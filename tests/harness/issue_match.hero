@@ -23,6 +23,8 @@
 # body as if it named the run's, so an issue pinned elsewhere is told its pin
 # differs once rather than its whole body.
 
+use <core>/strings as core_strings
+
 use cards
 use issue_github
 use issue_render
@@ -89,7 +91,7 @@ function ordered(entries: [Entry]) -> [Entry]
 # names none.
 function recorded(body: str) -> [str]
     for row in strings.lines(body)
-        if strings.starts_with(text: row, prefix: "Record: " + BLOB)
+        if core_strings.has_prefix(s: row, prefix: "Record: " + BLOB)
             rest = strings.without_prefix(text: row, prefix: "Record: " + BLOB)
             slash = strings.index_of(text: rest, needle: "/")
 

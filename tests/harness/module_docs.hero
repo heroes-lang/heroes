@@ -8,6 +8,8 @@
 # literals and its comments dropped: this reads the comments themselves, and the
 # two meet only in what a name is made of (`module_text.word_byte`).
 
+use <core>/strings as core_strings
+
 use module_text
 use strings
 
@@ -24,7 +26,7 @@ function functions_of(rows: [str]) -> [Declared]
     at: i64 @= 0
 
     for row in rows
-        if strings.starts_with(text: row, prefix: "function ")
+        if core_strings.has_prefix(s: row, prefix: "function ")
             out @ out.push(Declared(at: at, name: name_after(text: row, start: 9)))
         at @ at + 1
 
@@ -44,7 +46,7 @@ function name_after(text: str, start: i64) -> str
 # a code a package adds is such a constant (`examples/packages/README.md` § 3.3). A literal
 # holding an escape or a brace is not plain, and is none.
 function str_constant(rows: [str], at: i64) -> str?
-    if !strings.ends_with(text: rows[at], suffix: ": str") || at + 1 >= rows.len()
+    if !core_strings.has_suffix(s: rows[at], suffix: ": str") || at + 1 >= rows.len()
         return fail(code: "not_found", msg: "row " + (at + 1).to_str() + " declares no `str` constant")
     body = strings.trimmed(rows[at + 1])
 
@@ -53,7 +55,7 @@ function str_constant(rows: [str], at: i64) -> str?
     inner = body.slice(from: 1, to: body.len() - 1)
 
     for mark in ["\\", "\"", "{", "}"]
-        if strings.contains(text: inner, needle: mark)
+        if core_strings.contains(s: inner, substr: mark)
             return fail(code: "not_found", msg: "row " + (at + 2).to_str() + " holds no plain literal")
 
     return ok(inner)
@@ -95,10 +97,10 @@ function module_doc(rows: [str]) -> [str]
 
 # Whether a row is a comment, and not a `##` section heading.
 function commented(row: str) -> bool
-    return strings.starts_with(text: row, prefix: "#") && !strings.starts_with(text: row, prefix: "##")
+    return core_strings.has_prefix(s: row, prefix: "#") && !core_strings.has_prefix(s: row, prefix: "##")
 
 function uncommented(row: str) -> str
-    if strings.starts_with(text: row, prefix: "# ")
+    if core_strings.has_prefix(s: row, prefix: "# ")
         return strings.without_prefix(text: row, prefix: "# ")
     return strings.without_prefix(text: row, prefix: "#")
 

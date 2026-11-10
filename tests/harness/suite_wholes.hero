@@ -42,6 +42,8 @@
 # every program that suite covers, plus the seed, for the cost of reading
 # files.
 
+use <core>/strings as core_strings
+
 use report
 use shell
 use strings
@@ -62,7 +64,7 @@ function run_all(scratch: str) -> report.Report?
     judged: i64 @= 0
 
     for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
-        if !strings.ends_with(text: entry, suffix: ".c")
+        if !core_strings.has_suffix(s: entry, suffix: ".c")
             continue
         text = read_file(entry)
         label = "wholes/" + strings.base_name(path: entry)
@@ -406,5 +408,5 @@ test "a failure names the count and the sites, and a clean text passes"
     bad: report.Report @= report.empty()
     judge(@bad, label: "bad", c: "int f(void) {\nbb0:\n    t1.tag = INT64_C(0);\n}\n")
     assert bad.failed == 1
-    assert strings.contains(text: bad.failures[0], needle: "1 writes into a part of a temporary")
-    assert strings.contains(text: bad.failures[0], needle: "line 3: t1.tag = INT64_C(0);")
+    assert core_strings.contains(s: bad.failures[0], substr: "1 writes into a part of a temporary")
+    assert core_strings.contains(s: bad.failures[0], substr: "line 3: t1.tag = INT64_C(0);")

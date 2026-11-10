@@ -39,6 +39,8 @@
 # program's `file` word writes. GitHub had 2,021 issues when the second pass
 # ended, so the two series never meet.
 
+use <core>/strings as core_strings
+
 use cards
 use credit
 use github_issues
@@ -115,7 +117,7 @@ function body_numbers(body: str) -> [i64]
         field: str @= ""
 
         for opening in ["- **", "- [ ] **", "- [x] **"]
-            if field == "" && strings.starts_with(text: line, prefix: opening)
+            if field == "" && core_strings.has_prefix(s: line, prefix: opening)
                 field @ strings.without_prefix(text: line, prefix: opening)
 
         digits = credit.digit_run(text: field, at: 0)
@@ -196,7 +198,7 @@ function register_read(text: str) -> {i64: bool}?
     for row in strings.lines(text)
         line = strings.trimmed(row)
 
-        if line == "" || strings.starts_with(text: line, prefix: "#")
+        if line == "" || core_strings.has_prefix(s: line, prefix: "#")
             continue
         n = strings.to_number(line)
 
@@ -408,7 +410,7 @@ function answered_at(issue: github_issues.Listed) -> i64?
     if seconds.is_err()
         return seconds
 
-    if strings.ends_with(text: issue.closed, suffix: "T12:00:00Z") && imported(issue)
+    if core_strings.has_suffix(s: issue.closed, suffix: "T12:00:00Z") && imported(issue)
         return ok(seconds.must() / 86400 * 86400)
     return seconds
 
@@ -482,7 +484,7 @@ function prior_art_rows(body: str) -> credit.Section
             taken: [str] @= []
             j: i64 @= i + 1
 
-            while j < rows.len() && !strings.starts_with(text: rows[j], prefix: "#") && !strings.starts_with(text: rows[j], prefix: "Record: ")
+            while j < rows.len() && !core_strings.has_prefix(s: rows[j], prefix: "#") && !core_strings.has_prefix(s: rows[j], prefix: "Record: ")
                 taken @ taken.push(rows[j])
                 j @ j + 1
 
@@ -622,10 +624,10 @@ function epoch_of(instant: str) -> i64?
 # its card, a day and no minute, written as noon UTC.
 function imported(issue: github_issues.Listed) -> bool
     for row in strings.lines(issue.body)
-        if strings.starts_with(text: row, prefix: "Record: " + BLOB)
+        if core_strings.has_prefix(s: row, prefix: "Record: " + BLOB)
             rest = strings.without_prefix(text: row, prefix: "Record: " + BLOB)
 
-            if rest.len() > 48 && cards.is_full_hash(rest.slice(from: 0, to: 40)) && strings.starts_with(text: rest.slice(from: 40, to: rest.len()), prefix: "/issues/")
+            if rest.len() > 48 && cards.is_full_hash(rest.slice(from: 0, to: 40)) && core_strings.has_prefix(s: rest.slice(from: 40, to: rest.len()), prefix: "/issues/")
                 return true
 
     return false
@@ -648,7 +650,7 @@ function at_or_before(issue: github_issues.Listed, instant: str, at: i64) -> boo
     if seconds.is_err()
         return false
 
-    if strings.ends_with(text: instant, suffix: "T12:00:00Z") && imported(issue)
+    if core_strings.has_suffix(s: instant, suffix: "T12:00:00Z") && imported(issue)
         return seconds.must() / 86400 <= at / 86400
     return seconds.must() <= at
 
@@ -856,7 +858,7 @@ function classes_of(labels: [str]) -> [str]
     out: [str] @= []
 
     for label in labels
-        if strings.starts_with(text: label, prefix: "class:")
+        if core_strings.has_prefix(s: label, prefix: "class:")
             out @ out.push(label)
 
     return out.sort()
@@ -936,7 +938,7 @@ function waived_by(held: github_issues.Listing, judged: Tag, decision: i64, name
         if issue.open
             return whose + ", which is still open: a waiver is a decision taken, closed the day it is filed"
 
-        if !strings.contains(text: issue.body, needle: judged.name)
+        if !core_strings.contains(s: issue.body, substr: judged.name)
             return whose + ", whose body does not name " + judged.name
 
         for number in named
@@ -986,7 +988,7 @@ function unqueued(held: github_issues.Listing, judged: Tag) -> [str]
 
 # Whether a decision's title is a sitting's ratification: `Panel <digits>:`.
 function ratifies(title: str) -> bool
-    if !strings.starts_with(text: title, prefix: "Panel ")
+    if !core_strings.has_prefix(s: title, prefix: "Panel ")
         return false
     digits = credit.digit_run(text: title, at: 6)
     return digits > 0 && credit.has_at(text: title, at: 6 + digits, piece: ":")
@@ -1023,7 +1025,7 @@ function fixture(number: i64, title: str, kind: str, extra: [str], body: str, st
 
     rendered: str @= body
 
-    if !strings.starts_with(text: body, prefix: "Filed ")
+    if !core_strings.has_prefix(s: body, prefix: "Filed ")
         rendered @ "Filed " + created.slice(from: 0, to: 10) + "\\n\\n" + body
     return github_issues.json_of(
         number: number,
@@ -1058,7 +1060,7 @@ function labelled(first: i64, filed: str, given: [str], after: str, later: [str]
         id @ id + 1
 
     for label in later
-        if strings.starts_with(text: label, prefix: "-")
+        if core_strings.has_prefix(s: label, prefix: "-")
             events @ events.push(
                 github_labels.event_json(id: id, event: "unlabeled", instant: after, label: strings.without_prefix(text: label, prefix: "-"))
             )
@@ -1104,7 +1106,7 @@ test "a defect's names are its title's numbers and its body's later items, and a
     assert !register.new[2031].is_err()
     assert register.new[2040].is_err()
     assert register.misnamed.len() == 1
-    assert strings.contains(text: register.misnamed[0], needle: "names def" + "ect 2040")
+    assert core_strings.contains(s: register.misnamed[0], substr: "names def" + "ect 2040")
     assert register.unnamed.len() == 1
     names = names_of(register)
     assert keys(names).sort() == [33, 34, 2031]
@@ -1128,20 +1130,20 @@ test "numbering refuses an old number two issues name, a new number not the issu
     t: report.Report @= report.empty()
     numbering(@t, held: twice)
     assert t.failed == 1
-    assert strings.contains(text: t.failures[0], needle: "defect 235 is named by 2 issues, 3, 4")
-    assert strings.contains(text: t.failures[0], needle: "names def" + "ect 2041, which is neither")
-    assert strings.contains(
-        text: t.failures[0],
-        needle: "issues/2041 (no number) is an open defect whose title names no number"
+    assert core_strings.contains(s: t.failures[0], substr: "defect 235 is named by 2 issues, 3, 4")
+    assert core_strings.contains(s: t.failures[0], substr: "names def" + "ect 2041, which is neither")
+    assert core_strings.contains(
+        s: t.failures[0],
+        substr: "issues/2041 (no number) is an open defect whose title names no number"
     )
     empty: report.Report @= report.empty()
     numbering(@empty, held: github_issues.held_of([]))
-    assert strings.contains(text: empty.failures[0], needle: "read zero old defect numbers")
+    assert core_strings.contains(s: empty.failures[0], substr: "read zero old defect numbers")
     skipped: report.Report @= report.empty()
     numbering(@skipped, held: github_issues.unasked("no network"))
     assert skipped.failed == 0
     assert skipped.passed == 0
-    assert strings.contains(text: skipped.skips[0], needle: "no network")
+    assert core_strings.contains(s: skipped.skips[0], substr: "no network")
     broken: report.Report @= report.empty()
     numbering(@broken, held: github_issues.broken("not JSON"))
     assert broken.failed == 1
@@ -1181,7 +1183,7 @@ test "an open feature or task names a milestone open in the chain and on GitHub"
     )
     said = unhomed(held: stray, chain: chain)
     assert said.len() == 3
-    assert strings.contains(text: said[0], needle: "an open feature names") || strings.contains(text: said[0], needle: "M-ir-lowering is CLOSED")
+    assert core_strings.contains(s: said[0], substr: "an open feature names") || core_strings.contains(s: said[0], substr: "M-ir-lowering is CLOSED")
 
 test "a decision's prior art on GitHub keeps its opener and its two forms, and stands on a decision alone"
     known: {str: bool} @= {}
@@ -1203,9 +1205,9 @@ test "a decision's prior art on GitHub keeps its opener and its two forms, and s
     t: report.Report @= report.empty()
     prior_art(@t, held: bad, known: known)
     assert t.failed == 1
-    assert strings.contains(text: t.failures[0], needle: "stands on a `defect`")
-    assert strings.contains(text: t.failures[0], needle: "is neither `- **Taken from <who>**:`")
-    assert strings.contains(text: t.failures[0], needle: "`#### Prior Art` is nearly the heading")
+    assert core_strings.contains(s: t.failures[0], substr: "stands on a `defect`")
+    assert core_strings.contains(s: t.failures[0], substr: "is neither `- **Taken from <who>**:`")
+    assert core_strings.contains(s: t.failures[0], substr: "`#### Prior Art` is nearly the heading")
 
 # Issue 2037's shape, the reproducer of defect 2039: a ratification opened
 # from the sitting's lane, naming panel 213's file and its historian's report,
@@ -1247,9 +1249,9 @@ test "a sitting the tree has not received yet is not held against it, whatever t
         known: known
     )
     assert held_number.failed == 1
-    assert strings.contains(
-        text: held_number.failures[0],
-        needle: "names `docs/panel/212-a-typo.md`, a sitting's file this tree does not hold, and its number is not above 212"
+    assert core_strings.contains(
+        s: held_number.failures[0],
+        substr: "names `docs/panel/212-a-typo.md`, a sitting's file this tree does not hold, and its number is not above 212"
     )
 
     # A sitting that never lands is told once a later one reaches the tree.
@@ -1261,7 +1263,7 @@ test "a sitting the tree has not received yet is not held against it, whatever t
         known: known
     )
     assert later.failed == 1
-    assert strings.contains(text: later.failures[0], needle: "names `docs/panel/213-a-stopped-program.md`")
+    assert core_strings.contains(s: later.failures[0], substr: "names `docs/panel/213-a-stopped-program.md`")
 
 # A ratification GitHub closed, as `close` closes one: `Panel <n>:`, a
 # decision, closed as completed at `closed`.
@@ -1300,9 +1302,9 @@ test "a ratification GitHub closed after every answer the tree holds is not held
     # A tree holding 214's answer and not 213's, closed before it, lost it.
     later = answers_received(answered: [150, 214], first: first)
     lost = unasked_offence(sitting: 213, digits: "213", first: first, received: later)
-    assert strings.contains(
-        text: lost,
-        needle: "titled `Panel 213:`, asks for it; GitHub closed its ratification, https://github.com/heroes-lang/heroes/issues/2037 (Panel 213: a sitting), at 2026-10-14T02:56:48Z, not after 2026-10-14T07:59:37Z, when it closed the ratification of 214"
+    assert core_strings.contains(
+        s: lost,
+        substr: "titled `Panel 213:`, asks for it; GitHub closed its ratification, https://github.com/heroes-lang/heroes/issues/2037 (Panel 213: a sitting), at 2026-10-14T02:56:48Z, not after 2026-10-14T07:59:37Z, when it closed the ratification of 214"
     )
 
     # No ratification at all is told as before, and a tree placed nowhere
@@ -1310,9 +1312,9 @@ test "a ratification GitHub closed after every answer the tree holds is not held
     assert unasked_offence(sitting: 216, digits: "216", first: first, received: round) == "the verdict reads `Pending` and no open decision on GitHub, titled `Panel 216:`, asks for it"
     nowhere = answers_received(answered: [216], first: first)
     assert nowhere.at == 0
-    assert strings.contains(
-        text: unasked_offence(sitting: 214, digits: "214", first: first, received: nowhere),
-        needle: "nothing places it among the answers"
+    assert core_strings.contains(
+        s: unasked_offence(sitting: 214, digits: "214", first: first, received: nowhere),
+        substr: "nothing places it among the answers"
     )
 
     # A ratification closed as not planned answers nothing.
@@ -1367,16 +1369,16 @@ test "a milestone GitHub numbered above every one whose row the tree holds is no
     behind = github_issues.held_of([done, owed(number: 5, kind: "task", milestone: "M-doc-generator", numbered: 70)])
     said = unhomed(held: behind, chain: chain)
     assert said.len() == 1
-    assert strings.contains(
-        text: said[0],
-        needle: "M-doc-generator has no row in § The chain, and GitHub numbered it 70, not above 83, the highest milestone whose row this tree holds"
+    assert core_strings.contains(
+        s: said[0],
+        substr: "M-doc-generator has no row in § The chain, and GitHub numbered it 70, not above 83, the highest milestone whose row this tree holds"
     )
 
     # Its row landed, the milestone is judged as every other.
     chain["M-web-framework"] @ false
     landed = unhomed(held: ahead, chain: chain)
     assert landed.len() == 1
-    assert strings.contains(text: landed[0], needle: "M-web-framework is CLOSED")
+    assert core_strings.contains(s: landed[0], substr: "M-web-framework is CLOSED")
 
     # A tree placed nowhere excuses nothing, and a milestone that never lands
     # is told once a later one's row reaches the tree.
@@ -1389,9 +1391,9 @@ test "a milestone GitHub numbered above every one whose row the tree holds is no
     )
     stray = unhomed(held: beyond, chain: passed)
     assert stray.len() == 1
-    assert strings.contains(
-        text: stray[0],
-        needle: "M-web-framework has no row in § The chain, and GitHub numbered it 85, not above 86"
+    assert core_strings.contains(
+        s: stray[0],
+        substr: "M-web-framework has no row in § The chain, and GitHub numbered it 85, not above 86"
     )
 
 # The public defect form's body, as GitHub writes it from the form.
@@ -1420,10 +1422,10 @@ test "a stranger's defect names nothing but itself and is no offence of the proj
     t: report.Report @= report.empty()
     numbering(@t, held: own)
     assert t.failed == 1
-    assert strings.contains(text: t.failures[0], needle: "defect 235 is named by 2 issues, 3, 2101")
-    assert strings.contains(
-        text: t.failures[0],
-        needle: "issues/2100 (A wrong program compiles) is an open defect whose title names no number"
+    assert core_strings.contains(s: t.failures[0], substr: "defect 235 is named by 2 issues, 3, 2101")
+    assert core_strings.contains(
+        s: t.failures[0],
+        substr: "issues/2100 (A wrong program compiles) is an open defect whose title names no number"
     )
 
     # A listing with none of the project's own is no pass.
@@ -1433,9 +1435,9 @@ test "a stranger's defect names nothing but itself and is no offence of the proj
         held: github_issues.held_of([foreign(number: 2100, title: "Defect 014: x", kind: "defect", body: FORM, milestone: "")])
     )
     assert alone.failed == 1
-    assert strings.contains(
-        text: alone.failures[0],
-        needle: "GitHub listed 1 issues and none of them is the project's own"
+    assert core_strings.contains(
+        s: alone.failures[0],
+        substr: "GitHub listed 1 issues and none of them is the project's own"
     )
 
 test "a stranger's prior art, wish and decision are none of the project's, and a listing of strangers alone is no pass (defect 2042)"
@@ -1464,7 +1466,7 @@ test "a stranger's prior art, wish and decision are none of the project's, and a
         known: known
     )
     assert alone.failed == 1
-    assert strings.contains(text: alone.failures[0], needle: "none of them is the project's own")
+    assert core_strings.contains(s: alone.failures[0], substr: "none of them is the project's own")
 
     # A stranger's wish names no milestone; a stranger cannot set one.
     chain: {str: bool} @= {}
@@ -1478,7 +1480,7 @@ test "a stranger's prior art, wish and decision are none of the project's, and a
         chain: chain
     )
     assert lonely.len() == 1
-    assert strings.contains(text: lonely[0], needle: "none of them is the project's own")
+    assert core_strings.contains(s: lonely[0], substr: "none of them is the project's own")
 
     # A stranger's `Panel NNN:` asks for no sitting and answers none.
     asking = github_issues.held_of(
@@ -1515,14 +1517,14 @@ test "a tag stands over improvements and young adjacent defects, and over no blo
     )
     said = standing(held: aged, judged: judged, tags: tags, at_tag: unmoved(aged))
     assert said.len() == 1
-    assert strings.contains(text: said[0], needle: "open at 2 tags (m-judged m-earlier)")
+    assert core_strings.contains(s: said[0], substr: "open at 2 tags (m-judged m-earlier)")
     hard = github_issues.held_of(
         [fixture(number: 2034, title: "Def" + "ect 2034: e", kind: "defect", extra: ["class:systemic"], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: ""), fixture(number: 2035, title: "Def" + "ect 2035: f", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: "")]
     )
     held = standing(held: hard, judged: judged, tags: tags, at_tag: unmoved(hard))
     assert held.len() == 2
-    assert strings.contains(text: held[0], needle: "`systemic`")
-    assert strings.contains(text: held[1], needle: "no `class:` label")
+    assert core_strings.contains(s: held[0], substr: "`systemic`")
+    assert core_strings.contains(s: held[1], substr: "no `class:` label")
 
 # Defect 2323: `m-latency-ceiling` read red six days after it was placed,
 # over a defect classed `systemic` after it.
@@ -1558,13 +1560,13 @@ test "a tag is judged by the class each defect held at it, whatever the label sa
 
     # 101 was a young `adjacent` at the tag and does not count; the others do.
     assert numbers == [102, 103, 104, 105]
-    assert strings.contains(text: said[0].said, needle: "`systemic` at m-judged, `adjacent` today")
-    assert strings.ends_with(text: said[1].said, suffix: "`blocking`")
-    assert strings.contains(
-        text: said[2].said,
-        needle: "no `class:` label at m-judged, `improvement` today, and a defect without one counts as `blocking`"
+    assert core_strings.contains(s: said[0].said, substr: "`systemic` at m-judged, `adjacent` today")
+    assert core_strings.has_suffix(s: said[1].said, suffix: "`blocking`")
+    assert core_strings.contains(
+        s: said[2].said,
+        substr: "no `class:` label at m-judged, `improvement` today, and a defect without one counts as `blocking`"
     )
-    assert strings.contains(text: said[3].said, needle: "`blocking` at m-judged, `improvement` today")
+    assert core_strings.contains(s: said[3].said, substr: "`blocking` at m-judged, `improvement` today")
 
     # The same `adjacent` at the tag, open at two tags, is aged, and says
     # what it is today.
@@ -1581,9 +1583,9 @@ test "a tag is judged by the class each defect held at it, whatever the label sa
         at_tag: classed_at(@old, held: aged, judged: judged).at_tag
     )
     assert told_aged.len() == 1
-    assert strings.contains(
-        text: told_aged[0],
-        needle: "`adjacent` at m-judged, `systemic` today, open at 2 tags (m-judged m-earlier)"
+    assert core_strings.contains(
+        s: told_aged[0],
+        substr: "`adjacent` at m-judged, `systemic` today, open at 2 tags (m-judged m-earlier)"
     )
 
     # A change at the tag's own second stands at it, as an issue created then
@@ -1600,7 +1602,7 @@ test "a tag is judged by the class each defect held at it, whatever the label sa
     none: {i64: [str]} = {}
     unread_one = standing(held: second, judged: judged, tags: tags, at_tag: none)
     assert unread_one.len() == 1
-    assert strings.contains(text: unread_one[0], needle: "was never read")
+    assert core_strings.contains(s: unread_one[0], substr: "was never read")
 
 # Defect 2326: a defect labelled `adjacent` and `blocking` was read as the
 # first in sorted order, `adjacent`, and passed a tag its `blocking` label
@@ -1618,9 +1620,9 @@ test "two class labels are read as the most severe, at the tag and today, and to
     )
     said = standing(held: both, judged: judged, tags: tags, at_tag: unmoved(both))
     assert said.len() == 1
-    assert strings.contains(
-        text: said[0],
-        needle: "`blocking`, the most severe of the 2 `class:` labels it carried at m-judged, `class:adjacent` `class:blocking`, where `file` writes one"
+    assert core_strings.contains(
+        s: said[0],
+        substr: "`blocking`, the most severe of the 2 `class:` labels it carried at m-judged, `class:adjacent` `class:blocking`, where `file` writes one"
     )
     mild = github_issues.held_of(
         [fixture(number: 2031, title: d + "2031: b", kind: "defect", extra: ["class:improvement", "class:adjacent"], body: "b", state: "open", created: "2026-10-16T08:00:00Z", closed: "")]
@@ -1631,7 +1633,7 @@ test "two class labels are read as the most severe, at the tag and today, and to
     )
     told_aged = standing(held: aged, judged: judged, tags: tags, at_tag: unmoved(aged))
     assert told_aged.len() == 1
-    assert strings.contains(text: told_aged[0], needle: "`adjacent`, the most severe of the 2 `class:` labels")
+    assert core_strings.contains(s: told_aged[0], substr: "`adjacent`, the most severe of the 2 `class:` labels")
 
     # At the tag, from the label events: two stood then and one today.
     filed = "2026-10-16T08:00:00Z"
@@ -1645,9 +1647,9 @@ test "two class labels are read as the most severe, at the tag and today, and to
     assert classes.at_tag[109].must() == ["class:adjacent", "class:blocking"]
     counted_then = counted(held: then, judged: judged, tags: tags, at_tag: classes.at_tag)
     assert counted_then.len() == 1
-    assert strings.contains(
-        text: counted_then[0].said,
-        needle: "`blocking` at m-judged, `adjacent` today, the most severe of the 2 `class:` labels it carried at m-judged"
+    assert core_strings.contains(
+        s: counted_then[0].said,
+        substr: "`blocking` at m-judged, `adjacent` today, the most severe of the 2 `class:` labels it carried at m-judged"
     )
 
 test "a defect whose label events cannot be read, or are not whole, is a skip naming it, and an answer that cannot be read a failure"
@@ -1666,11 +1668,11 @@ test "a defect whose label events cannot be read, or are not whole, is a skip na
     unread(@r, broken: gone.broken, why: gone.why, label: "records/tagged")
     assert r.failed == 0
     assert r.passed == 0
-    assert strings.starts_with(text: r.skips[0], prefix: "SKIP records/tagged")
-    assert strings.contains(text: r.skips[0], needle: "issues/110")
-    assert strings.contains(
-        text: r.skips[0],
-        needle: "held at m-judged is unknown, and its label today, `adjacent`, is not judged in its place"
+    assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP records/tagged")
+    assert core_strings.contains(s: r.skips[0], substr: "issues/110")
+    assert core_strings.contains(
+        s: r.skips[0],
+        substr: "held at m-judged is unknown, and its label today, `adjacent`, is not judged in its place"
     )
 
     # Events that end on another class than the label today, or that take
@@ -1681,9 +1683,9 @@ test "a defect whose label events cannot be read, or are not whole, is a skip na
     partial = classed_at(@short, held: held, judged: judged)
     assert !partial.asked
     assert !partial.broken
-    assert strings.contains(
-        text: partial.why,
-        needle: "end with `class:blocking` where it holds `class:adjacent` today"
+    assert core_strings.contains(
+        s: partial.why,
+        substr: "end with `class:blocking` where it holds `class:adjacent` today"
     )
     lost: issue_pace.Session @= issue_pace.scripted(
         [labelled(first: 1, filed: filed, given: [], after: "2026-10-22T13:49:47Z", later: ["-class:blocking", "class:adjacent"])]
@@ -1691,7 +1693,7 @@ test "a defect whose label events cannot be read, or are not whole, is a skip na
     missing = classed_at(@lost, held: held, judged: judged)
     assert !missing.asked
     assert !missing.broken
-    assert strings.contains(text: missing.why, needle: "no event gave it")
+    assert core_strings.contains(s: missing.why, substr: "no event gave it")
 
     # An answer that came and cannot be read: a failure.
     odd: issue_pace.Session @= issue_pace.scripted(
@@ -1728,71 +1730,71 @@ test "the author's waiver excuses a tag over exactly the defects a closed decisi
     assert carried(held: held, judged: judged, against: against, rows: ["m-other | 9 | 1", "m-judged | 9 | 2031 2030"]) == ""
 
     # No row, another tag's row, one defect fewer or one more, a row of another shape.
-    assert strings.starts_with(
-        text: carried(held: held, judged: judged, against: against, rows: []),
+    assert core_strings.has_prefix(
+        s: carried(held: held, judged: judged, against: against, rows: []),
         prefix: "Nothing in CARRIED names m-judged"
     )
-    assert strings.starts_with(
-        text: carried(held: held, judged: judged, against: against, rows: ["m-other | 9 | 2030 2031"]),
+    assert core_strings.has_prefix(
+        s: carried(held: held, judged: judged, against: against, rows: ["m-other | 9 | 2030 2031"]),
         prefix: "Nothing in CARRIED"
     )
-    assert strings.contains(
-        text: carried(held: held, judged: judged, against: against, rows: ["m-judged | 9 | 2030"]),
-        needle: "never more and never fewer"
+    assert core_strings.contains(
+        s: carried(held: held, judged: judged, against: against, rows: ["m-judged | 9 | 2030"]),
+        substr: "never more and never fewer"
     )
-    assert strings.contains(
-        text: carried(held: held, judged: judged, against: against, rows: ["m-judged | 9 | 2030 2031 2032"]),
-        needle: "stands over 2030 2031"
+    assert core_strings.contains(
+        s: carried(held: held, judged: judged, against: against, rows: ["m-judged | 9 | 2030 2031 2032"]),
+        substr: "stands over 2030 2031"
     )
-    assert strings.contains(
-        text: carried(held: held, judged: judged, against: against, rows: ["m-judged | 9"]),
-        needle: "is not `<tag> | <decision> | <defect numbers>`"
+    assert core_strings.contains(
+        s: carried(held: held, judged: judged, against: against, rows: ["m-judged | 9"]),
+        substr: "is not `<tag> | <decision> | <defect numbers>`"
     )
-    assert strings.contains(
-        text: carried(held: held, judged: judged, against: against, rows: ["m-judged | nine | 2030 2031"]),
-        needle: "which is no issue number"
+    assert core_strings.contains(
+        s: carried(held: held, judged: judged, against: against, rows: ["m-judged | nine | 2030 2031"]),
+        substr: "which is no issue number"
     )
 
     # The decision: listed, a decision, the project's, closed, naming the tag and each defect.
     row = ["m-judged | 9 | 2030 2031"]
-    assert strings.contains(
-        text: carried(held: github_issues.held_of([]), judged: judged, against: against, rows: row),
-        needle: "which GitHub does not list"
+    assert core_strings.contains(
+        s: carried(held: github_issues.held_of([]), judged: judged, against: against, rows: row),
+        substr: "which GitHub does not list"
     )
     still = github_issues.held_of(
         [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "m-judged " + d + "2030 " + d + "2031", state: "open", created: "2026-10-20T11:00:00Z", closed: "")]
     )
-    assert strings.contains(
-        text: carried(held: still, judged: judged, against: against, rows: row),
-        needle: "which is still open"
+    assert core_strings.contains(
+        s: carried(held: still, judged: judged, against: against, rows: row),
+        substr: "which is still open"
     )
     short = github_issues.held_of(
         [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "m-judged " + d + "2030 " + d + "20310", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
     )
-    assert strings.contains(
-        text: carried(held: short, judged: judged, against: against, rows: row),
-        needle: "does not name " + d + "2031"
+    assert core_strings.contains(
+        s: carried(held: short, judged: judged, against: against, rows: row),
+        substr: "does not name " + d + "2031"
     )
     untagged = github_issues.held_of(
         [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "" + d + "2030 " + d + "2031", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
     )
-    assert strings.contains(
-        text: carried(held: untagged, judged: judged, against: against, rows: row),
-        needle: "does not name m-judged"
+    assert core_strings.contains(
+        s: carried(held: untagged, judged: judged, against: against, rows: row),
+        substr: "does not name m-judged"
     )
     filed = github_issues.held_of(
         [fixture(number: 9, title: "Def" + "ect 9: t", kind: "defect", extra: ["class:blocking"], body: "m-judged " + d + "2030 " + d + "2031", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
     )
-    assert strings.contains(
-        text: carried(held: filed, judged: judged, against: against, rows: row),
-        needle: "not a decision of the project's own"
+    assert core_strings.contains(
+        s: carried(held: filed, judged: judged, against: against, rows: row),
+        substr: "not a decision of the project's own"
     )
     stranger = github_issues.held_of(
         [foreign(number: 9, title: "t", kind: "decision", body: "m-judged " + d + "2030 " + d + "2031", milestone: "")]
     )
-    assert strings.contains(
-        text: carried(held: stranger, judged: judged, against: against, rows: row),
-        needle: "not a decision of the project's own"
+    assert core_strings.contains(
+        s: carried(held: stranger, judged: judged, against: against, rows: row),
+        substr: "not a decision of the project's own"
     )
 
     # A number is named whole, a link's text included.

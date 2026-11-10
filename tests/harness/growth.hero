@@ -28,6 +28,8 @@
 # scan of the whole file per diagnostic. Those were found by timing verbs on
 # a ladder, and a ladder is the instrument for them.
 
+use <core>/strings as core_strings
+
 use strings
 
 # One growth: the line, the name grown, and the line as written.
@@ -65,7 +67,7 @@ function sites(text: str) -> [Site]
         for one in lent_names(code)
             lent[one] @ true
 
-        if strings.starts_with(text: code, prefix: "for ") || strings.starts_with(text: code, prefix: "while ")
+        if core_strings.has_prefix(s: code, prefix: "for ") || core_strings.has_prefix(s: code, prefix: "while ")
             loops @ loops.push(indent)
         local = declared_str(code)
 
@@ -78,8 +80,8 @@ function sites(text: str) -> [Site]
             continue
         slow: bool @= false
 
-        if strings.contains(text: grown, needle: ".")
-            slow @ strings.contains(text: after_store(row), needle: "\\n")
+        if core_strings.contains(s: grown, substr: ".")
+            slow @ core_strings.contains(s: after_store(row), substr: "\\n")
         else if !lent[grown].is_err()
             slow @ true
         else if !declared[grown].is_err() && loops.len() > 0
@@ -154,10 +156,10 @@ function arm_body(code: str) -> str
 function declared_str(code: str) -> str
     name = identifier(code, from: 0)
 
-    if name.len() == 0 || strings.contains(text: name, needle: ".")
+    if name.len() == 0 || core_strings.contains(s: name, substr: ".")
         return ""
 
-    if strings.starts_with(text: code.slice(from: name.len(), to: code.len()), prefix: ": str @=")
+    if core_strings.has_prefix(s: code.slice(from: name.len(), to: code.len()), prefix: ": str @=")
         return name
     return ""
 
@@ -168,7 +170,7 @@ function grown_name(body: str) -> str
     if name.len() == 0
         return ""
 
-    if strings.starts_with(text: body.slice(from: name.len(), to: body.len()), prefix: " @ " + name + " + ")
+    if core_strings.has_prefix(s: body.slice(from: name.len(), to: body.len()), prefix: " @ " + name + " + ")
         return name
     return ""
 
@@ -191,7 +193,7 @@ function lent_names(code: str) -> [str]
             name = identifier(code, from: i + 1)
             rest = code.slice(from: i + 1 + name.len(), to: code.len())
 
-            if name.len() > 0 && (strings.starts_with(text: rest, prefix: ": str,") || strings.starts_with(text: rest, prefix: ": str)"))
+            if name.len() > 0 && (core_strings.has_prefix(s: rest, prefix: ": str,") || core_strings.has_prefix(s: rest, prefix: ": str)"))
                 out @ out.push(name)
         i @ i + 1
 

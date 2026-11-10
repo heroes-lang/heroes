@@ -16,6 +16,8 @@
 # rewritten), so a row is never rewritten; a reading since falsified is
 # answered by a later row.
 
+use <core>/strings as core_strings
+
 use latency_clock
 use strings
 
@@ -111,7 +113,7 @@ function cells_of(line: str) -> [str]
     return out
 
 function is_table_line(line: str) -> bool
-    return strings.starts_with(text: strings.trimmed(line), prefix: "|")
+    return core_strings.has_prefix(s: strings.trimmed(line), prefix: "|")
 
 # Where `name` stands among the header's cells.
 function column(cells: [str], name: str) -> i64?
@@ -172,7 +174,7 @@ function rows_in(text: str) -> [Row]?
     if !found
         return fail(code: "no_header", msg: "no table whose header names the columns " + COLUMNS.join(", "))
 
-    if at >= lines.len() || !strings.contains(text: lines[at], needle: "---")
+    if at >= lines.len() || !core_strings.contains(s: lines[at], substr: "---")
         return fail(
             code: "no_rule",
             msg: "line " + (at + 1).to_str() + ": the header is not followed by the table's rule line"

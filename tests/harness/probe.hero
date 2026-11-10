@@ -24,6 +24,8 @@
 # `f` unqualified. So `probe.Probe` travels between modules and the sugar
 # that builds one does not.
 
+use <core>/strings as core_strings
+
 use absence
 use platform_skips
 use report
@@ -154,7 +156,7 @@ function skip_of(scratch: str, p: Probe, said: shell.Run) -> Outcome
 # "" where there is none.
 function case_of(argv: str) -> str
     for word in words_of(argv)
-        if strings.ends_with(text: word, suffix: ".hero")
+        if core_strings.has_suffix(s: word, suffix: ".hero")
             return word
 
     return ""
@@ -170,7 +172,7 @@ function asks_about_absence(p: Probe) -> bool
         asked @ asked.push(needle)
 
     for one in asked
-        if strings.contains(text: one, needle: "ffi_missing_header") || strings.contains(text: one, needle: "ffi_pkgconfig") || strings.contains(text: one, needle: "pkg-config is not on this machine")
+        if core_strings.contains(s: one, substr: "ffi_missing_header") || core_strings.contains(s: one, substr: "ffi_pkgconfig") || core_strings.contains(s: one, substr: "pkg-config is not on this machine")
             return true
 
     return false
@@ -206,26 +208,26 @@ function judged(p: Probe, said: shell.Run) -> str
             "    stderr is not what it must be\n--- expected ---\n" + p.err_is + "--- actual ---\n" + err + "--- end ---"
         )
 
-    if p.out_starts.len() > 0 && !strings.starts_with(text: out, prefix: p.out_starts)
+    if p.out_starts.len() > 0 && !core_strings.has_prefix(s: out, prefix: p.out_starts)
         wrong @ wrong.push("    stdout does not start with `" + p.out_starts + "`, it starts:\n" + first_line(out))
 
-    if p.err_starts.len() > 0 && !strings.starts_with(text: err, prefix: p.err_starts)
+    if p.err_starts.len() > 0 && !core_strings.has_prefix(s: err, prefix: p.err_starts)
         wrong @ wrong.push("    stderr does not start with `" + p.err_starts + "`, it starts:\n" + first_line(err))
 
     for needle in p.out_has
-        if !strings.contains(text: out, needle: needle)
+        if !core_strings.contains(s: out, substr: needle)
             wrong @ wrong.push("    stdout does not carry `" + needle + "`")
 
     for needle in p.out_lacks
-        if strings.contains(text: out, needle: needle)
+        if core_strings.contains(s: out, substr: needle)
             wrong @ wrong.push("    stdout carries `" + needle + "` and must not")
 
     for needle in p.err_has
-        if !strings.contains(text: err, needle: needle)
+        if !core_strings.contains(s: err, substr: needle)
             wrong @ wrong.push("    stderr does not carry `" + needle + "`")
 
     for needle in p.err_lacks
-        if strings.contains(text: err, needle: needle)
+        if core_strings.contains(s: err, substr: needle)
             wrong @ wrong.push("    stderr carries `" + needle + "` and must not")
 
     if p.err_lines >= 0 && strings.lines(err).len() != p.err_lines
@@ -306,7 +308,7 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     refuted.err_has @ ["error[ffi_return_type]"]
     got = outcome(scratch: scratch, compiler: compiler.must(), p: refuted)
     assert got.kind == "failed"
-    assert strings.contains(text: got.text, needle: "not skipped for a missing library: clang finds `stdio.h`")
+    assert core_strings.contains(s: got.text, substr: "not skipped for a missing library: clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: Probe @= probe(name: "lacks", argv: "build " + lacks.must(), code: 1)
@@ -323,6 +325,6 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     r: report.Report @= report.empty()
     run_table(scratch: scratch, compiler: compiler.must(), probes: [excused, refuted], r: @r)
     assert r.skips.len() == 1
-    assert strings.starts_with(text: r.skips[0], prefix: "SKIP surface/lacks\n")
+    assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP surface/lacks\n")
     assert r.failed == 1
     assert !shell.remove_tree(scratch).is_err()

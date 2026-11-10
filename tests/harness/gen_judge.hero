@@ -37,6 +37,8 @@
 # by LeakSanitizer under `--sanitize -O0` on Linux and by `leaks --atExit`
 # on the `-O0` binary on Darwin (`gen_cjudge.leak_free`, task 972).
 
+use <core>/strings as core_strings
+
 use expectation
 use gen_cjudge
 use shell
@@ -140,7 +142,7 @@ function detail(v: Verdict) -> str
 function fallen(ran: shell.Run, stage: str) -> Verdict?
     said = ran.out + ran.err
 
-    if strings.contains(text: said, needle: "internal error") || strings.contains(text: said, needle: "hero_unreachable")
+    if core_strings.contains(s: said, substr: "internal error") || core_strings.contains(s: said, substr: "hero_unreachable")
         return ok(.fell(said: stage + ": " + first_line(said)))
 
     if ran.code == 0
@@ -149,10 +151,10 @@ function fallen(ran: shell.Run, stage: str) -> Verdict?
     if ran.code == 1
         return ok(.refused(said: stage + ": " + first_line(ran.err)))
 
-    if ran.code == 2 && strings.contains(text: ran.err, needle: "clang died on the C")
+    if ran.code == 2 && core_strings.contains(s: ran.err, substr: "clang died on the C")
         return ok(.clang_limit(said: stage + ": " + first_line(ran.err)))
 
-    if ran.code == 134 && strings.contains(text: ran.err, needle: "stack exhausted in")
+    if ran.code == 134 && core_strings.contains(s: ran.err, substr: "stack exhausted in")
         return ok(.depth_limit(said: stage + ": " + first_line(ran.err)))
     return ok(.fell(said: stage + ": exit " + ran.code.to_str() + ", " + first_line(said)))
 
@@ -166,7 +168,7 @@ function first_line(text: str) -> str
 # The first line of `text` holding `needle`, else its first line.
 function line_naming(text: str, needle: str) -> str
     for row in strings.lines(text)
-        if strings.contains(text: row, needle: needle)
+        if core_strings.contains(s: row, substr: needle)
             return row
 
     return first_line(text)
@@ -185,13 +187,13 @@ function missed(want: expectation.Expectation, ran: shell.Run, where: str) -> Ve
     # LeakSanitizer first: its report ends `SUMMARY: AddressSanitizer:`, so
     # the general test below would call a leak a corruption. Each says the
     # line that names its sanitiser, since a report opens with a rule of `=`.
-    if strings.contains(text: ran.err, needle: "LeakSanitizer")
+    if core_strings.contains(s: ran.err, substr: "LeakSanitizer")
         return ok(.leaked(said: where + ": " + line_naming(text: ran.err, needle: "LeakSanitizer")))
 
-    if strings.contains(text: ran.err, needle: "AddressSanitizer")
+    if core_strings.contains(s: ran.err, substr: "AddressSanitizer")
         return ok(.sanitized(said: where + ": " + line_naming(text: ran.err, needle: "AddressSanitizer")))
 
-    if strings.contains(text: ran.err, needle: "runtime error:")
+    if core_strings.contains(s: ran.err, substr: "runtime error:")
         return ok(.sanitized(said: where + ": " + line_naming(text: ran.err, needle: "runtime error:")))
     unmet = expectation.unmet(want, out: ran.out, err: ran.err, code: ran.code)
 

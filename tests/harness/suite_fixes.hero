@@ -50,6 +50,8 @@
 # diagnostic, most of them a fragment whose later stages speak once its syntax
 # is repaired, and were pinned as `.applied`.
 
+use <core>/strings as core_strings
+
 use cases
 use fix_names
 use report
@@ -341,7 +343,7 @@ function fixtures_named(scratch: str, compiler: str, dir: str, least: i64, only:
         for entry in entries
             present[entry] @ true
 
-            if strings.ends_with(text: entry, suffix: ".hero")
+            if core_strings.has_suffix(s: entry, suffix: ".hero")
                 roots @ roots + 1
 
         copy = scratch + "/fixed/" + strings.base_name(path: case_dir)
@@ -368,7 +370,7 @@ function fixtures_named(scratch: str, compiler: str, dir: str, least: i64, only:
         for entry in entries
             name = strings.base_name(path: case_dir) + "/" + strings.base_name(path: entry)
 
-            if strings.ends_with(text: entry, suffix: ".fixed") || strings.ends_with(text: entry, suffix: ".applied")
+            if core_strings.has_suffix(s: entry, suffix: ".fixed") || core_strings.has_suffix(s: entry, suffix: ".applied")
                 answered = strings.without_suffix(text: strings.without_suffix(text: entry, suffix: ".fixed"), suffix: ".applied") + ".hero"
 
                 if present[answered].is_err()
@@ -379,7 +381,7 @@ function fixtures_named(scratch: str, compiler: str, dir: str, least: i64, only:
                     )
                 continue
 
-            if !strings.ends_with(text: entry, suffix: ".hero")
+            if !core_strings.has_suffix(s: entry, suffix: ".hero")
                 continue
             stem = strings.without_suffix(text: entry, suffix: ".hero")
 
@@ -407,14 +409,14 @@ function fixtures_named(scratch: str, compiler: str, dir: str, least: i64, only:
 # Whether `only` names the fixture case at `case_dir`: the directory's own
 # name holds it, or one of its files' names, its extension left out.
 function names_a_case(case_dir: str, entries: [str], only: str) -> bool
-    if strings.contains(text: strings.base_name(path: case_dir), needle: only)
+    if core_strings.contains(s: strings.base_name(path: case_dir), substr: only)
         return true
 
     for entry in entries
         name = strings.base_name(path: entry)
         stem = strings.split_on(text: name, byte: '.')[0]
 
-        if strings.contains(text: stem, needle: only)
+        if core_strings.contains(s: stem, substr: only)
             return true
 
     return false
@@ -552,7 +554,7 @@ function unclean(got: bool?) -> str
 # Does every `.hero` directly inside the copy check clean, as it stands?
 function clean_roots(scratch: str, compiler: str, copy: str, entries: [str]) -> bool?
     for file in entries
-        if !strings.ends_with(text: file, suffix: ".hero")
+        if !core_strings.has_suffix(s: file, suffix: ".hero")
             continue
         rechecked = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", copy + "/" + strings.base_name(path: file), "--brief"])?
 
@@ -591,7 +593,7 @@ function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, lab
     broken: str @= ""
 
     for file in entries
-        if !strings.ends_with(text: file, suffix: ".hero") || broken != ""
+        if !core_strings.has_suffix(s: file, suffix: ".hero") || broken != ""
             continue
         placed = copy + "/" + strings.base_name(path: file)
         rechecked = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--brief"])
@@ -673,7 +675,7 @@ test "the fixes suite catches a wrong application and a repair that does not che
     red = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !red.is_err()
     assert red.must().passed == 0
-    assert strings.contains(text: red.must().failures[0], needle: "--apply")
+    assert core_strings.contains(s: red.must().failures[0], substr: "--apply")
     assert !shell.remove_tree(scratch).is_err()
 
 test "the fixtures half applies across two files, re-checks the whole program, and catches a lie"
@@ -699,7 +701,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
         words: [compiler, "check", tree + "/typo/main.hero", "--apply"]
     )
     assert !applied.is_err()
-    assert strings.contains(text: applied.must().out, needle: "geom.dist2(")
+    assert core_strings.contains(s: applied.must().out, substr: "geom.dist2(")
     assert !write_file(path: tree + "/typo/main.fixed", text: applied.must().out).is_err()
     green = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !green.is_err()
@@ -719,8 +721,8 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     red = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !red.is_err()
     assert red.must().failed == 1
-    assert strings.contains(text: red.must().failures[0], needle: "typo/main.hero")
-    assert strings.contains(text: red.must().failures[0], needle: "--apply")
+    assert core_strings.contains(s: red.must().failures[0], substr: "typo/main.hero")
+    assert core_strings.contains(s: red.must().failures[0], substr: "--apply")
 
     # A `.fixed` the compiler WOULD produce that does not check clean with its
     # module: the second half, which is the one that makes the tag mean
@@ -744,7 +746,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     lied = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !lied.is_err()
     assert lied.must().failed == 1
-    assert strings.contains(text: lied.must().failures[0], needle: "does not check clean")
+    assert core_strings.contains(s: lied.must().failures[0], substr: "does not check clean")
 
     # The lie this half held until 2026-10-04, `dist2` given `str` parameters,
     # is the first half's since defect 220: a rename into a call whose types
@@ -754,9 +756,9 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     caught = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !caught.is_err()
     assert caught.must().failed == 1
-    assert strings.contains(text: caught.must().failures[0], needle: "typo/main.hero")
-    assert strings.contains(text: caught.must().failures[0], needle: "--apply")
-    assert !strings.contains(text: caught.must().failures[0], needle: "does not check clean")
+    assert core_strings.contains(s: caught.must().failures[0], substr: "typo/main.hero")
+    assert core_strings.contains(s: caught.must().failures[0], substr: "--apply")
+    assert !core_strings.contains(s: caught.must().failures[0], substr: "does not check clean")
     assert !shell.remove_tree(scratch).is_err()
 
 # Defect 129, 2026-09-28: a case with no answer file was skipped, so a join
@@ -787,7 +789,7 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     assert !loose.is_err()
     assert loose.must().passed == 1
     assert loose.must().failed == 1
-    assert strings.contains(text: loose.must().failures[0], needle: "no answer pins")
+    assert core_strings.contains(s: loose.must().failures[0], substr: "no answer pins")
 
     # Pinned as `.applied` while its repaired program checks clean: its answer
     # is a `.fixed`, and the suite says so.
@@ -797,14 +799,14 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     clean = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
     assert !clean.is_err()
     assert clean.must().failed == 1
-    assert strings.contains(text: clean.must().failures[0], needle: "is a `.fixed`")
+    assert core_strings.contains(s: clean.must().failures[0], substr: "is a `.fixed`")
 
     # Both answers at once.
     assert !write_file(path: tree + "/c.fixed", text: applied.must().out).is_err()
     both = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
     assert !both.is_err()
     assert both.must().failed == 1
-    assert strings.contains(text: both.must().failures[0], needle: "both")
+    assert core_strings.contains(s: both.must().failures[0], substr: "both")
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
 
@@ -815,7 +817,7 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     assert !write_file(path: tree + "/m.expected", text: "").is_err()
     pinned = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", tree + "/m.hero", "--apply"])
     assert !pinned.is_err()
-    assert strings.contains(text: pinned.must().out, needle: "0xFF")
+    assert core_strings.contains(s: pinned.must().out, substr: "0xFF")
     assert !write_file(path: tree + "/m.applied", text: pinned.must().out).is_err()
     held = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
     assert !held.is_err()
@@ -825,7 +827,7 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     moved = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
     assert !moved.is_err()
     assert moved.must().failed == 1
-    assert strings.contains(text: moved.must().failures[0], needle: "--apply")
+    assert core_strings.contains(s: moved.must().failures[0], substr: "--apply")
     assert !shell.remove_tree(scratch).is_err()
 
 test "a fixture root with no answer is applied in a copy of its whole case and must be left as it is"
@@ -850,8 +852,8 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     assert !red.is_err()
     assert red.must().passed == 1
     assert red.must().failed == 1
-    assert strings.contains(text: red.must().failures[0], needle: "typo/main.hero")
-    assert strings.contains(text: red.must().failures[0], needle: "no answer pins")
+    assert core_strings.contains(s: red.must().failures[0], substr: "typo/main.hero")
+    assert core_strings.contains(s: red.must().failures[0], substr: "no answer pins")
 
     # Pinned as an `.applied`, the root is green: its case directory keeps a
     # second program, refused on purpose, so the repaired copy is not clean,
@@ -862,7 +864,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
         words: [compiler, "check", tree + "/typo/main.hero", "--apply"]
     )
     assert !applied.is_err()
-    assert strings.contains(text: applied.must().out, needle: "geom.dist2(")
+    assert core_strings.contains(s: applied.must().out, substr: "geom.dist2(")
     assert !write_file(path: tree + "/typo/main.applied", text: applied.must().out).is_err()
     assert !write_file(path: tree + "/typo/other.hero", text: "function main()\n    x = 1\n").is_err()
     pinned = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 0)
@@ -875,7 +877,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     promoted = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 0)
     assert !promoted.is_err()
     assert promoted.must().failed == 1
-    assert strings.contains(text: promoted.must().failures[0], needle: "is a `.fixed`")
+    assert core_strings.contains(s: promoted.must().failures[0], substr: "is a `.fixed`")
     assert !shell.remove_tree(scratch).is_err()
 
 # Batch 9's gate, 2026-10-04: a directory under the fixtures that holds no

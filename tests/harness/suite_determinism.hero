@@ -29,12 +29,13 @@
 # artifact — it is explicitly not version-stable, which is LLVM's stance
 # on `.ll` — and a promise nothing checks is not a promise.
 
+use <core>/strings as core_strings
+
 use absence
 use cases
 use one_file_units
 use report
 use shell
-use strings
 
 constant IR_DIR: str
     "tests/golden/ir"
@@ -311,7 +312,7 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert refuted.failed == 1
     assert none_skipped == 0
     assert refuted.skips.len() == 0
-    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @= report.empty()
@@ -327,7 +328,7 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert excused.failed == 0
     assert one_skipped == 1
     assert excused.skips.len() == 1
-    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP determinism/c/lacks\n")
+    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP determinism/c/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 453's widening in this suite, held as a test (2026-10-10): a program

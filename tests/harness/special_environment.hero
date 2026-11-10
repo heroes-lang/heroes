@@ -28,6 +28,8 @@
 #   it panics at its overflow, where until then it read the objects the edit
 #   had compiled under the same key and printed the wrong sum at exit 0.
 
+use <core>/strings as core_strings
+
 use report
 use shell
 use strings
@@ -111,13 +113,13 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
         words: [ENV, "CCC_OVERRIDE_OPTIONS=#s/-O2/" + KEPT_DEFINE + "/", compiler, "build", home + "/sum.hero", "-O2", "-o", home + "/sum-edited" + shell.exe_suffix()]
     )
 
-    if edited.is_err() || edited.must().code != 1 || !strings.contains(text: edited.must().err, needle: "error[shadowed_macro]")
+    if edited.is_err() || edited.must().code != 1 || !core_strings.contains(s: edited.must().err, substr: "error[shadowed_macro]")
         wrong @ wrong.push(
             "    an edit firing at `-O2` alone: " + shell.ending(edited) + ", where it is refused `shadowed_macro`"
         )
     clean = printed(scratch: scratch, compiler: compiler, variable: "", source: home + "/sum", level: "-O2")
 
-    if !strings.starts_with(text: clean, prefix: "panic: integer overflow")
+    if !core_strings.has_prefix(s: clean, prefix: "panic: integer overflow")
         wrong @ wrong.push("    the same program at `-O2` with no edit, after it: " + clean + ", where it panics")
 
     # An edit that only changes the level, or takes a warning away, goes
@@ -125,7 +127,7 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
     for one in [["CCC_OVERRIDE_OPTIONS=#s/-O2/-O3/", "-O2", "/sum", "panic: integer overflow"], ["CCC_OVERRIDE_OPTIONS=#x-Wall", "-O0", "/true", "true"]]
         said = printed(scratch: scratch, compiler: compiler, variable: one[0], source: home + one[2], level: one[1])
 
-        if !strings.starts_with(text: said, prefix: one[3])
+        if !core_strings.has_prefix(s: said, prefix: one[3])
             wrong @ wrong.push(
                 "    `" + one[0] + "` over `" + one[2] + ".hero`: " + said + ", where it prints " + one[3]
             )
@@ -139,7 +141,7 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
         words: [ENV, "CCC_OVERRIDE_OPTIONS=#s/-fsyntax-only/-DHERO_2355_NOTHING/", compiler, "build", home + "/group.hero", "-o", home + "/group" + shell.exe_suffix()]
     )
 
-    if broken.is_err() || broken.must().code != 2 || !strings.contains(text: broken.must().err, needle: "note: `CCC_OVERRIDE_OPTIONS` is set, and it edits every clang job this compiler starts")
+    if broken.is_err() || broken.must().code != 2 || !core_strings.contains(s: broken.must().err, substr: "note: `CCC_OVERRIDE_OPTIONS` is set, and it edits every clang job this compiler starts")
         wrong @ wrong.push(
             "    an edit taking a probe's `-fsyntax-only` away: " + shell.ending(broken) + ", where it exits 2 naming the variable"
         )

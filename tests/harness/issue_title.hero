@@ -16,6 +16,8 @@
 # never inside a code span. The prefixes a number gives are `issue_numbers.hero`.
 # Every reading is the value's own, so one tree gives one title.
 
+use <core>/strings as core_strings
+
 use issue_spans
 use strings
 
@@ -56,7 +58,7 @@ function opening_of(kind: str, rows: [str]) -> Opening
         return Opening(title: "", from: "", skip: -1, at: -1, fields: none)
     line = rows[first]
 
-    if strings.starts_with(text: line, prefix: "# ")
+    if core_strings.has_prefix(s: line, prefix: "# ")
         item = first_item(rows)
         found: [str] @= none
 
@@ -73,7 +75,7 @@ function opening_of(kind: str, rows: [str]) -> Opening
     if is_item(line)
         found = fields_of(line)
 
-        if kind == "defect" && strings.starts_with(text: found[0], prefix: "**")
+        if kind == "defect" && core_strings.has_prefix(s: found[0], prefix: "**")
             return Opening(title: numberless(unbolded(found[0])), from: "defect", skip: -1, at: first, fields: found)
 
         if found.len() > 1
@@ -124,7 +126,7 @@ function first_item(rows: [str]) -> i64
     return -1
 
 function is_item(line: str) -> bool
-    return strings.starts_with(text: line, prefix: "- [ ] ") || strings.starts_with(text: line, prefix: "- [x] ")
+    return core_strings.has_prefix(s: line, prefix: "- [ ] ") || core_strings.has_prefix(s: line, prefix: "- [x] ")
 
 # A row of the old log: a day, then ` | `.
 function is_log_row(line: str) -> bool
@@ -188,7 +190,7 @@ function numberless(field: str) -> str
     while digits < field.len() && field[digits] >= '0' && field[digits] <= '9'
         digits @ digits + 1
 
-    if digits == 0 || !strings.starts_with(text: field.slice(from: digits, to: field.len()), prefix: " — ")
+    if digits == 0 || !core_strings.has_prefix(s: field.slice(from: digits, to: field.len()), prefix: " — ")
         return field
     return strings.trimmed(field.slice(from: digits + 5, to: field.len()))
 
@@ -201,7 +203,7 @@ function class_of(rows: [str]) -> str
 
         if is_item(t) && !at.is_err()
             named @ t.slice(from: at.must() + 13, to: t.len())
-        else if strings.starts_with(text: t, prefix: "**Class: ")
+        else if core_strings.has_prefix(s: t, prefix: "**Class: ")
             named @ strings.without_prefix(text: t, prefix: "**Class: ")
         close = strings.index_of(text: named, needle: "**")
 
@@ -226,7 +228,7 @@ function path_title(title: str) -> str
         return ""
     held = issue_spans.inner(text: title, span: found[0])
 
-    if !strings.contains(text: held, needle: "/") || strings.contains(text: held, needle: " ")
+    if !core_strings.contains(s: held, substr: "/") || core_strings.contains(s: held, substr: " ")
         return ""
     at: i64 @= found[0].close
 
@@ -241,7 +243,7 @@ function path_title(title: str) -> str
 
 # The words of a file's slug, `YYYY-MM-DD-HHMM-<slug>.md`, one space apart.
 function slug_words(name: str) -> str
-    if name.len() < 20 || !strings.ends_with(text: name, suffix: ".md")
+    if name.len() < 20 || !core_strings.has_suffix(s: name, suffix: ".md")
         return ""
     return strings.split_on(text: name.slice(from: 16, to: name.len() - 3), byte: '-').join(" ")
 
@@ -330,11 +332,11 @@ test "a title that is a path in code takes the slug's words, one that goes on ke
     assert slug_words("2026-09-03-0018-scheduling-measured-three.md") == "scheduling measured three"
     long = "word ".repeat(60) + "end"
     assert characters(cut(long)) <= TITLE_LIMIT
-    assert strings.ends_with(text: cut(long), suffix: "word")
+    assert core_strings.has_suffix(s: cut(long), suffix: "word")
     assert cut("short") == "short"
     accented = "é".repeat(300)
     assert characters(cut(accented)) == TITLE_LIMIT
     spanned_title = "`" + "x".repeat(300) + "`"
-    assert strings.ends_with(text: cut(spanned_title), suffix: "`")
+    assert core_strings.has_suffix(s: cut(spanned_title), suffix: "`")
     assert characters(cut(spanned_title)) <= TITLE_LIMIT
     assert cut("lead " + "`a b " + "c ".repeat(200) + "`") == "lead"

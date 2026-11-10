@@ -18,6 +18,8 @@
 # constant a `fail` writes its code through is a code the package adds (the
 # conventions' § 3.3), and the card lists it among the codes.
 
+use <core>/strings as core_strings
+
 use module_docs
 use strings
 
@@ -100,20 +102,20 @@ function face_of(path: str, text: str) -> Face
     at: i64 @= 0
 
     for row in rows
-        if strings.starts_with(text: row, prefix: "use ")
+        if core_strings.has_prefix(s: row, prefix: "use ")
             uses @ uses.push(row)
-        else if strings.starts_with(text: row, prefix: "record ")
+        else if core_strings.has_prefix(s: row, prefix: "record ")
             shapes @ shapes.push(shape_at(rows: rows, at: at))
-        else if strings.starts_with(text: row, prefix: "variant ")
+        else if core_strings.has_prefix(s: row, prefix: "variant ")
             choices @ choices.push(choice_at(rows: rows, at: at))
-        else if strings.starts_with(text: row, prefix: "function ")
+        else if core_strings.has_prefix(s: row, prefix: "function ")
             got = callable_at(rows: rows, at: at)
 
             if got.is_err()
                 refused @ refused.push("line " + (at + 1).to_str() + ": " + why(got))
             else
                 callables @ callables.push(got.must())
-        else if strings.starts_with(text: row, prefix: "constant ")
+        else if core_strings.has_prefix(s: row, prefix: "constant ")
             value = module_docs.str_constant(rows: rows, at: at)
 
             if value.is_err()
@@ -124,7 +126,7 @@ function face_of(path: str, text: str) -> Face
                 constants @ constants.push(
                     Named(name: module_docs.name_after(text: row, start: 9), value: value.must(), said: first_said(module_docs.doc_above(rows: rows, at: at)))
                 )
-        else if strings.starts_with(text: row, prefix: "extern ")
+        else if core_strings.has_prefix(s: row, prefix: "extern ")
             refused @ refused.push(
                 "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has no line for an extern yet: teach `package_face.hero` one before a face declares it"
             )
@@ -181,10 +183,10 @@ function shape_at(rows: [str], at: i64) -> Shape
     fields: [Slot] @= []
     below: i64 @= at + 1
 
-    while below < rows.len() && strings.starts_with(text: rows[below], prefix: "    ")
+    while below < rows.len() && core_strings.has_prefix(s: rows[below], prefix: "    ")
         row = strings.trimmed(rows[below])
 
-        if !strings.starts_with(text: row, prefix: "#")
+        if !core_strings.has_prefix(s: row, prefix: "#")
             fields @ fields.push(slot_of(row))
         below @ below + 1
 
@@ -200,14 +202,14 @@ function choice_at(rows: [str], at: i64) -> Choice
     fields: [[Slot]] @= []
     below: i64 @= at + 1
 
-    while below < rows.len() && strings.starts_with(text: rows[below], prefix: "    ")
+    while below < rows.len() && core_strings.has_prefix(s: rows[below], prefix: "    ")
         row = strings.trimmed(rows[below])
 
-        if strings.starts_with(text: row, prefix: "#")
+        if core_strings.has_prefix(s: row, prefix: "#")
             below @ below + 1
             continue
 
-        if strings.starts_with(text: rows[below], prefix: "        ") && names.len() > 0
+        if core_strings.has_prefix(s: rows[below], prefix: "        ") && names.len() > 0
             last = fields.len() - 1
             fields[last] @ fields[last].push(slot_of(row))
         else
@@ -229,7 +231,7 @@ function callable_at(rows: [str], at: i64) -> Callable?
     rest = written.slice(from: name.len(), to: written.len())
     generics: str @= ""
 
-    if strings.starts_with(text: rest, prefix: "<")
+    if core_strings.has_prefix(s: rest, prefix: "<")
         close = strings.index_of(text: rest, needle: ">")
 
         if close.is_err()
@@ -238,14 +240,14 @@ function callable_at(rows: [str], at: i64) -> Callable?
     after = rest.slice(from: generics.len(), to: rest.len())
     close = closing(text: after, open: 0)
 
-    if !strings.starts_with(text: after, prefix: "(") || close.is_err()
+    if !core_strings.has_prefix(s: after, prefix: "(") || close.is_err()
         return fail(
             code: "unread",
             msg: "`function " + name + "`'s parameters do not close on its line, which `heroes fmt` writes on one: format the face"
         )
     tail = after.slice(from: close.must() + 1, to: after.len())
 
-    if tail.len() > 0 && !strings.starts_with(text: tail, prefix: " -> ")
+    if tail.len() > 0 && !core_strings.has_prefix(s: tail, prefix: " -> ")
         return fail(code: "unread", msg: "`function " + name + "` has `" + tail + "` after its parameters")
     params: [Slot] @= []
 
@@ -264,14 +266,14 @@ function callable_at(rows: [str], at: i64) -> Callable?
 # A parameter or a field, `[@]name: Type [lent]`, read.
 function slot_of(text: str) -> Slot
     piece = strings.trimmed(text)
-    mutable = strings.starts_with(text: piece, prefix: "@")
+    mutable = core_strings.has_prefix(s: piece, prefix: "@")
     body = strings.without_prefix(text: piece, prefix: "@")
     colon = strings.index_of(text: body, needle: ": ")
 
     if colon.is_err()
         return Slot(name: body, ty: "", mutable: mutable, lent: false)
     ty = body.slice(from: colon.must() + 2, to: body.len())
-    lent = strings.ends_with(text: ty, suffix: " lent")
+    lent = core_strings.has_suffix(s: ty, suffix: " lent")
     return Slot(
         name: body.slice(from: 0, to: colon.must()),
         ty: strings.without_suffix(text: ty, suffix: " lent"),
@@ -358,13 +360,13 @@ test "what the form has no line for is refused by name, and so is what cannot be
         text: "# X.\n\nconstant MOST: i64\n    3\n\nextern \"x.h\"\n    function x_f()\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n\nvariant Shape\n    dot\n"
     )
     assert face.refused.len() == 6
-    assert strings.contains(
-        text: face.refused[0],
-        needle: "line 3: `constant MOST: i64`, and a card has a line for a `str` constant naming a code alone"
+    assert core_strings.contains(
+        s: face.refused[0],
+        substr: "line 3: `constant MOST: i64`, and a card has a line for a `str` constant naming a code alone"
     )
-    assert strings.contains(text: face.refused[1], needle: "a card has no line for an extern yet")
-    assert strings.contains(text: face.refused[2], needle: "do not close on its line")
-    assert strings.contains(text: face.refused[3], needle: "no name a call can write")
+    assert core_strings.contains(s: face.refused[1], substr: "a card has no line for an extern yet")
+    assert core_strings.contains(s: face.refused[2], substr: "do not close on its line")
+    assert core_strings.contains(s: face.refused[3], substr: "no name a call can write")
     assert face.refused[4] == "`variant Shape` has no doc, whose first sentence its card line writes"
     assert face.refused[5] == "`function h` has no doc, whose first sentence its card line writes"
     assert face_of(path: "y", text: "# Documents f.\nfunction f()\n    _ = 0\n").refused[0] == "the module has no doc, whose first sentence a card opens with"

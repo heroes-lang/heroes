@@ -34,6 +34,8 @@
 # **A test below spells the word in two pieces** where it cites a number no
 # issue holds, because the grep reads this file too.
 
+use <core>/strings as core_strings
+
 use cards
 use floors
 use report
@@ -88,7 +90,7 @@ function section_of(body: str, heading: str) -> Section
             taken: [str] @= []
             j: i64 @= i + 1
 
-            while j < rows.len() && !strings.starts_with(text: strings.trimmed(rows[j]), prefix: "## ")
+            while j < rows.len() && !core_strings.has_prefix(s: strings.trimmed(rows[j]), prefix: "## ")
                 taken @ taken.push(rows[j])
                 j @ j + 1
 
@@ -106,13 +108,13 @@ function near_misses(body: str) -> [str]
     for row in strings.lines(body)
         line = strings.trimmed(row)
 
-        if !strings.starts_with(text: line, prefix: "#")
+        if !core_strings.has_prefix(s: line, prefix: "#")
             continue
 
         if line == PRIOR_ART
             continue
 
-        if strings.contains(text: line, needle: "rior art") || strings.contains(text: line, needle: "rior Art") || strings.contains(text: line, needle: "RIOR ART")
+        if core_strings.contains(s: line, substr: "rior art") || core_strings.contains(s: line, substr: "rior Art") || core_strings.contains(s: line, substr: "RIOR ART")
             out @ out.push(line)
 
     return out
@@ -149,10 +151,10 @@ function sittings_named(line: str, known: {str: bool}) -> [str]
     out: [str] @= []
 
     for span in code_spans(line)
-        if !strings.starts_with(text: span, prefix: SITTINGS)
+        if !core_strings.has_prefix(s: span, prefix: SITTINGS)
             continue
 
-        if strings.contains(text: span, needle: "-reports/")
+        if core_strings.contains(s: span, substr: "-reports/")
             continue
 
         if !known[span].is_err()
@@ -167,7 +169,7 @@ function panel_spans(line: str) -> [str]
     out: [str] @= []
 
     for span in code_spans(line)
-        if strings.starts_with(text: span, prefix: SITTINGS) && !strings.contains(text: span, needle: "-reports/")
+        if core_strings.has_prefix(s: span, prefix: SITTINGS) && !core_strings.contains(s: span, substr: "-reports/")
             out @ out.push(span)
 
     return out
@@ -178,12 +180,12 @@ function panel_spans(line: str) -> [str]
 function sitting_number(path: str) -> i64?
     wrong = "`" + path + "` is not a sitting's file, `" + SITTINGS + "<number>-<slug>.md`"
 
-    if !strings.starts_with(text: path, prefix: SITTINGS) || !strings.ends_with(text: path, suffix: ".md")
+    if !core_strings.has_prefix(s: path, prefix: SITTINGS) || !core_strings.has_suffix(s: path, suffix: ".md")
         return fail(code: "shape", msg: wrong)
     name = strings.without_prefix(text: path, prefix: SITTINGS)
     digits = digit_run(text: name, at: 0)
 
-    if strings.contains(text: name, needle: "/") || digits == 0 || !has_at(text: name, at: digits, piece: "-") || name.len() <= digits + 1 + 3
+    if core_strings.contains(s: name, substr: "/") || digits == 0 || !has_at(text: name, at: digits, piece: "-") || name.len() <= digits + 1 + 3
         return fail(code: "shape", msg: wrong)
 
     # Digits are ASCII, so the cut stands between characters.
@@ -249,7 +251,7 @@ function historian_sat(sitting: str, known: {str: bool}) -> bool
     if text.is_err()
         return false
 
-    return strings.contains(text: text.must(), needle: "historian")
+    return core_strings.contains(s: text.must(), substr: "historian")
 
 # What is wrong with one line of the section, or "" where it is a precedent
 # in one of the two forms with its link.
@@ -259,13 +261,13 @@ function precedent_offence(row: str) -> str
     if line == ""
         return ""
 
-    if !strings.starts_with(text: line, prefix: TAKEN) && !strings.starts_with(text: line, prefix: REACHED)
+    if !core_strings.has_prefix(s: line, prefix: TAKEN) && !core_strings.has_prefix(s: line, prefix: REACHED)
         return "is neither `- **Taken from <who>**:` nor `- **Reached first by <who>**:`, the two forms a precedent takes, and a sentence about an absence is not one"
 
-    if !strings.contains(text: line, needle: "**: [")
+    if !core_strings.contains(s: line, substr: "**: [")
         return "names no reference: the form is `- **Taken from <who>**: [<reference>](<url>): <what>`"
 
-    if !strings.contains(text: line, needle: "](http")
+    if !core_strings.contains(s: line, substr: "](http")
         return "carries no link, and a precedent nobody can open is a claim"
 
     return ""
@@ -361,7 +363,7 @@ function done_offence(issue: cards.Issue) -> str
     commit = issue.card.commit
 
     if commit == "self"
-        if !strings.contains(text: text, needle: "self")
+        if !core_strings.contains(s: text, substr: "self")
             return where + "says what was done and not that the commit is this file's own (`self`), as its card says"
 
         return ""
@@ -370,7 +372,7 @@ function done_offence(issue: cards.Issue) -> str
         # Forty hex digits, so the cut stands between characters.
         short = commit.slice(from: 0, to: 8)
 
-        if !strings.contains(text: text, needle: short)
+        if !core_strings.contains(s: text, substr: short)
             return where + "says what was done and does not name its card's commit, `" + short + "`"
 
         return ""
@@ -537,7 +539,7 @@ function numbers_cited(text: str, wide: bool) -> [i64]
 # Whether `path` stands under one of the cited roots.
 function under_roots(path: str) -> bool
     for root in CITED_ROOTS
-        if path == root || strings.starts_with(text: path, prefix: root + "/")
+        if path == root || core_strings.has_prefix(s: path, prefix: root + "/")
             return true
 
     return false
@@ -550,7 +552,7 @@ function under_roots(path: str) -> bool
 # series' spelling) and no new defect's name,
 # and which no repair may edit.
 function old_names_only(path: str) -> bool
-    return strings.ends_with(text: path, suffix: ".frozen")
+    return core_strings.has_suffix(s: path, suffix: ".frozen")
 
 # Every `defect NNN` under the cited roots, or under `only` where it names a
 # path there, resolved among `names`, the defects' names `from` gave (GitHub's
@@ -623,9 +625,9 @@ test "a precedent line is one of two forms, with a reference and a link"
     assert precedent_offence("- **Taken from Ada**: [AI05-0144](https://example.org/ai): the refusal") == ""
     assert precedent_offence("- **Reached first by Zig**: [#1717](https://example.org/z): closures") == ""
     assert precedent_offence("") == ""
-    assert strings.contains(text: precedent_offence("- not searched"), needle: "neither")
-    assert strings.contains(text: precedent_offence("- **Taken from Ada**: nothing"), needle: "no reference")
-    assert strings.contains(text: precedent_offence("- **Taken from Ada**: [x](ftp://y): z"), needle: "no link")
+    assert core_strings.contains(s: precedent_offence("- not searched"), substr: "neither")
+    assert core_strings.contains(s: precedent_offence("- **Taken from Ada**: nothing"), substr: "no reference")
+    assert core_strings.contains(s: precedent_offence("- **Taken from Ada**: [x](ftp://y): z"), substr: "no link")
 
 test "the opener names the sitting's file in a code span and the day the links were re-read"
     known: {str: bool} @= {}
@@ -675,22 +677,22 @@ test "a sitting the tree has not received is excused only where the tree places 
     assert section_offences(where: "w", kind: "decision", rows: ahead, known: known, received: 212).len() == 0
     drafted = section_offences(where: "w", kind: "decision", rows: ahead, known: known, received: 0)
     assert drafted.len() == 1
-    assert strings.contains(
-        text: drafted[0],
-        needle: "names `docs/panel/213-new.md`, a sitting's file this tree does not hold"
+    assert core_strings.contains(
+        s: drafted[0],
+        substr: "names `docs/panel/213-new.md`, a sitting's file this tree does not hold"
     )
     passed = ["Panel 150 (`docs/panel/150-gone.md`), read 2026-10-13.", precedent]
     told = section_offences(where: "w", kind: "decision", rows: passed, known: known, received: 212)
     assert told.len() == 1
-    assert strings.contains(text: told[0], needle: "its number is not above 212, the highest sitting the tree holds")
+    assert core_strings.contains(s: told[0], substr: "its number is not above 212, the highest sitting the tree holds")
     beside = ["Panel 196 (`docs/panel/196-a-sitting.md`, `docs/panel/196-a-typo.md`), read 2026-10-13.", precedent]
     typo = section_offences(where: "w", kind: "decision", rows: beside, known: known, received: 212)
     assert typo.len() == 1
-    assert strings.contains(text: typo[0], needle: "names `docs/panel/196-a-typo.md`")
+    assert core_strings.contains(s: typo[0], substr: "names `docs/panel/196-a-typo.md`")
     shaped = ["Panel 213 (`docs/panel/213-notes/x.md`), read 2026-10-13.", precedent]
     odd = section_offences(where: "w", kind: "decision", rows: shaped, known: known, received: 212)
     assert odd.len() == 1
-    assert strings.contains(text: odd[0], needle: "not a sitting's file")
+    assert core_strings.contains(s: odd[0], substr: "not a sitting's file")
     assert section_offences(where: "w", kind: "decision", rows: ["Panel 213, read 2026-10-13.", precedent], known: known, received: 212).len() == 1
 
 test "a line cites every number it names after the word, in any case, and no day or lane"
@@ -731,4 +733,4 @@ test "a closed feature's what-was-done names its card's commit, or self where th
     other = cards.card_text(kind: "task", area: "cli", milestone: "M-issue-files", filed: "2026-10-03", commit: "self", github: "none") + "- [x] **M-issue-files** | w | h\n\n## What was done\n\nThis file's own commit (`self`).\n"
     assert done_offence(cards.issue_of(path: "issues/y.md", text: other)) == ""
     bare = cards.card_text(kind: "task", area: "cli", milestone: "M-issue-files", filed: "2026-10-03", commit: "self", github: "none") + "- [x] **M-issue-files** | w | h\n"
-    assert strings.contains(text: done_offence(cards.issue_of(path: "issues/z.md", text: bare)), needle: "holds no")
+    assert core_strings.contains(s: done_offence(cards.issue_of(path: "issues/z.md", text: bare)), substr: "holds no")

@@ -20,6 +20,8 @@
 # `annotations` suite reads a case's diagnostics from its `.expected`, which
 # under this form is what the program prints.
 
+use <core>/strings as core_strings
+
 use cases
 use expectation
 use freed_bytes
@@ -27,7 +29,6 @@ use mark_readers
 use platform_skips
 use report
 use shell
-use strings
 
 constant CONTROL_DIR: str
     "tests/golden/control"
@@ -166,7 +167,7 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         report.keep_pass(@r)
         return
 
-    if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
+    if core_strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || core_strings.contains(s: sanitised.must().err, substr: "runtime error:")
         report.keep_failure(
             @r,
             label: "control/" + item.name + " at --permissive --sanitize",
@@ -201,6 +202,6 @@ test "the control cases are the 27 witnesses less two, each marked with the rule
 
     for item in found
         text = read_file(item.source).must()
-        assert strings.contains(text: text, needle: "#~ ")
-        assert strings.contains(text: text, needle: "panel 226")
+        assert core_strings.contains(s: text, substr: "#~ ")
+        assert core_strings.contains(s: text, substr: "panel 226")
         assert !expectation.split(read_file(item.expected).must()).is_err()

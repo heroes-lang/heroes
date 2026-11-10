@@ -7,6 +7,8 @@
 # compiles, links and runs to the same end. And oracle 5 at the boundary, a
 # leak through C, read by the leg's own leak tool, with its live control.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 
@@ -200,9 +202,9 @@ constant LEAKS_SECONDS: i64
 # that could not read the process judged nothing and must not read as clean.
 function leaks_said(text: str) -> str?
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "Process ")
-            if strings.contains(text: row, needle: " leaks for ") || strings.contains(text: row, needle: " leak for ")
-                if strings.contains(text: row, needle: ": 0 leaks for ")
+        if core_strings.has_prefix(s: row, prefix: "Process ")
+            if core_strings.contains(s: row, substr: " leaks for ") || core_strings.contains(s: row, substr: " leak for ")
+                if core_strings.contains(s: row, substr: ": 0 leaks for ")
                     return ok("")
                 return ok(row)
 

@@ -51,6 +51,8 @@
 # Exit 0 clean; 1 where the input refuses (a folder that is no suite); 2 where
 # the program could not run (no word, a wrong flag).
 
+use <core>/strings as core_strings
+
 use issue_wire
 use shell
 use strings
@@ -755,9 +757,9 @@ test "a plan through the harness names it and keeps its rows in a folder of thei
     assert codex.out == "build/thesis-runs/01234567-codex"
 
 test "a codex row is barred from a held-out suite, and nothing else is"
-    assert strings.contains(
-        text: held_out_barred(transport: "codex", label: "held-out", folder: "x"),
-        needle: "assistant's tasks alone"
+    assert core_strings.contains(
+        s: held_out_barred(transport: "codex", label: "held-out", folder: "x"),
+        substr: "assistant's tasks alone"
     )
     assert held_out_barred(transport: "codex", label: "assistant", folder: "x") == ""
     assert held_out_barred(transport: "claude", label: "held-out", folder: "x") == ""

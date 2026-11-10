@@ -37,6 +37,8 @@
 # there is said so, and a verdict the run's `tasks.txt` does not list is
 # counted and stands in no stratum.
 
+use <core>/strings as core_strings
+
 use json_fields
 use json_read
 use shell
@@ -744,11 +746,11 @@ test "the report groups verdicts, counts greens by turn and buckets, and pairs t
         primary: "strict minus control on claude-haiku-5-5 in the spec context",
         through: "Asked through the API."
     )
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 6 | 4 | 4 | 4 | 4 |")
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | control | 21226405 | 6 | 0 | 2 | 2 | 2 |")
-    assert strings.contains(text: text, needle: "| 6 | 4 | 2 | +33.3pp |")
-    assert strings.contains(text: text, needle: "| 2 / 0 | 0.250 (exact 0.500) |")
-    assert strings.contains(text: text, needle: "The primary is strict minus control")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | strict | 21226405 | 6 | 4 | 4 | 4 | 4 |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | control | 21226405 | 6 | 0 | 2 | 2 | 2 |")
+    assert core_strings.contains(s: text, substr: "| 6 | 4 | 2 | +33.3pp |")
+    assert core_strings.contains(s: text, substr: "| 2 / 0 | 0.250 (exact 0.500) |")
+    assert core_strings.contains(s: text, substr: "The primary is strict minus control")
     assert tenths(numerator: 70, denominator: 4) == "1.8"
     assert signed_percent(-0.125) == "-12.5pp"
     assert signed_percent(0.5) == "+50.0pp"
@@ -793,7 +795,7 @@ test "a folder of ten verdicts is reported, and a folder of none fails by its co
             thesis_verdict.keep(dir: out + "/samples", key: v.key, text: thesis_verdict.written_verdict(v)).must()
 
     text = report(scratch: scratch, out: out, seed: 1, primary: "strict minus control", labels: "").must()
-    assert strings.contains(text: text, needle: "10 verdicts under")
+    assert core_strings.contains(s: text, substr: "10 verdicts under")
     assert !read_file(path: out + "/verdicts.jsonl").is_err()
     empty = report(scratch: scratch, out: scratch + "/none", seed: 1, primary: "", labels: "")
 
@@ -821,21 +823,21 @@ test "the excluded leave n and the pairs, silence is read by turn 3, and the mes
         verdict_turns(task: "task3aaaaaaaaaa", arm: "control", outcomes: ["abort"])
     ]
     text = rendered(verdicts: verdicts, seed: 7, primary: "the test's", through: "Asked through the API.")
-    assert strings.contains(text: text, needle: "resamples over the tasks.\n\nAsked through the API.\n\n")
+    assert core_strings.contains(s: text, substr: "resamples over the tasks.\n\nAsked through the API.\n\n")
 
     # The strict arm: four samples, one lost, so n is three and two are green.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 3 | 1 | 2 | 2 | 2 |")
-    assert strings.contains(text: text, needle: "| 0 / 1 / 0 | ")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | strict | 21226405 | 3 | 1 | 2 | 2 | 2 |")
+    assert core_strings.contains(s: text, substr: "| 0 / 1 / 0 | ")
 
     # The primary over the three pairs left: strict 2, control 1, one discordant.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 3 | 2 | 1 | +33.3pp |")
-    assert strings.contains(text: text, needle: "| 1 / 0 | 0.500 (exact 1.000) |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | 3 | 2 | 1 | +33.3pp |")
+    assert core_strings.contains(s: text, substr: "| 1 / 0 | 0.500 (exact 1.000) |")
 
     # Silence: control silent on task0, strict on task3; no difference.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 3 | 1 | 1 | +0.0pp |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | 3 | 1 | 1 | +0.0pp |")
 
     # The message's value: task0 and task1 saw a refusal, task2 is out, task3 saw none.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 2 | 2 | 1 | +50.0pp |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | 2 | 2 | 1 | +50.0pp |")
     assert excluded(verdicts[6])
     assert !excluded(verdicts[0])
     assert silent_by(v: verdicts[2], k: 3)
@@ -883,19 +885,22 @@ test "the flow counts every sample once by how far its last turn got, a build re
     # Ten attempted; seven answered (two left out, one unnamed); six extracted
     # (no program); four compiled (a refusal, a build refused); three ran to an
     # end (a timeout); one green.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 10 | 7 | 6 | 4 | 3 | 1 | 1 |")
+    assert core_strings.contains(
+        s: text,
+        substr: "| claude-haiku-5-5 | strict | 21226405 | 10 | 7 | 6 | 4 | 3 | 1 | 1 |"
+    )
 
     # The build refused after check is outside n, which is the ten less three.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 7 | 0 | 1 | 1 | 1 |")
-    assert strings.contains(text: text, needle: "| 1 / 1 / 1 | ")
-    assert strings.contains(text: text, needle: "1 samples, outside every denominator")
-    assert strings.contains(text: text, needle: "| " + verdicts[4].key + " | 2 |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | strict | 21226405 | 7 | 0 | 1 | 1 | 1 |")
+    assert core_strings.contains(s: text, substr: "| 1 / 1 / 1 | ")
+    assert core_strings.contains(s: text, substr: "1 samples, outside every denominator")
+    assert core_strings.contains(s: text, substr: "| " + verdicts[4].key + " | 2 |")
     assert excluded(verdicts[4])
     assert stage_of("something_else") == -1
     assert stage_of("cases_pass") == 5
 
     clean = rendered(verdicts: [verdicts[8]], seed: 7, primary: "the test's", through: "Asked through the API.")
-    assert strings.contains(text: clean, needle: "None: no program `check` accepted was refused by `build`")
+    assert core_strings.contains(s: clean, substr: "None: no program `check` accepted was refused by `build`")
 
 test "the report says what its rows were asked through, from the run's provenance, and says so where none names it"
     scratch = shell.own_scratch()
@@ -904,17 +909,17 @@ test "the report says what its rows were asked through, from the run's provenanc
         path: scratch + "/provenance.json",
         text: "{\"transport\":\"claude\",\"harness\":\"2.1.292 (Claude Code)\"}"
     ).must()
-    assert strings.contains(
-        text: asked_through(scratch),
-        needle: "the `claude -p` harness (2.1.292 (Claude Code)), panel 226's route C"
+    assert core_strings.contains(
+        s: asked_through(scratch),
+        substr: "the `claude -p` harness (2.1.292 (Claude Code)), panel 226's route C"
     )
     write_file(
         path: scratch + "/provenance.json",
         text: "{\"transport\":\"codex\",\"harness\":\"codex-cli 0.163.0\"}"
     ).must()
-    assert strings.contains(
-        text: asked_through(scratch),
-        needle: "the `codex exec` harness (codex-cli 0.163.0), a ChatGPT plan's, on the assistant's tasks alone"
+    assert core_strings.contains(
+        s: asked_through(scratch),
+        substr: "the `codex exec` harness (codex-cli 0.163.0), a ChatGPT plan's, on the assistant's tasks alone"
     )
     write_file(path: scratch + "/provenance.json", text: "{\"transport\":\"api\"}").must()
     assert asked_through(scratch) == "Asked through the API."
@@ -923,7 +928,7 @@ test "the report says what its rows were asked through, from the run's provenanc
     write_file(path: scratch + "/provenance.json", text: "{\"schema\":1}").must()
     assert asked_through(scratch) == "Asked through the API."
     write_file(path: scratch + "/provenance.json", text: "not json").must()
-    assert strings.contains(text: asked_through(scratch), needle: "does not read as JSON")
+    assert core_strings.contains(s: asked_through(scratch), substr: "does not read as JSON")
 
 test "the report names the run's cap of turns, and what a cap below three makes of green@2 and green@3"
     scratch = shell.own_scratch()
@@ -937,7 +942,7 @@ test "the report names the run's cap of turns, and what a cap below three makes 
     write_file(path: scratch + "/provenance.json", text: "{\"schema\":1}").must()
     assert capped_at(scratch) == "`provenance.json` names no cap of turns."
     write_file(path: scratch + "/provenance.json", text: "not json").must()
-    assert strings.contains(text: capped_at(scratch), needle: "does not read as JSON")
+    assert core_strings.contains(s: capped_at(scratch), substr: "does not read as JSON")
 
 test "the report says on which days and commits a run was resumed into its folder, and that a run with none was asked in one go"
     scratch = shell.own_scratch()
@@ -989,11 +994,11 @@ test "a row's prompt tokens hold the cache's reads and writes beside the input, 
         converged: false
     )
     text = rendered(verdicts: [green, slow], seed: 7, primary: "the test's", through: "Asked through the API.")
-    assert strings.contains(text: text, needle: "| prompt tokens | tokens out |")
-    assert strings.contains(text: text, needle: "| loud (abort, crash, timeout) |")
+    assert core_strings.contains(s: text, substr: "| prompt tokens | tokens out |")
+    assert core_strings.contains(s: text, substr: "| loud (abort, crash, timeout) |")
 
     # 100 + 1,000 + 10 and 7 in; 50 and 3 out; the timeout one loud failure.
-    assert strings.contains(text: text, needle: "| 0 | 1 | 0 | 0 | 0 / 0 / 0 | 1117 | 53 |")
+    assert core_strings.contains(s: text, substr: "| 0 | 1 | 0 | 0 | 0 / 0 / 0 | 1117 | 53 |")
 
 test "the primary is stratified by traps.txt and weighed by constructs.txt, on hand-computed numbers"
     verdicts: [thesis_verdict.Verdict] @= []
@@ -1029,28 +1034,28 @@ test "the primary is stratified by traps.txt and weighed by constructs.txt, on h
     text = strata_lines(verdicts: verdicts, labels: labels, dir: "tests/thesis", numbers: numbers, seed: 7).join("\n")
 
     # The trap task A alone: strict 3 of 3, control 0. The others, B and C: 3 and 3 of 4.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 3 | 3 | 0 | +100.0pp |")
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 4 | 3 | 3 | +0.0pp |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | 3 | 3 | 0 | +100.0pp |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | 4 | 3 | 3 | +0.0pp |")
 
     # Records over A and C, (5 - 2) / 5; maps over B and C, (3 - 3) / 4; their
     # mean 0.3; the flat (6 - 3) / 7.
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | record | 2 | 5 | 5 | 2 | +60.0pp |")
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | map | 2 | 4 | 3 | 3 | +0.0pp |")
-    assert strings.contains(
-        text: text,
-        needle: "| claude-haiku-5-5 | 21226405 | class-weighted | 3 | 7 | | | +30.0pp |"
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | record | 2 | 5 | 5 | 2 | +60.0pp |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | map | 2 | 4 | 3 | 3 | +0.0pp |")
+    assert core_strings.contains(
+        s: text,
+        substr: "| claude-haiku-5-5 | 21226405 | class-weighted | 3 | 7 | | | +30.0pp |"
     )
-    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | flat | 3 | 7 | 6 | 3 | +42.9pp |")
+    assert core_strings.contains(s: text, substr: "| claude-haiku-5-5 | 21226405 | flat | 3 | 7 | 6 | 3 | +42.9pp |")
     none: [str] = []
     no_classes: [[str]] = []
     bare = strata_lines(verdicts: verdicts, labels: thesis_strata.Labels(has_traps: false, traps: none, has_constructs: false, numbers: none, classes: no_classes), dir: "x", numbers: numbers, seed: 7).join(
         "\n"
     )
-    assert strings.contains(text: bare, needle: "No `traps.txt` beside x")
-    assert strings.contains(text: bare, needle: "No `constructs.txt` beside x")
+    assert core_strings.contains(s: bare, substr: "No `traps.txt` beside x")
+    assert core_strings.contains(s: bare, substr: "No `constructs.txt` beside x")
     only_a: {str: str} = {"taskAaaaaaaaaaa": "01"}
     unlisted = strata_lines(verdicts: verdicts, labels: labels, dir: "x", numbers: only_a, seed: 7).join("\n")
-    assert strings.contains(text: unlisted, needle: "8 verdicts name a task the run's `tasks.txt` does not list")
+    assert core_strings.contains(s: unlisted, substr: "8 verdicts name a task the run's `tasks.txt` does not list")
 
 function sampled(task: str, arm: str, sample: i64, green: bool) -> thesis_verdict.Verdict
     outcome: str @= "compiled_wrong"
@@ -1073,14 +1078,14 @@ function sampled(task: str, arm: str, sample: i64, green: bool) -> thesis_verdic
 
 test "a run is set against its pre-registration field by protocol field, and a missing one or a missing block is said"
     scratch = shell.own_scratch()
-    assert strings.contains(
-        text: deviation_lines(out: scratch, dir: scratch).join("\n"),
-        needle: "No `prediction.md` beside"
+    assert core_strings.contains(
+        s: deviation_lines(out: scratch, dir: scratch).join("\n"),
+        substr: "No `prediction.md` beside"
     )
     write_file(path: scratch + "/prediction.md", text: "# The prediction\n\nno block here\n").must()
-    assert strings.contains(
-        text: deviation_lines(out: scratch, dir: scratch).join("\n"),
-        needle: "holds no `preregistered` block"
+    assert core_strings.contains(
+        s: deviation_lines(out: scratch, dir: scratch).join("\n"),
+        substr: "holds no `preregistered` block"
     )
     registered = "{\"date\":\"2026-10-20\",\"head\":\"aaa\",\"samples\":3,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i1\"}"
     write_file(
@@ -1092,14 +1097,14 @@ test "a run is set against its pre-registration field by protocol field, and a m
         text: "{\"date\":\"2026-11-02\",\"head\":\"bbb\",\"samples\":3,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i1\"}"
     ).must()
     same = deviation_lines(out: scratch, dir: scratch).join("\n")
-    assert strings.contains(text: same, needle: "None: the run holds every one of the 21 protocol fields")
+    assert core_strings.contains(s: same, substr: "None: the run holds every one of the 21 protocol fields")
     write_file(
         path: scratch + "/provenance.json",
         text: "{\"date\":\"2026-11-02\",\"head\":\"bbb\",\"samples\":1,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i2\",\"turns\":5}"
     ).must()
     moved = deviation_lines(out: scratch, dir: scratch).join("\n")
-    assert strings.contains(text: moved, needle: "| `samples` | 3 | 1 |")
-    assert strings.contains(text: moved, needle: "| `instrument` | \"i1\" | \"i2\" |")
-    assert strings.contains(text: moved, needle: "| `turns` | (absent) | 5 |")
-    assert !strings.contains(text: moved, needle: "`date`")
-    assert !strings.contains(text: moved, needle: "`head`")
+    assert core_strings.contains(s: moved, substr: "| `samples` | 3 | 1 |")
+    assert core_strings.contains(s: moved, substr: "| `instrument` | \"i1\" | \"i2\" |")
+    assert core_strings.contains(s: moved, substr: "| `turns` | (absent) | 5 |")
+    assert !core_strings.contains(s: moved, substr: "`date`")
+    assert !core_strings.contains(s: moved, substr: "`head`")

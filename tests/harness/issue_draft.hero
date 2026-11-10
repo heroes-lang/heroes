@@ -41,6 +41,8 @@
 # carries no `Record:` line. The draft is never deleted here: the caller
 # removes it once its issue reads back whole.
 
+use <core>/strings as core_strings
+
 use cards
 use credit
 use issue_check
@@ -201,7 +203,7 @@ function shape_offences(issue: cards.Issue, numbered: str) -> [str]
     # A decision taken holds its item ticked, and is held to an item's shape
     # as an open one is: the box is the one thing that differs.
     if !issue.open
-        if !strings.starts_with(text: text, prefix: "- [x] ")
+        if !core_strings.has_prefix(s: text, prefix: "- [x] ")
             out @ out.push(
                 "line " + issue.first.to_str() + " is not a ticked item, and a draft that holds no open item is a decision taken, drafted after the commit that applies it with its item ticked first: `- [x] **<first field>** | <what> | <where>`"
             )
@@ -328,14 +330,14 @@ test "a defect's draft in today's card shape renders with no number and no Recor
     assert got.r.labels == ["kind:defect", "class:blocking", "area:compiler"]
     assert !got.r.closed
     assert got.r.defect == ""
-    assert !strings.contains(text: got.r.body, needle: "Record: ")
-    assert strings.starts_with(text: got.r.body, prefix: "Filed 2026-10-12\n\n### What happens\n\nwhat happens\n")
+    assert !core_strings.contains(s: got.r.body, substr: "Record: ")
+    assert core_strings.has_prefix(s: got.r.body, prefix: "Filed 2026-10-12\n\n### What happens\n\nwhat happens\n")
     shown = preview(got)
-    assert strings.starts_with(
-        text: shown,
+    assert core_strings.has_prefix(
+        s: shown,
         prefix: "title: Def" + "ect <number>: a header name is refused\nlabels: kind:defect, class:blocking, area:compiler\nmilestone: none\nstate: open\n---\nFiled 2026-10-12\n"
     )
-    assert strings.ends_with(text: shown, suffix: got.r.body)
+    assert core_strings.has_suffix(s: shown, suffix: got.r.body)
     _ = shell.remove_tree(scratch).is_err()
 
 test "a draft is refused for its card, its address, `self`, an old number, its item, its class and its prior art"
@@ -344,50 +346,50 @@ test "a draft is refused for its card, its address, `self`, an old number, its i
     if unanswered(scratch: scratch, subject: "a draft refused for its card and its sections")
         return
     bad_card = test_draft(scratch: scratch, name: "2026-10-12-1800-a.md", text: "- [ ] **a** | b | c\n")
-    assert strings.contains(text: bad_card.refused[0], needle: "line 1 is")
+    assert core_strings.contains(s: bad_card.refused[0], substr: "line 1 is")
     filed = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-b.md",
         text: cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "https://github.com/heroes-lang/heroes/issues/7") + "- [ ] **M-issue-files** | b | c\n"
     )
-    assert strings.contains(text: filed.refused[0], needle: "so its issue exists")
+    assert core_strings.contains(s: filed.refused[0], substr: "so its issue exists")
     selfish = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-c.md",
         text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: "self", github: "none") + "# taken\n\nprose\n"
     )
-    assert strings.contains(text: selfish.refused[0], needle: "a draft is never committed")
+    assert core_strings.contains(s: selfish.refused[0], substr: "a draft is never committed")
     numbered = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-def" + "ect-678-x.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
     )
     assert numbered.refused.len() == 1
-    assert strings.contains(
-        text: numbered.refused[0],
-        needle: "it names Def" + "ect 678, and a defect filed since 2026-10-12 is named by its GitHub issue number"
+    assert core_strings.contains(
+        s: numbered.refused[0],
+        substr: "it names Def" + "ect 678, and a defect filed since 2026-10-12 is named by its GitHub issue number"
     )
     fielded = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-x.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **678 — x** | a | b · **class: blocking**\n\n    **Class: blocking**, 2026-10-12, a reason.\n"
     )
-    assert strings.contains(text: fielded.refused[0], needle: "it names Def" + "ect 678")
+    assert core_strings.contains(s: fielded.refused[0], substr: "it names Def" + "ect 678")
     loose = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-y.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **x** | a | b\n\nprose at column zero\n"
     )
     said = loose.refused.join("\n")
-    assert strings.contains(text: said, needle: "prose at column zero")
-    assert strings.contains(text: said, needle: "does not end with ` · **class: <name>**`")
-    assert strings.contains(text: said, needle: "the class rule")
+    assert core_strings.contains(s: said, substr: "prose at column zero")
+    assert core_strings.contains(s: said, substr: "does not end with ` · **class: <name>**`")
+    assert core_strings.contains(s: said, substr: "the class rule")
     art = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-z.md",
         text: cards.card_text(kind: "task", area: "none", milestone: "M-issue-files", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **M-issue-files** | a | b\n\n    ## Prior art\n"
     )
-    assert strings.contains(text: art.refused.join("\n"), needle: "stands on a `task`")
+    assert core_strings.contains(s: art.refused.join("\n"), substr: "stands on a `task`")
     _ = shell.remove_tree(scratch).is_err()
 
 test "a decision taken renders closed with its settling comment, and a commit git does not know is refused"
@@ -405,16 +407,16 @@ test "a decision taken renders closed with its settling comment, and a commit gi
     assert taken.r.closed
     assert taken.r.comment == "Settled by " + head
     assert taken.r.title == "A decision taken"
-    assert strings.contains(
-        text: preview(taken),
-        needle: "title: A decision taken\nlabels: kind:decision, area:records\nmilestone: none\nstate: closed, with the comment `Settled by " + head + "`\n---\n"
+    assert core_strings.contains(
+        s: preview(taken),
+        substr: "title: A decision taken\nlabels: kind:decision, area:records\nmilestone: none\nstate: closed, with the comment `Settled by " + head + "`\n---\n"
     )
     unknown = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-b.md",
         text: cards.card_text(kind: "decision", area: "records", milestone: "none", filed: "2026-10-12", commit: "0000000000000000000000000000000000000001", github: "none") + "- [x] **the author** | Taken | prose\n"
     )
-    assert strings.contains(text: unknown.refused.join("\n"), needle: "names no commit of this history")
+    assert core_strings.contains(s: unknown.refused.join("\n"), substr: "names no commit of this history")
     _ = shell.remove_tree(scratch).is_err()
 
 test "a draft that is a file of the tree is refused, and a long defect title leaves room for its number"
@@ -430,14 +432,14 @@ test "a draft that is a file of the tree is refused, and a long defect title lea
         chain: test_chain(),
         numbered: ""
     ).must()
-    assert strings.contains(text: tree_file.refused[0], needle: "it is a file of the tree")
+    assert core_strings.contains(s: tree_file.refused[0], substr: "it is a file of the tree")
     long = "word ".repeat(48) + "end"
     wide = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-long.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **" + long + "** | a | b · **class: blocking**\n\n    **Class: blocking**, 2026-10-12, a reason.\n"
     )
-    assert strings.contains(text: wide.refused.join("\n"), needle: "leaves room under 250")
+    assert core_strings.contains(s: wide.refused.join("\n"), substr: "leaves room under 250")
     _ = shell.remove_tree(scratch).is_err()
 
 test "a decision taken is a ticked item naming its commit, every defect states one class, and the card agrees with its origin and the chain"
@@ -451,22 +453,22 @@ test "a decision taken is a ticked item naming its commit, every defect states o
         name: "2026-10-12-1800-a.md",
         text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: head, github: "none") + "# A decision taken\n\nprose\n"
     )
-    assert strings.contains(text: prose.refused[0], needle: "is not a ticked item")
+    assert core_strings.contains(s: prose.refused[0], substr: "is not a ticked item")
     unsettled = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-b.md",
         text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [x] **the author** | taken | x\n"
     )
-    assert strings.contains(
-        text: unsettled.refused.join("\n"),
-        needle: "a draft filed closed names the commit that applies it"
+    assert core_strings.contains(
+        s: unsettled.refused.join("\n"),
+        substr: "a draft filed closed names the commit that applies it"
     )
     repaired = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-c.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: head, github: "none") + "- [x] **x** | a | b\n"
     )
-    assert strings.contains(text: repaired.refused.join("\n"), needle: "the class rule")
+    assert core_strings.contains(s: repaired.refused.join("\n"), substr: "the class rule")
     late = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-d.md",
@@ -478,17 +480,17 @@ test "a decision taken is a ticked item naming its commit, every defect states o
         name: "2026-10-12-1800-e.md",
         text: cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **a task** | a | b\n"
     )
-    assert strings.contains(text: homeless.refused[0], needle: "names no milestone")
+    assert core_strings.contains(s: homeless.refused[0], substr: "names no milestone")
     closed_home = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-f.md",
         text: cards.card_text(kind: "feature", area: "none", milestone: "M-ir-lowering", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **M-ir-lowering** | a | b\n"
     )
-    assert strings.contains(text: closed_home.refused[0], needle: "which is CLOSED")
+    assert core_strings.contains(s: closed_home.refused[0], substr: "which is CLOSED")
     nowhere = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-g.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "M-guide-book", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
     )
-    assert strings.contains(text: nowhere.refused[0], needle: "has no row in ROADMAP.md § The chain")
+    assert core_strings.contains(s: nowhere.refused[0], substr: "has no row in ROADMAP.md § The chain")
     _ = shell.remove_tree(scratch).is_err()

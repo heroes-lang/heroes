@@ -36,13 +36,14 @@
 # `asked: false` with the reason, and an answer this reader cannot read is
 # `broken`, as `github_issues` reads the listing.
 
+use <core>/strings as core_strings
+
 use github_issues
 use issue_github
 use issue_pace
 use issue_wire
 use json_fields
 use json_read
-use strings
 
 constant PAGE: i64
     100
@@ -263,11 +264,11 @@ test "a GitHub that cannot be asked is a skip, and an answer this reader cannot 
     )
     out_of_order = history_of(@falling, number: 7)
     assert out_of_order.broken
-    assert strings.contains(text: out_of_order.why, needle: "lists event 4 after event 5")
+    assert core_strings.contains(s: out_of_order.why, substr: "lists event 4 after event 5")
 
 test "a replay that takes away a label not held, or gives one already held, has lost an event"
     given = Change(id: 1, instant: "2026-11-01T14:52:50Z", added: true, label: "class:adjacent")
     taken = Change(id: 2, instant: "2026-11-07T13:49:47Z", added: false, label: "class:adjacent")
     assert held_after([given, taken]).must().len() == 0
-    assert strings.contains(text: issue_github.failure(held_after([taken])), needle: "no event gave it")
-    assert strings.contains(text: issue_github.failure(held_after([given, given])), needle: "while it is held")
+    assert core_strings.contains(s: issue_github.failure(held_after([taken])), substr: "no event gave it")
+    assert core_strings.contains(s: issue_github.failure(held_after([given, given])), substr: "while it is held")

@@ -20,6 +20,8 @@
 # strings that can be compared and joined without ever cutting one in half,
 # which is why every function below takes `[str]` where the Rust takes `&str`.
 
+use <core>/strings as core_strings
+
 use strings
 
 # Every identifier written inside a code span — a backticked fragment or a
@@ -164,7 +166,7 @@ function offered_builtins(text: str) -> [str]?
                 name = strings.trimmed(piece.join(""))
                 bare = strings.without_suffix(text: name, suffix: "(...)")
 
-                if bare.len() > 0 && !strings.contains(text: bare, needle: " ")
+                if bare.len() > 0 && !core_strings.contains(s: bare, substr: " ")
                     names @ names.push(bare)
                 piece @ piece.slice(from: 0, to: 0)
             inside @ !inside
@@ -277,10 +279,10 @@ function section_named(text: str, name: str) -> i64?
         # A `## ` inside a fenced block is a Heroes section heading, which the
         # spec's own § 1 says exists, and not a heading of the spec (panel 126's
         # compiler seat, with a probe).
-        if strings.starts_with(text: line, prefix: "```")
+        if core_strings.has_prefix(s: line, prefix: "```")
             in_fence @ !in_fence
 
-        if !in_fence && strings.starts_with(text: line, prefix: "## ")
+        if !in_fence && core_strings.has_prefix(s: line, prefix: "## ")
             title = strings.without_prefix(text: line, prefix: "## ")
 
             if strings.trimmed(without_number(title)) == name

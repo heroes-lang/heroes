@@ -59,9 +59,12 @@
 # a FLOOR, because an extractor that silently reads nothing turns two checks
 # into decorations.
 
+use <core>/strings as core_strings
+
 use floors
 use json_fields
 use json_read
+use placed_trees
 use report
 use shell
 use spec_text
@@ -471,7 +474,7 @@ function as_run(rule: textmate.Rule) -> textmate.Rule
     if pattern.len() > 0 && pattern[0] == '^'
         pattern @ pattern.slice(from: 1, to: pattern.len())
 
-    if strings.ends_with(text: pattern, suffix: "\\b")
+    if core_strings.has_suffix(s: pattern, suffix: "\\b")
         pattern @ pattern.slice(from: 0, to: pattern.len() - 2)
     return textmate.Rule(
         pattern: strings.split_text(text: pattern, separator: "\\s+").join(" +"),
@@ -623,7 +626,7 @@ function ledger_figures(text: str) -> [i64]
     found: [i64] @= []
 
     for row in strings.lines(text)
-        if !strings.starts_with(text: row, prefix: "| ")
+        if !core_strings.has_prefix(s: row, prefix: "| ")
             continue
         rest = strings.without_prefix(text: row, prefix: "| ")
         at = strings.index_of(text: rest, needle: " |")
@@ -663,7 +666,7 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
         return fail(code: "cannot_measure", msg: "`measure` exited " + said.code.to_str() + ": " + said.err)
 
     for row in strings.lines(said.out)
-        if strings.starts_with(text: row, prefix: "  maximum")
+        if core_strings.has_prefix(s: row, prefix: "  maximum")
             words = strings.words(row)
 
             if words.len() >= 2
@@ -696,7 +699,7 @@ function real_of(scratch: str, compiler: str, path: str) -> i64?
         )
 
     for row in strings.lines(said.out)
-        if strings.starts_with(text: row, prefix: "  real")
+        if core_strings.has_prefix(s: row, prefix: "  real")
             words = strings.words(row)
 
             if words.len() >= 2
@@ -726,7 +729,7 @@ function spendable(@r: report.Report, scratch: str, compiler: str)
         return
     want = "is " + (REAL_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
 
-    if !strings.contains(text: said.must().out, needle: want)
+    if !core_strings.contains(s: said.must().out, substr: want)
         report.keep_failure(
             @r,
             label: "spec/spendable",
@@ -746,7 +749,7 @@ function spendable(@r: report.Report, scratch: str, compiler: str)
         return
     owns = "against the contract's own " + CONTRACT_CEILING.to_str()
 
-    if !strings.contains(text: told.must().out, needle: owns)
+    if !core_strings.contains(s: told.must().out, substr: owns)
         report.keep_failure(
             @r,
             label: "spec/spendable",
@@ -874,10 +877,10 @@ function shape(@r: report.Report, spec: str)
     for line in strings.lines(spec)
         # A `## ` inside a fence is a Heroes section heading (spec § 1), not
         # one of the document's; panel 126's compiler seat showed the hole.
-        if strings.starts_with(text: line, prefix: "```")
+        if core_strings.has_prefix(s: line, prefix: "```")
             in_fence @ !in_fence
 
-        if !in_fence && strings.starts_with(text: line, prefix: "## ")
+        if !in_fence && core_strings.has_prefix(s: line, prefix: "## ")
             found @ found.push(strings.without_prefix(text: line, prefix: "## "))
 
     if found == numbered_sections()
@@ -906,7 +909,11 @@ function numbered_sections() -> [str]
 # `CLAUDE.md § 3` and design.md's `§4.19` are not this check's business; and a
 # line number, `spec:187`, is not judged at all, because it cannot be: it is the
 # one citation shape no instrument can see (CL-037), which is why
-# `.claude/rules/spec-shape.md` asks for the section instead.
+# `.claude/rules/spec-shape.md` asks for the section instead. **A placed
+# tree's files are not judged** (panel 242's R7, feature 2425;
+# `placed_trees.hero`): a package's citation is its author's, against the
+# specification of the day it was published, and the net's own catalogue
+# places one under `tests/harness/heroes.packages/`.
 function anchors(@r: report.Report)
     offenders: [str] @= []
     other = other_headings()
@@ -918,12 +925,7 @@ function anchors(@r: report.Report)
             report.keep_failure(@r, label: "spec/anchors", detail: "  cannot walk " + dir)
             return
 
-        for path in files.must()
-            # The instrument's own file carries the citation forms as strings
-            # and as test cases, and is the one file that cannot be judged by
-            # itself.
-            if strings.ends_with(text: path, suffix: "harness/suite_spec.hero")
-                continue
+        for path in cited_in(files.must())
             body = read_file(path)
 
             if body.is_err()
@@ -993,7 +995,7 @@ function mentions_spec(before: str) -> bool
 
 function names_another_document(before: str) -> bool
     for name in ["CLAUDE", "design", "reserved-words", "ROADMAP", "README", "DESIGN-LOG", "case-law", "journal", "panel", "measurements", "site/", "DONE", "SCHEDULED", "DECIDE", "DEFECTS", "LEARN", ".env"]
-        if strings.contains(text: before, needle: name)
+        if core_strings.contains(s: before, substr: name)
             return true
 
     return false
@@ -1009,16 +1011,16 @@ function names_another_document(before: str) -> bool
 function names_a_markdown_file(before: str) -> bool
     name: str @= strings.trimmed(before)
 
-    while strings.ends_with(text: name, suffix: "`") || strings.ends_with(text: name, suffix: "\"")
+    while core_strings.has_suffix(s: name, suffix: "`") || core_strings.has_suffix(s: name, suffix: "\"")
         name @ name.slice(from: 0, to: name.len() - 1)
 
-    return strings.ends_with(text: name, suffix: ".md") && !strings.ends_with(text: name, suffix: "heroes-spec.md")
+    return core_strings.has_suffix(s: name, suffix: ".md") && !core_strings.has_suffix(s: name, suffix: "heroes-spec.md")
 
 function opens_with_any(rest: [str], titles: [str]) -> bool
     text = rest.join("")
 
     for title in titles
-        if title.len() > 0 && strings.starts_with(text: text, prefix: title)
+        if title.len() > 0 && core_strings.has_prefix(s: text, prefix: title)
             return true
 
     # A title cut by a line wrap, `§ Where we` for `Where we are`, three
@@ -1027,7 +1029,7 @@ function opens_with_any(rest: [str], titles: [str]) -> bool
 
     if head.len() >= 3
         for title in titles
-            if title.len() >= 3 && strings.starts_with(text: title, prefix: head)
+            if title.len() >= 3 && core_strings.has_prefix(s: title, prefix: head)
                 return true
 
     return false
@@ -1068,7 +1070,7 @@ function other_headings() -> [str]
             return [MISSING_DOCUMENT + path]
 
         for line in strings.lines(text.must())
-            if strings.starts_with(text: line, prefix: "## ")
+            if core_strings.has_prefix(s: line, prefix: "## ")
                 out @ out.push(
                     strings.trimmed(spec_text.without_number(strings.without_prefix(text: line, prefix: "## ")))
                 )
@@ -1109,7 +1111,7 @@ function names_a_section(rest: [str]) -> bool
     text = rest.join("")
 
     for title in SECTIONS
-        if strings.starts_with(text: text, prefix: title) || strings.starts_with(text: text, prefix: before_colon(title))
+        if core_strings.has_prefix(s: text, prefix: title) || core_strings.has_prefix(s: text, prefix: before_colon(title))
             return true
 
     # A title wrapped at the end of a comment line arrives cut, `Strings,` or
@@ -1119,7 +1121,7 @@ function names_a_section(rest: [str]) -> bool
 
     if head.len() >= 3
         for title in SECTIONS
-            if strings.starts_with(text: title, prefix: head)
+            if core_strings.has_prefix(s: title, prefix: head)
                 return true
 
     return false
@@ -1269,7 +1271,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         return
     row = REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
 
-    if !strings.contains(text: said.must().out, needle: row)
+    if !core_strings.contains(s: said.must().out, substr: row)
         report.keep_failure(
             @r,
             label: "spec/real",
@@ -1277,7 +1279,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         )
         return
 
-    if !strings.contains(text: said.must().out, needle: "the binding number")
+    if !core_strings.contains(s: said.must().out, substr: "the binding number")
         report.keep_failure(
             @r,
             label: "spec/real",
@@ -1319,7 +1321,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         return
     contract_row = CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + CONTRACT_REAL_TAKEN
 
-    if !strings.contains(text: told.must().out, needle: contract_row)
+    if !core_strings.contains(s: told.must().out, substr: contract_row)
         report.keep_failure(
             @r,
             label: "spec/real",
@@ -1338,7 +1340,7 @@ function record_digest(text: str) -> str
         if take
             value = strings.trimmed(line)
 
-            if value.len() == 18 && strings.starts_with(text: value, prefix: "\"") && strings.ends_with(text: value, suffix: "\"")
+            if value.len() == 18 && core_strings.has_prefix(s: value, prefix: "\"") && core_strings.has_suffix(s: value, suffix: "\"")
                 return value.slice(from: 1, to: 17)
             return ""
         take @ line == "constant SPEC_DIGEST: str"
@@ -1357,6 +1359,19 @@ function digest_verdict(ours: str, kept: str) -> str
         return "  SPEC_DIGEST here is " + ours + ", and the spec's digest is " + theirs + ": `measure`\n  printed the spec's `real` row, which it does only where the file's digest is\n  the one " + RECORD + " carries, so this copy is the stale one.\n  `heroes measure " + SPEC + " --refresh` prints the record; paste it\n  into both files, in one commit (defect 2252)."
     return ""
 
+# The files of a walk whose citations `anchors` judges: all but a placed
+# tree's, and but this instrument's own, which carries the citation forms as
+# strings and as test cases and is the one file that cannot be judged by
+# itself.
+function cited_in(files: [str]) -> [str]
+    out: [str] @= []
+
+    for path in placed_trees.outside(files)
+        if !core_strings.has_suffix(s: path, suffix: "harness/suite_spec.hero")
+            out @ out.push(path)
+
+    return out
+
 test "this file's digest is held to the record's, and a stale copy is told with both"
     kept = "constant SPEC_REAL_TAKEN: str\n    \"2026-10-29\"\n\nconstant SPEC_DIGEST: str\n    \"46d399486a3fec77\"\n"
     assert record_digest(kept) == "46d399486a3fec77"
@@ -1364,16 +1379,16 @@ test "this file's digest is held to the record's, and a stale copy is told with 
 
     # The copy defect 2252 found, three days stale while the record moved.
     stale = digest_verdict(ours: "68e23ff00454a136", kept: kept)
-    assert strings.contains(text: stale, needle: "SPEC_DIGEST here is 68e23ff00454a136")
-    assert strings.contains(text: stale, needle: "the spec's digest is 46d399486a3fec77")
+    assert core_strings.contains(s: stale, substr: "SPEC_DIGEST here is 68e23ff00454a136")
+    assert core_strings.contains(s: stale, substr: "the spec's digest is 46d399486a3fec77")
 
 test "a record with no digest under its constant holds this file to nothing, and says so"
     assert record_digest("constant SPEC_DIGEST: str\n") == ""
     assert record_digest("constant SPEC_DIGEST: str\n    \"short\"\n") == ""
     assert record_digest("constant OTHER: str\n    \"46d399486a3fec77\"\n") == ""
-    assert strings.contains(
-        text: digest_verdict(ours: "46d399486a3fec77", kept: ""),
-        needle: "holds no `constant SPEC_DIGEST: str`"
+    assert core_strings.contains(
+        s: digest_verdict(ours: "46d399486a3fec77", kept: ""),
+        substr: "holds no `constant SPEC_DIGEST: str`"
     )
 
 ## The fences
@@ -1473,14 +1488,14 @@ function spec_fences(text: str) -> [SpecFence]
     body: str @= ""
 
     for line in strings.lines(text)
-        if strings.starts_with(text: line, prefix: "```")
+        if core_strings.has_prefix(s: line, prefix: "```")
             if inside
                 found @ found.push(SpecFence(section: section, text: body))
             body @ ""
             inside @ !inside
         else if inside
             body @ body + line + "\n"
-        else if strings.starts_with(text: line, prefix: "## ")
+        else if core_strings.has_prefix(s: line, prefix: "## ")
             section @ heading_number(strings.without_prefix(text: line, prefix: "## "))
 
     return found
@@ -1559,7 +1574,7 @@ function fence_parts(text: str) -> FenceParts
 
 function opens_declaration(line: str) -> bool
     for word in ["function ", "record ", "variant ", "constant ", "extern ", "test ", "use "]
-        if strings.starts_with(text: line, prefix: word)
+        if core_strings.has_prefix(s: line, prefix: word)
             return true
 
     return false
@@ -1572,7 +1587,7 @@ function fence_program(declarations: str, statements: str) -> str
         return declarations + "\nfunction main()\n" + indented_block(statements)
 
     for line in strings.lines(declarations)
-        if strings.starts_with(text: line, prefix: "function main(")
+        if core_strings.has_prefix(s: line, prefix: "function main(")
             return declarations
 
     return declarations + "\nfunction main()\n    return\n"
@@ -1650,13 +1665,13 @@ function fence_under(text: str, heading: str) -> str?
     for line in strings.lines(text)
         if !seen
             seen @ line == heading
-        else if strings.starts_with(text: line, prefix: "```")
+        else if core_strings.has_prefix(s: line, prefix: "```")
             if inside
                 return ok(body)
             inside @ true
         else if inside
             body @ body + line + "\n"
-        else if strings.starts_with(text: line, prefix: "#")
+        else if core_strings.has_prefix(s: line, prefix: "#")
             return fail(code: "absent", msg: "another heading before a fence")
 
     return fail(code: "absent", msg: "no fence under the heading")
@@ -1700,8 +1715,8 @@ test "a listed part is not built, and a fence that moved under its entry is buil
         listed: listed
     )
     assert moved.unheld.len() == 1
-    assert strings.contains(text: moved.unheld[0], needle: "read the list again")
-    assert strings.contains(text: moved.programs[0].text, needle: "    match head(others)")
+    assert core_strings.contains(s: moved.unheld[0], substr: "read the list again")
+    assert core_strings.contains(s: moved.programs[0].text, substr: "    match head(others)")
 
     # The same text in another section is not the listed one.
     elsewhere = fence_plan(found: [SpecFence(section: 8, text: tail)], listed: listed)
@@ -1715,17 +1730,17 @@ test "design.md's copy of the example is spec § 13's first fence, byte for byte
 
     # One word apart, the copy is told with both texts.
     apart = copy_verdict(spec: spec, design: "### 4.19 FFI\n```\nextern \"a.h\"\n    constant A: i32\n```\n")
-    assert strings.contains(text: apart, needle: "byte for byte")
-    assert strings.contains(text: apart, needle: "constant A: i32")
+    assert core_strings.contains(s: apart, substr: "byte for byte")
+    assert core_strings.contains(s: apart, substr: "constant A: i32")
 
     # A heading before any fence, and a spec with no § 13 fence, are told.
-    assert strings.contains(
-        text: copy_verdict(spec: spec, design: "### 4.19 FFI\nprose\n### 4.20 Next\n```\nx\n```\n"),
-        needle: "holds no fenced block under"
+    assert core_strings.contains(
+        s: copy_verdict(spec: spec, design: "### 4.19 FFI\nprose\n### 4.20 Next\n```\nx\n```\n"),
+        substr: "holds no fenced block under"
     )
-    assert strings.contains(
-        text: copy_verdict(spec: "## 12. Tests\n```\nx = 1\n```\n", design: same),
-        needle: "spec § 13 holds no fenced block"
+    assert core_strings.contains(
+        s: copy_verdict(spec: "## 12. Tests\n```\nx = 1\n```\n", design: same),
+        substr: "spec § 13 holds no fenced block"
     )
 
 ## The fourth copy
@@ -1816,7 +1831,7 @@ function braces(@r: report.Report, scratch: str, compiler: str)
         )
     refused = lexed_in_piece(scratch: scratch, compiler: compiler, brace: "}")
 
-    if refused.is_err() || refused.must().code != 1 || !strings.contains(text: refused.must().err, needle: "[lone_brace]")
+    if refused.is_err() || refused.must().code != 1 || !core_strings.contains(s: refused.must().err, substr: "[lone_brace]")
         wrong @ wrong.push("the lexer does not refuse a `}` alone inside an `f` literal as `lone_brace`")
 
     if wrong.len() == 0
@@ -1934,7 +1949,7 @@ function escapes_painted(@r: report.Report, scratch: str, compiler: str, spec: s
                 )
                 return
             said @ said.push(
-                Lexed(escape: escape, literal: literal, read: ran.must().code == 0, named: ran.must().code == 1 && strings.starts_with(text: escape, prefix: "\\u{") && only_named(ran.must().err))
+                Lexed(escape: escape, literal: literal, read: ran.must().code == 0, named: ran.must().code == 1 && core_strings.has_prefix(s: escape, prefix: "\\u{") && only_named(ran.must().err))
             )
 
     wrong = disagreements(grammar: grammar.must(), spelled: spelled, others: others, said: said)
@@ -1973,7 +1988,7 @@ function only_named(err: str) -> bool
         return false
 
     for piece in pieces.slice(from: 1, to: pieces.len())
-        if !strings.starts_with(text: piece, prefix: "escape_not_needed]")
+        if !core_strings.has_prefix(s: piece, prefix: "escape_not_needed]")
             return false
 
     return true
@@ -1998,7 +2013,7 @@ function disagreements(grammar: str, spelled: [str], others: [str], said: [Lexed
                 subject @ "'" + one.escape + "')"
                 whole @ whole + 2
             got = textmate.painted(rules: rules, text: subject)?
-            as_escape = strings.starts_with(text: got.scope, prefix: "constant.character") && got.reach == whole
+            as_escape = core_strings.has_prefix(s: got.scope, prefix: "constant.character") && got.reach == whole
 
             if one.read && !as_escape
                 wrong @ wrong.push(
@@ -2057,10 +2072,10 @@ function spec_escapes(spec: str) -> [str]
     in_fence: bool @= false
 
     for row in rows.slice(from: 1, to: rows.len())
-        if strings.starts_with(text: row, prefix: "## ")
+        if core_strings.has_prefix(s: row, prefix: "## ")
             break
 
-        if strings.starts_with(text: row, prefix: "```")
+        if core_strings.has_prefix(s: row, prefix: "```")
             in_fence @ !in_fence
             continue
 
@@ -2073,7 +2088,7 @@ function spec_escapes(spec: str) -> [str]
     while i < pieces.len()
         span = pieces[i]
 
-        if strings.starts_with(text: span, prefix: "\\") && span.len() >= 2 && absent_from(want: [span], got: out).len() == 1
+        if core_strings.has_prefix(s: span, prefix: "\\") && span.len() >= 2 && absent_from(want: [span], got: out).len() == 1
             out @ out.push(span)
         i @ i + 2
 
@@ -2086,7 +2101,7 @@ function other_spellings(spelled: [str]) -> [str]
     out: [str] @= []
 
     for escape in spelled
-        if !strings.starts_with(text: escape, prefix: "\\u{") || !strings.ends_with(text: escape, suffix: "}")
+        if !core_strings.has_prefix(s: escape, prefix: "\\u{") || !core_strings.has_suffix(s: escape, suffix: "}")
             continue
         digits = escape.slice(from: 3, to: escape.len() - 1)
         made: [str] @= [
@@ -2247,7 +2262,7 @@ function compiler_escapes(path: str) -> [str]
                 found @ found.push("\"")
             continue
 
-        if strings.contains(text: LOWER, needle: one) || one == "'"
+        if core_strings.contains(s: LOWER, substr: one) || one == "'"
             found @ found.push(one)
 
     return found
@@ -2364,7 +2379,7 @@ function match_value(text: str, marker: str) -> str
 
         # A rule's own opening brace ends the search. Without it a rule that has
         # `begin`/`end` and no `match` would read the rule above it.
-        if back < at && strings.contains(text: rows[back], needle: "{")
+        if back < at && core_strings.contains(s: rows[back], substr: "{")
             return ""
         back @ back - 1
 
@@ -2400,7 +2415,7 @@ function class_members(text: str, marker: str) -> [str]
             i @ i + 1
             continue
 
-        if strings.contains(text: LOWER, needle: one) || one == "\"" || one == "'"
+        if core_strings.contains(s: LOWER, substr: one) || one == "\"" || one == "'"
             found @ found.push(one)
         i @ i + 1
 
@@ -2500,10 +2515,10 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(text: capitals_wrong, needle: "`\\u{1B}` in a string: the lexer refuses it as no escape")
-    assert strings.contains(
-        text: capitals_wrong,
-        needle: "`\\u{1B}` in an `f` literal's text: the lexer refuses it as no escape"
+    assert core_strings.contains(s: capitals_wrong, substr: "`\\u{1B}` in a string: the lexer refuses it as no escape")
+    assert core_strings.contains(
+        s: capitals_wrong,
+        substr: "`\\u{1B}` in an `f` literal's text: the lexer refuses it as no escape"
     )
     zero_wrong = said_of_broken(
         grammar: real.must(),
@@ -2512,7 +2527,7 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(text: zero_wrong, needle: "`\\u{01b}` in a string: the lexer refuses it as no escape")
+    assert core_strings.contains(s: zero_wrong, substr: "`\\u{01b}` in a string: the lexer refuses it as no escape")
     ceiling_wrong = said_of_broken(
         grammar: real.must(),
         was: "[1-9a-f][0-9a-f]{4}",
@@ -2520,9 +2535,9 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(
-        text: ceiling_wrong,
-        needle: "`\\u{1b00000}` in a string: the lexer refuses it as no escape"
+    assert core_strings.contains(
+        s: ceiling_wrong,
+        substr: "`\\u{1b00000}` in a string: the lexer refuses it as no escape"
     )
     surrogate_wrong = said_of_broken(
         grammar: real.must(),
@@ -2531,10 +2546,13 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(text: surrogate_wrong, needle: "`\\u{d800}` in a string: the lexer refuses it as no escape")
-    assert strings.contains(
-        text: surrogate_wrong,
-        needle: "`\\u{dfff}` in an `f` literal's text: the lexer refuses it as no escape"
+    assert core_strings.contains(
+        s: surrogate_wrong,
+        substr: "`\\u{d800}` in a string: the lexer refuses it as no escape"
+    )
+    assert core_strings.contains(
+        s: surrogate_wrong,
+        substr: "`\\u{dfff}` in an `f` literal's text: the lexer refuses it as no escape"
     )
     past_wrong = said_of_broken(
         grammar: real.must(),
@@ -2543,7 +2561,7 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(text: past_wrong, needle: "`\\u{110000}` in a string: the lexer refuses it as no escape")
+    assert core_strings.contains(s: past_wrong, substr: "`\\u{110000}` in a string: the lexer refuses it as no escape")
     never = said_of_broken(
         grammar: real.must(),
         was: "|10[0-9a-f]{4})",
@@ -2551,14 +2569,14 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(
-        text: never,
-        needle: "`\\u{1b}` in a string: the lexer reads it, and the grammar paints `invalid.illegal.unknown-escape.hero` over 2 characters"
+    assert core_strings.contains(
+        s: never,
+        substr: "`\\u{1b}` in a string: the lexer reads it, and the grammar paints `invalid.illegal.unknown-escape.hero` over 2 characters"
     )
     fewer = said_of_broken(grammar: real.must(), was: "|[1-9a-f][0-9a-f]{4}|", now: "|", others: others, said: said)
-    assert strings.contains(
-        text: fewer,
-        needle: "`\\u{10000}` in a string: a code the lexer refuses only as a character a string writes otherwise"
+    assert core_strings.contains(
+        s: fewer,
+        substr: "`\\u{10000}` in a string: a code the lexer refuses only as a character a string writes otherwise"
     )
 
     # The `f` literal's own rules, which no check read until this one: its
@@ -2570,7 +2588,7 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(text: piece, needle: "`\\n` in an `f` literal's text: the lexer reads it")
+    assert core_strings.contains(s: piece, substr: "`\\n` in an `f` literal's text: the lexer reads it")
 
     # The other direction: a character literal the lexer refuses painted as one.
     leak = said_of_broken(
@@ -2580,7 +2598,7 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         others: others,
         said: said
     )
-    assert strings.contains(text: leak, needle: "`\\u{1b}` in a character literal: the lexer refuses it as no escape")
+    assert core_strings.contains(s: leak, substr: "`\\u{1b}` in a character literal: the lexer refuses it as no escape")
 
     # And a rule the reader cannot run is an error, never a pass.
     lazy = strings.split_text(text: real.must(), separator: "'[^']*'").join("'[^']*?'")
@@ -2599,10 +2617,10 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
             nowhere @ nowhere.push(one)
 
     unread = disagreements(grammar: real.must(), spelled: spelled, others: others, said: nowhere).must().join("\n")
-    assert strings.contains(text: unread, needle: "the spec names `\\t`, and the lexer reads it in no literal")
-    assert strings.contains(
-        text: unread,
-        needle: "`\\u{1B}` is read in a string, a second spelling of an escape the spec gives one"
+    assert core_strings.contains(s: unread, substr: "the spec names `\\t`, and the lexer reads it in no literal")
+    assert core_strings.contains(
+        s: unread,
+        substr: "`\\u{1B}` is read in a string, a second spelling of an escape the spec gives one"
     )
 
 # What § 2 says the lexer reads, as verdicts: the four letter escapes in every
@@ -2641,7 +2659,7 @@ function said_by_section_two(spelled: [str]) -> [Lexed]
 # The sentences `disagreements` says of `grammar` with `was` written `now`,
 # joined; `was` must be there, or the case would test the grammar unbroken.
 function said_of_broken(grammar: str, was: str, now: str, others: [str], said: [Lexed]) -> str
-    assert strings.contains(text: grammar, needle: was)
+    assert core_strings.contains(s: grammar, substr: was)
     spelled = ["\\n", "\\t", "\\r", "\\\\", "\\\"", "\\'", "\\u{1b}"]
     broke = strings.split_text(text: grammar, separator: was).join(now)
     return disagreements(grammar: broke, spelled: spelled, others: others, said: said).must().join("\n")
@@ -2719,19 +2737,19 @@ test "the compiler's two lists are read out of its own source"
     # Named rather than merely counted: a table read as the wrong shape can
     # still be long.
     joined = reserved.join(" ")
-    assert strings.contains(text: joined, needle: "print")
-    assert strings.contains(text: joined, needle: "to_str")
+    assert core_strings.contains(s: joined, substr: "print")
+    assert core_strings.contains(s: joined, substr: "to_str")
     refused = words_in_arms(path: FOREIGN_SOURCE, marker: "=> ok(ForeignWord(")
     assert refused.len() >= LEAST_FOREIGN
     words = refused.join(" ")
-    assert strings.contains(text: words, needle: "fn")
-    assert strings.contains(text: words, needle: "struct")
+    assert core_strings.contains(s: words, substr: "fn")
+    assert core_strings.contains(s: words, substr: "struct")
 
     # An arm carrying three words gives three, which a one-per-line reader
     # would have missed.
-    assert strings.contains(text: words, needle: "nil")
-    assert strings.contains(text: words, needle: "None")
-    assert strings.contains(text: words, needle: "catch")
+    assert core_strings.contains(s: words, substr: "nil")
+    assert core_strings.contains(s: words, substr: "None")
+    assert core_strings.contains(s: words, substr: "catch")
 
     # By word and not by substring, since 2026-10-12: `int`, whose arm the
     # formatter breaks over two lines, and every word of the arms that carry
@@ -2747,7 +2765,7 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     silent: report.Report @= report.empty()
     named(@silent, spec: "a document with prose and no code spans", reserved: reserved)
     assert silent.failed == 1
-    assert strings.contains(text: silent.failures[0], needle: "never mentions them")
+    assert core_strings.contains(s: silent.failures[0], substr: "never mentions them")
 
     # A document offering a name the compiler does not have. It trips the
     # truncation guard first, which is itself the check: a list that reads as
@@ -2755,20 +2773,20 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     invented: report.Report @= report.empty()
     offered(@invented, spec: "Built-ins: `nosuchbuiltin` .", reserved: reserved)
     assert invented.failed == 1
-    assert strings.contains(text: invented.failures[0], needle: "truncated")
+    assert core_strings.contains(s: invented.failures[0], substr: "truncated")
 
     # A refused word inside a code span — `fn` is the case that happened.
     foreign: report.Report @= report.empty()
     rejected(@foreign, spec: "the type is `(fn(A) -> B)` here", refused: refused)
     assert foreign.failed == 1
-    assert strings.contains(text: foreign.failures[0], needle: "prescribed fix")
+    assert core_strings.contains(s: foreign.failures[0], substr: "prescribed fix")
 
     # A letter above ASCII: the pre-tokeniser's premise dying, which is the
     # one thing this inventory exists to catch.
     letter: report.Report @= report.empty()
     inventory(@letter, spec: "a naïve sentence")
     assert letter.failed == 1
-    assert strings.contains(text: letter.failures[0], needle: "is it a")
+    assert core_strings.contains(s: letter.failures[0], substr: "is it a")
 
     # And the floors: an extractor that reads the wrong shape reads nothing,
     # and two checks would then pass vacuously.
@@ -2777,7 +2795,7 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     named(@starved, spec: "`print`", reserved: empty_list)
     rejected(@starved, spec: "`print`", refused: empty_list)
     assert starved.failed == 2
-    assert strings.contains(text: starved.failures[0], needle: "vacuously")
+    assert core_strings.contains(s: starved.failures[0], substr: "vacuously")
 
 test "the drift check fires when the two instruments disagree on the sum"
     # A stub compiler again, and for the same reason: what is under test is the
@@ -2798,7 +2816,7 @@ test "the drift check fires when the two instruments disagree on the sum"
 
     # The message has to name BOTH places, because "make the printed number
     # match" is as likely to be the wrong repair as the right one.
-    assert strings.contains(text: drifted.failures[0], needle: "one printed and one checked")
+    assert core_strings.contains(s: drifted.failures[0], substr: "one printed and one checked")
 
     # And the sum this file computes passes.
     good = scratch + "/stub-good.sh"
@@ -2848,7 +2866,7 @@ test "the record has to be printed by the tool, and still be called the binding 
     drifted: report.Report @= report.empty()
     recorded(@drifted, scratch: scratch, compiler: older)
     assert drifted.failed == 1
-    assert strings.contains(text: drifted.failures[0], needle: "one printed and one checked")
+    assert core_strings.contains(s: drifted.failures[0], substr: "one printed and one checked")
 
     # And the number right with the LABEL wrong, which is the state this
     # project was in for four milestones: a figure a reader had every reason
@@ -2859,7 +2877,7 @@ test "the record has to be printed by the tool, and still be called the binding 
     trusted: report.Report @= report.empty()
     recorded(@trusted, scratch: scratch, compiler: mislabelled)
     assert trusted.failed == 1
-    assert strings.contains(text: trusted.failures[0], needle: "cost 998 tokens")
+    assert core_strings.contains(s: trusted.failures[0], substr: "cost 998 tokens")
     assert !shell.remove_tree(scratch).is_err()
 
 test "the contract's ceiling fires, and a ceiling above it does not"
@@ -2889,7 +2907,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     reads_real: report.Report @= report.empty()
     contract(@reads_real, scratch: scratch, compiler: fat, ceiling: 9000)
     assert reads_real.failed == 1
-    assert strings.contains(text: reads_real.failures[0], needle: "9999")
+    assert core_strings.contains(s: reads_real.failures[0], substr: "9999")
 
     # A tool that prints only the vendored row has WITHHELD its verdict, and the
     # check must refuse rather than fall back to the number it can see.
@@ -2899,12 +2917,12 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     no_real: report.Report @= report.empty()
     contract(@no_real, scratch: scratch, compiler: vendored_only, ceiling: 9000)
     assert no_real.failed == 1
-    assert strings.contains(text: no_real.failures[0], needle: "no `real` row")
+    assert core_strings.contains(s: no_real.failures[0], substr: "no `real` row")
 
     # The message has to send the reader to the two places a rule can move to,
     # because "make the number bigger" is the wrong repair and the obvious one.
-    assert strings.contains(text: over.failures[0], needle: "docs/records/contract/case-law.md")
-    assert strings.contains(text: over.failures[0], needle: ".claude/rules/")
+    assert core_strings.contains(s: over.failures[0], substr: "docs/records/contract/case-law.md")
+    assert core_strings.contains(s: over.failures[0], substr: ".claude/rules/")
 
     under: report.Report @= report.empty()
     contract(@under, scratch: scratch, compiler: fat, ceiling: 10000)
@@ -3219,8 +3237,8 @@ function form_subject(form: Form) -> str
 # they agree.
 function form_disagreement(form: Form, code: i64, got: textmate.Painted) -> str
     whole = form.written.chars().len()
-    as_literal = strings.starts_with(text: got.scope, prefix: painted_prefix(form.rule)) && got.reach == whole
-    as_error = strings.starts_with(text: got.scope, prefix: "invalid.illegal")
+    as_literal = core_strings.has_prefix(s: got.scope, prefix: painted_prefix(form.rule)) && got.reach == whole
+    as_error = core_strings.has_prefix(s: got.scope, prefix: "invalid.illegal")
     shown = shown_form(form)
 
     if form.lexed == "refused"
@@ -3412,7 +3430,7 @@ function quoted_after(text: str, marker: str) -> str
     for line in strings.lines(text)
         if take
             return first_quoted(text: line, from: 0).default("")
-        take @ strings.contains(text: line, needle: marker)
+        take @ core_strings.contains(s: line, substr: marker)
 
     return ""
 
@@ -3517,7 +3535,7 @@ function files_under(@found: [str], value: json_read.Json, key: str)
             for one in list.all
                 files_under(@found, value: one, key: key)
         .text t =>
-            if strings.starts_with(text: t.v, prefix: "./")
+            if core_strings.has_prefix(s: t.v, prefix: "./")
                 found @ found.push(PLUGIN_DIR + t.v.slice(from: 2, to: t.v.len()))
             else if among(names: FILE_KEYS, word: key)
                 found @ found.push(PLUGIN_DIR + t.v)
@@ -3705,7 +3723,7 @@ function probe_said(scratch: str, compiler: str, probe: Probe) -> str?
     for line in strings.lines(ran.err + ran.out)
         at = strings.index_of(text: line, needle: "]: ")
 
-        if strings.contains(text: line, needle: "error[") && !at.is_err()
+        if core_strings.contains(s: line, substr: "error[") && !at.is_err()
             return ok(line.slice(from: at.must() + 3, to: line.len()))
 
     return fail(code: "no_diagnostic", msg: "`check --brief` printed no error, exit " + ran.code.to_str())
@@ -3774,7 +3792,7 @@ function registry_rows(text: str) -> [Row]
     out: [Row] @= []
 
     for line in strings.lines(text)
-        if !strings.starts_with(text: line, prefix: "| `") || !strings.ends_with(text: line, suffix: " |")
+        if !core_strings.has_prefix(s: line, prefix: "| `") || !core_strings.has_suffix(s: line, suffix: " |")
             continue
         inner = line.slice(from: 2, to: line.len() - 2)
         cut = strings.index_of(text: inner, needle: " | ")
@@ -3795,7 +3813,7 @@ function row_words(head: str) -> [str]
     none: [str] = []
 
     for piece in strings.split_text(text: head, separator: " / ")
-        if piece.len() < 3 || !strings.starts_with(text: piece, prefix: "`") || !strings.ends_with(text: piece, suffix: "`")
+        if piece.len() < 3 || !core_strings.has_prefix(s: piece, prefix: "`") || !core_strings.has_suffix(s: piece, suffix: "`")
             return none
         word = piece.slice(from: 1, to: piece.len() - 1)
 
@@ -3938,7 +3956,7 @@ test "a word the grammar leaves out, and one it paints too many, are each red an
         lesson: "why"
     )
     assert missing.failed == 1
-    assert strings.contains(text: missing.failures[0], needle: "does not paint `s.hero`: int")
+    assert core_strings.contains(s: missing.failures[0], substr: "does not paint `s.hero`: int")
     extra: report.Report @= report.empty()
     words_agree(
         @extra,
@@ -3949,7 +3967,7 @@ test "a word the grammar leaves out, and one it paints too many, are each red an
         lesson: "why"
     )
     assert extra.failed == 1
-    assert strings.contains(text: extra.failures[0], needle: "none of: while")
+    assert core_strings.contains(s: extra.failures[0], substr: "none of: while")
     unread: report.Report @= report.empty()
     words_agree(
         @unread,
@@ -3960,7 +3978,7 @@ test "a word the grammar leaves out, and one it paints too many, are each red an
         lesson: "why"
     )
     assert unread.failed == 1
-    assert strings.contains(text: unread.failures[0], needle: "a group of no words")
+    assert core_strings.contains(s: unread.failures[0], substr: "a group of no words")
 
     # Order is not the claim, and neither is a word painted by two rules.
     same: report.Report @= report.empty()
@@ -3986,28 +4004,28 @@ test "the plugin's version, engine, description and categories are each held in 
         main_text: "constant VERSION: str\n    \"0.4.0\"\n"
     )
     assert behind.len() == 1
-    assert strings.contains(text: behind[0], needle: "says version `0.3.0`, and the language is `0.4.0`")
+    assert core_strings.contains(s: behind[0], substr: "says version `0.3.0`, and the language is `0.4.0`")
     identity = plugin_disagreements(
         package: package,
         manifest: strings.split_text(text: manifest, separator: "Version=\"0.3.0\"").join("Version=\"0.0.1\""),
         main_text: main_text
     )
     assert identity.len() == 1
-    assert strings.contains(text: identity[0], needle: "says version `0.0.1`")
+    assert core_strings.contains(s: identity[0], substr: "says version `0.0.1`")
     engine = plugin_disagreements(
         package: strings.split_text(text: package, separator: "^1.71.0").join("^1.60.0"),
         manifest: manifest,
         main_text: main_text
     )
     assert engine.len() == 1
-    assert strings.contains(text: engine[0], needle: "the engine `^1.71.0`")
+    assert core_strings.contains(s: engine[0], substr: "the engine `^1.71.0`")
     described = plugin_disagreements(
         package: package,
         manifest: strings.split_text(text: manifest, separator: "&amp; more").join("only"),
         main_text: main_text
     )
     assert described.len() == 1
-    assert strings.contains(text: described[0], needle: "describes the package as \"Heroes only\"")
+    assert core_strings.contains(s: described[0], substr: "describes the package as \"Heroes only\"")
     assert plugin_disagreements(package: package, manifest: manifest, main_text: "no version here\n").len() == 1
     assert quoted_after(text: main_text, marker: "constant VERSION: str") == "0.3.0"
     assert package_field(package: package, path: ["engines", "vscode"]) == "^1.71.0"
@@ -4020,9 +4038,9 @@ test "the plugin's version, engine, description and categories are each held in 
         main_text: main_text
     )
     assert filed.len() == 1
-    assert strings.contains(
-        text: filed[0],
-        needle: "files the package under \"Programming Languages\", and editors/vscode/package.json under \"Programming Languages,Debuggers\""
+    assert core_strings.contains(
+        s: filed[0],
+        substr: "files the package under \"Programming Languages\", and editors/vscode/package.json under \"Programming Languages,Debuggers\""
     )
     assert package_list(package: package, key: "categories") == ["Programming Languages", "Debuggers"]
     assert package_list(package: package, key: "absent").len() == 0
@@ -4036,48 +4054,48 @@ test "the plugin's manifest names the files it has and the language it declares,
         json_read.read_json(strings.split_text(text: package, separator: "\"breakpoints\": [{\"language\": \"hero\"}]").join("\"breakpoints\": []")).must()
     )
     assert unheld.len() == 1
-    assert strings.contains(
-        text: unheld[0],
-        needle: "declares the language `hero` and `contributes.breakpoints` does not name it"
+    assert core_strings.contains(
+        s: unheld[0],
+        substr: "declares the language `hero` and `contributes.breakpoints` does not name it"
     )
     misnamed = wiring_slips(
         json_read.read_json(strings.split_text(text: package, separator: "\"languages\": [\"hero\"]").join("\"languages\": [\"heroes\"]")).must()
     )
     assert misnamed.len() == 2
-    assert strings.contains(
-        text: misnamed[0],
-        needle: "names the language `heroes` in a debugger's `languages` and declares no such language"
+    assert core_strings.contains(
+        s: misnamed[0],
+        substr: "names the language `heroes` in a debugger's `languages` and declares no such language"
     )
-    assert strings.contains(text: misnamed[1], needle: "no debugger's `languages` names it")
+    assert core_strings.contains(s: misnamed[1], substr: "no debugger's `languages` names it")
     nothing = wiring_slips(json_read.read_json("{}").must())
     assert nothing.len() == 1
-    assert strings.contains(text: nothing[0], needle: "declares no language")
+    assert core_strings.contains(s: nothing[0], substr: "declares no language")
     assert package_holds("editors/vscode/package.json")
     assert !package_holds("editors/vscode/no-such-file.js")
 
 test "a literal the lexer reads painted otherwise, and one it refuses painted as legal, are each a sentence"
     legal = Form(rule: "number", written: "1_000", lexed: "legal")
     assert form_disagreement(form: legal, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 5)) == ""
-    assert strings.contains(
-        text: form_disagreement(form: legal, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 1)),
-        needle: "`1_000` in a number: the lexer reads one literal, and the grammar paints `constant.numeric.integer.hero` over 1 characters"
+    assert core_strings.contains(
+        s: form_disagreement(form: legal, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 1)),
+        substr: "`1_000` in a number: the lexer reads one literal, and the grammar paints `constant.numeric.integer.hero` over 1 characters"
     )
     refused = Form(rule: "char", written: "'\\'", lexed: "refused")
     assert form_disagreement(form: refused, code: 1, got: textmate.Painted(scope: "invalid.illegal.char-literal.hero", reach: 3)) == ""
-    assert strings.contains(
-        text: form_disagreement(form: refused, code: 1, got: textmate.Painted(scope: "constant.character.hero", reach: 3)),
-        needle: "the lexer refuses it, and the grammar paints `constant.character.hero`"
+    assert core_strings.contains(
+        s: form_disagreement(form: refused, code: 1, got: textmate.Painted(scope: "constant.character.hero", reach: 3)),
+        substr: "the lexer refuses it, and the grammar paints `constant.character.hero`"
     )
 
     # The table is a premise, and the lexer is asked: a form it reads where
     # the table says refused is red, naming the table.
-    assert strings.contains(
-        text: form_disagreement(form: refused, code: 0, got: textmate.Painted(scope: "invalid.illegal.char-literal.hero", reach: 3)),
-        needle: "the table says the lexer refuses it"
+    assert core_strings.contains(
+        s: form_disagreement(form: refused, code: 0, got: textmate.Painted(scope: "invalid.illegal.char-literal.hero", reach: 3)),
+        substr: "the table says the lexer refuses it"
     )
-    assert strings.contains(
-        text: form_disagreement(form: legal, code: 1, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 5)),
-        needle: "the table says the lexer reads it"
+    assert core_strings.contains(
+        s: form_disagreement(form: legal, code: 1, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 5)),
+        substr: "the table says the lexer reads it"
     )
 
     # Several tokens: painted as one literal or as an error is red, a part of
@@ -4096,9 +4114,9 @@ test "a literal the lexer reads painted otherwise, and one it refuses painted as
     # A comment's tab is the lexer's to hold, and painted as an error it is red.
     tab = Form(rule: "comment", written: "\t", lexed: "plain")
     assert form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "", reach: 0)) == ""
-    assert strings.contains(
-        text: form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "invalid.illegal.tab.hero", reach: 1)),
-        needle: "`<U+0009>` in a comment: the lexer reads it, and the grammar paints `invalid.illegal.tab.hero`"
+    assert core_strings.contains(
+        s: form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "invalid.illegal.tab.hero", reach: 1)),
+        substr: "`<U+0009>` in a comment: the lexer reads it, and the grammar paints `invalid.illegal.tab.hero`"
     )
     assert form_program(Form(rule: "section", written: "\t", lexed: "plain")) == "## a\tb\nfunction main()\n    print(1)\n"
 
@@ -4126,38 +4144,38 @@ test "each registry row is held to the compiler's arm, and a word, a grouping or
     # Whitespace is the table's notation, not the claim.
     assert registry_disagreements(rows: rows, arms: arms).len() == 0
     wrong_text = registry_rows(strings.split_text(text: registry, separator: "use `function`").join("use `fun`"))
-    assert strings.contains(
-        text: registry_disagreements(rows: wrong_text, arms: arms).join("\n"),
-        needle: "the row for `fn` says"
+    assert core_strings.contains(
+        s: registry_disagreements(rows: wrong_text, arms: arms).join("\n"),
+        substr: "the row for `fn` says"
     )
     no_row = registry_rows(
         strings.split_text(text: registry, separator: "| `let` | error: `let` is not a word |\n").join("")
     )
-    assert strings.contains(
-        text: registry_disagreements(rows: no_row, arms: arms).join("\n"),
-        needle: "`let` is refused by the lexer, and the registry has no row for it"
+    assert core_strings.contains(
+        s: registry_disagreements(rows: no_row, arms: arms).join("\n"),
+        substr: "`let` is refused by the lexer, and the registry has no row for it"
     )
     regrouped = registry_rows(strings.split_text(text: registry, separator: "`null` / `nil`").join("`null`"))
-    assert strings.contains(
-        text: registry_disagreements(rows: regrouped, arms: arms).join("\n"),
-        needle: "groups other words than the compiler's arm"
+    assert core_strings.contains(
+        s: registry_disagreements(rows: regrouped, arms: arms).join("\n"),
+        substr: "groups other words than the compiler's arm"
     )
     stranger = registry_rows(registry + "| `goto` | error: no |\n")
-    assert strings.contains(
-        text: registry_disagreements(rows: stranger, arms: arms).join("\n"),
-        needle: "names words the lexer does not refuse"
+    assert core_strings.contains(
+        s: registry_disagreements(rows: stranger, arms: arms).join("\n"),
+        substr: "names words the lexer does not refuse"
     )
 
     # A row naming no foreign word is run, and one no probe runs is red.
     probe = Probe(head: "`return` used as `return;`", program: "")
     assert probe_disagreements(rows: rows, probe: probe, said: "something").len() == 0
-    assert strings.contains(
-        text: probe_disagreements(rows: rows, probe: probe, said: "other").join("\n"),
-        needle: "and the compiler prints"
+    assert core_strings.contains(
+        s: probe_disagreements(rows: rows, probe: probe, said: "other").join("\n"),
+        substr: "and the compiler prints"
     )
-    assert strings.contains(
-        text: probe_disagreements(rows: rows, probe: Probe(head: "`x`", program: ""), said: "s").join("\n"),
-        needle: "no row of the registry is headed"
+    assert core_strings.contains(
+        s: probe_disagreements(rows: rows, probe: Probe(head: "`x`", program: ""), said: "s").join("\n"),
+        substr: "no row of the registry is headed"
     )
     assert unprobed_rows(rows: rows, probes: [probe]).len() == 0
     assert unprobed_rows(rows: rows, probes: [Probe(head: "`x`", program: "")]).len() == 1
@@ -4166,13 +4184,13 @@ test "each registry row is held to the compiler's arm, and a word, a grouping or
     # The keywords' paragraph names `keyword()`'s words, no fewer and no more.
     paragraph = "Keywords of Heroes itself (cannot be identifiers): `if` `else` — plus the forms `=>`.\n"
     assert keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else"]).len() == 0
-    assert strings.contains(
-        text: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else", "nullptr"]).join("\n"),
-        needle: "leaves out `nullptr`"
+    assert core_strings.contains(
+        s: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else", "nullptr"]).join("\n"),
+        substr: "leaves out `nullptr`"
     )
-    assert strings.contains(
-        text: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if"]).join("\n"),
-        needle: "names `else`"
+    assert core_strings.contains(
+        s: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if"]).join("\n"),
+        substr: "names `else`"
     )
 
     # And the real table: every word `declared_word` refuses, each with its
@@ -4190,3 +4208,13 @@ test "each registry row is held to the compiler's arm, and a word, a grouping or
     assert absent_from(want: words_in_arms(path: FOREIGN_SOURCE, marker: "=> ok(ForeignWord("), got: words).len() == 0
     assert arm_of(arms: found, word: "int").must().message == "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`"
     assert arm_of(arms: found, word: "None").must().words == ["null", "nil", "None"]
+
+test "a placed tree's citations, and this file's own, are no citations the anchors judge (feature 2425)"
+    walked = [
+        "selfhost/main.hero"
+        "tests/harness/heroes.packages/core@0.2.0-8c07af1fca61d171/strings/internal/scan.hero"
+        "tests/harness/suite_spec.hero"
+        "tests/golden/check/package-a.case/heroes.packages/k@1.0.0-0123456789abcdef/k.hero"
+        "tests/harness/shell.hero"
+    ]
+    assert cited_in(walked) == ["selfhost/main.hero", "tests/harness/shell.hero"]

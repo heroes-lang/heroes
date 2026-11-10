@@ -34,6 +34,8 @@
 # compiler alike (`identity`, panel 242's R6), never written into the
 # harness's own environment, and with `core.autocrlf=false`.
 
+use <core>/strings as core_strings
+
 use floors
 use report
 use shell
@@ -81,7 +83,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     found: [str] @= []
 
     for dir in shell.list_directories(scratch: scratch, dir: ROOT)?
-        if strings.ends_with(text: dir, suffix: ".case") && (only == "" || strings.contains(text: last_part(dir), needle: only))
+        if core_strings.has_suffix(s: dir, suffix: ".case") && (only == "" || core_strings.contains(s: last_part(dir), substr: only))
             found @ found.push(dir)
 
     if only == ""

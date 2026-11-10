@@ -13,10 +13,11 @@
 # cap. Neither holds a task's text: the task's digest stands for it, so a
 # verdict of a held-out task is committable in clear.
 
+use <core>/strings as core_strings
+
 use json_fields
 use json_read
 use shell
-use strings
 use thesis_json
 
 record Generation
@@ -151,7 +152,7 @@ function all_kept(scratch: str, dir: str) -> [str]?
         return ok(out)
 
     for path in shell.list_entries(scratch: scratch, dir: dir)?
-        if strings.ends_with(text: path, suffix: ".json")
+        if core_strings.has_suffix(s: path, suffix: ".json")
             text = read_file(path: path)
 
             if !text.is_err()
@@ -206,7 +207,7 @@ test "a generation and a verdict are written and read back whole, the assistant'
         .ok _ => assert false
         .err e =>
             assert e.code == "bad_verdict"
-            assert strings.contains(text: e.msg, needle: "k.none")
+            assert core_strings.contains(s: e.msg, substr: "k.none")
 
     scratch = shell.own_scratch()
     keep(dir: scratch + "/samples", key: v.key, text: written_verdict(v)).must()
