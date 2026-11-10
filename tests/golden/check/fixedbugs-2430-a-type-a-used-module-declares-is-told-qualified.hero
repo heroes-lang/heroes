@@ -1,0 +1,29 @@
+# Fixed defect 2430, 2026-11-10, lane b30-msg (found by lane b29-pkgmsg
+# beside defect 2379): a bare name in a type position that a module this
+# file `use`s declares as a type was told `unknown_type`, *no type named
+# `Spot`*, with no word of the module, where the same name read as a value
+# was told `needs_qualifying`. Every type position is told now as the value
+# is, the module named, and the fix is certain: one module this file names
+# declares the type, so `geom.Spot` names that one type, in a field, a
+# parameter, a result, a local's annotation, an element of an array, a
+# fallible, a map's value, a function type's parameter, and a variant.
+use fixedbugs2430/geom
+
+record Holder
+    s: Spot  #~ needs_qualifying
+
+function nested(a: [Spot], b: Spot?, c: {str: Spot}, d: (function(Spot) -> i64)) -> i64  #~ needs_qualifying needs_qualifying needs_qualifying needs_qualifying
+    return a.len() + b.must().x + c.len() + d(c["k"].must())
+
+function shaped(s: Shape) -> Spot  #~ needs_qualifying needs_qualifying
+    match s
+        .dot    => return geom.Spot(x: 0)
+        .line l => return geom.Spot(x: l.len)
+
+function across(p: geom.Spot) -> i64
+    return p.x
+
+function main()
+    x: Spot = geom.Spot(x: 1)  #~ needs_qualifying
+    m: {str: geom.Spot} = {"k": x}
+    print(Holder(s: x).s.x, nested(a: [x], b: ok(x), c: m, d: across), shaped(.dot).x)

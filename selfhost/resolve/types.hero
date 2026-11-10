@@ -21,6 +21,7 @@ use resolve/errors
 use resolve/missing_use
 use resolve/offered
 use resolve/state
+use resolve/type_elsewhere
 use resolve/vocab
 use resolved
 use source
@@ -114,6 +115,14 @@ function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
             )
             .test_decl => return
 
+        return
+
+    # A type another module declares, told as the module is written, as a
+    # value of it is (defect 2430, `resolve/type_elsewhere.hero`).
+    elsewhere = type_elsewhere.told(@r, s, decls, text: name, span: span)
+
+    if !elsewhere.is_err()
+        state.push_diagnostic(@r, elsewhere.must())
         return
     candidates = type_candidates(@r, decls)
     near = did_you_mean.near_names(@r, name, candidates)

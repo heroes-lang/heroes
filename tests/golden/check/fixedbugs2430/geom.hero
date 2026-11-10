@@ -1,0 +1,15 @@
+# The module whose types `fixedbugs-2430-*` write bare (defect 2430).
+
+# A point.
+record Spot
+    x: i64
+
+# A shape.
+variant Shape
+    dot
+    line
+        len: i64
+
+# A function named as a type is.
+function Maker() -> i64
+    return 1
