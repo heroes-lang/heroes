@@ -9,7 +9,10 @@
 # of the marks, and a result of one type likewise. A position declared at two
 # types is two C parameters, which clang judges each against the header:
 # `twoarity`'s two arities of `printf` (panel 094) put an `i64` and a `cstr` in
-# one variadic slot, and the rule compares only the `format` they share.
+# one variadic slot, and the rule compared only the `format` they share, until
+# panel 243's R1 (2026-11-10) refused every argument passed by value past a
+# header's `...` and `twoarity` came to bind doors; the rule compares only the
+# positions two declarations give one type.
 # Inside one module the resolver's `declared_twice` speaks first, so this rule
 # reads only pairs from two files, and it reports the first disagreement of a
 # pair, once.
@@ -101,10 +104,11 @@ function compare_functions(@c: state.Checker, s: source.Source, decls: [ast.Decl
         here = "`" + source.span_text(s, pb.name) + "`"
 
         # A position the two declare at DIFFERENT types is two C parameters
-        # and not one: `twoarity`'s `printf(format, value: i64)` beside
-        # `printf(format, value: cstr lent)` binds a variadic slot twice, and
-        # clang judges each type against the header on its own. What the rule
-        # compares is what the two say about ONE type at one position.
+        # and not one, and clang judges each type against the header on its
+        # own; `twoarity`'s `printf(format, value: i64)` beside `printf(format,
+        # value: cstr lent)` was the shape until panel 243's R1 (2026-11-10)
+        # refused a by-value argument past `...`. What the rule compares is
+        # what the two say about ONE type at one position.
         if !same_type(c, x: pa.ty, y: pb.ty)
             continue
 
