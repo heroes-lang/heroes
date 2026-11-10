@@ -3089,7 +3089,7 @@ and it was stolen.
 the first is the one that proves the project's premise:
 
 1. **`printf` and `puts`** — proves the ABI works at all, including variadics on Apple ARM64. Since
-   2026-11-10 (panel 243's R1, provisional) a binding passes nothing by value past a header's `...`,
+   2026-11-10 (panel 243's R1, ratified 2026-11-11) a binding passes nothing by value past a header's `...`,
    so the variadic call is clang's, inside a door of the program's own header with its format
    literal there; the rung proves that call's ABI as it did a direct one's.
 2. **`libm`** — `sqrt`, `sin`, `pow`. Proves `f64` passing in floating-point registers.
@@ -3099,7 +3099,7 @@ the first is the one that proves the project's premise:
    others do not: `curl_easy_setopt` is **variadic**, which is where Apple ARM64 passes arguments on
    the stack rather than in registers, and `CURLOPT_WRITEFUNCTION` is a callback, which §4.19 fixes
    at `ptr` until a C-width type vocabulary exists. **Since 2026-11-10** (panel 243's R1,
-   provisional) the rung tests a door: `examples/curl` binds `net_set_url`, a function of a new name
+   ratified 2026-11-11) the rung tests a door: `examples/curl` binds `net_set_url`, a function of a new name
    in its own `curl_bound.h` that calls `curl_easy_setopt` with the option written there, since a
    binding passes nothing by value past `...`, a callback's `ptr` included; the variadic call, and
    its arguments on the stack, are clang's against libcurl's prototype.
@@ -3180,14 +3180,14 @@ the first is the one that proves the project's premise:
    folder's file is refused where a platform or runtime header includes it, or where a platform
    folder holds a file of its name, unless the folder is one only a `pkg-config` answer of the
    build names, a file named like a C11 or POSIX.1-2024 header refused even there, from the two
-   standards' lists (panel 243's R2, provisional, defect 2428), a file a header only asks after
+   standards' lists (panel 243's R2, ratified 2026-11-11, defect 2428), a file a header only asks after
    with `__has_include` judged alike; the header a group names is the program's own, read from
    where the program put it, even one named like the library's; and a file a header of a named
    folder includes in quotes is its own where that spelling, read from the header's own folder,
    names it, or where it is the header's sibling named as the search names it, unless a platform or
    runtime header includes it as well, which the listing shows even where a guard skips that
    second open (`-fshow-skipped-includes`), every includer of a file judged and not only its first
-   open (panel 243's R3, provisional, defect 2447); a quoted include found only through the search
+   open (panel 243's R3, ratified 2026-11-11, defect 2447); a quoted include found only through the search
    is refused as the angle form is, its note offering the path from the includer's folder; where `#include <util.h>` meaning the program's
    `util.h` is refused, its note naming the quoted form, the angle form asking the system's places
    for a name the platform holds. Until 2026-11-10 this sentence said *a platform folder holds a
@@ -3944,7 +3944,7 @@ are *on* the closure list.
     four CI legs. Produce one and this row is wrong. The one such field the core packages meet,
     `struct timespec`'s `tv_nsec`, stays in the platform layer's C (panel 234's R6), which hands the
     clock across as `int64_t` nanoseconds.
-    **Corrected 2026-11-10** (panel 243's R1, provisional, author ratification pending, defect
+    **Corrected 2026-11-10** (panel 243's R1, ratified 2026-11-11, defect
     2421; the spec-warden's wording widened to the sitting's whole scope): a parameter's shared
     spelling holds through a prototype, and past a header's `...` there is none. C converts nothing
     there and `va_arg` reads the type the callee asks for, so a C `long` read there has no spelling

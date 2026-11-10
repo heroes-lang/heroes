@@ -239,3 +239,10 @@ https://github.com/heroes-lang/heroes/issues/2449. **What a yes settles**: R1 to
 R5 as adopted, design.md's R10, §4.19 ladder and §4.19 paragraph amended in their own commits, the
 two defects of R4 filed, the landing in batch 30. **What it does not**: the predictions above, on
 their own clocks; the conservative readings, which stay the author's to choose.
+
+**Ratified, R1 to R5, 2026-11-11**: the author's answer at about 00:40, put with the coordinator's
+recommendation through the question form, *Ratifico entrambe* (243 and 244), recorded as a reading
+(`.claude/rules/records.md` § And the record says whose idea it was). What the yes settles: every
+resolution as adopted, landed in batch 30 (defects 2421, 2428 and 2447 repaired, 2448 filed),
+design.md's R10, §4.19 ladder and §4.19 paragraph marked ratified. What it does not: the predictions
+above, on their own clocks.

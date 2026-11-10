@@ -212,3 +212,12 @@ R5 as adopted, the specification amended by S1c2 in its own commit after the ref
 as the sixteenth verb by the author's decision, defect 2446's rule, R4's filings. **What it does
 not**: `internal` in the specification, which waits on the blind reading; the predictions above, on
 their own clocks; the conservative readings, which stay the author's to choose.
+
+**Ratified, R1 to R5, 2026-11-11**: the author's answer at about 00:40, put with the coordinator's
+recommendation through the question form, *Ratifico entrambe* (243 and 244), recorded as a reading
+(`.claude/rules/records.md` § And the record says whose idea it was). With it, by the same form: the
+real count asked for, *Sì, lancialo*, so S1c2 lands in batch 30 after `heroes measure
+spec/heroes-spec.md --refresh`; and the blind reading allowed, *Sì, fino a 3 USD*, run by
+`244-briefs/blind/README.md`, whose rule decides whether I2 enters. What the yes settles: every
+resolution as adopted, `heroes new` as the sixteenth verb, defect 2446's rule. What it does not: the
+predictions above, on their own clocks.
