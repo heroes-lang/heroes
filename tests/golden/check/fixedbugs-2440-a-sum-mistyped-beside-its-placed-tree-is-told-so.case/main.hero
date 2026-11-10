@@ -14,7 +14,7 @@
 # named with the field that moved, here the same version at another `sum`,
 # read by one reader with defect 2443's (`module/placed_beside.hero`); the
 # tree's own sum is never offered, a tree being held to the catalogue's, and
-# no `heroes fetch` is named, the catalogue writing no `index` line.
+# `heroes fetch` is named with the Heroes index it reads (defect 2456).
 use <json>/strconv  #~ package_unread
 
 function main()

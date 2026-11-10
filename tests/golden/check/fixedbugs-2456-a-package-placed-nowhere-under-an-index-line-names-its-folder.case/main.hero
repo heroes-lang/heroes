@@ -1,0 +1,8 @@
+# Fixed defect 2456, 2026-11-10, lane b30-pkg, a shape beside it: the same
+# entry under an `index` line the author wrote. The verb reads the index the
+# catalogue names, so the message names the folder it places the tree in
+# and nothing more.
+use <core>/strings  #~ package_unread
+
+function main()
+    print(strings.trim_space(s: "  hi  "))

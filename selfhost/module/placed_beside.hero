@@ -33,17 +33,19 @@
 #
 # **The tree's own sum is never offered** (defect 2440): a tree is held to
 # the catalogue's `sum`, and a sum copied from a folder anything can edit
-# would hold the tree to itself. **`heroes fetch` is named only where the
-# catalogue writes the source it reads**, an `index` line or a `git`
-# address: where it writes no `index` line, the source is the Heroes index,
-# which did not answer on 2026-11-10 (`curl` exited 6, defect 2443), so no
-# fix through it is named; the day it answers, naming it is a widening.
+# would hold the tree to itself. **Where `heroes fetch` is named, so is the
+# index it reads where the catalogue writes no `index` line** (defect 2456):
+# the Heroes index, by its address, and the `index` line as the way to read
+# another, a sentence true whether that index answers or not, so no message
+# here rests on whether it is built (`fetch_from`, which the build's own
+# not-placed message asks too).
 #
 # Asked on the error path alone: a build whose trees are placed reads none
 # of this, and nothing here writes.
 
 use cli/process
 use cli/strings
+use fetch/index_source
 use module/catalogue
 use module/fingerprint
 use module/placed
@@ -139,12 +141,19 @@ function moved_version(e: catalogue.Entry, at: str, standing: str) -> str
 function moved_sum(e: catalogue.Entry, at: str, fetch: str) -> str
     return "the package `" + e.name + "` " + version_said(e) + " is in the catalogue and not placed at its `sum`, `" + e.sum + "`, and a tree of it at that " + field_of(e) + " is placed beside, at `" + at + "`, under another `sum`: the catalogue's `sum` is not the one that tree was placed at, or its source names another tree; where the `sum` was changed by hand, write it back as `heroes add` wrote it, and this tree is read" + fetch
 
-# `heroes fetch`, where the catalogue writes the source it reads (above);
-# "" for an entry of the Heroes index the catalogue names no line for.
+# `heroes fetch` named for the tree the catalogue names, with the index it
+# reads where the catalogue writes none (above).
 function fetched(e: catalogue.Entry, index: str, root: str) -> str
-    if e.version.len() > 0 && index.len() == 0
+    return "; where they are the ones `heroes add` wrote, `heroes fetch` places the tree they name at `" + root + "`" + fetch_from(e, index: index)
+
+# The index `heroes fetch` reads for `e` where its catalogue writes no `index`
+# line: the Heroes index by its address, and the line that names another;
+# "" for an entry whose source its catalogue writes, an `index` line or a
+# `git` address (defect 2456).
+function fetch_from(e: catalogue.Entry, index: str) -> str
+    if e.version.len() == 0 || index.len() > 0
         return ""
-    return "; where they are the ones `heroes add` wrote, `heroes fetch` places the tree they name at `" + root + "`"
+    return ", reading the Heroes index, `" + index_source.HEROES_INDEX + "`, which a catalogue holding no `index` line reads; an `index` line above its entries names another"
 
 # The version or tag a tree beside stands at, its folder's name between the
 # entry's stem and the key's sixteen digits.
@@ -281,7 +290,8 @@ test "a tree beside an entry's key tells which line moved, and names heroes fetc
     assert told == "the package `json` 1.4.2 is in the catalogue and not placed at its `sum`, `" + other + "`, and a tree of it at that version is placed beside, at `" + where + "`, under another `sum`: the catalogue's `sum` is not the one that tree was placed at, or its source names another tree; where the `sum` was changed by hand, write it back as `heroes add` wrote it, and this tree is read; where they are the ones `heroes add` wrote, `heroes fetch` places the tree they name at `" + root + "`"
     assert !strings.holds(text: told, needle: sum)
 
-    assert fetched(summed, index: "", root: "r/") == ""
+    assert fetched(summed, index: "", root: "r/") == "; where they are the ones `heroes add` wrote, `heroes fetch` places the tree they name at `r/`, reading the Heroes index, `" + index_source.HEROES_INDEX + "`, which a catalogue holding no `index` line reads; an `index` line above its entries names another"
+    assert fetch_from(summed, index: "file://../packages") == ""
     assert written_back("v0.3.1", tag: true) == "write back `v0.3.1`"
     assert written_back("v0.3_rc_1", tag: true) == "write back the one `heroes add` wrote"
 
