@@ -1,0 +1,8 @@
+# A module of the package of defect 2431's case beside it, naming its own
+# entry `text` whole, under another name.
+
+use text as t  #~ unknown_package_module
+
+# A word.
+function word() -> str
+    return t.word()

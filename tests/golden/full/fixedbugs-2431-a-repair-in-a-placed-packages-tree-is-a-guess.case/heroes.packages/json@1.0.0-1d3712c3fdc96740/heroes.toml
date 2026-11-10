@@ -1,0 +1,4 @@
+# The placed package's own catalogue of defect 2431's case beside it, a file
+# of its tree and so of its sum: `core`, the program's own folder.
+[dependencies.core]
+path = "../../vendor/core"

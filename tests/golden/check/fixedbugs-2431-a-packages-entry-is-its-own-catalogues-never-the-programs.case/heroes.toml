@@ -1,0 +1,7 @@
+# The catalogue of defect 2431's case beside it: the program calls the
+# folder `vendor/core` `core`, and `json`'s own catalogue calls it `text`.
+[dependencies.core]
+path = "vendor/core"
+
+[dependencies.json]
+path = "vendor/json"

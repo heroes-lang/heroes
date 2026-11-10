@@ -1,0 +1,26 @@
+# Fixed defect 2431, 2026-11-10, lane b30-pkg: inside the package `json`,
+# whose own catalogue names `core`, `use core` and `use core/strconv`, the
+# brackets forgotten (spec § 1: inside a package a `use` starts at the
+# package's own root, and its brackets name entries of the package's own
+# catalogue).
+#
+# SYMPTOM: both told `unknown_package_module`, the package `json` has no
+# module `core`, with no word of the entry, where the same two lines in the
+# program's own file are told the entry and `use <core>/strconv` (defect
+# 2394's repair, panel 235's R18).
+#
+# CAUSE: a bare `use` of a package's file names a module of that package, so
+# `modules.unknown_modules` handed it to `package_told.unknown`, which never
+# asked a catalogue; R18's question was asked of the program's files alone.
+#
+# FIX: the same message, then that `core` is an entry of `json`'s own
+# catalogue, asked through the aliases discovery mapped from it: the whole
+# entry is offered the modules at its root, and `use core/strconv` is told
+# `package_unmarked`, `use <core>/strconv`, the repair certain in a folder of
+# the author's own. The modules are `vendor/json/parse.hero` and
+# `vendor/json/parse2.hero`, each marked where it is told.
+use <json>/parse
+use <json>/parse2
+
+function main()
+    print(parse.word() + parse2.word())

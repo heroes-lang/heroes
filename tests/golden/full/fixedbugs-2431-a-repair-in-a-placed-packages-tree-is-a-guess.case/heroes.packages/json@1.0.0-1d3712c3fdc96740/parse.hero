@@ -1,0 +1,8 @@
+# A module of the placed package of defect 2431's case beside it, naming a
+# module of its own entry with no brackets.
+
+use core/strconv  #~ package_unmarked
+
+# A word.
+function word() -> str
+    return strconv.word()

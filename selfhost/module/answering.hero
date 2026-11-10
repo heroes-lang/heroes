@@ -27,9 +27,9 @@ use cli/files
 use cli/process
 use keywords
 use module/names as module_names
-use module/package_told
 use module/paths
 use module/placed
+use module/private
 use module/spelling
 use source
 
@@ -42,7 +42,7 @@ function modules(s: source.Source, from: str, name: str) -> [str]
     found: [str] @= []
 
     for f in s.files
-        if !f.is_library && placed.package_of(f.module) == package && module_names.binding_of(f.module) == name && package_told.reaches(from: from, name: f.module)
+        if !f.is_library && placed.package_of(f.module) == package && module_names.binding_of(f.module) == name && private.reaches(from: from, name: f.module)
             found @ found.push(placed.inside_of(f.module))
             return found
 
@@ -52,7 +52,7 @@ function modules(s: source.Source, from: str, name: str) -> [str]
         return found
 
     for inside in under(root: root.must(), file: name + ".hero")
-        if package_told.reaches(from: from, name: package + inside)
+        if private.reaches(from: from, name: package + inside)
             found @ found.push(inside)
 
     return found

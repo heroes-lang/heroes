@@ -1,0 +1,15 @@
+# Fixed defect 2431, 2026-11-10, lane b30-pkg, the whole message: `json`, a
+# folder of the author's own, writes `use core/strconv`, `core` an entry of
+# its own catalogue whose folder holds `strconv.hero`, and `json` has no
+# `core/strconv.hero`.
+#
+# The repair writing `use <core>/strconv` is `certain` (panel 235's R18):
+# nothing on the package's own side answers that path, the entry's tree holds
+# the module, and the file stands in a folder the author edits, so `check
+# <directory> --apply --in-place` writes it and the program checks clean,
+# measured. Its neighbour in a placed tree is a `guess`
+# (`fixedbugs-2431-a-repair-in-a-placed-packages-tree-is-a-guess`).
+use <json>/parse
+
+function main()
+    print(parse.word())

@@ -20,7 +20,7 @@
 #
 # A leaf but for `bytes` and `module_text`'s reading of a `use` path, read by
 # `package_mark.hero` and, for the `internal` rule, by
-# `module/package_told.hero`, one rule in one place. **What a `use` wrote is
+# `module/private.hero`, one rule in one place. **What a `use` wrote is
 # asked of its bytes and never cut** (defect 2410's shape): a quoted line may
 # hold any character, and `use "heroes.package€x/y"` put the end of
 # `heroes.packages/` inside `€`, which stopped `check` with *string slice

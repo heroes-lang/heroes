@@ -1,0 +1,7 @@
+note: the package `json` is read from the folder `tests/golden/full/fixedbugs-2431-a-repair-in-a-packages-own-folder-is-certain.case/vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[package_unmarked]: there is no module `core/strconv` of the package `json`, and `core` is an entry of its catalogue `tests/golden/full/fixedbugs-2431-a-repair-in-a-packages-own-folder-is-certain.case/vendor/json/heroes.toml`: a package's module is written in angle brackets — `use <core>/strconv`
+  at tests/golden/full/fixedbugs-2431-a-repair-in-a-packages-own-folder-is-certain.case/vendor/json/parse.hero:4:5
+    |
+  4 | use core/strconv  #~ package_unmarked
+    |     ^^^^^^^^^^^^
+  fix (certain): write `use <core>/strconv`
