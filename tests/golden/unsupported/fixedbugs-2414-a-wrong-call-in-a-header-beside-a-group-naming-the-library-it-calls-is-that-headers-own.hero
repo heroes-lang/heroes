@@ -1,0 +1,22 @@
+# fixedbugs, defect 2414, lane b29-boundary, 2026-11-10.
+#
+# A header of the program's own calls `lib_set` with two arguments, and
+# another group names `lib.h`, which declares it with three. clang's error
+# stands in the first header and its note in the second, and it was told as
+# two headers refusing each other, *cannot be compiled in one unit*, with a
+# note to bind them from two modules, which is refused the same (the case
+# beside this one). The header does not compile alone, so the mistake is its
+# own: told as its line, `lib.h`'s declaration clang's note. Panel 241's
+# `osenvbad` package was this shape on the Windows box, its `_putenv_s` given
+# three arguments where the UCRT's `stdlib.h` declares two; both headers are
+# the program's here, so clang's note stands at one line on every platform.
+
+extern "fixedbugs-2414-env.h"  #~ ffi_header_refused
+    function osenv_set(name: cstr lent, value: cstr lent) -> i32
+
+extern "fixedbugs-2414-lib.h"
+    function lib_set(name: cstr lent, value: cstr lent, overwrite: i32) -> i32
+
+function main()
+    print(osenv_set(name: "P2414".cstr(), value: "v".cstr()))
+    print(lib_set(name: "P2414".cstr(), value: "v".cstr(), overwrite: 1))
