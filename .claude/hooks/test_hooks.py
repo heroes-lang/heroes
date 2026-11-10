@@ -2593,11 +2593,28 @@ class TrackedAsks(unittest.TestCase):
                 if rule.startswith("Bash(") and rule.endswith(")")
                 and fnmatch.fnmatchcase(command, rule[len("Bash("):-1])]
 
+    # The push rule as the author's answer of 2026-11-09 narrowed it
+    # (`ce9c288c3`): every form that reaches GitHub is asked, a push to the
+    # Windows box never is. Until defect 2412 this test pinned the one rule
+    # that commit replaced, and was red from that commit on.
+    ASKED = ["Bash(git push)", "Bash(git push -*)", "Bash(git push origin*)",
+             "Bash(git push git@*)", "Bash(git push https*)"]
+
     def test_the_program_asks_nothing_and_a_push_is_still_asked(self):
         # The transcription's prepare and finish, asked every time, left with
         # the folder of issue files on 2026-10-12, and so did their asks.
-        self.assertEqual(self.permissions.get("ask", []), ["Bash(git push*)"])
-        self.assertTrue(self.matched("ask", "git push origin HEAD:main"))
+        self.assertEqual(self.permissions.get("ask", []), self.ASKED)
+        for command in ("git push", "git push origin HEAD:main", "git push --tags", "git push -u origin main",
+                        "git push git@github.com:heroes-lang/heroes.git main",
+                        "git push https://github.com/heroes-lang/heroes.git main"):
+            self.assertTrue(self.matched("ask", command), command)
+
+    def test_a_push_to_the_box_is_never_asked_and_a_force_push_is_still_refused(self):
+        for command in ("git push win main", "git push win HEAD:refs/heads/lane"):
+            self.assertFalse(self.matched("ask", command), command)
+            self.assertFalse(self.matched("deny", command), command)
+        for command in ("git push -f origin main", "git push --force origin main", "git push --force-with-lease"):
+            self.assertTrue(self.matched("deny", command), command)
 
     def test_the_writes_asked_once_ask_nothing_and_none_is_denied(self):
         for word in ("file /tmp/x/2026-10-12-1800-a.md", "close 2031 /tmp/x/closing.md",
