@@ -1,5 +1,0 @@
-# The package of the case two folders up, read from its folder.
-
-# Two.
-function two() -> i64
-    return 2

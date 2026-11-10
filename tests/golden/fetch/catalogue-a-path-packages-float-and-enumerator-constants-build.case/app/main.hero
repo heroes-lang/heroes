@@ -2,7 +2,9 @@
 # has no body: the header holds the value, in a package named by `version` or
 # `git` never a float, a record or one read through an enumerator or object."
 # The package here is named by a `path`, so its units build as the program's
-# own and its header's float and enumerator are read: it prints 0.5 and 8.
+# own and its header's float and enumerator are read: it prints 0.5 and 8,
+# and stderr says no fingerprint holds the folder, which the `fetch` form's
+# transcript holds and the `run` form's empty stderr cannot.
 #
 # It is the spec-warden's P2 (iii), registered in
 # `docs/panel/244-reports/spec-warden.md` § 5 and scored at M-core-packages'

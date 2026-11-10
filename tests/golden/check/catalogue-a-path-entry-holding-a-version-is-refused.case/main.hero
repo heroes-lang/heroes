@@ -8,7 +8,7 @@
 # `docs/panel/244-reports/spec-warden.md` § 5 and scored at M-core-packages'
 # close: falsified if it flips while the sentence stands. Its twin, the entry
 # naming the `path` alone, builds, in
-# `tests/golden/run/catalogue-a-path-entry-alone-builds.case/`.
+# `tests/golden/fetch/catalogue-a-path-entry-alone-builds.case/`.
 use <mypkg>/lib  #~ catalogue_refused
 
 function main()

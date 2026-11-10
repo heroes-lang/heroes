@@ -1,4 +1,4 @@
-# The package `pk` of the case two folders up, read from its folder: a module
+# The package `pk` of the case this folder stands in, read from its folder: a module
 # binding a float and an enumerator of the header it holds.
 extern "pk.h"
     constant PK_HALF: f64

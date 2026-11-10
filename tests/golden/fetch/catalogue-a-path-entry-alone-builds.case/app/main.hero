@@ -1,8 +1,9 @@
 # Panel 244's R1, spec § 1 as it landed on 2026-11-11: the catalogue names a
 # package "with its source, exact version and `sum`, or by a local `path`
-# alone, which nothing verifies". This entry names the `path` alone: the
-# program builds, is told on stderr that no fingerprint holds the folder, and
-# prints 2.
+# alone, which nothing verifies". This entry names the `path` alone: `heroes
+# run` builds the program, says on stderr that no fingerprint holds the folder,
+# and prints 2. The `fetch` form holds the whole transcript, stderr's note
+# included, which the `run` form, wanting nothing on stderr, cannot.
 #
 # It is the second case of the spec-warden's P2 (i), registered in
 # `docs/panel/244-reports/spec-warden.md` § 5 and scored at M-core-packages'

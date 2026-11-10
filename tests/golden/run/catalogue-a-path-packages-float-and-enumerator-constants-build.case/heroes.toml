@@ -1,3 +1,0 @@
-# The catalogue of the case beside it: the package `pk` read from its folder.
-[dependencies.pk]
-path = "vendor/pk"

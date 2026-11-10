@@ -293,3 +293,5 @@ where at most 19 were. By the branch the row registered, the removal it named pa
 *and a call returning nothing takes no clause*, −10 vendored and 10,915 to 10,900 real, so fence B and
 R7's sentence stand and the two rows together leave the specification 4 real tokens under row 8327's
 10,904.
+
+**Row 8386's two `run/` cases, corrected 2026-11-11.** The row names `run/catalogue-a-path-entry-alone-builds.case` and `run/catalogue-a-path-packages-float-and-enumerator-constants-build.case`. Before the push they moved to the `fetch` form, `fetch/catalogue-a-path-entry-alone-builds.case` and `fetch/catalogue-a-path-packages-float-and-enumerator-constants-build.case`. The `run` form wants nothing on stderr, and a `path` entry's build writes its *unverified* note there, so both cases read 0 passed and 2 failed in it. The `fetch` form holds the whole transcript, the note included, and read 2 passed and 0 failed. P2's pairs are otherwise the row's.

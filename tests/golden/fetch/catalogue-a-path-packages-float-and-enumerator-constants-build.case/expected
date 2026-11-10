@@ -1,0 +1,12 @@
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+0.5
+8
+stderr:
+note: the package `pk` is read from the folder `<work>/app/../local/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+heroes.toml:
+[dependencies.pk]
+path = "../local"
+heroes.packages:
+(none)
