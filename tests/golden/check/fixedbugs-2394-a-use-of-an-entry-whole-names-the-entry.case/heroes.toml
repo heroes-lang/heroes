@@ -1,0 +1,4 @@
+# The catalogue of defect 2394's case beside it: one package of the author's
+# own, read from a folder.
+[dependencies.core]
+path = "vendor/core"

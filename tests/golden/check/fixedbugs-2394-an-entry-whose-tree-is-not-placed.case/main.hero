@@ -1,0 +1,8 @@
+# Fixed defect 2394, 2026-11-10, lane b29-pkgmsg, a shape beside it: `use
+# core as c`, `core` an entry of the catalogue whose tree is not placed. The
+# entry is told as in the case beside it, and with no tree to list, its
+# module is written as a stand-in.
+use core as c  #~ unknown_module
+
+function main()
+    print("x")
