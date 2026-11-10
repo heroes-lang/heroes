@@ -28,10 +28,12 @@
 # it names, a folder of the author's own, and told as unverified (R6).
 
 use cli/process
+use cli/strings
 use module/catalogue
 use module/fingerprint
 use module/placed
 use module/reached
+use module/spelling
 use module/unplaced
 
 constant PLACED: str
@@ -146,7 +148,7 @@ function problem_of(@b: Book, package: reached.Package, e: catalogue.Entry) -> s
     if !process.is_directory(path: package.opened)
         if package.unverified
             return "the folder `" + package.root + "` its `path` names is not there"
-        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`"
+        return not_placed(b, package: package, e: e)
 
     # The tree is a folder of the program anything can edit, so it is held to
     # its fingerprint at every build that reads it (R7): a tree changed since
@@ -164,6 +166,46 @@ function problem_of(@b: Book, package: reached.Package, e: catalogue.Entry) -> s
     if own.problem.len() > 0
         return "the package's own catalogue does not read: " + own.problem
     return mapped(@b, alias: e.name, own: own, root: package.opened)
+
+# A fetched entry's tree not placed at its key (R7), told with the tree of
+# the same package placed under another key where one stands, since `heroes
+# fetch` would place a second beside it: the field the two keys hold apart,
+# the version or the tag, or the rest of the source and the `sum` where they
+# hold one (defect 2440: a `sum` or `version` mistyped by one character was
+# told *not placed: `heroes fetch` places it*, and only `fetch` then told the
+# mismatch). The placed tree's own sum is never offered: a tree is held to
+# the catalogue's, and a sum copied from the tree holds the tree to itself.
+function not_placed(b: Book, package: reached.Package, e: catalogue.Entry) -> str
+    key = placed.key(e, index: b.program.index)
+    head = key.slice(from: 0, to: name_end(key) + 1)
+    wanted = key.slice(from: head.len(), to: key.len() - 17)
+    field: str @= "tag"
+    rest: str @= "`commit`, `sum` or address"
+
+    if e.version.len() > 0
+        field @ "version"
+        rest @ "`sum` or `index`"
+
+    for folder in sort(spelling.scan(folder: b.opened + PLACED + "/", kind: 1))
+        if folder != key && strings.starts_with(text: folder, prefix: head) && folder.len() > head.len() + 17 && folder[folder.len() - 17] == '-'
+            standing = folder.slice(from: head.len(), to: folder.len() - 17)
+            held: str @= "its " + field + " `" + standing + "` under another " + rest
+
+            if standing != wanted
+                held @ "its " + field + " `" + standing + "`, where the entry names `" + wanted + "`"
+            return "the package `" + e.name + "` is in the catalogue and not placed at the folder its entry names, `" + package.root + "`, while `" + b.named + PLACED + "/" + folder + "/` holds " + held + ": an entry changed since its tree was placed names a tree that is not there — write it back as `heroes add` wrote it, or `heroes fetch` places the tree it names"
+
+    return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`"
+
+# Where a placed folder's name ends, at its `@`: an entry's name and an
+# address's last part hold none (`placed.key`).
+function name_end(key: str) -> i64
+    at: i64 @= 0
+
+    while at < key.len() && key[at] != '@'
+        at @ at + 1
+
+    return at
 
 # Each entry of the package's own catalogue mapped to the program's entry for
 # the same package (R3), the aliases kept for `identity`; what is wrong where

@@ -1,0 +1,10 @@
+# Fixed defect 2440, 2026-11-10, lane b30-pkg, a shape beside it: the
+# catalogue's `version` for a placed `json` changed by hand, `1.0.1`, the
+# tree placed at `1.0.0` standing.
+#
+# The placed tree is named with its version and the entry's, so the field
+# that moved is told, and `heroes fetch` is offered for the version written.
+use <json>/strconv  #~ package_unread
+
+function main()
+    print(strconv.word())

@@ -1,0 +1,5 @@
+# The one module of the placed package of defect 2440's case.
+
+# A word.
+function word() -> str
+    return "y"

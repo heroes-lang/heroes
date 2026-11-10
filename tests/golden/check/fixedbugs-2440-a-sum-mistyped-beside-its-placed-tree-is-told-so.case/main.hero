@@ -1,0 +1,20 @@
+# Fixed defect 2440, 2026-11-10, lane b30-pkg: the catalogue's `sum` for a
+# placed `json` mistyped by one digit, the tree of the right sum standing
+# placed (panel 244's critic).
+#
+# SYMPTOM: *the package `json` is in the catalogue and not placed: `heroes
+# fetch` places it at …*, which sent the author to a verb that then told the
+# mismatch, while the mistake is the catalogue's own field.
+#
+# CAUSE: a tree is placed under a key of every field naming the package
+# (panel 235's R7), so a field changed names another folder, and the build
+# asked only whether that folder stood.
+#
+# FIX: where a tree of the same package stands under another key, it is
+# named, with the field the two keys hold apart, here the same version and so
+# another `sum` or `index`; the tree's own sum is never offered, since a tree
+# is held to the catalogue's and never the other way.
+use <json>/strconv  #~ package_unread
+
+function main()
+    print(strconv.word())
