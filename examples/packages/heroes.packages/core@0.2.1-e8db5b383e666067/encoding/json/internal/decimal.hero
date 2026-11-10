@@ -14,7 +14,11 @@
 # 300 took 2.26 s of user time, about 113 µs each, those near 10 to the -300
 # 1.69 s, about 85 µs each, and those near one 0.04 s, about 2 µs. Go's own
 # `strconv` takes this route last, only where a faster one cannot decide
-# (`atof64` in `src/internal/strconv/atof.go`, read on 2026-11-10).
+# (`atof64` in `src/internal/strconv/atof.go`, read on 2026-11-10), and so
+# does `numeral.hero` since core 0.2.1 (defect 2405): `scaling.hero` reads
+# every number of at most 19 digits, and a longer one whose first 19 digits
+# and the same plus one round alike, which leaves this route the numbers of
+# more than 19 digits within a hair of halfway between two `f64`s.
 #
 # Its one code is written as a literal, `does_not_fit`, the built-ins' own
 # (spec § 11).
