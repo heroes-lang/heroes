@@ -21,6 +21,8 @@
 # header's `static` one follows it, and the Windows target tells it in the
 # same extension's words, which the CI's Windows leg read first.
 
+use <core>/strings as core_strings
+
 use freed_bytes
 use shell
 use strings
@@ -197,7 +199,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     assert windows()[0].name + ".hero" == "fixedbugs-562-a-header-only-inline-is-told-what-c-wants.hero"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
-    assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
+    assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
     assert windows().len() == 17
 
     for one in windows().slice(from: 5, to: 17)

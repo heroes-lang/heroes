@@ -19,6 +19,8 @@
 # and with the two the same it is not (panel 231, the compiler-engineer's Q1:
 # 36 of 300 against 0 of 300 on a planted `>>`).
 
+use <core>/strings as core_strings
+
 use gen_depth
 use gen_eval
 use gen_hunt
@@ -135,7 +137,7 @@ function judge(dir: str, compiler: str) -> i64
 
         # A program is the `.hero` with its answer beside it: neither a
         # formatted copy nor a module of the program's own has one.
-        if strings.ends_with(text: name, suffix: ".hero") && shell.exists(strings.without_suffix(text: path, suffix: ".hero") + ".expected")
+        if core_strings.has_suffix(s: name, suffix: ".hero") && shell.exists(strings.without_suffix(text: path, suffix: ".hero") + ".expected")
             got = gen_judge.judged(compiler: compiler, source: path, work: work)
 
             match got
@@ -210,7 +212,7 @@ function deep(words: [str]) -> i64
                 stdin_path: ""
             ).must()
 
-            if ran.code == 134 && strings.contains(text: ran.err, needle: "stack exhausted in")
+            if ran.code == 134 && core_strings.contains(s: ran.err, substr: "stack exhausted in")
                 said @ "DEPTH-LIMIT at run: " + gen_judge.first_line(ran.err)
 
                 if n <= gen_depth.FLOOR
@@ -229,7 +231,7 @@ function deep(words: [str]) -> i64
 # Whether the shape named `name`, `<kind>-<n>-deep`, is one `asked` lists.
 function asked_for(name: str, asked: str) -> bool
     for kind in strings.split_text(text: asked, separator: ",")
-        if strings.starts_with(text: name, prefix: kind + "-")
+        if core_strings.has_prefix(s: name, prefix: kind + "-")
             return true
 
     return false

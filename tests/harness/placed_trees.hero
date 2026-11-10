@@ -18,6 +18,8 @@
 # so a file named `heroes.packages` or a folder whose name only holds the word,
 # `my.heroes.packages`, is the program's like any other.
 
+use <core>/strings as core_strings
+
 use strings
 
 # The folder's name: the compiler's `PLACED` (`selfhost/module/packages.hero`),
@@ -75,4 +77,4 @@ test "the paths outside every placed tree keep their order"
 test "the folder's name is the compiler's PLACED"
     source = read_file("selfhost/module/packages.hero")
     assert !source.is_err()
-    assert strings.contains(text: source.must(), needle: "constant PLACED: str\n    \"" + FOLDER + "\"\n")
+    assert core_strings.contains(s: source.must(), substr: "constant PLACED: str\n    \"" + FOLDER + "\"\n")

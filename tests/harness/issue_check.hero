@@ -13,13 +13,14 @@
 # every draft before an issue is opened from it (`issue_draft.hero`), and of
 # every issue file it renders while the folder stands (`issue_load.hero`).
 
+use <core>/strings as core_strings
+
 use cards
 use issue_controls
 use issue_json
 use issue_render
 use issue_safe
 use issue_title
-use strings
 
 constant BODY_LIMIT: i64
     65535
@@ -187,5 +188,5 @@ test "a rendering is refused for its title, its sizes, a live reference and a cl
         raised: true,
         comment: ""
     )
-    assert strings.contains(text: offences(raised)[0], needle: "the day its commit gives stands before")
+    assert core_strings.contains(s: offences(raised)[0], substr: "the day its commit gives stands before")
     assert offences(issue_render.refused(path: "p", why: "no title: x", unborn: false)) == ["no title: x"]

@@ -12,6 +12,8 @@
 # counts the probes. A request lost past its retries is kept as lost, never as
 # a GUID not completed.
 
+use <core>/strings as core_strings
+
 use issue_wire
 use strings
 use thesis_answer
@@ -78,7 +80,7 @@ function prompt_of(p: Probe) -> str
 # Whether an answer completes the probe's GUID: all thirty-two digits, which
 # the prompt does not hold.
 function completed(answer: str, p: Probe) -> bool
-    return p.guid.len() == 32 && strings.contains(text: answer, needle: p.guid)
+    return p.guid.len() == 32 && core_strings.contains(s: answer, substr: p.guid)
 
 # Every probe asked of every model, in order, through `transport`.
 function sweep(transport: issue_wire.Transport, world: issue_wire.World, models: [str], suite: thesis_tasks.Suite, dialect: str, base: str, max_tokens: i64, effort: str) -> Swept?
@@ -160,8 +162,8 @@ test "a suite's probes show eight digits of each GUID, and only an answer holdin
     assert found[0].of == "suite"
     assert found[1].of == "01"
     asked = prompt_of(found[1])
-    assert strings.ends_with(text: asked, suffix: "canary heroes-task:fedcba98")
-    assert !strings.contains(text: asked, needle: task_guid)
+    assert core_strings.has_suffix(s: asked, suffix: "canary heroes-task:fedcba98")
+    assert !core_strings.contains(s: asked, substr: task_guid)
     assert completed(answer: "canary heroes-task:" + task_guid, p: found[1])
     assert !completed(answer: "canary heroes-task:fedcba980000", p: found[1])
     assert !completed(answer: "unknown", p: found[0])
@@ -212,7 +214,7 @@ test "a sweep asks every probe of every model, reads a completion, and keeps a l
     assert !swept.results[2].completed
     assert swept.results[3].model == "m2"
     assert !swept.results[3].lost
-    assert strings.contains(text: written_probed(swept.results[0]), needle: "\"completed\":true")
+    assert core_strings.contains(s: written_probed(swept.results[0]), substr: "\"completed\":true")
 
 # An Anthropic answer holding `text`, for the sweep's test.
 function reply_with(text: str) -> str

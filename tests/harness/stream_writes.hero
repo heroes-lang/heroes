@@ -35,6 +35,8 @@
 # name; and `relaid` reached through a module alias, which reads as a write
 # and is refused, the loud direction.
 
+use <core>/strings as core_strings
+
 use growth
 use strings
 
@@ -104,7 +106,7 @@ function sites(path: str, text: str) -> [Site]
         if hit
             out @ out.push(Site(line: at, code: strings.trimmed(row)))
 
-        if strings.ends_with(text: code, suffix: "(")
+        if core_strings.has_suffix(s: code, suffix: "(")
             levels @ levels.push(indent)
             calls @ calls.push(code)
 
@@ -166,7 +168,7 @@ function kept_lend(path: str, before: str) -> bool
 # Whether `before` ends with `callee`, a name and its open bracket, read as a
 # whole name: `xstream_tables.relaid(` and `st.relaid(` are other callees.
 function called(before: str, callee: str) -> bool
-    if !strings.ends_with(text: before, suffix: callee)
+    if !core_strings.has_suffix(s: before, suffix: callee)
         return false
     at = before.len() - callee.len()
     return at == 0 || !growth.word_byte(before[at - 1])
@@ -347,15 +349,15 @@ test "a place is read to its end, its indexes left out of what it holds"
 test "relaid and the lexer's state are where the check says they are"
     home = read_file(HOME)
     assert !home.is_err()
-    assert strings.contains(
-        text: home.must(),
-        needle: "function relaid(@tokens: [token.Token], at: i64, kind: token.TokenKind, span: token.Span)\n    assert is_invisible(kind)\n"
+    assert core_strings.contains(
+        s: home.must(),
+        substr: "function relaid(@tokens: [token.Token], at: i64, kind: token.TokenKind, span: token.Span)\n    assert is_invisible(kind)\n"
     )
     lexer = read_file("selfhost/state.hero")
     assert !lexer.is_err()
-    assert strings.contains(text: lexer.must(), needle: "record LexState\n")
-    assert strings.contains(text: lexer.must(), needle: "\n    tokens: [token.Token]\n")
+    assert core_strings.contains(s: lexer.must(), substr: "record LexState\n")
+    assert core_strings.contains(s: lexer.must(), substr: "\n    tokens: [token.Token]\n")
     cursor = read_file("selfhost/cursor.hero")
     assert !cursor.is_err()
-    assert strings.contains(text: cursor.must(), needle: "record Cursor\n")
-    assert strings.contains(text: cursor.must(), needle: "\n    tokens: [token.Token]\n")
+    assert core_strings.contains(s: cursor.must(), substr: "record Cursor\n")
+    assert core_strings.contains(s: cursor.must(), substr: "\n    tokens: [token.Token]\n")

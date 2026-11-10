@@ -24,6 +24,8 @@
 # lines, written from the package's root (R4), are a program's once the
 # package's name is put before them.
 
+use <core>/strings as core_strings
+
 use package_codes
 use package_face
 use package_rules
@@ -72,7 +74,7 @@ function card_text(face: package_face.Face, codes: [package_codes.Code]) -> str
 # A meaning as a card ends it: a clause gains its period, and a doc's sentence
 # keeps the one it has.
 function ended(text: str) -> str
-    if strings.ends_with(text: text, suffix: ".")
+    if core_strings.has_suffix(s: text, suffix: ".")
         return text
     return text + "."
 
@@ -292,7 +294,7 @@ function bindings_in(ty: str) -> [str]
 # brackets and the same path; a line already naming a package in brackets is a
 # program's as it stands.
 function program_use(row: str) -> str
-    if strings.starts_with(text: row, prefix: "use <")
+    if core_strings.has_prefix(s: row, prefix: "use <")
         return row
     return "use <" + package_rules.PACKAGE + ">/" + strings.without_prefix(text: row, prefix: "use ")
 
@@ -322,7 +324,7 @@ function holds(names: [str], name: str) -> bool
 # a person reads may be corrected, and the row's name is its identity.
 function maximum_in(said: str) -> i64?
     for row in strings.lines(said)
-        if strings.starts_with(text: row, prefix: "  maximum")
+        if core_strings.has_prefix(s: row, prefix: "  maximum")
             words = strings.words(row)
 
             if words.len() >= 2

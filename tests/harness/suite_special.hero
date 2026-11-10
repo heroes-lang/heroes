@@ -11,6 +11,8 @@
 # is that a test with no successor is a promise that stops being checked
 # on the day the bootstrap is archived.
 
+use <core>/strings as core_strings
+
 use absence
 use expectation
 use report
@@ -64,7 +66,7 @@ function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
         return
     rows = strings.lines(said.must().err)
 
-    if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "wrote build/")
+    if rows.len() == 0 || !core_strings.has_prefix(s: rows[0], prefix: "wrote build/")
         report.keep_failure(
             @r,
             label: "special/build says where",
@@ -76,7 +78,7 @@ function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
     # The default name carries the machine's own suffix: `00first` here,
     # `00first.exe` on Windows, and the check asks for exactly the one this
     # machine produces.
-    if !strings.ends_with(text: binary, suffix: "/00first" + shell.exe_suffix())
+    if !core_strings.has_suffix(s: binary, suffix: "/00first" + shell.exe_suffix())
         report.keep_failure(
             @r,
             label: "special/build says where",
@@ -134,7 +136,7 @@ function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, c
         )
         return
 
-    if !strings.contains(text: after.must(), needle: "print((2 + 3) * 4)")
+    if !core_strings.contains(s: after.must(), substr: "print((2 + 3) * 4)")
         report.keep_failure(@r, label: "special/a retired flag", detail: "  the file no longer holds what it held")
         return
     report.keep_pass(@r)
@@ -291,28 +293,28 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     if said.must().code != 1
         wrong @ wrong.push("    a failing test is exit 1, and it exited " + said.must().code.to_str())
 
-    if !strings.contains(text: said.must().out, needle: "ok   \"holds\"")
+    if !core_strings.contains(s: said.must().out, substr: "ok   \"holds\"")
         wrong @ wrong.push("    the passing test is not reported")
 
-    if !strings.contains(text: said.must().out, needle: "FAIL \"fails\"")
+    if !core_strings.contains(s: said.must().out, substr: "FAIL \"fails\"")
         wrong @ wrong.push("    the failing test is not named")
 
     # The tests after a failure still run: a harness that stops at the
     # first failure hides every defect behind the first one.
-    if !strings.contains(text: said.must().out, needle: "ok   \"after the failure\"")
+    if !core_strings.contains(s: said.must().out, substr: "ok   \"after the failure\"")
         wrong @ wrong.push("    a test after the failure did not run")
 
     # The expression, and both sides, and the author's own brackets.
-    if !strings.contains(text: said.must().err, needle: "assert failed: twice(2) == 5")
+    if !core_strings.contains(s: said.must().err, substr: "assert failed: twice(2) == 5")
         wrong @ wrong.push("    the failing expression is not shown")
 
-    if !strings.contains(text: said.must().err, needle: "left:  4")
+    if !core_strings.contains(s: said.must().err, substr: "left:  4")
         wrong @ wrong.push("    the left side is not shown")
 
-    if !strings.contains(text: said.must().err, needle: "right: 5")
+    if !core_strings.contains(s: said.must().err, substr: "right: 5")
         wrong @ wrong.push("    the right side is not shown")
 
-    if !strings.contains(text: said.must().err, needle: "assert failed: (1 == 1) == (1 == 2)")
+    if !core_strings.contains(s: said.must().err, substr: "assert failed: (1 == 1) == (1 == 2)")
         wrong @ wrong.push("    the brackets the author typed are not kept")
 
     # **And where, since panel 230's R1**: beneath the head line, the file as the
@@ -320,15 +322,15 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     # scratch folder, which the report never names), the line, the column
     # where the asserted expression begins, and the test by its title; the
     # sides after it.
-    if !strings.contains(text: said.must().err, needle: "assert failed: twice(2) == 5\n  at failing.hero:8:12, in test \"fails\"\n  left:  4\n  right: 5\n")
+    if !core_strings.contains(s: said.must().err, substr: "assert failed: twice(2) == 5\n  at failing.hero:8:12, in test \"fails\"\n  left:  4\n  right: 5\n")
         wrong @ wrong.push(
             "    the failing test's place is not its file, line, column and title, between the head and the sides"
         )
 
-    if !strings.contains(text: said.must().err, needle: "\n  at failing.hero:11:12, in test \"brackets\"\n")
+    if !core_strings.contains(s: said.must().err, substr: "\n  at failing.hero:11:12, in test \"brackets\"\n")
         wrong @ wrong.push("    the place is not where the asserted expression begins, its first bracket")
 
-    if strings.contains(text: said.must().err, needle: scratch)
+    if core_strings.contains(s: said.must().err, substr: scratch)
         wrong @ wrong.push("    the report names the path the build was invoked with")
 
     # **The aggregate case.** Panel 117 pinned it at the behaviour of its day,
@@ -336,10 +338,10 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     # day that changed; panel 230's R2 changed it (M-panic-location step 10), so
     # the row now asks for both sides, written as the specification writes the
     # values, and the case per shape lives in `tests/golden/run/fixedbugs-016-*`.
-    if !strings.contains(text: said.must().err, needle: "assert failed: [1, 2] == [1, 3]")
+    if !core_strings.contains(s: said.must().err, substr: "assert failed: [1, 2] == [1, 3]")
         wrong @ wrong.push("    an aggregate assert does not even show its expression")
 
-    if !strings.contains(text: said.must().err, needle: "  left:  [1, 2]\n  right: [1, 3]\n")
+    if !core_strings.contains(s: said.must().err, substr: "  left:  [1, 2]\n  right: [1, 3]\n")
         wrong @ wrong.push("    an aggregate assert does not show both its sides (defect 016, panel 230's R2)")
 
     if wrong.len() > 0
@@ -431,7 +433,7 @@ function specs_program() -> str?
         return fail(code: "unread", msg: "the FFI section has no fenced block")
     block = blocks[1]
 
-    if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
+    if !core_strings.contains(s: block, substr: "extern \"sqlite3.h\"")
         return fail(code: "unread", msg: "the FFI section's first block is not the sqlite example any more:\n" + block)
 
     # `Db`, not `ptr`, since 2026-09-13: the document's own fence declares the
@@ -527,7 +529,7 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
             )
             return
 
-        if !strings.contains(text: said.must().err, needle: "names no directory") || !strings.contains(text: said.must().err, needle: "in silence")
+        if !core_strings.contains(s: said.must().err, substr: "names no directory") || !core_strings.contains(s: said.must().err, substr: "in silence")
             report.keep_failure(
                 @r,
                 label: "special/a path that names nothing",
@@ -690,7 +692,7 @@ function a_library_header_in_a_named_folder_is_refused(@r: report.Report, scratc
             words @ words.push("--include").push(home + "/included/inc")
         said = shell.run(scratch: scratch, program: compiler, words: words)
 
-        if said.is_err() || said.must().code != 1 || !strings.contains(text: said.must().err, needle: "error[shadowed_header]") || !strings.contains(text: said.must().err, needle: "`<" + pair[1] + ">`")
+        if said.is_err() || said.must().code != 1 || !core_strings.contains(s: said.must().err, substr: "error[shadowed_header]") || !core_strings.contains(s: said.must().err, substr: "`<" + pair[1] + ">`")
             wrong @ wrong.push("    `build` of " + pair[0] + " with its `" + pair[1] + "`: " + shell.ending(said))
 
     kept = shell.run(
@@ -738,7 +740,7 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
     assert unbound.passed == 0
     assert unbound.failed == 1
     assert unbound.skips.len() == 0
-    assert strings.contains(text: unbound.failures[0], needle: "binds no such header")
+    assert core_strings.contains(s: unbound.failures[0], substr: "binds no such header")
     its_own = absence.missing_header_said(header: "sqlite3.h", tail: absence.HEADER_LOOKED, at: at)
     assert !write_file(path: scratch + "/spec-ffi.said", text: its_own).is_err()
     claimed: report.Report @= report.empty()
@@ -753,9 +755,9 @@ test "the failing-test probe is itself falsifiable"
     # because every branch of it is a `contains` and a `contains` on an
     # empty string is simply false — so the check can only be wrong by
     # being too strict, never by being too kind.
-    assert !strings.contains(text: "", needle: "FAIL \"fails\"")
-    assert !strings.contains(text: "ok   \"holds\"\n", needle: "FAIL \"fails\"")
-    assert strings.contains(text: "ok   \"holds\"\nFAIL \"fails\"\n", needle: "FAIL \"fails\"")
+    assert !core_strings.contains(s: "", substr: "FAIL \"fails\"")
+    assert !core_strings.contains(s: "ok   \"holds\"\n", substr: "FAIL \"fails\"")
+    assert core_strings.contains(s: "ok   \"holds\"\nFAIL \"fails\"\n", substr: "FAIL \"fails\"")
 
 test "the expectation module reads what a special case needs"
     # `unmet` is what the run/ and corpus suites use; the special cases

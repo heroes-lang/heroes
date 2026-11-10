@@ -51,6 +51,8 @@
 # there, since the message lands where its own is pinned; ruling *A* writes
 # such a case on headers of the program's own.
 
+use <core>/strings as core_strings
+
 use mark_readers
 use shell
 use strings
@@ -319,7 +321,7 @@ function absences(text: str) -> [Absence]
             placed: Absence @= one.must()
             here: Place @= place_of(head_of(rows[at]))
 
-            if here.line == 0 && at + 1 < rows.len() && strings.starts_with(text: rows[at + 1], prefix: "  at ")
+            if here.line == 0 && at + 1 < rows.len() && core_strings.has_prefix(s: rows[at + 1], prefix: "  at ")
                 here @ place_of(strings.without_prefix(text: rows[at + 1], prefix: "  at "))
             placed.file @ here.file
             placed.line @ here.line
@@ -496,7 +498,7 @@ function bound_by(path: str, count: i64) -> str
 function inside(dir: str, file: str) -> bool
     if dir == "."
         return strings.index_of(text: file, needle: "/").is_err()
-    return strings.starts_with(text: file, prefix: dir + "/")
+    return core_strings.has_prefix(s: file, prefix: dir + "/")
 
 function message_of_sources(got: [Source]?) -> str
     return match got
@@ -555,7 +557,7 @@ function binds(source: str) -> Binds
     packages: [str] @= []
 
     for row in strings.lines(source)
-        if !strings.starts_with(text: row, prefix: "extern ")
+        if !core_strings.has_prefix(s: row, prefix: "extern ")
             continue
         rest = strings.without_prefix(text: row, prefix: "extern ")
         header = quoted(rest)
@@ -734,7 +736,7 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
     if clang.code == 0
         return fail(code: "present", msg: "clang finds `" + one.name + "` on the include path the compiler searches")
 
-    if !strings.contains(text: clang.err, needle: "'" + one.name + "' file not found")
+    if !core_strings.contains(s: clang.err, substr: "'" + one.name + "' file not found")
         return fail(
             code: "unasked",
             msg: "clang refused `#include <" + one.name + ">` for another reason: " + first_line(clang.err)
@@ -795,7 +797,7 @@ function first_line(text: str) -> str
 # Whether `row` opens the notes that carry `pkg-config`'s answer under a
 # package's headline: its words, or that it gave none (defect 326).
 function opens_quotation(row: str) -> bool
-    return strings.starts_with(text: row, prefix: NOTE + strings.trimmed(SAID)) || row == NOTE + NO_REASON
+    return core_strings.has_prefix(s: row, prefix: NOTE + strings.trimmed(SAID)) || row == NOTE + NO_REASON
 
 # Whether `row` is the way out that closes them, under either headline.
 function closes_quotation(row: str) -> bool
@@ -1044,7 +1046,7 @@ function group_place(source: str, header: str) -> str?
     for row in strings.lines(source)
         at @ at + 1
 
-        if strings.starts_with(text: row, prefix: "extern ")
+        if core_strings.has_prefix(s: row, prefix: "extern ")
             named = quoted(strings.without_prefix(text: row, prefix: "extern "))
             in_group @ !named.is_err() && named.must().value == header
             continue
@@ -1262,7 +1264,7 @@ test "clang is asked, and a header the machine has refutes the compiler"
     search = ["-I", "."]
     has = asked(scratch: scratch, search: search, one: an(kind: "header", name: "stdio.h", owner: ""))
     assert has.is_err()
-    assert strings.contains(text: message_of(has), needle: "clang finds `stdio.h`")
+    assert core_strings.contains(s: message_of(has), substr: "clang finds `stdio.h`")
     lacks = asked(
         scratch: scratch,
         search: search,
@@ -1309,17 +1311,17 @@ test "fixedbugs: a package said to be installed with its flags out of reach is a
     called_absent = an(kind: "package", name: pc, owner: "")
 
     if here.must().started
-        assert strings.contains(
-            text: asked(scratch: scratch, search: search, one: broken).must(),
-            needle: "which `pkg-config` reads here and whose flags it cannot give"
+        assert core_strings.contains(
+            s: asked(scratch: scratch, search: search, one: broken).must(),
+            substr: "which `pkg-config` reads here and whose flags it cannot give"
         )
-        assert strings.contains(
-            text: message_of(asked(scratch: scratch, search: search, one: nobody)),
-            needle: "so nothing says it is installed"
+        assert core_strings.contains(
+            s: message_of(asked(scratch: scratch, search: search, one: nobody)),
+            substr: "so nothing says it is installed"
         )
-        assert strings.contains(
-            text: message_of(asked(scratch: scratch, search: search, one: called_absent)),
-            needle: "so it is installed"
+        assert core_strings.contains(
+            s: message_of(asked(scratch: scratch, search: search, one: called_absent)),
+            substr: "so it is installed"
         )
     else
         assert asked(scratch: scratch, search: search, one: broken).is_err()
@@ -1336,7 +1338,7 @@ test "fixedbugs: the spellings are the compiler's own, read out of the files tha
         source = read_file(one.file)
         assert !source.is_err()
 
-        if !strings.contains(text: source.must(), needle: one.heard)
+        if !core_strings.contains(s: source.must(), substr: one.heard)
             parted @ parted.push(one.file + " no longer holds " + one.heard)
 
     assert parted.join("\n") == ""
@@ -1373,7 +1375,7 @@ test "fixedbugs: the compiler's words for a missing library are spelled in this 
     read: i64 @= 0
 
     for path in shell.list_entries(scratch: "build/harness-selftest", dir: "tests/harness").must()
-        if !strings.ends_with(text: path, suffix: ".hero") || strings.ends_with(text: path, suffix: "/absence.hero")
+        if !core_strings.has_suffix(s: path, suffix: ".hero") || core_strings.has_suffix(s: path, suffix: "/absence.hero")
             continue
         text = read_file(path)
         assert !text.is_err()
@@ -1383,11 +1385,11 @@ test "fixedbugs: the compiler's words for a missing library are spelled in this 
         for row in strings.lines(text.must())
             at @ at + 1
 
-            if strings.starts_with(text: strings.trimmed(row), prefix: "#")
+            if core_strings.has_prefix(s: strings.trimmed(row), prefix: "#")
                 continue
 
             for piece in pieces
-                if strings.contains(text: row, needle: as_written(piece))
+                if core_strings.contains(s: row, substr: as_written(piece))
                     copies @ copies.push(path + ":" + at.to_str() + ": " + piece)
 
     assert copies.join("\n") == ""
@@ -1455,7 +1457,7 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
         path = dir + "/placed-" + count.to_str() + ".hero"
         planted = header_said(path: path, source: text, header: NOWHERE).must()
         built = built_said(scratch: scratch, compiler: compiler, path: path, source: text, bin: "", alone: false).must()
-        assert strings.starts_with(text: built, prefix: planted)
+        assert core_strings.has_prefix(s: built, prefix: planted)
         places @ places.push(group_place(source: text, header: NOWHERE).must())
         count @ count + 1
 
@@ -1477,7 +1479,7 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
         bin: "",
         alone: false
     )
-    assert strings.starts_with(text: case_built.must(), prefix: case_said.must())
+    assert core_strings.has_prefix(s: case_built.must(), prefix: case_said.must())
 
     # A package, as a stand-in `pkg-config` answers for it.
     package = "heroes-absence-328-no-machine-has"
@@ -1571,7 +1573,7 @@ test "a package answering words the list holds builds and runs, and the words be
     assert !answering(dir: bin, answer: admitted).is_err()
     path = dir + "/ok.hero"
     err = built_said(scratch: scratch, compiler: compiler, path: path, source: asking, bin: bin, alone: false).must()
-    assert !strings.contains(text: err, needle: "does not pass on")
+    assert !core_strings.contains(s: err, substr: "does not pass on")
     ran = shell.run(scratch: scratch, program: path + ".out", words: [path + ".out"]).must()
     assert ran.code == 0
     assert ran.out == "7\n"
@@ -1587,9 +1589,9 @@ test "a package answering words the list holds builds and runs, and the words be
             bin: stood,
             alone: false
         ).must()
-        assert strings.contains(
-            text: said,
-            needle: "answered with `" + word + "`, which this compiler does not pass on"
+        assert core_strings.contains(
+            s: said,
+            substr: "answered with `" + word + "`, which this compiler does not pass on"
         )
 
     assert !shell.remove_tree(scratch).is_err()
@@ -1616,7 +1618,7 @@ test "an admitted -Wl,-rpath leaves a RUNPATH where readelf reads the binary, th
     assert !answering(dir: bin, answer: "-I" + inc + " -Wl,-rpath,/opt/heroes-198-rpath\n").is_err()
     path = dir + "/tag.hero"
     err = built_said(scratch: scratch, compiler: compiler, path: path, source: asking, bin: bin, alone: false).must()
-    assert !strings.contains(text: err, needle: "does not pass on")
+    assert !core_strings.contains(s: err, substr: "does not pass on")
     read = shell.run(scratch: scratch, program: "readelf", words: ["readelf", "-d", path + ".out"])
 
     if read.is_err()
@@ -1625,9 +1627,9 @@ test "an admitted -Wl,-rpath leaves a RUNPATH where readelf reads the binary, th
 
     if dynamic.code != 0
         return
-    assert strings.contains(text: dynamic.out, needle: "/opt/heroes-198-rpath")
-    assert strings.contains(text: dynamic.out, needle: "(RUNPATH)")
-    assert !strings.contains(text: dynamic.out, needle: "(RPATH)")
+    assert core_strings.contains(s: dynamic.out, substr: "/opt/heroes-198-rpath")
+    assert core_strings.contains(s: dynamic.out, substr: "(RUNPATH)")
+    assert !core_strings.contains(s: dynamic.out, substr: "(RPATH)")
     assert !shell.remove_tree(scratch).is_err()
 
 # PANEL 198's route V (defect 527), asked of the compiler itself: a value the list
@@ -1663,7 +1665,7 @@ test "a package whose admitted word carries @<file> or -l:<file> is refused, nam
     for word in shapes
         why: str @= "a value beginning with `@` names a file"
 
-        if strings.starts_with(text: word, prefix: "-l:")
+        if core_strings.has_prefix(s: word, prefix: "-l:")
             why @ "`-l:<file>` names a file"
         stood = dir + "/bin-" + shape.to_str()
         assert !answering(dir: stood, answer: "-I" + inc + " " + word + "\n").is_err()
@@ -1676,9 +1678,9 @@ test "a package whose admitted word carries @<file> or -l:<file> is refused, nam
             bin: stood,
             alone: false
         ).must()
-        assert strings.contains(
-            text: said,
-            needle: "answered with `" + word + "`, which this compiler does not pass on: " + why
+        assert core_strings.contains(
+            s: said,
+            substr: "answered with `" + word + "`, which this compiler does not pass on: " + why
         )
         assert !shell.exists(path + ".out")
         shape @ shape + 1
@@ -1720,11 +1722,11 @@ test "a package whose -l this machine has no library for is told at its string (
             bin: stood,
             alone: false
         ).must()
-        assert strings.contains(
-            text: said,
-            needle: "error[ffi_missing_library]: this machine has no library called `heroes528absent` — `pkg-config` answered for `pkg528` with `-lheroes528absent`, and the linker looked\n  at " + path + ":1:29\n"
+        assert core_strings.contains(
+            s: said,
+            substr: "error[ffi_missing_library]: this machine has no library called `heroes528absent` — `pkg-config` answered for `pkg528` with `-lheroes528absent`, and the linker looked\n  at " + path + ":1:29\n"
         )
-        assert !strings.contains(text: said, needle: "internal error")
+        assert !core_strings.contains(s: said, substr: "internal error")
         assert !shell.exists(path + ".out")
         shape @ shape + 1
 
@@ -1834,7 +1836,7 @@ function built_against(scratch: str, compiler: str, dir: str, program: str) -> s
 # binding, nothing written.
 function refused_at(got: shell.Run, dir: str, module: str, headline: str, program: str) -> bool
     at = "error[ffi_defined_elsewhere]: " + headline
-    return got.code == 1 && strings.contains(text: got.err, needle: at) && strings.contains(text: got.err, needle: "\n  at " + dir + "/" + module + ".hero:2:5\n") && !strings.contains(text: got.err, needle: "internal error") && !shell.exists(dir + "/" + program + ".out")
+    return got.code == 1 && core_strings.contains(s: got.err, substr: at) && core_strings.contains(s: got.err, substr: "\n  at " + dir + "/" + module + ".hero:2:5\n") && !core_strings.contains(s: got.err, substr: "internal error") && !shell.exists(dir + "/" + program + ".out")
 
 # A C file's text with its names exported where it is a DLL's, `X` before
 # each, and nothing elsewhere.
@@ -1870,11 +1872,11 @@ test "a C name two shared libraries define, or one the C library defines, is ref
     assert definitions_named(written.err) == 2
 
     if shell.exe_suffix() == ".exe"
-        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/a.lib(a.dll)`\n")
-        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/b.lib(b.dll)`\n")
+        assert core_strings.contains(s: written.err, substr: "  note: a definition is in `" + dir + "/a.lib(a.dll)`\n")
+        assert core_strings.contains(s: written.err, substr: "  note: a definition is in `" + dir + "/b.lib(b.dll)`\n")
     else
-        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/liba.")
-        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/libb.")
+        assert core_strings.contains(s: written.err, substr: "  note: a definition is in `" + dir + "/liba.")
+        assert core_strings.contains(s: written.err, substr: "  note: a definition is in `" + dir + "/libb.")
     sorted = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sorted")
     assert sorted.err == written.err
     flip = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "flip")
@@ -1925,9 +1927,9 @@ test "a C name two libraries of objects define is refused in every order, a defi
     # four notes for two (defect 2384, panel 239's blind seat): one note for
     # each, by the folder as the program's words wrote it, relative here.
     assert definitions_named(sig.err) == 2
-    assert strings.contains(
-        text: sig.err,
-        needle: "  note: a definition is in `" + dir + "/liba.a(pick_a.c.o)`\n  note: a definition is in `" + dir + "/libw.a(pick_w.c.o)`\n"
+    assert core_strings.contains(
+        s: sig.err,
+        substr: "  note: a definition is in `" + dir + "/liba.a(pick_a.c.o)`\n  note: a definition is in `" + dir + "/libw.a(pick_w.c.o)`\n"
     )
     assert built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_sorted").err == sig.err
     assert renamed(said: built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_flip").err, from: "apick", to: "picker") == sig.err
@@ -1947,9 +1949,9 @@ test "a C name two libraries of objects define is refused in every order, a defi
         one = built_against(scratch: scratch, compiler: compiler, dir: dir, program: shape[0] + "_written")
         opening = "`pick`, bound here from library `" + shape[2] + "`, "
         assert refused_at(one, dir: dir, module: shape[1], headline: opening, program: shape[0] + "_written")
-        assert strings.contains(
-            text: one.err,
-            needle: "library `" + shape[3] + "`, which module `" + shape[4] + "` links"
+        assert core_strings.contains(
+            s: one.err,
+            substr: "library `" + shape[3] + "`, which module `" + shape[4] + "` links"
         )
         flipped = built_against(scratch: scratch, compiler: compiler, dir: dir, program: shape[0] + "_flip")
         assert renamed(said: flipped.err, from: "apick", to: "picker") == one.err
@@ -1958,9 +1960,9 @@ test "a C name two libraries of objects define is refused in every order, a defi
         # its `pick` in both orders, while `libbs`'s own call reaches it; the
         # probe that loads every file whole names both.
         if shape[0] != "weak"
-            assert strings.contains(
-                text: one.err,
-                needle: opening + "is also defined by library `" + shape[3] + "`, which module `" + shape[4] + "` links" + whole
+            assert core_strings.contains(
+                s: one.err,
+                substr: opening + "is also defined by library `" + shape[3] + "`, which module `" + shape[4] + "` links" + whole
             )
             assert definitions_named(one.err) == 2
 
@@ -1997,9 +1999,9 @@ test "a library defining a name the runtime calls or defines is refused, unless 
         headline: "library `hh`, which module `hh_lib` links, defines `hero_print_end`, a name of the program's own runtime, and a program holds one `hero_print_end`",
         program: "hero_name"
     )
-    assert strings.contains(
-        text: named.err,
-        needle: "  note: `hero_print_end` is the runtime's own: rename it where library `hh` is built, or link a library that does not define it\n"
+    assert core_strings.contains(
+        s: named.err,
+        substr: "  note: `hero_print_end` is the runtime's own: rename it where library `hh` is built, or link a library that does not define it\n"
     )
 
     # An allocator replaces `malloc` on purpose only where its group binds
@@ -2169,15 +2171,15 @@ test "a name a linked library needs and nothing defines is told at its group or 
         program: compiler,
         words: [compiler, "build", linked, "--library", dir, "-o", linked + ".out"]
     ).must()
-    assert strings.contains(
-        text: said.err,
-        needle: "error[ffi_missing_link]: the library `top2365` needs `base_helper`, and nothing on the link line defines it\n  at " + linked + ":1:25\n"
+    assert core_strings.contains(
+        s: said.err,
+        substr: "error[ffi_missing_link]: the library `top2365` needs `base_helper`, and nothing on the link line defines it\n  at " + linked + ":1:25\n"
     )
-    assert strings.contains(
-        text: said.err,
-        needle: "  note: `libtop2365.a` refers to `base_helper` without defining it, and a library is linked only where a group names it: give this program a group for the library that defines it as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
+    assert core_strings.contains(
+        s: said.err,
+        substr: "  note: `libtop2365.a` refers to `base_helper` without defining it, and a library is linked only where a group names it: give this program a group for the library that defines it as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
     )
-    assert !strings.contains(text: said.err, needle: "internal error")
+    assert !core_strings.contains(s: said.err, substr: "internal error")
     assert said.code == 1
     assert !shell.exists(linked + ".out")
 
@@ -2193,11 +2195,11 @@ test "a name a linked library needs and nothing defines is told at its group or 
         bin: bin,
         alone: false
     ).must()
-    assert strings.contains(
-        text: told,
-        needle: "error[ffi_missing_link]: the library `top2365`, which `pkg-config` answered for `ptop2365`, needs `base_helper`, and nothing on the link line defines it\n  at " + path + ":1:30\n"
+    assert core_strings.contains(
+        s: told,
+        substr: "error[ffi_missing_link]: the library `top2365`, which `pkg-config` answered for `ptop2365`, needs `base_helper`, and nothing on the link line defines it\n  at " + path + ":1:30\n"
     )
-    assert !strings.contains(text: told, needle: "internal error")
+    assert !core_strings.contains(s: told, substr: "internal error")
     assert !shell.exists(path + ".out")
     assert !shell.remove_tree(scratch).is_err()
 
@@ -2248,15 +2250,15 @@ test "a header's inline body calling a name nothing on the link line defines is 
             program: compiler,
             words: [compiler, "build", level, path, "--library", dir, "-o", path + ".out"]
         ).must()
-        assert strings.contains(
-            text: said.err,
-            needle: "error[ffi_missing_link]: `top_value` is defined inline in `fast2372.h` line 2, and its body calls `base_helper`, which nothing on the link line defines\n  at " + path + ":2:5\n"
+        assert core_strings.contains(
+            s: said.err,
+            substr: "error[ffi_missing_link]: `top_value` is defined inline in `fast2372.h` line 2, and its body calls `base_helper`, which nothing on the link line defines\n  at " + path + ":2:5\n"
         )
-        assert strings.contains(
-            text: said.err,
-            needle: "  note: this program needs a `link` naming the library that defines `base_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
+        assert core_strings.contains(
+            s: said.err,
+            substr: "  note: this program needs a `link` naming the library that defines `base_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
         )
-        assert !strings.contains(text: said.err, needle: "internal error")
+        assert !core_strings.contains(s: said.err, substr: "internal error")
         assert said.code == 1
         assert !shell.exists(path + ".out")
 
@@ -2321,9 +2323,9 @@ test "each name a refused link reports is told by the reader whose question it a
             program: compiler,
             words: [compiler, "build", level, path, "--library", dir, "-o", path + ".out"]
         ).must()
-        assert strings.contains(text: said.err, needle: library + path + ":1:27\n")
-        assert strings.contains(text: said.err, needle: header + path + ":3:5\n")
-        assert !strings.contains(text: said.err, needle: "internal error")
+        assert core_strings.contains(s: said.err, substr: library + path + ":1:27\n")
+        assert core_strings.contains(s: said.err, substr: header + path + ":3:5\n")
+        assert !core_strings.contains(s: said.err, substr: "internal error")
         assert said.code == 1
         assert !shell.exists(path + ".out")
 
@@ -2351,8 +2353,8 @@ test "each name a refused link reports is told by the reader whose question it a
         program: compiler,
         words: [compiler, "build", neither, "--library", dir, "-o", neither + ".out"]
     ).must()
-    assert strings.contains(text: left.err, needle: "internal error: linking failed")
-    assert !strings.contains(text: left.err, needle: "error[ffi_missing_link]")
+    assert core_strings.contains(s: left.err, substr: "internal error: linking failed")
+    assert !core_strings.contains(s: left.err, substr: "error[ffi_missing_link]")
     assert left.code == 2
     assert !shell.remove_tree(scratch).is_err()
 
@@ -2513,7 +2515,7 @@ test "every package group sits in a program's root, where the pkg-config witness
         assert !listed_files.is_err()
 
         for file in listed_files.must()
-            if !strings.ends_with(text: file, suffix: ".hero")
+            if !core_strings.has_suffix(s: file, suffix: ".hero")
                 continue
             text = read_file(file)
 
@@ -2522,7 +2524,7 @@ test "every package group sits in a program's root, where the pkg-config witness
 
             if binds(text.must()).packages.len() > 0
                 seen @ seen + 1
-                assert strings.contains(text: text.must(), needle: "function main")
+                assert core_strings.contains(s: text.must(), substr: "function main")
 
     # Nineteen such roots on 2026-10-04, counted by a grep for the same lines:
     # `examples/raylib` and `examples/sdl`, eight `check/` cases, five `run/`
@@ -2586,7 +2588,7 @@ function notes_in(said: str) -> [str]
     out: [str] @= []
 
     for row in strings.lines(said)
-        if strings.starts_with(text: row, prefix: NOTE)
+        if core_strings.has_prefix(s: row, prefix: NOTE)
             out @ out.push(row)
 
     return out

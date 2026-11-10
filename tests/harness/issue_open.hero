@@ -17,11 +17,12 @@
 # label, `created_at` and the body, what the `/batch` skill reads to compose a
 # batch. It writes nothing.
 
+use <core>/strings as core_strings
+
 use github_issues
 use issue_json
 use issue_pace
 use issue_wire
-use strings
 
 # What `open` narrows the list to: a kind, a milestone and a class, each ""
 # for any.
@@ -127,7 +128,7 @@ test "open lists the open issues by number, one line each, narrowed by kind, mil
     assert json_of(listing.issues[0]) == "{\"number\":9,\"url\":\"https://github.com/heroes-lang/heroes/issues/9\",\"title\":\"Defect 235: t\",\"kind\":\"defect\",\"class\":\"blocking\",\"area\":\"cli\",\"milestone\":null,\"labels\":[\"area:cli\",\"class:blocking\",\"kind:defect\"],\"created_at\":\"2026-10-03T12:00:00Z\",\"body\":\"b\"}"
     t: issue_pace.Session @= issue_pace.scripted([])
     assert opened(@t, wanted: every, json: true) == 2
-    assert strings.contains(text: t.err[0], needle: "GitHub could not be read")
+    assert core_strings.contains(s: t.err[0], substr: "GitHub could not be read")
 
 # Defect 2326: an issue carrying two `class:` labels is listed as its most
 # severe, as a tag counts it, and `--class` finds it there and only there.
@@ -136,7 +137,7 @@ test "an issue carrying two class labels is listed as its most severe (defect 23
         [github_issues.json_of(number: 12, title: "two", body: "b", state: "open", labels: ["kind:defect", "class:adjacent", "class:blocking"], milestone: "", created: "2026-10-06T12:00:00Z", closed: "")]
     )
     assert line_of(two.issues[0]) == "12 defect blocking - two"
-    assert strings.contains(text: json_of(two.issues[0]), needle: "\"class\":\"blocking\"")
+    assert core_strings.contains(s: json_of(two.issues[0]), substr: "\"class\":\"blocking\"")
     assert chosen(listing: two, wanted: Narrowed(kind: "", milestone: "", grade: "blocking")).len() == 1
     assert chosen(listing: two, wanted: Narrowed(kind: "", milestone: "", grade: "adjacent")).len() == 0
 

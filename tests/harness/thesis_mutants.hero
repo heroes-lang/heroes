@@ -34,6 +34,8 @@
 # a model met there: a mistake the example shows costs the control arm a turn
 # and never green@3 (measurement 049).
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 use thesis_grade
@@ -78,7 +80,7 @@ function mutants_of(scratch: str, task: thesis_tasks.Task) -> [Mutant]?
     for path in shell.list_entries(scratch: scratch, dir: folder)?
         name = strings.base_name(path: path)
 
-        if !strings.ends_with(text: name, suffix: ".hero")
+        if !core_strings.has_suffix(s: name, suffix: ".hero")
             return fail(code: "bad_mutant", msg: folder + " holds `" + name + "`, and a mutant is a `.hero` file")
         out @ out.push(read_mutant(name: name, text: read_file(path: path)?)?)
 
@@ -95,7 +97,7 @@ function read_mutant(name: str, text: str) -> Mutant?
         )
     mistake = strings.trimmed(text: strings.without_prefix(text: rows[0], prefix: "# mistake:"))
 
-    if !strings.starts_with(text: rows[0], prefix: "# mistake: ") || mistake == ""
+    if !core_strings.has_prefix(s: rows[0], prefix: "# mistake: ") || mistake == ""
         return fail(
             code: "bad_mutant",
             msg: name + " opens with `" + rows[0] + "`, where `# mistake: <the mistake>` belongs"
@@ -109,7 +111,7 @@ function read_mutant(name: str, text: str) -> Mutant?
 function want_of(name: str, row: str, arm: str) -> Want?
     prefix = "# " + arm + ": "
 
-    if strings.starts_with(text: row, prefix: prefix)
+    if core_strings.has_prefix(s: row, prefix: prefix)
         said = strings.words(text: strings.without_prefix(text: row, prefix: prefix))
 
         if said.len() == 1 && said[0] == "cases_pass"
@@ -229,37 +231,37 @@ test "a mutant's three lines read, and every other shape is refused by its line"
         text: "# mistake: x\n# strict: compile_error unused_binding\n# control: cases_pass\n"
     ).must()
     assert quiet.control == Want(outcome: "cases_pass", detail: "")
-    assert strings.contains(
-        text: refusal(read_mutant(name: "short.hero", text: "# mistake: x\n# strict: cases_pass\n")),
-        needle: "short.hero has fewer than three lines"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "short.hero", text: "# mistake: x\n# strict: cases_pass\n")),
+        substr: "short.hero has fewer than three lines"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "a.hero", text: "# mistake:\n# strict: cases_pass\n# control: cases_pass\n")),
-        needle: "# mistake: <the mistake>"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "a.hero", text: "# mistake:\n# strict: cases_pass\n# control: cases_pass\n")),
+        substr: "# mistake: <the mistake>"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "b.hero", text: "# mistake: x\n# strict: compile_error\n# control: cases_pass\n")),
-        needle: "b.hero says `# strict: compile_error`"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "b.hero", text: "# mistake: x\n# strict: compile_error\n# control: cases_pass\n")),
+        substr: "b.hero says `# strict: compile_error`"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "c.hero", text: "# mistake: x\n# strict: compiled_wrong 4\n# control: cases_pass\n")),
-        needle: "c.hero says"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "c.hero", text: "# mistake: x\n# strict: compiled_wrong 4\n# control: cases_pass\n")),
+        substr: "c.hero says"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "d.hero", text: "# mistake: x\n# strict: hole\n# control: cases_pass\n")),
-        needle: "d.hero says"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "d.hero", text: "# mistake: x\n# strict: hole\n# control: cases_pass\n")),
+        substr: "d.hero says"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "e.hero", text: "# mistake: x\n# control: cases_pass\n# strict: cases_pass\n")),
-        needle: "e.hero says `# control: cases_pass`"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "e.hero", text: "# mistake: x\n# control: cases_pass\n# strict: cases_pass\n")),
+        substr: "e.hero says `# control: cases_pass`"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "f.hero", text: "# mistake: x\n# strict: cases_pass now\n# control: cases_pass\n")),
-        needle: "f.hero says"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "f.hero", text: "# mistake: x\n# strict: cases_pass now\n# control: cases_pass\n")),
+        substr: "f.hero says"
     )
-    assert strings.contains(
-        text: refusal(read_mutant(name: "g.hero", text: "# mistake: x\n# strict: crashed case 2\n# control: cases_pass\n")),
-        needle: "g.hero says"
+    assert core_strings.contains(
+        s: refusal(read_mutant(name: "g.hero", text: "# mistake: x\n# strict: crashed case 2\n# control: cases_pass\n")),
+        substr: "g.hero says"
     )
 
 test "a mutant ends as its arm's line says, or the line says why not"
@@ -355,9 +357,9 @@ test "the assistant's third task's mutants end as they say in both arms, and one
     assert last.why == "ended cases_pass where it says compiled_wrong case 1"
 
     write_file(path: scratch + "/03/mutants/zz-notes.txt", text: "not a program\n").must()
-    assert strings.contains(
-        text: refusal_of(mutants_of(scratch: scratch, task: task)),
-        needle: "`zz-notes.txt`, and a mutant is a `.hero` file"
+    assert core_strings.contains(
+        s: refusal_of(mutants_of(scratch: scratch, task: task)),
+        substr: "`zz-notes.txt`, and a mutant is a `.hero` file"
     )
 
 function refusal_of(read: [Mutant]?) -> str
@@ -380,7 +382,7 @@ test "a held-out task without a mutant the strict arm refuses and the control ar
     assert trap_refusal(label: "held-out", mutants: trapped) == ""
 
     # 03's refused mistake, `shadowed_binding`, is shown by the visible example in the control arm, case 0.
-    assert strings.contains(text: trap_refusal(label: "held-out", mutants: exposed), needle: "decision 2172")
+    assert core_strings.contains(s: trap_refusal(label: "held-out", mutants: exposed), substr: "decision 2172")
     assert trap_refusal(label: "assistant", mutants: exposed) == ""
     none: [Mutant] = []
     assert trap_refusal(label: "held-out", mutants: none) != ""

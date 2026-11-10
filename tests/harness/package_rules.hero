@@ -13,6 +13,8 @@
 # are held over the newest version's files, the one a version in preparation is
 # written in; every published version is held to its listing and its sum.
 
+use <core>/strings as core_strings
+
 use module_docs
 use module_text
 use shell
@@ -130,7 +132,7 @@ function newest(versions: [str]) -> str
 # `sha256-` then 64 lowercase hexadecimal digits, the compiler's
 # `sums.sum_shape`.
 function sum_shape(sum: str) -> bool
-    if sum.len() != 71 || !strings.starts_with(text: sum, prefix: "sha256-")
+    if sum.len() != 71 || !core_strings.has_prefix(s: sum, prefix: "sha256-")
         return false
 
     for at in range(from: 7, to: 71)
@@ -144,7 +146,7 @@ function sum_shape(sum: str) -> bool
 # A package's `versions` file as the fetch verb reads it: one `<version> <sum>`
 # a line, each line ended, no version twice; or what is wrong, by its line.
 function versions_read(text: str) -> [Listed]?
-    if text.len() == 0 || !strings.ends_with(text: text, suffix: "\n")
+    if text.len() == 0 || !core_strings.has_suffix(s: text, suffix: "\n")
         return fail(code: "malformed", msg: "is empty or its last line has no end")
     out: [Listed] @= []
     number: i64 @= 0
@@ -254,7 +256,7 @@ function catalogue_read(text: str) -> Catalogue?
         if line.len() == 0
             continue
 
-        if strings.starts_with(text: line, prefix: "[dependencies.") && strings.ends_with(text: line, suffix: "]")
+        if core_strings.has_prefix(s: line, prefix: "[dependencies.") && core_strings.has_suffix(s: line, suffix: "]")
             entries @ entries.push(Entry(name: line.slice(from: 14, to: line.len() - 1), version: "", sum: ""))
             continue
         value = quoted_value(line)
@@ -288,7 +290,7 @@ function catalogue_read(text: str) -> Catalogue?
 function quoted_value(line: str) -> str?
     at = strings.index_of(text: line, needle: " = \"")
 
-    if at.is_err() || !strings.ends_with(text: line, suffix: "\"") || line.len() < at.must() + 5
+    if at.is_err() || !core_strings.has_suffix(s: line, suffix: "\"") || line.len() < at.must() + 5
         return fail(code: "malformed", msg: line)
     return ok(line.slice(from: at.must() + 4, to: line.len() - 1))
 
@@ -407,7 +409,7 @@ function misnamed(text: str) -> [str]
         content = strings.trimmed(row)
 
         for word in ["record", "variant", "constant"]
-            if strings.starts_with(text: content, prefix: word + " ")
+            if core_strings.has_prefix(s: content, prefix: word + " ")
                 name = module_docs.name_after(text: content, start: word.len() + 1)
 
                 if word == "constant" && !screaming(name)
@@ -452,7 +454,7 @@ function crooked_codes(text: str) -> [str]
     values: {str: str} @= {}
 
     for at in range(from: 0, to: rows.len())
-        if strings.starts_with(text: rows[at], prefix: "constant ")
+        if core_strings.has_prefix(s: rows[at], prefix: "constant ")
             value = module_docs.str_constant(rows: rows, at: at)
 
             if !value.is_err()
@@ -473,7 +475,7 @@ function noisy(module: str, text: str) -> [str]
     out: [str] @= []
 
     for loud in LOUD
-        if module == loud || strings.starts_with(text: module, prefix: loud + "/")
+        if module == loud || core_strings.has_prefix(s: module, prefix: loud + "/")
             return out
 
     code = module_text.bare(text)
@@ -516,11 +518,11 @@ function line_paths(c: str) -> [str]
     seen: {str: bool} @= {}
 
     for row in strings.lines(c)
-        if !strings.starts_with(text: row, prefix: "#line ")
+        if !core_strings.has_prefix(s: row, prefix: "#line ")
             continue
         open = strings.index_of(text: row, needle: "\"")
 
-        if open.is_err() || !strings.ends_with(text: row, suffix: "\"") || row.len() - 1 <= open.must()
+        if open.is_err() || !core_strings.has_suffix(s: row, suffix: "\"") || row.len() - 1 <= open.must()
             continue
         path = row.slice(from: open.must() + 1, to: row.len() - 1)
 
@@ -536,7 +538,7 @@ function test_titles(text: str) -> [str]
     out: [str] @= []
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "test \"") && strings.ends_with(text: row, suffix: "\"") && row.len() > 7
+        if core_strings.has_prefix(s: row, prefix: "test \"") && core_strings.has_suffix(s: row, suffix: "\"") && row.len() > 7
             out @ out.push(row.slice(from: 6, to: row.len() - 1))
 
     return out
@@ -546,7 +548,7 @@ function passed_titles(said: str) -> {str: bool}
     out: {str: bool} @= {}
 
     for row in strings.lines(said)
-        if strings.starts_with(text: row, prefix: "ok   \"") && strings.ends_with(text: row, suffix: "\"") && row.len() > 7
+        if core_strings.has_prefix(s: row, prefix: "ok   \"") && core_strings.has_suffix(s: row, suffix: "\"") && row.len() > 7
             out[row.slice(from: 6, to: row.len() - 1)] @ true
 
     return out

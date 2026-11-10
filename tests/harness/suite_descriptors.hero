@@ -28,6 +28,8 @@
 # unit names them and never defines them. Only a name the mangler wrote —
 # `h_<module>_…_desc` — has to be defined where it is used.
 
+use <core>/strings as core_strings
+
 use report
 use shell
 use strings
@@ -46,7 +48,7 @@ function run_all(scratch: str) -> report.Report?
     r: report.Report @= report.empty()
 
     for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
-        if !strings.ends_with(text: entry, suffix: ".c")
+        if !core_strings.has_suffix(s: entry, suffix: ".c")
             continue
         text = read_file(entry)
 

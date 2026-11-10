@@ -18,6 +18,8 @@
 # instrument rule). The shapes that need a link or a mode are made in the
 # copy, on the platforms that have them.
 
+use <core>/strings as core_strings
+
 use probe
 use report
 use shell
@@ -247,7 +249,7 @@ function texts(scratch: str, copy: str) -> [Held]?
     nothing: [str] = []
 
     for path in shell.list_tree(scratch: scratch, dir: copy, skip: nothing)?
-        if strings.ends_with(text: path, suffix: ".hero")
+        if core_strings.has_suffix(s: path, suffix: ".hero")
             out @ out.push(Held(path: strings.without_prefix(text: path, prefix: copy + "/"), text: read_file(path)?))
 
     return ok(out)

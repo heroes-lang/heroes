@@ -21,6 +21,8 @@
 # (spec § 12), so there is nothing to run and no C to judge. Its build's
 # refusal is `surface`'s row, `a hole stops the build and says how many`.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 
@@ -39,7 +41,7 @@ function programs(scratch: str) -> [str]?
     out: [str] @= []
 
     for entry in shell.list_entries(scratch: scratch, dir: DIR)?
-        if strings.ends_with(text: entry, suffix: ".hero")
+        if core_strings.has_suffix(s: entry, suffix: ".hero")
             out @ out.push(entry)
 
     return ok(out)
@@ -58,7 +60,7 @@ function expected_of(path: str) -> str
 # writes `hole at <file>:<line>:<col>` first). A clean program's artifact is
 # no bytes at all, and a refused one exits 1, so neither reads as unfinished.
 function unfinished(said: shell.Run) -> bool
-    return said.code == 0 && strings.starts_with(text: said.out, prefix: "hole at ")
+    return said.code == 0 && core_strings.has_prefix(s: said.out, prefix: "hole at ")
 
 # `check` asked of one program, its answer whole.
 function checked(scratch: str, compiler: str, path: str) -> shell.Run?
@@ -72,8 +74,8 @@ test "the gallery is every .hero directly in it, and nothing else there"
     assert found.must().len() >= LEAST
 
     for path in found.must()
-        assert strings.starts_with(text: path, prefix: DIR + "/")
-        assert strings.ends_with(text: path, suffix: ".hero")
+        assert core_strings.has_prefix(s: path, prefix: DIR + "/")
+        assert core_strings.has_suffix(s: path, suffix: ".hero")
 
 test "a program's name, binary and expectation are read off its path"
     assert name_of("examples/gallery/12-interpolation.hero") == "gallery/12-interpolation"

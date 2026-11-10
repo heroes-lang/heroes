@@ -49,6 +49,8 @@
 # every write of this program (`issue_pace`), and reads it back. Writing an
 # issue through this program is asked once (CLAUDE.md § Hard stops).
 
+use <core>/strings as core_strings
+
 use cards
 use credit
 use github_issues
@@ -136,7 +138,7 @@ function labelled(h: issue_github.Held, name: str) -> bool
 
 # The sitting a ratification's title opens with, `Panel 212: …`, or 0.
 function sitting_of(title: str) -> i64
-    if !strings.starts_with(text: title, prefix: "Panel ")
+    if !core_strings.has_prefix(s: title, prefix: "Panel ")
         return 0
     digits = credit.digit_run(text: title, at: 6)
 
@@ -274,11 +276,11 @@ function sittings_of(paths: [str]) -> {i64: str}
     none: [str] = []
 
     for path in paths
-        if !strings.starts_with(text: path, prefix: "docs/panel/") || !strings.ends_with(text: path, suffix: ".md")
+        if !core_strings.has_prefix(s: path, prefix: "docs/panel/") || !core_strings.has_suffix(s: path, suffix: ".md")
             continue
         name = strings.without_prefix(text: path, prefix: "docs/panel/")
 
-        if strings.contains(text: name, needle: "/")
+        if core_strings.contains(s: name, substr: "/")
             continue
         digits = credit.digit_run(text: name, at: 0)
 
@@ -667,17 +669,17 @@ test "a body read back otherwise is told and answers 1, and a refused write answ
     )
     s: issue_pace.Session @= issue_pace.scripted([page, issue_scripts.answer(status: 200, body: "{}"), other])
     assert linking(@s, write: true, sittings: some_sittings(), pin: "p1n") == 1
-    assert strings.contains(text: s.err[0], needle: "still differs " + WEB + "301")
+    assert core_strings.contains(s: s.err[0], substr: "still differs " + WEB + "301")
     refused: issue_pace.Session @= issue_pace.scripted(
         [page, issue_scripts.answer(status: 403, body: "{\"message\":\"Forbidden\"}")]
     )
     assert linking(@refused, write: true, sittings: some_sittings(), pin: "p1n") == 2
-    assert strings.contains(text: refused.err[0], needle: "was not linked: 403: Forbidden")
+    assert core_strings.contains(s: refused.err[0], substr: "was not linked: 403: Forbidden")
     empty: issue_pace.Session @= issue_pace.scripted(
         [issue_scripts.issues([listed_json(number: 301, title: "a decision", kind: "decision", body: plain)])]
     )
     assert linking(@empty, write: true, sittings: some_sittings(), pin: "p1n") == 2
-    assert strings.contains(text: empty.err[0], needle: "named no defect")
+    assert core_strings.contains(s: empty.err[0], substr: "named no defect")
 
 test "a stranger's issue answers no name but its own number, and no link is written into it (defect 2063)"
     project = [
@@ -730,4 +732,4 @@ test "a stranger's issue answers no name but its own number, and no link is writ
         [issue_scripts.issues([listed_by(number: 300, title: "Defect 235: x", kind: "defect", body: "Filed 2026-10-01\n\nb", association: "NONE")])]
     )
     assert linking(@alone, write: true, sittings: some_sittings(), pin: "p1n") == 2
-    assert strings.contains(text: alone.err[0], needle: "no defect any one issue of the project's own answers")
+    assert core_strings.contains(s: alone.err[0], substr: "no defect any one issue of the project's own answers")

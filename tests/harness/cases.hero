@@ -25,6 +25,8 @@
 # expectation asks the walk alone, so a form of case this file learns reaches
 # every suite at once.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 
@@ -70,7 +72,7 @@ function collect(scratch: str, dir: str) -> [Case]?
     present = listed(entries)
 
     for entry in entries
-        if strings.ends_with(text: entry, suffix: ".expected")
+        if core_strings.has_suffix(s: entry, suffix: ".expected")
             owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
 
             if present[owner].is_err()
@@ -102,14 +104,14 @@ function programs(scratch: str, dir: str) -> [Case]?
     found: [Case] @= []
 
     for entry in entries
-        if strings.ends_with(text: entry, suffix: ".hero")
+        if core_strings.has_suffix(s: entry, suffix: ".hero")
             stem = strings.without_suffix(text: entry, suffix: ".hero")
             found @ found.push(
                 Case(source: entry, expected: beside(present: present, path: stem + ".expected"), name: strings.base_name(path: stem))
             )
 
     for folder in shell.list_directories(scratch: scratch, dir: dir)?
-        if strings.ends_with(text: folder, suffix: CASE)
+        if core_strings.has_suffix(s: folder, suffix: CASE)
             found @ found.push(folder_case(scratch: scratch, folder: folder)?)
 
     return ok(found)
@@ -160,7 +162,7 @@ function matching(found: [Case], only: str) -> [Case]
     kept: [Case] @= []
 
     for item in found
-        if strings.contains(text: item.name, needle: only)
+        if core_strings.contains(s: item.name, substr: only)
             kept @ kept.push(item)
 
     return kept
@@ -203,7 +205,7 @@ function shard_shaped(word: str) -> bool
         if half.len() == 0 || half.len() > SHARD_DIGITS || strings.to_number(half).is_err()
             return false
 
-        if strings.starts_with(text: half, prefix: "-")
+        if core_strings.has_prefix(s: half, prefix: "-")
             return false
 
     return true

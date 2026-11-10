@@ -18,6 +18,8 @@
 # `/` as GitHub reads one, `.` staying and `..` climbing, and a trailing `/`
 # kept, so a directory is matched as a directory.
 
+use <core>/strings as core_strings
+
 use strings
 
 record Link
@@ -33,7 +35,7 @@ function relative_links(text: str) -> [Link]
     for line in strings.lines(text)
         number @ number + 1
 
-        if strings.starts_with(text: strings.trimmed(line), prefix: "```")
+        if core_strings.has_prefix(s: strings.trimmed(line), prefix: "```")
             fenced @ !fenced
             continue
 
@@ -128,7 +130,7 @@ function targets_in(line: str) -> [str]
 # heading of the document itself.
 function is_relative(target: str) -> bool
     for opening in ["http:", "https:", "mailto:", "#"]
-        if strings.starts_with(text: target, prefix: opening)
+        if core_strings.has_prefix(s: target, prefix: opening)
             return false
 
     return true
@@ -144,7 +146,7 @@ function without_fragment(target: str) -> str
 function landed(from: str, target: str) -> str?
     parts: [str] @= []
 
-    if !strings.starts_with(text: target, prefix: "/")
+    if !core_strings.has_prefix(s: target, prefix: "/")
         for segment in strings.split_on(text: from, byte: 47)
             parts @ parts.push(segment)
 
@@ -163,7 +165,7 @@ function landed(from: str, target: str) -> str?
 
     joined = parts.join("/")
 
-    if strings.ends_with(text: target, suffix: "/")
+    if core_strings.has_suffix(s: target, suffix: "/")
         return ok(joined + "/")
     return ok(joined)
 

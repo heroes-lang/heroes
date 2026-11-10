@@ -18,6 +18,8 @@
 # still doing one of the three, and the draft or card that holds one is
 # refused.
 
+use <core>/strings as core_strings
+
 use issue_spans
 use strings
 
@@ -118,7 +120,7 @@ function reference_at(text: str, at: i64, from: i64) -> i64
     if start == at
         return at
 
-    if strings.contains(text: text.slice(from: start, to: at), needle: "/")
+    if core_strings.contains(s: text.slice(from: start, to: at), substr: "/")
         return start
     return -1
 
@@ -148,11 +150,11 @@ function name_end(text: str, at: i64) -> i64
 # Where a URL that starts at `at` ends, at the first space or bracket or
 # quote, or `at` where none starts there.
 function url_end(text: str, at: i64) -> i64
-    if text[at] != 'h' || !strings.starts_with(text: text.slice(from: at, to: text.len()), prefix: "http")
+    if text[at] != 'h' || !core_strings.has_prefix(s: text.slice(from: at, to: text.len()), prefix: "http")
         return at
     rest = text.slice(from: at, to: text.len())
 
-    if !strings.starts_with(text: rest, prefix: "https://") && !strings.starts_with(text: rest, prefix: "http://")
+    if !core_strings.has_prefix(s: rest, prefix: "https://") && !core_strings.has_prefix(s: rest, prefix: "http://")
         return at
     end: i64 @= at
 
@@ -166,7 +168,7 @@ function ends_url(b: u8) -> bool
 
 # The length of a URL's scheme and host, `https://github.com/`.
 function host_length(url: str) -> i64
-    if strings.starts_with(text: url, prefix: "http://")
+    if core_strings.has_prefix(s: url, prefix: "http://")
         return "http://github.com/".len()
     return "https://github.com/".len()
 
@@ -176,7 +178,7 @@ function foreign(url: str) -> bool
     path: str @= ""
 
     for host in ["https://github.com/", "http://github.com/"]
-        if strings.starts_with(text: url, prefix: host)
+        if core_strings.has_prefix(s: url, prefix: host)
             path @ strings.without_prefix(text: url, prefix: host)
 
     parts = strings.split_on(text: path, byte: '/')
@@ -400,7 +402,7 @@ test "a hash written bare inside a sentence is read, and one git names no commit
     assert unnamed_hashes(text: said, commits: commits) == [whole]
     told = unnamed_told(whose: "the comment", unnamed: [whole])
     assert told.len() == 1
-    assert strings.starts_with(text: told[0], prefix: "the comment names " + whole + " bare, which is no commit")
+    assert core_strings.has_prefix(s: told[0], prefix: "the comment names " + whole + " bare, which is no commit")
 
 test "a rendered body is read for what would still link, mention or backlink"
     assert live("see `#1`, `@x` and https://redirect.github.com/a/b/issues/1").len() == 0

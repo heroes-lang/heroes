@@ -23,6 +23,8 @@
 # What only a reading of the prose can judge, a choice point pinned or the
 # prose naming no construct in English words, is the blind second reader's.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 use thesis_mutants
@@ -131,7 +133,7 @@ function task_findings(scratch: str, label: str, task: thesis_tasks.Task) -> [st
     out: [str] @= []
 
     for token in FORBIDDEN
-        if strings.contains(text: task.prose, needle: token)
+        if core_strings.contains(s: task.prose, substr: token)
             out @ out.push("prose: holds `" + token + "`")
 
     example: str @= ""
@@ -151,7 +153,7 @@ function task_findings(scratch: str, label: str, task: thesis_tasks.Task) -> [st
 
     if !has_example
         out @ out.push("cases: no case 0, the visible example")
-    else if example != "" && !strings.contains(text: task.prose, needle: example)
+    else if example != "" && !core_strings.contains(s: task.prose, substr: example)
         out @ out.push("prose: case 0's output is not shown in it")
     beside: i64 @= task.cases.len()
 
@@ -173,7 +175,7 @@ function task_findings(scratch: str, label: str, task: thesis_tasks.Task) -> [st
         if lines < 25 || lines > 80
             out @ out.push("reference: " + lines.to_str() + " lines of code, the rule asks 25 to 80")
 
-        if strings.contains(text: reference.must(), needle: "???")
+        if core_strings.contains(s: reference.must(), substr: "???")
             out @ out.push("reference: holds a hole, `???`")
 
     # A mutant is told by its place in name order and never by its name, which
@@ -187,7 +189,7 @@ function task_findings(scratch: str, label: str, task: thesis_tasks.Task) -> [st
             for i in range(from: 0, to: mutants.len())
                 text = mutants[i].text
 
-                if strings.contains(text: text, needle: "TODO") || strings.contains(text: text, needle: "???")
+                if core_strings.contains(s: text, substr: "TODO") || core_strings.contains(s: text, substr: "???")
                     out @ out.push(
                         "mutants: the " + (i + 1).to_str() + " of " + mutants.len().to_str() + " in name order is still the skeleton's"
                     )
@@ -277,14 +279,14 @@ function stdout_of(expected: str) -> str
     kept: [str] @= []
 
     for line in strings.lines(text: expected)
-        if !strings.starts_with(text: line, prefix: "!exit:") && !strings.starts_with(text: line, prefix: "!panic:")
+        if !core_strings.has_prefix(s: line, prefix: "!exit:") && !core_strings.has_prefix(s: line, prefix: "!panic:")
             kept @ kept.push(line)
 
     return strings.trimmed(text: kept.join("\n"))
 
 function ends_in_exit(expected: str) -> bool
     for line in strings.lines(text: expected)
-        if strings.starts_with(text: line, prefix: "!exit:")
+        if core_strings.has_prefix(s: line, prefix: "!exit:")
             return true
 
     return false
@@ -302,17 +304,17 @@ test "a scaffold is a skeleton lint refuses, written once, never over a task, it
     assert scaffold(folder: folder, number: "a1").is_err()
     linted = lint(scratch: scratch, folder: folder).must()
     said = linted.lines.join("\n")
-    assert strings.contains(text: said, needle: "01 prose: holds `TODO`")
-    assert strings.contains(text: said, needle: "01 prose: holds `<!--`")
-    assert strings.contains(text: said, needle: "01 reference: holds a hole, `???`")
-    assert strings.contains(text: said, needle: "01 mutants: the 1 of 1 in name order is still the skeleton's")
-    assert !strings.contains(text: said, needle: "trap.hero")
-    assert strings.contains(text: said, needle: "01 cases: 0 beside case 0, the rule asks 4 to 8")
-    assert strings.contains(text: said, needle: "suite traps.txt: task 01 not listed")
-    assert strings.contains(text: said, needle: "suite constructs.txt: task 01 has no line")
+    assert core_strings.contains(s: said, substr: "01 prose: holds `TODO`")
+    assert core_strings.contains(s: said, substr: "01 prose: holds `<!--`")
+    assert core_strings.contains(s: said, substr: "01 reference: holds a hole, `???`")
+    assert core_strings.contains(s: said, substr: "01 mutants: the 1 of 1 in name order is still the skeleton's")
+    assert !core_strings.contains(s: said, substr: "trap.hero")
+    assert core_strings.contains(s: said, substr: "01 cases: 0 beside case 0, the rule asks 4 to 8")
+    assert core_strings.contains(s: said, substr: "suite traps.txt: task 01 not listed")
+    assert core_strings.contains(s: said, substr: "suite constructs.txt: task 01 has no line")
     assert linted.findings > 0
-    assert !strings.contains(text: said, needle: "Replace this whole file")
-    assert !strings.contains(text: said, needle: "what the program receives")
+    assert !core_strings.contains(s: said, substr: "Replace this whole file")
+    assert !core_strings.contains(s: said, substr: "what the program receives")
 
 test "a task that keeps every rule lint checks is told so, the suite's spread counted beside it, and a forbidden spelling or a lost trap is named"
     scratch = shell.own_scratch()
@@ -328,7 +330,7 @@ test "a task that keeps every rule lint checks is told so, the suite's spread co
     spread: i64 @= 0
 
     for line in linted.lines
-        if strings.starts_with(text: line, prefix: "suite spread: ")
+        if core_strings.has_prefix(s: line, prefix: "suite spread: ")
             spread @ spread + 1
 
     # One task asks one of each class, so the four it does not name are told.
@@ -338,17 +340,17 @@ test "a task that keeps every rule lint checks is told so, the suite's spread co
     write_file(path: folder + "/09/task.md", text: prose + "\nkeep a total @= the sum\n").must()
     _ = shell.remove_tree(folder + "/09/mutants/catch-all-area-zero.hero").is_err()
     again = lint(scratch: scratch, folder: folder).must().lines.join("\n")
-    assert strings.contains(text: again, needle: "09 prose: holds `@=`")
-    assert strings.contains(text: again, needle: "09 mutants: no trap")
-    assert !strings.contains(text: again, needle: ".hero")
+    assert core_strings.contains(s: again, substr: "09 prose: holds `@=`")
+    assert core_strings.contains(s: again, substr: "09 mutants: no trap")
+    assert !core_strings.contains(s: again, substr: ".hero")
     write_file(
         path: folder + "/09/mutants/zz.hero",
         text: "the secret mistake\n# strict: cases_pass\n# control: cases_pass\n"
     ).must()
     bad = lint(scratch: scratch, folder: folder).must().lines.join("\n")
-    assert strings.contains(text: bad, needle: "09 mutants: one does not read as a mutant (bad_mutant)")
-    assert !strings.contains(text: bad, needle: "secret")
-    assert !strings.contains(text: bad, needle: "zz")
+    assert core_strings.contains(s: bad, substr: "09 mutants: one does not read as a mutant (bad_mutant)")
+    assert !core_strings.contains(s: bad, substr: "secret")
+    assert !core_strings.contains(s: bad, substr: "zz")
 
 test "the spread is the page's for forty, scaled to the folder and rounded up"
     assert needed(kind: "variant", count: 40) == 8

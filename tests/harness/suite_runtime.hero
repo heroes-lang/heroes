@@ -48,6 +48,8 @@
 # before a needle is looked for, and `alloc.c`'s own floor below is what
 # proves it did not blank everything.
 
+use <core>/strings as core_strings
+
 use floors
 use report
 use shell
@@ -271,7 +273,7 @@ function run_all(scratch: str) -> report.Report?
     sources: [str] @= []
 
     for path in files
-        if strings.ends_with(text: path, suffix: ".c") || strings.ends_with(text: path, suffix: ".h")
+        if core_strings.has_suffix(s: path, suffix: ".c") || core_strings.has_suffix(s: path, suffix: ".h")
             sources @ sources.push(path)
 
     r: report.Report @= report.empty()
@@ -384,7 +386,7 @@ function keep_shared_state(@r: report.Report, sources: [str])
     total: i64 @= 0
 
     for path in sources
-        if !strings.ends_with(text: path, suffix: ".c")
+        if !core_strings.has_suffix(s: path, suffix: ".c")
             continue
         text = read_file(path)
 
@@ -474,7 +476,7 @@ function keep_shared_state(@r: report.Report, sources: [str])
 # same hole as the pointer. A declarator holding a `(` is still a function
 # unless it opens a function pointer, `pointed_function_name`.
 function declares_object(row: str) -> bool
-    if !strings.starts_with(text: row, prefix: "static")
+    if !core_strings.has_prefix(s: row, prefix: "static")
         return false
 
     if row.len() < 8
@@ -483,7 +485,7 @@ function declares_object(row: str) -> bool
     if word_byte(row[6])
         return false
 
-    if !strings.ends_with(text: row, suffix: ";")
+    if !core_strings.has_suffix(s: row, suffix: ";")
         return false
 
     # `const` USED TO SKIP THE WHOLE ROW, AND THAT WAS A HOLE THIS SWEEP FELL
@@ -499,10 +501,10 @@ function declares_object(row: str) -> bool
     # A `T *const p` is caught instead of skipped, which is the loud direction.
     decl = declarator(row)
 
-    if names_word(code: decl, name: "const") && !strings.contains(text: decl, needle: "*")
+    if names_word(code: decl, name: "const") && !core_strings.contains(s: decl, substr: "*")
         return false
 
-    if !strings.contains(text: decl, needle: "(")
+    if !core_strings.contains(s: decl, substr: "(")
         return true
 
     return pointed_function_name(decl) != ""
@@ -641,11 +643,11 @@ function named_here(key: str) -> bool
 # drops the project's own `incref`/`decref` vocabulary still trips the
 # floor rather than passing quietly.
 function counts(row: str) -> bool
-    return names_word(code: row, name: "incref") || names_word(code: row, name: "decref") || strings.contains(text: row, needle: "_incref") || strings.contains(text: row, needle: "_decref")
+    return names_word(code: row, name: "incref") || names_word(code: row, name: "decref") || core_strings.contains(s: row, substr: "_incref") || core_strings.contains(s: row, substr: "_decref")
 
 function is_prototype(row: str) -> bool
     trimmed = strings.trimmed(row)
-    return strings.ends_with(text: trimmed, suffix: ";") && !strings.contains(text: trimmed, needle: "{")
+    return core_strings.has_suffix(s: trimmed, suffix: ";") && !core_strings.contains(s: trimmed, substr: "{")
 
 ## The reader
 

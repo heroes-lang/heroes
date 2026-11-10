@@ -30,9 +30,15 @@
 # that walks a map's keys carries a `# ORDER:` mark — above the walk, or
 # in the doc comment of the function holding it. `tests/harness/` is
 # excluded the way `suite_layout` excludes it: it is the net, not the
-# compiler.
+# compiler. **And a placed tree is left out by its name** (panel 242's R7,
+# feature 2425; `placed_trees.hero`): a package's module is the package
+# author's, judged where its source is written, so a tree a fetch places under
+# `selfhost/` holds no walk this suite asks a mark of.
+
+use <core>/strings as core_strings
 
 use floors
+use placed_trees
 use report
 use shell
 use strings
@@ -100,13 +106,7 @@ function run_all(scratch: str) -> report.Report?
     # rather than quiet. Recursing is still the repair, because a floor tells
     # you the sweep shrank and not which files it stopped reading.
     nothing: [str] = []
-    files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
-    modules: [str] @= []
-
-    for path in files
-        if strings.ends_with(text: path, suffix: ".hero")
-            modules @ modules.push(path)
-
+    modules = modules_of(shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?)
     unmarked: [str] @= []
     marks: i64 @= 0
     walks: i64 @= 0
@@ -125,7 +125,7 @@ function run_all(scratch: str) -> report.Report?
             if is_mark(rows[at])
                 marks @ marks + 1
 
-            if code[at] && !is_comment(rows[at]) && strings.contains(text: rows[at], needle: WALK)
+            if code[at] && !is_comment(rows[at]) && core_strings.contains(s: rows[at], substr: WALK)
                 walks @ walks + 1
 
                 if !marked_above(rows, at: at)
@@ -155,12 +155,12 @@ function outside_tests(rows: [str]) -> [bool]
     inside: bool @= false
 
     for row in rows
-        if strings.starts_with(text: row, prefix: "test \"")
+        if core_strings.has_prefix(s: row, prefix: "test \"")
             inside @ true
             out @ out.push(false)
             continue
 
-        if inside && row.len() > 0 && !starts_indented(row) && !strings.starts_with(text: row, prefix: "#")
+        if inside && row.len() > 0 && !starts_indented(row) && !core_strings.has_prefix(s: row, prefix: "#")
             inside @ false
         out @ out.push(!inside)
 
@@ -211,13 +211,24 @@ function marked_above(rows: [str], at: i64) -> bool
     return false
 
 function is_mark(row: str) -> bool
-    return strings.starts_with(text: strings.trimmed(row), prefix: MARK)
+    return core_strings.has_prefix(s: strings.trimmed(row), prefix: MARK)
 
 function is_comment(row: str) -> bool
-    return strings.starts_with(text: strings.trimmed(row), prefix: "#")
+    return core_strings.has_prefix(s: strings.trimmed(row), prefix: "#")
 
 function starts_indented(row: str) -> bool
     return row[0] == 32 || row[0] == 9
+
+# The modules among the walk's `files`: each `.hero`, but those of a placed
+# tree.
+function modules_of(files: [str]) -> [str]
+    out: [str] @= []
+
+    for path in placed_trees.outside(files)
+        if core_strings.has_suffix(s: path, suffix: ".hero")
+            out @ out.push(path)
+
+    return out
 
 test "a mark covers the loop under it, and the doc comment above the header"
     body: [str] = [
@@ -269,3 +280,12 @@ test "the cases at the bottom of a module are outside the sweep"
     assert flags.len() == 5
     assert flags[1]
     assert !flags[4]
+
+test "a placed tree's module is no module of the compiler's walk (feature 2425)"
+    walked = [
+        "selfhost/main.hero"
+        "selfhost/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
+        "selfhost/cli/process.hero"
+        "selfhost/cli/notes.md"
+    ]
+    assert modules_of(walked) == ["selfhost/main.hero", "selfhost/cli/process.hero"]

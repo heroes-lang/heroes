@@ -45,6 +45,8 @@
 # paths written whole, so an empty element of `CPATH` names a folder of the
 # case and never the repository's root.
 
+use <core>/strings as core_strings
+
 use apply_tree
 use shell
 use strings
@@ -254,7 +256,7 @@ function whole(root: str, path: str) -> str
     if path.len() > 0 && path[0] == '/'
         return path
 
-    if strings.starts_with(text: path, prefix: "./")
+    if core_strings.has_prefix(s: path, prefix: "./")
         return root + "/" + path.slice(from: 2, to: path.len())
     return root + "/" + path
 

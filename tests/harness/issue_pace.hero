@@ -25,6 +25,8 @@
 # instant on GitHub's clock, so the seconds until it are read against the
 # `date` header of the same answer (`epoch_of`), never against this machine's.
 
+use <core>/strings as core_strings
+
 use issue_wire
 use strings
 
@@ -155,7 +157,7 @@ function is_limited(reply: issue_wire.Reply) -> bool
 
     if issue_wire.header(reply: reply, name: "x-ratelimit-remaining") == "0"
         return true
-    return strings.contains(text: issue_wire.lowered(reply.body), needle: "rate limit")
+    return core_strings.contains(s: issue_wire.lowered(reply.body), substr: "rate limit")
 
 # How long the `tries`-th rate limit in a row asks to wait, in seconds.
 function limit_wait(reply: issue_wire.Reply, tries: i64) -> i64

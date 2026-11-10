@@ -6,6 +6,17 @@
 # suites — a second copy is a second place for `ends_with` to be subtly
 # wrong.
 #
+# **Three of them are `core`'s since feature 2425** (panel 242's R7,
+# ratified 2026-11-10): the net's own catalogue, `tests/harness/heroes.toml`,
+# takes `core` 0.2.0, and `starts_with`, `ends_with` and `contains`, which
+# were hand copies of its contract, left this file for `use <core>/strings`
+# (`has_prefix`, `has_suffix`, `contains`), 1,476 calls in 112 modules, the
+# author's instruction that no copy by hand survives a package's arrival.
+# Each answers what the copy answered on every text, the empty one
+# included, and walks bytes as this file does. What stays here is what
+# `core` does not hold, or holds with another contract (`trimmed` cuts four
+# ASCII bytes where `trim_space` cuts Unicode's white space).
+#
 # Port of the small string helpers spread through
 # heroes-cli/tests/{golden,corpus,layout}.rs in the Rust bootstrap at `m-bootstrap-archive` (Rust hands those out
 # in its standard library, which is exactly what design.md §1.11 says
@@ -18,30 +29,18 @@
 # harness. Indexing gives a `u8` for any in-range index and cannot abort,
 # so every predicate here walks bytes.
 
-# Whether `text` ends with `suffix`, byte for byte.
-function ends_with(text: str, suffix: str) -> bool
-    if suffix.len() > text.len()
-        return false
-    offset = text.len() - suffix.len()
-    i: i64 @= 0
-
-    while i < suffix.len()
-        if text[offset + i] != suffix[i]
-            return false
-        i @ i + 1
-
-    return true
+use <core>/strings as core_strings
 
 # `text` with `suffix` removed.
 #
-# The caller must have asked `ends_with` first — this returns `text`
+# The caller must have asked `core_strings.has_suffix` first — this returns `text`
 # untouched otherwise, rather than guessing. The slice is safe for the
 # same reason it is safe nowhere else in this file: an ASCII suffix that
 # matched proves the cut is on a character boundary, because no ASCII
 # byte appears inside a multi-byte UTF-8 sequence. Every suffix the
 # harness passes is a literal in its own source (`.hero`, `.expected`).
 function without_suffix(text: str, suffix: str) -> str
-    if !ends_with(text: text, suffix: suffix)
+    if !core_strings.has_suffix(s: text, suffix: suffix)
         return text
     return text.slice(from: 0, to: text.len() - suffix.len())
 
@@ -129,49 +128,8 @@ function trimmed(text: str) -> str
 function is_space(byte: u8) -> bool
     return byte == 32 || byte == 9 || byte == 10 || byte == 13
 
-# Whether `needle` occurs anywhere in `text`, compared as bytes.
-#
-# Rust hands this out as `str::contains`; §1.11 says Heroes has no
-# standard library, so here it is. Byte comparison again, and for the
-# same reason as everything else in this file — a diagnostic's text is
-# UTF-8 and the needles are ASCII, so nothing may slice.
-function contains(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    start: i64 @= 0
-
-    while start + needle.len() <= text.len()
-        i: i64 @= 0
-        hit: bool @= true
-
-        while i < needle.len()
-            if text[start + i] != needle[i]
-                hit @ false
-                i @ needle.len()
-            else
-                i @ i + 1
-
-        if hit
-            return true
-        start @ start + 1
-
-    return false
-
-# Whether `text` starts with `prefix`, and the rest of it if so.
-function starts_with(text: str, prefix: str) -> bool
-    if prefix.len() > text.len()
-        return false
-    i: i64 @= 0
-
-    while i < prefix.len()
-        if text[i] != prefix[i]
-            return false
-        i @ i + 1
-
-    return true
-
 function without_prefix(text: str, prefix: str) -> str
-    if !starts_with(text: text, prefix: prefix)
+    if !core_strings.has_prefix(s: text, prefix: prefix)
         return text
     return text.slice(from: prefix.len(), to: text.len())
 
@@ -186,7 +144,7 @@ function to_number(text: str) -> i64?
     body: str @= text
     negative: bool @= false
 
-    if starts_with(text: text, prefix: "-")
+    if core_strings.has_prefix(s: text, prefix: "-")
         negative @ true
         body @ without_prefix(text: text, prefix: "-")
 
@@ -281,16 +239,16 @@ test "index_of, split_text and words"
     assert words("solo") == ["solo"]
 
 test "contains finds a needle at every position and refuses a longer one"
-    assert contains(text: "abc", needle: "a")
-    assert contains(text: "abc", needle: "c")
-    assert contains(text: "abc", needle: "abc")
-    assert !contains(text: "abc", needle: "abcd")
-    assert !contains(text: "abc", needle: "ac")
-    assert contains(text: "aab", needle: "ab")
+    assert core_strings.contains(s: "abc", substr: "a")
+    assert core_strings.contains(s: "abc", substr: "c")
+    assert core_strings.contains(s: "abc", substr: "abc")
+    assert !core_strings.contains(s: "abc", substr: "abcd")
+    assert !core_strings.contains(s: "abc", substr: "ac")
+    assert core_strings.contains(s: "aab", substr: "ab")
 
 test "starts_with and without_prefix"
-    assert starts_with(text: "!exit: 3", prefix: "!exit: ")
-    assert !starts_with(text: "!exit", prefix: "!exit: ")
+    assert core_strings.has_prefix(s: "!exit: 3", prefix: "!exit: ")
+    assert !core_strings.has_prefix(s: "!exit", prefix: "!exit: ")
     assert without_prefix(text: "!exit: 3", prefix: "!exit: ") == "3"
     assert without_prefix(text: "nope", prefix: "!exit: ") == "nope"
 
@@ -305,9 +263,9 @@ test "to_number reads what a case can hold, and names what it cannot"
     assert to_number("three").is_err()
 
 test "ends_with and without_suffix agree on the harness's own suffixes"
-    assert ends_with(text: "a/b/foo.hero", suffix: ".hero")
-    assert !ends_with(text: "a/b/foo.hero", suffix: ".expected")
-    assert !ends_with(text: ".hero", suffix: "x.hero")
+    assert core_strings.has_suffix(s: "a/b/foo.hero", suffix: ".hero")
+    assert !core_strings.has_suffix(s: "a/b/foo.hero", suffix: ".expected")
+    assert !core_strings.has_suffix(s: ".hero", suffix: "x.hero")
     assert without_suffix(text: "a/b/foo.hero", suffix: ".hero") == "a/b/foo"
     assert without_suffix(text: "a/b/foo.hero", suffix: ".expected") == "a/b/foo.hero"
 
@@ -316,9 +274,9 @@ test "ends_with walks bytes, so a multi-byte character neither matches nor abort
     # would abort if it sliced; walking bytes answers false instead, and
     # a match on the whole character still answers true.
     name = "pé.hero"
-    assert ends_with(text: name, suffix: ".hero")
-    assert ends_with(text: "pé", suffix: "é")
-    assert !ends_with(text: "pé", suffix: "e")
+    assert core_strings.has_suffix(s: name, suffix: ".hero")
+    assert core_strings.has_suffix(s: "pé", suffix: "é")
+    assert !core_strings.has_suffix(s: "pé", suffix: "e")
     assert without_suffix(text: name, suffix: ".hero") == "pé"
 
 test "split_on keeps empty pieces and lines drops the trailing one"

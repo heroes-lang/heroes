@@ -15,6 +15,8 @@
 # (the harnesses of `thesis_harness.hero`, in Anthropic's dialect alone),
 # `--base <url>`, `--out <dir>`, `--max-requests <n>`, `--max-dollars <n>`.
 
+use <core>/strings as core_strings
+
 use strings
 
 constant USAGE: str
@@ -159,7 +161,7 @@ function parsed(word: str, words: [str]) -> Asked
 
             if taken != ""
                 return wrong(word: word, why: taken)
-        else if strings.starts_with(text: one, prefix: "--")
+        else if core_strings.has_prefix(s: one, prefix: "--")
             return wrong(word: word, why: "`" + one + "` is no flag of `" + word + "`")
         else
             a.paths @ a.paths.push(one)
@@ -350,45 +352,45 @@ test "the words are read with their own flags, and a wrong flag is refused by na
     assert labelled.label == "assistant"
     assert labelled.compiler == "./heroes"
 
-    assert strings.contains(
-        text: parsed(word: "tasks", words: ["tests/thesis", "--label", "mine"]).wrong,
-        needle: "`--label` is `assistant` or `held-out`"
+    assert core_strings.contains(
+        s: parsed(word: "tasks", words: ["tests/thesis", "--label", "mine"]).wrong,
+        substr: "`--label` is `assistant` or `held-out`"
     )
-    assert strings.contains(
-        text: parsed(word: "tasks", words: ["tests/thesis", "--label"]).wrong,
-        needle: "takes a value"
+    assert core_strings.contains(
+        s: parsed(word: "tasks", words: ["tests/thesis", "--label"]).wrong,
+        substr: "takes a value"
     )
-    assert strings.contains(
-        text: parsed(word: "tasks", words: ["tests/thesis", "--json"]).wrong,
-        needle: "no flag of `tasks`"
+    assert core_strings.contains(
+        s: parsed(word: "tasks", words: ["tests/thesis", "--json"]).wrong,
+        substr: "no flag of `tasks`"
     )
-    assert strings.contains(text: parsed(word: "tasks", words: []).wrong, needle: "one folder")
-    assert strings.contains(
-        text: parsed(word: "tasks", words: ["tests/thesis", "--arm", "brief"]).wrong,
-        needle: "no flag of `tasks`"
+    assert core_strings.contains(s: parsed(word: "tasks", words: []).wrong, substr: "one folder")
+    assert core_strings.contains(
+        s: parsed(word: "tasks", words: ["tests/thesis", "--arm", "brief"]).wrong,
+        substr: "no flag of `tasks`"
     )
     dry = parsed(word: "dry", words: ["tests/thesis", "--arm", "control", "--mute"])
     assert dry.wrong == ""
     assert dry.arm == "control"
     assert dry.mute
     assert parsed(word: "dry", words: ["tests/thesis"]).arm == "strict"
-    assert strings.contains(
-        text: parsed(word: "dry", words: ["tests/thesis", "--arm", "loose"]).wrong,
-        needle: "`--arm` is `strict`, `brief`, `control` or `all`"
+    assert core_strings.contains(
+        s: parsed(word: "dry", words: ["tests/thesis", "--arm", "loose"]).wrong,
+        substr: "`--arm` is `strict`, `brief`, `control` or `all`"
     )
     graded = parsed(word: "grade", words: ["answer.hero", "--task", "tests/thesis/01"])
     assert graded.wrong == ""
     assert graded.task == "tests/thesis/01"
-    assert strings.contains(text: parsed(word: "grade", words: ["answer.hero"]).wrong, needle: "`--task <folder/NN>`")
-    assert strings.contains(text: refusal(given: ["render"]), needle: "no word of this program")
-    assert strings.contains(text: refusal(given: []), needle: "no word given")
+    assert core_strings.contains(s: parsed(word: "grade", words: ["answer.hero"]).wrong, substr: "`--task <folder/NN>`")
+    assert core_strings.contains(s: refusal(given: ["render"]), substr: "no word of this program")
+    assert core_strings.contains(s: refusal(given: []), substr: "no word given")
 
 test "a run's flags are read with their defaults, plan never goes live, and a wrong value is refused by name"
     plan = parsed(
         word: "plan",
         words: ["tests/thesis", "--model", "claude-haiku-5-5", "--model", "claude-sonnet-5-5", "--context", "spec", "--context", "none", "--samples", "3", "--turns", "3", "--effort", "medium", "--live"]
     )
-    assert strings.contains(text: plan.wrong, needle: "no flag of `plan`")
+    assert core_strings.contains(s: plan.wrong, substr: "no flag of `plan`")
     plan2 = parsed(
         word: "plan",
         words: ["tests/thesis", "--model", "claude-haiku-5-5", "--model", "claude-sonnet-5-5", "--context", "spec", "--context", "none", "--samples", "3", "--turns", "3", "--effort", "medium"]
@@ -416,9 +418,9 @@ test "a run's flags are read with their defaults, plan never goes live, and a wr
     assert live.max_requests == 10
     assert live.max_dollars == 0
     assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--live", "--max-dollars", "20"]).max_dollars == 20
-    assert strings.contains(
-        text: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--max-dollars", "20"]).wrong,
-        needle: "--max-dollars"
+    assert core_strings.contains(
+        s: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--max-dollars", "20"]).wrong,
+        substr: "--max-dollars"
     )
     assert live.dialect == "openai"
     assert live.base == "http://127.0.0.1:8080"
@@ -426,25 +428,25 @@ test "a run's flags are read with their defaults, plan never goes live, and a wr
     assert live.layout == "single"
     assert live.max_tokens == 4000
     assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--arm", "all"]).arms == ARMS
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis"]).wrong,
-        needle: "at least one `--model <id>`"
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis"]).wrong,
+        substr: "at least one `--model <id>`"
     )
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--samples", "three"]).wrong,
-        needle: "whole number"
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--samples", "three"]).wrong,
+        substr: "whole number"
     )
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--layout", "flat"]).wrong,
-        needle: "`--layout` is `single` or `cached`"
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--layout", "flat"]).wrong,
+        substr: "`--layout` is `single` or `cached`"
     )
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--dialect", "gemini"]).wrong,
-        needle: "`--dialect` is `anthropic` or `openai`"
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--dialect", "gemini"]).wrong,
+        substr: "`--dialect` is `anthropic` or `openai`"
     )
-    assert strings.contains(
-        text: parsed(word: "dry", words: ["tests/thesis", "--model", "m"]).wrong,
-        needle: "no flag of `dry`"
+    assert core_strings.contains(
+        s: parsed(word: "dry", words: ["tests/thesis", "--model", "m"]).wrong,
+        substr: "no flag of `dry`"
     )
 
 test "report takes one run folder, a seed and the primary's sentence, and refuses a run's flags"
@@ -455,15 +457,15 @@ test "report takes one run folder, a seed and the primary's sentence, and refuse
     seeded = parsed(word: "report", words: ["out", "--seed", "42", "--primary", "green@1 alone"])
     assert seeded.seed == 42
     assert seeded.primary == "green@1 alone"
-    assert strings.contains(text: parsed(word: "report", words: []).wrong, needle: "one run folder")
-    assert strings.contains(
-        text: parsed(word: "report", words: ["out", "--model", "m"]).wrong,
-        needle: "no flag of `report`"
+    assert core_strings.contains(s: parsed(word: "report", words: []).wrong, substr: "one run folder")
+    assert core_strings.contains(
+        s: parsed(word: "report", words: ["out", "--model", "m"]).wrong,
+        substr: "no flag of `report`"
     )
-    assert strings.contains(text: parsed(word: "report", words: ["out", "--seed", "x"]).wrong, needle: "whole number")
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--seed", "3"]).wrong,
-        needle: "no flag of `run`"
+    assert core_strings.contains(s: parsed(word: "report", words: ["out", "--seed", "x"]).wrong, substr: "whole number")
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--seed", "3"]).wrong,
+        substr: "no flag of `run`"
     )
 
 test "seal takes one folder and -o, tasks and dry take --sealed in place of a folder, and --key names the variable"
@@ -472,12 +474,12 @@ test "seal takes one folder and -o, tasks and dry take --sealed in place of a fo
     assert made.out == "tests/thesis/held-out/suite.enc"
     assert made.key == "HEROES_TASKS_KEY"
     assert parsed(word: "seal", words: ["x", "-o", "y", "--key", "HEROES_RESERVE_KEY"]).key == "HEROES_RESERVE_KEY"
-    assert strings.contains(text: parsed(word: "seal", words: ["x"]).wrong, needle: "`-o <file>`")
-    assert strings.contains(
-        text: parsed(word: "dry", words: ["--sealed", "suite.enc"]).wrong,
-        needle: "`dry --sealed` is refused"
+    assert core_strings.contains(s: parsed(word: "seal", words: ["x"]).wrong, substr: "`-o <file>`")
+    assert core_strings.contains(
+        s: parsed(word: "dry", words: ["--sealed", "suite.enc"]).wrong,
+        substr: "`dry --sealed` is refused"
     )
-    assert strings.contains(text: parsed(word: "dry", words: []).wrong, needle: "one folder")
+    assert core_strings.contains(s: parsed(word: "dry", words: []).wrong, substr: "one folder")
     opened = parsed(
         word: "unseal",
         words: ["--sealed", "suite.enc", "--into", "build/thesis-open", "--key", "HEROES_RESERVE_KEY"]
@@ -485,26 +487,29 @@ test "seal takes one folder and -o, tasks and dry take --sealed in place of a fo
     assert opened.sealed == "suite.enc"
     assert opened.into == "build/thesis-open"
     assert opened.key == "HEROES_RESERVE_KEY"
-    assert strings.contains(text: parsed(word: "unseal", words: ["--sealed", "s.enc"]).wrong, needle: "`--into <dir>`")
-    assert strings.contains(
-        text: parsed(word: "unseal", words: ["x", "--sealed", "s.enc", "--into", "d"]).wrong,
-        needle: "no folder"
+    assert core_strings.contains(
+        s: parsed(word: "unseal", words: ["--sealed", "s.enc"]).wrong,
+        substr: "`--into <dir>`"
     )
-    assert strings.contains(
-        text: parsed(word: "tasks", words: ["tests/thesis", "--sealed", "s.enc"]).wrong,
-        needle: "not both"
+    assert core_strings.contains(
+        s: parsed(word: "unseal", words: ["x", "--sealed", "s.enc", "--into", "d"]).wrong,
+        substr: "no folder"
     )
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--sealed", "s"]).wrong,
-        needle: "no flag of `run`"
+    assert core_strings.contains(
+        s: parsed(word: "tasks", words: ["tests/thesis", "--sealed", "s.enc"]).wrong,
+        substr: "not both"
+    )
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--sealed", "s"]).wrong,
+        substr: "no flag of `run`"
     )
 
 test "canary takes one folder and no flag of a run"
     assert parsed(word: "canary", words: ["tests/thesis"]).paths == ["tests/thesis"]
-    assert strings.contains(text: parsed(word: "canary", words: []).wrong, needle: "one folder")
-    assert strings.contains(
-        text: parsed(word: "canary", words: ["tests/thesis", "--model", "m"]).wrong,
-        needle: "no flag of `canary`"
+    assert core_strings.contains(s: parsed(word: "canary", words: []).wrong, substr: "one folder")
+    assert core_strings.contains(
+        s: parsed(word: "canary", words: ["tests/thesis", "--model", "m"]).wrong,
+        substr: "no flag of `canary`"
     )
 
 test "canary-probe takes one folder and at least one model, sends nothing without --live, and refuses a run's own flags"
@@ -513,10 +518,13 @@ test "canary-probe takes one folder and at least one model, sends nothing withou
     assert dry.models == ["m1", "m2"]
     assert !dry.live
     assert parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m", "--live"]).live
-    assert strings.contains(text: parsed(word: "canary-probe", words: ["tests/thesis"]).wrong, needle: "`--model <id>`")
-    assert strings.contains(
-        text: parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m", "--turns", "3"]).wrong,
-        needle: "no flag of `canary-probe`"
+    assert core_strings.contains(
+        s: parsed(word: "canary-probe", words: ["tests/thesis"]).wrong,
+        substr: "`--model <id>`"
+    )
+    assert core_strings.contains(
+        s: parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m", "--turns", "3"]).wrong,
+        substr: "no flag of `canary-probe`"
     )
 
 test "a harness transport speaks Anthropic's dialect alone, and `api` is the default"
@@ -524,25 +532,25 @@ test "a harness transport speaks Anthropic's dialect alone, and `api` is the def
     assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--transport", "claude"]).transport == "claude"
     assert parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "claude"]).wrong == ""
     assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--transport", "codex"]).transport == "codex"
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--transport", "gemini"]).wrong,
-        needle: "`--transport` is `api`, `claude` or `codex`, not `gemini`"
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--transport", "gemini"]).wrong,
+        substr: "`--transport` is `api`, `claude` or `codex`, not `gemini`"
     )
-    assert strings.contains(
-        text: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "claude", "--dialect", "openai"]).wrong,
-        needle: "Anthropic's dialect"
+    assert core_strings.contains(
+        s: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "claude", "--dialect", "openai"]).wrong,
+        substr: "Anthropic's dialect"
     )
-    assert strings.contains(
-        text: parsed(word: "dry", words: ["tests/thesis", "--transport", "claude"]).wrong,
-        needle: "`--transport` is no flag of `dry`"
+    assert core_strings.contains(
+        s: parsed(word: "dry", words: ["tests/thesis", "--transport", "claude"]).wrong,
+        substr: "`--transport` is no flag of `dry`"
     )
 
 test "`report` takes the folder its labels stand in, and no other word does"
     assert parsed(word: "report", words: ["build/thesis-runs/x", "--labels", "tests/thesis/held-out"]).labels == "tests/thesis/held-out"
     assert parsed(word: "report", words: ["build/thesis-runs/x"]).labels == ""
-    assert strings.contains(
-        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--labels", "x"]).wrong,
-        needle: "`--labels` is no flag of `run`"
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--labels", "x"]).wrong,
+        substr: "`--labels` is no flag of `run`"
     )
 
 test "`preregister` takes a plan's flags, one folder and a model, and never `--live`"
@@ -552,13 +560,13 @@ test "`preregister` takes a plan's flags, one folder and a model, and never `--l
     )
     assert asked.wrong == ""
     assert asked.samples == 3
-    assert strings.contains(
-        text: parsed(word: "preregister", words: ["tests/thesis"]).wrong,
-        needle: "at least one `--model <id>`"
+    assert core_strings.contains(
+        s: parsed(word: "preregister", words: ["tests/thesis"]).wrong,
+        substr: "at least one `--model <id>`"
     )
-    assert strings.contains(
-        text: parsed(word: "preregister", words: ["tests/thesis", "--model", "m", "--live"]).wrong,
-        needle: "`--live` is no flag of `preregister`"
+    assert core_strings.contains(
+        s: parsed(word: "preregister", words: ["tests/thesis", "--model", "m", "--live"]).wrong,
+        substr: "`--live` is no flag of `preregister`"
     )
 
 test "preregister takes a folder or a sealed archive with its key, never both and never neither"
@@ -570,12 +578,12 @@ test "preregister takes a folder or a sealed archive with its key, never both an
     assert sealed.sealed == "tests/thesis/held-out/suite.enc"
     assert sealed.key == "HEROES_TASKS_KEY"
     assert parsed(word: "preregister", words: ["tests/thesis", "--model", "claude-sonnet-5-5"]).wrong == ""
-    assert strings.contains(
-        text: parsed(word: "preregister", words: ["tests/thesis", "--sealed", "x.enc", "--model", "m"]).wrong,
-        needle: "not both"
+    assert core_strings.contains(
+        s: parsed(word: "preregister", words: ["tests/thesis", "--sealed", "x.enc", "--model", "m"]).wrong,
+        substr: "not both"
     )
-    assert strings.contains(text: parsed(word: "preregister", words: ["--model", "m"]).wrong, needle: "not both")
-    assert strings.contains(
-        text: parsed(word: "plan", words: ["--sealed", "x.enc", "--model", "m"]).wrong,
-        needle: "no flag"
+    assert core_strings.contains(s: parsed(word: "preregister", words: ["--model", "m"]).wrong, substr: "not both")
+    assert core_strings.contains(
+        s: parsed(word: "plan", words: ["--sealed", "x.enc", "--model", "m"]).wrong,
+        substr: "no flag"
     )

@@ -39,6 +39,8 @@
 # and a reading is taken on a machine that has it, macOS or Linux with GNU
 # time installed, never inferred.
 
+use <core>/strings as core_strings
+
 use latency_clock
 use latency_ledger
 use latency_runs
@@ -101,11 +103,11 @@ function parsed(given: [str]) -> Asked
             else if flag == "--clock"
                 clock @ value
             else
-                if strings.contains(text: value, needle: "|")
+                if core_strings.contains(s: value, substr: "|")
                     return refused("a note holds no `|`, which is the table's own")
                 note @ value
             i @ i + 2
-        else if strings.starts_with(text: flag, prefix: "--")
+        else if core_strings.has_prefix(s: flag, prefix: "--")
             return refused("no flag `" + flag + "`: --runs, --clock or --note")
         else
             names @ names.push(flag)
@@ -323,7 +325,7 @@ function recording(scratch: str, asked: Asked) -> i64
     text = existing.must()
     glue: str @= ""
 
-    if !strings.ends_with(text: text, suffix: "\n")
+    if !core_strings.has_suffix(s: text, suffix: "\n")
         glue @ "\n"
     written = write_file(path: latency_ledger.LEDGER, text: text + glue + line + "\n")
 

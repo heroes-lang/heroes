@@ -33,6 +33,8 @@
 # finds the paths each suite reads. What reads a file's name or its tree hands
 # this module the text and asks.
 
+use <core>/strings as core_strings
+
 use strings
 
 constant FENCE: str
@@ -145,7 +147,7 @@ function issue_of(path: str, text: str) -> Issue
 
 function holds_open_item(text: str) -> bool
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "- [ ] ")
+        if core_strings.has_prefix(s: row, prefix: "- [ ] ")
             return true
 
     return false
@@ -253,17 +255,17 @@ function read_card(text: str) -> Card
 function field_value(row: str, field: str) -> str?
     opening = field + ": "
 
-    if !strings.starts_with(text: row, prefix: opening)
+    if !core_strings.has_prefix(s: row, prefix: opening)
         return fail(
             code: "shape",
             msg: "`" + shown(row) + "` is not `" + field + ": <value>`, and the fields stand in the order " + FIELDS.join(", ")
         )
     value = strings.without_prefix(text: row, prefix: opening)
 
-    if value.len() == 0 || strings.trimmed(value) != value || strings.contains(text: value, needle: " ")
+    if value.len() == 0 || strings.trimmed(value) != value || core_strings.contains(s: value, substr: " ")
         return fail(code: "shape", msg: "`" + field + "` holds `" + shown(value) + "`, and a value is one bare word")
 
-    if strings.contains(text: value, needle: "\"") || strings.contains(text: value, needle: "'")
+    if core_strings.contains(s: value, substr: "\"") || core_strings.contains(s: value, substr: "'")
         return fail(code: "shape", msg: "`" + field + "` is quoted, and a value is written bare")
 
     return ok(value)
@@ -329,7 +331,7 @@ function template() -> str
 # `M-` and words of lowercase letters and digits joined by one `-`, the shape
 # `.claude/rules/records.md` § Milestone identifiers gives every name.
 function is_milestone_name(name: str) -> bool
-    if !strings.starts_with(text: name, prefix: "M-") || name.len() < 3
+    if !core_strings.has_prefix(s: name, prefix: "M-") || name.len() < 3
         return false
     rest = strings.without_prefix(text: name, prefix: "M-")
 
@@ -373,7 +375,7 @@ function is_hex(text: str) -> bool
     return true
 
 function is_issue_url(text: str) -> bool
-    if !strings.starts_with(text: text, prefix: ISSUE_URL)
+    if !core_strings.has_prefix(s: text, prefix: ISSUE_URL)
         return false
     number = strings.without_prefix(text: text, prefix: ISSUE_URL)
 
@@ -404,7 +406,7 @@ function origin_day(body: str) -> str
     rows = strings.lines(body)
     i: i64 @= 0
 
-    while i < rows.len() && !strings.starts_with(text: strings.trimmed(rows[i]), prefix: "**Origin:**")
+    while i < rows.len() && !core_strings.has_prefix(s: strings.trimmed(rows[i]), prefix: "**Origin:**")
         i @ i + 1
 
     if i == rows.len()
@@ -479,10 +481,10 @@ function repaired_hashes(body: str) -> [str]
 function first_field_milestone(line: str) -> str
     opening: str @= ""
 
-    if strings.starts_with(text: line, prefix: "- [ ] **M-")
+    if core_strings.has_prefix(s: line, prefix: "- [ ] **M-")
         opening @ "- [ ] **"
 
-    if strings.starts_with(text: line, prefix: "- [x] **M-")
+    if core_strings.has_prefix(s: line, prefix: "- [x] **M-")
         opening @ "- [x] **"
 
     if opening == ""
@@ -566,7 +568,7 @@ function padded_two(n: i64) -> str
 # string for a path no area names, which `records/areas` reports where the path
 # is under `selfhost/`, so a new directory there cannot stay unnamed.
 function area_of_path(path: str) -> str
-    if strings.starts_with(text: path, prefix: "selfhost/")
+    if core_strings.has_prefix(s: path, prefix: "selfhost/")
         rest = strings.without_prefix(text: path, prefix: "selfhost/")
         slash = strings.index_of(text: rest, needle: "/")
 
@@ -587,7 +589,7 @@ function area_of_path(path: str) -> str
         # Every row holds one space, between two ASCII words.
         head = pair.slice(from: 0, to: cut.must())
 
-        if strings.starts_with(text: path, prefix: head)
+        if core_strings.has_prefix(s: path, prefix: head)
             return pair.slice(from: cut.must() + 1, to: pair.len())
 
     return ""
@@ -684,7 +686,7 @@ function row_open(name: str, row: str) -> bool?
         return ok(true)
     day = strings.without_prefix(text: state, prefix: "done ")
 
-    if strings.starts_with(text: state, prefix: "done ") && day.len() == 10 && !day_of(day).is_err()
+    if core_strings.has_prefix(s: state, prefix: "done ") && day.len() == 10 && !day_of(day).is_err()
         return ok(false)
     return fail(
         code: "chain_state",
@@ -700,7 +702,7 @@ function row_open(name: str, row: str) -> bool?
 # closed this morning is open, and this check would have passed the very item it
 # was written for.
 function chain_row_name(row: str) -> str?
-    if !strings.starts_with(text: row, prefix: "| ")
+    if !core_strings.has_prefix(s: row, prefix: "| ")
         return fail(code: "shape", msg: "not a table row")
     rest = strings.without_prefix(text: row, prefix: "| ")
     bar = strings.index_of(text: rest, needle: " | ")
@@ -715,7 +717,7 @@ function chain_row_name(row: str) -> str?
         prefix: " | "
     )
 
-    if !strings.starts_with(text: after, prefix: "**M-")
+    if !core_strings.has_prefix(s: after, prefix: "**M-")
         return fail(code: "shape", msg: "the second cell is not a milestone")
     name = strings.without_prefix(text: after, prefix: "**")
     end = strings.index_of(text: name, needle: "**")
@@ -754,8 +756,8 @@ test "a file with no card is refused with the card to write, and stripping it ch
     item = "- [ ] **231 — a title** | what | where · **class: blocking**\n"
     got = read_card(item)
     assert got.complaints.len() == 1
-    assert strings.contains(text: got.complaints[0], needle: "line 1 is")
-    assert strings.contains(text: got.complaints[0], needle: "`filed: YYYY-MM-DD`")
+    assert core_strings.contains(s: got.complaints[0], substr: "line 1 is")
+    assert core_strings.contains(s: got.complaints[0], substr: "`filed: YYYY-MM-DD`")
     assert got.consumed == 0
     assert strip_card(item) == item
     assert read_card("").complaints.len() == 1
@@ -765,13 +767,13 @@ test "every line of a card is held to its place"
 
     # The fields out of order.
     swapped = "---\narea: none\nkind: task\nmilestone: none\nfiled: 2026-10-04\ncommit: self\ngithub: none\n---\n\nx\n"
-    assert strings.contains(text: read_card(swapped).complaints[0], needle: "line 2:")
+    assert core_strings.contains(s: read_card(swapped).complaints[0], substr: "line 2:")
     assert read_card(swapped).consumed == 9
 
     # A quoted value, a trailing space, two words, nothing.
-    assert strings.contains(
-        text: read_card("---\nkind: \"task\"\narea: none\nmilestone: none\nfiled: 2026-10-04\ncommit: self\ngithub: none\n---\n\nx\n").complaints[0],
-        needle: "quoted"
+    assert core_strings.contains(
+        s: read_card("---\nkind: \"task\"\narea: none\nmilestone: none\nfiled: 2026-10-04\ncommit: self\ngithub: none\n---\n\nx\n").complaints[0],
+        substr: "quoted"
     )
     assert read_card("---\nkind: task \narea: none\nmilestone: none\nfiled: 2026-10-04\ncommit: self\ngithub: none\n---\n\nx\n").complaints.len() == 1
     assert read_card("---\nkind: task\narea: two words\nmilestone: none\nfiled: 2026-10-04\ncommit: self\ngithub: none\n---\n\nx\n").complaints.len() == 1
@@ -779,13 +781,13 @@ test "every line of a card is held to its place"
 
     # A field missing, so the fence closes early; one too many; no fence at all.
     short = "---\nkind: task\narea: none\nmilestone: none\nfiled: 2026-10-04\ncommit: self\n---\n\nx\n"
-    assert strings.contains(text: read_card(short).complaints[0], needle: "holds 5 lines")
+    assert core_strings.contains(s: read_card(short).complaints[0], substr: "holds 5 lines")
     assert strip_card(short) == "x\n"
-    assert strings.contains(text: read_card("---\nkind: task\nx\n").complaints[0], needle: "no `---` closes")
+    assert core_strings.contains(s: read_card("---\nkind: task\nx\n").complaints[0], substr: "no `---` closes")
 
     # The blank line under the card is owed, and the card is still taken off.
     tight = "---\nkind: task\narea: none\nmilestone: none\nfiled: 2026-10-04\ncommit: self\ngithub: none\n---\nx\n"
-    assert strings.contains(text: read_card(tight).complaints[0], needle: "line 9 is not blank")
+    assert core_strings.contains(s: read_card(tight).complaints[0], substr: "line 9 is not blank")
     assert strip_card(tight) == "x\n"
     assert read_card(good + "x\n").complaints.len() == 0
 
@@ -845,7 +847,7 @@ test "an issue is open while an item in it is unticked, and its body is what sta
     assert open_one.open
     assert open_one.first == 10
     assert open_one.name == "2026-10-04-0000-defect-231-a.md"
-    assert strings.starts_with(text: open_one.body, prefix: "- [ ] **231")
+    assert core_strings.has_prefix(s: open_one.body, prefix: "- [ ] **231")
     closed_one = issue_of(path: "x/y.md", text: "- [x] **231 — a** | b | c\n\n- [x] another, ticked\n")
     assert !closed_one.open
     assert closed_one.first == 1
@@ -888,9 +890,9 @@ test "fixedbugs: a chain row whose state is none of the chain's three shapes is 
             "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 84 | **M-inferred-cell** | " + state + " | `m-inferred-cell` |\n"
         )
         assert refused.is_err()
-        assert strings.contains(
-            text: failure_of(refused),
-            needle: "the row of M-inferred-cell holds the state `" + state + "`"
+        assert core_strings.contains(
+            s: failure_of(refused),
+            substr: "the row of M-inferred-cell holds the state `" + state + "`"
         )
 
     assert !chain_states("| 84 | **M-inferred-cell** | done 2026-10-10 | `m-inferred-cell` |\n").must()["M-inferred-cell"].must()

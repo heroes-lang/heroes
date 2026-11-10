@@ -10,6 +10,8 @@
 # the rename bought is an invariant, and without these checks it is a
 # one-time cleanup that rots on the next commit.
 
+use <core>/strings as core_strings
+
 use cards
 use credit
 use floors
@@ -932,7 +934,7 @@ function run_all(scratch: str, only: str) -> report.Report?
     # answers of 2026-10-12): GitHub holds the issues, so a file of `ISSUES`
     # is read by no check, as a closed issue was a record before it.
     for path in walked
-        if strings.starts_with(text: path, prefix: ISSUES + "/")
+        if core_strings.has_prefix(s: path, prefix: ISSUES + "/")
             closed[path] @ true
 
     # **A question answered is a record too**, since the questions left
@@ -943,7 +945,7 @@ function run_all(scratch: str, only: str) -> report.Report?
         if is_question(path)
             question = read_file(path)?
 
-            if !strings.starts_with(text: question, prefix: "- [ ] ")
+            if !core_strings.has_prefix(s: question, prefix: "- [ ] ")
                 closed[path] @ true
 
     living: [str] @= []
@@ -995,7 +997,7 @@ function areas(@r: report.Report, present: [str])
     unnamed: [str] @= []
 
     for path in present
-        if strings.starts_with(text: path, prefix: "selfhost/") && cards.area_of_path(path) == ""
+        if core_strings.has_prefix(s: path, prefix: "selfhost/") && cards.area_of_path(path) == ""
             directory = strings.split_on(text: strings.without_prefix(text: path, prefix: "selfhost/"), byte: 47)[0]
 
             if !is_among(directory, seen: unnamed)
@@ -1235,7 +1237,7 @@ function tree_route(@r: report.Report, scratch: str, placed: [Placed])
     unqueued: [str] @= []
 
     for row in open_decisions.must()
-        ratified: bool @= strings.contains(text: row, needle: "panel ")
+        ratified: bool @= core_strings.contains(s: row, substr: "panel ")
 
         if strict.must()
             ratified @ is_ratification(row: row)
@@ -1360,7 +1362,7 @@ function open_rows_in(text: str) -> [str]
     open_rows: [str] @= []
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "- [ ] ")
+        if core_strings.has_prefix(s: row, prefix: "- [ ] ")
             open_rows @ open_rows.push(strings.trimmed(row))
 
     return open_rows
@@ -1512,13 +1514,13 @@ record ListAt
 
 function shape_listed(paths: [str]) -> ListAt
     for path in paths
-        if strings.starts_with(text: path, prefix: ISSUES + "/")
+        if core_strings.has_prefix(s: path, prefix: ISSUES + "/")
             return ListAt(directory: true, issues: true, files: issue_files(paths))
 
     directory: bool @= false
 
     for path in paths
-        if strings.starts_with(text: path, prefix: DEFECT_FILES + "/")
+        if core_strings.has_prefix(s: path, prefix: DEFECT_FILES + "/")
             directory @ true
 
     if directory
@@ -1586,7 +1588,7 @@ function joined_files(texts: [str]) -> str
     ended: [str] @= []
 
     for text in texts
-        if text == "" || strings.ends_with(text: text, suffix: "\n")
+        if text == "" || core_strings.has_suffix(s: text, suffix: "\n")
             ended @ ended.push(text)
         else
             ended @ ended.push(text + "\n")
@@ -1794,7 +1796,7 @@ function carried_the_rule(scratch: str, tag: str) -> bool?
     if shown.code != 0
         return fail(code: "no_such_file", msg: EXECUTOR + " does not exist at " + tag)
 
-    return ok(strings.contains(text: shown.out, needle: RATIFICATION_MARKER))
+    return ok(core_strings.contains(s: shown.out, substr: RATIFICATION_MARKER))
 
 # A ratification row's origin field is `panel NNN` and nothing else. The
 # padded spelling is `docs/work/DECIDE.md`'s own rule, written there for
@@ -1812,7 +1814,7 @@ function is_ratification(row: str) -> bool
         return false
     field = rest.slice(from: 0, to: close.must())
 
-    if !strings.starts_with(text: field, prefix: "panel ")
+    if !core_strings.has_prefix(s: field, prefix: "panel ")
         return false
     number = strings.to_number(text: strings.without_prefix(text: field, prefix: "panel "))
 
@@ -1828,7 +1830,7 @@ test "a ratification row is `panel NNN` and a finding row is not"
     # The row this whole repair exists for. It contains `panel ` and it is not
     # a ratification, which is what the substring test could not tell.
     assert !is_ratification(row: "- [ ] **panel 118 finding** | may a `certain` fix preserve the bug? | x")
-    assert strings.contains(text: "- [ ] **panel 118 finding** | x", needle: "panel ")
+    assert core_strings.contains(s: "- [ ] **panel 118 finding** | x", substr: "panel ")
 
 test "the shapes beside a ratification row, one at a time"
     # No origin field at all, an unclosed one, an empty one, a non-sitting
@@ -1868,7 +1870,7 @@ test "the walk leaves a placed tree out by its folder's name, and keeps the pack
 # the Rust twin's `rel == *r || rel.starts_with(&format!("{r}/"))`.
 function is_record(path: str) -> bool
     for entry in RECORD
-        if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+        if path == entry || core_strings.has_prefix(s: path, prefix: entry + "/")
             return true
 
     return false
@@ -1919,7 +1921,7 @@ function redirects(@r: report.Report, present: [str], archive: Archive)
         written = strings.trimmed(row.slice(from: 0, to: at.must()))
         landed = strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
 
-        archived = archive.state != "tree" && (landed == ISSUES || strings.starts_with(text: landed, prefix: ISSUES + "/"))
+        archived = archive.state != "tree" && (landed == ISSUES || core_strings.has_prefix(s: landed, prefix: ISSUES + "/"))
 
         if archived && archive.state == "read"
             if !selects_exactly(entry: landed, present: archive.paths) && !selects_tree(entry: landed, present: archive.paths)
@@ -2028,7 +2030,7 @@ function exemptions(@r: report.Report, present: [str], bootstrap: Archive)
 
 function selects_tree(entry: str, present: [str]) -> bool
     for path in present
-        if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+        if path == entry || core_strings.has_prefix(s: path, prefix: entry + "/")
             return true
 
     return false
@@ -2042,7 +2044,7 @@ function selects_exactly(entry: str, present: [str]) -> bool
 
 function selects_suffix(entry: str, present: [str]) -> bool
     for path in present
-        if strings.ends_with(text: path, suffix: entry)
+        if core_strings.has_suffix(s: path, suffix: entry)
             return true
 
     return false
@@ -2069,7 +2071,7 @@ function rules(@r: report.Report, present: [str])
     # directory it was given, which is what the first draft did to the repository
     # root.
     for rule in present
-        if !strings.starts_with(text: rule, prefix: ".claude/rules/") || !strings.ends_with(text: rule, suffix: ".md")
+        if !core_strings.has_prefix(s: rule, prefix: ".claude/rules/") || !core_strings.has_suffix(s: rule, suffix: ".md")
             continue
         text = read_file(rule)
 
@@ -2085,7 +2087,7 @@ function rules(@r: report.Report, present: [str])
             if fences != 1
                 continue
 
-            if !strings.starts_with(text: strings.trimmed(row), prefix: "- ")
+            if !core_strings.has_prefix(s: strings.trimmed(row), prefix: "- ")
                 continue
             glob = unquoted(strings.without_prefix(text: strings.trimmed(row), prefix: "- "))
             globs @ globs + 1
@@ -2119,7 +2121,7 @@ function prefix_of(glob: str) -> str
         return glob
     cut = glob.slice(from: 0, to: at.must())
 
-    if strings.ends_with(text: cut, suffix: "/")
+    if core_strings.has_suffix(s: cut, suffix: "/")
         return cut.slice(from: 0, to: cut.len() - 1)
 
     return cut
@@ -2127,17 +2129,17 @@ function prefix_of(glob: str) -> str
 function unquoted(text: str) -> str
     out: str @= text
 
-    if strings.starts_with(text: out, prefix: "\"")
+    if core_strings.has_prefix(s: out, prefix: "\"")
         out @ out.slice(from: 1, to: out.len())
 
-    if strings.ends_with(text: out, suffix: "\"")
+    if core_strings.has_suffix(s: out, suffix: "\"")
         out @ out.slice(from: 0, to: out.len() - 1)
 
     return out
 
 function selects_prefix(entry: str, present: [str]) -> bool
     for path in present
-        if path == entry || strings.starts_with(text: path, prefix: entry)
+        if path == entry || core_strings.has_prefix(s: path, prefix: entry)
             return true
 
     return false
@@ -2255,7 +2257,7 @@ function removed_by_file(text: str) -> [Removal]
     started: bool @= false
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "diff --git ")
+        if core_strings.has_prefix(s: row, prefix: "diff --git ")
             started @ false
             at = strings.index_of(text: row, needle: " b/")
 
@@ -2263,14 +2265,14 @@ function removed_by_file(text: str) -> [Removal]
                 path @ ""
             else
                 path @ row.slice(from: at.must() + 3, to: row.len())
-        else if strings.starts_with(text: row, prefix: "@@ -")
+        else if core_strings.has_prefix(s: row, prefix: "@@ -")
             old @ hunk_start(row)
             started @ true
         else if started
-            if strings.starts_with(text: row, prefix: "-")
+            if core_strings.has_prefix(s: row, prefix: "-")
                 out @ out.push(Removal(path: path, line: old, row: strings.trimmed(row)))
                 old @ old + 1
-            else if !strings.starts_with(text: row, prefix: "+")
+            else if !core_strings.has_prefix(s: row, prefix: "+")
                 old @ old + 1
 
     return out
@@ -2305,15 +2307,15 @@ function removed_below(text: str, floor: i64) -> [str]
     started: bool @= false
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "@@ -")
+        if core_strings.has_prefix(s: row, prefix: "@@ -")
             old @ hunk_start(row)
             started @ true
         else if started
-            if strings.starts_with(text: row, prefix: "-")
+            if core_strings.has_prefix(s: row, prefix: "-")
                 if old >= floor
                     out @ out.push(strings.trimmed(row))
                 old @ old + 1
-            else if !strings.starts_with(text: row, prefix: "+")
+            else if !core_strings.has_prefix(s: row, prefix: "+")
                 old @ old + 1
 
     return out
@@ -2345,10 +2347,10 @@ function hunk_start(row: str) -> i64
 function defect_number(row: str) -> str
     marker: str @= ""
 
-    if strings.starts_with(text: row, prefix: "- [ ] **")
+    if core_strings.has_prefix(s: row, prefix: "- [ ] **")
         marker @ "- [ ] **"
 
-    if strings.starts_with(text: row, prefix: "- [x] **")
+    if core_strings.has_prefix(s: row, prefix: "- [x] **")
         marker @ "- [x] **"
 
     if marker == ""
@@ -2362,7 +2364,7 @@ function defect_number(row: str) -> str
     # Digits are ASCII, so the cut stands between characters.
     number = rest.slice(from: 0, to: digits)
 
-    if !strings.starts_with(text: strings.without_prefix(text: rest, prefix: number), prefix: " — ")
+    if !core_strings.has_prefix(s: strings.without_prefix(text: rest, prefix: number), prefix: " — ")
         return ""
 
     return number
@@ -2476,7 +2478,7 @@ function entries(@r: report.Report, present: [str])
         held: i64 @= 0
 
         for path in present
-            if strings.starts_with(text: path, prefix: tree + "/")
+            if core_strings.has_prefix(s: path, prefix: tree + "/")
                 held @ held + 1
 
                 if !is_entry_name(strings.base_name(path))
@@ -2504,7 +2506,7 @@ function entries(@r: report.Report, present: [str])
 # written before the rotation: a historical entry has no time, and two entries
 # of one day still have an order.
 function is_entry_name(name: str) -> bool
-    if !strings.ends_with(text: name, suffix: ".md")
+    if !core_strings.has_suffix(s: name, suffix: ".md")
         return false
 
     if name.len() < 20
@@ -2681,7 +2683,7 @@ function numbered_headings(text: str) -> [str]
     found: [str] @= []
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "## ")
+        if core_strings.has_prefix(s: row, prefix: "## ")
             at = strings.index_of(text: row, needle: ".")
 
             if !at.is_err() && at.must() > 3
@@ -2783,12 +2785,12 @@ function c_files(@r: report.Report, living: [str])
     strays: [str] @= []
 
     for path in living
-        if !strings.ends_with(text: path, suffix: ".c") && !strings.ends_with(text: path, suffix: ".h")
+        if !core_strings.has_suffix(s: path, suffix: ".c") && !core_strings.has_suffix(s: path, suffix: ".h")
             continue
         owned: bool @= false
 
         for dir in owns
-            if strings.starts_with(text: path, prefix: dir)
+            if core_strings.has_prefix(s: path, prefix: dir)
                 owned @ true
 
         if !owned && !claimed(path: path, living: living)
@@ -2812,7 +2814,7 @@ function claimed(path: str, living: [str]) -> bool
     dir = path.slice(from: 0, to: path.len() - header.len())
 
     for other in living
-        if !strings.ends_with(text: other, suffix: ".hero") || !beside(other: other, dir: dir)
+        if !core_strings.has_suffix(s: other, suffix: ".hero") || !beside(other: other, dir: dir)
             continue
         text = read_file(other)
 
@@ -2827,7 +2829,7 @@ function claimed(path: str, living: [str]) -> bool
 # nothing here. A mention in a comment or in prose is not a claim.
 function names_header(text: str, header: str) -> bool
     for line in strings.lines(text)
-        if strings.starts_with(text: line, prefix: "extern \"" + header + "\"")
+        if core_strings.has_prefix(s: line, prefix: "extern \"" + header + "\"")
             return true
 
     return false
@@ -2978,19 +2980,19 @@ constant BOOTSTRAP_HOMES: [str]
 # rule existed: of 299 candidates in live files, 5 whole classes were code and
 # not prose.
 function is_prose(document: str, row: str) -> bool
-    if strings.ends_with(text: document, suffix: ".md")
+    if core_strings.has_suffix(s: document, suffix: ".md")
         return true
     t = strings.trimmed(row)
 
-    if strings.starts_with(text: t, prefix: "#")
+    if core_strings.has_prefix(s: t, prefix: "#")
         return true
 
-    if strings.starts_with(text: t, prefix: "//")
+    if core_strings.has_prefix(s: t, prefix: "//")
         return true
 
-    if strings.starts_with(text: t, prefix: "*")
+    if core_strings.has_prefix(s: t, prefix: "*")
         return true
-    return strings.starts_with(text: t, prefix: "/*")
+    return core_strings.has_prefix(s: t, prefix: "/*")
 
 # The punctuation a citation sits inside, turned to space so `words` can cut it:
 # backticks, quotes, brackets and the separators prose puts between two paths.
@@ -3138,7 +3140,7 @@ function moved_under(part: str, known: {str: bool}) -> bool
             continue
         written = strings.trimmed(row.slice(from: 0, to: at.must()))
 
-        if !strings.index_of(text: written, needle: " §").is_err() || !strings.starts_with(text: part, prefix: written + "/")
+        if !strings.index_of(text: written, needle: " §").is_err() || !core_strings.has_prefix(s: part, prefix: written + "/")
             continue
         landed = strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
 
@@ -3177,10 +3179,10 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
     # **And a question of comprehension cited in the flat shape** the learning
     # list had until 2026-10-04, `docs/learn/<name>`: it stands in its name's
     # day's folder of `LEARNING` since 2026-10-05, keeping its name.
-    if strings.starts_with(text: part, prefix: LEARNING + "/")
+    if core_strings.has_prefix(s: part, prefix: LEARNING + "/")
         flat = strings.without_prefix(text: part, prefix: LEARNING + "/")
 
-        if !strings.contains(text: flat, needle: "/") && is_entry_name(flat)
+        if !core_strings.contains(s: flat, substr: "/") && is_entry_name(flat)
             # Sixteen ASCII bytes open an entry's name.
             if !known[LEARNING + "/" + flat.slice(from: 0, to: 7) + "/" + flat.slice(from: 8, to: 10) + "/" + flat].is_err()
                 return true
@@ -3222,7 +3224,7 @@ function issue_redirect(part: str, known: {str: bool}) -> str
     name = strings.base_name(part)
 
     for root in ["docs/records/done/", "docs/records/log/", "docs/done/", "docs/log/"]
-        if strings.starts_with(text: part, prefix: root) && strings.without_prefix(text: part, prefix: root) == name
+        if core_strings.has_prefix(s: part, prefix: root) && strings.without_prefix(text: part, prefix: root) == name
             landed: str @= issue_home(name)
 
             if part == SHARED_NAME
@@ -3231,9 +3233,9 @@ function issue_redirect(part: str, known: {str: bool}) -> str
             if landed != "" && !known[landed].is_err()
                 return landed
 
-    if strings.starts_with(text: part, prefix: "docs/work/defects/") && strings.without_prefix(text: part, prefix: "docs/work/defects/") == name
+    if core_strings.has_prefix(s: part, prefix: "docs/work/defects/") && strings.without_prefix(text: part, prefix: "docs/work/defects/") == name
         for path in keys(known)
-            if strings.starts_with(text: path, prefix: ISSUES + "/") && strings.ends_with(text: path, suffix: "-defect-" + name)
+            if core_strings.has_prefix(s: path, prefix: ISSUES + "/") && core_strings.has_suffix(s: path, suffix: "-defect-" + name)
                 return path
 
     return ""
@@ -3251,14 +3253,14 @@ function shortened_issue(part: str, known: {str: bool}) -> bool
     rest: str @= ""
 
     for root in [ISSUES + "/", "docs/records/done/", "docs/records/log/", "docs/done/", "docs/log/"]
-        if strings.starts_with(text: cut, prefix: root)
+        if core_strings.has_prefix(s: cut, prefix: root)
             rest @ strings.without_prefix(text: cut, prefix: root)
 
     # A path under `ISSUES` holds its folders before its name.
-    if strings.starts_with(text: cut, prefix: ISSUES + "/")
+    if core_strings.has_prefix(s: cut, prefix: ISSUES + "/")
         rest @ strings.base_name(cut)
 
-    if rest.len() < 16 || strings.contains(text: rest, needle: "/") || !is_stamp(rest)
+    if rest.len() < 16 || core_strings.contains(s: rest, substr: "/") || !is_stamp(rest)
         return false
 
     # The stamp is sixteen ASCII bytes, so every cut stands between characters.
@@ -3311,7 +3313,7 @@ function is_claim(token: str, roots: {str: bool}) -> bool
     if at.is_err()
         return false
 
-    if strings.starts_with(text: token, prefix: "/") || strings.starts_with(text: token, prefix: "http")
+    if core_strings.has_prefix(s: token, prefix: "/") || core_strings.has_prefix(s: token, prefix: "http")
         return false
 
     for ch in token.chars()
@@ -3324,7 +3326,7 @@ function is_claim(token: str, roots: {str: bool}) -> bool
         return true
 
     for retired in RETIRED_ROOTS
-        if head == retired || strings.starts_with(text: token, prefix: retired + "/")
+        if head == retired || core_strings.has_prefix(s: token, prefix: retired + "/")
             return true
 
     # **Panel 092's half, narrowed to the languages this repository writes its
@@ -3345,7 +3347,7 @@ function is_claim(token: str, roots: {str: bool}) -> bool
     # into the bootstrap and nothing else. Since the bootstrap left the tree
     # such a pointer is followed to its archive (`lands_in_bootstrap`), and the
     # premise is asked of the tree where it would die (`citations`).
-    return strings.ends_with(text: token, suffix: ".rs")
+    return core_strings.has_suffix(s: token, suffix: ".rs")
 
 # Every path claim on one line of prose.
 function claims_on(row: str, roots: {str: bool}) -> [str]
@@ -3477,7 +3479,7 @@ function ignored_by_git(scratch: str, tree: str, tokens: [str]) -> {str: bool}
             token = tokens[at]
             words @ words.push(token)
 
-            if !strings.ends_with(text: token, suffix: "/")
+            if !core_strings.has_suffix(s: token, suffix: "/")
                 words @ words.push(token + "/")
             taken @ taken + 1
             at @ at + 1
@@ -3614,7 +3616,7 @@ function first_few(count: i64) -> i64
 # a tree whose files moved into it on 2026-10-04 (`issue_redirect`).
 function lands_in_issues(token: str) -> bool
     for root in [ISSUES + "/", "docs/records/done/", "docs/records/log/", "docs/done/", "docs/log/", "docs/work/defects/"]
-        if strings.starts_with(text: token, prefix: root)
+        if core_strings.has_prefix(s: token, prefix: root)
             return true
 
     return false
@@ -3626,13 +3628,13 @@ function lands_in_issues(token: str) -> bool
 # the folder has left, so it is a claim, and on the CI's one-commit checkout,
 # which cannot show the archive, nothing else set it aside.
 function lands_in_bootstrap(token: str) -> bool
-    if token == BOOTSTRAP || strings.starts_with(text: token, prefix: BOOTSTRAP + "/")
+    if token == BOOTSTRAP || core_strings.has_prefix(s: token, prefix: BOOTSTRAP + "/")
         return true
     bare = strings.without_suffix(text: token, suffix: "/")
 
-    if bare.len() > 0 && strings.starts_with(text: BOOTSTRAP, prefix: bare + "/")
+    if bare.len() > 0 && core_strings.has_prefix(s: BOOTSTRAP, prefix: bare + "/")
         return true
-    return strings.ends_with(text: token, suffix: ".rs")
+    return core_strings.has_suffix(s: token, suffix: ".rs")
 
 function citations(@r: report.Report, scratch: str, present: [str], closed: {str: bool}, archive: Archive, bootstrap: Archive)
     known: {str: bool} @= {}
@@ -3790,7 +3792,7 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
     rust: [str] @= []
 
     for path in present
-        if strings.ends_with(text: path, suffix: ".rs") && !strings.starts_with(text: path, prefix: BOOTSTRAP + "/")
+        if core_strings.has_suffix(s: path, suffix: ".rs") && !core_strings.has_prefix(s: path, prefix: BOOTSTRAP + "/")
             rust @ rust.push("    " + path)
 
     if rust.len() > 0
@@ -3903,7 +3905,7 @@ function english(@r: report.Report, present: [str], closed: {str: bool})
 # English nor Italian, and reading them buys only the chance of a false word.
 function reads_as_prose(path: str) -> bool
     for suffix in [".md", ".hero", ".c", ".h", ".html", ".astro", ".txt"]
-        if strings.ends_with(text: path, suffix: suffix)
+        if core_strings.has_suffix(s: path, suffix: suffix)
             return true
 
     return false
@@ -3923,7 +3925,7 @@ function quotes_the_italian(path: str) -> bool
 # The record with no directory of its own, kept out by exact name.
 function italian_by_design(path: str) -> bool
     for entry in ITALIAN_BY_DESIGN
-        if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+        if path == entry || core_strings.has_prefix(s: path, prefix: entry + "/")
             return true
 
     return false
@@ -4066,7 +4068,7 @@ function exists_or_prefixes(token: str, known: {str: bool}) -> bool
         return true
 
     for path in keys(known)
-        if strings.starts_with(text: path, prefix: token)
+        if core_strings.has_prefix(s: path, prefix: token)
             return true
 
     return false
@@ -4124,7 +4126,7 @@ function links(@r: report.Report, present: [str], closed: {str: bool}, known: {s
     read: i64 @= 0
 
     for path in present
-        if !strings.ends_with(text: path, suffix: ".md") || is_record(path) || is_generated(path) || !closed[path].is_err()
+        if !core_strings.has_suffix(s: path, suffix: ".md") || is_record(path) || is_generated(path) || !closed[path].is_err()
             continue
         text = read_file(path)
 
@@ -4165,7 +4167,7 @@ function expectations(@r: report.Report, scratch: str)
     offenders: [str] @= []
 
     for path in listing.must()
-        if !strings.ends_with(text: path, suffix: ".expected")
+        if !core_strings.has_suffix(s: path, suffix: ".expected")
             continue
         text = read_file(path)
 
@@ -4480,7 +4482,7 @@ constant LEARNING_PAGE: str
 # list's front page and the glossary beside the questions (`docs/learn/glossary/`,
 # since 2026-10-05) are not questions.
 function is_question(path: str) -> bool
-    if !strings.starts_with(text: path, prefix: LEARNING + "/")
+    if !core_strings.has_prefix(s: path, prefix: LEARNING + "/")
         return false
     rest = strings.without_prefix(text: path, prefix: LEARNING + "/")
 
@@ -4511,7 +4513,7 @@ function issue_files(present: [str]) -> [str]
     out: [str] @= []
 
     for path in present
-        if strings.starts_with(text: path, prefix: ISSUES + "/") && strings.ends_with(text: path, suffix: ".md") && path != ISSUES + "/README.md"
+        if core_strings.has_prefix(s: path, prefix: ISSUES + "/") && core_strings.has_suffix(s: path, suffix: ".md") && path != ISSUES + "/README.md"
             out @ out.push(path)
 
     return out
@@ -4543,10 +4545,10 @@ function sitting_digits(path: str) -> str?
 # ratified. The rule stays after the file went, so the next unnumbered thing to
 # land here is not read as a sitting either.
 function is_sitting(path: str) -> bool
-    if !strings.starts_with(text: path, prefix: SITTINGS)
+    if !core_strings.has_prefix(s: path, prefix: SITTINGS)
         return false
 
-    if !strings.ends_with(text: path, suffix: ".md")
+    if !core_strings.has_suffix(s: path, suffix: ".md")
         return false
     rest = path.slice(from: SITTINGS.len(), to: path.len())
 
@@ -4562,7 +4564,7 @@ function is_sitting(path: str) -> bool
     # `docs/panel/147-briefs/`, and 147 is above the floor — so twelve files
     # that are not sittings were asked for an author's verdict, which is how
     # a masked predicate finally answered out loud.
-    if strings.contains(text: rest, needle: "/")
+    if core_strings.contains(s: rest, substr: "/")
         return false
 
     # The BYTE, not a one-character slice: `<` and friends take a number in this
@@ -4586,7 +4588,7 @@ function opens_pending(text: str) -> bool
 
         if bare.len() == 0
             continue
-        return strings.starts_with(text: bare, prefix: "Pending")
+        return core_strings.has_prefix(s: bare, prefix: "Pending")
 
     return true
 
@@ -4616,7 +4618,7 @@ function answered_beneath(text: str) -> bool
             continue
 
         for word in ["Ratified,", "RATIFIED,", "Amended,", "AMENDED,", "Overturned,", "OVERTURNED,"]
-            if strings.starts_with(text: bare, prefix: word) && bare.len() > word.len()
+            if core_strings.has_prefix(s: bare, prefix: word) && bare.len() > word.len()
                 next = bare[word.len()]
 
                 if next >= '0' && next <= '9'
@@ -4686,7 +4688,7 @@ function scan_where(text: str) -> WhereScan
     closed: bool @= false
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "## Where we are")
+        if core_strings.has_prefix(s: row, prefix: "## Where we are")
             inside @ true
 
         if inside && !closed
@@ -4697,7 +4699,7 @@ function scan_where(text: str) -> WhereScan
             else
                 counted @ counted + 1
 
-                if strings.starts_with(text: bare, prefix: "---")
+                if core_strings.has_prefix(s: bare, prefix: "---")
                     mangled @ mangled + 1
 
     return WhereScan(counted: counted, mangled: mangled, found: inside)
@@ -4820,7 +4822,7 @@ function homed(@r: report.Report, present: [str], held: github_issues.Listing)
             offenders @ offenders.push("    " + own + ": a page and no row in § The chain")
 
     for path in present
-        if strings.starts_with(text: path, prefix: MILESTONES + "/") && !is_among(path, seen: files)
+        if core_strings.has_prefix(s: path, prefix: MILESTONES + "/") && !is_among(path, seen: files)
             offenders @ offenders.push(
                 "    " + path + ": below the pages, and a milestone's items are its issues on GitHub"
             )
@@ -4852,7 +4854,7 @@ function milestone_pages(present: [str]) -> [str]
     for path in present
         rest = strings.without_prefix(text: path, prefix: MILESTONES + "/")
 
-        if strings.starts_with(text: path, prefix: MILESTONES + "/") && strings.ends_with(text: path, suffix: ".md") && !strings.contains(text: rest, needle: "/")
+        if core_strings.has_prefix(s: path, prefix: MILESTONES + "/") && core_strings.has_suffix(s: path, suffix: ".md") && !core_strings.contains(s: rest, substr: "/")
             out @ out.push(path)
 
     return out
@@ -4861,7 +4863,7 @@ function milestone_pages(present: [str]) -> [str]
 # A ticked item is not read at all: it belongs to `docs/work/DONE.md`, and the
 # record is allowed to name a milestone that has since closed.
 function item_milestone(row: str) -> str?
-    if !strings.starts_with(text: row, prefix: "- [ ] **M-")
+    if !core_strings.has_prefix(s: row, prefix: "- [ ] **M-")
         return fail(code: "shape", msg: "the first field is not a milestone")
     rest = strings.without_prefix(text: row, prefix: "- [ ] **")
     end = strings.index_of(text: rest, needle: "**")
@@ -4967,7 +4969,7 @@ function lists(@r: report.Report, present: [str])
         for complaint in learn_offences(path: path, text: question.must())
             offenders @ offenders.push("    " + path + ": " + complaint)
 
-        if strings.starts_with(text: question.must(), prefix: "- [ ] ")
+        if core_strings.has_prefix(s: question.must(), prefix: "- [ ] ")
             asked @ asked + 1
 
     if asked < LEARNING_FLOOR
@@ -5002,13 +5004,13 @@ function front_page_offences(text: str, home: str, ceiling: i64) -> [str]
     for row in strings.lines(text)
         number @ number + 1
 
-        if strings.starts_with(text: row, prefix: "- [")
+        if core_strings.has_prefix(s: row, prefix: "- [")
             out @ out.push(
                 "line " + number.to_str() + ": an item, and an item is " + home + ": " + head_of(row)
             )
         else if row == item_shape.BANNER
             out @ out.push("line " + number.to_str() + ": a banner, and a front page fences no item region")
-        else if strings.starts_with(text: row, prefix: OPEN_PREFIX)
+        else if core_strings.has_prefix(s: row, prefix: OPEN_PREFIX)
             out @ out.push(
                 "line " + number.to_str() + ": a count line, and an open count is counted where the items are, never written beside them: " + head_of(row)
             )
@@ -5040,18 +5042,18 @@ function learn_offences(path: str, text: str) -> [str]
                 "it stands in another day's folder, and a question lives in the folder its name's day gives: " + home
             )
 
-    if strings.starts_with(text: text, prefix: cards.FENCE + "\n")
+    if core_strings.has_prefix(s: text, prefix: cards.FENCE + "\n")
         out @ out.push("line 1 opens a card, and a question is not an issue: it carries no card")
         return out
 
     # A question answered is a record, and keeps the shape it was written in:
     # the 25 that came from the old record were written before the lists took
     # one shape. Only an open question is held to the shape.
-    if strings.starts_with(text: text, prefix: "- [x] ")
+    if core_strings.has_prefix(s: text, prefix: "- [x] ")
         return out
     rows = strings.lines(text)
 
-    if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "- [ ] ") && !strings.starts_with(text: rows[0], prefix: "- [x] ")
+    if rows.len() == 0 || !core_strings.has_prefix(s: rows[0], prefix: "- [ ] ") && !core_strings.has_prefix(s: rows[0], prefix: "- [x] ")
         out @ out.push("line 1 is not the question's line, and a question opens with it, `- [ ]` or `- [x]`")
         return out
     i: i64 @= 1
@@ -5059,11 +5061,11 @@ function learn_offences(path: str, text: str) -> [str]
     while i < rows.len()
         row = rows[i]
 
-        if strings.starts_with(text: row, prefix: "- [")
+        if core_strings.has_prefix(s: row, prefix: "- [")
             out @ out.push(
                 "line " + (i + 1).to_str() + ": a second item, and a file here holds one question: " + head_of(row)
             )
-        else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
+        else if strings.trimmed(row).len() > 0 && !core_strings.has_prefix(s: row, prefix: "    ")
             out @ out.push(
                 "line " + (i + 1).to_str() + ": prose at column zero, and a question's body is indented under it: " + head_of(row)
             )
@@ -5077,7 +5079,7 @@ function defect_files(present: [str]) -> [str]
     out: [str] @= []
 
     for path in present
-        if strings.starts_with(text: path, prefix: DEFECT_FILES + "/") && path != DEFECT_KEEPER
+        if core_strings.has_prefix(s: path, prefix: DEFECT_FILES + "/") && path != DEFECT_KEEPER
             out @ out.push(path)
 
     return out
@@ -5085,17 +5087,17 @@ function defect_files(present: [str]) -> [str]
 test "a front page holds its rules and no item, no banner and no count"
     page = "# Issues\n\nthe rules, and where the files are\n"
     assert front_page_offences(text: page, home: ON_GITHUB, ceiling: PREAMBLE_CEILING).len() == 0
-    assert strings.contains(
-        text: front_page_offences(text: page + "- [ ] **177 — x** | a | b\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
-        needle: "line 4: an item, and an item is an issue of its own on GitHub"
+    assert core_strings.contains(
+        s: front_page_offences(text: page + "- [ ] **177 — x** | a | b\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
+        substr: "line 4: an item, and an item is an issue of its own on GitHub"
     )
-    assert strings.contains(
-        text: front_page_offences(text: page + item_shape.BANNER + "\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
-        needle: "line 4: a banner"
+    assert core_strings.contains(
+        s: front_page_offences(text: page + item_shape.BANNER + "\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
+        substr: "line 4: a banner"
     )
-    assert strings.contains(
-        text: front_page_offences(text: page + "**OPEN: 52**\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
-        needle: "line 4: a count line"
+    assert core_strings.contains(
+        s: front_page_offences(text: page + "**OPEN: 52**\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
+        substr: "line 4: a count line"
     )
 
     # The single list a page used to be is every one of the three at once.
@@ -5112,9 +5114,9 @@ test "a front page holds its rules and no item, no banner and no count"
         written @ written + 1
 
     assert front_page_offences(text: at_ceiling, home: ON_GITHUB, ceiling: PREAMBLE_CEILING).len() == 0
-    assert strings.contains(
-        text: front_page_offences(text: at_ceiling + "a story\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
-        needle: "lines, ceiling"
+    assert core_strings.contains(
+        s: front_page_offences(text: at_ceiling + "a story\n", home: ON_GITHUB, ceiling: PREAMBLE_CEILING)[0],
+        substr: "lines, ceiling"
     )
     assert front_page_offences(text: at_ceiling + at_ceiling + at_ceiling, home: ON_GITHUB, ceiling: 0).len() == 0
 
@@ -5240,7 +5242,7 @@ function names_used(text: str) -> [str]
 # Whether this file is one that quotes the retired spelling on purpose.
 function quoting(path: str) -> bool
     for name in QUOTES_THE_OLD_SPELLING
-        if strings.ends_with(text: path, suffix: name)
+        if core_strings.has_suffix(s: path, suffix: name)
             return true
 
     return false
@@ -5277,7 +5279,7 @@ function alias_table() -> [str]
     rows: [str] @= []
 
     for row in strings.lines(text.must())
-        if strings.starts_with(text: row, prefix: "| `M-")
+        if core_strings.has_prefix(s: row, prefix: "| `M-")
             rest = strings.without_prefix(text: row, prefix: "| `")
             at = strings.index_of(text: rest, needle: "`")
 
@@ -5293,11 +5295,11 @@ test "a dead link is told with its line, and a live one, a directory and a place
     text = "[a](../records/journal/033-c-callbacks.md) and [b](journal/033-c-callbacks.md)\n[c](../panel/) [d](../../../x.md)\n"
     dead = dead_links(path: "docs/roadmap/names.md", text: text, known: known)
     assert dead.len() == 2
-    assert strings.contains(
-        text: dead[0],
-        needle: "docs/roadmap/names.md:1: journal/033-c-callbacks.md lands on docs/roadmap/journal/033-c-callbacks.md"
+    assert core_strings.contains(
+        s: dead[0],
+        substr: "docs/roadmap/names.md:1: journal/033-c-callbacks.md lands on docs/roadmap/journal/033-c-callbacks.md"
     )
-    assert strings.contains(text: dead[1], needle: "docs/roadmap/names.md:2: ../../../x.md climbs out of the tree")
+    assert core_strings.contains(s: dead[1], substr: "docs/roadmap/names.md:2: ../../../x.md climbs out of the tree")
     assert dead_links(path: ".claude/rules/records.md", text: "[<reference>](<url>)\n", known: known).len() == 0
     assert dead_links(path: "docs/x.md", text: "[<reference>](<url>)\n", known: known).len() == 1
 
@@ -5728,7 +5730,7 @@ test "a removal below the record's first line is caught and one above it is not"
     diffed = "diff --git a/DESIGN-LOG.md b/DESIGN-LOG.md\nindex 1111111..2222222 100644\n--- a/DESIGN-LOG.md\n+++ b/DESIGN-LOG.md\n@@ -3,3 +3,3 @@\n \n-Format: the preamble, reworded\n+Format: the preamble, reworded better\n@@ -240,3 +240,2 @@\n 2026-08-11 | a decision | reason | § | 017\n-2026-08-12 | the decision somebody deleted | reason | § | 018\n 2026-08-13 | another | reason | § | 019\n"
     caught = removed_below(text: diffed, floor: 5)
     assert caught.len() == 1
-    assert strings.contains(text: caught[0], needle: "the decision somebody deleted")
+    assert core_strings.contains(s: caught[0], substr: "the decision somebody deleted")
 
     # And the preamble is editable on purpose: `b2efc3ff` rewrote eighteen
     # lines of DONE's and was right to.
@@ -5844,7 +5846,7 @@ test "a tag stands over young adjacent items and improvements, and over no block
     blocking = defects_holding(standing.push(defect_item(number: "164", kind: "blocking", day: "2026-10-02")))
     told = counted_at(text: blocking, at: judged, before: earlier)
     assert told.len() == 1
-    assert strings.starts_with(text: told[0].row, prefix: "- [ ] **164 — ")
+    assert core_strings.has_prefix(s: told[0].row, prefix: "- [ ] **164 — ")
     assert told[0].why == "`blocking`"
     systemic = defects_holding(standing.push(defect_item(number: "165", kind: "systemic", day: "2026-10-02")))
     held = counted_at(text: systemic, at: judged, before: earlier)
@@ -5861,7 +5863,7 @@ test "an adjacent item counts as blocking from the second tag placed since it wa
     later = [Placed(name: "m-between", day: 20261005, open: none)]
     aged = counted_at(text: item, at: judged, before: later)
     assert aged.len() == 1
-    assert strings.contains(text: aged[0].why, needle: "2 tags placed since it was filed (m-judged m-between)")
+    assert core_strings.contains(s: aged[0].why, substr: "2 tags placed since it was filed (m-judged m-between)")
 
     # A tag of its own day counts only where the item stood open at it: the
     # morning's tag, placed before the filing, does not; the evening's does.
@@ -5879,7 +5881,7 @@ test "an adjacent item counts as blocking from the second tag placed since it wa
     early = Placed(name: "m-early", day: 20261001, open: none)
     future = counted_at(text: item, at: early, before: no_tags)
     assert future.len() == 1
-    assert strings.contains(text: future[0].why, needle: "after m-early's own day 2026-10-01")
+    assert core_strings.contains(s: future[0].why, substr: "after m-early's own day 2026-10-01")
 
 test "an item without a class at a tag counts as blocking"
     none: [str] = []
@@ -5890,8 +5892,8 @@ test "an item without a class at a tag counts as blocking"
     old = defects_holding(["- [ ] **129 — a minus alone** | x | y", "- [ ] **130 — a skipped statement** | x | y"])
     standing = counted_at(text: old, at: tag, before: no_tags)
     assert standing.len() == 2
-    assert strings.contains(text: standing[0].why, needle: "no class this check can read")
-    assert strings.contains(text: standing[0].why, needle: "counts as `blocking`")
+    assert core_strings.contains(s: standing[0].why, substr: "no class this check can read")
+    assert core_strings.contains(s: standing[0].why, substr: "counts as `blocking`")
 
     # A class this cannot read is no class: two tokens, and `adjacent` with them.
     twice = "- [ ] **161 — x** | a | b · **class: adjacent** · **class: improvement**"
@@ -5988,8 +5990,8 @@ test "a tag's directory is read as its single file was, so a tag counts the same
     # Each item's body ends at the next file's line, never inside it.
     regions = item_shape.open_regions(as_files)
     assert regions.len() == 3
-    assert strings.contains(text: regions[1].text, needle: "**Class: blocking**")
-    assert !strings.contains(text: regions[1].text, needle: "systemic")
+    assert core_strings.contains(s: regions[1].text, substr: "**Class: blocking**")
+    assert !core_strings.contains(s: regions[1].text, substr: "systemic")
 
     # One blank line between two files, whether or not a file ended its line.
     bare = joined_files(["- [ ] **161 — a** | x | y", "- [ ] **162 — b** | x | y\n"])
@@ -6024,7 +6026,7 @@ test "once the issue files leave the tree a citation of one is followed to their
     lost: report.Report @= report.empty()
     citations(@lost, scratch: scratch, present: [document], closed: closed, archive: other, bootstrap: standing)
     assert lost.failed == 1
-    assert strings.contains(text: lost.failures[0], needle: "issues/2026-10/01/2026-10-01-0000-a.md")
+    assert core_strings.contains(s: lost.failures[0], substr: "issues/2026-10/01/2026-10-01-0000-a.md")
     unset: report.Report @= report.empty()
     citations(
         @unset,
@@ -6035,8 +6037,8 @@ test "once the issue files leave the tree a citation of one is followed to their
         bootstrap: standing
     )
     assert unset.failed == 1
-    assert strings.contains(text: unset.failures[0], needle: "the constant names no commit")
-    assert strings.contains(text: unset.failures[0], needle: "2 citations of an issue file could not be followed")
+    assert core_strings.contains(s: unset.failures[0], substr: "the constant names no commit")
+    assert core_strings.contains(s: unset.failures[0], substr: "2 citations of an issue file could not be followed")
     shallow: report.Report @= report.empty()
     citations(
         @shallow,
@@ -6047,7 +6049,7 @@ test "once the issue files leave the tree a citation of one is followed to their
         bootstrap: standing
     )
     assert shallow.failed == 0
-    assert strings.contains(text: shallow.skips[0], needle: "2 citations of an issue file were not followed")
+    assert core_strings.contains(s: shallow.skips[0], substr: "2 citations of an issue file were not followed")
     assert archive_of(scratch: scratch, present: ["issues/2026-10/01/2026-10-01-0000-a.md"]).state == "tree"
     assert lands_in_issues("issues/2026-10/01/x.md")
     assert lands_in_issues("docs/work/defects/187-four.md")
@@ -6082,8 +6084,8 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
     lost: report.Report @= report.empty()
     citations(@lost, scratch: scratch, present: [document], closed: closed, archive: standing, bootstrap: other)
     assert lost.failed == 1
-    assert strings.contains(text: lost.failures[0], needle: "emit/structural.rs")
-    assert strings.contains(text: lost.failures[0], needle: "archive/bootstrap-rs/heroes-cli/src/main.rs")
+    assert core_strings.contains(s: lost.failures[0], substr: "emit/structural.rs")
+    assert core_strings.contains(s: lost.failures[0], substr: "archive/bootstrap-rs/heroes-cli/src/main.rs")
     unset: report.Report @= report.empty()
     citations(
         @unset,
@@ -6094,8 +6096,11 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
         bootstrap: Archive(state: "unset", why: "the constant names no commit", paths: none)
     )
     assert unset.failed == 1
-    assert strings.contains(text: unset.failures[0], needle: "the constant names no commit")
-    assert strings.contains(text: unset.failures[0], needle: "2 citations of the Rust bootstrap could not be followed")
+    assert core_strings.contains(s: unset.failures[0], substr: "the constant names no commit")
+    assert core_strings.contains(
+        s: unset.failures[0],
+        substr: "2 citations of the Rust bootstrap could not be followed"
+    )
     shallow: report.Report @= report.empty()
     citations(
         @shallow,
@@ -6106,7 +6111,7 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
         bootstrap: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none)
     )
     assert shallow.failed == 0
-    assert strings.contains(text: shallow.skips[0], needle: "2 citations of the Rust bootstrap were not followed")
+    assert core_strings.contains(s: shallow.skips[0], substr: "2 citations of the Rust bootstrap were not followed")
 
     # The folder's parent, set aside with its files where the archive cannot
     # answer, and followed where it can (defect 2144: the CI read `archive/`
@@ -6123,7 +6128,7 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
         bootstrap: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none)
     )
     assert above.failed == 0
-    assert strings.contains(text: above.skips[0], needle: "1 citations of the Rust bootstrap were not followed")
+    assert core_strings.contains(s: above.skips[0], substr: "1 citations of the Rust bootstrap were not followed")
     followed: report.Report @= report.empty()
     citations(@followed, scratch: scratch, present: [parent], closed: closed, archive: standing, bootstrap: held)
     assert followed.failed == 0
@@ -6141,7 +6146,7 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
         bootstrap: held
     )
     assert rust.failed == 1
-    assert strings.contains(text: rust.failures[0], needle: "tools/probe.rs")
+    assert core_strings.contains(s: rust.failures[0], substr: "tools/probe.rs")
     assert bootstrap_of(scratch: scratch, present: ["archive/bootstrap-rs/Cargo.toml"]).state == "tree"
     assert lands_in_bootstrap("archive/bootstrap-rs/heroes/src/lib.rs")
     assert lands_in_bootstrap("emit/{ctype,typedefs}.rs")
@@ -6174,14 +6179,17 @@ test "a redirect that lands in the issue files is asked of their archive once th
         archive: Archive(state: "unset", why: "the constant names no commit", paths: none)
     )
     assert unset.failed == 1
-    assert strings.contains(text: unset.failures[0], needle: "lands in the archive, which the constant names no commit")
+    assert core_strings.contains(
+        s: unset.failures[0],
+        substr: "lands in the archive, which the constant names no commit"
+    )
     shallow: report.Report @= report.empty()
     redirects(
         @shallow,
         present: present,
         archive: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none)
     )
-    assert strings.contains(text: shallow.skips[0], needle: "docs/work/defects -> issues")
+    assert core_strings.contains(s: shallow.skips[0], substr: "docs/work/defects -> issues")
 
 test "a citation of an issue file shortened by hand names the file it opens, and a bare day names none"
     known: {str: bool} @= {}
@@ -6222,7 +6230,7 @@ test "a diff of many files names each removal's own file and its line in the old
     # The second file's own header is never read as a line it removes, which is
     # what reading the diff as one file would do.
     for one in got
-        assert !strings.contains(text: one.row, needle: "--- a/")
+        assert !core_strings.contains(s: one.row, substr: "--- a/")
 
 test "a list at a tag is its issues where the tag has them, and the older shapes where it has not"
     issues_shape = shape_listed(
@@ -6264,27 +6272,30 @@ test "a question of comprehension lives in its day's folder, holds one item, and
     assert learn_offences(path: path, text: good).len() == 0
     assert learn_offences(path: path, text: "- [x] **M-ir-lowering.1** | answered, and it stays | x\n").len() == 0
     assert learn_offences(path: path, text: "- [x] The record | M1.1 | written before one shape\n  CLOSED at column two, kept as written\n").len() == 0
-    assert strings.contains(
-        text: learn_offences(path: "docs/learn/2026-08/04/2026-08-03-0000-first-ir.md", text: good)[0],
-        needle: "another day's folder"
+    assert core_strings.contains(
+        s: learn_offences(path: "docs/learn/2026-08/04/2026-08-03-0000-first-ir.md", text: good)[0],
+        substr: "another day's folder"
     )
-    assert strings.contains(
-        text: learn_offences(path: "docs/learn/first-ir.md", text: good)[0],
-        needle: "its name is not"
+    assert core_strings.contains(
+        s: learn_offences(path: "docs/learn/first-ir.md", text: good)[0],
+        substr: "its name is not"
     )
     with_card = cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-08-03", commit: "none", github: "none") + good
-    assert strings.contains(text: learn_offences(path: path, text: with_card)[0], needle: "a question is not an issue")
-    assert strings.contains(
-        text: learn_offences(path: path, text: good + "- [ ] another\n")[0],
-        needle: "a second item"
+    assert core_strings.contains(
+        s: learn_offences(path: path, text: with_card)[0],
+        substr: "a question is not an issue"
     )
-    assert strings.contains(
-        text: learn_offences(path: path, text: good + "\nloose prose\n")[0],
-        needle: "prose at column zero"
+    assert core_strings.contains(
+        s: learn_offences(path: path, text: good + "- [ ] another\n")[0],
+        substr: "a second item"
     )
-    assert strings.contains(
-        text: learn_offences(path: path, text: "# a title\n" + good)[0],
-        needle: "not the question's line"
+    assert core_strings.contains(
+        s: learn_offences(path: path, text: good + "\nloose prose\n")[0],
+        substr: "prose at column zero"
+    )
+    assert core_strings.contains(
+        s: learn_offences(path: path, text: "# a title\n" + good)[0],
+        substr: "not the question's line"
     )
 
 test "a question cited in the learning list's old flat shape is found in its day's folder"
@@ -6309,4 +6320,4 @@ test "a directory of selfhost/ the areas do not name is refused, and one they na
     stray: report.Report @= report.empty()
     areas(@stray, present: ["selfhost/nowhere/a.hero", "selfhost/nowhere/b.hero"])
     assert stray.failed == 1
-    assert strings.contains(text: stray.failures[0], needle: "    selfhost/nowhere/\n  Add it")
+    assert core_strings.contains(s: stray.failures[0], substr: "    selfhost/nowhere/\n  Add it")

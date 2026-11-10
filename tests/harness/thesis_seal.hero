@@ -48,6 +48,8 @@
 # as `issue_git`'s do without a token, since this process cannot set one for
 # itself and a key written into a command line is what this module refuses.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 use thesis_sha256
@@ -135,7 +137,7 @@ function bsd_tar(scratch: str) -> bool?
 
     if asked.code != 0
         return fail(code: "tar_failed", msg: "`tar --version` failed" + shell.said_on_stderr(asked.err))
-    return ok(strings.contains(text: asked.out, needle: "bsdtar"))
+    return ok(core_strings.contains(s: asked.out, substr: "bsdtar"))
 
 # Whether the bytes of the archive `tar` hold an AppleDouble header's filler,
 # asked of the bytes by `grep -a`, since bsdtar's own listing hides the member.
@@ -157,7 +159,7 @@ function without_appledouble(scratch: str, dir: str) -> i64?
     for path in shell.found_under(dir: dir, suffix: "", reference: "")?
         name = strings.base_name(path: path)
 
-        if name.len() <= 2 || !strings.starts_with(text: name, prefix: "._")
+        if name.len() <= 2 || !core_strings.has_prefix(s: name, prefix: "._")
             continue
 
         if !shell.exists(parent_of(path) + "/" + name.slice(from: 2, to: name.len()))
@@ -305,7 +307,7 @@ function canaried(scratch: str, folder: str) -> i64?
 
 function has_line(text: str, prefix: str) -> bool
     for line in strings.lines(text: text)
-        if strings.starts_with(text: line, prefix: prefix)
+        if core_strings.has_prefix(s: line, prefix: prefix)
             return true
 
     return false
@@ -367,7 +369,7 @@ test "a seal under a variable nobody set writes nothing and names the variable"
         .ok _ => assert false
         .err e =>
             assert e.code == "no_key"
-            assert strings.contains(text: e.msg, needle: "HEROES_NO_SUCH_KEY_7f3a")
+            assert core_strings.contains(s: e.msg, substr: "HEROES_NO_SUCH_KEY_7f3a")
 
     assert !shell.exists(scratch + "/never.enc")
 
@@ -428,9 +430,9 @@ test "a small suite, canaried, sealed and opened, reads the same bytes and the d
     assert made.told != before
     assert made.told == thesis_tasks.told(thesis_tasks.read_suite(scratch: scratch, dir: suite).must())
     cipher = read_file(path: scratch + "/suite.enc").must()
-    assert strings.starts_with(text: cipher, prefix: "U2FsdGVkX1")
+    assert core_strings.has_prefix(s: cipher, prefix: "U2FsdGVkX1")
     assert made.sealed.sha == thesis_sha256.of(cipher)
-    assert strings.starts_with(text: read_file(path: scratch + "/suite.enc.sha256").must(), prefix: made.sealed.sha)
+    assert core_strings.has_prefix(s: read_file(path: scratch + "/suite.enc.sha256").must(), prefix: made.sealed.sha)
 
     opened = unsealed(scratch: scratch, file: scratch + "/suite.enc", key_name: TEST_KEY).must()
     assert thesis_tasks.told(thesis_tasks.read_suite(scratch: scratch, dir: opened).must()) == made.told

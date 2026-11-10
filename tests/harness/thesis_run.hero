@@ -23,6 +23,8 @@
 # already cost, would pass the cap (`thesis_price.hero`), so a rerun under the
 # same cap counts what the stopped one spent.
 
+use <core>/strings as core_strings
+
 use issue_wire
 use json_fields
 use json_read
@@ -423,7 +425,7 @@ function substituted(asked: str, answered: str) -> str
         return ""
     lead = asked + "-"
 
-    if strings.starts_with(text: answered, prefix: lead)
+    if core_strings.has_prefix(s: answered, prefix: lead)
         rest = strings.without_prefix(text: answered, prefix: lead)
 
         if rest.len() == 8 && all_digits(rest)
@@ -694,7 +696,7 @@ function feedback(template: thesis_prompt.Template, outcome: str, message: str) 
         )
 
     if outcome == "compiled_wrong" || outcome == "abort" || outcome == "crash" || outcome == "timeout"
-        if strings.starts_with(text: message, prefix: "case 0:")
+        if core_strings.has_prefix(s: message, prefix: "case 0:")
             observed = strings.without_prefix(text: message, prefix: "case 0: ")
             return ok(
                 Feedback(text: thesis_prompt.feedback_text(template: template, kind: "example", filled: observed)?, go_on: true)
@@ -788,23 +790,23 @@ test "the feedback is the template's block for the bucket, the compiler's words 
     template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE).must()
     refused = feedback(template: template, outcome: "compile_error", message: "error[unused_binding]: x").must()
     assert refused.go_on
-    assert strings.contains(text: refused.text, needle: "error[unused_binding]")
-    assert strings.ends_with(text: refused.text, suffix: "one fenced code block and nothing else.")
+    assert core_strings.contains(s: refused.text, substr: "error[unused_binding]")
+    assert core_strings.has_suffix(s: refused.text, suffix: "one fenced code block and nothing else.")
     visible = feedback(
         template: template,
         outcome: "compiled_wrong",
         message: "case 0: printed something else\n--- expected ---\n2\n"
     ).must()
     assert visible.go_on
-    assert strings.contains(text: visible.text, needle: "printed something else")
-    assert !strings.contains(text: visible.text, needle: "case 0:")
+    assert core_strings.contains(s: visible.text, substr: "printed something else")
+    assert !core_strings.contains(s: visible.text, substr: "case 0:")
     hidden = feedback(template: template, outcome: "compiled_wrong", message: "case 3: printed something else").must()
     assert !hidden.go_on
     assert hidden.text == ""
     assert !feedback(template: template, outcome: "api_refusal", message: "").must().go_on
     cut = feedback(template: template, outcome: "truncated", message: "").must()
     assert cut.go_on
-    assert strings.contains(text: cut.text, needle: "cut off")
+    assert core_strings.contains(s: cut.text, substr: "cut off")
     assert !feedback(template: template, outcome: "transport_error", message: "").must().go_on
     assert feedback(template: template, outcome: "no_program", message: "").must().go_on
     assert feedback(template: template, outcome: "refused_extern", message: "").must().go_on
@@ -916,8 +918,8 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
 
     # The tasks as they ran, one line each and the suite's, beside the verdicts.
     listed = read_file(path: scratch + "/out/tasks.txt").must()
-    assert strings.contains(text: listed, needle: " 01 9\n")
-    assert strings.contains(text: listed, needle: "\nsuite ")
+    assert core_strings.contains(s: listed, substr: " 01 9\n")
+    assert core_strings.contains(s: listed, substr: "\nsuite ")
 
     kept = thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/samples").must()
     assert kept.len() == 3
@@ -1060,15 +1062,15 @@ test "a run's provenance names the template and the layout apart, the suite, the
     assert json_fields.text_at(of: read, name: "layout_sha").default("") != template.sha
     assert json_fields.text_at(of: read, name: "suite_sha").default("") == "1d6a524d"
     assert json_fields.text_at(of: read, name: "sources").default("") == "7792ecfe50a531e8"
-    assert strings.contains(text: text, needle: "\"models\":[\"claude-sonnet-5-5\"]")
-    assert strings.contains(text: text, needle: "\"arms\":[\"strict\",\"control\"]")
+    assert core_strings.contains(s: text, substr: "\"models\":[\"claude-sonnet-5-5\"]")
+    assert core_strings.contains(s: text, substr: "\"arms\":[\"strict\",\"control\"]")
     assert json_fields.text_at(of: read, name: "transport").default("") == "api"
     assert json_fields.text_at(of: read, name: "harness").default("x") == ""
 
     # The plan names no effort, and the record writes the one its requests carry (defect 2181).
     assert json_fields.text_at(of: read, name: "effort").default("x") == ""
-    assert strings.contains(text: text, needle: "\"efforts\":[{\"model\":\"claude-sonnet-5-5\",\"effort\":\"high\"}]")
-    assert strings.contains(text: text, needle: "\"sha\":\"" + spec.spec_sha + "\"")
+    assert core_strings.contains(s: text, substr: "\"efforts\":[{\"model\":\"claude-sonnet-5-5\",\"effort\":\"high\"}]")
+    assert core_strings.contains(s: text, substr: "\"sha\":\"" + spec.spec_sha + "\"")
 
 # A plan of the tests below: one model, the `none` context, the folder given.
 function test_plan(dir: str, out: str, arms: [str]) -> Plan
@@ -1178,7 +1180,7 @@ test "a generation lost past its retries is every arm's transport_error and the 
         compiler: compiler
     ).must()
     assert stopped.lost == 3
-    assert strings.contains(text: stopped.stopped, needle: "3 requests in a row were lost")
+    assert core_strings.contains(s: stopped.stopped, substr: "3 requests in a row were lost")
     assert stopped.verdicts == 2
     assert thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/down/samples").must().len() == 2
 
@@ -1253,8 +1255,8 @@ test "a capped run stops before the request whose bound would pass the cap, and 
     assert first.requests == 2
     assert first.attempts == 2
     assert first.spent == 2 * (100 * 100 + 1000000 * 500)
-    assert strings.starts_with(
-        text: first.stopped,
+    assert core_strings.has_prefix(
+        s: first.stopped,
         prefix: "the cap of $1 would be passed: $1.01 spent, and the next request may cost up to $0."
     )
 
@@ -1381,7 +1383,7 @@ test "a run resumed into its folder holds the protocol it began with: another is
 
     match refused
         .ok _  => assert false
-        .err e => assert strings.contains(text: e.msg, needle: "`turns`")
+        .err e => assert core_strings.contains(s: e.msg, substr: "`turns`")
 
     # The same protocol a day later at another commit: the first record stands
     # and the resume is noted beside it.
@@ -1408,7 +1410,7 @@ test "an answer is the asked model's when it names that id or that id dated, and
     # A longer id that opens with the asked one is a different model, not a dated one.
     assert substituted(asked: "claude-sonnet-5", answered: "claude-sonnet-5-5") != ""
     assert substituted(asked: "claude-sonnet-5", answered: "claude-sonnet-5-2026101") != ""
-    assert strings.contains(text: substituted(asked: "m", answered: ""), needle: "names no model")
+    assert core_strings.contains(s: substituted(asked: "m", answered: ""), substr: "names no model")
 
 test "a run answered by another model than the one it asked stops at that answer and keeps nothing of it"
     if thesis_sandbox.unrunnable() != ""
@@ -1433,7 +1435,7 @@ test "a run answered by another model than the one it asked stops at that answer
     ).must()
     assert tally.generations == 1
     assert tally.verdicts == 1
-    assert strings.contains(text: tally.stopped, needle: "answered by `claude-haiku-4-5-20251001`")
+    assert core_strings.contains(s: tally.stopped, substr: "answered by `claude-haiku-4-5-20251001`")
     assert thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/generations").must().len() == 1
 
 # The script's reply as the model the request names: `{{MODEL}}` in its body

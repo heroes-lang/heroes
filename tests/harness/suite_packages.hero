@@ -70,6 +70,8 @@
 # driver reaches it. Such a module is told as unreached, the loud direction, and
 # the failure says why.
 
+use <core>/strings as core_strings
+
 use floors
 use package_judge
 use package_rules
@@ -82,14 +84,23 @@ use thesis_sha256
 constant EXAMPLES: str
     "examples"
 
+# The net's own program folder, whose catalogue takes `core` since feature
+# 2425 (panel 242's R7): the first program outside `examples/` to hold a
+# placed tree, held to the index as every example is (the compiler-engineer's
+# route (D) found this check reading `examples/` alone, *green because blind*,
+# the sitting's critic's words).
+constant NET: str
+    "tests/harness"
+
 # The package's own program (`examples/packages/README.md` § 1.6), a consumer
 # of `<core>` like every other.
 constant DRIVER: str
     "examples/packages/main.hero"
 
-# The index line every catalogue under `examples/` writes: the index at the
-# repository's root, two folders above a program one folder below `examples/`,
-# read over `file://` from inside the repository (R9's C4; panel 238's R10).
+# The index line every catalogue under `examples/` writes, and the net's: the
+# index at the repository's root, two folders above a program one folder
+# below `examples/` and above `tests/harness/`, read over `file://` from
+# inside the repository (R9's C4; panel 238's R10).
 constant INDEX_LINE: str
     "file://../../packages"
 
@@ -105,9 +116,10 @@ constant LEAST: i64
 
 # The floor of the placed trees: every program under `examples/` that uses the
 # core packages holds one. **14 on 2026-11-08**, the day R15 placed them: the
-# thirteen programs that carried a copy and the driver.
+# thirteen programs that carried a copy and the driver. **15 on 2026-11-10**,
+# the net's own (feature 2425).
 constant LEAST_PLACED: i64
-    14
+    15
 
 # A file of the package's source: where it stands, its path under the source's
 # root, and its text.
@@ -127,7 +139,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     count: i64 @= 0
 
     for h in source
-        if strings.ends_with(text: h.rel, suffix: ".hero")
+        if core_strings.has_suffix(s: h.rel, suffix: ".hero")
             count @ count + 1
 
     floors.check(
@@ -306,15 +318,17 @@ function index_read(scratch: str) -> Index?
 
     return ok(Index(sums: sums, lists: texts))
 
-# Every program's catalogue under `examples/` reads the local index and names
-# what it publishes, and every placed tree is the one an entry names, the
-# index's files byte for byte.
+# Every program's catalogue under `examples/`, and the net's, reads the local
+# index and names what it publishes, and every placed tree is the one an entry
+# names, the index's files byte for byte.
 function placed(@r: report.Report, scratch: str) -> ()?
     index = index_read(scratch)?
     found: [str] @= []
     trees: i64 @= 0
+    programs: [str] @= shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+    programs @ programs.push(NET)
 
-    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+    for dir in programs
         folder = dir + "/" + placed_trees.FOLDER
         text = read_file(dir + "/heroes.toml")
 
@@ -375,7 +389,7 @@ function placed(@r: report.Report, scratch: str) -> ()?
         label: "packages/placed",
         found: trees,
         floor: LEAST_PLACED,
-        what: "entries of the index's packages in the catalogues under " + EXAMPLES + "/"
+        what: "entries of the index's packages in the catalogues under " + EXAMPLES + "/ and " + NET + "/"
     )
     keep(
         @r,
@@ -440,7 +454,7 @@ function reach(@r: report.Report, scratch: str, compiler: str, root: str, source
     prefix = strings.without_suffix(text: DRIVER, suffix: "main.hero") + placed_trees.FOLDER + "/"
 
     for path in package_rules.line_paths(ran.out)
-        if strings.starts_with(text: path, prefix: prefix)
+        if core_strings.has_prefix(s: path, prefix: prefix)
             rest = strings.without_prefix(text: path, prefix: prefix)
             cut = strings.index_of(text: rest, needle: "/")
 
@@ -459,7 +473,7 @@ function reach(@r: report.Report, scratch: str, compiler: str, root: str, source
         )
 
     for h in source
-        if held_newest && strings.ends_with(text: h.rel, suffix: ".hero") && named[h.rel].is_err()
+        if held_newest && core_strings.has_suffix(s: h.rel, suffix: ".hero") && named[h.rel].is_err()
             found @ found.push("    " + h.path)
 
     keep(
@@ -478,7 +492,7 @@ function tests_ran(@r: report.Report, scratch: str, compiler: str, source: [Held
     found: [str] @= []
 
     for h in source
-        if strings.ends_with(text: h.rel, suffix: ".hero")
+        if core_strings.has_suffix(s: h.rel, suffix: ".hero")
             for title in package_rules.test_titles(h.text)
                 if passed[title].is_err()
                     found @ found.push("    " + h.path + ": `test \"" + title + "\"`")
@@ -502,7 +516,7 @@ function hero_paths(listed: [str]) -> [str]
     out: [str] @= []
 
     for path in placed_trees.outside(listed)
-        if strings.ends_with(text: path, suffix: ".hero")
+        if core_strings.has_suffix(s: path, suffix: ".hero")
             out @ out.push(path)
 
     return out
@@ -536,7 +550,7 @@ function each_module(@r: report.Report, root: str, source: [Held])
     tests: [str] @= []
 
     for h in source
-        if !strings.ends_with(text: h.rel, suffix: ".hero")
+        if !core_strings.has_suffix(s: h.rel, suffix: ".hero")
             continue
         at = "    " + h.path + ": "
 

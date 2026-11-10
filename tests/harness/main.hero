@@ -103,6 +103,8 @@
 # ported: `differential.rs` compares TWO compilers, so its oracle dies with
 # the bootstrap, and what survives is the bytes it blessed.
 
+use <core>/strings as core_strings
+
 use cases
 use report
 use shell
@@ -794,11 +796,11 @@ function reached(dir: str, root: str) -> [str]?
         out @ out.push(name)
 
         for line in strings.lines(text.must())
-            if !strings.starts_with(text: line, prefix: "use ")
+            if !core_strings.has_prefix(s: line, prefix: "use ")
                 continue
             used = strings.without_prefix(text: line, prefix: "use ")
 
-            if used.len() == 0 || strings.words(used).len() != 1 || strings.contains(text: used, needle: "/")
+            if used.len() == 0 || strings.words(used).len() != 1 || core_strings.contains(s: used, substr: "/")
                 return fail(
                     code: "shape",
                     msg: dir + "/" + name + ".hero: `" + line + "` is not `use <module>`, which this count reads"
@@ -814,7 +816,7 @@ function blocks(dir: str, root: str) -> i64?
 
     for name in reached(dir: dir, root: root)?
         for line in strings.lines(read_file(dir + "/" + name + ".hero")?)
-            if strings.starts_with(text: line, prefix: "test \"")
+            if core_strings.has_prefix(s: line, prefix: "test \"")
                 count @ count + 1
 
     return ok(count)
@@ -826,10 +828,10 @@ function skips_in(out: str) -> [str]
     inside: bool @= false
 
     for line in strings.lines(out)
-        if strings.starts_with(text: line, prefix: "SKIP ")
+        if core_strings.has_prefix(s: line, prefix: "SKIP ")
             inside @ true
             said @ said.push(line)
-        else if inside && strings.starts_with(text: line, prefix: "  ")
+        else if inside && core_strings.has_prefix(s: line, prefix: "  ")
             said @ said.push(line)
         else
             inside @ false
@@ -848,16 +850,16 @@ function strays(out: str, modules: [str]) -> [str]
     inside: bool @= false
 
     for line in strings.lines(out)
-        if inside && strings.starts_with(text: line, prefix: "  ")
+        if inside && core_strings.has_prefix(s: line, prefix: "  ")
             continue
         inside @ false
         words = strings.words(line)
 
-        if words.len() > 1 && words[0] == "SKIP" && strings.ends_with(text: words[1], suffix: ":") && named(modules: modules, name: strings.without_suffix(text: words[1], suffix: ":"))
+        if words.len() > 1 && words[0] == "SKIP" && core_strings.has_suffix(s: words[1], suffix: ":") && named(modules: modules, name: strings.without_suffix(text: words[1], suffix: ":"))
             inside @ true
             continue
 
-        if line == "" || strings.starts_with(text: line, prefix: "ok   \"") || strings.starts_with(text: line, prefix: "FAIL \"")
+        if line == "" || core_strings.has_prefix(s: line, prefix: "ok   \"") || core_strings.has_prefix(s: line, prefix: "FAIL \"")
             continue
 
         if counts(words)
@@ -896,7 +898,7 @@ test "a run's skips are read with their reasons, and nothing else"
 test "the modules a root reaches are read from its use lines, and one naming no file is no module"
     assert reached(dir: "tests/harness", root: "issues").must().len() > reached(dir: "tests/harness", root: "report").must().len()
     assert reached(dir: "tests/harness", root: "issues").must()[0] == "issues"
-    assert !strings.contains(text: reached(dir: "tests/harness", root: "issues").must().join(" "), needle: "suite_")
+    assert !core_strings.contains(s: reached(dir: "tests/harness", root: "issues").must().join(" "), substr: "suite_")
     assert reached(dir: "tests/harness", root: "no_such_module").is_err()
     assert blocks(dir: "tests/harness", root: "issues").must() > blocks(dir: "tests/harness", root: "issue_links").must()
 
@@ -907,7 +909,7 @@ test "the issue program's own tests run with the net's own, every block its modu
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     # A test the issue program's run stepped aside is said here too, with its
@@ -939,7 +941,7 @@ test "the thesis instrument's own tests run with the net's own, every block its 
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     # A test the instrument's run stepped aside is said here too, with its
@@ -969,7 +971,7 @@ test "the generator's own tests run with the net's own, every block its modules 
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     for line in skips_in(ran.out)
@@ -995,7 +997,7 @@ test "the latency instrument's own tests run with the net's own, every block its
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     for line in skips_in(ran.out)
@@ -1021,7 +1023,7 @@ test "the package cards' program's own tests run with the net's own, every block
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     for line in skips_in(ran.out)

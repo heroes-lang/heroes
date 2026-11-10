@@ -16,6 +16,8 @@
 # the face explains, and a stored `.md` that is no face's card are each told,
 # by name, and never written around.
 
+use <core>/strings as core_strings
+
 use package_card
 use package_codes
 use package_face
@@ -60,7 +62,7 @@ function faces_in(rels: [str]) -> [str]
     out: [str] @= []
 
     for rel in rels
-        if strings.ends_with(text: rel, suffix: ".hero") && !private(rel)
+        if core_strings.has_suffix(s: rel, suffix: ".hero") && !private(rel)
             out @ out.push(strings.without_suffix(text: rel, suffix: ".hero"))
 
     return out
@@ -80,7 +82,7 @@ function package_modules(face: str, rels: [str]) -> [str]
     out: [str] @= [face + ".hero"]
 
     for rel in rels
-        if strings.starts_with(text: rel, prefix: face + "/internal/") && strings.ends_with(text: rel, suffix: ".hero")
+        if core_strings.has_prefix(s: rel, prefix: face + "/internal/") && core_strings.has_suffix(s: rel, suffix: ".hero")
             out @ out.push(rel)
 
     return out
@@ -95,7 +97,7 @@ function strays(rels: [str]) -> [str]
     out: [str] @= []
 
     for rel in rels
-        if strings.ends_with(text: rel, suffix: ".md") && faces[strings.without_suffix(text: rel, suffix: ".md")].is_err()
+        if core_strings.has_suffix(s: rel, suffix: ".md") && faces[strings.without_suffix(text: rel, suffix: ".md")].is_err()
             out @ out.push(rel)
 
     return out
@@ -252,7 +254,7 @@ function proof_tree(scratch: str, root: str, rels: [str]) -> str?
     dir = scratch + "/cards-proof"
 
     for rel in rels
-        if strings.ends_with(text: rel, suffix: ".hero")
+        if core_strings.has_suffix(s: rel, suffix: ".hero")
             target = dir + "/" + COPY + "/" + rel
             shell.mkdir_all(parent(target))?
             write_file(path: target, text: read(root + "/" + rel)?)?

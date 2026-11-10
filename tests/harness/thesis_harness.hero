@@ -65,6 +65,8 @@
 # Haiku 5.5's under 2.1.304, and was read as the answer's model until defect
 # 2179; the answers were the asked model's (their sessions' messages say so).
 
+use <core>/strings as core_strings
+
 use issue_wire
 use json_fields
 use json_read
@@ -595,11 +597,11 @@ test "the harness's words: print mode, nothing of the machine, no tool, one JSON
     first = claude_words(program: "claude", model: "claude-haiku-5-5", effort: "", resume: "")
     assert first == ["claude", "-p", "--bare", "--tools", "", "--output-format", "json", "--model", "claude-haiku-5-5"]
     later = claude_words(program: "claude", model: "m", effort: "high", resume: "s1")
-    assert strings.contains(text: later.join(" "), needle: "--effort high --resume s1 --fork-session")
-    assert !strings.contains(text: later.join(" "), needle: "--no-session-persistence")
+    assert core_strings.contains(s: later.join(" "), substr: "--effort high --resume s1 --fork-session")
+    assert !core_strings.contains(s: later.join(" "), substr: "--no-session-persistence")
 
     for word in later
-        assert !strings.contains(text: word, needle: "sk-")
+        assert !core_strings.contains(s: word, substr: "sk-")
 
 test "the answering model is the one modelUsage names; several are named together, never the first alone, and none is none (defect 2179)"
     # `claude` 2.1.304's own `modelUsage` for one Sonnet 5.5 answer with its
@@ -610,7 +612,7 @@ test "the answering model is the one modelUsage names; several are named togethe
     assert answering(json_read.read_json(one).must()) == "claude-sonnet-5-5"
     assert answering(json_read.read_json("{\"modelUsage\":{}}").must()) == ""
     assert answering(json_read.read_json("{\"result\":\"x\"}").must()) == ""
-    assert strings.contains(text: SPAWN, needle: " " + NO_TITLE + " ")
+    assert core_strings.contains(s: SPAWN, substr: " " + NO_TITLE + " ")
 
 test "a request is read back to its model, effort, system text and messages, and the prompt is a first turn whole or a later turn's message"
     asked = asked_of(request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK")]).body).must()
@@ -637,7 +639,7 @@ test "a history's digest moves with any part and frames each part by its length"
     assert history_key(system: "S", said: a).len() == 64
 
 test "a harness run is refused for a missing key first, then for a compiler on the child's PATH"
-    assert strings.contains(text: refused(key_set: false, guard: ""), needle: "ANTHROPIC_API_KEY is not set")
+    assert core_strings.contains(s: refused(key_set: false, guard: ""), substr: "ANTHROPIC_API_KEY is not set")
     assert refused(key_set: false, guard: "found") == refused(key_set: false, guard: "")
     assert refused(key_set: true, guard: "") == ""
     assert refused(key_set: true, guard: "found") == "found"
@@ -668,11 +670,11 @@ test "a stand-in harness answers two arms over three turns: the first from the p
     assert one.input == 10
     assert one.cache_read == 2
     assert read_file(path: state + "/stdin-1").must() == "SPEC\n\nTASK"
-    assert strings.contains(
-        text: read_file(path: state + "/args-1").must(),
-        needle: "-p\n--bare\n--tools\n\n--output-format\njson\n--model\nm\n--effort\nlow\n"
+    assert core_strings.contains(
+        s: read_file(path: state + "/args-1").must(),
+        substr: "-p\n--bare\n--tools\n\n--output-format\njson\n--model\nm\n--effort\nlow\n"
     )
-    assert !strings.contains(text: read_file(path: state + "/args-1").must(), needle: "--resume")
+    assert !core_strings.contains(s: read_file(path: state + "/args-1").must(), substr: "--resume")
     assert strings.trimmed(read_file(path: state + "/pwd-1").must()) == here + "/out/harness-cwd"
     assert strings.trimmed(read_file(path: state + "/home-1").must()) == here + "/out/harness-home"
 
@@ -692,8 +694,8 @@ test "a stand-in harness answers two arms over three turns: the first from the p
         harness: stand_in_harness
     )
     assert read_file(path: state + "/stdin-2").must() == "FEEDBACK A"
-    assert strings.contains(text: read_file(path: state + "/args-2").must(), needle: "--resume\ns1\n--fork-session\n")
-    assert strings.contains(text: read_file(path: state + "/args-3").must(), needle: "--resume\ns1\n--fork-session\n")
+    assert core_strings.contains(s: read_file(path: state + "/args-2").must(), substr: "--resume\ns1\n--fork-session\n")
+    assert core_strings.contains(s: read_file(path: state + "/args-3").must(), substr: "--resume\ns1\n--fork-session\n")
     two = thesis_answer.read_anthropic(a.reply.body).must()
 
     # The first arm's third turn resumes its own second session.
@@ -703,7 +705,7 @@ test "a stand-in harness answers two arms over three turns: the first from the p
         harness: stand_in_harness
     )
     assert c.reply.status == 200
-    assert strings.contains(text: read_file(path: state + "/args-4").must(), needle: "--resume\ns2\n--fork-session\n")
+    assert core_strings.contains(s: read_file(path: state + "/args-4").must(), substr: "--resume\ns2\n--fork-session\n")
 
     # A history no session answered spawns nothing and sends nothing.
     never = "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"never said\"}]}"
@@ -725,7 +727,7 @@ test "a stand-in harness answers two arms over three turns: the first from the p
     )
     assert failed.reply.status == 0
     assert failed.reply.sent
-    assert strings.contains(text: failed.reply.failure, needle: "the API answered 529")
+    assert core_strings.contains(s: failed.reply.failure, substr: "the API answered 529")
 
 test "codex's words: its events as JSON, nothing of the machine, a read-only sandbox, no search, no approval, and a later turn's thread forked"
     first = codex_words(program: "codex", model: "gpt-5.5", effort: "", resume: "")
@@ -733,12 +735,12 @@ test "codex's words: its events as JSON, nothing of the machine, a read-only san
     later = codex_words(program: "codex", model: "gpt-5.5", effort: "high", resume: "t1")
     assert later[1] == "exec"
     assert later[2] == "fork"
-    assert strings.contains(text: later.join(" "), needle: "-m gpt-5.5 -c model_reasoning_effort=\"high\" t1 -")
-    assert !strings.contains(text: later.join(" "), needle: "--sandbox")
+    assert core_strings.contains(s: later.join(" "), substr: "-m gpt-5.5 -c model_reasoning_effort=\"high\" t1 -")
+    assert !core_strings.contains(s: later.join(" "), substr: "--sandbox")
 
 test "a codex row is refused for a missing login in the tree's home first, then for a compiler on the child's PATH"
     told = codex_refused(logged: false, guard: "found")
-    assert strings.contains(text: told, needle: "CODEX_HOME=build/thesis-codex-home codex login")
+    assert core_strings.contains(s: told, substr: "CODEX_HOME=build/thesis-codex-home codex login")
     assert codex_refused(logged: true, guard: "") == ""
     assert codex_refused(logged: true, guard: "found") == "found"
 
@@ -762,14 +764,14 @@ test "codex's events are read to their thread, last message and usage, its uncac
     failed = heard_codex(
         ran: shell.Run(code: 1, out: "{\"type\":\"thread.started\",\"thread_id\":\"t\"}\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"usage limit reached\"}}\n", err: "", started: true, why: 0)
     )
-    assert strings.contains(text: refusal_said(failed), needle: "usage limit reached")
-    assert strings.contains(
-        text: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "not json\n", err: "", started: true, why: 0))),
-        needle: "no JSON"
+    assert core_strings.contains(s: refusal_said(failed), substr: "usage limit reached")
+    assert core_strings.contains(
+        s: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "not json\n", err: "", started: true, why: 0))),
+        substr: "no JSON"
     )
-    assert strings.contains(
-        text: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "{\"type\":\"turn.started\"}\n", err: "", started: true, why: 0))),
-        needle: "name no thread"
+    assert core_strings.contains(
+        s: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "{\"type\":\"turn.started\"}\n", err: "", started: true, why: 0))),
+        substr: "name no thread"
     )
 
 test "a stand-in codex answers a first turn and two forks of it, in the tree's codex home"
@@ -797,7 +799,7 @@ test "a stand-in codex answers a first turn and two forks of it, in the tree's c
     assert one.input == 3
     assert one.cache_read == 7
     assert read_file(path: state + "/stdin-1").must() == "SPEC\n\nTASK"
-    assert strings.starts_with(text: read_file(path: state + "/args-1").must(), prefix: "exec\n--json\n")
+    assert core_strings.has_prefix(s: read_file(path: state + "/args-1").must(), prefix: "exec\n--json\n")
     assert strings.trimmed(read_file(path: state + "/codex-home-1").must()) == here + "/codex-home"
     assert strings.trimmed(read_file(path: state + "/home-1").must()) == here + "/out/harness-home"
     a = harness_sent(
@@ -812,9 +814,9 @@ test "a stand-in codex answers a first turn and two forks of it, in the tree's c
     )
     assert b.reply.status == 200
     assert read_file(path: state + "/stdin-2").must() == "FEEDBACK A"
-    assert strings.starts_with(text: read_file(path: state + "/args-2").must(), prefix: "exec\nfork\n")
-    assert strings.ends_with(text: read_file(path: state + "/args-2").must(), suffix: "t1\n-\n")
-    assert strings.ends_with(text: read_file(path: state + "/args-3").must(), suffix: "t1\n-\n")
+    assert core_strings.has_prefix(s: read_file(path: state + "/args-2").must(), prefix: "exec\nfork\n")
+    assert core_strings.has_suffix(s: read_file(path: state + "/args-2").must(), suffix: "t1\n-\n")
+    assert core_strings.has_suffix(s: read_file(path: state + "/args-3").must(), suffix: "t1\n-\n")
 
 function refusal_said(read: Heard?) -> str
     return match read
@@ -841,8 +843,8 @@ function stand_in(state: str) -> str
     return ["#!/bin/sh", "state='" + state + "'", "n=$(( $(cat \"$state/count\" 2>/dev/null || echo 0) + 1 ))", "echo \"$n\" > \"$state/count\"", "printf '%s\\n' \"$@\" > \"$state/args-$n\"", "pwd > \"$state/pwd-$n\"", "printf '%s\\n' \"$HOME\" > \"$state/home-$n\"", "printf '%s\\n' \"$CLAUDE_CODE_DISABLE_TERMINAL_TITLE\" > \"$state/title-$n\"", "cat > \"$state/stdin-$n\"", "if [ -f \"$state/fail\" ]; then printf '%s' '{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"session_id\":\"x\",\"errors\":[\"the API answered 529\"],\"usage\":{}}'; exit 1; fi", "printf '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"answer %s\",\"session_id\":\"s%s\",\"stop_reason\":\"end_turn\",\"num_turns\":1,\"total_cost_usd\":0.01,\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"cache_read_input_tokens\":2,\"cache_creation_input_tokens\":0},\"modelUsage\":{\"claude-haiku-5-5-20261001\":{\"inputTokens\":10}}}' \"$n\" \"$n\""].join("\n") + "\n"
 
 test "the harness child runs under a bound past the API deadline it is handed, and both stand inside the wire's"
-    assert strings.contains(text: SPAWN, needle: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")
-    assert strings.contains(text: CODEX_SPAWN, needle: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")
+    assert core_strings.contains(s: SPAWN, substr: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")
+    assert core_strings.contains(s: CODEX_SPAWN, substr: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")
     assert API_TIMEOUT_MS == (thesis_wire.MAX_TIME * 1000).to_str()
     assert HARNESS_SECONDS == thesis_wire.WIRE_SECONDS
     assert HARNESS_SECONDS <= shell.SELF_BOUNDED_MOST
