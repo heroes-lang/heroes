@@ -10,6 +10,8 @@
 
 use cli/argv
 use cli/io
+use cli/placed_files
+use cli/process
 use cli/publish
 use cli/strings
 use cli/table as cli_table
@@ -66,6 +68,12 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
     if formatted == source_extent.user_text(s)
         return .ok_exit
 
+    # A placed package's file is written by no `--in-place` (defect 2457,
+    # `cli/placed_files`): the build holds its tree to its `sum`.
+    if placed_files.within(path)
+        io.eprint(text: "error: " + placed_files.refused(path))
+        return .failed_exit
+
     # Whole or not at all, and the file stays what it was but its bytes
     # (`cli/publish.hero`, defect 136): this was `write_file` on the author's
     # own path, which emptied it first, so a full disk left 0 bytes.
@@ -104,6 +112,27 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
     bs = source.new_source(name: "build/selftest_fmt.hero", text: "function main(\n")
     assert run_fmt(path: "build/selftest_fmt.hero", s: bs, inv: finv) == .diagnostics_exit
     assert read_file("build/selftest_fmt.hero").must() == "function main(\n"
+
+# Defect 2457: `fmt --in-place` writes no file of a placed package's tree,
+# which the build holds to its `sum`, and refuses saying so; the same text
+# in a folder whose name only holds the word is the author's, and written.
+test "fmt --in-place leaves a placed package's file as it was placed, and formats the author's (defect 2457)"
+    messy = "function main()\n    print(2 + (3 * 4))\n"
+    in_place: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
+    placed = "build/selftest-fmt-placed/heroes.packages/json@1.0.0-0123456789abcdef/m.hero"
+    mine = "build/selftest-fmt-placed/my.heroes.packages/m.hero"
+
+    for path in [placed, mine]
+        assert !process.mkdir_all(path.slice(from: 0, to: path.len() - 7)).is_err()
+        assert !write_file(path: path, text: messy).is_err()
+
+    pinv = argv.Invocation(tag: .fmt_cmd, file: ok(placed), program_args: [], flags: in_place)
+    assert run_fmt(path: placed, s: source.new_source(name: placed, text: messy), inv: pinv) == .failed_exit
+    assert read_file(placed).must() == messy
+    minv = argv.Invocation(tag: .fmt_cmd, file: ok(mine), program_args: [], flags: in_place)
+    assert run_fmt(path: mine, s: source.new_source(name: mine, text: messy), inv: minv) == .ok_exit
+    assert read_file(mine).must() == "function main()\n    print(2 + 3 * 4)\n"
+    assert !process.remove_tree("build/selftest-fmt-placed").is_err()
 
 # §9: a verifier check gets a test that makes it FIRE, and this one
 # fires on a shape the printer still cannot spell — a `match` as the

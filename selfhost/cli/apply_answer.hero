@@ -18,6 +18,7 @@ use cli/argv
 use cli/check_json
 use cli/holes_json
 use cli/io
+use cli/placed_files
 use cli/publish
 use cli/table as cli_table
 use diag
@@ -89,6 +90,11 @@ function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, own
     # writes (defect 136): `write_file` here emptied the file first, and a full
     # disk left it cut mid-token.
     if settled.text != source_extent.user_text(s)
+        # A placed package's file is written by no `--apply` (defect 2457,
+        # `cli/placed_files`): the build holds its tree to its `sum`.
+        if placed_files.within(s.name)
+            io.eprint(text: "error: " + placed_files.refused(s.name))
+            return .failed_exit
         written = publish.rewrite(path: s.name, text: settled.text)
 
         if written.is_err()

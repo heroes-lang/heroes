@@ -1,0 +1,6 @@
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-cbc0687f1eac43b0027b03bfeb93aff23121b895ec8d9373e391a289d9c2383c"
+
+[dependencies.mine]
+path = "mine"
