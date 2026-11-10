@@ -2278,6 +2278,33 @@ test "fixedbugs: on Windows a program named above ASCII builds and runs, by rela
     assert answered.out == "42\n"
     assert !remove_tree(scratch).is_err()
 
+# Defect 2418: every build read clang's `-M` listing, which names a
+# program's own files by their paths, by a cut at the word's length from
+# every byte offset (`cli/package_reads.hero`, `entries`), so a program in a
+# folder above ASCII stopped every build at exit 134 on every platform. Only
+# the two Windows tests above build in such a folder, and the CI's Windows
+# leg of 2026-11-10 was the first to reach them since the line entered: this
+# one asks it of every machine.
+test "fixedbugs: a program in a folder above ASCII builds and runs on every platform (defect 2418)"
+    scratch = own_scratch()
+    compiler = some_compiler().must()
+    proj = scratch + "/proj-é"
+    assert !mkdir_all(proj).is_err()
+    assert !write_file(path: proj + "/main.hero", text: "use helper\n\nfunction main()\n    print(helper.answer())\n").is_err()
+    assert !write_file(path: proj + "/helper.hero", text: "function answer() -> i64\n    return 42\n").is_err()
+    built = run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", proj + "/main.hero", "-o", proj + "/answer" + exe_suffix()]
+    ).must()
+    assert built.code == 0
+    answered = run(
+        scratch: scratch,
+        program: proj + "/answer" + exe_suffix(),
+        words: [proj + "/answer" + exe_suffix()]
+    ).must()
+    assert answered.out == "42\n"
+
 test "fixedbugs: on Windows a command line's fullwidth quotes stay characters, and a fullwidth solidus never reaches another folder (defect 238, W15, W19)"
     if exe_suffix() != ".exe"
         return
