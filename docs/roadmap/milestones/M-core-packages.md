@@ -454,3 +454,41 @@ program reaches `core`, the package manager rewritten over these packages being 
 Defect 2398, the last M-package-manager's tag waited on, was repaired in the same round (`c6dd426cd`,
 `3f8f9d15a`): MSVC `link.exe`'s report of an undefined name, read as every other linker's, and two
 neighbours of it (defects 2407 and 2408); its story is journal 075's.
+
+## Step 6 met its own premise, 2026-11-10
+
+Asked first for a reduced sitting on feature 2315, the author got panel 241
+(`docs/panel/241-the-compiler-takes-no-package-yet-crypto-sha256-is-heroes-alone-and-the-package-managers-rewrite-waits-for-its-packages-and-a-full-sitting.md`,
+decision 2415, provisional). What it measured changes this page's acceptance
+condition from a step into a sequence:
+
+- **Over `core` 0.2.0 the rewrite replaces nothing.** Built over two stages with
+  its fixpoint, the compiler carrying `core` as a catalogue entry moved the 33
+  calls of `fetch/` from `cli/strings`' byte-safe helpers onto `core`'s
+  byte-identical loops, deleted 0 functions, and cost every check 0.285 % of its
+  instructions and every `core` version a seed refresh. No package of 0.2.0
+  covers a C group of the package manager, and the copy under `selfhost/core/`
+  that 2315's notes name does not compile as written (exit 1). So the step waits
+  for the packages it would actually replace something with: `path/filepath`
+  (decision 2404's reading above), `os`, `crypto/sha256` and a transport, each
+  admitted by the package manager's own need; and then for a full sitting,
+  because whether the compiler may carry a package at all is design.md's
+  *"No package is compiled into the compiler or the runtime"*, a Part 1
+  sentence (R4, R8).
+- **The table's row for `crypto/sha256` is answered** (R5): its route is Heroes
+  alone, correct on all three machines with nothing installed, 0.81 s for 64
+  MiB at `-O2` against 0.20 s for libcrypto; `pkgconfig "libcrypto"` is the
+  route a program takes by binding libcrypto itself, refused on the Windows box
+  today for want of `pkg-config`.
+- **The `os` row keeps its runtime half and loses a header's** (R7): an `os`
+  package with a platform arm in its own C header is refused, the ffi-pragmatist
+  having planted a wrong Windows call that built green on this Mac and in Linux
+  arm64; the environment's write a transport needs is `hero_env_put` moved into
+  `hero_os.h`, its Windows arm over `_wputenv_s`, recorded for the full sitting
+  with decision 2228's promise and task 2263.
+- **What the sitting bought at once** was not a package but three crashes: the
+  hand-written *starts with* and *contains* of `ffi_nested`, `catalogue` and
+  `catalogue_edit` cut a text at another's length and stopped the compiler on a
+  name past ASCII (defects 2409, 2410, 2411), repaired onto `cli/strings` in the
+  round that carries this paragraph; and the hooks' own tests, red on the trunk
+  since `ce9c288c3` (defect 2412).
