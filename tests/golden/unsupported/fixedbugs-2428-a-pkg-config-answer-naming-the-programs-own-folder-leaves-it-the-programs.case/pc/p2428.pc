@@ -1,0 +1,7 @@
+# A .pc whose folder is the program's own (defect 2428).
+prefix=${pcfiledir}/..
+Name: p2428
+Description: a library answer naming the program's own folder
+Version: 1.0
+Cflags: -I${prefix}
+Libs:

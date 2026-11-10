@@ -1,0 +1,3 @@
+# Two libraries of the case's own, each its own .pc, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/run/fixedbugs-2428-a-programs-own-header-reads-two-libraries-each-named-by-its-own-pkg-config-answer.case/pa:tests/golden/run/fixedbugs-2428-a-programs-own-header-reads-two-libraries-each-named-by-its-own-pkg-config-answer.case/pb
+PKG_CONFIG_LIBDIR=tests/golden/run/fixedbugs-2428-a-programs-own-header-reads-two-libraries-each-named-by-its-own-pkg-config-answer.case/pa:tests/golden/run/fixedbugs-2428-a-programs-own-header-reads-two-libraries-each-named-by-its-own-pkg-config-answer.case/pb

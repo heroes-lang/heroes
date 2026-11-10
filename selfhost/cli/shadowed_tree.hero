@@ -25,13 +25,17 @@
 #   the runtime's, and one found in a named folder stands in for it;
 # - **refused where a header that is no named folder's includes it**, the
 #   platform's or the runtime's: `_stdio.h` beneath the SDK's `stdio.h`;
-# - **refused where a platform folder holds a file of its name**, whoever
-#   includes it: `stdio.h` beneath the program's `lib.h`; unless the includer
-#   names it in quotes and it stands beside the includer, C's own rule for a
-#   header's sibling. The angle form asks the system's places for a name the
-#   platform holds, so a program's `money.h` writing `#include <util.h>` for
-#   its own `util.h` is refused, its note naming the quoted form (panel 237's
-#   ruling; CERT C's PRE04-C);
+# - **refused where a platform folder holds a file of its name**, a header of
+#   a named folder including it: `stdio.h` beneath the program's `lib.h`. Two
+#   exceptions. A header's sibling named in quotes is its own, C's own rule
+#   for it. A file of a folder only `pkg-config` names is that library's, but
+#   where its name is one of the C library's (`cli/shadowed_library.hero`,
+#   panel 243's R2, defect 2428): Homebrew's libcurl ships `curl/curl.h`, a
+#   name the SDK holds as well, and a program's own header including it was
+#   refused. The angle form asks the system's places for a name the platform
+#   holds, so a program's `money.h` writing `#include <util.h>` for its own
+#   `util.h` is refused, its note naming the quoted form (panel 237's ruling;
+#   CERT C's PRE04-C);
 # - and a file `-M` lists and `-H` does not, found by `__has_include` alone, is
 #   refused wherever a named folder found it, the landed rule, and told as a
 #   file a header only asks after (`asked`, defect 2356): its words said the
@@ -41,6 +45,7 @@ use cli/deps
 use cli/order_trial
 use cli/package_reads
 use cli/process
+use cli/shadowed_library
 use cli/stand_in
 use cli/strings
 use emit/c_text
@@ -106,10 +111,21 @@ function unwritten(path: str) -> str
 
     return pieces.push(path.slice(from: start, to: path.len())).join("")
 
+# What the rule reads of a unit's search: the headers the groups name;
+# `named` and `others` as `stand_in.finder` reads them, `others[0]` the
+# runtime's; and the folders only `pkg-config` names, each a library's
+# (`shadowed_library.folders`).
+record Search
+    groups: [str]
+    named: [str]
+    others: [str]
+    libraries: [str]
+
 # **Each file of a named folder the tree reads in another header's place**,
-# by the rule above; `groups` the headers the groups name, `named` and
-# `others` as `stand_in.finder` reads them, `others[0]` the runtime's.
-function shadows(said: str, paths: [str], groups: [str], named: [str], others: [str]) -> [stand_in.Shadow]
+# by the rule above.
+function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
+    named = search.named
+    others = search.others
     out: [stand_in.Shadow] @= []
     seen: {str: bool} @= {}
 
@@ -129,7 +145,7 @@ function shadows(said: str, paths: [str], groups: [str], named: [str], others: [
         if folder.len() > 0 && seen[path].is_err()
             seen[path] @ true
             name = stand_in.relative(path: path, dir: folder)
-            told = refused(one, reader: reader, name: name, groups: groups, named: named, others: others)
+            told = refused(one, reader: reader, name: name, folder: folder, search: search)
 
             if !told.is_err()
                 out @ out.push(
@@ -141,10 +157,15 @@ function shadows(said: str, paths: [str], groups: [str], named: [str], others: [
         folder = stand_in.finder(path: path, named: named, others: others)
 
         if folder.len() > 0 && seen[path].is_err() && process.path_exists(written)
-            seen[path] @ true
-            out @ out.push(
-                stand_in.Shadow(path: written, folder: folder, named: stand_in.relative(path: path, dir: folder), reader: "", beside: false, asked: true)
-            )
+            name = stand_in.relative(path: path, dir: folder)
+
+            # A library's own file only asked after is the library's, as one
+            # its headers include is (panel 243's R2).
+            if !library_own(folder: folder, name: name, search: search)
+                seen[path] @ true
+                out @ out.push(
+                    stand_in.Shadow(path: written, folder: folder, named: name, reader: "", beside: false, asked: true)
+                )
 
     return out
 
@@ -155,27 +176,38 @@ record Reader
     reader: str
     beside: bool
 
-# Why a file `name` of a named folder, included by `reader`, is refused, or
-# none where it is the program's own.
-function refused(one: Entry, reader: str, name: str, groups: [str], named: [str], others: [str]) -> Reader?
+# Why a file `name` of the named folder `folder`, included by `reader`, is
+# refused, or none where it is the program's own or a library's.
+function refused(one: Entry, reader: str, name: str, folder: str, search: Search) -> Reader?
     if one.depth == 1
-        if of_group(path: one.path, groups: groups)
+        if of_group(path: one.path, groups: search.groups)
             return fail(code: "own", msg: "the header a group names")
         return ok(Reader(reader: "", beside: false))
     from = package_reads.lexical(reader)
-    by_named = stand_in.finder(path: from, named: named, others: others).len() > 0
+    by_named = stand_in.finder(path: from, named: search.named, others: search.others).len() > 0
 
     if !by_named
-        return ok(Reader(reader: told_reader(from, others: others), beside: false))
+        return ok(Reader(reader: told_reader(from, others: search.others), beside: false))
 
-    if !twin(others, name: name)
+    if !twin(search.others, name: name)
         return fail(code: "own", msg: "a name the platform does not hold")
+
+    if library_own(folder: folder, name: name, search: search)
+        return fail(code: "own", msg: "a library's own header, in a folder only pkg-config names")
     path = package_reads.lexical(one.path)
     beside = folder_of(from) == folder_of(path)
 
     if beside && quoted(reader: reader, path: path, name: name)
         return fail(code: "own", msg: "the includer's own sibling, named in quotes")
     return ok(Reader(reader: "`" + clang_place.slashed(reader) + "`", beside: beside))
+
+# **Whether a file `name` of the named folder `folder` is a library's own**
+# (panel 243's R2, defect 2428): a folder only `pkg-config` names holds the
+# headers the build asked that library for, its link taking the library from
+# the same answer; a name of the C library's there is still refused, read in
+# the C library's place.
+function library_own(folder: str, name: str, search: Search) -> bool
+    return shadowed_library.held(search.libraries, item: folder) && !shadowed_library.standard(name)
 
 # **Whether a file the unit includes is a group's header**, by the path clang
 # printed: the folder that found it, as written, then `/` and the header as
@@ -192,14 +224,20 @@ function of_group(path: str, groups: [str]) -> bool
     return false
 
 # An includer as a refusal names it: "" for the runtime's, which the landed
-# sentence tells, a platform header by the name it has there, `<stdio.h>`.
+# sentence tells, a platform header by the name it has there, `<stdio.h>`,
+# the C library's where C11 or POSIX.1 lists the name and the system's where
+# neither does, the SDK's `sqlite3ext.h` among them (panel 243's R2).
 function told_reader(from: str, others: [str]) -> str
     if package_reads.holds(dir: others[0], path: from)
         return ""
 
     for dir in others
         if package_reads.holds(dir: dir, path: from)
-            return "the C library's `<" + stand_in.relative(path: from, dir: dir) + ">`"
+            name = stand_in.relative(path: from, dir: dir)
+
+            if shadowed_library.standard(name)
+                return "the C library's `<" + name + ">`"
+            return "the system's `<" + name + ">`"
 
     return "`" + from + "`"
 
@@ -304,9 +342,7 @@ test "a file of a named folder is told by who included it, and a group's own hea
     got = shadows(
         said: said,
         paths: [root + "/src/time.h", root + "/src/locale.h", root + "/src/absent.h"],
-        groups: ["money.h", "stdio.h", "quoted.h"],
-        named: [root + "/src"],
-        others: [root + "/rt", root + "/sdk"]
+        search: Search(groups: ["money.h", "stdio.h", "quoted.h"], named: [root + "/src"], others: [root + "/rt", root + "/sdk"], libraries: [])
     )
     assert got.len() == 4
     assert got[0].named == "heroes_unit.h" && got[0].reader == "" && !got[0].asked
@@ -361,7 +397,13 @@ test "a nested header's sibling named in quotes from its own folder is its own, 
     for row in verdicts
         reader = root + "/src/" + row[0]
         assert !write_file(path: reader, text: row[1]).is_err()
-        got = refused(file, reader: reader, name: "sys/timeb.h", groups: [row[0]], named: named, others: others)
+        got = refused(
+            file,
+            reader: reader,
+            name: "sys/timeb.h",
+            folder: root + "/src",
+            search: Search(groups: [row[0]], named: named, others: others, libraries: [])
+        )
 
         if row[2] == "own"
             assert got.is_err()
@@ -370,4 +412,63 @@ test "a nested header's sibling named in quotes from its own folder is its own, 
 
     assert quoted_spellings("#include\"a.h\"\n# include  \"b c.h\" // x\n#include \"\"\n#include \"open\n#includex \"d.h\"\n") == ["a.h", "b c.h"]
     assert from_folder(folder: "inc/curl", spelled: "/abs/x.h") == "/abs/x.h" && from_folder(folder: ".", spelled: "x.h") == "./x.h"
+    assert !process.remove_tree(root).is_err()
+
+# **A file of a folder only `pkg-config` names is the library's, but where its
+# name is one of the C library's** (panel 243's R2, defect 2428): the
+# program's `own.h` reads a keg's `curl/curl.h`, a name the SDK holds too, and
+# it is the library's; the same keg's `stdio.h` and `sys/socket.h` are refused
+# (the ffi-pragmatist's `pcstdio` printed 7 and `pcsocket` 99 at exit 0 where
+# every file was excused), and so is its `_stdio.h` beneath the SDK's
+# `stdio.h` and its `sqlite3.h` beneath the SDK's `sqlite3ext.h`, the first
+# arm, which knows no exception; a `curl/curl.h` in an `--include` folder
+# stays refused, since only an answer of `pkg-config` pairs a header with its
+# library.
+test "a file of a folder only pkg-config names is the library's, but where its name is the C library's (defect 2428)"
+    root = "build/selftest-shadowed-library"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/rt", "/sdk/curl", "/sdk/sys", "/src", "/lib", "/inc"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    for name in ["curl/curl.h", "stdio.h", "sys/socket.h"]
+        assert !write_file(path: root + "/sdk/" + name, text: "").is_err()
+
+    assert !write_file(path: root + "/src/own.h", text: "#include <curl/curl.h>\n#include <stdio.h>\n#include <sys/socket.h>\n").is_err()
+    assert !write_file(path: root + "/src/two.h", text: "#include <curl/curl.h>\n").is_err()
+    lines = [
+        ". " + root + "/src/own.h"
+        ".. " + root + "/lib/curl/curl.h"
+        ".. " + root + "/lib/stdio.h"
+        ".. " + root + "/lib/sys/socket.h"
+        ". " + root + "/sdk/stdio.h"
+        ".. " + root + "/lib/_stdio.h"
+        ". " + root + "/sdk/sqlite3ext.h"
+        ".. " + root + "/lib/sqlite3.h"
+        ". " + root + "/src/two.h"
+        ".. " + root + "/inc/curl/curl.h"
+    ]
+    assert !process.mkdir_all(root + "/lib/k").is_err()
+
+    for name in ["/lib/k/opt.h", "/lib/stdbool.h"]
+        assert !write_file(path: root + name, text: "").is_err()
+
+    got = shadows(
+        said: lines.join("\n") + "\n",
+        paths: [root + "/lib/k/opt.h", root + "/lib/stdbool.h"],
+        search: Search(groups: ["own.h", "stdio.h", "two.h"], named: [root + "/src", root + "/lib", root + "/inc"], others: [root + "/rt", root + "/sdk"], libraries: [root + "/lib"])
+    )
+    assert got.len() == 6
+    assert got[0].named == "stdio.h" && got[0].folder == root + "/lib" && got[0].reader == "`" + root + "/src/own.h`"
+    assert got[1].named == "sys/socket.h" && got[1].folder == root + "/lib"
+    assert got[2].named == "_stdio.h" && got[2].reader == "the C library's `<stdio.h>`"
+
+    # A platform header no standard lists is the system's, never the C
+    # library's: the SDK's copy of SQLite's own header.
+    assert got[3].named == "sqlite3.h" && got[3].reader == "the system's `<sqlite3ext.h>`"
+    assert got[4].named == "curl/curl.h" && got[4].folder == root + "/inc"
+
+    # Only asked after, with `__has_include`: the library's own `k/opt.h` is
+    # its own, its `stdbool.h` refused as asked.
+    assert got[5].named == "stdbool.h" && got[5].asked
     assert !process.remove_tree(root).is_err()

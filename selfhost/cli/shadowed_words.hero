@@ -9,6 +9,7 @@
 
 use cli/clang_added
 use cli/pkgconfig_macros
+use cli/shadowed_library
 use cli/stand_in
 use cli/strings
 use diag
@@ -64,11 +65,19 @@ constant PATH: str
 # `-I` of `CCC_OVERRIDE_OPTIONS`, can hold one read in its place, the unit
 # naming it in quotes (measured on this Mac, 2026-11-08: a
 # `heroes_standard.h` there was refused as the C library's `<heroes_standard.h>`).
+# **A header no standard lists is told as the system's** (panel 243's R2,
+# defect 2428): the SDK's `curl/curl.h` is its copy of libcurl's, which the
+# message called *the C library's* beside a keg's own; a name C11 or
+# POSIX.1-2024 lists keeps the C library's (`shadowed_library.standard`).
 function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Diagnostic
     whose_header: str @= "the C library's `<" + one.named + ">`"
     place: str @= "the system's"
     whose_place: str @= "the library's"
     spelled: str @= "<" + one.named + ">"
+
+    if !shadowed_library.standard(one.named)
+        whose_header @ "the system's `<" + one.named + ">`"
+        whose_place @ "the system's"
 
     if runtime
         whose_header @ "the runtime's `" + one.named + "`"
@@ -91,14 +100,21 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
         message: "`" + clang_place.slashed(one.path) + "` stands in for " + whose_header + ", " + reads + ": a folder this build names is searched before " + place + ", so " + read_in + " in " + whose_place + " place",
         span: token.Span(start: 0, end: 0)
     )
-    moved = "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder)
+    lead: str @= ""
+    reaches: str @= "every `#include " + spelled + "` of the build reads what it holds"
 
     if one.asked
+        lead @ "a header asks only whether `" + one.named + "` exists, with `__has_include`, and the file standing in `" + one.folder + "` answers yes in " + whose_place + " place: "
+        reaches @ "every `__has_include(" + spelled + ")` and `#include " + spelled + "` of the build finds it there"
+
+    if origin.kind == PKGCONFIG
         d.notes @ d.notes.push(
-            "a header asks only whether `" + one.named + "` exists, with `__has_include`, and the file standing in `" + one.folder + "` answers yes in " + whose_place + " place: " + moved + ", and every `__has_include(" + spelled + ")` and `#include " + spelled + "` of the build finds it there"
+            lead + library_remedy(folder: one.folder, named: one.named, library: origin.name, reaches: reaches)
         )
     else
-        d.notes @ d.notes.push(moved + ", and every `#include " + spelled + "` of the build reads what it holds")
+        d.notes @ d.notes.push(
+            lead + "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder) + ", and " + reaches
+        )
 
     # The angle form found a name the platform holds beside the header that
     # asked for it (panel 237's ruling on `sibutil-angled`). The quoted form
@@ -111,6 +127,15 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
             "or, where " + one.reader + " means its own `" + sibling + "` beside it, include it as `#include \"" + sibling + "\"`: C reads a quoted name from the including header's own folder first, where `<" + one.named + ">` asks the system's places, which hold a `" + one.named + "` of their own"
         )
     return d
+
+# **What the author can change where the folder is a library's** (panel 243's
+# R2, defect 2428): the file is the library's own, which no edit of the
+# program renames or moves, so the note names the two words the author does
+# write, the copy of the library `pkg-config` is pointed at and the group's
+# own word for it; until then it said *"rename the file, or move it out of"*
+# Homebrew's Cellar, a remedy nobody can take.
+function library_remedy(folder: str, named: str, library: str, reaches: str) -> str
+    return "`" + folder + "` is the library `" + library + "`'s, named by `pkg-config`'s answer for it, so the file is that library's own, which no edit of this program renames or moves, and " + reaches + ": build against a copy of `" + library + "` whose folders hold no `" + named + "`, its `.pc` named in `PKG_CONFIG_PATH`, or name the library with `link` rather than `pkgconfig`, so the build reads the system's headers for it"
 
 # The part of a `/`-separated path after its last `/`, the whole where it has
 # none.
@@ -260,3 +285,25 @@ test "the quoted form offered for a nested header's sibling is its name in that 
     assert d.notes.len() == 2
     assert d.notes[1] == "or, where `./sys/clock.h` means its own `timeb.h` beside it, include it as `#include \"timeb.h\"`: C reads a quoted name from the including header's own folder first, where `<sys/timeb.h>` asks the system's places, which hold a `sys/timeb.h` of their own"
     assert last_part("a/b/c.h") == "c.h" && last_part("c.h") == "c.h" && last_part("a/") == ""
+
+# **A file of a library's folder is told by what its author can change, and a
+# header no standard lists as the system's** (panel 243's R2, defect 2428): the
+# note names `PKG_CONFIG_PATH` and `link`, never a move out of the library's
+# folder, a keg's `include` under Homebrew's Cellar; a name C11 or POSIX.1
+# lists stays the C library's, and a program's own `curl/curl.h` stands in for
+# the system's.
+test "a library's folder is told by what its author can change, and a header no standard lists as the system's (defect 2428)"
+    d = header(
+        stand_in.Shadow(path: "/keg/include/sys/socket.h", folder: "/keg/include", named: "sys/socket.h", reader: "`./own.h`", beside: false, asked: false),
+        origin: Origin(kind: PKGCONFIG, name: "fake"),
+        runtime: false
+    )
+    assert d.message == "`/keg/include/sys/socket.h` stands in for the C library's `<sys/socket.h>`, which `./own.h` includes: a folder this build names is searched before the system's, so its file is read in the library's place"
+    assert d.notes == ["`/keg/include` is the library `fake`'s, named by `pkg-config`'s answer for it, so the file is that library's own, which no edit of this program renames or moves, and every `#include <sys/socket.h>` of the build reads what it holds: build against a copy of `fake` whose folders hold no `sys/socket.h`, its `.pc` named in `PKG_CONFIG_PATH`, or name the library with `link` rather than `pkgconfig`, so the build reads the system's headers for it"]
+    own = header(
+        stand_in.Shadow(path: "./curl/curl.h", folder: ".", named: "curl/curl.h", reader: "`./net/own.h`", beside: false, asked: false),
+        origin: Origin(kind: PROGRAM, name: ""),
+        runtime: false
+    )
+    assert own.message == "`./curl/curl.h` stands in for the system's `<curl/curl.h>`, which `./net/own.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place"
+    assert own.notes == ["rename the file, or move it out of `.`: the folder is this program's own, which every unit searches before the system's, and every `#include <curl/curl.h>` of the build reads what it holds"]

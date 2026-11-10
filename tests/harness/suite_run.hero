@@ -50,6 +50,7 @@
 use <core>/strings as core_strings
 
 use absence
+use case_setting
 use cases
 use expectation
 use freed_bytes
@@ -146,14 +147,28 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         report.keep_skip(@r, label: "run/" + item.name, detail: "  " + elsewhere.must())
         return false
 
+    started = starter_of(scratch: scratch, item: item)
+
+    match started
+        .ok _ => _ = 0
+        .err e =>
+            report.keep_failure(@r, label: "run/" + item.name, detail: "  " + e.msg)
+            return false
+
+    by = started.must()
+
+    # A case started through `/usr/bin/env`, which Windows has not, is skipped
+    # by name, apart from the missing libraries' ratio (`case_setting.hero`).
+    unstartable = case_setting.skip_here(by.setting)
+
+    if unstartable.len() > 0
+        report.keep_skip(@r, label: "run/" + item.name, detail: "  " + unstartable)
+        return false
+
     # `.exe` where the machine wants one: clang writes exactly what `-o` says,
     # and Windows will not start a file without the extension (shell.exe_suffix).
     binary = binaries + "/" + item.name + shell.exe_suffix()
-    built = shell.run(
-        scratch: scratch,
-        program: compiler,
-        words: [compiler, "build", item.source, "-o", binary]
-    )
+    built = compiled(scratch: scratch, by: by, words: [compiler, "build", item.source, "-o", binary])
 
     # **The machine, before the program.** A compiler that never started has no
     # verdict on this case, and until 2026-09-21 this branch said only that it
@@ -198,7 +213,7 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
 
     if guard_malloc_failed(@r, scratch: scratch, item: item, want: want, binary: binary)
         return false
-    at_o2 = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", item.source])
+    at_o2 = compiled(scratch: scratch, by: by, words: [compiler, "run", item.source])
 
     if judged(@r, item: item, level: "-O2", want: want, said: at_o2)
         return false
@@ -211,14 +226,68 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
     # flag of its own: `-O0` and `--sanitize` compose (cli-surface.md, the
     # stopping rule).
     for flags in [["--sanitize"], ["--sanitize", "-O0"]]
-        if sanitised_failed(@r, scratch: scratch, compiler: compiler, item: item, want: want, flags: flags)
+        if sanitised_failed(@r, scratch: scratch, compiler: compiler, item: item, want: want, flags: flags, by: by)
             return false
 
-    if tested_failed(@r, scratch: scratch, compiler: compiler, item: item)
+    if tested_failed(@r, scratch: scratch, compiler: compiler, item: item, by: by)
         return false
 
     report.keep_pass(@r)
     return false
+
+# **How the form starts the compiler on one case** (panel 243's R2, defect
+# 2428): a case that is a folder may ask its runs something
+# (`case_setting.hero`), and every run of the compiler on it is given what it
+# asks, its build, its `run` at each level and its `test`, so a case carries a
+# `pkg-config` library of its own as the golden forms' cases do. The binary
+# the form runs itself is the program's alone. `dir` is the case's folder,
+# `root` the repository's, asked once where the case asks anything.
+record Starter
+    setting: case_setting.Setting
+    dir: str
+    root: str
+
+# **The case's setting, read once**: none for a case that is one file. A
+# `directory` is refused by the case's name: the form writes the binary to a
+# path from the repository's root, which a compiler started in the case's own
+# folder would read from there.
+function starter_of(scratch: str, item: cases.Case) -> Starter?
+    tail = "/main.hero"
+    none = plain()
+
+    if !core_strings.has_suffix(s: item.source, suffix: ".case" + tail)
+        return ok(none)
+    dir = item.source.slice(from: 0, to: item.source.len() - tail.len())
+    setting = case_setting.read_setting(dir)?
+
+    if setting.directory.len() > 0
+        return fail(
+            code: "setting",
+            msg: dir + "/directory names a folder to start in, and the `run` form starts every case's compiler from the repository's root, where it writes the case's binary"
+        )
+
+    if !case_setting.asks(setting)
+        return ok(none)
+    return ok(Starter(setting: setting, dir: dir, root: case_setting.repository_root(scratch)?))
+
+# How a case that asks nothing is started: plainly.
+function plain() -> Starter
+    return Starter(setting: case_setting.Setting(environment: [], links: [], directory: ""), dir: "", root: "")
+
+# One run of the compiler, `words`, on the case `by` starts: as its setting
+# asks, what it printed written back as the case's own (`case_setting.ran`),
+# or plainly where it asks nothing.
+function compiled(scratch: str, by: Starter, words: [str]) -> shell.Run?
+    if !case_setting.asks(by.setting)
+        return shell.run(scratch: scratch, program: words[0], words: words)
+    return case_setting.ran(
+        scratch: scratch,
+        program: words[0],
+        words: words,
+        dir: by.dir,
+        s: by.setting,
+        root: by.root
+    )
 
 # **`heroes test` where the case holds tests** (defect 560, 2026-10-10):
 # until then `test` compiled the whole program as one unit, so a program of
@@ -227,12 +296,12 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
 # computes failed under `test` alone. A case whose program holds a `test`
 # block is asked `heroes test` too, and every test must pass. Answers
 # whether it FAILED, the failure recorded.
-function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case) -> bool
+function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, by: Starter) -> bool
     text = read_file(item.source)
 
     if text.is_err() || !core_strings.has_prefix(s: text.must(), prefix: "test \"") && !core_strings.contains(s: text.must(), substr: "\ntest \"")
         return false
-    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", item.source])
+    said = compiled(scratch: scratch, by: by, words: [compiler, "test", item.source])
 
     if said.is_err()
         report.keep_failure(
@@ -256,7 +325,7 @@ function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cas
 # overwritten, so a C library reading freed bytes reads the fill and the
 # program's answer moves, where ASan alone keeps them and says nothing.
 # Answers whether it FAILED, the failure recorded.
-function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, want: expectation.Expectation, flags: [str]) -> bool
+function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, want: expectation.Expectation, flags: [str], by: Starter) -> bool
     level = flags.join(" ")
     words: [str] @= [compiler, "run", item.source]
 
@@ -264,7 +333,7 @@ function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: 
         words @ words.push(flag)
 
     words @ freed_bytes.filled(words)
-    sanitised = shell.run(scratch: scratch, program: words[0], words: words)
+    sanitised = compiled(scratch: scratch, by: by, words: words)
 
     if sanitised.is_err()
         report.keep_failure(
@@ -456,12 +525,20 @@ test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, asked o
     exact_case = cases.Case(source: tree + "/exact.hero", expected: "", name: "exact")
     leg = ["--sanitize", "-O0"]
     seen: report.Report @= report.empty()
-    assert sanitised_failed(@seen, scratch: scratch, compiler: compiler, item: over_case, want: want, flags: leg)
+    assert sanitised_failed(
+        @seen,
+        scratch: scratch,
+        compiler: compiler,
+        item: over_case,
+        want: want,
+        flags: leg,
+        by: plain()
+    )
     assert seen.failed == 1
     assert core_strings.has_prefix(s: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
     assert core_strings.contains(s: seen.failures[0], substr: "stack-buffer-overflow")
     unseen: report.Report @= report.empty()
-    assert !sanitised_failed(@unseen, scratch: scratch, compiler: compiler, item: exact_case, want: want, flags: leg)
+    assert !sanitised_failed(@unseen, scratch: scratch, compiler: compiler, item: exact_case, want: want, flags: leg, by: plain())
     assert unseen.failed == 0
 
     # The whole case fails at some leg on every platform, whichever falls
@@ -580,4 +657,32 @@ test "fixedbugs: a program that does not build is skipped only where the machine
     assert excused.failed == 0
     assert excused.skips.len() == 1
     assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP run/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# **A case that is a folder is started as its setting asks** (panel 243's R2,
+# defect 2428): its variables reach every run of the compiler on it through
+# `case_setting.ran`, the root asked of git once; a case of one file, and a
+# folder that asks nothing, are started plainly; and a `directory` is refused
+# by the case's name, since the form writes the binary from the repository's
+# root.
+test "the run form starts a case folder's compiler as its setting asks, and refuses a folder to start in (defect 2428)"
+    scratch = "build/selftest-run-starter"
+    assert !shell.remove_tree(scratch).is_err()
+    dir = scratch + "/x.case"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/environment", text: "PKG_CONFIG_PATH=" + dir + "/pc\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
+    item = cases.Case(source: dir + "/main.hero", expected: dir + "/main.expected", name: "x")
+    by = starter_of(scratch: scratch, item: item).must()
+    assert by.dir == dir && by.setting.environment.len() == 2 && by.root.len() > 0
+    said = compiled(scratch: scratch, by: by, words: ["sh", "-c", "printf '%s' \"$PKG_CONFIG_LIBDIR\""]).must()
+    assert said.code == 0 && said.out == dir + "/pc"
+    one = starter_of(scratch: scratch, item: cases.Case(source: scratch + "/y.hero", expected: "", name: "y")).must()
+    assert !case_setting.asks(one.setting) && one.root == ""
+    assert !write_file(path: dir + "/directory", text: "here\n").is_err()
+
+    refused = match starter_of(scratch: scratch, item: item)
+        .ok _  => "ok"
+        .err e => e.msg
+
+    assert refused == dir + "/directory names a folder to start in, and the `run` form starts every case's compiler from the repository's root, where it writes the case's binary"
     assert !shell.remove_tree(scratch).is_err()

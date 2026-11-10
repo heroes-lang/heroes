@@ -1,0 +1,15 @@
+#~ shadowed_header
+# fixedbugs, defect 2428, lane b30-shadow, 2026-11-10 (panel 243's R2, the
+# ffi-pragmatist's veto): a folder only `pkg-config` names is its library's,
+# but not for a file named like one of the C library's headers. The library's
+# `stdio.h` reads the C library's and defines `BUFSIZ` as 7, and the program's
+# `own.h` means the C library's: excusing every file of such a folder printed
+# 7 at exit 0 where the SDK says 1024. Refused, its note naming what the
+# author can change, the copy of the library or the group's word, never a
+# move of the library's own file; this line is its mark.
+
+extern "own.h" pkgconfig "p2428"
+    constant BUFSIZ: i64
+
+function main()
+    print(BUFSIZ)

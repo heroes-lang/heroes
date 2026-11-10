@@ -1,8 +1,8 @@
 # What a golden case that is a folder may ask of the run beside its files
 # (M-package-manager step 5b): a shape no file of the repository can hold, a
 # machine with no git, a program git places in no repository, a link on the
-# way to a source, a variable clang reads. Three files beside `main.hero`, any
-# of them:
+# way to a source, a variable clang or `pkg-config` reads. Three files beside
+# `main.hero`, any of them:
 #
 #     environment    `NAME=VALUE` a line, given to the case's run alone and
 #                    never to this process, `<root>` in a value standing for
@@ -37,7 +37,15 @@
 # set in this harness's own process, where every later case's clang would
 # read them: the case's compiler is started through `/usr/bin/env` with them,
 # and the case is skipped by name where that is not the machine's, Windows.
-# Any other name is refused with the case's name, never given.
+# **And the two `pkg-config` reads** (`PKG_CONFIG_READS`, panel 243's R2,
+# defect 2428): the compiler starts `pkg-config` for a `pkgconfig` group, so
+# a case carries a library of its own, a `.pc` naming its folder by
+# `${pcfiledir}` (`prefix=${pcfiledir}/..`) beside the headers it describes,
+# with no absolute path, and `PKG_CONFIG_LIBDIR` naming the same folder hides
+# the machine's, so the case is hermetic. An empty `PKG_CONFIG_LIBDIR` is no
+# unset either, `pkg-config` then searching no folder at all, so the two go
+# the clang reads' way. Any other name is refused with the case's name, never
+# given.
 #
 # **A case with a `directory` runs from a copy of its folder**, as one with
 # links does, since the compiler writes its cache under the folder it runs in:
@@ -59,6 +67,12 @@ constant SETTABLE: [str]
 # may set for its compiler alone.
 constant CLANG_READS: [str]
     ["CPATH", "C_INCLUDE_PATH", "CCC_OVERRIDE_OPTIONS"]
+
+# The variables `pkg-config` reads where the compiler asks it for a
+# `pkgconfig` group, which a case's `environment` may set for its compiler
+# alone, as the clang reads are.
+constant PKG_CONFIG_READS: [str]
+    ["PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]
 
 # The one program that starts a case's compiler with variables of its own,
 # from a folder of its own: POSIX's `env`, `-C` in GNU's and in this Mac's.
@@ -85,7 +99,7 @@ function read_setting(dir: str) -> Setting?
         if cut.is_err() || !settable(pair.slice(from: 0, to: cut.must())) && !reads(pair.slice(from: 0, to: cut.must()))
             return fail(
                 code: "setting",
-                msg: dir + "/environment sets `" + pair + "`, and a case sets only " + SETTABLE.join(" and ") + ", the variables whose empty value reads as unset, and " + CLANG_READS.join(", ") + ", which clang reads, as `NAME=VALUE`"
+                msg: dir + "/environment sets `" + pair + "`, and a case sets only " + SETTABLE.join(" and ") + ", the variables whose empty value reads as unset, " + CLANG_READS.join(", ") + ", which clang reads, and " + PKG_CONFIG_READS.join(" and ") + ", which `pkg-config` reads, as `NAME=VALUE`"
             )
 
     for link in links
@@ -121,16 +135,17 @@ function skip_here(s: Setting) -> str
         return "the case makes a symbolic link with `ln -s` before its run, as `apply_tree.hero`'s link cases do, and this platform has no `ln`"
 
     if started_by_env(s) && shell.exe_suffix() == ".exe"
-        return "the case starts its compiler through `" + ENV + "`, with a variable clang reads or from a folder of its own, and this platform has no `" + ENV + "`"
+        return "the case starts its compiler through `" + ENV + "`, with a variable clang or `pkg-config` reads or from a folder of its own, and this platform has no `" + ENV + "`"
     return ""
 
 # Whether the case's compiler is started through `/usr/bin/env`: it sets a
-# variable clang reads, or starts in a folder of its own.
+# variable clang or `pkg-config` reads, or starts in a folder of its own.
 function started_by_env(s: Setting) -> bool
-    return s.directory.len() > 0 || clang_pairs(s).len() > 0
+    return s.directory.len() > 0 || env_pairs(s).len() > 0
 
-# The case's `NAME=VALUE` lines of a variable clang reads.
-function clang_pairs(s: Setting) -> [str]
+# The case's `NAME=VALUE` lines of a variable clang or `pkg-config` reads,
+# which go to its compiler's line through `/usr/bin/env`.
+function env_pairs(s: Setting) -> [str]
     out: [str] @= []
 
     for pair in s.environment
@@ -157,9 +172,14 @@ function settable(name: str) -> bool
 
     return false
 
-# Whether `name` is a variable clang reads, set for a case's compiler alone.
+# Whether `name` is a variable clang or `pkg-config` reads, set for a case's
+# compiler alone.
 function reads(name: str) -> bool
     for one in CLANG_READS
+        if one == name
+            return true
+
+    for one in PKG_CONFIG_READS
         if one == name
             return true
 
@@ -179,7 +199,7 @@ function repository_root(scratch: str) -> str?
 # The run of `words` for the case in `dir` as `s` asks it, what it printed
 # written back as the case's own: in a copy holding its links or starting in
 # its folder, its variables given to its run alone, those clang reads to its
-# compiler through `/usr/bin/env`.
+# compiler through `/usr/bin/env`, as those `pkg-config` reads are.
 function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
     at: str @= dir
     line: [str] @= words
@@ -210,7 +230,8 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
         cut = strings.index_of(text: pair, needle: "=").must()
         name = pair.slice(from: 0, to: cut)
 
-        # A variable clang reads went to the compiler's line alone.
+        # A variable clang or `pkg-config` reads went to the compiler's line
+        # alone.
         if reads(name)
             continue
         given @ given.push(
@@ -229,8 +250,8 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
 # **The line that starts a case's compiler through `/usr/bin/env`**: from the
 # case's `directory` in `at`, its copy, where it names one, the compiler and
 # the copy's paths then written whole, since a relative one would be read from
-# there; then each variable clang reads, `<root>` its value's root; then the
-# compiler's own line.
+# there; then each variable clang or `pkg-config` reads, `<root>` its value's
+# root; then the compiler's own line.
 function env_line(words: [str], s: Setting, at: str, root: str) -> [str]
     out: [str] @= [ENV]
     line: [str] @= words
@@ -242,7 +263,7 @@ function env_line(words: [str], s: Setting, at: str, root: str) -> [str]
         for word in words.slice(from: 1, to: words.len())
             line @ line.push(swapped(text: word, old: unwhole(root: root, path: at), new: at))
 
-    for pair in clang_pairs(s)
+    for pair in env_pairs(s)
         out @ out.push(swapped(text: pair, old: "<root>", new: root))
 
     for word in line
@@ -331,10 +352,37 @@ test "a variable clang reads is given to the case's compiler alone, and a direct
     assert reads("CPATH") && reads("C_INCLUDE_PATH") && reads("CCC_OVERRIDE_OPTIONS")
     assert !settable("CPATH") && !reads("PATH")
     plain = Setting(environment: ["PATH=/x", "CPATH=<root>/inc"], links: [], directory: "")
-    assert started_by_env(plain) && clang_pairs(plain) == ["CPATH=<root>/inc"]
+    assert started_by_env(plain) && env_pairs(plain) == ["CPATH=<root>/inc"]
     words = ["./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
     assert env_line(words, s: plain, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "CPATH=/r/inc", "./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
     moved = Setting(environment: ["C_INCLUDE_PATH=:"], links: [], directory: "here")
     assert env_line(words, s: moved, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "-C", "/r/build/h-1/set/x.case/here", "C_INCLUDE_PATH=:", "/r/heroes-next", "build", "/r/build/h-1/set/x.case/main.hero"]
     assert inside("here") && inside("a/b") && !inside("../up") && !inside("/abs") && !inside("a/../..")
     assert whole(root: "/r", path: "/abs") == "/abs" && unwhole(root: "/r", path: "/r/b/c") == "b/c"
+
+# **The two `pkg-config` reads go to the case's compiler alone** (panel 243's
+# R2, defect 2428): a case naming its own `.pc` folder sets `PKG_CONFIG_PATH`
+# and `PKG_CONFIG_LIBDIR`, which reach the compiler's line through
+# `/usr/bin/env` in the order the case wrote them, never this process's
+# environment, where every later case's `pkg-config` would read them; any
+# other variable of `pkg-config`'s is refused by name.
+test "a case's own pkg-config folder is given to its compiler alone, and another pkg-config variable is refused (defect 2428)"
+    assert reads("PKG_CONFIG_PATH") && reads("PKG_CONFIG_LIBDIR")
+    assert !settable("PKG_CONFIG_PATH") && !settable("PKG_CONFIG_LIBDIR") && !reads("PKG_CONFIG_SYSROOT_DIR")
+    dir = "build/selftest-case-setting-pc"
+    assert !shell.remove_tree(dir).is_err()
+    assert !shell.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/environment", text: "# the case's own library\nPKG_CONFIG_PATH=" + dir + "/pc\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
+    got = read_setting(dir).must()
+    pairs = ["PKG_CONFIG_PATH=" + dir + "/pc", "PKG_CONFIG_LIBDIR=" + dir + "/pc"]
+    assert started_by_env(got) && env_pairs(got) == pairs
+    words = ["./heroes-next", "build", dir + "/main.hero"]
+    assert env_line(words, s: got, at: dir, root: "/r") == [ENV, pairs[0], pairs[1], "./heroes-next", "build", dir + "/main.hero"]
+    assert !write_file(path: dir + "/environment", text: "PKG_CONFIG_SYSROOT_DIR=/x\n").is_err()
+
+    said = match read_setting(dir)
+        .ok _  => "ok"
+        .err e => e.msg
+
+    assert said == dir + "/environment sets `PKG_CONFIG_SYSROOT_DIR=/x`, and a case sets only PATH and GIT_CEILING_DIRECTORIES, the variables whose empty value reads as unset, CPATH, C_INCLUDE_PATH, CCC_OVERRIDE_OPTIONS, which clang reads, and PKG_CONFIG_PATH and PKG_CONFIG_LIBDIR, which `pkg-config` reads, as `NAME=VALUE`"
+    assert !shell.remove_tree(dir).is_err()

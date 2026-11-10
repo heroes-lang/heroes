@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2428, lane b30-shadow, 2026-11-10 (panel 243's R2, the
+# lane's reading): a folder `pkg-config` answers is its library's only where
+# nothing else names it. Here the `.pc` names the program's own folder, so its
+# `sys/timeb.h`, read by the program's `own.h` through the angle form, is the
+# program's file, judged as one: refused, its note telling the folder as the
+# program's own, which the author can rename or move, never as the
+# library's; this line is its mark.
+
+extern "own.h" pkgconfig "p2428"
+    constant TIMEB_LIB: i64
+
+function main()
+    print(TIMEB_LIB)

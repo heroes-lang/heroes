@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2428-a-folder-only-pkg-config-names-holding-a-posix-header-stays-refused.case/pc/../inc/sys/socket.h` stands in for the C library's `<sys/socket.h>`, which `tests/golden/unsupported/fixedbugs-2428-a-folder-only-pkg-config-names-holding-a-posix-header-stays-refused.case/own.h` includes: a folder this build names is searched before the system's, so its file is read in the library's place
+  at tests/golden/unsupported/fixedbugs-2428-a-folder-only-pkg-config-names-holding-a-posix-header-stays-refused.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: `tests/golden/unsupported/fixedbugs-2428-a-folder-only-pkg-config-names-holding-a-posix-header-stays-refused.case/inc` is the library `p2428`'s, named by `pkg-config`'s answer for it, so the file is that library's own, which no edit of this program renames or moves, and every `#include <sys/socket.h>` of the build reads what it holds: build against a copy of `p2428` whose folders hold no `sys/socket.h`, its `.pc` named in `PKG_CONFIG_PATH`, or name the library with `link` rather than `pkgconfig`, so the build reads the system's headers for it
