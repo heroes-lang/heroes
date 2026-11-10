@@ -1,0 +1,215 @@
+# A name the unit finds declared before its own header's rung, asked again
+# of that header (design.md §4.19, spec § 13; defect 2429, 2026-11-10,
+# whose first case was defect 2413's `hero_os.h` names, asked so by
+# `cli/os_bound.hero` until this module took its place).
+#
+# **Declared before is not declared by another.** Two headers of C's own
+# both declare `SEEK_SET`; a header of the program's own that includes
+# `hero_os.h` declares every name of it; an umbrella header declares what a
+# header after it declares again. So the header is asked alone, under the
+# probe's words and nothing of the unit's opening, and a name it declares
+# there is its own. Where that gives no answer, a header needing an earlier
+# one's names, or answers *undeclared*, it is asked after the headers the
+# unit reads before it, with the seeds and every header whose rung first
+# declared a name asked left out, since they would answer for it: a header
+# that declares a name only once an earlier one has defined a switch, and
+# not alone, declares it there.
+#
+# **Refused where the last of those asks, read clean, says undeclared**, and
+# the header's own file was not read before its rung. Where it was, an
+# earlier header having included it, the unit read its declarations there,
+# under whatever that header defined first (`gnu_string.h` defining
+# `_GNU_SOURCE` and including `string.h`, then a group naming `string.h`),
+# which no reading of the header apart can tell, and nothing is refused.
+# Asked by `clang -M`, which lists each file once in the order clang entered
+# it: the header's path is the first file its include alone enters, and the
+# question is whether the files the opening before its rung reads hold it.
+#
+# **And one last ask before a refusal stands**: the header read where the
+# unit reads it, every header before it first, each name renamed by a macro
+# while the header alone is read (`ladder.renamed_question`). An earlier
+# header that defines the header's switch AND declares the name itself
+# (`both.h`: `#define WANT_EXTRA 1` and `extra`'s declaration; `lib.h`
+# defining `extra` under `WANT_EXTRA`) left the name declared before the
+# header and the header declaring it neither alone nor after the others,
+# measured: refused, a correct program told *`lib.h` declares no `extra`*.
+# Renamed, only the header's own declaration can answer. What is left
+# unasked: a header whose declaration of the name stands in a file an
+# earlier header already entered, under that one's switch, which no ask of
+# clang's separates from the header declaring nothing; refused, the case
+# being a program's own header reaching into a library's private file.
+
+use cli/declared_ask
+use cli/declared_ladder as ladder
+use cli/toolchain
+use emit/c_text
+use emit/clang_place
+
+# A name asked again: its binding's index, what is asked, and the rung that
+# first declares it.
+record Candidate
+    index: i64
+    asked: ladder.Asked
+    declarer: i64
+
+# A name refused: its binding's index, the rung that first declares it, and
+# the headers the compile that answered read before its own, none where it
+# read the header alone.
+record Refused
+    index: i64
+    declarer: i64
+    after: [str]
+
+# The candidates of the header at rung `at` of `q` that it does not declare.
+function refused(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Question, at: i64, candidates: [Candidate]) -> [Refused]
+    none: [Refused] = []
+    header = q.rungs[at].header
+    asked = asked_of(candidates)
+    alone = declared_ask.answered(
+        t,
+        words: words,
+        read: read,
+        q: ladder.plain_question(headers: [header], asked: asked),
+        asked: asked
+    )
+    before = earlier(q, at: at, candidates: candidates)
+    faithful: [i64]? @= alone
+
+    if before.len() > 0 && (alone.is_err() || holds(alone.must(), state: ladder.UNDECLARED))
+        whole = before.push(header)
+        faithful @ declared_ask.answered(
+            t,
+            words: words,
+            read: read,
+            q: ladder.plain_question(headers: whole, asked: asked),
+            asked: asked
+        )
+
+    if faithful.is_err()
+        return none
+    out: [Refused] @= []
+    left: [ladder.Asked] @= []
+    index: i64 @= 0
+
+    for one in candidates
+        found = !alone.is_err() && alone.must()[index] == ladder.DECLARED
+
+        if !found && faithful.must()[index] == ladder.UNDECLARED
+            out @ out.push(Refused(index: one.index, declarer: one.declarer, after: before))
+            left @ left.push(one.asked)
+        index @ index + 1
+
+    if out.len() == 0 || read_before(t, words: words, q: q, at: at)
+        return none
+    return unrenamed(t, words: words, read: read, q: q, at: at, told: out, asked: left)
+
+# The refusals the header still declares nothing of where the unit reads it,
+# every header before it read first and each name renamed while it alone is
+# read (`ladder.renamed_question`): a header declaring a name only after an
+# earlier one's switch, where that earlier one declares the name too, is
+# found declaring it, as alone and after the others it was not. An ask that
+# gives no answer, a header whose own code a renamed name breaks, keeps the
+# refusals the cleaner asks made.
+function unrenamed(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Question, at: i64, told: [Refused], asked: [ladder.Asked]) -> [Refused]
+    question = ladder.renamed_question(groups: groups_before(q, at: at), header: q.rungs[at].header, asked: asked)
+    states = declared_ask.answered(t, words: words, read: read, q: question, asked: ladder.renamed(asked))
+
+    if states.is_err()
+        return told
+    out: [Refused] @= []
+    index: i64 @= 0
+
+    for one in told
+        if states.must()[index] != ladder.DECLARED
+            out @ out.push(one)
+        index @ index + 1
+
+    return out
+
+# Every group's header the unit reads before rung `at`, in order.
+function groups_before(q: ladder.Question, at: i64) -> [str]
+    out: [str] @= []
+    rung: i64 @= 0
+
+    while rung < at
+        if q.rungs[rung].stands == .group
+            out @ out.push(q.rungs[rung].header)
+        rung @ rung + 1
+
+    return out
+
+function asked_of(candidates: [Candidate]) -> [ladder.Asked]
+    out: [ladder.Asked] @= []
+
+    for one in candidates
+        out @ out.push(one.asked)
+
+    return out
+
+function holds(states: [i64], state: i64) -> bool
+    for one in states
+        if one == state
+            return true
+
+    return false
+
+# The groups' headers the unit reads before rung `at`, but those whose rung
+# first declared a name asked: the seeds are no group's, and a declarer
+# would answer for the header.
+function earlier(q: ladder.Question, at: i64, candidates: [Candidate]) -> [str]
+    out: [str] @= []
+    rung: i64 @= 0
+
+    while rung < at
+        if q.rungs[rung].stands == .group && !declares(candidates, rung: rung)
+            out @ out.push(q.rungs[rung].header)
+        rung @ rung + 1
+
+    return out
+
+function declares(candidates: [Candidate], rung: i64) -> bool
+    for one in candidates
+        if one.declarer == rung
+            return true
+
+    return false
+
+# Whether the header at rung `at` was read before it: its file, the first
+# its include alone enters, among the files the opening up to the group
+# before it reads. True where clang cannot say, which refuses nothing.
+function read_before(t: toolchain.Toolchain, words: [str], q: ladder.Question, at: i64) -> bool
+    own = declared_ask.listed(t, words: words, text: c_text.includes([q.rungs[at].header]).join("\n") + "\n")
+
+    if own.is_err() || own.must().len() == 0
+        return true
+    opened = declared_ask.listed(t, words: words, text: ladder.opening_text(groups_before(q, at: at)))
+
+    if opened.is_err()
+        return true
+    return among(opened.must(), path: own.must()[0])
+
+# Whether `paths` holds `path`, every separator read as `/`.
+function among(paths: [str], path: str) -> bool
+    wanted = clang_place.slashed(path)
+
+    for one in paths
+        if clang_place.slashed(one) == wanted
+            return true
+
+    return false
+
+## Tests
+
+# **Only a group's rung before the header is read again, and never one that
+# declared a name asked** (defect 2429): the seeds would answer for a
+# `hero_os.h` name, and `math.h`, declaring `sqrt`, would answer for
+# `stdio.h`.
+test "a header is asked again after the groups before it, the declarers and the seeds left out (defect 2429)"
+    asked = [ladder.Asked(name: "sqrt", sized: "")]
+    q = ladder.unit_question(groups: ["first.h", "math.h", "stdio.h"], standard: [], asked: asked)
+    candidates = [Candidate(index: 0, asked: asked[0], declarer: 3)]
+    assert earlier(q, at: 4, candidates: candidates) == ["first.h"]
+    seeded = [Candidate(index: 0, asked: asked[0], declarer: 1)]
+    assert earlier(q, at: 4, candidates: seeded) == ["first.h", "math.h"]
+    assert holds([0, 1], state: 1) && !holds([0, 2], state: 1)
+    assert among(["/inc/a.h", "C:\\inc\\b.h"], path: "C:/inc/b.h") && !among(["/inc/a.h"], path: "/inc/b.h")

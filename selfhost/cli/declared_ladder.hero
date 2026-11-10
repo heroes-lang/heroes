@@ -1,0 +1,383 @@
+# The question a module's unit is asked of the names its groups bind: the
+# unit's own opening written again with a question after each header it
+# reads (design.md §4.19, spec § 13; defect 2429, 2026-11-10, defect 2413's
+# reading widened from the runtime's `hero_os.h` to every header).
+#
+# **What it closes, measured on this Mac.** A unit reads the runtime's two
+# seeds and every header of its module before any line of its own C, so a
+# name a group binds was found if ANY header the unit reads declares it:
+# `extern "stdio.h"` holding `function sqrt(x: f64) -> f64` beside a group
+# naming `math.h` built at exit 0, and with `-> i64` was told *`sqrt`
+# returns `double` in `stdio.h`*, a header that declares no `sqrt`. Spec § 13
+# checks a group's names against the header it names, so each name is asked
+# where its own header stands (`cli/declared_by.hero` reads the answer).
+#
+# **A ladder, one rung after each header**: the opening as the unit writes
+# it (`heroes_unit.h`'s line, the two seeds, the groups' headers in the order
+# the unit reads them between the guard's lines, as `cli/order_trial.hero`
+# writes one), then each angled header `heroes_standard.h` reads, and after
+# each header one function referring to every name asked. clang says, line
+# by line, at which rungs a name is still undeclared.
+#
+# **What a rung asks.** A function or a constant is referred to as a value,
+# `(void)(name);`, unless the preprocessor already defines it
+# (`#if !defined(name)`): a header's macro declares the name, and one
+# written with parameters expands only before a `(`. A group record with
+# fields is asked by its size, `(void)sizeof(struct tm);`, which clang
+# refuses for an incomplete struct as for an absent one: a header that only
+# names the struct declares none of its fields. A record with no fields is a
+# handle, a pointer C writes with no declaration at all, and is not asked.
+#
+# **`-fno-builtin`** (`cli/declared_ask.OWN`), because clang declares a C
+# library function at its first reference, *call to undeclared library
+# function 'sqrt'*, and every later rung then reads it declared: measured on
+# this Mac's clang 21, `(void)(sqrt);` twice is one error. Under the flag a
+# reference is *use of undeclared identifier* at every rung, and no
+# predefined macro and no preprocessed byte of `stdio.h`, `math.h`,
+# `string.h` and `stdlib.h` moves (measured the same day).
+#
+# **What an answer is**: an error at a question's own line naming its name
+# undeclared, or its record's type incomplete, is that name undeclared at
+# that rung; any other error at a question's line is no answer for that name
+# at that rung; an error anywhere else, a header's own line or an include
+# not found, is no answer at all, and the build's own compile tells it as it
+# did before.
+
+use cli/deps
+use cli/strings
+use emit/c_text
+use emit/clang_place
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use emit/ffi_reach
+use emit/macro_guard
+
+# What a rung says of a name.
+constant DECLARED: i64
+    0
+
+constant UNDECLARED: i64
+    1
+
+constant UNREAD: i64
+    2
+
+# The mark a question's line ends with, then its rung and its name's index,
+# so the line is found by its text whatever the opening around it holds.
+constant MARK: str
+    "/* hero-asked "
+
+# One name asked: what C calls it, and for a group record the type its size
+# is asked of, `struct tm` or a typedef's own name; empty for a function or
+# a constant.
+record Asked
+    name: str
+    sized: str
+
+# Where a header stands in the unit: a seed of the runtime's, read before
+# every group; a group's; or one of C's own, read after the groups.
+variant Stands
+    seed
+    group
+    standard
+
+# A rung: the header read just before its question, as the unit names it.
+record Rung
+    header: str
+    stands: Stands
+
+# A question's text, and its rungs in the order they stand.
+record Question
+    text: str
+    rungs: [Rung]
+
+# Where a question's line asks: its rung and its name's index.
+record Spot
+    rung: i64
+    asked: i64
+
+# The unit's opening with a rung after each header it reads: after each seed,
+# after each of `groups` between the guard's lines, in the order the unit
+# reads them, and after each of `standard`, the headers of C's own the unit
+# reads after its groups (`standard_of`).
+function unit_question(groups: [str], standard: [str], asked: [Asked]) -> Question
+    rungs: [Rung] @= []
+    lines: [str] @= [macro_guard.FIRST_LINE]
+
+    for seed in emit_externs.SEEDS
+        with_rung(@lines, @rungs, one: Rung(header: seed, stands: .seed), asked: asked)
+
+    inside: [str] @= []
+
+    for header in groups
+        with_rung(@inside, @rungs, one: Rung(header: header, stands: .group), asked: asked)
+
+    no_names: {str: bool} = {}
+    appended(lines: @lines, more: macro_guard.around(inside, bound: no_names))
+
+    for header in standard
+        with_rung(@lines, @rungs, one: Rung(header: header, stands: .standard), asked: asked)
+
+    return Question(text: lines.join("\n") + "\n", rungs: rungs)
+
+# `headers` alone, in order, and one rung after them: what the last declares
+# where no seed and no other group is read before it but those listed.
+function plain_question(headers: [str], asked: [Asked]) -> Question
+    lines: [str] @= []
+    rungs: [Rung] @= []
+    before = headers.slice(from: 0, to: headers.len() - 1)
+    appended(lines: @lines, more: c_text.includes(before))
+    with_rung(@lines, @rungs, one: Rung(header: headers[headers.len() - 1], stands: .group), asked: asked)
+    return Question(text: lines.join("\n") + "\n", rungs: rungs)
+
+# The lines a unit opens with up to `groups`, as include lines alone: what
+# `clang -M` is asked which files they read (`cli/declared_again.hero`).
+function opening_text(groups: [str]) -> str
+    return opening_lines(groups).join("\n") + "\n"
+
+function opening_lines(groups: [str]) -> [str]
+    lines: [str] @= [macro_guard.FIRST_LINE]
+    appended(lines: @lines, more: c_text.includes(emit_externs.SEEDS))
+    appended(lines: @lines, more: c_text.includes(groups))
+    return lines
+
+# What a renamed name is spelled as while the header it is asked of is read.
+constant RENAMED: str
+    "hero_renamed_"
+
+# `header` read where the unit reads it, after the seeds and `groups`, with
+# each name asked renamed by a macro while `header` alone is read: a
+# declaration the header makes itself, in a file it enters, declares the new
+# name, and one an earlier header made does not (`cli/declared_again.hero`).
+# A name a macro already holds is not renamed, and is answered undeclared.
+function renamed_question(groups: [str], header: str, asked: [Asked]) -> Question
+    lines: [str] @= opening_lines(groups)
+
+    for one in asked
+        appended(
+            lines: @lines,
+            more: ["#if !defined(" + one.name + ")", "#define " + one.name + " " + RENAMED + one.name, "#define " + RENAMED + "held_" + one.name, "#endif"]
+        )
+
+    appended(lines: @lines, more: c_text.includes([header]))
+
+    for one in asked
+        appended(
+            lines: @lines,
+            more: ["#if defined(" + RENAMED + "held_" + one.name + ")", "#undef " + one.name, "#endif"]
+        )
+
+    appended(lines: @lines, more: question_lines(rung: 0, asked: renamed(asked)))
+    return Question(text: lines.join("\n") + "\n", rungs: [Rung(header: header, stands: .group)])
+
+# The names as `renamed_question` asks them: a record's type by its new tag
+# or typedef name.
+function renamed(asked: [Asked]) -> [Asked]
+    out: [Asked] @= []
+
+    for one in asked
+        sized: str @= ""
+
+        if one.sized == "struct " + one.name
+            sized @ "struct " + RENAMED + one.name
+        else if one.sized != ""
+            sized @ RENAMED + one.name
+        out @ out.push(Asked(name: RENAMED + one.name, sized: sized))
+
+    return out
+
+# One header's include and its rung's question after it.
+function with_rung(@lines: [str], @rungs: [Rung], one: Rung, asked: [Asked])
+    appended(lines: @lines, more: c_text.includes([one.header]))
+    appended(lines: @lines, more: question_lines(rung: rungs.len(), asked: asked))
+    rungs @ rungs.push(one)
+
+# Each of `more` pushed onto `lines` in place: `strings.with_all` copies the
+# list it extends, the square of a ladder's lines over its rungs.
+function appended(@lines: [str], more: [str])
+    for one in more
+        lines @ lines.push(one)
+
+# A rung's question: one function referring to each name, each referring
+# line marked with the rung and the name's index.
+function question_lines(rung: i64, asked: [Asked]) -> [str]
+    out: [str] @= ["__attribute__((unused)) static void hero_asked_" + rung.to_str() + "(void) {"]
+    at: i64 @= 0
+
+    for one in asked
+        mark = " " + MARK + rung.to_str() + " " + at.to_str() + " */"
+
+        if one.sized != ""
+            out @ out.push("    (void)sizeof(" + one.sized + ");" + mark)
+        else
+            out @ out.push("#if !defined(" + one.name + ")")
+            out @ out.push("    (void)(" + one.name + ");" + mark)
+            out @ out.push("#endif")
+        at @ at + 1
+
+    out @ out.push("}")
+    return out
+
+# The headers of C's own `heroes_standard.h` reads, each `#include <...>` of
+# its text in order: read from the runtime the unit compiles against, never
+# listed here, so a header the runtime adds is a rung at once.
+function standard_of(text: str) -> [str]
+    out: [str] @= []
+    opening = "#include <"
+
+    for row in deps.lines(text)
+        line = strings.trimmed(row)
+
+        if strings.starts_with(text: line, prefix: opening) && strings.ends_with(text: line, suffix: ">")
+            out @ out.push(line.slice(from: opening.len(), to: line.len() - 1))
+
+    return out
+
+# Each marked line of `text`, by its line number from 1.
+function marked(text: str) -> {i64: Spot}
+    out: {i64: Spot} @= {}
+    row: i64 @= 0
+
+    for line in deps.lines(text)
+        row @ row + 1
+        rest = ffi_lookup.after(text: line, marker: MARK)
+
+        if !rest.is_err()
+            parts = ffi_lookup.words(text: rest.must())
+
+            if parts.len() >= 2
+                at_rung = ffi_lookup.number(parts[0])
+                at_name = ffi_lookup.number(parts[1])
+
+                if !at_rung.is_err() && !at_name.is_err()
+                    out[row] @ Spot(rung: at_rung.must(), asked: at_name.must())
+
+    return out
+
+# What clang said of `q`, compiled as `unit`, read into one state per rung and
+# name, rung by rung: `UNDECLARED` where an error at that name's line of that
+# rung names it undeclared or its type incomplete, `UNREAD` where another
+# error stands there, `DECLARED` where none does. Absent where an error
+# stands at no question's line, or clang stopped.
+function states_of(said: str, unit: str, q: Question, asked: [Asked]) -> [i64]?
+    marks = marked(q.text)
+    width = asked.len()
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: q.rungs.len() * width)
+        out @ out.push(DECLARED)
+
+    for row in deps.lines(said)
+        if strings.holds(text: row, needle: ": fatal error: ")
+            return fail(code: "unread", msg: "clang stopped")
+
+        if !strings.holds(text: row, needle: ": error: ")
+            continue
+        place = clang_place.place(row)
+
+        if place.is_err() || clang_place.slashed(place.must().path) != clang_place.slashed(unit)
+            return fail(code: "unread", msg: "an error stands at no question's line")
+        spot = marks[place.must().row]
+
+        if spot.is_err()
+            return fail(code: "unread", msg: "an error stands at no question's line")
+        index = spot.must().rung * width + spot.must().asked
+        state: i64 @= UNREAD
+
+        if undeclared(row, one: asked[spot.must().asked])
+            state @ UNDECLARED
+
+        if state > out[index]
+            out[index] @ state
+
+    return ok(out)
+
+# Whether `row` says the name asked is undeclared: clang's three words for an
+# undeclared name, naming it, or a record's type incomplete.
+function undeclared(row: str, one: Asked) -> bool
+    if one.sized != "" && strings.holds(text: row, needle: "incomplete type")
+        return true
+    named = ffi_reach.undeclared(row)
+    return !named.is_err() && named.must() == one.name
+
+## Tests
+
+# **A rung asks each name once, the macro form passed over and a record by
+# its size** (defect 2429): every referring line is marked with its rung and
+# its name's index, and found again by that mark.
+test "a rung refers to each name, a macro passed over and a record by its size, each line marked (defect 2429)"
+    asked = [Asked(name: "sqrt", sized: ""), Asked(name: "tm", sized: "struct tm")]
+    lines = question_lines(rung: 3, asked: asked)
+    assert lines.join("\n") == "__attribute__((unused)) static void hero_asked_3(void) {\n#if !defined(sqrt)\n    (void)(sqrt); /* hero-asked 3 0 */\n#endif\n    (void)sizeof(struct tm); /* hero-asked 3 1 */\n}"
+    q = plain_question(headers: ["first.h", "stdio.h"], asked: asked)
+    assert q.rungs.len() == 1 && q.rungs[0].header == "stdio.h"
+    marks = marked(q.text)
+    assert keys(marks).len() == 2
+    assert marks[5].must().rung == 0 && marks[5].must().asked == 0
+    assert marks[7].must().asked == 1
+
+# **The unit's opening, a rung after each header it reads**: the two seeds,
+# the groups between the guard's lines, then C's own after them; and the
+# headers `heroes_standard.h` reads are its angled includes, in order.
+test "the unit's question has a rung after each seed, each group and each standard header (defect 2429)"
+    asked = [Asked(name: "sqrt", sized: "")]
+    q = unit_question(groups: ["stdio.h", "math.h"], standard: ["stdint.h"], asked: asked)
+    assert q.rungs.len() == 5
+    assert q.rungs[0].header == "heroes_unit.h" && q.rungs[1].header == "hero_os.h"
+    assert q.rungs[2].header == "stdio.h" && q.rungs[3].header == "math.h" && q.rungs[4].header == "stdint.h"
+    assert strings.starts_with(text: q.text, prefix: macro_guard.FIRST_LINE + "\n#include <heroes_unit.h>\n")
+    assert strings.holds(text: q.text, needle: macro_guard.OPEN_LINE + "\n#include <stdio.h>\n")
+    assert keys(marked(q.text)).len() == 5
+    assert standard_of("#include \"heroes_reserved_open.h\"\n#if x\n#  pragma y\n#endif\n#include <stdint.h>\n  #include <math.h>\n") == ["stdint.h", "math.h"]
+    assert opening_text(["a.h"]) == macro_guard.FIRST_LINE + "\n#include <heroes_unit.h>\n#include <hero_os.h>\n#include <a.h>\n"
+
+# **A renamed question hides every earlier declaration of a name from the
+# header asked** (defect 2429): `both.h` defines `lib.h`'s switch and declares
+# `extra` itself, so only `lib.h`'s own declaration may answer, under the new
+# name; a record by its new tag.
+test "a renamed question renames each name while the header alone is read (defect 2429)"
+    asked = [
+        Asked(name: "extra", sized: "")
+        Asked(name: "tm", sized: "struct tm")
+        Asked(name: "Color", sized: "Color")
+    ]
+    q = renamed_question(groups: ["both.h"], header: "lib.h", asked: asked)
+    assert strings.holds(
+        text: q.text,
+        needle: "#include <both.h>\n#if !defined(extra)\n#define extra hero_renamed_extra\n#define hero_renamed_held_extra\n#endif\n"
+    )
+    assert strings.holds(
+        text: q.text,
+        needle: "#include <lib.h>\n#if defined(hero_renamed_held_extra)\n#undef extra\n#endif\n"
+    )
+    assert strings.holds(text: q.text, needle: "    (void)(hero_renamed_extra); /* hero-asked 0 0 */\n")
+    assert strings.holds(text: q.text, needle: "    (void)sizeof(struct hero_renamed_tm); /* hero-asked 0 1 */\n")
+    assert strings.holds(text: q.text, needle: "    (void)sizeof(hero_renamed_Color); /* hero-asked 0 2 */\n")
+    assert q.rungs.len() == 1 && q.rungs[0].header == "lib.h"
+    assert keys(marked(q.text)).len() == 3
+
+# **Only an error at a question's own line is an answer** (defect 2429):
+# an undeclared name or an incomplete type there is that name undeclared at
+# that rung, another error there is no answer for it, and an error at a
+# header's line, at an unmarked line of the unit, or a fatal one, is no
+# answer at all.
+test "what clang said at a question's line is the answer, and an error elsewhere is none (defect 2429)"
+    asked = [Asked(name: "sqrt", sized: ""), Asked(name: "tm", sized: "struct tm")]
+    q = plain_question(headers: ["stdio.h"], asked: asked)
+    unit = "build/declared/asked-1.c"
+    none = states_of(said: "", unit: unit, q: q, asked: asked).must()
+    assert none == [DECLARED, DECLARED]
+    said = unit + ":4:12: error: use of undeclared identifier 'sqrt'\n" + unit + ":6:5: error: invalid application of 'sizeof' to an incomplete type 'struct tm'\n" + unit + ":6:5: note: forward declaration\n2 errors generated.\n"
+    assert states_of(said: said, unit: unit, q: q, asked: asked).must() == [UNDECLARED, UNDECLARED]
+    other = unit + ":4:12: error: use of undeclared identifier 'sqrtf'\n"
+    assert states_of(said: other, unit: unit, q: q, asked: asked).must() == [UNREAD, DECLARED]
+    library = unit + ":4:12: error: call to undeclared library function 'sqrt' with type 'double (double)'\n"
+    assert states_of(said: library, unit: unit, q: q, asked: asked).must() == [UNDECLARED, DECLARED]
+    assert states_of(said: "lib.h:2:1: error: unknown type name 'x'\n", unit: unit, q: q, asked: asked).is_err()
+    assert states_of(
+        said: unit + ":1:10: fatal error: 'stdio.h' file not found\n",
+        unit: unit,
+        q: q,
+        asked: asked
+    ).is_err()
+    assert states_of(said: unit + ":2:1: error: expected expression\n", unit: unit, q: q, asked: asked).is_err()

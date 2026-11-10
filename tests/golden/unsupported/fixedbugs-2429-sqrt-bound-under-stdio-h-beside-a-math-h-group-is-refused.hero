@@ -1,0 +1,21 @@
+# fixedbugs, defect 2429, lane b30-msg, 2026-11-10.
+#
+# A unit reads every header of its module before its own C, so `sqrt` bound
+# under `stdio.h` beside a group naming `math.h` built at exit 0, and with
+# `-> i64`, as here, was told *`sqrt` returns `double` in `stdio.h`*, a
+# header that declares no `sqrt`. Spec § 13 checks a group's names against
+# the header it names, so each is asked where the unit reads its own header:
+# `stdio.h`, read first, declares no `sqrt`, and `math.h`, read after it, is
+# named. Defect 2413 asked this of the runtime's `hero_os.h` names alone.
+
+extern "stdio.h"
+    function sqrt(x: f64) -> i64  #~ ffi_unknown_name
+    function puts(s: cstr lent) -> i32
+
+extern "math.h" link "m"
+    function floor(x: f64) -> f64
+
+function main()
+    print(sqrt(16.0))
+    print(floor(1.5))
+    print(puts("x".cstr()))

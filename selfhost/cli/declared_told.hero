@@ -1,0 +1,103 @@
+# What a binding its header does not declare is told (design.md §4.17,
+# §4.19, spec § 13; defect 2429, 2026-11-10): `ffi_unknown_name` at the
+# name, saying which header does declare it and where the unit reads that
+# one, and how clang read the header named, so the author moves the binding
+# without opening the unit. The words for a name of the runtime's
+# `hero_os.h` are defect 2413's, kept byte for byte.
+#
+# No fix: which group the binding belongs in is the author's, a header of
+# their own that includes the declaring one being as right as the
+# declaring one, and a group's line holding other names would move with it.
+
+use cli/declared_ladder as ladder
+use diag
+use token
+
+# A refusal and the declaration it is told on, which orders it.
+record Told
+    decl: i64
+    diagnostic: diag.Diagnostic
+
+# A name the header at its rung does not declare, declared at a later rung:
+# a later group's header, or one of C's own the unit reads after its groups.
+function after(decl: i64, word: str, asked: ladder.Asked, header: str, declarer: ladder.Rung, span: token.Span) -> Told
+    head = "`" + header + "` declares no `" + named(asked) + "` — "
+    read = "; clang read `" + header + "` where this unit reads it and could not find it"
+    message: str @= head + "`" + declarer.header + "` does, which this module's unit reads after it, so the name was found whatever header its group names" + read
+
+    if is_standard(declarer)
+        message @ head + "`" + declarer.header + "`, a header of C's own every unit reads after its groups' headers, does" + read
+    return Told(decl: decl, diagnostic: diagnostic(message: message, word: word, declarer: declarer, span: span))
+
+# A name the unit finds declared before its header's rung, which the header
+# declares neither alone nor after the headers before it; `read_first` the
+# headers the compile that answered read first, none where it read the
+# header alone.
+function before(decl: i64, word: str, asked: ladder.Asked, header: str, declarer: ladder.Rung, read_first: [str], span: token.Span) -> Told
+    how: str @= "alone"
+
+    if read_first.len() > 0
+        how @ "after `" + read_first.join("`, `") + "`, which its module's groups name before it,"
+    head = "`" + header + "` declares no `" + named(asked) + "` — "
+    found = ", so the name was found whatever header its group names; clang compiled `" + header + "` " + how + " and could not find it"
+    message: str @= head + "`" + declarer.header + "` does, which this module's unit reads before it" + found
+
+    if is_seed(declarer)
+        message @ head + "the runtime's `" + declarer.header + "` does, which every unit reads before its groups' headers" + found
+    return Told(decl: decl, diagnostic: diagnostic(message: message, word: word, declarer: declarer, span: span))
+
+# The name as C writes it: a record's by the type its size was asked of.
+function named(asked: ladder.Asked) -> str
+    if asked.sized != ""
+        return asked.sized
+    return asked.name
+
+function diagnostic(message: str, word: str, declarer: ladder.Rung, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_unknown_name", message: message, span: span)
+    d.notes @ d.notes.push(
+        "spec § 13: a group's names are checked against the header it names; bind `" + word + "` in a group `extern \"" + declarer.header + "\"`, or in one naming a header of your own that includes `" + declarer.header + "`"
+    )
+    return d
+
+function is_seed(r: ladder.Rung) -> bool
+    match r.stands
+        .seed              => return true
+        .group | .standard => return false
+
+function is_standard(r: ladder.Rung) -> bool
+    match r.stands
+        .standard      => return true
+        .seed | .group => return false
+
+## Tests
+
+# **Defect 2413's words for a `hero_os.h` name, and the new ones beside
+# them** (defect 2429): a declarer before the header, a later group's, and
+# one of C's own read after the groups.
+test "a binding is told which header declares it and where the unit reads that one (defect 2429)"
+    span = token.Span(start: 0, end: 4)
+    door = ladder.Asked(name: "hero_env_shown", sized: "")
+    os = ladder.Rung(header: "hero_os.h", stands: .seed)
+    seeded = before(3, word: "hero_env_shown", asked: door, header: "stdio.h", declarer: os, read_first: [], span: span)
+    assert seeded.decl == 3 && seeded.diagnostic.code == "ffi_unknown_name"
+    assert seeded.diagnostic.message == "`stdio.h` declares no `hero_env_shown` — the runtime's `hero_os.h` does, which every unit reads before its groups' headers, so the name was found whatever header its group names; clang compiled `stdio.h` alone and could not find it"
+    assert seeded.diagnostic.notes[0] == "spec § 13: a group's names are checked against the header it names; bind `hero_env_shown` in a group `extern \"hero_os.h\"`, or in one naming a header of your own that includes `hero_os.h`"
+    sqrt = ladder.Asked(name: "sqrt", sized: "")
+    math = ladder.Rung(header: "math.h", stands: .group)
+    earlier = before(
+        1,
+        word: "sqrt",
+        asked: sqrt,
+        header: "stdio.h",
+        declarer: math,
+        read_first: ["a.h", "b.h"],
+        span: span
+    )
+    assert earlier.diagnostic.message == "`stdio.h` declares no `sqrt` — `math.h` does, which this module's unit reads before it, so the name was found whatever header its group names; clang compiled `stdio.h` after `a.h`, `b.h`, which its module's groups name before it, and could not find it"
+    later = after(1, word: "sqrt", asked: sqrt, header: "stdio.h", declarer: math, span: span)
+    assert later.diagnostic.message == "`stdio.h` declares no `sqrt` — `math.h` does, which this module's unit reads after it, so the name was found whatever header its group names; clang read `stdio.h` where this unit reads it and could not find it"
+    tm = ladder.Asked(name: "tm", sized: "struct tm")
+    c_own = ladder.Rung(header: "math.h", stands: .standard)
+    record_told = after(2, word: "record Broken", asked: tm, header: "stdio.h", declarer: c_own, span: span)
+    assert record_told.diagnostic.message == "`stdio.h` declares no `struct tm` — `math.h`, a header of C's own every unit reads after its groups' headers, does; clang read `stdio.h` where this unit reads it and could not find it"
+    assert record_told.diagnostic.notes[0] == "spec § 13: a group's names are checked against the header it names; bind `record Broken` in a group `extern \"math.h\"`, or in one naming a header of your own that includes `math.h`"
