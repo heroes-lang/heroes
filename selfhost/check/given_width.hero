@@ -57,7 +57,7 @@ function after_call(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast
 
             while k < values.len() && k < call.params.len() && k < fd.value.params.len()
                 param = source.span_text(s, fd.value.params[k].name)
-                whose: str @= "the header's: `" + param + "` of `" + name + "` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19)"
+                whose: str @= "the header's: `" + param + "` of `" + name + "` is bound at the width its header gives it, as every parameter of an `extern` binding is (spec § 13)"
 
                 if library
                     whose @ "the library's: `" + name + "` takes its `" + param + "` at that width, which no program changes"
@@ -153,7 +153,7 @@ function after_write(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [as
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return
 
 function field_whose(field: str, holder: str) -> str
-    return "the header's: `" + field + "` of `" + holder + "` is bound at the width its header gives it, as every field of a group's `record` is (§4.19)"
+    return "the header's: `" + field + "` of `" + holder + "` is bound at the width its header gives it, as every field of a group's `record` is (spec § 13)"
 
 # Each `int_out_of_range` told from diagnostic `from` on at a literal
 # `value` hands its width to, where the literal was measured against `ty`,

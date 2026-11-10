@@ -3,4 +3,4 @@ error[ffi_call_shape]: `combine` is declared with 1 parameters, and `fixedbugs-1
     |
   9 |     function combine(x: i64) -> i64  #~ ffi_call_shape
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: §4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with
+  note: spec § 13: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with

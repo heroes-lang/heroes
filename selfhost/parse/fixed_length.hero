@@ -27,7 +27,7 @@ function read(@c: cursor.Cursor, text: str, open: token.Span) -> i64
             cursor.error(
                 @c,
                 code: "expected_array_length",
-                message: "expected the array's length after `[`, found " + cursor.found(c, text) + " — a C array member is `i32[4]`, and the length is part of the type (§4.19)",
+                message: "expected the array's length after `[`, found " + cursor.found(c, text) + " — a C array member is `i32[4]`, and the length is part of the type (spec § 13)",
                 span: cursor.current_span(c)
             )
         return 1

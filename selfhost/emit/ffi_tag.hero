@@ -301,12 +301,12 @@ function another_kind(found: TaggedRecord, tag: str, kind: str, by_name: bool) -
         span: found.span
     )
     by_typedef = "If `" + h + "` gives `" + tag + "` a typedef, "
-    union_note: str @= "a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
+    union_note: str @= "a `tag` names a struct (spec § 13), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
 
     if by_name
         union_note @ "C reads `" + tag + "` as a type's name, and `" + h + "` has it only as a union's tag, so a `record` binds it by a typedef. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + tag + ";`, and keep `record " + name + "`, or reach it as a `ptr` through C functions"
     else if handle
-        union_note @ "a `tag` names a struct (§4.19), and a handle reaches a union by a typedef's name. " + by_typedef + "write that name after `tag`; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + "_t;`, and write `record " + name + " tag " + name + "_t`, or pass it to C as a `ptr`"
+        union_note @ "a `tag` names a struct (spec § 13), and a handle reaches a union by a typedef's name. " + by_typedef + "write that name after `tag`; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + "_t;`, and write `record " + name + " tag " + name + "_t`, or pass it to C as a `ptr`"
     enum_note = "an enum is a C integer, not a record or a handle: bind its values as `constant`s, and a value of it as a number at the width and sign of the integer C gives the enum, as any field, parameter or result is (§ 13)"
 
     if kind == "enum"

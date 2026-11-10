@@ -200,7 +200,7 @@ function not_bytes(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: contai
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.19: a `cstr` crosses to a pointer to `const` bytes, `char` of any sign or `void`; for anything else, declare the parameter `ptr` and hand C what its header names"
+        "spec § 13: a `cstr` crosses to a pointer to `const` bytes, `char` of any sign or `void`; for anything else, declare the parameter `ptr` and hand C what its header names"
     )
 
     if !spans.is_err()
@@ -263,7 +263,7 @@ function no_prototype(s: source.Source, decls: [ast.Decl], p: containers.Program
         span: decls[found.must().f.decl].span
     )
     d.notes @ d.notes.push(
-        "§4.19: every parameter of an `extern` is held to the header's own type, and a declaration such as `int " + name + "();` names none: C takes whatever a call hands it, and may write through any pointer among it"
+        "spec § 13: every parameter of an `extern` is held to the header's own type, and a declaration such as `int " + name + "();` names none: C takes whatever a call hands it, and may write through any pointer among it"
     )
     d.notes @ d.notes.push(
         "write a header of your own that includes `" + header + "` and declares the prototype the library's documentation gives, `<result> " + name + "(<its parameters>);`, and name that header in this group"

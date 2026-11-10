@@ -1,11 +1,11 @@
-error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
+error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (spec § 13)
   at tests/golden/full/fixedbugs-424-a-fixed-array-at-a-function-s-result-is-told-results-hold-none.hero:15:20
      |
   15 | function four() -> i8[4]  #~ fixed_outside_a_group
      |                    ^^^^^
   note: `Tag`'s field `name` is built from it at line 22: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
-error[fixed_outside_a_group]: `i32[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
+error[fixed_outside_a_group]: `i32[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (spec § 13)
   at tests/golden/full/fixedbugs-424-a-fixed-array-at-a-function-s-result-is-told-results-hold-none.hero:18:22
      |
   18 | function counts() -> i32[4]  #~ fixed_outside_a_group

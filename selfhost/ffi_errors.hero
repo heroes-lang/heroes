@@ -21,7 +21,7 @@ use token
 function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "ffi_type",
-        message: "`" + name + "` cannot cross the FFI boundary, and it is " + what + " — a C header can declare a number, `bool`, `str`, `ptr`, `cstr`, a function type as a parameter, and a `record` declared in this same group (§4.19)",
+        message: "`" + name + "` cannot cross the FFI boundary, and it is " + what + " — a C header can declare a number, `bool`, `str`, `ptr`, `cstr`, a function type as a parameter, and a `record` declared in this same group (spec § 13)",
         span: span
     )
 
@@ -39,7 +39,7 @@ function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
 function ffi_callback_carries(callback: str, carried: str, what: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_type",
-        message: "`" + callback + "` cannot cross the FFI boundary, and it is " + what + " — the callback may stand there, but `" + carried + "` inside it cannot (§4.19)",
+        message: "`" + callback + "` cannot cross the FFI boundary, and it is " + what + " — the callback may stand there, but `" + carried + "` inside it cannot (spec § 13)",
         span: span
     )
     d.notes @ d.notes.push(
@@ -60,7 +60,7 @@ function ffi_callback_carries(callback: str, carried: str, what: str, span: toke
 function ffi_result_position(function_name: str, name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_type",
-        message: "`" + function_name + "` cannot return `" + name + "` — a function type crosses the FFI boundary as a *parameter* only (§4.19)",
+        message: "`" + function_name + "` cannot return `" + name + "` — a function type crosses the FFI boundary as a *parameter* only (spec § 13)",
         span: span
     )
     d.notes @ d.notes.push(
@@ -116,7 +116,7 @@ function counted_by_shape(parameter: str, function_name: str, why: str, span: to
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.19: `counted_by` says how far C reads or writes through a `ptr`, by naming the parameter beside it that carries the count: `read(fd: i32, buf: ptr counted_by n, n: u64) -> i64`. The compiler checks a lend's extent against the field it lends, wherever the call states a constant"
+        "spec § 13: `counted_by` says how far C reads or writes through a `ptr`, by naming the parameter beside it that carries the count: `read(fd: i32, buf: ptr counted_by n, n: u64) -> i64`. The compiler checks a lend's extent against the field it lends, wherever the call states a constant"
     )
     return d
 
@@ -166,7 +166,7 @@ function word_taken_out(text: str, word: token.Span) -> token.Span
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_field_type",
-        message: "`" + name + "` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (§4.19)",
+        message: "`" + name + "` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (spec § 13)",
         span: span
     )
     d.notes @ d.notes.push(why)
@@ -200,7 +200,7 @@ function partial_operation(holder: str, shown: str, what: str, span: token.Span)
 function fixed_array_length(want: str, expected: i64, got: i64, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "fixed_array_length",
-        message: "`" + want + "` holds exactly " + expected.to_str() + ", and this literal has " + got.to_str() + " — a fixed array's length is part of its type, so the two must agree (§4.19)",
+        message: "`" + want + "` holds exactly " + expected.to_str() + ", and this literal has " + got.to_str() + " — a fixed array's length is part of its type, so the two must agree (spec § 13)",
         span: span
     )
 
@@ -244,7 +244,7 @@ function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: 
 function fixed_outside_a_group(name: str, growable: str, fills: bool, into: BuiltInto?, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "fixed_outside_a_group",
-        message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)",
+        message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (spec § 13)",
         span: span
     )
     no_value = ": no binding, constant, parameter or result holds a fixed array, and `" + growable + "` is not one"
@@ -331,7 +331,7 @@ test "the partial refusal names what was reached, only when it differs"
 test "the fixed-array messages carry both numbers and the last index"
     span = token.Span(start: 0, end: 4)
     short = fixed_array_length(want: "f32[4]", expected: 4, got: 3, span: span)
-    assert short.message == "`f32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (§4.19)"
+    assert short.message == "`f32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (spec § 13)"
     past = fixed_index_out_of_range(shown: "i32[4]", length: 4, got_text: "7", span: span)
     assert past.message == "`i32[4]` holds 4, so its last index is 3, and this is 7 — a fixed array's length is part of its type, so the index is checked here rather than at run time"
 
@@ -345,7 +345,7 @@ test "a fixed array outside a group is told the repairs that work, each under it
     span = token.Span(start: 0, end: 4)
     none: BuiltInto? = fail(code: "none", msg: "built into no group record")
     bytes_field = fixed_outside_a_group(name: "i8[256]", growable: "[i8]", fills: true, into: none, span: span)
-    assert bytes_field.message == "`i8[256]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert bytes_field.message == "`i8[256]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (spec § 13)"
     assert bytes_field.notes.len() == 2
     assert bytes_field.notes[0] == "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[256]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
     assert bytes_field.notes[1] == "where no C struct holds it, use `[i8]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"

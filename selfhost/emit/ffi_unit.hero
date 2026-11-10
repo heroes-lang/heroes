@@ -88,11 +88,11 @@ function whole_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
     # first, and the counted `@` lend, which C may write, second.
     if read_only_at(s, decls, name: name, param: param)
         d.notes @ d.notes.push(
-            "§4.19: a record lent read-only crosses as a pointer to `const` of its own struct, and a `void *` drops both the struct and the `const`: write a header of your own that declares a `static inline` function taking `" + param + "` as that pointer and handing it on to `" + name + "`, and bind that one; or, where C may write it, take it `@" + param + ": <record> counted_by <count>`"
+            "spec § 13: a record lent read-only crosses as a pointer to `const` of its own struct, and a `void *` drops both the struct and the `const`: write a header of your own that declares a `static inline` function taking `" + param + "` as that pointer and handing it on to `" + name + "`, and bind that one; or, where C may write it, take it `@" + param + ": <record> counted_by <count>`"
         )
         return ok(d)
     d.notes @ d.notes.push(
-        "§4.19: name the parameter that carries the count, `@" + param + ": <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is"
+        "spec § 13: name the parameter that carries the count, `@" + param + ": <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is"
     )
     return ok(d)
 
@@ -142,7 +142,7 @@ function unit_unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answer
             span: at.must()
         )
         d.notes @ d.notes.push(
-            "§4.19: a counted parameter is lent the program's own bytes, a field or a record, and C counts them in what its pointer points at; where the header keeps that type opaque, declare `" + one.asked.param + "` without `counted_by` and hand it a pointer C gave you"
+            "spec § 13: a counted parameter is lent the program's own bytes, a field or a record, and C counts them in what its pointer points at; where the header keeps that type opaque, declare `" + one.asked.param + "` without `counted_by` and hand it a pointer C gave you"
         )
         out @ out.push(d)
 

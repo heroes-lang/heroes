@@ -63,7 +63,7 @@ function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: st
         span: found.must().field_span
     )
     d.notes @ d.notes.push(
-        "a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `" + member + "`, or name the header that spells `" + type_name + "` this way"
+        "a group's `record` IS the header's struct (spec § 13), so every field is at the header's own width and sign: correct `" + member + "`, or name the header that spells `" + type_name + "` this way"
     )
 
     if !typed.is_err()
@@ -157,7 +157,7 @@ function unknown_field(s: source.Source, decls: [ast.Decl], line: str) -> diag.D
         span: found.must().span
     )
     d.notes @ d.notes.push(
-        "a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + c_type + "` has a member `" + member + "`"
+        "a group's `record` IS the header's type (spec § 13), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + c_type + "` has a member `" + member + "`"
     )
     return ok(d)
 
@@ -274,7 +274,7 @@ function flexible_array_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl
         span: found.must().field_span
     )
     d.notes @ d.notes.push(
-        "leave `" + member + "` out and write the `record` `partial` (§4.19): what is left is the header's struct minus a member C itself does not size, and those bytes are reached through the functions the header declares for them"
+        "leave `" + member + "` out and write the `record` `partial` (spec § 13): what is left is the header's struct minus a member C itself does not size, and those bytes are reached through the functions the header declares for them"
     )
     return ok(d)
 

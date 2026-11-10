@@ -3,21 +3,21 @@ error[ffi_unknown_name]: `fixedbugs-2128-values.h` declares no `K_GONE` — clan
      |
   22 |     constant K_GONE: i64  #~ ffi_unknown_name
      |     ^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `K_GONE`
+  note: an `extern` names what the header already has (spec § 13): check the spelling, or name the header that does declare `K_GONE`
 
 error[ffi_unknown_name]: `fixedbugs-2128-values.h` declares no `K_NONE` — clang read the header and could not find it
   at tests/golden/unsupported/fixedbugs2143/vals.hero:7:5
     |
   7 |     constant K_NONE: i64  #~ ffi_unknown_name
     |     ^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `K_NONE`
+  note: an `extern` names what the header already has (spec § 13): check the spelling, or name the header that does declare `K_NONE`
 
 error[ffi_parameter_type]: `x` of `narrow` is declared wider than the header's `int` — clang read the header, and C would convert the value in silence
   at tests/golden/unsupported/fixedbugs2143/wide.hero:6:5
     |
   6 |     function narrow(x: i64) -> i32  #~ ffi_parameter_type
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: §4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `i32`, and convert at the call where the value is known to fit
+  note: spec § 13: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `i32`, and convert at the call where the value is known to fit
   fix (guess): declare it `i32`
 
 error[ffi_constant_type]: `K_DIV` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it

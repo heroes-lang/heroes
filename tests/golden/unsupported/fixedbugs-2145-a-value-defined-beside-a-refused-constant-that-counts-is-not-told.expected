@@ -3,5 +3,5 @@ error[ffi_constant_type]: `K_BAD` is `int` in `fixedbugs-2145-counted.h`, not `i
      |
   16 |     constant K_BAD: i8  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^
-  note: an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `K_BAD` as `i8`
+  note: an `extern constant` takes its value and its type from the header (spec § 13), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `K_BAD` as `i8`
   fix (guess): declare it `i32`

@@ -38,7 +38,7 @@ function header(@c: cursor.Cursor, text: str) -> token.Span?
         message: str @= "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`" + heads.in_braces(c, block: heads.below_of(.kw_extern))
 
         if cursor.at(c, .kw_function)
-            message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)"
+            message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (spec § 13)"
         cursor.error(@c, code: "expected_extern_header", message: message, span: cursor.current_span(c))
 
     if cursor.at(c, .error)

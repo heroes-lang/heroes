@@ -6,4 +6,4 @@ tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero:26
 tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero:31:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
 tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero:24:11: error[expected_field_type]: expected `:` and the field's type, found a name (`i32`)
 tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero:26:23: error[expected_extern_signature]: expected a `function`, a `constant` or a `record`, found a name (`f64`) — an `extern` group holds what the header declares, one per line
-tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero:31:1: error[expected_extern_block]: an `extern` group's signatures are indented under it — `extern "math.h"` then `    function sqrt(x: f64) -> f64` (§4.19)
+tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero:31:1: error[expected_extern_block]: an `extern` group's signatures are indented under it — `extern "math.h"` then `    function sqrt(x: f64) -> f64` (spec § 13)

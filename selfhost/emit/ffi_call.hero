@@ -136,7 +136,7 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
             message @ "`" + name + "` is declared with " + n.must().have.to_str() + " parameters, and `" + header + "` gives it " + n.must().expected.to_str() + " — clang read the header, and the call this declaration implies does not fit it"
         d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_call_shape", message: message, span: span)
         d.notes @ d.notes.push(
-            "§4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with"
+            "spec § 13: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with"
         )
         return ok(d)
     d: diag.Diagnostic @= diag.new_diagnostic(
@@ -145,7 +145,7 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.19: bind the fixed shape the program calls — `function " + name + "(format: cstr, value: i64) -> i32` binds one argument after the format, and the format may then be a literal at every call"
+        "bind the fixed shape the program calls — `function " + name + "(format: cstr, value: i64) -> i32` binds one argument after the format, and the format may then be a literal at every call"
     )
     return ok(d)
 
@@ -206,7 +206,7 @@ function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Progr
         span: declared.must().span
     )
     d.notes @ d.notes.push(
-        "an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (§4.19): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline " + returning(c_type: c_type, callee: "hero_" + name) + "(void) { return " + name + "; }`"
+        "an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (spec § 13): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline " + returning(c_type: c_type, callee: "hero_" + name) + "(void) { return " + name + "; }`"
     )
     return ok(d)
 

@@ -47,7 +47,7 @@ function unavailable(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
     if !words.is_err()
         d.notes @ d.notes.push("`" + header + "` says of `" + name + "`: " + without_flag(words.must()))
     d.notes @ d.notes.push(
-        "§4.19: an `extern` is checked against the real header, and clang refuses every use of a name it marks unavailable, this binding's own check included: remove the binding, or bind what the header offers in its place"
+        "spec § 13: an `extern` is checked against the real header, and clang refuses every use of a name it marks unavailable, this binding's own check included: remove the binding, or bind what the header offers in its place"
     )
     return ok(d)
 

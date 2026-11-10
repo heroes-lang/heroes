@@ -3,7 +3,7 @@ error[ffi_parameter_type]: `x` of `narrow` is declared wider than the header's `
      |
   12 |     function narrow(x: i64) -> i32  #~ ffi_parameter_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: §4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `i32`, and convert at the call where the value is known to fit
+  note: spec § 13: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `i32`, and convert at the call where the value is known to fit
   fix (guess): declare it `i32`
 
 error[ffi_constant_type]: `K_DIV` in `fixedbugs-2137-counted-call.h` cannot be declared `i64`: clang refuses the header's value at line 7: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it

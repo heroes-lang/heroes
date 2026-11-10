@@ -58,7 +58,7 @@ function parse_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         cursor.error(
             @c,
             code: "nested_fallible",
-            message: "a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)",
+            message: "a fallible type cannot be fallible twice — `T?` already carries the error case",
             span: extra
         )
 

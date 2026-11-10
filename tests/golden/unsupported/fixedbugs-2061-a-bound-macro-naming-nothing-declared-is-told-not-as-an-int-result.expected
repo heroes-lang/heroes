@@ -3,4 +3,4 @@ error[ffi_unknown_name]: `fixedbugs-2061-reach.h` defines `nowhere` as a macro n
      |
   11 |     function nowhere(x: f64) -> f64  #~ ffi_unknown_name
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against what its header makes the name (§4.19), and a macro through the name it leaves: name the header that declares `nosuch_fn` in a group above this one, or bind the name the header's documentation gives in place of `nowhere`
+  note: an `extern` is checked against what its header makes the name (spec § 13), and a macro through the name it leaves: name the header that declares `nosuch_fn` in a group above this one, or bind the name the header's documentation gives in place of `nowhere`

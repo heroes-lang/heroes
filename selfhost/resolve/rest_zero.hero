@@ -213,7 +213,7 @@ function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.
 function outside_a_group(name: str, has_rest: bool, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "rest_outside_a_group",
-        message: "`" + name + "` is a Heroes `record`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
+        message: "`" + name + "` is a Heroes `record`, and a construction of one names every field, always (spec § 9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
         span: span
     )
 
@@ -228,7 +228,7 @@ function outside_a_group(name: str, has_rest: bool, span: token.Span) -> diag.Di
 function a_case(name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "rest_outside_a_group",
-        message: "`" + name + "` builds a case of a Heroes `variant`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
+        message: "`" + name + "` builds a case of a Heroes `variant`, and a construction of one names every field, always (spec § 9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
         span: span
     )
     d.notes @ d.notes.push(

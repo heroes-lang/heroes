@@ -3,56 +3,56 @@ error[int_out_of_range]: `3000000000` does not fit an `i32`
      |
   30 |     print(twice(x: 3000000000))  #~ int_out_of_range
      |                    ^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:33:11
      |
   33 |     print(3000000000.twice())  #~ int_out_of_range
      |           ^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `-3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:36:20
      |
   36 |     print(twice(x: -3000000000))  #~ int_out_of_range
      |                    ^^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:39:24
      |
   39 |     print(twice(x: 1 + 3000000000))  #~ int_out_of_range
      |                        ^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:42:19
      |
   42 |     print(Pair(a: 3000000000, b: 1).a)  #~ int_out_of_range
      |                   ^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `a` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `a` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `-3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:45:19
      |
   45 |     print(Pair(b: -3000000000).b)  #~ int_out_of_range
      |                   ^^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `b` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `b` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:49:11
      |
   49 |     p.a @ 3000000000  #~ int_out_of_range
      |           ^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `a` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `a` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:52:9
      |
   52 |         3000000000  #~ int_out_of_range
      |         ^^^^^^^^^^
-  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `b` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `b` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (spec § 13). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `256` does not fit a `u8`
   at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:61:16

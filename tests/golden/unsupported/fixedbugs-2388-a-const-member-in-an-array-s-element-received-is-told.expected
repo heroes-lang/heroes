@@ -3,4 +3,4 @@ error[ffi_const_field]: `fixedbugs-2388-const-in-an-element.h` declares `Outer`'
      |
   24 |     got = fixedbugs_2388_outer_make()  #~ ffi_const_field
      |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: C11 counts a `const` member inside an array's element as it counts one at the top (§6.3.2.1p1), though clang assigns it without a word: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here
+  note: C11 counts a `const` member inside an array's element as it counts one at the top (C11 §6.3.2.1p1), though clang assigns it without a word: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here

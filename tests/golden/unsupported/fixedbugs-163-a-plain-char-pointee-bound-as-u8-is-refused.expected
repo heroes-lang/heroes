@@ -3,5 +3,5 @@ error[ffi_parameter_type]: `p` of `fill` is declared `u8`, and the header's `cha
      |
   10 |     function fill(@p: u8)  #~ ffi_parameter_type
      |                    ^
-  note: §4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
+  note: spec § 13: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
   fix (guess): declare `p` as `@p: i8`
