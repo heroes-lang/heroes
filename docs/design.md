@@ -2833,11 +2833,16 @@ mean it, as with the other refusals this section names.
 definition*, so `function` gives up its code and `constant` gives up its value:
 
 ```
-extern "curl/curl.h" link "curl"
+extern "curl_bound.h" link "curl"
     constant CURLOPT_URL: i64
     record Curl tag CURL
-    function curl_easy_setopt(handle: Curl, option: i64, value: cstr) -> i64
+    function net_set_url(handle: Curl, url: cstr lent) -> i64
 ```
+
+The group names the program's own `curl_bound.h`, which includes `curl/curl.h` and defines the door
+`net_set_url` (`examples/curl`). Until 2026-11-10 the fence bound `curl_easy_setopt(handle: Curl,
+option: i64, value: cstr) -> i64` directly, a binding panel 243's R1 refuses on `value`, which falls
+past the prototype's `...`.
 
 **`handle: ptr` until 2026-09-13**, corrected with the fence above and worth its own sentence,
 because this is the binding that decided the form's SPELLING. `curl/curl.h` reads
@@ -3083,14 +3088,21 @@ and it was stolen.
 **Acceptance tests for the FFI, in order of increasing ambition.** Each one is a real milestone, and
 the first is the one that proves the project's premise:
 
-1. **`printf` and `puts`** — proves the ABI works at all, including variadics on Apple ARM64.
+1. **`printf` and `puts`** — proves the ABI works at all, including variadics on Apple ARM64. Since
+   2026-11-10 (panel 243's R1, provisional) a binding passes nothing by value past a header's `...`,
+   so the variadic call is clang's, inside a door of the program's own header with its format
+   literal there; the rung proves that call's ABI as it did a direct one's.
 2. **`libm`** — `sqrt`, `sin`, `pow`. Proves `f64` passing in floating-point registers.
 3. **SQLite** — open a database, run a query, read a result, close. Pure C, clean header, immediate
    value. **If this works without you having written a standard library, the architecture holds.**
 4. **libcurl** — fetch a URL (author instruction, 2026-08-12). It is the rung that tests what the
    others do not: `curl_easy_setopt` is **variadic**, which is where Apple ARM64 passes arguments on
    the stack rather than in registers, and `CURLOPT_WRITEFUNCTION` is a callback, which §4.19 fixes
-   at `ptr` until a C-width type vocabulary exists.
+   at `ptr` until a C-width type vocabulary exists. **Since 2026-11-10** (panel 243's R1,
+   provisional) the rung tests a door: `examples/curl` binds `net_set_url`, a function of a new name
+   in its own `curl_bound.h` that calls `curl_easy_setopt` with the option written there, since a
+   binding passes nothing by value past `...`, a callback's `ptr` included; the variadic call, and
+   its arguments on the stack, are clang's against libcurl's prototype.
 5. **raylib** — opens a window and draws. Proves the toolchain handles a library with real struct
    passing and framework linking on macOS, and it is disproportionately motivating to see. Measured
    before it was needed: the homebrew **dylib** links with `-I`/`-L` and **no framework at all**;
@@ -3929,8 +3941,8 @@ are *on* the closure list.
     and crosses through a header of the program's own: a `static inline` function of a new name
     whose prototype fixes the shape and calls the variadic through its own, a `long` there bound
     with `i32` as above, the literal format inside it where the callee is a format function, and
-    `-Wformat-nonliteral` kept an error in that header so a door forwarding its format is refused;
-    never a re-declaration of the variadic (panel 052).
+    `-Wformat-nonliteral` kept an error in every group header's region, as `-Wformat` is, so a door
+    forwarding its format is refused; never a re-declaration of the variadic (panel 052).
 11. ~~**A `raw` module for low-level access** — see Part 9.~~ **Left this list for Part 6 at panel 140,
     2026-09-13** (M-deferral-ledger step 5;
     `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md`), refused
