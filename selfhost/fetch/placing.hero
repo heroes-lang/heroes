@@ -13,6 +13,7 @@ use cli/process
 use fetch/address
 use fetch/git_source
 use fetch/index_source
+use fetch/staging
 use fetch/transport
 use module/catalogue
 use module/fingerprint
@@ -24,8 +25,9 @@ record Placed
     fetched: bool
 
 # The entry `e` of the program whose folder is `program` ("" or a path ending
-# with `/`) placed, `index` its catalogue's `index` line.
-function placed_tree(tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> Placed?
+# with `/`) placed, `index` its catalogue's `index` line; a tree fetched is
+# written into the run's `ledger`.
+function placed_tree(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> Placed?
     if e.path.len() > 0
         return ok(Placed(folder: program + e.path, fetched: false))
     at = program + "heroes.packages/" + placed.key(e, index: index)
@@ -35,16 +37,19 @@ function placed_tree(tools: transport.Tools, e: catalogue.Entry, program: str, r
 
     if e.git.len() > 0
         return ok(
-            Placed(folder: git_source.fetched(tools, e: e, program: program, root: root, index: index)?, fetched: true)
+            Placed(folder: git_source.fetched(@ledger, tools, e: e, program: program, root: root, index: index)?, fetched: true)
         )
     return ok(
-        Placed(folder: index_source.fetched(tools, e: e, program: program, root: root, index: index)?, fetched: true)
+        Placed(folder: index_source.fetched(@ledger, tools, e: e, program: program, root: root, index: index)?, fetched: true)
     )
 
 # The catalogue a placed tree holds, `catalogue.read`'s empty one where it
-# holds none; refused where it does not read.
+# holds none; refused where it does not read, its place named in the
+# package, `<json>/heroes.toml:3`, as a `use <json>/...` line names its
+# modules: the refusal is a refused run's, which takes the tree away again
+# (defect 2434), so a path into it would name a file that is gone.
 function own_catalogue(e: catalogue.Entry, folder: str) -> catalogue.Catalogue?
-    c = catalogue.read(opened: folder + "/", named: folder + "/")
+    c = catalogue.read(opened: folder + "/", named: "<" + e.name + ">/")
 
     if c.problem.len() > 0
         return fail(

@@ -26,11 +26,11 @@ use cli/artifact
 use cli/clang_floor
 use cli/compile
 use cli/compiling
+use cli/declared_by
 use cli/input
 use cli/io
 use cli/kept
 use cli/libraries
-use cli/os_bound
 use cli/pointee_ask
 use cli/process
 use cli/publish
@@ -213,10 +213,6 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     )
     under = shadowed.checked(t, options, site, art.must(), s)?
 
-    # A door of the runtime's `hero_os.h` bound by a group naming another
-    # header, asked of that header compiled alone under these words (defect 2413).
-    os_bound.stopped(t, under: under, s, art.must().decls, permissive: options.permissive)?
-
     # THE ROUNDS (`cli/rounds.hero`; defect 037, panel 152 R1): each asks every
     # module's headers its questions, then compiles and links, and runs again
     # where clang asked `struct` for a handle's tag. What a build settles
@@ -225,6 +221,11 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # unit spells of another module read there as its own module reads it, or
     # refused before any of them (panel 239, `cli/agreed.hero`).
     planned = agreed.planned(t, under: under, art.must(), s, site, target: options.target)?
+
+    # Each name a group binds asked of the header its group names, where the
+    # module's unit reads it, one question per header list (spec § 13;
+    # defects 2413 and 2429, `cli/declared_by.hero`).
+    declared_by.stopped(t, planned.probings, s, art.must().decls, permissive: options.permissive)?
     went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
 
     if went.verdict.is_err()

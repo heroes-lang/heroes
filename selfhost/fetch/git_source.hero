@@ -40,10 +40,11 @@ record Blob
     path: str
 
 # The git entry `e` of the program whose folder is `program` ("" or a path
-# ending with `/`) fetched and placed under its key: the folder it now
-# stands in. `root` is where the program stands in its repository
-# (`transport.root_of`), `index` its catalogue's `index` line.
-function fetched(tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
+# ending with `/`) fetched and placed under its key, and written into the
+# run's `ledger`: the folder it now stands in. `root` is where the program
+# stands in its repository (`transport.root_of`), `index` its catalogue's
+# `index` line.
+function fetched(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
     s = staging.opened(program)?
     done = written(tools, e: e, root: root, s: s)
 
@@ -51,8 +52,8 @@ function fetched(tools: transport.Tools, e: catalogue.Entry, program: str, root:
         staging.dropped(s)
         return fail(code: code_of(done), msg: why(done))
     return staging.placed(
+        @ledger,
         s,
-        program: program,
         key: placed.key(e, index: index),
         sum: e.sum,
         what: "the tree of `" + e.name + "`, `" + e.git + "` at `" + e.tag + "`,"
@@ -261,7 +262,9 @@ function entry(tag: str, commit: str, sum: str) -> catalogue.Entry
 test "a git entry is fetched from its blobs, held to its sum and placed under its key, a file that is not text among them"
     m = source_made()
     e = entry(tag: "v1", commit: m.commit, sum: m.sum)
-    at = fetched(transport.path_tools(), e: e, program: SCRATCH + "/app/", root: m.root, index: "").must()
+    ledger: staging.Ledger @= staging.begun(SCRATCH + "/app/").must()
+    at = fetched(@ledger, transport.path_tools(), e: e, program: SCRATCH + "/app/", root: m.root, index: "").must()
+    staging.ended(ledger)
     assert at == SCRATCH + "/app/heroes.packages/" + placed.key(e, index: "")
     assert read_file(at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
     assert read_file(at + "/sub/note.txt").must() == "deep\n"
@@ -276,8 +279,9 @@ test "a git entry is fetched from its blobs, held to its sum and placed under it
 
 test "a sum that is not the tree's places nothing, and a moved tag and a missing one are refused before a fetch"
     m = source_made()
+    ledger: staging.Ledger @= staging.begun(SCRATCH + "/app/").must()
 
-    match fetched(transport.path_tools(), e: entry(tag: "v1", commit: m.commit, sum: "sha256-" + "0".repeat(64.to_u64().must())), program: SCRATCH + "/app/", root: m.root, index: "")
+    match fetched(@ledger, transport.path_tools(), e: entry(tag: "v1", commit: m.commit, sum: "sha256-" + "0".repeat(64.to_u64().must())), program: SCRATCH + "/app/", root: m.root, index: "")
         .ok _ => assert false
         .err e =>
             assert e.code == "sum_mismatch"
@@ -297,20 +301,22 @@ test "a sum that is not the tree's places nothing, and a moved tag and a missing
     made_repo.tagged(dir: SCRATCH + "/src", tag: "v1", annotated: false).must()
     now = made_repo.head(SCRATCH + "/src").must()
 
-    match fetched(transport.path_tools(), e: entry(tag: "v1", commit: m.commit, sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
+    match fetched(@ledger, transport.path_tools(), e: entry(tag: "v1", commit: m.commit, sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
         .ok _ => assert false
         .err e =>
             assert e.code == "tag_moved"
             assert e.msg == "the tag `v1` of `file://../src` names the commit " + now + ", and the entry `src` was written when it named " + m.commit + ": a tag that moved is refused, never followed, and `heroes add` writes the entry again once the new commit is the one meant"
 
-    match fetched(transport.path_tools(), e: entry(tag: "v9", commit: m.commit, sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
+    match fetched(@ledger, transport.path_tools(), e: entry(tag: "v9", commit: m.commit, sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
         .ok _  => assert false
         .err e => assert e.code == "absent"
 
-    match fetched(transport.path_tools(), e: entry(tag: "v1", commit: "abc", sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
+    match fetched(@ledger, transport.path_tools(), e: entry(tag: "v1", commit: "abc", sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
         .ok _  => assert false
         .err e => assert e.code == "commit_refused"
 
+    assert ledger.landed.len() == 0
+    staging.ended(ledger)
     assert !process.path_exists(SCRATCH + "/app/heroes.packages") || process.walk(SCRATCH + "/app/heroes.packages").must().files.len() == 0
     assert !process.remove_tree(SCRATCH).is_err()
 

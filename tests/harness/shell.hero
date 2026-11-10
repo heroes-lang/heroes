@@ -36,6 +36,7 @@
 use <core>/strings as core_strings
 
 use placed_trees
+use sources_key
 use strings
 
 extern "hero_os.h"
@@ -992,8 +993,10 @@ function env_written(name: str) -> str
 # The compilers this harness's own test blocks may use, in the order they are
 # tried. Read as: whatever the caller named, then the binary in the repository
 # root — the one every command in CLAUDE.md § Commands and the ROADMAP's *Verify
-# it yourself* block names — then what CI builds from the seed with clang alone,
-# then a local seed build.
+# it yourself* block names — then stage 2 beside it, the second line of those
+# commands, then what CI builds from the seed with clang alone, then a local
+# seed build. In a tree of the compiler's sources the first of them built from
+# that tree's sources is chosen (defect 2435, `some_compiler`).
 #
 # **`./heroes` was missing from this list and `./target/debug/heroes` was on it**
 # until 2026-08-25 (author decision, `/decide` answer `a`). The second is the
@@ -1014,6 +1017,7 @@ function env_written(name: str) -> str
 constant CANDIDATES: [str]
     [
         "./heroes"
+        "./heroes-next"
         "./heroes-from-seed"
         "./build/heroes-seed"
     ]
@@ -1078,10 +1082,28 @@ function some_compiler() -> str?
             msg: "HEROES_COMPILER is set to `" + hint + "`, and no file is there, so it names no compiler: set it to one, unset it, or name the compiler, -- <compiler>"
         )
 
-    # The first place that holds anything is the answer, and what it holds
-    # must start: a directory or a link to nothing at `./heroes` is refused by
-    # name (defect 332), never passed over for the next place, which would
-    # judge a compiler nobody chose without a word, defect 316's shape.
+    # What each place holds must start: a directory or a link to nothing at
+    # `./heroes` is refused by name (defect 332), never passed over for the
+    # next place, which would judge a compiler nobody chose without a word,
+    # defect 316's shape.
+    #
+    # **In a tree of the compiler's sources, the first place holding a
+    # compiler built from that tree's sources is the answer** (defect 2435):
+    # `--version`'s `sources` line against the tree's key
+    # (`sources_key.hero`), the question the hook in front of the net asks of
+    # the compiler it is named (panel 222's R2). The seed is refreshed only
+    # where the two-stage build goes red or a release closes, so between
+    # refreshes the `./heroes` clang builds from it predates the tree's
+    # repairs, and the net's own tests run as CLAUDE.md § Commands runs them
+    # judged it: defect 2418's test was red under it and green under stage 2
+    # and on the CI. A compiler passed over is passed over for a reason that
+    # is the tree's, and where none stands built from it the refusal names
+    # what each says; outside such a tree there is no tree to ask, and the
+    # first place that holds a compiler is the answer, as it always was.
+    tree = sources_key.in_a_tree()
+    want = tree_sources()
+    found: [Found] @= []
+
     for path in CANDIDATES
         for name in spellings(path)
             if hero_fs_kind(path: name.cstr()) != HERO_FS_ABSENT
@@ -1092,9 +1114,77 @@ function some_compiler() -> str?
                         code: "unstartable",
                         msg: "`" + name + "` is the first place this harness finds anything where it looks for a compiler, and " + why + ", so no compiler is chosen: build one there, or name the compiler, -- <compiler>"
                     )
-                return ok(name)
 
-    return fail(code: "none", msg: no_compiler_anywhere())
+                if !tree
+                    return ok(name)
+                found @ found.push(Found(name: name, sources: sources_said(scratch: SELFTEST, path: name)))
+
+                if !want.is_err() && found[found.len() - 1].sources == want.must()
+                    return ok(name)
+
+    if found.len() == 0
+        return fail(code: "none", msg: no_compiler_anywhere())
+    return chosen_of(found, want: want)
+
+# A compiler this harness found where it looks, and the key its `--version`
+# says it was compiled from, "" where it says none.
+record Found
+    name: str
+    sources: str
+
+# The first of `found` built from the sources whose key is `want`, or the
+# refusal that names what each says and the tree's key, or why the tree
+# cannot be keyed here.
+function chosen_of(found: [Found], want: str?) -> str?
+    if want.is_err()
+        return fail(
+            code: "unkeyed",
+            msg: "this tree's sources cannot be keyed here: " + failure_said(want) + "; so no compiler standing here can be told to be built from them: name the compiler, HEROES_COMPILER=<path> or -- <compiler>"
+        )
+    said: [str] @= []
+
+    for one in found
+        if one.sources == want.must()
+            return ok(one.name)
+        shown: str @= "no sources"
+
+        if one.sources.len() > 0
+            shown @ "sources " + one.sources
+        said @ said.push("`" + one.name + "` says " + shown)
+
+    return fail(
+        code: "not_this_tree",
+        msg: "no compiler standing here was built from this tree's sources, `" + want.must() + "`: " + said.join(", ") + "; build one, `./heroes build selfhost/main.hero -o heroes-next`, or name the compiler, HEROES_COMPILER=<path> or -- <compiler>"
+    )
+
+# The key of this tree's sources, the runtime read where its compiler looks
+# first: `$HEROES_RUNTIME`, else `./runtime`.
+function tree_sources() -> str?
+    hint = env(name: "HEROES_RUNTIME")?
+
+    if hint.len() > 0
+        return sources_key.of_tree(runtime: hint)
+    return sources_key.of_tree(runtime: "runtime")
+
+# A failure's words, "" where there is none.
+function failure_said(answer: str?) -> str
+    match answer
+        .ok _  => return ""
+        .err e => return e.msg
+
+# What the compiler at `path` says it was compiled from: the key on the line
+# of its `--version` that opens `sources `, "" where it says none.
+function sources_said(scratch: str, path: str) -> str
+    program = started_as(path)
+
+    match run(scratch: scratch, program: program, words: [program, "--version"])
+        .err _ => return ""
+        .ok ran =>
+            for line in strings.split_on(text: ran.out, byte: 10)
+                if core_strings.has_prefix(s: line, prefix: "sources ")
+                    return strings.trimmed(line.slice(from: 8, to: line.len()))
+
+            return ""
 
 # A program's name as given, then as the machine spells it: `./heroes` is
 # `./heroes.exe` on Windows, and a list that forgets the suffix answers "" on a
@@ -1863,7 +1953,7 @@ function harness_probe(scratch: str, name: str, main: str) -> str?
     remove_tree(dir)?
     mkdir_all(dir)?
 
-    for module in ["absence", "mark_readers", "placed_trees", "shell", "strings"]
+    for module in ["absence", "mark_readers", "placed_trees", "shell", "sources_key", "strings"]
         text = read_file(NET + "/" + module + ".hero")?
         write_file(path: dir + "/" + module + ".hero", text: text)?
 
@@ -2364,6 +2454,76 @@ test "fixedbugs: a program in a folder above ASCII builds and runs on every plat
         words: [proj + "/answer" + exe_suffix()]
     ).must()
     assert answered.out == "42\n"
+
+# Defect 2435: the rows `sources_key.hero` reads are the compiler's, held to
+# the compiler this harness judges over the program the hook's mirror is held
+# to, whose `use` lines take every spelling: a name, a path, a path behind a
+# comment, a path under another name, and a nested module's own `use`,
+# resolved from the root's folder. A compiler compiles in the library of the
+# sources it was built from, so the library row is this tree's for any
+# compiler of this tree, a stage 2 included.
+test "fixedbugs: the tree's key is read as the compiler writes it, over every spelling of a use line (defect 2435)"
+    scratch = own_scratch()
+    compiler = some_compiler().must()
+    root = scratch + "/held"
+    program = [
+        "main.hero"
+        "use a\nuse sub/helper  # the helper\nuse sub/x as y\n\nfunction main()\n    print(a.one() + helper.two() + y.three())\n"
+        "a.hero"
+        "function one() -> i64\n    return 1\n"
+        "sub/helper.hero"
+        "use sub/deep\n\nfunction two() -> i64\n    return deep.four() - 2\n"
+        "sub/deep.hero"
+        "function four() -> i64\n    return 4\n"
+        "sub/x.hero"
+        "function three() -> i64\n    return 3\n"
+    ]
+    assert !mkdir_all(root + "/sub").is_err()
+
+    for at in range(from: 0, to: program.len() / 2)
+        assert !write_file(path: root + "/" + program[at * 2], text: program[at * 2 + 1]).is_err()
+
+    emitted = run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", root + "/main.hero", "--emit-c"]
+    ).must()
+    assert emitted.code == 0
+    head = "hero_program_sources(void) { return hero_str_from_bytes(\""
+    at = strings.index_of(text: emitted.out, needle: head).must()
+    carried = emitted.out.slice(from: at + head.len(), to: at + head.len() + 16)
+    runtime = env(name: "HEROES_RUNTIME").must()
+    looked: str @= "runtime"
+
+    if runtime.len() > 0
+        looked @ runtime
+    assert carried == sources_key.sources_key(root: root + "/main.hero", library: sources_key.LIBRARY, runtime: looked).must()
+    assert !remove_tree(scratch).is_err()
+
+# Defect 2435: the first compiler found built from the tree's sources is the
+# answer wherever it stands among the places, and where none is, the refusal
+# names what each says; a tree that cannot be keyed is told so. Here, with no
+# compiler named, the one chosen says the tree's key.
+test "fixedbugs: the first compiler built from the tree's sources is chosen, and the refusal of none names what each says (defect 2435)"
+    seed = Found(name: "./heroes", sources: "5aae00294f7cd6fa")
+    stage = Found(name: "./heroes-next", sources: "14e9e5ce168a2336")
+    mute = Found(name: "./build/heroes-seed", sources: "")
+    assert chosen_of([seed, stage], want: ok("14e9e5ce168a2336")).must() == "./heroes-next"
+    assert chosen_of([stage, seed], want: ok("14e9e5ce168a2336")).must() == "./heroes-next"
+    assert chosen_of([seed, stage], want: ok("5aae00294f7cd6fa")).must() == "./heroes"
+
+    match chosen_of([seed, mute], want: ok("14e9e5ce168a2336"))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "not_this_tree"
+            assert e.msg == "no compiler standing here was built from this tree's sources, `14e9e5ce168a2336`: `./heroes` says sources 5aae00294f7cd6fa, `./build/heroes-seed` says no sources; build one, `./heroes build selfhost/main.hero -o heroes-next`, or name the compiler, HEROES_COMPILER=<path> or -- <compiler>"
+
+    match chosen_of([seed], want: fail(code: "unmirrored", msg: "cannot read selfhost/x.hero (read_failed)"))
+        .ok _  => assert false
+        .err e => assert e.code == "unkeyed"
+
+    if sources_key.in_a_tree() && env(name: "HEROES_COMPILER").must().len() == 0
+        assert sources_said(scratch: own_scratch(), path: some_compiler().must()) == tree_sources().must()
 
 test "fixedbugs: on Windows a command line's fullwidth quotes stay characters, and a fullwidth solidus never reaches another folder (defect 238, W15, W19)"
     if exe_suffix() != ".exe"

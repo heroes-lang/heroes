@@ -1,0 +1,6 @@
+# A module naming `fixedbugs2430/far`, which the file using it does not (defect 2430).
+use fixedbugs2430/far
+
+# A tile of `far`'s.
+function made() -> far.Tile
+    return far.Tile(z: 1)

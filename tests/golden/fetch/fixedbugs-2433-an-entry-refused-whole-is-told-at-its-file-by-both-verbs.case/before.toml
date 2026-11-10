@@ -1,0 +1,4 @@
+# Defect 2433, 2026-11-10: an entry refused whole, its `sum` missing, is told
+# at the catalogue's file alone, first, by both verbs.
+[dependencies.yaml]
+version = "1.0.0"

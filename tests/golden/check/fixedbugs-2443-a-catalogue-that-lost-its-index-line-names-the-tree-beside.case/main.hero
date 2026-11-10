@@ -1,0 +1,8 @@
+# Defect 2443, 2026-11-10: the catalogue lost its `index` line, and the tree
+# placed while it read `file://../packages` stands beside the key it names
+# now, at the same version and sum. The build told `heroes fetch` places it,
+# which reads the Heroes index; it names the tree beside and the line.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

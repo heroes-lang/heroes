@@ -1,0 +1,130 @@
+# Where clang says a name's declaration stands where the unit reads a
+# header (design.md §4.19, spec § 13; defect 2429, 2026-11-10): the last ask
+# `cli/declared_again.hero` makes before a refusal stands.
+#
+# **What it closes, measured on this Mac.** `earlier.h` defines `WANT_SUB`
+# and includes `sub.h`, which declares `sub_extra` under it; `top.h`
+# includes `sub.h` too, and a group naming `top.h` binds `sub_extra`. Where
+# the unit reads `top.h` the name is declared, by a file `top.h` includes,
+# but `sub.h`'s guard skips it there: `top.h` read alone, after the headers
+# before it, and renamed while it is read, declares nothing, and the
+# program was refused, *`top.h` declares no `sub_extra`*, a correct program
+# told something false.
+#
+# **So each name is declared again after the header, as another kind of
+# thing**: a function, a constant or an enumerator as a typedef, a macro as
+# another macro, a struct with another body, a typedef with another type.
+# clang refuses each, or warns of the macro, at the question's line, and its
+# first note under that line says where the declaration it meets stands,
+# *previous definition is here* (measured that day, clang 21, for a
+# function, a macro, a struct, a typedef and an enumerator). A name whose
+# declaration stands in a file the header reads alone (`clang -M`'s listing)
+# is the header's where the unit reads it. A name with no such note, which
+# nothing declares there or only a struct's forward declaration names, has
+# no place, and its refusal stands.
+
+use cli/declared_ask
+use cli/declared_ladder as ladder
+use cli/deps
+use cli/strings
+use cli/toolchain
+use emit/c_text
+use emit/clang_place
+
+# The files each name asked is declared in where the unit reads `header`
+# after the seeds and `groups`, by the name's index; none for a name clang
+# placed nowhere, and none at all where clang did not answer.
+function placed(t: toolchain.Toolchain, words: [str], groups: [str], header: str, asked: [ladder.Asked]) -> {i64: str}
+    none: {i64: str} = {}
+    q = question(groups: groups, header: header, asked: asked)
+    said = declared_ask.said_of(t, words: words, text: q.text, kind: "placed")
+
+    if said.is_err()
+        return none
+    return places_of(said: said.must().text, unit: said.must().unit, q: q)
+
+# The opening up to `header`, then each name declared again, its line marked.
+function question(groups: [str], header: str, asked: [ladder.Asked]) -> ladder.Question
+    lines: [str] @= ladder.opening_lines(groups)
+    ladder.appended(lines: @lines, more: c_text.includes([header]))
+    at: i64 @= 0
+
+    for one in asked
+        mark = " " + ladder.MARK + "0 " + at.to_str() + " */"
+        other = "typedef struct hero_placed_" + at.to_str() + " " + one.name + ";" + mark
+
+        if one.sized == "struct " + one.name
+            lines @ lines.push("struct " + one.name + " { char hero_placed; };" + mark)
+        else if one.sized != ""
+            lines @ lines.push(other)
+        else
+            ladder.appended(
+                lines: @lines,
+                more: ["#if defined(" + one.name + ")", "#define " + one.name + " hero_placed_" + one.name + mark, "#else", other, "#endif"]
+            )
+        at @ at + 1
+
+    return ladder.Question(text: lines.join("\n") + "\n", rungs: [ladder.Rung(header: header, stands: .group)])
+
+# The file of the first note under each error or warning clang said at a
+# question's marked line, by the name's index.
+function places_of(said: str, unit: str, q: ladder.Question) -> {i64: str}
+    marks = ladder.marked(q.text)
+    out: {i64: str} @= {}
+    pending: i64 @= -1
+
+    for row in deps.lines(said)
+        place = clang_place.place(row)
+
+        if place.is_err()
+            continue
+
+        if strings.holds(text: row, needle: ": note: ")
+            if pending >= 0 && out[pending].is_err()
+                out[pending] @ place.must().path
+            pending @ -1
+            continue
+        pending @ -1
+        spot = marks[place.must().row]
+
+        if clang_place.slashed(place.must().path) == clang_place.slashed(unit) && !spot.is_err()
+            pending @ spot.must().asked
+
+    return out
+
+## Tests
+
+# **A name is placed by the first note under clang's word at its line**
+# (defect 2429): a redefinition's *previous definition is here*, a macro's
+# warning the same, and nothing for a line clang said nothing of or a note
+# under another file's error.
+test "each name is declared again, and placed where clang's first note under its line stands (defect 2429)"
+    asked = [
+        ladder.Asked(name: "sub_extra", sized: "")
+        ladder.Asked(name: "sub_rec", sized: "struct sub_rec")
+        ladder.Asked(name: "Pair", sized: "Pair")
+        ladder.Asked(name: "gone", sized: "")
+    ]
+    q = question(groups: ["earlier.h"], header: "top.h", asked: asked)
+    assert strings.holds(
+        text: q.text,
+        needle: "#include <top.h>\n#if defined(sub_extra)\n#define sub_extra hero_placed_sub_extra /* hero-asked 0 0 */\n#else\ntypedef struct hero_placed_0 sub_extra; /* hero-asked 0 0 */\n#endif\n"
+    )
+    assert strings.holds(
+        text: q.text,
+        needle: "struct sub_rec { char hero_placed; }; /* hero-asked 0 1 */\ntypedef struct hero_placed_2 Pair; /* hero-asked 0 2 */\n"
+    )
+    marks = ladder.marked(q.text)
+    row_of: {i64: i64} @= {}
+
+    for line in sort(keys(marks))
+        if row_of[marks[line].must().asked].is_err()
+            row_of[marks[line].must().asked] @ line
+
+    unit = "build/declared/placed-1.c"
+    at_0 = unit + ":" + row_of[0].must().to_str() + ":31: error: redefinition of 'sub_extra' as different kind of symbol\n./sub.h:6:25: note: previous definition is here\n"
+    at_1 = unit + ":" + row_of[1].must().to_str() + ":8: error: redefinition of 'sub_rec'\n./sub.h:8:8: note: previous definition is here\n"
+    elsewhere = "./other.h:3:1: error: unknown type name 'x'\n./other.h:2:1: note: here\n"
+    got = places_of(said: at_0 + elsewhere + at_1, unit: unit, q: q)
+    assert got[0].must() == "./sub.h" && got[1].must() == "./sub.h"
+    assert got[2].is_err() && got[3].is_err()

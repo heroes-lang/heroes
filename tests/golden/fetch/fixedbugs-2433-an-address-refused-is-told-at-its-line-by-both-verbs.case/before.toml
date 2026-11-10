@@ -1,0 +1,5 @@
+# Defect 2433, 2026-11-10: `heroes add` told a catalogue that does not read
+# with its place inside its words, `error[source_refused]: heroes.toml:<line>: ...`,
+# where `heroes fetch` told it first; both tell it first now.
+[dependencies.yaml]
+git = "file://packages/yaml"

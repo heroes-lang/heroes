@@ -1,0 +1,31 @@
+# fixedbugs, defect 2429, lane b30-msg, 2026-11-10.
+#
+# The shapes beside `fixedbugs-2429-sqrt-bound-under-stdio-h-...`, the
+# declaring header read BEFORE the one the group names: `sqrt` under
+# `stdio.h` after `math.h`, and a function, a macro constant and a group
+# record with fields under `fixedbugs-2429-empty.h` after
+# `fixedbugs-2429-shapes.h`, which declares them. Each built at exit 0. The
+# header named is asked alone and after the headers before it, the declaring
+# one left out, and each is refused, the record at its tag; `area` and
+# `empty_one`, their own headers', bind.
+
+extern "math.h" link "m"
+    function floor(x: f64) -> f64
+
+extern "fixedbugs-2429-shapes.h"
+    function area(w: i64, h: i64) -> i64
+
+extern "stdio.h"
+    function sqrt(x: f64) -> f64  #~ ffi_unknown_name
+
+extern "fixedbugs-2429-empty.h"
+    function empty_one() -> i64
+    function shape_count() -> i64  #~ ffi_unknown_name
+    constant SPOT_MAX: i64  #~ ffi_unknown_name
+    record Spot tag spot  #~ ffi_unknown_name
+        x: i64
+
+function main()
+    s = Spot(x: 2)
+    print(floor(sqrt(10.0)))
+    print(area(w: s.x, h: SPOT_MAX) + shape_count() + empty_one())

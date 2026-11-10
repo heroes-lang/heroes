@@ -1,0 +1,5 @@
+# A second module declaring a type `Spot` (defect 2430).
+
+# A point of another kind.
+record Spot
+    y: i64

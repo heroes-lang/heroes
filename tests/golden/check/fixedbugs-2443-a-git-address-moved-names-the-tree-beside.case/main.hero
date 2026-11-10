@@ -1,0 +1,6 @@
+# Defect 2443, 2026-11-10: a git entry's address moved, `ana/json` to
+# `bob/json`, at the same tag, commit and sum as the tree placed beside.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

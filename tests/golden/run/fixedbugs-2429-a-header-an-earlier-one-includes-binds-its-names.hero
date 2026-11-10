@@ -1,0 +1,28 @@
+# fixedbugs, defect 2429, lane b30-msg, 2026-11-10.
+#
+# The correct programs beside `unsupported/fixedbugs-2429-...` where the
+# header a group names was read before its own group, an earlier group's
+# header including it: `fixedbugs-2429-through.h` defines the switch
+# `fixedbugs-2429-lib.h` declares `extra` under and includes it, so the unit
+# read `lib.h`'s declarations there, which `lib.h` read alone cannot show
+# (`clang -M` says the file was read before its rung, and nothing is
+# refused); and the umbrella `fixedbugs-2429-all.h` declares what the group
+# naming its part `fixedbugs-2429-parts.h` binds, which the part declares
+# alone. Both build and run.
+
+extern "fixedbugs-2429-through.h"
+    constant WANT_EXTRA: i64
+
+extern "fixedbugs-2429-lib.h"
+    function extra() -> i64
+    function plain() -> i64
+
+extern "fixedbugs-2429-all.h"
+    constant ALL_PARTS: i64
+
+extern "fixedbugs-2429-parts.h"
+    function part_count() -> i64
+
+function main()
+    print(extra() + plain() + WANT_EXTRA)
+    print(part_count() + ALL_PARTS)

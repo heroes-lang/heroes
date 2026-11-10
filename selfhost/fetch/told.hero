@@ -10,6 +10,17 @@
 # code a module of `fetch/` fails with is in one of the two lists below, and a
 # code in neither is told as the tool's, exit 2: a refusal nobody classified
 # is this compiler's to answer for, never the author's input.
+#
+# **Both verbs speak through one door**, `spoken`, and a catalogue that does
+# not read is turned into a line in one place, `of_catalogue`, its place kept
+# apart from its words. Until defect 2433 `heroes add` told the catalogue's
+# `problem`, the place and the words already joined, with no place of its own,
+# so one mistake read `error[catalogue_refused]: heroes.toml:4: ...` from
+# `add` and `heroes.toml:4: error[catalogue_refused]: ...` from `fetch`.
+
+use cli/io
+use cli/table as cli_table
+use module/catalogue
 
 # The codes that blame the input, exit 1: a source refused by its shape, a
 # word a catalogue wrote, a source that answers that what was asked for is not
@@ -55,6 +66,46 @@ function exit_of(code: str) -> i64
 
     return 2
 
+# One line a verb says: what it prints on stdout where `code` is "", else a
+# refusal, told on stderr with its place first where `at` holds one.
+record Said
+    code: str
+    at: str
+    said: str
+
+# What a verb says, each line where it belongs, and the exit the worst
+# refusal among them earns.
+function spoken(lines: [Said]) -> cli_table.Exit
+    worst: i64 @= 0
+
+    for one in lines
+        if one.code.len() == 0
+            print(one.said)
+        else
+            io.eprint(text: line(at: one.at, code: one.code, said: one.said))
+
+            if exit_of(one.code) > worst
+                worst @ exit_of(one.code)
+
+    if worst == 2
+        return .failed_exit
+
+    if worst == 1
+        return .diagnostics_exit
+    return .ok_exit
+
+# The catalogue `c`, which does not read, told at its place: its file and
+# line, the file alone for an entry read whole, and none where the file
+# cannot be read, whose words then name it.
+function of_catalogue(c: catalogue.Catalogue) -> Said
+    return Said(code: c.code, at: c.at, said: c.said)
+
+# A failure told at the place `at`.
+function refused(failure: ()?, at: str) -> Said
+    match failure
+        .ok _  => return Said(code: "internal", at: at, said: "a refusal was asked of what did not fail")
+        .err e => return Said(code: e.code, at: at, said: e.msg)
+
 # One refusal as stderr shows it, its place first where it has one.
 function line(at: str, code: str, said: str) -> str
     if at.len() == 0
@@ -78,3 +129,27 @@ test "a refusal is told with its place first, and its code gives the exit"
 
     # A code nobody classified is the tool's to answer for.
     assert exit_of("never_written") == 2
+
+# Defect 2433: each shape of a catalogue that does not read keeps its place
+# apart from its words, so `line` puts the place first: a line, the file
+# alone for an entry read whole, and no place where the file cannot be read.
+test "a catalogue that does not read is told with its place first, in each of its shapes"
+    twice = catalogue.parsed(
+        file: "app/heroes.toml",
+        text: "[dependencies.yaml]\ngit = \"file://../git/yaml\"\n\n[dependencies.yaml]\n"
+    )
+    one = of_catalogue(twice)
+    assert line(at: one.at, code: one.code, said: one.said) == "app/heroes.toml:4: error[catalogue_refused]: the entry `yaml` is written twice"
+    host = of_catalogue(
+        catalogue.parsed(file: "app/heroes.toml", text: "[dependencies.yaml]\ngit = \"file://packages/yaml\"\n")
+    )
+    assert host.code == "source_refused" && host.at == "app/heroes.toml:2"
+    assert !opens_with_its_file(host.said)
+    whole = of_catalogue(catalogue.parsed(file: "app/heroes.toml", text: "[dependencies.yaml]\nversion = \"1.0.0\"\n"))
+    assert whole.code == "catalogue_refused" && whole.at == "app/heroes.toml"
+    assert !opens_with_its_file(whole.said)
+    assert refused(failure: fail(code: "absent", msg: "m"), at: "f:3") == Said(code: "absent", at: "f:3", said: "m")
+
+# Whether `said` opens with a catalogue's place, which belongs in `at`.
+function opens_with_its_file(said: str) -> bool
+    return said.len() >= 15 && said.slice(from: 0, to: 15) == "app/heroes.toml"

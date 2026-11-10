@@ -1,0 +1,9 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2434-a-package-catalogue-that-does-not-read-is-taken-back.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue of the package `json` does not read: <json>/heroes.toml:1: a value is a string between double quotes: `version = "1.4.2"`
+heroes.toml:
+(none)
+heroes.packages:
+(none)

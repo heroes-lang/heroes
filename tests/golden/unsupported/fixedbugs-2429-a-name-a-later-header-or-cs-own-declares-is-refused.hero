@@ -1,0 +1,28 @@
+# fixedbugs, defect 2429, lane b30-msg, 2026-11-10.
+#
+# The shapes beside `fixedbugs-2429-sqrt-bound-under-stdio-h-...`, the
+# declaring header read AFTER the one the group names: a function, a macro
+# constant and a group record with fields `fixedbugs-2429-late.h` declares,
+# bound under `fixedbugs-2429-empty.h`, a group above it; and `fabs`, which
+# only `math.h` declares, a header of C's own the unit reads after its
+# groups. Measured with the compiler of the batch's base: the function and
+# the record built at exit 0, the constant was told *changed by
+# `fixedbugs-2429-late.h`, a header read after it*, and `fabs` was told
+# *`fixedbugs-2429-empty.h` declares `fabs` read alone*, false of a header
+# that declares no `fabs`. Each is refused, the declaring header named.
+
+extern "fixedbugs-2429-empty.h"
+    function empty_one() -> i64
+    function late_count() -> i64  #~ ffi_unknown_name
+    constant LATE_MAX: i64  #~ ffi_unknown_name
+    record Late tag late  #~ ffi_unknown_name
+        y: i64
+    function fabs(x: f64) -> f64  #~ ffi_unknown_name
+
+extern "fixedbugs-2429-late.h"
+    function late_first() -> i64
+
+function main()
+    l = Late(y: 2)
+    print(fabs(-1.5))
+    print(l.y + LATE_MAX + late_count() + late_first() + empty_one())

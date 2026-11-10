@@ -1,0 +1,6 @@
+# Needs a `strings` whose sum is not the index's.
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2434-a-second-package-refused-takes-back-the-first.case/idx"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-0000000000000000000000000000000000000000000000000000000000000000"

@@ -1,0 +1,2 @@
+add strings --index file://../../../../../tests/golden/fetch/fixedbugs-2434-an-earlier-runs-tree-is-kept-by-a-refused-add.case/idx -C <work>/app
+add json -C <work>/app

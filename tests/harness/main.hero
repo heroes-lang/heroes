@@ -30,10 +30,12 @@
 # asks them of the shards' sums.
 #
 # With no compiler named, the machine is asked rather than a path assumed
-# (`shell.some_compiler`): $HEROES_COMPILER, then `./heroes-from-seed` — what
-# CI builds out of `seed/heroes.c` with clang alone — then `./build/heroes-seed`,
-# then the bootstrap. That order is the archive's order, so this line does not
-# change on the day the Rust bootstrap moves (it moved 2026-08-19).
+# (`shell.some_compiler`): $HEROES_COMPILER, else the first of `./heroes`,
+# `./heroes-next`, `./heroes-from-seed` — what CI builds out of
+# `seed/heroes.c` with clang alone — and `./build/heroes-seed` that was built
+# from this tree's own sources, its `--version` asked (defect 2435). Until
+# that day the first that stood was taken, and between two refreshes of the
+# seed that was a compiler older than the tree.
 #
 # Exit: 0 all green · 1 something failed · 2 the harness could not run.
 # That is §10's contract for a tool whose artifact is a verdict.
@@ -152,7 +154,7 @@ function main()
     given = args()
 
     # No compiler named: ask the machine which one is here (shell.some_compiler
-    # — the seed-built one first, the bootstrap last), so the same invocation
+    # — the first built from this tree's sources), so the same invocation
     # works before and after the Rust bootstrap was archived (2026-08-19). A
     # `HEROES_COMPILER` that is not UTF-8 is told and ends the run, where until
     # defect 243 it read as unset and the net judged another compiler.
