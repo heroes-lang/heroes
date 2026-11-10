@@ -881,17 +881,22 @@ def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
             if said is not None:
                 return said
 
-    rest = git_args(w, "add")
+    # `git stage` is git's other name for `git add` (`git help stage`), and
+    # until 2026-11-10 it went past both refusals below: `git stage -A`
+    # staged the whole tree with this guard silent (found beside defect 2380,
+    # measured that day, git 2.56.0). The verb is named as it was written.
+    rest = git_args(w, "add", "stage")
     if rest is not None:
+        said_as = "git " + runs.verb_of(w)[0]
         if {"-A", "--all", "-u", "--update"} & set(rest):
             return (
-                "refused: `git add` with -A, --all or -u stages every "
+                "refused: `" + said_as + "` with -A, --all or -u stages every "
                 "session's work in this shared checkout. Name each file "
                 "this conversation touched. " + CONTRACT
             )
         if "." in rest:
             return (
-                "refused: `git add .` stages every session's work in this "
+                "refused: `" + said_as + " .` stages every session's work in this "
                 "shared checkout. Name each file this conversation "
                 "touched. " + CONTRACT
             )

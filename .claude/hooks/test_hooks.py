@@ -818,6 +818,32 @@ class SameLine(unittest.TestCase):
         self.assertIn("defect 2380", self.said("git st && git commit -q -F m -- examples/x.hero"))
 
 
+class StageIsAdd(unittest.TestCase):
+    """Found beside defect 2380: `git stage` is git's other name for `git
+    add`, and `git stage -A` and `git stage .` went past the hard stops'
+    refusal of the whole tree. Witnessed against what git stages."""
+
+    def setUp(self):
+        self.top = fresh("hooks-stage-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        write(os.path.join(self.tree, "other.txt"), "a peer's work\n")
+
+    def test_every_spelling_of_the_whole_tree_is_refused(self):
+        for command in ("git stage -A", "git stage --all", "git stage -u", "git stage --update", "git stage .",
+                        "env X=1 git stage -A", "git -C . stage -A", "bash -c 'git stage -A'"):
+            said = guard_bash.verdict(command, self.tree)
+            self.assertIsNotNone(said, command)
+            self.assertIn("`git stage", said, command)
+        self.assertIn("`git add` with -A", guard_bash.verdict("git add -A", self.tree))
+
+    def test_what_git_stage_a_stages_is_the_whole_tree(self):
+        git(self.tree, "stage", "-A")
+        self.assertIn("other.txt", git(self.tree, "diff", "--cached", "--name-only").stdout.split())
+
+    def test_a_file_named_to_git_stage_passes(self):
+        self.assertIsNone(guard_bash.verdict("git stage -- other.txt", self.tree))
+
+
 class Ahead(unittest.TestCase):
     """`ahead.redirected`: the file an output redirection writes, read outside
     quotes, a descriptor and `/dev/null` writing none."""
