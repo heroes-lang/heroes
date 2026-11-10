@@ -6,6 +6,7 @@
 # this folder, and builds from the tree that verb placed under
 # `heroes.packages/` (`README.md` beside this file).
 
+use <core>/encoding/json
 use <core>/strconv
 use <core>/strings
 
@@ -24,6 +25,11 @@ function main()
         .ok n  => print(n)
         .err e => print(e.msg)
 
+    match json.parse("{\"core\": [\"strings\", \"strconv\", \"encoding/json\"], \"since\": 0.1}")
+        .ok doc => print(json.render(doc).default("no text"))
+        .err e  => print(e.msg)
+
 test "the driver reaches every package"
     assert strings.has_prefix(s: "core/strings", prefix: "core/")
     assert strconv.atoi("7").must() == 7
+    assert json.parse("[1]").must() == .array(items: [.number(value: 1.0)])

@@ -97,9 +97,11 @@ constant INDEX_LINE: str
 # **4 on 2026-11-08**, M-package-manager step 14, the day the source became
 # the index's: `strings`, `strconv` and their two private modules. The suite's
 # floor until then, 38, counted thirteen programs' copies beside the canonical
-# tree, which are placed trees now and counted by `LEAST_PLACED`.
+# tree, which are placed trees now and counted by `LEAST_PLACED`. **10 on
+# 2026-11-10**, raised as the suite asked when core 0.2.0 added `encoding/json`
+# and its five private modules (M-core-packages step 9).
 constant LEAST: i64
-    4
+    10
 
 # The floor of the placed trees: every program under `examples/` that uses the
 # core packages holds one. **14 on 2026-11-08**, the day R15 placed them: the
@@ -604,8 +606,9 @@ function reason<A>(got: A?) -> str
 
 test "the floors are under the counts the walk found on the day the source became the index's"
     # 4 `.hero` files in core 0.1.0's `files/`, and 14 placed trees, on
-    # 2026-11-08; a walk reaching no source or no program finds 0.
-    assert LEAST <= 4
+    # 2026-11-08; 10 in core 0.2.0's on 2026-11-10; a walk reaching no source
+    # or no program finds 0.
+    assert LEAST <= 10
     assert LEAST > 0
     assert LEAST_PLACED <= 14
     assert LEAST_PLACED > 0

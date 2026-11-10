@@ -1,0 +1,172 @@
+# Where a reader stands in a JSON text, and how a message says so: the text
+# and the byte the reader has reached, the white space RFC 8259 allows
+# between tokens, and the words of a mistake, what was expected, what stood
+# there instead, and on which line and column. Strings and numbers are read
+# by `quoted.hero` and `numeral.hero`, and the order of the tokens is
+# `tokens.hero`'s.
+
+# The hexadecimal digits a code point is written with, `U+000A`.
+constant HEX: str
+    "0123456789ABCDEF"
+
+# A JSON text, and the byte a reader has reached in it. A reader moves past an
+# ASCII byte or a whole character at a time, so `at` stands where a character
+# begins, and a message may quote the character it finds there.
+record Cursor
+    text: str
+    at: i64
+
+# A cursor at the first byte of `text`.
+function start(text: str) -> Cursor
+    return Cursor(text: text, at: 0)
+
+# Whether the cursor has passed the last byte of its text.
+function at_end(c: Cursor lent) -> bool
+    return c.at >= c.text.len()
+
+# The byte at the cursor. The caller asks `at_end` first: past the end it
+# aborts, as an index does (spec § 10).
+function byte_at(c: Cursor lent) -> u8
+    return c.text[c.at]
+
+# Moves the cursor past one byte.
+function advance(@c: Cursor)
+    c.at @ c.at + 1
+
+# Moves past JSON's white space, the four bytes RFC 8259 allows between
+# tokens: space, tab, line feed and carriage return, and no other.
+function skip_space(@c: Cursor)
+    while c.at < c.text.len()
+        b = c.text[c.at]
+
+        if b != ' ' && b != '\t' && b != '\n' && b != '\r'
+            return
+        c.at @ c.at + 1
+
+# Whether `word` stands at the cursor; where it does, the cursor moves past it.
+# A word that would run past the end of the text does not stand there.
+function accept(@c: Cursor, word: str) -> bool
+    if c.at + word.len() > c.text.len()
+        return false
+    i: i64 @= 0
+
+    while i < word.len()
+        if c.text[c.at + i] != word[i]
+            return false
+        i @ i + 1
+
+    c.at @ c.at + word.len()
+    return true
+
+# Where the cursor stands, as a person reading the text counts: `line 2,
+# column 5`, both from 1, a column counting characters and not bytes.
+function place(c: Cursor lent) -> str
+    line: i64 @= 1
+    column: i64 @= 1
+    i: i64 @= 0
+
+    while i < c.at && i < c.text.len()
+        b = c.text[i]
+
+        if b == '\n'
+            line @ line + 1
+            column @ 1
+        else if b < 128 || b >= 192
+            column @ column + 1
+        i @ i + 1
+
+    return f"line {line}, column {column}"
+
+# What stands at the cursor, as a message names it: `the end of the text`, a
+# character in backticks, or a control character by its code point, which
+# backticks would not show.
+function found(c: Cursor lent) -> str
+    if at_end(c)
+        return "the end of the text"
+    b = c.text[c.at]
+
+    if b < 32 || b == 127
+        n = to_i64(b).must()
+        return "the control character U+00" + HEX.slice(from: n / 16, to: n / 16 + 1) + HEX.slice(from: n % 16, to: n % 16 + 1)
+
+    if b >= 128 && b < 192
+        return "a byte inside a character"
+    width: i64 @= 1
+
+    if b >= 240
+        width @ 4
+    else if b >= 224
+        width @ 3
+    else if b >= 192
+        width @ 2
+    end: i64 @= c.at + width
+
+    if end > c.text.len()
+        end @ c.text.len()
+    return "`" + c.text.slice(from: c.at, to: end) + "`"
+
+# The message of a mistake: what was expected at the cursor, what was found
+# there instead, and where, as in `expected `:` after a field's name, found
+# `1` at line 1, column 6`.
+function wanted(c: Cursor lent, expected: str) -> str
+    return "expected " + expected + ", found " + found(c) + " at " + place(c)
+
+## Tests
+
+test "cursor: a cursor starts at the first byte, and ends past the last"
+    c: Cursor @= start("ab")
+    assert c.at == 0 && !at_end(c)
+    assert byte_at(c) == 'a'
+    advance(@c)
+    advance(@c)
+    assert at_end(c)
+    assert at_end(start(""))
+
+test "cursor: white space is JSON's four bytes and no other"
+    c: Cursor @= start(" \t\r\n x")
+    skip_space(@c)
+    assert byte_at(c) == 'x'
+
+    # A form feed is white space to C's `isspace`, and not to JSON.
+    feed: Cursor @= start("\u{c}x")
+    skip_space(@feed)
+    assert feed.at == 0
+    empty: Cursor @= start("")
+    skip_space(@empty)
+    assert at_end(empty)
+
+test "cursor: a word is accepted whole or not at all"
+    c: Cursor @= start("true,")
+    assert !accept(@c, "truer")
+    assert c.at == 0
+    assert accept(@c, "true")
+    assert c.at == 4
+    assert accept(@c, ",")
+    assert !accept(@c, ",")
+    short: Cursor @= start("tru")
+    assert !accept(@short, "true")
+
+test "cursor: a place counts lines from 1 and columns in characters"
+    c: Cursor @= start("ab\ncaffè x")
+    assert place(c) == "line 1, column 1"
+    c.at @ 9
+    assert place(c) == "line 2, column 6"
+    c.at @ 2
+    assert place(c) == "line 1, column 3"
+
+test "cursor: what is found is the end, a whole character, or a control's code"
+    c: Cursor @= start("é\n")
+    assert found(c) == "`é`"
+    c.at @ 1
+    assert found(c) == "a byte inside a character"
+    c.at @ 2
+    assert found(c) == "the control character U+000A"
+    c.at @ 3
+    assert found(c) == "the end of the text"
+    assert found(start("\u{7f}")) == "the control character U+007F"
+    assert found(start("😀")) == "`😀`"
+
+test "cursor: a message says what was expected, what was found, and where"
+    c: Cursor @= start("{\"a\" 1}")
+    c.at @ 5
+    assert wanted(c, "`:` after a field's name") == "expected `:` after a field's name, found `1` at line 1, column 6"

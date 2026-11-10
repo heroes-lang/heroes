@@ -1,0 +1,254 @@
+# A JSON text read one token at a time, in its order: the brackets that open
+# and close an array or an object, a field's name, and each value that holds
+# no other, every token held to what RFC 8259's grammar allows after the one
+# before it. The face builds a `Value` from them with no recursion of its own
+# (`encoding/json.hero`), and the nesting stops at `DEEPEST`, so neither the
+# reader nor a program walking what it built runs out of stack.
+#
+# The codes are written here as literals, `not_json` and `too_deep`, and the
+# face names them as constants: the face uses this module, and a module the
+# face uses cannot use the face, which would be a cycle (spec § 1).
+
+use encoding/json/internal/cursor
+use encoding/json/internal/numeral
+use encoding/json/internal/quoted
+
+# The deepest arrays and objects nest in a text `parse` reads and a value
+# `render` writes, the default of PHP's reader
+# (`PHP_JSON_PARSER_DEFAULT_DEPTH`), where Rust's `serde_json` stops at 128
+# and Go's `encoding/json` at 10,000 on a stack that grows, which a Heroes
+# stack does not (each read in its source on 2026-11-10). A program's own walk
+# of a value, a call per level, then stays within a stack every thread of a
+# Heroes program has: measured on 2026-11-10, a walk built at `-O0` ran 512
+# levels deep in 1,024 KB of stack and stopped at 768 KB, and a thread is
+# given the main thread's size at least (`runtime/parts/spawn.c`), 8,176 KB
+# on this Mac by `ulimit -s`.
+constant DEEPEST: i64
+    512
+
+# One token of a JSON text: a bracket, a field's name, a value that holds no
+# other, or the end of the text after its one value.
+variant Token
+    open_array
+    close_array
+    open_object
+    close_object
+    name
+        text: str
+    nothing
+    boolean
+        value: bool
+    number
+        value: f64
+    string
+        value: str
+    end
+
+# What the grammar allows next.
+variant Want
+    # Any value: at the start, after a `,` in an array, after a `:`.
+    value
+    # After a `[`: a value, or the `]` of an empty array.
+    value_or_close
+    # After a `{`: a field's name, or the `}` of an empty object.
+    name_or_close
+    # After a `,` in an object: a field's name.
+    name
+    # After a value: a `,` or the bracket that closes the innermost array or
+    # object, or the end where none is open.
+    after
+
+# A reader of a JSON text: where it stands, the arrays and objects open
+# there, innermost last, each `true` where it is an object, and what may come
+# next.
+record Reader
+    at: cursor.Cursor
+    open: [bool]
+    want: Want
+
+# A reader at the start of `text`.
+function start(text: str) -> Reader
+    nothing: [bool] = []
+    return Reader(at: cursor.start(text), open: nothing, want: .value)
+
+# The next token of the text, the reader moved past it. It fails `not_json`
+# where the text does not go on as JSON's grammar does, and `too_deep` where
+# arrays and objects nest deeper than `DEEPEST`; after `end` it answers `end`
+# again.
+function next(@r: Reader) -> Token?
+    cursor.skip_space(@r.at)
+
+    match r.want
+        .value =>
+            return value_token(@r)
+        .value_or_close =>
+            if cursor.accept(@r.at, "]")
+                return ok(closed(@r))
+            return value_token(@r)
+        .name_or_close =>
+            if cursor.accept(@r.at, "}")
+                return ok(closed(@r))
+            return name_token(@r)
+        .name =>
+            return name_token(@r)
+        .after =>
+            return after_value(@r)
+
+# The value whose first byte stands at the cursor: a bracket that opens an
+# array or an object, or a value that holds no other, read whole.
+function value_token(@r: Reader) -> Token?
+    if cursor.at_end(r.at)
+        return fail(code: "not_json", msg: cursor.wanted(r.at, "a value"))
+    b = cursor.byte_at(r.at)
+
+    if b == '[' || b == '{'
+        if r.open.len() >= DEEPEST
+            return fail(
+                code: "too_deep",
+                msg: f"arrays and objects nest deeper than {DEEPEST} at {cursor.place(r.at)}, the deepest this package reads"
+            )
+        cursor.advance(@r.at)
+        r.open @ r.open.push(b == '{')
+
+        if b == '{'
+            r.want @ .name_or_close
+            return ok(.open_object)
+        r.want @ .value_or_close
+        return ok(.open_array)
+    r.want @ .after
+
+    if b == '"'
+        return ok(.string(value: quoted.read(@r.at)?))
+
+    if b == '-' || numeral.digit(b)
+        return ok(.number(value: numeral.read(@r.at)?))
+
+    if cursor.accept(@r.at, "true")
+        return ok(.boolean(value: true))
+
+    if cursor.accept(@r.at, "false")
+        return ok(.boolean(value: false))
+
+    if cursor.accept(@r.at, "null")
+        return ok(.nothing)
+    return fail(code: "not_json", msg: cursor.wanted(r.at, "a value"))
+
+# A field's name and the `:` after it.
+function name_token(@r: Reader) -> Token?
+    if cursor.at_end(r.at) || cursor.byte_at(r.at) != '"'
+        return fail(code: "not_json", msg: cursor.wanted(r.at, "a field's name in double quotes"))
+    text = quoted.read(@r.at)?
+    cursor.skip_space(@r.at)
+
+    if !cursor.accept(@r.at, ":")
+        return fail(code: "not_json", msg: cursor.wanted(r.at, "`:` after a field's name"))
+    r.want @ .value
+    return ok(.name(text: text))
+
+# What follows a value: a `,` and the token after it, the bracket that closes
+# the innermost array or object, or the end of the text where none is open.
+function after_value(@r: Reader) -> Token?
+    if r.open.len() == 0
+        if cursor.at_end(r.at)
+            return ok(.end)
+        return fail(code: "not_json", msg: cursor.wanted(r.at, "the end of the text after its value"))
+    object = r.open[r.open.len() - 1]
+
+    if cursor.accept(@r.at, ",")
+        if object
+            r.want @ .name
+        else
+            r.want @ .value
+        return next(@r)
+
+    if object
+        if cursor.accept(@r.at, "}")
+            return ok(closed(@r))
+        return fail(code: "not_json", msg: cursor.wanted(r.at, "`,` or `}` after a field's value"))
+
+    if cursor.accept(@r.at, "]")
+        return ok(closed(@r))
+    return fail(code: "not_json", msg: cursor.wanted(r.at, "`,` or `]` after an array's element"))
+
+# The innermost array or object closed, its bracket just read: the token that
+# says which, and a value read in its place.
+function closed(@r: Reader) -> Token
+    object = r.open[r.open.len() - 1]
+    r.open @ r.open.slice(from: 0, to: r.open.len() - 1)
+    r.want @ .after
+
+    if object
+        return .close_object
+    return .close_array
+
+## Tests
+
+# Every token of `text` in its order, named, to its end or its failure's code.
+function named(text: str) -> [str]
+    r: Reader @= start(text)
+    out: [str] @= []
+
+    while true
+        match next(@r)
+            .err e => return out.push(e.code)
+            .ok t =>
+                match t
+                    .open_array   => out @ out.push("[")
+                    .close_array  => out @ out.push("]")
+                    .open_object  => out @ out.push("{")
+                    .close_object => out @ out.push("}")
+                    .name n       => out @ out.push(n.text + ":")
+                    .nothing      => out @ out.push("null")
+                    .boolean b    => out @ out.push(b.value.to_str())
+                    .number n     => out @ out.push(n.value.to_str())
+                    .string s     => out @ out.push("'" + s.value + "'")
+                    .end          => return out.push("end")
+
+test "tokens: a value that holds no other, then the end"
+    assert named("null") == ["null", "end"]
+    assert named(" true ") == ["true", "end"]
+    assert named("false") == ["false", "end"]
+    assert named("-1.5") == ["-1.5", "end"]
+    assert named("\"hi\"") == ["'hi'", "end"]
+
+test "tokens: arrays and objects open, hold and close"
+    assert named("[]") == ["[", "]", "end"]
+    assert named("{}") == ["{", "}", "end"]
+    assert named("[1, [2], {\"a\": null}]") == ["[", "1.0", "[", "2.0", "]", "{", "a:", "null", "}", "]", "end"]
+    assert named("{\"a\" : {\"b\":[]}}") == ["{", "a:", "{", "b:", "[", "]", "}", "}", "end"]
+
+test "tokens: what the grammar does not allow next fails `not_json`"
+    for text in ["", "[1,]", "[1 2]", "{\"a\" 1}", "{a:1}", "{\"a\":1,}", "[1}", "{\"a\":1]", "1 2", "nul", "[", "{\"a\":"]
+        out = named(text)
+        assert out[out.len() - 1] == "not_json"
+
+    r: Reader @= start("[1 2]")
+    _ = next(@r).must()
+    _ = next(@r).must()
+
+    match next(@r)
+        .ok _  => assert false
+        .err e => assert e.msg == "expected `,` or `]` after an array's element, found `2` at line 1, column 4"
+
+test "tokens: nesting stops at DEEPEST, and not before"
+    deep = repeat("[", DEEPEST.to_u64().must()) + repeat("]", DEEPEST.to_u64().must())
+    out = named(deep)
+    assert out[out.len() - 1] == "end"
+    deeper = named(repeat("[", (DEEPEST + 1).to_u64().must()))
+    assert deeper[deeper.len() - 1] == "too_deep"
+
+test "tokens: the reader's pieces, each asked alone"
+    r: Reader @= start("x")
+    assert r.want == .value && r.open.len() == 0
+
+    match value_token(@r)
+        .ok _  => assert false
+        .err e => assert e.code == "not_json"
+
+    n: Reader @= start("\"k\" :1")
+    assert name_token(@n).must() == .name(text: "k")
+    a: Reader @= start("")
+    assert after_value(@a).must() == .end
+    c: Reader @= start("[")
+    _ = next(@c).must()
+    assert closed(@c) == .close_array && c.open.len() == 0

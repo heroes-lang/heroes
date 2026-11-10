@@ -55,23 +55,225 @@ HERO_STR_STATIC(hero_str_142f4291, "key=value");
 HERO_STR_STATIC(hero_str_3d, "=");
 HERO_STR_STATIC(hero_str_8d61dcf, "one\015\ntwo\n");
 HERO_STR_STATIC(hero_str_be1df, "-17");
+HERO_STR_STATIC(hero_str_439a1e0d, "{\"core\": [\"strings\", \"strconv\", \"encoding/json\"], \"since\": 0.1}");
+HERO_STR_STATIC(hero_str_747c4de9, "no text");
+HERO_STR_STATIC(hero_str_330ee464, "not_json");
+HERO_STR_STATIC(hero_str_1526a387, "too_deep");
+HERO_STR_STATIC(hero_str_5bfaae18, "not_an_object");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_edc3367, "null");
+HERO_STR_STATIC(hero_str_172d4941, "the number ");
+HERO_STR_STATIC(hero_str_6a99962d, " has no JSON text, which writes finite numbers alone");
+HERO_STR_STATIC(hero_str_29bcb9c1, "arrays and objects nest deeper than ");
+HERO_STR_STATIC(hero_str_67d61f9c, ", which `parse` would not read back");
+HERO_STR_STATIC(hero_str_5b, "[");
+HERO_STR_STATIC(hero_str_7b, "{");
+HERO_STR_STATIC(hero_str_2c, ",");
+HERO_STR_STATIC(hero_str_3a, ":");
+HERO_STR_STATIC(hero_str_7d, "}");
+HERO_STR_STATIC(hero_str_5d, "]");
+HERO_STR_STATIC(hero_str_258fba0d, "missing_key");
+HERO_STR_STATIC(hero_str_395c672c, "the object has no field ");
+HERO_STR_STATIC(hero_str_3c200879, "a boolean");
+HERO_STR_STATIC(hero_str_7cfc63e3, "a number");
+HERO_STR_STATIC(hero_str_55b18501, "a string");
+HERO_STR_STATIC(hero_str_ab91ec8, "an array");
+HERO_STR_STATIC(hero_str_240a1114, "an object");
+HERO_STR_STATIC(hero_str_6f5a25d4, "asked for the field ");
+HERO_STR_STATIC(hero_str_466f899, " of ");
+HERO_STR_STATIC(hero_str_26813a95, ", which is no object");
+HERO_STR_STATIC(hero_str_fa94082, "true");
+HERO_STR_STATIC(hero_str_b928f19, "false");
+HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
+HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_71877a9b, "not_a_number");
 HERO_STR_STATIC(hero_str_2df6a0c8, " is not a number");
-HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_34adc7ac, " does not fit an i64");
+HERO_STR_STATIC(hero_str_2b, "+");
+HERO_STR_STATIC(hero_str_30, "0");
+HERO_STR_STATIC(hero_str_65, "e");
+HERO_STR_STATIC(hero_str_a, "\n");
 HERO_STR_STATIC(hero_str_59e06249, "not_found");
+HERO_STR_STATIC(hero_str_51c234a3, "a digit");
+HERO_STR_STATIC(hero_str_6a765592, "a `.`, an exponent or the number's end after its leading `0`");
+HERO_STR_STATIC(hero_str_2e, ".");
+HERO_STR_STATIC(hero_str_7ceeca06, "a digit after the decimal point");
+HERO_STR_STATIC(hero_str_45, "E");
+HERO_STR_STATIC(hero_str_4d9133ff, "a digit in the exponent");
+HERO_STR_STATIC(hero_str_3ce5513b, "finite(x)");
+HERO_STR_STATIC(hero_str_18be, "0.");
+HERO_STR_STATIC(hero_str_33dc, "e-");
+HERO_STR_STATIC(hero_str_33da, "e+");
+HERO_STR_STATIC(hero_str_1440a8bf, "the number did not reach the end of ");
+HERO_STR_STATIC(hero_str_35b2f7b2, "0123456789abcdef");
+HERO_STR_STATIC(hero_str_5caf5fbc, "the text ends inside the string that opens at ");
+HERO_STR_STATIC(hero_str_147663e, "a string holds ");
+HERO_STR_STATIC(hero_str_4635545, " at ");
+HERO_STR_STATIC(hero_str_5833b73f, ", which JSON writes escaped, as `\\n` for a line feed");
+HERO_STR_STATIC(hero_str_30ccb139, "an escape after `\\`");
+HERO_STR_STATIC(hero_str_22, "\"");
+HERO_STR_STATIC(hero_str_5c, "\\");
+HERO_STR_STATIC(hero_str_2f, "/");
+HERO_STR_STATIC(hero_str_8, "\010");
+HERO_STR_STATIC(hero_str_c, "\014");
+HERO_STR_STATIC(hero_str_d, "\015");
+HERO_STR_STATIC(hero_str_9, "\t");
+HERO_STR_STATIC(hero_str_6c903d89, "one of JSON's escapes, `\\\"` `\\\\` `\\/` `\\b` `\\f` `\\n` `\\r` `\\t` or `\\u`, after `\\`");
+HERO_STR_STATIC(hero_str_2e33fb96, "the escape at ");
+HERO_STR_STATIC(hero_str_7b3815b8, " names the second half of a surrogate pair with no first half before it, and a string holds whole characters");
+HERO_STR_STATIC(hero_str_2f89, "\\u");
+HERO_STR_STATIC(hero_str_37c9cd33, " names the first half of a surrogate pair with no `\\u` escape of its second half after it, and a string holds whole characters");
+HERO_STR_STATIC(hero_str_5c3ee9ac, " names the first half of a surrogate pair, and the escape after it is no second half");
+HERO_STR_STATIC(hero_str_77e7f69a, "four hexadecimal digits after `\\u`");
+HERO_STR_STATIC(hero_str_353f7ed8, " is no code point, which runs from 0 to 0x10ffff");
+HERO_STR_STATIC(hero_str_2f36, "\\\"");
+HERO_STR_STATIC(hero_str_2f70, "\\\\");
+HERO_STR_STATIC(hero_str_2f82, "\\n");
+HERO_STR_STATIC(hero_str_2f86, "\\r");
+HERO_STR_STATIC(hero_str_2f88, "\\t");
+HERO_STR_STATIC(hero_str_2f76, "\\b");
+HERO_STR_STATIC(hero_str_2f7a, "\\f");
+HERO_STR_STATIC(hero_str_c729f91, "\\u00");
+HERO_STR_STATIC(hero_str_6bac0650, "no failure");
+HERO_STR_STATIC(hero_str_ca7eec2, "a value");
+HERO_STR_STATIC(hero_str_1a382a31, ", the deepest this package reads");
+HERO_STR_STATIC(hero_str_5c5957ae, "a field's name in double quotes");
+HERO_STR_STATIC(hero_str_659d2f1e, "`:` after a field's name");
+HERO_STR_STATIC(hero_str_54cff8fb, "the end of the text after its value");
+HERO_STR_STATIC(hero_str_2271c53c, "`,` or `}` after a field's value");
+HERO_STR_STATIC(hero_str_7465f344, "`,` or `]` after an array's element");
+HERO_STR_STATIC(hero_str_27, "'");
+HERO_STR_STATIC(hero_str_1aab3b, "end");
+HERO_STR_STATIC(hero_str_f2097ef, "0123456789ABCDEF");
+HERO_STR_STATIC(hero_str_75f7c07a, "line ");
+HERO_STR_STATIC(hero_str_d37734a, ", column ");
+HERO_STR_STATIC(hero_str_8c7c2c1, "the end of the text");
+HERO_STR_STATIC(hero_str_79c54fab, "the control character U+00");
+HERO_STR_STATIC(hero_str_20ad539b, "a byte inside a character");
+HERO_STR_STATIC(hero_str_60, "`");
+HERO_STR_STATIC(hero_str_73a616c5, "expected ");
+HERO_STR_STATIC(hero_str_7f933ce3, ", found ");
+HERO_STR_STATIC(hero_str_37842519, "the number lies past the largest f64, about 1.8 times ten to the 308");
+HERO_STR_STATIC(hero_str_10c5, " e");
 HERO_STR_STATIC(hero_str_75bf279b, "a text of ");
 HERO_STR_STATIC(hero_str_391e7e27, " bytes");
-HERO_STR_STATIC(hero_str_22, "\"");
 HERO_STR_STATIC(hero_str_eda7a03, "no \"");
 HERO_STR_STATIC(hero_str_2cee3aa3, "\" in a text of ");
 HERO_STR_STATIC(hero_str_277784c0, "\" in \"");
 
-#line 71 "main.c"
+#line 165 "main.c"
+typedef enum h_1coreencodingjson_0Value_tag {
+    h_1coreencodingjson_0Value_tag_nothing = 0,
+    h_1coreencodingjson_0Value_tag_boolean = 1,
+    h_1coreencodingjson_0Value_tag_number = 2,
+    h_1coreencodingjson_0Value_tag_string = 3,
+    h_1coreencodingjson_0Value_tag_array = 4,
+    h_1coreencodingjson_0Value_tag_object = 5,
+} h_1coreencodingjson_0Value_tag;
+
+typedef struct h_1coreencodingjson_0Value_c_boolean {
+    bool f_value;
+} h_1coreencodingjson_0Value_c_boolean;
+
+typedef struct h_1coreencodingjson_0Value_c_number {
+    double f_value;
+} h_1coreencodingjson_0Value_c_number;
+
+typedef struct h_1coreencodingjson_0Value_c_string {
+    HeroStr f_value;
+} h_1coreencodingjson_0Value_c_string;
+
+typedef struct h_1coreencodingjson_0Value_c_array {
+    HeroArrayHeader * f_items;
+} h_1coreencodingjson_0Value_c_array;
+
+typedef struct h_1coreencodingjson_0Value_c_object {
+    HeroMapHeader * f_fields;
+} h_1coreencodingjson_0Value_c_object;
+
+typedef struct h_1coreencodingjson_Value {
+    h_1coreencodingjson_0Value_tag tag;
+    union {
+        h_1coreencodingjson_0Value_c_boolean c_boolean;
+        h_1coreencodingjson_0Value_c_number c_number;
+        h_1coreencodingjson_0Value_c_string c_string;
+        h_1coreencodingjson_0Value_c_array c_array;
+        h_1coreencodingjson_0Value_c_object c_object;
+    } as;
+} h_1coreencodingjson_Value;
+
 typedef struct h_1corestrings_Halves {
     HeroStr f_before;
     HeroStr f_after;
 } h_1corestrings_Halves;
+
+typedef enum h_1coreencodingjsoninternaltokens_0Token_tag {
+    h_1coreencodingjsoninternaltokens_0Token_tag_open_array = 0,
+    h_1coreencodingjsoninternaltokens_0Token_tag_close_array = 1,
+    h_1coreencodingjsoninternaltokens_0Token_tag_open_object = 2,
+    h_1coreencodingjsoninternaltokens_0Token_tag_close_object = 3,
+    h_1coreencodingjsoninternaltokens_0Token_tag_name = 4,
+    h_1coreencodingjsoninternaltokens_0Token_tag_nothing = 5,
+    h_1coreencodingjsoninternaltokens_0Token_tag_boolean = 6,
+    h_1coreencodingjsoninternaltokens_0Token_tag_number = 7,
+    h_1coreencodingjsoninternaltokens_0Token_tag_string = 8,
+    h_1coreencodingjsoninternaltokens_0Token_tag_end = 9,
+} h_1coreencodingjsoninternaltokens_0Token_tag;
+
+typedef struct h_1coreencodingjsoninternaltokens_0Token_c_name {
+    HeroStr f_text;
+} h_1coreencodingjsoninternaltokens_0Token_c_name;
+
+typedef struct h_1coreencodingjsoninternaltokens_0Token_c_boolean {
+    bool f_value;
+} h_1coreencodingjsoninternaltokens_0Token_c_boolean;
+
+typedef struct h_1coreencodingjsoninternaltokens_0Token_c_number {
+    double f_value;
+} h_1coreencodingjsoninternaltokens_0Token_c_number;
+
+typedef struct h_1coreencodingjsoninternaltokens_0Token_c_string {
+    HeroStr f_value;
+} h_1coreencodingjsoninternaltokens_0Token_c_string;
+
+typedef struct h_1coreencodingjsoninternaltokens_Token {
+    h_1coreencodingjsoninternaltokens_0Token_tag tag;
+    union {
+        h_1coreencodingjsoninternaltokens_0Token_c_name c_name;
+        h_1coreencodingjsoninternaltokens_0Token_c_boolean c_boolean;
+        h_1coreencodingjsoninternaltokens_0Token_c_number c_number;
+        h_1coreencodingjsoninternaltokens_0Token_c_string c_string;
+    } as;
+} h_1coreencodingjsoninternaltokens_Token;
+
+typedef enum h_1coreencodingjsoninternaltokens_0Want_tag {
+    h_1coreencodingjsoninternaltokens_0Want_tag_value = 0,
+    h_1coreencodingjsoninternaltokens_0Want_tag_value_or_close = 1,
+    h_1coreencodingjsoninternaltokens_0Want_tag_name_or_close = 2,
+    h_1coreencodingjsoninternaltokens_0Want_tag_name = 3,
+    h_1coreencodingjsoninternaltokens_0Want_tag_after = 4,
+} h_1coreencodingjsoninternaltokens_0Want_tag;
+
+typedef struct h_1coreencodingjsoninternaltokens_Want {
+    h_1coreencodingjsoninternaltokens_0Want_tag tag;
+} h_1coreencodingjsoninternaltokens_Want;
+
+typedef struct h_1coreencodingjsoninternalcursor_Cursor {
+    HeroStr f_text;
+    int64_t f_at;
+} h_1coreencodingjsoninternalcursor_Cursor;
+
+typedef struct h_1coreencodingjsoninternaltokens_Reader {
+    h_1coreencodingjsoninternalcursor_Cursor f_at;
+    HeroArrayHeader * f_open;
+    h_1coreencodingjsoninternaltokens_Want f_want;
+} h_1coreencodingjsoninternaltokens_Reader;
+
+typedef struct h_1coreencodingjsoninternaldecimal_Decimal {
+    HeroArrayHeader * f_digits;
+    int64_t f_point;
+    bool f_truncated;
+} h_1coreencodingjsoninternaldecimal_Decimal;
 
 typedef struct h_0opt_48a26f25 {
     int64_t tag;
@@ -89,6 +291,14 @@ typedef struct h_0opt_e201354 {
     } as;
 } h_0opt_e201354;
 
+typedef struct h_0opt_64c818a4 {
+    int64_t tag;
+    union {
+        h_1coreencodingjson_Value ok;
+        HeroFailure err;
+    } as;
+} h_0opt_64c818a4;
+
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -96,6 +306,38 @@ typedef struct h_0opt_f87774a {
         HeroFailure err;
     } as;
 } h_0opt_f87774a;
+
+typedef struct h_0opt_f42698c {
+    int64_t tag;
+    union {
+        h_1coreencodingjsoninternaltokens_Token ok;
+        HeroFailure err;
+    } as;
+} h_0opt_f42698c;
+
+typedef struct h_0opt_db92a83 {
+    int64_t tag;
+    union {
+        double ok;
+        HeroFailure err;
+    } as;
+} h_0opt_db92a83;
+
+typedef struct h_0opt_fbbb698 {
+    int64_t tag;
+    union {
+        uint64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_fbbb698;
+
+typedef struct h_0opt_1ec004 {
+    int64_t tag;
+    union {
+        uint8_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_1ec004;
 
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
@@ -118,13 +360,63 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "main.c"
+#line 364 "main.c"
 #pragma clang diagnostic pop
 
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_boolean_eq(const h_1coreencodingjson_0Value_c_boolean *a, const h_1coreencodingjson_0Value_c_boolean *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_boolean_hash(const void *elem);
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_number_eq(const h_1coreencodingjson_0Value_c_number *a, const h_1coreencodingjson_0Value_c_number *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_number_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_string_retain(const h_1coreencodingjson_0Value_c_string *v);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_string_release(h_1coreencodingjson_0Value_c_string *v);
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_string_eq(const h_1coreencodingjson_0Value_c_string *a, const h_1coreencodingjson_0Value_c_string *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_string_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_array_retain(const h_1coreencodingjson_0Value_c_array *v);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_array_release(h_1coreencodingjson_0Value_c_array *v);
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_array_eq(const h_1coreencodingjson_0Value_c_array *a, const h_1coreencodingjson_0Value_c_array *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_array_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_object_retain(const h_1coreencodingjson_0Value_c_object *v);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_object_release(h_1coreencodingjson_0Value_c_object *v);
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_object_eq(const h_1coreencodingjson_0Value_c_object *a, const h_1coreencodingjson_0Value_c_object *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_object_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_retain(const h_1coreencodingjson_Value *v);
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_release(h_1coreencodingjson_Value *v);
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_eq(const h_1coreencodingjson_Value *a, const h_1coreencodingjson_Value *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_hash(const void *elem);
 HERO_TU_LOCAL void h_1corestrings_0Halves_retain(const h_1corestrings_Halves *v);
 HERO_TU_LOCAL void h_1corestrings_0Halves_release(h_1corestrings_Halves *v);
 HERO_TU_LOCAL bool h_1corestrings_0Halves_eq(const h_1corestrings_Halves *a, const h_1corestrings_Halves *b);
 HERO_TU_LOCAL uint64_t h_1corestrings_0Halves_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_name_retain(const h_1coreencodingjsoninternaltokens_0Token_c_name *v);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_name_release(h_1coreencodingjsoninternaltokens_0Token_c_name *v);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_name_eq(const h_1coreencodingjsoninternaltokens_0Token_c_name *a, const h_1coreencodingjsoninternaltokens_0Token_c_name *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_name_hash(const void *elem);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_boolean_eq(const h_1coreencodingjsoninternaltokens_0Token_c_boolean *a, const h_1coreencodingjsoninternaltokens_0Token_c_boolean *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_boolean_hash(const void *elem);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_number_eq(const h_1coreencodingjsoninternaltokens_0Token_c_number *a, const h_1coreencodingjsoninternaltokens_0Token_c_number *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_number_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_string_retain(const h_1coreencodingjsoninternaltokens_0Token_c_string *v);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_string_release(h_1coreencodingjsoninternaltokens_0Token_c_string *v);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_string_eq(const h_1coreencodingjsoninternaltokens_0Token_c_string *a, const h_1coreencodingjsoninternaltokens_0Token_c_string *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_string_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_retain(const h_1coreencodingjsoninternaltokens_Token *v);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_release(h_1coreencodingjsoninternaltokens_Token *v);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_eq(const h_1coreencodingjsoninternaltokens_Token *a, const h_1coreencodingjsoninternaltokens_Token *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_hash(const void *elem);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Want_eq(const h_1coreencodingjsoninternaltokens_Want *a, const h_1coreencodingjsoninternaltokens_Want *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Want_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjsoninternalcursor_0Cursor_retain(const h_1coreencodingjsoninternalcursor_Cursor *v);
+HERO_TU_LOCAL void h_1coreencodingjsoninternalcursor_0Cursor_release(h_1coreencodingjsoninternalcursor_Cursor *v);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternalcursor_0Cursor_eq(const h_1coreencodingjsoninternalcursor_Cursor *a, const h_1coreencodingjsoninternalcursor_Cursor *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternalcursor_0Cursor_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Reader_retain(const h_1coreencodingjsoninternaltokens_Reader *v);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Reader_release(h_1coreencodingjsoninternaltokens_Reader *v);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Reader_eq(const h_1coreencodingjsoninternaltokens_Reader *a, const h_1coreencodingjsoninternaltokens_Reader *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Reader_hash(const void *elem);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaldecimal_0Decimal_retain(const h_1coreencodingjsoninternaldecimal_Decimal *v);
+HERO_TU_LOCAL void h_1coreencodingjsoninternaldecimal_0Decimal_release(h_1coreencodingjsoninternaldecimal_Decimal *v);
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaldecimal_0Decimal_eq(const h_1coreencodingjsoninternaldecimal_Decimal *a, const h_1coreencodingjsoninternaldecimal_Decimal *b);
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaldecimal_0Decimal_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_48a26f25_retain(const h_0opt_48a26f25 *v);
 HERO_TU_LOCAL void h_0opt_48a26f25_release(h_0opt_48a26f25 *v);
 HERO_TU_LOCAL bool h_0opt_48a26f25_eq(const h_0opt_48a26f25 *a, const h_0opt_48a26f25 *b);
@@ -133,10 +425,30 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_64c818a4_retain(const h_0opt_64c818a4 *v);
+HERO_TU_LOCAL void h_0opt_64c818a4_release(h_0opt_64c818a4 *v);
+HERO_TU_LOCAL bool h_0opt_64c818a4_eq(const h_0opt_64c818a4 *a, const h_0opt_64c818a4 *b);
+HERO_TU_LOCAL uint64_t h_0opt_64c818a4_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f42698c_retain(const h_0opt_f42698c *v);
+HERO_TU_LOCAL void h_0opt_f42698c_release(h_0opt_f42698c *v);
+HERO_TU_LOCAL bool h_0opt_f42698c_eq(const h_0opt_f42698c *a, const h_0opt_f42698c *b);
+HERO_TU_LOCAL uint64_t h_0opt_f42698c_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *v);
+HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *v);
+HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *a, const h_0opt_db92a83 *b);
+HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v);
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b);
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v);
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
@@ -160,7 +472,49 @@ HERO_TU_QUIET static const HeroDesc h_1corestrings_0Halves_desc = {
     h_1corestrings_0Halves_hash,
 };
 
+static void h_1coreencodingjson_0Value_desc_copy(void *dst, const void *src) {
+    __builtin_memmove(dst, src, sizeof(h_1coreencodingjson_Value));
+    h_1coreencodingjson_0Value_retain((const h_1coreencodingjson_Value *)dst);
+}
+static void h_1coreencodingjson_0Value_desc_drop(void *elem) {
+    h_1coreencodingjson_0Value_release((h_1coreencodingjson_Value *)elem);
+}
+static bool h_1coreencodingjson_0Value_desc_eq(const void *a, const void *b) {
+    return h_1coreencodingjson_0Value_eq((const h_1coreencodingjson_Value *)a, (const h_1coreencodingjson_Value *)b);
+}
+HERO_TU_QUIET static const HeroDesc h_1coreencodingjson_0Value_desc = {
+    sizeof(h_1coreencodingjson_Value),
+    h_1coreencodingjson_0Value_desc_copy,
+    h_1coreencodingjson_0Value_desc_drop,
+    h_1coreencodingjson_0Value_desc_eq,
+    h_1coreencodingjson_0Value_hash,
+};
+
+static void h_1coreencodingjsoninternaltokens_0Token_desc_copy(void *dst, const void *src) {
+    __builtin_memmove(dst, src, sizeof(h_1coreencodingjsoninternaltokens_Token));
+    h_1coreencodingjsoninternaltokens_0Token_retain((const h_1coreencodingjsoninternaltokens_Token *)dst);
+}
+static void h_1coreencodingjsoninternaltokens_0Token_desc_drop(void *elem) {
+    h_1coreencodingjsoninternaltokens_0Token_release((h_1coreencodingjsoninternaltokens_Token *)elem);
+}
+static bool h_1coreencodingjsoninternaltokens_0Token_desc_eq(const void *a, const void *b) {
+    return h_1coreencodingjsoninternaltokens_0Token_eq((const h_1coreencodingjsoninternaltokens_Token *)a, (const h_1coreencodingjsoninternaltokens_Token *)b);
+}
+HERO_TU_QUIET static const HeroDesc h_1coreencodingjsoninternaltokens_0Token_desc = {
+    sizeof(h_1coreencodingjsoninternaltokens_Token),
+    h_1coreencodingjsoninternaltokens_0Token_desc_copy,
+    h_1coreencodingjsoninternaltokens_0Token_desc_drop,
+    h_1coreencodingjsoninternaltokens_0Token_desc_eq,
+    h_1coreencodingjsoninternaltokens_0Token_hash,
+};
+
 void h_main_main(void);
+HeroStr h_1coreencodingjson_NOT_JSON(void);
+HeroStr h_1coreencodingjson_TOO_DEEP(void);
+HeroStr h_1coreencodingjson_NOT_AN_OBJECT(void);
+h_0opt_64c818a4 h_1coreencodingjson_parse(HeroStr h0_s);
+h_0opt_f87774a h_1coreencodingjson_render(h_1coreencodingjson_Value h0_v);
+h_0opt_64c818a4 h_1coreencodingjson_field(h_1coreencodingjson_Value h0_v, HeroStr h1_key);
 HeroStr h_1corestrconv_NOT_A_NUMBER(void);
 h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s);
 bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix);
@@ -170,30 +524,94 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s);
 HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s);
 HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s);
 h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep);
+HeroArrayHeader * h_1coreencodingjsoninternalnumeral_EXACT(void);
+int64_t h_1coreencodingjsoninternalnumeral_EXACT_DIGITS(void);
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+bool h_1coreencodingjsoninternalnumeral_digit(uint8_t h0_b);
+void h_1coreencodingjsoninternalnumeral_digits_past(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+int64_t h_1coreencodingjsoninternalnumeral_exponent_past(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_value_of(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent);
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_nearest(HeroStr h0_digits, int64_t h1_point);
+bool h_1coreencodingjsoninternalnumeral_finite(double h0_x);
+HeroStr h_1coreencodingjsoninternalnumeral_written(double h0_x);
+int64_t h_1coreencodingjsoninternalnumeral_exponent_of(HeroStr h0_text);
+HeroStr h_1coreencodingjsoninternalnumeral_laid_out(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent);
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read_all(HeroStr h0_text);
+HeroStr h_1coreencodingjsoninternalnumeral_shown(HeroStr h0_text);
+HeroStr h_1coreencodingjsoninternalquoted_HEX(void);
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_read(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_escaped(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_unicode(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, int64_t h1_backslash);
+h_0opt_e201354 h_1coreencodingjsoninternalquoted_code_unit(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_character(int64_t h0_n);
+HeroStr h_1coreencodingjsoninternalquoted_written(HeroStr h0_s);
+HeroStr h_1coreencodingjsoninternalquoted_escape_of(uint8_t h0_b);
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_read_all(HeroStr h0_text);
+HeroStr h_1coreencodingjsoninternalquoted_code_of(h_0opt_f87774a h0_got);
+int64_t h_1coreencodingjsoninternaltokens_DEEPEST(void);
+h_1coreencodingjsoninternaltokens_Reader h_1coreencodingjsoninternaltokens_start(HeroStr h0_text);
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_next(h_1coreencodingjsoninternaltokens_Reader *ph0_r);
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_value_token(h_1coreencodingjsoninternaltokens_Reader *ph0_r);
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_name_token(h_1coreencodingjsoninternaltokens_Reader *ph0_r);
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_after_value(h_1coreencodingjsoninternaltokens_Reader *ph0_r);
+h_1coreencodingjsoninternaltokens_Token h_1coreencodingjsoninternaltokens_closed(h_1coreencodingjsoninternaltokens_Reader *ph0_r);
+HeroArrayHeader * h_1coreencodingjsoninternaltokens_named(HeroStr h0_text);
+HeroStr h_1coreencodingjsoninternalcursor_HEX(void);
+h_1coreencodingjsoninternalcursor_Cursor h_1coreencodingjsoninternalcursor_start(HeroStr h0_text);
+bool h_1coreencodingjsoninternalcursor_at_end(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+uint8_t h_1coreencodingjsoninternalcursor_byte_at(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+void h_1coreencodingjsoninternalcursor_advance(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+void h_1coreencodingjsoninternalcursor_skip_space(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+bool h_1coreencodingjsoninternalcursor_accept(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, HeroStr h1_word);
+HeroStr h_1coreencodingjsoninternalcursor_place(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+HeroStr h_1coreencodingjsoninternalcursor_found(h_1coreencodingjsoninternalcursor_Cursor *ph0_c);
+HeroStr h_1coreencodingjsoninternalcursor_wanted(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, HeroStr h1_expected);
+int64_t h_1coreencodingjsoninternaldecimal_CAPACITY(void);
+int64_t h_1coreencodingjsoninternaldecimal_WIDEST(void);
+HeroArrayHeader * h_1coreencodingjsoninternaldecimal_STEPS(void);
+h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_nearest(HeroStr h0_digits, int64_t h1_point);
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_decimal_of(HeroStr h0_digits, int64_t h1_point);
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_trimmed(h_1coreencodingjsoninternaldecimal_Decimal h0_d);
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_shifted(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k);
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_doubled(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k);
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_halved(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k);
+bool h_1coreencodingjsoninternaldecimal_rounds_up(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_at);
+int64_t h_1coreencodingjsoninternaldecimal_rounded(h_1coreencodingjsoninternaldecimal_Decimal h0_d);
+int64_t h_1coreencodingjsoninternaldecimal_step_for(int64_t h0_n);
+h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_rounded_to_float(h_1coreencodingjsoninternaldecimal_Decimal h0_d);
+double h_1coreencodingjsoninternaldecimal_scaled(double h0_x, int64_t h1_k);
+HeroStr h_1coreencodingjsoninternaldecimal_shown(h_1coreencodingjsoninternaldecimal_Decimal h0_d);
 HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s);
 int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at);
 int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end);
 h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 
-#line 12 "examples/packages/main.hero"
-void h_main_main(void) { HeroArrayHeader * h0_words = {0}; HERO_NODEBUG h_0opt_48a26f25 h1_s0 = {0}, h12_own12 = {0}, t8, t9, t11, t14, t44, t45; h_1corestrings_Halves h2_halves = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h10_own10 = {0}, *h13_own13 = {0}, *t2, *t3, *t18, *t21, *t24, *t41, *t42, *t46, *t47; HERO_NODEBUG int64_t h5_i0, t10, t19, t20, t22, t25, t28, t29, t30, t34, t36, t37; HeroStr h6_line = {0}; HERO_NODEBUG h_0opt_e201354 h7_s1 = {0}, h14_own14 = {0}, t32, t33, t35, t38, t51, t52; int64_t h8_n; HeroFailure h9_e = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}, t1, t4, t5, t6, t7, t13, t16, t17, t26, t27, t31, t40, t43, t50; HERO_NODEBUG h_1corestrings_Halves t12, t48; HERO_NODEBUG HeroFailure t15, t39, t49, t53; HERO_NODEBUG bool t23; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_127b814e); t2 = h_1corestrings_fields(t1); t41 = h10_own10; h10_own10 = t2; hero_array_decref(t41); t42 = h0_words; hero_array_incref(t2); h0_words = t2; hero_array_decref(t42);
-    t3 = h0_words; t4 = HERO_STR_LIT(hero_str_2d); t5 = hero_str_join(t3, t4); t43 = h11_own11; h11_own11 = t5; hero_str_decref(t43); hero_print_str(t5); hero_print_end();
-#line 16
-    t6 = HERO_STR_LIT(hero_str_142f4291); t7 = HERO_STR_LIT(hero_str_3d); t8 = h_1corestrings_split_once(t6, t7); t44 = h12_own12; h12_own12 = t8; h_0opt_48a26f25_release(&t44); t45 = h1_s0; h_0opt_48a26f25_retain(&t8); h1_s0 = t8; h_0opt_48a26f25_release(&t45); t9 = h1_s0; t10 = t9.tag; switch (t10) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1:
-#line 20
-    t17 = HERO_STR_LIT(hero_str_8d61dcf); t18 = h_1corestrings_split_lines(t17); t46 = h13_own13; h13_own13 = t18; hero_array_decref(t46); t47 = h4_xs0; hero_array_incref(t18); h4_xs0 = t18; hero_array_decref(t47); t19 = INT64_C(0); h5_i0 = t19; goto bb4; bb2:
+#line 13 "examples/packages/main.hero"
+void h_main_main(void) { HeroArrayHeader * h0_words = {0}; HERO_NODEBUG h_0opt_48a26f25 h1_s0 = {0}, h17_own17 = {0}, t8, t9, t11, t14, t63, t64; h_1corestrings_Halves h2_halves = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h15_own15 = {0}, *h18_own18 = {0}, *t2, *t3, *t18, *t21, *t24, *t60, *t61, *t65, *t66; HERO_NODEBUG int64_t h5_i0, t10, t19, t20, t22, t25, t28, t29, t30, t34, t36, t37, t44, t50, t51; HeroStr h6_line = {0}; HERO_NODEBUG h_0opt_e201354 h7_s1 = {0}, h19_own19 = {0}, t32, t33, t35, t38, t70, t71; int64_t h8_n; HeroFailure h9_e = {0}; HERO_NODEBUG h_0opt_64c818a4 h10_s2 = {0}, h20_own20 = {0}, t42, t43, t45, t57, t72, t73; h_1coreencodingjson_Value h11_doc = {0}; HERO_NODEBUG h_0opt_f87774a h12_f0 = {0}, h21_own21 = {0}, t48, t49, t53, t76, t77; HERO_NODEBUG HeroStr h13_r0 = {0}, h16_own16 = {0}, t1, t4, t5, t6, t7, t13, t16, t17, t26, t27, t31, t40, t41, t54, t55, t56, t59, t62, t69, t79, t80; HeroFailure h14_e = {0}; HERO_NODEBUG h_1corestrings_Halves t12, t67; HERO_NODEBUG HeroFailure t15, t39, t58, t68, t74, t78; HERO_NODEBUG bool t23, t52; HERO_NODEBUG h_1coreencodingjson_Value t46, t47, t75; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_127b814e); t2 = h_1corestrings_fields(t1); t60 = h15_own15; h15_own15 = t2; hero_array_decref(t60); t61 = h0_words; hero_array_incref(t2); h0_words = t2; hero_array_decref(t61);
+    t3 = h0_words; t4 = HERO_STR_LIT(hero_str_2d); t5 = hero_str_join(t3, t4); t62 = h16_own16; h16_own16 = t5; hero_str_decref(t62); hero_print_str(t5); hero_print_end();
 #line 17
-    t11 = h1_s0; t12 = t11.as.ok; t48 = h2_halves; h_1corestrings_0Halves_retain(&t12); h2_halves = t12; h_1corestrings_0Halves_release(&t48); t13 = h2_halves.f_after; hero_print_str(t13); hero_print_end(); goto bb1; bb3:
-    t14 = h1_s0; t15 = t14.as.err; t49 = h3_e; hero_failure_retain(&t15); h3_e = t15; hero_failure_release(&t49); t16 = h3_e.msg; hero_print_str(t16); hero_print_end(); goto bb1; bb4:
-#line 20
-    t20 = h5_i0; t21 = h4_xs0; t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len); t23 = t20 < t22; if (t23) goto bb5; else goto bb7; bb5: t24 = h4_xs0; t25 = h5_i0; t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? hero_panic_index_at(t24, t25, "main.hero", "main.main", 20, 9) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]); t50 = h6_line; hero_str_incref(t26); h6_line = t26; hero_str_decref(t50);
+    t6 = HERO_STR_LIT(hero_str_142f4291); t7 = HERO_STR_LIT(hero_str_3d); t8 = h_1corestrings_split_once(t6, t7); t63 = h17_own17; h17_own17 = t8; h_0opt_48a26f25_release(&t63); t64 = h1_s0; h_0opt_48a26f25_retain(&t8); h1_s0 = t8; h_0opt_48a26f25_release(&t64); t9 = h1_s0; t10 = t9.tag; switch (t10) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1:
+#line 21
+    t17 = HERO_STR_LIT(hero_str_8d61dcf); t18 = h_1corestrings_split_lines(t17); t65 = h18_own18; h18_own18 = t18; hero_array_decref(t65); t66 = h4_xs0; hero_array_incref(t18); h4_xs0 = t18; hero_array_decref(t66); t19 = INT64_C(0); h5_i0 = t19; goto bb4; bb2:
+#line 18
+    t11 = h1_s0; t12 = t11.as.ok; t67 = h2_halves; h_1corestrings_0Halves_retain(&t12); h2_halves = t12; h_1corestrings_0Halves_release(&t67); t13 = h2_halves.f_after; hero_print_str(t13); hero_print_end(); goto bb1; bb3:
+    t14 = h1_s0; t15 = t14.as.err; t68 = h3_e; hero_failure_retain(&t15); h3_e = t15; hero_failure_release(&t68); t16 = h3_e.msg; hero_print_str(t16); hero_print_end(); goto bb1; bb4:
+#line 21
+    t20 = h5_i0; t21 = h4_xs0; t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len); t23 = t20 < t22; if (t23) goto bb5; else goto bb7; bb5: t24 = h4_xs0; t25 = h5_i0; t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? hero_panic_index_at(t24, t25, "main.hero", "main.main", 21, 9) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]); t69 = h6_line; hero_str_incref(t26); h6_line = t26; hero_str_decref(t69);
     t27 = h6_line; hero_print_str(t27); hero_print_end(); goto bb6; bb6:
-#line 20
-    t28 = h5_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.main", 20, 9); h5_i0 = t30; goto bb4; bb7:
-#line 23
-    t31 = HERO_STR_LIT(hero_str_be1df); t32 = h_1corestrconv_atoi(t31); t51 = h14_own14; h14_own14 = t32; h_0opt_e201354_release(&t51); t52 = h7_s1; h_0opt_e201354_retain(&t32); h7_s1 = t32; h_0opt_e201354_release(&t52); t33 = h7_s1; t34 = t33.tag; switch (t34) { case 0: goto bb9; case 1: goto bb10; default: hero_unreachable(); } bb8:
-#line 197 "main.c"
+#line 21
+    t28 = h5_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.main", 21, 9); h5_i0 = t30; goto bb4; bb7:
+#line 24
+    t31 = HERO_STR_LIT(hero_str_be1df); t32 = h_1corestrconv_atoi(t31); t70 = h19_own19; h19_own19 = t32; h_0opt_e201354_release(&t70); t71 = h7_s1; h_0opt_e201354_retain(&t32); h7_s1 = t32; h_0opt_e201354_release(&t71); t33 = h7_s1; t34 = t33.tag; switch (t34) { case 0: goto bb9; case 1: goto bb10; default: hero_unreachable(); } bb8:
+#line 28
+    t41 = HERO_STR_LIT(hero_str_439a1e0d); t42 = h_1coreencodingjson_parse(t41); t72 = h20_own20; h20_own20 = t42; h_0opt_64c818a4_release(&t72); t73 = h10_s2; h_0opt_64c818a4_retain(&t42); h10_s2 = t42; h_0opt_64c818a4_release(&t73); t43 = h10_s2; t44 = t43.tag; switch (t44) { case 0: goto bb12; case 1: goto bb13; default: hero_unreachable(); } bb9:
+#line 25
+    t35 = h7_s1; t36 = t35.as.ok; h8_n = t36; t37 = h8_n; hero_print_int(t37); hero_print_end(); goto bb8; bb10:
+    t38 = h7_s1; t39 = t38.as.err; t74 = h9_e; hero_failure_retain(&t39); h9_e = t39; hero_failure_release(&t74); t40 = h9_e.msg; hero_print_str(t40); hero_print_end(); goto bb8; bb11:
+#line 615 "main.c"
     hero_array_release_at(&h0_words);
     h_0opt_48a26f25_release(hero_slot_escape(&h1_s0));
     h_1corestrings_0Halves_release(hero_slot_escape(&h2_halves));
@@ -202,28 +620,405 @@ void h_main_main(void) { HeroArrayHeader * h0_words = {0}; HERO_NODEBUG h_0opt_4
     hero_str_release_at(&h6_line);
     h_0opt_e201354_release(hero_slot_escape(&h7_s1));
     hero_failure_release(&h9_e);
-    hero_array_release_at(&h10_own10);
-    hero_str_release_at(&h11_own11);
-    h_0opt_48a26f25_release(hero_slot_escape(&h12_own12));
-    hero_array_release_at(&h13_own13);
-    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_64c818a4_release(hero_slot_escape(&h10_s2));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h11_doc));
+    h_0opt_f87774a_release(hero_slot_escape(&h12_f0));
+    hero_str_release_at(&h13_r0);
+    hero_failure_release(&h14_e);
+    hero_array_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    h_0opt_48a26f25_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_64c818a4_release(hero_slot_escape(&h20_own20));
+    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
     return;
-bb9:
-#line 24 "examples/packages/main.hero"
-    t35 = h7_s1; t36 = t35.as.ok; h8_n = t36; t37 = h8_n; hero_print_int(t37); hero_print_end(); goto bb8; bb10:
-    t38 = h7_s1; t39 = t38.as.err; t53 = h9_e; hero_failure_retain(&t39); h9_e = t39; hero_failure_release(&t53); t40 = h9_e.msg; hero_print_str(t40); hero_print_end(); goto bb8;
-#line 216 "main.c"
+bb12:
+#line 29 "examples/packages/main.hero"
+    t45 = h10_s2; t46 = t45.as.ok; t75 = h11_doc; h_1coreencodingjson_0Value_retain(&t46); h11_doc = t46; h_1coreencodingjson_0Value_release(&t75); t47 = h11_doc; t48 = h_1coreencodingjson_render(t47); t76 = h21_own21; h21_own21 = t48; h_0opt_f87774a_release(&t76); t77 = h12_f0; h_0opt_f87774a_retain(&t48); h12_f0 = t48; h_0opt_f87774a_release(&t77); t49 = h12_f0; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb14; else goto bb15; bb13:
+    t57 = h10_s2; t58 = t57.as.err; t78 = h14_e; hero_failure_retain(&t58); h14_e = t58; hero_failure_release(&t78); t59 = h14_e.msg; hero_print_str(t59); hero_print_end(); goto bb11; bb14:
+#line 29
+    t53 = h12_f0; t54 = t53.as.ok; t79 = h13_r0; hero_str_incref(t54); h13_r0 = t54; hero_str_decref(t79); goto bb16; bb15: t55 = HERO_STR_LIT(hero_str_747c4de9); t80 = h13_r0; hero_str_incref(t55); h13_r0 = t55; hero_str_decref(t80); goto bb16; bb16: t56 = h13_r0; hero_print_str(t56); hero_print_end(); goto bb11;
+#line 643 "main.c"
 }
 
-#line 10 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv.hero"
-HeroStr h_1corestrconv_NOT_A_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_71877a9b);
-#line 222 "main.c"
+#line 24 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+HeroStr h_1coreencodingjson_NOT_JSON(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_330ee464);
+#line 649 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 17 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv.hero"
+#line 29 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+HeroStr h_1coreencodingjson_TOO_DEEP(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_1526a387);
+#line 657 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 33 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+HeroStr h_1coreencodingjson_NOT_AN_OBJECT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_5bfaae18);
+#line 665 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 59 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+h_0opt_64c818a4 h_1coreencodingjson_parse(HeroStr h0_s) { h_1coreencodingjsoninternaltokens_Reader h1_r = {0}; HeroArrayHeader * h2_outer_items = {0}; HeroArrayHeader * h3_outer_fields = {0}; HeroArrayHeader * h4_outer_names = {0}; HeroArrayHeader * h5_outer_objects = {0}; HeroArrayHeader * h6_items = {0}; HeroMapHeader * h7_fields = {0}; HeroStr h8_name = {0}; bool h9_in_object; h_1coreencodingjson_Value h10_whole = {0}; HERO_NODEBUG h_0opt_f42698c h11_f0 = {0}, h30_own30 = {0}, t13, t14, t18, t21, t131, t132; h_1coreencodingjsoninternaltokens_Token h12_token = {0}; h_1coreencodingjson_Value h13_made = {0}; bool h14_closing; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h15_s0 = {0}, h35_own35 = {0}, t22, t25, t26, t42, t43, t45, t57, t61, t65, t133, t136, t142; h_1coreencodingjsoninternaltokens_0Token_c_name h16_n = {0}; h_1coreencodingjsoninternaltokens_0Token_c_boolean h17_b; h_1coreencodingjsoninternaltokens_0Token_c_number h18_n; h_1coreencodingjsoninternaltokens_0Token_c_string h19_t = {0}; int64_t h20_last; HERO_NODEBUG h_0opt_64c818a4 h21_ret0 = {0}, h32_own32 = {0}, h36_own36 = {0}, t20, t49, t113, t137, t145; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Reader h22_own22 = {0}, t2, t114, t115; HERO_NODEBUG HeroArrayHeader *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h33_own33 = {0}, *h43_own43 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h46_own46 = {0}, *t3, *t4, *t5, *t6, *t7, *t29, *t40, *t50, *t70, *t74, *t76, *t77, *t80, *t83, *t86, *t89, *t90, *t93, *t94, *t97, *t98, *t101, *t102, *t116, *t117, *t118, *t119, *t120, *t121, *t122, *t123, *t124, *t125, *t138, *t139, *t159, *t162, *t163, *t164, *t165, *t166, *t167, *t168, *t169; HERO_NODEBUG HeroMapHeader *h28_own28 = {0}, *h34_own34 = {0}, *t8, *t32, *t41, *t53, *t79, *t126, *t127, *t140, *t141, *t160; HERO_NODEBUG h_1coreencodingjson_Value h29_own29 = {0}, h31_own31 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h42_own42 = {0}, t11, t23, t48, t51, t54, t56, t60, t64, t68, t106, t109, t111, t129, t130, t134, t135, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t157, t158, t170; HERO_NODEBUG HeroStr t1, t9, t35, t47, t67, t82, t108, t128, t144, t161; HERO_NODEBUG bool t10, t12, t17, t24, t38, t44, t52, t55, t59, t69, t85, t105, t107; HERO_NODEBUG int64_t t15, t16, t27, t71, t72, t73, t75, t78, t81, t84, t87, t88, t91, t92, t95, t96, t99, t100, t103, t104; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_name t46, t143; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_boolean t58; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_number t62; HERO_NODEBUG double t63; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_string t66, t156; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = h_1coreencodingjsoninternaltokens_start(t1); t114 = h22_own22; h22_own22 = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t114); t115 = h1_r; h_1coreencodingjsoninternaltokens_0Reader_retain(&t2); h1_r = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t115);
+#line 67
+    t3 = hero_array_new(&hero_desc_array, 1); t116 = h23_own23; h23_own23 = t3; hero_array_decref(t116); t117 = h2_outer_items; hero_array_incref(t3); h2_outer_items = t3; hero_array_decref(t117);
+    t4 = hero_array_new(&hero_desc_map, 1); t118 = h24_own24; h24_own24 = t4; hero_array_decref(t118); t119 = h3_outer_fields; hero_array_incref(t4); h3_outer_fields = t4; hero_array_decref(t119);
+    t5 = hero_array_new(&hero_desc_str, 1); t120 = h25_own25; h25_own25 = t5; hero_array_decref(t120); t121 = h4_outer_names; hero_array_incref(t5); h4_outer_names = t5; hero_array_decref(t121);
+    t6 = hero_array_new(&hero_desc_bool, 1); t122 = h26_own26; h26_own26 = t6; hero_array_decref(t122); t123 = h5_outer_objects; hero_array_incref(t6); h5_outer_objects = t6; hero_array_decref(t123);
+    t7 = hero_array_new(&h_1coreencodingjson_0Value_desc, 1); t124 = h27_own27; h27_own27 = t7; hero_array_decref(t124); t125 = h6_items; hero_array_incref(t7); h6_items = t7; hero_array_decref(t125);
+    t8 = hero_map_new(&hero_desc_str, &h_1coreencodingjson_0Value_desc, 0); t126 = h28_own28; h28_own28 = t8; hero_map_decref(t126); t127 = h7_fields; hero_map_incref(t8); h7_fields = t8; hero_map_decref(t127);
+    t9 = HERO_STR_LIT(hero_str_0); t128 = h8_name; hero_str_incref(t9); h8_name = t9; hero_str_decref(t128);
+    t10 = false; h9_in_object = t10;
+    t11 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_nothing}; t129 = h29_own29; h29_own29 = t11; h_1coreencodingjson_0Value_release(&t129); t130 = h10_whole; h_1coreencodingjson_0Value_retain(&t11); h10_whole = t11; h_1coreencodingjson_0Value_release(&t130); goto bb1; bb1:
+#line 77
+    t12 = true; if (t12) goto bb2; else goto bb3; bb2:
+    t13 = h_1coreencodingjsoninternaltokens_next(&h1_r); t131 = h30_own30; h30_own30 = t13; h_0opt_f42698c_release(&t131); t132 = h11_f0; h_0opt_f42698c_retain(&t13); h11_f0 = t13; h_0opt_f42698c_release(&t132); t14 = h11_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb4; else goto bb5; bb3: hero_unreachable(); bb4: t21 = h11_f0; t22 = t21.as.ok; t133 = h12_token; h_1coreencodingjsoninternaltokens_0Token_retain(&t22); h12_token = t22; h_1coreencodingjsoninternaltokens_0Token_release(&t133);
+    t23 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_nothing}; t134 = h31_own31; h31_own31 = t23; h_1coreencodingjson_0Value_release(&t134); t135 = h13_made; h_1coreencodingjson_0Value_retain(&t23); h13_made = t23; h_1coreencodingjson_0Value_release(&t135);
+    t24 = false; h14_closing = t24;
+#line 82
+    t25 = h12_token; t136 = h15_s0; h_1coreencodingjsoninternaltokens_0Token_retain(&t25); h15_s0 = t25; h_1coreencodingjsoninternaltokens_0Token_release(&t136); t26 = h15_s0; t27 = t26.tag; switch (t27) { case 0: goto bb7; case 1: goto bb10; case 2: goto bb7; case 3: goto bb11; case 4: goto bb8; case 5: goto bb12; case 6: goto bb13; case 7: goto bb14; case 8: goto bb15; case 9: goto bb9; default: hero_unreachable(); } bb5:
+#line 78
+    t18 = h11_f0; t19 = t18.as.err; hero_failure_retain(&t19); t20 = (h_0opt_64c818a4){.tag = INT64_C(1), .as.err = t19}; t137 = h32_own32; h32_own32 = t20; h_0opt_64c818a4_release(&t137); h21_ret0 = t20; goto bb24; bb6:
+#line 108
+    t69 = h14_closing; if (t69) goto bb17; else goto bb18; bb7:
+#line 84
+    t29 = h6_items; hero_array_push_owned(&h2_outer_items, &t29);
+    t32 = h7_fields; hero_array_push_owned(&h3_outer_fields, &t32);
+    t35 = h8_name; hero_array_push_owned(&h4_outer_names, &t35);
+    t38 = h9_in_object; hero_array_push_owned(&h5_outer_objects, &t38);
+    t40 = hero_array_new(&h_1coreencodingjson_0Value_desc, 1); t138 = h33_own33; h33_own33 = t40; hero_array_decref(t138); t139 = h6_items; hero_array_incref(t40); h6_items = t40; hero_array_decref(t139);
+    t41 = hero_map_new(&hero_desc_str, &h_1coreencodingjson_0Value_desc, 0); t140 = h34_own34; h34_own34 = t41; hero_map_decref(t140); t141 = h7_fields; hero_map_incref(t41); h7_fields = t41; hero_map_decref(t141);
+    t42 = h12_token; t43 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_open_object}; t142 = h35_own35; h35_own35 = t43; h_1coreencodingjsoninternaltokens_0Token_release(&t142); t44 = h_1coreencodingjsoninternaltokens_0Token_eq(&t42, &t43); h9_in_object = t44; goto bb1; bb8:
+#line 92
+    t45 = h15_s0; t46 = t45.as.c_name; t143 = h16_n; h_1coreencodingjsoninternaltokens_0Token_c_name_retain(&t46); h16_n = t46; h_1coreencodingjsoninternaltokens_0Token_c_name_release(&t143);
+    t47 = h16_n.f_text; t144 = h8_name; hero_str_incref(t47); h8_name = t47; hero_str_decref(t144); goto bb1; bb9:
+#line 96
+    t48 = h10_whole; h_1coreencodingjson_0Value_retain(&t48); t49 = (h_0opt_64c818a4){.tag = INT64_C(0), .as.ok = t48}; t145 = h36_own36; h36_own36 = t49; h_0opt_64c818a4_release(&t145); h21_ret0 = t49; goto bb24; bb10:
+#line 98
+    t50 = h6_items; hero_array_incref(t50); t51 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_array, .as.c_array = {.f_items = t50}}; t146 = h37_own37; h37_own37 = t51; h_1coreencodingjson_0Value_release(&t146); t147 = h13_made; h_1coreencodingjson_0Value_retain(&t51); h13_made = t51; h_1coreencodingjson_0Value_release(&t147);
+    t52 = true; h14_closing = t52; goto bb6; bb11:
+#line 101
+    t53 = h7_fields; hero_map_incref(t53); t54 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_object, .as.c_object = {.f_fields = t53}}; t148 = h38_own38; h38_own38 = t54; h_1coreencodingjson_0Value_release(&t148); t149 = h13_made; h_1coreencodingjson_0Value_retain(&t54); h13_made = t54; h_1coreencodingjson_0Value_release(&t149);
+    t55 = true; h14_closing = t55; goto bb6; bb12:
+    t56 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_nothing}; t150 = h39_own39; h39_own39 = t56; h_1coreencodingjson_0Value_release(&t150); t151 = h13_made; h_1coreencodingjson_0Value_retain(&t56); h13_made = t56; h_1coreencodingjson_0Value_release(&t151); goto bb6; bb13:
+    t57 = h15_s0; t58 = t57.as.c_boolean; h17_b = t58; t59 = h17_b.f_value; t60 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_boolean, .as.c_boolean = {.f_value = t59}}; t152 = h40_own40; h40_own40 = t60; h_1coreencodingjson_0Value_release(&t152); t153 = h13_made; h_1coreencodingjson_0Value_retain(&t60); h13_made = t60; h_1coreencodingjson_0Value_release(&t153); goto bb6; bb14:
+    t61 = h15_s0; t62 = t61.as.c_number; h18_n = t62; t63 = h18_n.f_value; t64 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_number, .as.c_number = {.f_value = t63}}; t154 = h41_own41; h41_own41 = t64; h_1coreencodingjson_0Value_release(&t154); t155 = h13_made; h_1coreencodingjson_0Value_retain(&t64); h13_made = t64; h_1coreencodingjson_0Value_release(&t155); goto bb6; bb15:
+    t65 = h15_s0; t66 = t65.as.c_string; t156 = h19_t; h_1coreencodingjsoninternaltokens_0Token_c_string_retain(&t66); h19_t = t66; h_1coreencodingjsoninternaltokens_0Token_c_string_release(&t156); t67 = h19_t.f_value; hero_str_incref(t67); t68 = (h_1coreencodingjson_Value){.tag = h_1coreencodingjson_0Value_tag_string, .as.c_string = {.f_value = t67}}; t157 = h42_own42; h42_own42 = t68; h_1coreencodingjson_0Value_release(&t157); t158 = h13_made; h_1coreencodingjson_0Value_retain(&t68); h13_made = t68; h_1coreencodingjson_0Value_release(&t158); goto bb6; bb16:
+#line 122
+    t102 = h2_outer_items; t103 = ((void)(t102 == NULL ? ((void)hero_array_len(t102), hero_unreachable()) : (void)0), t102->len); t104 = INT64_C(0); t105 = t103 == t104; if (t105) goto bb20; else goto bb21; bb17:
+#line 112
+    t70 = h2_outer_items; t71 = ((void)(t70 == NULL ? ((void)hero_array_len(t70), hero_unreachable()) : (void)0), t70->len); t72 = INT64_C(1); if (__builtin_sub_overflow(t71, t72, &t73)) hero_panic_overflow_at("<core>/encoding/json.hero", "json.parse", 112, 20); h20_last = t73;
+    t74 = h2_outer_items; t75 = h20_last; t76 = ((void)((t74 == NULL || t75 < 0 || t75 >= t74->len) ? hero_panic_index_at(t74, t75, "<core>/encoding/json.hero", "json.parse", 113, 21) : (void)0), (void)(t74->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t74 + 1))[t75]); t159 = h6_items; hero_array_incref(t76); h6_items = t76; hero_array_decref(t159);
+    t77 = h3_outer_fields; t78 = h20_last; t79 = ((void)((t77 == NULL || t78 < 0 || t78 >= t77->len) ? hero_panic_index_at(t77, t78, "<core>/encoding/json.hero", "json.parse", 114, 22) : (void)0), (void)(t77->elem->size != sizeof(HeroMapHeader *) ? hero_unreachable() : (void)0), ((HeroMapHeader * const *)(const void *)(t77 + 1))[t78]); t160 = h7_fields; hero_map_incref(t79); h7_fields = t79; hero_map_decref(t160);
+    t80 = h4_outer_names; t81 = h20_last; t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? hero_panic_index_at(t80, t81, "<core>/encoding/json.hero", "json.parse", 115, 20) : (void)0), (void)(t80->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t80 + 1))[t81]); t161 = h8_name; hero_str_incref(t82); h8_name = t82; hero_str_decref(t161);
+    t83 = h5_outer_objects; t84 = h20_last; t85 = ((void)((t83 == NULL || t84 < 0 || t84 >= t83->len) ? hero_panic_index_at(t83, t84, "<core>/encoding/json.hero", "json.parse", 116, 25) : (void)0), (void)(t83->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t83 + 1))[t84]); h9_in_object = t85;
+    t86 = h2_outer_items; t87 = INT64_C(0); t88 = h20_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.parse", 117, 27}; t89 = hero_array_slice_at(t86, t87, t88, &hero_here); } t162 = h43_own43; h43_own43 = t89; hero_array_decref(t162); t163 = h2_outer_items; hero_array_incref(t89); h2_outer_items = t89; hero_array_decref(t163);
+    t90 = h3_outer_fields; t91 = INT64_C(0); t92 = h20_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.parse", 118, 28}; t93 = hero_array_slice_at(t90, t91, t92, &hero_here); } t164 = h44_own44; h44_own44 = t93; hero_array_decref(t164); t165 = h3_outer_fields; hero_array_incref(t93); h3_outer_fields = t93; hero_array_decref(t165);
+    t94 = h4_outer_names; t95 = INT64_C(0); t96 = h20_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.parse", 119, 27}; t97 = hero_array_slice_at(t94, t95, t96, &hero_here); } t166 = h45_own45; h45_own45 = t97; hero_array_decref(t166); t167 = h4_outer_names; hero_array_incref(t97); h4_outer_names = t97; hero_array_decref(t167);
+    t98 = h5_outer_objects; t99 = INT64_C(0); t100 = h20_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.parse", 120, 29}; t101 = hero_array_slice_at(t98, t99, t100, &hero_here); } t168 = h46_own46; h46_own46 = t101; hero_array_decref(t168); t169 = h5_outer_objects; hero_array_incref(t101); h5_outer_objects = t101; hero_array_decref(t169); goto bb16; bb18: goto bb16; bb19: goto bb1; bb20:
+#line 123
+    t106 = h13_made; t170 = h10_whole; h_1coreencodingjson_0Value_retain(&t106); h10_whole = t106; h_1coreencodingjson_0Value_release(&t170); goto bb19; bb21:
+    t107 = h9_in_object; if (t107) goto bb22; else goto bb23; bb22:
+    t108 = h8_name; t109 = h13_made; h_1coreencodingjson_0Value_retain(&t109); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.parse", 125, 13}; hero_map_set_at(&(h7_fields), &t108, &t109, &hero_here); } goto bb19; bb23:
+#line 127
+    t111 = h13_made; hero_array_push_owned(&h6_items, &t111); goto bb19; bb24:
+#line 735 "main.c"
+    t113 = h21_ret0;
+    h_0opt_64c818a4_retain(&t113);
+    h_1coreencodingjsoninternaltokens_0Reader_release(hero_slot_escape(&h1_r));
+    hero_array_release_at(&h2_outer_items);
+    hero_array_release_at(&h3_outer_fields);
+    hero_array_release_at(&h4_outer_names);
+    hero_array_release_at(&h5_outer_objects);
+    hero_array_release_at(&h6_items);
+    hero_map_release_at(&h7_fields);
+    hero_str_release_at(&h8_name);
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h10_whole));
+    h_0opt_f42698c_release(hero_slot_escape(&h11_f0));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h12_token));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h13_made));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h15_s0));
+    h_1coreencodingjsoninternaltokens_0Token_c_name_release(hero_slot_escape(&h16_n));
+    h_1coreencodingjsoninternaltokens_0Token_c_string_release(hero_slot_escape(&h19_t));
+    h_1coreencodingjsoninternaltokens_0Reader_release(hero_slot_escape(&h22_own22));
+    hero_array_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
+    hero_array_release_at(&h26_own26);
+    hero_array_release_at(&h27_own27);
+    hero_map_release_at(&h28_own28);
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h29_own29));
+    h_0opt_f42698c_release(hero_slot_escape(&h30_own30));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h31_own31));
+    h_0opt_64c818a4_release(hero_slot_escape(&h32_own32));
+    hero_array_release_at(&h33_own33);
+    hero_map_release_at(&h34_own34);
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h35_own35));
+    h_0opt_64c818a4_release(hero_slot_escape(&h36_own36));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h37_own37));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h38_own38));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h39_own39));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h40_own40));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h41_own41));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h42_own42));
+    hero_array_release_at(&h43_own43);
+    hero_array_release_at(&h44_own44);
+    hero_array_release_at(&h45_own45);
+    hero_array_release_at(&h46_own46);
+    return t113;
+}
+
+#line 135 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+h_0opt_f87774a h_1coreencodingjson_render(h_1coreencodingjson_Value h0_v) { HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_open_values = {0}; HeroArrayHeader * h3_open_names = {0}; HeroArrayHeader * h4_open_objects = {0}; HeroArrayHeader * h5_open_done = {0}; h_1coreencodingjson_Value h6_next = {0}; bool h7_pending; HERO_NODEBUG h_1coreencodingjson_Value h8_s0 = {0}, t6, t11, t12, t17, t23, t40, t46, t76, t117, t179, t221, t222, t257; h_1coreencodingjson_0Value_c_boolean h9_b; h_1coreencodingjson_0Value_c_number h10_n; h_1coreencodingjson_0Value_c_string h11_s = {0}; h_1coreencodingjson_0Value_c_array h12_a = {0}; HeroArrayHeader * h13_unnamed = {0}; h_1coreencodingjson_0Value_c_object h14_o = {0}; HeroArrayHeader * h15_names = {0}; HeroArrayHeader * h16_values = {0}; HERO_NODEBUG HeroArrayHeader *h17_xs0 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h37_own37 = {0}, *h43_own43 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h55_own55 = {0}, *h56_own56 = {0}, *h57_own57 = {0}, *h58_own58 = {0}, *t1, *t2, *t3, *t4, *t5, *t48, *t63, *t65, *t68, *t78, *t94, *t95, *t96, *t97, *t100, *t103, *t123, *t126, *t134, *t138, *t142, *t146, *t150, *t152, *t161, *t165, *t167, *t175, *t177, *t185, *t194, *t197, *t198, *t201, *t202, *t205, *t206, *t209, *t211, *t212, *t213, *t214, *t215, *t216, *t217, *t218, *t219, *t220, *t234, *t235, *t241, *t242, *t243, *t244, *t245, *t246, *t259, *t260, *t261, *t262, *t263, *t264, *t265, *t266; HERO_NODEBUG int64_t h18_i0, t13, t49, t50, t53, t74, t79, t80, t83, t98, t99, t101, t104, t111, t112, t119, t120, t121, t132, t135, t136, t143, t144, t145, t147, t148, t149, t151, t153, t155, t156, t162, t166, t168, t176, t178, t181, t182, t183, t184, t186, t195, t196, t199, t200, t203, t204, t207, t208; HeroStr h19_one = {0}; HERO_NODEBUG h_0opt_64c818a4 h20_f0 = {0}, h51_own51 = {0}, t109, t110, t114, t116, t253, t254; int64_t h21_last; int64_t h22_done; HERO_NODEBUG h_0opt_f87774a h23_ret0 = {0}, h36_own36 = {0}, h42_own42 = {0}, h50_own50 = {0}, h53_own53 = {0}, t35, t59, t89, t141, t210, t233, t240, t251, t256; HERO_NODEBUG HeroStr h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h46_own46 = {0}, h47_own47 = {0}, h48_own48 = {0}, h49_own49 = {0}, h52_own52 = {0}, h54_own54 = {0}, t15, t21, t28, t30, t31, t32, t33, t34, t38, t43, t44, t52, t54, t55, t56, t57, t58, t61, t82, t84, t85, t86, t87, t88, t91, t105, t108, t139, t140, t159, t169, t170, t173, t189, t192, t223, t225, t228, t229, t230, t231, t232, t236, t237, t238, t239, t247, t248, t249, t250, t252, t255, t258; HERO_NODEBUG bool t7, t8, t9, t10, t20, t26, t27, t51, t71, t81, t102, t113, t129, t137, t154, t157, t163, t180, t187; HERO_NODEBUG h_1coreencodingjson_0Value_c_boolean t18; HERO_NODEBUG h_1coreencodingjson_0Value_c_number t24; HERO_NODEBUG double t25, t29, t37; HERO_NODEBUG h_1coreencodingjson_0Value_c_string t41, t224; HERO_NODEBUG h_1coreencodingjson_0Value_c_array t47, t226; HERO_NODEBUG h_1coreencodingjson_0Value_c_object t77, t227; HERO_NODEBUG HeroMapHeader *t93, *t107; HERO_NODEBUG HeroFailure t115; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t211 = h24_own24; h24_own24 = t1; hero_array_decref(t211); t212 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t212);
+#line 142
+    t2 = hero_array_new(&hero_desc_array, 1); t213 = h25_own25; h25_own25 = t2; hero_array_decref(t213); t214 = h2_open_values; hero_array_incref(t2); h2_open_values = t2; hero_array_decref(t214);
+    t3 = hero_array_new(&hero_desc_array, 1); t215 = h26_own26; h26_own26 = t3; hero_array_decref(t215); t216 = h3_open_names; hero_array_incref(t3); h3_open_names = t3; hero_array_decref(t216);
+    t4 = hero_array_new(&hero_desc_bool, 1); t217 = h27_own27; h27_own27 = t4; hero_array_decref(t217); t218 = h4_open_objects; hero_array_incref(t4); h4_open_objects = t4; hero_array_decref(t218);
+    t5 = hero_array_new(&hero_desc_int, 1); t219 = h28_own28; h28_own28 = t5; hero_array_decref(t219); t220 = h5_open_done; hero_array_incref(t5); h5_open_done = t5; hero_array_decref(t220);
+#line 149
+    t6 = h0_v; t221 = h6_next; h_1coreencodingjson_0Value_retain(&t6); h6_next = t6; h_1coreencodingjson_0Value_release(&t221);
+    t7 = true; h7_pending = t7; goto bb1; bb1:
+#line 152
+    t8 = true; if (t8) goto bb2; else goto bb3; bb2:
+    t9 = h7_pending; if (t9) goto bb5; else goto bb6; bb3: hero_unreachable(); bb4:
+#line 200
+    t134 = h2_open_values; t135 = ((void)(t134 == NULL ? ((void)hero_array_len(t134), hero_unreachable()) : (void)0), t134->len); t136 = INT64_C(0); t137 = t135 == t136; if (t137) goto bb30; else goto bb31; bb5:
+#line 154
+    t10 = false; h7_pending = t10;
+#line 156
+    t11 = h6_next; t222 = h8_s0; h_1coreencodingjson_0Value_retain(&t11); h8_s0 = t11; h_1coreencodingjson_0Value_release(&t222); t12 = h8_s0; t13 = t12.tag; switch (t13) { case 0: goto bb8; case 1: goto bb9; case 2: goto bb10; case 3: goto bb11; case 4: goto bb12; case 5: goto bb13; default: hero_unreachable(); } bb6: goto bb4; bb7: goto bb1; bb8:
+    t15 = HERO_STR_LIT(hero_str_edc3367); hero_array_push_owned(&h1_out, &t15); goto bb7; bb9:
+    t17 = h8_s0; t18 = t17.as.c_boolean; h9_b = t18; t20 = h9_b.f_value; t21 = hero_bool_to_str(t20); t223 = h29_own29; h29_own29 = t21; hero_str_decref(t223); hero_array_push_owned(&h1_out, &t21); goto bb7; bb10:
+    t23 = h8_s0; t24 = t23.as.c_number; h10_n = t24;
+    t25 = h10_n.f_value; t26 = h_1coreencodingjsoninternalnumeral_finite(t25); t27 = !t26; if (t27) goto bb15; else goto bb16; bb11:
+#line 166
+    t40 = h8_s0; t41 = t40.as.c_string; t224 = h11_s; h_1coreencodingjson_0Value_c_string_retain(&t41); h11_s = t41; h_1coreencodingjson_0Value_c_string_release(&t224); t43 = h11_s.f_value; t44 = h_1coreencodingjsoninternalquoted_written(t43); t225 = h30_own30; h30_own30 = t44; hero_str_decref(t225); hero_array_push_owned(&h1_out, &t44); goto bb7; bb12:
+    t46 = h8_s0; t47 = t46.as.c_array; t226 = h12_a; h_1coreencodingjson_0Value_c_array_retain(&t47); h12_a = t47; h_1coreencodingjson_0Value_c_array_release(&t226);
+    t48 = h2_open_values; t49 = ((void)(t48 == NULL ? ((void)hero_array_len(t48), hero_unreachable()) : (void)0), t48->len); t50 = h_1coreencodingjsoninternaltokens_DEEPEST(); t51 = t49 >= t50; if (t51) goto bb18; else goto bb19; bb13:
+#line 179
+    t76 = h8_s0; t77 = t76.as.c_object; t227 = h14_o; h_1coreencodingjson_0Value_c_object_retain(&t77); h14_o = t77; h_1coreencodingjson_0Value_c_object_release(&t227);
+    t78 = h2_open_values; t79 = ((void)(t78 == NULL ? ((void)hero_array_len(t78), hero_unreachable()) : (void)0), t78->len); t80 = h_1coreencodingjsoninternaltokens_DEEPEST(); t81 = t79 >= t80; if (t81) goto bb21; else goto bb22; bb14:
+#line 165
+    t37 = h10_n.f_value; t38 = h_1coreencodingjsoninternalnumeral_written(t37); t228 = h31_own31; h31_own31 = t38; hero_str_decref(t228); hero_array_push_owned(&h1_out, &t38); goto bb7; bb15:
+#line 162
+    t28 = h_1coreencodingjson_NOT_JSON(); t229 = h32_own32; h32_own32 = t28; hero_str_decref(t229);
+    t29 = h10_n.f_value; t30 = HERO_STR_LIT(hero_str_172d4941); t31 = hero_f64_to_str(t29); t230 = h33_own33; h33_own33 = t31; hero_str_decref(t230); t32 = HERO_STR_LIT(hero_str_6a99962d); t33 = hero_str_concat(t30, t31); t231 = h34_own34; h34_own34 = t33; hero_str_decref(t231); t34 = hero_str_concat(t33, t32); t232 = h35_own35; h35_own35 = t34; hero_str_decref(t232);
+#line 161
+    hero_str_incref(t28); hero_str_incref(t34); t35 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t28, .msg = t34}}; t233 = h36_own36; h36_own36 = t35; h_0opt_f87774a_release(&t233); h23_ret0 = t35; goto bb44; bb16: goto bb14; bb17:
+#line 173
+    t61 = HERO_STR_LIT(hero_str_5b); hero_array_push_owned(&h1_out, &t61);
+    t63 = hero_array_new(&hero_desc_str, 1); t234 = h37_own37; h37_own37 = t63; hero_array_decref(t234); t235 = h13_unnamed; hero_array_incref(t63); h13_unnamed = t63; hero_array_decref(t235);
+    t65 = h12_a.f_items; hero_array_push_owned(&h2_open_values, &t65);
+    t68 = h13_unnamed; hero_array_push_owned(&h3_open_names, &t68);
+    t71 = false; hero_array_push_owned(&h4_open_objects, &t71);
+    t74 = INT64_C(0); hero_array_push_owned(&h5_open_done, &t74); goto bb7; bb18:
+#line 170
+    t52 = h_1coreencodingjson_TOO_DEEP(); t236 = h38_own38; h38_own38 = t52; hero_str_decref(t236);
+    t53 = h_1coreencodingjsoninternaltokens_DEEPEST(); t54 = HERO_STR_LIT(hero_str_29bcb9c1); t55 = hero_int_to_str(t53); t237 = h39_own39; h39_own39 = t55; hero_str_decref(t237); t56 = HERO_STR_LIT(hero_str_67d61f9c); t57 = hero_str_concat(t54, t55); t238 = h40_own40; h40_own40 = t57; hero_str_decref(t238); t58 = hero_str_concat(t57, t56); t239 = h41_own41; h41_own41 = t58; hero_str_decref(t239);
+#line 169
+    hero_str_incref(t52); hero_str_incref(t58); t59 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t52, .msg = t58}}; t240 = h42_own42; h42_own42 = t59; h_0opt_f87774a_release(&t240); h23_ret0 = t59; goto bb44; bb19: goto bb17; bb20:
+#line 185
+    t91 = HERO_STR_LIT(hero_str_7b); hero_array_push_owned(&h1_out, &t91);
+    t93 = h14_o.f_fields; t94 = hero_map_keys(t93); t241 = h43_own43; h43_own43 = t94; hero_array_decref(t241); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.render", 186, 29}; t95 = hero_array_sort_at(t94, &hero_here); } t242 = h44_own44; h44_own44 = t95; hero_array_decref(t242); t243 = h15_names; hero_array_incref(t95); h15_names = t95; hero_array_decref(t243);
+    t96 = hero_array_new(&h_1coreencodingjson_0Value_desc, 1); t244 = h45_own45; h45_own45 = t96; hero_array_decref(t244); t245 = h16_values; hero_array_incref(t96); h16_values = t96; hero_array_decref(t245);
+#line 190
+    t97 = h15_names; t246 = h17_xs0; hero_array_incref(t97); h17_xs0 = t97; hero_array_decref(t246); t98 = INT64_C(0); h18_i0 = t98; goto bb23; bb21:
+#line 182
+    t82 = h_1coreencodingjson_TOO_DEEP(); t247 = h46_own46; h46_own46 = t82; hero_str_decref(t247);
+    t83 = h_1coreencodingjsoninternaltokens_DEEPEST(); t84 = HERO_STR_LIT(hero_str_29bcb9c1); t85 = hero_int_to_str(t83); t248 = h47_own47; h47_own47 = t85; hero_str_decref(t248); t86 = HERO_STR_LIT(hero_str_67d61f9c); t87 = hero_str_concat(t84, t85); t249 = h48_own48; h48_own48 = t87; hero_str_decref(t249); t88 = hero_str_concat(t87, t86); t250 = h49_own49; h49_own49 = t88; hero_str_decref(t250);
+#line 181
+    hero_str_incref(t82); hero_str_incref(t88); t89 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t82, .msg = t88}}; t251 = h50_own50; h50_own50 = t89; h_0opt_f87774a_release(&t251); h23_ret0 = t89; goto bb44; bb22: goto bb20; bb23:
+#line 190
+    t99 = h18_i0; t100 = h17_xs0; t101 = ((void)(t100 == NULL ? ((void)hero_array_len(t100), hero_unreachable()) : (void)0), t100->len); t102 = t99 < t101; if (t102) goto bb24; else goto bb26; bb24: t103 = h17_xs0; t104 = h18_i0; t105 = ((void)((t103 == NULL || t104 < 0 || t104 >= t103->len) ? hero_panic_index_at(t103, t104, "<core>/encoding/json.hero", "json.render", 190, 25) : (void)0), (void)(t103->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t103 + 1))[t104]); t252 = h19_one; hero_str_incref(t105); h19_one = t105; hero_str_decref(t252);
+    t107 = h14_o.f_fields; t108 = h19_one; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.render", 191, 46}; HERO_NODEBUG const void *found = hero_map_find_at(t107, &t108, &hero_here); if (found == NULL) { t109 = (h_0opt_64c818a4){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t109 = (h_0opt_64c818a4){.tag = INT64_C(0)}; (&h_1coreencodingjson_0Value_desc)->copy(&t109.as.ok, found); } } t253 = h51_own51; h51_own51 = t109; h_0opt_64c818a4_release(&t253); t254 = h20_f0; h_0opt_64c818a4_retain(&t109); h20_f0 = t109; h_0opt_64c818a4_release(&t254); t110 = h20_f0; t111 = t110.tag; t112 = INT64_C(0); t113 = t111 == t112; if (t113) goto bb27; else goto bb28; bb25:
+#line 190
+    t119 = h18_i0; t120 = INT64_C(1); if (__builtin_add_overflow(t119, t120, &t121)) hero_panic_overflow_at("<core>/encoding/json.hero", "json.render", 190, 25); h18_i0 = t121; goto bb23; bb26:
+#line 193
+    t123 = h16_values; hero_array_push_owned(&h2_open_values, &t123);
+    t126 = h15_names; hero_array_push_owned(&h3_open_names, &t126);
+    t129 = true; hero_array_push_owned(&h4_open_objects, &t129);
+    t132 = INT64_C(0); hero_array_push_owned(&h5_open_done, &t132); goto bb7; bb27:
+#line 191
+    t116 = h20_f0; t117 = t116.as.ok; hero_array_push_owned(&h16_values, &t117); goto bb25; bb28: t114 = h20_f0; t115 = t114.as.err;
+#line 854 "main.c"
+    hero_panic_must_at(t115, "<core>/encoding/json.hero", "json.render", 191, 46);
+    hero_unreachable();
+bb29:
+#line 202 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+    t142 = h2_open_values; t143 = ((void)(t142 == NULL ? ((void)hero_array_len(t142), hero_unreachable()) : (void)0), t142->len); t144 = INT64_C(1); if (__builtin_sub_overflow(t143, t144, &t145)) hero_panic_overflow_at("<core>/encoding/json.hero", "json.render", 202, 16); h21_last = t145;
+    t146 = h5_open_done; t147 = h21_last; t148 = ((void)((t146 == NULL || t147 < 0 || t147 >= t146->len) ? hero_panic_index_at(t146, t147, "<core>/encoding/json.hero", "json.render", 203, 16) : (void)0), (void)(t146->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t146 + 1))[t147]); h22_done = t148;
+#line 205
+    t149 = h22_done; t150 = h2_open_values; t151 = h21_last; t152 = ((void)((t150 == NULL || t151 < 0 || t151 >= t150->len) ? hero_panic_index_at(t150, t151, "<core>/encoding/json.hero", "json.render", 205, 19) : (void)0), (void)(t150->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t150 + 1))[t151]); t153 = ((void)(t152 == NULL ? ((void)hero_array_len(t152), hero_unreachable()) : (void)0), t152->len); t154 = t149 < t153; if (t154) goto bb33; else goto bb34; bb30:
+#line 201
+    t138 = h1_out; t139 = HERO_STR_LIT(hero_str_0); t140 = hero_str_join(t138, t139); t255 = h52_own52; h52_own52 = t140; hero_str_decref(t255); hero_str_incref(t140); t141 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t140}; t256 = h53_own53; h53_own53 = t141; h_0opt_f87774a_release(&t256); h23_ret0 = t141; goto bb44; bb31: goto bb29; bb32:
+#line 217
+    t185 = h4_open_objects; t186 = h21_last; t187 = ((void)((t185 == NULL || t186 < 0 || t186 >= t185->len) ? hero_panic_index_at(t185, t186, "<core>/encoding/json.hero", "json.render", 217, 12) : (void)0), (void)(t185->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t185 + 1))[t186]); if (t187) goto bb42; else goto bb43; bb33:
+#line 206
+    t155 = h22_done; t156 = INT64_C(0); t157 = t155 > t156; if (t157) goto bb36; else goto bb37; bb34: goto bb32; bb35:
+#line 209
+    t161 = h4_open_objects; t162 = h21_last; t163 = ((void)((t161 == NULL || t162 < 0 || t162 >= t161->len) ? hero_panic_index_at(t161, t162, "<core>/encoding/json.hero", "json.render", 209, 16) : (void)0), (void)(t161->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t161 + 1))[t162]); if (t163) goto bb39; else goto bb40; bb36:
+#line 207
+    t159 = HERO_STR_LIT(hero_str_2c); hero_array_push_owned(&h1_out, &t159); goto bb35; bb37: goto bb35; bb38:
+#line 212
+    t175 = h2_open_values; t176 = h21_last; t177 = ((void)((t175 == NULL || t176 < 0 || t176 >= t175->len) ? hero_panic_index_at(t175, t176, "<core>/encoding/json.hero", "json.render", 212, 20) : (void)0), (void)(t175->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t175 + 1))[t176]); t178 = h22_done; t179 = ((void)((t177 == NULL || t178 < 0 || t178 >= t177->len) ? hero_panic_index_at(t177, t178, "<core>/encoding/json.hero", "json.render", 212, 20) : (void)0), (void)(t177->elem->size != sizeof(h_1coreencodingjson_Value) ? hero_unreachable() : (void)0), ((h_1coreencodingjson_Value const *)(const void *)(t177 + 1))[t178]); t257 = h6_next; h_1coreencodingjson_0Value_retain(&t179); h6_next = t179; h_1coreencodingjson_0Value_release(&t257);
+    t180 = true; h7_pending = t180;
+    t181 = h21_last; t182 = h22_done; t183 = INT64_C(1); if (__builtin_add_overflow(t182, t183, &t184)) hero_panic_overflow_at("<core>/encoding/json.hero", "json.render", 214, 31); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h5_open_done); if (*hero_slot == NULL || t181 < 0 || t181 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t181, "<core>/encoding/json.hero", "json.render", 214, 13); hero_array_set(hero_slot, t181, &t184); } goto bb1; bb39:
+#line 210
+    t165 = h3_open_names; t166 = h21_last; t167 = ((void)((t165 == NULL || t166 < 0 || t166 >= t165->len) ? hero_panic_index_at(t165, t166, "<core>/encoding/json.hero", "json.render", 210, 47) : (void)0), (void)(t165->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t165 + 1))[t166]); t168 = h22_done; t169 = ((void)((t167 == NULL || t168 < 0 || t168 >= t167->len) ? hero_panic_index_at(t167, t168, "<core>/encoding/json.hero", "json.render", 210, 47) : (void)0), (void)(t167->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t167 + 1))[t168]); t170 = h_1coreencodingjsoninternalquoted_written(t169); t258 = h54_own54; h54_own54 = t170; hero_str_decref(t258); hero_array_push_owned(&h1_out, &t170);
+    t173 = HERO_STR_LIT(hero_str_3a); hero_array_push_owned(&h1_out, &t173); goto bb38; bb40: goto bb38; bb41:
+#line 221
+    t194 = h2_open_values; t195 = INT64_C(0); t196 = h21_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.render", 221, 23}; t197 = hero_array_slice_at(t194, t195, t196, &hero_here); } t259 = h55_own55; h55_own55 = t197; hero_array_decref(t259); t260 = h2_open_values; hero_array_incref(t197); h2_open_values = t197; hero_array_decref(t260);
+    t198 = h3_open_names; t199 = INT64_C(0); t200 = h21_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.render", 222, 22}; t201 = hero_array_slice_at(t198, t199, t200, &hero_here); } t261 = h56_own56; h56_own56 = t201; hero_array_decref(t261); t262 = h3_open_names; hero_array_incref(t201); h3_open_names = t201; hero_array_decref(t262);
+    t202 = h4_open_objects; t203 = INT64_C(0); t204 = h21_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.render", 223, 24}; t205 = hero_array_slice_at(t202, t203, t204, &hero_here); } t263 = h57_own57; h57_own57 = t205; hero_array_decref(t263); t264 = h4_open_objects; hero_array_incref(t205); h4_open_objects = t205; hero_array_decref(t264);
+    t206 = h5_open_done; t207 = INT64_C(0); t208 = h21_last; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.render", 224, 21}; t209 = hero_array_slice_at(t206, t207, t208, &hero_here); } t265 = h58_own58; h58_own58 = t209; hero_array_decref(t265); t266 = h5_open_done; hero_array_incref(t209); h5_open_done = t209; hero_array_decref(t266); goto bb1; bb42:
+#line 218
+    t189 = HERO_STR_LIT(hero_str_7d); hero_array_push_owned(&h1_out, &t189); goto bb41; bb43:
+#line 220
+    t192 = HERO_STR_LIT(hero_str_5d); hero_array_push_owned(&h1_out, &t192); goto bb41; bb44:
+#line 889 "main.c"
+    t210 = h23_ret0;
+    h_0opt_f87774a_retain(&t210);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_open_values);
+    hero_array_release_at(&h3_open_names);
+    hero_array_release_at(&h4_open_objects);
+    hero_array_release_at(&h5_open_done);
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h6_next));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h8_s0));
+    h_1coreencodingjson_0Value_c_string_release(hero_slot_escape(&h11_s));
+    h_1coreencodingjson_0Value_c_array_release(hero_slot_escape(&h12_a));
+    hero_array_release_at(&h13_unnamed);
+    h_1coreencodingjson_0Value_c_object_release(hero_slot_escape(&h14_o));
+    hero_array_release_at(&h15_names);
+    hero_array_release_at(&h16_values);
+    hero_array_release_at(&h17_xs0);
+    hero_str_release_at(&h19_one);
+    h_0opt_64c818a4_release(hero_slot_escape(&h20_f0));
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
+    hero_array_release_at(&h26_own26);
+    hero_array_release_at(&h27_own27);
+    hero_array_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    hero_str_release_at(&h30_own30);
+    hero_str_release_at(&h31_own31);
+    hero_str_release_at(&h32_own32);
+    hero_str_release_at(&h33_own33);
+    hero_str_release_at(&h34_own34);
+    hero_str_release_at(&h35_own35);
+    h_0opt_f87774a_release(hero_slot_escape(&h36_own36));
+    hero_array_release_at(&h37_own37);
+    hero_str_release_at(&h38_own38);
+    hero_str_release_at(&h39_own39);
+    hero_str_release_at(&h40_own40);
+    hero_str_release_at(&h41_own41);
+    h_0opt_f87774a_release(hero_slot_escape(&h42_own42));
+    hero_array_release_at(&h43_own43);
+    hero_array_release_at(&h44_own44);
+    hero_array_release_at(&h45_own45);
+    hero_str_release_at(&h46_own46);
+    hero_str_release_at(&h47_own47);
+    hero_str_release_at(&h48_own48);
+    hero_str_release_at(&h49_own49);
+    h_0opt_f87774a_release(hero_slot_escape(&h50_own50));
+    h_0opt_64c818a4_release(hero_slot_escape(&h51_own51));
+    hero_str_release_at(&h52_own52);
+    h_0opt_f87774a_release(hero_slot_escape(&h53_own53));
+    hero_str_release_at(&h54_own54);
+    hero_array_release_at(&h55_own55);
+    hero_array_release_at(&h56_own56);
+    hero_array_release_at(&h57_own57);
+    hero_array_release_at(&h58_own58);
+    return t210;
+}
+
+#line 229 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json.hero"
+h_0opt_64c818a4 h_1coreencodingjson_field(h_1coreencodingjson_Value h0_v, HeroStr h1_key) { HERO_NODEBUG h_1coreencodingjson_Value h2_s0 = {0}, h6_s1 = {0}, t1, t2, t4, t21, t22, t44, t49; h_1coreencodingjson_0Value_c_object h3_o = {0}; h_0opt_64c818a4 h4_got = {0}; HERO_NODEBUG h_0opt_64c818a4 h5_f0 = {0}, h9_ret0 = {0}, h10_own10 = {0}, h13_own13 = {0}, h20_own20 = {0}, t8, t9, t10, t19, t20, t42, t43, t46, t47, t48, t52, t60; HERO_NODEBUG HeroStr h7_r0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t7, t14, t15, t16, t17, t18, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t50, t51, t53, t54, t55, t56, t57, t58, t59, t61, t62, t63, t64, t65, t66; HeroStr h8_found = {0}; HERO_NODEBUG int64_t t3, t11, t12, t23; HERO_NODEBUG h_1coreencodingjson_0Value_c_object t5, t45; HERO_NODEBUG HeroMapHeader *t6; HERO_NODEBUG bool t13; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_v; t44 = h2_s0; h_1coreencodingjson_0Value_retain(&t1); h2_s0 = t1; h_1coreencodingjson_0Value_release(&t44); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb3; case 2: goto bb3; case 3: goto bb3; case 4: goto bb3; case 5: goto bb2; default: hero_unreachable(); } bb2:
+    t4 = h2_s0; t5 = t4.as.c_object; t45 = h3_o; h_1coreencodingjson_0Value_c_object_retain(&t5); h3_o = t5; h_1coreencodingjson_0Value_c_object_release(&t45);
+    t6 = h3_o.f_fields; t7 = h1_key; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json.hero", "json.field", 232, 19}; HERO_NODEBUG const void *found = hero_map_find_at(t6, &t7, &hero_here); if (found == NULL) { t8 = (h_0opt_64c818a4){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t8 = (h_0opt_64c818a4){.tag = INT64_C(0)}; (&h_1coreencodingjson_0Value_desc)->copy(&t8.as.ok, found); } } t46 = h10_own10; h10_own10 = t8; h_0opt_64c818a4_release(&t46); t47 = h4_got; h_0opt_64c818a4_retain(&t8); h4_got = t8; h_0opt_64c818a4_release(&t47);
+#line 234
+    t9 = h4_got; t48 = h5_f0; h_0opt_64c818a4_retain(&t9); h5_f0 = t9; h_0opt_64c818a4_release(&t48); t10 = h5_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+#line 238
+    t21 = h0_v; t49 = h6_s1; h_1coreencodingjson_0Value_retain(&t21); h6_s1 = t21; h_1coreencodingjson_0Value_release(&t49); t22 = h6_s1; t23 = t22.tag; switch (t23) { case 0: goto bb8; case 1: goto bb9; case 2: goto bb10; case 3: goto bb11; case 4: goto bb12; case 5: goto bb13; default: hero_unreachable(); } bb4:
+#line 236
+    t20 = h4_got; h9_ret0 = t20; goto bb14; bb5:
+#line 235
+    t14 = HERO_STR_LIT(hero_str_258fba0d); t15 = HERO_STR_LIT(hero_str_395c672c); t16 = h1_key; t17 = h_1coreencodingjsoninternalquoted_written(t16); t50 = h11_own11; h11_own11 = t17; hero_str_decref(t50); t18 = hero_str_concat(t15, t17); t51 = h12_own12; h12_own12 = t18; hero_str_decref(t51); hero_str_incref(t14); hero_str_incref(t18); t19 = (h_0opt_64c818a4){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t18}}; t52 = h13_own13; h13_own13 = t19; h_0opt_64c818a4_release(&t52); h9_ret0 = t19; goto bb14; bb6: goto bb4; bb7:
+#line 238
+    t30 = h7_r0; t53 = h8_found; hero_str_incref(t30); h8_found = t30; hero_str_decref(t53);
+#line 247
+    t31 = h_1coreencodingjson_NOT_AN_OBJECT(); t54 = h14_own14; h14_own14 = t31; hero_str_decref(t54);
+    t32 = HERO_STR_LIT(hero_str_6f5a25d4); t33 = h1_key; t34 = h_1coreencodingjsoninternalquoted_written(t33); t55 = h15_own15; h15_own15 = t34; hero_str_decref(t55); t35 = hero_str_concat(t32, t34); t56 = h16_own16; h16_own16 = t35; hero_str_decref(t56); t36 = HERO_STR_LIT(hero_str_466f899); t37 = hero_str_concat(t35, t36); t57 = h17_own17; h17_own17 = t37; hero_str_decref(t57); t38 = h8_found; t39 = hero_str_concat(t37, t38); t58 = h18_own18; h18_own18 = t39; hero_str_decref(t58); t40 = HERO_STR_LIT(hero_str_26813a95); t41 = hero_str_concat(t39, t40); t59 = h19_own19; h19_own19 = t41; hero_str_decref(t59);
+#line 246
+    hero_str_incref(t31); hero_str_incref(t41); t42 = (h_0opt_64c818a4){.tag = INT64_C(1), .as.err = {.code = t31, .msg = t41}}; t60 = h20_own20; h20_own20 = t42; h_0opt_64c818a4_release(&t60); h9_ret0 = t42; goto bb14; bb8:
+#line 239
+    t24 = HERO_STR_LIT(hero_str_edc3367);
+#line 238
+    t61 = h7_r0; hero_str_incref(t24); h7_r0 = t24; hero_str_decref(t61); goto bb7; bb9:
+#line 240
+    t25 = HERO_STR_LIT(hero_str_3c200879);
+#line 238
+    t62 = h7_r0; hero_str_incref(t25); h7_r0 = t25; hero_str_decref(t62); goto bb7; bb10:
+#line 241
+    t26 = HERO_STR_LIT(hero_str_7cfc63e3);
+#line 238
+    t63 = h7_r0; hero_str_incref(t26); h7_r0 = t26; hero_str_decref(t63); goto bb7; bb11:
+#line 242
+    t27 = HERO_STR_LIT(hero_str_55b18501);
+#line 238
+    t64 = h7_r0; hero_str_incref(t27); h7_r0 = t27; hero_str_decref(t64); goto bb7; bb12:
+#line 243
+    t28 = HERO_STR_LIT(hero_str_ab91ec8);
+#line 238
+    t65 = h7_r0; hero_str_incref(t28); h7_r0 = t28; hero_str_decref(t65); goto bb7; bb13:
+#line 244
+    t29 = HERO_STR_LIT(hero_str_240a1114);
+#line 238
+    t66 = h7_r0; hero_str_incref(t29); h7_r0 = t29; hero_str_decref(t66); goto bb7; bb14:
+#line 990 "main.c"
+    t43 = h9_ret0;
+    h_0opt_64c818a4_retain(&t43);
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h2_s0));
+    h_1coreencodingjson_0Value_c_object_release(hero_slot_escape(&h3_o));
+    h_0opt_64c818a4_release(hero_slot_escape(&h4_got));
+    h_0opt_64c818a4_release(hero_slot_escape(&h5_f0));
+    h_1coreencodingjson_0Value_release(hero_slot_escape(&h6_s1));
+    hero_str_release_at(&h7_r0);
+    hero_str_release_at(&h8_found);
+    h_0opt_64c818a4_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_64c818a4_release(hero_slot_escape(&h13_own13));
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    h_0opt_64c818a4_release(hero_slot_escape(&h20_own20));
+    return t43;
+}
+
+#line 10 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strconv.hero"
+HeroStr h_1corestrconv_NOT_A_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_71877a9b);
+#line 1017 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 17 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strconv.hero"
 h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s) { int64_t h1_at; bool h2_negative; HERO_NODEBUG bool h3_b0, h4_b1, h8_b2, t2, t6, t11, t16, t17, t18, t23, t28, t42, t48, t51, t52, t66, t77, t92, t97; int64_t h5_lowest; int64_t h6_total; uint8_t h7_c; HERO_NODEBUG h_0opt_e201354 h9_f0 = {0}, h11_ret0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h28_own28 = {0}, t34, t58, t62, t63, t67, t69, t83, t94, t103, t106, t107, t111, t112, t113, t117, t120, t121, t122, t125; int64_t h10_digit; HERO_NODEBUG HeroStr h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, t3, t7, t12, t19, t26, t29, t30, t31, t32, t33, t40, t43, t53, t54, t55, t56, t57, t78, t79, t80, t81, t82, t98, t99, t100, t101, t102, t108, t109, t110, t114, t115, t116, t118, t119, t123, t124; HERO_NODEBUG int64_t t1, t4, t5, t8, t13, t20, t24, t25, t27, t35, t36, t37, t38, t39, t41, t44, t64, t65, t70, t71, t72, t73, t74, t75, t76, t84, t85, t86, t87, t88, t89, t90, t91, t93, t95, t96, t104, t105; HERO_NODEBUG uint8_t t9, t10, t14, t15, t21, t22, t45, t46, t47, t49, t50, t59, t60, t61; HERO_NODEBUG HeroFailure t68; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_at = t1;
     t2 = false; h2_negative = t2;
@@ -257,11 +1052,11 @@ h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s) { int64_t h1_at; bool h2_negati
     t71 = h6_total; t72 = h5_lowest; t73 = h10_digit; if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 41, 21); t75 = INT64_C(10); if (t75 == 0) hero_panic_at("division by zero", "<core>/strconv.hero", "strconv.atoi", 41, 20); if (t74 == INT64_MIN && t75 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 41, 20); t76 = t74 / t75; t77 = t71 < t76; if (t77) goto bb22; else goto bb23; bb20:
 #line 39
     t67 = h9_f0; t68 = t67.as.err;
-#line 261 "main.c"
+#line 1056 "main.c"
     hero_panic_must_at(t68, "<core>/strconv.hero", "strconv.atoi", 39, 17);
     hero_unreachable();
 bb21:
-#line 43 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv.hero"
+#line 43 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strconv.hero"
     t84 = h6_total; t85 = INT64_C(10); if (__builtin_mul_overflow(t84, t85, &t86)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 43, 17); t87 = h10_digit; if (__builtin_sub_overflow(t86, t87, &t88)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 43, 17); h6_total = t88;
     t89 = h1_at; t90 = INT64_C(1); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 44, 14); h1_at = t91; goto bb11; bb22:
 #line 42
@@ -274,7 +1069,7 @@ bb21:
     t104 = h6_total; if (__builtin_sub_overflow(INT64_C(0), t104, &t105)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 51, 15); t106 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t105}; t122 = h25_own25; h25_own25 = t106; h_0opt_e201354_release(&t122); h11_ret0 = t106; goto bb30; bb28:
 #line 50
     t98 = HERO_STR_LIT(hero_str_2633b9f3); t99 = h0_s; t100 = h_1corestrconvinternalshown_quoted(t99); t123 = h26_own26; h26_own26 = t100; hero_str_decref(t123); t101 = HERO_STR_LIT(hero_str_34adc7ac); t102 = hero_str_concat(t100, t101); t124 = h27_own27; h27_own27 = t102; hero_str_decref(t124); hero_str_incref(t98); hero_str_incref(t102); t103 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t98, .msg = t102}}; t125 = h28_own28; h28_own28 = t103; h_0opt_e201354_release(&t125); h11_ret0 = t103; goto bb30; bb29: goto bb27; bb30:
-#line 278 "main.c"
+#line 1073 "main.c"
     t107 = h11_ret0;
     h_0opt_e201354_retain(&t107);
     h_0opt_e201354_release(hero_slot_escape(&h9_f0));
@@ -298,7 +1093,7 @@ bb21:
     return t107;
 }
 
-#line 17 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 17 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at; HERO_NODEBUG bool h3_ret0, t5, t6, t11, t18, t19, t23, t24; HERO_NODEBUG HeroStr t1, t3, t9, t12, t15; HERO_NODEBUG int64_t t2, t4, t7, t8, t10, t13, t16, t20, t21, t22; HERO_NODEBUG uint8_t t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_prefix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 20
@@ -314,12 +1109,12 @@ bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at;
     t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_prefix", 25, 14); h2_at = t22; goto bb4; bb8:
 #line 24
     t19 = false; h3_ret0 = t19; goto bb10; bb9: goto bb7; bb10:
-#line 318 "main.c"
+#line 1113 "main.c"
     t24 = h3_ret0;
     return t24;
 }
 
-#line 30 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 30 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_offset; int64_t h3_at; HERO_NODEBUG bool h4_ret0, t5, t6, t16, t25, t26, t30, t31; HERO_NODEBUG HeroStr t1, t3, t7, t9, t14, t17, t22; HERO_NODEBUG int64_t t2, t4, t8, t10, t11, t12, t13, t15, t18, t19, t20, t23, t27, t28, t29; HERO_NODEBUG uint8_t t21, t24; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_suffix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 33
@@ -336,21 +1131,21 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
     t27 = h3_at; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_suffix", 39, 14); h3_at = t29; goto bb4; bb8:
 #line 38
     t26 = false; h4_ret0 = t26; goto bb10; bb9: goto bb7; bb10:
-#line 340 "main.c"
+#line 1135 "main.c"
     t31 = h4_ret0;
     return t31;
 }
 
-#line 44 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 44 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_substr; t3 = h_1corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
-#line 348 "main.c"
+#line 1143 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t8;
 }
 
-#line 50 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 50 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_width; int64_t h3_to; int64_t h4_width; HERO_NODEBUG HeroStr h5_own5 = {0}, t3, t6, t15, t20, t29, t32, t33; HERO_NODEBUG int64_t t1, t2, t4, t7, t8, t9, t10, t12, t13, t14, t16, t17, t18, t21, t22, t23, t24, t26, t27, t28, t30, t31; HERO_NODEBUG bool t5, t11, t19, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_from = t1; goto bb1; bb1:
 #line 53
@@ -369,17 +1164,17 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_wi
     t23 = h4_width; t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb9:
 #line 69
     t29 = h0_s; t30 = h1_from; t31 = h3_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.trim_space", 69, 12}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t33 = h5_own5; h5_own5 = t32; hero_str_decref(t33);
-#line 373 "main.c"
+#line 1168 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
 bb10:
-#line 67 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 67 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
     t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
-#line 380 "main.c"
+#line 1175 "main.c"
 }
 
-#line 74 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 74 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; bool h3_inside; int64_t h4_at; int64_t h5_width; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t41, *t42, *t43; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t6, t9, t17, t20, t35, t37, t39, t44, t45; HERO_NODEBUG int64_t t2, t4, t5, t7, t10, t11, t12, t13, t18, t19, t23, t24, t25, t28, t30, t31, t32, t36, t38; HERO_NODEBUG bool t3, t8, t14, t15, t22, t26, t27, t29, t33; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t42 = h6_own6; h6_own6 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
     t2 = INT64_C(0); h2_start = t2;
@@ -408,7 +1203,7 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     t29 = true; h3_inside = t29; goto bb10; bb12: goto bb10; bb13:
 #line 96
     t41 = h1_out;
-#line 412 "main.c"
+#line 1207 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -416,12 +1211,12 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     hero_str_release_at(&h8_own8);
     return t41;
 bb14:
-#line 95 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 95 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
     t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
-#line 422 "main.c"
+#line 1217 "main.c"
 }
 
-#line 101 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 101 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; int64_t h4_end; HERO_NODEBUG bool h5_b0, t7, t12, t16, t23, t24, t43; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t51, *t52, *t53; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t5, t8, t17, t29, t32, t41, t45, t47, t49, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t9, t13, t14, t15, t18, t19, t20, t25, t26, t27, t30, t31, t34, t35, t36, t37, t38, t39, t40, t42, t46, t48; HERO_NODEBUG uint8_t t10, t11, t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t52 = h6_own6; h6_own6 = t1; hero_array_decref(t52); t53 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t53);
     t2 = INT64_C(0); h2_start = t2;
@@ -445,7 +1240,7 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     t25 = h4_end; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strings.hero", "strings.split_lines", 111, 23); h4_end = t27; goto bb7; bb11: goto bb7; bb12:
 #line 118
     t51 = h1_out;
-#line 449 "main.c"
+#line 1244 "main.c"
     hero_array_incref(t51);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -453,12 +1248,12 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     hero_str_release_at(&h8_own8);
     return t51;
 bb13:
-#line 117 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 117 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
     t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
-#line 459 "main.c"
+#line 1254 "main.c"
 }
 
-#line 124 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
+#line 124 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings.hero"
 h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t11, t30, t31; int64_t h3_at; HeroStr h4_before = {0}; HeroStr h5_after = {0}; HERO_NODEBUG h_0opt_48a26f25 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t10, t28, t29, t37, t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t2, t13, t16, t17, t19, t22, t24, t25, t26, t32, t33, t34, t35; HERO_NODEBUG h_1corestrings_Halves h10_own10 = {0}, t27, t36; HERO_NODEBUG int64_t t5, t6, t12, t14, t15, t18, t20, t21, t23; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_sep; t3 = h_1corestringsinternalscan_first_at(t1, t2); t30 = h7_own7; h7_own7 = t3; h_0opt_e201354_release(&t30); t31 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t31); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_at = t12;
     t13 = h0_s; t14 = INT64_C(0); t15 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_once", 126, 14}; t16 = hero_str_slice_at(t13, t14, t15, &hero_here); } t32 = h8_own8; h8_own8 = t16; hero_str_decref(t32); t33 = h4_before; hero_str_incref(t16); h4_before = t16; hero_str_decref(t33);
@@ -466,7 +1261,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     t25 = h4_before; t26 = h5_after; hero_str_incref(t25); hero_str_incref(t26); t27 = (h_1corestrings_Halves){.f_before = t25, .f_after = t26}; t36 = h10_own10; h10_own10 = t27; h_1corestrings_0Halves_release(&t36); h_1corestrings_0Halves_retain(&t27); t28 = (h_0opt_48a26f25){.tag = INT64_C(0), .as.ok = t27}; t37 = h11_own11; h11_own11 = t28; h_0opt_48a26f25_release(&t37); h6_ret0 = t28; goto bb3; bb2:
 #line 125
     t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_48a26f25){.tag = INT64_C(1), .as.err = t9}; t38 = h12_own12; h12_own12 = t10; h_0opt_48a26f25_release(&t38); h6_ret0 = t10; goto bb3; bb3:
-#line 470 "main.c"
+#line 1265 "main.c"
     t29 = h6_ret0;
     h_0opt_48a26f25_retain(&t29);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -481,14 +1276,1979 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     return t29;
 }
 
-#line 6 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown.hero"
+#if HERO_STATIC_CONSTANTS
+#line 17 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternalnumeral_EXACT_24, double, &hero_desc_f64, 23, 0x1p+0, 0x1.4p+3, 0x1.9p+6, 0x1.f4p+9, 0x1.388p+13, 0x1.86ap+16, 0x1.e848p+19, 0x1.312dp+23, 0x1.7d784p+26, 0x1.dcd65p+29, 0x1.2a05f2p+33, 0x1.74876e8p+36, 0x1.d1a94a2p+39, 0x1.2309ce54p+43, 0x1.6bcc41e9p+46, 0x1.c6bf52634p+49, 0x1.1c37937e08p+53, 0x1.6345785d8ap+56, 0x1.bc16d674ec8p+59, 0x1.158e460913dp+63, 0x1.5af1d78b58c4p+66, 0x1.b1ae4d6e2ef5p+69, 0x1.0f0cf064dd592p+73); HeroArrayHeader * h_1coreencodingjsoninternalnumeral_EXACT(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternalnumeral_EXACT_24);
+#line 1283 "main.c"
+}
+#else
+
+#line 17 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+HeroArrayHeader * h_1coreencodingjsoninternalnumeral_EXACT(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t24, *t25; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 19
+    t1 = 0x1p+0;
+    t2 = 0x1.4p+3;
+    t3 = 0x1.9p+6;
+    t4 = 0x1.f4p+9;
+    t5 = 0x1.388p+13;
+    t6 = 0x1.86ap+16;
+    t7 = 0x1.e848p+19;
+    t8 = 0x1.312dp+23;
+    t9 = 0x1.7d784p+26;
+    t10 = 0x1.dcd65p+29;
+    t11 = 0x1.2a05f2p+33;
+    t12 = 0x1.74876e8p+36;
+    t13 = 0x1.d1a94a2p+39;
+    t14 = 0x1.2309ce54p+43;
+    t15 = 0x1.6bcc41e9p+46;
+    t16 = 0x1.c6bf52634p+49;
+    t17 = 0x1.1c37937e08p+53;
+    t18 = 0x1.6345785d8ap+56;
+    t19 = 0x1.bc16d674ec8p+59;
+    t20 = 0x1.158e460913dp+63;
+    t21 = 0x1.5af1d78b58c4p+66;
+    t22 = 0x1.b1ae4d6e2ef5p+69;
+    t23 = 0x1.0f0cf064dd592p+73;
+#line 18
+    t24 = hero_array_new(&hero_desc_f64, 23); hero_array_push_owned(&t24, &t1); hero_array_push_owned(&t24, &t2); hero_array_push_owned(&t24, &t3); hero_array_push_owned(&t24, &t4); hero_array_push_owned(&t24, &t5); hero_array_push_owned(&t24, &t6); hero_array_push_owned(&t24, &t7); hero_array_push_owned(&t24, &t8); hero_array_push_owned(&t24, &t9); hero_array_push_owned(&t24, &t10); hero_array_push_owned(&t24, &t11); hero_array_push_owned(&t24, &t12); hero_array_push_owned(&t24, &t13); hero_array_push_owned(&t24, &t14); hero_array_push_owned(&t24, &t15); hero_array_push_owned(&t24, &t16); hero_array_push_owned(&t24, &t17); hero_array_push_owned(&t24, &t18); hero_array_push_owned(&t24, &t19); hero_array_push_owned(&t24, &t20); hero_array_push_owned(&t24, &t21); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t25 = h0_own0; h0_own0 = t24; hero_array_decref(t25);
+#line 1315 "main.c"
+    hero_array_incref(t24);
+    hero_array_release_at(&h0_own0);
+    return t24;
+}
+#endif
+
+#line 46 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+int64_t h_1coreencodingjsoninternalnumeral_EXACT_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(15); return t1;
+#line 1325 "main.c"
+}
+
+#line 55 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { bool h1_negative; int64_t h2_whole_start; HERO_NODEBUG bool h3_b0, h4_b1, h8_b2, h10_b3, h12_b4, t2, t4, t6, t7, t8, t14, t15, t16, t18, t19, t30, t32, t34, t35, t36, t47, t49, t50, t52, t53, t54, t57, t59, t60, t61, t67, t78, t84; HeroStr h5_whole = {0}; HeroStr h6_fraction = {0}; int64_t h7_fraction_start; int64_t h9_exponent; bool h11_below; HERO_NODEBUG h_0opt_db92a83 h13_f0 = {0}, h15_ret0 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, t12, t23, t40, t65, t74, t75, t79, t81, t82, t87, t89, t90, t92, t97, t101, t102, t103, t105, t106, t107, t108; double h14_magnitude; HERO_NODEBUG HeroStr h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h25_own25 = {0}, t1, t9, t10, t11, t13, t20, t21, t22, t24, t27, t28, t29, t37, t38, t39, t41, t44, t46, t48, t51, t55, t62, t63, t64, t71, t72, t91, t93, t94, t95, t96, t98, t99, t100, t104; HERO_NODEBUG int64_t t3, t25, t26, t31, t42, t43, t45, t66, t68, t69, t70, t73, t76, t77; HERO_NODEBUG uint8_t t5, t17, t33, t58; HERO_NODEBUG HeroFailure t80; HERO_NODEBUG double t83, t85, t86, t88; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_2d); t2 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t1); h1_negative = t2;
+    t3 = (*ph0_c).f_at; h2_whole_start = t3;
+#line 59
+    t4 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); h3_b0 = t4; if (t4) goto bb3; else goto bb2; bb1:
+#line 62
+    t13 = HERO_STR_LIT(hero_str_30); t14 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t13); if (t14) goto bb7; else goto bb8; bb2:
+#line 59
+    t5 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t6 = h_1coreencodingjsoninternalnumeral_digit(t5); t7 = !t6; h3_b0 = t7; goto bb3; bb3: t8 = h3_b0; if (t8) goto bb4; else goto bb5; bb4:
+    t9 = HERO_STR_LIT(hero_str_330ee464); t10 = HERO_STR_LIT(hero_str_51c234a3); t11 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t10); t91 = h16_own16; h16_own16 = t11; hero_str_decref(t91); hero_str_incref(t9); hero_str_incref(t11); t12 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t11}}; t92 = h17_own17; h17_own17 = t12; h_0opt_db92a83_release(&t92); h15_ret0 = t12; goto bb43; bb5: goto bb1; bb6:
+#line 70
+    t24 = (*ph0_c).f_text; t25 = h2_whole_start; t26 = (*ph0_c).f_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.read", 70, 13}; t27 = hero_str_slice_at(t24, t25, t26, &hero_here); } t93 = h18_own18; h18_own18 = t27; hero_str_decref(t93); t94 = h5_whole; hero_str_incref(t27); h5_whole = t27; hero_str_decref(t94);
+    t28 = HERO_STR_LIT(hero_str_0); t95 = h6_fraction; hero_str_incref(t28); h6_fraction = t28; hero_str_decref(t95);
+#line 73
+    t29 = HERO_STR_LIT(hero_str_2e); t30 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t29); if (t30) goto bb15; else goto bb16; bb7:
+#line 63
+    t15 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); t16 = !t15; h4_b1 = t16; if (t16) goto bb10; else goto bb11; bb8:
+#line 69
+    h_1coreencodingjsoninternalnumeral_digits_past(&(*ph0_c)); goto bb6; bb9: goto bb6; bb10:
+#line 63
+    t17 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t18 = h_1coreencodingjsoninternalnumeral_digit(t17); h4_b1 = t18; goto bb11; bb11: t19 = h4_b1; if (t19) goto bb12; else goto bb13; bb12:
+#line 65
+    t20 = HERO_STR_LIT(hero_str_330ee464);
+    t21 = HERO_STR_LIT(hero_str_6a765592); t22 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t21); t96 = h19_own19; h19_own19 = t22; hero_str_decref(t96);
+#line 64
+    hero_str_incref(t20); hero_str_incref(t22); t23 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t20, .msg = t22}}; t97 = h20_own20; h20_own20 = t23; h_0opt_db92a83_release(&t97); h15_ret0 = t23; goto bb43; bb13: goto bb9; bb14:
+#line 80
+    t45 = INT64_C(0); h9_exponent = t45;
+#line 82
+    t46 = HERO_STR_LIT(hero_str_65); t47 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t46); h10_b3 = t47; if (t47) goto bb24; else goto bb23; bb15:
+#line 74
+    t31 = (*ph0_c).f_at; h7_fraction_start = t31;
+#line 76
+    t32 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); h8_b2 = t32; if (t32) goto bb19; else goto bb18; bb16: goto bb14; bb17:
+#line 78
+    h_1coreencodingjsoninternalnumeral_digits_past(&(*ph0_c));
+    t41 = (*ph0_c).f_text; t42 = h7_fraction_start; t43 = (*ph0_c).f_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.read", 79, 20}; t44 = hero_str_slice_at(t41, t42, t43, &hero_here); } t98 = h21_own21; h21_own21 = t44; hero_str_decref(t98); t99 = h6_fraction; hero_str_incref(t44); h6_fraction = t44; hero_str_decref(t99); goto bb14; bb18:
+#line 76
+    t33 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t34 = h_1coreencodingjsoninternalnumeral_digit(t33); t35 = !t34; h8_b2 = t35; goto bb19; bb19: t36 = h8_b2; if (t36) goto bb20; else goto bb21; bb20:
+    t37 = HERO_STR_LIT(hero_str_330ee464); t38 = HERO_STR_LIT(hero_str_7ceeca06); t39 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t38); t100 = h22_own22; h22_own22 = t39; hero_str_decref(t100); hero_str_incref(t37); hero_str_incref(t39); t40 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t37, .msg = t39}}; t101 = h23_own23; h23_own23 = t40; h_0opt_db92a83_release(&t101); h15_ret0 = t40; goto bb43; bb21: goto bb17; bb22:
+#line 94
+    t71 = h5_whole; t72 = h6_fraction; t73 = h9_exponent; t74 = h_1coreencodingjsoninternalnumeral_value_of(t71, t72, t73); t102 = h24_own24; h24_own24 = t74; h_0opt_db92a83_release(&t102); t103 = h13_f0; h_0opt_db92a83_retain(&t74); h13_f0 = t74; h_0opt_db92a83_release(&t103); t75 = h13_f0; t76 = t75.tag; t77 = INT64_C(0); t78 = t76 == t77; if (t78) goto bb38; else goto bb39; bb23:
+#line 82
+    t48 = HERO_STR_LIT(hero_str_45); t49 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t48); h10_b3 = t49; goto bb24; bb24: t50 = h10_b3; if (t50) goto bb25; else goto bb26; bb25:
+    t51 = HERO_STR_LIT(hero_str_2d); t52 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t51); h11_below = t52;
+#line 85
+    t53 = h11_below; t54 = !t53; if (t54) goto bb28; else goto bb29; bb26: goto bb22; bb27:
+#line 88
+    t57 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); h12_b4 = t57; if (t57) goto bb32; else goto bb31; bb28:
+#line 86
+    t55 = HERO_STR_LIT(hero_str_2b); h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t55); goto bb27; bb29: goto bb27; bb30:
+#line 90
+    t66 = h_1coreencodingjsoninternalnumeral_exponent_past(&(*ph0_c)); h9_exponent = t66;
+#line 92
+    t67 = h11_below; if (t67) goto bb36; else goto bb37; bb31:
+#line 88
+    t58 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t59 = h_1coreencodingjsoninternalnumeral_digit(t58); t60 = !t59; h12_b4 = t60; goto bb32; bb32: t61 = h12_b4; if (t61) goto bb33; else goto bb34; bb33:
+    t62 = HERO_STR_LIT(hero_str_330ee464); t63 = HERO_STR_LIT(hero_str_4d9133ff); t64 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t63); t104 = h25_own25; h25_own25 = t64; hero_str_decref(t104); hero_str_incref(t62); hero_str_incref(t64); t65 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t62, .msg = t64}}; t105 = h26_own26; h26_own26 = t65; h_0opt_db92a83_release(&t105); h15_ret0 = t65; goto bb43; bb34: goto bb30; bb35: goto bb22; bb36:
+#line 93
+    t68 = INT64_C(0); t69 = h9_exponent; if (__builtin_sub_overflow(t68, t69, &t70)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.read", 93, 24); h9_exponent = t70; goto bb35; bb37: goto bb35; bb38:
+    t82 = h13_f0; t83 = t82.as.ok; h14_magnitude = t83;
+#line 96
+    t84 = h1_negative; if (t84) goto bb41; else goto bb42; bb39:
+#line 94
+    t79 = h13_f0; t80 = t79.as.err; hero_failure_retain(&t80); t81 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t80}; t106 = h27_own27; h27_own27 = t81; h_0opt_db92a83_release(&t106); h15_ret0 = t81; goto bb43; bb40:
+#line 98
+    t88 = h14_magnitude; t89 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t88}; t107 = h28_own28; h28_own28 = t89; h_0opt_db92a83_release(&t107); h15_ret0 = t89; goto bb43; bb41:
+#line 97
+    t85 = h14_magnitude; t86 = -t85; t87 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t86}; t108 = h29_own29; h29_own29 = t87; h_0opt_db92a83_release(&t108); h15_ret0 = t87; goto bb43; bb42: goto bb40; bb43:
+#line 1398 "main.c"
+    t90 = h15_ret0;
+    h_0opt_db92a83_retain(&t90);
+    hero_str_release_at(&h5_whole);
+    hero_str_release_at(&h6_fraction);
+    h_0opt_db92a83_release(hero_slot_escape(&h13_f0));
+    hero_str_release_at(&h16_own16);
+    h_0opt_db92a83_release(hero_slot_escape(&h17_own17));
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    h_0opt_db92a83_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    h_0opt_db92a83_release(hero_slot_escape(&h23_own23));
+    h_0opt_db92a83_release(hero_slot_escape(&h24_own24));
+    hero_str_release_at(&h25_own25);
+    h_0opt_db92a83_release(hero_slot_escape(&h26_own26));
+    h_0opt_db92a83_release(hero_slot_escape(&h27_own27));
+    h_0opt_db92a83_release(hero_slot_escape(&h28_own28));
+    h_0opt_db92a83_release(hero_slot_escape(&h29_own29));
+    return t90;
+}
+
+#line 101 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+bool h_1coreencodingjsoninternalnumeral_digit(uint8_t h0_b) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_b; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
+#line 1424 "main.c"
+}
+
+#line 105 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+void h_1coreencodingjsoninternalnumeral_digits_past(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG bool h1_b0, t1, t2, t4, t5; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
+    t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); t2 = !t1; h1_b0 = t2; if (t2) goto bb4; else goto bb5; bb2:
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c)); goto bb1; bb3: return; bb4:
+#line 106
+    t3 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t4 = h_1coreencodingjsoninternalnumeral_digit(t3); h1_b0 = t4; goto bb5; bb5: t5 = h1_b0; if (t5) goto bb2; else goto bb3;
+#line 1433 "main.c"
+}
+
+#line 113 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+int64_t h_1coreencodingjsoninternalnumeral_exponent_past(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_n; HERO_NODEBUG bool h2_b0, t2, t3, t5, t6, t9, t20; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h4_own4 = {0}, t16, t17, t21, t23, t27, t28; HERO_NODEBUG int64_t t1, t7, t8, t10, t11, t12, t18, t19, t24, t25, t26; HERO_NODEBUG uint8_t t4, t13, t14, t15; HERO_NODEBUG HeroFailure t22; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1; goto bb1; bb1:
+#line 116
+    t2 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); t3 = !t2; h2_b0 = t3; if (t3) goto bb4; else goto bb5; bb2:
+    t7 = h1_n; t8 = INT64_C(1000000000000000); t9 = t7 < t8; if (t9) goto bb7; else goto bb8; bb3:
+#line 121
+    t26 = h1_n;
+#line 1444 "main.c"
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
+    return t26;
+bb4:
+#line 116 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t4 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t5 = h_1coreencodingjsoninternalnumeral_digit(t4); h2_b0 = t5; goto bb5; bb5: t6 = h2_b0; if (t6) goto bb2; else goto bb3; bb6:
+#line 119
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c)); goto bb1; bb7:
+#line 118
+    t10 = h1_n; t11 = INT64_C(10); if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_past", 118, 17); t13 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t14 = UINT64_C(48); if (__builtin_sub_overflow(t13, t14, &t15)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_past", 118, 33); t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t15}; t27 = h4_own4; h4_own4 = t16; h_0opt_e201354_release(&t27); t28 = h3_f0; h_0opt_e201354_retain(&t16); h3_f0 = t16; h_0opt_e201354_release(&t28); t17 = h3_f0; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb9; else goto bb10; bb8: goto bb6; bb9: t23 = h3_f0; t24 = t23.as.ok; if (__builtin_add_overflow(t12, t24, &t25)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_past", 118, 17); h1_n = t25; goto bb6; bb10: t21 = h3_f0; t22 = t21.as.err;
+#line 1455 "main.c"
+    hero_panic_must_at(t22, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_past", 118, 26);
+    hero_unreachable();
+}
+
+#line 125 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_value_of(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent) { HeroStr h3_digits = {0}; int64_t h4_lead; HERO_NODEBUG bool h5_b0, h7_b1, t8, t13, t14, t22, t29, t30, t36; int64_t h6_end; HERO_NODEBUG h_0opt_db92a83 h8_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t38, t49, t50, t54, t55; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, t1, t2, t3, t6, t9, t18, t23, t39, t42, t43, t51, t52, t53; HERO_NODEBUG int64_t t4, t5, t7, t10, t15, t16, t17, t19, t20, t21, t24, t25, t26, t31, t32, t33, t34, t35, t40, t41, t44, t45, t46, t47, t48; HERO_NODEBUG uint8_t t11, t12, t27, t28; HERO_NODEBUG double t37; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_whole; t2 = h1_fraction; t3 = hero_str_concat(t1, t2); t51 = h9_own9; h9_own9 = t3; hero_str_decref(t51); t52 = h3_digits; hero_str_incref(t3); h3_digits = t3; hero_str_decref(t52);
+    t4 = INT64_C(0); h4_lead = t4; goto bb1; bb1:
+#line 129
+    t5 = h4_lead; t6 = h3_digits; t7 = hero_str_len(t6); t8 = t5 < t7; h5_b0 = t8; if (t8) goto bb4; else goto bb5; bb2:
+    t15 = h4_lead; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 130, 16); h4_lead = t17; goto bb1; bb3:
+#line 132
+    t18 = h3_digits; t19 = hero_str_len(t18); h6_end = t19; goto bb6; bb4:
+#line 129
+    t9 = h3_digits; t10 = h4_lead; t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? hero_panic_byte_at(t9, t10, "<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 129, 34) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]); t12 = UINT64_C(48); t13 = t11 == t12; h5_b0 = t13; goto bb5; bb5: t14 = h5_b0; if (t14) goto bb2; else goto bb3; bb6:
+#line 134
+    t20 = h6_end; t21 = h4_lead; t22 = t20 > t21; h7_b1 = t22; if (t22) goto bb9; else goto bb10; bb7:
+    t31 = h6_end; t32 = INT64_C(1); if (__builtin_sub_overflow(t31, t32, &t33)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 135, 15); h6_end = t33; goto bb6; bb8:
+#line 137
+    t34 = h6_end; t35 = h4_lead; t36 = t34 == t35; if (t36) goto bb12; else goto bb13; bb9:
+#line 134
+    t23 = h3_digits; t24 = h6_end; t25 = INT64_C(1); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 134, 32); t27 = ((void)((t23.ptr == NULL || t26 < 0 || t26 >= t23.len) ? hero_panic_byte_at(t23, t26, "<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 134, 25) : (void)0), (int64_t)(unsigned char)t23.ptr[t26]); t28 = UINT64_C(48); t29 = t27 == t28; h7_b1 = t29; goto bb10; bb10: t30 = h7_b1; if (t30) goto bb7; else goto bb8; bb11:
+#line 139
+    t39 = h3_digits; t40 = h4_lead; t41 = h6_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 139, 28}; t42 = hero_str_slice_at(t39, t40, t41, &hero_here); } t53 = h10_own10; h10_own10 = t42; hero_str_decref(t53); t43 = h0_whole; t44 = hero_str_len(t43); t45 = h4_lead; if (__builtin_sub_overflow(t44, t45, &t46)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 139, 70); t47 = h2_exponent; if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.value_of", 139, 70); t49 = h_1coreencodingjsoninternalnumeral_nearest(t42, t48); t54 = h11_own11; h11_own11 = t49; h_0opt_db92a83_release(&t54); h8_ret0 = t49; goto bb14; bb12:
+#line 138
+    t37 = 0x0p+0; t38 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t37}; t55 = h12_own12; h12_own12 = t38; h_0opt_db92a83_release(&t55); h8_ret0 = t38; goto bb14; bb13: goto bb11; bb14:
+#line 1482 "main.c"
+    t50 = h8_ret0;
+    h_0opt_db92a83_retain(&t50);
+    hero_str_release_at(&h3_digits);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_db92a83_release(hero_slot_escape(&h11_own11));
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    return t50;
+}
+
+#line 146 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_nearest(HeroStr h0_digits, int64_t h1_point) { int64_t h2_power; HERO_NODEBUG bool h3_b0, h4_b1, t8, t11, t12, t15, t16, t29, t45, t56; int64_t h5_whole; HERO_NODEBUG HeroArrayHeader *h6_xs0 = {0}, *h11_own11 = {0}, *h14_own14 = {0}, *h16_own16 = {0}, *t24, *t27, *t30, *t59, *t66, *t74, *t75, *t79, *t81; HERO_NODEBUG int64_t h7_i0, t1, t3, t4, t6, t7, t9, t10, t13, t14, t18, t20, t21, t23, t25, t26, t28, t31, t32, t33, t34, t35, t37, t43, t44, t49, t50, t51, t52, t53, t54, t55, t57, t60, t64, t67, t68, t69; int64_t h8_i; HERO_NODEBUG h_0opt_e201354 h9_f0 = {0}, h13_own13 = {0}, t41, t42, t46, t48, t77, t78; HERO_NODEBUG h_0opt_db92a83 h10_ret0 = {0}, h12_own12 = {0}, h15_own15 = {0}, h17_own17 = {0}, t19, t63, t72, t73, t76, t80, t82; HERO_NODEBUG HeroStr t2, t5, t17, t22, t36; HERO_NODEBUG uint8_t t38, t39, t40; HERO_NODEBUG HeroFailure t47; HERO_NODEBUG double t58, t61, t62, t65, t70, t71; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_point; t2 = h0_digits; t3 = hero_str_len(t2); if (__builtin_sub_overflow(t1, t3, &t4)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 147, 13); h2_power = t4;
+#line 149
+    t5 = h0_digits; t6 = hero_str_len(t5); t7 = h_1coreencodingjsoninternalnumeral_EXACT_DIGITS(); t8 = t6 > t7; h4_b1 = t8; if (t8) goto bb3; else goto bb2; bb1:
+#line 151
+    t20 = INT64_C(0); h5_whole = t20;
+#line 153
+    t21 = INT64_C(0); t22 = h0_digits; t23 = hero_str_len(t22); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 153, 14}; t24 = h_library_range(t21, t23, &hero_here); } t74 = h11_own11; h11_own11 = t24; hero_array_decref(t74); t75 = h6_xs0; hero_array_incref(t24); h6_xs0 = t24; hero_array_decref(t75); t25 = INT64_C(0); h7_i0 = t25; goto bb8; bb2:
+#line 149
+    t9 = h2_power; t10 = INT64_C(-22); t11 = t9 < t10; h4_b1 = t11; goto bb3; bb3: t12 = h4_b1; h3_b0 = t12; if (t12) goto bb5; else goto bb4; bb4: t13 = h2_power; t14 = INT64_C(22); t15 = t13 > t14; h3_b0 = t15; goto bb5; bb5: t16 = h3_b0; if (t16) goto bb6; else goto bb7; bb6:
+    t17 = h0_digits; t18 = h1_point; t19 = h_1coreencodingjsoninternaldecimal_nearest(t17, t18); t76 = h12_own12; h12_own12 = t19; h_0opt_db92a83_release(&t76); h10_ret0 = t19; goto bb17; bb7: goto bb1; bb8:
+#line 153
+    t26 = h7_i0; t27 = h6_xs0; t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len); t29 = t26 < t28; if (t29) goto bb9; else goto bb11; bb9: t30 = h6_xs0; t31 = h7_i0; t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? hero_panic_index_at(t30, t31, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 153, 9) : (void)0), (void)(t30->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t30 + 1))[t31]); h8_i = t32;
+    t33 = h5_whole; t34 = INT64_C(10); if (__builtin_mul_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 154, 17); t36 = h0_digits; t37 = h8_i; t38 = ((void)((t36.ptr == NULL || t37 < 0 || t37 >= t36.len) ? hero_panic_byte_at(t36, t37, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 154, 37) : (void)0), (int64_t)(unsigned char)t36.ptr[t37]); t39 = UINT64_C(48); if (__builtin_sub_overflow(t38, t39, &t40)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 154, 37); t41 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t40}; t77 = h13_own13; h13_own13 = t41; h_0opt_e201354_release(&t77); t78 = h9_f0; h_0opt_e201354_retain(&t41); h9_f0 = t41; h_0opt_e201354_release(&t78); t42 = h9_f0; t43 = t42.tag; t44 = INT64_C(0); t45 = t43 == t44; if (t45) goto bb12; else goto bb13; bb10:
+#line 153
+    t51 = h7_i0; t52 = INT64_C(1); if (__builtin_add_overflow(t51, t52, &t53)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 153, 9); h7_i0 = t53; goto bb8; bb11:
+#line 156
+    t54 = h2_power; t55 = INT64_C(0); t56 = t54 >= t55; if (t56) goto bb15; else goto bb16; bb12:
+#line 154
+    t48 = h9_f0; t49 = t48.as.ok; if (__builtin_add_overflow(t35, t49, &t50)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 154, 17); h5_whole = t50; goto bb10; bb13: t46 = h9_f0; t47 = t46.as.err;
+#line 1514 "main.c"
+    hero_panic_must_at(t47, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 154, 30);
+    hero_unreachable();
+bb14:
+#line 158 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t64 = h5_whole; t65 = hero_int_to_f64(t64); t66 = h_1coreencodingjsoninternalnumeral_EXACT(); t79 = h14_own14; h14_own14 = t66; hero_array_decref(t79); t67 = INT64_C(0); t68 = h2_power; if (__builtin_sub_overflow(t67, t68, &t69)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 158, 37); t70 = ((void)((t66 == NULL || t69 < 0 || t69 >= t66->len) ? hero_panic_index_at(t66, t69, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 158, 31) : (void)0), (void)(t66->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t66 + 1))[t69]); t71 = t65 / t70; t72 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t71}; t80 = h15_own15; h15_own15 = t72; h_0opt_db92a83_release(&t80); h10_ret0 = t72; goto bb17; bb15:
+#line 157
+    t57 = h5_whole; t58 = hero_int_to_f64(t57); t59 = h_1coreencodingjsoninternalnumeral_EXACT(); t81 = h16_own16; h16_own16 = t59; hero_array_decref(t81); t60 = h2_power; t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? hero_panic_index_at(t59, t60, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 157, 35) : (void)0), (void)(t59->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t59 + 1))[t60]); t62 = t58 * t61; t63 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t62}; t82 = h17_own17; h17_own17 = t63; h_0opt_db92a83_release(&t82); h10_ret0 = t63; goto bb17; bb16: goto bb14; bb17:
+#line 1522 "main.c"
+    t73 = h10_ret0;
+    h_0opt_db92a83_retain(&t73);
+    hero_array_release_at(&h6_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h9_f0));
+    hero_array_release_at(&h11_own11);
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    h_0opt_db92a83_release(hero_slot_escape(&h15_own15));
+    hero_array_release_at(&h16_own16);
+    h_0opt_db92a83_release(hero_slot_escape(&h17_own17));
+    return t73;
+}
+
+#line 162 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+bool h_1coreencodingjsoninternalnumeral_finite(double h0_x) { HERO_NODEBUG double t1, t2, t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = h0_x; t3 = t1 - t2; t4 = 0x0p+0; t5 = t3 == t4; return t5;
+#line 1540 "main.c"
+}
+
+#line 171 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+HeroStr h_1coreencodingjsoninternalnumeral_written(double h0_x) { HeroStr h1_text = {0}; HeroStr h2_sign = {0}; int64_t h3_at; int64_t h4_whole_start; HERO_NODEBUG bool h5_b0, h6_b1, h9_b2, h11_b3, t3, t12, t19, t24, t25, t30, t31, t43, t48, t49, t57, t62, t63, t75; HeroStr h7_whole = {0}; HeroStr h8_fraction = {0}; int64_t h10_fraction_start; int64_t h12_exponent; HERO_NODEBUG HeroStr h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, t1, t5, t6, t8, t13, t17, t20, t26, t35, t38, t39, t41, t44, t55, t58, t67, t70, t73, t76, t80, t82, t84, t85, t86, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101; HERO_NODEBUG double t2, t4; HERO_NODEBUG int64_t t7, t9, t14, t15, t16, t18, t21, t27, t32, t33, t34, t36, t37, t40, t42, t45, t50, t51, t52, t53, t54, t56, t59, t64, t65, t66, t68, t69, t71, t72, t74, t77, t78, t79, t81, t83, t87; HERO_NODEBUG uint8_t t10, t11, t22, t23, t28, t29, t46, t47, t60, t61; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3ce5513b); t2 = h0_x; t3 = h_1coreencodingjsoninternalnumeral_finite(t2); if (t3) goto bb1; else goto bb2; bb1:
+    t4 = h0_x; t5 = hero_f64_to_str(t4); t90 = h13_own13; h13_own13 = t5; hero_str_decref(t90); t91 = h1_text; hero_str_incref(t5); h1_text = t5; hero_str_decref(t91);
+    t6 = HERO_STR_LIT(hero_str_0); t92 = h2_sign; hero_str_incref(t6); h2_sign = t6; hero_str_decref(t92);
+    t7 = INT64_C(0); h3_at = t7;
+#line 177
+    t8 = h1_text; t9 = INT64_C(0); t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 177, 8) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(45); t12 = t10 == t11; if (t12) goto bb4; else goto bb5; bb2:
+#line 1551 "main.c"
+    hero_panic_assert_at(t1, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 172, 12);
+    hero_unreachable();
+bb3:
+#line 180 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t15 = h3_at; h4_whole_start = t15; goto bb6; bb4:
+#line 178
+    t13 = HERO_STR_LIT(hero_str_2d); t93 = h2_sign; hero_str_incref(t13); h2_sign = t13; hero_str_decref(t93);
+    t14 = INT64_C(1); h3_at = t14; goto bb3; bb5: goto bb3; bb6:
+#line 182
+    t16 = h3_at; t17 = h1_text; t18 = hero_str_len(t17); t19 = t16 < t18; h6_b1 = t19; if (t19) goto bb9; else goto bb10; bb7:
+    t32 = h3_at; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.written", 183, 14); h3_at = t34; goto bb6; bb8:
+#line 185
+    t35 = h1_text; t36 = h4_whole_start; t37 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.written", 185, 13}; t38 = hero_str_slice_at(t35, t36, t37, &hero_here); } t94 = h14_own14; h14_own14 = t38; hero_str_decref(t94); t95 = h7_whole; hero_str_incref(t38); h7_whole = t38; hero_str_decref(t95);
+    t39 = HERO_STR_LIT(hero_str_0); t96 = h8_fraction; hero_str_incref(t39); h8_fraction = t39; hero_str_decref(t96);
+#line 188
+    t40 = h3_at; t41 = h1_text; t42 = hero_str_len(t41); t43 = t40 < t42; h9_b2 = t43; if (t43) goto bb14; else goto bb15; bb9:
+#line 182
+    t20 = h1_text; t21 = h3_at; t22 = ((void)((t20.ptr == NULL || t21 < 0 || t21 >= t20.len) ? hero_panic_byte_at(t20, t21, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 182, 30) : (void)0), (int64_t)(unsigned char)t20.ptr[t21]); t23 = UINT64_C(46); t24 = t22 != t23; h6_b1 = t24; goto bb10; bb10: t25 = h6_b1; h5_b0 = t25; if (t25) goto bb11; else goto bb12; bb11: t26 = h1_text; t27 = h3_at; t28 = ((void)((t26.ptr == NULL || t27 < 0 || t27 >= t26.len) ? hero_panic_byte_at(t26, t27, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 182, 49) : (void)0), (int64_t)(unsigned char)t26.ptr[t27]); t29 = UINT64_C(101); t30 = t28 != t29; h5_b0 = t30; goto bb12; bb12: t31 = h5_b0; if (t31) goto bb7; else goto bb8; bb13:
+#line 196
+    t71 = INT64_C(0); h12_exponent = t71;
+#line 198
+    t72 = h3_at; t73 = h1_text; t74 = hero_str_len(t73); t75 = t72 < t74; if (t75) goto bb24; else goto bb25; bb14:
+#line 188
+    t44 = h1_text; t45 = h3_at; t46 = ((void)((t44.ptr == NULL || t45 < 0 || t45 >= t44.len) ? hero_panic_byte_at(t44, t45, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 188, 27) : (void)0), (int64_t)(unsigned char)t44.ptr[t45]); t47 = UINT64_C(46); t48 = t46 == t47; h9_b2 = t48; goto bb15; bb15: t49 = h9_b2; if (t49) goto bb16; else goto bb17; bb16:
+    t50 = h3_at; t51 = INT64_C(1); if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.written", 189, 14); h3_at = t52;
+    t53 = h3_at; h10_fraction_start = t53; goto bb18; bb17: goto bb13; bb18:
+#line 192
+    t54 = h3_at; t55 = h1_text; t56 = hero_str_len(t55); t57 = t54 < t56; h11_b3 = t57; if (t57) goto bb21; else goto bb22; bb19:
+    t64 = h3_at; t65 = INT64_C(1); if (__builtin_add_overflow(t64, t65, &t66)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.written", 193, 18); h3_at = t66; goto bb18; bb20:
+#line 195
+    t67 = h1_text; t68 = h10_fraction_start; t69 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.written", 195, 20}; t70 = hero_str_slice_at(t67, t68, t69, &hero_here); } t97 = h15_own15; h15_own15 = t70; hero_str_decref(t97); t98 = h8_fraction; hero_str_incref(t70); h8_fraction = t70; hero_str_decref(t98); goto bb13; bb21:
+#line 192
+    t58 = h1_text; t59 = h3_at; t60 = ((void)((t58.ptr == NULL || t59 < 0 || t59 >= t58.len) ? hero_panic_byte_at(t58, t59, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 192, 34) : (void)0), (int64_t)(unsigned char)t58.ptr[t59]); t61 = UINT64_C(101); t62 = t60 != t61; h11_b3 = t62; goto bb22; bb22: t63 = h11_b3; if (t63) goto bb19; else goto bb20; bb23:
+#line 200
+    t84 = h2_sign; t85 = h7_whole; t86 = h8_fraction; t87 = h12_exponent; t88 = h_1coreencodingjsoninternalnumeral_laid_out(t85, t86, t87); t99 = h16_own16; h16_own16 = t88; hero_str_decref(t99); t89 = hero_str_concat(t84, t88); t100 = h17_own17; h17_own17 = t89; hero_str_decref(t100);
+#line 1587 "main.c"
+    hero_str_incref(t89);
+    hero_str_release_at(&h1_text);
+    hero_str_release_at(&h2_sign);
+    hero_str_release_at(&h7_whole);
+    hero_str_release_at(&h8_fraction);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    return t89;
+bb24:
+#line 199 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t76 = h1_text; t77 = h3_at; t78 = INT64_C(1); if (__builtin_add_overflow(t77, t78, &t79)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.written", 199, 49); t80 = h1_text; t81 = hero_str_len(t80); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.written", 199, 32}; t82 = hero_str_slice_at(t76, t79, t81, &hero_here); } t101 = h18_own18; h18_own18 = t82; hero_str_decref(t101); t83 = h_1coreencodingjsoninternalnumeral_exponent_of(t82); h12_exponent = t83; goto bb23; bb25: goto bb23;
+#line 1603 "main.c"
+}
+
+#line 203 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+int64_t h_1coreencodingjsoninternalnumeral_exponent_of(HeroStr h0_text) { int64_t h1_n; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *t5, *t8, *t11, *t50, *t51; HERO_NODEBUG int64_t h3_i0, h7_ret0, t1, t2, t4, t6, t7, t9, t12, t13, t14, t15, t16, t18, t24, t25, t30, t31, t32, t33, t34, t36, t37, t40, t45, t46, t47, t48, t49; int64_t h4_i; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t22, t23, t27, t29, t52, t53; HERO_NODEBUG bool h6_b0, t10, t26, t38, t43, t44; HERO_NODEBUG HeroStr t3, t17, t35, t39; HERO_NODEBUG uint8_t t19, t20, t21, t41, t42; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1;
+#line 206
+    t2 = INT64_C(1); t3 = h0_text; t4 = hero_str_len(t3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 206, 14}; t5 = h_library_range(t2, t4, &hero_here); } t50 = h8_own8; h8_own8 = t5; hero_array_decref(t50); t51 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t51); t6 = INT64_C(0); h3_i0 = t6; goto bb1; bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto bb2; else goto bb4; bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 206, 9) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_i = t13;
+    t14 = h1_n; t15 = INT64_C(10); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 207, 13); t17 = h0_text; t18 = h4_i; t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 207, 29) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = UINT64_C(48); if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 207, 29); t22 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t21}; t52 = h9_own9; h9_own9 = t22; h_0opt_e201354_release(&t52); t53 = h5_f0; h_0opt_e201354_retain(&t22); h5_f0 = t22; h_0opt_e201354_release(&t53); t23 = h5_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb5; else goto bb6; bb3:
+#line 206
+    t32 = h3_i0; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 206, 9); h3_i0 = t34; goto bb1; bb4:
+#line 209
+    t35 = h0_text; t36 = hero_str_len(t35); t37 = INT64_C(0); t38 = t36 > t37; h6_b0 = t38; if (t38) goto bb8; else goto bb9; bb5:
+#line 207
+    t29 = h5_f0; t30 = t29.as.ok; if (__builtin_add_overflow(t16, t30, &t31)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 207, 13); h1_n = t31; goto bb3; bb6: t27 = h5_f0; t28 = t27.as.err;
+#line 1618 "main.c"
+    hero_panic_must_at(t28, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 207, 22);
+    hero_unreachable();
+bb7:
+#line 211 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t48 = h1_n; h7_ret0 = t48; goto bb12; bb8:
+#line 209
+    t39 = h0_text; t40 = INT64_C(0); t41 = ((void)((t39.ptr == NULL || t40 < 0 || t40 >= t39.len) ? hero_panic_byte_at(t39, t40, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 209, 26) : (void)0), (int64_t)(unsigned char)t39.ptr[t40]); t42 = UINT64_C(45); t43 = t41 == t42; h6_b0 = t43; goto bb9; bb9: t44 = h6_b0; if (t44) goto bb10; else goto bb11; bb10:
+    t45 = INT64_C(0); t46 = h1_n; if (__builtin_sub_overflow(t45, t46, &t47)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 210, 16); h7_ret0 = t47; goto bb12; bb11: goto bb7; bb12:
+#line 1627 "main.c"
+    t49 = h7_ret0;
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    return t49;
+}
+
+#line 219 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+HeroStr h_1coreencodingjsoninternalnumeral_laid_out(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent) { HeroStr h3_digits = {0}; int64_t h4_lead; HERO_NODEBUG bool h5_b0, h7_b1, h11_b2, h13_b3, h14_b4, t8, t13, t14, t22, t29, t30, t36, t52, t55, t56, t66, t75, t78, t79, t93, t96, t97, t107, t122, t135; int64_t h6_end; HeroStr h8_s = {0}; int64_t h9_k; int64_t h10_n; HERO_NODEBUG h_0opt_fbbb698 h12_f0 = {0}, h15_f1 = {0}, h20_own20 = {0}, h28_own28 = {0}, t62, t63, t67, t69, t103, t104, t108, t110, t157, t158, t167, t168; HeroStr h16_mantissa = {0}; HERO_NODEBUG HeroStr h17_ret0 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, t1, t2, t3, t6, t9, t18, t23, t37, t38, t41, t42, t44, t57, t58, t71, t72, t80, t83, t84, t85, t86, t89, t90, t98, t99, t112, t113, t114, t115, t116, t119, t123, t124, t125, t126, t129, t130, t136, t137, t138, t142, t143, t144, t145, t146, t150, t151, t152, t153, t154, t155, t156, t159, t160, t161, t162, t163, t164, t165, t166, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181; HERO_NODEBUG int64_t t4, t5, t7, t10, t15, t16, t17, t19, t20, t21, t24, t25, t26, t31, t32, t33, t34, t35, t39, t40, t43, t45, t46, t47, t48, t49, t50, t51, t53, t54, t59, t60, t61, t64, t65, t73, t74, t76, t77, t81, t82, t87, t88, t91, t92, t94, t95, t100, t101, t102, t105, t106, t117, t118, t120, t121, t127, t128, t131, t132, t133, t134, t139, t140, t141, t147, t148, t149; HERO_NODEBUG uint8_t t11, t12, t27, t28; HERO_NODEBUG HeroFailure t68, t109; HERO_NODEBUG uint64_t t70, t111; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_whole; t2 = h1_fraction; t3 = hero_str_concat(t1, t2); t153 = h18_own18; h18_own18 = t3; hero_str_decref(t153); t154 = h3_digits; hero_str_incref(t3); h3_digits = t3; hero_str_decref(t154);
+    t4 = INT64_C(0); h4_lead = t4; goto bb1; bb1:
+#line 223
+    t5 = h4_lead; t6 = h3_digits; t7 = hero_str_len(t6); t8 = t5 < t7; h5_b0 = t8; if (t8) goto bb4; else goto bb5; bb2:
+    t15 = h4_lead; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 224, 16); h4_lead = t17; goto bb1; bb3:
+#line 226
+    t18 = h3_digits; t19 = hero_str_len(t18); h6_end = t19; goto bb6; bb4:
+#line 223
+    t9 = h3_digits; t10 = h4_lead; t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? hero_panic_byte_at(t9, t10, "<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 223, 34) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]); t12 = UINT64_C(48); t13 = t11 == t12; h5_b0 = t13; goto bb5; bb5: t14 = h5_b0; if (t14) goto bb2; else goto bb3; bb6:
+#line 228
+    t20 = h6_end; t21 = h4_lead; t22 = t20 > t21; h7_b1 = t22; if (t22) goto bb9; else goto bb10; bb7:
+    t31 = h6_end; t32 = INT64_C(1); if (__builtin_sub_overflow(t31, t32, &t33)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 229, 15); h6_end = t33; goto bb6; bb8:
+#line 231
+    t34 = h6_end; t35 = h4_lead; t36 = t34 == t35; if (t36) goto bb12; else goto bb13; bb9:
+#line 228
+    t23 = h3_digits; t24 = h6_end; t25 = INT64_C(1); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 228, 32); t27 = ((void)((t23.ptr == NULL || t26 < 0 || t26 >= t23.len) ? hero_panic_byte_at(t23, t26, "<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 228, 25) : (void)0), (int64_t)(unsigned char)t23.ptr[t26]); t28 = UINT64_C(48); t29 = t27 == t28; h7_b1 = t29; goto bb10; bb10: t30 = h7_b1; if (t30) goto bb7; else goto bb8; bb11:
+#line 233
+    t38 = h3_digits; t39 = h4_lead; t40 = h6_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 233, 9}; t41 = hero_str_slice_at(t38, t39, t40, &hero_here); } t155 = h19_own19; h19_own19 = t41; hero_str_decref(t155); t156 = h8_s; hero_str_incref(t41); h8_s = t41; hero_str_decref(t156);
+    t42 = h8_s; t43 = hero_str_len(t42); h9_k = t43;
+    t44 = h0_whole; t45 = hero_str_len(t44); t46 = h4_lead; if (__builtin_sub_overflow(t45, t46, &t47)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 235, 9); t48 = h2_exponent; if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 235, 9); h10_n = t49;
+#line 237
+    t50 = h9_k; t51 = h10_n; t52 = t50 <= t51; h11_b2 = t52; if (t52) goto bb15; else goto bb16; bb12:
+#line 232
+    t37 = HERO_STR_LIT(hero_str_30); h17_ret0 = t37; goto bb39; bb13: goto bb11; bb14:
+#line 240
+    t73 = INT64_C(0); t74 = h10_n; t75 = t73 < t74; h13_b3 = t75; if (t75) goto bb22; else goto bb23; bb15:
+#line 237
+    t53 = h10_n; t54 = INT64_C(21); t55 = t53 <= t54; h11_b2 = t55; goto bb16; bb16: t56 = h11_b2; if (t56) goto bb17; else goto bb18; bb17:
+    t57 = h8_s; t58 = HERO_STR_LIT(hero_str_30); t59 = h10_n; t60 = h9_k; if (__builtin_sub_overflow(t59, t60, &t61)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 238, 33); if (t61 >= 0LL) { t62 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t61}; } else { t62 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t157 = h20_own20; h20_own20 = t62; h_0opt_fbbb698_release(&t157); t158 = h12_f0; h_0opt_fbbb698_retain(&t62); h12_f0 = t62; h_0opt_fbbb698_release(&t158); t63 = h12_f0; t64 = t63.tag; t65 = INT64_C(0); t66 = t64 == t65; if (t66) goto bb19; else goto bb20; bb18: goto bb14; bb19: t69 = h12_f0; t70 = t69.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 238, 20}; t71 = hero_str_repeat_at(t58, t70, &hero_here); } t159 = h21_own21; h21_own21 = t71; hero_str_decref(t159); t72 = hero_str_concat(t57, t71); t160 = h22_own22; h22_own22 = t72; hero_str_decref(t160); h17_ret0 = t72; goto bb39; bb20: t67 = h12_f0; t68 = t67.as.err;
+#line 1667 "main.c"
+    hero_panic_must_at(t68, "<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 238, 32);
+    hero_unreachable();
+bb21:
+#line 243 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t91 = INT64_C(-6); t92 = h10_n; t93 = t91 < t92; h14_b4 = t93; if (t93) goto bb27; else goto bb28; bb22:
+#line 240
+    t76 = h10_n; t77 = INT64_C(21); t78 = t76 <= t77; h13_b3 = t78; goto bb23; bb23: t79 = h13_b3; if (t79) goto bb24; else goto bb25; bb24:
+    t80 = h8_s; t81 = INT64_C(0); t82 = h10_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 241, 16}; t83 = hero_str_slice_at(t80, t81, t82, &hero_here); } t161 = h23_own23; h23_own23 = t83; hero_str_decref(t161); t84 = HERO_STR_LIT(hero_str_2e); t85 = hero_str_concat(t83, t84); t162 = h24_own24; h24_own24 = t85; hero_str_decref(t162); t86 = h8_s; t87 = h10_n; t88 = h9_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 241, 48}; t89 = hero_str_slice_at(t86, t87, t88, &hero_here); } t163 = h25_own25; h25_own25 = t89; hero_str_decref(t163); t90 = hero_str_concat(t85, t89); t164 = h26_own26; h26_own26 = t90; hero_str_decref(t164); h17_ret0 = t90; goto bb39; bb25: goto bb21; bb26:
+#line 245
+    t116 = h8_s; t117 = INT64_C(0); t118 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 245, 22}; t119 = hero_str_slice_at(t116, t117, t118, &hero_here); } t165 = h27_own27; h27_own27 = t119; hero_str_decref(t165); t166 = h16_mantissa; hero_str_incref(t119); h16_mantissa = t119; hero_str_decref(t166);
+#line 247
+    t120 = h9_k; t121 = INT64_C(1); t122 = t120 > t121; if (t122) goto bb34; else goto bb35; bb27:
+#line 243
+    t94 = h10_n; t95 = INT64_C(0); t96 = t94 <= t95; h14_b4 = t96; goto bb28; bb28: t97 = h14_b4; if (t97) goto bb29; else goto bb30; bb29:
+    t98 = HERO_STR_LIT(hero_str_18be); t99 = HERO_STR_LIT(hero_str_30); t100 = INT64_C(0); t101 = h10_n; if (__builtin_sub_overflow(t100, t101, &t102)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 244, 36); if (t102 >= 0LL) { t103 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t102}; } else { t103 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t167 = h28_own28; h28_own28 = t103; h_0opt_fbbb698_release(&t167); t168 = h15_f1; h_0opt_fbbb698_retain(&t103); h15_f1 = t103; h_0opt_fbbb698_release(&t168); t104 = h15_f1; t105 = t104.tag; t106 = INT64_C(0); t107 = t105 == t106; if (t107) goto bb31; else goto bb32; bb30: goto bb26; bb31: t110 = h15_f1; t111 = t110.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 244, 23}; t112 = hero_str_repeat_at(t99, t111, &hero_here); } t169 = h29_own29; h29_own29 = t112; hero_str_decref(t169); t113 = hero_str_concat(t98, t112); t170 = h30_own30; h30_own30 = t113; hero_str_decref(t170); t114 = h8_s; t115 = hero_str_concat(t113, t114); t171 = h31_own31; h31_own31 = t115; hero_str_decref(t171); h17_ret0 = t115; goto bb39; bb32: t108 = h15_f1; t109 = t108.as.err;
+#line 1683 "main.c"
+    hero_panic_must_at(t109, "<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 244, 35);
+    hero_unreachable();
+bb33:
+#line 250 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t131 = h10_n; t132 = INT64_C(1); if (__builtin_sub_overflow(t131, t132, &t133)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 250, 8); t134 = INT64_C(0); t135 = t133 < t134; if (t135) goto bb37; else goto bb38; bb34:
+#line 248
+    t123 = h16_mantissa; t124 = HERO_STR_LIT(hero_str_2e); t125 = hero_str_concat(t123, t124); t172 = h32_own32; h32_own32 = t125; hero_str_decref(t172); t126 = h8_s; t127 = INT64_C(1); t128 = h9_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 248, 37}; t129 = hero_str_slice_at(t126, t127, t128, &hero_here); } t173 = h33_own33; h33_own33 = t129; hero_str_decref(t173); t130 = hero_str_concat(t125, t129); t174 = h34_own34; h34_own34 = t130; hero_str_decref(t174); t175 = h16_mantissa; hero_str_incref(t130); h16_mantissa = t130; hero_str_decref(t175); goto bb33; bb35: goto bb33; bb36:
+#line 252
+    t144 = h16_mantissa; t145 = HERO_STR_LIT(hero_str_33da); t146 = hero_str_concat(t144, t145); t176 = h35_own35; h35_own35 = t146; hero_str_decref(t176); t147 = h10_n; t148 = INT64_C(1); if (__builtin_sub_overflow(t147, t148, &t149)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 252, 31); t150 = hero_int_to_str(t149); t177 = h36_own36; h36_own36 = t150; hero_str_decref(t177); t151 = hero_str_concat(t146, t150); t178 = h37_own37; h37_own37 = t151; hero_str_decref(t178); h17_ret0 = t151; goto bb39; bb37:
+#line 251
+    t136 = h16_mantissa; t137 = HERO_STR_LIT(hero_str_33dc); t138 = hero_str_concat(t136, t137); t179 = h38_own38; h38_own38 = t138; hero_str_decref(t179); t139 = INT64_C(1); t140 = h10_n; if (__builtin_sub_overflow(t139, t140, &t141)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 251, 35); t142 = hero_int_to_str(t141); t180 = h39_own39; h39_own39 = t142; hero_str_decref(t180); t143 = hero_str_concat(t138, t142); t181 = h40_own40; h40_own40 = t143; hero_str_decref(t181); h17_ret0 = t143; goto bb39; bb38: goto bb36; bb39:
+#line 1695 "main.c"
+    t152 = h17_ret0;
+    hero_str_incref(t152);
+    hero_str_release_at(&h3_digits);
+    hero_str_release_at(&h8_s);
+    h_0opt_fbbb698_release(hero_slot_escape(&h12_f0));
+    h_0opt_fbbb698_release(hero_slot_escape(&h15_f1));
+    hero_str_release_at(&h16_mantissa);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    h_0opt_fbbb698_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    h_0opt_fbbb698_release(hero_slot_escape(&h28_own28));
+    hero_str_release_at(&h29_own29);
+    hero_str_release_at(&h30_own30);
+    hero_str_release_at(&h31_own31);
+    hero_str_release_at(&h32_own32);
+    hero_str_release_at(&h33_own33);
+    hero_str_release_at(&h34_own34);
+    hero_str_release_at(&h35_own35);
+    hero_str_release_at(&h36_own36);
+    hero_str_release_at(&h37_own37);
+    hero_str_release_at(&h38_own38);
+    hero_str_release_at(&h39_own39);
+    hero_str_release_at(&h40_own40);
+    return t152;
+}
+
+#line 258 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read_all(HeroStr h0_text) { h_1coreencodingjsoninternalcursor_Cursor h1_c = {0}; HERO_NODEBUG h_0opt_db92a83 h2_f0 = {0}, h4_ret0 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, t3, t4, t8, t10, t11, t19, t21, t22, t25, t26, t27, t28, t30; double h3_x; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h5_own5 = {0}, t2, t23, t24; HERO_NODEBUG HeroStr h9_own9 = {0}, t1, t15, t16, t17, t18, t29; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t13, t14; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG double t12, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_1coreencodingjsoninternalcursor_start(t1); t23 = h5_own5; h5_own5 = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t23); t24 = h1_c; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t2); h1_c = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t24);
+    t3 = h_1coreencodingjsoninternalnumeral_read(&h1_c); t25 = h6_own6; h6_own6 = t3; h_0opt_db92a83_release(&t25); t26 = h2_f0; h_0opt_db92a83_retain(&t3); h2_f0 = t3; h_0opt_db92a83_release(&t26); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_x = t12;
+#line 262
+    t13 = h_1coreencodingjsoninternalcursor_at_end(&h1_c); t14 = !t13; if (t14) goto bb4; else goto bb5; bb2:
+#line 260
+    t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t9}; t27 = h7_own7; h7_own7 = t10; h_0opt_db92a83_release(&t27); h4_ret0 = t10; goto bb6; bb3:
+#line 264
+    t20 = h3_x; t21 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t20}; t28 = h8_own8; h8_own8 = t21; h_0opt_db92a83_release(&t28); h4_ret0 = t21; goto bb6; bb4:
+#line 263
+    t15 = HERO_STR_LIT(hero_str_330ee464); t16 = HERO_STR_LIT(hero_str_1440a8bf); t17 = h0_text; t18 = hero_str_concat(t16, t17); t29 = h9_own9; h9_own9 = t18; hero_str_decref(t29); hero_str_incref(t15); hero_str_incref(t18); t19 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t18}}; t30 = h10_own10; h10_own10 = t19; h_0opt_db92a83_release(&t30); h4_ret0 = t19; goto bb6; bb5: goto bb3; bb6:
+#line 1741 "main.c"
+    t22 = h4_ret0;
+    h_0opt_db92a83_retain(&t22);
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h1_c));
+    h_0opt_db92a83_release(hero_slot_escape(&h2_f0));
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h5_own5));
+    h_0opt_db92a83_release(hero_slot_escape(&h6_own6));
+    h_0opt_db92a83_release(hero_slot_escape(&h7_own7));
+    h_0opt_db92a83_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_db92a83_release(hero_slot_escape(&h10_own10));
+    return t22;
+}
+
+#line 269 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+HeroStr h_1coreencodingjsoninternalnumeral_shown(HeroStr h0_text) { HERO_NODEBUG h_0opt_db92a83 h1_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t9, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h6_own6 = {0}, t1, t8, t11, t12, t15, t16, t18; double h3_x; HeroFailure h4_e = {0}; HERO_NODEBUG int64_t t4; HERO_NODEBUG double t6, t7; HERO_NODEBUG HeroFailure t10, t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_1coreencodingjsoninternalnumeral_read_all(t1); t13 = h5_own5; h5_own5 = t2; h_0opt_db92a83_release(&t13); t14 = h1_s0; h_0opt_db92a83_retain(&t2); h1_s0 = t2; h_0opt_db92a83_release(&t14); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t12 = h2_r0;
+#line 1758 "main.c"
+    hero_str_incref(t12);
+    h_0opt_db92a83_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    hero_failure_release(&h4_e);
+    h_0opt_db92a83_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
+    return t12;
+bb2:
+#line 271 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/numeral.hero"
+    t5 = h1_s0; t6 = t5.as.ok; h3_x = t6; t7 = h3_x; t8 = h_1coreencodingjsoninternalnumeral_written(t7); t15 = h6_own6; h6_own6 = t8; hero_str_decref(t15);
+#line 270
+    t16 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t16); goto bb1; bb3:
+#line 272
+    t9 = h1_s0; t10 = t9.as.err; t17 = h4_e; hero_failure_retain(&t10); h4_e = t10; hero_failure_release(&t17); t11 = h4_e.code;
+#line 270
+    t18 = h2_r0; hero_str_incref(t11); h2_r0 = t11; hero_str_decref(t18); goto bb1;
+#line 1775 "main.c"
+}
+
+#line 16 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+HeroStr h_1coreencodingjsoninternalquoted_HEX(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_35b2f7b2);
+#line 1781 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 23 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_read(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_opened; HeroArrayHeader * h2_pieces = {0}; int64_t h3_run; h_1coreencodingjsoninternalcursor_Cursor h4_start = {0}; uint8_t h5_b; HeroStr h6_last = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}, h8_ret0 = {0}, h13_own13 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, h21_own21 = {0}, h28_own28 = {0}, t13, t27, t33, t44, t45, t49, t51, t52, t69, t70, t77, t82, t83, t85, t86, t87, t94; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h15_own15 = {0}, *t2, *t22, *t28, *t30, *t71, *t72, *t80; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h10_own10 = {0}, t8, t73, t74; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h16_own16 = {0}, h19_own19 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, t6, t9, t10, t11, t12, t18, t21, t26, t29, t31, t32, t38, t41, t53, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t75, t76, t78, t79, t81, t84, t88, t89, t90, t91, t92, t93; HERO_NODEBUG int64_t t1, t3, t7, t19, t20, t23, t24, t39, t40, t46, t47, t55; HERO_NODEBUG bool t4, t5, t17, t25, t36, t48, t58; HERO_NODEBUG uint8_t t14, t15, t16, t34, t35, t56, t57; HERO_NODEBUG HeroFailure t50; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c).f_at; h1_opened = t1;
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
+    t2 = hero_array_new(&hero_desc_str, 1); t71 = h9_own9; h9_own9 = t2; hero_array_decref(t71); t72 = h2_pieces; hero_array_incref(t2); h2_pieces = t2; hero_array_decref(t72);
+    t3 = (*ph0_c).f_at; h3_run = t3; goto bb1; bb1:
+#line 29
+    t4 = true; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); if (t5) goto bb5; else goto bb6; bb3: hero_unreachable(); bb4:
+#line 33
+    t14 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); h5_b = t14;
+#line 35
+    t15 = h5_b; t16 = UINT64_C(34); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+#line 31
+    t6 = (*ph0_c).f_text; t7 = h1_opened; hero_str_incref(t6); t8 = (h_1coreencodingjsoninternalcursor_Cursor){.f_text = t6, .f_at = t7}; t73 = h10_own10; h10_own10 = t8; h_1coreencodingjsoninternalcursor_0Cursor_release(&t73); t74 = h4_start; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t8); h4_start = t8; h_1coreencodingjsoninternalcursor_0Cursor_release(&t74);
+    t9 = HERO_STR_LIT(hero_str_330ee464); t10 = HERO_STR_LIT(hero_str_5caf5fbc); t11 = h_1coreencodingjsoninternalcursor_place(&h4_start); t75 = h11_own11; h11_own11 = t11; hero_str_decref(t75); t12 = hero_str_concat(t10, t11); t76 = h12_own12; h12_own12 = t12; hero_str_decref(t76); hero_str_incref(t9); hero_str_incref(t12); t13 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t12}}; t77 = h13_own13; h13_own13 = t13; h_0opt_f87774a_release(&t77); h8_ret0 = t13; goto bb20; bb6: goto bb4; bb7:
+#line 43
+    t34 = h5_b; t35 = UINT64_C(92); t36 = t34 == t35; if (t36) goto bb14; else goto bb15; bb8:
+#line 36
+    t18 = (*ph0_c).f_text; t19 = h3_run; t20 = (*ph0_c).f_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/quoted.hero", "quoted.read", 36, 20}; t21 = hero_str_slice_at(t18, t19, t20, &hero_here); } t78 = h14_own14; h14_own14 = t21; hero_str_decref(t78); t79 = h6_last; hero_str_incref(t21); h6_last = t21; hero_str_decref(t79);
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
+#line 39
+    t22 = h2_pieces; t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len); t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb9: goto bb7; bb10:
+#line 41
+    t28 = h2_pieces; t29 = h6_last; t30 = hero_array_push(t28, &t29); t80 = h15_own15; h15_own15 = t30; hero_array_decref(t80); t31 = HERO_STR_LIT(hero_str_0); t32 = hero_str_join(t30, t31); t81 = h16_own16; h16_own16 = t32; hero_str_decref(t81); hero_str_incref(t32); t33 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t32}; t82 = h17_own17; h17_own17 = t33; h_0opt_f87774a_release(&t82); h8_ret0 = t33; goto bb20; bb11:
+#line 40
+    t26 = h6_last; hero_str_incref(t26); t27 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t26}; t83 = h18_own18; h18_own18 = t27; h_0opt_f87774a_release(&t83); h8_ret0 = t27; goto bb20; bb12: goto bb10; bb13: goto bb1; bb14:
+#line 44
+    t38 = (*ph0_c).f_text; t39 = h3_run; t40 = (*ph0_c).f_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/quoted.hero", "quoted.read", 44, 34}; t41 = hero_str_slice_at(t38, t39, t40, &hero_here); } t84 = h19_own19; h19_own19 = t41; hero_str_decref(t84); hero_array_push_owned(&h2_pieces, &t41);
+    t44 = h_1coreencodingjsoninternalquoted_escaped(&(*ph0_c)); t85 = h20_own20; h20_own20 = t44; h_0opt_f87774a_release(&t85); t86 = h7_f0; h_0opt_f87774a_retain(&t44); h7_f0 = t44; h_0opt_f87774a_release(&t86); t45 = h7_f0; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb16; else goto bb17; bb15:
+#line 47
+    t56 = h5_b; t57 = UINT64_C(32); t58 = t56 < t57; if (t58) goto bb18; else goto bb19; bb16:
+#line 45
+    t52 = h7_f0; t53 = t52.as.ok; hero_array_push_owned(&h2_pieces, &t53);
+    t55 = (*ph0_c).f_at; h3_run = t55; goto bb13; bb17:
+#line 45
+    t49 = h7_f0; t50 = t49.as.err; hero_failure_retain(&t50); t51 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t50}; t87 = h21_own21; h21_own21 = t51; h_0opt_f87774a_release(&t87); h8_ret0 = t51; goto bb20; bb18:
+#line 49
+    t59 = HERO_STR_LIT(hero_str_330ee464);
+    t60 = HERO_STR_LIT(hero_str_147663e); t61 = h_1coreencodingjsoninternalcursor_found(&(*ph0_c)); t88 = h22_own22; h22_own22 = t61; hero_str_decref(t88); t62 = hero_str_concat(t60, t61); t89 = h23_own23; h23_own23 = t62; hero_str_decref(t89); t63 = HERO_STR_LIT(hero_str_4635545); t64 = hero_str_concat(t62, t63); t90 = h24_own24; h24_own24 = t64; hero_str_decref(t90); t65 = h_1coreencodingjsoninternalcursor_place(&(*ph0_c)); t91 = h25_own25; h25_own25 = t65; hero_str_decref(t91); t66 = hero_str_concat(t64, t65); t92 = h26_own26; h26_own26 = t66; hero_str_decref(t92); t67 = HERO_STR_LIT(hero_str_5833b73f); t68 = hero_str_concat(t66, t67); t93 = h27_own27; h27_own27 = t68; hero_str_decref(t93);
+#line 48
+    hero_str_incref(t59); hero_str_incref(t68); t69 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t59, .msg = t68}}; t94 = h28_own28; h28_own28 = t69; h_0opt_f87774a_release(&t94); h8_ret0 = t69; goto bb20; bb19:
+#line 53
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c)); goto bb13; bb20:
+#line 1830 "main.c"
+    t70 = h8_ret0;
+    h_0opt_f87774a_retain(&t70);
+    hero_array_release_at(&h2_pieces);
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h4_start));
+    hero_str_release_at(&h6_last);
+    h_0opt_f87774a_release(hero_slot_escape(&h7_f0));
+    hero_array_release_at(&h9_own9);
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    hero_str_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    h_0opt_f87774a_release(hero_slot_escape(&h18_own18));
+    hero_str_release_at(&h19_own19);
+    h_0opt_f87774a_release(hero_slot_escape(&h20_own20));
+    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    h_0opt_f87774a_release(hero_slot_escape(&h28_own28));
+    return t70;
+}
+
+#line 59 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_escaped(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_backslash; uint8_t h2_b; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t6, t12, t17, t22, t27, t32, t37, t42, t47, t52, t59, t60, t62, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73; HERO_NODEBUG HeroStr h4_own4 = {0}, h6_own6 = {0}, t3, t4, t5, t11, t16, t21, t26, t31, t36, t41, t46, t56, t57, t58, t61, t63; HERO_NODEBUG int64_t t1, t51, t53, t54, t55; HERO_NODEBUG bool t2, t10, t15, t20, t25, t30, t35, t40, t45, t50; HERO_NODEBUG uint8_t t7, t8, t9, t13, t14, t18, t19, t23, t24, t28, t29, t33, t34, t38, t39, t43, t44, t48, t49; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c).f_at; h1_backslash = t1;
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
+#line 63
+    t2 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); if (t2) goto bb2; else goto bb3; bb1:
+#line 65
+    t7 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); h2_b = t7;
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
+#line 68
+    t8 = h2_b; t9 = UINT64_C(34); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 64
+    t3 = HERO_STR_LIT(hero_str_330ee464); t4 = HERO_STR_LIT(hero_str_30ccb139); t5 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t4); t61 = h4_own4; h4_own4 = t5; hero_str_decref(t61); hero_str_incref(t3); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t3, .msg = t5}}; t62 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t62); h3_ret0 = t6; goto bb23; bb3: goto bb1; bb4:
+#line 86
+    t53 = (*ph0_c).f_at; t54 = INT64_C(1); if (__builtin_sub_overflow(t53, t54, &t55)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.escaped", 86, 12); (*ph0_c).f_at = t55;
+#line 88
+    t56 = HERO_STR_LIT(hero_str_330ee464);
+    t57 = HERO_STR_LIT(hero_str_6c903d89); t58 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t57); t63 = h6_own6; h6_own6 = t58; hero_str_decref(t63);
+#line 87
+    hero_str_incref(t56); hero_str_incref(t58); t59 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t56, .msg = t58}}; t64 = h7_own7; h7_own7 = t59; h_0opt_f87774a_release(&t64); h3_ret0 = t59; goto bb23; bb5:
+#line 69
+    t11 = HERO_STR_LIT(hero_str_22); hero_str_incref(t11); t12 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t11}; t65 = h8_own8; h8_own8 = t12; h_0opt_f87774a_release(&t65); h3_ret0 = t12; goto bb23; bb6:
+    t13 = h2_b; t14 = UINT64_C(92); t15 = t13 == t14; if (t15) goto bb7; else goto bb8; bb7:
+    t16 = HERO_STR_LIT(hero_str_5c); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t16}; t66 = h9_own9; h9_own9 = t17; h_0opt_f87774a_release(&t66); h3_ret0 = t17; goto bb23; bb8:
+    t18 = h2_b; t19 = UINT64_C(47); t20 = t18 == t19; if (t20) goto bb9; else goto bb10; bb9:
+    t21 = HERO_STR_LIT(hero_str_2f); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t21}; t67 = h10_own10; h10_own10 = t22; h_0opt_f87774a_release(&t67); h3_ret0 = t22; goto bb23; bb10:
+    t23 = h2_b; t24 = UINT64_C(98); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb11:
+    t26 = HERO_STR_LIT(hero_str_8); hero_str_incref(t26); t27 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t26}; t68 = h11_own11; h11_own11 = t27; h_0opt_f87774a_release(&t68); h3_ret0 = t27; goto bb23; bb12:
+    t28 = h2_b; t29 = UINT64_C(102); t30 = t28 == t29; if (t30) goto bb13; else goto bb14; bb13:
+    t31 = HERO_STR_LIT(hero_str_c); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t31}; t69 = h12_own12; h12_own12 = t32; h_0opt_f87774a_release(&t69); h3_ret0 = t32; goto bb23; bb14:
+    t33 = h2_b; t34 = UINT64_C(110); t35 = t33 == t34; if (t35) goto bb15; else goto bb16; bb15:
+    t36 = HERO_STR_LIT(hero_str_a); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t36}; t70 = h13_own13; h13_own13 = t37; h_0opt_f87774a_release(&t70); h3_ret0 = t37; goto bb23; bb16:
+    t38 = h2_b; t39 = UINT64_C(114); t40 = t38 == t39; if (t40) goto bb17; else goto bb18; bb17:
+    t41 = HERO_STR_LIT(hero_str_d); hero_str_incref(t41); t42 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t41}; t71 = h14_own14; h14_own14 = t42; h_0opt_f87774a_release(&t71); h3_ret0 = t42; goto bb23; bb18:
+    t43 = h2_b; t44 = UINT64_C(116); t45 = t43 == t44; if (t45) goto bb19; else goto bb20; bb19:
+    t46 = HERO_STR_LIT(hero_str_9); hero_str_incref(t46); t47 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t46}; t72 = h15_own15; h15_own15 = t47; h_0opt_f87774a_release(&t72); h3_ret0 = t47; goto bb23; bb20:
+    t48 = h2_b; t49 = UINT64_C(117); t50 = t48 == t49; if (t50) goto bb21; else goto bb22; bb21:
+    t51 = h1_backslash; t52 = h_1coreencodingjsoninternalquoted_unicode(&(*ph0_c), t51); t73 = h16_own16; h16_own16 = t52; h_0opt_f87774a_release(&t73); h3_ret0 = t52; goto bb23; bb22: goto bb4; bb23:
+#line 1898 "main.c"
+    t60 = h3_ret0;
+    h_0opt_f87774a_retain(&t60);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    h_0opt_f87774a_release(hero_slot_escape(&h14_own14));
+    h_0opt_f87774a_release(hero_slot_escape(&h15_own15));
+    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
+    return t60;
+}
+
+#line 96 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_unicode(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, int64_t h1_backslash) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_f1 = {0}, h11_own11 = {0}, h19_own19 = {0}, t1, t2, t6, t9, t47, t48, t52, t55, t84, t85, t94, t95; int64_t h3_first; h_1coreencodingjsoninternalcursor_Cursor h4_at = {0}; HERO_NODEBUG bool h5_b0, h6_b1, h9_b2, t5, t16, t19, t20, t30, t33, t34, t38, t39, t51, t59, t62, t63; int64_t h8_second; HERO_NODEBUG h_0opt_f87774a h10_ret0 = {0}, h13_own13 = {0}, h17_own17 = {0}, h18_own18 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h29_own29 = {0}, t8, t27, t36, t46, t54, t70, t82, t83, t88, t92, t93, t99, t100, t101, t105; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h12_own12 = {0}, t13, t86, t87; HERO_NODEBUG HeroStr h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t11, t21, t22, t23, t24, t25, t26, t37, t40, t41, t42, t43, t44, t45, t64, t65, t66, t67, t68, t69, t89, t90, t91, t96, t97, t98, t102, t103, t104; HERO_NODEBUG int64_t t3, t4, t10, t12, t14, t15, t17, t18, t28, t29, t31, t32, t35, t49, t50, t56, t57, t58, t60, t61, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81; HERO_NODEBUG HeroFailure t7, t53; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_1coreencodingjsoninternalquoted_code_unit(&(*ph0_c)); t84 = h11_own11; h11_own11 = t1; h_0opt_e201354_release(&t84); t85 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t85); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_first = t10;
+    t11 = (*ph0_c).f_text; t12 = h1_backslash; hero_str_incref(t11); t13 = (h_1coreencodingjsoninternalcursor_Cursor){.f_text = t11, .f_at = t12}; t86 = h12_own12; h12_own12 = t13; h_1coreencodingjsoninternalcursor_0Cursor_release(&t86); t87 = h4_at; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t13); h4_at = t13; h_1coreencodingjsoninternalcursor_0Cursor_release(&t87);
+#line 100
+    t14 = h3_first; t15 = INT64_C(56320); t16 = t14 >= t15; h5_b0 = t16; if (t16) goto bb4; else goto bb5; bb2:
+#line 97
+    t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t7}; t88 = h13_own13; h13_own13 = t8; h_0opt_f87774a_release(&t88); h10_ret0 = t8; goto bb23; bb3:
+#line 106
+    t28 = h3_first; t29 = INT64_C(55296); t30 = t28 < t29; h6_b1 = t30; if (t30) goto bb10; else goto bb9; bb4:
+#line 100
+    t17 = h3_first; t18 = INT64_C(57343); t19 = t17 <= t18; h5_b0 = t19; goto bb5; bb5: t20 = h5_b0; if (t20) goto bb6; else goto bb7; bb6:
+#line 102
+    t21 = HERO_STR_LIT(hero_str_34624695);
+    t22 = HERO_STR_LIT(hero_str_2e33fb96); t23 = h_1coreencodingjsoninternalcursor_place(&h4_at); t89 = h14_own14; h14_own14 = t23; hero_str_decref(t89); t24 = hero_str_concat(t22, t23); t90 = h15_own15; h15_own15 = t24; hero_str_decref(t90); t25 = HERO_STR_LIT(hero_str_7b3815b8); t26 = hero_str_concat(t24, t25); t91 = h16_own16; h16_own16 = t26; hero_str_decref(t91);
+#line 101
+    hero_str_incref(t21); hero_str_incref(t26); t27 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t21, .msg = t26}}; t92 = h17_own17; h17_own17 = t27; h_0opt_f87774a_release(&t92); h10_ret0 = t27; goto bb23; bb7: goto bb3; bb8:
+#line 109
+    t37 = HERO_STR_LIT(hero_str_2f89); t38 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t37); t39 = !t38; if (t39) goto bb14; else goto bb15; bb9:
+#line 106
+    t31 = h3_first; t32 = INT64_C(56319); t33 = t31 > t32; h6_b1 = t33; goto bb10; bb10: t34 = h6_b1; if (t34) goto bb11; else goto bb12; bb11:
+    t35 = h3_first; t36 = h_1coreencodingjsoninternalquoted_character(t35); t93 = h18_own18; h18_own18 = t36; h_0opt_f87774a_release(&t93); h10_ret0 = t36; goto bb23; bb12: goto bb8; bb13:
+#line 114
+    t47 = h_1coreencodingjsoninternalquoted_code_unit(&(*ph0_c)); t94 = h19_own19; h19_own19 = t47; h_0opt_e201354_release(&t94); t95 = h7_f1; h_0opt_e201354_retain(&t47); h7_f1 = t47; h_0opt_e201354_release(&t95); t48 = h7_f1; t49 = t48.tag; t50 = INT64_C(0); t51 = t49 == t50; if (t51) goto bb16; else goto bb17; bb14:
+#line 111
+    t40 = HERO_STR_LIT(hero_str_34624695);
+    t41 = HERO_STR_LIT(hero_str_2e33fb96); t42 = h_1coreencodingjsoninternalcursor_place(&h4_at); t96 = h20_own20; h20_own20 = t42; hero_str_decref(t96); t43 = hero_str_concat(t41, t42); t97 = h21_own21; h21_own21 = t43; hero_str_decref(t97); t44 = HERO_STR_LIT(hero_str_37c9cd33); t45 = hero_str_concat(t43, t44); t98 = h22_own22; h22_own22 = t45; hero_str_decref(t98);
+#line 110
+    hero_str_incref(t40); hero_str_incref(t45); t46 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t40, .msg = t45}}; t99 = h23_own23; h23_own23 = t46; h_0opt_f87774a_release(&t99); h10_ret0 = t46; goto bb23; bb15: goto bb13; bb16:
+#line 114
+    t55 = h7_f1; t56 = t55.as.ok; h8_second = t56;
+#line 116
+    t57 = h8_second; t58 = INT64_C(56320); t59 = t57 < t58; h9_b2 = t59; if (t59) goto bb20; else goto bb19; bb17:
+#line 114
+    t52 = h7_f1; t53 = t52.as.err; hero_failure_retain(&t53); t54 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t53}; t100 = h24_own24; h24_own24 = t54; h_0opt_f87774a_release(&t100); h10_ret0 = t54; goto bb23; bb18:
+#line 121
+    t71 = INT64_C(65536); t72 = h3_first; t73 = INT64_C(55296); if (__builtin_sub_overflow(t72, t73, &t74)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.unicode", 121, 33); t75 = INT64_C(1024); if (__builtin_mul_overflow(t74, t75, &t76)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.unicode", 121, 32); if (__builtin_add_overflow(t71, t76, &t77)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.unicode", 121, 22); t78 = h8_second; t79 = INT64_C(56320); if (__builtin_sub_overflow(t78, t79, &t80)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.unicode", 121, 60); if (__builtin_add_overflow(t77, t80, &t81)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.unicode", 121, 22); t82 = h_1coreencodingjsoninternalquoted_character(t81); t101 = h25_own25; h25_own25 = t82; h_0opt_f87774a_release(&t101); h10_ret0 = t82; goto bb23; bb19:
+#line 116
+    t60 = h8_second; t61 = INT64_C(57343); t62 = t60 > t61; h9_b2 = t62; goto bb20; bb20: t63 = h9_b2; if (t63) goto bb21; else goto bb22; bb21:
+#line 118
+    t64 = HERO_STR_LIT(hero_str_34624695);
+    t65 = HERO_STR_LIT(hero_str_2e33fb96); t66 = h_1coreencodingjsoninternalcursor_place(&h4_at); t102 = h26_own26; h26_own26 = t66; hero_str_decref(t102); t67 = hero_str_concat(t65, t66); t103 = h27_own27; h27_own27 = t67; hero_str_decref(t103); t68 = HERO_STR_LIT(hero_str_5c3ee9ac); t69 = hero_str_concat(t67, t68); t104 = h28_own28; h28_own28 = t69; hero_str_decref(t104);
+#line 117
+    hero_str_incref(t64); hero_str_incref(t69); t70 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t64, .msg = t69}}; t105 = h29_own29; h29_own29 = t70; h_0opt_f87774a_release(&t105); h10_ret0 = t70; goto bb23; bb22: goto bb18; bb23:
+#line 1961 "main.c"
+    t83 = h10_ret0;
+    h_0opt_f87774a_retain(&t83);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h4_at));
+    h_0opt_e201354_release(hero_slot_escape(&h7_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h12_own12));
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    h_0opt_f87774a_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    h_0opt_f87774a_release(hero_slot_escape(&h23_own23));
+    h_0opt_f87774a_release(hero_slot_escape(&h24_own24));
+    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    h_0opt_f87774a_release(hero_slot_escape(&h29_own29));
+    return t83;
+}
+
+#line 126 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+h_0opt_e201354 h_1coreencodingjsoninternalquoted_code_unit(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_n; int64_t h2_count; uint8_t h3_b; int64_t h4_digit; HERO_NODEBUG bool h5_b0, h7_b1, h9_b2, t5, t6, t15, t18, t19, t27, t34, t37, t38, t46, t55, t58, t59, t67; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}, h8_f1 = {0}, h10_f2 = {0}, h11_ret0 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, t10, t23, t24, t28, t30, t42, t43, t47, t49, t63, t64, t68, t70, t77, t87, t88, t89, t91, t92, t93, t94, t95, t96, t97, t99; HERO_NODEBUG HeroStr h13_own13 = {0}, h18_own18 = {0}, t7, t8, t9, t74, t75, t76, t90, t98; HERO_NODEBUG int64_t t1, t2, t3, t4, t12, t25, t26, t31, t44, t45, t50, t51, t52, t65, t66, t71, t72, t73, t78, t79, t80, t81, t82, t83, t84, t85, t86; HERO_NODEBUG uint8_t t11, t13, t14, t16, t17, t20, t21, t22, t32, t33, t35, t36, t39, t40, t41, t53, t54, t56, t57, t60, t61, t62; HERO_NODEBUG HeroFailure t29, t48, t69; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1;
+    t2 = INT64_C(0); h2_count = t2; goto bb1; bb1:
+#line 130
+    t3 = h2_count; t4 = INT64_C(4); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); if (t6) goto bb5; else goto bb6; bb3:
+#line 148
+    t86 = h1_n; t87 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t86}; t89 = h12_own12; h12_own12 = t87; h_0opt_e201354_release(&t89); h11_ret0 = t87; goto bb26; bb4:
+#line 133
+    t11 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); h3_b = t11;
+    t12 = INT64_C(0); h4_digit = t12;
+#line 136
+    t13 = h3_b; t14 = UINT64_C(48); t15 = t13 >= t14; h5_b0 = t15; if (t15) goto bb8; else goto bb9; bb5:
+#line 132
+    t7 = HERO_STR_LIT(hero_str_330ee464); t8 = HERO_STR_LIT(hero_str_77e7f69a); t9 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t8); t90 = h13_own13; h13_own13 = t9; hero_str_decref(t90); hero_str_incref(t7); hero_str_incref(t9); t10 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t9}}; t91 = h14_own14; h14_own14 = t10; h_0opt_e201354_release(&t91); h11_ret0 = t10; goto bb26; bb6: goto bb4; bb7:
+#line 144
+    t78 = h1_n; t79 = INT64_C(16); if (__builtin_mul_overflow(t78, t79, &t80)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 144, 13); t81 = h4_digit; if (__builtin_add_overflow(t80, t81, &t82)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 144, 13); h1_n = t82;
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
+    t83 = h2_count; t84 = INT64_C(1); if (__builtin_add_overflow(t83, t84, &t85)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 146, 17); h2_count = t85; goto bb1; bb8:
+#line 136
+    t16 = h3_b; t17 = UINT64_C(57); t18 = t16 <= t17; h5_b0 = t18; goto bb9; bb9: t19 = h5_b0; if (t19) goto bb10; else goto bb11; bb10:
+    t20 = h3_b; t21 = UINT64_C(48); if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 137, 28); t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t22}; t92 = h15_own15; h15_own15 = t23; h_0opt_e201354_release(&t92); t93 = h6_f0; h_0opt_e201354_retain(&t23); h6_f0 = t23; h_0opt_e201354_release(&t93); t24 = h6_f0; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb12; else goto bb13; bb11:
+    t32 = h3_b; t33 = UINT64_C(97); t34 = t32 >= t33; h7_b1 = t34; if (t34) goto bb14; else goto bb15; bb12:
+#line 137
+    t30 = h6_f0; t31 = t30.as.ok; h4_digit = t31; goto bb7; bb13: t28 = h6_f0; t29 = t28.as.err;
+#line 2015 "main.c"
+    hero_panic_must_at(t29, "<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 137, 21);
+    hero_unreachable();
+bb14:
+#line 138 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t35 = h3_b; t36 = UINT64_C(102); t37 = t35 <= t36; h7_b1 = t37; goto bb15; bb15: t38 = h7_b1; if (t38) goto bb16; else goto bb17; bb16:
+    t39 = h3_b; t40 = UINT64_C(97); if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 139, 28); t42 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t41}; t94 = h16_own16; h16_own16 = t42; h_0opt_e201354_release(&t94); t95 = h8_f1; h_0opt_e201354_retain(&t42); h8_f1 = t42; h_0opt_e201354_release(&t95); t43 = h8_f1; t44 = t43.tag; t45 = INT64_C(0); t46 = t44 == t45; if (t46) goto bb18; else goto bb19; bb17:
+    t53 = h3_b; t54 = UINT64_C(65); t55 = t53 >= t54; h9_b2 = t55; if (t55) goto bb20; else goto bb21; bb18:
+#line 139
+    t49 = h8_f1; t50 = t49.as.ok; t51 = INT64_C(10); if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 139, 21); h4_digit = t52; goto bb7; bb19: t47 = h8_f1; t48 = t47.as.err;
+#line 2025 "main.c"
+    hero_panic_must_at(t48, "<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 139, 21);
+    hero_unreachable();
+bb20:
+#line 140 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t56 = h3_b; t57 = UINT64_C(70); t58 = t56 <= t57; h9_b2 = t58; goto bb21; bb21: t59 = h9_b2; if (t59) goto bb22; else goto bb23; bb22:
+    t60 = h3_b; t61 = UINT64_C(65); if (__builtin_sub_overflow(t60, t61, &t62)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 141, 28); t63 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t62}; t96 = h17_own17; h17_own17 = t63; h_0opt_e201354_release(&t96); t97 = h10_f2; h_0opt_e201354_retain(&t63); h10_f2 = t63; h_0opt_e201354_release(&t97); t64 = h10_f2; t65 = t64.tag; t66 = INT64_C(0); t67 = t65 == t66; if (t67) goto bb24; else goto bb25; bb23:
+#line 143
+    t74 = HERO_STR_LIT(hero_str_330ee464); t75 = HERO_STR_LIT(hero_str_77e7f69a); t76 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_c), t75); t98 = h18_own18; h18_own18 = t76; hero_str_decref(t98); hero_str_incref(t74); hero_str_incref(t76); t77 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t74, .msg = t76}}; t99 = h19_own19; h19_own19 = t77; h_0opt_e201354_release(&t99); h11_ret0 = t77; goto bb26; bb24:
+#line 141
+    t70 = h10_f2; t71 = t70.as.ok; t72 = INT64_C(10); if (__builtin_add_overflow(t71, t72, &t73)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 141, 21); h4_digit = t73; goto bb7; bb25: t68 = h10_f2; t69 = t68.as.err;
+#line 2036 "main.c"
+    hero_panic_must_at(t69, "<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 141, 21);
+    hero_unreachable();
+bb26:
+    t88 = h11_ret0;
+    h_0opt_e201354_retain(&t88);
+    h_0opt_e201354_release(hero_slot_escape(&h6_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h8_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h10_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    hero_str_release_at(&h18_own18);
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    return t88;
+}
+
+#line 152 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_character(int64_t h0_n) { HeroArrayHeader * h1_bytes = {0}; HERO_NODEBUG bool h2_b0, t4, t7, t8, t17, t23, t31, t41, t55, t63, t73, t89, t103, t118, t134, t150, t164; HERO_NODEBUG h_0opt_1ec004 h3_f0 = {0}, h4_f1 = {0}, h5_f2 = {0}, h6_f3 = {0}, h7_f4 = {0}, h8_f5 = {0}, h9_f6 = {0}, h10_f7 = {0}, h11_f8 = {0}, h12_f9 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, t19, t20, t24, t26, t37, t38, t42, t44, t51, t52, t56, t58, t69, t70, t74, t76, t85, t86, t90, t92, t99, t100, t104, t106, t114, t115, t119, t121, t130, t131, t135, t137, t146, t147, t151, t153, t160, t161, t165, t167, t179, t180, t183, t184, t185, t186, t189, t190, t191, t192, t193, t194, t195, t196, t199, t200, t201, t202, t203, t204; HERO_NODEBUG h_0opt_f87774a h13_ret0 = {0}, h17_own17 = {0}, h18_own18 = {0}, t14, t171, t172, t177, t178; HERO_NODEBUG HeroArrayHeader *h14_own14 = {0}, *h20_own20 = {0}, *h23_own23 = {0}, *h28_own28 = {0}, *h32_own32 = {0}, *t1, *t28, *t60, *t108, *t169, *t170, *t173, *t174, *t181, *t182, *t187, *t188, *t197, *t198, *t205, *t206; HERO_NODEBUG HeroStr h15_own15 = {0}, h16_own16 = {0}, t9, t11, t12, t13, t175, t176; HERO_NODEBUG int64_t t2, t3, t5, t6, t10, t15, t16, t18, t21, t22, t29, t30, t32, t33, t34, t35, t36, t39, t40, t46, t47, t48, t49, t50, t53, t54, t61, t62, t64, t65, t66, t67, t68, t71, t72, t78, t79, t80, t81, t82, t83, t84, t87, t88, t94, t95, t96, t97, t98, t101, t102, t109, t110, t111, t112, t113, t116, t117, t123, t124, t125, t126, t127, t128, t129, t132, t133, t139, t140, t141, t142, t143, t144, t145, t148, t149, t155, t156, t157, t158, t159, t162, t163; HERO_NODEBUG HeroFailure t25, t43, t57, t75, t91, t105, t120, t136, t152, t166; HERO_NODEBUG uint8_t t27, t45, t59, t77, t93, t107, t122, t138, t154, t168; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t173 = h14_own14; h14_own14 = t1; hero_array_decref(t173); t174 = h1_bytes; hero_array_incref(t1); h1_bytes = t1; hero_array_decref(t174);
+#line 155
+    t2 = h0_n; t3 = INT64_C(0); t4 = t2 < t3; h2_b0 = t4; if (t4) goto bb3; else goto bb2; bb1:
+#line 158
+    t15 = h0_n; t16 = INT64_C(128); t17 = t15 < t16; if (t17) goto bb7; else goto bb8; bb2:
+#line 155
+    t5 = h0_n; t6 = INT64_C(1114111); t7 = t5 > t6; h2_b0 = t7; goto bb3; bb3: t8 = h2_b0; if (t8) goto bb4; else goto bb5; bb4:
+    t9 = HERO_STR_LIT(hero_str_34624695); t10 = h0_n; t11 = hero_int_to_str(t10); t175 = h15_own15; h15_own15 = t11; hero_str_decref(t175); t12 = HERO_STR_LIT(hero_str_353f7ed8); t13 = hero_str_concat(t11, t12); t176 = h16_own16; h16_own16 = t13; hero_str_decref(t176); hero_str_incref(t9); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t13}}; t177 = h17_own17; h17_own17 = t14; h_0opt_f87774a_release(&t177); h13_ret0 = t14; goto bb33; bb5: goto bb1; bb6:
+#line 171
+    t170 = h1_bytes; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t170, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t171 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t171 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t178 = h18_own18; h18_own18 = t171; h_0opt_f87774a_release(&t178); h13_ret0 = t171; goto bb33; bb7:
+#line 159
+    t18 = h0_n; if (t18 >= 0LL && t18 <= 255LL) { t19 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t18}; } else { t19 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t179 = h19_own19; h19_own19 = t19; h_0opt_1ec004_release(&t179); t180 = h3_f0; h_0opt_1ec004_retain(&t19); h3_f0 = t19; h_0opt_1ec004_release(&t180); t20 = h3_f0; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb9; else goto bb10; bb8:
+    t29 = h0_n; t30 = INT64_C(2048); t31 = t29 < t30; if (t31) goto bb11; else goto bb12; bb9:
+#line 159
+    t26 = h3_f0; t27 = t26.as.ok; t28 = hero_array_new(&hero_desc_u8, 1); hero_array_push_owned(&t28, &t27); t181 = h20_own20; h20_own20 = t28; hero_array_decref(t181); t182 = h1_bytes; hero_array_incref(t28); h1_bytes = t28; hero_array_decref(t182); goto bb6; bb10: t24 = h3_f0; t25 = t24.as.err;
+#line 2073 "main.c"
+    hero_panic_must_at(t25, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 159, 18);
+    hero_unreachable();
+bb11:
+#line 161 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t32 = INT64_C(192); t33 = h0_n; t34 = INT64_C(6); if (t34 < 0 || t34 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 161, 31); t35 = (t33 < 0) ? ~(int64_t)((~(uint64_t)t33) >> (uint64_t)t34) : (int64_t)((uint64_t)t33 >> (uint64_t)t34); t36 = t32 | t35; if (t36 >= 0LL && t36 <= 255LL) { t37 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t36}; } else { t37 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t183 = h21_own21; h21_own21 = t37; h_0opt_1ec004_release(&t183); t184 = h4_f1; h_0opt_1ec004_retain(&t37); h4_f1 = t37; h_0opt_1ec004_release(&t184); t38 = h4_f1; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb13; else goto bb14; bb12:
+    t61 = h0_n; t62 = INT64_C(65536); t63 = t61 < t62; if (t63) goto bb17; else goto bb18; bb13:
+#line 161
+    t44 = h4_f1; t45 = t44.as.ok; t46 = INT64_C(128); t47 = h0_n; t48 = INT64_C(63); t49 = t47 & t48; t50 = t46 | t49; if (t50 >= 0LL && t50 <= 255LL) { t51 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t50}; } else { t51 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t185 = h22_own22; h22_own22 = t51; h_0opt_1ec004_release(&t185); t186 = h5_f2; h_0opt_1ec004_retain(&t51); h5_f2 = t51; h_0opt_1ec004_release(&t186); t52 = h5_f2; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb15; else goto bb16; bb14: t42 = h4_f1; t43 = t42.as.err;
+#line 2082 "main.c"
+    hero_panic_must_at(t43, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 161, 18);
+    hero_unreachable();
+bb15:
+#line 161 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t58 = h5_f2; t59 = t58.as.ok; t60 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t60, &t45); hero_array_push_owned(&t60, &t59); t187 = h23_own23; h23_own23 = t60; hero_array_decref(t187); t188 = h1_bytes; hero_array_incref(t60); h1_bytes = t60; hero_array_decref(t188); goto bb6; bb16: t56 = h5_f2; t57 = t56.as.err;
+#line 2088 "main.c"
+    hero_panic_must_at(t57, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 161, 47);
+    hero_unreachable();
+bb17:
+#line 163 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t64 = INT64_C(224); t65 = h0_n; t66 = INT64_C(12); if (t66 < 0 || t66 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 31); t67 = (t65 < 0) ? ~(int64_t)((~(uint64_t)t65) >> (uint64_t)t66) : (int64_t)((uint64_t)t65 >> (uint64_t)t66); t68 = t64 | t67; if (t68 >= 0LL && t68 <= 255LL) { t69 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t68}; } else { t69 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t189 = h24_own24; h24_own24 = t69; h_0opt_1ec004_release(&t189); t190 = h6_f3; h_0opt_1ec004_retain(&t69); h6_f3 = t69; h_0opt_1ec004_release(&t190); t70 = h6_f3; t71 = t70.tag; t72 = INT64_C(0); t73 = t71 == t72; if (t73) goto bb19; else goto bb20; bb18:
+#line 166
+    t109 = INT64_C(240); t110 = h0_n; t111 = INT64_C(18); if (t111 < 0 || t111 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 166, 26); t112 = (t110 < 0) ? ~(int64_t)((~(uint64_t)t110) >> (uint64_t)t111) : (int64_t)((uint64_t)t110 >> (uint64_t)t111); t113 = t109 | t112; if (t113 >= 0LL && t113 <= 255LL) { t114 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t113}; } else { t114 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t191 = h25_own25; h25_own25 = t114; h_0opt_1ec004_release(&t191); t192 = h9_f6; h_0opt_1ec004_retain(&t114); h9_f6 = t114; h_0opt_1ec004_release(&t192); t115 = h9_f6; t116 = t115.tag; t117 = INT64_C(0); t118 = t116 == t117; if (t118) goto bb25; else goto bb26; bb19:
+#line 163
+    t76 = h6_f3; t77 = t76.as.ok; t78 = INT64_C(128); t79 = h0_n; t80 = INT64_C(6); if (t80 < 0 || t80 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 61); t81 = (t79 < 0) ? ~(int64_t)((~(uint64_t)t79) >> (uint64_t)t80) : (int64_t)((uint64_t)t79 >> (uint64_t)t80); t82 = INT64_C(63); t83 = t81 & t82; t84 = t78 | t83; if (t84 >= 0LL && t84 <= 255LL) { t85 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t84}; } else { t85 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t193 = h26_own26; h26_own26 = t85; h_0opt_1ec004_release(&t193); t194 = h7_f4; h_0opt_1ec004_retain(&t85); h7_f4 = t85; h_0opt_1ec004_release(&t194); t86 = h7_f4; t87 = t86.tag; t88 = INT64_C(0); t89 = t87 == t88; if (t89) goto bb21; else goto bb22; bb20: t74 = h6_f3; t75 = t74.as.err;
+#line 2098 "main.c"
+    hero_panic_must_at(t75, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 18);
+    hero_unreachable();
+bb21:
+#line 163 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t92 = h7_f4; t93 = t92.as.ok; t94 = INT64_C(128); t95 = h0_n; t96 = INT64_C(63); t97 = t95 & t96; t98 = t94 | t97; if (t98 >= 0LL && t98 <= 255LL) { t99 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t98}; } else { t99 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t195 = h27_own27; h27_own27 = t99; h_0opt_1ec004_release(&t195); t196 = h8_f5; h_0opt_1ec004_retain(&t99); h8_f5 = t99; h_0opt_1ec004_release(&t196); t100 = h8_f5; t101 = t100.tag; t102 = INT64_C(0); t103 = t101 == t102; if (t103) goto bb23; else goto bb24; bb22: t90 = h7_f4; t91 = t90.as.err;
+#line 2104 "main.c"
+    hero_panic_must_at(t91, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 48);
+    hero_unreachable();
+bb23:
+#line 163 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t106 = h8_f5; t107 = t106.as.ok; t108 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t108, &t77); hero_array_push_owned(&t108, &t93); hero_array_push_owned(&t108, &t107); t197 = h28_own28; h28_own28 = t108; hero_array_decref(t197); t198 = h1_bytes; hero_array_incref(t108); h1_bytes = t108; hero_array_decref(t198); goto bb6; bb24: t104 = h8_f5; t105 = t104.as.err;
+#line 2110 "main.c"
+    hero_panic_must_at(t105, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 84);
+    hero_unreachable();
+bb25:
+#line 166 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t121 = h9_f6; t122 = t121.as.ok;
+    t123 = INT64_C(128); t124 = h0_n; t125 = INT64_C(12); if (t125 < 0 || t125 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 167, 26); t126 = (t124 < 0) ? ~(int64_t)((~(uint64_t)t124) >> (uint64_t)t125) : (int64_t)((uint64_t)t124 >> (uint64_t)t125); t127 = INT64_C(63); t128 = t126 & t127; t129 = t123 | t128; if (t129 >= 0LL && t129 <= 255LL) { t130 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t129}; } else { t130 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t199 = h29_own29; h29_own29 = t130; h_0opt_1ec004_release(&t199); t200 = h10_f7; h_0opt_1ec004_retain(&t130); h10_f7 = t130; h_0opt_1ec004_release(&t200); t131 = h10_f7; t132 = t131.tag; t133 = INT64_C(0); t134 = t132 == t133; if (t134) goto bb27; else goto bb28; bb26:
+#line 166
+    t119 = h9_f6; t120 = t119.as.err;
+#line 2119 "main.c"
+    hero_panic_must_at(t120, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 166, 13);
+    hero_unreachable();
+bb27:
+#line 167 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t137 = h10_f7; t138 = t137.as.ok;
+    t139 = INT64_C(128); t140 = h0_n; t141 = INT64_C(6); if (t141 < 0 || t141 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 168, 26); t142 = (t140 < 0) ? ~(int64_t)((~(uint64_t)t140) >> (uint64_t)t141) : (int64_t)((uint64_t)t140 >> (uint64_t)t141); t143 = INT64_C(63); t144 = t142 & t143; t145 = t139 | t144; if (t145 >= 0LL && t145 <= 255LL) { t146 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t145}; } else { t146 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t201 = h30_own30; h30_own30 = t146; h_0opt_1ec004_release(&t201); t202 = h11_f8; h_0opt_1ec004_retain(&t146); h11_f8 = t146; h_0opt_1ec004_release(&t202); t147 = h11_f8; t148 = t147.tag; t149 = INT64_C(0); t150 = t148 == t149; if (t150) goto bb29; else goto bb30; bb28:
+#line 167
+    t135 = h10_f7; t136 = t135.as.err;
+#line 2128 "main.c"
+    hero_panic_must_at(t136, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 167, 13);
+    hero_unreachable();
+bb29:
+#line 168 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t153 = h11_f8; t154 = t153.as.ok;
+    t155 = INT64_C(128); t156 = h0_n; t157 = INT64_C(63); t158 = t156 & t157; t159 = t155 | t158; if (t159 >= 0LL && t159 <= 255LL) { t160 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t159}; } else { t160 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t203 = h31_own31; h31_own31 = t160; h_0opt_1ec004_release(&t203); t204 = h12_f9; h_0opt_1ec004_retain(&t160); h12_f9 = t160; h_0opt_1ec004_release(&t204); t161 = h12_f9; t162 = t161.tag; t163 = INT64_C(0); t164 = t162 == t163; if (t164) goto bb31; else goto bb32; bb30:
+#line 168
+    t151 = h11_f8; t152 = t151.as.err;
+#line 2137 "main.c"
+    hero_panic_must_at(t152, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 168, 13);
+    hero_unreachable();
+bb31:
+#line 169 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t167 = h12_f9; t168 = t167.as.ok;
+#line 165
+    t169 = hero_array_new(&hero_desc_u8, 4); hero_array_push_owned(&t169, &t122); hero_array_push_owned(&t169, &t138); hero_array_push_owned(&t169, &t154); hero_array_push_owned(&t169, &t168); t205 = h32_own32; h32_own32 = t169; hero_array_decref(t205); t206 = h1_bytes; hero_array_incref(t169); h1_bytes = t169; hero_array_decref(t206); goto bb6; bb32:
+#line 169
+    t165 = h12_f9; t166 = t165.as.err;
+#line 2147 "main.c"
+    hero_panic_must_at(t166, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 169, 13);
+    hero_unreachable();
+bb33:
+    t172 = h13_ret0;
+    h_0opt_f87774a_retain(&t172);
+    hero_array_release_at(&h1_bytes);
+    h_0opt_1ec004_release(hero_slot_escape(&h3_f0));
+    h_0opt_1ec004_release(hero_slot_escape(&h4_f1));
+    h_0opt_1ec004_release(hero_slot_escape(&h5_f2));
+    h_0opt_1ec004_release(hero_slot_escape(&h6_f3));
+    h_0opt_1ec004_release(hero_slot_escape(&h7_f4));
+    h_0opt_1ec004_release(hero_slot_escape(&h8_f5));
+    h_0opt_1ec004_release(hero_slot_escape(&h9_f6));
+    h_0opt_1ec004_release(hero_slot_escape(&h10_f7));
+    h_0opt_1ec004_release(hero_slot_escape(&h11_f8));
+    h_0opt_1ec004_release(hero_slot_escape(&h12_f9));
+    hero_array_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    h_0opt_f87774a_release(hero_slot_escape(&h18_own18));
+    h_0opt_1ec004_release(hero_slot_escape(&h19_own19));
+    hero_array_release_at(&h20_own20);
+    h_0opt_1ec004_release(hero_slot_escape(&h21_own21));
+    h_0opt_1ec004_release(hero_slot_escape(&h22_own22));
+    hero_array_release_at(&h23_own23);
+    h_0opt_1ec004_release(hero_slot_escape(&h24_own24));
+    h_0opt_1ec004_release(hero_slot_escape(&h25_own25));
+    h_0opt_1ec004_release(hero_slot_escape(&h26_own26));
+    h_0opt_1ec004_release(hero_slot_escape(&h27_own27));
+    hero_array_release_at(&h28_own28);
+    h_0opt_1ec004_release(hero_slot_escape(&h29_own29));
+    h_0opt_1ec004_release(hero_slot_escape(&h30_own30));
+    h_0opt_1ec004_release(hero_slot_escape(&h31_own31));
+    hero_array_release_at(&h32_own32);
+    return t172;
+}
+
+#line 177 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+HeroStr h_1coreencodingjsoninternalquoted_written(HeroStr h0_s) { HeroArrayHeader * h1_pieces = {0}; int64_t h2_run; int64_t h3_i; uint8_t h4_b; HERO_NODEBUG bool h5_b0, h6_b1, t8, t14, t17, t18, t21, t22; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t2, *t49, *t52, *t53; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t1, t6, t9, t24, t27, t31, t40, t42, t44, t47, t50, t51, t54, t55, t56, t57; HERO_NODEBUG int64_t t3, t4, t5, t7, t10, t25, t26, t33, t34, t35, t36, t37, t38, t41, t43; HERO_NODEBUG uint8_t t11, t12, t13, t15, t16, t19, t20, t30; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_22); t2 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t2, &t1); t52 = h7_own7; h7_own7 = t2; hero_array_decref(t52); t53 = h1_pieces; hero_array_incref(t2); h1_pieces = t2; hero_array_decref(t53);
+    t3 = INT64_C(0); h2_run = t3;
+    t4 = INT64_C(0); h3_i = t4; goto bb1; bb1:
+#line 182
+    t5 = h3_i; t6 = h0_s; t7 = hero_str_len(t6); t8 = t5 < t7; if (t8) goto bb2; else goto bb3; bb2:
+    t9 = h0_s; t10 = h3_i; t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? hero_panic_byte_at(t9, t10, "<core>/encoding/json/internal/quoted.hero", "quoted.written", 183, 13) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]); h4_b = t11;
+#line 185
+    t12 = h4_b; t13 = UINT64_C(34); t14 = t12 == t13; h6_b1 = t14; if (t14) goto bb6; else goto bb5; bb3:
+#line 191
+    t40 = h0_s; t41 = h2_run; t42 = h0_s; t43 = hero_str_len(t42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/quoted.hero", "quoted.written", 191, 26}; t44 = hero_str_slice_at(t40, t41, t43, &hero_here); } t54 = h8_own8; h8_own8 = t44; hero_str_decref(t54); hero_array_push_owned(&h1_pieces, &t44);
+    t47 = HERO_STR_LIT(hero_str_22); hero_array_push_owned(&h1_pieces, &t47);
+    t49 = h1_pieces; t50 = HERO_STR_LIT(hero_str_0); t51 = hero_str_join(t49, t50); t55 = h9_own9; h9_own9 = t51; hero_str_decref(t55);
+#line 2200 "main.c"
+    hero_str_incref(t51);
+    hero_array_release_at(&h1_pieces);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    return t51;
+bb4:
+#line 189 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t36 = h3_i; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.written", 189, 13); h3_i = t38; goto bb1; bb5:
+#line 185
+    t15 = h4_b; t16 = UINT64_C(92); t17 = t15 == t16; h6_b1 = t17; goto bb6; bb6: t18 = h6_b1; h5_b0 = t18; if (t18) goto bb8; else goto bb7; bb7: t19 = h4_b; t20 = UINT64_C(32); t21 = t19 < t20; h5_b0 = t21; goto bb8; bb8: t22 = h5_b0; if (t22) goto bb9; else goto bb10; bb9:
+    t24 = h0_s; t25 = h2_run; t26 = h3_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/quoted.hero", "quoted.written", 186, 34}; t27 = hero_str_slice_at(t24, t25, t26, &hero_here); } t56 = h10_own10; h10_own10 = t27; hero_str_decref(t56); hero_array_push_owned(&h1_pieces, &t27);
+    t30 = h4_b; t31 = h_1coreencodingjsoninternalquoted_escape_of(t30); t57 = h11_own11; h11_own11 = t31; hero_str_decref(t57); hero_array_push_owned(&h1_pieces, &t31);
+    t33 = h3_i; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.written", 188, 19); h2_run = t35; goto bb4; bb10: goto bb4;
+#line 2217 "main.c"
+}
+
+#line 197 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+HeroStr h_1coreencodingjsoninternalquoted_escape_of(uint8_t h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h4_own4 = {0}, t30, t31, t35, t37, t63, t64; int64_t h2_n; HERO_NODEBUG HeroStr h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t8, t12, t16, t20, t24, t28, t39, t40, t49, t50, t51, t60, t61, t62, t65, t66, t67, t68, t69, t70; HERO_NODEBUG uint8_t t1, t2, t5, t6, t9, t10, t13, t14, t17, t18, t21, t22, t25, t26, t29; HERO_NODEBUG bool t3, t7, t11, t15, t19, t23, t27, t34; HERO_NODEBUG int64_t t32, t33, t38, t41, t42, t43, t44, t45, t46, t47, t48, t52, t53, t54, t55, t56, t57, t58, t59; HERO_NODEBUG HeroFailure t36; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; t2 = UINT64_C(34); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 212
+    t29 = h0_b; t30 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t29}; t63 = h4_own4; h4_own4 = t30; h_0opt_e201354_release(&t63); t64 = h1_f0; h_0opt_e201354_retain(&t30); h1_f0 = t30; h_0opt_e201354_release(&t64); t31 = h1_f0; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb16; else goto bb17; bb2:
+#line 199
+    t4 = HERO_STR_LIT(hero_str_2f36); h3_ret0 = t4; goto bb18; bb3:
+    t5 = h0_b; t6 = UINT64_C(92); t7 = t5 == t6; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = HERO_STR_LIT(hero_str_2f70); h3_ret0 = t8; goto bb18; bb5:
+    t9 = h0_b; t10 = UINT64_C(10); t11 = t9 == t10; if (t11) goto bb6; else goto bb7; bb6:
+    t12 = HERO_STR_LIT(hero_str_2f82); h3_ret0 = t12; goto bb18; bb7:
+    t13 = h0_b; t14 = UINT64_C(13); t15 = t13 == t14; if (t15) goto bb8; else goto bb9; bb8:
+    t16 = HERO_STR_LIT(hero_str_2f86); h3_ret0 = t16; goto bb18; bb9:
+    t17 = h0_b; t18 = UINT64_C(9); t19 = t17 == t18; if (t19) goto bb10; else goto bb11; bb10:
+    t20 = HERO_STR_LIT(hero_str_2f88); h3_ret0 = t20; goto bb18; bb11:
+    t21 = h0_b; t22 = UINT64_C(8); t23 = t21 == t22; if (t23) goto bb12; else goto bb13; bb12:
+    t24 = HERO_STR_LIT(hero_str_2f76); h3_ret0 = t24; goto bb18; bb13:
+    t25 = h0_b; t26 = UINT64_C(12); t27 = t25 == t26; if (t27) goto bb14; else goto bb15; bb14:
+    t28 = HERO_STR_LIT(hero_str_2f7a); h3_ret0 = t28; goto bb18; bb15: goto bb1; bb16:
+    t37 = h1_f0; t38 = t37.as.ok; h2_n = t38;
+    t39 = HERO_STR_LIT(hero_str_c729f91); t40 = h_1coreencodingjsoninternalquoted_HEX(); t65 = h5_own5; h5_own5 = t40; hero_str_decref(t65); t41 = h2_n; t42 = INT64_C(16); if (t42 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 38); if (t41 == INT64_MIN && t42 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 38); t43 = t41 / t42; t44 = h2_n; t45 = INT64_C(16); if (t45 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 50); if (t44 == INT64_MIN && t45 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 50); t46 = t44 / t45; t47 = INT64_C(1); if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 50); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 22}; t49 = hero_str_slice_at(t40, t43, t48, &hero_here); } t66 = h6_own6; h6_own6 = t49; hero_str_decref(t66); t50 = hero_str_concat(t39, t49); t67 = h7_own7; h7_own7 = t50; hero_str_decref(t67); t51 = h_1coreencodingjsoninternalquoted_HEX(); t68 = h8_own8; h8_own8 = t51; hero_str_decref(t68); t52 = h2_n; t53 = INT64_C(16); if (t53 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 80); if (t52 == INT64_MIN && t53 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 80); t54 = t52 % t53; t55 = h2_n; t56 = INT64_C(16); if (t56 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 92); if (t55 == INT64_MIN && t56 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 92); t57 = t55 % t56; t58 = INT64_C(1); if (__builtin_add_overflow(t57, t58, &t59)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 92); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 213, 64}; t60 = hero_str_slice_at(t51, t54, t59, &hero_here); } t69 = h9_own9; h9_own9 = t60; hero_str_decref(t69); t61 = hero_str_concat(t50, t60); t70 = h10_own10; h10_own10 = t61; hero_str_decref(t70); h3_ret0 = t61; goto bb18; bb17:
+#line 212
+    t35 = h1_f0; t36 = t35.as.err;
+#line 2243 "main.c"
+    hero_panic_must_at(t36, "<core>/encoding/json/internal/quoted.hero", "quoted.escape_of", 212, 9);
+    hero_unreachable();
+bb18:
+    t62 = h3_ret0;
+    hero_str_incref(t62);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    return t62;
+}
+
+#line 218 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+h_0opt_f87774a h_1coreencodingjsoninternalquoted_read_all(HeroStr h0_text) { h_1coreencodingjsoninternalcursor_Cursor h1_c = {0}; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h2_own2 = {0}, t2, t4, t5; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}, t3, t6; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_1coreencodingjsoninternalcursor_start(t1); t4 = h2_own2; h2_own2 = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t4); t5 = h1_c; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t2); h1_c = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t5);
+    t3 = h_1coreencodingjsoninternalquoted_read(&h1_c); t6 = h3_own3; h3_own3 = t3; h_0opt_f87774a_release(&t6);
+#line 2264 "main.c"
+    h_0opt_f87774a_retain(&t3);
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h1_c));
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h2_own2));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
+    return t3;
+}
+
+#line 223 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+HeroStr h_1coreencodingjsoninternalquoted_code_of(h_0opt_f87774a h0_got) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_got; t9 = h1_s0; h_0opt_f87774a_retain(&t1); h1_s0 = t1; h_0opt_f87774a_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
+#line 2275 "main.c"
+    hero_str_incref(t8);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    hero_failure_release(&h3_e);
+    return t8;
+bb2:
+#line 225 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/quoted.hero"
+    t4 = HERO_STR_LIT(hero_str_6bac0650);
+#line 224
+    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
+#line 226
+    t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.code;
+#line 224
+    t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
+#line 2290 "main.c"
+}
+
+#line 26 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+int64_t h_1coreencodingjsoninternaltokens_DEEPEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(512); return t1;
+#line 2296 "main.c"
+}
+
+#line 70 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+h_1coreencodingjsoninternaltokens_Reader h_1coreencodingjsoninternaltokens_start(HeroStr h0_text) { HeroArrayHeader * h1_nothing = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t4, *t7, *t8; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h3_own3 = {0}, t3, t9; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Reader h4_own4 = {0}, t6, t10; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_bool, 1); t7 = h2_own2; h2_own2 = t1; hero_array_decref(t7); t8 = h1_nothing; hero_array_incref(t1); h1_nothing = t1; hero_array_decref(t8);
+    t2 = h0_text; t3 = h_1coreencodingjsoninternalcursor_start(t2); t9 = h3_own3; h3_own3 = t3; h_1coreencodingjsoninternalcursor_0Cursor_release(&t9); t4 = h1_nothing; t5 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_value}; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t3); hero_array_incref(t4); t6 = (h_1coreencodingjsoninternaltokens_Reader){.f_at = t3, .f_open = t4, .f_want = t5}; t10 = h4_own4; h4_own4 = t6; h_1coreencodingjsoninternaltokens_0Reader_release(&t10);
+#line 2303 "main.c"
+    h_1coreencodingjsoninternaltokens_0Reader_retain(&t6);
+    hero_array_release_at(&h1_nothing);
+    hero_array_release_at(&h2_own2);
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h3_own3));
+    h_1coreencodingjsoninternaltokens_0Reader_release(hero_slot_escape(&h4_own4));
+    return t6;
+}
+
+#line 78 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_next(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want h1_s0, t1, t2; HERO_NODEBUG h_0opt_f42698c h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h11_own11 = {0}, t4, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t23, t24, t26; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h7_own7 = {0}, h10_own10 = {0}, t7, t12, t22, t25; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t5, t10; HERO_NODEBUG bool t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    h_1coreencodingjsoninternalcursor_skip_space(&(*ph0_r).f_at);
+#line 81
+    t1 = (*ph0_r).f_want; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; default: hero_unreachable(); } bb2:
+#line 83
+    t4 = h_1coreencodingjsoninternaltokens_value_token(&(*ph0_r)); t18 = h3_own3; h3_own3 = t4; h_0opt_f42698c_release(&t18); h2_ret0 = t4; goto bb13; bb3:
+#line 85
+    t5 = HERO_STR_LIT(hero_str_5d); t6 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t5); if (t6) goto bb8; else goto bb9; bb4:
+#line 89
+    t10 = HERO_STR_LIT(hero_str_7d); t11 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t10); if (t11) goto bb11; else goto bb12; bb5:
+#line 93
+    t15 = h_1coreencodingjsoninternaltokens_name_token(&(*ph0_r)); t19 = h4_own4; h4_own4 = t15; h_0opt_f42698c_release(&t19); h2_ret0 = t15; goto bb13; bb6:
+#line 95
+    t16 = h_1coreencodingjsoninternaltokens_after_value(&(*ph0_r)); t20 = h5_own5; h5_own5 = t16; h_0opt_f42698c_release(&t20); h2_ret0 = t16; goto bb13; bb7:
+#line 87
+    t9 = h_1coreencodingjsoninternaltokens_value_token(&(*ph0_r)); t21 = h6_own6; h6_own6 = t9; h_0opt_f42698c_release(&t21); h2_ret0 = t9; goto bb13; bb8:
+#line 86
+    t7 = h_1coreencodingjsoninternaltokens_closed(&(*ph0_r)); t22 = h7_own7; h7_own7 = t7; h_1coreencodingjsoninternaltokens_0Token_release(&t22); h_1coreencodingjsoninternaltokens_0Token_retain(&t7); t8 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t7}; t23 = h8_own8; h8_own8 = t8; h_0opt_f42698c_release(&t23); h2_ret0 = t8; goto bb13; bb9: goto bb7; bb10:
+#line 91
+    t14 = h_1coreencodingjsoninternaltokens_name_token(&(*ph0_r)); t24 = h9_own9; h9_own9 = t14; h_0opt_f42698c_release(&t24); h2_ret0 = t14; goto bb13; bb11:
+#line 90
+    t12 = h_1coreencodingjsoninternaltokens_closed(&(*ph0_r)); t25 = h10_own10; h10_own10 = t12; h_1coreencodingjsoninternaltokens_0Token_release(&t25); h_1coreencodingjsoninternaltokens_0Token_retain(&t12); t13 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t12}; t26 = h11_own11; h11_own11 = t13; h_0opt_f42698c_release(&t26); h2_ret0 = t13; goto bb13; bb12: goto bb10; bb13:
+#line 2335 "main.c"
+    t17 = h2_ret0;
+    h_0opt_f42698c_retain(&t17);
+    h_0opt_f42698c_release(hero_slot_escape(&h3_own3));
+    h_0opt_f42698c_release(hero_slot_escape(&h4_own4));
+    h_0opt_f42698c_release(hero_slot_escape(&h5_own5));
+    h_0opt_f42698c_release(hero_slot_escape(&h6_own6));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_f42698c_release(hero_slot_escape(&h8_own8));
+    h_0opt_f42698c_release(hero_slot_escape(&h9_own9));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h10_own10));
+    h_0opt_f42698c_release(hero_slot_escape(&h11_own11));
+    return t17;
+}
+
+#line 99 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_value_token(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h4_b1, t1, t9, t12, t13, t17, t33, t37, t47, t52, t62, t64, t65, t70, t79, t80, t84, t85, t89; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h21_own21 = {0}, t48, t49, t53, t56, t112, t113; HERO_NODEBUG h_0opt_db92a83 h5_f1 = {0}, h25_own25 = {0}, t66, t67, t71, t74, t117, t118; HERO_NODEBUG h_0opt_f42698c h6_ret0 = {0}, h8_own8 = {0}, h16_own16 = {0}, h18_own18 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h32_own32 = {0}, h34_own34 = {0}, h36_own36 = {0}, t5, t29, t40, t43, t55, t59, t73, t77, t82, t87, t91, t95, t96, t98, t107, t109, t111, t115, t116, t120, t121, t123, t125, t127, t129; HERO_NODEBUG HeroStr h7_own7 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h33_own33 = {0}, t2, t3, t4, t18, t20, t21, t22, t23, t24, t25, t26, t27, t28, t57, t78, t83, t88, t92, t93, t94, t97, t101, t102, t103, t104, t105, t106, t126; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *t14, *t30, *t34, *t99, *t100; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h17_own17 = {0}, h19_own19 = {0}, h22_own22 = {0}, h26_own26 = {0}, h29_own29 = {0}, h31_own31 = {0}, h35_own35 = {0}, t39, t42, t58, t76, t81, t86, t90, t108, t110, t114, t119, t122, t124, t128; HERO_NODEBUG uint8_t t6, t7, t8, t10, t11, t31, t32, t35, t36, t45, t46, t60, t61, t63; HERO_NODEBUG int64_t t15, t16, t19, t50, t51, t68, t69; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t38, t41, t44; HERO_NODEBUG HeroFailure t54, t72; HERO_NODEBUG double t75; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_r).f_at); if (t1) goto bb2; else goto bb3; bb1:
+#line 102
+    t6 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_r).f_at); h1_b = t6;
+#line 104
+    t7 = h1_b; t8 = UINT64_C(91); t9 = t7 == t8; h2_b0 = t9; if (t9) goto bb6; else goto bb5; bb2:
+#line 101
+    t2 = HERO_STR_LIT(hero_str_330ee464); t3 = HERO_STR_LIT(hero_str_ca7eec2); t4 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t3); t97 = h7_own7; h7_own7 = t4; hero_str_decref(t97); hero_str_incref(t2); hero_str_incref(t4); t5 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t2, .msg = t4}}; t98 = h8_own8; h8_own8 = t5; h_0opt_f42698c_release(&t98); h6_ret0 = t5; goto bb36; bb3: goto bb1; bb4:
+#line 118
+    t44 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_after}; (*ph0_r).f_want = t44;
+#line 120
+    t45 = h1_b; t46 = UINT64_C(34); t47 = t45 == t46; if (t47) goto bb16; else goto bb17; bb5:
+#line 104
+    t10 = h1_b; t11 = UINT64_C(123); t12 = t10 == t11; h2_b0 = t12; goto bb6; bb6: t13 = h2_b0; if (t13) goto bb7; else goto bb8; bb7:
+    t14 = (*ph0_r).f_open; t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len); t16 = h_1coreencodingjsoninternaltokens_DEEPEST(); t17 = t15 >= t16; if (t17) goto bb10; else goto bb11; bb8: goto bb4; bb9:
+#line 110
+    h_1coreencodingjsoninternalcursor_advance(&(*ph0_r).f_at);
+    t30 = (*ph0_r).f_open; t31 = h1_b; t32 = UINT64_C(123); t33 = t31 == t32; t34 = hero_array_push(t30, &t33); t99 = h9_own9; h9_own9 = t34; hero_array_decref(t99); t100 = (*ph0_r).f_open; hero_array_incref(t34); (*ph0_r).f_open = t34; hero_array_decref(t100);
+#line 113
+    t35 = h1_b; t36 = UINT64_C(123); t37 = t35 == t36; if (t37) goto bb13; else goto bb14; bb10:
+#line 107
+    t18 = HERO_STR_LIT(hero_str_1526a387);
+    t19 = h_1coreencodingjsoninternaltokens_DEEPEST(); t20 = h_1coreencodingjsoninternalcursor_place(&(*ph0_r).f_at); t101 = h10_own10; h10_own10 = t20; hero_str_decref(t101); t21 = HERO_STR_LIT(hero_str_29bcb9c1); t22 = hero_int_to_str(t19); t102 = h11_own11; h11_own11 = t22; hero_str_decref(t102); t23 = HERO_STR_LIT(hero_str_4635545); t24 = HERO_STR_LIT(hero_str_1a382a31); t25 = hero_str_concat(t21, t22); t103 = h12_own12; h12_own12 = t25; hero_str_decref(t103); t26 = hero_str_concat(t25, t23); t104 = h13_own13; h13_own13 = t26; hero_str_decref(t104); t27 = hero_str_concat(t26, t20); t105 = h14_own14; h14_own14 = t27; hero_str_decref(t105); t28 = hero_str_concat(t27, t24); t106 = h15_own15; h15_own15 = t28; hero_str_decref(t106);
+#line 106
+    hero_str_incref(t18); hero_str_incref(t28); t29 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t28}}; t107 = h16_own16; h16_own16 = t29; h_0opt_f42698c_release(&t107); h6_ret0 = t29; goto bb36; bb11: goto bb9; bb12:
+#line 116
+    t41 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_value_or_close}; (*ph0_r).f_want = t41;
+    t42 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_open_array}; t108 = h17_own17; h17_own17 = t42; h_1coreencodingjsoninternaltokens_0Token_release(&t108); h_1coreencodingjsoninternaltokens_0Token_retain(&t42); t43 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t42}; t109 = h18_own18; h18_own18 = t43; h_0opt_f42698c_release(&t109); h6_ret0 = t43; goto bb36; bb13:
+#line 114
+    t38 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_name_or_close}; (*ph0_r).f_want = t38;
+    t39 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_open_object}; t110 = h19_own19; h19_own19 = t39; h_1coreencodingjsoninternaltokens_0Token_release(&t110); h_1coreencodingjsoninternaltokens_0Token_retain(&t39); t40 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t39}; t111 = h20_own20; h20_own20 = t40; h_0opt_f42698c_release(&t111); h6_ret0 = t40; goto bb36; bb14: goto bb12; bb15:
+#line 123
+    t60 = h1_b; t61 = UINT64_C(45); t62 = t60 == t61; h4_b1 = t62; if (t62) goto bb22; else goto bb21; bb16:
+#line 121
+    t48 = h_1coreencodingjsoninternalquoted_read(&(*ph0_r).f_at); t112 = h21_own21; h21_own21 = t48; h_0opt_f87774a_release(&t112); t113 = h3_f0; h_0opt_f87774a_retain(&t48); h3_f0 = t48; h_0opt_f87774a_release(&t113); t49 = h3_f0; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb18; else goto bb19; bb17: goto bb15; bb18: t56 = h3_f0; t57 = t56.as.ok; hero_str_incref(t57); t58 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_string, .as.c_string = {.f_value = t57}}; t114 = h22_own22; h22_own22 = t58; h_1coreencodingjsoninternaltokens_0Token_release(&t114); h_1coreencodingjsoninternaltokens_0Token_retain(&t58); t59 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t58}; t115 = h23_own23; h23_own23 = t59; h_0opt_f42698c_release(&t115); h6_ret0 = t59; goto bb36; bb19: t53 = h3_f0; t54 = t53.as.err; hero_failure_retain(&t54); t55 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = t54}; t116 = h24_own24; h24_own24 = t55; h_0opt_f42698c_release(&t116); h6_ret0 = t55; goto bb36; bb20:
+#line 126
+    t78 = HERO_STR_LIT(hero_str_fa94082); t79 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t78); if (t79) goto bb28; else goto bb29; bb21:
+#line 123
+    t63 = h1_b; t64 = h_1coreencodingjsoninternalnumeral_digit(t63); h4_b1 = t64; goto bb22; bb22: t65 = h4_b1; if (t65) goto bb23; else goto bb24; bb23:
+    t66 = h_1coreencodingjsoninternalnumeral_read(&(*ph0_r).f_at); t117 = h25_own25; h25_own25 = t66; h_0opt_db92a83_release(&t117); t118 = h5_f1; h_0opt_db92a83_retain(&t66); h5_f1 = t66; h_0opt_db92a83_release(&t118); t67 = h5_f1; t68 = t67.tag; t69 = INT64_C(0); t70 = t68 == t69; if (t70) goto bb25; else goto bb26; bb24: goto bb20; bb25: t74 = h5_f1; t75 = t74.as.ok; t76 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_number, .as.c_number = {.f_value = t75}}; t119 = h26_own26; h26_own26 = t76; h_1coreencodingjsoninternaltokens_0Token_release(&t119); h_1coreencodingjsoninternaltokens_0Token_retain(&t76); t77 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t76}; t120 = h27_own27; h27_own27 = t77; h_0opt_f42698c_release(&t120); h6_ret0 = t77; goto bb36; bb26: t71 = h5_f1; t72 = t71.as.err; hero_failure_retain(&t72); t73 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = t72}; t121 = h28_own28; h28_own28 = t73; h_0opt_f42698c_release(&t121); h6_ret0 = t73; goto bb36; bb27:
+#line 129
+    t83 = HERO_STR_LIT(hero_str_b928f19); t84 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t83); if (t84) goto bb31; else goto bb32; bb28:
+#line 127
+    t80 = true; t81 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_boolean, .as.c_boolean = {.f_value = t80}}; t122 = h29_own29; h29_own29 = t81; h_1coreencodingjsoninternaltokens_0Token_release(&t122); h_1coreencodingjsoninternaltokens_0Token_retain(&t81); t82 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t81}; t123 = h30_own30; h30_own30 = t82; h_0opt_f42698c_release(&t123); h6_ret0 = t82; goto bb36; bb29: goto bb27; bb30:
+#line 132
+    t88 = HERO_STR_LIT(hero_str_edc3367); t89 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t88); if (t89) goto bb34; else goto bb35; bb31:
+#line 130
+    t85 = false; t86 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_boolean, .as.c_boolean = {.f_value = t85}}; t124 = h31_own31; h31_own31 = t86; h_1coreencodingjsoninternaltokens_0Token_release(&t124); h_1coreencodingjsoninternaltokens_0Token_retain(&t86); t87 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t86}; t125 = h32_own32; h32_own32 = t87; h_0opt_f42698c_release(&t125); h6_ret0 = t87; goto bb36; bb32: goto bb30; bb33:
+#line 134
+    t92 = HERO_STR_LIT(hero_str_330ee464); t93 = HERO_STR_LIT(hero_str_ca7eec2); t94 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t93); t126 = h33_own33; h33_own33 = t94; hero_str_decref(t126); hero_str_incref(t92); hero_str_incref(t94); t95 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t92, .msg = t94}}; t127 = h34_own34; h34_own34 = t95; h_0opt_f42698c_release(&t127); h6_ret0 = t95; goto bb36; bb34:
+#line 133
+    t90 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_nothing}; t128 = h35_own35; h35_own35 = t90; h_1coreencodingjsoninternaltokens_0Token_release(&t128); h_1coreencodingjsoninternaltokens_0Token_retain(&t90); t91 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t90}; t129 = h36_own36; h36_own36 = t91; h_0opt_f42698c_release(&t129); h6_ret0 = t91; goto bb36; bb35: goto bb33; bb36:
+#line 2403 "main.c"
+    t96 = h6_ret0;
+    h_0opt_f42698c_retain(&t96);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
+    h_0opt_db92a83_release(hero_slot_escape(&h5_f1));
+    hero_str_release_at(&h7_own7);
+    h_0opt_f42698c_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_f42698c_release(hero_slot_escape(&h16_own16));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_f42698c_release(hero_slot_escape(&h18_own18));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h19_own19));
+    h_0opt_f42698c_release(hero_slot_escape(&h20_own20));
+    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h22_own22));
+    h_0opt_f42698c_release(hero_slot_escape(&h23_own23));
+    h_0opt_f42698c_release(hero_slot_escape(&h24_own24));
+    h_0opt_db92a83_release(hero_slot_escape(&h25_own25));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h26_own26));
+    h_0opt_f42698c_release(hero_slot_escape(&h27_own27));
+    h_0opt_f42698c_release(hero_slot_escape(&h28_own28));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h29_own29));
+    h_0opt_f42698c_release(hero_slot_escape(&h30_own30));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h31_own31));
+    h_0opt_f42698c_release(hero_slot_escape(&h32_own32));
+    hero_str_release_at(&h33_own33);
+    h_0opt_f42698c_release(hero_slot_escape(&h34_own34));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h35_own35));
+    h_0opt_f42698c_release(hero_slot_escape(&h36_own36));
+    return t96;
+}
+
+#line 137 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_name_token(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { HERO_NODEBUG bool h1_b0, t1, t4, t5, t14, t21, t22; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}, h5_own5 = {0}, t10, t11, t15, t18, t32, t33; HeroStr h3_text = {0}; HERO_NODEBUG h_0opt_f42698c h4_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, t9, t17, t26, t30, t31, t35, t37, t39, t41; HERO_NODEBUG HeroStr h6_own6 = {0}, h11_own11 = {0}, t6, t7, t8, t19, t20, t23, t24, t25, t28, t34, t36, t40; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h9_own9 = {0}, t29, t38; HERO_NODEBUG uint8_t t2, t3; HERO_NODEBUG int64_t t12, t13; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t27; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_r).f_at); h1_b0 = t1; if (t1) goto bb3; else goto bb2; bb1:
+#line 140
+    t10 = h_1coreencodingjsoninternalquoted_read(&(*ph0_r).f_at); t32 = h5_own5; h5_own5 = t10; h_0opt_f87774a_release(&t32); t33 = h2_f0; h_0opt_f87774a_retain(&t10); h2_f0 = t10; h_0opt_f87774a_release(&t33); t11 = h2_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb6; else goto bb7; bb2:
+#line 138
+    t2 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_r).f_at); t3 = UINT64_C(34); t4 = t2 != t3; h1_b0 = t4; goto bb3; bb3: t5 = h1_b0; if (t5) goto bb4; else goto bb5; bb4:
+    t6 = HERO_STR_LIT(hero_str_330ee464); t7 = HERO_STR_LIT(hero_str_5c5957ae); t8 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t7); t34 = h6_own6; h6_own6 = t8; hero_str_decref(t34); hero_str_incref(t6); hero_str_incref(t8); t9 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t8}}; t35 = h7_own7; h7_own7 = t9; h_0opt_f42698c_release(&t35); h4_ret0 = t9; goto bb11; bb5: goto bb1; bb6:
+    t18 = h2_f0; t19 = t18.as.ok; t36 = h3_text; hero_str_incref(t19); h3_text = t19; hero_str_decref(t36);
+    h_1coreencodingjsoninternalcursor_skip_space(&(*ph0_r).f_at);
+#line 143
+    t20 = HERO_STR_LIT(hero_str_3a); t21 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t20); t22 = !t21; if (t22) goto bb9; else goto bb10; bb7:
+#line 140
+    t15 = h2_f0; t16 = t15.as.err; hero_failure_retain(&t16); t17 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = t16}; t37 = h8_own8; h8_own8 = t17; h_0opt_f42698c_release(&t37); h4_ret0 = t17; goto bb11; bb8:
+#line 145
+    t27 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_value}; (*ph0_r).f_want = t27;
+    t28 = h3_text; hero_str_incref(t28); t29 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_name, .as.c_name = {.f_text = t28}}; t38 = h9_own9; h9_own9 = t29; h_1coreencodingjsoninternaltokens_0Token_release(&t38); h_1coreencodingjsoninternaltokens_0Token_retain(&t29); t30 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t29}; t39 = h10_own10; h10_own10 = t30; h_0opt_f42698c_release(&t39); h4_ret0 = t30; goto bb11; bb9:
+#line 144
+    t23 = HERO_STR_LIT(hero_str_330ee464); t24 = HERO_STR_LIT(hero_str_659d2f1e); t25 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t24); t40 = h11_own11; h11_own11 = t25; hero_str_decref(t40); hero_str_incref(t23); hero_str_incref(t25); t26 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t25}}; t41 = h12_own12; h12_own12 = t26; h_0opt_f42698c_release(&t41); h4_ret0 = t26; goto bb11; bb10: goto bb8; bb11:
+#line 2460 "main.c"
+    t31 = h4_ret0;
+    h_0opt_f42698c_retain(&t31);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
+    hero_str_release_at(&h3_text);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
+    h_0opt_f42698c_release(hero_slot_escape(&h7_own7));
+    h_0opt_f42698c_release(hero_slot_escape(&h8_own8));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h9_own9));
+    h_0opt_f42698c_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    h_0opt_f42698c_release(hero_slot_escape(&h12_own12));
+    return t31;
+}
+
+#line 150 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+h_0opt_f42698c h_1coreencodingjsoninternaltokens_after_value(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { bool h1_object; HERO_NODEBUG h_0opt_f42698c h2_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t7, t11, t23, t28, t32, t36, t40, t41, t43, t45, t46, t48, t50, t52, t54; HERO_NODEBUG HeroStr h3_own3 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t18, t25, t29, t30, t31, t33, t37, t38, t39, t42, t47, t51; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h5_own5 = {0}, h10_own10 = {0}, h14_own14 = {0}, t6, t27, t35, t44, t49, t53; HERO_NODEBUG HeroArrayHeader *t1, *t12, *t13; HERO_NODEBUG int64_t t2, t3, t14, t15, t16; HERO_NODEBUG bool t4, t5, t17, t19, t20, t24, t26, t34; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_r).f_open; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 155
+    t12 = (*ph0_r).f_open; t13 = (*ph0_r).f_open; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/encoding/json/internal/tokens.hero", "tokens.after_value", 155, 21); t17 = ((void)((t12 == NULL || t16 < 0 || t16 >= t12->len) ? hero_panic_index_at(t12, t16, "<core>/encoding/json/internal/tokens.hero", "tokens.after_value", 155, 14) : (void)0), (void)(t12->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t12 + 1))[t16]); h1_object = t17;
+#line 157
+    t18 = HERO_STR_LIT(hero_str_2c); t19 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t18); if (t19) goto bb8; else goto bb9; bb2:
+#line 152
+    t5 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_r).f_at); if (t5) goto bb5; else goto bb6; bb3: goto bb1; bb4:
+#line 154
+    t8 = HERO_STR_LIT(hero_str_330ee464); t9 = HERO_STR_LIT(hero_str_54cff8fb); t10 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t9); t42 = h3_own3; h3_own3 = t10; hero_str_decref(t42); hero_str_incref(t8); hero_str_incref(t10); t11 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t10}}; t43 = h4_own4; h4_own4 = t11; h_0opt_f42698c_release(&t43); h2_ret0 = t11; goto bb22; bb5:
+#line 153
+    t6 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_end}; t44 = h5_own5; h5_own5 = t6; h_1coreencodingjsoninternaltokens_0Token_release(&t44); h_1coreencodingjsoninternaltokens_0Token_retain(&t6); t7 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t6}; t45 = h6_own6; h6_own6 = t7; h_0opt_f42698c_release(&t45); h2_ret0 = t7; goto bb22; bb6: goto bb4; bb7:
+#line 164
+    t24 = h1_object; if (t24) goto bb14; else goto bb15; bb8:
+#line 158
+    t20 = h1_object; if (t20) goto bb11; else goto bb12; bb9: goto bb7; bb10:
+#line 162
+    t23 = h_1coreencodingjsoninternaltokens_next(&(*ph0_r)); t46 = h7_own7; h7_own7 = t23; h_0opt_f42698c_release(&t46); h2_ret0 = t23; goto bb22; bb11:
+#line 159
+    t21 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_name}; (*ph0_r).f_want = t21; goto bb10; bb12:
+#line 161
+    t22 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_value}; (*ph0_r).f_want = t22; goto bb10; bb13:
+#line 169
+    t33 = HERO_STR_LIT(hero_str_5d); t34 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t33); if (t34) goto bb20; else goto bb21; bb14:
+#line 165
+    t25 = HERO_STR_LIT(hero_str_7d); t26 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_r).f_at, t25); if (t26) goto bb17; else goto bb18; bb15: goto bb13; bb16:
+#line 167
+    t29 = HERO_STR_LIT(hero_str_330ee464); t30 = HERO_STR_LIT(hero_str_2271c53c); t31 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t30); t47 = h8_own8; h8_own8 = t31; hero_str_decref(t47); hero_str_incref(t29); hero_str_incref(t31); t32 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t31}}; t48 = h9_own9; h9_own9 = t32; h_0opt_f42698c_release(&t48); h2_ret0 = t32; goto bb22; bb17:
+#line 166
+    t27 = h_1coreencodingjsoninternaltokens_closed(&(*ph0_r)); t49 = h10_own10; h10_own10 = t27; h_1coreencodingjsoninternaltokens_0Token_release(&t49); h_1coreencodingjsoninternaltokens_0Token_retain(&t27); t28 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t27}; t50 = h11_own11; h11_own11 = t28; h_0opt_f42698c_release(&t50); h2_ret0 = t28; goto bb22; bb18: goto bb16; bb19:
+#line 171
+    t37 = HERO_STR_LIT(hero_str_330ee464); t38 = HERO_STR_LIT(hero_str_7465f344); t39 = h_1coreencodingjsoninternalcursor_wanted(&(*ph0_r).f_at, t38); t51 = h12_own12; h12_own12 = t39; hero_str_decref(t51); hero_str_incref(t37); hero_str_incref(t39); t40 = (h_0opt_f42698c){.tag = INT64_C(1), .as.err = {.code = t37, .msg = t39}}; t52 = h13_own13; h13_own13 = t40; h_0opt_f42698c_release(&t52); h2_ret0 = t40; goto bb22; bb20:
+#line 170
+    t35 = h_1coreencodingjsoninternaltokens_closed(&(*ph0_r)); t53 = h14_own14; h14_own14 = t35; h_1coreencodingjsoninternaltokens_0Token_release(&t53); h_1coreencodingjsoninternaltokens_0Token_retain(&t35); t36 = (h_0opt_f42698c){.tag = INT64_C(0), .as.ok = t35}; t54 = h15_own15; h15_own15 = t36; h_0opt_f42698c_release(&t54); h2_ret0 = t36; goto bb22; bb21: goto bb19; bb22:
+#line 2511 "main.c"
+    t41 = h2_ret0;
+    h_0opt_f42698c_retain(&t41);
+    hero_str_release_at(&h3_own3);
+    h_0opt_f42698c_release(hero_slot_escape(&h4_own4));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h5_own5));
+    h_0opt_f42698c_release(hero_slot_escape(&h6_own6));
+    h_0opt_f42698c_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    h_0opt_f42698c_release(hero_slot_escape(&h9_own9));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h10_own10));
+    h_0opt_f42698c_release(hero_slot_escape(&h11_own11));
+    hero_str_release_at(&h12_own12);
+    h_0opt_f42698c_release(hero_slot_escape(&h13_own13));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_f42698c_release(hero_slot_escape(&h15_own15));
+    return t41;
+}
+
+#line 175 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+h_1coreencodingjsoninternaltokens_Token h_1coreencodingjsoninternaltokens_closed(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { bool h1_object; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h2_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t16, t17, t18, t21, t22; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t7, *t9, *t13, *t19, *t20; HERO_NODEBUG int64_t t3, t4, t5, t8, t10, t11, t12; HERO_NODEBUG bool t6, t15; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_r).f_open; t2 = (*ph0_r).f_open; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(1); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("<core>/encoding/json/internal/tokens.hero", "tokens.closed", 176, 21); t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? hero_panic_index_at(t1, t5, "<core>/encoding/json/internal/tokens.hero", "tokens.closed", 176, 14) : (void)0), (void)(t1->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t1 + 1))[t5]); h1_object = t6;
+    t7 = (*ph0_r).f_open; t8 = INT64_C(0); t9 = (*ph0_r).f_open; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(1); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow_at("<core>/encoding/json/internal/tokens.hero", "tokens.closed", 177, 40); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/tokens.hero", "tokens.closed", 177, 14}; t13 = hero_array_slice_at(t7, t8, t12, &hero_here); } t19 = h3_own3; h3_own3 = t13; hero_array_decref(t19); t20 = (*ph0_r).f_open; hero_array_incref(t13); (*ph0_r).f_open = t13; hero_array_decref(t20);
+    t14 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_after}; (*ph0_r).f_want = t14;
+#line 180
+    t15 = h1_object; if (t15) goto bb2; else goto bb3; bb1:
+#line 182
+    t17 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_close_array}; t21 = h4_own4; h4_own4 = t17; h_1coreencodingjsoninternaltokens_0Token_release(&t21); h2_ret0 = t17; goto bb4; bb2:
+#line 181
+    t16 = (h_1coreencodingjsoninternaltokens_Token){.tag = h_1coreencodingjsoninternaltokens_0Token_tag_close_object}; t22 = h5_own5; h5_own5 = t16; h_1coreencodingjsoninternaltokens_0Token_release(&t22); h2_ret0 = t16; goto bb4; bb3: goto bb1; bb4:
+#line 2541 "main.c"
+    t18 = h2_ret0;
+    h_1coreencodingjsoninternaltokens_0Token_retain(&t18);
+    hero_array_release_at(&h3_own3);
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h4_own4));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h5_own5));
+    return t18;
+}
+
+#line 187 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/tokens.hero"
+HeroArrayHeader * h_1coreencodingjsoninternaltokens_named(HeroStr h0_text) { h_1coreencodingjsoninternaltokens_Reader h1_r = {0}; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG h_0opt_f42698c h3_s0 = {0}, h14_own14 = {0}, t5, t6, t8, t13, t69, t70; HeroFailure h4_e = {0}; h_1coreencodingjsoninternaltokens_Token h5_t = {0}; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h6_s1 = {0}, t14, t15, t16, t30, t40, t46, t52, t73, t74; h_1coreencodingjsoninternaltokens_0Token_c_name h7_n = {0}; h_1coreencodingjsoninternaltokens_0Token_c_boolean h8_b; h_1coreencodingjsoninternaltokens_0Token_c_number h9_n; h_1coreencodingjsoninternaltokens_0Token_c_string h10_s = {0}; HERO_NODEBUG HeroArrayHeader *h11_ret0 = {0}, *h13_own13 = {0}, *h15_own15 = {0}, *h21_own21 = {0}, *t3, *t10, *t12, *t61, *t63, *t64, *t67, *t68, *t72, *t82; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Reader h12_own12 = {0}, t2, t65, t66; HERO_NODEBUG HeroStr h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, t1, t11, t19, t22, t25, t28, t33, t34, t35, t38, t44, t50, t55, t56, t57, t58, t59, t62, t76, t77, t78, t80, t81; HERO_NODEBUG bool t4, t43; HERO_NODEBUG int64_t t7, t17; HERO_NODEBUG HeroFailure t9, t71; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_name t31, t75; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_boolean t41; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_number t47; HERO_NODEBUG double t49; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_string t53, t79; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_1coreencodingjsoninternaltokens_start(t1); t65 = h12_own12; h12_own12 = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t65); t66 = h1_r; h_1coreencodingjsoninternaltokens_0Reader_retain(&t2); h1_r = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t66);
+    t3 = hero_array_new(&hero_desc_str, 1); t67 = h13_own13; h13_own13 = t3; hero_array_decref(t67); t68 = h2_out; hero_array_incref(t3); h2_out = t3; hero_array_decref(t68); goto bb1; bb1:
+#line 191
+    t4 = true; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = h_1coreencodingjsoninternaltokens_next(&h1_r); t69 = h14_own14; h14_own14 = t5; h_0opt_f42698c_release(&t69); t70 = h3_s0; h_0opt_f42698c_retain(&t5); h3_s0 = t5; h_0opt_f42698c_release(&t70); t6 = h3_s0; t7 = t6.tag; switch (t7) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb3: hero_unreachable(); bb4: goto bb1; bb5:
+    t8 = h3_s0; t9 = t8.as.err; t71 = h4_e; hero_failure_retain(&t9); h4_e = t9; hero_failure_release(&t71); t10 = h2_out; t11 = h4_e.code; t12 = hero_array_push(t10, &t11); t72 = h15_own15; h15_own15 = t12; hero_array_decref(t72); h11_ret0 = t12; goto bb18; bb6:
+    t13 = h3_s0; t14 = t13.as.ok; t73 = h5_t; h_1coreencodingjsoninternaltokens_0Token_retain(&t14); h5_t = t14; h_1coreencodingjsoninternaltokens_0Token_release(&t73);
+    t15 = h5_t; t74 = h6_s1; h_1coreencodingjsoninternaltokens_0Token_retain(&t15); h6_s1 = t15; h_1coreencodingjsoninternaltokens_0Token_release(&t74); t16 = h6_s1; t17 = t16.tag; switch (t17) { case 0: goto bb8; case 1: goto bb9; case 2: goto bb10; case 3: goto bb11; case 4: goto bb12; case 5: goto bb13; case 6: goto bb14; case 7: goto bb15; case 8: goto bb16; case 9: goto bb17; default: hero_unreachable(); } bb7: goto bb4; bb8:
+    t19 = HERO_STR_LIT(hero_str_5b); hero_array_push_owned(&h2_out, &t19); goto bb7; bb9:
+    t22 = HERO_STR_LIT(hero_str_5d); hero_array_push_owned(&h2_out, &t22); goto bb7; bb10:
+    t25 = HERO_STR_LIT(hero_str_7b); hero_array_push_owned(&h2_out, &t25); goto bb7; bb11:
+    t28 = HERO_STR_LIT(hero_str_7d); hero_array_push_owned(&h2_out, &t28); goto bb7; bb12:
+    t30 = h6_s1; t31 = t30.as.c_name; t75 = h7_n; h_1coreencodingjsoninternaltokens_0Token_c_name_retain(&t31); h7_n = t31; h_1coreencodingjsoninternaltokens_0Token_c_name_release(&t75); t33 = h7_n.f_text; t34 = HERO_STR_LIT(hero_str_3a); t35 = hero_str_concat(t33, t34); t76 = h16_own16; h16_own16 = t35; hero_str_decref(t76); hero_array_push_owned(&h2_out, &t35); goto bb7; bb13:
+    t38 = HERO_STR_LIT(hero_str_edc3367); hero_array_push_owned(&h2_out, &t38); goto bb7; bb14:
+    t40 = h6_s1; t41 = t40.as.c_boolean; h8_b = t41; t43 = h8_b.f_value; t44 = hero_bool_to_str(t43); t77 = h17_own17; h17_own17 = t44; hero_str_decref(t77); hero_array_push_owned(&h2_out, &t44); goto bb7; bb15:
+    t46 = h6_s1; t47 = t46.as.c_number; h9_n = t47; t49 = h9_n.f_value; t50 = hero_f64_to_str(t49); t78 = h18_own18; h18_own18 = t50; hero_str_decref(t78); hero_array_push_owned(&h2_out, &t50); goto bb7; bb16:
+    t52 = h6_s1; t53 = t52.as.c_string; t79 = h10_s; h_1coreencodingjsoninternaltokens_0Token_c_string_retain(&t53); h10_s = t53; h_1coreencodingjsoninternaltokens_0Token_c_string_release(&t79); t55 = HERO_STR_LIT(hero_str_27); t56 = h10_s.f_value; t57 = hero_str_concat(t55, t56); t80 = h19_own19; h19_own19 = t57; hero_str_decref(t80); t58 = HERO_STR_LIT(hero_str_27); t59 = hero_str_concat(t57, t58); t81 = h20_own20; h20_own20 = t59; hero_str_decref(t81); hero_array_push_owned(&h2_out, &t59); goto bb7; bb17:
+    t61 = h2_out; t62 = HERO_STR_LIT(hero_str_1aab3b); t63 = hero_array_push(t61, &t62); t82 = h21_own21; h21_own21 = t63; hero_array_decref(t82); h11_ret0 = t63; goto bb18; bb18:
+#line 2570 "main.c"
+    t64 = h11_ret0;
+    hero_array_incref(t64);
+    h_1coreencodingjsoninternaltokens_0Reader_release(hero_slot_escape(&h1_r));
+    hero_array_release_at(&h2_out);
+    h_0opt_f42698c_release(hero_slot_escape(&h3_s0));
+    hero_failure_release(&h4_e);
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h5_t));
+    h_1coreencodingjsoninternaltokens_0Token_release(hero_slot_escape(&h6_s1));
+    h_1coreencodingjsoninternaltokens_0Token_c_name_release(hero_slot_escape(&h7_n));
+    h_1coreencodingjsoninternaltokens_0Token_c_string_release(hero_slot_escape(&h10_s));
+    h_1coreencodingjsoninternaltokens_0Reader_release(hero_slot_escape(&h12_own12));
+    hero_array_release_at(&h13_own13);
+    h_0opt_f42698c_release(hero_slot_escape(&h14_own14));
+    hero_array_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    return t64;
+}
+
+#line 9 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+HeroStr h_1coreencodingjsoninternalcursor_HEX(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_f2097ef);
+#line 2597 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 20 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+h_1coreencodingjsoninternalcursor_Cursor h_1coreencodingjsoninternalcursor_start(HeroStr h0_text) { HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = INT64_C(0); hero_str_incref(t1); t3 = (h_1coreencodingjsoninternalcursor_Cursor){.f_text = t1, .f_at = t2}; t4 = h1_own1; h1_own1 = t3; h_1coreencodingjsoninternalcursor_0Cursor_release(&t4);
+#line 2605 "main.c"
+    h_1coreencodingjsoninternalcursor_0Cursor_retain(&t3);
+    h_1coreencodingjsoninternalcursor_0Cursor_release(hero_slot_escape(&h1_own1));
+    return t3;
+}
+
+#line 24 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+bool h_1coreencodingjsoninternalcursor_at_end(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c).f_at; t2 = (*ph0_c).f_text; t3 = hero_str_len(t2); t4 = t1 >= t3; return t4;
+#line 2614 "main.c"
+}
+
+#line 29 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+uint8_t h_1coreencodingjsoninternalcursor_byte_at(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c).f_text; t2 = (*ph0_c).f_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "<core>/encoding/json/internal/cursor.hero", "cursor.byte_at", 30, 12) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); return t3;
+#line 2620 "main.c"
+}
+
+#line 33 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+void h_1coreencodingjsoninternalcursor_advance(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c).f_at; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.advance", 34, 12); (*ph0_c).f_at = t3; return;
+#line 2626 "main.c"
+}
+
+#line 38 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+void h_1coreencodingjsoninternalcursor_skip_space(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, t4, t10, t13, t14, t17, t18, t21, t22; HERO_NODEBUG int64_t t1, t3, t6, t23, t24, t25; HERO_NODEBUG HeroStr t2, t5; HERO_NODEBUG uint8_t t7, t8, t9, t11, t12, t15, t16, t19, t20; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
+    t1 = (*ph0_c).f_at; t2 = (*ph0_c).f_text; t3 = hero_str_len(t2); t4 = t1 < t3; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = (*ph0_c).f_text; t6 = (*ph0_c).f_at; t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "<core>/encoding/json/internal/cursor.hero", "cursor.skip_space", 40, 13) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); h1_b = t7;
+#line 42
+    t8 = h1_b; t9 = UINT64_C(32); t10 = t8 != t9; h4_b2 = t10; if (t10) goto bb5; else goto bb6; bb3: goto bb13; bb4:
+#line 44
+    t23 = (*ph0_c).f_at; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.skip_space", 44, 16); (*ph0_c).f_at = t25; goto bb1; bb5:
+#line 42
+    t11 = h1_b; t12 = UINT64_C(9); t13 = t11 != t12; h4_b2 = t13; goto bb6; bb6: t14 = h4_b2; h3_b1 = t14; if (t14) goto bb7; else goto bb8; bb7: t15 = h1_b; t16 = UINT64_C(10); t17 = t15 != t16; h3_b1 = t17; goto bb8; bb8: t18 = h3_b1; h2_b0 = t18; if (t18) goto bb9; else goto bb10; bb9: t19 = h1_b; t20 = UINT64_C(13); t21 = t19 != t20; h2_b0 = t21; goto bb10; bb10: t22 = h2_b0; if (t22) goto bb11; else goto bb12; bb11: goto bb13; bb12: goto bb4; bb13: return;
+#line 2639 "main.c"
+}
+
+#line 48 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+bool h_1coreencodingjsoninternalcursor_accept(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, HeroStr h1_word) { int64_t h2_i; HERO_NODEBUG bool h3_ret0, t7, t8, t13, t22, t23, t31, t32; HERO_NODEBUG int64_t t1, t3, t4, t6, t9, t10, t12, t15, t16, t17, t20, t24, t25, t26, t27, t29, t30; HERO_NODEBUG HeroStr t2, t5, t11, t14, t19, t28; HERO_NODEBUG uint8_t t18, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c).f_at; t2 = h1_word; t3 = hero_str_len(t2); if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.accept", 49, 8); t5 = (*ph0_c).f_text; t6 = hero_str_len(t5); t7 = t4 > t6; if (t7) goto bb2; else goto bb3; bb1:
+#line 51
+    t9 = INT64_C(0); h2_i = t9; goto bb4; bb2:
+#line 50
+    t8 = false; h3_ret0 = t8; goto bb10; bb3: goto bb1; bb4:
+#line 53
+    t10 = h2_i; t11 = h1_word; t12 = hero_str_len(t11); t13 = t10 < t12; if (t13) goto bb5; else goto bb6; bb5:
+    t14 = (*ph0_c).f_text; t15 = (*ph0_c).f_at; t16 = h2_i; if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.accept", 54, 19); t18 = ((void)((t14.ptr == NULL || t17 < 0 || t17 >= t14.len) ? hero_panic_byte_at(t14, t17, "<core>/encoding/json/internal/cursor.hero", "cursor.accept", 54, 12) : (void)0), (int64_t)(unsigned char)t14.ptr[t17]); t19 = h1_word; t20 = h2_i; t21 = ((void)((t19.ptr == NULL || t20 < 0 || t20 >= t19.len) ? hero_panic_byte_at(t19, t20, "<core>/encoding/json/internal/cursor.hero", "cursor.accept", 54, 32) : (void)0), (int64_t)(unsigned char)t19.ptr[t20]); t22 = t18 != t21; if (t22) goto bb8; else goto bb9; bb6:
+#line 58
+    t27 = (*ph0_c).f_at; t28 = h1_word; t29 = hero_str_len(t28); if (__builtin_add_overflow(t27, t29, &t30)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.accept", 58, 12); (*ph0_c).f_at = t30;
+    t31 = true; h3_ret0 = t31; goto bb10; bb7:
+#line 56
+    t24 = h2_i; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.accept", 56, 13); h2_i = t26; goto bb4; bb8:
+#line 55
+    t23 = false; h3_ret0 = t23; goto bb10; bb9: goto bb7; bb10:
+#line 2659 "main.c"
+    t32 = h3_ret0;
+    return t32;
+}
+
+#line 63 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+HeroStr h_1coreencodingjsoninternalcursor_place(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_line; int64_t h2_column; int64_t h3_i; HERO_NODEBUG bool h4_b0, h6_b1, t6, t10, t11, t17, t24, t27, t28; uint8_t h5_b; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t8, t12, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t7, t9, t13, t18, t19, t20, t21, t29, t30, t31, t32, t33, t34, t35, t36; HERO_NODEBUG uint8_t t14, t15, t16, t22, t23, t25, t26; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); h1_line = t1;
+    t2 = INT64_C(1); h2_column = t2;
+    t3 = INT64_C(0); h3_i = t3; goto bb1; bb1:
+#line 68
+    t4 = h3_i; t5 = (*ph0_c).f_at; t6 = t4 < t5; h4_b0 = t6; if (t6) goto bb4; else goto bb5; bb2:
+    t12 = (*ph0_c).f_text; t13 = h3_i; t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "<core>/encoding/json/internal/cursor.hero", "cursor.place", 69, 13) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); h5_b = t14;
+#line 71
+    t15 = h5_b; t16 = UINT64_C(10); t17 = t15 == t16; if (t17) goto bb7; else goto bb8; bb3:
+#line 78
+    t35 = h1_line; t36 = h2_column; t37 = HERO_STR_LIT(hero_str_75f7c07a); t38 = hero_int_to_str(t35); t44 = h7_own7; h7_own7 = t38; hero_str_decref(t44); t39 = HERO_STR_LIT(hero_str_d37734a); t40 = hero_int_to_str(t36); t45 = h8_own8; h8_own8 = t40; hero_str_decref(t45); t41 = hero_str_concat(t37, t38); t46 = h9_own9; h9_own9 = t41; hero_str_decref(t46); t42 = hero_str_concat(t41, t39); t47 = h10_own10; h10_own10 = t42; hero_str_decref(t47); t43 = hero_str_concat(t42, t40); t48 = h11_own11; h11_own11 = t43; hero_str_decref(t48);
+#line 2676 "main.c"
+    hero_str_incref(t43);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    return t43;
+bb4:
+#line 68 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+    t7 = h3_i; t8 = (*ph0_c).f_text; t9 = hero_str_len(t8); t10 = t7 < t9; h4_b0 = t10; goto bb5; bb5: t11 = h4_b0; if (t11) goto bb2; else goto bb3; bb6:
+#line 76
+    t32 = h3_i; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.place", 76, 13); h3_i = t34; goto bb1; bb7:
+#line 72
+    t18 = h1_line; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.place", 72, 20); h1_line = t20;
+    t21 = INT64_C(1); h2_column = t21; goto bb6; bb8:
+    t22 = h5_b; t23 = UINT64_C(128); t24 = t22 < t23; h6_b1 = t24; if (t24) goto bb10; else goto bb9; bb9: t25 = h5_b; t26 = UINT64_C(192); t27 = t25 >= t26; h6_b1 = t27; goto bb10; bb10: t28 = h6_b1; if (t28) goto bb11; else goto bb12; bb11:
+    t29 = h2_column; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.place", 75, 22); h2_column = t31; goto bb6; bb12: goto bb6;
+#line 2694 "main.c"
+}
+
+#line 83 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+HeroStr h_1coreencodingjsoninternalcursor_found(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h5_b1, t1, t8, t11, t12, t18, t48, t51, t52, t57, t61, t65, t73; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h9_own9 = {0}, t14, t15, t19, t21, t85, t86; int64_t h4_n; int64_t h6_width; int64_t h7_end; HERO_NODEBUG HeroStr h8_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, t2, t3, t23, t24, t33, t34, t35, t44, t45, t53, t71, t74, t76, t77, t80, t81, t82, t83, t84, t87, t88, t89, t90, t91, t92, t93, t94, t95; HERO_NODEBUG int64_t t4, t16, t17, t22, t25, t26, t27, t28, t29, t30, t31, t32, t36, t37, t38, t39, t40, t41, t42, t43, t54, t58, t62, t66, t67, t68, t69, t70, t72, t75, t78, t79; HERO_NODEBUG uint8_t t5, t6, t7, t9, t10, t13, t46, t47, t49, t50, t55, t56, t59, t60, t63, t64; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); if (t1) goto bb2; else goto bb3; bb1:
+#line 86
+    t3 = (*ph0_c).f_text; t4 = (*ph0_c).f_at; t5 = ((void)((t3.ptr == NULL || t4 < 0 || t4 >= t3.len) ? hero_panic_byte_at(t3, t4, "<core>/encoding/json/internal/cursor.hero", "cursor.found", 86, 9) : (void)0), (int64_t)(unsigned char)t3.ptr[t4]); h1_b = t5;
+#line 88
+    t6 = h1_b; t7 = UINT64_C(32); t8 = t6 < t7; h2_b0 = t8; if (t8) goto bb6; else goto bb5; bb2:
+#line 85
+    t2 = HERO_STR_LIT(hero_str_8c7c2c1); h8_ret0 = t2; goto bb26; bb3: goto bb1; bb4:
+#line 92
+    t46 = h1_b; t47 = UINT64_C(128); t48 = t46 >= t47; h5_b1 = t48; if (t48) goto bb12; else goto bb13; bb5:
+#line 88
+    t9 = h1_b; t10 = UINT64_C(127); t11 = t9 == t10; h2_b0 = t11; goto bb6; bb6: t12 = h2_b0; if (t12) goto bb7; else goto bb8; bb7:
+    t13 = h1_b; t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t13}; t85 = h9_own9; h9_own9 = t14; h_0opt_e201354_release(&t85); t86 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t86); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb9; else goto bb10; bb8: goto bb4; bb9: t21 = h3_f0; t22 = t21.as.ok; h4_n = t22;
+    t23 = HERO_STR_LIT(hero_str_79c54fab); t24 = h_1coreencodingjsoninternalcursor_HEX(); t87 = h10_own10; h10_own10 = t24; hero_str_decref(t87); t25 = h4_n; t26 = INT64_C(16); if (t26 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 63); if (t25 == INT64_MIN && t26 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 63); t27 = t25 / t26; t28 = h4_n; t29 = INT64_C(16); if (t29 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 75); if (t28 == INT64_MIN && t29 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 75); t30 = t28 / t29; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 75); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 47}; t33 = hero_str_slice_at(t24, t27, t32, &hero_here); } t88 = h11_own11; h11_own11 = t33; hero_str_decref(t88); t34 = hero_str_concat(t23, t33); t89 = h12_own12; h12_own12 = t34; hero_str_decref(t89); t35 = h_1coreencodingjsoninternalcursor_HEX(); t90 = h13_own13; h13_own13 = t35; hero_str_decref(t90); t36 = h4_n; t37 = INT64_C(16); if (t37 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 105); if (t36 == INT64_MIN && t37 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 105); t38 = t36 % t37; t39 = h4_n; t40 = INT64_C(16); if (t40 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 117); if (t39 == INT64_MIN && t40 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 117); t41 = t39 % t40; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 117); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/cursor.hero", "cursor.found", 90, 89}; t44 = hero_str_slice_at(t35, t38, t43, &hero_here); } t91 = h14_own14; h14_own14 = t44; hero_str_decref(t91); t45 = hero_str_concat(t34, t44); t92 = h15_own15; h15_own15 = t45; hero_str_decref(t92); h8_ret0 = t45; goto bb26; bb10:
+#line 89
+    t19 = h3_f0; t20 = t19.as.err;
+#line 2714 "main.c"
+    hero_panic_must_at(t20, "<core>/encoding/json/internal/cursor.hero", "cursor.found", 89, 13);
+    hero_unreachable();
+bb11:
+#line 94 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+    t54 = INT64_C(1); h6_width = t54;
+#line 96
+    t55 = h1_b; t56 = UINT64_C(240); t57 = t55 >= t56; if (t57) goto bb17; else goto bb18; bb12:
+#line 92
+    t49 = h1_b; t50 = UINT64_C(192); t51 = t49 < t50; h5_b1 = t51; goto bb13; bb13: t52 = h5_b1; if (t52) goto bb14; else goto bb15; bb14:
+    t53 = HERO_STR_LIT(hero_str_20ad539b); h8_ret0 = t53; goto bb26; bb15: goto bb11; bb16:
+#line 102
+    t67 = (*ph0_c).f_at; t68 = h6_width; if (__builtin_add_overflow(t67, t68, &t69)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.found", 102, 17); h7_end = t69;
+#line 104
+    t70 = h7_end; t71 = (*ph0_c).f_text; t72 = hero_str_len(t71); t73 = t70 > t72; if (t73) goto bb24; else goto bb25; bb17:
+#line 97
+    t58 = INT64_C(4); h6_width = t58; goto bb16; bb18:
+    t59 = h1_b; t60 = UINT64_C(224); t61 = t59 >= t60; if (t61) goto bb19; else goto bb20; bb19:
+    t62 = INT64_C(3); h6_width = t62; goto bb16; bb20:
+    t63 = h1_b; t64 = UINT64_C(192); t65 = t63 >= t64; if (t65) goto bb21; else goto bb22; bb21:
+    t66 = INT64_C(2); h6_width = t66; goto bb16; bb22: goto bb16; bb23:
+#line 106
+    t76 = HERO_STR_LIT(hero_str_60); t77 = (*ph0_c).f_text; t78 = (*ph0_c).f_at; t79 = h7_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/cursor.hero", "cursor.found", 106, 18}; t80 = hero_str_slice_at(t77, t78, t79, &hero_here); } t93 = h16_own16; h16_own16 = t80; hero_str_decref(t93); t81 = hero_str_concat(t76, t80); t94 = h17_own17; h17_own17 = t81; hero_str_decref(t94); t82 = HERO_STR_LIT(hero_str_60); t83 = hero_str_concat(t81, t82); t95 = h18_own18; h18_own18 = t83; hero_str_decref(t95); h8_ret0 = t83; goto bb26; bb24:
+#line 105
+    t74 = (*ph0_c).f_text; t75 = hero_str_len(t74); h7_end = t75; goto bb23; bb25: goto bb23; bb26:
+#line 2739 "main.c"
+    t84 = h8_ret0;
+    hero_str_incref(t84);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    return t84;
+}
+
+#line 111 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/cursor.hero"
+HeroStr h_1coreencodingjsoninternalcursor_wanted(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, HeroStr h1_expected) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_73a616c5); t2 = h1_expected; t3 = hero_str_concat(t1, t2); t12 = h2_own2; h2_own2 = t3; hero_str_decref(t12); t4 = HERO_STR_LIT(hero_str_7f933ce3); t5 = hero_str_concat(t3, t4); t13 = h3_own3; h3_own3 = t5; hero_str_decref(t13); t6 = h_1coreencodingjsoninternalcursor_found(&(*ph0_c)); t14 = h4_own4; h4_own4 = t6; hero_str_decref(t14); t7 = hero_str_concat(t5, t6); t15 = h5_own5; h5_own5 = t7; hero_str_decref(t15); t8 = HERO_STR_LIT(hero_str_4635545); t9 = hero_str_concat(t7, t8); t16 = h6_own6; h6_own6 = t9; hero_str_decref(t16); t10 = h_1coreencodingjsoninternalcursor_place(&(*ph0_c)); t17 = h7_own7; h7_own7 = t10; hero_str_decref(t17); t11 = hero_str_concat(t9, t10); t18 = h8_own8; h8_own8 = t11; hero_str_decref(t18);
+#line 2759 "main.c"
+    hero_str_incref(t11);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    return t11;
+}
+
+#line 25 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+int64_t h_1coreencodingjsoninternaldecimal_CAPACITY(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(800); return t1;
+#line 2774 "main.c"
+}
+
+#line 31 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+int64_t h_1coreencodingjsoninternaldecimal_WIDEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(59); return t1;
+#line 2780 "main.c"
+}
+
+#if HERO_STATIC_CONSTANTS
+#line 44 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternaldecimal_STEPS_10, int64_t, &hero_desc_int, 9, INT64_C(1), INT64_C(3), INT64_C(6), INT64_C(9), INT64_C(13), INT64_C(16), INT64_C(19), INT64_C(23), INT64_C(26)); HeroArrayHeader * h_1coreencodingjsoninternaldecimal_STEPS(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternaldecimal_STEPS_10);
+#line 2786 "main.c"
+}
+#else
+
+#line 44 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+HeroArrayHeader * h_1coreencodingjsoninternaldecimal_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t10, *t11; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(3); t3 = INT64_C(6); t4 = INT64_C(9); t5 = INT64_C(13); t6 = INT64_C(16); t7 = INT64_C(19); t8 = INT64_C(23); t9 = INT64_C(26); t10 = hero_array_new(&hero_desc_int, 9); hero_array_push_owned(&t10, &t1); hero_array_push_owned(&t10, &t2); hero_array_push_owned(&t10, &t3); hero_array_push_owned(&t10, &t4); hero_array_push_owned(&t10, &t5); hero_array_push_owned(&t10, &t6); hero_array_push_owned(&t10, &t7); hero_array_push_owned(&t10, &t8); hero_array_push_owned(&t10, &t9); t11 = h0_own0; h0_own0 = t10; hero_array_decref(t11);
+#line 2793 "main.c"
+    hero_array_incref(t10);
+    hero_array_release_at(&h0_own0);
+    return t10;
+}
+#endif
+
+#line 59 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_nearest(HeroStr h0_digits, int64_t h1_point) { HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h2_own2 = {0}, t3, t5; HERO_NODEBUG h_0opt_db92a83 h3_own3 = {0}, t4, t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_digits; t2 = h1_point; t3 = h_1coreencodingjsoninternaldecimal_decimal_of(t1, t2); t5 = h2_own2; h2_own2 = t3; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t5); t4 = h_1coreencodingjsoninternaldecimal_rounded_to_float(t3); t6 = h3_own3; h3_own3 = t4; h_0opt_db92a83_release(&t6);
+#line 2803 "main.c"
+    h_0opt_db92a83_retain(&t4);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h2_own2));
+    h_0opt_db92a83_release(hero_slot_escape(&h3_own3));
+    return t4;
+}
+
+#line 63 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_decimal_of(HeroStr h0_digits, int64_t h1_point) { HeroArrayHeader * h2_kept = {0}; bool h3_truncated; int64_t h4_i; uint8_t h5_digit; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t13, *t27, *t32, *t33; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h7_own7 = {0}, h8_own8 = {0}, t30, t31, t34, t35; HERO_NODEBUG bool t2, t7, t16, t22, t23, t29; HERO_NODEBUG int64_t t3, t4, t6, t9, t14, t15, t24, t25, t26, t28; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG uint8_t t10, t11, t12, t18, t20, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t32 = h6_own6; h6_own6 = t1; hero_array_decref(t32); t33 = h2_kept; hero_array_incref(t1); h2_kept = t1; hero_array_decref(t33);
+    t2 = false; h3_truncated = t2;
+    t3 = INT64_C(0); h4_i = t3; goto bb1; bb1:
+#line 68
+    t4 = h4_i; t5 = h0_digits; t6 = hero_str_len(t5); t7 = t4 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h0_digits; t9 = h4_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "<core>/encoding/json/internal/decimal.hero", "decimal.decimal_of", 69, 17) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(48); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.decimal_of", 69, 17); h5_digit = t12;
+#line 71
+    t13 = h2_kept; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = h_1coreencodingjsoninternaldecimal_CAPACITY(); t16 = t14 < t15; if (t16) goto bb5; else goto bb6; bb3:
+#line 77
+    t27 = h2_kept; t28 = h1_point; t29 = h3_truncated; hero_array_incref(t27); t30 = (h_1coreencodingjsoninternaldecimal_Decimal){.f_digits = t27, .f_point = t28, .f_truncated = t29}; t34 = h7_own7; h7_own7 = t30; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t34); t31 = h_1coreencodingjsoninternaldecimal_trimmed(t30); t35 = h8_own8; h8_own8 = t31; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t35);
+#line 2822 "main.c"
+    h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t31);
+    hero_array_release_at(&h2_kept);
+    hero_array_release_at(&h6_own6);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h7_own7));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h8_own8));
+    return t31;
+bb4:
+#line 75 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t24 = h4_i; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.decimal_of", 75, 13); h4_i = t26; goto bb1; bb5:
+#line 72
+    t18 = h5_digit; hero_array_push_owned(&h2_kept, &t18); goto bb4; bb6:
+    t20 = h5_digit; t21 = UINT64_C(0); t22 = t20 != t21; if (t22) goto bb7; else goto bb8; bb7:
+    t23 = true; h3_truncated = t23; goto bb4; bb8: goto bb4;
+#line 2836 "main.c"
+}
+
+#line 81 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_trimmed(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { int64_t h1_end; HERO_NODEBUG bool h2_b0, t5, t12, t13, t20, t24, t28, t35; HeroArrayHeader * h3_nothing = {0}; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h4_ret0 = {0}, h6_own6 = {0}, h8_own8 = {0}, t21, t29, t36, t37, t39, t42; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *t1, *t6, *t18, *t25, *t26, *t30, *t33, *t38, *t40, *t41; HERO_NODEBUG int64_t t2, t3, t4, t7, t8, t9, t14, t15, t16, t17, t19, t22, t23, t27, t31, t32, t34; HERO_NODEBUG uint8_t t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_d.f_digits; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); h1_end = t2; goto bb1; bb1:
+#line 84
+    t3 = h1_end; t4 = INT64_C(0); t5 = t3 > t4; h2_b0 = t5; if (t5) goto bb4; else goto bb5; bb2:
+    t14 = h1_end; t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.trimmed", 85, 15); h1_end = t16; goto bb1; bb3:
+#line 87
+    t17 = h1_end; t18 = h0_d.f_digits; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 == t19; if (t20) goto bb7; else goto bb8; bb4:
+#line 84
+    t6 = h0_d.f_digits; t7 = h1_end; t8 = INT64_C(1); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.trimmed", 84, 31); t10 = ((void)((t6 == NULL || t9 < 0 || t9 >= t6->len) ? hero_panic_index_at(t6, t9, "<core>/encoding/json/internal/decimal.hero", "decimal.trimmed", 84, 22) : (void)0), (void)(t6->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t6 + 1))[t9]); t11 = UINT64_C(0); t12 = t10 == t11; h2_b0 = t12; goto bb5; bb5: t13 = h2_b0; if (t13) goto bb2; else goto bb3; bb6:
+#line 90
+    t22 = h1_end; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb10; else goto bb11; bb7:
+#line 88
+    t21 = h0_d; h4_ret0 = t21; goto bb12; bb8: goto bb6; bb9:
+#line 93
+    t30 = h0_d.f_digits; t31 = INT64_C(0); t32 = h1_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/decimal.hero", "decimal.trimmed", 93, 28}; t33 = hero_array_slice_at(t30, t31, t32, &hero_here); } t38 = h5_own5; h5_own5 = t33; hero_array_decref(t38); t34 = h0_d.f_point; t35 = h0_d.f_truncated; hero_array_incref(t33); t36 = (h_1coreencodingjsoninternaldecimal_Decimal){.f_digits = t33, .f_point = t34, .f_truncated = t35}; t39 = h6_own6; h6_own6 = t36; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t39); h4_ret0 = t36; goto bb12; bb10:
+#line 91
+    t25 = hero_array_new(&hero_desc_u8, 1); t40 = h7_own7; h7_own7 = t25; hero_array_decref(t40); t41 = h3_nothing; hero_array_incref(t25); h3_nothing = t25; hero_array_decref(t41);
+    t26 = h3_nothing; t27 = INT64_C(0); t28 = h0_d.f_truncated; hero_array_incref(t26); t29 = (h_1coreencodingjsoninternaldecimal_Decimal){.f_digits = t26, .f_point = t27, .f_truncated = t28}; t42 = h8_own8; h8_own8 = t29; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t42); h4_ret0 = t29; goto bb12; bb11: goto bb9; bb12:
+#line 2858 "main.c"
+    t37 = h4_ret0;
+    h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t37);
+    hero_array_release_at(&h3_nothing);
+    hero_array_release_at(&h5_own5);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h6_own6));
+    hero_array_release_at(&h7_own7);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h8_own8));
+    return t37;
+}
+
+#line 97 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_shifted(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k) { HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t10, t14, t15, t16, t17, t18; HERO_NODEBUG int64_t t1, t2, t5, t7, t8, t11, t12, t13; HERO_NODEBUG bool t3, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_k; t2 = INT64_C(0); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 101
+    t7 = h1_k; t8 = INT64_C(0); t9 = t7 < t8; if (t9) goto bb5; else goto bb6; bb2:
+#line 99
+    t4 = h0_d; t5 = h1_k; t6 = h_1coreencodingjsoninternaldecimal_doubled(t4, t5); t17 = h3_own3; h3_own3 = t6; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t17); h2_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+#line 103
+    t15 = h0_d; h2_ret0 = t15; goto bb7; bb5:
+#line 102
+    t10 = h0_d; t11 = INT64_C(0); t12 = h1_k; if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.shifted", 102, 32); t14 = h_1coreencodingjsoninternaldecimal_halved(t10, t13); t18 = h4_own4; h4_own4 = t14; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t18); h2_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+#line 2880 "main.c"
+    t16 = h2_ret0;
+    h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t16);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h3_own3));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h4_own4));
+    return t16;
+}
+
+#line 107 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_doubled(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k) { HeroArrayHeader * h2_backwards = {0}; int64_t h3_n; int64_t h4_read; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h12_own12 = {0}, t14, t15, t19, t21, t106, t107; HERO_NODEBUG h_0opt_1ec004 h6_f1 = {0}, h7_f2 = {0}, h13_own13 = {0}, h14_own14 = {0}, t30, t31, t35, t37, t53, t54, t58, t60, t108, t109, t110, t111; HeroArrayHeader * h8_digits = {0}; bool h9_truncated; int64_t h10_at; HERO_NODEBUG HeroArrayHeader *h11_own11 = {0}, *h15_own15 = {0}, *t1, *t3, *t11, *t66, *t68, *t75, *t80, *t84, *t93, *t95, *t98, *t104, *t105, *t112, *t113; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h16_own16 = {0}, h17_own17 = {0}, t102, t103, t114, t115; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t12, t16, t17, t22, t23, t24, t25, t27, t28, t29, t32, t33, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51, t52, t55, t56, t63, t64, t65, t69, t70, t71, t72, t73, t76, t77, t81, t85, t90, t91, t92, t94, t96, t97, t99, t100; HERO_NODEBUG bool t9, t18, t34, t48, t57, t67, t74, t78, t88, t89, t101; HERO_NODEBUG uint8_t t13, t38, t61, t82, t86, t87; HERO_NODEBUG HeroFailure t20, t36, t59; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t104 = h11_own11; h11_own11 = t1; hero_array_decref(t104); t105 = h2_backwards; hero_array_incref(t1); h2_backwards = t1; hero_array_decref(t105);
+    t2 = INT64_C(0); h3_n = t2;
+    t3 = h0_d.f_digits; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = INT64_C(1); if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 110, 18); h4_read = t6; goto bb1; bb1:
+#line 112
+    t7 = h4_read; t8 = INT64_C(0); t9 = t7 >= t8; if (t9) goto bb2; else goto bb3; bb2:
+    t10 = h3_n; t11 = h0_d.f_digits; t12 = h4_read; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 113, 25) : (void)0), (void)(t11->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t11 + 1))[t12]); t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t13}; t106 = h12_own12; h12_own12 = t14; h_0opt_e201354_release(&t106); t107 = h5_f0; h_0opt_e201354_retain(&t14); h5_f0 = t14; h_0opt_e201354_release(&t107); t15 = h5_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb4; else goto bb5; bb3: goto bb8; bb4: t21 = h5_f0; t22 = t21.as.ok; t23 = h1_k; if (t23 < 0 || t23 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 113, 18); t24 = (int64_t)((uint64_t)t22 << (uint64_t)t23); if (__builtin_add_overflow(t10, t24, &t25)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 113, 13); h3_n = t25;
+    t27 = h3_n; t28 = INT64_C(10); if (t28 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 114, 42); if (t27 == INT64_MIN && t28 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 114, 42); t29 = t27 % t28; if (t29 >= 0LL && t29 <= 255LL) { t30 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t29}; } else { t30 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t108 = h13_own13; h13_own13 = t30; h_0opt_1ec004_release(&t108); t109 = h6_f1; h_0opt_1ec004_retain(&t30); h6_f1 = t30; h_0opt_1ec004_release(&t109); t31 = h6_f1; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb6; else goto bb7; bb5:
+#line 113
+    t19 = h5_f0; t20 = t19.as.err;
+#line 2899 "main.c"
+    hero_panic_must_at(t20, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 113, 18);
+    hero_unreachable();
+bb6:
+#line 114 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t37 = h6_f1; t38 = t37.as.ok; hero_array_push_owned(&h2_backwards, &t38);
+    t40 = h3_n; t41 = INT64_C(10); if (t41 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 115, 13); if (t40 == INT64_MIN && t41 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 115, 13); t42 = t40 / t41; h3_n = t42;
+    t43 = h4_read; t44 = INT64_C(1); if (__builtin_sub_overflow(t43, t44, &t45)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 116, 16); h4_read = t45; goto bb1; bb7:
+#line 114
+    t35 = h6_f1; t36 = t35.as.err;
+#line 2909 "main.c"
+    hero_panic_must_at(t36, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 114, 36);
+    hero_unreachable();
+bb8:
+#line 118 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t46 = h3_n; t47 = INT64_C(0); t48 = t46 > t47; if (t48) goto bb9; else goto bb10; bb9:
+    t50 = h3_n; t51 = INT64_C(10); if (t51 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 119, 42); if (t50 == INT64_MIN && t51 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 119, 42); t52 = t50 % t51; if (t52 >= 0LL && t52 <= 255LL) { t53 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t52}; } else { t53 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t110 = h14_own14; h14_own14 = t53; h_0opt_1ec004_release(&t110); t111 = h7_f2; h_0opt_1ec004_retain(&t53); h7_f2 = t53; h_0opt_1ec004_release(&t111); t54 = h7_f2; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb11; else goto bb12; bb10:
+#line 122
+    t66 = hero_array_new(&hero_desc_u8, 1); t112 = h15_own15; h15_own15 = t66; hero_array_decref(t112); t113 = h8_digits; hero_array_incref(t66); h8_digits = t66; hero_array_decref(t113);
+    t67 = h0_d.f_truncated; h9_truncated = t67;
+    t68 = h2_backwards; t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len); t70 = INT64_C(1); if (__builtin_sub_overflow(t69, t70, &t71)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 124, 16); h10_at = t71; goto bb13; bb11:
+#line 119
+    t60 = h7_f2; t61 = t60.as.ok; hero_array_push_owned(&h2_backwards, &t61);
+    t63 = h3_n; t64 = INT64_C(10); if (t64 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 120, 13); if (t63 == INT64_MIN && t64 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 120, 13); t65 = t63 / t64; h3_n = t65; goto bb8; bb12:
+#line 119
+    t58 = h7_f2; t59 = t58.as.err;
+#line 2925 "main.c"
+    hero_panic_must_at(t59, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 119, 36);
+    hero_unreachable();
+bb13:
+#line 126 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t72 = h10_at; t73 = INT64_C(0); t74 = t72 >= t73; if (t74) goto bb14; else goto bb15; bb14:
+    t75 = h8_digits; t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len); t77 = h_1coreencodingjsoninternaldecimal_CAPACITY(); t78 = t76 < t77; if (t78) goto bb17; else goto bb18; bb15:
+#line 134
+    t93 = h8_digits; t94 = h0_d.f_point; t95 = h2_backwards; t96 = ((void)(t95 == NULL ? ((void)hero_array_len(t95), hero_unreachable()) : (void)0), t95->len); if (__builtin_add_overflow(t94, t96, &t97)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 134, 40); t98 = h0_d.f_digits; t99 = ((void)(t98 == NULL ? ((void)hero_array_len(t98), hero_unreachable()) : (void)0), t98->len); if (__builtin_sub_overflow(t97, t99, &t100)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 134, 40); t101 = h9_truncated; hero_array_incref(t93); t102 = (h_1coreencodingjsoninternaldecimal_Decimal){.f_digits = t93, .f_point = t100, .f_truncated = t101}; t114 = h16_own16; h16_own16 = t102; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t114);
+#line 133
+    t103 = h_1coreencodingjsoninternaldecimal_trimmed(t102); t115 = h17_own17; h17_own17 = t103; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t115);
+#line 2936 "main.c"
+    h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t103);
+    hero_array_release_at(&h2_backwards);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    h_0opt_1ec004_release(hero_slot_escape(&h6_f1));
+    h_0opt_1ec004_release(hero_slot_escape(&h7_f2));
+    hero_array_release_at(&h8_digits);
+    hero_array_release_at(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_1ec004_release(hero_slot_escape(&h13_own13));
+    h_0opt_1ec004_release(hero_slot_escape(&h14_own14));
+    hero_array_release_at(&h15_own15);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h16_own16));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h17_own17));
+    return t103;
+bb16:
+#line 131 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t90 = h10_at; t91 = INT64_C(1); if (__builtin_sub_overflow(t90, t91, &t92)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 131, 14); h10_at = t92; goto bb13; bb17:
+#line 128
+    t80 = h2_backwards; t81 = h10_at; t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? hero_panic_index_at(t80, t81, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 128, 34) : (void)0), (void)(t80->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t80 + 1))[t81]); hero_array_push_owned(&h8_digits, &t82); goto bb16; bb18:
+    t84 = h2_backwards; t85 = h10_at; t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 129, 17) : (void)0), (void)(t84->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t84 + 1))[t85]); t87 = UINT64_C(0); t88 = t86 != t87; if (t88) goto bb19; else goto bb20; bb19:
+    t89 = true; h9_truncated = t89; goto bb16; bb20: goto bb16;
+#line 2958 "main.c"
+}
+
+#line 140 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_halved(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k) { int64_t h2_read; int64_t h3_n; HeroArrayHeader * h4_nothing = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h10_f2 = {0}, h16_own16 = {0}, h20_own20 = {0}, t37, t38, t42, t44, t87, t88, t92, t94, t140, t141, t147, t148; int64_t h6_point; int64_t h7_mask; HeroArrayHeader * h8_digits = {0}; HERO_NODEBUG h_0opt_1ec004 h9_f1 = {0}, h12_f3 = {0}, h19_own19 = {0}, h21_own21 = {0}, t69, t70, t74, t76, t107, t108, t112, t114, t145, t146, t149, t150; bool h11_truncated; uint8_t h13_digit; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h14_ret0 = {0}, h18_own18 = {0}, h22_own22 = {0}, h23_own23 = {0}, t19, t135, t136, t137, t144, t151, t152; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h17_own17 = {0}, *t9, *t15, *t16, *t34, *t60, *t62, *t84, *t121, *t132, *t138, *t139, *t142, *t143; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t8, t10, t12, t13, t17, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30, t31, t32, t33, t35, t39, t40, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t61, t63, t66, t67, t68, t71, t72, t79, t80, t81, t82, t83, t85, t89, t90, t95, t96, t97, t98, t99, t101, t102, t104, t105, t106, t109, t110, t116, t117, t118, t119, t120, t122, t123, t133; HERO_NODEBUG bool t7, t11, t14, t18, t24, t41, t64, t73, t91, t100, t103, t111, t124, t130, t131, t134; HERO_NODEBUG uint8_t t36, t77, t86, t115, t126, t128, t129; HERO_NODEBUG HeroFailure t43, t75, t93, t113; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h2_read = t1;
+    t2 = INT64_C(0); h3_n = t2; goto bb1; bb1:
+#line 144
+    t3 = h3_n; t4 = h1_k; if (t4 < 0 || t4 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 144, 11); t5 = (t3 < 0) ? ~(int64_t)((~(uint64_t)t3) >> (uint64_t)t4) : (int64_t)((uint64_t)t3 >> (uint64_t)t4); t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h2_read; t9 = h0_d.f_digits; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = t8 >= t10; if (t11) goto bb5; else goto bb6; bb3:
+#line 160
+    t50 = h0_d.f_point; t51 = h2_read; if (__builtin_sub_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 160, 13); t53 = INT64_C(1); if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 160, 13); h6_point = t54;
+    t55 = INT64_C(1); t56 = h1_k; if (t56 < 0 || t56 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 161, 13); t57 = (int64_t)((uint64_t)t55 << (uint64_t)t56); t58 = INT64_C(1); if (__builtin_sub_overflow(t57, t58, &t59)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 161, 12); h7_mask = t59;
+    t60 = hero_array_new(&hero_desc_u8, 1); t138 = h15_own15; h15_own15 = t60; hero_array_decref(t138); t139 = h8_digits; hero_array_incref(t60); h8_digits = t60; hero_array_decref(t139); goto bb15; bb4:
+#line 155
+    t31 = h3_n; t32 = INT64_C(10); if (__builtin_mul_overflow(t31, t32, &t33)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 155, 13); t34 = h0_d.f_digits; t35 = h2_read; t36 = ((void)((t34 == NULL || t35 < 0 || t35 >= t34->len) ? hero_panic_index_at(t34, t35, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 155, 29) : (void)0), (void)(t34->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t34 + 1))[t35]); t37 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t36}; t140 = h16_own16; h16_own16 = t37; h_0opt_e201354_release(&t140); t141 = h5_f0; h_0opt_e201354_retain(&t37); h5_f0 = t37; h_0opt_e201354_release(&t141); t38 = h5_f0; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb13; else goto bb14; bb5:
+#line 146
+    t12 = h3_n; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb8; else goto bb9; bb6: goto bb4; bb7: goto bb10; bb8:
+    t15 = hero_array_new(&hero_desc_u8, 1); t142 = h17_own17; h17_own17 = t15; hero_array_decref(t142); t143 = h4_nothing; hero_array_incref(t15); h4_nothing = t15; hero_array_decref(t143);
+    t16 = h4_nothing; t17 = INT64_C(0); t18 = h0_d.f_truncated; hero_array_incref(t16); t19 = (h_1coreencodingjsoninternaldecimal_Decimal){.f_digits = t16, .f_point = t17, .f_truncated = t18}; t144 = h18_own18; h18_own18 = t19; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t144); h14_ret0 = t19; goto bb32; bb9: goto bb7; bb10:
+#line 150
+    t20 = h3_n; t21 = h1_k; if (t21 < 0 || t21 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 150, 19); t22 = (t20 < 0) ? ~(int64_t)((~(uint64_t)t20) >> (uint64_t)t21) : (int64_t)((uint64_t)t20 >> (uint64_t)t21); t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb11; else goto bb12; bb11:
+    t25 = h3_n; t26 = INT64_C(10); if (__builtin_mul_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 151, 21); h3_n = t27;
+    t28 = h2_read; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 152, 24); h2_read = t30; goto bb10; bb12: goto bb3; bb13:
+#line 155
+    t44 = h5_f0; t45 = t44.as.ok; if (__builtin_add_overflow(t33, t45, &t46)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 155, 13); h3_n = t46;
+    t47 = h2_read; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 156, 16); h2_read = t49; goto bb1; bb14:
+#line 155
+    t42 = h5_f0; t43 = t42.as.err;
+#line 2987 "main.c"
+    hero_panic_must_at(t43, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 155, 22);
+    hero_unreachable();
+bb15:
+#line 164 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t61 = h2_read; t62 = h0_d.f_digits; t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len); t64 = t61 < t63; if (t64) goto bb16; else goto bb17; bb16:
+    t66 = h3_n; t67 = h1_k; if (t67 < 0 || t67 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 165, 36); t68 = (t66 < 0) ? ~(int64_t)((~(uint64_t)t66) >> (uint64_t)t67) : (int64_t)((uint64_t)t66 >> (uint64_t)t67); if (t68 >= 0LL && t68 <= 255LL) { t69 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t68}; } else { t69 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t145 = h19_own19; h19_own19 = t69; h_0opt_1ec004_release(&t145); t146 = h9_f1; h_0opt_1ec004_retain(&t69); h9_f1 = t69; h_0opt_1ec004_release(&t146); t70 = h9_f1; t71 = t70.tag; t72 = INT64_C(0); t73 = t71 == t72; if (t73) goto bb18; else goto bb19; bb17:
+#line 169
+    t100 = h0_d.f_truncated; h11_truncated = t100; goto bb22; bb18:
+#line 165
+    t76 = h9_f1; t77 = t76.as.ok; hero_array_push_owned(&h8_digits, &t77);
+    t79 = h3_n; t80 = h7_mask; t81 = t79 & t80; t82 = INT64_C(10); if (__builtin_mul_overflow(t81, t82, &t83)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 166, 13); t84 = h0_d.f_digits; t85 = h2_read; t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 166, 38) : (void)0), (void)(t84->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t84 + 1))[t85]); t87 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t86}; t147 = h20_own20; h20_own20 = t87; h_0opt_e201354_release(&t147); t148 = h10_f2; h_0opt_e201354_retain(&t87); h10_f2 = t87; h_0opt_e201354_release(&t148); t88 = h10_f2; t89 = t88.tag; t90 = INT64_C(0); t91 = t89 == t90; if (t91) goto bb20; else goto bb21; bb19:
+#line 165
+    t74 = h9_f1; t75 = t74.as.err;
+#line 3001 "main.c"
+    hero_panic_must_at(t75, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 165, 30);
+    hero_unreachable();
+bb20:
+#line 166 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t94 = h10_f2; t95 = t94.as.ok; if (__builtin_add_overflow(t83, t95, &t96)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 166, 13); h3_n = t96;
+    t97 = h2_read; t98 = INT64_C(1); if (__builtin_add_overflow(t97, t98, &t99)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 167, 16); h2_read = t99; goto bb15; bb21:
+#line 166
+    t92 = h10_f2; t93 = t92.as.err;
+#line 3010 "main.c"
+    hero_panic_must_at(t93, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 166, 31);
+    hero_unreachable();
+bb22:
+#line 171 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t101 = h3_n; t102 = INT64_C(0); t103 = t101 > t102; if (t103) goto bb23; else goto bb24; bb23:
+    t104 = h3_n; t105 = h1_k; if (t105 < 0 || t105 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 172, 23); t106 = (t104 < 0) ? ~(int64_t)((~(uint64_t)t104) >> (uint64_t)t105) : (int64_t)((uint64_t)t104 >> (uint64_t)t105); if (t106 >= 0LL && t106 <= 255LL) { t107 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t106}; } else { t107 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t149 = h21_own21; h21_own21 = t107; h_0opt_1ec004_release(&t149); t150 = h12_f3; h_0opt_1ec004_retain(&t107); h12_f3 = t107; h_0opt_1ec004_release(&t150); t108 = h12_f3; t109 = t108.tag; t110 = INT64_C(0); t111 = t109 == t110; if (t111) goto bb25; else goto bb26; bb24:
+#line 180
+    t132 = h8_digits; t133 = h6_point; t134 = h11_truncated; hero_array_incref(t132); t135 = (h_1coreencodingjsoninternaldecimal_Decimal){.f_digits = t132, .f_point = t133, .f_truncated = t134}; t151 = h22_own22; h22_own22 = t135; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t151); t136 = h_1coreencodingjsoninternaldecimal_trimmed(t135); t152 = h23_own23; h23_own23 = t136; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t152); h14_ret0 = t136; goto bb32; bb25:
+#line 172
+    t114 = h12_f3; t115 = t114.as.ok; h13_digit = t115;
+    t116 = h3_n; t117 = h7_mask; t118 = t116 & t117; t119 = INT64_C(10); if (__builtin_mul_overflow(t118, t119, &t120)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 173, 13); h3_n = t120;
+#line 175
+    t121 = h8_digits; t122 = ((void)(t121 == NULL ? ((void)hero_array_len(t121), hero_unreachable()) : (void)0), t121->len); t123 = h_1coreencodingjsoninternaldecimal_CAPACITY(); t124 = t122 < t123; if (t124) goto bb28; else goto bb29; bb26:
+#line 172
+    t112 = h12_f3; t113 = t112.as.err;
+#line 3026 "main.c"
+    hero_panic_must_at(t113, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 172, 17);
+    hero_unreachable();
+bb27:
+    goto bb22;
+bb28:
+#line 176 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t126 = h13_digit; hero_array_push_owned(&h8_digits, &t126); goto bb27; bb29:
+    t128 = h13_digit; t129 = UINT64_C(0); t130 = t128 != t129; if (t130) goto bb30; else goto bb31; bb30:
+    t131 = true; h11_truncated = t131; goto bb27; bb31: goto bb27; bb32:
+#line 3036 "main.c"
+    t137 = h14_ret0;
+    h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t137);
+    hero_array_release_at(&h4_nothing);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h8_digits);
+    h_0opt_1ec004_release(hero_slot_escape(&h9_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h10_f2));
+    h_0opt_1ec004_release(hero_slot_escape(&h12_f3));
+    hero_array_release_at(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    hero_array_release_at(&h17_own17);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h18_own18));
+    h_0opt_1ec004_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_1ec004_release(hero_slot_escape(&h21_own21));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h22_own22));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h23_own23));
+    return t137;
+}
+
+#line 184 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+bool h_1coreencodingjsoninternaldecimal_rounds_up(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_at) { HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, h5_ret0, t3, t7, t8, t9, t14, t20, t21, t22, t23, t26, t35, t36, t41, t42; HERO_NODEBUG int64_t t1, t2, t4, t6, t11, t15, t16, t17, t19, t24, t25, t28, t29, t30, t38; HERO_NODEBUG HeroArrayHeader *t5, *t10, *t18, *t27, *t37; HERO_NODEBUG uint8_t t12, t13, t31, t32, t33, t34, t39, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_at; t2 = INT64_C(0); t3 = t1 < t2; h2_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 188
+    t10 = h0_d.f_digits; t11 = h1_at; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/encoding/json/internal/decimal.hero", "decimal.rounds_up", 188, 8) : (void)0), (void)(t10->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t10 + 1))[t11]); t13 = UINT64_C(5); t14 = t12 == t13; h3_b1 = t14; if (t14) goto bb7; else goto bb8; bb2:
+#line 185
+    t4 = h1_at; t5 = h0_d.f_digits; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 >= t6; h2_b0 = t7; goto bb3; bb3: t8 = h2_b0; if (t8) goto bb4; else goto bb5; bb4:
+    t9 = false; h5_ret0 = t9; goto bb16; bb5: goto bb1; bb6:
+#line 192
+    t37 = h0_d.f_digits; t38 = h1_at; t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? hero_panic_index_at(t37, t38, "<core>/encoding/json/internal/decimal.hero", "decimal.rounds_up", 192, 12) : (void)0), (void)(t37->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t37 + 1))[t38]); t40 = UINT64_C(5); t41 = t39 >= t40; h5_ret0 = t41; goto bb16; bb7:
+#line 188
+    t15 = h1_at; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounds_up", 188, 29); t18 = h0_d.f_digits; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 == t19; h3_b1 = t20; goto bb8; bb8: t21 = h3_b1; if (t21) goto bb9; else goto bb10; bb9:
+    t22 = h0_d.f_truncated; if (t22) goto bb12; else goto bb13; bb10: goto bb6; bb11:
+#line 191
+    t24 = h1_at; t25 = INT64_C(0); t26 = t24 > t25; h4_b2 = t26; if (t26) goto bb14; else goto bb15; bb12:
+#line 190
+    t23 = true; h5_ret0 = t23; goto bb16; bb13: goto bb11; bb14:
+    t27 = h0_d.f_digits; t28 = h1_at; t29 = INT64_C(1); if (__builtin_sub_overflow(t28, t29, &t30)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounds_up", 191, 35); t31 = ((void)((t27 == NULL || t30 < 0 || t30 >= t27->len) ? hero_panic_index_at(t27, t30, "<core>/encoding/json/internal/decimal.hero", "decimal.rounds_up", 191, 26) : (void)0), (void)(t27->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t27 + 1))[t30]); t32 = UINT64_C(2); if (t32 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.rounds_up", 191, 26); t33 = t31 % t32; t34 = UINT64_C(1); t35 = t33 == t34; h4_b2 = t35; goto bb15; bb15: t36 = h4_b2; h5_ret0 = t36; goto bb16; bb16:
+#line 3075 "main.c"
+    t42 = h5_ret0;
+    return t42;
+}
+
+#line 196 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+int64_t h_1coreencodingjsoninternaldecimal_rounded(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { int64_t h1_n; int64_t h2_i; HERO_NODEBUG bool h3_b0, t5, t9, t10, t21, t32, t41; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h6_own6 = {0}, t17, t18, t22, t24, t47, t48; HERO_NODEBUG int64_t h5_ret0, t1, t2, t3, t4, t6, t8, t11, t12, t13, t15, t19, t20, t25, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t37, t38, t40, t42, t43, t44, t45, t46; HERO_NODEBUG HeroArrayHeader *t7, *t14; HERO_NODEBUG uint8_t t16; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal t39; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1;
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 200
+    t3 = h2_i; t4 = h0_d.f_point; t5 = t3 < t4; h3_b0 = t5; if (t5) goto bb4; else goto bb5; bb2:
+    t11 = h1_n; t12 = INT64_C(10); if (__builtin_mul_overflow(t11, t12, &t13)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 201, 13); t14 = h0_d.f_digits; t15 = h2_i; t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 201, 29) : (void)0), (void)(t14->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t14 + 1))[t15]); t17 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t16}; t47 = h6_own6; h6_own6 = t17; h_0opt_e201354_release(&t47); t48 = h4_f0; h_0opt_e201354_retain(&t17); h4_f0 = t17; h_0opt_e201354_release(&t48); t18 = h4_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb6; else goto bb7; bb3: goto bb8; bb4:
+#line 200
+    t6 = h2_i; t7 = h0_d.f_digits; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; h3_b0 = t9; goto bb5; bb5: t10 = h3_b0; if (t10) goto bb2; else goto bb3; bb6:
+    t24 = h4_f0; t25 = t24.as.ok; if (__builtin_add_overflow(t13, t25, &t26)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 201, 13); h1_n = t26;
+    t27 = h2_i; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 202, 13); h2_i = t29; goto bb1; bb7:
+#line 201
+    t22 = h4_f0; t23 = t22.as.err;
+#line 3093 "main.c"
+    hero_panic_must_at(t23, "<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 201, 22);
+    hero_unreachable();
+bb8:
+#line 204 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+    t30 = h2_i; t31 = h0_d.f_point; t32 = t30 < t31; if (t32) goto bb9; else goto bb10; bb9:
+    t33 = h1_n; t34 = INT64_C(10); if (__builtin_mul_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 205, 13); h1_n = t35;
+    t36 = h2_i; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 206, 13); h2_i = t38; goto bb8; bb10:
+#line 208
+    t39 = h0_d; t40 = h0_d.f_point; t41 = h_1coreencodingjsoninternaldecimal_rounds_up(t39, t40); if (t41) goto bb12; else goto bb13; bb11:
+#line 210
+    t45 = h1_n; h5_ret0 = t45; goto bb14; bb12:
+#line 209
+    t42 = h1_n; t43 = INT64_C(1); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 209, 16); h5_ret0 = t44; goto bb14; bb13: goto bb11; bb14:
+#line 3107 "main.c"
+    t46 = h5_ret0;
+    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    return t46;
+}
+
+#line 213 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+int64_t h_1coreencodingjsoninternaldecimal_step_for(int64_t h0_n) { HERO_NODEBUG int64_t h1_ret0, t1, t3, t6, t7, t8, t9, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t2, *t5, *t14, *t15; HERO_NODEBUG bool t4, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h_1coreencodingjsoninternaldecimal_STEPS(); t14 = h2_own2; h2_own2 = t2; hero_array_decref(t14); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = t1 < t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 217
+    t8 = h0_n; t9 = INT64_C(18); t10 = t8 < t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 215
+    t5 = h_1coreencodingjsoninternaldecimal_STEPS(); t15 = h3_own3; h3_own3 = t5; hero_array_decref(t15); t6 = h0_n; t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "<core>/encoding/json/internal/decimal.hero", "decimal.step_for", 215, 16) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]); h1_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+#line 219
+    t12 = h_1coreencodingjsoninternaldecimal_WIDEST(); h1_ret0 = t12; goto bb7; bb5:
+#line 218
+    t11 = INT64_C(27); h1_ret0 = t11; goto bb7; bb6: goto bb4; bb7:
+#line 3125 "main.c"
+    t13 = h1_ret0;
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    return t13;
+}
+
+#line 224 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_rounded_to_float(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { h_1coreencodingjsoninternaldecimal_Decimal h1_x = {0}; int64_t h2_exponent; int64_t h3_n; HERO_NODEBUG bool h4_b0, h5_b1, t4, t9, t15, t22, t35, t38, t43, t44, t45, t61, t75, t87, t96; int64_t h6_n; int64_t h7_n; int64_t h8_significand; HERO_NODEBUG h_0opt_db92a83 h9_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t6, t12, t17, t78, t99, t106, t107, t108, t109, t111, t119, t120, t121; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t18, t25, t29, t50, t52, t65, t69, t79, t81, t110, t112, t113, t114, t115, t116, t117, t118; HERO_NODEBUG HeroArrayHeader *t1, *t39; HERO_NODEBUG int64_t t2, t3, t7, t8, t13, t14, t19, t20, t21, t23, t24, t26, t27, t28, t30, t31, t32, t33, t34, t36, t37, t40, t46, t47, t48, t49, t51, t53, t54, t55, t56, t57, t58, t59, t60, t62, t63, t64, t66, t67, t68, t70, t71, t72, t73, t74, t80, t82, t83, t84, t85, t86, t88, t89, t90, t91, t92, t93, t94, t95, t100, t102, t103, t104; HERO_NODEBUG double t5, t16, t101, t105; HERO_NODEBUG HeroStr t10, t11, t76, t77, t97, t98; HERO_NODEBUG uint8_t t41, t42; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_d.f_digits; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 228
+    t7 = h0_d.f_point; t8 = INT64_C(310); t9 = t7 > t8; if (t9) goto bb5; else goto bb6; bb2:
+#line 226
+    t5 = 0x0p+0; t6 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t5}; t108 = h10_own10; h10_own10 = t6; h_0opt_db92a83_release(&t108); h9_ret0 = t6; goto bb32; bb3: goto bb1; bb4:
+#line 231
+    t13 = h0_d.f_point; t14 = INT64_C(-330); t15 = t13 < t14; if (t15) goto bb8; else goto bb9; bb5:
+#line 229
+    t10 = HERO_STR_LIT(hero_str_2633b9f3); t11 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t109 = h11_own11; h11_own11 = t12; h_0opt_db92a83_release(&t109); h9_ret0 = t12; goto bb32; bb6: goto bb4; bb7:
+#line 233
+    t18 = h0_d; t110 = h1_x; h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t18); h1_x = t18; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t110);
+    t19 = INT64_C(0); h2_exponent = t19; goto bb10; bb8:
+#line 232
+    t16 = 0x0p+0; t17 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t16}; t111 = h12_own12; h12_own12 = t17; h_0opt_db92a83_release(&t111); h9_ret0 = t17; goto bb32; bb9: goto bb7; bb10:
+#line 236
+    t20 = h1_x.f_point; t21 = INT64_C(0); t22 = t20 > t21; if (t22) goto bb11; else goto bb12; bb11:
+    t23 = h1_x.f_point; t24 = h_1coreencodingjsoninternaldecimal_step_for(t23); h3_n = t24;
+    t25 = h1_x; t26 = INT64_C(0); t27 = h3_n; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 238, 30); t29 = h_1coreencodingjsoninternaldecimal_shifted(t25, t28); t112 = h13_own13; h13_own13 = t29; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t112); t113 = h1_x; h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t29); h1_x = t29; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t113);
+    t30 = h2_exponent; t31 = h3_n; if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 239, 20); h2_exponent = t32; goto bb10; bb12: goto bb13; bb13:
+#line 241
+    t33 = h1_x.f_point; t34 = INT64_C(0); t35 = t33 < t34; h4_b0 = t35; if (t35) goto bb17; else goto bb16; bb14:
+    t46 = INT64_C(0); t47 = h1_x.f_point; if (__builtin_sub_overflow(t46, t47, &t48)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 242, 22); t49 = h_1coreencodingjsoninternaldecimal_step_for(t48); h6_n = t49;
+    t50 = h1_x; t51 = h6_n; t52 = h_1coreencodingjsoninternaldecimal_shifted(t50, t51); t114 = h14_own14; h14_own14 = t52; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t114); t115 = h1_x; h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t52); h1_x = t52; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t115);
+    t53 = h2_exponent; t54 = h6_n; if (__builtin_sub_overflow(t53, t54, &t55)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 244, 20); h2_exponent = t55; goto bb13; bb15:
+#line 247
+    t56 = h2_exponent; t57 = INT64_C(1); if (__builtin_sub_overflow(t56, t57, &t58)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 247, 16); h2_exponent = t58;
+#line 251
+    t59 = h2_exponent; t60 = INT64_C(-1022); t61 = t59 < t60; if (t61) goto bb21; else goto bb22; bb16:
+#line 241
+    t36 = h1_x.f_point; t37 = INT64_C(0); t38 = t36 == t37; h5_b1 = t38; if (t38) goto bb18; else goto bb19; bb17: t45 = h4_b0; if (t45) goto bb14; else goto bb15; bb18: t39 = h1_x.f_digits; t40 = INT64_C(0); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 241, 42) : (void)0), (void)(t39->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t39 + 1))[t40]); t42 = UINT64_C(5); t43 = t41 < t42; h5_b1 = t43; goto bb19; bb19: t44 = h5_b1; h4_b0 = t44; goto bb17; bb20:
+#line 256
+    t73 = h2_exponent; t74 = INT64_C(1023); t75 = t73 > t74; if (t75) goto bb24; else goto bb25; bb21:
+#line 252
+    t62 = INT64_C(-1022); t63 = h2_exponent; if (__builtin_sub_overflow(t62, t63, &t64)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 252, 13); h7_n = t64;
+    t65 = h1_x; t66 = INT64_C(0); t67 = h7_n; if (__builtin_sub_overflow(t66, t67, &t68)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 253, 30); t69 = h_1coreencodingjsoninternaldecimal_shifted(t65, t68); t116 = h15_own15; h15_own15 = t69; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t116); t117 = h1_x; h_1coreencodingjsoninternaldecimal_0Decimal_retain(&t69); h1_x = t69; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t117);
+    t70 = h2_exponent; t71 = h7_n; if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 254, 20); h2_exponent = t72; goto bb20; bb22: goto bb20; bb23:
+#line 258
+    t79 = h1_x; t80 = INT64_C(53); t81 = h_1coreencodingjsoninternaldecimal_shifted(t79, t80); t118 = h16_own16; h16_own16 = t81; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t118); t82 = h_1coreencodingjsoninternaldecimal_rounded(t81); h8_significand = t82;
+#line 261
+    t83 = h8_significand; t84 = INT64_C(1); t85 = INT64_C(53); if (t85 < 0 || t85 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 261, 23); t86 = (int64_t)((uint64_t)t84 << (uint64_t)t85); t87 = t83 == t86; if (t87) goto bb27; else goto bb28; bb24:
+#line 257
+    t76 = HERO_STR_LIT(hero_str_2633b9f3); t77 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t76); hero_str_incref(t77); t78 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t76, .msg = t77}}; t119 = h17_own17; h17_own17 = t78; h_0opt_db92a83_release(&t119); h9_ret0 = t78; goto bb32; bb25: goto bb23; bb26:
+#line 270
+    t100 = h8_significand; t101 = hero_int_to_f64(t100); t102 = h2_exponent; t103 = INT64_C(52); if (__builtin_sub_overflow(t102, t103, &t104)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 270, 49); t105 = h_1coreencodingjsoninternaldecimal_scaled(t101, t104); t106 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t105}; t120 = h18_own18; h18_own18 = t106; h_0opt_db92a83_release(&t120); h9_ret0 = t106; goto bb32; bb27:
+#line 262
+    t88 = h8_significand; t89 = INT64_C(2); if (t89 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 262, 23); if (t88 == INT64_MIN && t89 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 262, 23); t90 = t88 / t89; h8_significand = t90;
+    t91 = h2_exponent; t92 = INT64_C(1); if (__builtin_add_overflow(t91, t92, &t93)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded_to_float", 263, 20); h2_exponent = t93;
+#line 265
+    t94 = h2_exponent; t95 = INT64_C(1023); t96 = t94 > t95; if (t96) goto bb30; else goto bb31; bb28: goto bb26; bb29: goto bb26; bb30:
+#line 267
+    t97 = HERO_STR_LIT(hero_str_2633b9f3);
+    t98 = HERO_STR_LIT(hero_str_37842519);
+#line 266
+    hero_str_incref(t97); hero_str_incref(t98); t99 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t97, .msg = t98}}; t121 = h19_own19; h19_own19 = t99; h_0opt_db92a83_release(&t121); h9_ret0 = t99; goto bb32; bb31: goto bb29; bb32:
+#line 3188 "main.c"
+    t107 = h9_ret0;
+    h_0opt_db92a83_retain(&t107);
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h1_x));
+    h_0opt_db92a83_release(hero_slot_escape(&h10_own10));
+    h_0opt_db92a83_release(hero_slot_escape(&h11_own11));
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h13_own13));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h14_own14));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h15_own15));
+    h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h16_own16));
+    h_0opt_db92a83_release(hero_slot_escape(&h17_own17));
+    h_0opt_db92a83_release(hero_slot_escape(&h18_own18));
+    h_0opt_db92a83_release(hero_slot_escape(&h19_own19));
+    return t107;
+}
+
+#line 275 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+double h_1coreencodingjsoninternaldecimal_scaled(double h0_x, int64_t h1_k) { double h2_out; int64_t h3_i; HERO_NODEBUG double t1, t6, t7, t8, t15, t16, t17, t21; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11, t12, t13, t18, t19, t20; HERO_NODEBUG bool t5, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; h2_out = t1;
+    t2 = INT64_C(0); h3_i = t2; goto bb1; bb1:
+#line 279
+    t3 = h3_i; t4 = h1_k; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h2_out; t7 = 0x1p+1; t8 = t6 * t7; h2_out = t8;
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.scaled", 281, 13); h3_i = t11; goto bb1; bb3: goto bb4; bb4:
+#line 283
+    t12 = h3_i; t13 = h1_k; t14 = t12 > t13; if (t14) goto bb5; else goto bb6; bb5:
+    t15 = h2_out; t16 = 0x1p+1; t17 = t15 / t16; h2_out = t17;
+    t18 = h3_i; t19 = INT64_C(1); if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.scaled", 285, 13); h3_i = t20; goto bb4; bb6:
+#line 287
+    t21 = h2_out; return t21;
+#line 3219 "main.c"
+}
+
+#line 292 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/encoding/json/internal/decimal.hero"
+HeroStr h_1coreencodingjsoninternaldecimal_shown(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t26, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17, t23; uint8_t h4_digit; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t13, t19, t20, t21, t22, t24, t25, t29, t30, t31, t32, t33; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t26 = h5_own5; h5_own5 = t1; hero_array_decref(t26); t27 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t27);
+#line 295
+    t2 = h0_d.f_digits; t28 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t28); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "<core>/encoding/json/internal/decimal.hero", "decimal.shown", 295, 9) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); h4_digit = t10;
+    t12 = h4_digit; t13 = hero_int_to_str(t12); t29 = h6_own6; h6_own6 = t13; hero_str_decref(t29); hero_array_push_owned(&h1_out, &t13); goto bb3; bb3:
+#line 295
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.shown", 295, 9); h3_i0 = t17; goto bb1; bb4:
+#line 298
+    t18 = h1_out; t19 = HERO_STR_LIT(hero_str_0); t20 = hero_str_join(t18, t19); t30 = h7_own7; h7_own7 = t20; hero_str_decref(t30); t21 = HERO_STR_LIT(hero_str_10c5); t22 = hero_str_concat(t20, t21); t31 = h8_own8; h8_own8 = t22; hero_str_decref(t31); t23 = h0_d.f_point; t24 = hero_int_to_str(t23); t32 = h9_own9; h9_own9 = t24; hero_str_decref(t32); t25 = hero_str_concat(t22, t24); t33 = h10_own10; h10_own10 = t25; hero_str_decref(t33);
+#line 3232 "main.c"
+    hero_str_incref(t25);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    return t25;
+}
+
+#line 6 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strconv/internal/shown.hero"
 HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t5, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG int64_t t2, t3, t6; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = INT64_C(40); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 9
     t12 = h0_s; t13 = HERO_STR_LIT(hero_str_22); t14 = HERO_STR_LIT(hero_str_22); t15 = hero_str_concat(t13, t12); t18 = h2_own2; h2_own2 = t15; hero_str_decref(t18); t16 = hero_str_concat(t15, t14); t19 = h3_own3; h3_own3 = t16; hero_str_decref(t19); h1_ret0 = t16; goto bb4; bb2:
 #line 8
     t5 = h0_s; t6 = hero_str_len(t5); t7 = HERO_STR_LIT(hero_str_75bf279b); t8 = hero_int_to_str(t6); t20 = h4_own4; h4_own4 = t8; hero_str_decref(t20); t9 = HERO_STR_LIT(hero_str_391e7e27); t10 = hero_str_concat(t7, t8); t21 = h5_own5; h5_own5 = t10; hero_str_decref(t21); t11 = hero_str_concat(t10, t9); t22 = h6_own6; h6_own6 = t11; hero_str_decref(t22); h1_ret0 = t11; goto bb4; bb3: goto bb1; bb4:
-#line 492 "main.c"
+#line 3252 "main.c"
     t17 = h1_ret0;
     hero_str_incref(t17);
     hero_str_release_at(&h2_own2);
@@ -499,7 +3259,7 @@ HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr 
     return t17;
 }
 
-#line 17 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings/internal/scan.hero"
+#line 17 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) { uint8_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, h10_b5, h11_b6, h12_b7, h13_b8, h14_b9, h15_b10, h16_b11, h17_b12, h18_b13, h19_b14, t6, t9, t12, t13, t14, t18, t24, t31, t38, t39, t40, t48, t62, t65, t66, t69, t70, t74, t77, t78, t81, t84, t85, t88, t89, t92, t93, t94, t98, t101, t102, t105, t106, t110, t113, t114, t117, t118; uint8_t h7_second; uint8_t h8_third; HERO_NODEBUG int64_t h20_ret0, t2, t15, t19, t20, t21, t23, t26, t27, t28, t33, t34, t35, t41, t42, t43, t44, t45, t47, t49, t51, t52, t53, t56, t57, t58, t71, t95, t107, t119, t120, t121; HERO_NODEBUG HeroStr t1, t22, t25, t32, t46, t50, t55; HERO_NODEBUG uint8_t t3, t4, t5, t7, t8, t10, t11, t16, t17, t29, t30, t36, t37, t54, t59, t60, t61, t63, t64, t67, t68, t72, t73, t75, t76, t79, t80, t82, t83, t86, t87, t90, t91, t96, t97, t99, t100, t103, t104, t108, t109, t111, t112, t115, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "<core>/strings/internal/scan.hero", "scan.space_width_at", 18, 13) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); h2_first = t3;
 #line 20
@@ -545,12 +3305,12 @@ int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) {
 #line 42
     t111 = h7_second; t112 = UINT64_C(128); t113 = t111 == t112; h19_b14 = t113; goto bb50; bb50: t114 = h19_b14; h18_b13 = t114; if (t114) goto bb51; else goto bb52; bb51: t115 = h8_third; t116 = UINT64_C(128); t117 = t115 == t116; h18_b13 = t117; goto bb52; bb52: t118 = h18_b13; if (t118) goto bb53; else goto bb54; bb53:
     t119 = INT64_C(3); h20_ret0 = t119; goto bb55; bb54: goto bb48; bb55:
-#line 549 "main.c"
+#line 3309 "main.c"
     t121 = h20_ret0;
     return t121;
 }
 
-#line 48 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings/internal/scan.hero"
+#line 48 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t4, *t7, *t10, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_ret0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t14, t15, t16, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30, t31; int64_t h4_width; HERO_NODEBUG bool h5_b0, t9, t17, t24, t25; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t32 = h7_own7; h7_own7 = t4; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t33); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/strings/internal/scan.hero", "scan.space_width_before", 49, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_width = t12;
     t13 = h1_end; t14 = h4_width; if (__builtin_sub_overflow(t13, t14, &t15)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 12); t16 = INT64_C(0); t17 = t15 >= t16; h5_b0 = t17; if (t17) goto bb6; else goto bb7; bb3:
@@ -561,14 +3321,14 @@ int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_e
 #line 50
     t18 = h0_s; t19 = h1_end; t20 = h4_width; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 50); t22 = h_1corestringsinternalscan_space_width_at(t18, t21); t23 = h4_width; t24 = t22 == t23; h5_b0 = t24; goto bb7; bb7: t25 = h5_b0; if (t25) goto bb8; else goto bb9; bb8:
     t26 = h4_width; h6_ret0 = t26; goto bb10; bb9: goto bb5; bb10:
-#line 565 "main.c"
+#line 3325 "main.c"
     t31 = h6_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h7_own7);
     return t31;
 }
 
-#line 57 "examples/packages/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings/internal/scan.hero"
+#line 57 "examples/packages/heroes.packages/core@0.2.0-8c07af1fca61d171/strings/internal/scan.hero"
 h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep) { int64_t h2_last; int64_t h3_at; int64_t h4_matched; HERO_NODEBUG bool h5_b0, t9, t14, t23, t24, t31, t40; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h18_own18 = {0}, t33, t53, t64, t65, t66, t71, t77; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t1, t3, t12, t15, t20, t29, t37, t41, t42, t43, t45, t46, t47, t48, t49, t50, t51, t52, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t67, t68, t69, t70, t72, t73, t74, t75, t76; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t11, t13, t16, t17, t18, t21, t25, t26, t27, t28, t30, t32, t34, t35, t36, t38, t39, t44; HERO_NODEBUG uint8_t t19, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = h1_sep; t4 = hero_str_len(t3); if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.first_at", 58, 12); h2_last = t5;
     t6 = INT64_C(0); h3_at = t6; goto bb1; bb1:
@@ -592,7 +3352,7 @@ h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep)
     t54 = HERO_STR_LIT(hero_str_59e06249); t55 = h1_sep; t56 = h0_s; t57 = HERO_STR_LIT(hero_str_eda7a03); t58 = HERO_STR_LIT(hero_str_277784c0); t59 = HERO_STR_LIT(hero_str_22); t60 = hero_str_concat(t57, t55); t67 = h8_own8; h8_own8 = t60; hero_str_decref(t67); t61 = hero_str_concat(t60, t58); t68 = h9_own9; h9_own9 = t61; hero_str_decref(t68); t62 = hero_str_concat(t61, t56); t69 = h10_own10; h10_own10 = t62; hero_str_decref(t69); t63 = hero_str_concat(t62, t59); t70 = h11_own11; h11_own11 = t63; hero_str_decref(t70); hero_str_incref(t54); hero_str_incref(t63); t64 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t63}}; t71 = h12_own12; h12_own12 = t64; h_0opt_e201354_release(&t71); h6_ret0 = t64; goto bb15; bb13:
 #line 72
     t41 = HERO_STR_LIT(hero_str_59e06249); t42 = h1_sep; t43 = h0_s; t44 = hero_str_len(t43); t45 = HERO_STR_LIT(hero_str_eda7a03); t46 = HERO_STR_LIT(hero_str_2cee3aa3); t47 = hero_int_to_str(t44); t72 = h13_own13; h13_own13 = t47; hero_str_decref(t72); t48 = HERO_STR_LIT(hero_str_391e7e27); t49 = hero_str_concat(t45, t42); t73 = h14_own14; h14_own14 = t49; hero_str_decref(t73); t50 = hero_str_concat(t49, t46); t74 = h15_own15; h15_own15 = t50; hero_str_decref(t74); t51 = hero_str_concat(t50, t47); t75 = h16_own16; h16_own16 = t51; hero_str_decref(t75); t52 = hero_str_concat(t51, t48); t76 = h17_own17; h17_own17 = t52; hero_str_decref(t76); hero_str_incref(t41); hero_str_incref(t52); t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t41, .msg = t52}}; t77 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t77); h6_ret0 = t53; goto bb15; bb14: goto bb12; bb15:
-#line 596 "main.c"
+#line 3356 "main.c"
     t65 = h6_ret0;
     h_0opt_e201354_retain(&t65);
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -609,6 +3369,155 @@ h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep)
     h_0opt_e201354_release(hero_slot_escape(&h18_own18));
     return t65;
 }
+
+#line 26 "<heroes library>"
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
+    t2 = h0_from; h3_i = t2; goto bb1; bb1:
+    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
+    t12 = h2_out;
+#line 3382 "main.c"
+    hero_array_incref(t12);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
+    return t12;
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
+}
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_boolean_eq(const h_1coreencodingjson_0Value_c_boolean *a, const h_1coreencodingjson_0Value_c_boolean *b) {
+    if (!(a->f_value == b->f_value)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_boolean_hash(const void *elem) {
+    const h_1coreencodingjson_0Value_c_boolean *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_number_eq(const h_1coreencodingjson_0Value_c_number *a, const h_1coreencodingjson_0Value_c_number *b) {
+    if (!(a->f_value == b->f_value)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_number_hash(const void *elem) {
+    const h_1coreencodingjson_0Value_c_number *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_f64)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_string_retain(const h_1coreencodingjson_0Value_c_string *v) {
+    hero_str_incref(v->f_value);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_string_release(h_1coreencodingjson_0Value_c_string *v) {
+    hero_str_decref(v->f_value);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_string_eq(const h_1coreencodingjson_0Value_c_string *a, const h_1coreencodingjson_0Value_c_string *b) {
+    if (!(hero_str_eq(a->f_value, b->f_value))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_string_hash(const void *elem) {
+    const h_1coreencodingjson_0Value_c_string *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_array_retain(const h_1coreencodingjson_0Value_c_array *v) {
+    hero_array_incref(v->f_items);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_array_release(h_1coreencodingjson_0Value_c_array *v) {
+    hero_array_decref(v->f_items);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_array_eq(const h_1coreencodingjson_0Value_c_array *a, const h_1coreencodingjson_0Value_c_array *b) {
+    if (!(hero_array_eq(a->f_items, b->f_items))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_array_hash(const void *elem) {
+    const h_1coreencodingjson_0Value_c_array *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_array)->hash(&v->f_items)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_object_retain(const h_1coreencodingjson_0Value_c_object *v) {
+    hero_map_incref(v->f_fields);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_c_object_release(h_1coreencodingjson_0Value_c_object *v) {
+    hero_map_decref(v->f_fields);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_c_object_eq(const h_1coreencodingjson_0Value_c_object *a, const h_1coreencodingjson_0Value_c_object *b) {
+    if (!(hero_map_eq(a->f_fields, b->f_fields))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_c_object_hash(const void *elem) {
+    const h_1coreencodingjson_0Value_c_object *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_map)->hash(&v->f_fields)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_retain(const h_1coreencodingjson_Value *v) {
+    switch (v->tag) {
+        case h_1coreencodingjson_0Value_tag_string: h_1coreencodingjson_0Value_c_string_retain(&v->as.c_string); break;
+        case h_1coreencodingjson_0Value_tag_array: h_1coreencodingjson_0Value_c_array_retain(&v->as.c_array); break;
+        case h_1coreencodingjson_0Value_tag_object: h_1coreencodingjson_0Value_c_object_retain(&v->as.c_object); break;
+        default: break;
+    }
+}
+
+HERO_TU_LOCAL void h_1coreencodingjson_0Value_release(h_1coreencodingjson_Value *v) {
+    switch (v->tag) {
+        case h_1coreencodingjson_0Value_tag_string: h_1coreencodingjson_0Value_c_string_release(&v->as.c_string); break;
+        case h_1coreencodingjson_0Value_tag_array: h_1coreencodingjson_0Value_c_array_release(&v->as.c_array); break;
+        case h_1coreencodingjson_0Value_tag_object: h_1coreencodingjson_0Value_c_object_release(&v->as.c_object); break;
+        default: break;
+    }
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjson_0Value_eq(const h_1coreencodingjson_Value *a, const h_1coreencodingjson_Value *b) {
+    if (a->tag != b->tag) return false;
+    switch (a->tag) {
+        case h_1coreencodingjson_0Value_tag_nothing: return true;
+        case h_1coreencodingjson_0Value_tag_boolean: return h_1coreencodingjson_0Value_c_boolean_eq(&a->as.c_boolean, &b->as.c_boolean);
+        case h_1coreencodingjson_0Value_tag_number: return h_1coreencodingjson_0Value_c_number_eq(&a->as.c_number, &b->as.c_number);
+        case h_1coreencodingjson_0Value_tag_string: return h_1coreencodingjson_0Value_c_string_eq(&a->as.c_string, &b->as.c_string);
+        case h_1coreencodingjson_0Value_tag_array: return h_1coreencodingjson_0Value_c_array_eq(&a->as.c_array, &b->as.c_array);
+        case h_1coreencodingjson_0Value_tag_object: return h_1coreencodingjson_0Value_c_object_eq(&a->as.c_object, &b->as.c_object);
+    }
+    hero_unreachable();
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjson_0Value_hash(const void *elem) {
+    const h_1coreencodingjson_Value *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    switch (v->tag) {
+        case h_1coreencodingjson_0Value_tag_nothing: return h;
+        case h_1coreencodingjson_0Value_tag_boolean: return (h ^ h_1coreencodingjson_0Value_c_boolean_hash(&v->as.c_boolean)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjson_0Value_tag_number: return (h ^ h_1coreencodingjson_0Value_c_number_hash(&v->as.c_number)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjson_0Value_tag_string: return (h ^ h_1coreencodingjson_0Value_c_string_hash(&v->as.c_string)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjson_0Value_tag_array: return (h ^ h_1coreencodingjson_0Value_c_array_hash(&v->as.c_array)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjson_0Value_tag_object: return (h ^ h_1coreencodingjson_0Value_c_object_hash(&v->as.c_object)) * UINT64_C(0x100000001b3);
+    }
+    hero_unreachable();
+}
+
 HERO_TU_LOCAL void h_1corestrings_0Halves_retain(const h_1corestrings_Halves *v) {
     hero_str_incref(v->f_before);
     hero_str_incref(v->f_after);
@@ -630,6 +3539,220 @@ HERO_TU_LOCAL uint64_t h_1corestrings_0Halves_hash(const void *elem) {
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_before)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_str)->hash(&v->f_after)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_name_retain(const h_1coreencodingjsoninternaltokens_0Token_c_name *v) {
+    hero_str_incref(v->f_text);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_name_release(h_1coreencodingjsoninternaltokens_0Token_c_name *v) {
+    hero_str_decref(v->f_text);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_name_eq(const h_1coreencodingjsoninternaltokens_0Token_c_name *a, const h_1coreencodingjsoninternaltokens_0Token_c_name *b) {
+    if (!(hero_str_eq(a->f_text, b->f_text))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_name_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_0Token_c_name *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_boolean_eq(const h_1coreencodingjsoninternaltokens_0Token_c_boolean *a, const h_1coreencodingjsoninternaltokens_0Token_c_boolean *b) {
+    if (!(a->f_value == b->f_value)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_boolean_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_0Token_c_boolean *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_number_eq(const h_1coreencodingjsoninternaltokens_0Token_c_number *a, const h_1coreencodingjsoninternaltokens_0Token_c_number *b) {
+    if (!(a->f_value == b->f_value)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_number_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_0Token_c_number *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_f64)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_string_retain(const h_1coreencodingjsoninternaltokens_0Token_c_string *v) {
+    hero_str_incref(v->f_value);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_c_string_release(h_1coreencodingjsoninternaltokens_0Token_c_string *v) {
+    hero_str_decref(v->f_value);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_c_string_eq(const h_1coreencodingjsoninternaltokens_0Token_c_string *a, const h_1coreencodingjsoninternaltokens_0Token_c_string *b) {
+    if (!(hero_str_eq(a->f_value, b->f_value))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_c_string_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_0Token_c_string *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_retain(const h_1coreencodingjsoninternaltokens_Token *v) {
+    switch (v->tag) {
+        case h_1coreencodingjsoninternaltokens_0Token_tag_name: h_1coreencodingjsoninternaltokens_0Token_c_name_retain(&v->as.c_name); break;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_string: h_1coreencodingjsoninternaltokens_0Token_c_string_retain(&v->as.c_string); break;
+        default: break;
+    }
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Token_release(h_1coreencodingjsoninternaltokens_Token *v) {
+    switch (v->tag) {
+        case h_1coreencodingjsoninternaltokens_0Token_tag_name: h_1coreencodingjsoninternaltokens_0Token_c_name_release(&v->as.c_name); break;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_string: h_1coreencodingjsoninternaltokens_0Token_c_string_release(&v->as.c_string); break;
+        default: break;
+    }
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Token_eq(const h_1coreencodingjsoninternaltokens_Token *a, const h_1coreencodingjsoninternaltokens_Token *b) {
+    if (a->tag != b->tag) return false;
+    switch (a->tag) {
+        case h_1coreencodingjsoninternaltokens_0Token_tag_open_array: return true;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_close_array: return true;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_open_object: return true;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_close_object: return true;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_name: return h_1coreencodingjsoninternaltokens_0Token_c_name_eq(&a->as.c_name, &b->as.c_name);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_nothing: return true;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_boolean: return h_1coreencodingjsoninternaltokens_0Token_c_boolean_eq(&a->as.c_boolean, &b->as.c_boolean);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_number: return h_1coreencodingjsoninternaltokens_0Token_c_number_eq(&a->as.c_number, &b->as.c_number);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_string: return h_1coreencodingjsoninternaltokens_0Token_c_string_eq(&a->as.c_string, &b->as.c_string);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_end: return true;
+    }
+    hero_unreachable();
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Token_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_Token *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    switch (v->tag) {
+        case h_1coreencodingjsoninternaltokens_0Token_tag_open_array: return h;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_close_array: return h;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_open_object: return h;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_close_object: return h;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_name: return (h ^ h_1coreencodingjsoninternaltokens_0Token_c_name_hash(&v->as.c_name)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_nothing: return h;
+        case h_1coreencodingjsoninternaltokens_0Token_tag_boolean: return (h ^ h_1coreencodingjsoninternaltokens_0Token_c_boolean_hash(&v->as.c_boolean)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_number: return (h ^ h_1coreencodingjsoninternaltokens_0Token_c_number_hash(&v->as.c_number)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_string: return (h ^ h_1coreencodingjsoninternaltokens_0Token_c_string_hash(&v->as.c_string)) * UINT64_C(0x100000001b3);
+        case h_1coreencodingjsoninternaltokens_0Token_tag_end: return h;
+    }
+    hero_unreachable();
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Want_eq(const h_1coreencodingjsoninternaltokens_Want *a, const h_1coreencodingjsoninternaltokens_Want *b) {
+    if (a->tag != b->tag) return false;
+    switch (a->tag) {
+        case h_1coreencodingjsoninternaltokens_0Want_tag_value: return true;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_value_or_close: return true;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_name_or_close: return true;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_name: return true;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_after: return true;
+    }
+    hero_unreachable();
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Want_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_Want *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    switch (v->tag) {
+        case h_1coreencodingjsoninternaltokens_0Want_tag_value: return h;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_value_or_close: return h;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_name_or_close: return h;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_name: return h;
+        case h_1coreencodingjsoninternaltokens_0Want_tag_after: return h;
+    }
+    hero_unreachable();
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternalcursor_0Cursor_retain(const h_1coreencodingjsoninternalcursor_Cursor *v) {
+    hero_str_incref(v->f_text);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternalcursor_0Cursor_release(h_1coreencodingjsoninternalcursor_Cursor *v) {
+    hero_str_decref(v->f_text);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternalcursor_0Cursor_eq(const h_1coreencodingjsoninternalcursor_Cursor *a, const h_1coreencodingjsoninternalcursor_Cursor *b) {
+    if (!(hero_str_eq(a->f_text, b->f_text))) return false;
+    if (!(a->f_at == b->f_at)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternalcursor_0Cursor_hash(const void *elem) {
+    const h_1coreencodingjsoninternalcursor_Cursor *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_at)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Reader_retain(const h_1coreencodingjsoninternaltokens_Reader *v) {
+    h_1coreencodingjsoninternalcursor_0Cursor_retain(&v->f_at);
+    hero_array_incref(v->f_open);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaltokens_0Reader_release(h_1coreencodingjsoninternaltokens_Reader *v) {
+    h_1coreencodingjsoninternalcursor_0Cursor_release(&v->f_at);
+    hero_array_decref(v->f_open);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaltokens_0Reader_eq(const h_1coreencodingjsoninternaltokens_Reader *a, const h_1coreencodingjsoninternaltokens_Reader *b) {
+    if (!(h_1coreencodingjsoninternalcursor_0Cursor_eq(&a->f_at, &b->f_at))) return false;
+    if (!(hero_array_eq(a->f_open, b->f_open))) return false;
+    if (!(h_1coreencodingjsoninternaltokens_0Want_eq(&a->f_want, &b->f_want))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaltokens_0Reader_hash(const void *elem) {
+    const h_1coreencodingjsoninternaltokens_Reader *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ h_1coreencodingjsoninternalcursor_0Cursor_hash(&v->f_at)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_array)->hash(&v->f_open)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_1coreencodingjsoninternaltokens_0Want_hash(&v->f_want)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaldecimal_0Decimal_retain(const h_1coreencodingjsoninternaldecimal_Decimal *v) {
+    hero_array_incref(v->f_digits);
+}
+
+HERO_TU_LOCAL void h_1coreencodingjsoninternaldecimal_0Decimal_release(h_1coreencodingjsoninternaldecimal_Decimal *v) {
+    hero_array_decref(v->f_digits);
+}
+
+HERO_TU_LOCAL bool h_1coreencodingjsoninternaldecimal_0Decimal_eq(const h_1coreencodingjsoninternaldecimal_Decimal *a, const h_1coreencodingjsoninternaldecimal_Decimal *b) {
+    if (!(hero_array_eq(a->f_digits, b->f_digits))) return false;
+    if (!(a->f_point == b->f_point)) return false;
+    if (!(a->f_truncated == b->f_truncated)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1coreencodingjsoninternaldecimal_0Decimal_hash(const void *elem) {
+    const h_1coreencodingjsoninternaldecimal_Decimal *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_array)->hash(&v->f_digits)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_point)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_truncated)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -697,6 +3820,38 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
+HERO_TU_LOCAL void h_0opt_64c818a4_retain(const h_0opt_64c818a4 *v) {
+    if (v->tag == INT64_C(0)) {
+        h_1coreencodingjson_0Value_retain(&v->as.ok);
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_64c818a4_release(h_0opt_64c818a4 *v) {
+    if (v->tag == INT64_C(0)) {
+        h_1coreencodingjson_0Value_release(&v->as.ok);
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_64c818a4_eq(const h_0opt_64c818a4 *a, const h_0opt_64c818a4 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&h_1coreencodingjson_0Value_desc)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_64c818a4_hash(const void *elem) {
+    const h_0opt_64c818a4 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&h_1coreencodingjson_0Value_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
@@ -727,6 +3882,134 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_f42698c_retain(const h_0opt_f42698c *v) {
+    if (v->tag == INT64_C(0)) {
+        h_1coreencodingjsoninternaltokens_0Token_retain(&v->as.ok);
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_f42698c_release(h_0opt_f42698c *v) {
+    if (v->tag == INT64_C(0)) {
+        h_1coreencodingjsoninternaltokens_0Token_release(&v->as.ok);
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_f42698c_eq(const h_0opt_f42698c *a, const h_0opt_f42698c *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&h_1coreencodingjsoninternaltokens_0Token_desc)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_f42698c_hash(const void *elem) {
+    const h_0opt_f42698c *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&h_1coreencodingjsoninternaltokens_0Token_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *a, const h_0opt_db92a83 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_f64)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *elem) {
+    const h_0opt_db92a83 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_f64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_u64)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem) {
+    const h_0opt_fbbb698 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_u64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
+    const h_0opt_1ec004 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
@@ -762,10 +4045,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3fe13bf06d9794e0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f2b02767c4ec4a7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
-    hero_stack_spell("1corestrconv\tstrconv\n1corestrings\tstrings\n1corestrconvinternalshown\tshown\n1corestringsinternalscan\tscan\n");
+    hero_stack_spell("1coreencodingjson\tjson\n1corestrconv\tstrconv\n1corestrings\tstrings\n1coreencodingjsoninternalnumeral\tnumeral\n1coreencodingjsoninternalquoted\tquoted\n1coreencodingjsoninternaltokens\ttokens\n1coreencodingjsoninternalcursor\tcursor\n1coreencodingjsoninternaldecimal\tdecimal\n1corestrconvinternalshown\tshown\n1corestringsinternalscan\tscan\n");
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

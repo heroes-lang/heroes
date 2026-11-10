@@ -1,0 +1,383 @@
+# JSON text read into a `Value` and a `Value` written as JSON text (RFC 8259),
+# where a text that is not JSON is a failure the caller answers and never an
+# abort. Go's `json.Marshal` and `json.Unmarshal` fill and read a program's own
+# types through reflection, which Heroes has no route for, so the contract is
+# another and so are the names: `parse` and `render` over one `Value`, a
+# variant a program matches.
+#
+# `parse` and `render` walk a value with loops, and no function calling
+# itself: a function called for each level would stand on this face, which
+# declares only what a program calls (`examples/packages/README.md` § 1.2),
+# and could not stand under `internal/`, whose modules cannot name `Value`
+# without using this one, a cycle the language refuses. The arrays and objects
+# still open are kept in arrays beside each loop instead. Both stop at a
+# nesting of 512, so a program's own walk of a value, a call per level, stays
+# inside its stack. The tokens, strings and numbers are read by the modules
+# under `encoding/json/internal/`.
+
+use encoding/json/internal/numeral
+use encoding/json/internal/quoted
+use encoding/json/internal/tokens
+
+# What `parse` fails with where a text is not JSON, and `render` where a
+# number is not finite, which no JSON text writes.
+constant NOT_JSON: str
+    "not_json"
+
+# What `parse` fails with where arrays and objects nest deeper than 512, and
+# `render` where a value does.
+constant TOO_DEEP: str
+    "too_deep"
+
+# What `field` fails with where the value it is asked of is no object.
+constant NOT_AN_OBJECT: str
+    "not_an_object"
+
+# A JSON value, one of JSON's six kinds: `nothing` is JSON's `null`, a word
+# Heroes refuses. An object's `fields` keep its names in the order the text
+# wrote them, which `keys` gives, and two objects holding the same fields are
+# equal in any order (spec § 7).
+variant Value
+    nothing
+    boolean
+        value: bool
+    number
+        value: f64
+    string
+        value: str
+    array
+        items: [Value]
+    object
+        fields: {str: Value}
+
+# The value `s` holds as JSON text, white space allowed around it and nothing
+# else after it. Each number is the `f64` nearest the number written, and a
+# name written twice in one object keeps the value written last. It fails
+# `not_json` where `s` is not JSON, `too_deep` where arrays and objects nest
+# deeper than 512, `does_not_fit` where a number lies past the largest `f64`,
+# and `not_text` where a `\u` escape names half of a surrogate pair alone.
+function parse(s: str) -> Value?
+    r: tokens.Reader @= tokens.start(s)
+
+    # The arrays and objects open around the reader, outermost first, each with
+    # what it holds so far: its elements, or its fields and the name its next
+    # value takes. The innermost stands apart in `items`, `fields` and `name`,
+    # so a value joins it in place: `push` on an array reached through an index
+    # copies the whole array (spec § 10).
+    outer_items: [[Value]] @= []
+    outer_fields: [{str: Value}] @= []
+    outer_names: [str] @= []
+    outer_objects: [bool] @= []
+    items: [Value] @= []
+    fields: {str: Value} @= {}
+    name: str @= ""
+    in_object: bool @= false
+    whole: Value @= .nothing
+
+    while true
+        token = tokens.next(@r)?
+        made: Value @= .nothing
+        closing: bool @= false
+
+        match token
+            .open_array | .open_object =>
+                outer_items @ outer_items.push(items)
+                outer_fields @ outer_fields.push(fields)
+                outer_names @ outer_names.push(name)
+                outer_objects @ outer_objects.push(in_object)
+                items @ []
+                fields @ {}
+                in_object @ token == .open_object
+                continue
+            .name n =>
+                name @ n.text
+                continue
+            .end =>
+                return ok(whole)
+            .close_array =>
+                made @ .array(items: items)
+                closing @ true
+            .close_object =>
+                made @ .object(fields: fields)
+                closing @ true
+            .nothing   => made @ .nothing
+            .boolean b => made @ .boolean(value: b.value)
+            .number n  => made @ .number(value: n.value)
+            .string t  => made @ .string(value: t.value)
+
+        if closing
+            # The array or object around the one just closed is the innermost
+            # again, and the stacks let go of their copy of it, so it is held
+            # once and grows in place.
+            last = outer_items.len() - 1
+            items @ outer_items[last]
+            fields @ outer_fields[last]
+            name @ outer_names[last]
+            in_object @ outer_objects[last]
+            outer_items @ outer_items.slice(from: 0, to: last)
+            outer_fields @ outer_fields.slice(from: 0, to: last)
+            outer_names @ outer_names.slice(from: 0, to: last)
+            outer_objects @ outer_objects.slice(from: 0, to: last)
+
+        if outer_items.len() == 0
+            whole @ made
+        else if in_object
+            fields[name] @ made
+        else
+            items @ items.push(made)
+
+# `v` as JSON text, compact, with an object's fields in the order of their
+# names' bytes and each number laid out as Go's `encoding/json` lays it out:
+# `300`, `0.5`, `1e+21`. Two equal values write one text, and each number's
+# digits read back as the same `f64`. It fails `not_json` where a number is
+# not finite, and `too_deep` where arrays and objects nest deeper than 512, so
+# `parse` reads every text `render` writes back as the same value.
+function render(v: Value) -> str?
+    out: [str] @= []
+
+    # The arrays and objects open around the value being written, outermost
+    # first: the values each holds, in the order they are written, an
+    # object's names in the same order, whether it is an object, and how many
+    # of its values are written.
+    open_values: [[Value]] @= []
+    open_names: [[str]] @= []
+    open_objects: [bool] @= []
+    open_done: [i64] @= []
+
+    # The value to write next, where one is `pending`; where none is, the
+    # innermost open array or object hands on its next value, or closes.
+    next: Value @= v
+    pending: bool @= true
+
+    while true
+        if pending
+            pending @ false
+
+            match next
+                .nothing   => out @ out.push("null")
+                .boolean b => out @ out.push(b.value.to_str())
+                .number n =>
+                    if !numeral.finite(n.value)
+                        return fail(
+                            code: NOT_JSON,
+                            msg: f"the number {n.value} has no JSON text, which writes finite numbers alone"
+                        )
+                    out @ out.push(numeral.written(n.value))
+                .string s => out @ out.push(quoted.written(s.value))
+                .array a =>
+                    if open_values.len() >= tokens.DEEPEST
+                        return fail(
+                            code: TOO_DEEP,
+                            msg: f"arrays and objects nest deeper than {tokens.DEEPEST}, which `parse` would not read back"
+                        )
+                    out @ out.push("[")
+                    unnamed: [str] = []
+                    open_values @ open_values.push(a.items)
+                    open_names @ open_names.push(unnamed)
+                    open_objects @ open_objects.push(false)
+                    open_done @ open_done.push(0)
+                .object o =>
+                    if open_values.len() >= tokens.DEEPEST
+                        return fail(
+                            code: TOO_DEEP,
+                            msg: f"arrays and objects nest deeper than {tokens.DEEPEST}, which `parse` would not read back"
+                        )
+                    out @ out.push("{")
+                    names = sort(keys(o.fields))
+                    values: [Value] @= []
+
+                    # Every name is one `keys` gave, so each is there.
+                    for one in names
+                        values @ values.push(o.fields[one].must())
+
+                    open_values @ open_values.push(values)
+                    open_names @ open_names.push(names)
+                    open_objects @ open_objects.push(true)
+                    open_done @ open_done.push(0)
+
+            continue
+
+        if open_values.len() == 0
+            return ok(out.join(""))
+        last = open_values.len() - 1
+        done = open_done[last]
+
+        if done < open_values[last].len()
+            if done > 0
+                out @ out.push(",")
+
+            if open_objects[last]
+                out @ out.push(quoted.written(open_names[last][done]))
+                out @ out.push(":")
+            next @ open_values[last][done]
+            pending @ true
+            open_done[last] @ done + 1
+            continue
+
+        if open_objects[last]
+            out @ out.push("}")
+        else
+            out @ out.push("]")
+        open_values @ open_values.slice(from: 0, to: last)
+        open_names @ open_names.slice(from: 0, to: last)
+        open_objects @ open_objects.slice(from: 0, to: last)
+        open_done @ open_done.slice(from: 0, to: last)
+
+# The value of the field `key` of the object `v`. It fails `not_an_object`
+# where `v` is no object, and `missing_key` where the object has no field
+# `key`: a field that holds `null` is there, `nothing`, and is not missing.
+function field(v: Value, key: str) -> Value?
+    match v
+        .object o =>
+            got = o.fields[key]
+
+            if got.is_err()
+                return fail(code: "missing_key", msg: "the object has no field " + quoted.written(key))
+            return got
+        .nothing | .boolean _ | .number _ | .string _ | .array _ =>
+            found = match v
+                .nothing   => "null"
+                .boolean _ => "a boolean"
+                .number _  => "a number"
+                .string _  => "a string"
+                .array _   => "an array"
+                .object _  => "an object"
+
+            return fail(
+                code: NOT_AN_OBJECT,
+                msg: "asked for the field " + quoted.written(key) + " of " + found + ", which is no object"
+            )
+
+## Tests
+#
+# A face declares only what a program calls (`examples/packages/README.md`
+# § 1.2), so its tests write each call out and lean on no helper of their own,
+# which the card would list beside `parse`.
+
+test "json: the six kinds are read"
+    assert parse("null").must() == .nothing
+    assert parse("true").must() == .boolean(value: true)
+    assert parse(" false ").must() == .boolean(value: false)
+    assert parse("-2.5").must() == .number(value: -2.5)
+    assert parse("\"caffè\"").must() == .string(value: "caffè")
+    assert parse("[]").must() == .array(items: [])
+    empty: {str: Value} = {}
+    assert parse("{}").must() == .object(fields: empty)
+
+test "json: arrays and objects hold values, an object's names in the text's order"
+    doc = parse("{\"b\": [1, {\"c\": null}], \"a\": true}").must()
+
+    match doc
+        .object o =>
+            assert keys(o.fields) == ["b", "a"]
+            assert o.fields["a"].must() == .boolean(value: true)
+            assert o.fields["b"].must() == .array(items: [.number(value: 1.0), .object(fields: {"c": .nothing})])
+        .nothing | .boolean _ | .number _ | .string _ | .array _ => assert false
+
+    assert parse("[[[]]]").must() == .array(items: [.array(items: [.array(items: [])])])
+
+test "json: a name written twice keeps the value written last"
+    assert parse("{\"a\": 1, \"a\": 2}").must() == .object(fields: {"a": .number(value: 2.0)})
+
+test "json: a text that is not JSON fails with the face's codes, and says where"
+    for text in ["", " ", "nul", "[1,]", "{\"a\" 1}", "01", "\"a", "1 2", "{\"a\":1", "[1}", "'a'"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_JSON
+
+    match parse("{\n  \"a\": tru\n}")
+        .ok _  => assert false
+        .err e => assert e.msg == "expected a value, found `t` at line 2, column 8"
+
+    match parse(repeat("[", 513))
+        .ok _  => assert false
+        .err e => assert e.code == TOO_DEEP
+
+    match parse("1e400")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match parse("\"\\ud800\"")
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+    assert !parse(repeat("[", 512) + repeat("]", 512)).is_err()
+
+test "json: a value is rendered compact, its names in byte order"
+    assert render(parse(" [ 1 , true , null ] ").must()).must() == "[1,true,null]"
+    nested = parse("{\"b\": 1, \"a\": {\"d\": [], \"c\": {}}}").must()
+    assert render(nested).must() == "{\"a\":{\"c\":{},\"d\":[]},\"b\":1}"
+    assert render(.string(value: "say \"hi\"\n")).must() == "\"say \\\"hi\\\"\\n\""
+    assert render(.number(value: 300.0)).must() == "300"
+    assert render(.number(value: 0.1)).must() == "0.1"
+    assert render(.array(items: [])).must() == "[]"
+
+test "json: what render writes, parse reads back as the same value"
+    for text in ["null", "[1.5,-0,\"\\u0001\",{\"x\":[{}]}]", "{\"\":\"\",\"é\":1e-7}", "123456789012345680000"]
+        doc = parse(text).must()
+        assert parse(render(doc).must()).must() == doc
+
+test "json: render refuses what no JSON text writes"
+    zero = 0.0
+
+    match render(.array(items: [.number(value: zero / zero)]))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_JSON
+
+    assert render(.number(value: 1.0 / zero)).is_err()
+    deep: Value @= .nothing
+
+    for _ in range(from: 0, to: 512)
+        deep @ .array(items: [deep])
+
+    assert render(deep).must().len() == 1028
+
+    match render(.object(fields: {"a": deep}))
+        .ok _  => assert false
+        .err e => assert e.code == TOO_DEEP
+
+test "json: a field is read from an object, and is missing or asked of no object"
+    doc = parse("{\"title\": \"Heroes\", \"successor\": null}").must()
+    assert field(doc, "title").must() == .string(value: "Heroes")
+    assert field(doc, "successor").must() == .nothing
+
+    match field(doc, "nothing_here")
+        .ok _  => assert false
+        .err e => assert e.code == "missing_key" && e.msg == "the object has no field \"nothing_here\""
+
+    match field(.array(items: []), "title")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_AN_OBJECT && e.msg == "asked for the field \"title\" of an array, which is no object"
+
+## Admission
+#
+# Each function is here because a program of `examples/` wrote it by hand
+# (the conventions, `examples/packages/README.md` § 7), counted on 2026-11-10
+# by what the functions do: `grep -rli json examples --include='*.hero'
+# --exclude-dir=heroes.packages` named seven files of four programs, and read,
+# `binarytrees`, `interpreter` and `query` name `json/` in a comment alone, so
+# `examples/json/` is the one program that reads and writes JSON.
+#
+# - `parse`: `parse.read`, 419 lines in its `parse.hero`, which left the
+#   program with core 0.2.0 (`examples/json/parse.hero` until 2026-11-10),
+#   wrong on these inputs, run on 2026-11-10: `0.3` read as
+#   `0.30000000000000004`, and `123456789012345678901234567890` as
+#   `1.2345678901234566e+29` where the nearest `f64` is
+#   `1.2345678901234568e+29`, since it built a number a digit at a time,
+#   rounding at each; `1e309` read as an infinity its renderer then wrote as
+#   `inf`, which RFC 8259's grammar has no form for; `01` and a string holding
+#   a raw line feed accepted, which RFC 8259 refuses; and `\u00e9` refused,
+#   with `\r`, `\b` and `\f`, which a Heroes string holds (spec § 2).
+# - `render`: `value.render` (`examples/json/value.hero` until 2026-11-10),
+#   whose `quote` wrote a carriage return and every control character but
+#   `\n` and `\t` raw, run on 2026-11-10.
+# - `field`: `value.field`, whose hand form is the match the doc above
+#   describes, four lines, and easy to get subtly wrong: `.default(.nothing)`
+#   reports a field holding `null` as a missing one.
+#
+# Not adopted, and what a program writes instead:
+#
+# - `size` and `depth`, the json program's own report on a document: no other
+#   program asks them, and each is the walk a program writes over a `Value`, a
+#   `match` with an arm per kind, which `examples/json/main.hero` keeps.
+# - An indented `render`, Go's `json.MarshalIndent`: no program writes one.

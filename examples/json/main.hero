@@ -2,30 +2,28 @@
 #
 #     heroes run examples/json/main.hero -- examples/json/sample.json title
 #
-# The program's three edges are all here (§1.11): it takes `args()`, it reads a
-# file, and it ends with a status a shell can branch on — 0 for a document it
-# read, 1 for one it could not, 2 for being asked wrong. That last distinction is
-# the compiler's own contract (CLAUDE.md §10) applied to a program: *the input is
-# bad* and *you called me wrong* are different answers.
+# The program's three edges are all here (design.md §1.11): it takes `args()`,
+# it reads a file, and it ends with a status a shell can branch on, 0 for a
+# document it read, 1 for one it could not, 2 for being asked wrong. That last
+# distinction is the compiler's own contract (CLAUDE.md §10) applied to a
+# program: *the input is bad* and *you called me wrong* are different answers.
 #
-#     main.hero    the program: arguments, the file, the report
-#     parse.hero   the reader — recursive descent, one byte of lookahead
-#     value.hero   the document, its canonical form, and how to ask it questions
-#
-# What it exercises: a variant recursive through **both** `[T]` and `{K: V}`, an
-# `@` record travelling through a parser, `T?` with `?` propagation across two
-# modules, `f64` arithmetic built up digit by digit, and a `{str: Json}` walked
-# in sorted key order because a map remembers no other one.
+# Reading and writing JSON is the package `encoding/json`'s, which `use
+# <core>/encoding/json` reaches through the catalogue `heroes.toml` beside this
+# file, written by `heroes add core`, and the tree that verb placed under
+# `heroes.packages/`. What stays here is the program's own question of a
+# document, how many values it holds and how deep they nest: a walk over
+# `json.Value`, a variant recursive through both `[T]` and `{K: V}`, with an
+# arm for each of its six kinds.
 
-use parse
-use value
+use <core>/encoding/json
 
 function main()
     given = args()
 
-    if len(given) == 0
+    if given.len() == 0
         print("usage: json <file> [key]")
-        exit(2)
+        exit(code: 2)
 
     match read_file(given[0])
         .err e   => stop("cannot read " + given[0] + ": " + e.code)
@@ -34,31 +32,91 @@ function main()
 # Every unhappy ending in one place, so the exit code is decided once.
 function stop(message: str)
     print(message)
-    exit(1)
+    exit(code: 1)
 
 function report(text: str, given: [str])
-    match parse.read(text)
+    match json.parse(text)
         .err e  => stop(e.code + ": " + e.msg)
         .ok doc => describe(doc, given)
 
-function describe(doc: value.Json, given: [str])
-    print("values: ", value.size(doc))
-    print("depth: ", value.depth(doc))
-    print(value.render(doc))
+function describe(doc: json.Value, given: [str])
+    print("values: ", size(doc))
+    print("depth: ", depth(doc))
+    print(shown(doc))
 
-    if len(given) > 1
-        match value.field(doc, given[1])
+    if given.len() > 1
+        match json.field(doc, given[1])
             .err e  => print("field ", given[1], ": ", e.code)
-            .ok got => print("field ", given[1], ": ", value.render(got))
+            .ok got => print("field ", given[1], ": ", shown(got))
+
+# A value as JSON text. `parse` reads only what `render` writes back, so a
+# value the document held always has a text, and the failure arm is the
+# other answer `render` can give, for a value a program built.
+function shown(v: json.Value) -> str
+    return match json.render(v)
+        .ok text => text
+        .err e   => "(" + e.code + ")"
+
+# How many values the tree holds, counting itself.
+function size(v: json.Value) -> i64
+    return match v
+        .nothing | .boolean _ | .number _ | .string _ => 1
+        .array a                                      => 1 + size_of_all(a.items)
+        .object o                                     => 1 + size_of_all(values_of(o.fields))
+
+function size_of_all(items: [json.Value]) -> i64
+    total: i64 @= 0
+
+    for item in items
+        total @ total + size(item)
+
+    return total
+
+# How deep the tree goes: a value holding no other is 1.
+function depth(v: json.Value) -> i64
+    return match v
+        .nothing | .boolean _ | .number _ | .string _ => 1
+        .array a                                      => 1 + deepest(a.items)
+        .object o                                     => 1 + deepest(values_of(o.fields))
+
+function deepest(items: [json.Value]) -> i64
+    best: i64 @= 0
+
+    for item in items
+        d = depth(item)
+
+        if d > best
+            best @ d
+
+    return best
+
+# An object's values, in the order its text wrote their names, which is the
+# order `keys` gives.
+function values_of(fields: {str: json.Value}) -> [json.Value]
+    out: [json.Value] @= []
+
+    for k in keys(fields)
+        out @ out.push(fields[k].must())
+
+    return out
 
 test "the report reads its own sample"
-    doc = parse.read(read_file("examples/json/sample.json").must()).must()
-    assert value.render(value.field(doc, "title").must()) == "\"Heroes\""
-    assert value.field(doc, "nothing_here").is_err()
-    assert value.field(.number(v: 1.0), "title").is_err()
+    doc = json.parse(read_file("examples/json/sample.json").must()).must()
+    assert shown(json.field(doc, "title").must()) == "\"Heroes\""
+    assert size(doc) == 12
+    assert depth(doc) == 3
+    assert json.field(doc, "nothing_here").is_err()
+    assert json.field(.number(value: 1.0), "title").is_err()
+
+test "size and depth count the tree, a value that holds no other counting one"
+    leaf: json.Value = .number(value: 1.0)
+    nested: json.Value = .array(items: [leaf, .array(items: [leaf])])
+    assert size(nested) == 4
+    assert depth(nested) == 3
+    assert depth(leaf) == 1
+    assert size(.object(fields: {"a": leaf, "b": .nothing})) == 3
+    assert shown(.number(value: 1.0 / 0.0)) == "(not_json)"
 
 test "a document survives a round trip through its own canonical form"
-    once = read_file("examples/json/sample.json").must()
-    first = value.render(parse.read(once).must())
-    twice = value.render(parse.read(first).must())
-    assert first == twice
+    first = shown(json.parse(read_file("examples/json/sample.json").must()).must())
+    assert shown(json.parse(first).must()) == first
