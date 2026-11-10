@@ -12,7 +12,6 @@
 # this verb is what that names.
 
 use cli/argv
-use cli/io
 use cli/process
 use cli/strings
 use cli/table as cli_table
@@ -31,58 +30,36 @@ use module/placed
 # The command: one line on stdout for each entry placed, kept or read where
 # it stands, and each refusal on stderr at the catalogue's line.
 function run(inv: argv.Invocation) -> cli_table.Exit
-    worst: i64 @= 0
-
-    for one in outcome(inv, tools: transport.path_tools())
-        if one.code.len() == 0
-            print(one.said)
-        else
-            io.eprint(text: told.line(at: one.at, code: one.code, said: one.said))
-
-            if told.exit_of(one.code) > worst
-                worst @ told.exit_of(one.code)
-
-    if worst == 2
-        return .failed_exit
-
-    if worst == 1
-        return .diagnostics_exit
-    return .ok_exit
-
-# One line the command says: what it printed, or a refusal with its place.
-record Said
-    code: str
-    at: str
-    said: str
+    return told.spoken(outcome(inv, tools: transport.path_tools()))
 
 # What `heroes fetch` says for the program `inv` names, each entry in its
 # catalogue's order.
-function outcome(inv: argv.Invocation, tools: transport.Tools) -> [Said]
+function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
     program = verb_place.program_of(inv)
 
     if program.is_err()
-        return [refused(failure: verb_place.unit_of(program), at: "")]
+        return [told.refused(failure: verb_place.unit_of(program), at: "")]
     folder = program.must()
     c = catalogue.read(opened: folder, named: folder)
 
     if c.problem.len() > 0
-        return [Said(code: c.code, at: c.at, said: c.said)]
+        return [told.of_catalogue(c)]
 
     if c.file.len() == 0
         return [
-            Said(code: "no_catalogue", at: "", said: "there is no catalogue `" + folder + catalogue.FILE + "`, so there is nothing to fetch: `heroes add` writes one")
+            told.Said(code: "no_catalogue", at: "", said: "there is no catalogue `" + folder + catalogue.FILE + "`, so there is nothing to fetch: `heroes add` writes one")
         ]
     scratch = staging.opened(folder)
 
     if scratch.is_err()
-        return [refused(failure: verb_place.unit_of(scratch), at: "")]
+        return [told.refused(failure: verb_place.unit_of(scratch), at: "")]
     root = transport.root_of(tools, folder: verb_place.dot_if_empty(folder), scratch: scratch.must().folder)
     staging.dropped(scratch.must())
 
     if root.is_err()
-        return [refused(failure: verb_place.unit_of(root), at: "")]
+        return [told.refused(failure: verb_place.unit_of(root), at: "")]
     text = read_file(c.file).default("")
-    out: [Said] @= []
+    out: [told.Said] @= []
 
     for e in c.entries
         tree = placing.placed_tree(tools, e: e, program: folder, root: root.must(), index: c.index)
@@ -93,18 +70,18 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [Said]
                 name: e.name,
                 key: key_of(e, code: verb_place.code_of(verb_place.unit_of(tree)))
             )
-            out @ out.push(refused(failure: verb_place.unit_of(tree), at: place_said(c.file, line: line)))
+            out @ out.push(told.refused(failure: verb_place.unit_of(tree), at: place_said(c.file, line: line)))
         else if e.path.len() > 0
             out @ out.push(
-                Said(code: "", at: "", said: "path " + e.name + " " + e.path + ", read where it stands and unverified")
+                told.Said(code: "", at: "", said: "path " + e.name + " " + e.path + ", read where it stands and unverified")
             )
         else if tree.must().fetched
             out @ out.push(
-                Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
+                told.Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
             )
         else
             out @ out.push(
-                Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
+                told.Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
             )
 
     verb_place.unused_dropped(folder)
@@ -135,11 +112,6 @@ function place_said(file: str, line: i64) -> str
     if line > 0
         return file + ":" + line.to_str()
     return file
-
-function refused(failure: ()?, at: str) -> Said
-    match failure
-        .ok _  => return Said(code: "internal", at: at, said: "a refusal was asked of what did not fail")
-        .err e => return Said(code: e.code, at: at, said: e.msg)
 
 ## Tests
 
@@ -184,7 +156,7 @@ function program_made() -> Made
 function catalogue_of(json: str, lib: str, commit: str) -> str
     return "index = \"file://../idx\"\n\n[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + json + "\"\n\n[dependencies.lib]\ngit = \"file://../src\"\ntag = \"v1.0.0\"\ncommit = \"" + commit + "\"\nsum = \"" + lib + "\"\n\n[dependencies.mine]\npath = \"../mine\"\n"
 
-function said(words: [Said]) -> [str]
+function said(words: [told.Said]) -> [str]
     out: [str] @= []
 
     for one in words

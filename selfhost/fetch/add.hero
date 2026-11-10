@@ -20,17 +20,21 @@
 # `add` from git trusts its source on first use, recording the commit its tag
 # names and the sum of the tree there; one from the index trusts the index's
 # sum. Every later fetch is held to what was written.
+#
+# What the command line asks for is made an entry, and fetched, in
+# `fetch/add_wanted.hero`; this module reads the program's catalogue, walks
+# the build list from it and writes the catalogue back.
 
 use cli/argv
-use cli/io
 use cli/process
 use cli/publish
+use cli/strings
 use cli/table as cli_table
+use fetch/add_wanted
 use fetch/address
 use fetch/build_list
 use fetch/catalogue_edit
 use fetch/git_source
-use fetch/index_source
 use fetch/made_index
 use fetch/made_repo
 use fetch/placing
@@ -41,32 +45,39 @@ use fetch/verb_place
 use module/catalogue
 use module/fingerprint
 use module/placed
-use module_text
 
 # The command: what changed and the file written on stdout, or the refusal
 # on stderr, its exit its code's (`fetch/told.hero`).
 function run(inv: argv.Invocation) -> cli_table.Exit
-    match added(inv, tools: transport.path_tools())
-        .ok lines =>
-            for line in lines
-                print(line)
+    return told.spoken(outcome(inv, tools: transport.path_tools()))
 
-            return .ok_exit
-        .err e =>
-            io.eprint(text: told.line(at: "", code: e.code, said: e.msg))
+# What `heroes add` says for `inv`: every change and then the file written,
+# or the refusal that stopped it. The program's catalogue is read once, here,
+# and one that does not read is told at its place, as `heroes fetch` tells it
+# (defect 2433: its place stood inside its words).
+function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
+    program = verb_place.program_of(inv)
 
-            if told.exit_of(e.code) == 1
-                return .diagnostics_exit
-            return .failed_exit
-
-# What the program's catalogue becomes once `inv`'s package is added: the
-# lines the command prints, every change and then the file written.
-function added(inv: argv.Invocation, tools: transport.Tools) -> [str]?
-    program = verb_place.program_of(inv)?
-    c = catalogue.read(opened: program, named: program)
+    if program.is_err()
+        return [told.refused(failure: verb_place.unit_of(program), at: "")]
+    c = catalogue.read(opened: program.must(), named: program.must())
 
     if c.problem.len() > 0
-        return fail(code: c.code, msg: c.problem)
+        return [told.of_catalogue(c)]
+    out: [told.Said] @= []
+
+    match added(inv, tools: tools, program: program.must(), c: c)
+        .ok lines =>
+            for line in lines
+                out @ out.push(told.Said(code: "", at: "", said: line))
+        .err e => out @ out.push(told.Said(code: e.code, at: "", said: e.msg))
+
+    return out
+
+# What the catalogue `c` of the program whose folder is `program` becomes
+# once `inv`'s package is added: the lines the command prints, every change
+# and then the file written.
+function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: catalogue.Catalogue) -> [str]?
     line = index_line(inv, c: c)?
     held = catalogue.Catalogue(file: c.file, index: line, entries: c.entries, problem: "", code: "", at: "", said: "")
     scratch = staging.opened(program)?
@@ -107,150 +118,8 @@ function index_line(inv: argv.Invocation, c: catalogue.Catalogue) -> str?
 # The build list once the package `inv` names is added.
 function chosen(inv: argv.Invocation, tools: transport.Tools, program: str, root: address.Root?, c: catalogue.Catalogue, scratch: staging.Staging) -> [build_list.Pick]?
     at = root?
-    wanted = wanted_entry(inv, tools: tools, program: program, root: at, c: c, scratch: scratch)?
+    wanted = add_wanted.entry_of(inv, tools: tools, program: program, root: at, c: c, scratch: scratch)?
     return build_list.chosen(tools, program: program, root: at, c: c, wanted: wanted)
-
-# The entry `inv` asks for, placed where it is fetched.
-function wanted_entry(inv: argv.Invocation, tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue, scratch: staging.Staging) -> catalogue.Entry?
-    folder = argv.value_of(inv, spelling: "--path")
-
-    if !folder.is_err()
-        return folder_entry(inv, program: program, folder: folder.must())
-
-    if inv.file.is_err()
-        return fail(
-            code: "bad_usage",
-            msg: "`add` needs a package: a name from the index, `heroes add json`; a git address at a tag, `heroes add https://git.example.org/ana/json --tag v1.0.0`; or a folder, `heroes add --path ../json`"
-        )
-    asked = inv.file.must()
-
-    if looks_addressed(asked)
-        return git_entry(inv, tools: tools, address_text: asked, program: program, root: root, c: c)
-    return index_entry(inv, tools: tools, asked: asked, program: program, root: root, c: c, scratch: scratch)
-
-# A folder of the author's own, read where it stands (R6).
-function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalogue.Entry?
-    if !inv.file.is_err() || argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--index")
-        return fail(
-            code: "bad_usage",
-            msg: "`--path` names the package's folder, so `add` takes no package, `--tag` or `--index` beside it"
-        )
-    name = argv.value_of(inv, spelling: "--as").default(last_part(folder))
-
-    if !catalogue.entry_name(name)
-        return fail(
-            code: "bad_usage",
-            msg: "`" + name + "` is no entry's name: a name is lowercase letters, digits and `_`, starting with a letter; give one with `--as`"
-        )
-
-    if !process.is_directory(program + folder)
-        return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
-    return ok(catalogue.Entry(name: name, version: "", git: "", tag: "", commit: "", path: folder, sum: ""))
-
-# A git source at a tag: its commit asked, its tree fetched and placed, and
-# its sum the tree's, trusted on first use.
-function git_entry(inv: argv.Invocation, tools: transport.Tools, address_text: str, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
-    tag = argv.value_of(inv, spelling: "--tag")
-
-    if tag.is_err()
-        return fail(
-            code: "bad_usage",
-            msg: "a git source is added at a tag: `heroes add " + address_text + " --tag v1.0.0`"
-        )
-
-    if argv.has(inv, spelling: "--index")
-        return fail(
-            code: "bad_usage",
-            msg: "`--index` names where a package is read by its name, and a git address names its own source"
-        )
-    at = address.judged(address_text, root: root)?
-    name = argv.value_of(inv, spelling: "--as").default(module_text.address_entry(address_text))
-
-    if !catalogue.entry_name(name)
-        return fail(
-            code: "bad_usage",
-            msg: "`" + address_text + "` ends in no entry's name: give one with `--as`, lowercase letters, digits and `_`, starting with a letter"
-        )
-    s = staging.opened(program)?
-    commit = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
-    first = catalogue.Entry(
-        name: name,
-        version: "",
-        git: address_text,
-        tag: tag.must(),
-        commit: commit.default(""),
-        path: "",
-        sum: ""
-    )
-    done: ()? @= verb_place.unit_of(commit)
-
-    if !done.is_err()
-        done @ git_source.written(tools, e: first, root: root, s: s)
-
-    if done.is_err()
-        staging.dropped(s)
-        return fail(code: verb_place.code_of(done), msg: verb_place.why(done))
-    sum = fingerprint.of(s.tree)
-
-    if sum.is_err()
-        staging.dropped(s)
-        return fail(code: "cannot_place", msg: verb_place.reason(sum))
-    e = catalogue.Entry(
-        name: name,
-        version: "",
-        git: address_text,
-        tag: tag.must(),
-        commit: commit.must(),
-        path: "",
-        sum: sum.must()
-    )
-    _ = staging.placed(s, program: program, key: placed.key(e, index: c.index), sum: e.sum, what: "the tree of `" + name + "`")?
-    return ok(e)
-
-# A name from the index, at the version written or the highest it lists, its
-# sum the index's.
-function index_entry(inv: argv.Invocation, tools: transport.Tools, asked: str, program: str, root: address.Root, c: catalogue.Catalogue, scratch: staging.Staging) -> catalogue.Entry?
-    if argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--as")
-        return fail(
-            code: "bad_usage",
-            msg: "a package from the index keeps the index's name and has no tag: `heroes add json` or `heroes add json@1.4.2`"
-        )
-    at_sign = verb_place.at_of(asked)
-    name = asked.slice(from: 0, to: at_sign)
-
-    if !catalogue.entry_name(name)
-        return fail(
-            code: "bad_usage",
-            msg: "`" + name + "` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter"
-        )
-    index = address.judged(index_source.written_index(c.index), root: root)?
-    listed = index_source.versions(tools, index: index, name: name, scratch: scratch.folder)?
-    pick = verb_place.version_picked(listed, asked: asked, at: at_sign, index: index.written)?
-    e = catalogue.Entry(name: name, version: pick.version, git: "", tag: "", commit: "", path: "", sum: pick.sum)
-    _ = index_source.fetched(tools, e: e, program: program, root: root, index: c.index)?
-    return ok(e)
-
-# Whether the operand is an address rather than a name: a scheme, git's
-# `user@host:path`, or a path, each of which `fetch/address.hero` judges.
-function looks_addressed(asked: str) -> bool
-    for at in range(from: 0, to: asked.len())
-        if asked[at] == ':' || asked[at] == '/' || asked[at] == '\\'
-            return true
-
-    return false
-
-function last_part(folder: str) -> str
-    end: i64 @= folder.len()
-
-    while end > 0 && folder[end - 1] == '/'
-        end @ end - 1
-
-    at: i64 @= end
-
-    while at > 0 && folder[at - 1] != '/'
-        at @ at - 1
-
-    return folder.slice(from: at, to: end)
 
 function entries_of(picks: [build_list.Pick]) -> [catalogue.Entry]
     out: [catalogue.Entry] @= []
@@ -347,35 +216,54 @@ function needs(version: str, sum: str) -> str
 function invoked(words: [str]) -> argv.Invocation
     return argv.parse(words, dir_probe: process.is_directory).must()
 
+# What `heroes add` with `words` says, a line each as the author reads it, a
+# refusal's place first.
+function said(words: [str], tools: transport.Tools) -> [str]
+    out: [str] @= []
+
+    for one in outcome(invoked(words), tools: tools)
+        if one.code.len() == 0
+            out @ out.push(one.said)
+        else
+            out @ out.push(told.line(at: one.at, code: one.code, said: one.said))
+
+    return out
+
+# The code of the one refusal `heroes add` with `words` gives, "" where it
+# gives none or more than one.
+function refused_code(words: [str], tools: transport.Tools) -> str
+    got = outcome(invoked(words), tools: tools)
+
+    if got.len() != 1
+        return ""
+    return got[0].code
+
 test "a name from the index is added at its version with every package it needs, and the catalogue is written byte for byte"
     m = index_made()
-    lines = added(
-        invoked(["add", "json@1.0.0", "-C", SCRATCH + "/app", "--index", "file://../idx"]),
+    lines = said(
+        ["add", "json@1.0.0", "-C", SCRATCH + "/app", "--index", "file://../idx"],
         tools: transport.path_tools()
-    ).must()
+    )
     assert lines == ["added json 1.0.0", "added strings 1.0.0 for json", "wrote " + SCRATCH + "/app/heroes.toml"]
     assert read_file(SCRATCH + "/app/heroes.toml").must() == "index = \"file://../idx\"\n\n[dependencies.json]\nversion = \"1.0.0\"\nsum = \"" + m.json_1 + "\"\n\n" + "[dependencies.strings]\nversion = \"1.0.0\"\nsum = \"" + m.strings_1 + "\"\n"
     json = catalogue.Entry(name: "json", version: "1.0.0", git: "", tag: "", commit: "", path: "", sum: m.json_1)
     assert fingerprint.of(SCRATCH + "/app/heroes.packages/" + placed.key(json, index: "file://../idx")).must() == m.json_1
 
     # The highest version, and the `strings` it needs raised with it (MVS).
-    again = added(invoked(["add", "json", "-C", SCRATCH + "/app"]), tools: transport.path_tools()).must()
+    again = said(["add", "json", "-C", SCRATCH + "/app"], tools: transport.path_tools())
     assert again == ["changed json 1.0.0 -> 2.0.0", "changed strings 1.0.0 -> 1.1.0 for json", "wrote " + SCRATCH + "/app/heroes.toml"]
 
     # The program's own version lowered below what `json` needs stays where
     # `json` needs it: the program's is at least each dependency's.
-    held = added(invoked(["add", "strings@1.0.0", "-C", SCRATCH + "/app"]), tools: transport.path_tools()).must()
+    held = said(["add", "strings@1.0.0", "-C", SCRATCH + "/app"], tools: transport.path_tools())
     assert held == ["wrote " + SCRATCH + "/app/heroes.toml"]
     assert catalogue.entry(catalogue.read(opened: SCRATCH + "/app/", named: ""), name: "strings").must().version == "1.1.0"
     assert !process.remove_tree(SCRATCH).is_err()
 
 test "a version the program holds above a dependency's need stays, and a git source and a folder are added as entries"
     m = index_made()
-    _ = added(
-        invoked(["add", "strings@1.1.0", "-C", SCRATCH + "/app", "--index", "file://../idx"]),
-        tools: transport.path_tools()
-    ).must()
-    assert added(invoked(["add", "json@1.0.0", "-C", SCRATCH + "/app"]), tools: transport.path_tools()).must() == ["added json 1.0.0", "wrote " + SCRATCH + "/app/heroes.toml"]
+    assert said(["add", "strings@1.1.0", "-C", SCRATCH + "/app", "--index", "file://../idx"], tools: transport.path_tools()) == ["added strings 1.1.0", "wrote " + SCRATCH + "/app/heroes.toml"]
+    assert said(["add", "json@1.0.0", "-C", SCRATCH + "/app"], tools: transport.path_tools()) == ["added json 1.0.0", "wrote " + SCRATCH + "/app/heroes.toml"]
     assert catalogue.entry(catalogue.read(opened: SCRATCH + "/app/", named: ""), name: "strings").must().sum == m.strings_2
 
     made_repo.made(SCRATCH + "/src").must()
@@ -386,13 +274,13 @@ test "a version the program holds above a dependency's need stays, and a git sou
     ).must()
     made_repo.tagged(dir: SCRATCH + "/src", tag: "v0.3.1", annotated: true).must()
     commit = made_repo.head(SCRATCH + "/src").must()
-    assert added(invoked(["add", "file://../src", "--tag", "v0.3.1", "--as", "yaml", "-C", SCRATCH + "/app"]), tools: transport.path_tools()).must() == ["added yaml v0.3.1", "wrote " + SCRATCH + "/app/heroes.toml"]
+    assert said(["add", "file://../src", "--tag", "v0.3.1", "--as", "yaml", "-C", SCRATCH + "/app"], tools: transport.path_tools()) == ["added yaml v0.3.1", "wrote " + SCRATCH + "/app/heroes.toml"]
     yaml = catalogue.entry(catalogue.read(opened: SCRATCH + "/app/", named: ""), name: "yaml").must()
     assert yaml.commit == commit && yaml.git == "file://../src" && yaml.tag == "v0.3.1"
     assert yaml.sum == fingerprint.of(SCRATCH + "/app/heroes.packages/" + placed.key(yaml, index: "file://../idx")).must()
 
     assert !process.mkdir_all(SCRATCH + "/local").is_err()
-    assert added(invoked(["add", "--path", "../local", "-C", SCRATCH + "/app"]), tools: transport.path_tools()).must() == ["added local ../local", "wrote " + SCRATCH + "/app/heroes.toml"]
+    assert said(["add", "--path", "../local", "-C", SCRATCH + "/app"], tools: transport.path_tools()) == ["added local ../local", "wrote " + SCRATCH + "/app/heroes.toml"]
     assert catalogue.read(opened: SCRATCH + "/app/", named: "").problem == ""
     assert !process.remove_tree(SCRATCH).is_err()
 
@@ -410,21 +298,24 @@ test "an add that cannot be is refused with its code, and the catalogue is left 
     ]
 
     for one in refusals
-        match added(invoked(one[0]), tools: transport.path_tools())
-            .ok _  => assert false
-            .err e => assert e.code == one[1][0]
+        assert refused_code(one[0], tools: transport.path_tools()) == one[1][0]
 
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")
     assert !process.path_exists(SCRATCH + "/app/heroes.packages")
 
-    # A catalogue that does not read is told, and left as it was.
+    # A catalogue that does not read is told at its line, first, as `heroes
+    # fetch` tells it (defect 2433), and left as it was.
     assert !write_file(path: SCRATCH + "/app/heroes.toml", text: "version = 1\n").is_err()
-
-    match added(invoked(["add", "json", "-C", SCRATCH + "/app", "--index", "file://../idx"]), tools: transport.path_tools())
-        .ok _  => assert false
-        .err e => assert e.code == "catalogue_refused"
-
+    told_line = said(["add", "json", "-C", SCRATCH + "/app", "--index", "file://../idx"], tools: transport.path_tools())
+    assert told_line == [SCRATCH + "/app/heroes.toml:1: error[catalogue_refused]: a value is a string between double quotes: `version = \"1.4.2\"`"]
     assert read_file(SCRATCH + "/app/heroes.toml").must() == "version = 1\n"
+
+    # One that cannot be read at all has no place, and its words name it.
+    assert !process.remove_tree(SCRATCH + "/app/heroes.toml").is_err()
+    assert !process.mkdir_all(SCRATCH + "/app/heroes.toml").is_err()
+    unread = outcome(invoked(["add", "json", "-C", SCRATCH + "/app"]), tools: transport.path_tools())
+    assert unread.len() == 1 && unread[0].code == "catalogue_refused" && unread[0].at == ""
+    assert strings.starts_with(text: unread[0].said, prefix: "`" + SCRATCH + "/app/heroes.toml` cannot be read: ")
     assert !process.remove_tree(SCRATCH).is_err()
 
 # Defect 2392: the refusals a machine's state causes, each the tool's at exit
@@ -448,11 +339,9 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
         if one[1][0] == "no_curl"
             tools @ no_curl
 
-        match added(invoked(one[0]), tools: tools)
-            .ok _ => assert false
-            .err e =>
-                assert e.code == one[1][0]
-                assert told.exit_of(e.code) == 2
+        got = refused_code(one[0], tools: tools)
+        assert got == one[1][0]
+        assert told.exit_of(got) == 2
 
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")
     s = staging.opened(SCRATCH + "/app/").must()
@@ -469,11 +358,11 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
     # No tree can be staged under a placement folder that is a file.
     assert !write_file(path: SCRATCH + "/app/heroes.packages", text: "not a folder\n").is_err()
 
-    match added(invoked(["add", "json", "-C", SCRATCH + "/app", "--index", "file://../idx"]), tools: transport.path_tools())
-        .ok _ => assert false
-        .err e =>
-            assert e.code == "cannot_place"
-            assert told.exit_of(e.code) == 2
+    filed = refused_code(
+        ["add", "json", "-C", SCRATCH + "/app", "--index", "file://../idx"],
+        tools: transport.path_tools()
+    )
+    assert filed == "cannot_place" && told.exit_of(filed) == 2
 
     assert read_file(SCRATCH + "/app/heroes.packages").must() == "not a folder\n"
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")

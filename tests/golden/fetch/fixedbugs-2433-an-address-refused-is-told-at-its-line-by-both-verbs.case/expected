@@ -1,0 +1,18 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[source_refused]: `file://packages/yaml` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./packages/yaml`, and an absolute one `file:///` and the path
+$ heroes add yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[source_refused]: `file://packages/yaml` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./packages/yaml`, and an absolute one `file:///` and the path
+heroes.toml:
+# Defect 2433, 2026-11-10: `heroes add` told a catalogue that does not read
+# with its place inside its words, `error[source_refused]: heroes.toml:<line>: ...`,
+# where `heroes fetch` told it first; both tell it first now.
+[dependencies.yaml]
+git = "file://packages/yaml"
+heroes.packages:
+(none)

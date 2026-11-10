@@ -1,0 +1,164 @@
+# The package `heroes add` is asked for, made an entry (panel 235's R11 and
+# R6, ratified 2026-11-07): a name from the index at the version written or
+# the highest it lists, its sum the index's; a git address at a tag, its
+# commit asked and its tree's sum trusted on first use; or a folder of the
+# author's own, read where it stands. The first two are fetched and placed
+# here, so `fetch/build_list.hero` reads the package's own catalogue from a
+# tree held to its sum. Out of `fetch/add.hero` since defect 2433, whose
+# repair took that module past its ceiling: this is the verb's operand, and
+# `add.hero` what the verb does with it.
+
+use cli/argv
+use cli/process
+use fetch/address
+use fetch/git_source
+use fetch/index_source
+use fetch/staging
+use fetch/transport
+use fetch/verb_place
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module_text
+
+# The entry `inv` asks for, placed where it is fetched.
+function entry_of(inv: argv.Invocation, tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue, scratch: staging.Staging) -> catalogue.Entry?
+    folder = argv.value_of(inv, spelling: "--path")
+
+    if !folder.is_err()
+        return folder_entry(inv, program: program, folder: folder.must())
+
+    if inv.file.is_err()
+        return fail(
+            code: "bad_usage",
+            msg: "`add` needs a package: a name from the index, `heroes add json`; a git address at a tag, `heroes add https://git.example.org/ana/json --tag v1.0.0`; or a folder, `heroes add --path ../json`"
+        )
+    asked = inv.file.must()
+
+    if looks_addressed(asked)
+        return git_entry(inv, tools: tools, address_text: asked, program: program, root: root, c: c)
+    return index_entry(inv, tools: tools, asked: asked, program: program, root: root, c: c, scratch: scratch)
+
+# A folder of the author's own, read where it stands (R6).
+function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalogue.Entry?
+    if !inv.file.is_err() || argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--index")
+        return fail(
+            code: "bad_usage",
+            msg: "`--path` names the package's folder, so `add` takes no package, `--tag` or `--index` beside it"
+        )
+    name = argv.value_of(inv, spelling: "--as").default(last_part(folder))
+
+    if !catalogue.entry_name(name)
+        return fail(
+            code: "bad_usage",
+            msg: "`" + name + "` is no entry's name: a name is lowercase letters, digits and `_`, starting with a letter; give one with `--as`"
+        )
+
+    if !process.is_directory(program + folder)
+        return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
+    return ok(catalogue.Entry(name: name, version: "", git: "", tag: "", commit: "", path: folder, sum: ""))
+
+# A git source at a tag: its commit asked, its tree fetched and placed, and
+# its sum the tree's, trusted on first use.
+function git_entry(inv: argv.Invocation, tools: transport.Tools, address_text: str, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
+    tag = argv.value_of(inv, spelling: "--tag")
+
+    if tag.is_err()
+        return fail(
+            code: "bad_usage",
+            msg: "a git source is added at a tag: `heroes add " + address_text + " --tag v1.0.0`"
+        )
+
+    if argv.has(inv, spelling: "--index")
+        return fail(
+            code: "bad_usage",
+            msg: "`--index` names where a package is read by its name, and a git address names its own source"
+        )
+    at = address.judged(address_text, root: root)?
+    name = argv.value_of(inv, spelling: "--as").default(module_text.address_entry(address_text))
+
+    if !catalogue.entry_name(name)
+        return fail(
+            code: "bad_usage",
+            msg: "`" + address_text + "` ends in no entry's name: give one with `--as`, lowercase letters, digits and `_`, starting with a letter"
+        )
+    s = staging.opened(program)?
+    commit = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
+    first = catalogue.Entry(
+        name: name,
+        version: "",
+        git: address_text,
+        tag: tag.must(),
+        commit: commit.default(""),
+        path: "",
+        sum: ""
+    )
+    done: ()? @= verb_place.unit_of(commit)
+
+    if !done.is_err()
+        done @ git_source.written(tools, e: first, root: root, s: s)
+
+    if done.is_err()
+        staging.dropped(s)
+        return fail(code: verb_place.code_of(done), msg: verb_place.why(done))
+    sum = fingerprint.of(s.tree)
+
+    if sum.is_err()
+        staging.dropped(s)
+        return fail(code: "cannot_place", msg: verb_place.reason(sum))
+    e = catalogue.Entry(
+        name: name,
+        version: "",
+        git: address_text,
+        tag: tag.must(),
+        commit: commit.must(),
+        path: "",
+        sum: sum.must()
+    )
+    _ = staging.placed(s, program: program, key: placed.key(e, index: c.index), sum: e.sum, what: "the tree of `" + name + "`")?
+    return ok(e)
+
+# A name from the index, at the version written or the highest it lists, its
+# sum the index's.
+function index_entry(inv: argv.Invocation, tools: transport.Tools, asked: str, program: str, root: address.Root, c: catalogue.Catalogue, scratch: staging.Staging) -> catalogue.Entry?
+    if argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--as")
+        return fail(
+            code: "bad_usage",
+            msg: "a package from the index keeps the index's name and has no tag: `heroes add json` or `heroes add json@1.4.2`"
+        )
+    at_sign = verb_place.at_of(asked)
+    name = asked.slice(from: 0, to: at_sign)
+
+    if !catalogue.entry_name(name)
+        return fail(
+            code: "bad_usage",
+            msg: "`" + name + "` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter"
+        )
+    index = address.judged(index_source.written_index(c.index), root: root)?
+    listed = index_source.versions(tools, index: index, name: name, scratch: scratch.folder)?
+    pick = verb_place.version_picked(listed, asked: asked, at: at_sign, index: index.written)?
+    e = catalogue.Entry(name: name, version: pick.version, git: "", tag: "", commit: "", path: "", sum: pick.sum)
+    _ = index_source.fetched(tools, e: e, program: program, root: root, index: c.index)?
+    return ok(e)
+
+# Whether the operand is an address rather than a name: a scheme, git's
+# `user@host:path`, or a path, each of which `fetch/address.hero` judges.
+function looks_addressed(asked: str) -> bool
+    for at in range(from: 0, to: asked.len())
+        if asked[at] == ':' || asked[at] == '/' || asked[at] == '\\'
+            return true
+
+    return false
+
+function last_part(folder: str) -> str
+    end: i64 @= folder.len()
+
+    while end > 0 && folder[end - 1] == '/'
+        end @ end - 1
+
+    at: i64 @= end
+
+    while at > 0 && folder[at - 1] != '/'
+        at @ at - 1
+
+    return folder.slice(from: at, to: end)
