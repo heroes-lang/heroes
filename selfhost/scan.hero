@@ -19,13 +19,10 @@ use backslash
 use brace_layout
 use bracket_reach
 use bytes
-use c_names
 use closers
 use comment_habit
 use comment_refusal
 use diag
-use foreign_at
-use keywords
 use layout
 use lex_interp
 use literals
@@ -37,12 +34,11 @@ use open_line
 use openers
 use punctuation
 use refused_stretch
+use scan_word
 use separator_runs
 use shown_char
 use state
-use text_lines
 use token
-use word_beside
 use word_place
 
 ## One line of words
@@ -94,7 +90,7 @@ function line_body(@l: state.LexState, text: str)
         else if bytes.is_digit(b)
             number.number(@l, text)
         else if bytes.is_alpha(b) || b == '_'
-            ident(@l, text)
+            scan_word.ident(@l, text)
         else if b == '}' && lex_interp.closes_a_hole(l)
             # This `}` closes a hole and not a map: the piece after it is text.
             lex_interp.piece(@l, text)
@@ -176,87 +172,6 @@ function foreign_comment(@l: state.LexState, text: str)
     )
     state.push_diagnostic(@l.diagnostics, d)
     comment_refusal.comment(@l, text)
-
-## The word
-
-# A keyword naming a C type, a tag or a field, its error token pushed (defect
-# 2238): apart from `ident`, which every word takes, and asked past `may_name`.
-function keyword_named(@l: state.LexState, text: str, start: i64) -> bool
-    named = c_names.keyword_named(text, token.Span(start: start, end: l.pos), @l.outline)
-
-    if named.is_err()
-        return false
-    state.error_token(@l, named.must())
-    return true
-
-# A word: Heroes keyword, foreign reserved word (loud failure with the repair
-# pre-written — the thesis, executable), or plain identifier.
-function ident(@l: state.LexState, text: str)
-    start = l.pos
-
-    while l.pos < text.len() && (bytes.is_alnum(text[l.pos]) || text[l.pos] == '_')
-        l.pos @ l.pos + 1
-
-    word = text.slice(from: start, to: l.pos)
-
-    # A word touching a letter above ASCII is part of a name the author wrote,
-    # never the keyword or the refused word its ASCII bytes spell: the letter
-    # alone is told (`word_beside.hero`, defect 2417).
-    if word_beside.touches_letter(text, start: start, end: l.pos)
-        state.emit(@l, .ident, start)
-        return
-    kw = keywords.keyword(word)
-
-    if !kw.is_err()
-        if !c_names.may_name(text, start: start, end: l.pos) || !keyword_named(@l, text, start: start)
-            state.emit(@l, kw.must(), start)
-        return
-
-    # **The character after the word decides the repair** (defect 015). A
-    # word-for-word swap that is right where the word DECLARES something is
-    # wrong where it is CALLED — `int(3)` repaired to `i64(3)` is
-    # `error[unknown_name]`, and `--apply` wrote it. The lexer cannot know a
-    # position, but it can read the next byte, and that is a fact about the text
-    # in hand rather than a premise about the program around it (CLAUDE.md §11).
-    # `foreign_at.repair_at` reads that byte, and the parser asks the same
-    # function when it reads a construct as the swap writes it (defect 133).
-    #
-    # **The token stays `error` even where the swap is certain** (defect 133):
-    # the parser reads the swap only where it dispatches on the keyword the
-    # swap writes (`parse/swap_reading.hero`), and every other reader of the
-    # stream goes on seeing a word the lexer refused. What it reads is the
-    # swap written here, kept where the word begins (`LexState.swaps`, defect
-    # 146), so the parser reads the word as `--apply` writes it.
-    span = token.Span(start: start, end: l.pos)
-    entry = foreign_at.foreign_word_at(text, span)
-
-    # A foreign word a lost quote left outside every string is that quote's
-    # (`lost_quote.hero`): no report and no swap. One in a hole is code.
-    if !entry.is_err() && l.holes.len() == 0 && lost_quote.lost_in(@l, text, at: start)
-        state.error_token_at(@l, start)
-        return
-
-    if !entry.is_err()
-        found = foreign_at.repair_of(text, span, entry.must(), @l.outline)
-        d: diag.Diagnostic @= diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
-        swap = foreign_at.swap_of(found.repair)
-
-        if !swap.is_err()
-            state.push_swap(@l.swaps, at: start, word: swap.must())
-
-        d.fixes @ match found.repair
-            .swap fix => d.fixes.push(
-                diag.Fix(title: "replace `" + word + "` with `" + fix.word + "`", replacement: fix.word, span: span, certainty: .certain)
-            )
-            .hint fix => d.fixes.push(diag.Fix(title: fix.title, replacement: fix.word, span: span, certainty: .guess))
-            .drop => d.fixes.push(
-                diag.Fix(title: "drop `" + word + "`", replacement: "", span: token.Span(start: start, end: text_lines.past_spaces(text, at: l.pos)), certainty: .guess)
-            )
-            .guidance => d.fixes
-
-        state.error_token(@l, d)
-        return
-    state.emit(@l, .ident, start)
 
 ## The punctuation
 

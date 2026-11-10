@@ -1,0 +1,89 @@
+# Whose header a refusal clang gave is, asked after `cli/header_refused.hero`
+# first told it (design.md §4.17, §4.19; defects 557 and 2414): the group whose
+# header holds clang's first error alone, or beside a note in another group's
+# header, that header's refusal told as its own, and one told against the
+# earlier header of the unit it does not compile after. `cli/whose.hero` asks
+# these with the compiles of `cli/header_alone.hero` and re-tells the refusal
+# by their answer. Moved out of `cli/header_refused.hero` on 2026-11-10, when
+# defect 2414's repair took that file past §11's 300 lines: these read
+# clang's first error and use that module's wording, and it uses none of them.
+
+use ast
+use cli/caret_bytes
+use cli/clang_excerpt
+use cli/clang_first
+use cli/group_file
+use cli/header_refused
+use cli/headers_together
+use diag
+use emit/clang_place
+use source
+
+# The group whose header clang refused on its own, where it refused one group's
+# header and no note names another's: the header `cli/header_alone.hero` asks
+# whether it compiles alone (defect 557).
+function refused_alone(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> group_file.Group?
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, @again)?
+
+    if !read.beside.is_err()
+        return fail(code: "none", msg: "two headers are told")
+    return ok(read.group)
+
+# **A first error in one group's header with its note in another's is told
+# as two headers only where the first compiles alone** (defect 2414): a
+# package's `env.h` calling `setenv` with two arguments, beside a group naming
+# `stdlib.h`, was told *`env.h` and `stdlib.h` ... cannot be compiled in one
+# unit*, with a note to bind the two from two modules, which refused the
+# same; the mistake is `env.h`'s alone, and `stdlib.h`'s line is the
+# declaration it disagrees with. `refused_beside` names the group whose header
+# holds the first error where a note names another's, and `refused_own` tells
+# that header's refusal as `told` does, every note of clang's among it.
+function refused_beside(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> group_file.Group?
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, @again)?
+
+    if read.beside.is_err()
+        return fail(code: "none", msg: "no note names another group's header")
+    return ok(read.group)
+
+function refused_own(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, @again)
+
+    if read.is_err()
+        return none
+    one = read.must()
+    return [
+        header_refused.told(s, rows: one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, notes: one.notes)
+    ]
+
+# A header clang refused in a unit that compiles alone, and the earlier
+# header of the unit it does not compile after (defect 557,
+# `cli/header_alone.hero`): told as two headers refused together, the words
+# the same whichever is written first.
+function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, earlier: group_file.Group, @again: caret_bytes.Again) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, @again)
+
+    if read.is_err()
+        return none
+    one = read.must()
+    directory = clang_place.found_in(path: one.steps[one.at].path, spelled: one.group.header)
+    refused_file: str @= one.group.header
+
+    if one.at < one.steps.len() - 1
+        refused_file @ clang_place.shown(path: one.first.place.path, directory: directory)
+    side = headers_together.Side(
+        span: one.group.span,
+        header: one.group.header,
+        file: refused_file,
+        row: one.first.place.row,
+        quoted: clang_excerpt.of(one.rows, after: one.first.row)
+    )
+    added: [str] @= []
+
+    for note in one.notes
+        added @ added.push(header_refused.adds(note, directory: directory))
+
+    return [
+        headers_together.after(s, refused: side, earlier: earlier.span, earlier_header: earlier.header, message: one.first.message, added: added)
+    ]

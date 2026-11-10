@@ -16,6 +16,7 @@ use cli/header_alone
 use cli/header_ask
 use cli/header_order
 use cli/header_refused
+use cli/header_whose
 use cli/inline_only
 use cli/io
 use cli/link
@@ -278,14 +279,14 @@ function header_told(message: str, art: compile.Artifact, s: source.Source, t: t
     # Two headers told together where the one clang's first error lies in
     # does not compile alone are that header's own refusal, the other's line
     # the declaration clang's note names (defect 2414).
-    beside = header_refused.refused_beside(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
+    beside = header_whose.refused_beside(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
 
     if !beside.is_err() && !header_alone.compiles(t, under: under, headers: [beside.must().header])
-        refusal @ header_refused.refused_own(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
+        refusal @ header_whose.refused_own(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
 
     # A header refused on its own that compiles alone is two headers'
     # refusal, the earlier named (defect 557).
-    alone = header_refused.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
+    alone = header_whose.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
 
     if !alone.is_err()
         before = header_alone.earlier(t, under: under, header: alone.must().header, headers: unit_headers)
@@ -294,7 +295,7 @@ function header_told(message: str, art: compile.Artifact, s: source.Source, t: t
             other = group_file.group_of(s, art.decls, path: before.must())
 
             if !other.is_err()
-                refusal @ header_refused.refused_after(
+                refusal @ header_whose.refused_after(
                     stderr: message,
                     s: s,
                     decls: art.decls,
