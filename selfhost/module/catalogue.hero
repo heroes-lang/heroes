@@ -9,8 +9,7 @@
 # `tag = 1.10` are refused and never converted; and so is every key an entry
 # does not have, a compiler flag, a search path, a library, a language version
 # or the program's own name among them (`.claude/rules/cli-surface.md` § Four
-# input classes): the catalogue holds the program's dependencies and nothing
-# else.
+# input classes): a catalogue holds what `HOLDS` says and nothing else.
 #
 # **Read all or nothing** (R5): a catalogue that does not read names no
 # entry, the lines read before the refused one included, so no reading of it
@@ -73,6 +72,12 @@ record Catalogue
 
 constant FILE: str
     "heroes.toml"
+
+# What a catalogue holds, as every refusal of a line says it, true of the
+# program's and of a package's own (defect 2442: three said *the program's
+# dependencies and nothing else* beside an `index` line the reader accepted).
+constant HOLDS: str
+    "a catalogue holds the dependencies of the program or the package at whose root it stands and, above them, the one `index` line naming where they are read from, and nothing else"
 
 # The catalogue of no entries, which no file holds.
 function empty() -> Catalogue
@@ -209,7 +214,7 @@ function line(@c: Catalogue, row: str) -> str
 # A line above every table: the `index` line alone.
 function top_line(@c: Catalogue, key: str, value: str) -> str
     if key != "index"
-        return "`" + key + "` is no line of a catalogue: above its entries it holds the `index` line alone, and each entry is a table `[dependencies.<name>]`; the catalogue holds the program's dependencies and nothing else"
+        return "`" + key + "` is no line of a catalogue: above its entries it holds the `index` line alone, and each entry is a table `[dependencies.<name>]`; " + HOLDS
 
     if c.index.len() > 0
         return "the `index` line is written twice"
@@ -246,7 +251,7 @@ function field(@c: Catalogue, key: str, value: str) -> str
         taken @ e.sum.len() > 0
         e.sum @ value
     else
-        return "`" + key + "` is not a key an entry has: an entry holds `version` and `sum` for the index, `git`, `tag`, `commit` and `sum` for git, or `path`, and the catalogue holds nothing but the program's dependencies"
+        return "`" + key + "` is not a key an entry has: an entry holds `version` and `sum` for the index, `git`, `tag`, `commit` and `sum` for git, or `path`; " + HOLDS
 
     if taken
         return "`" + key + "` is written twice in the entry `" + e.name + "`"
@@ -274,7 +279,7 @@ function table(@c: Catalogue, row: str, at: i64) -> str
     head = "[dependencies."
 
     if !bytes.bytes_at(text: row, at: at, needle: head)
-        return "a table is `[dependencies.<name>]`, one per entry, found `" + row + "`; the catalogue holds the program's dependencies and nothing else"
+        return "a table is `[dependencies.<name>]`, one per entry, found `" + row + "`; " + HOLDS
     start = at + head.len()
     close: i64 @= start
 

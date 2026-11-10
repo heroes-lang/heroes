@@ -1,0 +1,10 @@
+# Fixed defect 2442, 2026-11-10, lane b30-pkg, a shape beside it: the
+# package `json`'s own catalogue holds a compiler flag. The reader reads a
+# package's catalogue as it reads the program's, and its refusal said the
+# catalogue holds *nothing but the program's dependencies*, which a
+# package's never does: it holds the package's. It now says what any
+# catalogue holds.
+use <json>/p  #~ package_unread
+
+function main()
+    print(p.word())

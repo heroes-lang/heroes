@@ -1,0 +1,7 @@
+# The catalogue of defect 2442's case beside it: two folders of the author's
+# own.
+[dependencies.core]
+path = "vendor/core"
+
+[dependencies.json]
+path = "vendor/json"
