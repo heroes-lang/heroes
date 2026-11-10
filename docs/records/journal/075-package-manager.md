@@ -246,3 +246,32 @@ it (`3f8f9d15a`, defects 2407 and 2408): a missing library under `link.exe` and 
 closes with that repair at the gate, and the tag waits, as the author asked, for a Windows leg that
 reads `unsupported` with no failure: it goes on the first commit whose leg does, the push that
 carries the repair.
+
+**And what that leg read, 2026-11-10.** The push of `87d77dec2` (CI run 42760969959) read Linux
+x86-64 and arm64 `11865 passed, 0 failed` and Darwin arm64 `11906 passed, 0 failed` again, and the
+Windows leg ran its net to the end with `harness: 11607 passed, 0 failed` and `unsupported: 393
+passed, 0 failed`: defect 2398's repair held where it had to. The leg was red all the same, on the
+next step, the net's own tests, 588 run and 7 failed, which no Windows leg had reached since
+`5bd4cf3e4` on 2026-11-07, each leg since stopping earlier: two tests of defect 238, a program built
+in a folder above ASCII and one built by a compiler installed under such a folder, counted once for
+each program whose own tests run with the net's. Both ended at `0xC0000409`, the UCRT's abort, and
+the same builds on this Mac stopped at exit 134 in `cli/package_reads.hero`, a cut of clang's `-M`
+listing at every byte offset since 2026-11-08: every build of a program in a folder above ASCII, on
+every platform, and only those two Windows tests had ever built in one. It is defect 2418; the round
+that panel 241's three crashes had opened already repaired it, as a shape beside defect 2409
+(`2bc18d007`), and gave it a test of the net's own that every machine runs (`fce7db267`).
+
+That round, `b28-round`: defects 2409, 2410 and 2411 repaired onto `cli/strings`' byte reads, 57
+lines and a guard of their shape with them; defect 2412, the hooks' own tests red since `ce9c288c3`;
+panel 241's sitting; the ROADMAP's counts re-measured. Its gate on this Mac: stage 1 from the seed,
+stages 2 and 3 emitting the same C (`cmp` silent), the compiler's own tests 1,995 and the net's own
+588 all passed, the hooks' own 215; the full net, 31 suites and 6 forms four at a time with `cache`
+alone, 0 failed in each but `records`, 27 and 1 on an undated citation this round had written
+(repaired), `run` 736, `emission` 2,541, `check` 760, `annotations` 1,353, `unsupported` 432, and
+`FLOOR fetch` raised to 14; then the suites the changes after it touched, read once together:
+`records` 28, `unseen` 3, `canonical` 2, `fetch` 15, `spec` 35, `probe` 31, the net's own 589, all
+at 0 failed; Linux arm64's `emission` 2502 and 0 before and after its blessing, the blessed tree
+equal to the round's by `diff -r`; the site's build green. The author asked, as the leg came back,
+that GitHub run only the part of Windows that fails and not five hours of the rest, so the push
+carries `[skip ci]`, and the workflow gained `net: own`, which with `only: windows` builds the
+compiler and runs the net's own tests alone; the tag waits on that dispatch reading 0 failed.
