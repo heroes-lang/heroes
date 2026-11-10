@@ -1,0 +1,14 @@
+# Fixed defect 2379, 2026-11-10, lane b29-pkgmsg, a shape beside it: a file
+# of the package `core` calls `mine()`, which only the package `alpha`
+# declares; the program uses both, and `core` lists no `alpha` in a catalogue
+# of its own, so no `use` of its files names `<alpha>/a`.
+#
+# SYMPTOM: `unknown_name` with a near name's rename and a note on binding C.
+#
+# FIX: the name is told with `<alpha>/a` and why no line of the file reaches
+# it, and no near name is offered.
+use <alpha>/a
+use <core>/strings
+
+function main()
+    print(strings.word() + a.mine())

@@ -63,8 +63,6 @@ extern "hero_os.h"
     function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_FOUND: i64
-
-extern "stdlib.h"
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
     function hero_dir_at(index: i64) -> str
     function hero_dir_release()

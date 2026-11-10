@@ -1,0 +1,20 @@
+error[ffi_unknown_name]: `stdio.h` declares no `hero_env_shown` — the runtime's `hero_os.h` does, which every unit reads before its groups' headers, so the name was found whatever header its group names; clang compiled `stdio.h` alone and could not find it
+  at tests/golden/unsupported/fixedbugs-2413-a-hero-os-name-bound-under-a-header-that-does-not-declare-it-is-refused.hero:15:14
+     |
+  15 |     function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str  #~ ffi_unknown_name
+     |              ^^^^^^^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `hero_env_shown` in a group `extern "hero_os.h"`, or in one naming a header of your own that includes `hero_os.h`
+
+error[ffi_unknown_name]: `stdio.h` declares no `HERO_OS_OK` — the runtime's `hero_os.h` does, which every unit reads before its groups' headers, so the name was found whatever header its group names; clang compiled `stdio.h` alone and could not find it
+  at tests/golden/unsupported/fixedbugs-2413-a-hero-os-name-bound-under-a-header-that-does-not-declare-it-is-refused.hero:16:14
+     |
+  16 |     constant HERO_OS_OK: i64  #~ ffi_unknown_name
+     |              ^^^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `HERO_OS_OK` in a group `extern "hero_os.h"`, or in one naming a header of your own that includes `hero_os.h`
+
+error[ffi_unknown_name]: `fixedbugs-2413-second.h` declares no `hero_os_pid` — the runtime's `hero_os.h` does, which every unit reads before its groups' headers, so the name was found whatever header its group names; clang compiled `fixedbugs-2413-second.h` after `stdio.h`, `fixedbugs-2413-first.h`, which its module's groups name before it, and could not find it
+  at tests/golden/unsupported/fixedbugs-2413-a-hero-os-name-bound-under-a-header-that-does-not-declare-it-is-refused.hero:23:14
+     |
+  23 |     function hero_os_pid() -> i64  #~ ffi_unknown_name
+     |              ^^^^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `hero_os_pid` in a group `extern "hero_os.h"`, or in one naming a header of your own that includes `hero_os.h`

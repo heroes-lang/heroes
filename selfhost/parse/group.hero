@@ -91,7 +91,7 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
             at @ head
         empty = diag.new_diagnostic(
             code: "expected_extern_block",
-            message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)",
+            message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (spec § 13)",
             span: at
         )
         close = members_below.close_of(

@@ -1,0 +1,30 @@
+# Defect 2427, 2026-11-10: a `u64` from 2 to the 63, which an `int64_t` would
+# read as negative, converts to the nearest float, ties to even, rounded once
+# from the integer. Each line is the number, then how far its `f64` and its
+# `f32` lie from 2 to the 63, whose `f64` spacing is 2048 and `f32` spacing
+# 2 to the 40: a tie goes to the even neighbour, a hair past it up, and
+# 2^63 + 2^39 + 1, which a `double` on the way would first round to the tie
+# 2^63 + 2^39 and then to 2^63, is 2^63 + 2^40 as a `float`.
+
+function main()
+    xs: [u64] = [
+        9223372036854775807
+        9223372036854775808
+        9223372036854776832
+        9223372036854776833
+        9223372036854778880
+        9223372586610589696
+        9223372586610589697
+        18446744073709551615
+    ]
+    floor = 9223372036854775808.0
+    narrow: f32 = 9223372036854775808.0
+
+    for x in xs
+        print(x, " ", to_f64(x) - floor, " ", to_f64(to_f32(x) - narrow))
+
+    # Past 2 to the 53, below 2 to the 63: the f64 ties to even as well.
+    ys: [u64] = [9007199254740993, 9007199254740995, 9007199254740997]
+
+    for y in ys
+        print(y, " ", to_f64(y))

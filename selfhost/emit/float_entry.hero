@@ -1,0 +1,90 @@
+# The C a `to_f64` or a `to_f32` becomes, chosen by the source's type (spec
+# § 11 Built-ins; design.md §4.3, where both conversions *cannot fail and give
+# a value*). Split out of `emit/builtins.hero` on 2026-11-10 with defect
+# 2427's repair, which took that file past §11's 300 lines; `builtins.entry`
+# asks `entry` here and `builtins.called` writes what it answers.
+#
+# **A `u64` becomes a float by C's own cast** (defect 2427): `to_f64` and
+# `to_f32` of one were the runtime's `hero_int_to_f64(int64_t)` and
+# `hero_int_to_f32(int64_t)`, which clang refused under `-Wsign-conversion`, at
+# exit 2, and which would have read every value from 2 to the 63 as a negative
+# one. The cast is the operation those entry points make themselves,
+# `(double)v` and `(float)v`, at the source's own type, so the value is
+# rounded once, from the integer, to the nearest float, ties to even (C11
+# 6.3.1.4 and F.4); a `u64` through a `double` on its way to a `float` would be
+# rounded twice. Every other integer widens into the `int64_t` those entry
+# points take without losing a value, `builtins.to_str_entry`'s rule, and keeps
+# them. An expression rather than a third entry point leaves the runtime's
+# names, which a unit guards across its groups' headers
+# (`emit/guarded_names.hero`), as they are.
+
+use check/table
+
+# The cast `entry` answers with for a `u64`'s `to_f64`.
+constant DOUBLE_CAST: str
+    "(double)"
+
+# The cast for a `u64`'s `to_f32`, as `DOUBLE_CAST` above says.
+constant FLOAT_CAST: str
+    "(float)"
+
+# The C a `to_f64` becomes where `wide`, a `to_f32` where not, of a first
+# argument of type `first`. An f32 source reaching `hero_int_to_f64` would be C
+# converting a float to an `int64_t` and back, the silent wrong answer this
+# dispatch exists to stop; a call with no value argument, which the gate has
+# already refused, takes the integer's entry point.
+function entry(first: table.Ty?, wide: bool) -> str
+    of_integer: str @= "hero_int_to_f32"
+    of_u64: str @= FLOAT_CAST
+    of_float: str @= "hero_f64_to_f32"
+
+    if wide
+        of_integer @ "hero_int_to_f64"
+        of_u64 @ DOUBLE_CAST
+        of_float @ "hero_f32_to_f64"
+
+    if first.is_err()
+        return of_integer
+
+    match first.must()
+        .float_ty => return of_float
+        .int_ty ik =>
+            match ik.kind
+                .u64                                         => return of_u64
+                .i8 | .i16 | .i32 | .i64 | .u8 | .u16 | .u32 => return of_integer
+        .bool | .str | .ptr | .cstr | .unit                        => return of_integer
+        .array | .fixed | .map | .fallible | .function_ty | .named => return of_integer
+        .case_ty | .failure | .generic | .error                    => return of_integer
+
+    return of_integer
+
+# Whether `entry` answered with one of the two casts rather than a callee.
+function is_cast(callee: str) -> bool
+    return callee == DOUBLE_CAST || callee == FLOAT_CAST
+
+# The cast `callee` of `argument` as C: parenthesised, so it reads as one
+# operand wherever it stands, and cast to `void` where nobody reads the value,
+# as clang asks of an expression that computes one.
+function cast(callee: str, argument: str, wanted: bool) -> str
+    written = "(" + callee + argument + ")"
+
+    if wanted
+        return written
+    return "(void)" + written
+
+## Tests
+
+test "a u64 takes C's own cast to either float, every other integer the runtime's entry point (defect 2427)"
+    assert entry(first: ok(.int_ty(kind: .u64)), wide: true) == DOUBLE_CAST
+    assert entry(first: ok(.int_ty(kind: .u64)), wide: false) == FLOAT_CAST
+    assert entry(first: ok(.int_ty(kind: .u32)), wide: true) == "hero_int_to_f64"
+    assert entry(first: ok(.int_ty(kind: .i64)), wide: false) == "hero_int_to_f32"
+    assert entry(first: ok(.float_ty(kind: .f32)), wide: true) == "hero_f32_to_f64"
+    assert entry(first: ok(.float_ty(kind: .f64)), wide: false) == "hero_f64_to_f32"
+    assert entry(first: fail(code: "none", msg: "no arguments"), wide: true) == "hero_int_to_f64"
+    assert is_cast(DOUBLE_CAST) && is_cast(FLOAT_CAST) && !is_cast("hero_int_to_f64")
+
+test "a cast is one parenthesised operand, and cast to void where its value is not read"
+    assert cast(callee: DOUBLE_CAST, argument: "t1", wanted: true) == "((double)t1)"
+    assert cast(callee: FLOAT_CAST, argument: "t1", wanted: true) == "((float)t1)"
+    assert cast(callee: DOUBLE_CAST, argument: "t1", wanted: false) == "(void)((double)t1)"

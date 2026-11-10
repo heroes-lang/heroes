@@ -256,7 +256,7 @@ function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: to
             "declare `function " + name + "(p: ptr)` in a group of this module — the header that group names is what clang checks the freer against"
         )
         d.notes @ d.notes.push(
-            "§4.19: the compiler frees an `owned` string by calling the freer by name, so the name has to be one this module's headers know"
+            "spec § 13: the compiler frees an `owned` string by calling the freer by name, so the name has to be one this module's headers know"
         )
         return ok(d)
 
@@ -283,7 +283,7 @@ function refusal(s: source.Source, name: str, mark: token.Span, span: token.Span
     )
     d.notes @ d.notes.push("the `owned " + name + "` that says so is " + at_line)
     d.notes @ d.notes.push(
-        "§4.19: a marked string is handed over as a `str?`, already copied — the bytes C gave you are gone by the time you hold it"
+        "spec § 13: a marked string is handed over as a `str?`, already copied — the bytes C gave you are gone by the time you hold it"
     )
 
     # Two repairs and they are opposite, so neither can be `certain`: which one

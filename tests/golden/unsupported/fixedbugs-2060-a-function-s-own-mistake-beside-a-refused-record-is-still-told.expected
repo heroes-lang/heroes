@@ -10,5 +10,5 @@ error[ffi_return_type]: `lock_init` returns `int32_t` in `fixedbugs-2060-records
      |
   10 |     function lock_init(@l: Lock) -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `lock_init`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `lock_init`
   fix (guess): declare the result `i32`

@@ -22,6 +22,7 @@
 use ast
 use diag
 use module/diagnostics
+use module/package_told
 use module/placed
 use resolve/binding as resolve_binding
 use resolve/did_you_mean
@@ -161,15 +162,30 @@ function name_declared_elsewhere(@r: state.Resolver, s: source.Source, text: str
         # never wrote.
         return ok(diagnostics.needs_qualifying(name: text, qualifier: local.must(), module: module, span: span))
 
-    # The line to add, as this file writes it (defect 2373): in a package's
-    # own file its module is bare. A module no `use` of this file can name,
-    # a program's from a package's file or a package its catalogue does not
-    # hold, is no answer, and the name is told as unknown.
-    written = placed.written_in(s.reached.aliases, from: r.module, module: module)
+    # No `use` of this file names a module declaring it. The line to add is
+    # the first such module's, in ascending order, that a `use` of this file
+    # can name, as this file writes it (defect 2373): in a package's own file
+    # its module is bare. Every declaring module is asked (defect 2379):
+    # until then only the first was, so `<alpha>/a`, which `core`'s files
+    # cannot name, hid `<core>/util`, which `use util` names, and the name
+    # was told as unknown with a near name's rename.
+    beyond: [str] @= []
 
-    if written == ""
-        return fail(code: "absent", msg: "no `use` of this file names the module declaring it")
-    return ok(diagnostics.needs_a_use(name: text, module: module, written: written, span: span))
+    for one in sort(resolved.modules_declaring(r.out))
+        if one != r.module && one != source.LIBRARY_MODULE && !resolved.top_in(r.out, module: one, name: text).is_err()
+            written = placed.written_in(s.reached.aliases, from: r.module, module: one)
+
+            if written != "" && package_told.reaches(from: r.module, name: one)
+                return ok(diagnostics.needs_a_use(name: text, module: one, written: written, span: span))
+            beyond @ beyond.push(one)
+
+    # Only modules no `use` of this file can name declare it: a program's,
+    # from a package's file; a package's that this one's catalogue does not
+    # list; or one private to another (R16). Told with each and why, never
+    # a near name's rename, which points away from the cause.
+    if beyond.len() == 0
+        return fail(code: "absent", msg: "no other module declares this name")
+    return ok(diagnostics.out_of_reach(name: text, modules: beyond, s: s, from: r.module, span: span))
 
 ## Tests
 
@@ -320,3 +336,36 @@ test "elsewhere splits on the use line, and neither repair is certain"
     resolved.declare_top(@r.out, module: "library", name: "range", decl: 1)
     quiet = name_declared_elsewhere(@r, s, "range", span)
     assert quiet.is_err()
+
+# Defect 2379: every module declaring the name is asked, and the first a
+# `use` of this file can name gets its line; where none can, the name is told
+# with each module and why, and no near name is offered.
+test "a name only out-of-reach modules declare is told with them, and a nameable one wins"
+    s = fixture()
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
+    r.module @ "<core>/strings"
+    span = token.Span(start: 5, end: 10)
+    resolved.declare_top(@r.out, module: "other/strings", name: "dist2", decl: 0)
+    program = name_declared_elsewhere(@r, s, "dist2", span).must()
+    assert program.code == "unknown_name"
+    assert program.message == "nothing named `dist2` is in scope, and no `use` of this file can name a module declaring it: `other/strings` is a module of the program, and no file of the package `core` names a module of the program that uses it"
+    assert program.fixes.len() == 0
+    assert program.notes.len() == 1
+
+    # A package the file's own catalogue does not list sorts first, and the
+    # file's own package's module after it is still the answer.
+    resolved.declare_top(@r.out, module: "<alpha>/a", name: "dist2", decl: 1)
+    resolved.declare_top(@r.out, module: "<core>/util", name: "dist2", decl: 2)
+    own = name_declared_elsewhere(@r, s, "dist2", span).must()
+    assert own.code == "needs_qualifying"
+    assert own.fixes[0].title == "write `util.dist2` (and add `use util`)"
+
+    # A module under another's `internal` folder is no answer either.
+    q: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
+    q.module @ "main"
+    resolved.declare_top(@q.out, module: "lib/internal/x", name: "dist2", decl: 0)
+    private = name_declared_elsewhere(@q, s, "dist2", span).must()
+    assert private.code == "unknown_name"
+    assert private.message == "nothing named `dist2` is in scope, and no `use` of this file can name a module declaring it: `lib/internal/x` is private to `lib`"
+    q.module @ "lib/words"
+    assert name_declared_elsewhere(@q, s, "dist2", span).must().code == "needs_qualifying"

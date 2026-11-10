@@ -1,0 +1,16 @@
+# Defect 2427, 2026-11-10, the conversions beside the two it repaired: every
+# other built-in taking a `u64` answers at the edges of its target, the
+# largest `u64` written whole, 2 to the 63 one past an `i64`, 2 to the 32 one
+# past a `u32`, and each narrower target refusing what it cannot hold.
+
+function main()
+    top: u64 = 18446744073709551615
+    half: u64 = 9223372036854775808
+    below: u64 = 9223372036854775807
+    w: u64 = 4294967295
+    over: u64 = 4294967296
+    print(top.to_str(), " ", half.to_str(), " ", top)
+    print(to_i64(below).must(), " ", to_i64(half).is_err(), " ", to_i64(top).is_err())
+    print(to_u32(w).must(), " ", to_u32(over).is_err(), " ", to_u64(top).must())
+    print(to_i8(half).is_err(), " ", to_u8(w).is_err(), " ", to_i32(w).is_err(), " ", to_u16(over).is_err())
+    print(to_i32(to_u32(over - 1).must()).is_err(), " ", to_u16(w / 65537).must())

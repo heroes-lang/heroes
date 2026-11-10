@@ -3,4 +3,4 @@ error[ffi_call_shape]: `stdio.h` declares `stdin` as an object of type `FILE *`,
      |
   12 |     function stdin() -> ptr  #~ ffi_call_shape
      |     ^^^^^^^^^^^^^^^^^^^^^^^
-  note: an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (§4.19): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline FILE *hero_stdin(void) { return stdin; }`
+  note: an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (spec § 13): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline FILE *hero_stdin(void) { return stdin; }`

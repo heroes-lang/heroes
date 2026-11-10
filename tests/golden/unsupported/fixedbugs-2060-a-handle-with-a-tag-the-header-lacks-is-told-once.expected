@@ -3,4 +3,4 @@ error[ffi_unknown_name]: `fixedbugs-145-types.h` declares no `opaque_ss` — cla
      |
   10 |     record H tag opaque_ss  #~ ffi_unknown_name
      |     ^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `opaque_ss`
+  note: an `extern` names what the header already has (spec § 13): check the spelling, or name the header that does declare `opaque_ss`

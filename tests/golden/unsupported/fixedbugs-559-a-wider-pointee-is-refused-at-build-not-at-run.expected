@@ -3,5 +3,5 @@ error[ffi_parameter_type]: `x` of `fill_wide` is declared `i32`, and the header'
      |
   15 |     function fill_wide(@x: i32)  #~ ffi_parameter_type
      |                         ^
-  note: §4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
+  note: spec § 13: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
   fix (guess): declare `x` as `@x: i64`

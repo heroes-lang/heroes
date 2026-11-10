@@ -3,7 +3,7 @@ error[ffi_parameter_type]: `out` of `fill` is declared `i32`, and the header's `
      |
   14 |     function fill(@out: i32)  #~ ffi_parameter_type
      |                    ^^^
-  note: §4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
+  note: spec § 13: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
   fix (guess): declare `out` as `@out: i64`
 
 error[ffi_constant_type]: `K_DIV` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it

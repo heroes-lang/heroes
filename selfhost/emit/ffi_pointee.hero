@@ -132,7 +132,7 @@ function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
         span: at
     )
     d.notes @ d.notes.push(
-        "§4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`"
+        "spec § 13: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`"
     )
     spelled = c_spellings.spelling(c_type: header_type, word_bits: width)
 
@@ -244,7 +244,7 @@ function pointee_depth(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
         span: at
     )
     d.notes @ d.notes.push(
-        "§4.19: `@` on a handle or a `ptr` is for a parameter the header spells `T **`, one that writes a pointer back into the cell; a parameter spelled `" + header_type + " *` takes the handle, so pass it without `@`"
+        "spec § 13: `@` on a handle or a `ptr` is for a parameter the header spells `T **`, one that writes a pointer back into the cell; a parameter spelled `" + header_type + " *` takes the handle, so pass it without `@`"
     )
     d.notes @ d.notes.push(
         "if the header does write a pointer back, it is the header that is short by one `*`, and the binding is right — say so beside the declaration and change the header, never the mark"
@@ -320,7 +320,7 @@ function unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, 
         span: at
     )
     d.notes @ d.notes.push(
-        "§4.19: a pointer to something the header does not size is bound as `ptr` — declare `" + param + ": ptr`, hold the address C hands you (or the address of a `record` you declared with the layout the library documents), and pass it"
+        "spec § 13: a pointer to something the header does not size is bound as `ptr` — declare `" + param + ": ptr`, hold the address C hands you (or the address of a `record` you declared with the layout the library documents), and pass it"
     )
 
     if spans.is_err()

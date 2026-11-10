@@ -1,0 +1,5 @@
+# The catalogue of defect 2394's case beside it: an entry `heroes fetch` has
+# not placed, so no tree is there to list.
+[dependencies.core]
+version = "0.2.0"
+sum = "sha256-8a5f9d20346cc82a313d11491b4273b3affeda4b010bc5fedda3cab5174eabf4"

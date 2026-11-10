@@ -1,0 +1,8 @@
+# The owner's module of defect 2379's case beside it, which names its private
+# module.
+
+use lib/internal/x
+
+# A word.
+function word() -> str
+    return x.mine()

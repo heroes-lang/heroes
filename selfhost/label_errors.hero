@@ -91,7 +91,7 @@ function label_on_function_value(written: str, span: token.Span) -> diag.Diagnos
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.9 names an argument where two parameters share a type; no other parameter of this type has this one's type, so this position carries no name for a label to be checked against"
+        "spec § 9 names an argument where two parameters share a type; no other parameter of this type has this one's type, so this position carries no name for a label to be checked against"
     )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "drop the label", replacement: "", span: span, certainty: .certain)
@@ -119,7 +119,7 @@ function label_on_builtin(holder: str, written: str, elsewhere: bool, span: toke
         span: span
     )
     d.notes @ d.notes.push(
-        "a built-in's arguments carry names only where two of its parameters share a type (§4.9), and this one of `" + holder + "` carries none: its position says which it is"
+        "a built-in's arguments carry names only where two of its parameters share a type (spec § 9), and this one of `" + holder + "` carries none: its position says which it is"
     )
     certainty: diag.Certainty @= .certain
 

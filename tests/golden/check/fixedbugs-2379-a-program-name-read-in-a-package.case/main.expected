@@ -1,0 +1,2 @@
+note: the package `core` is read from the folder `tests/golden/check/fixedbugs-2379-a-program-name-read-in-a-package.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/fixedbugs-2379-a-program-name-read-in-a-package.case/vendor/core/strings.hero:6:9: error[unknown_name]: nothing named `mine` is in scope, and no `use` of this file can name a module declaring it: `other/strings` is a module of the program, and no file of the package `core` names a module of the program that uses it

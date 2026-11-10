@@ -1,0 +1,28 @@
+# Fixed defect 2416, 2026-11-10, lane b29-pkgmsg: a `use` naming a module of
+# a placed folder that is no path a `use` writes, with no catalogue beside
+# this file, which the parser reads none of.
+#
+# SYMPTOM: each was told `package_unmarked` with `fix (guess): write
+# <json>/a-b` and its like, a line refused once written (`expected a
+# declaration, found -`), and the message advised the same line.
+#
+# CAUSE: `placed_use.repair` asked the entry and the module non-empty and the
+# `internal` rule, never whether the module is a path the parser reads, as
+# `module_text.quoted` asks before it offers a line.
+#
+# FIX: such a module is told it is no module's name, and offered no line: a
+# `-`, a character above ASCII, a keyword, a word the lexer refuses as a
+# name, a part opening with a digit, an empty part, a `/` at its end; quoted,
+# bare and in the mark alike.
+use "heroes.packages/json@1-k/y/a-b"  #~ package_unmarked
+use "heroes.packages/json@1-k/y/internal€"  #~ package_unmarked
+use "heroes.packages/json@1-k/y/match"  #~ package_unmarked
+use "heroes.packages/json@1-k/let"  #~ package_unmarked
+use "heroes.packages/json@1-k/2d"  #~ package_unmarked
+use "heroes.packages/json@1-k/y//z"  #~ package_unmarked
+use "heroes.packages/json@1-k/y/"  #~ package_unmarked
+use heroes.packages/json@1.4.2-fbd8abc09c185522/a-b  #~ package_unmarked
+use <heroes.packages/json@1.4.2-fbd8abc09c185522/a-b>/parse  #~ package_unmarked
+
+function main()
+    print(1)

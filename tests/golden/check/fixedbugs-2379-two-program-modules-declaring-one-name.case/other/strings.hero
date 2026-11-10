@@ -1,0 +1,5 @@
+# One of the program's modules of defect 2379's case beside it.
+
+# A word only the program declares.
+function mine() -> str
+    return "p"

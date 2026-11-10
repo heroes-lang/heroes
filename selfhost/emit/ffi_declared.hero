@@ -66,7 +66,7 @@ function wrong_type(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
             span: found.must().span
         )
         d.notes @ d.notes.push(
-            "an `extern constant` takes its value from the header (§4.19), so its type is the header's too: correct the declared type, or name the header that spells `" + name + "` as `" + declared + "`"
+            "an `extern constant` takes its value from the header (spec § 13), so its type is the header's too: correct the declared type, or name the header that spells `" + name + "` as `" + declared + "`"
         )
         return ok(d)
     d: diag.Diagnostic @= diag.new_diagnostic(
@@ -75,7 +75,7 @@ function wrong_type(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
         span: found.must().span
     )
     d.notes @ d.notes.push(
-        "an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `" + name + "`"
+        "an `extern` is checked against the real header (spec § 13): correct the result type, or name the header that declares this `" + name + "`"
     )
     return ok(d)
 
@@ -107,7 +107,7 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # `cli/header_order.hero` replaces where the header declares the name read
 # alone and not after another group's (panel 204's R3).
 constant UNKNOWN: str
-    "an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `"
+    "an `extern` names what the header already has (spec § 13): check the spelling, or name the header that does declare `"
 
 # The header has no such name at all. A different mistake from the one
 # above and it was being reported as that one — "`sqlite3_openn` does

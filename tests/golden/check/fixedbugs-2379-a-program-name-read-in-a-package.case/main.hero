@@ -1,0 +1,10 @@
+# Fixed defect 2379, 2026-11-10, lane b29-pkgmsg, a shape beside it: a file
+# of the package `core` reads `mine` as a value, which only the program's own
+# `other/strings` declares. It was told `unknown_name` with a near name's
+# rename; it is told the module and why no line of the package reaches it.
+use <core>/strings
+
+use other/strings as own
+
+function main()
+    print(strings.word() + own.mine())

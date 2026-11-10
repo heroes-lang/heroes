@@ -30,6 +30,7 @@ use module/paths
 use module/placed
 use module/reached
 use module/spelling
+use module_text
 use placed_use
 use source
 use token
@@ -115,8 +116,11 @@ function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str
     entry = head_of(name)
     listed = catalogue.read(opened: base, named: base)
 
-    if entry == name || catalogue.entry(listed, name: entry).is_err()
+    if catalogue.entry(listed, name: entry).is_err()
         return spelling.unknown(s, uses, used: used, base: base, name: name)
+
+    if entry == name
+        return whole_entry(s, uses, used: used, listed: listed, entry: entry)
     marked = "<" + entry + ">/" + name.slice(from: entry.len() + 1, to: name.len())
     book: packages.Book @= packages.book(named: base, opened: base)
     at = packages.file_of(@book, marked)
@@ -135,6 +139,65 @@ function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str
         diag.Fix(title: "write `use " + marked + "`", replacement: marked, span: used.name, certainty: certainty)
     )
     return d
+
+# A bare `use` naming an entry of the catalogue whole, `use core` with no
+# `core.hero` beside the file (defect 2394): told as the module the directory
+# does not hold, as `spelling.unknown` tells it, and that `core` is an entry,
+# reached through one of its modules in angle brackets. It was told the first
+# half alone, the entry's word given to `use core/strconv` and kept from this
+# line, which `import core`'s certain fix writes. No repair: which module is
+# meant is the author's.
+function whole_entry(s: source.Source, uses: [ast.Use], used: ast.Use, listed: catalogue.Catalogue, entry: str) -> diag.Diagnostic
+    base = paths.directory_text(s.name)
+    d: diag.Diagnostic @= spelling.unknown(s, uses, used: used, base: base, name: entry)
+    found = root_modules(base: base, from: source.module_at(s, used.span.start), entry: entry)
+    lines: [str] @= []
+
+    for module in found
+        if lines.len() < SHOWN
+            lines @ lines.push("`use <" + entry + ">/" + module + "`")
+
+    offered: str @= "`use <" + entry + ">/parse`, `parse` standing for one of its modules"
+
+    if found.len() > SHOWN
+        offered @ lines.join(", ") + " or another of the modules at its root"
+    else if lines.len() == 1
+        offered @ lines[0] + ", the one module at its root"
+    else if lines.len() > 1
+        offered @ listed_or(lines) + ", the modules at its root"
+    d.message @ d.message + "; `" + entry + "` is an entry of the catalogue `" + listed.file + "`, and a package is reached through one of its modules, written in angle brackets — " + offered
+    return d
+
+# How many of a package's modules a message names.
+constant SHOWN: i64
+    3
+
+# The modules at the root of the package `entry`'s tree that a `use` of the
+# module `from` can name, in their names' byte order: each `.hero` file whose
+# stem is a path the parser reads, and none private to the package's root
+# (R16). None where the package's tree is not there to list.
+function root_modules(base: str, from: str, entry: str) -> [str]
+    book: packages.Book @= packages.book(named: base, opened: base)
+    at = packages.reach(@book, alias: entry)
+    found: [str] @= []
+
+    if at < 0 || book.reached[at].problem.len() > 0
+        return found
+
+    for file in sort(spelling.scan(folder: book.reached[at].opened, kind: 0))
+        if strings.ends_with(text: file, suffix: ".hero")
+            stem = file.slice(from: 0, to: file.len() - 5)
+
+            if module_text.is_use_path(stem) && reaches(from: from, name: "<" + entry + ">/" + stem)
+                found @ found.push(stem)
+
+    return found
+
+# `a`, `a or b`, `a, b or c`.
+function listed_or(lines: [str]) -> str
+    if lines.len() < 2
+        return lines.join("")
+    return lines.slice(from: 0, to: lines.len() - 1).join(", ") + " or " + lines[lines.len() - 1]
 
 # The code a package's problem is told with: the verb's, where the build
 # tells the refusal `heroes fetch` would give (`module/unplaced.hero`), else
@@ -223,3 +286,8 @@ test "a private module is its owner's and its owner's modules' alone"
     assert !reaches(from: "<core>/stringsx", name: "<core>/strings/internal/scan")
     assert !reaches(from: "main", name: "lib/internal/strs")
     assert reaches(from: "main", name: "lib/strs")
+
+test "the lines an entry is offered are listed with an `or` before the last"
+    assert listed_or(["`a`"]) == "`a`"
+    assert listed_or(["`a`", "`b`"]) == "`a` or `b`"
+    assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"

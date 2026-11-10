@@ -1,0 +1,7 @@
+# Defect 2392, 2026-11-10, lane b29-pkgmsg: `unknown_package_module`, pinned
+# by no case until then. `use <core>/nothere`, the package `core` read from
+# its folder, which holds no `nothere.hero`: told the file the line reads.
+use <core>/nothere  #~ unknown_package_module
+
+function main()
+    print(nothere.n())

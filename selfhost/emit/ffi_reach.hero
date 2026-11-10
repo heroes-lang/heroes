@@ -96,7 +96,7 @@ function diagnostic(s: source.Source, tree: ast.Ast, decls: [ast.Decl], bound: s
         span: found.span
     )
     d.notes @ d.notes.push(
-        "an `extern` is checked against what its header makes the name (§4.19), and a macro through the name it leaves: name the header that declares `" + reach.name + "` in a group above this one, or bind the name the header's documentation gives in place of `" + bound + "`"
+        "an `extern` is checked against what its header makes the name (spec § 13), and a macro through the name it leaves: name the header that declares `" + reach.name + "` in a group above this one, or bind the name the header's documentation gives in place of `" + bound + "`"
     )
     return d
 

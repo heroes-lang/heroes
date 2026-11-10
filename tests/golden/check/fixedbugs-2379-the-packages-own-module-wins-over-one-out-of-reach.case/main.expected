@@ -1,0 +1,3 @@
+note: the package `alpha` is read from the folder `tests/golden/check/fixedbugs-2379-the-packages-own-module-wins-over-one-out-of-reach.case/vendor/alpha/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `core` is read from the folder `tests/golden/check/fixedbugs-2379-the-packages-own-module-wins-over-one-out-of-reach.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/fixedbugs-2379-the-packages-own-module-wins-over-one-out-of-reach.case/vendor/core/strings.hero:6:12: error[needs_qualifying]: `mine` is declared in module `<core>/util`, which this file does not name — add `use util` at the top and write `util.mine`

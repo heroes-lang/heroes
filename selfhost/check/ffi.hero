@@ -189,7 +189,7 @@ function ffi_constant(@c: state.Checker, s: source.Source, decls: [ast.Decl], de
     why: str @= ""
 
     match table.get(c.out.types, declared)
-        .str  => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (§4.20)"
+        .str  => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (spec § 13)"
         .unit => why @ "a `constant` names a value, and `()` is a type rather than a value"
         # Panel 111 R4 opened the parameter position and nothing else,
         # and a `constant` is not a position: it is a VALUE this
@@ -236,7 +236,7 @@ function ffi_field(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i
     why = match table.get(c.out.types, ty)
         .str => "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and read it with `validated`, which copies and may fail"
         .array | .map => "a C struct holds a pointer to its elements, never the elements: declare the field `ptr` and reach them through the header's own accessors"
-        .fallible => "`T?` is this language's own two-word value and no header declares one: a C function reports failure in its result or an out-parameter (§4.19)"
+        .fallible => "`T?` is this language's own two-word value and no header declares one: a C function reports failure in its result or an out-parameter (spec § 13)"
         .unit => "`()` is a type rather than a value, so nothing can hold one — drop the field"
         .named => "a record can hold another only if the header declares that one too: move it into this `extern` group, or declare the field `ptr` if C holds a pointer to it"
         # Was "no C header can declare a field of this type" — §11's false

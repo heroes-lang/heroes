@@ -1,0 +1,5 @@
+# The package `alpha`'s module of defect 2379's case beside it.
+
+# A word of `alpha`.
+function mine() -> str
+    return "a"

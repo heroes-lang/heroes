@@ -32,6 +32,7 @@
 use diag
 use module/names as module_names
 use module/placed
+use placed_use
 use source
 use token
 
@@ -191,6 +192,70 @@ function needs_a_use(name: str, module: str, written: str, span: token.Span) -> 
     )
     return d
 
+# A name only modules no `use` of this file can name declare (defect 2379):
+# `mine()` in a file of the package `core` where the program's own
+# `other/strings` alone declares `mine`. It was told `unknown_name` with a near
+# name's rename and a note on binding C, both pointing away from the cause.
+# Each module is named by its identity with why no line of `from` reaches
+# it, in three groups: the program's, which no file of a package names (spec
+# § 1: a package's `use` starts at its own root, and its brackets name the
+# entries of its own catalogue); a package's that `from`'s package lists in no
+# catalogue of its own; one private to another (panel 235's R16), the one
+# group whose module `placed.written_in` spells, the line being there and
+# refused. No fix: where the declaration should stand is the author's choice.
+function out_of_reach(name: str, modules: [str], s: source.Source, from: str, span: token.Span) -> diag.Diagnostic
+    program: [str] @= []
+    packaged: [str] @= []
+    held: [str] @= []
+    owners: [str] @= []
+
+    for module in modules
+        if placed.written_in(s.reached.aliases, from: from, module: module) != ""
+            held @ held.push(module)
+            owners @ owners.push(placed_use.internal_owner(module))
+        else if placed.is_package(module)
+            packaged @ packaged.push(module)
+        else
+            program @ program.push(module)
+
+    said: [str] @= []
+
+    if program.len() > 0
+        said @ said.push(
+            listed(program) + " " + counted(program, one: "is a module", many: "are modules") + " of the program, and no file of the package `" + placed.entry_of(from) + "` names a module of the program that uses it"
+        )
+
+    if packaged.len() > 0
+        said @ said.push(
+            listed(packaged) + " " + counted(packaged, one: "is a module of a package", many: "are modules of packages") + " that the package `" + placed.entry_of(from) + "` lists in no catalogue of its own"
+        )
+
+    for at in range(from: 0, to: held.len())
+        said @ said.push("`" + held[at] + "` is private to `" + owners[at] + "`")
+
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "unknown_name",
+        message: "nothing named `" + name + "` is in scope, and no `use` of this file can name a module declaring it: " + said.join("; "),
+        span: span
+    )
+
+    if program.len() + packaged.len() > 0
+        d.notes @ d.notes.push(
+            "inside a package a `use` starts at the package's own root, and its angle brackets name the entries of the package's own catalogue (spec § 1): what a package calls is declared in the package itself or in a package its catalogue lists"
+        )
+
+    if held.len() > 0
+        d.notes @ d.notes.push(
+            "a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it: name what its owner offers instead"
+        )
+    return d
+
+# `one` for a single module, `many` for several.
+function counted(modules: [str], one: str, many: str) -> str
+    if modules.len() == 1
+        return one
+    return many
+
 # An `extern` reached from another module (panel 033 R5, carried by
 # M-separate-compilation acceptance row 1). clang verifies an extern
 # against its header only in the translation unit that declares it, so a
@@ -213,11 +278,11 @@ function extern_across_modules(name: str, module: str, is_library: bool, span: t
     if is_library
         d.message @ "`" + name + "` is the library's own `extern` — an extern is never reachable across a module boundary, and the library is a module"
         d.notes @ d.notes.push(
-            "§4.19: every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have"
+            "every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have"
         )
     else
         d.notes @ d.notes.push(
-            "§4.19: write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks"
+            "write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks"
         )
     return d
 

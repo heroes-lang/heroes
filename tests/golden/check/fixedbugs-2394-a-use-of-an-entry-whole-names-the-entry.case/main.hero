@@ -1,0 +1,18 @@
+# Fixed defect 2394, 2026-11-10, lane b29-pkgmsg: `use core`, where `core`
+# is an entry of the catalogue beside this file and no `core.hero` stands
+# here, the line `import core`'s certain fix writes.
+#
+# SYMPTOM: `unknown_module`, *there is no module `core`*, and no word of the
+# entry, which `use core/strconv` is told with `use <core>/strconv`.
+#
+# CAUSE: `package_told.own_unknown` asked the catalogue only of a path of two
+# parts or more, and a line naming the entry whole went to the plain message.
+#
+# FIX: the same message, then that `core` is an entry, reached through one
+# of its modules in angle brackets, naming those at its root that a `use`
+# here can write: never `internal`, private to the package's root, nor
+# `match`, a keyword, nor `my-mod`, which no name holds.
+use core  #~ unknown_module
+
+function main()
+    print("x")

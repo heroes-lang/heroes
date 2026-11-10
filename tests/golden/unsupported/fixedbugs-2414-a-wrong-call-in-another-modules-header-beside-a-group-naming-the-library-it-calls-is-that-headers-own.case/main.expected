@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `env.h`, the header this group names, does not compile: clang refuses it at line 9: too few arguments to function call, expected 3, have 2
+  at tests/golden/unsupported/fixedbugs-2414-a-wrong-call-in-another-modules-header-beside-a-group-naming-the-library-it-calls-is-that-headers-own.case/env.hero:2:8
+    |
+  2 | extern "env.h"  #~ ffi_header_refused
+    |        ^^^^^^^
+  note: `env.h` line 9 reads `    return lib_set(name, value);`
+  note: clang adds, at `lib.h` line 2: 'lib_set' declared here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

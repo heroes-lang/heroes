@@ -149,7 +149,7 @@ function refusal(name: str, param: str, declared: str, c_type: str, spans: ffi_p
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+        "spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
     )
 
     # The repair is not "add const", which is the header's to choose

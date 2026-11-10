@@ -1,0 +1,9 @@
+# Fixed defect 2416, 2026-11-10, lane b29-pkgmsg, a shape beside it: a placed
+# folder's module written as its file, `parse.hero`, as one is copied from the
+# tree. It was offered `<json>/parse.hero`, which no `use` reads; it is the
+# module `parse`, as a quoted path naming its file is (`module_text.quoted`),
+# and offered `<json>/parse` as a `guess`.
+use "heroes.packages/json@1-k/parse.hero"  #~ package_unmarked
+
+function main()
+    print(parse.value())

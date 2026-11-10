@@ -134,16 +134,33 @@ test "deep nesting works, and the depth it works to is measured rather than hope
     # never promote it, and together they were **58.5% of all declared frame
     # bytes**. The repair deletes them, and the ceilings roughly doubled.
     #
-    # Measured on this Mac, one nesting depth per configuration,
-    # this program, binary-searched:
+    # Measured on this Mac at that repair (2026-09-04, `3e3bdf4f9`), one
+    # nesting depth per configuration, this program, binary-searched:
     #
     #                  before   after
     #   --sanitize       104      166
     #   -O0              191      314
     #   -O2              349      585
     #
-    # All three stop with `panic: stack exhausted` and the guard naming the
-    # function (panel 104), which is what makes a ceiling measurable at all.
+    # MEASURED AGAIN ON 2026-11-10 (defect 2393), with the compiler of
+    # `sources 45824e7205ca021e` (heroes 0.6.0, Apple clang 21.0.0, this
+    # Mac): the deepest `print (((...1...)))` that prints `1`, binary-searched
+    # between 1 and 4,000, each edge run three more times. The program built
+    # alone and this test's own binary, `heroes test` at each level as the
+    # corpus runs it, read the same depths:
+    #
+    #                  prints 1   stops at   with
+    #   --sanitize        166        167     ERROR: AddressSanitizer: stack-overflow
+    #   -O0               323        324     panic: stack exhausted
+    #   -O2               760        761     panic: stack exhausted
+    #
+    # The two plain builds stop with `panic: stack exhausted` and the guard
+    # naming the function (panel 104), which is what makes a ceiling
+    # measurable at all; which function it names moves with the build and with
+    # what called the parser. Under `--sanitize` that guard is left out by
+    # design (`runtime/parts/stack.c`, *NOTHING UNDER THE SANITIZER*), and
+    # AddressSanitizer's own report stops the program. What raised the two
+    # plain ceilings since 2026-09-04 was not measured.
     #
     # WHY IT IS STILL NOT 500, and this is the honest half: `--sanitize` tops
     # out at 166, the corpus runs every program in all three configurations,
@@ -165,9 +182,10 @@ test "deep nesting works, and the depth it works to is measured rather than hope
     nodes = parse.program(deep).must()
     assert nodes.exprs.len() == 1
 
-    # A hundred and fifty still works in every configuration, which says 83 is
-    # not sitting on a cliff — it was a hundred against a ceiling of 104
-    # before the repair, and the margin is wider now.
+    # A hundred and fifty still works in every configuration, 16 under the
+    # tightest ceiling, `--sanitize`'s 166 in this test's own binary, which
+    # says 83 is not sitting on a cliff. It was a hundred against a ceiling of
+    # 104 before the repair.
     hundred = "print " + repeat("(", 150) + "2" + repeat(")", 150)
     assert ran(hundred) == "2"
 

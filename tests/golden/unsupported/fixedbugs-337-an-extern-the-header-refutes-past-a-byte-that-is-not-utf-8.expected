@@ -3,5 +3,5 @@ error[ffi_return_type]: `wide_count` returns `int64_t` in `fixedbugs-337-located
      |
   17 |     function wide_count() -> i32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `wide_count`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `wide_count`
   fix (guess): declare the result `i64`

@@ -256,7 +256,7 @@ function told(a: ast.Ast, s: source.Source, built: str, what: str, arg: ast.Arg)
         written @ source.span_text(s, arg.name.must()) + ": @" + value
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "marker_mismatch",
-        message: "`" + built + "(…)` builds " + what + ", which keeps a copy of each value: the `@` in `" + written + "` says `" + value + "` is changed and written back, and only a function's `@` parameter does that (§4.8)",
+        message: "`" + built + "(…)` builds " + what + ", which keeps a copy of each value: the `@` in `" + written + "` says `" + value + "` is changed and written back, and only a function's `@` parameter does that (spec § 9)",
         span: token.Span(start: at, end: value_span.end)
     )
 

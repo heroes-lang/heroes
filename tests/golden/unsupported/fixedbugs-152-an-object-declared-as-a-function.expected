@@ -3,4 +3,4 @@ error[ffi_call_shape]: `errno.h` declares `errno` as an object of type `int`, no
      |
   21 |     function errno() -> i32  #~ ffi_call_shape
      |     ^^^^^^^^^^^^^^^^^^^^^^^
-  note: an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (§4.19): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline int hero_errno(void) { return errno; }`
+  note: an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (spec § 13): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline int hero_errno(void) { return errno; }`

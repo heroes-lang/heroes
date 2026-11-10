@@ -9,4 +9,4 @@ tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:22:1: error[missing_body]: the `test` `"empty"` needs an indented body — one level deeper, exactly 4 spaces (found `€`)
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:24:1: error[empty_record]: a `record` needs at least one field, indented one level below it
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:28:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
-tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:34:1: error[expected_extern_block]: an `extern` group's signatures are indented under it — `extern "math.h"` then `    function sqrt(x: f64) -> f64` (§4.19)
+tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:34:1: error[expected_extern_block]: an `extern` group's signatures are indented under it — `extern "math.h"` then `    function sqrt(x: f64) -> f64` (spec § 13)

@@ -290,8 +290,8 @@ test "the file-wide sweep stays quiet on the one legal position"
 test "a nested fixed array outside a group is told once, at its outermost"
     nested = swept("function f(g: i64[2][3], h: u8[2][3][4]) -> i64\n    return 0\n")
     assert nested.len() == 2
-    assert nested[0].message == "`i64[2][3]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
-    assert nested[1].message == "`u8[2][3][4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert nested[0].message == "`i64[2][3]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (spec § 13)"
+    assert nested[1].message == "`u8[2][3][4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (spec § 13)"
     assert nested[1].notes == ["where no C struct holds it, use `[[[u8]]]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"]
 
 # Defect 408: a binding built into a group record's field is told that

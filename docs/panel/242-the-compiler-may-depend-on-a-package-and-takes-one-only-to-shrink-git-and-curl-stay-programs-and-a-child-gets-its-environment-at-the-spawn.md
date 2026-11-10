@@ -272,3 +272,11 @@ R8 as adopted, design.md:570-572 amended in its own commit, the compiler taking 
 R2's ruler is met and then by (A), the fingerprint the runtime's, `git` and `curl` programs, route
 (e) with its three choices as M-core-packages' work, (D) first. **What it does not**: the
 predictions above, on their own clocks; the cheaper reading, which stays the author's to choose.
+
+**Ratified, R1 to R8, 2026-11-10**: the author's answer at about 13:55 the same day, put with the
+coordinator's recommendation through the question form, *ratify R1 to R8*, recorded as a reading
+(`.claude/rules/records.md` § And the record says whose idea it was). With it, by the same form:
+feature 2315 stays open and waits for the compiler's first package by R2's ruler; the next batch
+takes all fifteen open defects and features 2424 (R6) and 2425 (R7); the site publishes with that
+batch's push. What the yes settles: every resolution as adopted, design.md §1.11 as amended at
+`498c32967`, now ratified. What it does not: the predictions above, on their own clocks.
