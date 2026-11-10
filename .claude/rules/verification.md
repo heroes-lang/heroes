@@ -389,6 +389,20 @@ run followed the push as every post-push check does, and so does every run
 after it: one that ends at exit 0, or at exit 2 only on failures an open defect
 names, is the run this section owes.
 
+**Amended 2026-11-10 by author instruction**, given when task 2419 put the
+whole run to the author (five commits had moved `selfhost/print/` since batch
+24, about 15 CPU hours and 4 of wall), meant as: *it makes no sense; do not run
+it, or run it reduced*. **What a push that touches `selfhost/print/` owes, after
+it, is one strided pass**: `heroes probe <root> --family <family> --stride 97
+--offset 0` for each of `selfhost`, `tests` and `examples` and each of `single`
+and `bracket`, the six side by side, with the tree's compiler built at `-O2`, a
+stride that is not a multiple of 3 for defect 506's reason above; about one
+variant in a hundred of the whole run. A failure it finds is filed by its class,
+as before. The whole run, every variant, is owed only where the author asks for
+it, or where a strided pass has found a failure and its family's seed is judged
+whole to read the class; the paragraphs above stand as the rule of 2026-09-28
+and 2026-10-25.
+
 ## What may run beside a gate, and what may not
 
 **Free: a pass-or-fail gate.** While a suite is deciding green or red, other
