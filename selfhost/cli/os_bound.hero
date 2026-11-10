@@ -1,0 +1,374 @@
+# A door of the runtime's `hero_os.h` bound by a group naming another header,
+# asked of the header the group names (design.md §4.19, spec § 13; defect 2413,
+# 2026-11-10).
+#
+# **What it closes, measured on this Mac.** Every unit reads `hero_os.h`
+# before its groups' headers (`emit/externs.SEEDS`), so `extern "stdio.h"`
+# holding `function hero_env_shown(...) -> str` found the name declared and
+# built at exit 0, and the same binding with `-> i64` was told
+# *`hero_env_shown` returns `HeroStr` in `stdio.h`*, a header that declares no
+# such function. Spec § 13 holds every result type *against that header*, the
+# one the group names, so a group's name is the named header's or it is refused.
+#
+# **Asked of clang, never of a list**: each header a group names that binds a
+# word `hero_os.h`'s C writes in the compiler's own forms (`own_names.reserved`)
+# is compiled alone, without the unit's opening, under the words every probe
+# takes, with a reference to each such name. A name clang finds is the
+# header's, a header of the program's own that includes `hero_os.h` among
+# them, and binds as before; one clang calls undeclared, where nothing else in
+# that compile failed, is refused `ffi_unknown_name` at its name. A header
+# that does not compile alone is asked again after the headers its module's
+# groups name before it, `hero_os.h` left out, so a header needing an earlier
+# one's names is still asked (`second.h` after `first.h`'s macro); one that
+# compiles neither way, a header only a package's own search finds among
+# them, is no verdict, and the build goes on as before.
+# No clang runs for a program binding no such word under another header. The
+# runtime's own `heroes_runtime.h` names are `cli/runtime_bound.hero`'s,
+# refused before this asks (defect 2256).
+
+use ast
+use cli/compile
+use cli/compiling
+use cli/deps
+use cli/digest
+use cli/own_names
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use diag
+use emit/c_text
+use emit/c_words
+use emit/externs as emit_externs
+use module/reading
+use parse
+use source
+use token
+
+# The header whose words this asks after, as a group names it.
+constant OS_HEADER: str
+    "hero_os.h"
+
+# The build stopped where a group binds a word of `hero_os.h` its own header
+# does not declare: its refusals printed as `check`'s are.
+function stopped(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], permissive: bool) -> ()?
+    stop = compile.stage(told(t, under: under, s, decls), s, permissive: permissive)
+
+    if stop.is_err()
+        return ok()
+    _ = compile.leave(stop.must(), stage_name: "the runtime's `hero_os.h` names")?
+    return ok()
+
+# One binding asked of its group's header: the C name and where it stands.
+record Asked
+    name: str
+    span: token.Span
+
+# The bindings asked of one group's header in one module, and the headers
+# that module's groups name before its first, `hero_os.h` left out.
+record Question
+    header: str
+    before: [str]
+    asked: [Asked]
+
+# Each binding of a `hero_os.h` word whose group's header does not declare
+# it, told at the name, module by module and header by header in the order
+# their first groups stand, and in the order the declarations stand within
+# one; none where `hero_os.h` cannot be read now.
+function told(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    read = reading.source_text(t.runtime + "/" + OS_HEADER)
+    runtime = reading.source_text(t.runtime + "/heroes_runtime.h")
+
+    if read.is_err() || runtime.is_err()
+        return out
+    os = c_words.used(read.must().text)
+    theirs = c_words.used(runtime.must().text)
+
+    # ORDER: a module's groups in the order they stand, which is the order its
+    # unit reads their headers; `seen` holds each module's headers so far.
+    seen: {str: [str]} @= {}
+    at: {str: i64} @= {}
+    questions: [Question] @= []
+
+    for decl in decls
+        named = bound(decl)
+
+        if named.is_err()
+            continue
+        name = source.span_text(s, named.must().name)
+        header = emit_externs.unquoted(s, span: named.must().header)
+        file = source.file_of(s, named.must().name.start).to_str()
+        before = seen[file].default([])
+
+        if !holds(before, one: header)
+            seen[file] @ before.push(header)
+        word = own_names.reserved(name) && !os[name].is_err() && theirs[name].is_err()
+
+        if !word || header == OS_HEADER
+            continue
+        key = file + " " + header
+
+        if at[key].is_err()
+            at[key] @ questions.len()
+            questions @ questions.push(Question(header: header, before: others(before, but: header), asked: []))
+        index = at[key].must()
+        questions[index].asked @ questions[index].asked.push(Asked(name: name, span: named.must().name))
+
+    for one in questions
+        answer = undeclared(t, under: under, question: one)
+
+        if !answer.is_err()
+            for asked in one.asked
+                if !answer.must().missing[asked.name].is_err()
+                    out @ out.push(
+                        diagnostic(header: one.header, after: answer.must().after, name: asked.name, span: asked.span)
+                    )
+
+    return out
+
+# Whether `list` holds `one`.
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+# The headers of `list` but `but` and `hero_os.h`, which would declare every
+# name this asks after.
+function others(list: [str], but: str) -> [str]
+    out: [str] @= []
+
+    for each in list
+        if each != but && each != OS_HEADER
+            out @ out.push(each)
+
+    return out
+
+function names_of(list: [Asked]) -> [str]
+    out: [str] @= []
+
+    for one in list
+        out @ out.push(one.name)
+
+    return out
+
+# A function's or a constant's C name and its group's header string, where
+# the declaration stands in a group; a record is asked by neither, since
+# `hero_os.h` declares none a program binds.
+record Named
+    name: token.Span
+    header: token.Span
+
+function bound(decl: ast.Decl) -> Named?
+    match decl.kind
+        .function_decl fd =>
+            if !fd.value.header.is_err()
+                return ok(Named(name: decl.name, header: fd.value.header.must()))
+        .constant_decl k =>
+            if !k.header.is_err()
+                return ok(Named(name: decl.name, header: k.header.must()))
+        .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not asked")
+
+    return fail(code: "none", msg: "no group")
+
+# **The names a question asks that its header does not declare**: one
+# `clang -fsyntax-only` of the header alone and a reference to each, and where
+# that gives no verdict, the same after the headers its module's groups name
+# before it, which a header needing an earlier one's names compiles after;
+# absent where neither answers, which is no verdict on any of them.
+function undeclared(t: toolchain.Toolchain, under: compiling.Compiling, question: Question) -> Answer?
+    names = names_of(question.asked)
+    alone = asked_of(t, under: under, text: question_text(headers: [question.header], names: names), names: names)
+
+    if !alone.is_err()
+        return ok(Answer(missing: alone.must(), after: []))
+
+    if question.before.len() == 0
+        return fail(code: "unread", msg: "the header did not compile alone")
+    after = asked_of(t, under: under, text: question_text(headers: question.before.push(question.header), names: names), names: names)?
+    return ok(Answer(missing: after, after: question.before))
+
+# What a question's compile answered: the names clang could not find, and the
+# headers it read before the group's own, none where it read that one alone.
+record Answer
+    missing: {str: bool}
+    after: [str]
+
+# One compile of `text`, read by `missing_in`.
+function asked_of(t: toolchain.Toolchain, under: compiling.Compiling, text: str, names: [str]) -> {str: bool}?
+    dir = t.build + "/os-bound"
+    process.mkdir_all(dir)?
+    unit = dir + "/alone-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    err = publish.private_name(dir + "/said.txt")
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only"], more: compiling.probe_words(under)),
+        dir: dir
+    )
+    ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started || said.is_err()
+        return fail(code: "unread", msg: "clang did not answer")
+    return missing_in(said: said.must(), unit: unit, names: names)
+
+# The unit asking it: the headers as a unit includes them, then one function
+# referring to each name, which a declaration answers and nothing else does.
+function question_text(headers: [str], names: [str]) -> str
+    lines: [str] @= c_text.includes(headers)
+    lines @ lines.push("__attribute__((unused)) static void hero_os_bound_question(void) {")
+
+    for name in names
+        lines @ lines.push("    (void)(" + name + ");")
+
+    lines @ lines.push("}")
+    return lines.join("\n") + "\n"
+
+# **What clang said, read**: every error must be *use of undeclared
+# identifier* at a line of `unit` naming one of `names`, and those names are
+# the answer; any other error, a header not found or a header's own line
+# refused, is no verdict, so a name is never refused for a compile that
+# failed elsewhere.
+function missing_in(said: str, unit: str, names: [str]) -> {str: bool}?
+    wanted: {str: bool} @= {}
+
+    for name in names
+        wanted[name] @ true
+
+    out: {str: bool} @= {}
+    mark = "error: use of undeclared identifier '"
+
+    for row in deps.lines(said)
+        if !strings.holds(text: row, needle: "error: ")
+            continue
+        at = row_index(text: row, needle: mark)
+
+        if !strings.starts_with(text: row, prefix: unit + ":") || at < 0
+            return fail(code: "unread", msg: "the header did not compile alone")
+        rest = row.slice(from: at + mark.len(), to: row.len())
+        close: i64 @= 0
+
+        while close < rest.len() && rest[close] != '\''
+            close @ close + 1
+
+        name = rest.slice(from: 0, to: close)
+
+        if close == rest.len() || wanted[name].is_err()
+            return fail(code: "unread", msg: "an identifier no binding names")
+        out[name] @ true
+
+    return ok(out)
+
+# Where `needle` first stands in `text`, -1 where it does not.
+function row_index(text: str, needle: str) -> i64
+    at: i64 @= 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return at
+        at @ at + 1
+
+    return -1
+
+function diagnostic(header: str, after: [str], name: str, span: token.Span) -> diag.Diagnostic
+    read: str @= "alone"
+
+    if after.len() > 0
+        read @ "after `" + after.join("`, `") + "`, which its module's groups name before it,"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_unknown_name",
+        message: "`" + header + "` declares no `" + name + "` — the runtime's `" + OS_HEADER + "` does, which every unit reads before its groups' headers, so the name was found whatever header its group names; clang compiled `" + header + "` " + read + " and could not find it",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "spec § 13: a group's names are checked against the header it names; bind `" + name + "` in a group `extern \"" + OS_HEADER + "\"`, or in one naming a header of your own that includes `" + OS_HEADER + "`"
+    )
+    return d
+
+## Tests
+
+# **Only a reference clang could not find is an answer** (defect 2413): the
+# names clang called undeclared at the question's own lines, and no verdict
+# where the header was not found, where it failed at a line of its own, or
+# where an identifier no binding names was refused.
+test "what clang called undeclared at the question is the answer, and any other failure is none (defect 2413)"
+    unit = "build/os-bound/alone-1.c"
+    names = ["hero_env_shown", "hero_os_pid"]
+    said = unit + ":3:12: error: use of undeclared identifier 'hero_env_shown'\n" + unit + ":3:5: note: x\n1 error generated.\n"
+    got = missing_in(said: said, unit: unit, names: names).must()
+    assert sort(keys(got)) == ["hero_env_shown"]
+    assert missing_in(said: "", unit: unit, names: names).must().len() == 0
+    assert missing_in(said: unit + ":1:10: fatal error: 'no.h' file not found\n", unit: unit, names: names).is_err()
+    assert missing_in(said: "lib.h:2:1: error: unknown type name 'x'\n", unit: unit, names: names).is_err()
+    assert missing_in(
+        said: unit + ":3:12: error: use of undeclared identifier 'other'\n",
+        unit: unit,
+        names: names
+    ).is_err()
+    assert question_text(headers: ["stdio.h"], names: ["a", "b"]) == "#include <stdio.h>\n__attribute__((unused)) static void hero_os_bound_question(void) {\n    (void)(a);\n    (void)(b);\n}\n"
+    assert row_index(text: "abcab", needle: "ab") == 0 && row_index(text: "xab", needle: "ab") == 1 && row_index(text: "x", needle: "ab") == -1
+
+# **Asked of clang, `stdio.h` declares no `hero_env_shown` and a header of the
+# program's own that includes `hero_os.h` does** (defect 2413): the first is
+# told at the name, the second binds as before, and a `heroes_runtime.h` name
+# is `runtime_bound`'s and asked nothing here.
+test "a hero_os.h name under stdio.h is refused, and under a header that includes hero_os.h binds (defect 2413)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-os-bound"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root).is_err()
+    assert !write_file(path: root + "/my_os.h", text: "#include \"hero_os.h\"\n").is_err()
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [],
+        pkgconfig_flags: [],
+        runtime: t.runtime,
+        source_dir: root
+    )
+    text = "extern \"stdio.h\"\n    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str\n    function puts(s: cstr lent) -> i32\n\nextern \"my_os.h\"\n    function hero_os_pid() -> i64\n\nextern \"hero_os.h\"\n    constant HERO_OS_OK: i64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    got = told(t, under: under, s, parsed.decls)
+    assert got.len() == 1
+    assert got[0].code == "ffi_unknown_name" && source.span_text(s, got[0].span) == "hero_env_shown"
+    assert got[0].message == "`stdio.h` declares no `hero_env_shown` — the runtime's `hero_os.h` does, which every unit reads before its groups' headers, so the name was found whatever header its group names; clang compiled `stdio.h` alone and could not find it"
+    assert !process.remove_tree(root).is_err()
+
+# **A header that needs an earlier group's names is asked after them**
+# (defect 2413): `second.h` spells `first.h`'s macro and does not compile
+# alone, so `hero_os_pid` bound under it was no verdict and built; asked after
+# `first.h` it is told, and a group naming `hero_os.h` before it lends it no
+# name.
+test "a header that does not compile alone is asked after its module's earlier headers, never after hero_os.h (defect 2413)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-os-bound-after"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root).is_err()
+    assert !write_file(path: root + "/first.h", text: "#define MY_COUNT long long\n#define MY_ONE 1\n").is_err()
+    assert !write_file(path: root + "/second.h", text: "static inline MY_COUNT second_count(void) { return 2; }\n").is_err()
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [],
+        pkgconfig_flags: [],
+        runtime: t.runtime,
+        source_dir: root
+    )
+    text = "extern \"hero_os.h\"\n    constant HERO_OS_OK: i64\n\nextern \"first.h\"\n    constant MY_ONE: i64\n\nextern \"second.h\"\n    function second_count() -> i64\n    function hero_os_pid() -> i64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    got = told(t, under: under, s, parsed.decls)
+    assert got.len() == 1 && source.span_text(s, got[0].span) == "hero_os_pid"
+    assert strings.starts_with(text: got[0].message, prefix: "`second.h` declares no `hero_os_pid`")
+    assert strings.ends_with(
+        text: got[0].message,
+        suffix: "clang compiled `second.h` after `first.h`, which its module's groups name before it, and could not find it"
+    )
+    assert others(["hero_os.h", "first.h", "second.h"], but: "second.h") == ["first.h"] && holds(["a"], one: "a") && !holds([], one: "a")
+    assert !process.remove_tree(root).is_err()
