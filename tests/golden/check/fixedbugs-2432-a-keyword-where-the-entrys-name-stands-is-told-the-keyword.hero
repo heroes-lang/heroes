@@ -1,0 +1,26 @@
+# Fixed defect 2432, 2026-11-10, lane b30-pkg: `use <match>/x`, `match` an
+# entry the catalogue beside the file held, `[dependencies.match]`.
+#
+# SYMPTOM: `package_wants_a_name`, *expected the package's name after `<`,
+# found `match`*, at the `<`, with no word that `match` is a keyword, which
+# is why no `use` can write it; `use <let>/y` was told twice, the lexer's
+# *bind with `=`* and *found an unreadable token*; and `use <"match">/z`'s
+# certain repair wrote `use <match>/z`, refused at once.
+#
+# CAUSE: the mark's reader asked whether a name stood after `<`, never
+# whether the word standing there is one no `use` can ever write, and the
+# catalogue's reader accepted it as an entry's name.
+#
+# FIX: told at the word that it is a keyword, or a word of another language
+# Heroes refuses, which no `use` writes between `<` `>`, so the catalogue
+# names the entry otherwise; no repair, the entry's name being the
+# catalogue's to change, and the lexer's report inside the word taken back.
+# The catalogue itself refuses the entry at its line (the folder case
+# `fixedbugs-2432-an-entry-named-by-a-keyword-is-refused-at-its-line`).
+use <match>/x  #~ package_wants_a_name
+use <let>/y  #~ package_wants_a_name
+use <"match">/z  #~ package_wants_a_name
+use <true>  #~ package_wants_a_name
+
+function main()
+    print(1)

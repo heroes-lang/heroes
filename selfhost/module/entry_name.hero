@@ -1,0 +1,89 @@
+# An entry's name (spec § 1, `Use`; panel 235's R1 and R5, ratified
+# 2026-11-07): the alias the `use` lines of the files a catalogue serves write
+# between `<` `>`, `json` in `[dependencies.json]` and `use <json>/parse`. The
+# production holds an `ident` there, so an entry is named only as a `use` can
+# write it: lowercase letters, digits and `_`, starting with a letter, and no
+# keyword and no word the lexer refuses as a name. Asked by the catalogue's
+# reader at the entry's line (`module/catalogue.hero`), by `heroes add` before
+# it fetches or writes anything (`fetch/add.hero`), and by the parser where
+# such a word stands in a `use` line's mark (`package_mark.hero`), one rule in
+# one place.
+#
+# Defect 2432: `[dependencies.match]` read, and `use <match>/x` was refused at
+# its `<` with no word of the keyword; `heroes add --path vendor/match` wrote
+# that entry; and the program's alias for a package another package names
+# otherwise was offered in a message as `use <match>/x`, a line the parser
+# refuses (`needs_qualifying`, measured).
+
+use foreign_words
+use keywords
+
+# Whether `name` has an entry's shape: lowercase letters, digits and `_`,
+# starting with a letter.
+function shaped(name: str) -> bool
+    if name.len() == 0 || !(name[0] >= 'a' && name[0] <= 'z')
+        return false
+    at: i64 @= 1
+
+    while at < name.len()
+        b = name[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
+            return false
+        at @ at + 1
+
+    return true
+
+# Why no `use` can write `name` between `<` `>`, as the clause a message says
+# it in; "" where one can.
+function refused(name: str) -> str
+    if !shaped(name)
+        return "a name is lowercase letters, digits and `_`, starting with a letter"
+    return word(name)
+
+# Why no `use` can write `name` between `<` `>` where it is a word of the
+# language or one the lexer refuses as a name, whatever its shape; "" for any
+# other.
+function word(name: str) -> str
+    if !keywords.keyword(name).is_err()
+        return "`" + name + "` is a keyword of Heroes, which no `use` writes between `<` `>`"
+
+    if !foreign_words.declared_word(name).is_err()
+        return "`" + name + "` is a word of another language that Heroes refuses, which no `use` writes between `<` `>`"
+    return ""
+
+# What a `use` line is told where `name` stands between its `<` `>` and is a
+# word no `use` writes there; "" where it is none.
+function in_mark(name: str) -> str
+    said = word(name)
+
+    if said.len() == 0
+        return ""
+    return said + ": no line reaches an entry the catalogue names so, and an entry is named as a `use` can write it — `[dependencies.json]`, read by `use <json>/parse`"
+
+## Tests
+
+test "an entry is named as a `use` writes it between the brackets"
+    assert shaped("json") && shaped("core_2") && shaped("a")
+    assert !shaped("") && !shaped("Json") && !shaped("2json") && !shaped("_json") && !shaped("my-json")
+    assert refused("json") == ""
+    assert refused("Json") == "a name is lowercase letters, digits and `_`, starting with a letter"
+    assert refused("match") == "`match` is a keyword of Heroes, which no `use` writes between `<` `>`"
+    assert refused("let") == "`let` is a word of another language that Heroes refuses, which no `use` writes between `<` `>`"
+
+    # A contextual word is a name everywhere but its one position, so a
+    # `use` writes it: `use <as>/x` compiles.
+    assert refused("as") == "" && refused("tag") == ""
+
+    # The mark is told only of a word, never of a name or of another token.
+    assert in_mark("json") == "" && in_mark("1") == "" && in_mark("Json") == ""
+    assert in_mark("match") == refused("match") + ": no line reaches an entry the catalogue names so, and an entry is named as a `use` can write it — `[dependencies.json]`, read by `use <json>/parse`"
+    assert in_mark("None").len() > 0
+
+# Every keyword the compiler reserves, read from its own table: an entry
+# named by one is refused, so no keyword added to the language is left
+# writable as an entry the parser then refuses in a mark.
+test "no keyword is an entry's name"
+    for one in keywords.keywords()
+        assert word(one).len() > 0
+        assert refused(one).len() > 0

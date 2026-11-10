@@ -1,0 +1,5 @@
+# The one module of the folder of defect 2432's case beside it.
+
+# A number.
+function n() -> i64
+    return 1

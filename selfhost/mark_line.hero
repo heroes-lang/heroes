@@ -1,0 +1,72 @@
+# A `use` line's tokens around its package mark, read from the line's text
+# and never the cursor (spec § 1, `Use`; panel 235's R1, ratified
+# 2026-11-07): where the line ends, where the mark closes, whether a dot
+# stands inside it, whether its parts touch, whether only an `as` follows,
+# and a token's text. `package_mark.hero` asks them of every mark it reads.
+#
+# Split from `package_mark.hero` at its line ceiling
+# (`tests/harness/suite_layout.hero`) by defect 2432's repair, along the
+# seam its own sections drew: how the line is read, apart from what each
+# habit beside the mark is told.
+
+use keywords
+use module_text
+use token
+
+# The tokens from `at` to the end of its line: its terminator, a comment, the
+# end of the text, or a token on a later line (a `use` plants no terminator
+# after punctuation, `use_line.skip_rest_of_line`). Never empty.
+function line_at(tokens: [token.Token], at: i64, text: str) -> [token.Token]
+    out: [token.Token] @= [tokens[at]]
+    probe: i64 @= at + 1
+
+    while probe < tokens.len() && on_the_line(tokens[probe], text, from: tokens[at].span.start)
+        out @ out.push(tokens[probe])
+        probe @ probe + 1
+
+    return out
+
+function on_the_line(t: token.Token, text: str, from: i64) -> bool
+    if t.kind == .terminator || t.kind == .eof || t.kind == .comment || t.kind == .indent || t.kind == .dedent
+        return false
+    return module_text.one_line(text, from: from, to: t.span.start)
+
+# Where the mark's `>` stands in `line`, or -1 where the line has none.
+function closing(line: [token.Token]) -> i64
+    for at in range(from: 1, to: line.len())
+        if line[at].kind == .gt
+            return at
+
+    return -1
+
+# Whether a `.` stands between the brackets, or before the line's end where
+# they never close: an address's dots (`<github.com/acme/json>`).
+function dotted_inside(line: [token.Token], close: i64) -> bool
+    end: i64 @= close
+
+    if end < 0
+        end @ line.len()
+
+    for at in range(from: 1, to: end)
+        if line[at].kind == .dot
+            return true
+
+    return false
+
+# Whether each of the first `upto` + 1 tokens touches the one before it.
+function touching(line: [token.Token], upto: i64) -> bool
+    for at in range(from: 1, to: upto + 1)
+        if at < line.len() && line[at].span.start != line[at - 1].span.end
+            return false
+
+    return true
+
+# Whether nothing follows `from` but an `as` and a name, what a repair of the
+# mark leaves standing as it was.
+function ends_cleanly(line: [token.Token], text: str, from: i64) -> bool
+    if from >= line.len()
+        return true
+    return from + 2 == line.len() && line[from].kind == .ident && text_of(text, line[from]) == keywords.WORD_AS && line[from + 1].kind == .ident
+
+function text_of(text: str, t: token.Token) -> str
+    return text.slice(from: t.span.start, to: t.span.end)

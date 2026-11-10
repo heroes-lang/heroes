@@ -1,0 +1,10 @@
+# Fixed defect 2432, 2026-11-10, lane b30-pkg, the catalogue's half under
+# `heroes fetch`: the catalogue names this folder `match`, a keyword, which
+# the reader accepted, and `fetch` read it where it stands.
+#
+# Now the catalogue's reader refuses the entry at its line, as it refuses a
+# name of the wrong shape, so `fetch` places nothing and says why.
+
+# A number.
+function n() -> i64
+    return 1
