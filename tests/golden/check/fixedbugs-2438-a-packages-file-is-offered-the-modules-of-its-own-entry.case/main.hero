@@ -1,0 +1,12 @@
+# Fixed defect 2438, 2026-11-10, lane b30-pkg, a shape beside it: the
+# package `json` writes `use <text>` alone, `text` its own catalogue's alias
+# for the folder the program calls `core` (panel 235's R3).
+#
+# It is told the modules at that package's root as `json`'s own `use` lines
+# write them, `use <text>/strconv`, read through the aliases discovery mapped
+# from `json`'s catalogue. The module is `vendor/json/a.hero`, marked where it
+# is told.
+use <json>/a
+
+function main()
+    print(a.word())

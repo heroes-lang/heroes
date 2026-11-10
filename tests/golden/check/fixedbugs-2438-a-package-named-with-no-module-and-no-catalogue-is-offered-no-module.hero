@@ -1,0 +1,20 @@
+# Fixed defect 2438, 2026-11-10, lane b30-pkg: `use <core>`, a package named
+# with no module, and no catalogue beside this file (panel 244's critic).
+#
+# SYMPTOM: `package_wants_a_module`, *`use <core>/parse`, `parse` being a
+# file of the package `core`*, a false message: no package `core` is here,
+# and core 0.2.1's root holds `strconv`, `strings` and `encoding/`, no
+# `parse`.
+#
+# CAUSE: the parser reads no catalogue and no tree, and its message named a
+# module anyway, the same word for every package.
+#
+# FIX: the parser says how the line goes on, the mark then a module's path,
+# naming no module; the parse stage names the modules at the package's root
+# where its tree can be read (the folder cases
+# `fixedbugs-2438-a-package-named-with-no-module-is-offered-its-modules`),
+# and here, with no catalogue and so no tree, nothing is invented.
+use <core>  #~ package_wants_a_module
+
+function main()
+    print("x")
