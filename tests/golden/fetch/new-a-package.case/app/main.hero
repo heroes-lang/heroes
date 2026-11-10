@@ -1,0 +1,9 @@
+# Feature 2441: a program beside the package that `heroes new greet
+# --package` wrote, reaching it while it is developed through the entry
+# `heroes add --path ../greet` writes in this folder's catalogue, read where
+# the package stands and never fetched.
+
+use <greet>/greet
+
+function main()
+    print(greet.hello("ana"))

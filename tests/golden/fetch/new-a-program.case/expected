@@ -1,0 +1,38 @@
+$ heroes new hello -C <work>
+exit 0
+stdout:
+wrote <work>/hello/main.hero
+next: `heroes run <work>/hello/main.hero` runs it, and `heroes test <work>/hello/main.hero` runs its tests
+stderr:
+$ heroes test <work>/hello/main.hero
+exit 0
+stdout:
+ok   "the greeting is hello"
+1 test, all passed
+stderr:
+$ heroes run <work>/hello/main.hero
+exit 0
+stdout:
+hello
+stderr:
+$ heroes fmt <work>/hello/main.hero
+exit 0
+stdout:
+# A program: `heroes run main.hero` runs it, and `heroes test main.hero` runs
+# its `test` blocks. It reaches a package once `heroes add` has named one in
+# its catalogue, `heroes.toml`, beside this file; until then it has none.
+
+function main()
+    print(greeting())
+
+# The line `main` prints.
+function greeting() -> str
+    return "hello"
+
+test "the greeting is hello"
+    assert greeting() == "hello"
+stderr:
+heroes.toml:
+(none)
+heroes.packages:
+(none)

@@ -1,0 +1,7 @@
+new greet --package -C <work>
+test <work>/greet/greet.hero
+add --path ../greet -C <work>/app
+run <work>/app/main.hero
+test <work>/app/main.hero
+fmt <work>/greet/greet.hero
+fmt <work>/greet/greet/internal/words.hero

@@ -3,13 +3,16 @@
 # every one asked before the first byte, each whole or not at all.
 #
 # Refused together, before anything is written: a file outside the directory
-# named, a symbolic link on the way to one (a write through it lands outside
-# what the directory holds), a landing that cannot be written, a file with a
-# second name, and two names that may be one file holding two texts. A failure
-# after that, a full disk, leaves each file whole and names those written.
+# named, a file in a placed package's tree (defect 2457, `cli/placed_files`;
+# the rounds leave those as placed, so none reaches here), a symbolic link on
+# the way to one (a write through it lands outside what the directory holds),
+# a landing that cannot be written, a file with a second name, and two names
+# that may be one file holding two texts. A failure after that, a full disk,
+# leaves each file whole and names those written.
 
 use cli/files as fs
 use cli/io
+use cli/placed_files
 use cli/publish
 use cli/strings
 use source
@@ -37,6 +40,9 @@ function refused(files: [source.InputFile], dir: str) -> str
     for one in files
         if !strings.starts_with(text: one.name, prefix: dir + "/")
             return "cannot write " + one.name + ": it is outside " + dir + ", the directory named; nothing was written"
+
+        if placed_files.within(one.name)
+            return placed_files.refused(one.name)
         link = linked(path: one.name, dir: dir)
 
         if link != ""
@@ -132,3 +138,12 @@ test "two spellings of one name are written once where their texts agree"
     assert planned([a, c]).len() == 2
     assert refused([a, c], dir: "d") != ""
     assert strings.starts_with(text: refused([a], dir: "e"), prefix: "cannot write d/lib/geom.hero: it is outside e")
+
+    # Defect 2457: a placed package's file is never written.
+    placed = source.InputFile(
+        name: "d/heroes.packages/json@1.0.0-0123456789abcdef/parse.hero",
+        module: "",
+        text: "t",
+        is_library: false
+    )
+    assert refused([placed], dir: "d") == placed_files.refused(placed.name)

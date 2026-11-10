@@ -27,6 +27,7 @@ use cli/argv
 use cli/certain
 use cli/check
 use cli/io
+use cli/placed_files
 use cli/process
 use cli/publish
 use cli/strings
@@ -96,6 +97,9 @@ function run(dir: str, inv: argv.Invocation) -> cli_table.Exit
     for told in disputes(last)
         io.eprint(text: "note: " + told)
 
+    for name in placed_left(last)
+        io.eprint(text: "note: " + placed_files.left(name))
+
     if count == ROUNDS
         io.eprint(
             text: "note: certain fixes were still being agreed after " + ROUNDS.to_str() + " rounds; `check " + base + " --apply --in-place` again writes the rest"
@@ -146,15 +150,16 @@ function failure_of(got: [str]?) -> str
         .err e => e.msg
 
 # Every root under `dir`, in order of name: a `.hero` file declaring
-# `function main`, outside every hidden directory and every `build/`, which
-# are a tool's and not the author's (`.git`, the lanes of `.claude/worktrees`).
+# `function main`, outside every hidden directory, every `build/` and every
+# placed package's tree, which are a tool's and not the author's (`.git`, the
+# lanes of `.claude/worktrees`, `heroes.packages/`, defect 2457).
 # A root that is not text is one: it reads its modules all the same, and
 # `votes_of` has it leave them as they stand.
 function roots_under(dir: str) -> [str]?
     out: [str] @= []
 
     for path in process.files_under(dir)?.sort()
-        if !strings.ends_with(text: path, suffix: ".hero") || hidden(path.slice(from: dir.len() + 1, to: path.len()))
+        if !strings.ends_with(text: path, suffix: ".hero") || hidden(path.slice(from: dir.len() + 1, to: path.len())) || placed_files.within(path)
             continue
         text = reading.source_text(path)?
 
@@ -224,12 +229,14 @@ function votes_of(roots: [str], edited: [source.InputFile], inv: argv.Invocation
 
     return ok(out)
 
-# The files every root that reads them makes the same new text of.
+# The files every root that reads them makes the same new text of, never a
+# placed package's (defect 2457): its tree is read as it was placed, in every
+# round, and its certain fix is told (`placed_left`).
 function agreed_of(votes: [Vote]) -> [source.InputFile]
     out: [source.InputFile] @= []
 
     for v in votes
-        if v.proposed != v.read && !named(out, name: v.name) && unanimous(votes, name: v.name)
+        if v.proposed != v.read && !placed_files.within(v.name) && !named(out, name: v.name) && unanimous(votes, name: v.name)
             out @ out.push(source.InputFile(name: v.name, module: "", text: v.proposed, is_library: false))
 
     return out
@@ -254,7 +261,7 @@ function disputes(votes: [Vote]) -> [str]
     done: [str] @= []
 
     for v in votes
-        if certain.listed(names: done, name: v.name) || unanimous(votes, name: v.name)
+        if certain.listed(names: done, name: v.name) || unanimous(votes, name: v.name) || placed_files.within(v.name)
             continue
         done @ done.push(v.name)
         changing: [str] @= []
@@ -270,6 +277,16 @@ function disputes(votes: [Vote]) -> [str]
         out @ out.push(
             v.name + " was not written: the roots that read it compute different certain fixes for it (changing it: " + changing.join(", ") + "; leaving it: " + keeping.join(", ") + "), and a file means what its root's directory makes of it (spec § 1)"
         )
+
+    return out
+
+# The placed packages' files some root would change, once each.
+function placed_left(votes: [Vote]) -> [str]
+    out: [str] @= []
+
+    for v in votes
+        if v.proposed != v.read && placed_files.within(v.name) && !certain.listed(names: out, name: v.name)
+            out @ out.push(v.name)
 
     return out
 

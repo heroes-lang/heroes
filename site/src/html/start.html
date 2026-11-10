@@ -117,13 +117,23 @@ we can be heroes</code></pre>
     working files in a <code>build/</code> folder in the current directory. The second run of
     an unchanged file reuses what is in there.
   </p>
+  <p>
+    <code>./heroes new hello</code> writes a first program into a new folder,
+    <code>hello/main.hero</code>: a <code>main</code>, one function with the
+    comment that says what it returns, and a test, a block that checks it,
+    which <code>./heroes test hello/main.hero</code> runs. With
+    <code>--package</code> it writes a package instead, code that other
+    programs reach through <code>use</code>, in the shape
+    <a href="/docs/packages/">the chapter on packages</a> describes. It refuses a
+    name where a folder or a file is already there, and then writes nothing.
+  </p>
 
-  <h2>One command, fifteen verbs</h2>
+  <h2>One command, sixteen verbs</h2>
   <p>
     All the tools are available through <code>heroes</code>:
     <code>lex</code>, <code>parse</code>, <code>check</code>,
     <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
-    <code>add</code>, <code>fetch</code>,
+    <code>add</code>, <code>fetch</code>, <code>new</code>,
     <code>doctor</code>, <code>mutate</code>, <code>probe</code>, <code>measure</code>,
     <code>grammar</code>, <code>this</code>. There is no second binary, no build file and no plugin.
   </p>

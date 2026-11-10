@@ -120,7 +120,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 .run_cmd                                                        => take @ true
                 .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .test_cmd     => take @ take
                 .fmt_cmd | .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd => take @ take
-                .add_cmd | .fetch_cmd                                           => take @ take
+                .add_cmd | .fetch_cmd | .new_cmd                                => take @ take
                 .grammar_cmd | .probe_cmd                                       => take @ take
                 .version_cmd | .help_cmd                                        => take @ take
 
@@ -209,8 +209,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         no_operand: bool @= false
 
         match command.operand
-            .no_operand                                          => no_operand @ true
-            .file_operand | .optional_operand | .package_operand => no_operand @ no_operand
+            .no_operand                                                          => no_operand @ true
+            .file_operand | .optional_operand | .package_operand | .name_operand => no_operand @ no_operand
 
         if no_operand
             return fail(code: "bad_usage", msg: "`" + command.name + "` takes no file")
@@ -222,32 +222,30 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             return fail(code: "bad_usage", msg: empty_operand(command))
 
         if !file.is_err()
-            return fail(code: "bad_usage", msg: "`" + command.name + "` takes one file, and two were given")
+            return fail(code: "bad_usage", msg: second_operand(command, first: file.must(), second: arg))
         file @ ok(arg)
         at @ at + 1
 
     needs_file: bool @= false
 
     match command.operand
-        .file_operand                                      => needs_file @ true
+        .file_operand | .name_operand                      => needs_file @ true
         .no_operand | .optional_operand | .package_operand => needs_file @ needs_file
 
     if needs_file && file.is_err()
-        return fail(
-            code: "bad_usage",
-            msg: "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`"
-        )
+        return fail(code: "bad_usage", msg: missing_operand(command))
     return ok(Invocation(tag: command.tag, file: file, program_args: program_args, flags: flags))
 
 # The operand as a usage line shows it, the help's form: `<file.hero>` where
 # one is needed, `[file]` where it may be left out, `[package]` for what `add`
-# adds, and nothing for a command that takes none, whose usage line would
-# otherwise name a file it refuses.
+# adds, `<name>` for the folder `new` makes, and nothing for a command that
+# takes none, whose usage line would otherwise name a file it refuses.
 function operand_said(command: cli_table.Command) -> str
     match command.operand
         .file_operand     => return " <file.hero>"
         .optional_operand => return " [file]"
         .package_operand  => return " [package]"
+        .name_operand     => return " <name>"
         .no_operand       => return ""
 
 # What an empty operand is told, in the form the help gives the operand:
@@ -258,6 +256,20 @@ function empty_operand(command: cli_table.Command) -> str
         .optional_operand | .no_operand =>
             return "`" + command.name + "` was given an empty file, which names none: `heroes " + command.name + " [file]`, or no file for its default"
         .package_operand => return "`" + command.name + "` was given an empty package, which names none: `heroes " + command.name + " json`, or `--path` and a folder"
+        .name_operand => return "`" + command.name + "` was given an empty name, which names no folder: `heroes " + command.name + " <name>`"
+
+# What a missing operand is told, in the help's form of it.
+function missing_operand(command: cli_table.Command) -> str
+    match command.operand
+        .name_operand => return "`" + command.name + "` needs the name of the folder it makes: `heroes " + command.name + " <name>`, or `heroes " + command.name + " <name> --package` for a package"
+        .file_operand | .optional_operand | .package_operand | .no_operand => return "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`"
+
+# A second operand, told as the package or the folder it is, not *one file*.
+function second_operand(command: cli_table.Command, first: str, second: str) -> str
+    match command.operand
+        .name_operand => return "`" + command.name + "` makes one folder, and was given two names, `" + first + "` and `" + second + "`: `heroes " + command.name + " <name>`"
+        .package_operand => return "`" + command.name + "` adds one package at a time, and was given two, `" + first + "` and `" + second + "`: run `heroes " + command.name + "` once for each"
+        .file_operand | .optional_operand | .no_operand => return "`" + command.name + "` takes one file, and two were given"
 
 # The enumerating error the llm-ergonomist asked for: every wrong flag
 # is one round trip, because the message carries the list.
@@ -283,7 +295,8 @@ function unknown_flag(command: cli_table.Command, arg: str) -> str
 #   on as a `str`, and the program's author reaches it by building the
 #   program and reading `args_checked()`;
 # - any other is the compiler's own, a file or a flag's value: a file is told
-#   as defect 239's walk tells one, and a value is asked again in UTF-8.
+#   as defect 239's walk tells one, and a value is asked again in UTF-8, as is
+#   what `add` adds and the name of the folder `new` makes, which no file is.
 #
 # Until that day every one of them was told *build the program with `heroes
 # build` and read it with `args_checked()`*, a program author's repair handed
@@ -309,6 +322,11 @@ function unheld(given: [str], at: i64) -> [str]
             if at > 0 && !value_of(inv, spelling: given[at - 1]).is_err()
                 return [
                     "error: the value of `" + given[at - 1] + "`, `" + given[at] + "`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
+                ]
+
+            if inv.tag == .add_cmd || inv.tag == .new_cmd
+                return [
+                    "error: `" + given[at] + "`, what `" + given[0] + "` was given, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
                 ]
             return [
                 "error: the name of `" + given[at] + "` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
@@ -350,7 +368,7 @@ test "strict against the table, and every refusal names what is accepted"
 
     match bad
         .ok    => assert false
-        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, doctor, mutate, probe, measure, grammar, this"
+        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, new, doctor, mutate, probe, measure, grammar, this"
 
     old: [str] = ["fmt", "main.hero", "--write"]
 
@@ -422,7 +440,7 @@ test "an argument that is not UTF-8 is told by what it is to the command (defect
     searched: [str] = ["build", "x.hero", "--include", "inc<0xE9>"]
     assert unheld(searched, at: 3)[0] == "error: the value of `--include`, `inc<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
     command: [str] = ["<0xE9>"]
-    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, doctor, mutate, probe, measure, grammar, this"]
+    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, new, doctor, mutate, probe, measure, grammar, this"]
     flag: [str] = ["check", "x.hero", "--<0xE9>"]
     assert unheld(flag, at: 2) == ["error: `check` does not accept `--<0xE9>` — it accepts " + flag_list(name: "check")]
     program: [str] = ["run", "x.hero", "--", "-o", "<0xE9>"]
@@ -497,8 +515,8 @@ test "an empty operand is refused, naming the command, before anything is read (
         taken: bool @= true
 
         match c.operand
-            .no_operand                                          => taken @ false
-            .file_operand | .optional_operand | .package_operand => taken @ true
+            .no_operand                                                          => taken @ false
+            .file_operand | .optional_operand | .package_operand | .name_operand => taken @ true
 
         if taken
             asked @ asked + 1
@@ -509,6 +527,37 @@ test "an empty operand is refused, naming the command, before anything is read (
                     .err e => assert e.code == "bad_usage"
 
     assert asked >= 10
+
+# Feature 2441 (panel 244's R2): `new` takes one name, the folder it makes,
+# and every refusal of its operand names a name and the form that works,
+# never a file; a second package given to `add` names a package, where both
+# were told *takes one file, and two were given*, and a word of either that is
+# not UTF-8 is asked again in UTF-8, where it was told to rename a file.
+test "the folder new makes and the package add adds are named as what they are (feature 2441)"
+    made = parse(["new", "hello", "--package", "-C", "deep"], dir_probe: yes_dir).must()
+    assert made.tag == .new_cmd && made.file.must() == "hello" && has(made, spelling: "--package")
+    assert value_of(made, spelling: "-C").must() == "deep"
+    refusals = [
+        [["new"], ["`new` needs the name of the folder it makes: `heroes new <name>`, or `heroes new <name> --package` for a package"]]
+        [["new", "--package"], ["`new` needs the name of the folder it makes: `heroes new <name>`, or `heroes new <name> --package` for a package"]]
+        [["new", ""], ["`new` was given an empty name, which names no folder: `heroes new <name>`"]]
+        [["new", "my", "app"], ["`new` makes one folder, and was given two names, `my` and `app`: `heroes new <name>`"]]
+        [["add", "json", "yaml"], ["`add` adds one package at a time, and was given two, `json` and `yaml`: run `heroes add` once for each"]]
+        [["check", "a.hero", "b.hero"], ["`check` takes one file, and two were given"]]
+        [["new", "x", "--", "y"], ["`--` passes arguments to the program, and `new` does not run one — only `heroes run` does"]]
+    ]
+
+    for one in refusals
+        match parse(one[0], dir_probe: yes_dir)
+            .ok _  => assert false
+            .err e => assert e.code == "bad_usage" && e.msg == one[1][0]
+
+    named: [str] = ["new", "caf<0xE9>"]
+    assert unheld(named, at: 1) == ["error: `caf<0xE9>`, what `new` was given, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"]
+    added: [str] = ["add", "j<0xE9>"]
+    assert unheld(added, at: 1)[0] == "error: `j<0xE9>`, what `add` was given, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
+    within: [str] = ["new", "x", "-C", "d<0xE9>"]
+    assert unheld(within, at: 3)[0] == "error: the value of `-C`, `d<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
 
 # The flags the table gives a command, as `unknown_flag` lists them.
 function flag_list(name: str) -> str

@@ -1,0 +1,9 @@
+# Defect 2457 (2026-11-10): `check <directory> --apply --in-place` wrote a
+# certain fix into a placed package's tree, `heroes.packages/`, and the next
+# `check` refused the program by its fingerprint. No writer writes there now,
+# and the run says so; a `path` package, the author's own folder, is written.
+use <json>/parse
+use <mine>/m
+
+function main()
+    print(parse.two() + m.three())

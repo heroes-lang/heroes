@@ -3158,11 +3158,20 @@ the first is the one that proves the project's premise:
    same run lists the program's groups after the opening, with who included each file (`-H`),
    so a library header only a group's header reaches is judged too (defect 2343): a named
    folder's file is refused where a platform or runtime header includes it, or where a platform
-   folder holds a file of its name; the header a group names is the program's own, read from
-   where the program put it, even one named like the library's; and a header's own sibling
-   included in quotes is its own, where `#include <util.h>` meaning the program's `util.h` is
-   refused, its note naming the quoted form, the angle form asking the system's places for a
-   name the platform holds. **The environment is a named folder** (defect 2344): panel 055 made
+   folder holds a file of its name and the folder is not one a `pkg-config` answer of the build
+   names for a library, a file named like a C11 or POSIX.1 standard header refused even there,
+   from a list sourced from the two standards (panel 243's R2, provisional, defect 2428); the
+   header a group names is the program's own, read from where the program put it, even one named
+   like the library's; and a file under the program's own folder that one of its headers includes
+   in quotes is its own, however clang finds it, unless a platform or runtime header includes it
+   as well, which the listing shows even where a guard skips that second open
+   (`-fshow-skipped-includes`), every includer of a file judged and not only its first open
+   (panel 243's R3, provisional, defect 2447), where `#include <util.h>` meaning the program's
+   `util.h` is refused, its note naming the quoted form, the angle form asking the system's places
+   for a name the platform holds. Until 2026-11-10 this sentence said *a platform folder holds a
+   file of its name* with no exception and *a header's own sibling included in quotes is its own*,
+   which refused a `pkg-config` folder's own headers and a quoted include found from its
+   includer's folder that is not a sibling. **The environment is a named folder** (defect 2344): panel 055 made
    `CPATH` the machine's own way to name a header folder, so the folders and words the
    environment hands clang are read from clang's own answer, the `-cc1` job of the `-###` the
    build already asks and of the listing's `-v`, with clang's reading of empty elements and
@@ -3908,6 +3917,20 @@ are *on* the closure list.
     four CI legs. Produce one and this row is wrong. The one such field the core packages meet,
     `struct timespec`'s `tv_nsec`, stays in the platform layer's C (panel 234's R6), which hands the
     clock across as `int64_t` nanoseconds.
+    **Corrected 2026-11-10** (panel 243's R1, provisional, author ratification pending, defect
+    2421; the spec-warden's wording widened to the sitting's whole scope): a parameter's shared
+    spelling holds through a prototype, and past a header's `...` there is none. C converts nothing
+    there and `va_arg` reads the type the callee asks for, so a C `long` read there has no spelling
+    every leg shares: `i32` reads wrong on three legs (`-1` printed `4294967295` on this Mac), and
+    `i64` is `long` only on Linux, `long long` on this Mac, the same width and by C11 §7.16.1.1p2
+    another type, and four bytes wider than `long` on Windows; and a `cstr` read by `%d` prints its
+    pointer's bits (`n = 42259872` at exit 0, the sitting's critic). Every argument passed by value
+    past `...` is therefore refused, a number, a `bool`, a float, a record, a `cstr` or a pointer,
+    and crosses through a header of the program's own: a `static inline` function of a new name
+    whose prototype fixes the shape and calls the variadic through its own, a `long` there bound
+    with `i32` as above, the literal format inside it where the callee is a format function, and
+    `-Wformat-nonliteral` kept an error in that header so a door forwarding its format is refused;
+    never a re-declaration of the variadic (panel 052).
 11. ~~**A `raw` module for low-level access** — see Part 9.~~ **Left this list for Part 6 at panel 140,
     2026-09-13** (M-deferral-ledger step 5;
     `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md`), refused

@@ -39,6 +39,7 @@ use cli/mutate
 use cli/probe
 use cli/process
 use cli/runtime_places
+use cli/stub
 use cli/syntax_cmds
 use cli/table as cli_table
 use cli/toolchain
@@ -210,6 +211,7 @@ function command(_: i64) -> i64
         .probe_cmd   => hero_exit(code: cli_table.exit_code(probe.run(inv)))
         .add_cmd     => hero_exit(code: cli_table.exit_code(add.run(inv)))
         .fetch_cmd   => hero_exit(code: cli_table.exit_code(fetch_all.run(inv)))
+        .new_cmd     => hero_exit(code: cli_table.exit_code(stub.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and
@@ -260,7 +262,7 @@ function command(_: i64) -> i64
             inv: inv
         )
         .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
-        .grammar_cmd | .probe_cmd | .add_cmd | .fetch_cmd                               => verdict @ verdict
+        .grammar_cmd | .probe_cmd | .add_cmd | .fetch_cmd | .new_cmd                    => verdict @ verdict
 
     return cli_table.exit_code(verdict)
 
@@ -298,7 +300,7 @@ function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_tab
         .test_cmd => return verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
         .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
-        .grammar_cmd | .probe_cmd | .add_cmd | .fetch_cmd => return .ok_exit
+        .grammar_cmd | .probe_cmd | .add_cmd | .fetch_cmd | .new_cmd => return .ok_exit
 
     return .ok_exit
 
