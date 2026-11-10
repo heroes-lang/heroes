@@ -1,0 +1,329 @@
+# The key of the sources a compiler of this tree is built from, read as the
+# compiler writes it (defect 2435; panel 222's R1 and R2, ratified
+# 2026-10-17). Every program carries sixteen characters beside its `main`,
+# the key of the modules its root reaches, the library compiled into it and
+# the runtime it links (`selfhost/emit/provenance.hero`), and `heroes
+# --version` prints the compiler's own on its second line, `sources <key>`.
+# `shell.some_compiler` asks it of each place a compiler may stand, so the
+# net's own tests judge a compiler of this tree's sources and never one the
+# seed's rhythm lets predate the tree's repairs
+# (`.claude/rules/verification.md` § The batch).
+#
+# **A MIRROR, AND THE COMPILER IS THE ARBITER.** The rows are the emitter's,
+# read here as `.claude/hooks/provenance.py` reads them for the hook in front
+# of the net; every text is keyed by the compiler's own C, `hero_text_key`,
+# so the digest is not copied, only which texts it is taken over. The test
+# below holds the rows to a real compiler over a program whose `use` lines
+# take every spelling; where the two disagree, this is the one that is wrong.
+#
+# THE ROWS, sorted, joined by a newline with one after the last, and keyed:
+#   - `module <name> <key>` for the root, by its stem, and each module it
+#     reaches through its `use` lines, every path resolved from the root's
+#     directory, `<name>` that path;
+#   - `library library <key>` for `LINES` of `selfhost/library_source.hero`,
+#     decoded and joined by a newline with one after the last: a compiler
+#     compiles in the library of the sources it was built from, so one built
+#     by a compiler with another library says so, one stage behind, as the
+#     hook reads it too;
+#   - `runtime <key>` for `runtime.c` and each file it names on a line
+#     opening `#include "`, each keyed, the keys joined and keyed again.
+
+use <core>/strings as core_strings
+
+use strings
+
+extern "hero_compiler.h"
+    function hero_text_key(text: str) -> str
+
+# The root of the compiler's sources, and the file its library is read from.
+constant ROOT: str
+    "selfhost/main.hero"
+
+constant LIBRARY: str
+    "selfhost/library_source.hero"
+
+# Whether the working directory is a tree of the compiler's sources: where
+# it holds no `selfhost/main.hero` there is no tree to ask.
+function in_a_tree() -> bool
+    return !read_file(ROOT).is_err()
+
+# The key of the compiler this tree builds from its own sources, the runtime
+# read from `runtime`, the directory its compiler looks in first.
+function of_tree(runtime: str) -> str?
+    return sources_key(root: ROOT, library: LIBRARY, runtime: runtime)
+
+# The sixteen characters a program built from `root`, with the library of
+# the file `library` and the runtime directory `runtime`, carries.
+function sources_key(root: str, library: str, runtime: str) -> str?
+    rows: [str] @= module_rows(root)?
+    rows @ rows.push("library library " + hero_text_key(text: library_text(library)?))
+    rows @ rows.push("runtime " + runtime_key(runtime)?)
+    return ok(hero_text_key(text: sort(rows).join("\n") + "\n"))
+
+# `module <name> <key>` for the root and every module it reaches.
+function module_rows(root: str) -> [str]?
+    base = folder_of(root)
+    stem = stem_of(root)
+    seen: {str: str} @= {}
+    names: [str] @= [stem]
+    paths: [str] @= [root]
+
+    while names.len() > 0
+        name = names[names.len() - 1]
+        path = paths[paths.len() - 1]
+        names @ names.slice(from: 0, to: names.len() - 1)
+        paths @ paths.slice(from: 0, to: paths.len() - 1)
+
+        if seen[name].is_err()
+            text = read(path)?
+            seen[name] @ hero_text_key(text: text)
+
+            for used in uses_of(text)
+                names @ names.push(used)
+                paths @ paths.push(joined(base: base, path: used + ".hero"))
+
+    out: [str] @= []
+
+    for name in keys(seen)
+        out @ out.push("module " + name + " " + seen[name].must())
+
+    return ok(out)
+
+# The module paths a file's `use` lines name, in order: a line opening with
+# spaces or tabs, the word `use`, a space or tab, then names of letters,
+# digits and `_`, none opening with a digit, joined by `/`. A bracketed
+# package path names none, as the compiler's own tree holds none. Every
+# question is asked of a byte, never of a slice, since a line may hold a
+# character above ASCII where a slice would split it, and that aborts.
+function uses_of(text: str) -> [str]
+    out: [str] @= []
+
+    for line in strings.split_on(text: text, byte: 10)
+        at = past_blanks(line, at: 0)
+
+        if at + 3 < line.len() && line[at] == 'u' && line[at + 1] == 's' && line[at + 2] == 'e' && is_blank(line[at + 3])
+            from = past_blanks(line, at: at + 3)
+            end = path_end(line, at: from)
+
+            if end > from
+                out @ out.push(line.slice(from: from, to: end))
+
+    return out
+
+# Where a path of names starting at `at` ends: a name, then `/` and a name,
+# as long as they go on.
+function path_end(line: str, at: i64) -> i64
+    end: i64 @= name_end(line, at: at)
+
+    if end == at
+        return at
+
+    while end + 1 < line.len() && line[end] == '/' && name_end(line, at: end + 1) > end + 1
+        end @ name_end(line, at: end + 1)
+
+    return end
+
+# Where a name starting at `at` ends, `at` itself where none starts there.
+function name_end(line: str, at: i64) -> i64
+    if at >= line.len() || !(is_letter(line[at]) || line[at] == '_')
+        return at
+    end: i64 @= at + 1
+
+    while end < line.len() && (is_letter(line[end]) || line[end] >= '0' && line[end] <= '9' || line[end] == '_')
+        end @ end + 1
+
+    return end
+
+# `library_source.text()`: its `LINES`, each a string literal on a line of
+# its own, decoded, joined by a newline with one after the last.
+function library_text(path: str) -> str?
+    text = read(path)?
+    head = "constant LINES: [str]\n    [\n"
+    at = strings.index_of(text: text, needle: head)
+    rest = text.slice(from: at.default(0), to: text.len())
+    end = strings.index_of(text: rest, needle: "\n    ]\n")
+
+    if at.is_err() || end.is_err()
+        return fail(code: "unmirrored", msg: path + " holds no `constant LINES: [str]` list in the shape this reads")
+    lines: [str] @= []
+
+    for row in strings.split_on(text: rest.slice(from: head.len(), to: end.must()), byte: 10)
+        literal = strings.trimmed(row)
+
+        if literal.len() < 2 || literal[0] != '"' || literal[literal.len() - 1] != '"'
+            return fail(code: "unmirrored", msg: path + " holds a row of LINES that is not one string literal: " + row)
+        lines @ lines.push(unescaped(body: literal.slice(from: 1, to: literal.len() - 1), where: path)?)
+
+    return ok(lines.join("\n") + "\n")
+
+# A string literal's text, its seven escapes read as the spec reads them
+# (spec § 2 Literals).
+function unescaped(body: str, where: str) -> str?
+    out: [str] @= []
+    at: i64 @= 0
+    from: i64 @= 0
+
+    while at < body.len()
+        if body[at] != '\\'
+            at @ at + 1
+            continue
+        out @ out.push(body.slice(from: from, to: at))
+
+        if at + 1 >= body.len()
+            return fail(code: "unmirrored", msg: where + " holds a `\\` at the end of a string")
+        next = body[at + 1]
+
+        if next == 'n'
+            out @ out.push("\n")
+        else if next == 't'
+            out @ out.push("\t")
+        else if next == 'r'
+            out @ out.push("\r")
+        else if next == '\\'
+            out @ out.push("\\")
+        else if next == '"'
+            out @ out.push("\"")
+        else if next == '\''
+            out @ out.push("'")
+        else if next == 'u' && at + 2 < body.len() && body[at + 2] == '{'
+            shut = strings.index_of(text: body.slice(from: at + 3, to: body.len()), needle: "}")
+
+            if shut.is_err()
+                return fail(code: "unmirrored", msg: where + " holds a `\\u{` with no `}`")
+            out @ out.push(encoded(hex: body.slice(from: at + 3, to: at + 3 + shut.must()), where: where)?)
+            at @ at + 3 + shut.must() + 1
+            from @ at
+            continue
+        else
+            return fail(
+                code: "unmirrored",
+                msg: where + " holds an escape this does not read, `\\` then the byte " + next.to_str()
+            )
+        at @ at + 2
+        from @ at
+
+    out @ out.push(body.slice(from: from, to: body.len()))
+    return ok(out.join(""))
+
+# The character whose code `hex` writes, in UTF-8.
+function encoded(hex: str, where: str) -> str?
+    code: i64 @= 0
+
+    for at in range(from: 0, to: hex.len())
+        digit = hex_value(hex[at])
+
+        if digit < 0 || code > 0x10ffff
+            return fail(code: "unmirrored", msg: where + " holds a `\\u{" + hex + "}` this does not read")
+        code @ code * 16 + digit
+
+    bytes: [u8] @= []
+
+    if code < 0x80
+        bytes @ bytes.push(code.to_u8().must())
+    else if code < 0x800
+        bytes @ bytes.push((0xc0 | code >> 6).to_u8().must()).push((0x80 | code & 0x3f).to_u8().must())
+    else if code < 0x10000
+        bytes @ bytes.push((0xe0 | code >> 12).to_u8().must()).push((0x80 | code >> 6 & 0x3f).to_u8().must()).push(
+            (0x80 | code & 0x3f).to_u8().must()
+        )
+    else
+        bytes @ bytes.push((0xf0 | code >> 18).to_u8().must()).push((0x80 | code >> 12 & 0x3f).to_u8().must()).push((0x80 | code >> 6 & 0x3f).to_u8().must()).push(
+            (0x80 | code & 0x3f).to_u8().must()
+        )
+    return bytes.validated_bytes()
+
+function hex_value(byte: u8) -> i64
+    if byte >= '0' && byte <= '9'
+        return (byte - '0').to_i64().must()
+
+    if byte >= 'a' && byte <= 'f'
+        return (byte - 'a').to_i64().must() + 10
+    return -1
+
+# `Toolchain.runtime_key`: `runtime.c`'s key and each included file's,
+# joined, keyed again.
+function runtime_key(runtime: str) -> str?
+    entry = read(runtime + "/runtime.c")?
+    each: [str] @= [hero_text_key(text: entry)]
+
+    for name in included_names(entry)
+        each @ each.push(hero_text_key(text: read(runtime + "/" + name)?))
+
+    return ok(hero_text_key(text: each.join("")))
+
+# Every line opening `#include "`, the name up to the next quote on it.
+function included_names(text: str) -> [str]
+    head = "#include \""
+    out: [str] @= []
+
+    for line in strings.split_on(text: text, byte: 10)
+        if core_strings.has_prefix(s: line, prefix: head)
+            shut = strings.index_of(text: line.slice(from: head.len(), to: line.len()), needle: "\"")
+
+            if !shut.is_err()
+                out @ out.push(line.slice(from: head.len(), to: head.len() + shut.must()))
+
+    return out
+
+# A file's text, or a failure saying the tree cannot be keyed here.
+function read(path: str) -> str?
+    match read_file(path)
+        .ok text => return ok(text)
+        .err e   => return fail(code: "unmirrored", msg: "cannot read " + path + " (" + e.code + ")")
+
+function past_blanks(line: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < line.len() && is_blank(line[end])
+        end @ end + 1
+
+    return end
+
+function is_blank(byte: u8) -> bool
+    return byte == ' ' || byte == '\t'
+
+function is_letter(byte: u8) -> bool
+    return byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z'
+
+# The folder `path` stands in, "" for none, and `path` read from it.
+function folder_of(path: str) -> str
+    at: i64 @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at < 0
+        return ""
+    return path.slice(from: 0, to: at)
+
+function joined(base: str, path: str) -> str
+    if base.len() == 0
+        return path
+    return base + "/" + path
+
+# A file's name with its folder and its last `.` and after taken off.
+function stem_of(path: str) -> str
+    base = folder_of(path)
+    name: str @= path
+
+    if base.len() > 0
+        name @ path.slice(from: base.len() + 1, to: path.len())
+    at: i64 @= name.len() - 1
+
+    while at > 0 && name[at] != '.'
+        at @ at - 1
+
+    if at <= 0
+        return name
+    return name.slice(from: 0, to: at)
+
+## Tests
+
+test "a file's use lines are read as the compiler reads their paths, and a literal's escapes as the spec writes them (defect 2435)"
+    text = "use a\nuse sub/helper  # the helper\n    use x/y as z\n# use commented\nuse <core>/strings\nusex\nuse 9no\nuse a/\n# é\n#é\néé\nuseé\n"
+    assert uses_of(text) == ["a", "sub/helper", "x/y", "a"]
+    assert unescaped(body: "a\\nb\\t\\\\\\\"\\'\\u{41}\\u{e9}", where: "w").must() == "a\nb\t\\\"'Aé"
+    assert unescaped(body: "\\q", where: "w").is_err()
+    assert included_names("#include \"parts/a.c\"\n  #include \"no.c\"\n#include <stdio.h>\n#include \"b.h\"\n") == ["parts/a.c", "b.h"]
+    assert stem_of("selfhost/main.hero") == "main" && folder_of("selfhost/main.hero") == "selfhost"
+    assert stem_of("main.hero") == "main" && folder_of("main.hero") == ""
