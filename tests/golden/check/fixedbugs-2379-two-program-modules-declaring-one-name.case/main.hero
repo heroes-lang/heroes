@@ -1,0 +1,11 @@
+# Fixed defect 2379, 2026-11-10, lane b29-pkgmsg, a shape beside it: two
+# modules of the program declare `mine`, and a file of the package `core`
+# calls it. Both are named, in their names' order, and why no line of the
+# package reaches either.
+use <core>/strings
+
+use more/words
+use other/strings as own
+
+function main()
+    print(strings.word() + own.mine() + words.mine())

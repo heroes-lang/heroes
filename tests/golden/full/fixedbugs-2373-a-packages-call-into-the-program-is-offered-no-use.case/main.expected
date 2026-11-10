@@ -1,7 +1,7 @@
 note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-call-into-the-program-is-offered-no-use.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
-error[unknown_name]: nothing named `greeting_of_the_program` is in scope
+error[unknown_name]: nothing named `greeting_of_the_program` is in scope, and no `use` of this file can name a module declaring it: `other/greetings` is a module of the program, and no file of the package `core` names a module of the program that uses it
   at tests/golden/full/fixedbugs-2373-a-packages-call-into-the-program-is-offered-no-use.case/vendor/core/strings.hero:6:12
     |
   6 |     return greeting_of_the_program()  #~ unknown_name
     |            ^^^^^^^^^^^^^^^^^^^^^^^
-  note: if `greeting_of_the_program` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function greeting_of_the_program(…) -> …` (§4.19)
+  note: inside a package a `use` starts at the package's own root, and its angle brackets name the entries of the package's own catalogue (spec § 1): what a package calls is declared in the package itself or in a package its catalogue lists

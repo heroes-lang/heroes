@@ -1,0 +1,19 @@
+# Fixed defect 2379, 2026-11-10, lane b29-pkgmsg: a file of the package
+# `core` calls `mine()`, which only the program's own `other/strings`
+# declares, a module no `use` of a package's file can name (spec § 1).
+#
+# SYMPTOM: `unknown_name` with `did you mean find?`, `fix (guess): rename to
+# find` and a note on binding a C function, all pointing away from the cause.
+#
+# CAUSE: the lookup of a name declared elsewhere answered nothing where its
+# one module was out of the file's reach (defect 2373's repair), so the name
+# was told as one nothing declares.
+#
+# FIX: the name is told with the module that declares it and why no line of
+# the file reaches it, and no near name is offered.
+use <core>/strings
+
+use other/strings as own
+
+function main()
+    print(strings.word() + own.mine())

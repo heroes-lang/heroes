@@ -1,0 +1,5 @@
+# The package's module of defect 2379's case beside it.
+
+# A word.
+function word() -> str
+    return mine()  #~ unknown_name

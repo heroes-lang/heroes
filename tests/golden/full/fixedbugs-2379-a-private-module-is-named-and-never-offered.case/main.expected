@@ -1,0 +1,6 @@
+error[unknown_name]: nothing named `mine` is in scope, and no `use` of this file can name a module declaring it: `lib/internal/x` is private to `lib`
+  at tests/golden/full/fixedbugs-2379-a-private-module-is-named-and-never-offered.case/main.hero:15:26
+     |
+  15 |     print(words.word() + mine())  #~ unknown_name
+     |                          ^^^^
+  note: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it: name what its owner offers instead
