@@ -149,8 +149,12 @@ record Rect
     <code>find</code>, <code>any</code>, <code>all</code> e
     <code>range</code>, che sono scritte in Heroes a loro volta; più leggere e
     scrivere un file, gli argomenti della riga di comando ed <code>exit</code>.
-    Tutto il resto è una libreria C che dichiari tu, e non ci sono un package
-    manager né un registry da cui prenderla.</li>
+    Tutto il resto è una libreria C che dichiari tu, oppure un pacchetto di
+    codice Heroes che il tuo programma porta con sé, e che
+    <code>heroes add</code> scarica da un repository git o da un indice, il
+    posto dove i pacchetti vengono pubblicati. Per ora il progetto pubblica
+    solo i pacchetti di base, per il testo, i numeri e il JSON, in una cartella
+    del suo repository, e il suo indice sul web è ancora da costruire.</li>
     <li><b>Il lavoro in parallelo porta un numero solo.</b> Un thread prende
     un <code>i64</code> e ne restituisce uno. Se metti una lista dentro il
     tipo di una callback, il compilatore la rifiuta prima che il programma
@@ -187,7 +191,7 @@ record Rect
     <a href="/it/why/not/">I no&nbsp;&rarr;</a></li>
     <li><b>Linux, macOS e Windows, a 64 bit, passando da clang.</b> Heroes gira
     su macchine a 64 bit e compila attraverso clang, che installi tu: non
-    c&rsquo;è ancora un installer né un pacchetto. Il browser e i
+    c&rsquo;è ancora un installer di nessun tipo. Il browser e i
     microcontrollori non sono posti dove gira oggi.
     <a href="/it/start/">Per cominciare&nbsp;&rarr;</a></li>
   </ul>
