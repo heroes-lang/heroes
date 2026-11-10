@@ -1,0 +1,156 @@
+# A question of `cli/declared_ladder.hero` asked of clang, and its answer
+# kept (design.md §4.19, §1.12; defect 2429, 2026-11-10). One
+# `clang -fsyntax-only` of the question under the probe's words, so it reads
+# the headers as the unit's own compile does (`compiling.probe_words`), and
+# four of its own: `-fno-builtin`, why is the ladder's doc;
+# `-ferror-limit=0`, since a rung's undeclared names are errors and clang
+# stops at twenty of them; and no spelling search and no caret, which cost
+# clang a walk of every name a header declared and say nothing a rung reads.
+#
+# **Kept under everything it depends on**, as `cli/bound_ask.hero`'s answers
+# are: the question's bytes, the words, what the unit's headers resolve to
+# under them (`compiling.reads`, a digest of every file read), the compiler
+# and the runtime, so a warm build asks clang nothing, and a header edited, a
+# flag moved or another clang is another key. A question that gave no answer
+# is not kept, and is asked again.
+#
+# And `listed`, the files a text reads in the order clang entered them, one
+# `clang -M`: what `cli/declared_again.hero` asks whether a header was read
+# before its own rung.
+
+use cli/compiling
+use cli/declared_ladder as ladder
+use cli/deps
+use cli/digest
+use cli/kept
+use cli/libraries
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use emit/clang_place
+
+# The words a question adds to the probe's.
+constant OWN: [str]
+    [
+        "-fno-builtin"
+        "-ferror-limit=0"
+        "-fno-spell-checking"
+        "-fno-caret-diagnostics"
+    ]
+
+function words_of(under: compiling.Compiling) -> [str]
+    return strings.with_all(list: compiling.probe_words(under), more: OWN)
+
+# The states clang gives `q`'s names (`ladder.states_of`), asked once and kept
+# under `read`, what the unit's headers resolve to, and everything else they
+# depend on; absent where clang gave no answer.
+function answered(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Question, asked: [ladder.Asked]) -> [i64]?
+    key = digest.digest(
+        t.fingerprint + "|declared|" + t.compiler_key + "|" + q.text + "|words:" + libraries.key_text(words) + "|reads:" + read + "|" + t.runtime_key
+    )
+    path = t.build + "/declared/said-" + key + ".txt"
+    width = q.rungs.len() * asked.len()
+    known = kept.read(path)
+
+    if !known.is_err()
+        states = unkept(known.must())
+
+        if !states.is_err() && states.must().len() == width
+            return states
+    states = asked_now(t, words: words, q: q, asked: asked)?
+    _ = kept.write(path: path, text: kept_text(states)).is_err()
+    return ok(states)
+
+# One compile of `q`, read.
+function asked_now(t: toolchain.Toolchain, words: [str], q: ladder.Question, asked: [ladder.Asked]) -> [i64]?
+    dir = t.build + "/declared"
+    process.mkdir_all(dir)?
+    unit = dir + "/asked-" + digest.digest(q.text) + ".c"
+    publish.write_whole(path: unit, text: q.text, keyed: true)?
+    err = publish.private_name(dir + "/said.txt")
+    line = response_file.carried(line: strings.with_all(list: ["clang", "-fsyntax-only"], more: words), dir: dir)
+    ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started || said.is_err()
+        return fail(code: "unread", msg: "clang did not answer")
+    return ladder.states_of(said: said.must(), unit: unit, q: q, asked: asked)
+
+# States kept as one digit each, in order.
+function kept_text(states: [i64]) -> str
+    out: [str] @= []
+
+    for one in states
+        out @ out.push(one.to_str())
+
+    return out.join("")
+
+function unkept(text: str) -> [i64]?
+    out: [i64] @= []
+
+    for one in text.chars()
+        if one == "0"
+            out @ out.push(ladder.DECLARED)
+        else if one == "1"
+            out @ out.push(ladder.UNDECLARED)
+        else if one == "2"
+            out @ out.push(ladder.UNREAD)
+        else
+            return fail(code: "unread", msg: "not a kept answer")
+
+    return ok(out)
+
+# The files `text` reads under `words`, in the order clang first entered
+# them, `text`'s own file left out; absent where it does not preprocess.
+function listed(t: toolchain.Toolchain, words: [str], text: str) -> [str]?
+    dir = t.build + "/declared"
+    process.mkdir_all(dir)?
+    unit = dir + "/listed-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    depfile = publish.private_name(dir + "/listed.d")
+    line = response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: dir)
+    ran = process.run(
+        program: "clang",
+        words: strings.with_all(list: line, more: ["-M", "-MT", "dep", "-MF", depfile, unit]),
+        out: process.discard(),
+        err: process.discard()
+    )
+    said = read_back.words(depfile)
+    publish.discard(depfile)
+
+    if !ran.started || ran.code != 0 || said.is_err()
+        return fail(code: "unread", msg: "the text did not preprocess")
+    return after_unit(paths: deps.paths_of(said.must()), unit: unit)
+
+# The paths a listing names after `unit`'s own, every one a file the unit
+# entered: clang on this Mac lists the SDK's `SDKSettings.json` before the
+# unit (measured 2026-11-10, clang 21), so the unit's place is asked, never
+# assumed to be the first. Every separator is read as `/`, as clang on
+# Windows writes `\`.
+function after_unit(paths: [str], unit: str) -> [str]?
+    at: i64 @= 0
+
+    while at < paths.len()
+        if clang_place.slashed(paths[at]) == clang_place.slashed(unit)
+            return ok(paths.slice(from: at + 1, to: paths.len()))
+        at @ at + 1
+
+    return fail(code: "unread", msg: "the listing does not name the unit")
+
+## Tests
+
+test "an answer is kept as one digit a state and read back whole, and a text of another shape is none (defect 2429)"
+    states = [ladder.DECLARED, ladder.UNDECLARED, ladder.UNREAD, ladder.DECLARED]
+    assert kept_text(states) == "0120"
+    assert unkept("0120").must() == states
+    assert unkept("").must().len() == 0
+    assert unkept("01x").is_err()
+    sdk = "/sdk/SDKSettings.json"
+    assert after_unit(paths: [sdk, "build/declared/listed-1.c", "/inc/stdio.h"], unit: "build/declared/listed-1.c").must() == ["/inc/stdio.h"]
+    assert after_unit(paths: ["build\\declared\\listed-1.c", "a.h"], unit: "build/declared/listed-1.c").must() == ["a.h"]
+    assert after_unit(paths: [sdk], unit: "build/declared/listed-1.c").is_err()
+    assert words_of(compiling.Compiling(level: "-O0", sanitize: false, search_include: [], pkgconfig_flags: [], runtime: "rt", source_dir: ".")).len() > OWN.len()

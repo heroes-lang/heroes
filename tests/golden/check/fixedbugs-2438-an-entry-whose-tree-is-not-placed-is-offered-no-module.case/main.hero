@@ -1,0 +1,9 @@
+# Fixed defect 2438, 2026-11-10, lane b30-pkg, a shape beside it: `use
+# <core>`, `core` an entry whose tree is not placed. No tree is there to
+# list, so the line is told how it goes on and no module is named: the
+# compiler reads no index (panel 235's R9), and a name it cannot read is one
+# it would invent.
+use <core>  #~ package_wants_a_module
+
+function main()
+    print("x")

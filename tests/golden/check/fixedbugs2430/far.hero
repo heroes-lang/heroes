@@ -1,0 +1,5 @@
+# A module only `fixedbugs2430/mid` names (defect 2430).
+
+# A tile.
+record Tile
+    z: i64

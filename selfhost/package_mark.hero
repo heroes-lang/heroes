@@ -24,7 +24,8 @@
 #   a `guess` for the same reason, only the catalogue saying its entry
 #   `core` placed that folder;
 # - `use <json>`, a package with no module, an unclosed mark and an empty one:
-#   no repair, which module or name is meant being the author's;
+#   no repair, which module or name is meant being the author's, and no
+#   module named that the package does not hold (defect 2438);
 # - `use <match>/parse`, a keyword or a word the lexer refuses as the entry's
 #   name, bare or quoted (defect 2432): no repair, the entry's name being the
 #   catalogue's to change (`module/entry_name.hero`, which the catalogue's
@@ -37,6 +38,14 @@ use module/entry_name
 use module_text
 use placed_use
 use token
+
+# How `use <core>` with no module is told, then how the line goes on: here
+# the mark and no module's name, the parser reading no catalogue, and in the
+# parse stage the modules the package's tree holds where it can be read
+# (`module/offered_modules.hero`; defect 2438: `parse` was said to be a file
+# of the package, whatever the package held).
+constant MODULE_WANTED: str
+    "a package is reached through one of its modules, written after its mark — "
 
 # The diagnostic owed by the mark at `tokens[at]`, a `<`, or none where the
 # mark is whole: then its four tokens stand at `at` to `at + 3`.
@@ -78,7 +87,7 @@ function read(tokens: [token.Token], at: i64, text: str) -> [diag.Diagnostic]
 
     if line.len() < 5 || line[3].kind != .slash || line[4].kind != .ident
         return [
-            refused(code: "package_wants_a_module", message: "a package is reached through one of its modules — `use <" + name + ">/parse`, `parse` being a file of the package `" + name + "`", span: token.Span(start: open.start, end: line[2].span.end))
+            refused(code: "package_wants_a_module", message: MODULE_WANTED + "`use <" + name + ">/` and the path of one of its modules", span: token.Span(start: open.start, end: line[2].span.end))
         ]
 
     if !mark_line.touching(line, upto: 4)

@@ -1,0 +1,117 @@
+# The modules of a package a `use` is offered where its line names the
+# package and no module of it (spec § 1, `use <json>/parse` reaches the module
+# `parse` of the package `json`; panel 235's R16 and R18, ratified
+# 2026-11-07): the modules at the root of the package's tree that a `use` of
+# the file can write, read from the tree and never invented.
+#
+# Asked by two lines' messages, one rule in one place: `use core`, an entry
+# named whole with no brackets (`module/package_told.whole_entry`, defect
+# 2394), and `use <core>` alone, which the parser refuses before any
+# catalogue is read (`package_mark.hero`, `package_wants_a_module`). The
+# parser said `parse` was a file of the package, whatever the package held
+# (defect 2438), so the parse stage now hands its reports here, where the
+# file's catalogue and the package's tree can be read, and a line whose tree
+# cannot be listed keeps the parser's words, which name no module.
+#
+# A leaf of the parse stage: nothing here reaches the parser, which
+# `module/paths.hero` does, so the directory is `module/folders.hero`'s.
+
+use cli/strings
+use diag
+use module/folders
+use module/packages
+use module/placed
+use module/private
+use module/spelling
+use module_text
+use package_mark
+use source
+
+# How many of a package's modules a message names.
+constant SHOWN: i64
+    3
+
+# The parse stage's reports, each `package_wants_a_module` told the modules
+# its package offers where its tree can be listed; every other report as it
+# was.
+function wants_a_module(s: source.Source, said: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for d in said
+        if d.code == "package_wants_a_module"
+            out @ out.push(listed(s, d: d))
+        else
+            out @ out.push(d)
+
+    return out
+
+# `use <core>` told the modules at the root of the package the file's own
+# catalogue names `core` (a package's file reads its own, R3), as that file
+# writes them; `d` as the parser said it where none can be listed.
+function listed(s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
+    written = placed.entry_of(source.span_text(s, d.span) + "/")
+    from = source.module_at(s, d.span.start)
+    meant = placed.entry_of(placed.identity(s.reached.aliases, from: from, named: "<" + written + ">/" + "x"))
+
+    if written.len() == 0 || meant.len() == 0
+        return d
+    found = root_modules(base: folders.directory_text(s.name), from: from, meant: meant)
+
+    if found.len() == 0
+        return d
+    out: diag.Diagnostic @= d
+    out.message @ package_mark.MODULE_WANTED + phrase(written: written, found: found)
+    return out
+
+# `use <core>/strconv`, the one module at its root; `use <core>/a` or
+# `use <core>/b`, the modules at its root; three and `or another`, past
+# three. `found` holds one module at least.
+function phrase(written: str, found: [str]) -> str
+    lines: [str] @= []
+
+    for module in found
+        if lines.len() < SHOWN
+            lines @ lines.push("`use <" + written + ">/" + module + "`")
+
+    if found.len() > SHOWN
+        return lines.join(", ") + " or another of the modules at its root"
+
+    if lines.len() == 1
+        return lines[0] + ", the one module at its root"
+    return listed_or(lines) + ", the modules at its root"
+
+# The modules at the root of the tree of the package the program calls
+# `meant` that a `use` of the module `from` can name, in their names' byte
+# order: each `.hero` file whose stem is a path the parser reads, and none
+# private to the package's root (R16). None where the package's tree is not
+# there to list.
+function root_modules(base: str, from: str, meant: str) -> [str]
+    book: packages.Book @= packages.book(named: base, opened: base)
+    at = packages.reach(@book, alias: meant)
+    found: [str] @= []
+
+    if at < 0 || book.reached[at].problem.len() > 0
+        return found
+
+    for file in sort(spelling.scan(folder: book.reached[at].opened, kind: 0))
+        if strings.ends_with(text: file, suffix: ".hero")
+            stem = file.slice(from: 0, to: file.len() - 5)
+
+            if module_text.is_use_path(stem) && private.reaches(from: from, name: "<" + meant + ">/" + stem)
+                found @ found.push(stem)
+
+    return found
+
+# `a`, `a or b`, `a, b or c`.
+function listed_or(lines: [str]) -> str
+    if lines.len() < 2
+        return lines.join("")
+    return lines.slice(from: 0, to: lines.len() - 1).join(", ") + " or " + lines[lines.len() - 1]
+
+test "the lines an entry is offered are listed with an `or` before the last"
+    assert listed_or(["`a`"]) == "`a`"
+    assert listed_or(["`a`", "`b`"]) == "`a` or `b`"
+    assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"
+    assert phrase(written: "core", found: ["strconv"]) == "`use <core>/strconv`, the one module at its root"
+    assert phrase(written: "core", found: ["a", "b"]) == "`use <core>/a` or `use <core>/b`, the modules at its root"
+    assert phrase(written: "core", found: ["a", "b", "c", "d"]) == "`use <core>/a`, `use <core>/b`, `use <core>/c` or another of the modules at its root"

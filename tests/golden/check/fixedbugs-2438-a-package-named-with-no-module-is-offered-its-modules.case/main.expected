@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2438-a-package-named-with-no-module-is-offered-its-modules.case/main.hero:12:5: error[package_wants_a_module]: a package is reached through one of its modules, written after its mark — `use <core>/strconv` or `use <core>/strings`, the modules at its root

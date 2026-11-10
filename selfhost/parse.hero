@@ -9,6 +9,7 @@ use closer_runs
 use cursor
 use diag
 use lexer
+use module/offered_modules
 use pairing
 use parse/apart
 use parse/decl
@@ -141,12 +142,14 @@ function parse_source(s: source.Source) -> ParseOutput
     for d in closer_runs.told_once(controlled, text: s.text)
         control @ control.push(d)
 
+    # `use <core>` alone is told the modules its package's tree holds, which
+    # the parser, reading no catalogue, cannot name (defect 2438).
     return ParseOutput(
         decls: decls,
         uses: uses,
         comments: comments,
-        diagnostics: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: s.text),
-        control: wrap_break.offer(control, tokens: lexed.tokens, a: a, text: s.text),
+        diagnostics: offered_modules.wants_a_module(s, said: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: s.text)),
+        control: offered_modules.wants_a_module(s, said: wrap_break.offer(control, tokens: lexed.tokens, a: a, text: s.text)),
         tree: a,
         tokens: lexed.tokens
     )

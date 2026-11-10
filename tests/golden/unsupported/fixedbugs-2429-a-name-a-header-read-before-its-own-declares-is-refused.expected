@@ -1,0 +1,27 @@
+error[ffi_unknown_name]: `stdio.h` declares no `sqrt` — `math.h` does, which this module's unit reads before it, so the name was found whatever header its group names; clang compiled `stdio.h` after `fixedbugs-2429-shapes.h`, which its module's groups name before it, and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-header-read-before-its-own-declares-is-refused.hero:19:14
+     |
+  19 |     function sqrt(x: f64) -> f64  #~ ffi_unknown_name
+     |              ^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `sqrt` in a group `extern "math.h"`, or in one naming a header of your own that includes `math.h`
+
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `shape_count` — `fixedbugs-2429-shapes.h` does, which this module's unit reads before it, so the name was found whatever header its group names; clang compiled `fixedbugs-2429-empty.h` after `math.h`, `stdio.h`, which its module's groups name before it, and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-header-read-before-its-own-declares-is-refused.hero:23:14
+     |
+  23 |     function shape_count() -> i64  #~ ffi_unknown_name
+     |              ^^^^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `shape_count` in a group `extern "fixedbugs-2429-shapes.h"`, or in one naming a header of your own that includes `fixedbugs-2429-shapes.h`
+
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `SPOT_MAX` — `fixedbugs-2429-shapes.h` does, which this module's unit reads before it, so the name was found whatever header its group names; clang compiled `fixedbugs-2429-empty.h` after `math.h`, `stdio.h`, which its module's groups name before it, and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-header-read-before-its-own-declares-is-refused.hero:24:14
+     |
+  24 |     constant SPOT_MAX: i64  #~ ffi_unknown_name
+     |              ^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `SPOT_MAX` in a group `extern "fixedbugs-2429-shapes.h"`, or in one naming a header of your own that includes `fixedbugs-2429-shapes.h`
+
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `struct spot` — `fixedbugs-2429-shapes.h` does, which this module's unit reads before it, so the name was found whatever header its group names; clang compiled `fixedbugs-2429-empty.h` after `math.h`, `stdio.h`, which its module's groups name before it, and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-header-read-before-its-own-declares-is-refused.hero:25:21
+     |
+  25 |     record Spot tag spot  #~ ffi_unknown_name
+     |                     ^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `record Spot` in a group `extern "fixedbugs-2429-shapes.h"`, or in one naming a header of your own that includes `fixedbugs-2429-shapes.h`

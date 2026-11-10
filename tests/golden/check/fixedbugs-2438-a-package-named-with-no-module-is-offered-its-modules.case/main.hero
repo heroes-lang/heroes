@@ -1,0 +1,15 @@
+# Fixed defect 2438, 2026-11-10, lane b30-pkg: `use <core>`, `core` an entry
+# of the catalogue beside this file whose folder holds `strconv.hero`,
+# `strings.hero`, `internal.hero`, `match.hero` and `encoding/json.hero`.
+#
+# SYMPTOM: told *`use <core>/parse`, `parse` being a file of the package
+# `core`*, a module the folder does not hold.
+#
+# FIX: told the modules at the package's root that this file's `use` can
+# write, read from its tree in the parse stage: `strconv` and `strings`;
+# never `internal`, private to the package's root (panel 235's R16), nor
+# `match`, a keyword no `use` writes, nor `encoding/json`, below the root.
+use <core>  #~ package_wants_a_module
+
+function main()
+    print("x")
