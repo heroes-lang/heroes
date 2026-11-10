@@ -1,0 +1,17 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml: error[catalogue_refused]: the entry `yaml` wants its `sum`, `sha256-` then 64 lowercase hexadecimal digits, which `heroes add` writes
+$ heroes add yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml: error[catalogue_refused]: the entry `yaml` wants its `sum`, `sha256-` then 64 lowercase hexadecimal digits, which `heroes add` writes
+heroes.toml:
+# Defect 2433, 2026-11-10: an entry refused whole, its `sum` missing, is told
+# at the catalogue's file alone, first, by both verbs.
+[dependencies.yaml]
+version = "1.0.0"
+heroes.packages:
+(none)
