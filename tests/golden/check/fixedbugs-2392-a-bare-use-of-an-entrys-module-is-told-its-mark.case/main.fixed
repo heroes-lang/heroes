@@ -1,0 +1,10 @@
+# Defect 2392, 2026-11-10, lane b29-pkgmsg: `package_unmarked` as
+# `package_told.own_unknown` tells it, pinned by no case until then. `use
+# core/strconv`, `core` an entry of the catalogue, the package's tree holding
+# `strconv.hero` and the program no `core/strconv.hero` of its own: the mark
+# was forgotten, and the repair is certain (panel 235's R18), nothing of the
+# program's answering that path.
+use <core>/strconv  #~ package_unmarked
+
+function main()
+    print(strconv.n())

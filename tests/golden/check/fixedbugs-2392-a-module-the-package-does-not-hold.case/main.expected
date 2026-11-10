@@ -1,0 +1,2 @@
+note: the package `core` is read from the folder `tests/golden/check/fixedbugs-2392-a-module-the-package-does-not-hold.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/fixedbugs-2392-a-module-the-package-does-not-hold.case/main.hero:4:5: error[unknown_package_module]: the package `core` has no module `nothere`: `use <core>/nothere` reads `tests/golden/check/fixedbugs-2392-a-module-the-package-does-not-hold.case/vendor/core/nothere.hero`, and that file is not there

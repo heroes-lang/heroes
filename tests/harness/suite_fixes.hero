@@ -111,6 +111,17 @@ function run_cases(scratch: str, compiler: str, dir: str, least: i64, only: str)
     seen: i64 @= 0
 
     for item in cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
+        # A folder case's answer stands beside its `main.hero`, inside the
+        # folder, which the walk above does not enter (defect 2392's finding):
+        # until then a `main.fixed` was never seen, so no folder case could
+        # hold a `certain` fix, and panel 235's R18 repair, which only a
+        # catalogue beside the file can provoke, was judged by no case.
+        folder = parent_of(item.source)
+
+        if folder != dir
+            for entry in shell.list_entries(scratch: scratch, dir: folder)?
+                present[entry] @ true
+
         stem = strings.without_suffix(text: item.source, suffix: ".hero")
         repaired = stem + ".fixed"
         pinned = stem + ".applied"
@@ -942,4 +953,36 @@ test "a fixture directory with no root is not copied, so its bytes that are not 
     assert !passed_over.is_err()
     assert passed_over.must().failed == 0
     assert passed_over.must().passed == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# Defect 2392's finding: a folder case's answer stands inside the folder,
+# beside its `main.hero`, and is held to `--apply` as a flat case's is.
+test "a folder case's answer is read beside its main.hero, and a wrong one is caught"
+    scratch = shell.own_scratch()
+    tree = scratch + "/fixes-folder"
+    folder = tree + "/u.case"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(folder).is_err()
+    assert !write_file(path: folder + "/main.hero", text: "function main()\n    mask = 0XFF\n    print(mask)\n").is_err()
+    assert !write_file(path: folder + "/main.expected", text: "").is_err()
+    compiler = shell.some_compiler().must()
+    applied = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", folder + "/main.hero", "--apply"]
+    )
+    assert !applied.is_err()
+
+    # No answer: the certain fix applies and nothing pins it.
+    unpinned = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert unpinned.must().failed == 1
+
+    assert !write_file(path: folder + "/main.fixed", text: applied.must().out).is_err()
+    green = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert green.must().passed == 1
+    assert green.must().failed == 0
+
+    assert !write_file(path: folder + "/main.fixed", text: "function main()\n    something else\n").is_err()
+    red = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert red.must().failed == 1
     assert !shell.remove_tree(scratch).is_err()

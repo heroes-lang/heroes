@@ -1,0 +1,5 @@
+# The package's module of defect 2392's case beside it.
+
+# A number.
+function n() -> i64
+    return 1
