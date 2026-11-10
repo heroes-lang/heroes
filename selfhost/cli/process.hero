@@ -42,6 +42,9 @@ extern "hero_os.h"
     function hero_run_exe_suffix() -> str
     function hero_run_reset()
     function hero_run_arg(word: str)
+    # One variable for the next program alone (panel 242's R6): this
+    # process's environment is never written.
+    function hero_run_env(name: str, value: str)
     # `lent`: each call reads the path while it runs and keeps nothing of it
     # (panel 171). Without the word a lend is refused, because a C parameter
     # is assumed to keep what it is handed. `runtime/parts/os.c` is the C.
@@ -57,8 +60,6 @@ extern "hero_os.h"
     function hero_dir_remove_tree(path: cstr lent) -> i64
     function hero_os_pid() -> i64
     function hero_run_serial() -> i64
-    # `lent`, as every name handed to it above: read while it runs, kept never.
-    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
     function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_FOUND: i64
@@ -107,10 +108,33 @@ constant RUN_OK: i64
 # orphan `clang.exe` a month earlier without anybody connecting the two
 # (panel 174, route F).
 function run(program: str, words: [str], out: str, err: str) -> Ran
+    return run_given(program: program, words: words, out: out, err: err, given: [])
+
+# A variable a program this compiler starts is given, and no other process
+# (panel 242's R6, ratified 2026-11-10; `hero_run_env` in
+# `runtime/hero_os.h`). The program's environment is this process's, each
+# variable given taking its namesake's place, a name given twice its later
+# value; this process's own is never written, so no later program and no
+# other thread's sees it. Until feature 2424 the compiler wrote its own
+# environment for this (`hero_env_put`), and every program it started after,
+# on every thread, inherited the write.
+record Variable
+    name: str
+    value: str
+
+# `run`, the program given `given` as well. **The program is found through
+# this process's `PATH`, never a `PATH` among `given`**, on every system, so a
+# `PATH` given is the program's own and means one thing everywhere (R6's first
+# choice). A name that is empty, holds `=` or holds a NUL, and a value
+# holding a NUL, are the runtime's panics; every caller names a constant.
+function run_given(program: str, words: [str], out: str, err: str, given: [Variable]) -> Ran
     hero_run_reset()
 
     for word in words
         hero_run_arg(word: word)
+
+    for one in given
+        hero_run_env(name: one.name, value: one.value)
 
     status: i64 @= 0
     code = hero_run_go(
@@ -237,55 +261,6 @@ function files_under(dir: str) -> [str]?
 # What a file whose name is not UTF-8 is told as, its bytes by their value.
 function unnamed_said(written: str) -> str
     return "the name of `" + written + "` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
-
-# One environment variable: "" where it is unset, its value where that is
-# UTF-8, and a failure naming the variable where it is set and not UTF-8,
-# which the caller tells, at its place. The failure does not quote the
-# value: a variable may hold a secret (the key `measure --refresh` reads),
-# and a variable that names a place is quoted by its caller through
-# `env_written`.
-#
-# **This killed the compiler until 2026-08-24**: `getenv` answers a pointer
-# to whatever bytes the environment holds, and `to_str` aborts on bytes that
-# are not UTF-8, so `HEROES_RUNTIME=$'\xff\xfe' heroes doctor` was exit 134
-# (panel 089). **And then it read such a value as unset** (defect 243), ""
-# for both: a `HEROES_RUNTIME` naming a real runtime was answered *looked in:
-# the given hint* and told to set what was set, and with a `./runtime` beside
-# the program the build went on against that one, no word said. The runtime
-# reads the value as the shown read reads a file (`hero_env_shown`), so a
-# value that is not text is held, and named.
-function env(name: str) -> str?
-    status: i64 @= 0
-    marks: i64 @= 0
-    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
-
-    if status == HERO_OS_NOT_FOUND
-        return ok("")
-
-    if status == HERO_OS_OK
-        return ok(got)
-    return fail(
-        code: "not_text",
-        msg: "`" + name + "` is set, and its value is not UTF-8, which a value this compiler reads must be"
-    )
-
-# Whether `name` is set at all, empty included, which `env` answers as unset:
-# a `PKG_CONFIG_LIBDIR` set empty leaves `pkg-config` no default directory
-# (defect 292, `cli/pkgconfig_answer.hero`).
-function is_set(name: str) -> bool
-    status: i64 @= 0
-    marks: i64 @= 0
-    _ = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
-    return status != HERO_OS_NOT_FOUND
-
-# A variable's value as a message may quote it, each byte that is not UTF-8
-# written by its value, `<0xE9>`; "" where it is unset. For a variable that
-# names a place, never for one that may hold a secret.
-function env_written(name: str) -> str
-    status: i64 @= 0
-    marks: i64 @= 0
-    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
-    return written_value(answer: got, marks: marks)
 
 # The runtime's answer for a value, its marks before its shown text, as the
 # value with each byte that is not UTF-8 written by its value.
@@ -493,11 +468,6 @@ test "a refusal the runtime makes itself is told as its own, never as the operat
         .err e => assert strings.holds(text: e.msg, needle: ": the operating system's own reason is ")
 
     assert !remove_file("build/selftest-346-file").is_err()
-
-test "an unset variable is empty, and a set one is its value"
-    assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS").must() == ""
-    assert env_written(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""
-    assert env(name: "PATH").must().len() > 0
 
 # Defect 243: a value that is not UTF-8 is held and named, never read as
 # unset. No test can set one, so how it is quoted is asked of the runtime's

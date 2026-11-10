@@ -1,0 +1,2 @@
+staged
+!panic: a launch still holds 1 variable(s) for its child at exit — `hero_run_env` keeps each until `hero_run_reset()` gives them back, and this program did not call it after its last `hero_run_env`

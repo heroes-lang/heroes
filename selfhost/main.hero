@@ -38,6 +38,7 @@ use cli/measure
 use cli/mutate
 use cli/probe
 use cli/process
+use cli/runtime_places
 use cli/syntax_cmds
 use cli/table as cli_table
 use cli/toolchain
@@ -202,7 +203,7 @@ function command(_: i64) -> i64
         .this_cmd    => hero_exit(code: cli_table.exit_code(doctor.run_this()))
         .grammar_cmd => hero_exit(code: cli_table.exit_code(grammar.run()))
         .doctor_cmd => hero_exit(
-            code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: toolchain.runtime_hint()))
+            code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: runtime_places.runtime_hint()))
         )
         .measure_cmd => hero_exit(code: cli_table.exit_code(measure.run(inv)))
         .mutate_cmd  => hero_exit(code: cli_table.exit_code(mutate.run(inv)))
@@ -277,7 +278,7 @@ function arg_written(index: i64) -> str
 # located: a missing runtime is the tool being unable to run, which is
 # exit 2 whatever the verb.
 function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
-    hint = toolchain.runtime_hint()
+    hint = runtime_places.runtime_hint()
 
     if hint.is_err()
         io.eprint(

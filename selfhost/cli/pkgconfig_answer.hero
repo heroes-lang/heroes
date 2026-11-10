@@ -20,6 +20,7 @@
 # `-DSEVEN=7\r\n` warned in every compile. A lone return stays a return, as
 # `strings.without_returns` keeps it, written by its code where it is shown.
 
+use cli/environment
 use cli/files
 use cli/process
 use cli/publish
@@ -156,19 +157,19 @@ function read_alone(words: [str]) -> bool
 function on_search_path(pkgconfig: str, build_dir: str) -> bool
     rest: str @= ""
 
-    if process.is_set(name: "PKG_CONFIG_LIBDIR")
-        rest @ process.env(name: "PKG_CONFIG_LIBDIR").default("")
+    if environment.is_set(name: "PKG_CONFIG_LIBDIR")
+        rest @ environment.env(name: "PKG_CONFIG_LIBDIR").default("")
     else
         rest @ default_path(build_dir)
     windows = process.exe_suffix() == ".exe"
     dirs = strings.with_all(
-        list: entries(process.env(name: "PKG_CONFIG_PATH").default(""), windows: windows),
+        list: entries(environment.env(name: "PKG_CONFIG_PATH").default(""), windows: windows),
         more: entries(rest, windows: windows)
     )
     return pc_found(
         dirs: dirs,
         pkgconfig: pkgconfig,
-        uninstalled: !process.is_set(name: "PKG_CONFIG_DISABLE_UNINSTALLED")
+        uninstalled: !environment.is_set(name: "PKG_CONFIG_DISABLE_UNINSTALLED")
     )
 
 # The default search path `pkg-config` reports of itself, "" where it reports

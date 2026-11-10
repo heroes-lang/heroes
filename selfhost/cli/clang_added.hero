@@ -33,6 +33,7 @@
 # environment moves, which moves the platform's folders with it.
 
 use cli/deps
+use cli/environment
 use cli/package_reads
 use cli/pkgconfig_macros
 use cli/process
@@ -286,7 +287,7 @@ function folder_variable(flag: str, value: str) -> str
 # on Windows and `:` elsewhere (clang's `llvm::sys::EnvPathSeparator`;
 # unrun on Windows).
 function element_names(name: str, dir: str) -> bool
-    if !process.is_set(name)
+    if !environment.is_set(name)
         return false
     separator: u8 @= ':'
 
@@ -294,7 +295,7 @@ function element_names(name: str, dir: str) -> bool
         separator @ ';'
     want = package_reads.lexical(dir)
 
-    for one in parts(text: process.env(name).default(""), separator: separator)
+    for one in parts(text: environment.env(name).default(""), separator: separator)
         if package_reads.lexical(one) == want
             return true
 
@@ -320,7 +321,7 @@ function parts(text: str, separator: u8) -> [str]
 # is in every answer on this Mac (absent here, so clang searches nothing
 # there), and a configuration file adds words of its own.
 function edited_or_own() -> str
-    if process.is_set("CCC_OVERRIDE_OPTIONS")
+    if environment.is_set("CCC_OVERRIDE_OPTIONS")
         return "CCC_OVERRIDE_OPTIONS"
     return OWN
 
@@ -348,7 +349,7 @@ test "the -cc1 job's words are read as clang quotes them, and what it adds is fo
     assert got.macros.len() == 2 && got.macros[0].value == "true=0" && got.macros[1].flag == "-U"
     assert got.platform == ["/sdk"]
 
-    if !process.is_set("CCC_OVERRIDE_OPTIONS") && !process.is_set("CPATH") && !process.is_set("C_INCLUDE_PATH")
+    if !environment.is_set("CCC_OVERRIDE_OPTIONS") && !environment.is_set("CPATH") && !environment.is_set("C_INCLUDE_PATH")
         assert got.folders[0].variable == OWN && got.macros[0].variable == OWN
     assert edits("no job here").folders.len() == 0
     assert edits(" \"/x/clang\" \"-cc1\" \"€x\" \"-é\" \"-Iü\"\n").folders[0].value == "ü"

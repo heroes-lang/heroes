@@ -1,0 +1,43 @@
+# Feature 2424, 2026-11-10 (panel 242's R6, its first choice, the critic's
+# correction): a program is found through the `PATH` of the process that
+# starts it, never through a `PATH` staged for the program, so a staged
+# `PATH` is the child's alone and means one thing on every system. The
+# program stages a `PATH` naming one folder that does not exist and starts
+# `clang` by its bare name, which this process's `PATH` holds wherever the
+# net builds a case. Route (e)'s first POSIX arm handed the staged block to
+# `execvp`, which searched it, and did not find the program (the critic's
+# measurement on this Mac and on Linux); a name nobody has stays not found,
+# its control. Unrun on Windows the day it was written, where
+# `CreateProcessW`'s own search reads this process's `PATH`.
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_env(name: str, value: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_discard_path() -> str
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    constant HERO_OS_OK: i64
+
+# Whether `program`, named bare, is started with a `PATH` of one missing
+# folder staged for it.
+function found(program: str) -> bool
+    hero_run_reset()
+    hero_run_env(name: "PATH", value: "/heroes-no-such-folder")
+    hero_run_arg(word: program)
+    hero_run_arg(word: "--version")
+    hero_run_limit(seconds: 60)
+    discard = hero_run_discard_path()
+    status: i64 @= 0
+    _ = hero_run_go(
+        program: program.cstr(),
+        in_path: "".cstr(),
+        out_path: discard.cstr(),
+        err_path: discard.cstr(),
+        @status
+    )
+    hero_run_reset()
+    return status == HERO_OS_OK
+
+function main()
+    print("clang found through the parent's PATH: ", found("clang"))
+    print("a name nobody has found: ", found("heroes-no-such-program"))

@@ -1,0 +1,28 @@
+# Feature 2424, 2026-11-10: a variable staged for a child whose value holds
+# a NUL byte is refused, since C reads the pair to that byte and the child
+# would be given another value. The NUL comes from a file, as case 245's
+# siblings make one, since no literal writes it.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "hero_os.h"
+    function hero_run_env(name: str, value: str)
+
+constant HELD: str
+    "build/heroes-golden-2424-value-nul.bin"
+
+function held() -> str
+    handle = fopen(path: HELD.cstr(), mode: "wb".cstr())
+    assert handle != nullptr
+    _ = fputc(c: 0, stream: handle)
+    _ = fclose(stream: handle)
+    return read_file(HELD).must()
+
+function main()
+    nul = held()
+    print("before")
+    hero_run_env(name: "A", value: "1" + nul)
+    print("unreachable")

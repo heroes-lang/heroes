@@ -30,18 +30,14 @@
 # placed. The case's scratch folder is written `<work>` and the repository's
 # root `<root>`, so one transcript holds on every machine. **A commit is the
 # same on every machine**: every source is made with one name, one address
-# and one date, through the environment every git this process starts
-# inherits, and with `core.autocrlf=false`.
+# and one date, given to every program this suite starts, git and the
+# compiler alike (`identity`, panel 242's R6), never written into the
+# harness's own environment, and with `core.autocrlf=false`.
 
 use floors
 use report
 use shell
 use strings
-
-# `runtime/hero_compiler.h`: this process's environment, which every git it
-# starts inherits.
-extern "hero_compiler.h"
-    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
 
 constant ROOT: str
     "tests/golden/fetch"
@@ -65,6 +61,19 @@ constant IDENTITY: [str]
         "GIT_COMMITTER_DATE=2026-11-08T00:00:00Z"
     ]
 
+# The identity as the variables each program this suite starts is given, so
+# the compiler's own git runs under it as the suite's do.
+function identity() -> [shell.Variable]
+    out: [shell.Variable] @= []
+
+    for pair in IDENTITY
+        cut = strings.index_of(text: pair, needle: "=").must()
+        out @ out.push(
+            shell.Variable(name: pair.slice(from: 0, to: cut), value: pair.slice(from: cut + 1, to: pair.len()))
+        )
+
+    return out
+
 # `only` narrows the suite to the cases whose name holds it, its floor then
 # left to the whole suite.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
@@ -81,14 +90,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     if found.len() == 0
         return ok(r)
 
-    for pair in IDENTITY
-        cut = strings.index_of(text: pair, needle: "=").must()
-        _ = hero_env_put(
-            name: pair.slice(from: 0, to: cut).cstr(),
-            value: pair.slice(from: cut + 1, to: pair.len()).cstr()
-        )
-
-    asked = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--show-toplevel"])?
+    asked = shell.run_given(scratch: scratch, program: "git", words: ["git", "rev-parse", "--show-toplevel"], given: identity())?
 
     if asked.code != 0
         return fail(
@@ -202,7 +204,7 @@ function git(scratch: str, at: str, words: [str]) -> ()?
         "-c"
         "init.defaultBranch=main"
     ]
-    ran = shell.run(scratch: scratch, program: "git", words: both(first: settings, second: words))?
+    ran = shell.run_given(scratch: scratch, program: "git", words: both(first: settings, second: words), given: identity())?
 
     if ran.code != 0
         return fail(
@@ -221,7 +223,7 @@ function transcript(scratch: str, compiler: str, dir: str, work: str) -> str?
         for word in strings.split_on(text: line, byte: 32)
             words @ words.push(swapped(text: word, old: "<work>", new: work))
 
-        ran = shell.attempted(scratch: scratch, program: compiler, words: words)?
+        ran = shell.attempted_given(scratch: scratch, program: compiler, words: words, given: identity())?
         out @ out.push("$ heroes " + line + "\n")
         out @ out.push("exit " + ran.code.to_str() + "\n")
         out @ out.push("stdout:\n")

@@ -97,7 +97,7 @@ function first_said(name: str, text: str, faults: [source.Fault]) -> str
     return head + "and " + lines.to_str() + " lines hold one"
 
 # The marks read against the text they describe, a file's
-# (`module/reading.source_text`) or a variable's value (`cli/process.env`):
+# (`module/reading.source_text`) or a variable's value (`cli/environment.env`):
 # two for each U+FFFD of the text in order, the byte it stands for in
 # hexadecimal, or `--` where the bytes themselves held a U+FFFD, which is
 # text and no fault. A U+FFFD is the three bytes EF BF BD, and a byte search

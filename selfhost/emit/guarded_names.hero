@@ -95,7 +95,7 @@ constant NAMES: [str]
         "hero_print_f32"
         "hero_print_f64 hero_print_int hero_print_str hero_print_uint"
         "hero_program_sources"
-        "hero_run_arg hero_run_discard_path hero_run_exe_suffix hero_run_go"
+        "hero_run_arg hero_run_discard_path hero_run_env hero_run_exe_suffix hero_run_go"
         "hero_run_limit hero_run_limit_writes hero_run_reset hero_run_serial"
         "hero_run_signal hero_run_why hero_runtime_check_leaks hero_runtime_live hero_show_array hero_show_bool hero_show_child hero_show_close hero_show_f32 hero_show_f64 hero_show_failure hero_show_fixed hero_show_i16 hero_show_i32 hero_show_i64 hero_show_i8 hero_show_map hero_show_open hero_show_pointer hero_show_str hero_show_text hero_show_u16 hero_show_u32 hero_show_u64 hero_show_u8 hero_show_unit"
         "hero_slot_escape hero_stack_spell hero_str_byte hero_str_chars hero_str_cmp"

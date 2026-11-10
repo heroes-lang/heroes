@@ -899,7 +899,8 @@ HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks) {
 }
 
 /* `name` set to `value` in this process's own environment (`hero_compiler.h`,
- * defect 509), which a child started afterwards inherits: on Windows the
+ * defect 509; kept for the committed seed alone since feature 2424, the
+ * header says why), which a child started afterwards inherits: on Windows the
  * process's block, wide, which `CreateProcessA` passes on when it is given
  * none and which `hero_env_shown` reads back; elsewhere `setenv`. The CRT's
  * narrow copy on Windows is not updated, and nothing here reads it. */

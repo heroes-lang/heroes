@@ -1,0 +1,2 @@
+before
+!panic: a variable's name given to a child contains a NUL byte

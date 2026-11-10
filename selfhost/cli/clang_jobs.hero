@@ -33,6 +33,7 @@
 use cli/clang_added
 use cli/clang_floor
 use cli/deps
+use cli/environment
 use cli/process
 use cli/strings
 use cli/toolchain
@@ -119,7 +120,7 @@ constant WORDS: [str]
 function added(t: toolchain.Toolchain, words: [str]) -> clang_added.Edits
     none = clang_added.Edits(folders: [], forced: [], macros: [], platform: [])
 
-    if !process.is_set("CCC_OVERRIDE_OPTIONS")
+    if !environment.is_set("CCC_OVERRIDE_OPTIONS")
         return none
     line = strings.with_all(list: strings.with_all(list: words, more: WORDS), more: written(t))
     own = clang_added.of_words(strings.with_all(list: line, more: ["-c", t.runtime + "/runtime.c", "-o", "identity.o"]))

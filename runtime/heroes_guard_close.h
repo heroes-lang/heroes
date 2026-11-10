@@ -377,6 +377,7 @@
 #pragma pop_macro("hero_program_sources")
 #pragma pop_macro("hero_run_arg")
 #pragma pop_macro("hero_run_discard_path")
+#pragma pop_macro("hero_run_env")
 #pragma pop_macro("hero_run_exe_suffix")
 #pragma pop_macro("hero_run_go")
 #pragma pop_macro("hero_run_limit")
