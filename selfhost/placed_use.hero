@@ -126,7 +126,7 @@ function said(held: Placed) -> str
     owner = internal_owner(marked + "/" + held.module)
 
     if owner.len() > 0
-        return told + ", and `" + marked + "/" + held.module + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it, so no `use` of this program reaches it; name what `" + owner + "` offers instead"
+        return told + ", and `" + marked + "/" + held.module + "` is private to `" + owner + "`: " + PRIVATE_RULE + ", so no `use` of this program reaches it; name what `" + owner + "` offers instead"
 
     if !module_text.is_use_path(held.module)
         return told + ", and `" + held.module + "` is no module's name: each part of a `use` path is a name, letters, digits and `_` not opening with a digit and no word of the language, so a file named otherwise is one no `use` reaches"
@@ -142,6 +142,15 @@ function repair(held: Placed) -> str
     if internal_owner(marked).len() > 0
         return ""
     return marked
+
+# How a message states the rule `internal_owner` applies (R16, Go's
+# element rule for `internal`, read on a module's path): a part `internal`
+# after the first, a folder's name or the module's own, makes the module
+# private to the path before the last such part. The messages said a folder, and
+# `lib/internal.hero`, `use lib/internal`, is none (defect 2439); a first
+# part `internal`, at the root or as a folder there, belongs to no one.
+constant PRIVATE_RULE: str
+    "a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it"
 
 # The module a private module belongs to, "" for one under no `internal`
 # folder (R16): the path before its last `/internal` part.
