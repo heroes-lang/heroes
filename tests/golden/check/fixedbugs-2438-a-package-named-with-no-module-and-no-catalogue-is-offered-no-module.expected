@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2438-a-package-named-with-no-module-and-no-catalogue-is-offered-no-module.hero:17:5: error[package_wants_a_module]: a package is reached through one of its modules, written after its mark — `use <core>/` and the path of one of its modules

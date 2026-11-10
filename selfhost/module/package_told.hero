@@ -28,13 +28,12 @@ use cli/files
 use cli/strings
 use diag
 use module/catalogue
+use module/offered_modules
 use module/packages
 use module/paths
 use module/placed
-use module/private
 use module/reached
 use module/spelling
-use module_text
 use source
 use token
 
@@ -222,59 +221,17 @@ function unmarked(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry
 # author's.
 function whole_entry(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry: Named) -> diag.Diagnostic
     d: diag.Diagnostic @= plain
-    found = root_modules(
+    found = offered_modules.root_modules(
         base: paths.directory_text(s.name),
         from: source.module_at(s, used.span.start),
         meant: entry.meant
     )
-    lines: [str] @= []
-
-    for module in found
-        if lines.len() < SHOWN
-            lines @ lines.push("`use <" + entry.written + ">/" + module + "`")
-
     offered: str @= "`use <" + entry.written + ">/parse`, `parse` standing for one of its modules"
 
-    if found.len() > SHOWN
-        offered @ lines.join(", ") + " or another of the modules at its root"
-    else if lines.len() == 1
-        offered @ lines[0] + ", the one module at its root"
-    else if lines.len() > 1
-        offered @ listed_or(lines) + ", the modules at its root"
+    if found.len() > 0
+        offered @ offered_modules.phrase(written: entry.written, found: found)
     d.message @ d.message + "; `" + entry.written + "` is an entry of the catalogue `" + entry.file + "`, and a package is reached through one of its modules, written in angle brackets — " + offered
     return d
-
-# How many of a package's modules a message names.
-constant SHOWN: i64
-    3
-
-# The modules at the root of the tree of the package the program calls
-# `meant` that a `use` of the module `from` can name, in their names' byte
-# order: each `.hero` file whose stem is a path the parser reads, and none
-# private to the package's root (R16). None where the package's tree is not
-# there to list.
-function root_modules(base: str, from: str, meant: str) -> [str]
-    book: packages.Book @= packages.book(named: base, opened: base)
-    at = packages.reach(@book, alias: meant)
-    found: [str] @= []
-
-    if at < 0 || book.reached[at].problem.len() > 0
-        return found
-
-    for file in sort(spelling.scan(folder: book.reached[at].opened, kind: 0))
-        if strings.ends_with(text: file, suffix: ".hero")
-            stem = file.slice(from: 0, to: file.len() - 5)
-
-            if module_text.is_use_path(stem) && private.reaches(from: from, name: "<" + meant + ">/" + stem)
-                found @ found.push(stem)
-
-    return found
-
-# `a`, `a or b`, `a, b or c`.
-function listed_or(lines: [str]) -> str
-    if lines.len() < 2
-        return lines.join("")
-    return lines.slice(from: 0, to: lines.len() - 1).join(", ") + " or " + lines[lines.len() - 1]
 
 # The code a package's problem is told with: the verb's, where the build
 # tells the refusal `heroes fetch` would give (`module/unplaced.hero`), else
@@ -315,8 +272,3 @@ function present(path: str) -> bool
     match files.entry(path)
         .absent                                        => return false
         .file | .directory | .link | .other | .unknown => return true
-
-test "the lines an entry is offered are listed with an `or` before the last"
-    assert listed_or(["`a`"]) == "`a`"
-    assert listed_or(["`a`", "`b`"]) == "`a` or `b`"
-    assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"

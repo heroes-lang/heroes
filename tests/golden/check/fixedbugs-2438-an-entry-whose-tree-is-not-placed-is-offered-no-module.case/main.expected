@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2438-an-entry-whose-tree-is-not-placed-is-offered-no-module.case/main.hero:6:5: error[package_wants_a_module]: a package is reached through one of its modules, written after its mark — `use <core>/` and the path of one of its modules

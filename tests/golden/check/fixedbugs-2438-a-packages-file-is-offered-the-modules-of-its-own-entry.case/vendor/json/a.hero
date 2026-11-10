@@ -1,0 +1,8 @@
+# A module of the package of defect 2438's case beside it, naming its own
+# entry with no module.
+
+use <text>  #~ package_wants_a_module
+
+# A word.
+function word() -> str
+    return "j"
