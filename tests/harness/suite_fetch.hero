@@ -47,9 +47,12 @@ constant ROOT: str
     "tests/golden/fetch"
 
 # Ten cases on 2026-11-08, the day the suite landed (M-package-manager step
-# 13), and eleven the same day, a catalogue whose lines end `\r\n`.
+# 13), and eleven the same day, a catalogue whose lines end `\r\n`; thirteen
+# by that evening (an index written two ways, a source of no shape), and
+# fourteen with defect 2411's case on 2026-11-10, raised where the b28
+# round's gate told `FLOOR fetch`.
 constant LEAST: i64
-    11
+    14
 
 # The identity and the date every git source of a case is committed with.
 constant IDENTITY: [str]
