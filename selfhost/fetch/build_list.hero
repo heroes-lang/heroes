@@ -18,8 +18,11 @@
 # walk keeps apart the compiler keeps apart. A requirement no entry of the
 # program has joins it under the alias its requirer gives it, or that alias
 # and a number where the program's own catalogue uses the name for another
-# package. Refused, never guessed: a requirement naming a local `path`, which
-# only the program's own catalogue may hold; an index package from another
+# package. A requirement naming a local `path` is the rule of
+# `module/path_entries.hero` (panel 244's R3, defect 2446): written into the
+# program's catalogue, from the program's folder, where its requirer is read
+# from a `path` of the program's, and refused where its requirer is fetched.
+# Refused, never guessed: an index package from another
 # index than the program's, whose identity the compiler would not match; one
 # version of a package named with two sums, or with two commits; and two tags
 # of one git source that are not both versions.
@@ -34,6 +37,8 @@ use fetch/staging
 use fetch/transport
 use fetch/versions
 use module/catalogue
+use module/path_entries
+use module/sums
 
 # One package of the build: its entry as the program's catalogue will hold
 # it, its identity, and the package whose catalogue first required it, ""
@@ -87,7 +92,7 @@ function chosen(@ledger: staging.Ledger, tools: transport.Tools, program: str, r
                         msg: "the catalogue of `" + e.name + "` needs the index's `" + r.name + "`, and the program's catalogue names another package `" + r.name + "`: an index package keeps the index's name, so the program's own entry is the one to rename"
                     )
                 picks @ picks.push(
-                    Pick(entry: renamed(r, name: free_name(picks, wanted: r.name)), identity: id, for_whom: e.name)
+                    Pick(entry: renamed(from_program(r: r, of: e), name: free_name(picks, wanted: r.name)), identity: id, for_whom: e.name)
                 )
                 pending @ pending.push(picks.len() - 1)
             else if raised(held: picks[found].entry, by: r, of: e)?
@@ -99,18 +104,28 @@ function chosen(@ledger: staging.Ledger, tools: transport.Tools, program: str, r
 
 # The identity of the requirement `r` that `of`'s catalogue `own` holds.
 function required_id(r: catalogue.Entry, own: catalogue.Catalogue, of: catalogue.Entry, program: str, c: catalogue.Catalogue) -> str?
-    if r.path.len() > 0
-        return fail(
-            code: "requirement_refused",
-            msg: "the catalogue of `" + of.name + "` names the local folder `" + r.path + "` for `" + r.name + "`, and only the program's own catalogue holds a `path`, while a package is developed"
-        )
+    local = path_entries.refused(of: of, r: r)
+
+    if local.len() > 0
+        return fail(code: path_entries.CODE, msg: local)
 
     if r.version.len() > 0 && address_form.canonical(own.index) != address_form.canonical(c.index)
         return fail(
             code: "requirement_refused",
             msg: "the catalogue of `" + of.name + "` reads `" + r.name + "` from the index `" + index_index(own.index) + "`, and the program's reads `" + index_index(c.index) + "`: a program reads one index, which its catalogue's `index` line names"
         )
-    return ok(catalogue.source_of(r, index: c.index, folder: program))
+    return ok(catalogue.source_of(from_program(r: r, of: of), index: c.index, folder: program))
+
+# A requirement as the program's catalogue writes it: a `path` that a package
+# read from a `path` names, from the package's folder, written from the
+# program's, the two joined and their `.` and `..` taken out; any other as it
+# is.
+function from_program(r: catalogue.Entry, of: catalogue.Entry) -> catalogue.Entry
+    if r.path.len() == 0 || r.path[0] == '/'
+        return r
+    moved: catalogue.Entry @= r
+    moved.path @ sums.folded(of.path + "/" + r.path)
+    return moved
 
 function index_index(line: str) -> str
     if line.len() == 0

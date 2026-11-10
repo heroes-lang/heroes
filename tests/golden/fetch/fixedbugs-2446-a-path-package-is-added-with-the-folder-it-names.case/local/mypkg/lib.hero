@@ -1,0 +1,5 @@
+# The folder `pp` of defect 2446's case names.
+
+# Two.
+function two() -> i64
+    return 2

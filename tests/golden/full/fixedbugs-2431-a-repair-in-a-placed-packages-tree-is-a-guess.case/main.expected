@@ -1,5 +1,5 @@
-error[package_unmarked]: there is no module `core/strconv` of the package `json`, and `core` is an entry of its catalogue `tests/golden/full/fixedbugs-2431-a-repair-in-a-placed-packages-tree-is-a-guess.case/heroes.packages/json@1.0.0-1d3712c3fdc96740/heroes.toml`: a package's module is written in angle brackets — `use <core>/strconv`
-  at tests/golden/full/fixedbugs-2431-a-repair-in-a-placed-packages-tree-is-a-guess.case/heroes.packages/json@1.0.0-1d3712c3fdc96740/parse.hero:4:5
+error[package_unmarked]: there is no module `core/strconv` of the package `json`, and `core` is an entry of its catalogue `tests/golden/full/fixedbugs-2431-a-repair-in-a-placed-packages-tree-is-a-guess.case/heroes.packages/json@1.0.0-4a649cb1cb796b26/heroes.toml`: a package's module is written in angle brackets — `use <core>/strconv`
+  at tests/golden/full/fixedbugs-2431-a-repair-in-a-placed-packages-tree-is-a-guess.case/heroes.packages/json@1.0.0-4a649cb1cb796b26/parse.hero:4:5
     |
   4 | use core/strconv  #~ package_unmarked
     |     ^^^^^^^^^^^^

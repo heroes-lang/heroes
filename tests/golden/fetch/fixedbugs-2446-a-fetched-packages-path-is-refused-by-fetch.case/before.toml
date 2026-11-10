@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2446-a-fetched-packages-path-is-refused-by-fetch.case/idx"
+
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-32cb43858d69e6b31cfd38c176032306249045a13d30bbe95cd1388ad393c20a"

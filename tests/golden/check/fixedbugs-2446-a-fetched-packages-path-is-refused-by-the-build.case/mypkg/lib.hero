@@ -1,0 +1,5 @@
+# The program's own folder of defect 2446's case beside it.
+
+# Two.
+function two() -> i64
+    return 2

@@ -1,6 +1,6 @@
 # Fixed defect 2431, 2026-11-10, lane b30-pkg, the whole message: `json`, a
 # tree `heroes fetch` placed from the index, writes `use core/strconv`,
-# `core` an entry of its own catalogue whose folder holds `strconv.hero`.
+# `core` an entry of its own catalogue whose placed tree holds `strconv.hero`.
 #
 # The repair writing `use <core>/strconv` is a `guess`, shown and never
 # written: a placed tree is held to its fingerprint at every build (panel

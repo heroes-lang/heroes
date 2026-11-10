@@ -1,0 +1,5 @@
+use <mypkg>/lib
+
+# Two, from the local folder.
+function g() -> i64
+    return lib.two()

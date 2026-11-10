@@ -1,10 +1,12 @@
-# The catalogue of defect 2431's case beside it: `json` from the index, its
-# tree placed under `heroes.packages/` and held to its sum, and `core` a
-# folder of the author's own. The index is not here: `check` reads the
-# placed tree and its fingerprint alone.
+# The catalogue of defect 2431's case beside it: `json` and `core` from the
+# index, each tree placed under `heroes.packages/` and held to its sum
+# (no `path` stands in a fetched package's catalogue, panel 244's R3). The
+# index is not here: `check` reads the placed trees and their fingerprints
+# alone.
 [dependencies.core]
-path = "vendor/core"
+version = "1.0.0"
+sum = "sha256-23b26b3feefc8d2d9cd3a5cf04b586a195a94150fbb1e65902033cf08422cb8a"
 
 [dependencies.json]
 version = "1.0.0"
-sum = "sha256-f09019afdb579366ad7a2e7a860c8b19b548e031fb4a7b3774b9880c4ba06c80"
+sum = "sha256-ab29b3a13aeb774a65021128932d6926e012d6f80436dfb3d7b259015489fff2"

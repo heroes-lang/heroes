@@ -15,6 +15,8 @@
 
 use cli/argv
 use cli/io
+use module/catalogue
+use module/path_entries
 use module/reached
 use source
 
@@ -28,6 +30,9 @@ function notes(s: source.Source) -> [str]
             out @ out.push(
                 "the package `" + p.alias + "` is read from the folder `" + p.root + "`, a `path` entry of the catalogue: unverified, no fingerprint holds it"
             )
+
+            for note in path_entries.noted(alias: p.alias, folder: p.root, own: catalogue.read(opened: p.opened, named: p.root))
+                out @ out.push(note)
 
     return out
 

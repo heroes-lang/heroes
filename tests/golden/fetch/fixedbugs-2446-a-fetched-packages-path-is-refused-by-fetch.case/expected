@@ -1,0 +1,13 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[requirement_refused]: the catalogue of `json` names the local folder `../text` for `text`, and a package fetched by its `version` or `git` holds no `path`: its tree is held to its `sum`, and a folder outside it to nothing; a `path` stands in the program's own catalogue, or in the catalogue of a package the program reads from a `path` of its own
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2446-a-fetched-packages-path-is-refused-by-fetch.case/idx"
+
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-32cb43858d69e6b31cfd38c176032306249045a13d30bbe95cd1388ad393c20a"
+heroes.packages:
+json@1.0.0-e434dbd695df0bd5

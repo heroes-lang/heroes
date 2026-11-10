@@ -1,0 +1,28 @@
+$ heroes add --path ../local/pp -C <work>/app
+exit 0
+stdout:
+added mypkg ../local/mypkg for pp
+added pp ../local/pp
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+path mypkg ../local/mypkg, read where it stands and unverified
+path pp ../local/pp, read where it stands and unverified
+stderr:
+$ heroes check <work>/local/prog/main.hero
+exit 0
+stdout:
+stderr:
+note: the package `pp` is read from the folder `<work>/local/prog/../pp/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `pp`, read from the folder `<work>/local/prog/../pp/`, names the local folder `../mypkg` for `mypkg` in its own catalogue: read here, both folders being the author's own, and refused where `pp` is fetched by its `version` or `git`
+note: the package `mypkg` is read from the folder `<work>/local/prog/../mypkg/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+heroes.toml:
+[dependencies.mypkg]
+path = "../local/mypkg"
+
+[dependencies.pp]
+path = "../local/pp"
+heroes.packages:
+(none)

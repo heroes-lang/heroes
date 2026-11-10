@@ -1,0 +1,4 @@
+# The package `pp` of defect 2446's case, a folder of the author's own whose
+# catalogue names another, `mypkg`.
+[dependencies.mypkg]
+path = "../mypkg"

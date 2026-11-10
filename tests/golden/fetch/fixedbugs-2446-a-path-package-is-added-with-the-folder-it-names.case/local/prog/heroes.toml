@@ -1,0 +1,7 @@
+# A program of defect 2446's case reading `pp` and the folder it names, both
+# from `path` entries.
+[dependencies.pp]
+path = "../pp"
+
+[dependencies.mypkg]
+path = "../mypkg"

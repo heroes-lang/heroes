@@ -1,0 +1,3 @@
+add --path ../local/pp -C <work>/app
+fetch -C <work>/app
+check <work>/local/prog/main.hero
