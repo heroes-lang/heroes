@@ -957,8 +957,17 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   `--hard`, a forced checkout or switch of the whole tree), and so is an
   autostash that would take one (defect 514); and a commit is judged on what it
   carries, a path named after `--` as the working tree holds it, staged or not
-  (defect 515). And a command that would leave a path's staged change nowhere
-  is refused by the paths it names (defect 529): `git restore -S -W` in every
+  (defect 515). **Since 2026-11-10 only on a line that leaves it what the
+  guard read** (defect 2380: `git add -- <dir> && git commit -F m -- <dir>`
+  committed a file that does not parse, the files and the index having been
+  read before the line ran): a commit, or a `--continue` that concludes with
+  the index, is refused behind anything on its line that may write a file or
+  an index, `git add` and `git stage`, a redirection into a file, a copy, a
+  checkout, a shell's `-c`, a git alias, everything but the moves, readers,
+  printers and git's reading verbs `.claude/hooks/ahead.py` lists, a
+  substitution in its own words included. And a command that would leave a
+  path's staged change nowhere is refused by the paths it names (defect 529):
+  `git restore -S -W` in every
   spelling and `restore -S` alone, `git checkout <commit> -- <paths>`, `git rm
   -f` and `rm --cached -f`, `git mv -f` over a staged destination, `git reset`
   by its paths and of the whole index where a staged path was changed again

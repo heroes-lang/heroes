@@ -691,6 +691,155 @@ class Carried(unittest.TestCase):
         self.assertIn("examples/z.hero does not parse", said)
 
 
+class SameLine(unittest.TestCase):
+    """Defect 2380: the guard reads the files and the index before the line
+    runs, so a command ahead of the commit on its line that stages or writes a
+    file put it into the commit unjudged. A commit is refused behind anything
+    but a command that writes neither (`ahead.py`); each shape witnessed
+    against what git commits when the line runs."""
+
+    def setUp(self):
+        self.top = fresh("hooks-2380-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        staged(self.tree, "examples/x.hero", "fine\n")
+        git(self.tree, "commit", "-q", "-m", "x", "--", "examples/x.hero")
+        write(os.path.join(self.tree, "m"), "message\n")
+
+    def said(self, command):
+        return guard_bash.verdict(command, self.tree)
+
+    def ran(self, command):
+        subprocess.run(["/bin/sh", "-c", command], cwd=self.tree, env=GIT_ENV, capture_output=True, text=True)
+
+    def ahead_of(self, command, writer):
+        said = self.said(command)
+        self.assertIsNotNone(said, command)
+        self.assertIn("`" + writer + "` runs before `", said)
+        self.assertIn("defect 2380", said)
+        return said
+
+    def test_the_issue_s_shape_is_refused_and_would_have_committed_what_does_not_parse(self):
+        write(os.path.join(self.tree, "tests", "golden", "full", "zz.case", "main.hero"), "function main()\nBROKEN (\n")
+        line = "git add -- tests/golden/full/zz.case && git commit -q -F m -- tests/golden/full/zz.case"
+        self.ahead_of(line, "git add -- tests/golden/full/zz.case")
+        self.ran(line)
+        self.assertIn("BROKEN", git(self.tree, "show", "HEAD:tests/golden/full/zz.case/main.hero").stdout)
+
+    def test_run_as_two_commands_the_same_commit_is_judged_by_what_it_carries(self):
+        write(os.path.join(self.tree, "tests", "golden", "full", "zz.case", "main.hero"), "BROKEN (\n")
+        self.assertIsNone(self.said("git add -- tests/golden/full/zz.case"))
+        git(self.tree, "add", "--", "tests/golden/full/zz.case")
+        said = self.said("git commit -q -F m -- tests/golden/full/zz.case")
+        self.assertIn("tests/golden/full/zz.case/main.hero does not parse", said)
+        self.assertNotIn("defect 2380", said)
+
+    def test_a_file_added_and_its_directory_committed(self):
+        write(os.path.join(self.tree, "examples", "new", "a.hero"), "BROKEN\n")
+        line = "git add -- examples/new/a.hero && git commit -q -F m -- examples/new"
+        self.ahead_of(line, "git add -- examples/new/a.hero")
+        self.ran(line)
+        self.assertEqual(git(self.tree, "show", "HEAD:examples/new/a.hero").stdout, "BROKEN\n")
+
+    def test_an_intent_to_add(self):
+        write(os.path.join(self.tree, "examples", "n.hero"), "BROKEN\n")
+        for line in ("git add -N -- examples/n.hero && git commit -q -F m -- examples/n.hero",
+                     "git add --intent-to-add examples/n.hero && git commit -q -F m -- examples"):
+            self.assertIn("defect 2380", self.said(line), line)
+        self.ran("git add -N -- examples/n.hero && git commit -q -F m -- examples/n.hero")
+        self.assertEqual(git(self.tree, "show", "HEAD:examples/n.hero").stdout, "BROKEN\n")
+
+    def test_an_add_through_a_semicolon_an_or_a_pipe_or_a_subshell(self):
+        write(os.path.join(self.tree, "examples", "s.hero"), "BROKEN\n")
+        for line in ("git add -- examples/s.hero ; git commit -q -F m -- examples/s.hero",
+                     "git add -- examples/s.hero || git commit -q -F m -- examples/s.hero",
+                     "git add --ignore-errors -- examples/s.hero examples/u.hero || git commit -q -F m -- examples",
+                     "(git add -- examples/s.hero) && git commit -q -F m -- examples/s.hero",
+                     "git add -- examples/s.hero\ngit commit -q -F m -- examples/s.hero",
+                     "git stage -- examples/s.hero && git commit -q -F m -- examples/s.hero",
+                     "git -C examples add s.hero && git -C examples commit -q -F ../m -- s.hero",
+                     "cd examples && git add -- s.hero && git commit -q -F ../m -- s.hero"):
+            self.assertIn("defect 2380", self.said(line), line)
+        # `--ignore-errors` stages what it can read and exits 1 on a file it
+        # cannot, so `||` runs the commit with the other file staged (a path
+        # that matches nothing is fatal instead, exit 128, and stages nothing).
+        unreadable = write(os.path.join(self.tree, "examples", "u.hero"), "fine\n")
+        os.chmod(unreadable, 0)
+        self.addCleanup(os.chmod, unreadable, 0o644)
+        self.ran("git add --ignore-errors -- examples/s.hero examples/u.hero || git commit -q -F m -- examples")
+        self.assertEqual(git(self.tree, "show", "HEAD:examples/s.hero").stdout, "BROKEN\n")
+
+    def test_a_commit_of_a_path_the_add_did_not_name(self):
+        # Two commands judge every staged file, so one line does too.
+        write(os.path.join(self.tree, "examples", "a.hero"), "BROKEN\n")
+        write(os.path.join(self.tree, "examples", "b.hero"), "fine\n")
+        self.assertIn("defect 2380", self.said("git add -- examples/a.hero examples/b.hero && git commit -q -F m -- examples/b.hero"))
+        git(self.tree, "add", "--", "examples/a.hero", "examples/b.hero")
+        self.assertIn("examples/a.hero does not parse", self.said("git commit -q -F m -- examples/b.hero"))
+
+    def test_a_file_written_ahead_of_the_commit(self):
+        write(os.path.join(self.tree, "broken.txt"), "BROKEN\n")
+        for line, writer in (("printf 'BROKEN\\n' > examples/x.hero && git commit -q -F m -- examples/x.hero", "printf 'BROKEN\\n' > examples/x.hero"),
+                             ("echo BROKEN >>examples/x.hero; git commit -q -F m -- examples/x.hero", "echo BROKEN >>examples/x.hero"),
+                             ("cp broken.txt examples/x.hero && git commit -q -F m -- examples/x.hero", "cp broken.txt examples/x.hero"),
+                             ("git checkout HEAD -- m && cp broken.txt examples/x.hero; git commit -q -F m -- examples", "git checkout HEAD -- m"),
+                             ("git diff --output=examples/x.hero && git commit -q -F m -- examples", "git diff --output=examples/x.hero"),
+                             ("bash -c 'cp broken.txt examples/x.hero' && git commit -q -F m -- examples", "bash -c 'cp broken.txt examples/x.hero'")):
+            self.ahead_of(line, writer)
+        self.ran("cp broken.txt examples/x.hero && git commit -q -F m -- examples/x.hero")
+        self.assertEqual(git(self.tree, "show", "HEAD:examples/x.hero").stdout, "BROKEN\n")
+
+    def test_what_the_commit_s_own_words_substitute_and_a_shell_s_line(self):
+        write(os.path.join(self.tree, "examples", "y.hero"), "BROKEN\n")
+        self.assertIn("defect 2380", self.said("git commit -q -m \"$(git add -- examples/y.hero; echo m)\" -- examples/y.hero"))
+        self.assertIn("defect 2380", self.said("bash -c 'git add -- examples/y.hero && git commit -q -F m -- examples/y.hero'"))
+        git(self.tree, "config", "alias.ci", "commit")
+        self.assertIn("defect 2380", self.said("git add -- examples/y.hero && git ci -q -F m -- examples/y.hero"))
+
+    def test_a_conclusion_judged_by_its_index_is_held_the_same(self):
+        for line in ("git add -- a.txt && git merge --continue", "git add -- a.txt && git cherry-pick --continue",
+                     "git add -- a.txt; git rebase --cont", "git add -- a.txt && git am -r"):
+            self.assertIn("defect 2380", self.said(line), line)
+
+    def test_what_writes_neither_passes(self):
+        write(os.path.join(self.tree, "examples", "x.hero"), "fine, edited\n")
+        for line in ("cd examples && git commit -q -F ../m -- x.hero", "pushd examples && git commit -q -F ../m -- x.hero",
+                     "git status --short && git commit -q -F m -- examples/x.hero",
+                     "git diff --stat -- examples && git log --oneline -1 && git commit -q -F m -- examples/x.hero",
+                     "cat m | git commit -q -F - -- examples/x.hero", "printf 'm\\n' | git commit -q -F - -- examples/x.hero",
+                     "echo go >/dev/null 2>&1 && git commit -q -F m -- examples/x.hero", "true; git commit -q -F m -- examples/x.hero",
+                     "X=1; git commit -q -F m -- examples/x.hero", "ls examples && wc -l m >&2 && git commit -q -F m -- examples/x.hero",
+                     "git commit -q -m \"$(cat <<'EOF'\nA message; with && and > inside\nEOF\n)\" -- examples/x.hero",
+                     "git commit -q -F m -- examples/x.hero && git add -- examples/x.hero",
+                     "echo \"a > b\" && git commit -q -F m -- examples/x.hero"):
+            self.assertIsNone(self.said(line), line)
+
+    def test_an_alias_of_a_reading_verb_is_not_read_as_one(self):
+        git(self.tree, "config", "alias.st", "status")
+        self.assertIn("defect 2380", self.said("git st && git commit -q -F m -- examples/x.hero"))
+
+
+class Ahead(unittest.TestCase):
+    """`ahead.redirected`: the file an output redirection writes, read outside
+    quotes, a descriptor and `/dev/null` writing none."""
+
+    def test_the_redirections_that_write_a_file(self):
+        import ahead
+
+        for segment, target in (("echo a > f", "f"), ("echo a>f", "f"), ("echo a >> log", "log"), ("echo a >| f", "f"),
+                                ("echo a &>log", "log"), ("echo a 2>err", "err"), ("echo a >&out", "out"),
+                                ("echo a > 'my file'", "my file"), ("cat <> f", "f"), ("tee >(cat)", ">("),
+                                ("echo a 2>/dev/null > f", "f"), ("echo a >", ">")):
+            self.assertEqual(ahead.redirected(segment), target, segment)
+
+    def test_the_redirections_that_write_none(self):
+        import ahead
+
+        for segment in ("echo a", "echo 'a > b'", "echo \"a > b\"", "echo a \\> b", "echo a 2>&1", "echo a >&2",
+                        "echo a 2>/dev/null", "echo a &>/dev/null", "echo a >&-", "cat <<'EOF'", "echo $((1 > 0))",
+                        "cat < m"):
+            self.assertIsNone(ahead.redirected(segment), segment)
+
+
 def conflicted(tree, op, extra=None):
     """`tree` stopped in a conflicted `op`, `merge` or `cherry-pick`, of a
     branch that changed `a.txt` and `b.txt`, both resolved and staged; and
