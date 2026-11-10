@@ -336,7 +336,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     # `use` line is always in this file. **It reports and then BINDS**, as the
     # two below do: returning here leaves the name meaning the MODULE,
     # which is not a value, and one mistake became five diagnostics — measured
-    # on `examples/json/parse.hero` (panel 102, the whole argument).
+    # on `examples/json/parse.hero`, gone since 2026-11-10 (panel 102, the whole argument).
     used = resolved.used_module_named(r.out, from: source.module_at(s, name.start), binding: text)
 
     if !used.is_err()
