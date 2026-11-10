@@ -18,14 +18,23 @@
 # module or none. A module under the package's `internal` folder is offered no
 # line, since no line of the program reaches it (R16), and is told so.
 #
-# A leaf but for `bytes`, read by `package_mark.hero` and, for the `internal`
-# rule, by `module/package_told.hero`, one rule in one place. **What a `use`
-# wrote is asked of its bytes and never cut** (defect 2410's shape): a quoted
-# line may hold any character, and `use "heroes.package€x/y"` put the end of
+# A leaf but for `bytes` and `module_text`'s reading of a `use` path, read by
+# `package_mark.hero` and, for the `internal` rule, by
+# `module/package_told.hero`, one rule in one place. **What a `use` wrote is
+# asked of its bytes and never cut** (defect 2410's shape): a quoted line may
+# hold any character, and `use "heroes.package€x/y"` put the end of
 # `heroes.packages/` inside `€`, which stopped `check` with *string slice
 # splits a character* where the author was owed the line's message.
+#
+# **A line is offered only where the parser reads it** (defect 2416), as
+# `module_text.quoted` asks before it offers one: the entry and the module
+# are each held to `module_text.is_use_path`, so `use
+# "heroes.packages/x/y/a-b"` was offered `<x>/y/a-b`, refused at `-` once
+# written, and is now told that `y/a-b` is no module's name. A module written
+# as its file, `strconv.hero`, is the module `strconv`, as a quoted path is.
 
 use bytes
+use module_text
 
 # The folder every fetched tree is placed under, as `module/packages.PLACED`
 # and `fetch/staging.PLACED` spell it.
@@ -59,6 +68,11 @@ function read(written: str) -> Placed
     if end + 1 < written.len()
         module @ written.slice(from: end + 1, to: written.len())
 
+    # Asked of its bytes and cut only after a match, an ASCII `.` beginning
+    # the five (defect 2410's shape).
+    if module.len() > 5 && bytes.bytes_at(text: module, at: module.len() - 5, needle: ".hero")
+        module @ module.slice(from: 0, to: module.len() - 5)
+
     # `heroes.packages/` alone: the folder every tree is placed under.
     if end == start
         folder @ FOLDER
@@ -70,7 +84,9 @@ function read(written: str) -> Placed
 
 # The entry a placed folder's name opens with, before its `@`: lowercase
 # letters, digits and `_` after a letter (the catalogue's rule,
-# `module/catalogue.entry_name`), else "".
+# `module/catalogue.entry_name`), and a name the mark can hold, no keyword
+# and no word the lexer refuses as a name (defect 2416: `match@1-k` was
+# offered `<match>/…`, which the parser refuses at `match`), else "".
 function entry_of(folder: str) -> str
     end: i64 @= 0
 
@@ -88,6 +104,8 @@ function entry_of(folder: str) -> str
         if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
             return ""
 
+    if !module_text.is_use_path(name)
+        return ""
     return name
 
 # What the line is told: the folder, then the line reaching the module through
@@ -109,12 +127,15 @@ function said(held: Placed) -> str
 
     if owner.len() > 0
         return told + ", and `" + marked + "/" + held.module + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it, so no `use` of this program reaches it; name what `" + owner + "` offers instead"
+
+    if !module_text.is_use_path(held.module)
+        return told + ", and `" + held.module + "` is no module's name: each part of a `use` path is a name, letters, digits and `_` not opening with a digit and no word of the language, so a file named otherwise is one no `use` reaches"
     return told + " — `use " + marked + "/" + held.module + "`, `" + held.entry + "` standing for the entry that placed this folder"
 
-# The line the repair writes, "" where none is offered: an entry and a module
-# no `internal` folder holds.
+# The line the repair writes, "" where none is offered: an entry, and a
+# module that is a path the parser reads and that no `internal` folder holds.
 function repair(held: Placed) -> str
-    if held.entry.len() == 0 || held.module.len() == 0
+    if held.entry.len() == 0 || !module_text.is_use_path(held.module)
         return ""
     marked = "<" + held.entry + ">/" + held.module
 
@@ -168,3 +189,16 @@ test "the repair is the entry's line, and none reaches a module under `internal`
     assert internal_owner("a/internal/b/internal/c") == "a/internal/b"
     assert internal_owner("internalx/y") == ""
     assert internal_owner("a/internals/b") == ""
+
+# Defect 2416: a line is offered only where the parser reads it, the entry's
+# mark and each part of the module a name.
+test "a placed module or entry no `use` can write is offered no line"
+    for odd in ["y/a-b", "y/internal€", "y/match", "y//z", "€", "y/", "let", "2d"]
+        assert repair(read("heroes.packages/x@1-k/" + odd)) == ""
+
+    assert read("heroes.packages/match@1-k/y").entry == ""
+    assert repair(read("heroes.packages/match@1-k/y")) == ""
+    assert repair(read("heroes.packages/x@1-k/y/a_b")) == "<x>/y/a_b"
+    assert read("heroes.packages/x@1-k/strconv.hero").module == "strconv"
+    assert repair(read("heroes.packages/x@1-k/strconv.hero")) == "<x>/strconv"
+    assert read("heroes.packages/x@1-k/€.hero").module == "€"

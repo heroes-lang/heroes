@@ -1,0 +1,13 @@
+# Fixed defect 2416, 2026-11-10, lane b29-pkgmsg, a shape beside it: a placed
+# folder whose name opens with a keyword, `match`, which the catalogue's rule
+# for an entry's name admits and no mark holds.
+#
+# SYMPTOM: `fix (guess): write <match>/parse`, refused at `match` once
+# written, `package_wants_a_name`.
+#
+# FIX: the folder's entry is read as none, and the line is told with a
+# stand-in, offered no repair.
+use "heroes.packages/match@1-k/parse"  #~ package_unmarked
+
+function main()
+    print(1)
