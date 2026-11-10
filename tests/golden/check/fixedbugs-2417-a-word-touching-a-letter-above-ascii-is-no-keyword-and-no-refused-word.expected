@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-2417-a-word-touching-a-letter-above-ascii-is-no-keyword-and-no-refused-word.hero:12:25: error[unexpected_character]: `é` (U+00E9) is not part of the language's syntax
+tests/golden/check/fixedbugs-2417-a-word-touching-a-letter-above-ascii-is-no-keyword-and-no-refused-word.hero:16:10: error[unexpected_character]: `é` (U+00E9) is not part of the language's syntax
+tests/golden/check/fixedbugs-2417-a-word-touching-a-letter-above-ascii-is-no-keyword-and-no-refused-word.hero:17:12: error[unexpected_character]: `é` (U+00E9) is not part of the language's syntax
+tests/golden/check/fixedbugs-2417-a-word-touching-a-letter-above-ascii-is-no-keyword-and-no-refused-word.hero:18:9: error[unexpected_character]: `é` (U+00E9) is not part of the language's syntax

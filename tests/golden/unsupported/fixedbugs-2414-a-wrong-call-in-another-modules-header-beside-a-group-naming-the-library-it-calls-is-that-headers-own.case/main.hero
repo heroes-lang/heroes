@@ -1,0 +1,15 @@
+# fixedbugs, defect 2414, lane b29-boundary, 2026-11-10: the shape beside
+# `fixedbugs-2414-a-wrong-call-in-a-header-beside-a-group-naming-the-library-
+# it-calls-is-that-headers-own`, the two groups in two modules, as panel 241's
+# `osenvbad` package stood beside its program's `stdlib.h` group, `lib.h`
+# standing for the C library's header. It was told
+# as the two headers refusing each other in one unit; `env.h` does not compile
+# alone, and is told as its own refusal, at its group in `env.hero`.
+use env
+
+extern "lib.h"
+    function lib_set(name: cstr lent, value: cstr lent, overwrite: i32) -> i32
+
+function main()
+    print(env.set(name: "P2414", value: "v"))
+    print(lib_set(name: "P2414".cstr(), value: "v".cstr(), overwrite: 1))

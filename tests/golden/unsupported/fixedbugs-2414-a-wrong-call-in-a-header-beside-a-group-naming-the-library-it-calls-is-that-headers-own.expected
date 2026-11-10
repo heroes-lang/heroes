@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2414-env.h`, the header this group names, does not compile: clang refuses it at line 9: too few arguments to function call, expected 3, have 2
+  at tests/golden/unsupported/fixedbugs-2414-a-wrong-call-in-a-header-beside-a-group-naming-the-library-it-calls-is-that-headers-own.hero:14:8
+     |
+  14 | extern "fixedbugs-2414-env.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2414-env.h` line 9 reads `    return lib_set(name, value);`
+  note: clang adds, at `fixedbugs-2414-lib.h` line 2: 'lib_set' declared here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

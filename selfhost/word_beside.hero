@@ -1,0 +1,59 @@
+# Whether a word the scanner read touches a character above ASCII that a
+# terminal shows (design.md §4.17; defect 2417, 2026-11-10).
+#
+# A name is ASCII letters, digits and `_` (spec § 2), so the scanner ends a
+# word at the first byte above ASCII and tells that character
+# `unexpected_character`. The word it ended is not the word the author wrote:
+# `unioné` was read as `union` and told a second time as the word Heroes
+# refuses, with a route naming C's `struct union`; `matché` as the keyword
+# `match`, then a `match` with no arms; `nilé` was offered `none` for its first
+# three bytes; and `éunion`, the character before the word, was told about
+# `union` too. So a word touching such a character, after it or before it, is
+# read as a plain name, and the character alone is told.
+#
+# **Which characters**: every one above ASCII but those `shown_char.unseen`
+# names, the spaces other than the space and the characters that show as
+# nothing, which part a word as a space does, so `union` and a no-break
+# space are still told as `union` and as the space. A visible symbol, `—`
+# after `union`, is read as continuing the word too: the program is refused at
+# the symbol either way, and the word's own refusal, true there, is told once
+# the symbol is gone, the one message it loses (`.claude/rules/
+# verification.md` § Bounded discovery's *a mistake told only after the first
+# is fixed*), where keeping it would tell `unioné`'s false one.
+
+use bytes
+use shown_char
+
+# Whether the character right after `end`, or the one ending right before
+# `start`, is above ASCII and shown.
+function touches_letter(text: str, start: i64, end: i64) -> bool
+    if end < text.len() && text[end] >= 128 && shown(bytes.char_at(text, at: end))
+        return true
+
+    if start == 0 || text[start - 1] < 128
+        return false
+    lead: i64 @= start - 1
+
+    # Back over the continuation bytes, 0x80 to 0xbf, to the character's lead,
+    # never past a byte that is none of them.
+    while lead > 0 && text[lead] >= 128 && text[lead] < 192
+        lead @ lead - 1
+
+    return shown(bytes.char_at(text, at: lead))
+
+function shown(ch: str) -> bool
+    return !shown_char.unseen(shown_char.code_point(ch))
+
+## Tests
+
+# **A letter above ASCII on either side makes the word a plain name, and a
+# space above ASCII does not** (defect 2417).
+test "a word touching a letter above ASCII on either side is a plain name, and one beside a no-break space is not (defect 2417)"
+    assert touches_letter("unioné", start: 0, end: 5)
+    assert touches_letter("éunion", start: 2, end: 7)
+    assert touches_letter("x = matché", start: 4, end: 9)
+    assert !touches_letter("union x", start: 0, end: 5)
+    space = shown_char.utf8_of(160)
+    assert !touches_letter("union" + space + "x", start: 0, end: 5)
+    assert !touches_letter(space + "union", start: 2, end: 7)
+    assert !touches_letter("union", start: 0, end: 5)

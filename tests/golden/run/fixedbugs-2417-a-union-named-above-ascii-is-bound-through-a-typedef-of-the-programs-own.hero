@@ -1,0 +1,19 @@
+# fixedbugs, defect 2417, lane b29-boundary, 2026-11-10.
+#
+# The route `ffi_unknown_field` offers for a member whose type is named above
+# ASCII, which no group spells: `unioné` named again in a header of the
+# program's own, `typedef unioné Via;`, bound there as `record Via`, and the
+# member declared a field of it. Defect 2409's case offered `record ... tag
+# unioné` until then, a line the lexer refuses; this one builds and reads
+# both fields, the union's through the member, `t.via.fd`.
+
+extern "fixedbugs-2417-own.h"
+    record Via
+        fd: i32
+    record Tagged tag tagged
+        kind: i32
+        via: Via
+
+function main()
+    t = Tagged(kind: 2, via: Via(fd: 3))
+    print(t.kind, " ", t.via.fd)
