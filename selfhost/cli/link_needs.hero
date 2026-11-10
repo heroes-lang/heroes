@@ -133,6 +133,13 @@ test "a link is told where every name it reports is answered by one reader, and 
     runtime = library + "  \"_base_two\", referenced from:\n      _hero_x in runtime-0128005f5ecb3c36-578c67547cb30f76.o\n"
     assert told(runtime, s, decls, t, asking: [], linked: []).len() == 0
     assert told(library + "lld-link: error: undefined symbol: base_two\n", s, decls, t, asking: [], linked: []).len() == 0
+
+    # MSVC's link.exe names the library's member at the line's start (defect
+    # 2398), and the program's object beside it leaves the link the compiler's.
+    member = "top.lib(top.obj) : error LNK2019: unresolved external symbol base_helper referenced in function top_value\r\n"
+    msvc = told(member, s, decls, t, asking: [], linked: [])
+    assert msvc.len() == 1 && msvc[0].message == alone[0].message
+    assert told(member + "m-740b7fff2887daca.o : error LNK2001: unresolved external symbol base_helper\r\n", s, decls, t, asking: [], linked: []).len() == 0
     assert told("", s, decls, t, asking: [], linked: []).len() == 0
     assert told("ld: library 'top' not found\n", s, decls, t, asking: [], linked: []).len() == 0
 

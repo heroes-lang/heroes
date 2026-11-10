@@ -333,6 +333,14 @@ test "a reference is the program's where every one is placed in a module's objec
     gnu = "/usr/bin/ld: build/tu-02/inlineref-563fa1164bcae0e1.o: in function `top_fast':\n/w/r/./fast.h:2:(.text+0x24): undefined reference to `base_helper'\n/usr/bin/ld: /w/r/./fast.h:2:(.text+0x3c): undefined reference to `base_helper'\n"
     assert placed(link_report.references(gnu), symbol: "base_helper", modules: modules, libraries: [])
 
+    # MSVC's link.exe, the CI's, naming the module's object at the line's
+    # start, its run 42721242127's words (defect 2398).
+    msvc = "fixedbugs2372twoinlinebodiescallingtwonamesareeachtold-11565d543efb34ff.o : error LNK2019: unresolved external symbol base2372_one referenced in function top2372_one\r\nfixedbugs2372twoinlinebodiescallingtwonamesareeachtold-11565d543efb34ff.o : error LNK2019: unresolved external symbol base2372_two referenced in function top2372_two\r\n"
+    two = ["fixedbugs2372twoinlinebodiescallingtwonamesareeachtold"]
+    assert placed(link_report.references(msvc), symbol: "base2372_one", modules: two, libraries: [])
+    assert placed(link_report.references(msvc), symbol: "base2372_two", modules: two, libraries: [])
+    assert !placed(link_report.references(msvc), symbol: "base2372_one", modules: modules, libraries: [])
+
     # A library the program names refers too; one it does not name, the
     # runtime's object, and a library alone, are not the program's object.
     both = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in inlineref-1d862cfd051b96b5.o\n      _top_value in libtop.a[2](top.o)\n"

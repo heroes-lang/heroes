@@ -26,10 +26,26 @@
 # function, on its `in function` line, so a source location under it is that
 # file's; it names the file on the line itself for a shared library and for a
 # reference outside any function, the program's own object's included
-# (`/tmp/m.o:(.data+0x0)`). MSVC's `link.exe` is unrun with a library that
-# needs another, so its report is placed nowhere. ld64 links a dylib that
-# leaves a name undefined (measured), so on macOS only an archive's
-# reference is reported.
+# (`/tmp/m.o:(.data+0x0)`). ld64 links a dylib that leaves a name undefined
+# (measured), so on macOS only an archive's reference is reported.
+#
+# **MSVC's `link.exe`, the CI's, was read by none of these forms until defect
+# 2398** (2026-11-10): it was unrun with a library that needs another, and a
+# name the program's own object refers to was *internal error: linking
+# failed* at exit 2 on the CI's Windows leg where `lld-link` read it. Measured
+# that day on the Windows box, `link.exe` 14.44.35207 through clang 23.1.1's
+# `-fuse-ld=link`, on stdout and each line ending in CRLF:
+#
+#     m-0a1b.o : error LNK2019: unresolved external symbol base_two referenced in function other
+#     m-0a1b.o : error LNK2001: unresolved external symbol main_var
+#     top.lib(top.obj) : error LNK2019: unresolved external symbol base_helper referenced in function top_value
+#     m.exe : fatal error LNK1120: 5 unresolved externals
+#
+# one line for each file and name, the file as its base name opening the
+# line; `LNK2001` names no function, for a reference from data and for a
+# file whose name an earlier line reported with its function
+# (`t2-11.o : error LNK2001: unresolved external symbol base_two` after
+# `m2-22.o`'s `LNK2019`). The `LNK1120` line is a count and refers to nothing.
 
 use cli/strings
 use emit/ffi_build
@@ -55,7 +71,11 @@ function references(message: str) -> [Reference]
     open: str @= ""
     placed_one: bool @= true
 
-    for line in ffi_lookup.lines(text: message)
+    # Both Windows linkers end a line in CRLF (measured 2026-11-10), which
+    # `cli/read_back.hero` reads as `\n`; a line handed here otherwise keeps
+    # its `\r`, which is no part of a file's name.
+    for raw in ffi_lookup.lines(text: message)
+        line = unreturned(raw)
         within = before(text: line, marker: ": in function `")
 
         if !within.is_err()
@@ -70,6 +90,11 @@ function references(message: str) -> [Reference]
             if is_file(here)
                 file @ here
             out @ out.push(Reference(symbol: ffi_build.undefined_symbol(line).default(""), file: file))
+            continue
+        msvc = unresolved(line)
+
+        if !msvc.is_err()
+            out @ out.push(msvc.must())
             continue
         listing = listed_symbol(line)
 
@@ -90,6 +115,32 @@ function references(message: str) -> [Reference]
     if !placed_one
         out @ out.push(Reference(symbol: open, file: ""))
     return out
+
+# The reference one line of `link.exe`'s report holds: the undefined name,
+# and the file opening the line, an object or a library's member placed as
+# the library; `LINK`, the linker's own word for a name it wants itself,
+# places nobody (`file: ""`). An error where the line is none of its
+# `unresolved external symbol` lines, its `LNK1120` count among them.
+function unresolved(line: str) -> Reference?
+    head = before(text: line, marker: " : error LNK")
+
+    if head.is_err() || !ffi_lookup.has(text: line, needle: "unresolved external symbol ")
+        return fail(code: "none", msg: "no line of link.exe's report")
+    symbol = ffi_build.undefined_symbol(line)
+
+    if symbol.is_err()
+        return fail(code: "none", msg: "no name after link.exe's words")
+    file = placed(head.must())
+
+    if !is_file(file)
+        return ok(Reference(symbol: symbol.must(), file: ""))
+    return ok(Reference(symbol: symbol.must(), file: file))
+
+# `line` without the `\r` a CRLF line end leaves on it.
+function unreturned(line: str) -> str
+    if strings.ends_with(text: line, suffix: "\r")
+        return line.slice(from: 0, to: line.len() - 1)
+    return line
 
 # The name an ld64, `ld.lld` or `lld-link` report opens with, whose references
 # the lines under it list: ld64's quoted `referenced from:` line, the lld
@@ -227,6 +278,26 @@ test "every linker's report of a library's undefined name is read with who refer
     # nobody, and words that are no report are none.
     assert references("lld-link: error: undefined symbol: base_helper\n") == [Reference(symbol: "base_helper", file: "")]
     assert references("ld: library 'top' not found\n").len() == 0
+
+# **MSVC's `link.exe`, the CI's**, in its own words (defect 2398): the CI's
+# Windows leg's text of 2026-11-10, run 42721242127, then the Windows box's of
+# the same day, a library's member, a data reference, a second file's
+# `LNK2001` and an import's `__imp_`, every line ending in CRLF.
+test "link.exe's report is read with who refers to each name, as every other linker's is (defect 2398)"
+    ci = "internal error: linking failed:\nfixedbugs2372amacroforanamenothinglinksistoldatitsbinding-16ba2e2752d92f34.o : error LNK2019: unresolved external symbol base2372_alias referenced in function hero_extern_refs\nbuild\\3fa07e244c2ef3c1\\fixedbugs2372amacroforanamenothinglinksistoldatitsbinding.exe.3220-36.tmp\\fixedbugs2372amacroforanamenothinglinksistoldatitsbinding.exe : fatal error LNK1120: 1 unresolved externals\nclang: error: linker command failed with exit code 1120 (use -v to see invocation)\n"
+    assert references(ci) == [Reference(symbol: "base2372_alias", file: "fixedbugs2372amacroforanamenothinglinksistoldatitsbinding-16ba2e2752d92f34.o")]
+    box = "m-0a1b.o : error LNK2019: unresolved external symbol base_two referenced in function other\r\nm-0a1b.o : error LNK2019: unresolved external symbol __imp_base_imp referenced in function main\r\nm-0a1b.o : error LNK2001: unresolved external symbol main_var\r\ntop.lib(top.obj) : error LNK2019: unresolved external symbol base_helper referenced in function top_value\r\nt2-11.o : error LNK2001: unresolved external symbol base_two\r\nm.exe : fatal error LNK1120: 5 unresolved externals\r\n"
+    assert references(box) == [Reference(symbol: "base_two", file: "m-0a1b.o"), Reference(symbol: "base_imp", file: "m-0a1b.o"), Reference(symbol: "main_var", file: "m-0a1b.o"), Reference(symbol: "base_helper", file: "top.lib"), Reference(symbol: "base_two", file: "t2-11.o")]
+
+    # The linker's own want places nobody; its count, a missing library and a
+    # missing entry point are no reference.
+    assert references("LINK : error LNK2001: unresolved external symbol mainCRTStartup\r\n") == [Reference(symbol: "mainCRTStartup", file: "")]
+    assert references("m.exe : fatal error LNK1120: 1 unresolved externals\r\nLINK : fatal error LNK1181: cannot open input file 'top.lib'\r\nLINK : fatal error LNK1561: entry point must be defined\r\n").len() == 0
+
+    # A CRLF line end is no part of a file `lld-link` names.
+    assert references("lld-link: error: undefined symbol: base_helper\r\n>>> referenced by top.lib(top.obj):(top_value)\r\n") == [Reference(symbol: "base_helper", file: "top.lib")]
+    assert unreturned("a\r") == "a" && unreturned("a") == "a" && unreturned("") == ""
+    assert unresolved("m.o : warning LNK4217: symbol 'f' defined in 'a.obj' is imported").is_err()
 
 test "a file is read whole from what a linker writes after it (defect 2365)"
     assert placed("a/libtop.a(top.o)") == "a/libtop.a"
