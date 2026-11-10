@@ -1,0 +1,19 @@
+# fixedbugs, defect 2417, lane b29-boundary, 2026-11-10.
+#
+# A name the author wrote with a letter above ASCII, `unioné`, was read as
+# its ASCII bytes, `union`, and told twice: once for the letter, which is
+# true, and once as the word Heroes refuses, `union`, which the author never
+# wrote, with a route naming C's `struct union`. So were `matché`, read as the
+# keyword `match` and then as a `match` with no arms, `nilé`, offered `none`
+# for its first three bytes, and `éunion`, the letter before the word. The
+# letter is the one mistake: each line is told once, at it.
+
+extern "fixedbugs-2417-a-word-touching-a-letter-above-ascii-is-no-keyword-and-no-refused-word.h"
+    record Via tag unioné  #~ unexpected_character
+        fd: i32
+
+function main()
+    matché = 3  #~ unexpected_character
+    x = nilé  #~ unexpected_character
+    y = éunion  #~ unexpected_character
+    print(1)

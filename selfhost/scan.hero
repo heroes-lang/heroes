@@ -42,6 +42,7 @@ use shown_char
 use state
 use text_lines
 use token
+use word_beside
 use word_place
 
 ## One line of words
@@ -197,6 +198,13 @@ function ident(@l: state.LexState, text: str)
         l.pos @ l.pos + 1
 
     word = text.slice(from: start, to: l.pos)
+
+    # A word touching a letter above ASCII is part of a name the author wrote,
+    # never the keyword or the refused word its ASCII bytes spell: the letter
+    # alone is told (`word_beside.hero`, defect 2417).
+    if word_beside.touches_letter(text, start: start, end: l.pos)
+        state.emit(@l, .ident, start)
+        return
     kw = keywords.keyword(word)
 
     if !kw.is_err()

@@ -151,11 +151,40 @@ function told(header: str, owner: str, member: str, c_type: str, n: ffi_asked.Ne
         "or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `" + header + "` and defines `#define " + member + " " + path + "`, which this group then names in `" + header + "`'s place, so `" + member + "` stays a field; the macro renames every `" + member + "` read after it"
     )
 
-    if n.named != "" && top == n.holder
+    # The holder's type offered as a record only where a group can spell it:
+    # a name above ASCII, `unioné`, is no word the lexer reads, so the route
+    # is a name of the program's own for it, `typedef unioné Via;`, which
+    # builds (`run/fixedbugs-2417-*`, defect 2417).
+    if n.named != "" && top == n.holder && ascii(n.named)
         d.notes @ d.notes.push(
             "or bind `" + n.named + "`, the type of `" + n.holder + "`, as a record of this group, and declare `" + n.holder + "` a field of it (§ 13)"
         )
+    else if n.named != "" && top == n.holder
+        name = record_name(n.holder)
+        d.notes @ d.notes.push(
+            "or name `" + n.named + "`, the type of `" + n.holder + "`, again in a header of the program's own that includes `" + header + "`, `typedef " + n.named + " " + name + ";`, bind `record " + name + "` from a group naming that header, and declare `" + n.holder + "` a field of it (§ 13): a group spells a name in ASCII alone, and `" + n.named + "` is not"
+        )
     return d
+
+# Whether every byte of `text` is ASCII.
+function ascii(text: str) -> bool
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] >= 128
+            return false
+        at @ at + 1
+
+    return true
+
+# A record's name for the type of the member `holder`: the member's name with
+# its first letter upper-case, `via` as `Via`, where it is an ASCII name that
+# opens with a letter, and `Held` where it is not.
+function record_name(holder: str) -> str
+    if holder.len() == 0 || !ascii(holder) || holder[0] < 'a' || holder[0] > 'z'
+        return "Held"
+    at = to_i64(holder[0]).must() - to_i64('a').must()
+    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(from: at, to: at + 1) + holder.slice(from: 1, to: holder.len())
 
 # `the union `via``, `the struct `pos``, or `` `pos`, a `point_t` ``.
 function holder_phrase(holder: str, kind: str) -> str
@@ -279,6 +308,21 @@ test "a field inside a union member is told where it is, with what builds (defec
     assert named.notes[1] == "what builds today: bind `Holds` `partial`, naming only `kind` and `n`, and end a construction of it with `rest: zero`, which leaves `via` to C"
     assert named.notes[2] == "or reach `via.fd` through a function of the program's own in a header that includes `s.h` and reads `t->via.fd`, which this group then names in `s.h`'s place"
     assert named.notes[4] == "or bind `union named_u`, the type of `via`, as a record of this group, and declare `via` a field of it (§ 13)"
+
+    # Defect 2417: a holder's type named above ASCII is offered the typedef
+    # of the program's own that builds, never a record line no group spells.
+    above = ffi_asked.Nested(
+        holder: "via",
+        kind: "unioné",
+        named: "unioné",
+        field_type: "int32_t",
+        outside: ["kind"],
+        members: ["kind"]
+    )
+    offered = told(header: "t.h", owner: "Tagged", member: "fd", c_type: "struct tagged", n: above, span: span)
+    assert offered.notes[4] == "or name `unioné`, the type of `via`, again in a header of the program's own that includes `t.h`, `typedef unioné Via;`, bind `record Via` from a group naming that header, and declare `via` a field of it (§ 13): a group spells a name in ASCII alone, and `unioné` is not"
+    assert record_name("via") == "Via" && record_name("_v") == "Held" && record_name("é") == "Held" && record_name("") == "Held"
+    assert ascii("union u") && !ascii("unioné")
     inner = ffi_asked.Nested(
         holder: "inner.u",
         kind: "union",
