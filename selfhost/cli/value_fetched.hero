@@ -123,6 +123,16 @@ function refused(accessor: value_probe.Accessor, why: str, s: source.Source, dec
     d.notes @ d.notes.push(NOTE)
     return ok(d)
 
-# What every such refusal says under it.
+# What every such refusal says under it: what the reading takes, and what the
+# reader of the refusal can do (panel 244's R4, defect 2458). It said *"Write
+# the value so in the package's header, or compute it in Heroes from
+# constants that are"*: the reader is the package's consumer, whose placed
+# tree is held to its fingerprint (a header changed there is refused
+# `package_unread`, panel 244's `e5/`), and no header rescues a float or a
+# record, which the reading refuses by its kind before any header is read.
+# What works, measured by that sitting: the package's author binds the value
+# as a `function` over a `static inline` of a header the package ships, which
+# a fetched build reads with nothing run (its `e6/`), and a copy of the
+# package named by a `path` entry builds as the program's own (its `e2/`).
 constant NOTE: str
-    "a group's `constant` is the value C computes from the header (§ 13), and a fetched package's is read by clang's front end alone, nothing of the package run (panel 235's R9, its C5): an integer or `bool` whose expression is an integer constant expression C defines and reads no enumerator or object. Write the value so in the package's header, or compute it in Heroes from constants that are"
+    "a group's `constant` is the value C computes from the header (§ 13), and a fetched package's is read by clang's front end alone, nothing of the package run (panel 235's R9, its C5): an integer or `bool` whose expression is an integer constant expression C defines and reads no enumerator or object. The package's placed tree is held to its fingerprint, so no edit of it is this program's: ask the package's author to bind the value as a `function` of a header the package ships, a `static inline` that returns it, or develop a copy of the package through a `path` entry of the catalogue, whose units build as this program's own, their header's code run at build"

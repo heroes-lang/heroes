@@ -1,0 +1,8 @@
+# The package of defect 2458's case, placed in `heroes.packages/` by `heroes add`
+# from a local index, the line it wrote kept: the placed folder is keyed to
+# its source, and nothing is fetched where it is placed.
+index = "file://../idx"
+
+[dependencies.pk]
+version = "1.0.0"
+sum = "sha256-e183b9ff0da2e25d76c3a8fb37cb0d7e8b4d55ac377d7607403605471ec2ae1e"

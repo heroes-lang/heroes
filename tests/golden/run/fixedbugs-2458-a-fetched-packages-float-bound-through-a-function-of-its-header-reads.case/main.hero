@@ -1,0 +1,12 @@
+# fixedbugs, defect 2458, lane b30-shadow, 2026-11-10 (panel 244's R4).
+#
+# A fetched package's float constant is refused, never run (panel 235's C5),
+# and the refusal's note sent the consumer to write the value in the
+# package's header, a tree held to its fingerprint and no remedy for a float.
+# What the note now asks of the package's author is this: the value returned
+# by a `static inline` of a header the package ships, bound as a `function`,
+# which a fetched build reads with nothing run. It builds and reads 0.5.
+use <pk>/pk
+
+function main()
+    print(pk.half())
