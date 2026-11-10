@@ -1,0 +1,10 @@
+# Feature 2424, 2026-11-10: a variable staged for a child whose name holds
+# `=` is refused, since `=` ends a name in every environment, and `A=B` given
+# `1` would reach the child as `A` given `B=1`.
+extern "hero_os.h"
+    function hero_run_env(name: str, value: str)
+
+function main()
+    print("before")
+    hero_run_env(name: "A=B", value: "1")
+    print("unreachable")

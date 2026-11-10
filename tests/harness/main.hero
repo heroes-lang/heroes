@@ -103,7 +103,10 @@
 # ported: `differential.rs` compares TWO compilers, so its oracle dies with
 # the bootstrap, and what survives is the bytes it blessed.
 
+use <core>/strings as core_strings
+
 use cases
+use placed_trees
 use report
 use shell
 use strings
@@ -772,9 +775,18 @@ constant CARDS_PROGRAM: str
     "tests/harness/package_cards.hero"
 
 # Every module the root `root` reaches through its `use` lines, the root among
-# them, each a file of `dir`, in the order they are found. A `use` of any
-# other shape, or one naming no file there, is a failure rather than a module
-# left out, since a module left out is a count that agrees by accident.
+# them, each named by its path under `dir` without `.hero`, in the order they
+# are found: `issues`, and a placed package's module by its tree,
+# `heroes.packages/core@0.2.0-8c07af1fca61d171/strings`, since `heroes test`
+# runs the `test` blocks of every module it reaches, a placed package's among
+# them (`examples/packages/README.md` § 1.6), and the net's catalogue takes
+# `core` since feature 2425. A `use` is read in the shapes spec § 1 writes,
+# `use m`, `use a/m` and `use <entry>/m`, each with `as` or without, an entry
+# reached in the one tree the net's `heroes.packages/` holds of it and a path
+# from the package's own root inside a package. Any other shape, an entry of a
+# package's own catalogue, an entry with no tree or more than one, and a `use`
+# naming no file, are a failure rather than a module left out, since a module
+# left out is a count that agrees by accident.
 function reached(dir: str, root: str) -> [str]?
     out: [str] @= []
     seen: {str: bool} @= {}
@@ -790,22 +802,89 @@ function reached(dir: str, root: str) -> [str]?
         text = read_file(dir + "/" + name + ".hero")
 
         if text.is_err()
-            return fail(code: "absent", msg: "`use " + name + "` names no module " + dir + "/" + name + ".hero")
+            return fail(code: "absent", msg: "`use` names no module " + dir + "/" + name + ".hero")
         out @ out.push(name)
+        base = tree_of_module(name)
 
         for line in strings.lines(text.must())
-            if !strings.starts_with(text: line, prefix: "use ")
+            if !core_strings.has_prefix(s: line, prefix: "use ")
                 continue
-            used = strings.without_prefix(text: line, prefix: "use ")
+            target = used_target(dir: dir, name: name, line: line)?
 
-            if used.len() == 0 || strings.words(used).len() != 1 || strings.contains(text: used, needle: "/")
+            if !core_strings.has_prefix(s: target, prefix: "<")
+                waiting @ waiting.push(base + target)
+            else if base != ""
                 return fail(
                     code: "shape",
-                    msg: dir + "/" + name + ".hero: `" + line + "` is not `use <module>`, which this count reads"
+                    msg: dir + "/" + name + ".hero: `" + line + "` names an entry of a package's own catalogue, which this count does not read"
                 )
-            waiting @ waiting.push(used)
+            else
+                cut = strings.index_of(text: target, needle: ">/").must()
+                tree = placed_tree(dir: dir, entry: target.slice(from: 1, to: cut))?
+                waiting @ waiting.push(tree + "/" + target.slice(from: cut + 2, to: target.len()))
 
     return ok(out)
+
+# What a `use` line of the module `name` names, its `as` left out: `m`,
+# `a/m` or `<entry>/m`, every part a name; or the failure of any other shape.
+function used_target(dir: str, name: str, line: str) -> str?
+    words = strings.words(strings.without_prefix(text: line, prefix: "use "))
+    target: str @= ""
+
+    if words.len() == 1 || words.len() == 3 && words[1] == "as" && words[2].len() > 0
+        target @ words[0]
+    path: str @= target
+
+    if core_strings.has_prefix(s: target, prefix: "<")
+        cut = strings.index_of(text: target, needle: ">/")
+
+        if cut.is_err() || cut.must() < 2
+            path @ ""
+        else
+            entry = target.slice(from: 1, to: cut.must())
+            path @ target.slice(from: cut.must() + 2, to: target.len())
+
+            if core_strings.contains(s: entry, substr: "/") || core_strings.contains(s: entry, substr: "<")
+                path @ ""
+
+    for part in strings.split_on(text: path, byte: '/')
+        if part.len() == 0 || part == ".." || part == "." || core_strings.contains(s: part, substr: "<") || core_strings.contains(s: part, substr: ">")
+            return fail(
+                code: "shape",
+                msg: dir + "/" + name + ".hero: `" + line + "` is not `use <module>`, `use <path>/<module>` or `use <entry>/<module>`, which this count reads"
+            )
+
+    return ok(target)
+
+# The tree a module stands in, `heroes.packages/<tree>/`, where it is a placed
+# package's; "" where it is the program's own.
+function tree_of_module(name: str) -> str
+    parts = strings.split_on(text: name, byte: '/')
+
+    if parts.len() > 2 && parts[0] == placed_trees.FOLDER
+        return parts[0] + "/" + parts[1] + "/"
+    return ""
+
+# The one tree of `entry` under `dir`'s `heroes.packages/`, as a path under
+# `dir`: a folder named `<entry>@<version>-<key>`, as `heroes add` places one
+# (`package_rules.placed_named` reads the name in full). None, or more than
+# one, is a failure, since the build reads the one its catalogue names and
+# the `packages` suite holds there to be exactly one.
+function placed_tree(dir: str, entry: str) -> str?
+    folder = dir + "/" + placed_trees.FOLDER
+    found: [str] @= []
+
+    if shell.is_directory(folder)
+        for one in shell.list_directories(scratch: dir, dir: folder)?
+            if core_strings.has_prefix(s: strings.base_name(path: one), prefix: entry + "@")
+                found @ found.push(placed_trees.FOLDER + "/" + strings.base_name(path: one))
+
+    if found.len() != 1
+        return fail(
+            code: "absent",
+            msg: folder + " holds " + found.len().to_str() + " trees of `" + entry + "`, and a count of what a root reaches reads the one its catalogue placed"
+        )
+    return ok(found[0])
 
 # How many `test` blocks open in the modules `root` reaches: what `heroes test`
 # runs of it.
@@ -814,7 +893,7 @@ function blocks(dir: str, root: str) -> i64?
 
     for name in reached(dir: dir, root: root)?
         for line in strings.lines(read_file(dir + "/" + name + ".hero")?)
-            if strings.starts_with(text: line, prefix: "test \"")
+            if core_strings.has_prefix(s: line, prefix: "test \"")
                 count @ count + 1
 
     return ok(count)
@@ -826,10 +905,10 @@ function skips_in(out: str) -> [str]
     inside: bool @= false
 
     for line in strings.lines(out)
-        if strings.starts_with(text: line, prefix: "SKIP ")
+        if core_strings.has_prefix(s: line, prefix: "SKIP ")
             inside @ true
             said @ said.push(line)
-        else if inside && strings.starts_with(text: line, prefix: "  ")
+        else if inside && core_strings.has_prefix(s: line, prefix: "  ")
             said @ said.push(line)
         else
             inside @ false
@@ -848,16 +927,16 @@ function strays(out: str, modules: [str]) -> [str]
     inside: bool @= false
 
     for line in strings.lines(out)
-        if inside && strings.starts_with(text: line, prefix: "  ")
+        if inside && core_strings.has_prefix(s: line, prefix: "  ")
             continue
         inside @ false
         words = strings.words(line)
 
-        if words.len() > 1 && words[0] == "SKIP" && strings.ends_with(text: words[1], suffix: ":") && named(modules: modules, name: strings.without_suffix(text: words[1], suffix: ":"))
+        if words.len() > 1 && words[0] == "SKIP" && core_strings.has_suffix(s: words[1], suffix: ":") && named(modules: modules, name: strings.without_suffix(text: words[1], suffix: ":"))
             inside @ true
             continue
 
-        if line == "" || strings.starts_with(text: line, prefix: "ok   \"") || strings.starts_with(text: line, prefix: "FAIL \"")
+        if line == "" || core_strings.has_prefix(s: line, prefix: "ok   \"") || core_strings.has_prefix(s: line, prefix: "FAIL \"")
             continue
 
         if counts(words)
@@ -896,9 +975,45 @@ test "a run's skips are read with their reasons, and nothing else"
 test "the modules a root reaches are read from its use lines, and one naming no file is no module"
     assert reached(dir: "tests/harness", root: "issues").must().len() > reached(dir: "tests/harness", root: "report").must().len()
     assert reached(dir: "tests/harness", root: "issues").must()[0] == "issues"
-    assert !strings.contains(text: reached(dir: "tests/harness", root: "issues").must().join(" "), needle: "suite_")
+    assert !core_strings.contains(s: reached(dir: "tests/harness", root: "issues").must().join(" "), substr: "suite_")
     assert reached(dir: "tests/harness", root: "no_such_module").is_err()
     assert blocks(dir: "tests/harness", root: "issues").must() > blocks(dir: "tests/harness", root: "issue_links").must()
+
+# Feature 2425: the net's catalogue takes `core`, so a root reaches a placed
+# package's modules, whose `test` blocks `heroes test` runs with the program's
+# own. A fixture under the test's own scratch: a root reaching its own module,
+# a module by a path, and a package `k` whose module reaches its own private
+# module by a path from the package's root; then each shape the count refuses.
+test "a root's package use is followed into the tree its catalogue placed, and a use the count cannot read is a failure (feature 2425)"
+    dir = shell.own_scratch() + "/reached"
+    tree = dir + "/heroes.packages/k@1.0.0-0123456789abcdef"
+    assert !shell.remove_tree(dir).is_err()
+    assert !shell.mkdir_all(tree + "/k/internal").is_err()
+    assert !shell.mkdir_all(dir + "/sub").is_err()
+    assert !write_file(path: dir + "/root.hero", text: "use <k>/k as kk\nuse sub/m\nuse own\n\ntest \"r\"\n    assert true\n").is_err()
+    assert !write_file(path: dir + "/own.hero", text: "test \"o\"\n    assert true\n\ntest \"p\"\n    assert true\n").is_err()
+    assert !write_file(path: dir + "/sub/m.hero", text: "use own\n\ntest \"m\"\n    assert true\n").is_err()
+    assert !write_file(path: tree + "/k.hero", text: "use k/internal/scan\n\ntest \"k\"\n    assert true\n").is_err()
+    assert !write_file(path: tree + "/k/internal/scan.hero", text: "test \"s\"\n    assert true\n").is_err()
+    placed = "heroes.packages/k@1.0.0-0123456789abcdef"
+    assert reached(dir: dir, root: "root").must() == ["root", "own", "sub/m", placed + "/k", placed + "/k/internal/scan"]
+    assert blocks(dir: dir, root: "root").must() == 6
+
+    # Each shape the count cannot read: a package's own entry, an entry with
+    # no tree, one with two, a `use` of two words, and a path that climbs.
+    assert !write_file(path: tree + "/k.hero", text: "use <j>/x\n").is_err()
+    assert reached(dir: dir, root: "root").is_err()
+    assert !write_file(path: tree + "/k.hero", text: "use k/internal/scan\n").is_err()
+    assert !write_file(path: dir + "/root.hero", text: "use <z>/m\n").is_err()
+    assert reached(dir: dir, root: "root").is_err()
+    assert !shell.mkdir_all(dir + "/heroes.packages/k@2.0.0-0123456789abcdef").is_err()
+    assert !write_file(path: dir + "/root.hero", text: "use <k>/k\n").is_err()
+    assert reached(dir: dir, root: "root").is_err()
+    assert !write_file(path: dir + "/root.hero", text: "use own extra\n").is_err()
+    assert reached(dir: dir, root: "root").is_err()
+    assert !write_file(path: dir + "/root.hero", text: "use ../own\n").is_err()
+    assert reached(dir: dir, root: "root").is_err()
+    assert !shell.remove_tree(dir).is_err()
 
 test "the issue program's own tests run with the net's own, every block its modules hold and all passed (defect 2064)"
     compiler = shell.some_compiler().must()
@@ -907,7 +1022,7 @@ test "the issue program's own tests run with the net's own, every block its modu
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     # A test the issue program's run stepped aside is said here too, with its
@@ -939,7 +1054,7 @@ test "the thesis instrument's own tests run with the net's own, every block its 
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     # A test the instrument's run stepped aside is said here too, with its
@@ -969,7 +1084,7 @@ test "the generator's own tests run with the net's own, every block its modules 
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     for line in skips_in(ran.out)
@@ -995,7 +1110,7 @@ test "the latency instrument's own tests run with the net's own, every block its
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     for line in skips_in(ran.out)
@@ -1021,7 +1136,7 @@ test "the package cards' program's own tests run with the net's own, every block
     failed: [str] @= []
 
     for line in strings.lines(ran.out)
-        if strings.starts_with(text: line, prefix: "FAIL \"")
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
             failed @ failed.push(line)
 
     for line in skips_in(ran.out)

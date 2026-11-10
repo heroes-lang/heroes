@@ -27,6 +27,7 @@
 # everyone who has not got one.
 
 use cli/count_tokens
+use cli/environment
 use cli/process
 use cli/read_back
 use measure/bpe
@@ -191,7 +192,7 @@ function probed() -> i64?
 # `selfhost/measure/pinned.hero`'s `CONTRACT_TOKENS`.
 function refreshed(text: str, spec: bool, vendored: i64) -> [str]?
     # A key that is not UTF-8 is named as one, never said unset (defect 243).
-    key = process.env(name: KEY_NAME)
+    key = environment.env(name: KEY_NAME)
 
     if key.is_err()
         return fail(code: "no_key", msg: why_text(key))

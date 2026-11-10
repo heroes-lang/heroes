@@ -34,6 +34,8 @@
 # the one Oniguruma's backtracking takes, the first in its order of preference,
 # which `ends` below lists in that order.
 
+use <core>/strings as core_strings
+
 use strings
 
 # A stretch of the grammar's text, `start` up to but not including `stop`.
@@ -90,7 +92,7 @@ function rules_of(grammar: str, name: str) -> [Rule]?
             out @ out.push(rule_in(text: grammar, object: element)?)
             continue
 
-        if !strings.starts_with(text: included, prefix: "#")
+        if !core_strings.has_prefix(s: included, prefix: "#")
             return fail(
                 code: "unread_include",
                 msg: "`" + name + "` includes `" + included + "`, which this reader does not follow"

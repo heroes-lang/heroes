@@ -14,6 +14,8 @@
 # decimal is read where a platform writes one, and nothing here is a float:
 # a reading is compared and printed as the integer it was read as.
 
+use <core>/strings as core_strings
+
 use strings
 
 record Reading
@@ -104,11 +106,11 @@ function reading_in(err: str) -> Reading?
     for line in strings.lines(err)
         row = strings.trimmed(line)
 
-        if strings.starts_with(text: row, prefix: "real ")
+        if core_strings.has_prefix(s: row, prefix: "real ")
             real @ parse_seconds(strings.trimmed(strings.without_prefix(text: row, prefix: "real ")))?
-        else if strings.starts_with(text: row, prefix: "user ")
+        else if core_strings.has_prefix(s: row, prefix: "user ")
             user @ parse_seconds(strings.trimmed(strings.without_prefix(text: row, prefix: "user ")))?
-        else if strings.starts_with(text: row, prefix: "sys ")
+        else if core_strings.has_prefix(s: row, prefix: "sys ")
             sys @ parse_seconds(strings.trimmed(strings.without_prefix(text: row, prefix: "sys ")))?
 
     if real < 0 || user < 0 || sys < 0

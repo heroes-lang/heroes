@@ -47,6 +47,8 @@
 # guards; restored, green. A debugger suite that passes without DWARF is a
 # decoration.
 
+use <core>/strings as core_strings
+
 use cases
 use floors
 use lldb_notation
@@ -94,7 +96,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     # One notation with an `assert`'s sides (panel 230's R2): read from the
     # corpus case's session as text, so it needs no debugger and runs here
     # whether lldb does or not.
-    if only == "" || strings.contains(text: "notation", needle: only)
+    if only == "" || core_strings.contains(s: "notation", substr: only)
         lldb_notation.held(@r, scratch: scratch, compiler: compiler)
     absent = absence(
         said: shell.attempted(scratch: scratch, program: LLDB, words: [LLDB, "--version"]),
@@ -221,10 +223,10 @@ function tracebacks(out: str, err: str) -> [str]
     k: i64 @= 0
 
     while k < rows.len()
-        if strings.contains(text: rows[k], needle: TRACEBACK)
+        if core_strings.contains(s: rows[k], substr: TRACEBACK)
             end: i64 @= k + 1
 
-            while end < rows.len() && strings.starts_with(text: rows[end], prefix: " ")
+            while end < rows.len() && core_strings.has_prefix(s: rows[end], prefix: " ")
                 end @ end + 1
 
             if end < rows.len()
@@ -256,11 +258,11 @@ test "a machine that cannot run lldb is told why, and Windows by the code its ll
     assert absence(said: gone, windows: false) == "lldb is not on this machine, the operating system's own reason being 2, so no breakpoint can be asked of a `.hero` line on this machine"
     mute: shell.Run? = ok(shell.Run(code: -1073741515, out: "", err: "", started: true, why: 0))
     told = absence(said: mute, windows: true)
-    assert strings.starts_with(
-        text: told,
+    assert core_strings.has_prefix(
+        s: told,
         prefix: "lldb started and did not answer `--version`: it exited -1073741515, with nothing on stderr; "
     )
-    assert strings.contains(text: told, needle: "0xC0000135")
+    assert core_strings.contains(s: told, substr: "0xC0000135")
     here: shell.Run? = ok(shell.Run(code: 0, out: "lldb-2103.0.34.103\n", err: "", started: true, why: 0))
     assert absence(said: here, windows: false) == ""
     assert absence(said: here, windows: true) == ""
@@ -269,8 +271,8 @@ test "a Python traceback on either stream is told with its lines, and a transcri
     raised = "Traceback (most recent call last):\n  File \"heroes_lldb.py\", line 3, in summary\n    raise ValueError(\"boom\")\nValueError: boom\n(HeroStr) h1_name = \"ada\"\n"
     got = tracebacks(out: "", err: raised)
     assert got.len() == 1
-    assert strings.contains(text: got[0], needle: "      ValueError: boom")
-    assert !strings.contains(text: got[0], needle: "h1_name")
+    assert core_strings.contains(s: got[0], substr: "      ValueError: boom")
+    assert !core_strings.contains(s: got[0], substr: "h1_name")
     assert tracebacks(out: raised + raised, err: "").len() == 2
     assert tracebacks(out: "(lldb) frame variable\n(HeroStr) h1_name = \"ada\"\n", err: "").len() == 0
 

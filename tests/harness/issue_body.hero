@@ -19,6 +19,8 @@
 # it until the next, and one the form does not name stands under *Notes* two
 # levels down, its words kept.
 
+use <core>/strings as core_strings
+
 use issue_spans
 use issue_title
 use strings
@@ -67,25 +69,25 @@ function settling(kind: str) -> str
 
 # The heading a paragraph's bold opening gives it in `kind`'s form, or "".
 function label_of(kind: str, line: str) -> str
-    if strings.starts_with(text: line, prefix: "**Origin:**")
+    if core_strings.has_prefix(s: line, prefix: "**Origin:**")
         return "Origin"
 
     if kind == "defect"
-        if strings.starts_with(text: line, prefix: "**Class: ")
+        if core_strings.has_prefix(s: line, prefix: "**Class: ")
             return "Class"
 
-        if strings.starts_with(text: line, prefix: "**The repair")
+        if core_strings.has_prefix(s: line, prefix: "**The repair")
             return "The repair"
 
     if kind == "decision"
-        if strings.starts_with(text: line, prefix: "**Recommendation")
+        if core_strings.has_prefix(s: line, prefix: "**Recommendation")
             return "Recommendation"
 
-        if strings.starts_with(text: line, prefix: "**Default")
+        if core_strings.has_prefix(s: line, prefix: "**Default")
             return "The default today"
 
         for opening in ["**Verdict", "**Ratified", "**RATIFIED"]
-            if strings.starts_with(text: line, prefix: opening)
+            if core_strings.has_prefix(s: line, prefix: opening)
                 return "Verdict"
 
     return ""
@@ -98,10 +100,10 @@ function unlabelled(line: str) -> str
     for word in ["Origin", "Class", "Recommendation", "Default while open", "Verdict", "The repair"]
         lead = "**" + word + ":"
 
-        if strings.starts_with(text: line, prefix: lead + "**")
+        if core_strings.has_prefix(s: line, prefix: lead + "**")
             return strings.trimmed(strings.without_prefix(text: line, prefix: lead + "**"))
 
-        if strings.starts_with(text: line, prefix: lead + " ")
+        if core_strings.has_prefix(s: line, prefix: lead + " ")
             return "**" + strings.without_prefix(text: line, prefix: lead + " ")
 
     return line
@@ -237,7 +239,7 @@ function sections(kind: str, rows: [str], opening: issue_title.Opening, hash: st
             continue
         row: str @= raw
 
-        if in_item && strings.starts_with(text: raw, prefix: "    ")
+        if in_item && core_strings.has_prefix(s: raw, prefix: "    ")
             row @ raw.slice(from: 4, to: raw.len())
         else if in_item && fence == "" && strings.trimmed(raw) != ""
             in_item @ false
@@ -320,8 +322,8 @@ test "a defect's fields, its labelled paragraphs, its notes and its repair stand
         hash: "7d2f03bee011003fbd37562924582b0660789f03"
     )
     text = got.join("\n")
-    assert strings.starts_with(
-        text: text,
+    assert core_strings.has_prefix(
+        s: text,
         prefix: "### What happens\n\nwhat\n\n### Where to look\n\nwhere\n\n### Origin\n\nlane x, 2026-10-03.\n\n### Class\n\n**adjacent**, 2026-10-03, a reason.\n\n### Notes\n\nA note.\n\n    indented code\n\n### The repair\n\nRepaired at `7d2f03be`.\n\n7d2f03bee011003fbd37562924582b0660789f03\n"
     )
 
@@ -350,12 +352,12 @@ test "a decision's prior art follows its origin, its verdict comes last, and a h
         hash: "self-hash"
     )
     text = got.join("\n")
-    assert strings.contains(
-        text: text,
-        needle: "### Origin\n\na sitting, 2026-10-11.\n\n### Prior art\n\n- one line\n\n### Recommendation\n\nratify.\n\n### Notes\n\n#### The measurements\n\nMeasured.\n\n### Verdict\n\n**Ratified, 2026-10-11**, R1 as written.\n\nself-hash\n"
+    assert core_strings.contains(
+        s: text,
+        substr: "### Origin\n\na sitting, 2026-10-11.\n\n### Prior art\n\n- one line\n\n### Recommendation\n\nratify.\n\n### Notes\n\n#### The measurements\n\nMeasured.\n\n### Verdict\n\n**Ratified, 2026-10-11**, R1 as written.\n\nself-hash\n"
     )
-    assert strings.starts_with(
-        text: text,
+    assert core_strings.has_prefix(
+        s: text,
         prefix: "### The question\n\nratify R1\n\n### Where to look\n\n`docs/panel/`\n"
     )
 
@@ -377,11 +379,11 @@ test "a heading's file keeps its prose, a fenced block passes whole, and a secon
     ]
     got = sections(kind: "defect", rows: rows, opening: issue_title.opening_of(kind: "defect", rows: rows), hash: "")
     text = got.join("\n")
-    assert strings.contains(
-        text: text,
-        needle: "### Notes\n\nIntro prose.\n\n```\n#1 code\n\n```\n\n- **063 — another** | a | b\n- an open one\n"
+    assert core_strings.contains(
+        s: text,
+        substr: "### Notes\n\nIntro prose.\n\n```\n#1 code\n\n```\n\n- **063 — another** | a | b\n- an open one\n"
     )
-    assert !strings.contains(text: text, needle: "Defect 065 closes")
+    assert !core_strings.contains(s: text, substr: "Defect 065 closes")
     assert plain_item("    - [x] kept indented") == "    - kept indented"
     assert plain_item("- [y] not a box") == "- [y] not a box"
 
@@ -405,5 +407,5 @@ test "an item of another count than three puts every field after the first under
     text = sections(kind: "task", rows: old_task, opening: issue_title.opening_of(kind: "task", rows: old_task), hash: "").join(
         "\n"
     )
-    assert !strings.contains(text: text, needle: "Where to look")
-    assert strings.starts_with(text: text, prefix: "### What it delivers\n\n**CLOSED — it has.**\n\nRun one corpus\n")
+    assert !core_strings.contains(s: text, substr: "Where to look")
+    assert core_strings.has_prefix(s: text, prefix: "### What it delivers\n\n**CLOSED — it has.**\n\nRun one corpus\n")

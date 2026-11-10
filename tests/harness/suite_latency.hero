@@ -16,6 +16,8 @@
 # newest row may not pass without a decision, is the level below, set by
 # decision 2282.
 
+use <core>/strings as core_strings
+
 use latency_clock
 use latency_ledger
 use latency_runs
@@ -109,7 +111,7 @@ function described(@r: report.Report, text: str)
     for clock in clocks.must()
         line = command_of(clock)
 
-        if !strings.contains(text: joined, needle: line)
+        if !core_strings.contains(s: joined, substr: line)
             missing @ missing.push("    " + clock.name + ": " + line)
 
     if missing.len() == 0
@@ -280,9 +282,9 @@ test "the ledger's prose is held to the commands the instrument times, read acro
     told: report.Report @= report.empty()
     described(@told, text: "the best of `heroes check selfhost/main.hero` alone")
     assert told.failed == 1
-    assert strings.contains(
-        text: told.failures[0],
-        needle: "    seed: clang -I runtime seed/heroes.c runtime/runtime.c\n    build: heroes build selfhost/main.hero\n"
+    assert core_strings.contains(
+        s: told.failures[0],
+        substr: "    seed: clang -I runtime seed/heroes.c runtime/runtime.c\n    build: heroes build selfhost/main.hero\n"
     )
 
 test "the newest row under the level passes, and one past it is named clock by clock (decision 2282)"
@@ -311,8 +313,8 @@ test "the newest row under the level passes, and one past it is named clock by c
     told: report.Report @= report.empty()
     under(@told, rows: [row, slow])
     assert told.failed == 1
-    assert strings.contains(
-        text: told.failures[0],
-        needle: "    check: " + latency_clock.seconds_text(CHECK_CEILING_MS + 10) + " s, above its ceiling of " + latency_clock.seconds_text(CHECK_CEILING_MS) + " s\n    build: " + latency_clock.seconds_text(BUILD_CEILING_MS + 1000) + " s, above its ceiling of " + latency_clock.seconds_text(BUILD_CEILING_MS) + " s\n"
+    assert core_strings.contains(
+        s: told.failures[0],
+        substr: "    check: " + latency_clock.seconds_text(CHECK_CEILING_MS + 10) + " s, above its ceiling of " + latency_clock.seconds_text(CHECK_CEILING_MS) + " s\n    build: " + latency_clock.seconds_text(BUILD_CEILING_MS + 1000) + " s, above its ceiling of " + latency_clock.seconds_text(BUILD_CEILING_MS) + " s\n"
     )
-    assert !strings.contains(text: told.failures[0], needle: "seed:")
+    assert !core_strings.contains(s: told.failures[0], substr: "seed:")

@@ -49,6 +49,8 @@
 # bubblewrap (the `thesis-attest` job alone does), so the Linux words are
 # judged where bubblewrap is installed and nowhere else (issue 2162).
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 
@@ -187,7 +189,7 @@ function linux_words(scratch: str, binary: str) -> [str]
 # be an absolute path (the profile names it, and the program's own `{dir}`
 # arguments do too); the profile is written into the scratch.
 function prepared(scratch: str, binary: str) -> Sandbox?
-    if !strings.starts_with(text: scratch, prefix: "/") || !strings.starts_with(text: binary, prefix: "/")
+    if !core_strings.has_prefix(s: scratch, prefix: "/") || !core_strings.has_prefix(s: binary, prefix: "/")
         return fail(
             code: "relative_path",
             msg: "a sandbox names its scratch and its binary by absolute paths; given " + scratch + " and " + binary
@@ -226,12 +228,12 @@ function words_with(sandbox: Sandbox, arguments: [str]) -> [str]
 
 test "the profile denies by default, allows the scratch alone for writing, and denies the home and the network"
     text = profile(scratch: "/x/scratch", binary: "/x/scratch/main")
-    assert strings.starts_with(text: text, prefix: "(version 1)\n(deny default)\n")
-    assert strings.contains(text: text, needle: "(allow file-read* file-write* (subpath \"/x/scratch\"))")
-    assert strings.contains(text: text, needle: "(deny file-read* (subpath \"/Users\")")
-    assert strings.contains(text: text, needle: "(deny network*)")
-    assert strings.contains(text: text, needle: "(allow sysctl-read)")
-    assert !strings.contains(text: text, needle: "allow default")
+    assert core_strings.has_prefix(s: text, prefix: "(version 1)\n(deny default)\n")
+    assert core_strings.contains(s: text, substr: "(allow file-read* file-write* (subpath \"/x/scratch\"))")
+    assert core_strings.contains(s: text, substr: "(deny file-read* (subpath \"/Users\")")
+    assert core_strings.contains(s: text, substr: "(deny network*)")
+    assert core_strings.contains(s: text, substr: "(allow sysctl-read)")
+    assert !core_strings.contains(s: text, substr: "allow default")
 
     match prepared(scratch: "relative", binary: "/x/main")
         .ok _  => assert false
@@ -285,9 +287,9 @@ test "a program run inside the sandbox writes in its scratch, is refused outside
         stdin_path: ""
     ).must()
     assert ran.code == 0
-    assert strings.contains(text: ran.out, needle: "in false")
-    assert strings.contains(text: ran.out, needle: "out true")
-    assert strings.contains(text: ran.out, needle: "read true")
+    assert core_strings.contains(s: ran.out, substr: "in false")
+    assert core_strings.contains(s: ran.out, substr: "out true")
+    assert core_strings.contains(s: ran.out, substr: "read true")
     assert shell.exists(inside + "/inside.txt")
     assert !shell.exists(outside + "/leak.txt")
 
@@ -297,7 +299,7 @@ test "a machine with neither sandbox tool cannot run a model's program, and says
         return
 
     told = unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap")
-    assert strings.contains(text: told, needle: "neither /no/such/sandbox-exec nor /no/such/bwrap")
+    assert core_strings.contains(s: told, substr: "neither /no/such/sandbox-exec nor /no/such/bwrap")
 
     # A tool that exists answers nothing, whichever of the two it is: the test
     # makes the file it names, since a path the machine is supposed to hold,
@@ -314,11 +316,11 @@ test "every limit is set by a `ulimit` of its own, joined so a refused one stops
     assert script == "ulimit -f " + FILE_BLOCKS.to_str() + " && ulimit -v " + ADDRESS_KIB.to_str() + " && exec \"$0\" \"$@\""
     assert linux[linux.len() - 1] == "/s/answer"
     darwin = darwin_words(profile_path: "/s/sandbox.sb", binary: "/s/answer")
-    assert strings.starts_with(
-        text: darwin[2],
+    assert core_strings.has_prefix(
+        s: darwin[2],
         prefix: "ulimit -f " + FILE_BLOCKS.to_str() + " && exec /usr/bin/env -i "
     )
 
     for words in [linux, darwin]
         for word in words
-            assert !strings.contains(text: word, needle: "; exec")
+            assert !core_strings.contains(s: word, substr: "; exec")

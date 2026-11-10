@@ -25,6 +25,8 @@
 # none and the language is Heroes, so that what a model knows of the language
 # without the document shows.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 use thesis_sha256
@@ -104,7 +106,7 @@ function template_at(path: str) -> Template?
         )
     prompt = strings.trimmed(text: pieces[1])
 
-    if !strings.contains(text: prompt, needle: "{{SPEC}}") || !strings.contains(text: prompt, needle: "{{TASK}}")
+    if !core_strings.contains(s: prompt, substr: "{{SPEC}}") || !core_strings.contains(s: prompt, substr: "{{TASK}}")
         return fail(code: "bad_template", msg: path + "'s prompt lacks `{{SPEC}}` or `{{TASK}}`")
     blocks = feedback_blocks(pieces.slice(from: 2, to: pieces.len()).join("\n---\n"))
 
@@ -218,7 +220,7 @@ function provenance(scratch: str, compiler: str) -> Provenance?
     sources: str @= ""
 
     for line in lines
-        if strings.starts_with(text: line, prefix: "sources ")
+        if core_strings.has_prefix(s: line, prefix: "sources ")
             sources @ strings.without_prefix(text: line, prefix: "sources ")
 
     if sources == ""
@@ -240,7 +242,7 @@ function instrument_digest(scratch: str, dir: str) -> str?
     for path in shell.list_entries(scratch: scratch, dir: dir)?
         name = strings.base_name(path: path)
 
-        if strings.starts_with(text: name, prefix: "thesis") && strings.ends_with(text: name, suffix: ".hero") || name == "expectation.hero"
+        if core_strings.has_prefix(s: name, prefix: "thesis") && core_strings.has_suffix(s: name, suffix: ".hero") || name == "expectation.hero"
             text = read_file(path: path)?
             parts @ parts.push(name + "\n" + text.len().to_str() + "\n" + text)
 
@@ -256,37 +258,37 @@ function estimated_tokens(text: str) -> i64
 test "the frozen template renders in both layouts, and the digests are the files' own"
     template = template_at(path: TEMPLATE).must()
     assert template.sha.len() == 64
-    assert strings.contains(text: template.text, needle: "<specification>")
+    assert core_strings.contains(s: template.text, substr: "<specification>")
     spec = context_of(name: "spec").must()
     assert spec.spec_sha.len() == 64
     assert spec.spec.len() > 1000
 
     single = rendered(template: template, context: spec, task: "Print `hello`.", layout: "single").must()
     assert single.system == ""
-    assert strings.contains(text: single.user, needle: "## 1. Files and layout")
-    assert strings.contains(text: single.user, needle: "<task>\nPrint `hello`.\n</task>")
+    assert core_strings.contains(s: single.user, substr: "## 1. Files and layout")
+    assert core_strings.contains(s: single.user, substr: "<task>\nPrint `hello`.\n</task>")
 
     # The spec itself writes `{{` (its § 2), so the placeholders are what must be gone.
-    assert !strings.contains(text: single.user, needle: "{{SPEC}}")
-    assert !strings.contains(text: single.user, needle: "{{TASK}}")
+    assert !core_strings.contains(s: single.user, substr: "{{SPEC}}")
+    assert !core_strings.contains(s: single.user, substr: "{{TASK}}")
 
     cached = rendered(template: template, context: spec, task: "Print `hello`.", layout: "cached").must()
-    assert strings.ends_with(text: cached.system, suffix: "</specification>")
-    assert strings.contains(text: cached.system, needle: "## 1. Files and layout")
-    assert strings.starts_with(text: cached.user, prefix: "<task>")
-    assert !strings.contains(text: cached.user, needle: "## 1. Files")
+    assert core_strings.has_suffix(s: cached.system, suffix: "</specification>")
+    assert core_strings.contains(s: cached.system, substr: "## 1. Files and layout")
+    assert core_strings.has_prefix(s: cached.user, prefix: "<task>")
+    assert !core_strings.contains(s: cached.user, substr: "## 1. Files")
     assert cached.system + "\n\n" + cached.user == single.user
 
 test "the feedback blocks are the template's four, filled where their placeholder stands, and a template missing one is refused"
     template = template_at(path: TEMPLATE).must()
     refused = feedback_text(template: template, kind: "refused", filled: "error[unused_binding]: x").must()
-    assert strings.starts_with(text: refused, prefix: "The compiler refused the program:")
-    assert strings.contains(text: refused, needle: "error[unused_binding]: x")
-    assert strings.ends_with(text: refused, suffix: "one fenced code block and nothing else.")
-    assert !strings.contains(text: refused, needle: "{{")
+    assert core_strings.has_prefix(s: refused, prefix: "The compiler refused the program:")
+    assert core_strings.contains(s: refused, substr: "error[unused_binding]: x")
+    assert core_strings.has_suffix(s: refused, suffix: "one fenced code block and nothing else.")
+    assert !core_strings.contains(s: refused, substr: "{{")
     example = feedback_text(template: template, kind: "example", filled: "printed 3\n--- expected ---\n2").must()
-    assert strings.contains(text: example, needle: "printed 3\n--- expected ---\n2")
-    assert !strings.contains(text: template.text, needle: "<feedback")
+    assert core_strings.contains(s: example, substr: "printed 3\n--- expected ---\n2")
+    assert !core_strings.contains(s: template.text, substr: "<feedback")
 
     for kind in FEEDBACK_KINDS
         assert !template.feedback[kind].is_err()
@@ -307,7 +309,7 @@ test "the feedback blocks are the template's four, filled where their placeholde
         .ok _ => assert false
         .err e =>
             assert e.code == "bad_template"
-            assert strings.contains(text: e.msg, needle: "no_program")
+            assert core_strings.contains(s: e.msg, substr: "no_program")
 
     old = scratch + "/old.md"
     write_file(
@@ -325,22 +327,22 @@ test "the canary context holds no specification, and a layout or a context nobod
     assert none.spec == ""
     canary = rendered(template: template, context: none, task: "Print `hello`.", layout: "cached").must()
     assert canary.system == ""
-    assert strings.contains(text: canary.user, needle: NONE_SENTENCE)
-    assert !strings.contains(text: canary.user, needle: "## 1. Files")
-    assert !strings.contains(text: canary.user, needle: "<specification>")
+    assert core_strings.contains(s: canary.user, substr: NONE_SENTENCE)
+    assert !core_strings.contains(s: canary.user, substr: "## 1. Files")
+    assert !core_strings.contains(s: canary.user, substr: "<specification>")
 
     # No promise of a document the prompt does not give (defect 2169), and the
     # `spec` context keeps the template's opening whole.
-    assert strings.contains(text: canary.user, needle: NONE_OPENING)
-    assert !strings.contains(text: canary.user, needle: "specification of a small")
-    assert !strings.contains(text: canary.user, needle: "complete specification")
+    assert core_strings.contains(s: canary.user, substr: NONE_OPENING)
+    assert !core_strings.contains(s: canary.user, substr: "specification of a small")
+    assert !core_strings.contains(s: canary.user, substr: "complete specification")
     given = rendered(
         template: template,
         context: context_of(name: "spec").must(),
         task: "Print `hello`.",
         layout: "single"
     ).must()
-    assert strings.contains(text: given.user, needle: OPENING)
+    assert core_strings.contains(s: given.user, substr: OPENING)
 
     # A template that opens otherwise is refused for `none`, never rendered with its promise.
     moved = Template(

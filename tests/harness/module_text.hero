@@ -20,6 +20,8 @@
 # "cannot_walk",` on the next line), so a code is read from the scan's runs,
 # where the newline between `fail(` and `code:` is white space like any other.
 
+use <core>/strings as core_strings
+
 use strings
 
 # One run of a module's text: code, or the contents of one literal without its
@@ -231,11 +233,11 @@ function past_space(text: str, at: i64) -> i64
 function opens_code(code: str) -> bool
     rest = right_trimmed(code)
 
-    if !strings.ends_with(text: rest, suffix: "code:")
+    if !core_strings.has_suffix(s: rest, suffix: "code:")
         return false
     before = right_trimmed(strings.without_suffix(text: rest, suffix: "code:"))
 
-    if !strings.ends_with(text: before, suffix: "fail(")
+    if !core_strings.has_suffix(s: before, suffix: "fail(")
         return false
     head = before.len() - 5
     return head == 0 || !word_byte(before[head - 1])
@@ -270,7 +272,7 @@ function masked(text: str, keep_tests: bool) -> str
     inside: bool @= false
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "test \"")
+        if core_strings.has_prefix(s: row, prefix: "test \"")
             inside @ true
         else if inside && row.len() > 0 && row[0] != ' ' && row[0] != '\t' && row[0] != '#'
             inside @ false

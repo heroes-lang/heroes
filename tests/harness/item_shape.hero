@@ -13,6 +13,8 @@
 # Moved here from `suite_records.hero` on 2026-10-12, unchanged in what it
 # reads, so that the program and the suite ask one reading.
 
+use <core>/strings as core_strings
+
 use cards
 use strings
 
@@ -36,7 +38,7 @@ function item_offences(text: str, first: i64) -> [str]
     out: [str] @= []
     opening = rows[0]
 
-    if !strings.starts_with(text: opening, prefix: "- [ ] ")
+    if !core_strings.has_prefix(s: opening, prefix: "- [ ] ")
         out @ out.push(
             "line " + first.to_str() + " is not the item's line, and an open issue's item stands first under its card: " + head_of(opening)
         )
@@ -45,11 +47,11 @@ function item_offences(text: str, first: i64) -> [str]
     while i < rows.len()
         row = rows[i]
 
-        if strings.starts_with(text: row, prefix: "- [")
+        if core_strings.has_prefix(s: row, prefix: "- [")
             out @ out.push(
                 "line " + (first + i).to_str() + ": an item line below line " + first.to_str() + ", and an issue holds one item, on its first line: " + head_of(row)
             )
-        else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
+        else if strings.trimmed(row).len() > 0 && !core_strings.has_prefix(s: row, prefix: "    ")
             out @ out.push(
                 "line " + (first + i).to_str() + ": prose at column zero, and an item's body is indented under its line: " + head_of(row)
             )
@@ -75,7 +77,7 @@ function line_shape(first: str) -> str
     # `**` is ASCII, so each cut stands between characters.
     after = rest.slice(from: close.must() + 2, to: rest.len())
 
-    if !strings.starts_with(text: after, prefix: " | ")
+    if !core_strings.has_prefix(s: after, prefix: " | ")
         return "its title's closing `**` is not followed by ` | `, which sets it apart from what the defect does"
     fields: str @= strings.without_prefix(text: after, prefix: " | ")
     token = strings.index_of(text: fields, needle: CLASS_TOKEN)
@@ -172,14 +174,14 @@ function open_regions(text: str) -> [Region]
 
     for row in strings.lines(text)
         number @ number + 1
-        item = strings.starts_with(text: row, prefix: "- [")
-        column_zero = strings.trimmed(row) != "" && !strings.starts_with(text: row, prefix: "    ")
+        item = core_strings.has_prefix(s: row, prefix: "- [")
+        column_zero = strings.trimmed(row) != "" && !core_strings.has_prefix(s: row, prefix: "    ")
 
         if rows.len() > 0 && (item || row == BANNER || column_zero)
             out @ out.push(Region(line: start, head: head, text: rows.join("\n")))
             rows @ none
 
-        if strings.starts_with(text: row, prefix: "- [ ] ")
+        if core_strings.has_prefix(s: row, prefix: "- [ ] ")
             head @ strings.trimmed(row)
             start @ number
             rows @ [row]
@@ -206,7 +208,7 @@ function classed(text: str) -> Classed
     i: i64 @= 1
 
     while i < rows.len()
-        if strings.starts_with(text: strings.trimmed(rows[i]), prefix: CLASS_LINE)
+        if core_strings.has_prefix(s: strings.trimmed(rows[i]), prefix: CLASS_LINE)
             marked @ marked.push(i)
         i @ i + 1
 
@@ -257,7 +259,7 @@ function line_class(row: str) -> str?
     rest = line.slice(from: at.must() + CLASS_TOKEN.len(), to: line.len())
     name = strings.without_suffix(text: rest, suffix: "**")
 
-    if !strings.ends_with(text: rest, suffix: "**") || strings.contains(text: name, needle: "**")
+    if !core_strings.has_suffix(s: rest, suffix: "**") || core_strings.contains(s: name, substr: "**")
         return fail(code: "shape", msg: "its class token is not the end of its line")
 
     if !is_class(name)
@@ -275,7 +277,7 @@ function class_stated(rows: [str], at: i64) -> Classed?
     row = strings.trimmed(rows[at])
     opening = CLASS_LINE + " "
 
-    if !strings.starts_with(text: row, prefix: opening)
+    if !core_strings.has_prefix(s: row, prefix: opening)
         return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line does not open `**Class: <name>**`")
     rest = strings.without_prefix(text: row, prefix: opening)
     close = strings.index_of(text: rest, needle: "**")
@@ -291,7 +293,7 @@ function class_stated(rows: [str], at: i64) -> Classed?
         )
     after = rest.slice(from: close.must() + 2, to: rest.len())
 
-    if !strings.starts_with(text: after, prefix: ", ")
+    if !core_strings.has_prefix(s: after, prefix: ", ")
         return fail(
             code: "shape",
             msg: "its `**Class: " + name + "**` is not followed by `, YYYY-MM-DD`, the day it was classed"
@@ -394,7 +396,7 @@ function defect_line_offences(text: str, first: i64) -> [str]
     out: [str] @= []
     rows = strings.lines(text)
 
-    if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "- [ ] ")
+    if rows.len() == 0 || !core_strings.has_prefix(s: rows[0], prefix: "- [ ] ")
         return out
     shape = line_shape(rows[0])
 
@@ -421,14 +423,14 @@ test "an open issue holds its one item, its line first under its card, and its b
     # Something above the item's line; a second item; prose at column zero;
     # nothing at all. Each names the line a reader opens the file at.
     headed = item_offences(text: "# a title\n" + good, first: 10)
-    assert strings.contains(text: headed[0], needle: "line 10 is not the item's line")
+    assert core_strings.contains(s: headed[0], substr: "line 10 is not the item's line")
     second = item_offences(text: good + "\n- [ ] **M-ir-lowering** | another | x\n", first: 10)
     assert second.len() == 1
-    assert strings.contains(text: second[0], needle: "line 14: an item line below line 10")
+    assert core_strings.contains(s: second[0], substr: "line 14: an item line below line 10")
     loose = item_offences(text: good + "\nAnd this paragraph is not indented.\n", first: 10)
     assert loose.len() == 1
-    assert strings.contains(text: loose[0], needle: "line 14: prose at column zero")
-    assert strings.contains(text: item_offences(text: "", first: 10)[0], needle: "holds no item")
+    assert core_strings.contains(s: loose[0], substr: "line 14: prose at column zero")
+    assert core_strings.contains(s: item_offences(text: "", first: 10)[0], substr: "holds no item")
 
 test "an item of the defect list states one class on its line and the same in its body"
     filed = [
@@ -469,44 +471,44 @@ test "an item with no class on its line, two, a fifth, or one out of place is re
     # No token, and the token spelt with the body's capital, which is not the
     # line's spelling. The complaint names the item by its line and its head.
     bare = one_defect(head: "- [ ] **164 — x** | a | b", body: body)
-    assert strings.contains(text: only_complaint(bare), needle: "does not end with ` · **class: <name>**`")
-    assert strings.starts_with(text: only_complaint(bare), prefix: "line 1: - [ ] **164 — x**")
+    assert core_strings.contains(s: only_complaint(bare), substr: "does not end with ` · **class: <name>**`")
+    assert core_strings.has_prefix(s: only_complaint(bare), prefix: "line 1: - [ ] **164 — x**")
     capital = one_defect(head: "- [ ] **164 — x** | a | b · **Class: blocking**", body: body)
-    assert strings.contains(text: only_complaint(capital), needle: "does not end with")
+    assert core_strings.contains(s: only_complaint(capital), substr: "does not end with")
 
     # Two tokens, a fifth class and an empty one.
     two = one_defect(head: "- [ ] **164 — x** | a | b · **class: blocking** · **class: adjacent**", body: body)
-    assert strings.contains(text: only_complaint(two), needle: "carries 2 class tokens")
+    assert core_strings.contains(s: only_complaint(two), substr: "carries 2 class tokens")
     fifth = one_defect(head: "- [ ] **164 — x** | a | b · **class: blocker**", body: body)
-    assert strings.contains(text: only_complaint(fifth), needle: "names the class `blocker`")
+    assert core_strings.contains(s: only_complaint(fifth), substr: "names the class `blocker`")
     empty = one_defect(head: "- [ ] **164 — x** | a | b · **class: **", body: body)
-    assert strings.contains(text: only_complaint(empty), needle: "names the class ``")
+    assert core_strings.contains(s: only_complaint(empty), substr: "names the class ``")
 
     # Out of place: before the bar rather than at the end, and not set off.
     inside = one_defect(head: "- [ ] **164 — x** · **class: blocking** | a | b", body: body)
-    assert strings.contains(text: only_complaint(inside), needle: "not the end of its line")
+    assert core_strings.contains(s: only_complaint(inside), substr: "not the end of its line")
     unset = one_defect(head: "- [ ] **164 — x** | a | b **class: blocking**", body: body)
-    assert strings.contains(text: only_complaint(unset), needle: "not set off by ` · `")
+    assert core_strings.contains(s: only_complaint(unset), substr: "not set off by ` · `")
 
 test "an item's body states its class once, with its day and its reason, and agrees with its line"
     head = "- [ ] **165 — x** | a | b · **class: blocking**"
     silent = one_defect(head: head, body: ["", "**Origin:** a lane, 2026-10-02."])
-    assert strings.contains(text: only_complaint(silent), needle: "its body holds no line opening")
+    assert core_strings.contains(s: only_complaint(silent), substr: "its body holds no line opening")
     twice = one_defect(
         head: head,
         body: ["", "**Class: blocking**, 2026-10-02, a crash.", "", "**Class: blocking**, 2026-10-03, again."]
     )
-    assert strings.contains(text: only_complaint(twice), needle: "holds 2 lines opening `**Class:`")
+    assert core_strings.contains(s: only_complaint(twice), substr: "holds 2 lines opening `**Class:`")
 
     # The spelling the rule names loosely, `**Class:**`, is a line and a wrong one.
     unspaced = one_defect(head: head, body: ["", "**Class:** blocking, 2026-10-02, a crash."])
-    assert strings.contains(text: only_complaint(unspaced), needle: "does not open `**Class: <name>**`")
+    assert core_strings.contains(s: only_complaint(unspaced), substr: "does not open `**Class: <name>**`")
     fifth = one_defect(head: head, body: ["", "**Class: urgent**, 2026-10-02, a crash."])
-    assert strings.contains(text: only_complaint(fifth), needle: "line names `urgent`")
+    assert core_strings.contains(s: only_complaint(fifth), substr: "line names `urgent`")
     other = one_defect(head: head, body: ["", "**Class: adjacent**, 2026-10-02, a second message."])
-    assert strings.contains(
-        text: only_complaint(other),
-        needle: "its line says `blocking` and its `**Class:` line says `adjacent`"
+    assert core_strings.contains(
+        s: only_complaint(other),
+        substr: "its line says `blocking` and its `**Class:` line says `adjacent`"
     )
 
     # A malformed item is held to no class and no day, so nothing downstream
@@ -515,7 +517,7 @@ test "an item's body states its class once, with its day and its reason, and agr
     assert split.kind == ""
     assert split.day == 0
     undated = one_defect(head: head, body: ["", "**Class: blocking**: a crash."])
-    assert strings.contains(text: only_complaint(undated), needle: "is not followed by `, YYYY-MM-DD`")
+    assert core_strings.contains(s: only_complaint(undated), substr: "is not followed by `, YYYY-MM-DD`")
     days = [
         "2026-10-2, a crash."
         "02-10-2026, a crash."
@@ -527,10 +529,10 @@ test "an item's body states its class once, with its day and its reason, and agr
 
     for day in days
         misdated = one_defect(head: head, body: ["", "**Class: blocking**, " + day])
-        assert strings.contains(text: only_complaint(misdated), needle: "gives no day after its class")
+        assert core_strings.contains(s: only_complaint(misdated), substr: "gives no day after its class")
 
     unreasoned = one_defect(head: head, body: ["", "**Class: blocking**, 2026-10-02."])
-    assert strings.contains(text: only_complaint(unreasoned), needle: "gives its day and no reason")
+    assert core_strings.contains(s: only_complaint(unreasoned), substr: "gives its day and no reason")
 
     # A sentence that names the spelling is not a second line of it.
     naming = one_defect(
@@ -559,11 +561,11 @@ test "an open item's body runs to the next item, a banner or a line at column ze
     assert regions.len() == 2
     assert regions[0].line == 4
     assert regions[1].line == 8
-    assert strings.contains(text: regions[0].text, needle: "a crash")
-    assert !strings.contains(text: regions[0].text, needle: "167")
+    assert core_strings.contains(s: regions[0].text, substr: "a crash")
+    assert !core_strings.contains(s: regions[0].text, substr: "167")
 
     # The line under the loose prose belongs to no item, so `b` states none.
-    assert !strings.contains(text: regions[1].text, needle: "under the prose")
+    assert !core_strings.contains(s: regions[1].text, substr: "under the prose")
     assert classed(regions[1].text).kind == ""
 
 # DEFECT 190, held as a test (2026-10-04): a defect item's line is read whole
@@ -578,7 +580,7 @@ test "fixedbugs: a defect item's line is read whole, its title closed and its tw
     )
     said = defect_line_offences(text: damaged, first: 10)
     assert said.len() == 1
-    assert strings.starts_with(text: said[0], prefix: "line 10: its title's closing `**` is not followed by ` | `")
+    assert core_strings.has_prefix(s: said[0], prefix: "line 10: its title's closing `**` is not followed by ` | `")
     shapes = [
         "- [ ] **164 — x · **class: blocking**"
         "- [ ] **164 — x** · **class: blocking**"
@@ -600,7 +602,7 @@ test "fixedbugs: a defect item's line is read whole, its title closed and its tw
     while at < shapes.len()
         got = defect_line_offences(text: one_defect(head: shapes[at], body: body), first: 10)
         assert got.len() == 1
-        assert strings.starts_with(text: got[0], prefix: "line 10: " + told[at])
+        assert core_strings.has_prefix(s: got[0], prefix: "line 10: " + told[at])
         at @ at + 1
 
     bars_inside = one_defect(head: "- [ ] **164 — x** | no ` | ` at all | where · **class: blocking**", body: body)

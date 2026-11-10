@@ -19,18 +19,15 @@
 # **Through the environment, because the program itself cannot say it**:
 # `__asan_default_options` defined in the program is not read by clang
 # 23.1.1's dynamic runtime on Windows (measured: `verbosity=1` in it printed
-# nothing), so the compiler, which starts the program, sets the variable it
-# inherits. A user who named a symbolizer, in `ASAN_OPTIONS` or in
-# `ASAN_SYMBOLIZER_PATH`, keeps theirs. A binary run by hand, not by `run` or
-# `test`, gets what its environment says.
+# nothing), so the compiler, which starts the program, gives it the variable
+# at its start (`process.run_given`, panel 242's R6), and the compiler's own
+# environment is never written. A user who named a symbolizer, in
+# `ASAN_OPTIONS` or in `ASAN_SYMBOLIZER_PATH`, keeps theirs. A binary run by
+# hand, not by `run` or `test`, gets what its environment says.
 
+use cli/environment
 use cli/process
 use cli/strings
-
-# `runtime/hero_compiler.h`: this process's environment, which the program it
-# starts inherits.
-extern "hero_compiler.h"
-    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
 
 constant OPTIONS: str
     "ASAN_OPTIONS"
@@ -38,23 +35,27 @@ constant OPTIONS: str
 constant SYMBOLIZER_WORD: str
     "external_symbolizer_path"
 
-# Before a program built under `--sanitize` is started: on Windows, DbgHelp
-# for its frames unless the user chose a symbolizer.
-function prepare(sanitize: bool)
+# What a program built under `--sanitize` is given at its start: on Windows,
+# DbgHelp for its frames unless the user chose a symbolizer; nothing
+# elsewhere, or where the user's own words already say it.
+function prepare(sanitize: bool) -> [process.Variable]
+    none: [process.Variable] = []
+
     if !sanitize || process.exe_suffix() != ".exe"
-        return
-    chosen = process.env("ASAN_SYMBOLIZER_PATH")
+        return none
+    chosen = environment.env("ASAN_SYMBOLIZER_PATH")
 
     if chosen.is_err() || chosen.must().len() > 0
-        return
-    current = process.env(OPTIONS)
+        return none
+    current = environment.env(OPTIONS)
 
     if current.is_err()
-        return
+        return none
     wanted = options_with(current.must())
 
-    if wanted != current.must()
-        _ = hero_env_put(name: OPTIONS.cstr(), value: wanted.cstr())
+    if wanted == current.must()
+        return none
+    return [process.Variable(name: OPTIONS, value: wanted)]
 
 # `current` with no external symbolizer, unless it already names one; ASan's
 # options are `name=value` words joined by `:`, asked of the bytes, since the
@@ -73,7 +74,11 @@ test "the options keep a symbolizer the user named, and otherwise name none (def
     assert options_with("external_symbolizer_path=C:/llvm/llvm-symbolizer.exe") == "external_symbolizer_path=C:/llvm/llvm-symbolizer.exe"
     assert options_with("verbosity=1:external_symbolizer_path=") == "verbosity=1:external_symbolizer_path="
 
-test "a program not sanitised, or not on Windows, changes nothing in the environment"
-    before = process.env(OPTIONS)
-    prepare(sanitize: false)
-    assert process.env(OPTIONS).default("unread") == before.default("unread")
+test "a program not sanitised, or not on Windows, is given nothing, and this process's environment is never written"
+    before = environment.env(OPTIONS)
+    assert prepare(sanitize: false).len() == 0
+
+    if process.exe_suffix() != ".exe"
+        assert prepare(sanitize: true).len() == 0
+    _ = prepare(sanitize: true)
+    assert environment.env(OPTIONS).default("unread") == before.default("unread")

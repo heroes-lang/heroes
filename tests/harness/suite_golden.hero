@@ -34,6 +34,8 @@
 # it in `check/` and `ir/`, and a flag that cannot be typed is a rule that
 # cannot be broken by accident.
 
+use <core>/strings as core_strings
+
 use absence
 use case_setting
 use cases
@@ -41,7 +43,6 @@ use floors
 use platform_skips
 use report
 use shell
-use strings
 
 # One suite, as data. `flags` follow the verb and the case, in their order.
 record Shape
@@ -378,12 +379,12 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
 function case_ran(@root: str, scratch: str, compiler: str, item: cases.Case, words: [str], expected: str) -> shell.Run?
     tail = "/main.hero"
 
-    if !strings.ends_with(text: item.source, suffix: ".case" + tail)
+    if !core_strings.has_suffix(s: item.source, suffix: ".case" + tail)
         return shell.run(scratch: scratch, program: compiler, words: words)
     dir = item.source.slice(from: 0, to: item.source.len() - tail.len())
     setting = case_setting.read_setting(dir)?
 
-    if !case_setting.asks(setting) && !strings.contains(text: expected, needle: "<root>")
+    if !case_setting.asks(setting) && !core_strings.contains(s: expected, substr: "<root>")
         return shell.run(scratch: scratch, program: compiler, words: words)
     skip = case_setting.skip_here(setting)
 
@@ -664,9 +665,9 @@ test "fixedbugs: a compiler that writes bytes that are not UTF-8 is told as one 
     assert !got.is_err()
     assert got.must().failed == 1
     failure = got.must().failures[0]
-    assert strings.contains(text: failure, needle: tree.must() + "/x.hero: " + path + " ran and exited 1")
-    assert strings.contains(text: failure, needle: "on stderr 1 byte is not, in `x.hero:1:1: error[boom]: caf<0xE9>`")
-    assert !strings.contains(text: failure, needle: "cannot run")
+    assert core_strings.contains(s: failure, substr: tree.must() + "/x.hero: " + path + " ran and exited 1")
+    assert core_strings.contains(s: failure, substr: "on stderr 1 byte is not, in `x.hero:1:1: error[boom]: caf<0xE9>`")
+    assert !core_strings.contains(s: failure, substr: "cannot run")
     assert !shell.remove_tree(scratch).is_err()
 
 test "a refusal that writes an artifact fails, and so does a suite below its floor"
@@ -750,7 +751,7 @@ test "a machine missing the library skips, but a machine missing every library f
     assert got.must().passed == 0
     assert got.must().failed == 1
     assert got.must().skips.len() == 1
-    assert strings.contains(text: got.must().failures[0], needle: "not testing the refusals")
+    assert core_strings.contains(s: got.must().failures[0], substr: "not testing the refusals")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's reproducer, held as a test (2026-10-04). A case whose expectation
@@ -824,9 +825,9 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
 
     # And each failure says why the compiler's word was not taken.
     for failure in got.must().failures
-        assert strings.contains(
-            text: failure,
-            needle: "not skipped for a missing library: the expectation names the same missing library"
+        assert core_strings.contains(
+            s: failure,
+            substr: "not skipped for a missing library: the expectation names the same missing library"
         )
 
     assert !shell.remove_tree(scratch).is_err()
@@ -858,8 +859,8 @@ test "a library the case binds and this machine lacks is skipped by name, among 
     assert got.must().passed == 3
     assert got.must().failed == 0
     assert got.must().skips.len() == 1
-    assert strings.starts_with(text: got.must().skips[0], prefix: "SKIP unsupported/d\n")
-    assert strings.contains(text: got.must().skips[0], needle: "which clang does not find")
+    assert core_strings.has_prefix(s: got.must().skips[0], prefix: "SKIP unsupported/d\n")
+    assert core_strings.contains(s: got.must().skips[0], substr: "which clang does not find")
     assert !shell.remove_tree(scratch).is_err()
 
 test "a library said to be missing is judged where the machine has it, or the case binds none"
@@ -889,8 +890,8 @@ test "a library said to be missing is judged where the machine has it, or the ca
     assert got.must().passed == 0
     assert got.must().failed == 2
     assert got.must().skips.len() == 0
-    assert strings.contains(text: got.must().failures[0], needle: "clang finds `stdio.h`")
-    assert strings.contains(text: got.must().failures[1], needle: "binds no such header")
+    assert core_strings.contains(s: got.must().failures[0], substr: "clang finds `stdio.h`")
+    assert core_strings.contains(s: got.must().failures[1], substr: "binds no such header")
     assert !shell.remove_tree(scratch).is_err()
 
 test "a pkg-config said to be missing is believed only where it does not start"
@@ -918,7 +919,7 @@ test "a pkg-config said to be missing is believed only where it does not start"
     if here.must().started
         assert got.must().failed == 1
         assert got.must().skips.len() == 0
-        assert strings.contains(text: got.must().failures[0], needle: "`pkg-config` runs on this machine")
+        assert core_strings.contains(s: got.must().failures[0], substr: "`pkg-config` runs on this machine")
     else
         assert got.must().skips.len() == 1
         assert got.must().failed == 1
@@ -956,7 +957,7 @@ test "an expectation quoting pkg-config is judged on this machine's answer, and 
     assert got.must().passed == 1
     assert got.must().failed == 1
     assert got.must().skips.len() == 0
-    assert strings.contains(text: got.must().failures[0], needle: "unsupported/b-moved")
+    assert core_strings.contains(s: got.must().failures[0], substr: "unsupported/b-moved")
     assert !shell.remove_tree(scratch).is_err()
 
 # An empty golden tree under `scratch`.

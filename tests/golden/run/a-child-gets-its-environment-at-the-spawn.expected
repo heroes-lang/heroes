@@ -1,0 +1,28 @@
+the first run's own: HEROES_SPAWN_HELD unset
+nothing staged:
+  HEROES_SPAWN_HELD [parent]
+  HEROES_SPAWN_PLAIN unset
+  HEROES_SPAWN_EMPTY unset
+  HEROES_SPAWN_EQUALS unset
+  HEROES_SPAWN_TEXT unset
+  HEROES_SPAWN_TWICE unset
+child exit 0
+six staged, one of them twice:
+  HEROES_SPAWN_HELD [child]
+  HEROES_SPAWN_PLAIN [plain]
+  HEROES_SPAWN_EMPTY []
+  HEROES_SPAWN_EQUALS [a=b=c]
+  HEROES_SPAWN_TEXT [café ∂ 日本 😀]
+  HEROES_SPAWN_TWICE [second]
+child exit 0
+the middle's own: HEROES_SPAWN_HELD [parent], HEROES_SPAWN_PLAIN unset
+one staged, then reset:
+  HEROES_SPAWN_HELD [parent]
+  HEROES_SPAWN_PLAIN unset
+  HEROES_SPAWN_EMPTY unset
+  HEROES_SPAWN_EQUALS unset
+  HEROES_SPAWN_TEXT unset
+  HEROES_SPAWN_TWICE unset
+child exit 0
+middle exit 0
+the first run's own, after: HEROES_SPAWN_HELD unset

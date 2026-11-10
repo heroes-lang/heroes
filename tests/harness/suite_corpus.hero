@@ -45,6 +45,8 @@
 # is judged by `check`'s holes (`gallery.hero`). Check 2 is not asked of
 # the gallery: a lesson tests itself through the expectation beside it.
 
+use <core>/strings as core_strings
+
 use absence
 use expectation
 use floors
@@ -316,7 +318,7 @@ function one_program(scratch: str, compiler: str, binaries: str, p: Program, @r:
             report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: detail)
             return false
 
-        if strings.contains(text: said.must().out, needle: "FAIL ")
+        if core_strings.contains(s: said.must().out, substr: "FAIL ")
             report.keep_failure(
                 @r,
                 label: "corpus/" + name + " at " + level,
@@ -324,7 +326,7 @@ function one_program(scratch: str, compiler: str, binaries: str, p: Program, @r:
             )
             return false
 
-        if level == "--sanitize" && (strings.contains(text: said.must().err, needle: "AddressSanitizer") || strings.contains(text: said.must().err, needle: "runtime error:"))
+        if level == "--sanitize" && (core_strings.contains(s: said.must().err, substr: "AddressSanitizer") || core_strings.contains(s: said.must().err, substr: "runtime error:"))
             report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + said.must().err)
             return false
 
@@ -389,7 +391,7 @@ function prints(scratch: str, compiler: str, binaries: str, p: Program, @r: repo
         )
         return
 
-    if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
+    if core_strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || core_strings.contains(s: sanitised.must().err, substr: "runtime error:")
         report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
         return
 
@@ -421,7 +423,7 @@ function prints(scratch: str, compiler: str, binaries: str, p: Program, @r: repo
             )
             return
 
-        if strings.contains(text: low.must().err, needle: "AddressSanitizer") || strings.contains(text: low.must().err, needle: "LeakSanitizer") || strings.contains(text: low.must().err, needle: "runtime error:")
+        if core_strings.contains(s: low.must().err, substr: "AddressSanitizer") || core_strings.contains(s: low.must().err, substr: "LeakSanitizer") || core_strings.contains(s: low.must().err, substr: "runtime error:")
             report.keep_failure(
                 @r,
                 label: "corpus/" + name + " at --sanitize -O0",
@@ -537,7 +539,7 @@ function module_texts(scratch: str, dir: str, carried: bool) -> [str]?
     nothing: [str] = []
 
     for entry in shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
-        if strings.ends_with(text: entry, suffix: ".hero") && (carried || own_module(dir: dir, path: entry))
+        if core_strings.has_suffix(s: entry, suffix: ".hero") && (carried || own_module(dir: dir, path: entry))
             text = read_file(entry)
 
             if !text.is_err()
@@ -566,7 +568,7 @@ function module_paths(scratch: str, dir: str) -> [str]
         return out
 
     for entry in walked.must()
-        if strings.ends_with(text: entry, suffix: ".hero")
+        if core_strings.has_suffix(s: entry, suffix: ".hero")
             out @ out.push(entry)
 
     return out
@@ -577,14 +579,14 @@ function module_paths(scratch: str, dir: str) -> [str]
 function declares_any(modules: [str], opening: str) -> bool
     for text in modules
         for row in strings.lines(text)
-            if strings.starts_with(text: row, prefix: opening)
+            if core_strings.has_prefix(s: row, prefix: opening)
                 return true
 
     return false
 
 function holds(modules: [str], needle: str) -> bool
     for text in modules
-        if strings.contains(text: text, needle: needle)
+        if core_strings.contains(s: text, substr: needle)
             return true
 
     return false
@@ -605,7 +607,7 @@ test "fixedbugs: no comment of an example runs straight into a section heading (
     read: i64 @= 0
 
     for path in files.must()
-        if !strings.ends_with(text: path, suffix: ".hero")
+        if !core_strings.has_suffix(s: path, suffix: ".hero")
             continue
         text = read_file(path)
         assert !text.is_err()
@@ -616,7 +618,7 @@ test "fixedbugs: no comment of an example runs straight into a section heading (
         for row in strings.lines(text.must())
             at @ at + 1
 
-            if strings.starts_with(text: row, prefix: "## ") && strings.starts_with(text: before, prefix: "#") && !strings.starts_with(text: before, prefix: "##")
+            if core_strings.has_prefix(s: row, prefix: "## ") && core_strings.has_prefix(s: before, prefix: "#") && !core_strings.has_prefix(s: before, prefix: "##")
                 cut @ cut.push(path + ":" + at.to_str())
             before @ row
 
@@ -711,7 +713,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert !took
     assert refuted.failed == 1
     assert refuted.skips.len() == 0
-    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = tree + "/lacks"
     assert !write_file(path: lacks + "/main.hero", text: "use db/store\n\nfunction main()\n    print(store.seven())\n").is_err()
     store = "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32\n"
@@ -729,7 +731,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert skipped
     assert excused.failed == 0
     assert excused.skips.len() == 1
-    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP corpus/lacks\n")
+    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP corpus/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 606's cause in this suite, held as a test (2026-10-11): the gallery's
@@ -765,15 +767,15 @@ test "fixedbugs: a gallery program is checked, owes its expectation, and is run 
 
     assert r.failed == 2
     assert r.passed == 2
-    assert strings.starts_with(text: r.failures[0], prefix: "FAIL corpus/gallery/refused\n")
-    assert strings.contains(text: r.failures[0], needle: "never_rebound")
-    assert strings.starts_with(text: r.failures[1], prefix: "FAIL corpus/gallery/unowed\n")
-    assert strings.contains(text: r.failures[1], needle: "unowed.expected is not there")
+    assert core_strings.has_prefix(s: r.failures[0], prefix: "FAIL corpus/gallery/refused\n")
+    assert core_strings.contains(s: r.failures[0], substr: "never_rebound")
+    assert core_strings.has_prefix(s: r.failures[1], prefix: "FAIL corpus/gallery/unowed\n")
+    assert core_strings.contains(s: r.failures[1], substr: "unowed.expected is not there")
 
     # And an expectation the program does not meet is a failure at its level.
     assert !write_file(path: tree + "/owed.expected", text: "8\n").is_err()
     wrong: report.Report @= report.empty()
     _ = one_lesson(scratch: scratch, compiler: compiler, binaries: binaries, path: tree + "/owed.hero", r: @wrong)
     assert wrong.failed == 1
-    assert strings.starts_with(text: wrong.failures[0], prefix: "FAIL corpus/gallery/owed at -O0\n")
+    assert core_strings.has_prefix(s: wrong.failures[0], prefix: "FAIL corpus/gallery/owed at -O0\n")
     assert !shell.remove_tree(scratch).is_err()

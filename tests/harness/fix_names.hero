@@ -53,6 +53,8 @@
 # When that becomes the shape that ships a wrong name, the arm is added and
 # this paragraph is what it is added against.
 
+use <core>/strings as core_strings
+
 use report
 use shell
 use spec_text
@@ -92,7 +94,7 @@ function run_default(scratch: str, compiler: str) -> report.Report?
     seen: i64 @= 0
 
     for entry in strings.lines(listed.must().out)
-        if !strings.ends_with(text: entry, suffix: ".hero")
+        if !core_strings.has_suffix(s: entry, suffix: ".hero")
             continue
         said = shell.run_guarded(
             scratch: scratch,
@@ -168,7 +170,7 @@ function judge(@r: report.Report, where: str, title: str, names: [str])
             continue
         word = callee.must()
 
-        if strings.contains(text: word, needle: "<")
+        if core_strings.contains(s: word, substr: "<")
             stem = before_angle(word)
 
             if !family_exists(names: names, stem: stem)
@@ -275,7 +277,7 @@ function family_exists(names: [str], stem: str) -> bool
         return false
 
     for one in names
-        if strings.starts_with(text: one, prefix: stem)
+        if core_strings.has_prefix(s: one, prefix: stem)
             return true
 
     return false

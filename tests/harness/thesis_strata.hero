@@ -18,6 +18,8 @@
 # `numbers_of` reads each digest's number back from it, so a suite edited
 # after its run cannot move the report.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 
@@ -177,31 +179,31 @@ function among(word: str, words: [str]) -> bool
 test "traps and constructs are read by number, comments and blanks are nothing, and every wrong line is refused by its line"
     traps = traps_of(text: "# the traps\n03\n\n05  # a variant\n", path: "traps.txt").must()
     assert traps == ["03", "05"]
-    assert strings.contains(
-        text: refusal(traps_of(text: "03\nthree\n", path: "traps.txt")),
-        needle: "traps.txt line 2: `three` is no task number"
+    assert core_strings.contains(
+        s: refusal(traps_of(text: "03\nthree\n", path: "traps.txt")),
+        substr: "traps.txt line 2: `three` is no task number"
     )
-    assert strings.contains(
-        text: refusal(traps_of(text: "03\n03\n", path: "traps.txt")),
-        needle: "task 03 is named twice"
+    assert core_strings.contains(
+        s: refusal(traps_of(text: "03\n03\n", path: "traps.txt")),
+        substr: "task 03 is named twice"
     )
     read = constructs_of(text: "01 map\n02 record map  # two\n# none\n03\n", path: "constructs.txt").must()
     assert read.numbers == ["01", "02", "03"]
     assert classes_of(labels: read, number: "02") == ["record", "map"]
     assert classes_of(labels: read, number: "03").len() == 0
     assert classes_of(labels: read, number: "09").len() == 0
-    assert strings.contains(
-        text: refusal_labels(constructs_of(text: "01 maps\n", path: "constructs.txt")),
-        needle: "constructs.txt line 1: `maps` is no class"
+    assert core_strings.contains(
+        s: refusal_labels(constructs_of(text: "01 maps\n", path: "constructs.txt")),
+        substr: "constructs.txt line 1: `maps` is no class"
     )
-    assert strings.contains(
-        text: refusal_labels(constructs_of(text: "x1 map\n", path: "constructs.txt")),
-        needle: "is no task number"
+    assert core_strings.contains(
+        s: refusal_labels(constructs_of(text: "x1 map\n", path: "constructs.txt")),
+        substr: "is no task number"
     )
 
 test "a run's tasks.txt ties each digest to its number, labels absent are none, and a run with no list is refused by name"
     scratch = shell.own_scratch()
-    assert strings.contains(text: refusal_of(numbers_of(scratch)), needle: "holds no tasks.txt")
+    assert core_strings.contains(s: refusal_of(numbers_of(scratch)), substr: "holds no tasks.txt")
     write_file(path: scratch + "/tasks.txt", text: "aaa bbb 01 9\nccc ddd 02 7\nsuite eee assistant 2 canary\n").must()
     numbers = numbers_of(scratch).must()
     assert numbers["aaa"].must() == "01"
@@ -216,7 +218,7 @@ test "a run's tasks.txt ties each digest to its number, labels absent are none, 
     assert beside.traps == ["02"]
     assert classes_of(labels: beside, number: "02") == ["map", "variant"]
     write_file(path: scratch + "/constructs.txt", text: "01 record\n01 map\n").must()
-    assert strings.contains(text: refusal_labels(labels_at(scratch)), needle: "task 01 is named twice")
+    assert core_strings.contains(s: refusal_labels(labels_at(scratch)), substr: "task 01 is named twice")
 
 function refusal(read: [str]?) -> str
     return match read

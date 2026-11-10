@@ -41,6 +41,8 @@
 # refuses answers 2. The days GitHub writes are the day of the run: the REST
 # route sets no other, and the card's own day stands in the body's first line.
 
+use <core>/strings as core_strings
+
 use cards
 use issue_check
 use issue_controls
@@ -288,7 +290,7 @@ function edited(@s: issue_pace.Session, number: i64, draft: issue_draft.Draft) -
 # from, or "".
 function record_line(body: str) -> str
     for row in strings.lines(body)
-        if strings.starts_with(text: row, prefix: "Record: https://github.com/heroes-lang/heroes/blob/")
+        if core_strings.has_prefix(s: row, prefix: "Record: https://github.com/heroes-lang/heroes/blob/")
             return row
 
     return ""
@@ -406,7 +408,7 @@ function closing_of(given: str, kind: str) -> Closing
     if kind == "defect"
         section @ "The repair"
 
-    if rows.len() > 0 && !strings.starts_with(text: strings.trimmed(rows[0]), prefix: "#")
+    if rows.len() > 0 && !core_strings.has_prefix(s: strings.trimmed(rows[0]), prefix: "#")
         headed: [str] @= ["## " + section, ""]
 
         for row in rows
@@ -446,7 +448,7 @@ function with_section(body: str, section: str) -> str
 function trimmed_end(text: str) -> str
     out: str @= text
 
-    while strings.ends_with(text: out, suffix: "\n") || strings.ends_with(text: out, suffix: " ")
+    while core_strings.has_suffix(s: out, suffix: "\n") || core_strings.has_suffix(s: out, suffix: " ")
         out @ out.slice(from: 0, to: out.len() - 1)
 
     return out
@@ -495,7 +497,7 @@ function closed_with(@s: issue_pace.Session, number: i64, given: str, commits: {
     kind: str @= ""
 
     for label in issue.labels
-        if strings.starts_with(text: label, prefix: "kind:")
+        if core_strings.has_prefix(s: label, prefix: "kind:")
             kind @ strings.without_prefix(text: label, prefix: "kind:")
 
     if issue.pull || kind == ""
@@ -516,7 +518,7 @@ function closed_with(@s: issue_pace.Session, number: i64, given: str, commits: {
     section = made_inert(text: closing.text, commits: commits)
     body: str @= issue.body
 
-    if !strings.contains(text: body, needle: section)
+    if !core_strings.contains(s: body, substr: section)
         body @ with_section(body: body, section: section)
     wrong = text_offences(body)
 
@@ -628,7 +630,7 @@ function commented(@s: issue_pace.Session, number: i64, given: str, commits: {st
     id = json_fields.whole_at(of: answer, name: "id")
     shown = json_fields.text_at(of: answer, name: "html_url").default("")
 
-    if id.is_err() || !strings.starts_with(text: shown, prefix: WEB + number.to_str())
+    if id.is_err() || !core_strings.has_prefix(s: shown, prefix: WEB + number.to_str())
         issue_pace.warn(
             @s,
             text: "the comment for " + address + " was posted and GitHub's answer names no comment of it: " + issue_github.failure(id)
@@ -743,7 +745,7 @@ test "a draft refused, a label GitHub lacks or a day not GitHub's opens nothing"
     s: issue_pace.Session @= issue_pace.scripted([])
     assert filed(@s, draft: refused) == 1
     assert s.world.requests.len() == 0
-    assert strings.contains(text: s.err[0], needle: "its title is too long")
+    assert core_strings.contains(s: s.err[0], substr: "its title is too long")
     d = defect_draft()
     t: issue_pace.Session @= issue_pace.scripted([issue_scripts.milestones([]), issue_scripts.labels(["kind:defect"])])
     assert filed(@t, draft: d) == 1
@@ -753,7 +755,7 @@ test "a draft refused, a label GitHub lacks or a day not GitHub's opens nothing"
     old.r.filed @ "2026-10-01"
     u: issue_pace.Session @= issue_pace.scripted(names_reply())
     assert filed(@u, draft: old) == 1
-    assert strings.contains(text: u.err[0], needle: "GitHub dates the issue 2026-10-12")
+    assert core_strings.contains(s: u.err[0], substr: "GitHub dates the issue 2026-10-12")
     assert day_offence(card_day: "2026-10-13", today: "2026-10-12") == ""
     assert day_offence(card_day: "2026-11-01", today: "2026-10-31") == ""
     assert day_offence(card_day: "2026-10-14", today: "2026-10-12") != ""
@@ -767,9 +769,9 @@ test "a rerun of a draft whose issue was opened finds it by its body and opens n
     s: issue_pace.Session @= issue_pace.scripted(replies)
     assert filed(@s, draft: d) == 0
     assert issue_scripts.posts(s) == 0
-    assert strings.contains(
-        text: s.err[0],
-        needle: "was filed already, as https://github.com/heroes-lang/heroes/issues/2031"
+    assert core_strings.contains(
+        s: s.err[0],
+        substr: "was filed already, as https://github.com/heroes-lang/heroes/issues/2031"
     )
     assert s.out == ["https://github.com/heroes-lang/heroes/issues/2031"]
 
@@ -777,8 +779,8 @@ test "an opening whose answer never came stops the run and says a rerun opens no
     d = defect_draft()
     s: issue_pace.Session @= issue_pace.scripted(names_reply().push(issue_scripts.answer(status: 200, body: "[]")))
     assert filed(@s, draft: d) == 2
-    assert strings.contains(text: s.err[0], needle: "may have reached GitHub")
-    assert strings.contains(text: s.err[0], needle: "opens no second one")
+    assert core_strings.contains(s: s.err[0], substr: "may have reached GitHub")
+    assert core_strings.contains(s: s.err[0], substr: "opens no second one")
     assert s.out.len() == 0
 
 test "a decision taken is opened, closed completed and given its settling comment"
@@ -808,16 +810,16 @@ test "an issue still otherwise after its write is told and answers 1, and a refu
     )
     s: issue_pace.Session @= issue_pace.scripted(replies)
     assert filed(@s, draft: d) == 1
-    assert strings.contains(
-        text: s.err[s.err.len() - 1],
-        needle: "still differs https://github.com/heroes-lang/heroes/issues/2031"
+    assert core_strings.contains(
+        s: s.err[s.err.len() - 1],
+        substr: "still differs https://github.com/heroes-lang/heroes/issues/2031"
     )
     refused = names_reply().push(issue_scripts.answer(status: 200, body: "[]")).push(
         issue_scripts.answer(status: 422, body: "{\"message\":\"Validation Failed\"}")
     )
     t: issue_pace.Session @= issue_pace.scripted(refused)
     assert filed(@t, draft: d) == 2
-    assert strings.contains(text: t.err[0], needle: "422: Validation Failed")
+    assert core_strings.contains(s: t.err[0], substr: "422: Validation Failed")
 
 test "edit makes an issue its draft's, numbering a new defect's title and keeping an imported issue's Record line"
     d = defect_draft()
@@ -871,33 +873,33 @@ test "close appends the settling section before the Record line, posts its comme
     assert s.out == ["https://github.com/heroes-lang/heroes/issues/7"]
 
 test "a closing text that does not open with its kind's section or end with a known commit closes nothing"
-    assert strings.contains(
-        text: closing_of(given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, kind: "defect").wrong,
-        needle: "`## The repair`"
+    assert core_strings.contains(
+        s: closing_of(given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, kind: "defect").wrong,
+        substr: "`## The repair`"
     )
-    assert strings.contains(
-        text: closing_of(given: "## The repair\n\nlanded at `0123`.\n", kind: "defect").wrong,
-        needle: "forty digits"
+    assert core_strings.contains(
+        s: closing_of(given: "## The repair\n\nlanded at `0123`.\n", kind: "defect").wrong,
+        substr: "forty digits"
     )
     assert closing_of(given: "## What was done\n\nRatified.\n\n" + issue_scripts.SETTLED, kind: "decision").wrong == ""
-    assert strings.contains(
-        text: closing_of(given: "## Verdict\n\nRatified.\n\n" + issue_scripts.SETTLED, kind: "decision").wrong,
-        needle: "`## What was done`"
+    assert core_strings.contains(
+        s: closing_of(given: "## Verdict\n\nRatified.\n\n" + issue_scripts.SETTLED, kind: "decision").wrong,
+        substr: "`## What was done`"
     )
     assert closing_of(given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, kind: "task").wrong == ""
     bare = closing_of(given: "\nThe guard reads the header.\n\n" + issue_scripts.SETTLED + "\n", kind: "defect")
     assert bare.wrong == ""
     assert bare.text == "### The repair\n\nThe guard reads the header.\n\n" + issue_scripts.SETTLED
     assert closing_of(given: "Landed.\n\n" + issue_scripts.SETTLED, kind: "task").text == "### What was done\n\nLanded.\n\n" + issue_scripts.SETTLED
-    assert strings.contains(
-        text: closing_of(given: "### Notes\n\nx\n\n" + issue_scripts.SETTLED, kind: "task").wrong,
-        needle: "`## What was done`"
+    assert core_strings.contains(
+        s: closing_of(given: "### Notes\n\nx\n\n" + issue_scripts.SETTLED, kind: "task").wrong,
+        substr: "`## What was done`"
     )
     open_issue = "{\"number\":7,\"title\":\"t\",\"body\":\"b\",\"state\":\"open\",\"labels\":[{\"name\":\"kind:task\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":null,\"comments\":0}"
     unknown: {str: bool} = {}
     s: issue_pace.Session @= issue_pace.scripted([issue_scripts.answer(status: 200, body: open_issue)])
     assert closed_with(@s, number: 7, given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, commits: unknown) == 1
-    assert strings.contains(text: s.err[0], needle: "names no commit of this history")
+    assert core_strings.contains(s: s.err[0], substr: "names no commit of this history")
     assert issue_scripts.posts(s) == 0
     assert with_section(body: "Filed x\n\n### What it delivers\n\ny\n", section: "### What was done\n\nz") == "Filed x\n\n### What it delivers\n\ny\n\n### What was done\n\nz\n"
 
@@ -925,25 +927,25 @@ test "a hash written bare in a sentence that names no commit refuses a comment a
     s: issue_pace.Session @= issue_pace.scripted([])
     assert commented(@s, number: 7, given: "Repaired at " + wrong + ", gated by its cases.", commits: unknown) == 1
     assert s.world.requests.len() == 0
-    assert strings.contains(text: s.err[0], needle: "names " + wrong + " bare, which is no commit of this history")
+    assert core_strings.contains(s: s.err[0], substr: "names " + wrong + " bare, which is no commit of this history")
     known: {str: bool} @= {}
     known[issue_scripts.SETTLED] @ true
     c: issue_pace.Session @= issue_pace.scripted([])
     assert closed_with(@c, number: 7, given: "Landed, see 7d2f03be0 beside it.\n\n" + issue_scripts.SETTLED, commits: known) == 1
     assert c.world.requests.len() == 0
-    assert strings.contains(text: c.err[0], needle: "names 7d2f03be0 bare")
+    assert core_strings.contains(s: c.err[0], substr: "names 7d2f03be0 bare")
 
 test "edit refuses a closed issue, which comment corrects, and a draft that would close an open one"
     d = defect_draft()
     closed = answer_of(r: d.r, number: 2031, title: new_title(), state: "closed", comments: 1)
     s: issue_pace.Session @= issue_pace.scripted(names_reply().push(closed))
     assert edited(@s, number: 2031, draft: d) == 1
-    assert strings.contains(text: s.err[0], needle: "a closed issue is a record")
-    assert strings.contains(text: s.err[0], needle: "by `comment`")
+    assert core_strings.contains(s: s.err[0], substr: "a closed issue is a record")
+    assert core_strings.contains(s: s.err[0], substr: "by `comment`")
     assert issue_scripts.posts(s) == 0
     taken: issue_draft.Draft @= d
     taken.r.closed @ true
     open_one = answer_of(r: d.r, number: 2031, title: new_title(), state: "open", comments: 0)
     t: issue_pace.Session @= issue_pace.scripted(names_reply().push(open_one))
     assert edited(@t, number: 2031, draft: taken) == 1
-    assert strings.contains(text: t.err[0], needle: "an issue is closed by `close`")
+    assert core_strings.contains(s: t.err[0], substr: "an issue is closed by `close`")

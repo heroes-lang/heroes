@@ -30,18 +30,16 @@
 # placed. The case's scratch folder is written `<work>` and the repository's
 # root `<root>`, so one transcript holds on every machine. **A commit is the
 # same on every machine**: every source is made with one name, one address
-# and one date, through the environment every git this process starts
-# inherits, and with `core.autocrlf=false`.
+# and one date, given to every program this suite starts, git and the
+# compiler alike (`identity`, panel 242's R6), never written into the
+# harness's own environment, and with `core.autocrlf=false`.
+
+use <core>/strings as core_strings
 
 use floors
 use report
 use shell
 use strings
-
-# `runtime/hero_compiler.h`: this process's environment, which every git it
-# starts inherits.
-extern "hero_compiler.h"
-    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
 
 constant ROOT: str
     "tests/golden/fetch"
@@ -65,6 +63,19 @@ constant IDENTITY: [str]
         "GIT_COMMITTER_DATE=2026-11-08T00:00:00Z"
     ]
 
+# The identity as the variables each program this suite starts is given, so
+# the compiler's own git runs under it as the suite's do.
+function identity() -> [shell.Variable]
+    out: [shell.Variable] @= []
+
+    for pair in IDENTITY
+        cut = strings.index_of(text: pair, needle: "=").must()
+        out @ out.push(
+            shell.Variable(name: pair.slice(from: 0, to: cut), value: pair.slice(from: cut + 1, to: pair.len()))
+        )
+
+    return out
+
 # `only` narrows the suite to the cases whose name holds it, its floor then
 # left to the whole suite.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
@@ -72,7 +83,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     found: [str] @= []
 
     for dir in shell.list_directories(scratch: scratch, dir: ROOT)?
-        if strings.ends_with(text: dir, suffix: ".case") && (only == "" || strings.contains(text: last_part(dir), needle: only))
+        if core_strings.has_suffix(s: dir, suffix: ".case") && (only == "" || core_strings.contains(s: last_part(dir), substr: only))
             found @ found.push(dir)
 
     if only == ""
@@ -81,14 +92,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     if found.len() == 0
         return ok(r)
 
-    for pair in IDENTITY
-        cut = strings.index_of(text: pair, needle: "=").must()
-        _ = hero_env_put(
-            name: pair.slice(from: 0, to: cut).cstr(),
-            value: pair.slice(from: cut + 1, to: pair.len()).cstr()
-        )
-
-    asked = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--show-toplevel"])?
+    asked = shell.run_given(scratch: scratch, program: "git", words: ["git", "rev-parse", "--show-toplevel"], given: identity())?
 
     if asked.code != 0
         return fail(
@@ -164,7 +168,7 @@ function copied(from: str, to: str) -> ()?
 
     for path in shell.walk_into(from, skip: nothing)?
         target = to + path.slice(from: from.len(), to: path.len())
-        shell.mkdir_all(target.slice(from: 0, to: last_slash(target)))?
+        shell.mkdir_all(folder_of(target))?
         write_file(path: target, text: read_file(path)?)?
 
     return ok()
@@ -202,7 +206,7 @@ function git(scratch: str, at: str, words: [str]) -> ()?
         "-c"
         "init.defaultBranch=main"
     ]
-    ran = shell.run(scratch: scratch, program: "git", words: both(first: settings, second: words))?
+    ran = shell.run_given(scratch: scratch, program: "git", words: both(first: settings, second: words), given: identity())?
 
     if ran.code != 0
         return fail(
@@ -221,7 +225,7 @@ function transcript(scratch: str, compiler: str, dir: str, work: str) -> str?
         for word in strings.split_on(text: line, byte: 32)
             words @ words.push(swapped(text: word, old: "<work>", new: work))
 
-        ran = shell.attempted(scratch: scratch, program: compiler, words: words)?
+        ran = shell.attempted_given(scratch: scratch, program: compiler, words: words, given: identity())?
         out @ out.push("$ heroes " + line + "\n")
         out @ out.push("exit " + ran.code.to_str() + "\n")
         out @ out.push("stdout:\n")
@@ -290,13 +294,30 @@ function lines_of(text: str) -> [str]
 function last_part(path: str) -> str
     return path.slice(from: last_slash(path) + 1, to: path.len())
 
+# The index of `path`'s last `/`, -1 where it holds none: every byte is
+# asked, the first included (defect 2406: the loop stopped at index 0, so
+# `a` answered a slash there as `/a` does, and `last_part("file.tar.gz")` was
+# `ile.tar.gz`).
 function last_slash(path: str) -> i64
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
     return at
+
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none.
+function folder_of(path: str) -> str
+    at = last_slash(path)
+
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
 
 function why(failed: ()?) -> str
     match failed
@@ -316,3 +337,21 @@ test "a transcript holds no machine's paths, and two texts are told apart at the
     assert apart(one: "a\n", two: "a\nb\n") == 2
     assert lines_of("one\ntwo") == ["one", "two"]
     assert last_part("tests/golden/fetch/add.case") == "add.case"
+
+test "a path's last part and folder are asked of every byte, the first included (defect 2406)"
+    assert last_part("") == ""
+    assert last_part("a") == "a"
+    assert last_part("/") == ""
+    assert last_part("/a") == "a"
+    assert last_part(".bashrc") == ".bashrc"
+    assert last_part("..") == ".."
+    assert last_part("file.tar.gz") == "file.tar.gz"
+    assert last_part("tests/golden/fetch/file.tar.gz") == "file.tar.gz"
+    assert folder_of("") == "."
+    assert folder_of("a") == "."
+    assert folder_of("/") == "/"
+    assert folder_of("/a") == "/"
+    assert folder_of(".bashrc") == "."
+    assert folder_of("..") == "."
+    assert folder_of("file.tar.gz") == "."
+    assert folder_of("tests/golden/fetch/file.tar.gz") == "tests/golden/fetch"

@@ -17,6 +17,8 @@
 # A clone whose history is shortened answers none of these truly: there
 # `file` refuses to read a draft (the CI's checkout is one commit deep).
 
+use <core>/strings as core_strings
+
 use cards
 use shell
 use strings
@@ -175,9 +177,9 @@ test "a clone that cannot answer a draft's history says why, and one that can sa
         print(skip_said(subject: "issue_git: a clone's history", why: "git did not make a repository at " + empty))
         _ = shell.remove_tree(scratch).is_err()
         return
-    assert strings.contains(
-        text: history_unread(scratch: scratch, tree: empty),
-        needle: "HEAD names no commit at " + empty
+    assert core_strings.contains(
+        s: history_unread(scratch: scratch, tree: empty),
+        substr: "HEAD names no commit at " + empty
     )
 
     # This tree answers as git says it should: read, shortened or whole.
@@ -185,10 +187,10 @@ test "a clone that cannot answer a draft's history says why, and one that can sa
     short = shallow(scratch)
 
     if short.is_err()
-        assert strings.starts_with(text: here, prefix: "git cannot read the history at .")
+        assert core_strings.has_prefix(s: here, prefix: "git cannot read the history at .")
     else if short.must()
-        assert strings.starts_with(text: here, prefix: "this clone's history is shortened")
+        assert core_strings.has_prefix(s: here, prefix: "this clone's history is shortened")
     else
-        assert here == "" || strings.starts_with(text: here, prefix: "HEAD names no commit")
+        assert here == "" || core_strings.has_prefix(s: here, prefix: "HEAD names no commit")
     assert skip_said(subject: "x", why: "y") == "SKIP x\n  y"
     _ = shell.remove_tree(scratch).is_err()

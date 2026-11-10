@@ -47,6 +47,8 @@
 # would be the defect. `expectation.hero` carries the reasoning and the
 # two things the line does not do.
 
+use <core>/strings as core_strings
+
 use absence
 use cases
 use expectation
@@ -228,7 +230,7 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
 function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case) -> bool
     text = read_file(item.source)
 
-    if text.is_err() || !strings.starts_with(text: text.must(), prefix: "test \"") && !strings.contains(text: text.must(), needle: "\ntest \"")
+    if text.is_err() || !core_strings.has_prefix(s: text.must(), prefix: "test \"") && !core_strings.contains(s: text.must(), substr: "\ntest \"")
         return false
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", item.source])
 
@@ -301,7 +303,7 @@ function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: 
             return true
         return false
 
-    if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
+    if core_strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || core_strings.contains(s: sanitised.must().err, substr: "runtime error:")
         report.keep_failure(
             @r,
             label: "run/" + item.name + " at " + level,
@@ -383,9 +385,9 @@ test "fixedbugs: a program that writes bytes that are not UTF-8 is told as one t
         r: @got
     )
     assert got.failed == 1
-    assert strings.starts_with(text: got.failures[0], prefix: "FAIL run/latin at -O0\n")
-    assert strings.contains(text: got.failures[0], needle: "ran and exited 0, and what it wrote is not UTF-8")
-    assert strings.contains(text: got.failures[0], needle: "on stdout 1 byte is not, in `c<0xE9>`")
+    assert core_strings.has_prefix(s: got.failures[0], prefix: "FAIL run/latin at -O0\n")
+    assert core_strings.contains(s: got.failures[0], substr: "ran and exited 0, and what it wrote is not UTF-8")
+    assert core_strings.contains(s: got.failures[0], substr: "on stdout 1 byte is not, in `c<0xE9>`")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2287 (2026-11-07): four threads that ran out of their stacks at once
@@ -411,10 +413,10 @@ test "fixedbugs: four threads out of stack at once tell one whole line, run afte
         said = shell.run(scratch: scratch, program: binary, words: [binary]).must()
         assert said.code != 0
         assert said.out == ""
-        assert strings.starts_with(text: said.err, prefix: "panic: stack exhausted")
+        assert core_strings.has_prefix(s: said.err, prefix: "panic: stack exhausted")
         assert strings.split_text(text: said.err, separator: "panic:").len() == 2
         assert strings.split_text(text: said.err, separator: "\n").len() == 2
-        assert strings.ends_with(text: said.err, suffix: "\n")
+        assert core_strings.has_suffix(s: said.err, suffix: "\n")
 
     assert !shell.remove_tree(scratch).is_err()
 
@@ -456,8 +458,8 @@ test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, asked o
     seen: report.Report @= report.empty()
     assert sanitised_failed(@seen, scratch: scratch, compiler: compiler, item: over_case, want: want, flags: leg)
     assert seen.failed == 1
-    assert strings.starts_with(text: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
-    assert strings.contains(text: seen.failures[0], needle: "stack-buffer-overflow")
+    assert core_strings.has_prefix(s: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
+    assert core_strings.contains(s: seen.failures[0], substr: "stack-buffer-overflow")
     unseen: report.Report @= report.empty()
     assert !sanitised_failed(@unseen, scratch: scratch, compiler: compiler, item: exact_case, want: want, flags: leg)
     assert unseen.failed == 0
@@ -531,7 +533,7 @@ test "a program that does not build is a failure naming clang's words"
         r: @r
     )
     assert r.failed == 1
-    assert strings.contains(text: r.failures[0], needle: "did not build")
+    assert core_strings.contains(s: r.failures[0], substr: "did not build")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
@@ -562,7 +564,7 @@ test "fixedbugs: a program that does not build is skipped only where the machine
     assert !took
     assert refuted.failed == 1
     assert refuted.skips.len() == 0
-    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @= report.empty()
@@ -577,5 +579,5 @@ test "fixedbugs: a program that does not build is skipped only where the machine
     assert skipped
     assert excused.failed == 0
     assert excused.skips.len() == 1
-    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP run/lacks\n")
+    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP run/lacks\n")
     assert !shell.remove_tree(scratch).is_err()

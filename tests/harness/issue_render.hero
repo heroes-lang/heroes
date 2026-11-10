@@ -22,6 +22,8 @@
 # closed issue's one comment is `Fixed by <commit>` for a defect and `Settled by
 # <commit>` for the rest, where the card names a commit.
 
+use <core>/strings as core_strings
+
 use cards
 use issue_body
 use issue_controls
@@ -271,7 +273,7 @@ function closed_line_day(rows: [str]) -> str
     for row in rows
         t = strings.without_prefix(text: strings.trimmed(row), prefix: "**")
 
-        if strings.starts_with(text: t, prefix: "Closed ") && t.len() >= 17 && cards.looks_like_day(text: t, at: 7)
+        if core_strings.has_prefix(s: t, prefix: "Closed ") && t.len() >= 17 && cards.looks_like_day(text: t, at: 7)
             return t.slice(from: 7, to: 17)
 
     return ""
@@ -332,16 +334,16 @@ test "a closed defect renders its days, prefix, labels, sections, record and com
     assert got.closed_day == "2026-10-04"
     assert got.closed_from == "body"
     assert got.comment == "Fixed by 7d2f03bee011003fbd37562924582b0660789f03"
-    assert strings.starts_with(
-        text: got.body,
+    assert core_strings.has_prefix(
+        s: got.body,
         prefix: "Filed 2026-10-03 · closed 2026-10-04\n\n### What happens\n\nwhat `#3`\n"
     )
-    assert strings.contains(
-        text: got.body,
-        needle: "with the batch, at 7d2f03be.\n\n7d2f03bee011003fbd37562924582b0660789f03\n"
+    assert core_strings.contains(
+        s: got.body,
+        substr: "with the batch, at 7d2f03be.\n\n7d2f03bee011003fbd37562924582b0660789f03\n"
     )
-    assert strings.ends_with(
-        text: got.body,
+    assert core_strings.has_suffix(
+        s: got.body,
         suffix: "\nRecord: https://github.com/heroes-lang/heroes/blob/p1n/issues/2026-10/03/2026-10-03-1200-defect-235-a-header-name.md"
     )
     assert instant(got.closed_day) == "2026-10-04T12:00:00Z"
@@ -386,7 +388,7 @@ test "the closed day falls from the body to the commit to filed, and never befor
     still = render(issue: open_one, facts: facts, twins: [])
     assert !still.closed
     assert still.milestone == "M-issue-files"
-    assert strings.starts_with(text: still.body, prefix: "Filed 2026-10-11\n\n### What it delivers\n\nrender\n")
+    assert core_strings.has_prefix(s: still.body, prefix: "Filed 2026-10-11\n\n### What it delivers\n\nrender\n")
 
 test "a self card git holds no commit of is unborn, one neither reading names is refused, and so is a card with no title"
     made: {str: str} @= {}
@@ -421,15 +423,15 @@ test "a self card git holds no commit of is unborn, one neither reading names is
         commits: commits
     )
     assert !render(issue: self_card, facts: merged, twins: []).unborn
-    assert strings.contains(
-        text: render(issue: self_card, facts: merged, twins: []).refusal,
-        needle: "neither of D4's readings"
+    assert core_strings.contains(
+        s: render(issue: self_card, facts: merged, twins: []).refusal,
+        substr: "neither of D4's readings"
     )
     untitled = cards.issue_of(
         path: "issues/x/2026-09-11-0008-a.md",
         text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-09-11", commit: "none", github: "none") + "2026-09-11\n"
     )
-    assert strings.starts_with(text: render(issue: untitled, facts: facts, twins: []).refusal, prefix: "no title")
+    assert core_strings.has_prefix(s: render(issue: untitled, facts: facts, twins: []).refusal, prefix: "no title")
 
 test "the two files of a number issued twice each name the other, and the title and the field hold it"
     one = cards.issue_of(
@@ -460,9 +462,9 @@ test "the two files of a number issued twice each name the other, and the title 
     assert got.defect == "014"
     assert got.prefix == "defect"
     assert got.title == "Defect 014: one"
-    assert strings.contains(
-        text: got.body,
-        needle: "The number 014 was issued twice: the other defect holding it is https://github.com/heroes-lang/heroes/blob/p/issues/b/2026-09-06-0636-found-by-y.md"
+    assert core_strings.contains(
+        s: got.body,
+        substr: "The number 014 was issued twice: the other defect holding it is https://github.com/heroes-lang/heroes/blob/p/issues/b/2026-09-06-0636-found-by-y.md"
     )
 
 test "a ratification opens with its sitting's number once, a path alone takes the slug's words, and the first paragraph titles what else has none"
@@ -498,7 +500,7 @@ test "a ratification opens with its sitting's number once, a path alone takes th
     assert ratified.title == "Panel 212: ratify R1 to R11"
     assert ratified.prefix == "panel"
     assert ratified.self_from == "addition"
-    assert !strings.contains(text: ratified.body, needle: "**panel 212**")
+    assert !core_strings.contains(s: ratified.body, substr: "**panel 212**")
     plain = cards.card_text(
         kind: "decision",
         area: "cli",
@@ -534,7 +536,7 @@ test "a ratification opens with its sitting's number once, a path alone takes th
         twins: []
     )
     assert first.title == "A row, ratified. More words."
-    assert strings.contains(text: first.body, needle: "### Notes\n\n2026-09-11 · **A row, ratified.** More\nwords.\n")
+    assert core_strings.contains(s: first.body, substr: "### Notes\n\n2026-09-11 · **A row, ratified.** More\nwords.\n")
 
 test "a cut title stands after the days unless the body holds it under a heading already"
     made: {str: str} = {}
@@ -566,15 +568,15 @@ test "a cut title stands after the days unless the body holds it under a heading
         twins: []
     )
     assert second.cut
-    assert strings.starts_with(text: second.body, prefix: "Filed 2026-10-11\n\n### What it delivers\n\n" + long + "\n")
+    assert core_strings.has_prefix(s: second.body, prefix: "Filed 2026-10-11\n\n### What it delivers\n\n" + long + "\n")
     heading = render(
         issue: cards.issue_of(path: "issues/x/2026-10-11-0001-b.md", text: card + "# " + long + "\n\nprose\n"),
         facts: facts,
         twins: []
     )
     assert heading.cut
-    assert strings.starts_with(
-        text: heading.body,
+    assert core_strings.has_prefix(
+        s: heading.body,
         prefix: "Filed 2026-10-11 · closed 2026-10-11\n\n" + long + "\n\n### Notes\n"
     )
     assert second.fields == 3

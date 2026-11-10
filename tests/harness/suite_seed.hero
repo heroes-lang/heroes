@@ -23,6 +23,8 @@
 # holds of nothing passes in silence, so a reader moved or renamed is told,
 # and a reader removed on purpose takes this question with it.
 
+use <core>/strings as core_strings
+
 use report
 use shell
 use strings
@@ -46,7 +48,7 @@ function run_all(scratch: str) -> report.Report?
     readers: [str] @= []
 
     for path in shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
-        if !strings.ends_with(text: path, suffix: ".hero")
+        if !core_strings.has_suffix(s: path, suffix: ".hero")
             continue
         text = read_file(path)
 
@@ -54,7 +56,7 @@ function run_all(scratch: str) -> report.Report?
             report.keep_failure(@r, label: "seed/writer", detail: "  cannot read " + path)
             return ok(r)
 
-        if strings.contains(text: text.must(), needle: BINDING)
+        if core_strings.contains(s: text.must(), substr: BINDING)
             readers @ readers.push(path)
 
     seed = read_file(SEED)
@@ -90,24 +92,24 @@ test "a seed that defines the function once holds, none or two is told, and no r
     seed = "int a;\nHeroStr hero_program_sources(void) { return hero_str_from_bytes(\"0123456789abcdef\", 16); }\nint main(void) { return 0; }\n"
     assert judged(readers: ["selfhost/cli/help.hero"], seed: seed) == ""
     lacking = judged(readers: ["selfhost/cli/help.hero"], seed: "int main(void) { return 0; }\n")
-    assert strings.starts_with(
-        text: lacking,
+    assert core_strings.has_prefix(
+        s: lacking,
         prefix: "  selfhost/cli/help.hero reads hero_program_sources and seed/heroes.c does not define it"
     )
     twice = judged(readers: ["selfhost/cli/help.hero"], seed: seed + seed)
     assert twice == "  seed/heroes.c defines hero_program_sources 2 times, where one program's C defines it once"
     none: [str] = []
-    assert strings.starts_with(
-        text: judged(readers: none, seed: seed),
+    assert core_strings.has_prefix(
+        s: judged(readers: none, seed: seed),
         prefix: "  no module of selfhost/ binds hero_program_sources"
     )
 
 test "the binding and the definition are spelt as the compiler's own source and emitter spell them"
     help = read_file("selfhost/cli/help.hero").must()
-    assert strings.contains(text: help, needle: "extern \"hero_os.h\"\n" + BINDING + ") -> str\n")
+    assert core_strings.contains(s: help, substr: "extern \"hero_os.h\"\n" + BINDING + ") -> str\n")
     provenance = read_file("selfhost/emit/provenance.hero").must()
-    assert strings.contains(text: provenance, needle: "\"hero_program_sources\"")
-    assert strings.contains(
-        text: provenance,
-        needle: "\"HeroStr \" + FUNCTION + \"(void) { return hero_str_from_bytes("
+    assert core_strings.contains(s: provenance, substr: "\"hero_program_sources\"")
+    assert core_strings.contains(
+        s: provenance,
+        substr: "\"HeroStr \" + FUNCTION + \"(void) { return hero_str_from_bytes("
     )

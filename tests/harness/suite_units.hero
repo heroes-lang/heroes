@@ -42,6 +42,8 @@
 # build leaves on disk across two runs, so the source has no single
 # resting state and no expectation file could hold the answer.
 
+use <core>/strings as core_strings
+
 use report
 use shell
 use strings
@@ -323,10 +325,10 @@ function a_tu_names_the_runtime_descriptors_and_defines_none(@r: report.Report, 
 
     for i in range(from: 0, to: seen.paths.len())
         for row in strings.lines(seen.texts[i])
-            if strings.contains(text: row, needle: "HeroDesc " + RUNTIME_DESC)
+            if core_strings.contains(s: row, substr: "HeroDesc " + RUNTIME_DESC)
                 carried @ carried.push("    " + seen.paths[i] + ": " + strings.trimmed(row))
 
-            if strings.contains(text: row, needle: "&" + RUNTIME_DESC)
+            if core_strings.contains(s: row, substr: "&" + RUNTIME_DESC)
                 named @ named + 1
 
     if carried.len() > 0
@@ -371,7 +373,7 @@ function text_of(e: Emission, name: str) -> str
 # two is that every statement inside a function body is indented.
 function prototype_of(text: str, name: str) -> str
     for row in strings.lines(text)
-        if strings.contains(text: row, needle: name) && strings.ends_with(text: row, suffix: ";") && !strings.starts_with(text: row, prefix: " ")
+        if core_strings.contains(s: row, substr: name) && core_strings.has_suffix(s: row, suffix: ";") && !core_strings.has_prefix(s: row, prefix: " ")
             return row
 
     return ""
@@ -383,7 +385,7 @@ function prototype_of(text: str, name: str) -> str
 # (a re-anchoring `#line` joins its anchor), so the row goes on past ` {`.
 function definition_of(text: str, name: str) -> str
     for row in strings.lines(text)
-        if strings.contains(text: row, needle: name + "(") && !strings.starts_with(text: row, prefix: " ")
+        if core_strings.contains(s: row, substr: name + "(") && !core_strings.has_prefix(s: row, prefix: " ")
             head = strings.index_of(text: row, needle: ") {")
 
             if !head.is_err()

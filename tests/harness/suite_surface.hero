@@ -20,6 +20,8 @@
 # echoes the path it was given and an expectation must not also record
 # which directory ran the harness.
 
+use <core>/strings as core_strings
+
 use apply_tree
 use probe
 use report
@@ -255,7 +257,7 @@ function warning_wrong(said: shell.Run) -> [str]
             "  clang's warning is told " + copies.to_str() + " times, where the program's unit tells it once"
         )
 
-    if strings.contains(text: said.err, needle: "pointee-")
+    if core_strings.contains(s: said.err, substr: "pointee-")
         wrong @ wrong.push("  stderr names the pointee probe's file, which the author never wrote")
     return wrong
 
@@ -294,11 +296,11 @@ function no_operand_wrong(said: shell.Run, spelled: shell.Run) -> [str]
             "  `measure` exits " + said.code.to_str() + " and `measure spec/heroes-spec.md` " + spelled.code.to_str() + ", and their streams differ:\n" + report.mismatch(what: "stdout", expected: spelled.out, actual: said.out)
         )
 
-    if !strings.starts_with(text: said.out, prefix: "spec/heroes-spec.md\n") || said.err != ""
+    if !core_strings.has_prefix(s: said.out, prefix: "spec/heroes-spec.md\n") || said.err != ""
         wrong @ wrong.push("  its report is not of spec/heroes-spec.md alone, on stdout")
-    verdict = strings.contains(text: said.out, needle: " — the binding number\n") && strings.contains(text: said.out, needle: "An addition needs a named removal")
-    breach = strings.contains(text: said.out, needle: "\nBREACH: ")
-    stale = strings.contains(text: said.out, needle: "\nSTALE: the recorded count is for ") && strings.contains(text: said.out, needle: "No verdict is given against a stale count")
+    verdict = core_strings.contains(s: said.out, substr: " — the binding number\n") && core_strings.contains(s: said.out, substr: "An addition needs a named removal")
+    breach = core_strings.contains(s: said.out, substr: "\nBREACH: ")
+    stale = core_strings.contains(s: said.out, substr: "\nSTALE: the recorded count is for ") && core_strings.contains(s: said.out, substr: "No verdict is given against a stale count")
 
     if !(said.code == 0 && verdict && !stale || said.code == 1 && (stale && !verdict || breach && !stale))
         wrong @ wrong.push(
@@ -342,19 +344,19 @@ function apply_json_in_place(scratch: str, compiler: str, @r: report.Report)
     # The bytes it read, `fn main()` and its line, by `shasum -a 256`, and
     # what it wrote as the document's last field before the holes, which a
     # program the rounds rewrote cannot promise whole (panel 228's R1).
-    read_said = strings.contains(
-        text: said.out,
-        needle: "\"sha256\": \"6fab839e9cdb8212aa763381eda66978867e6461bfca0005002f5874b0d6b02a\""
+    read_said = core_strings.contains(
+        s: said.out,
+        substr: "\"sha256\": \"6fab839e9cdb8212aa763381eda66978867e6461bfca0005002f5874b0d6b02a\""
     )
-    wrote_said = strings.ends_with(
-        text: said.out,
+    wrote_said = core_strings.has_suffix(
+        s: said.out,
         suffix: "  \"rounds\": 1,\n  \"not_applied\": [],\n  \"output\": \"function main()\\n    print(1)\\n\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
     )
 
-    if !strings.contains(text: said.out, needle: "\"kind\": \"applied\"") || !read_said || !wrote_said
+    if !core_strings.contains(s: said.out, substr: "\"kind\": \"applied\"") || !read_said || !wrote_said
         wrong @ wrong.push("  stdout is not the applied document of what it read and wrote:\n" + said.out)
 
-    if !strings.contains(text: said.err, needle: "rewrote " + path)
+    if !core_strings.contains(s: said.err, substr: "rewrote " + path)
         wrong @ wrong.push("  stderr does not say the file was rewritten: " + said.err)
 
     if wrong.len() > 0
@@ -418,7 +420,7 @@ function in_place_case(@r: report.Report, scratch: str, compiler: str, verb: str
     if said.code != 2
         wrong @ wrong.push("  exit " + said.code.to_str() + ", where a write that failed is 2")
 
-    if !strings.contains(text: said.err, needle: path + " is untouched")
+    if !core_strings.contains(s: said.err, substr: path + " is untouched")
         wrong @ wrong.push("  stderr does not say the file is untouched: " + said.err)
 
     if after != text
@@ -1384,9 +1386,9 @@ test "a probe names every way one invocation disappointed it"
     p = row(name: "wrong", argv: "this", code: 2).out_has("not there").err_nonempty()
     wrong = probe.unmet(scratch: scratch, compiler: shell.some_compiler().must(), p: p)
     assert wrong.len() > 0
-    assert strings.contains(text: wrong, needle: "exited 0, not 2")
-    assert strings.contains(text: wrong, needle: "does not carry `not there`")
-    assert strings.contains(text: wrong, needle: "stderr is empty")
+    assert core_strings.contains(s: wrong, substr: "exited 0, not 2")
+    assert core_strings.contains(s: wrong, substr: "does not carry `not there`")
+    assert core_strings.contains(s: wrong, substr: "stderr is empty")
     assert !shell.remove_tree(scratch).is_err()
 
 test "the chain leaves the probe it was given alone"

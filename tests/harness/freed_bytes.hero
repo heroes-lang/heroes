@@ -41,8 +41,9 @@
 # `--sanitize` runs. Measured on this Mac only: the fill on Linux and Windows,
 # and `env` on the Windows box, are the round's legs to run.
 
+use <core>/strings as core_strings
+
 use shell
-use strings
 
 # What every sanitised run of a case is handed: everything ASan frees is
 # overwritten with 85 (`U`) at its whole length, the length being the largest
@@ -127,7 +128,7 @@ test "the fill turns a C library's read of freed bytes into a wrong answer, and 
     ).must()
     assert alone.code == 0
     assert alone.out == "412\n"
-    assert !strings.contains(text: alone.err, needle: "AddressSanitizer")
+    assert !core_strings.contains(s: alone.err, substr: "AddressSanitizer")
 
     # With the fill, the bytes C reads are 85 each.
     words = filled([compiler, "run", dir + "/keeper.hero", "--sanitize", "-O0"])

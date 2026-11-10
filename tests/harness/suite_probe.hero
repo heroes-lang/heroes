@@ -57,6 +57,8 @@
 # when one stops failing, which is the day its entry goes, as well as when
 # anything else fails.
 
+use <core>/strings as core_strings
+
 use floors
 use report
 use shell
@@ -200,6 +202,16 @@ function trees() -> [Tree]
     # and 1431, the fifteen trees of core 0.2.0 that programs carry, ten files
     # each, and `examples/json/` down to its one module; packages 14 seeds and
     # 126 variants, past 4 and 36, the ten files of 0.2.0 beside 0.1.0's four.
+    # **The tests row reads the net's own placed tree since feature 2425**
+    # (panel 242's R7), as the examples row reads the fifteen of `examples/`:
+    # `heroes probe <root>` reads every `.hero` under its root, a placed
+    # tree's included, and this suite's walk is held to that census
+    # (`/covered`), so the two read it together; its ten files are
+    # `packages/core/0.2.0/files`' bytes (the fingerprint holds them so at
+    # every build), which the packages row probes as their source. Leaving a
+    # placed tree out of both is a change to what `heroes probe`'s own walk
+    # reads, as `heroes mutate`'s leaves it out (`cli/mutate.hero`,
+    # `in_placed_tree`), and would lower the examples row by its 150 copies.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
@@ -221,7 +233,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 
     # Every directory a `fmt` row reads is one the fixtures' row probed.
     for dir in fixture_directories()
-        if !strings.contains(text: ran.out, needle: "\n  " + dir + ": ")
+        if !core_strings.contains(s: ran.out, substr: "\n  " + dir + ": ")
             report.keep_failure(
                 @r,
                 label: "probe/fixtures",
@@ -326,7 +338,7 @@ function judged(@r: report.Report, row: Row, ran: shell.Run)
 function added(sum: Sum, file: str, family: str, ran: shell.Run) -> Sum
     out: Sum @= sum
 
-    if ran.code == 1 && strings.contains(text: ran.err, needle: REFUSING)
+    if ran.code == 1 && core_strings.contains(s: ran.err, substr: REFUSING)
         out.refused @ out.refused + 1
         return out
     named = failures(ran.err)
@@ -449,9 +461,9 @@ function failures(err: str) -> [str]
     out: [str] @= []
 
     for line in strings.lines(err)
-        first = strings.starts_with(text: line, prefix: "error: the first, `")
+        first = core_strings.has_prefix(s: line, prefix: "error: the first, `")
 
-        if !first && !strings.starts_with(text: line, prefix: "    `")
+        if !first && !core_strings.has_prefix(s: line, prefix: "    `")
             continue
         parts = strings.split_text(text: line, separator: "`")
 
@@ -491,7 +503,7 @@ function refused_of(out: str) -> i64
 # The cells of the report's row for `family`, the family first.
 function tally(text: str, family: str) -> [str]
     for line in strings.lines(text)
-        if strings.starts_with(text: line, prefix: "| " + family + " | ")
+        if core_strings.has_prefix(s: line, prefix: "| " + family + " | ")
             cells: [str] @= []
 
             for cell in strings.split_text(text: line, separator: "|")
@@ -535,7 +547,7 @@ function fixture_directories() -> [str]
         for p in table
             words = strings.words(p.argv)
 
-            if words.len() < 2 || words[0] != "fmt" || !strings.starts_with(text: words[1], prefix: "tests/golden/surface-fixtures/")
+            if words.len() < 2 || words[0] != "fmt" || !core_strings.has_prefix(s: words[1], prefix: "tests/golden/surface-fixtures/")
                 continue
             dir = directory_of(words[1])
 
@@ -544,12 +556,22 @@ function fixture_directories() -> [str]
 
     return out
 
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none. Every byte is asked, the first included: until
+# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
+# `/a` does, and `""` sliced to -1 and aborted.
 function directory_of(path: str) -> str
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
     return path.slice(from: 0, to: at)
 
 ## Tests
@@ -625,7 +647,7 @@ test "a file's run adds a seed, a file the parser refuses, or a run no row allow
         ran: shell.Run(code: 2, out: "", err: "error: cannot read `e.hero`", started: true, why: 0)
     )
     assert sum.broken.len() == 3
-    assert strings.starts_with(text: sum.broken[0], prefix: "  `c.hero` exited 124")
+    assert core_strings.has_prefix(s: sum.broken[0], prefix: "  `c.hero` exited 124")
     assert sum.seeds == 1
 
     # A 2 naming its failures adds them, to be held to the row's known ones.
@@ -654,7 +676,7 @@ test "a tree is red when its files do not read what the probe reads of its root"
     missed: report.Report @= report.empty()
     summed(@missed, tree: low, census: census, sum: short)
     assert missed.failed == 1
-    assert strings.contains(text: missed.failures[0], needle: "FAIL probe/t/covered")
+    assert core_strings.contains(s: missed.failures[0], substr: "FAIL probe/t/covered")
 
     # A census the watchdog stopped, and a file's run no row allows.
     stopped: report.Report @= report.empty()
@@ -669,7 +691,7 @@ test "a tree is red when its files do not read what the probe reads of its root"
     broken: report.Report @= report.empty()
     summed(@broken, tree: tree, census: census, sum: killed)
     assert broken.failed == 1
-    assert strings.contains(text: broken.failures[0], needle: "`c.hero` exited 124")
+    assert core_strings.contains(s: broken.failures[0], substr: "`c.hero` exited 124")
 
 test "a tree's failures are held to the ones its row names as known"
     census = file_run(code: 0, seeds: 1, err: "")
@@ -700,3 +722,13 @@ test "a tree's failures are held to the ones its row names as known"
         sum: clean
     )
     assert gone.failed == 1
+
+test "a path's folder is asked of every byte, the first included (defect 2406)"
+    assert directory_of("") == "."
+    assert directory_of("a") == "."
+    assert directory_of("/") == "/"
+    assert directory_of("/a") == "/"
+    assert directory_of(".bashrc") == "."
+    assert directory_of("..") == "."
+    assert directory_of("file.tar.gz") == "."
+    assert directory_of("tests/golden/surface-fixtures/comments101/a.hero") == "tests/golden/surface-fixtures/comments101"

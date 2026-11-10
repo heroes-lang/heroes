@@ -11,6 +11,8 @@
 # would be two readers of one mark, and the day they disagreed a case would be
 # skipped by one rule and judged by the other.
 
+use <core>/strings as core_strings
+
 use strings
 
 # Every annotation in a case, with `#~v` resolved to the next line.
@@ -52,7 +54,7 @@ function marks_in(row: str, line: i64) -> [str]
     found: [str] @= []
     opener = strings.trimmed(row)
 
-    if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
+    if core_strings.has_prefix(s: opener, prefix: "#") && !core_strings.has_prefix(s: opener, prefix: "#~")
         return found
     at = strings.index_of(text: row, needle: "#~")
 
@@ -77,7 +79,7 @@ function marks_in(row: str, line: i64) -> [str]
         delta: i64 @= 0
         codes: str @= strings.trimmed(chunk)
 
-        if strings.starts_with(text: chunk, prefix: "v")
+        if core_strings.has_prefix(s: chunk, prefix: "v")
             delta @ 1
             codes @ strings.trimmed(strings.without_prefix(text: chunk, prefix: "v"))
 
@@ -99,7 +101,7 @@ function reported_by(text: str) -> [str]
     pending: str @= ""
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "  at ")
+        if core_strings.has_prefix(s: row, prefix: "  at ")
             if pending.len() > 0
                 rest = strings.without_prefix(text: row, prefix: "  at ")
                 parts = strings.split_on(text: rest, byte: 58)
@@ -142,7 +144,7 @@ function reported_with_file(text: str) -> [str]
     pending: str @= ""
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "  at ")
+        if core_strings.has_prefix(s: row, prefix: "  at ")
             if pending.len() > 0
                 rest = strings.without_prefix(text: row, prefix: "  at ")
                 parts = strings.split_on(text: rest, byte: 58)
@@ -174,7 +176,7 @@ function reported_by_file(text: str) -> [str]
     pending: str @= ""
 
     for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "  at ")
+        if core_strings.has_prefix(s: row, prefix: "  at ")
             if pending.len() > 0
                 parts = strings.split_on(text: strings.without_prefix(text: row, prefix: "  at "), byte: 58)
 
@@ -213,7 +215,7 @@ function told_in(said: [str], path: str) -> [str]
     out: [str] @= []
 
     for one in said
-        if strings.starts_with(text: one, prefix: path + ":")
+        if core_strings.has_prefix(s: one, prefix: path + ":")
             out @ out.push(strings.without_prefix(text: one, prefix: path + ":"))
 
     return out

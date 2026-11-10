@@ -355,6 +355,21 @@ int64_t hero_dir_remove_tree(const char *path);
 void hero_run_reset(void);
 void hero_run_arg(HeroStr word);
 
+/* ONE VARIABLE FOR THE NEXT CHILD ALONE (panel 242's R6, ratified 2026-11-10;
+ * feature 2424), staged as a word is and given back by `hero_run_reset`: this
+ * process's own environment is never written, so no other thread's child, and
+ * no later child, sees it. The child's environment is this process's, each
+ * staged variable taking the place of its namesake (compared as the system
+ * compares names: by bytes on POSIX, without case on Windows), a name staged
+ * twice taking its later value; with nothing staged the child inherits this
+ * process's environment exactly. **The program is found through THIS
+ * process's `PATH` on every system**, never the child's, so a staged `PATH`
+ * is the child's alone and means one thing everywhere. An empty value is a
+ * variable set empty, never one removed. An empty name, a name holding `=`,
+ * and a NUL in either are panics. `parts/run.c` carries why each is so, and
+ * which platform measured which promise. */
+void hero_run_env(HeroStr name, HeroStr value);
+
 /* Seconds after which the next `hero_run_go` kills its child and answers 124 —
  * coreutils' `timeout` code, on purpose, so a caller that used to read that
  * program's answer reads the same number. 0 is no limit and is the default.

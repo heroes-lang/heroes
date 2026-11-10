@@ -43,6 +43,8 @@
 # miscompilation introduced since the seed was last refreshed. Run with one
 # compiler on both sides, the grid above is the guard.
 
+use <core>/strings as core_strings
+
 use gen_cjudge
 use gen_contract
 use gen_depth
@@ -102,7 +104,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     while seed <= SAMPLE
         name = "g" + seed.to_str()
 
-        if only == "" || strings.contains(text: name, needle: only)
+        if only == "" || core_strings.contains(s: name, substr: only)
             g = gen_program.from_seed(seed: seed, percent: DECLARED)
             source = dir + "/" + name + ".hero"
             files = gen_program.files_of(g, seed: seed)
@@ -130,8 +132,8 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                     )
         seed @ seed + 1
 
-    depth_asked = only == "" || strings.contains(text: "depth", needle: only)
-    control_asked = only == "" || strings.contains(text: "leak-control", needle: only)
+    depth_asked = only == "" || core_strings.contains(s: "depth", substr: only)
+    control_asked = only == "" || core_strings.contains(s: "leak-control", substr: only)
 
     if control_asked
         leak_control(@r, compiler: compiler, dir: dir + "/leak", work: work)?
@@ -215,7 +217,7 @@ function answers_in(text: str) -> {str: str}
     block: str @= ""
 
     for row in gen_text.lines_of(text)
-        if strings.starts_with(text: row, prefix: "== ")
+        if core_strings.has_prefix(s: row, prefix: "== ")
             if name != ""
                 found[name] @ block
             name @ strings.without_prefix(text: row, prefix: "== ")

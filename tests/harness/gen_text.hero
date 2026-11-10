@@ -9,10 +9,11 @@
 # block has a blank line before it, unless it opens its own block, and a
 # `for` and a `match` binding have one after them, where an `if` has none.
 
+use <core>/strings as core_strings
+
 use gen_cboundary
 use gen_eval
 use gen_tree
-use strings
 
 # spec § 7's precedence, weakest first; a negative literal is a unary minus.
 # A unary operand is never parenthesised for being unary: `fmt` prints
@@ -324,7 +325,7 @@ function lines_of(text: str) -> [str]
 # M-generated-programs' closing hunt, `string slice splits a character` in
 # this function, the families' strings above ASCII printed whole).
 function opens_panic(row: str) -> bool
-    return strings.starts_with(text: row, prefix: "!panic: ")
+    return core_strings.has_prefix(s: row, prefix: "!panic: ")
 
 function has_panic(answer: str) -> bool
     for row in lines_of(answer)

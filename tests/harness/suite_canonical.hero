@@ -72,6 +72,8 @@
 # something must type it, and the harness already runs the binary and
 # reads files. A `--check` flag would be surface bought for nothing.
 
+use <core>/strings as core_strings
+
 use floors
 use placed_trees
 use report
@@ -128,7 +130,7 @@ constant LEAST: i64
 # Whether `path` is a file this check judges: a `.hero` file standing in no
 # tree a package fetch placed (the reasons are at the top of this file).
 function is_source(path: str) -> bool
-    return strings.ends_with(text: path, suffix: ".hero") && !placed_trees.within(path)
+    return core_strings.has_suffix(s: path, suffix: ".hero") && !placed_trees.within(path)
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()

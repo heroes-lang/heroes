@@ -21,10 +21,19 @@
 #include "heroes_runtime.h"
 
 /* `name` set to `value` in this process's environment, which every child it
- * starts afterwards inherits (`hero_run_go` passes no block of its own):
- * HERO_OS_OK, or HERO_OS_FAILED where the system refused or either is not
- * UTF-8 on Windows. Defect 509: the compiler names the symbolizer a program
- * it runs under `--sanitize` uses (`selfhost/cli/symbolized.hero`). */
+ * starts afterwards inherits: HERO_OS_OK, or HERO_OS_FAILED where the system
+ * refused or either is not UTF-8 on Windows (defect 509).
+ *
+ * **NO SOURCE OF THIS TREE CALLS IT SINCE FEATURE 2424**, which gives a child
+ * its variables at the spawn (`hero_run_env`, `hero_os.h`; panel 242's R6),
+ * and R6 retires it from this header. It stays for one reader alone, the
+ * committed `seed/heroes.c`, emitted before its five callers moved, which
+ * binds it (eleven references, `grep -c hero_env_put seed/heroes.c` on
+ * 2026-11-10): the first command of CLAUDE.md § Commands compiles that seed
+ * against this runtime, and every route a refresh of the seed is rebuilt by
+ * (`seed/README.md`, `one-stage`, `abi-put-back`, `scaffold`) compiles the
+ * seed before it against the refresh's own runtime. So it leaves in the first
+ * commit after the refresh whose seed no longer names it, and not before. */
 int64_t hero_env_put(const char *name, const char *value);
 
 /* The key of a file's bytes, as the compiler's build cache takes it (defect

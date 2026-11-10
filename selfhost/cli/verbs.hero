@@ -15,6 +15,7 @@
 
 use cli/argv
 use cli/compile
+use cli/environment
 use cli/files
 use cli/input
 use cli/io
@@ -93,8 +94,8 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
     # The streams are INHERITED: this program's output is the point of
     # the command, so it goes where the compiler's own output goes. Under
     # `--sanitize` on Windows, DbgHelp names its frames (`cli/symbolized`).
-    symbolized.prepare(sanitize: options.sanitize)
-    ran = process.run(program: made.must().binary, words: words, out: "", err: "")
+    given = symbolized.prepare(sanitize: options.sanitize)
+    ran = process.run_given(program: made.must().binary, words: words, out: "", err: "", given: given)
 
     if !ran.started
         io.eprint(text: "error: cannot execute " + made.must().binary)
@@ -143,7 +144,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
     failed: i64 @= 0
     index: i64 @= 0
     ran: i64 @= 0
-    symbolized.prepare(sanitize: options.sanitize)
+    given = symbolized.prepare(sanitize: options.sanitize)
 
     # `--only` runs the tests whose title holds its text, each by its index
     # as the binary takes it (issue 1075, panel 018): two titles may share
@@ -156,11 +157,12 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             index @ index + 1
             continue
         ran @ ran + 1
-        one = process.run(
+        one = process.run_given(
             program: made.must().binary,
             words: [made.must().binary, index.to_str()],
             out: "",
-            err: ""
+            err: "",
+            given: given
         )
 
         if one.started && one.code == 0
@@ -210,7 +212,7 @@ function exit_of(failed: produce.Produced?) -> cli_table.Exit
             # which no line this compiler asks can show where it matches a job's
             # own file (`cli/clang_jobs.hero`): the variable is named, never the
             # compiler blamed alone (defect 2355).
-            if process.is_set("CCC_OVERRIDE_OPTIONS")
+            if environment.is_set("CCC_OVERRIDE_OPTIONS")
                 io.eprint(
                     text: "  note: `CCC_OVERRIDE_OPTIONS` is set, and it edits every clang job this compiler starts: build with it unset to tell whether this failure is the compiler's or the edit's"
                 )

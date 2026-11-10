@@ -10,6 +10,8 @@
 # opens `Panel 212: `. Each prefix stands only where the title does not open so
 # already, in any case.
 
+use <core>/strings as core_strings
+
 use strings
 
 # The numbers a defect's file name carries and how a title says them:
@@ -95,7 +97,7 @@ function defect_numbers(name: str, first: str) -> Numbered
     while digits < field.len() && field[digits] >= '0' && field[digits] <= '9'
         digits @ digits + 1
 
-    if digits == 0 || !strings.starts_with(text: field.slice(from: digits, to: field.len()), prefix: " — ")
+    if digits == 0 || !core_strings.has_prefix(s: field.slice(from: digits, to: field.len()), prefix: " — ")
         return Numbered(numbers: [], said: "")
     number = padded(strings.to_number(field.slice(from: 0, to: digits)).must())
     return Numbered(numbers: [number], said: "Defect " + number)
@@ -103,7 +105,7 @@ function defect_numbers(name: str, first: str) -> Numbered
 # The digits of a first field that is `**panel NNN**` and nothing else, as
 # written, or "".
 function panel_of(field: str) -> str
-    if !strings.starts_with(text: field, prefix: "**panel ") || !strings.ends_with(text: field, suffix: "**")
+    if !core_strings.has_prefix(s: field, prefix: "**panel ") || !core_strings.has_suffix(s: field, suffix: "**")
         return ""
 
     # Both ends are ASCII, so the cut stands between characters.

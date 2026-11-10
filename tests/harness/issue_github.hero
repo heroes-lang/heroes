@@ -24,6 +24,8 @@
 # and an import's `url` an import of the same, so no answer can send a later
 # request, or a card's `github:` line, anywhere else.
 
+use <core>/strings as core_strings
+
 use issue_pace
 use issue_wire
 use json_fields
@@ -101,7 +103,7 @@ function listed(@s: issue_pace.Session, path: str) -> [json_read.Json]?
     page: i64 @= 1
 
     while page <= PAGES
-        joiner = if strings.contains(text: path, needle: "?")
+        joiner = if core_strings.contains(s: path, substr: "?")
             "&"
         else
             "?"
@@ -314,7 +316,7 @@ function import_path(url: str) -> str?
 function number_after(text: str, prefix: str) -> i64?
     rest = strings.without_prefix(text: text, prefix: prefix)
 
-    if !strings.starts_with(text: text, prefix: prefix) || rest.len() == 0 || rest.len() > 12 || rest[0] == '0'
+    if !core_strings.has_prefix(s: text, prefix: prefix) || rest.len() == 0 || rest.len() > 12 || rest[0] == '0'
         return fail(code: "foreign", msg: "`" + text + "` is not " + prefix + "<number>")
     n = strings.to_number(rest)
 
@@ -417,7 +419,7 @@ test "a list is read a page at a time until a short page, and the issues stop at
 
     match limit(@u)
         .ok _  => assert false
-        .err e => assert strings.contains(text: e.msg, needle: "answered 404: Not Found")
+        .err e => assert core_strings.contains(s: e.msg, substr: "answered 404: Not Found")
 
     v: issue_pace.Session @= issue_pace.scripted(
         [issue_wire.answer(status: 200, headers: [], body: "{}"), issue_wire.answer(status: 200, headers: [], body: "{\"limit\":\"collaborators_only\",\"origin\":\"repository\",\"expires_at\":\"2026-10-13T10:00:00Z\"}")]

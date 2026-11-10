@@ -72,6 +72,8 @@
 # Tightened, `run` read 138 passed and 0 failed and `corpus` 55 and 0: no
 # case in the tree had been leaning on the gap.
 
+use <core>/strings as core_strings
+
 use strings
 
 # How a case ends, when it does not end at exit 0 with nothing on stderr.
@@ -107,10 +109,10 @@ function split(text: str) -> Expectation?
     if rows.len() > 0
         last = rows[rows.len() - 1]
 
-        if strings.starts_with(text: last, prefix: "!panic: ")
+        if core_strings.has_prefix(s: last, prefix: "!panic: ")
             ending @ .panics(message: strings.without_prefix(text: last, prefix: "!panic: "))
             kept @ rows.slice(from: 0, to: rows.len() - 1)
-        else if strings.starts_with(text: last, prefix: "!exit: ")
+        else if core_strings.has_prefix(s: last, prefix: "!exit: ")
             code = strings.to_number(strings.trimmed(strings.without_prefix(text: last, prefix: "!exit: ")))
 
             if code.is_err()
@@ -122,7 +124,7 @@ function split(text: str) -> Expectation?
     # to, which must be an abort's (panel 231).
     place: str? @= fail(code: "none", msg: "no place line")
 
-    if kept.len() > 0 && strings.starts_with(text: kept[kept.len() - 1], prefix: "!at: ")
+    if kept.len() > 0 && core_strings.has_prefix(s: kept[kept.len() - 1], prefix: "!at: ")
         where = strings.trimmed(strings.without_prefix(text: kept[kept.len() - 1], prefix: "!at: "))
 
         match ending
@@ -146,7 +148,7 @@ function split(text: str) -> Expectation?
     if kept.len() > 0
         before = kept[kept.len() - 1]
 
-        if strings.starts_with(text: before, prefix: "!sanitizer: ")
+        if core_strings.has_prefix(s: before, prefix: "!sanitizer: ")
             needle = strings.trimmed(strings.without_prefix(text: before, prefix: "!sanitizer: "))
 
             if needle.len() == 0
@@ -192,7 +194,7 @@ function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
                     "must exit " + x.code.to_str() + ", and exited " + code.to_str() + "\n  its stderr was:\n" + err
                 )
         .panics p =>
-            if !strings.contains(text: err, needle: p.message)
+            if !core_strings.contains(s: err, substr: p.message)
                 return ok("must abort saying `" + p.message + "`, and said:\n" + err)
 
             if code == 0
@@ -200,7 +202,7 @@ function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
                     "must not exit 0: an abort that returns success is the silent wrong answer this case exists to catch"
                 )
 
-            if !e.place.is_err() && !strings.contains(text: err, needle: "  at " + e.place.must() + ",")
+            if !e.place.is_err() && !core_strings.contains(s: err, substr: "  at " + e.place.must() + ",")
                 return ok("must abort at " + e.place.must() + ", and said:\n" + err)
 
     return fail(code: "met", msg: "the run matched its expectation")
@@ -216,7 +218,7 @@ function sanitizer_unmet(e: Expectation, err: str) -> str?
     if e.sanitizer.is_err()
         return fail(code: "none", msg: "this case declares no sanitiser report")
 
-    if !strings.contains(text: err, needle: e.sanitizer.must())
+    if !core_strings.contains(s: err, substr: e.sanitizer.must())
         return ok(
             "must be caught by the sanitiser saying `" + e.sanitizer.must() + "`, and it said:\n" + err
         )

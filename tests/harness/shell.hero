@@ -33,11 +33,17 @@
 #    Measured on both compilers: 3 entries for 3 files, the newline name
 #    whole, every one readable. The test below is that measurement, kept.
 
+use <core>/strings as core_strings
+
+use placed_trees
 use strings
 
 extern "hero_os.h"
     function hero_run_reset()
     function hero_run_arg(word: str)
+    # One variable for the next child alone (panel 242's R6): this process's
+    # environment is never written, so no later case's child sees it.
+    function hero_run_env(name: str, value: str)
     function hero_run_limit(seconds: i64)
     function hero_run_limit_writes(bytes: i64) -> i64
     function hero_run_exe_suffix() -> str
@@ -147,13 +153,29 @@ record Run
 # Windows arm, where the inherited handle already had a probe around it.
 function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS, given: [])?,
         program: program
     )
 
 function run(scratch: str, program: str, words: [str]) -> Run?
+    return run_given(scratch: scratch, program: program, words: words, given: [])
+
+# A variable a child of this harness is given at its start, and no other
+# process (panel 242's R6, ratified 2026-11-10; `hero_run_env`): the child's
+# environment is this process's, each given variable taking its namesake's
+# place, a name given twice its later value. Until feature 2424 a suite wrote
+# this process's environment for it, so every later child of every suite
+# inherited the write, and a case's `PATH` had to be put back by hand after
+# its run, empty where it had been unset, since nothing could unset one.
+record Variable
+    name: str
+    value: str
+
+# `run`, the child given `given` as well. **The program is found through this
+# process's `PATH`**, never a `PATH` among `given`, which is the child's alone.
+function run_given(scratch: str, program: str, words: [str], given: [Variable]) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS, given: given)?,
         program: program
     )
 
@@ -165,7 +187,7 @@ function run(scratch: str, program: str, words: [str]) -> Run?
 # says so first and the caller runs nothing.
 function run_limited(scratch: str, program: str, words: [str], bytes: i64) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS, given: [])?,
         program: program
     )
 
@@ -207,7 +229,7 @@ function run_bounded(scratch: str, program: str, words: [str], seconds: i64, byt
         )
 
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [])?,
         program: program
     )
 
@@ -236,7 +258,7 @@ function run_self_bounded(scratch: str, program: str, words: [str], seconds: i64
         )
 
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [])?,
         program: program
     )
 
@@ -256,13 +278,18 @@ function can_limit_writes() -> bool
 # machine's answer has to say so at the call, which is where a reader of
 # the case will look for it.
 function attempted(scratch: str, program: str, words: [str]) -> Run?
+    return attempted_given(scratch: scratch, program: program, words: words, given: [])
+
+# `attempted`, the child given `given` as well, as `run_given` gives them.
+function attempted_given(scratch: str, program: str, words: [str], given: [Variable]) -> Run?
     return spawned(
         scratch: scratch,
         program: program,
         words: words,
         in_path: "",
         write_limit: 0,
-        seconds: WATCHDOG_SECONDS
+        seconds: WATCHDOG_SECONDS,
+        given: given
     )
 
 # Why a `run` came back with no program verdict, for a caller about to print
@@ -318,7 +345,7 @@ function insisted(ran: Run, program: str) -> Run?
         msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
     )
 
-function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64) -> Run?
+function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64, given: [Variable]) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
     # The two streams are files opened under it, so a missing directory makes
     # the child fail to start — and `started: false` then means "the program is
@@ -374,6 +401,9 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
 
     for word in words
         hero_run_arg(word: word)
+
+    for one in given
+        hero_run_env(name: one.name, value: one.value)
 
     status: i64 @= 0
     code = hero_run_go(
@@ -906,12 +936,12 @@ function found_under(dir: str, suffix: str, reference: str) -> [str]?
 
     return ok(out.sort())
 
-# Asked of the bytes, as `strings.ends_with` asks them: the slice this was
+# Asked of the bytes, as `core_strings.has_suffix` asks them: the slice this was
 # put its cut inside a character above ASCII, and a file such as `é.txt`
 # under a walked tree would have stopped the harness (found beside defect
 # 110, 2026-09-27).
 function ends_with(text: str, tail: str) -> bool
-    return strings.ends_with(text: text, suffix: tail)
+    return core_strings.has_suffix(s: text, suffix: tail)
 
 # One list after another. `+` joins two `str`s and this language does
 # not overload it onto arrays, which is why this exists rather than
@@ -1451,7 +1481,7 @@ test "a child that outlives the caller's own bound is ended inside it and answer
         .ok _ => assert false
         .err e =>
             assert e.code == "unbounded"
-            assert strings.contains(text: e.msg, needle: "over the watchdog's")
+            assert core_strings.contains(s: e.msg, substr: "over the watchdog's")
 
     fed = run_bounded(
         scratch: scratch,
@@ -1509,18 +1539,18 @@ test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (
 
     if made.must().code == 0
         file = "the name of `" + only + "/caf" + byte + ".hero` is not UTF-8"
-        assert strings.contains(text: refused_walk(list_entries(scratch: scratch, dir: only)), needle: file)
-        assert strings.contains(
-            text: refused_walk(list_tree(scratch: scratch, dir: only, skip: nothing)),
-            needle: "is not UTF-8"
+        assert core_strings.contains(s: refused_walk(list_entries(scratch: scratch, dir: only)), substr: file)
+        assert core_strings.contains(
+            s: refused_walk(list_tree(scratch: scratch, dir: only, skip: nothing)),
+            substr: "is not UTF-8"
         )
-        assert strings.contains(
-            text: refused_walk(list_directories(scratch: scratch, dir: only)),
-            needle: "the name of `" + only + "/d" + byte + "` is not UTF-8"
+        assert core_strings.contains(
+            s: refused_walk(list_directories(scratch: scratch, dir: only)),
+            substr: "the name of `" + only + "/d" + byte + "` is not UTF-8"
         )
-        assert strings.contains(
-            text: refused_walk(found_under(dir: only, suffix: ".hero", reference: "")),
-            needle: byte
+        assert core_strings.contains(
+            s: refused_walk(found_under(dir: only, suffix: ".hero", reference: "")),
+            substr: byte
         )
 
         # A walk for another suffix passes over both, as `cache` walks
@@ -1571,17 +1601,17 @@ test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named,
         words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$(printf 'nowhere/heroes\\351')\" HEROES_RUNTIME=\"$(printf 'nowhere/rt\\351')\" exec \"$0\"", probe]
     )
     assert !bad.is_err()
-    assert strings.contains(
-        text: bad.must().out,
-        needle: "compiler not_text: HEROES_COMPILER is set to `nowhere/heroes<0xE9>`, which is not UTF-8"
+    assert core_strings.contains(
+        s: bad.must().out,
+        substr: "compiler not_text: HEROES_COMPILER is set to `nowhere/heroes<0xE9>`, which is not UTF-8"
     )
-    assert strings.contains(
-        text: bad.must().out,
-        needle: "runtime unasked: HEROES_RUNTIME is set to `nowhere/rt<0xE9>`, which is not UTF-8"
+    assert core_strings.contains(
+        s: bad.must().out,
+        substr: "runtime unasked: HEROES_RUNTIME is set to `nowhere/rt<0xE9>`, which is not UTF-8"
     )
-    assert strings.contains(
-        text: bad.must().out,
-        needle: "env not_text: `HEROES_RUNTIME` is set, and its value is not UTF-8"
+    assert core_strings.contains(
+        s: bad.must().out,
+        substr: "env not_text: `HEROES_RUNTIME` is set, and its value is not UTF-8"
     )
 
     # The same readers over values that are text, and over none.
@@ -1591,16 +1621,16 @@ test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named,
         words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$1\" HEROES_RUNTIME=rt exec \"$0\"", probe, compiler]
     )
     assert !good.is_err()
-    assert strings.contains(text: good.must().out, needle: "compiler ok " + compiler + "\n")
-    assert strings.contains(text: good.must().out, needle: "runtime ok rt\n")
+    assert core_strings.contains(s: good.must().out, substr: "compiler ok " + compiler + "\n")
+    assert core_strings.contains(s: good.must().out, substr: "runtime ok rt\n")
     unset = run(
         scratch: scratch,
         program: "/bin/sh",
         words: ["/bin/sh", "-c", "unset HEROES_COMPILER HEROES_RUNTIME; exec \"$0\"", probe]
     )
     assert !unset.is_err()
-    assert strings.contains(text: unset.must().out, needle: "compiler ok ")
-    assert strings.contains(text: unset.must().out, needle: "runtime ok \n")
+    assert core_strings.contains(s: unset.must().out, substr: "compiler ok ")
+    assert core_strings.contains(s: unset.must().out, substr: "runtime ok \n")
     assert !remove_tree(scratch).is_err()
 
 # DEFECT 316, held as a test (2026-10-04): a `HEROES_COMPILER` that is UTF-8
@@ -1621,14 +1651,14 @@ test "fixedbugs: a HEROES_COMPILER that names nothing is refused, never passed o
             words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$1\" exec \"$0\"", probe, value]
         )
         assert !told.is_err()
-        assert strings.contains(
-            text: told.must().out,
-            needle: "compiler absent: HEROES_COMPILER is set to `" + value + "`, and no file is there, so it names no compiler"
+        assert core_strings.contains(
+            s: told.must().out,
+            substr: "compiler absent: HEROES_COMPILER is set to `" + value + "`, and no file is there, so it names no compiler"
         )
 
     empty = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "HEROES_COMPILER= exec \"$0\"", probe])
     assert !empty.is_err()
-    assert strings.contains(text: empty.must().out, needle: "compiler ok ")
+    assert core_strings.contains(s: empty.must().out, substr: "compiler ok ")
     assert !remove_tree(scratch).is_err()
 
 # DEFECT 332, held as a test (2026-10-07): a compiler path naming a directory,
@@ -1669,9 +1699,9 @@ test "fixedbugs: a compiler path that names a directory, a file that will not st
             words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$1\" exec \"$0\"", probe, value]
         )
         assert !told.is_err()
-        assert strings.contains(
-            text: told.must().out,
-            needle: "compiler unstartable: HEROES_COMPILER is set to `" + value + "`, and " + unstartable(scratch: scratch, path: value) + ", so it names no compiler this machine can start"
+        assert core_strings.contains(
+            s: told.must().out,
+            substr: "compiler unstartable: HEROES_COMPILER is set to `" + value + "`, and " + unstartable(scratch: scratch, path: value) + ", so it names no compiler this machine can start"
         )
 
     # `./heroes` a directory, HEROES_COMPILER unset: refused by name, never
@@ -1790,13 +1820,13 @@ test "fixedbugs: a scratch directory is gone once its process ends, and kept whe
     ended = run(scratch: scratch, program: probe, words: [probe, "end"]).must()
     assert ended.code == 0
     gone = strings.trimmed(ended.out)
-    assert strings.starts_with(text: gone, prefix: SELFTEST + "/")
+    assert core_strings.has_prefix(s: gone, prefix: SELFTEST + "/")
     assert gone != scratch
     assert !exists(gone)
     stopped = run(scratch: scratch, program: probe, words: [probe, "abort"]).must()
     assert stopped.code != 0
     kept = strings.trimmed(stopped.out)
-    assert strings.starts_with(text: kept, prefix: SELFTEST + "/")
+    assert core_strings.has_prefix(s: kept, prefix: SELFTEST + "/")
     assert exists(kept + "/why.txt")
     assert !remove_tree(kept).is_err()
 
@@ -1825,16 +1855,19 @@ constant START_PROBE: str
 function env_probe(scratch: str) -> str?
     return harness_probe(scratch: scratch, name: "env-values", main: ENV_PROBE)
 
-# `main` built over the harness's own modules under `scratch/name`.
+# `main` built over the harness's own modules under `scratch/name`, with the
+# net's own catalogue beside them (`with_catalogue`), since those modules reach
+# `core` through it (feature 2425).
 function harness_probe(scratch: str, name: str, main: str) -> str?
     dir = scratch + "/" + name
     remove_tree(dir)?
     mkdir_all(dir)?
 
-    for module in ["absence", "mark_readers", "shell", "strings"]
-        text = read_file("tests/harness/" + module + ".hero")?
+    for module in ["absence", "mark_readers", "placed_trees", "shell", "strings"]
+        text = read_file(NET + "/" + module + ".hero")?
         write_file(path: dir + "/" + module + ".hero", text: text)?
 
+    with_catalogue(dir)?
     write_file(path: dir + "/main.hero", text: main)?
     compiler = some_compiler()?
     probe = dir + "/probe" + exe_suffix()
@@ -1843,6 +1876,33 @@ function harness_probe(scratch: str, name: str, main: str) -> str?
     if built.code != 0
         return fail(code: "unbuilt", msg: "the probe did not build: " + built.err)
     return ok(probe)
+
+# The net's own folder, its modules and its catalogue.
+constant NET: str
+    "tests/harness"
+
+# The net's catalogue, `heroes.toml`, and every file of the trees it placed
+# under `heroes.packages/`, written under `dir` as they stand, so a program
+# built there over the net's modules reaches the package they `use` (feature
+# 2425, panel 242's R7): `build` reads the catalogue's entry and holds the tree
+# to its `sum`, the folder's name included, and never fetches, so a copy of
+# the two is the catalogue a fetch would have left. A file of a tree that is
+# not text fails the copy by name rather than reaching the build changed.
+function with_catalogue(dir: str) -> ()?
+    write_file(path: dir + "/heroes.toml", text: read_file(NET + "/heroes.toml")?)?
+    nothing: [str] = []
+
+    for path in walk_into(dir: NET + "/" + placed_trees.FOLDER, skip: nothing)?
+        target = dir + path.slice(from: NET.len(), to: path.len())
+        at: i64 @= target.len() - 1
+
+        while at >= 0 && target[at] != '/'
+            at @ at - 1
+
+        mkdir_all(target.slice(from: 0, to: at))?
+        write_file(path: target, text: read_file(path)?)?
+
+    return ok()
 
 # The program the two tests above build over the harness's own modules.
 constant ENV_PROBE: str
@@ -1910,7 +1970,7 @@ function captures_left(dir: str) -> i64
     for path in list_entries(scratch: dir, dir: dir).must()
         name = strings.base_name(path: path)
 
-        if strings.starts_with(text: name, prefix: "stdout-") || strings.starts_with(text: name, prefix: "stderr-")
+        if core_strings.has_prefix(s: name, prefix: "stdout-") || core_strings.has_prefix(s: name, prefix: "stderr-")
             left @ left + 1
 
     return left
@@ -1931,8 +1991,8 @@ test "fixedbugs: a capture and a test's files are named by the process that make
     assert list_entries(scratch: scratch, dir: scratch).must().len() == 0
     listed = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "ls \"$0\"", scratch])
     assert !listed.is_err()
-    assert strings.contains(text: listed.must().out, needle: "stdout-" + pid().to_str() + "-")
-    assert strings.contains(text: listed.must().out, needle: "stderr-" + pid().to_str() + "-")
+    assert core_strings.contains(s: listed.must().out, substr: "stdout-" + pid().to_str() + "-")
+    assert core_strings.contains(s: listed.must().out, substr: "stderr-" + pid().to_str() + "-")
 
     # A program that never starts leaves no capture either.
     absent = attempted(scratch: scratch, program: "heroes-no-such-program", words: ["heroes-no-such-program"])
@@ -2018,7 +2078,7 @@ function launched_raw(w: Wide, program: str, line: str) -> Launched?
 function said_launched(w: Wide, said: str, out: str, err: str) -> Launched?
     _ = w
 
-    if !strings.starts_with(text: said, prefix: "exit ")
+    if !core_strings.has_prefix(s: said, prefix: "exit ")
         return fail(code: "wide", msg: "the wide-world helper said `" + said + "`")
     code = strings.to_number(strings.trimmed(strings.without_prefix(text: said, prefix: "exit ")))?
     return ok(Launched(code: code, out: read_file(out)?, err: read_file(err)?))
@@ -2089,9 +2149,9 @@ test "fixedbugs: on Windows `check` and `fmt --in-place` of a name above ASCII r
     assert !wide(w, words: ["mk", w.root + "/judged/s.hero", WIDE_CLEAN]).is_err()
     judged = launched(w, cwd: w.root + "/judged", setting: "-", words: [compiler, "check", "\\u015d.hero"]).must()
     assert judged.code == 1
-    assert strings.contains(
-        text: judged.err,
-        needle: "error[unknown_name]: nothing named `nowhere` is in scope\n  at ŝ.hero:2:11"
+    assert core_strings.contains(
+        s: judged.err,
+        substr: "error[unknown_name]: nothing named `nowhere` is in scope\n  at ŝ.hero:2:11"
     )
     unformatted = "function main()\\n    print( 1 )\\n"
     assert !wide(w, words: ["mkdir", w.root + "/placed"]).is_err()
@@ -2152,15 +2212,15 @@ test "fixedbugs: on Windows `probe` and `mutate` walk folders holding names abov
     assert !wide(w, words: ["mk", w.root + "/walk1/caf\\u00e9.hero", WIDE_CLEAN]).is_err()
     probed = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "walk1"]).must()
     assert probed.code == 0
-    assert strings.starts_with(text: probed.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
+    assert core_strings.has_prefix(s: probed.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
     mutated = launched(w, cwd: w.root, setting: "-", words: [compiler, "mutate", "walk1"]).must()
     assert mutated.code == 0
-    assert strings.starts_with(text: mutated.out, prefix: "corpus: 1 programs under walk1\n")
+    assert core_strings.has_prefix(s: mutated.out, prefix: "corpus: 1 programs under walk1\n")
     assert !wide(w, words: ["mkdir", w.root + "/walk2"]).is_err()
     assert !wide(w, words: ["mk", w.root + "/walk2/\\u015d.hero", WIDE_CLEAN]).is_err()
     hatted = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "walk2"]).must()
     assert hatted.code == 0
-    assert strings.starts_with(text: hatted.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
+    assert core_strings.has_prefix(s: hatted.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
 
     # A hundred CJK characters are 100 units on disk and 300 bytes of UTF-8,
     # past the 260 a narrow listing holds: it ended the listing there under
@@ -2174,7 +2234,7 @@ test "fixedbugs: on Windows `probe` and `mutate` walk folders holding names abov
 
     six = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "six"]).must()
     assert six.code == 0
-    assert strings.starts_with(text: six.out, prefix: "probe: 6 seeds, and 0 files the parser refuses\n")
+    assert core_strings.has_prefix(s: six.out, prefix: "probe: 6 seeds, and 0 files the parser refuses\n")
     assert !remove_tree(scratch).is_err()
 
 test "fixedbugs: on Windows a name holding a surrogate standing alone is named by its bytes, in a file and through a directory, and an empty such directory is walked (defect 238, W14, panel 191's R2)"
@@ -2208,7 +2268,7 @@ test "fixedbugs: on Windows a name holding a surrogate standing alone is named b
     assert !wide(w, words: ["mkdir", w.root + "/empty/x\\ud800"]).is_err()
     empty = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "empty"]).must()
     assert empty.code == 0
-    assert strings.starts_with(text: empty.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
+    assert core_strings.has_prefix(s: empty.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
 
     # And this process's own walk removes every one of them by its name.
     assert !remove_tree(scratch).is_err()
@@ -2227,13 +2287,13 @@ test "fixedbugs: on Windows HEROES_RUNTIME above ASCII, and a compiler installed
         setting: "HEROES_RUNTIME=" + w.root + "/rt\\u00e9",
         words: [compiler, "doctor"]
     ).must()
-    assert strings.contains(text: named.out, needle: "\nok   runtime      " + w.root + "/rté\n")
+    assert core_strings.contains(s: named.out, substr: "\nok   runtime      " + w.root + "/rté\n")
     inst = w.root + "/inst-\\u00e9"
     assert !wide(w, words: ["mkdir", inst]).is_err()
     assert !wide(w, words: ["cp", compiler, inst + "/heroes.exe"]).is_err()
     copied_runtime(w, to: inst + "/runtime").must()
     beside = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "doctor"]).must()
-    assert strings.contains(text: beside.out, needle: "\nok   runtime      ")
+    assert core_strings.contains(s: beside.out, substr: "\nok   runtime      ")
     assert !wide(w, words: ["mk", w.root + "/hello.hero", "function main()\\n    print(\"hello\")\\n"]).is_err()
     built = launched(
         w,
@@ -2421,7 +2481,7 @@ test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a
     # A link needs a privilege an account may lack (1314), and then this
     # half has nothing to ask; no other refusal is one.
     match made
-        .err e => assert strings.contains(text: e.msg, needle: "symlink failed 1314")
+        .err e => assert core_strings.contains(s: e.msg, substr: "symlink failed 1314")
         .ok _ =>
             followed = launched(
                 w,
@@ -2430,7 +2490,7 @@ test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a
                 words: [compiler, "fmt", "L.hero", "--in-place"]
             ).must()
             assert followed.code == 2
-            assert strings.contains(text: followed.err, needle: "the link cannot be followed")
+            assert core_strings.contains(s: followed.err, substr: "the link cannot be followed")
             assert wide(w, words: ["ls", w.root + "/linked"]).must() == "L.hero\nx\\ud800.hero\n"
             assert wide(w, words: ["attrs", w.root + "/linked/L.hero"]).must() == "a link"
 
@@ -2445,16 +2505,16 @@ test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a
         words: [inst + "/heroes.exe", "build", "hello.hero"]
     ).must()
     assert placed.code == 2
-    assert strings.contains(text: placed.err, needle: "inst-" + surrogate)
+    assert core_strings.contains(s: placed.err, substr: "inst-" + surrogate)
     valued = launched(
         w,
         cwd: "-",
         setting: "HEROES_RUNTIME=" + w.root + "/rt\\ud800",
         words: [compiler, "doctor"]
     ).must()
-    assert strings.contains(
-        text: valued.out,
-        needle: "runtime      `HEROES_RUNTIME` is set, and its value, `" + w.root + "/rt" + surrogate + "`, is not UTF-8"
+    assert core_strings.contains(
+        s: valued.out,
+        substr: "runtime      `HEROES_RUNTIME` is set, and its value, `" + w.root + "/rt" + surrogate + "`, is not UTF-8"
     )
     assert !remove_tree(scratch).is_err()
 

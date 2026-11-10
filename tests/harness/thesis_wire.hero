@@ -25,9 +25,10 @@
 # connection broke) may have reached the server, which the pacing reads as a
 # retry that may be paid twice and counts.
 
+use <core>/strings as core_strings
+
 use issue_wire
 use shell
-use strings
 
 constant ANTHROPIC_KEY: str
     "ANTHROPIC_API_KEY"
@@ -149,18 +150,18 @@ test "the curl words keep the key out of argv, name the dialect's headers and th
         url: "https://api.anthropic.com/v1/messages"
     )
     assert words[0] == "curl"
-    assert strings.contains(
-        text: words.join(" "),
-        needle: "--variable %ANTHROPIC_API_KEY --expand-header x-api-key: {{ANTHROPIC_API_KEY}}"
+    assert core_strings.contains(
+        s: words.join(" "),
+        substr: "--variable %ANTHROPIC_API_KEY --expand-header x-api-key: {{ANTHROPIC_API_KEY}}"
     )
-    assert strings.contains(
-        text: words.join(" "),
-        needle: "--data-binary @build/x/request-1.json https://api.anthropic.com/v1/messages"
+    assert core_strings.contains(
+        s: words.join(" "),
+        substr: "--data-binary @build/x/request-1.json https://api.anthropic.com/v1/messages"
     )
-    assert strings.contains(text: words.join(" "), needle: "-H Expect: --max-time 1800")
+    assert core_strings.contains(s: words.join(" "), substr: "-H Expect: --max-time 1800")
 
     for word in words
-        assert !strings.contains(text: word, needle: "sk-")
+        assert !core_strings.contains(s: word, substr: "sk-")
 
     assert may_have_reached(28)
     assert may_have_reached(56)

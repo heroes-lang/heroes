@@ -7,6 +7,8 @@
 # `fails `not_found` where `s` holds no `sep``. A code no doc explains has no
 # meaning here, and its card is refused by `package_judge.hero`, never filled.
 
+use <core>/strings as core_strings
+
 use module_docs
 use module_text
 use package_face
@@ -116,7 +118,7 @@ function fail_verb(sentence: str) -> i64?
         before = at == 0 || !module_text.word_byte(sentence[at - 1])
         rest = sentence.slice(from: at, to: sentence.len())
 
-        if before && (strings.starts_with(text: rest, prefix: "fail ") || strings.starts_with(text: rest, prefix: "fails ") || strings.starts_with(text: rest, prefix: "failing "))
+        if before && (core_strings.has_prefix(s: rest, prefix: "fail ") || core_strings.has_prefix(s: rest, prefix: "fails ") || core_strings.has_prefix(s: rest, prefix: "failing "))
             return ok(at)
 
     return fail(code: "not_found", msg: "no `fail` in the sentence")

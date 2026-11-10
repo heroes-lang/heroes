@@ -37,6 +37,8 @@
 # `examples/sqlite` the same afternoon, exactly as the sentence above it
 # promised, and the exemption was deleted by the step that made it obsolete.
 
+use <core>/strings as core_strings
+
 use absence
 use cases
 use gallery
@@ -196,7 +198,7 @@ function warnings_in(err: str) -> [str]
     found: [str] @= []
 
     for row in strings.lines(err)
-        if strings.contains(text: row, needle: "warning:")
+        if core_strings.contains(s: row, substr: "warning:")
             found @ found.push(row)
 
     return found
@@ -225,7 +227,7 @@ function foreign_program(noise: [str], main: str) -> str
 
     for row in noise
         for word in strings.words(row)
-            if !strings.contains(text: word, needle: ".hero")
+            if !core_strings.contains(s: word, substr: ".hero")
                 continue
             at = strings.index_of(text: word, needle: ".hero").must()
             named = word.slice(from: 0, to: at + 5)
@@ -233,7 +235,7 @@ function foreign_program(noise: [str], main: str) -> str
             if named == main
                 continue
 
-            if home.len() > 0 && strings.starts_with(text: named, prefix: home + "/")
+            if home.len() > 0 && core_strings.has_prefix(s: named, prefix: home + "/")
                 continue
             return named
 
@@ -288,7 +290,7 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert refuted.failed == 1
     assert refuted.passed == 0
     assert refuted.skips.len() == 0
-    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @= report.empty()
@@ -298,7 +300,7 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert excused.failed == 0
     assert excused.passed == 0
     assert excused.skips.len() == 1
-    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP warnings/lacks\n")
+    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP warnings/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 299, held as a test (2026-10-04). A build that fails for a reason
@@ -323,10 +325,10 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
     judge(@refused, @none, scratch: scratch, compiler: always, label: "warnings/x", main: main)
     assert refused.passed == 0
     assert refused.failed == 1
-    assert strings.starts_with(text: refused.failures[0], prefix: "FAIL warnings/x at -O0\n")
-    assert strings.contains(
-        text: refused.failures[0],
-        needle: " -O0` exited 1, so its C was never judged for warnings:\n    error[boom]: the build failed"
+    assert core_strings.has_prefix(s: refused.failures[0], prefix: "FAIL warnings/x at -O0\n")
+    assert core_strings.contains(
+        s: refused.failures[0],
+        substr: " -O0` exited 1, so its C was never judged for warnings:\n    error[boom]: the build failed"
     )
     late = stub_compiler(
         scratch: scratch,
@@ -336,7 +338,7 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
     at_o2: report.Report @= report.empty()
     judge(@at_o2, @none, scratch: scratch, compiler: late, label: "warnings/x", main: main)
     assert at_o2.failed == 1
-    assert strings.starts_with(text: at_o2.failures[0], prefix: "FAIL warnings/x at -O2\n")
+    assert core_strings.has_prefix(s: at_o2.failures[0], prefix: "FAIL warnings/x at -O2\n")
     clean = stub_compiler(scratch: scratch, name: "stub-clean.sh", body: "exit 0").must()
     quiet: report.Report @= report.empty()
     judge(@quiet, @none, scratch: scratch, compiler: clean, label: "warnings/x", main: main)

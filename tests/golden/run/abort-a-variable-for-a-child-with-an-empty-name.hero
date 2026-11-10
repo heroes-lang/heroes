@@ -1,0 +1,9 @@
+# Feature 2424, 2026-11-10: a variable staged for a child with an empty name
+# is refused, since no environment holds one.
+extern "hero_os.h"
+    function hero_run_env(name: str, value: str)
+
+function main()
+    print("before")
+    hero_run_env(name: "", value: "1")
+    print("unreachable")

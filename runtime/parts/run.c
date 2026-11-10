@@ -30,6 +30,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <wchar.h>
 #else
 #include <unistd.h>
 #include <fcntl.h>
@@ -43,6 +44,7 @@
 #include <sys/prctl.h>
 #endif
 #if defined(__APPLE__)
+#include <paths.h>
 #include <pthread.h>
 #include <spawn.h>
 #endif
@@ -71,7 +73,38 @@ static int64_t hero_run_words_held_at_exit(void) {
     return atomic_load(&hero_run_words_held);
 }
 
-/* Drop every word. Safe to call twice, and called before every build. */
+/* **THE CHILD'S OWN VARIABLES, GIVEN AT THE SPAWN** (panel 242's R6, ratified
+ * 2026-11-10; feature 2424). Each is one `NAME=VALUE` pair, staged as the words
+ * are and read by the next `hero_run_go` alone, so no variable is ever written
+ * into this process: the child's environment is this process's own, each
+ * staged variable taking the place of its namesake, and a child with nothing
+ * staged inherits this process's environment exactly as it did before the door
+ * existed. Until then a caller wrote this process's environment
+ * (`hero_env_put`, `setenv`), which every later child of every thread
+ * inherited; the sitting's historian read Go's open issue 63567 recording
+ * `os.Setenv` crashing beside glibc's `getenv`, and Rust 2024 making `set_var`
+ * unsafe and pointing at `Command::env`, which this door is.
+ *
+ * A name staged twice is one variable, the later value its own, decided where
+ * the child's environment is built: by bytes on POSIX, and without case on
+ * Windows, as each system compares two names. Bounded as the words are, the
+ * bound being far above any launch (the net's largest stages six). */
+#define HERO_RUN_MAX_VARIABLES 1024
+
+static _Thread_local char *hero_run_variables[HERO_RUN_MAX_VARIABLES];
+static _Thread_local int64_t hero_run_variable_count = 0;
+
+/* Every pair every thread's launch holds, told apart from the words at exit
+ * (defect 573's rule): a variable staged and never given back is the
+ * program's, and the call that gives it back is named. */
+static _Atomic int64_t hero_run_variables_held = 0;
+
+static int64_t hero_run_variables_held_at_exit(void) {
+    return atomic_load(&hero_run_variables_held);
+}
+
+/* Drop every word and every variable. Safe to call twice, and called before
+ * every build. */
 void hero_run_reset(void) {
     for (int64_t i = 0; i < hero_run_count; i += 1) {
         hero_release(hero_run_words[i]);
@@ -79,6 +112,12 @@ void hero_run_reset(void) {
         atomic_fetch_sub(&hero_run_words_held, 1);
     }
     hero_run_count = 0;
+    for (int64_t i = 0; i < hero_run_variable_count; i += 1) {
+        hero_release(hero_run_variables[i]);
+        hero_run_variables[i] = NULL;
+        atomic_fetch_sub(&hero_run_variables_held, 1);
+    }
+    hero_run_variable_count = 0;
 }
 
 /* One word, copied. The copy is this file's, because the `str` it came from may
@@ -101,6 +140,44 @@ void hero_run_arg(HeroStr word) {
     hero_run_words[hero_run_count] = copy;
     hero_run_count += 1;
     atomic_fetch_add(&hero_run_words_held, 1);
+}
+
+/* One variable for the next child alone, copied as a word is.
+ *
+ * **Four shapes are panics, as a word's NUL is, each told by its own words**:
+ * an empty name, which no environment holds; a name holding `=`, which ends a
+ * name in every environment, so `A=B` given `1` would reach the child as `A`
+ * given `B=1`; and a NUL in the name or in the value, which C reads as the
+ * pair's end. A value holding `=` is a value (`ASAN_OPTIONS` holds several),
+ * and an empty value is a variable set empty, never one unset: the child reads
+ * `""`, on Windows too, whose `_wputenv_s` would have removed it (the
+ * ffi-pragmatist's measurement on the box, panel 242). */
+void hero_run_env(HeroStr name, HeroStr value) {
+    if (hero_run_variable_count >= HERO_RUN_MAX_VARIABLES) {
+        hero_panic("a launch reached 1024 variables of its own");
+    }
+    size_t n = (size_t)hero_str_len(name);
+    size_t v = (size_t)hero_str_len(value);
+    if (n == 0) {
+        hero_panic("a variable given to a child has an empty name");
+    }
+    if (strlen(name.ptr) != n) {
+        hero_panic("a variable's name given to a child contains a NUL byte");
+    }
+    if (memchr(name.ptr, '=', n) != NULL) {
+        hero_panic("a variable's name given to a child holds `=`, which ends a name in an environment");
+    }
+    if (strlen(value.ptr) != v) {
+        hero_panic("a variable's value given to a child contains a NUL byte");
+    }
+    char *pair = hero_alloc(n + v + 2);
+    memcpy(pair, name.ptr, n);
+    pair[n] = '=';
+    memcpy(pair + n + 1, value.ptr, v);
+    pair[n + v + 1] = '\0';
+    hero_run_variables[hero_run_variable_count] = pair;
+    hero_run_variable_count += 1;
+    atomic_fetch_add(&hero_run_variables_held, 1);
 }
 
 /* Where a stream goes when the caller wants it thrown away. The word is spelled
@@ -255,6 +332,175 @@ static HeroStr hero_run_win_command_line(void) {
     hero_release(line);
     return built;
 }
+
+/* THE CHILD'S BLOCK ON WINDOWS IS WIDE (panel 242's R6, its second choice):
+ * `CreateProcessW` with `CREATE_UNICODE_ENVIRONMENT`, so a value is the UTF-16
+ * this process's own block holds, and the ANSI call's limit does not apply
+ * (*"CreateProcessA fails if the total size of the environment block for the
+ * process exceeds 32,767 characters"*, Microsoft's page on `CreateProcessW`,
+ * read 2026-11-10). A name runs to its first `=` after its first character,
+ * since the block's drive entries (`=C:=C:\w`) open with one. */
+static size_t hero_run_win_name_length(const wchar_t *entry) {
+    const wchar_t *eq = entry[0] != 0 ? wcschr(entry + 1, L'=') : NULL;
+    return eq != NULL ? (size_t)(eq - entry) : wcslen(entry);
+}
+
+/* Two names compared as Windows compares them, ordinally and without case:
+ * `CompareStringOrdinal`'s answer, -1, 0 or 1, the order the block must be
+ * sorted in (*"All strings in the environment block must be sorted
+ * alphabetically by name. The sort is case-insensitive, Unicode order, without
+ * regard to locale."*, Microsoft's page *Changing Environment Variables*, read
+ * 2026-11-10). */
+static int hero_run_win_name_order(const wchar_t *a, const wchar_t *b) {
+    return CompareStringOrdinal(a, (int)hero_run_win_name_length(a),
+                                b, (int)hero_run_win_name_length(b), TRUE) - CSTR_EQUAL;
+}
+
+/* For `qsort`: by name, and two entries of one name, which only a block this
+ * process was handed can hold, by their whole text, so the order is one. */
+static int hero_run_win_entry_order(const void *x, const void *y) {
+    const wchar_t *a = *(const wchar_t *const *)x;
+    const wchar_t *b = *(const wchar_t *const *)y;
+    int by_name = hero_run_win_name_order(a, b);
+    return by_name != 0 ? by_name : wcscmp(a, b);
+}
+
+/* The child's block: this process's own (`GetEnvironmentStringsW`, which a
+ * child given no block inherits), each variable staged taking the place of
+ * every entry of its name, without case as Windows compares names, then the
+ * staged ones, a name staged twice taking its later value; sorted. NULL where
+ * nothing is staged, so the child inherits as it always did; NULL and the
+ * system's reason in `*failed` where this process's block cannot be read, or a
+ * staged pair is not text, which no `str` reaches and which fails the launch
+ * rather than guessing. The block is the caller's to release. */
+static wchar_t *hero_run_win_environment(DWORD *failed) {
+    *failed = 0;
+    if (hero_run_variable_count == 0) return NULL;
+    size_t staged = (size_t)hero_run_variable_count;
+    wchar_t **mine = hero_alloc(staged * sizeof *mine);
+    for (size_t i = 0; i < staged; i += 1) {
+        mine[i] = hero_win_wide(hero_run_variables[i], NULL);
+        if (mine[i] == NULL) {
+            *failed = GetLastError();
+            for (size_t k = 0; k < i; k += 1) hero_release(mine[k]);
+            hero_release(mine);
+            return NULL;
+        }
+    }
+    wchar_t *current = GetEnvironmentStringsW();
+    if (current == NULL) {
+        *failed = GetLastError() != 0 ? GetLastError() : (DWORD)ERROR_OUTOFMEMORY;
+        for (size_t k = 0; k < staged; k += 1) hero_release(mine[k]);
+        hero_release(mine);
+        return NULL;
+    }
+    size_t have = 0;
+    for (const wchar_t *e = current; *e != 0; e += wcslen(e) + 1) have += 1;
+    const wchar_t **all = hero_alloc((have + staged) * sizeof *all);
+    size_t n = 0;
+    for (const wchar_t *e = current; *e != 0; e += wcslen(e) + 1) {
+        bool replaced = false;
+        for (size_t i = 0; i < staged && !replaced; i += 1) replaced = hero_run_win_name_order(e, mine[i]) == 0;
+        if (!replaced) all[n++] = e;
+    }
+    for (size_t i = 0; i < staged; i += 1) {
+        bool later = false;
+        for (size_t j = i + 1; j < staged && !later; j += 1) later = hero_run_win_name_order(mine[i], mine[j]) == 0;
+        if (!later) all[n++] = mine[i];
+    }
+    qsort(all, n, sizeof *all, hero_run_win_entry_order);
+    /* Each entry ends with its zero and the block with one more: *"A Unicode
+     * environment block is terminated by four zero bytes: two for the last
+     * string, two more to terminate the block"* (the same page). */
+    size_t units = 1;
+    for (size_t k = 0; k < n; k += 1) units += wcslen(all[k]) + 1;
+    wchar_t *block = hero_alloc(units * sizeof *block);
+    size_t put = 0;
+    for (size_t k = 0; k < n; k += 1) {
+        size_t length = wcslen(all[k]) + 1;
+        memcpy(block + put, all[k], length * sizeof *block);
+        put += length;
+    }
+    block[put] = 0;
+    hero_release(all);
+    for (size_t k = 0; k < staged; k += 1) hero_release(mine[k]);
+    hero_release(mine);
+    FreeEnvironmentStringsW(current);
+    return block;
+}
+#else
+extern char **environ;
+
+/* How long an entry's name is: up to its first `=`, or all of it. */
+static size_t hero_run_name_length(const char *entry) {
+    const char *eq = strchr(entry, '=');
+    return eq != NULL ? (size_t)(eq - entry) : strlen(entry);
+}
+
+/* Whether two entries name one variable, as POSIX compares names: byte for
+ * byte, case and all. */
+static bool hero_run_same_name(const char *a, const char *b) {
+    size_t n = hero_run_name_length(a);
+    return n == hero_run_name_length(b) && memcmp(a, b, n) == 0;
+}
+
+/* The child's environment: this process's `environ`, each variable staged
+ * taking the place of every entry of its name, then the staged ones, a name
+ * staged twice taking its later value. NULL where nothing is staged, so the
+ * child is started by `execvp` and inherits exactly as it always did. Built in
+ * the parent, before the fork, because the child may not allocate: another
+ * thread may hold the allocator's lock at the fork, and the child would wait
+ * on it for ever. The array is the caller's to release; its strings are
+ * `environ`'s and the staged pairs, which the fork copies with it. */
+static char **hero_run_child_environment(void) {
+    if (hero_run_variable_count == 0) return NULL;
+    size_t staged = (size_t)hero_run_variable_count;
+    size_t have = 0;
+    if (environ != NULL) {
+        for (char **e = environ; *e != NULL; e += 1) have += 1;
+    }
+    char **out = hero_alloc((have + staged + 1) * sizeof *out);
+    size_t at = 0;
+    for (size_t k = 0; k < have; k += 1) {
+        bool replaced = false;
+        for (size_t i = 0; i < staged && !replaced; i += 1) replaced = hero_run_same_name(environ[k], hero_run_variables[i]);
+        if (!replaced) out[at++] = environ[k];
+    }
+    for (size_t i = 0; i < staged; i += 1) {
+        bool later = false;
+        for (size_t j = i + 1; j < staged && !later; j += 1) later = hero_run_same_name(hero_run_variables[i], hero_run_variables[j]);
+        if (!later) out[at++] = hero_run_variables[i];
+    }
+    out[at] = NULL;
+    return out;
+}
+
+/* The parent's copies, given back once the child holds its own or no child
+ * was started. Either may be NULL. */
+static void hero_run_give_back_environment(char **environment, char *search) {
+    if (environment != NULL) hero_release(environment);
+    if (search != NULL) hero_release(search);
+}
+
+#if defined(__APPLE__)
+/* **THE PROGRAM IS FOUND THROUGH THIS PROCESS'S `PATH`, never the child's**
+ * (panel 242's R6, its first choice; the critic's measurement that route (e)
+ * as first built searched the child's). Darwin has no `execvpe`; its
+ * `execvp` searches `getenv("PATH")`, or `_PATH_DEFPATH` where that is unset,
+ * through `execvP`, which reads the new image's environment from `environ`.
+ * So the parent reads its own search path here, copied before the fork, and
+ * the child sets `environ` to its block and calls `execvP` with that path:
+ * the search `execvp` makes, over the parent's path, into the child's
+ * environment. The copy is the caller's to release. */
+static char *hero_run_parent_search(void) {
+    const char *path = getenv("PATH");
+    if (path == NULL) path = _PATH_DEFPATH;
+    size_t n = strlen(path);
+    char *copy = hero_alloc(n + 1);
+    memcpy(copy, path, n + 1);
+    return copy;
+}
+#endif
 #endif
 
 #if !defined(_WIN32)
@@ -967,7 +1213,8 @@ static pid_t hero_run_reap(pid_t child, int slot, int *wait_status, int nohang,
 static void hero_run_child(const char *program, int report, int tty,
                            const char *in_path, const char *out_path,
                            const char *err_path, int64_t write_limit,
-                           const sigset_t *before, pid_t parent) {
+                           const sigset_t *before, pid_t parent,
+                           char **environment, const char *search) {
 #if defined(__linux__)
     /* **AND IT DIES WITH THIS PROCESS, SIGKILL INCLUDED** (defect 437,
      * 2026-10-07). A signal this process can catch reaches the child through
@@ -1080,7 +1327,26 @@ static void hero_run_child(const char *program, int report, int tty,
         if (err > 2) close(err);
     }
 
-    execvp(program, hero_run_words);
+    /* Nothing staged: `execvp`, the child's environment this process's own,
+     * as before the door. Something staged: the same search, over THIS
+     * process's `PATH` (panel 242's R6), into the block built before the fork.
+     * glibc's and musl's `execvpe` search `getenv("PATH")`, which in the child
+     * still reads the parent's `environ`; Darwin's `execvP` is given the path
+     * the parent read (`hero_run_parent_search`) and takes the block from
+     * `environ`, which is set to it here, in the child alone. Neither
+     * allocates: both build each candidate on the stack. */
+    if (environment == NULL) {
+        (void)search;
+        execvp(program, hero_run_words);
+    } else {
+#if defined(__APPLE__)
+        environ = environment;
+        execvP(program, search, hero_run_words);
+#else
+        (void)search;
+        execvpe(program, hero_run_words, environment);
+#endif
+    }
 
     /* Only reachable when the exec failed. The pipe is close-on-exec, so the
      * parent seeing bytes here means "never started" and seeing none means the
@@ -1217,6 +1483,29 @@ int64_t hero_run_go(const char *program, const char *in_path,
      * quoting an argument list deletes on POSIX does not disappear here, it
      * changes algorithm and moves into C — see `hero_run_win_quote`. */
     HeroStr line = hero_run_win_command_line();
+
+    /* **WIDE, THE LINE AND THE BLOCK** (panel 242's R6, its second choice):
+     * `CreateProcessW`, so the child's block can be the UTF-16 this process's
+     * own holds. The line is the same UTF-8 the ANSI call read in this
+     * process's code page, which is UTF-8 (`parts/codepage.c`), so a word
+     * reaches the child as it did; a line that is not text fails the launch
+     * rather than reaching the child as other characters. Built first, so a
+     * failure here has no handle to close. */
+    wchar_t *wide_line = hero_win_wide(line.ptr, NULL);
+    hero_str_decref(line);
+    if (wide_line == NULL) {
+        hero_run_why_code = (int64_t)GetLastError();
+        *status = HERO_OS_FAILED;
+        return -1;
+    }
+    DWORD block_failed = 0;
+    wchar_t *env_block = hero_run_win_environment(&block_failed);
+    if (block_failed != 0) {
+        hero_run_why_code = (int64_t)block_failed;
+        hero_release(wide_line);
+        *status = HERO_OS_FAILED;
+        return -1;
+    }
     SECURITY_ATTRIBUTES inherit;
     inherit.nLength = sizeof inherit;
     inherit.lpSecurityDescriptor = NULL;
@@ -1250,7 +1539,8 @@ int64_t hero_run_go(const char *program, const char *in_path,
         hero_run_why_code = (int64_t)GetLastError();
         if (out != INVALID_HANDLE_VALUE && !hero_run_inherits(out_path)) CloseHandle(out);
         if (err != INVALID_HANDLE_VALUE && !hero_run_inherits(err_path)) CloseHandle(err);
-        hero_str_decref(line);
+        hero_release(wide_line);
+        if (env_block != NULL) hero_release(env_block);
         *status = HERO_OS_FAILED;
         return -1;
     }
@@ -1279,7 +1569,8 @@ int64_t hero_run_go(const char *program, const char *in_path,
             hero_run_why_code = (int64_t)GetLastError();
             if (!hero_run_inherits(out_path)) CloseHandle(out);
             if (!hero_run_inherits(err_path)) CloseHandle(err);
-            hero_str_decref(line);
+            hero_release(wide_line);
+            if (env_block != NULL) hero_release(env_block);
             *status = HERO_OS_FAILED;
             return -1;
         }
@@ -1297,7 +1588,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
         in = nul_in;
     }
 
-    STARTUPINFOA startup;
+    STARTUPINFOW startup;
     memset(&startup, 0, sizeof startup);
     startup.cb = sizeof startup;
     startup.dwFlags = STARTF_USESTDHANDLES;
@@ -1356,15 +1647,28 @@ int64_t hero_run_go(const char *program, const char *in_path,
         }
     }
 
-    BOOL started = CreateProcessA(NULL, (char *)line.ptr, NULL, NULL, TRUE,
-                                  job != NULL ? CREATE_SUSPENDED : 0,
-                                  NULL, NULL, &startup, &child);
+    /* The program is found as before, by the search `CreateProcessW` makes
+     * with no application name, which R6's first choice wants through THIS
+     * process's `PATH`. Microsoft's page names *"the directories that are
+     * listed in the PATH environment variable"* and not whose (read
+     * 2026-11-10); the ffi-pragmatist read it as this process's, since the
+     * search runs before the child exists, and that is an inference until the
+     * CI's Windows leg runs `run/a-child-is-found-through-the-parents-path`,
+     * unrun on the box the day this was written. A NULL block gives the child
+     * this process's own, exactly as before the door. The line is writable, as
+     * the wide call may write it. */
+    BOOL started = CreateProcessW(NULL, wide_line, NULL, NULL, TRUE,
+                                  (job != NULL ? CREATE_SUSPENDED : 0) |
+                                      (env_block != NULL ? CREATE_UNICODE_ENVIRONMENT : 0),
+                                  env_block, NULL, &startup, &child);
     /* **Read on the very next line, because every call below resets it.**
      * `CloseHandle` succeeding sets the thread's last error to 0 on some
      * Windows versions, so a `GetLastError` after the cleanup answers about the
      * cleanup. This is the number the caller wants and the only place it is
      * still true. */
     if (!started) hero_run_why_code = (int64_t)GetLastError();
+    hero_release(wide_line);
+    if (env_block != NULL) hero_release(env_block);
     if (started && job != NULL) {
         /* If the assignment is refused the child is still suspended, so it is
          * resumed unguarded rather than left frozen for ever. */
@@ -1402,7 +1706,6 @@ int64_t hero_run_go(const char *program, const char *in_path,
     if (!hero_run_inherits(err_path)) CloseHandle(err);
     if (nul_in != INVALID_HANDLE_VALUE) CloseHandle(nul_in);
     if (file_in != INVALID_HANDLE_VALUE) CloseHandle(file_in);
-    hero_str_decref(line);
     if (!started) {
         *status = HERO_OS_NOT_FOUND;
         return -1;
@@ -1461,6 +1764,16 @@ int64_t hero_run_go(const char *program, const char *in_path,
         return -1;
     }
 
+    /* The child's environment and, on Darwin, the parent's search path, both
+     * built here, before the launch's window below and before the fork, and
+     * both given back on every path out of this call (`hero_run_child`'s
+     * comment says why the child cannot build them). */
+    char **environment = hero_run_child_environment();
+    char *search = NULL;
+#if defined(__APPLE__)
+    if (environment != NULL) search = hero_run_parent_search();
+#endif
+
     pid_t tty_holder __attribute__((cleanup(hero_run_tty_restore))) =
         hero_run_tty_holder();
 
@@ -1483,6 +1796,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
         pthread_sigmask(SIG_SETMASK, &before, NULL);
         close(report[0]);
         close(report[1]);
+        hero_run_give_back_environment(environment, search);
         *status = HERO_OS_FAILED;
         return -1;
     }
@@ -1497,13 +1811,18 @@ int64_t hero_run_go(const char *program, const char *in_path,
         pthread_sigmask(SIG_SETMASK, &before, NULL);
         close(report[0]);
         close(report[1]);
+        hero_run_give_back_environment(environment, search);
         *status = HERO_OS_FAILED;
         return -1;
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit, &before, parent);
+        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit, &before, parent,
+                       environment, search);
     }
+
+    /* The child holds its own copy of both from the fork on. */
+    hero_run_give_back_environment(environment, search);
 
     /* The other half of the race: EACCES here means the child has already
      * exec'd, having set it itself, which is the outcome we wanted. */

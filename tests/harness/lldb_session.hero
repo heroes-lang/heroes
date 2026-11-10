@@ -43,6 +43,8 @@
 # own writes land wherever they land among lldb's lines, which is why a claim
 # asks whether a line is THERE and never where.
 
+use <core>/strings as core_strings
+
 use strings
 
 # What lldb writes before each command it runs in batch mode.
@@ -101,7 +103,7 @@ function session(text: str) -> [Step]?
         if line.len() == 0
             continue
 
-        if strings.starts_with(text: line, prefix: ">")
+        if core_strings.has_prefix(s: line, prefix: ">")
             command = strings.trimmed(strings.without_prefix(text: line, prefix: ">"))
 
             if command.len() == 0
@@ -144,24 +146,24 @@ function session(text: str) -> [Step]?
 
 # One claim line, `!<word>: <what>`, or why it is none.
 function claim(line: str) -> Claim?
-    if strings.starts_with(text: line, prefix: "!resolved: ")
+    if core_strings.has_prefix(s: line, prefix: "!resolved: ")
         return ok(.resolved(place: placed(strings.without_prefix(text: line, prefix: "!resolved: "))?))
 
-    if strings.starts_with(text: line, prefix: "!stop: ")
+    if core_strings.has_prefix(s: line, prefix: "!stop: ")
         halves = around_at(strings.without_prefix(text: line, prefix: "!stop: "))?
         return ok(.stop(why: halves[0], place: placed(halves[1])?))
 
-    if strings.starts_with(text: line, prefix: "!at: ")
+    if core_strings.has_prefix(s: line, prefix: "!at: ")
         return ok(.at(place: placed(strings.without_prefix(text: line, prefix: "!at: "))?))
 
-    if strings.starts_with(text: line, prefix: "!frame: ")
+    if core_strings.has_prefix(s: line, prefix: "!frame: ")
         halves = around_at(strings.without_prefix(text: line, prefix: "!frame: "))?
         return ok(.frame(named: halves[0], place: placed(halves[1])?))
 
-    if strings.starts_with(text: line, prefix: "!shows: ")
+    if core_strings.has_prefix(s: line, prefix: "!shows: ")
         return ok(.shows(text: strings.trimmed(strings.without_prefix(text: line, prefix: "!shows: "))))
 
-    if strings.starts_with(text: line, prefix: "!variables: ")
+    if core_strings.has_prefix(s: line, prefix: "!variables: ")
         said = strings.trimmed(strings.without_prefix(text: line, prefix: "!variables: "))
         count = strings.to_number(said)
 
@@ -240,7 +242,7 @@ function answers(out: str, steps: [Step]) -> [Answer]
             continue
         end: i64 @= hit + 1
 
-        while end < rows.len() && !strings.starts_with(text: rows[end], prefix: ECHO)
+        while end < rows.len() && !core_strings.has_prefix(s: rows[end], prefix: ECHO)
             end @ end + 1
 
         found @ found.push(Answer(reached: true, rows: rows.slice(from: hit + 1, to: end)))
@@ -296,7 +298,7 @@ function frames(rows: [str]) -> [Frame]
     out: [Frame] @= []
 
     for row in rows
-        if strings.contains(text: row, needle: "frame #")
+        if core_strings.contains(s: row, substr: "frame #")
             out @ out.push(frame_of(row))
 
     return out
@@ -314,7 +316,7 @@ function stop_reason(rows: [str]) -> str?
 # A reason reads as the one claimed when it is that reason, or that reason and
 # lldb's numbering after a space: `breakpoint` reads `breakpoint 1.1`.
 function reads_as(reason: str, want: str) -> bool
-    return reason == want || strings.starts_with(text: reason, prefix: want + " ")
+    return reason == want || core_strings.has_prefix(s: reason, prefix: want + " ")
 
 ## The judgement
 
@@ -344,7 +346,7 @@ function unmet(steps: [Step], out: str, err: str, code: i64) -> [str]
         )
 
     for row in strings.lines(out + "\n" + err)
-        if strings.contains(text: row, needle: PENDING)
+        if core_strings.contains(s: row, substr: PENDING)
             wrong @ wrong.push(
                 "a breakpoint is pending with no locations, `" + strings.trimmed(row) + "`: the program's debug info does not reach the `.hero` line asked for, and `run` goes on without stopping there"
             )
@@ -398,7 +400,7 @@ function resolved_unmet(place: Place, rows: [str]) -> str
     for row in rows
         line = strings.trimmed(row)
 
-        if strings.starts_with(text: line, prefix: "Breakpoint ") && strings.contains(text: line, needle: "where = ")
+        if core_strings.has_prefix(s: line, prefix: "Breakpoint ") && core_strings.contains(s: line, substr: "where = ")
             got = location(line)
 
             if got.is_err()
@@ -409,7 +411,7 @@ function resolved_unmet(place: Place, rows: [str]) -> str
             return "the breakpoint resolved at " + shown(got.must()) + ", not at " + shown(place)
 
     for row in rows
-        if strings.contains(text: row, needle: PENDING)
+        if core_strings.contains(s: row, substr: PENDING)
             return "the breakpoint is pending with no locations"
 
     return "lldb named no one location for the breakpoint"
@@ -453,7 +455,7 @@ function variables_unmet(count: i64, rows: [str]) -> str
     found: i64 @= 0
 
     for row in rows
-        if row.len() > 0 && row[0] == 40 && strings.contains(text: row, needle: ") ") && strings.contains(text: row, needle: " = ")
+        if row.len() > 0 && row[0] == 40 && core_strings.contains(s: row, substr: ") ") && core_strings.contains(s: row, substr: " = ")
             found @ found + 1
 
     if found == count
@@ -467,7 +469,7 @@ function frames_unmet(claimed: [Frame], rows: [str]) -> str
     heroes: [Frame] @= []
 
     for one in frames(rows)
-        if strings.ends_with(text: one.file, suffix: ".hero")
+        if core_strings.has_suffix(s: one.file, suffix: ".hero")
             heroes @ heroes.push(one)
 
     if heroes.len() != claimed.len()
@@ -591,16 +593,16 @@ test "a session is its commands, each with the claims under it"
 
 test "a broken session is told by its line, and one that claims no hit is no session"
     assert unread_claim(claim("!stop: breakpoint s.hero:6")) == "`breakpoint s.hero:6` has no ` at <file>:<line>` after it"
-    assert strings.contains(text: unread_claim(claim("!at: s.hero:6:10")), needle: "never a column")
-    assert strings.contains(text: unread_claim(claim("!at: s.hero:0")), needle: "names no line")
-    assert strings.contains(text: unread_claim(claim("stop at s.hero:6")), needle: "is neither a command")
+    assert core_strings.contains(s: unread_claim(claim("!at: s.hero:6:10")), substr: "never a column")
+    assert core_strings.contains(s: unread_claim(claim("!at: s.hero:0")), substr: "names no line")
+    assert core_strings.contains(s: unread_claim(claim("stop at s.hero:6")), substr: "is neither a command")
     early = session("!resolved: s.hero:6\n> run\n")
     assert early.is_err()
-    assert strings.contains(text: code_and_msg(early), needle: "line 1 claims")
+    assert core_strings.contains(s: code_and_msg(early), substr: "line 1 claims")
     bare = session("> run\n> \n")
-    assert strings.contains(text: code_and_msg(bare), needle: "line 2 is a `>` with no command")
+    assert core_strings.contains(s: code_and_msg(bare), substr: "line 2 is a `>` with no command")
     hitless = session("> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n")
-    assert strings.contains(text: code_and_msg(hitless), needle: "claims 1 `!resolved:` and 0 `!stop:`")
+    assert core_strings.contains(s: code_and_msg(hitless), substr: "claims 1 `!resolved:` and 0 `!stop:`")
 
 function code_and_msg(got: [Step]?) -> str
     return match got
@@ -655,23 +657,23 @@ test "silence is told first and alone, whatever the session claims"
     steps = session(STEPPING_SESSION).must()
     got = unmet(steps: steps, out: "", err: "  \n", code: -1073741515)
     assert got.len() == 1
-    assert strings.starts_with(text: got[0], prefix: "lldb wrote nothing on either stream and exited -1073741515")
+    assert core_strings.has_prefix(s: got[0], prefix: "lldb wrote nothing on either stream and exited -1073741515")
 
 test "a pending breakpoint is told as such, and so is the stop it never made"
     steps = session(STEPPING_SESSION).must()
     out = "(lldb) target create \"b\"\n(lldb) breakpoint set --file stepping.hero --line 12\nBreakpoint 1: no locations (pending).\nWARNING:  Unable to resolve breakpoint to any actual locations.\n(lldb) run\n13\nProcess 18930 launched: 'b' (arm64)\nProcess 18930 exited with status = 0 (0x00000000)\n(lldb) step\n"
     got = unmet(steps: steps, out: out, err: "error: Command requires a current process.\n", code: 1)
-    assert strings.starts_with(
-        text: got[0],
+    assert core_strings.has_prefix(
+        s: got[0],
         prefix: "a breakpoint is pending with no locations, `Breakpoint 1: no locations (pending).`"
     )
-    assert strings.contains(
-        text: got[1],
-        needle: "!resolved: stepping.hero:12: the breakpoint is pending with no locations"
+    assert core_strings.contains(
+        s: got[1],
+        substr: "!resolved: stepping.hero:12: the breakpoint is pending with no locations"
     )
-    assert strings.contains(text: got[2], needle: "!stop: breakpoint at stepping.hero:12: the process did not stop")
-    assert strings.contains(text: got[got.len() - 1], needle: "lldb never reached `> next`")
-    assert strings.contains(text: got[got.len() - 1], needle: "Command requires a current process")
+    assert core_strings.contains(s: got[2], substr: "!stop: breakpoint at stepping.hero:12: the process did not stop")
+    assert core_strings.contains(s: got[got.len() - 1], substr: "lldb never reached `> next`")
+    assert core_strings.contains(s: got[got.len() - 1], substr: "Command requires a current process")
 
 test "a stop on another line, or for another reason, is told with what lldb said"
     steps = session(
@@ -680,14 +682,14 @@ test "a stop on another line, or for another reason, is told with what lldb said
     out = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total(h0_base=7) at s.hero:6:10\n(lldb) next\n* thread #1, name = 'b', stop reason = step in\n    frame #0: 0x2 b`h_s_total(h0_base=7) at s.hero:8:10\n"
     got = unmet(steps: steps, out: out, err: "", code: 0)
     assert got.len() == 1
-    assert strings.starts_with(
-        text: got[0],
+    assert core_strings.has_prefix(
+        s: got[0],
         prefix: "`> next`, !stop: step over at s.hero:7: the process stopped for `step in`, not `step over`"
     )
     moved = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total(h0_base=7) at s.hero:6:10\n(lldb) next\n* thread #1, stop reason = step over\n    frame #0: 0x2 b`h_s_total + 40\n"
     lost = unmet(steps: steps, out: moved, err: "", code: 0)
     assert lost.len() == 1
-    assert strings.contains(text: lost[0], needle: "the frame is `h_s_total` with no file and line")
+    assert core_strings.contains(s: lost[0], substr: "the frame is `h_s_total` with no file and line")
 
 test "a backtrace is held to every frame in a .hero file, in order"
     steps = session(
@@ -696,9 +698,9 @@ test "a backtrace is held to every frame in a .hero file, in order"
     out = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total at s.hero:6:10\n(lldb) bt\n* thread #1, stop reason = breakpoint 1.1\n  * frame #0: 0x1 b`h_s_total at s.hero:6:10\n    frame #1: 0x2 b`h_s_main at s.hero:12:10\n    frame #2: 0x3 b`main(argc=1) at s.c:69:5\n"
     got = unmet(steps: steps, out: out, err: "", code: 0)
     assert got.len() == 1
-    assert strings.contains(
-        text: got[0],
-        needle: "the backtrace has 2 frames in a `.hero` file, `h_s_total` at s.hero:6, `h_s_main` at s.hero:12, and the case claims 1"
+    assert core_strings.contains(
+        s: got[0],
+        substr: "the backtrace has 2 frames in a `.hero` file, `h_s_total` at s.hero:6, `h_s_main` at s.hero:12, and the case claims 1"
     )
 
 test "a line lldb did not write is told, and a nonzero exit after the last command is too"
@@ -708,12 +710,12 @@ test "a line lldb did not write is told, and a nonzero exit after the last comma
     out = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total at s.hero:6:10\n(lldb) frame variable\nno variable information is available in debug info for this compile unit\n"
     got = unmet(steps: steps, out: out, err: "", code: 1)
     assert got.len() == 2
-    assert strings.contains(
-        text: got[0],
-        needle: "no line of lldb's answer is `(int64_t) h0_base = 7`; lldb answered:\n      no variable information"
+    assert core_strings.contains(
+        s: got[0],
+        substr: "no line of lldb's answer is `(int64_t) h0_base = 7`; lldb answered:\n      no variable information"
     )
-    assert strings.starts_with(
-        text: got[1],
+    assert core_strings.has_prefix(
+        s: got[1],
         prefix: "lldb exited 1 after its last command, and it wrote nothing on stderr"
     )
 
@@ -740,19 +742,19 @@ test "a frame is held to the count of variables claimed, and one more is told"
         code: 0
     )
     assert got.len() == 1
-    assert strings.starts_with(
-        text: got[0],
+    assert core_strings.has_prefix(
+        s: got[0],
         prefix: "`> frame variable`, !variables: 2: lldb listed 3 variables, and the case claims 2: a variable listed and not claimed is one the frame shows that the author did not write"
     )
-    assert strings.contains(text: got[0], needle: "(HeroStr) t5 = ")
+    assert core_strings.contains(s: got[0], substr: "(HeroStr) t5 = ")
 
     # A frame that lists nothing meets a claim of none, and a count is a number.
     none = session(
         "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> frame variable\n!variables: 0\n"
     ).must()
     assert unmet(steps: none, out: head, err: "", code: 0).len() == 0
-    assert strings.contains(text: unread_claim(claim("!variables: three")), needle: "names no count of variables")
-    assert strings.contains(text: unread_claim(claim("!variables: -1")), needle: "a number from 0")
+    assert core_strings.contains(s: unread_claim(claim("!variables: three")), substr: "names no count of variables")
+    assert core_strings.contains(s: unread_claim(claim("!variables: -1")), substr: "a number from 0")
     assert written(steps[2].claims[0]) == "!variables: 2"
 
 test "a place a session claims must be a line the author wrote in the case's own file"

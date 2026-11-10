@@ -31,6 +31,8 @@
 # text is written as `answer.hero` in the sample's scratch and nothing else is
 # read of the answer.
 
+use <core>/strings as core_strings
+
 use expectation
 use json_fields
 use json_read
@@ -67,11 +69,11 @@ function extracted(answer: str) -> str?
         bare = strings.trimmed(text: line)
 
         if !inside
-            if strings.starts_with(text: bare, prefix: "```") || strings.starts_with(text: bare, prefix: "~~~")
+            if core_strings.has_prefix(s: bare, prefix: "```") || core_strings.has_prefix(s: bare, prefix: "~~~")
                 inside @ true
                 fence @ bare.slice(from: 0, to: 3)
                 held @ []
-        else if strings.starts_with(text: bare, prefix: fence)
+        else if core_strings.has_prefix(s: bare, prefix: fence)
             inside @ false
             blocks @ blocks.push(held.join("\n") + "\n")
         else
@@ -83,7 +85,7 @@ function extracted(answer: str) -> str?
     for i in range(from: 0, to: blocks.len())
         block = blocks[blocks.len() - 1 - i]
 
-        if strings.contains(text: block, needle: "function main")
+        if core_strings.contains(s: block, substr: "function main")
             return ok(block)
 
     return fail(
@@ -99,7 +101,7 @@ function without_cr(line: str) -> str
 # A program that binds C: a top-level line opening `extern `.
 function binds_c(program: str) -> bool
     for line in strings.lines(text: program)
-        if strings.starts_with(text: line, prefix: "extern ")
+        if core_strings.has_prefix(s: line, prefix: "extern ")
             return true
 
     return false
@@ -166,7 +168,7 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
     built = shell.run_bounded(scratch: scratch, program: compiler, words: build_words(compiler: compiler, arm: arm, path: path, binary: binary), seconds: 120, bytes: 0, stdin_path: "")?
 
     if built.code != 0
-        if strings.contains(text: built.err, needle: "no binary:") && strings.contains(text: built.err, needle: "hole")
+        if core_strings.contains(s: built.err, substr: "no binary:") && core_strings.contains(s: built.err, substr: "hole")
             return ok(
                 Graded(outcome: "hole", codes: [], message: built.err, passed: 0, total: task.cases.len(), at_case: "")
             )
@@ -224,7 +226,7 @@ function codes_of(err: str) -> [str]
 # `path` as an absolute path: itself where it already is one, else under the
 # working directory `pwd` names.
 function absolute(scratch: str, path: str) -> str?
-    if strings.starts_with(text: path, prefix: "/")
+    if core_strings.has_prefix(s: path, prefix: "/")
         return ok(path)
     here = shell.run(scratch: scratch, program: "pwd", words: ["pwd"])?
 
@@ -255,7 +257,7 @@ function run_case(scratch: str, sandbox: thesis_sandbox.Sandbox, task: thesis_ta
         )
 
     if ran.code >= 128
-        if strings.contains(text: ran.err, needle: "panic:")
+        if core_strings.contains(s: ran.err, substr: "panic:")
             return ok(
                 Graded(outcome: "abort", codes: [], message: strings.trimmed(text: ran.err), passed: 0, total: 0, at_case: "")
             )
@@ -328,7 +330,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
     assert wrong.outcome == "compiled_wrong"
     assert wrong.passed == 1
     assert wrong.total == task.cases.len()
-    assert strings.contains(text: wrong.message, needle: "printed something else")
+    assert core_strings.contains(s: wrong.message, substr: "printed something else")
 
     refused = graded(
         scratch: scratch + "/refused",
@@ -341,7 +343,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
     ).must()
     assert refused.outcome == "compile_error"
     assert refused.codes == ["unused_binding"]
-    assert strings.contains(text: refused.message, needle: "error[unused_binding]")
+    assert core_strings.contains(s: refused.message, substr: "error[unused_binding]")
 
     brief = graded(
         scratch: scratch + "/brief",
@@ -445,4 +447,4 @@ test "the control arm builds what the strict build refuses and runs it: a droppe
     ).must()
     assert loud.outcome == "abort"
     assert loud.passed == 0
-    assert strings.contains(text: loud.message, needle: "panic: this match has no arm for .empty")
+    assert core_strings.contains(s: loud.message, substr: "panic: this match has no arm for .empty")

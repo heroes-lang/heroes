@@ -31,6 +31,8 @@
 # report); any other ending of a write is a request that may have been taken,
 # which `push` never sends a second time without asking GitHub first.
 
+use <core>/strings as core_strings
+
 use shell
 use strings
 
@@ -208,7 +210,7 @@ function reply_of(out: str) -> Reply
     none: {str: str} = {}
     unread = Reply(status: 0, headers: none, body: "", failure: "", sent: true)
 
-    if !strings.starts_with(text: out, prefix: "HTTP/")
+    if !core_strings.has_prefix(s: out, prefix: "HTTP/")
         return unread
     cut: i64 @= -1
     skip: i64 @= 0
@@ -306,7 +308,7 @@ test "the scripted transport answers in order, writes down every request and wai
     w @ past.world
     assert past.reply.status == 0
     assert past.reply.sent
-    assert strings.contains(text: past.reply.failure, needle: "no answer for POST /b")
+    assert core_strings.contains(s: past.reply.failure, substr: "no answer for POST /b")
     w @ pause(world: w, seconds: 7).world
     assert w.requests.len() == 2
     assert w.waits == [7]

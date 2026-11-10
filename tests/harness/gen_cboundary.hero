@@ -22,10 +22,11 @@
 # the model's, so a header the model gets wrong is the generator's fault and
 # never charged to the compiler.
 
+use <core>/strings as core_strings
+
 use gen_eval
 use gen_rng
 use gen_tree
-use strings
 
 # The masks a C body narrows an operand with before an operation that could
 # overflow: 32 bits for `+` and `-`, 16 for `*`, and a shift's count.
@@ -43,7 +44,7 @@ constant SAMPLES: [i64]
     [0, 1, -1, 9223372036854775807, -9223372036854775807 - 1, 123456789, -987654321]
 
 function is_c(f: gen_tree.Fn) -> bool
-    return f.name.len() > 2 && strings.starts_with(text: f.name, prefix: "cf")
+    return f.name.len() > 2 && core_strings.has_prefix(s: f.name, prefix: "cf")
 
 # Whether the program has C to prove, so a header and a driver are
 # written: a C function, or a shape whose driver proves C of its own.
