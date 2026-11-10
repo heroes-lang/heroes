@@ -170,9 +170,10 @@ function refused(one: Entry, reader: str, name: str, groups: [str], named: [str]
 
     if !twin(others, name: name)
         return fail(code: "own", msg: "a name the platform does not hold")
-    beside = folder_of(from) == folder_of(package_reads.lexical(one.path))
+    path = package_reads.lexical(one.path)
+    beside = folder_of(from) == folder_of(path)
 
-    if beside && quoted(reader: reader, name: name)
+    if beside && quoted(reader: reader, path: path, name: name)
         return fail(code: "own", msg: "the includer's own sibling, named in quotes")
     return ok(Reader(reader: "`" + clang_place.slashed(reader) + "`", beside: beside))
 
@@ -214,24 +215,58 @@ function twin(others: [str], name: str) -> bool
 
     return false
 
-# Whether `reader` includes `name` in quotes, `#include "name"`, any spaces
-# after the `#`: what clang's `-H` cannot say, so the includer's text is read.
-function quoted(reader: str, name: str) -> bool
+# **Whether `reader` includes the file at `path` in quotes**: what clang's
+# `-H` cannot say, so the includer's text is read. A quoted spelling names the
+# file where, read from the includer's own folder, it is `path`, which is
+# where C looks first (`curl/curl.h`'s `#include "curlver.h"` for its
+# `curl/curlver.h`, refused until defect 2420, since the spelling was asked to
+# be the name the folder that found it gives the file); or where it is that
+# name, `name`, which the search finds in the folder (`"curl/curlver.h"`).
+# `path` is lexical.
+function quoted(reader: str, path: str, name: str) -> bool
     read = file_reading.source_text(reader)
 
     if read.is_err()
         return false
+    from = folder_of(package_reads.lexical(reader))
 
-    for line in deps.lines(read.must().text)
+    for spelled in quoted_spellings(read.must().text)
+        if spelled == name || package_reads.lexical(from_folder(folder: from, spelled: spelled)) == path
+            return true
+
+    return false
+
+# What each `#include "..."` of a header's text spells between its quotes,
+# any spaces around the `#` and before the quote; `#include_next`, which
+# skips the includer's own folder, and the angle form are none.
+function quoted_spellings(header: str) -> [str]
+    out: [str] @= []
+    word = "include"
+
+    for line in deps.lines(header)
         written = strings.trimmed(line)
 
         if strings.starts_with(text: written, prefix: "#")
             rest = strings.trimmed(written.slice(from: 1, to: written.len()))
+            spaced = rest.len() > word.len() && (rest[word.len()] == ' ' || rest[word.len()] == '\t' || rest[word.len()] == '"')
 
-            if strings.starts_with(text: rest, prefix: "include") && strings.holds(text: rest, needle: "\"" + name + "\"")
-                return true
+            if strings.starts_with(text: rest, prefix: word) && spaced
+                after = strings.trimmed(rest.slice(from: word.len(), to: rest.len()))
+                close: i64 @= 1
 
-    return false
+                while close < after.len() && after[close] != '"'
+                    close @ close + 1
+
+                if after.len() > 0 && after[0] == '"' && close > 1 && close < after.len()
+                    out @ out.push(after.slice(from: 1, to: close))
+
+    return out
+
+# A quoted spelling read from the folder `folder`: itself where it is rooted.
+function from_folder(folder: str, spelled: str) -> str
+    if strings.starts_with(text: clang_place.slashed(spelled), prefix: "/")
+        return spelled
+    return folder + "/" + spelled
 
 # The folder a lexical path stands in: `.` for a bare name.
 function folder_of(path: str) -> str
@@ -288,4 +323,51 @@ test "a file of a named folder is told by who included it, and a group's own hea
     assert windows[0].path == "build\\evil\\lib.h" && windows[1].path == "C:\\Program Files\\Kits\\stdio.h" && windows[2].path == "a\"b.h"
     assert clang_place.slashed(windows[0].path) == "build/evil/lib.h"
     assert of_group(path: "inc/./x.h", groups: ["./x.h"]) && of_group(path: "inc/sub/x.h", groups: ["sub/x.h"]) && !of_group(path: "inc/ax.h", groups: ["x.h"])
+    assert !process.remove_tree(root).is_err()
+
+# **A nested header's sibling named in quotes from its own folder is its own**
+# (defect 2420): `curl/curl.h`'s `#include "curlver.h"` read Homebrew's
+# `curl/curlver.h` beside it and was refused as standing in for the SDK's,
+# since the spelling was asked to be `curl/curlver.h`. Here `sys/clock.h`
+# beside its own `sys/timeb.h`, a name the platform holds: `"timeb.h"` and
+# `"./timeb.h"` are its own, and so is `"sys/timeb.h"`, which the search finds
+# in the folder; `<sys/timeb.h>` stays refused (panel 237's ruling), and so
+# does a quoted spelling that names another file than the one C read, and a
+# file outside the includer's folder (`"../sys/timeb.h"`, which the sentence
+# of design.md §4.19 does not reach).
+test "a nested header's sibling named in quotes from its own folder is its own, and the angle form is refused (defect 2420)"
+    root = "build/selftest-shadowed-nested"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/rt", "/sdk/sys", "/src/sys", "/src/lib"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    assert !write_file(path: root + "/sdk/sys/timeb.h", text: "").is_err()
+    assert !write_file(path: root + "/src/sys/timeb.h", text: "#define TIMEB_OWN 21\n").is_err()
+    named = [root + "/src"]
+    others = [root + "/rt", root + "/sdk"]
+    file = Entry(depth: 2, path: root + "/src/sys/timeb.h")
+    verdicts = [
+        ["sys/clock.h", "#include \"timeb.h\"\n", "own"]
+        ["sys/dot.h", "#  include \"./timeb.h\"\n", "own"]
+        ["sys/up.h", "#include \"../sys/timeb.h\"\n", "own"]
+        ["sys/found.h", "#include \"sys/timeb.h\"\n", "own"]
+        ["sys/angle.h", "#include <sys/timeb.h>\n", "beside"]
+        ["sys/next.h", "#include_next \"timeb.h\"\n", "beside"]
+        ["sys/other.h", "#include \"clock.h\"\n", "beside"]
+        ["lib/clock.h", "#include \"../sys/timeb.h\"\n", "apart"]
+    ]
+
+    for row in verdicts
+        reader = root + "/src/" + row[0]
+        assert !write_file(path: reader, text: row[1]).is_err()
+        got = refused(file, reader: reader, name: "sys/timeb.h", groups: [row[0]], named: named, others: others)
+
+        if row[2] == "own"
+            assert got.is_err()
+        else
+            assert !got.is_err() && got.must().beside == (row[2] == "beside")
+
+    assert quoted_spellings("#include\"a.h\"\n# include  \"b c.h\" // x\n#include \"\"\n#include \"open\n#includex \"d.h\"\n") == ["a.h", "b c.h"]
+    assert from_folder(folder: "inc/curl", spelled: "/abs/x.h") == "/abs/x.h" && from_folder(folder: ".", spelled: "x.h") == "./x.h"
     assert !process.remove_tree(root).is_err()

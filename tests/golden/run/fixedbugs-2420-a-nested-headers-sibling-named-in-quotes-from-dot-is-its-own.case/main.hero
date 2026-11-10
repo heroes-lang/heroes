@@ -1,0 +1,13 @@
+# fixedbugs, defect 2420, lane b29-boundary, 2026-11-10.
+#
+# The shape beside `a-nested-headers-sibling-named-in-quotes-is-its-own`:
+# `sys/clock.h` spells its sibling `#include "./timeb.h"`, and from its own
+# folder that is the same file, `sys/timeb.h`, which clang enters as
+# `./sys/./timeb.h`. Refused `shadowed_header` until defect 2420 as the
+# library's `<sys/timeb.h>`; it builds and reads its own `TIMEB_OWN`, 21.
+
+extern "sys/clock.h"
+    constant CLOCK_TICKS: i64
+
+function main()
+    print(CLOCK_TICKS)

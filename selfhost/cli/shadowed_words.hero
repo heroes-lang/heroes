@@ -101,12 +101,26 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
         d.notes @ d.notes.push(moved + ", and every `#include " + spelled + "` of the build reads what it holds")
 
     # The angle form found a name the platform holds beside the header that
-    # asked for it (panel 237's ruling on `sibutil-angled`).
+    # asked for it (panel 237's ruling on `sibutil-angled`). The quoted form
+    # offered is the file's name in that folder, which C reads there first;
+    # the library's name for it, `sys/timeb.h` for a `sys/clock.h`'s
+    # `timeb.h`, is found by the search and was offered until defect 2420.
     if one.beside
+        sibling = last_part(clang_place.slashed(one.path))
         d.notes @ d.notes.push(
-            "or, where " + one.reader + " means its own `" + one.named + "` beside it, include it as `#include \"" + one.named + "\"`: C reads a quoted name from the including header's own folder first, where `<" + one.named + ">` asks the system's places, which hold a `" + one.named + "` of their own"
+            "or, where " + one.reader + " means its own `" + sibling + "` beside it, include it as `#include \"" + sibling + "\"`: C reads a quoted name from the including header's own folder first, where `<" + one.named + ">` asks the system's places, which hold a `" + one.named + "` of their own"
         )
     return d
+
+# The part of a `/`-separated path after its last `/`, the whole where it has
+# none.
+function last_part(path: str) -> str
+    at: i64 @= path.len()
+
+    while at > 0 && path[at - 1] != '/'
+        at @ at - 1
+
+    return path.slice(from: at, to: path.len())
 
 # **Who named the folder, in words** (panel 237's R3): the one origin the
 # reader changes, never the three it might be, which the note said until then.
@@ -232,3 +246,17 @@ test "a forced file and a folder some jobs search are told with `/` in the messa
     folder = unlisted(clang_added.Added(flag: "-I", value: "build\\evil", variable: clang_added.OWN))
     assert strings.holds(text: folder.message, needle: "`build/evil` is searched before")
     assert folder.notes == ["take `-I build/evil` out of clang's configuration file, which adds it to every compile"]
+
+# **The quoted form a note offers is the file's name in its includer's
+# folder** (defect 2420): a nested header's `<sys/timeb.h>` for its own
+# `timeb.h` beside it is offered `#include "timeb.h"`, which C reads from that
+# folder first; `"sys/timeb.h"` is found there by the search alone.
+test "the quoted form offered for a nested header's sibling is its name in that folder (defect 2420)"
+    d = header(
+        stand_in.Shadow(path: "./sys/timeb.h", folder: ".", named: "sys/timeb.h", reader: "`./sys/clock.h`", beside: true, asked: false),
+        origin: Origin(kind: PROGRAM, name: ""),
+        runtime: false
+    )
+    assert d.notes.len() == 2
+    assert d.notes[1] == "or, where `./sys/clock.h` means its own `timeb.h` beside it, include it as `#include \"timeb.h\"`: C reads a quoted name from the including header's own folder first, where `<sys/timeb.h>` asks the system's places, which hold a `sys/timeb.h` of their own"
+    assert last_part("a/b/c.h") == "c.h" && last_part("c.h") == "c.h" && last_part("a/") == ""
