@@ -1,6 +1,9 @@
 # Both arities of `printf`, one module lending its value read-only past the
 # `...`: refused on that module's parameter, the other module's binding of the
-# same C name left alone (defect 2102's reader, 2026-10-17).
+# same C name left alone (defect 2102's reader, 2026-10-17). Since panel 243's
+# R1 (defect 2421, 2026-11-10) the other module's `value: i64` is refused too,
+# as crossing by value, and each refusal is told on its own module's line in
+# its own words.
 
 use as_int
 use as_text

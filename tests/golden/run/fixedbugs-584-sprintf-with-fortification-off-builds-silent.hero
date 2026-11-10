@@ -11,14 +11,22 @@
 # close, the program's own lines as the compiler's (`emit/deprecation.hero`,
 # panel 208's R1): a deprecation is advice about a program, not a mistake in
 # it, and this language has no warning level.
+#
+# **Since 2026-11-10** (panel 243's R1, defect 2421) a binding declares no
+# parameter past a header's `...`, and `sprintf(buf: ptr, format: cstr lent,
+# n: i64)` is refused on `n`. The call is the header's door, `print_number`,
+# a function of a new name with a fixed prototype holding the literal format,
+# which quiets the deprecation of its own call, since a header's own code is
+# outside the quiet above; the compiler's lines name the door and never
+# `sprintf`.
 
 extern "fixedbugs-584-sprintf-with-fortification-off-builds-silent.h"
     function malloc(n: u64) -> ptr
     function free(p: ptr)
-    function sprintf(buf: ptr, format: cstr lent, n: i64) -> i32
+    function print_number(buf: ptr, n: i64) -> i32
 
 function main()
     p = malloc(64.to_u64().must())
-    k = sprintf(p, "%lld".cstr(), 42)
+    k = print_number(p, 42)
     print(k)
     free(p)
