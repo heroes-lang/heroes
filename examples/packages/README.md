@@ -9,6 +9,10 @@ nothing else (`docs/design.md` §1.11), so these are not a standard library. The
 are source, verified the way any program is: by the checker, by their own
 `test` blocks and, where they bind C, by clang against the header they name.
 
+How a program fetches a package and names it, and the reasons behind each of
+§ 1's rules, are the guide's chapter on packages, in English and in Italian:
+[heroes-lang.org/docs/packages](https://heroes-lang.org/docs/packages/).
+
 **Their source is one tree**, the newest version of `core` in the local static
 index at the repository's root, `packages/core/<version>/files/` (panel 235's
 R15, ratified 2026-11-07; panel 238's R10 moved the index there from inside

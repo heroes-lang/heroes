@@ -12,7 +12,7 @@
 
   <h3>I percorsi partono dalla radice del programma</h3>
   <p>
-    Se esegui <code>heroes run shapes/main.hero</code>, la cartella <code>shapes/</code> è la radice del programma. Tutti i percorsi <code>use</code>, in qualsiasi file, partono da quella cartella.
+    Se esegui <code>heroes run shapes/main.hero</code>, la cartella <code>shapes/</code> è la radice del programma. Tutti i percorsi <code>use</code>, in qualsiasi file, partono da quella cartella. L&rsquo;eccezione è un <code>use</code> che comincia con un nome tra parentesi angolari, <code>use &lt;core&gt;/strings</code>: raggiunge un pacchetto pubblicato da qualcun altro, l&rsquo;argomento del <a href="/it/docs/packages/">capitolo 13</a>.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
 <pre><code>use geom/area
@@ -110,12 +110,12 @@ error[shadowed_binding]: `point` is what this file calls the module `geom/point`
 
   <h3>Le regole di accesso ai moduli</h3>
   <p>
-    Non esistono <code>public</code> e <code>private</code>: le dichiarazioni di un modulo sono accessibili a ogni file che lo usa. Il qualificatore è sempre obbligatorio. Il compilatore segnala gli import circolari sulla riga <code>use</code>. Non servono file di progetto o configurazione: le cartelle organizzano i moduli e il file passato al comando determina la radice.
+    Non esistono <code>public</code> e <code>private</code>: le dichiarazioni di un modulo sono accessibili a ogni file che lo usa, e un modulo dentro una cartella <code>internal</code> è privato del modulo a cui quella cartella appartiene, come spiega il <a href="/it/docs/packages/">capitolo 13</a>. Il qualificatore è sempre obbligatorio. Il compilatore segnala gli import circolari sulla riga <code>use</code>. Non servono file di progetto o configurazione: le cartelle organizzano i moduli e il file passato al comando determina la radice. Un programma che usa un pacchetto ha un file in più, il suo catalogo.
   </p>
 
   <p class="next">
-    Poi: <b><a href="/it/docs/tests-and-holes/">Test e buchi</a></b>, dove un
-    programma non finito è comunque un programma di cui il compilatore ti parla.
+    Poi: <b><a href="/it/docs/packages/">I pacchetti</a></b>, il codice che
+    pubblica qualcun altro, scaricato nel tuo programma e controllato a ogni build.
     <span class="back">&larr; Prima: <a href="/it/docs/values-all-the-way-down/">Valori fino in fondo</a></span>
   </p>
 

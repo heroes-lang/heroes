@@ -1,0 +1,317 @@
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 13</p>
+
+  <h1 class="chapter">Packages</h1>
+  <p class="tagline">Code somebody else published, copied into your program and checked at every build.</p>
+
+  <p>
+    The modules of <a href="/docs/modules/">chapter 12</a> are files of your own program. A <b>package</b> is code others publish: a tree of modules with a version, which your program fetches into its own folder and carries from then on. On this page each word means one thing: a <i>module</i> is one <code>.hero</code> file, a <i>package</i> is code a program fetches, and a <i>library</i> is C code a build links, the subject of <a href="/docs/the-c-boundary/">chapter 15</a>. The author asked for one name for one thing, and <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/240-a-package-is-code-others-publish-and-the-mark-that-asks-pkg-config-is-spelled-pkgconfig.md">a sitting of the design panel</a>, the judges every change to the language goes before, settled the three.
+  </p>
+
+  <h3>Fetching a package</h3>
+  <p>
+    The first packages are the core packages, published together as one package called <code>core</code>: <code>strings</code> searches and splits text, <code>strconv</code> turns text into numbers and back, and <code>encoding/json</code> reads and writes JSON, a common format for data. The program in <code>examples/packages/</code> uses all three:
+  </p>
+  <figure class="example" data-src="examples/packages/main.hero" data-lines="9-15">
+<pre><code>use &lt;core&gt;/encoding/json
+use &lt;core&gt;/strconv
+use &lt;core&gt;/strings
+
+function main()
+    words = strings.fields("  the core packages  ")
+    print(join(words, "-"))</code></pre>
+    <figcaption>examples/packages/main.hero, lines 9&ndash;15</figcaption>
+  </figure>
+  <p>
+    Check it before it has fetched anything, and every line that names a package says what is missing:
+  </p>
+  <pre class="diag"><code>$ heroes check --brief main.hero
+<span class="msg">main.hero:9:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span>
+<span class="msg">main.hero:10:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span>
+<span class="msg">main.hero:11:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span></code></pre>
+  <p>
+    The command that fetches is <code>heroes add</code>, run in the program&rsquo;s folder. A package is read from an <b>index</b>, a place that lists every version of every package it holds. Today the one index is the folder <code>packages/</code> at the root of this project&rsquo;s repository, the folder that holds all its files and their history, so the command names it:
+  </p>
+  <pre><code>$ heroes add core --index file://../../packages
+added core 0.2.1
+wrote heroes.toml</code></pre>
+  <p>
+    And the program builds and runs:
+  </p>
+  <pre><code>$ heroes run main.hero
+the-core-packages
+value
+one
+two
+-17
+{"core":["strings","strconv","encoding/json"],"since":0.1}</code></pre>
+  <p>
+    <code>heroes add</code> did two things. It wrote a file beside <code>main.hero</code>, the <b>catalogue</b>, and it placed a copy of the package&rsquo;s files inside the program&rsquo;s folder. From then on the program needs neither the index nor the network: <code>heroes build</code>, <code>heroes check</code> and <code>heroes run</code> never fetch anything. Only <code>heroes add</code> and <code>heroes fetch</code> reach out, and a package that is missing, or does not match, is an error that names <code>heroes fetch</code>. <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/235-dependencies-named-by-an-alias-in-angle-brackets-that-the-programs-catalogue-resolves-gos-modules-copied-whole-a-toml-catalogue-listing-every-package-and-no-fetched-code-run-at-build.md">The sitting that designed the package manager</a> made that a rule: the compiler may use the network only where the answer was written down in advance, and for a package that answer is its fingerprint, further down. Go, the language whose package system this one copies, was measured fetching during a build; a Heroes build never does.
+  </p>
+  <p>
+    A program that uses no package has no catalogue. Every program in the chapters before this one builds as it always did, with no file beside it: the design was measured from the start on the files a program must have, and the answer for a program that depends on nothing is none.
+  </p>
+
+  <h3>The catalogue, line by line</h3>
+  <figure class="example" data-src="examples/packages/heroes.toml">
+<pre><code>index = "file://../../packages"
+
+[dependencies.core]
+version = "0.2.1"
+sum = "sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c"</code></pre>
+    <figcaption>examples/packages/heroes.toml</figcaption>
+  </figure>
+  <p>
+    <code>index</code> is the address the two commands read packages from. <code>[dependencies.core]</code> opens the entry, and <code>core</code> is the name the code writes between angle brackets. <code>version</code> is exact: no range, no &ldquo;this one or newer&rdquo;. <code>sum</code> is the package&rsquo;s <b>fingerprint</b>, a number computed from every byte of its files, and the build refuses a copy whose bytes give another.
+  </p>
+  <p>
+    Nobody types the catalogue: <code>heroes add</code> writes it. The sum is sixty-four digits and letters after its <code>sha256-</code>, which nobody can write from memory, so an entry written by hand, by a person or by a model, has no sum to put in it, and the sitting had the specification name the command for that reason.
+  </p>
+  <p>
+    The format is TOML, a small format for files of settings that Rust&rsquo;s Cargo and Python&rsquo;s <code>pyproject.toml</code> use too, read here as a strict subset. Every value is a string between double quotes, so <code>version = 0.2.1</code> written bare is refused at its line and never read as a number. The file is read whole or not at all: a mistake on any line names no package, the lines above it included. And reading it runs no code. The sitting is plain about what it did not show: in its test with language models every format did equally well, because the models copied the example they were given. TOML was chosen for its comments, its named keys, its strictness and its being familiar from Cargo, and not because models write it better.
+  </p>
+
+  <h3>Mine and fetched: the angle brackets</h3>
+  <figure class="example" data-src="examples/ledger/main.hero" data-lines="29-33">
+<pre><code>use &lt;core&gt;/strings
+
+use book/entry
+use db/sqlite
+use report/lines</code></pre>
+    <figcaption>examples/ledger/main.hero, lines 29&ndash;33</figcaption>
+  </figure>
+  <p>
+    Two kinds of <code>use</code> stand side by side in this file. <code>use book/entry</code> is a module of the program, read from its root as in chapter 12. <code>use &lt;core&gt;/strings</code> is the module <code>strings</code> of the package the catalogue calls <code>core</code>. The brackets are the whole difference between mine and fetched, and you see it on the line without opening another file. That was the author&rsquo;s call, made before the panel sat; the sitting tested it rather than ruled on it, and the two other spellings it tried beside it did no better.
+  </p>
+  <p>
+    Between the brackets goes a name, never an address. In Go an import carries the address of the repository it comes from; here the address lives in the catalogue, and the code says only <code>core</code>. When a package moves, from a git repository to an index for instance (git is the tool most projects keep their history in), the catalogue&rsquo;s entry changes and no line of code does. Write an address anyway and the compiler says where it belongs:
+  </p>
+  <pre class="diag"><code>$ heroes check main.hero
+<span class="msg">error[use_holds_an_address]: `git.example.org/ana/core` is an address, which the catalogue `heroes.toml` beside the file you compile holds and a `use` never does: the `use` names its entry between `&lt;` `&gt;`, then a module of the package — `use &lt;core&gt;/strings`, `core` standing for the entry the catalogue gives that address</span>
+  at main.hero:11:5
+     |
+  11 | use &lt;git.example.org/ana/core&gt;/strings
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): write `&lt;core&gt;`</code></pre>
+  <p>
+    The two kinds never stand in for each other. A <code>use</code> with brackets is read only through the catalogue, and one without only from the program&rsquo;s own folders, with no fallback either way. So deleting the catalogue, deleting an entry or mistyping one of its fields never changes which module compiles, only whether the program builds. The <a href="https://github.com/heroes-lang/heroes/blob/main/docs/design.md">design document</a> admits the catalogue on that condition and no other, with one exception, a <code>path</code> entry, which this chapter comes back to.
+  </p>
+  <p>
+    <code>heroes fmt</code> keeps the two kinds apart on the page as well: packages first, then the program&rsquo;s own modules, a blank line between, each group sorted by its path. The compiler walks the modules in that same order, so the order you write them in changes nothing it does, only the line numbers of the file.
+  </p>
+
+  <h3>Where the copy lives</h3>
+  <pre><code>$ ls heroes.packages
+core@0.2.1-e8db5b383e666067</code></pre>
+  <p>
+    <code>heroes add</code> placed the package in a folder of the program called <code>heroes.packages/</code>, under a name made of the entry, its version and sixteen hexadecimal digits (the digits 0 to 9 and the letters a to f) computed from the entry&rsquo;s fields and the <code>index</code> line. A mistyped field therefore names a folder that is not there, and the build says so. Inside is a byte-for-byte copy of the package&rsquo;s files as the index publishes them. The program keeps that folder in its repository beside its own files: every program in <code>examples/</code> that uses <code>core</code> carries its copy there.
+  </p>
+  <p>
+    No <code>use</code> can spell the folder, because a part of a <code>use</code> path cannot hold a dot. Try, and the compiler answers that this is the folder a fetch placed a package in, &ldquo;which a <code>use</code> never names&rdquo;, and offers <code>use &lt;core&gt;/strings</code>. So the copy is reached only through its entry, and with the entry gone the copy compiles nothing: every <code>use &lt;core&gt;/&hellip;</code> is refused, the folder still there.
+  </p>
+  <p>
+    Why inside the program, and not in a cache, a folder every program on the machine shares, as Go keeps one? The sitting&rsquo;s compiler engineer gave the reasons. Every name the compiler prints of a fetched module is relative to the program and the same on every machine, in its messages and in the line markers of the C it writes, where a debugger, the tool that stops a running program to look inside it, finds the file names. No user&rsquo;s cache folder is read, so no rule about where each system keeps one enters the compiler. And two programs never share a copy, so two builds never wait for each other. What it costs is a copy per program, and a folder that anything can edit: an editor, a script, a slip of the hand. The second cost is what the fingerprint, checked at every build, is for.
+  </p>
+
+  <h3>Inside a package, a <code>use</code> starts at its own root</h3>
+  <figure class="example" data-src="packages/core/0.2.1/files/strings.hero" data-lines="1-8">
+<pre><code># Text searched, trimmed and split, never cutting a character in two: every
+# position a function here cuts at is a character's first byte, so none aborts
+# on a text a program reads from outside. A function keeps Go's name where its
+# contract is Go's and takes another where it is not, and each is here because
+# the programs of `examples/` wrote it by hand (the admission notes at the end
+# of this file).
+
+use strings/internal/scan</code></pre>
+    <figcaption>packages/core/0.2.1/files/strings.hero, lines 1&ndash;8</figcaption>
+  </figure>
+  <p>
+    This is the top of <code>core</code>&rsquo;s <code>strings.hero</code>. Its <code>use strings/internal/scan</code> does not start at your program&rsquo;s root, where there is no <code>strings/</code> folder: inside a package, a <code>use</code> starts at the package&rsquo;s own root, and a <code>use</code> with brackets names an entry of the package&rsquo;s own catalogue.
+  </p>
+  <p>
+    The reason is the folder&rsquo;s name above. The package&rsquo;s author cannot know it: it holds digits computed from the entry, so it changes with the version and with the <code>index</code> line. The same <code>core</code> 0.2.1, added to a program that reads the index by another path, landed in <code>core@0.2.1-861e1a4ddf9ad992</code>. A <code>use</code> written from the program&rsquo;s root would have to name that folder; written from the package&rsquo;s own root it is the same in every program, so a package moves from one program, index or version to the next without one of its <code>use</code> lines changing.
+  </p>
+
+  <h3>Private modules: <code>internal/</code></h3>
+  <p>
+    The module <code>strings/internal/scan</code> does the byte-by-byte work of <code>strings</code>, and its first lines say why it stands apart: &ldquo;kept out of its face because no program calls it&rdquo;. A module under a folder called <code>internal</code> belongs to the module before the last <code>internal</code> in its path, here <code>strings</code>, and only that module and the modules under it may name it. From a program:
+  </p>
+  <pre class="diag"><code>$ heroes check main.hero
+<span class="msg">error[private_module]: `&lt;core&gt;/strings/internal/scan` is private to `&lt;core&gt;/strings`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `&lt;core&gt;/strings` offers instead</span>
+  at main.hero:11:5
+     |
+  11 | use &lt;core&gt;/strings/internal/scan
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+  <p>
+    The rule is Go&rsquo;s, which has had it since Go 1.4, and here it binds your own folders too: in a program with <code>geom/shapes.hero</code> and <code>geom/internal/sq.hero</code>, <code>geom/shapes</code> may write <code>use geom/internal/sq</code> and <code>main.hero</code> may not.
+  </p>
+  <p>
+    What it buys is a package whose <b>face</b>, the module a program names, is the whole of what a program can depend on. Each package&rsquo;s card, the short reference beside its face (<code>strings.md</code> beside <code>strings.hero</code>), is written from the face alone. The modules under <code>internal/</code> are free to change between versions, since no program can have named them, and <code>core</code> 0.2.1 did exactly that: every file it changed or added is under <code>encoding/json/internal/</code>, and the face, <code>encoding/json.hero</code>, is the same file as in 0.2.0.
+  </p>
+
+  <h3>The fingerprint</h3>
+  <p>
+    Each version an index publishes has a list: one line per file, the file&rsquo;s SHA-256 and its name, sorted by name. SHA-256 is a standard recipe that turns any bytes into sixty-four hexadecimal digits, and into entirely different ones if a single byte changes. Six lines of <code>core</code> 0.2.1&rsquo;s list:
+  </p>
+  <figure class="example" data-src="packages/core/0.2.1/list" data-lines="10-15">
+<pre><code>891da4a53219bde785b10da4051b0e14e09a7dbe99e1288f669bed2df5f5e74f  strconv.hero
+a3455e343539decafda988898b8b94658bb6dc647597cf110180d4e158088b05  strconv.md
+d8bca85c8e97f6747fd7106c639af0975a78529929eb9ec0f217b0fec7821395  strconv/internal/shown.hero
+cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
+39762eaa9819cffda30ae2f310bf7b04fd05b54610ecdedd0c2817be1f15765a  strings.md
+3a1b953c9bcee1da8b1881fcfb735443e58c1c2c7f365d2fdcb5f03998b82fbd  strings/internal/scan.hero</code></pre>
+    <figcaption>packages/core/0.2.1/list, lines 10&ndash;15</figcaption>
+  </figure>
+  <p>
+    The SHA-256 of the list is the version&rsquo;s fingerprint. The index keeps one line per version in a file called <code>versions</code>, and the catalogue&rsquo;s <code>sum</code> repeats the line of the version it holds:
+  </p>
+  <figure class="example" data-src="packages/core/versions">
+<pre><code>0.1.0 sha256-732461c3ff08b9f593d64f214beefdc95306d67643ded67c476a1994502c9998
+0.2.0 sha256-8a5f9d20346cc82a313d11491b4273b3affeda4b010bc5fedda3cab5174eabf4
+0.2.1 sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c</code></pre>
+    <figcaption>packages/core/versions</figcaption>
+  </figure>
+  <p>
+    Anybody can check those digits with nothing of Heroes, from the root of the repository:
+  </p>
+  <pre><code>$ shasum -a 256 packages/core/0.2.1/list
+6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c  packages/core/0.2.1/list</code></pre>
+  <p>
+    The compiler checks the copy in <code>heroes.packages/</code> against the sum at every build, every check and every run. Change one byte of it, here a <code>0</code> made a <code>1</code> in <code>strings.hero</code>, and the build stops before it compiles anything:
+  </p>
+  <pre class="diag"><code>$ heroes build main.hero
+<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.2.1-e8db5b383e666067/` is `sha256-d0c03c5902caf551b9bed49cf764a3c92022183d06061b3cdf38247f8b0d1d37`, and the catalogue's `sum` for it is `sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c`: a file of it was changed, added or taken out since it was placed — `heroes fetch` places it again</span>
+  at main.hero:9:5
+    |
+  9 | use &lt;core&gt;/encoding/json
+    |     ^^^^^^^^^^^^^^^^^^^^</code></pre>
+  <p>
+    <code>heroes fetch</code> puts the published bytes back, and holds the index to the same standard on the way: each file it copies must match its line of the list and the list must match the catalogue&rsquo;s sum, or nothing is placed.
+  </p>
+  <pre><code>$ heroes fetch
+placed core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067</code></pre>
+  <p>
+    Why at every build, and not only when fetching: the copy lives in a folder anything can edit, and an edited copy compiled without a word is the silent failure this language exists to refuse. The check is the SHA-256 of the runtime, the piece of program that sits underneath every Heroes program, written in C, and never a package&rsquo;s code: in the words of <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/242-the-compiler-may-depend-on-a-package-and-takes-one-only-to-shrink-git-and-curl-stay-programs-and-a-child-gets-its-environment-at-the-spawn.md">a later sitting</a>, the verifier stays out of the verified, so no package can vouch for itself. Every file counts, <code>.hero</code> or not, because a C header a package carries, the file that tells the compiler how a C library is shaped, is code the program trusts too.
+  </p>
+
+  <h3>A published version never changes</h3>
+  <p>
+    A version, once published, is never edited: a change to a package is a new version. crates.io, Rust&rsquo;s index, says it of every crate it holds: &ldquo;The version can never be overwritten, and the code cannot be deleted.&rdquo; Here the <code>versions</code> file above has only ever gained lines.
+  </p>
+  <p>
+    <code>core</code> 0.2.0 to 0.2.1 is the case so far. In 0.2.0, <code>json.parse</code> read a number far from one slowly, by a route whose cost grew with the distance; 0.2.1 reads most numbers with a single multiplication by a 128-bit power of ten, the method Go&rsquo;s own <code>strconv</code> uses. That change went out as 0.2.1, and 0.2.0 stayed byte for byte as it was published. A program that holds 0.2.0 builds exactly as it did, and one that wants the new version asks for it:
+  </p>
+  <pre><code>$ heroes add core@0.2.0 --index file://../../packages
+added core 0.2.0
+wrote heroes.toml
+$ heroes add core
+changed core 0.2.0 -&gt; 0.2.1
+wrote heroes.toml</code></pre>
+  <p>
+    A program keeps the version it fetched, so a change to a package never breaks a program&rsquo;s build: it reaches a program only when the program asks for it.
+  </p>
+
+  <h3>One version of each package</h3>
+  <p>
+    A program holds one version of each package, and its catalogue lists every package the build compiles, the packages its packages need included. When two of them need two versions of a third, <code>heroes add</code> keeps the higher one: that is Go&rsquo;s rule, called minimal version selection. Here a small index made for the purpose holds <code>a</code>, which needs <code>strs</code> 1.0.0, and <code>b</code>, which needs <code>strs</code> 1.1.0:
+  </p>
+  <pre><code>$ heroes add a --index file://../index3
+added a 1.0.0
+added strs 1.0.0 for a
+wrote heroes.toml
+$ heroes add b
+added b 1.0.0
+changed strs 1.0.0 -&gt; 1.1.0 for b
+wrote heroes.toml
+$ heroes run main.hero
+a sees 1.1.0
+b sees 1.1.0</code></pre>
+  <p>
+    The choice is made once, by the command, and written down; the compiler solves nothing, and a catalogue that leaves out one of those packages is refused, never completed. Since the catalogue holds the whole list with every sum, nothing else stands beside it: no lock file, the second file other systems keep to pin what was chosen. Russ Cox, who designed Go&rsquo;s rule, wrote that it &ldquo;leads to reproducible builds without lock files&rdquo;.
+  </p>
+  <p>
+    Why one version: a package compiled twice is two packages. Its records become two types with one name, and a value one copy hands out is refused where the other&rsquo;s is expected. Reach one folder both as a package and as a module of your own, which only a <code>path</code> entry allows, and that is what happens:
+  </p>
+  <pre class="diag"><code>$ heroes check main.hero
+<span class="msg">note: the package `lib` is read from the folder `lib/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</span>
+<span class="msg">error[type_mismatch]: expected `counter.Box`, found `own.Box`</span>
+  at main.hero:7:22
+    |
+  7 |     b: counter.Box = own.boxed(3)
+    |                      ^^^^^^^^^^^^</code></pre>
+  <p>
+    Dart records the same failure: one file reached by two spellings, which Dart&rsquo;s own guide says it takes for &ldquo;two completely unrelated libraries&rdquo;.
+  </p>
+
+  <h3>Two other sources: git, and a folder of your own</h3>
+  <p>
+    An entry can name a git repository instead of an index. A <i>commit</i> is one saved state of a repository, and a <i>tag</i> a name given to one commit, such as <code>v0.1.0</code>. <code>heroes add</code> with an address and <code>--tag</code> writes the address, the tag, the commit the tag names and the sum. The repository here is a local one made for the purpose:
+  </p>
+  <pre><code>$ heroes add file://../greet --tag v0.1.0
+added greet v0.1.0
+wrote heroes.toml
+$ cat heroes.toml
+[dependencies.greet]
+git = "file://../greet"
+tag = "v0.1.0"
+commit = "e191abf1ce560fd3020d201ed56e76d43dcb1eb6"
+sum = "sha256-09cac94c6a5803de196d94dc80c9da89329c20ce2ee673a876de3a4d5ac381d3"</code></pre>
+  <p>
+    The commit is there because a tag can be moved to another commit. A moved tag is refused, never followed:
+  </p>
+  <pre class="diag"><code>$ heroes fetch
+<span class="msg">heroes.toml:3: error[tag_moved]: the tag `v0.1.0` of `file://../greet` names the commit 07290184ea57bf707fa8c8e2b30e3a278ebc80fa, and the entry `greet` was written when it named e191abf1ce560fd3020d201ed56e76d43dcb1eb6: a tag that moved is refused, never followed, and `heroes add` writes the entry again once the new commit is the one meant</span></code></pre>
+  <p>
+    On the network an address is <code>https://</code>: a plain <code>http://</code> is refused, being &ldquo;read in clear, so anything between could change what is fetched&rdquo;. And <code>file://</code> is accepted only for a folder inside the program&rsquo;s own repository, which is how the programs in <code>examples/</code> read <code>packages/</code>.
+  </p>
+  <p>
+    The third source is a folder of your own, <code>heroes add --path</code>, for a package you are still writing. It is read where it stands and never copied, and nothing holds it to a fingerprint, so every build says so:
+  </p>
+  <pre><code>$ heroes add --path ../../packages/core/0.2.1/files --as core
+added core ../../packages/core/0.2.1/files
+wrote heroes.toml
+$ heroes check main.hero
+note: the package `core` is read from the folder `../../packages/core/0.2.1/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
+  <p>
+    It is the one exception to the promise that a catalogue&rsquo;s mistake never changes which module compiles: a <code>path</code> pointing at the wrong folder compiles other code. The author listed a local folder among the sources, so the sitting kept it, and made it loud rather than silent.
+  </p>
+
+  <h3>What exists today</h3>
+  <p>
+    One package, <code>core</code>, with three modules a program can name: <code>&lt;core&gt;/strings</code>, <code>&lt;core&gt;/strconv</code> and <code>&lt;core&gt;/encoding/json</code>, each with its card, all written in Heroes, none over a C library. One index, the folder <code>packages/</code> at the root of the repository, which the programs in <code>examples/</code> read over <code>file://</code>.
+  </p>
+  <p>
+    A catalogue with no <code>index</code> line reads the Heroes index, a site that is not built yet: building it, publishing a package to it and deciding who may take a name make <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-package-index.md">a milestone of its own</a>, M-package-index, on the roadmap. Until it exists, a package from outside this repository comes from git, or from a folder of your own. The rules every core package follows, for whoever writes the next one, are <a href="https://github.com/heroes-lang/heroes/blob/main/examples/packages/README.md">the package writer&rsquo;s guide</a>, beside the program this chapter used.
+  </p>
+
+  <p class="next">
+    Next: <b><a href="/docs/tests-and-holes/">Tests and holes</a></b>, where an
+    unfinished program is still a program the compiler will talk to you about.
+    <span class="back">&larr; Previous: <a href="/docs/modules/">Modules and files</a></span>
+  </p>
+
+  <p class="next away">
+    Run a program of your own: <a href="/start/">it takes five commands</a>. Or
+    take <a href="/spec/">the whole language in one file</a>, and
+    <a href="/examples/">every program already written in it</a>.
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of a repository file:
+    <code>examples/packages/</code>, the core packages&rsquo; own program, with
+    the catalogue <code>heroes add</code> wrote for it;
+    <code>examples/ledger/main.hero</code>; and <code>packages/core/</code>,
+    the index they read. The five diagnostics are that first program with one
+    edit each, run in its own folder: its catalogue taken away, an address
+    written in its third <code>use</code>, the same line pointed at
+    <code>strings/internal/scan</code>, and one byte changed in its placed copy;
+    and a small program whose catalogue names its own folder
+    <code>lib/</code> with a <code>path</code> entry, reached both as
+    <code>&lt;lib&gt;/counter</code> and as <code>lib/counter</code>. The other
+    transcripts ran on copies: the move from 0.2.0, a local git repository
+    whose tag was then moved to a second commit, a small index where
+    <code>a</code> needs <code>strs</code> 1.0.0 and <code>b</code> needs 1.1.0,
+    and the program with <code>core</code> taken from the index&rsquo;s own
+    folder. The reasons are the records of the sittings that decided them,
+    235, 238, 240 and 242, with the package writer&rsquo;s guide,
+    <code>examples/packages/README.md</code>.</p>
+  </footer>

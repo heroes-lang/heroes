@@ -12,7 +12,7 @@
 
   <h3>Paths start at the program root</h3>
   <p>
-    If you run <code>heroes run shapes/main.hero</code>, <code>shapes/</code> is the program&rsquo;s root directory. Every <code>use</code> path in every file starts there.
+    If you run <code>heroes run shapes/main.hero</code>, <code>shapes/</code> is the program&rsquo;s root directory. Every <code>use</code> path in every file starts there. The one exception is a <code>use</code> whose first part is a name in angle brackets, <code>use &lt;core&gt;/strings</code>: it reaches a package somebody else published, the subject of <a href="/docs/packages/">chapter 13</a>.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
 <pre><code>use geom/area
@@ -109,12 +109,12 @@ error[shadowed_binding]: `point` is what this file calls the module `geom/point`
 
   <h3>Module access rules</h3>
   <p>
-    There is no <code>public</code> or <code>private</code>: a module&rsquo;s declarations are accessible from every file that uses it. The qualifier is always required. The compiler reports circular imports at the <code>use</code> line. No project or configuration file is needed: directories organise the modules, and the file passed to the command determines the root.
+    There is no <code>public</code> or <code>private</code>: a module&rsquo;s declarations are accessible from every file that uses it, and a module under a folder called <code>internal</code> is private to the module that folder belongs to, as <a href="/docs/packages/">chapter 13</a> explains. The qualifier is always required. The compiler reports circular imports at the <code>use</code> line. No project or configuration file is needed: directories organise the modules, and the file passed to the command determines the root. A program that uses a package has one file more, its catalogue.
   </p>
 
   <p class="next">
-    Next: <b><a href="/docs/tests-and-holes/">Tests and holes</a></b>, where an
-    unfinished program is still a program the compiler will talk to you about.
+    Next: <b><a href="/docs/packages/">Packages</a></b>, code somebody else
+    published, fetched into your program and checked at every build.
     <span class="back">&larr; Previous: <a href="/docs/values-all-the-way-down/">Values all the way down</a></span>
   </p>
 
