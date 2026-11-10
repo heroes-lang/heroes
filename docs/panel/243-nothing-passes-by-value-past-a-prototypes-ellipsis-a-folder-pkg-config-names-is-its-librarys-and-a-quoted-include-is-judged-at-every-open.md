@@ -234,7 +234,8 @@ on 2026-11-10, the clang comment by `curl` of the raw file and N1570 at its prin
 
 ## Author's verdict
 
-Pending. The sitting's decision issue, `Panel 243:`, is filed open. **What a yes settles**: R1 to
+Pending. The sitting's decision issue, `Panel 243:`, is filed open:
+https://github.com/heroes-lang/heroes/issues/2449. **What a yes settles**: R1 to
 R5 as adopted, design.md's R10, §4.19 ladder and §4.19 paragraph amended in their own commits, the
 two defects of R4 filed, the landing in batch 30. **What it does not**: the predictions above, on
 their own clocks; the conservative readings, which stay the author's to choose.
