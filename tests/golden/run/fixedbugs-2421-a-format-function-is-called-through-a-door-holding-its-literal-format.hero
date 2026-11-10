@@ -1,0 +1,22 @@
+# FIXED DEFECT 2421's route for a format function, 2026-11-10, lane
+# b30-variadic (panel 243's R1, provisional, author ratification pending).
+#
+# `printf(format: cstr lent, value: i64)` called with `"n = %d\n"` and
+# 4294967338 printed `n = 42` at exit 0: past the `...` nothing held `value`
+# to the `int` `%d` reads, and the format crossed as a pointer clang never
+# read. The door holds both: `say_count(long long n)` writes `%lld` as a
+# literal inside, which `-Wformat` reads against `n` in the header's own code,
+# and its prototype holds `n: i64` to `long long`; `say_text` the same for a
+# string lent read-only. A door that hands on a format it was given is
+# refused (`tests/golden/unsupported/fixedbugs-2421-a-door-that-hands-on-its-format-is-refused.hero`).
+# `printf` writes to the same stdout the runtime writes to, so the lines
+# interleave in order.
+
+extern "fixedbugs-2421-say.h"
+    function say_count(n: i64) -> i32
+    function say_text(s: cstr lent) -> i32
+
+function main()
+    _ = say_count(n: 4294967338)
+    _ = say_text(s: "forty-two".cstr())
+    print(7)
