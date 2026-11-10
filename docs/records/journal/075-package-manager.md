@@ -229,3 +229,20 @@ unattended).
 So the row says *done*. The tag is placed over this commit once the round's push reads its Windows
 leg: `unsupported` with no failure closes defect 2398 by that run and the tag follows; a
 failure names its cases at the net's end, and the tag waits on their repair.
+
+**And the Windows leg, 2026-11-10.** The round's push (`c338bef33`, CI run 42721242127) read Linux
+x86-64 and arm64 `harness: 11865 passed, 0 failed` and Darwin arm64 `11906 passed, 0 failed`; the
+Windows leg ran its net to the end in 4 h 09 min under the 360-minute ceiling and read `unsupported:
+389 passed, 4 failed`, every other suite at 0. So defect 2398's four were named at last, and they
+were not the cases the box judges only with `pkg-config` but defect 2372's: a header's name nothing
+links, told `ffi_missing_link` on every other linker and an `internal error` at exit 2 under MSVC
+`link.exe`, the CI's linker, whose `LNK2019` line no reader of a refused link knew. The box had read
+them green because its clang links through `lld-link`; made to link through `link.exe` by a
+`clang.cfg`, it reproduced the four with the CI's words, and the repair (`c6dd426cd`) reads that
+line as every other linker's, the four green on the box under both linkers and the whole
+`unsupported` form 390 and 0. Two neighbours of the same family were found there and repaired beside
+it (`3f8f9d15a`, defects 2407 and 2408): a missing library under `link.exe` and a
+`__declspec(dllimport)` name under `lld-link`, each an exit 2 that is now an exit 1. Defect 2398
+closes with that repair at the gate, and the tag waits, as the author asked, for a Windows leg that
+reads `unsupported` with no failure: it goes on the first commit whose leg does, the push that
+carries the repair.

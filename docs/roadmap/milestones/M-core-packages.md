@@ -415,3 +415,42 @@ rewritten in Heroes over these packages (issue 2082): **the package manager
 rewritten over the core packages, every golden of its interface passing
 unchanged.** It is M-package-manager's third tempo, and this row closes with
 it.
+
+**Resumed 2026-11-10**, on the author's word of the evening before, given as they left the
+session for the night (*finish everything the plan holds*): the batches resume with
+`encoding/json`, the first package of the next batch, published as `core` 0.2.0 in the static index
+at `packages/` (`8a660cb32`), 0.1.0 left byte for byte as it was published. Its hand copy in
+`examples/json/` was wrong in five places that night (`0.3` read as `0.30000000000000004`, `1e309`
+written `inf`, `01` and a raw line feed accepted, `\u00e9` refused) and left with the package. Three
+things the steps after it inherit:
+
+- **One `core` across `examples/`.** All fifteen programs that fetch it moved to 0.2.0 by `heroes
+  add core` (`1e27458d6`), so a reader opening any of them meets the newest; a published version is
+  never edited, so a package that changes publishes the next version.
+- **A face walks a recursive type with loops** (decision 2403, taken with its recommendation
+  while the author was away, for the author to turn): every function of a face is a line of its card
+  (§ 1.2 of the conventions), and a module under `internal/` cannot name the face's type without a
+  cycle, so `parse` and `render` hold explicit stacks. A heading after which the card program reads
+  no function is the route recorded for the author to choose.
+- **The card says a variant** (`24de372eb`), each case as a program builds it, since `json.Value` is
+  the first variant a face exports.
+
+Task 2401 landed in the same round (`dcfbe86af`): the compiler's `pkg-config` modules renamed after
+the mark, which refreshed the seed (`8bf61be46`, and `40326b8b8` over a dated citation), since a
+module of `selfhost/` renamed or deleted now does (`seed/README.md`). The slow exact route
+`json.parse` takes for a number far from one is an improvement filed beside it (defect 2405).
+
+**And `path` waits for its program** (decision 2404, taken with its recommendation for the author to
+turn). The same night a lane counted, before any code, the hand copies of Go's `path` functions in
+`examples/`: none, for every candidate (`Base`, `Dir`, `Split`, `Ext`, `Join`, `Clean`, `IsAbs`,
+`Match`), the eleven programs that read `args()` handing each path whole to `read_file`; so § 7
+admits no function and the first batch closes with three packages. The hand copies live in the
+compiler and the harness, at least 35 bodies read and run beside Go's, disagreeing with Go and with
+each other on `a/`, a name with no `/` and `""`, unreachable from today's callers (defect 2406); and
+nine of them, with the hooks' 314 calls of `os.path`, ask `path/filepath`'s contract rather than
+`path`'s. So the package the corpus will first need is `path/filepath`, admitted the day its first
+program reaches `core`, the package manager rewritten over these packages being the likeliest.
+
+Defect 2398, the last M-package-manager's tag waited on, was repaired in the same round (`c6dd426cd`,
+`3f8f9d15a`): MSVC `link.exe`'s report of an undefined name, read as every other linker's, and two
+neighbours of it (defects 2407 and 2408); its story is journal 075's.
