@@ -1,0 +1,7 @@
+# The catalogue of defect 2432's case beside it: an entry a `use` names, and
+# one named by a keyword, which no `use` can write.
+[dependencies.json]
+path = "vendor/json"
+
+[dependencies.match]
+path = "vendor/m"

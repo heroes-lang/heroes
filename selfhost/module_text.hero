@@ -173,7 +173,13 @@ function read_address(written: str) -> Address
 
     if module.len() > 0 && written.len() > module.len()
         address @ written.slice(from: 0, to: written.len() - module.len() - 1)
-    return Address(address: address, entry: address_entry(address), module: module)
+    entry: str @= address_entry(address)
+
+    # No line a `use` cannot write is offered (defect 2432): a keyword or a
+    # refused word as the last part leaves the stand-in, `json`.
+    if !is_use_path(entry)
+        entry @ ""
+    return Address(address: address, entry: entry, module: module)
 
 # What a `use` holding an address is told: where the address goes, and the
 # line that names it, which is a line this compiler reads (defect 2308's

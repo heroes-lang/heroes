@@ -1,0 +1,14 @@
+# Fixed defect 2432, 2026-11-10, lane b30-pkg, the verb's half: the folder
+# beside this file is `match`, a keyword, and `heroes add --path ../match`
+# wrote `[dependencies.match]`, an entry no `use` can write, which the
+# build then refused at the `<` of `use <match>/x` with no word of the
+# keyword; `--as while` wrote the same.
+#
+# Now every route refuses the name before anything is fetched or written,
+# a folder's, `--as`'s, the index's and a git address's last part, saying
+# the word is a keyword, or a word of another language Heroes refuses, which
+# no `use` writes between `<` `>`: no catalogue is written and no tree placed.
+
+# A number.
+function n() -> i64
+    return 1

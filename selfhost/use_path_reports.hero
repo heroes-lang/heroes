@@ -5,7 +5,10 @@
 # tree's folder (`package_mark.told_whole`, the codes `use_holds_an_address`
 # and `package_unmarked`). Where it does, a report the lexer made inside that
 # path is a second message for the one mistake and is taken back; a report
-# reaching past the path is kept. The parser applies it where it applies
+# reaching past the path is kept. A report at the word a mark holds where
+# the entry's name stands is taken back too, `let` in `use <let>/x`, which
+# the parser tells with the entry (`package_wants_a_name`, defect 2432) and
+# the lexer told as a binding, `x = 5`. The parser applies it where it applies
 # `unclosed.withdrawn` (`parse.hero`), for the strict and the control arm alike.
 #
 # Split from `package_mark.hero` at its line ceiling
@@ -29,7 +32,7 @@ function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic]) -> [diag.D
 # Whether `span` lies inside a path the parser told whole.
 function inside_a_path(said: [diag.Diagnostic], span: token.Span) -> bool
     for d in said
-        whole = d.code == "use_holds_an_address" || d.code == "package_unmarked"
+        whole = d.code == "use_holds_an_address" || d.code == "package_unmarked" || d.code == "package_wants_a_name"
 
         if whole && d.span.start <= span.start && span.end <= d.span.end
             return true

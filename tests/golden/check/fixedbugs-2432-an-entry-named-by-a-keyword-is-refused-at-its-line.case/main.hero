@@ -1,0 +1,16 @@
+# Fixed defect 2432, 2026-11-10, lane b30-pkg, the catalogue's half: an
+# entry named `match`, a keyword, beside the entry `json` the file reaches.
+#
+# SYMPTOM: the catalogue read, `match` an entry no `use` can write: a `use
+# <match>/…` refused at the word, and, where another package named the same
+# folder under an alias of its own, the program's alias offered in a message
+# as `use <match>/x`, a line the parser refuses (`needs_qualifying`,
+# measured); `heroes add --path vendor/match` wrote the entry.
+#
+# FIX: the catalogue refuses the entry at its line, `catalogue_refused`, as
+# it refuses a name of the wrong shape, and a catalogue that does not read
+# names no entry (panel 235's R5), so the `use` of `json` is told it.
+use <json>/p  #~ catalogue_refused
+
+function main()
+    print(p.n())

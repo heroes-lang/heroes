@@ -1,0 +1,16 @@
+# Fixed defect 2432, 2026-11-10, lane b30-pkg, a shape beside it: a `use`
+# holding an address whose last part is a keyword, `match`.
+#
+# SYMPTOM: `use_holds_an_address`, *`use <match>/parse`, `match` standing
+# for the entry the catalogue gives that address*, with a repair writing
+# `<match>/parse`, a line the parser refuses at `match`.
+#
+# CAUSE: the entry an address is likeliest written under was its last part
+# wherever that has an entry's shape, a keyword included.
+#
+# FIX: a last part no `use` writes between `<` `>` offers no entry: the
+# message names the stand-in, `json`, and no repair is offered.
+use github.com/acme/match/parse  #~ use_holds_an_address
+
+function main()
+    print(1)
