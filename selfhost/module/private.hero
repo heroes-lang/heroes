@@ -1,5 +1,5 @@
-# The private modules (spec § 1; panel 235's R16, ratified 2026-11-07, the
-# program's own folders as well as a package's): a module under an `internal`
+# The private modules (panel 235's R16, ratified 2026-11-07, the program's
+# own folders as well as a package's): a module under an `internal`
 # folder is named only by the module that folder belongs to and by the
 # modules under it, Go's rule for `internal` since Go 1.4. One rule in one
 # place, asked of every `use` line by the graph (`modules.errors`), and of
