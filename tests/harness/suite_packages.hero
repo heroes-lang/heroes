@@ -620,11 +620,12 @@ function reason<A>(got: A?) -> str
 
 test "the floors are under the counts the walk found on the day the source became the index's"
     # 4 `.hero` files in core 0.1.0's `files/`, and 14 placed trees, on
-    # 2026-11-08; 10 in core 0.2.0's on 2026-11-10; a walk reaching no source
-    # or no program finds 0.
+    # 2026-11-08; 10 in core 0.2.0's on 2026-11-10, and 15 placed trees the
+    # same day, the net's own catalogue joining `examples/`' fourteen (feature
+    # 2425); a walk reaching no source or no program finds 0.
     assert LEAST <= 10
     assert LEAST > 0
-    assert LEAST_PLACED <= 14
+    assert LEAST_PLACED <= 15
     assert LEAST_PLACED > 0
 
 test "a label passes on nothing found, and fails once naming everything found"

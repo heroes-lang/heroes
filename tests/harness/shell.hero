@@ -35,6 +35,7 @@
 
 use <core>/strings as core_strings
 
+use placed_trees
 use strings
 
 extern "hero_os.h"
@@ -1854,16 +1855,19 @@ constant START_PROBE: str
 function env_probe(scratch: str) -> str?
     return harness_probe(scratch: scratch, name: "env-values", main: ENV_PROBE)
 
-# `main` built over the harness's own modules under `scratch/name`.
+# `main` built over the harness's own modules under `scratch/name`, with the
+# net's own catalogue beside them (`with_catalogue`), since those modules reach
+# `core` through it (feature 2425).
 function harness_probe(scratch: str, name: str, main: str) -> str?
     dir = scratch + "/" + name
     remove_tree(dir)?
     mkdir_all(dir)?
 
-    for module in ["absence", "mark_readers", "shell", "strings"]
-        text = read_file("tests/harness/" + module + ".hero")?
+    for module in ["absence", "mark_readers", "placed_trees", "shell", "strings"]
+        text = read_file(NET + "/" + module + ".hero")?
         write_file(path: dir + "/" + module + ".hero", text: text)?
 
+    with_catalogue(dir)?
     write_file(path: dir + "/main.hero", text: main)?
     compiler = some_compiler()?
     probe = dir + "/probe" + exe_suffix()
@@ -1872,6 +1876,33 @@ function harness_probe(scratch: str, name: str, main: str) -> str?
     if built.code != 0
         return fail(code: "unbuilt", msg: "the probe did not build: " + built.err)
     return ok(probe)
+
+# The net's own folder, its modules and its catalogue.
+constant NET: str
+    "tests/harness"
+
+# The net's catalogue, `heroes.toml`, and every file of the trees it placed
+# under `heroes.packages/`, written under `dir` as they stand, so a program
+# built there over the net's modules reaches the package they `use` (feature
+# 2425, panel 242's R7): `build` reads the catalogue's entry and holds the tree
+# to its `sum`, the folder's name included, and never fetches, so a copy of
+# the two is the catalogue a fetch would have left. A file of a tree that is
+# not text fails the copy by name rather than reaching the build changed.
+function with_catalogue(dir: str) -> ()?
+    write_file(path: dir + "/heroes.toml", text: read_file(NET + "/heroes.toml")?)?
+    nothing: [str] = []
+
+    for path in walk_into(dir: NET + "/" + placed_trees.FOLDER, skip: nothing)?
+        target = dir + path.slice(from: NET.len(), to: path.len())
+        at: i64 @= target.len() - 1
+
+        while at >= 0 && target[at] != '/'
+            at @ at - 1
+
+        mkdir_all(target.slice(from: 0, to: at))?
+        write_file(path: target, text: read_file(path)?)?
+
+    return ok()
 
 # The program the two tests above build over the harness's own modules.
 constant ENV_PROBE: str
