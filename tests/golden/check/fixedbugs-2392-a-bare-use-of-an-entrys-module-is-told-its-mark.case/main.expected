@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2392-a-bare-use-of-an-entrys-module-is-told-its-mark.case/main.hero:7:5: error[package_unmarked]: there is no module `core/strconv` of this program, and `core` is an entry of its catalogue: a package's module is written in angle brackets — `use <core>/strconv`

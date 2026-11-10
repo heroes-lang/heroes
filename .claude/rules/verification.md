@@ -676,6 +676,19 @@ superseded by this paragraph; the risk it takes, a repair's damage to
 another's cases found only at the gate, is the risk CL-079 already took, and
 the gate's bisect by lane and commit is its answer.
 
+**Said again by the author 2026-11-10**, meant as: *do not run the net a
+thousand times, run it only at the end; stop pinning my Mac*. Given on batch
+29, whose lanes' common brief had copied the superseded bullet below and asked,
+after each repair, the compiler's own tests and, where `tests/harness/` moved,
+the net's own tests, five lanes at once (`sysctl vm.swapusage` read 5,717 of
+7,168 MB of swap in use at 14:34 that day), and whose coordinator had run the
+hooks' suite, `records` and `unseen` on the round between its merges. So a
+lane's brief asks, per repair, its own cases narrowed by the harness's third
+word, the touched files' `fmt` and the stage 2 rebuild where `selfhost/` or
+`runtime/` moved, and nothing else; and the coordinator runs nothing on the
+round between its merges. The compiler's own tests, the net's own tests and
+every whole form run once, at the round's gate.
+
 Author instruction 2026-09-29, in these words (meant as): *it is unsustainable
 to go at the speed we are going; a repair gets its own test, on one platform,
 and is queued; the next repair the same; only at the end of a batch of four or
@@ -957,8 +970,17 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   `--hard`, a forced checkout or switch of the whole tree), and so is an
   autostash that would take one (defect 514); and a commit is judged on what it
   carries, a path named after `--` as the working tree holds it, staged or not
-  (defect 515). And a command that would leave a path's staged change nowhere
-  is refused by the paths it names (defect 529): `git restore -S -W` in every
+  (defect 515). **Since 2026-11-10 only on a line that leaves it what the
+  guard read** (defect 2380: `git add -- <dir> && git commit -F m -- <dir>`
+  committed a file that does not parse, the files and the index having been
+  read before the line ran): a commit, or a `--continue` that concludes with
+  the index, is refused behind anything on its line that may write a file or
+  an index, `git add` and `git stage`, a redirection into a file, a copy, a
+  checkout, a shell's `-c`, a git alias, everything but the moves, readers,
+  printers and git's reading verbs `.claude/hooks/ahead.py` lists, a
+  substitution in its own words included. And a command that would leave a
+  path's staged change nowhere is refused by the paths it names (defect 529):
+  `git restore -S -W` in every
   spelling and `restore -S` alone, `git checkout <commit> -- <paths>`, `git rm
   -f` and `rm --cached -f`, `git mv -f` over a staged destination, `git reset`
   by its paths and of the whole index where a staged path was changed again

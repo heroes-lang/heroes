@@ -1,0 +1,10 @@
+# Fixed defect 2379, 2026-11-10, lane b29-pkgmsg, a shape beside it: a file
+# of the package `core` calls `mine()`, which only `x/internal/y` declares,
+# a module private to `x` (panel 235's R16). It was offered `use
+# x/internal/y`, a line refused `private_module` once written; it is told the
+# module and its owner, and offered no line.
+use <core>/strings
+use <core>/x
+
+function main()
+    print(strings.word() + x.other())

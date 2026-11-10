@@ -1,0 +1,8 @@
+note: the package `alpha` is read from the folder `tests/golden/full/fixedbugs-2379-a-package-its-catalogue-does-not-list-is-named.case/vendor/alpha/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2379-a-package-its-catalogue-does-not-list-is-named.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[unknown_name]: nothing named `mine` is in scope, and no `use` of this file can name a module declaring it: `<alpha>/a` is a module of a package that the package `core` lists in no catalogue of its own
+  at tests/golden/full/fixedbugs-2379-a-package-its-catalogue-does-not-list-is-named.case/vendor/core/strings.hero:6:12
+    |
+  6 |     return mine()  #~ unknown_name
+    |            ^^^^
+  note: inside a package a `use` starts at the package's own root, and its angle brackets name the entries of the package's own catalogue (spec § 1): what a package calls is declared in the package itself or in a package its catalogue lists

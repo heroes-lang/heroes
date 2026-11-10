@@ -145,8 +145,12 @@ record Rect
     <code>any</code>, <code>all</code> and <code>range</code>, which are
     themselves written in Heroes; plus reading and writing a file, the
     command-line arguments and <code>exit</code>. Everything else is a C
-    library you declare yourself, and there is no package manager and no
-    registry to pull it from.</li>
+    library you declare yourself, or a package of Heroes code your program
+    carries with it, which <code>heroes add</code> fetches from a git
+    repository or from an index, the place where packages are published. So
+    far the project publishes only the core packages, for text, numbers and
+    JSON, in a folder of its repository, and its index on the web is still to
+    be built.</li>
     <li><b>Parallel work carries one number.</b> A thread takes an
     <code>i64</code> and gives one back. Put a list inside a callback&rsquo;s
     type and the compiler refuses it before anything runs, with
@@ -182,7 +186,7 @@ record Rect
     <a href="/why/not/">The refusals&nbsp;&rarr;</a></li>
     <li><b>Linux, macOS and Windows, on 64 bits, through clang.</b> Heroes runs
     on 64-bit machines and compiles through clang, which you install yourself:
-    there is no installer and no package yet. The browser and microcontrollers
+    there is no installer of any kind yet. The browser and microcontrollers
     are not where it runs today.
     <a href="/start/">Getting started&nbsp;&rarr;</a></li>
   </ul>

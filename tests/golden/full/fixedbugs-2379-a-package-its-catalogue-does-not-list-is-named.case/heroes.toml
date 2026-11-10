@@ -1,0 +1,7 @@
+# The catalogue of defect 2379's case beside it: two packages of the author's
+# own, read from folders, and `core` lists neither in a catalogue of its own.
+[dependencies.alpha]
+path = "vendor/alpha"
+
+[dependencies.core]
+path = "vendor/core"

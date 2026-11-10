@@ -1,0 +1,7 @@
+# The package's module of defect 2379's case beside it: it reads a function
+# only the program declares as a value.
+
+# A word.
+function word() -> str
+    f = mine  #~ unknown_name
+    return f()

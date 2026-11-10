@@ -1,0 +1,31 @@
+# Defect 2427, 2026-11-10: `to_f64` and `to_f32` of a `u64` stopped the build
+# at exit 2, clang refusing the runtime's `int64_t` entry point under
+# `-Wsign-conversion`, where spec § 11 says the two conversions give a value.
+# Every unsigned width at its largest to both floats, the signed widths beside
+# them, and a `u64` reached as a method, an element, a field, a constant and a
+# value nobody reads: each converts, a `u64` by C's own cast.
+
+constant TOP: u64
+    18446744073709551615
+
+record Meter
+    reading: u64
+
+function main()
+    a: u8 = 255
+    b: u16 = 65535
+    c: u32 = 4294967295
+    d: u64 = 18446744073709551615
+    print(to_f64(a), " ", to_f64(b), " ", to_f64(c), " ", to_f64(d))
+    print(to_f32(a), " ", to_f32(b), " ", to_f32(c), " ", to_f32(d))
+    e: i8 = -128
+    g: i64 = -9223372036854775807
+    print(to_f64(e), " ", to_f64(g), " ", to_f32(e), " ", to_f32(g))
+    xs: [u64] = [3, 18446744073709551615]
+    m = Meter(reading: 4294967296)
+    print(xs[0].to_f64(), " ", to_f32(xs[1]), " ", to_f64(m.reading) * 2.0, " ", to_f64(TOP))
+    _ = to_f64(xs[1])
+    _ = to_f32(m.reading)
+
+    # The largest u64's nearest f64 and f32 are both 2 to the 64.
+    print(to_f64(d) == 18446744073709551616.0, " ", to_f64(to_f32(d)) == 18446744073709551616.0)

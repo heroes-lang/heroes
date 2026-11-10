@@ -1,0 +1,13 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[tag_refused]: `v0..3` holds `..`, which git reads as a range of commits and no tag
+heroes.toml:
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0..3"
+commit = "0000000000000000000000000000000000000001"
+sum = "sha256-1111111111111111111111111111111111111111111111111111111111111111"
+heroes.packages:
+(none)

@@ -1,0 +1,5 @@
+# The program's own module of defect 2379's case beside it.
+
+# The word handed in, as only the program declares it.
+function mined(s: str) -> str
+    return s

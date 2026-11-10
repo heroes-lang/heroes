@@ -1,0 +1,7 @@
+# Fixed defect 2394, 2026-11-10, lane b29-pkgmsg, a shape beside it: `use
+# core`, the package `core` holding four modules at its root. Three are
+# named, in their names' order, and the message says there are others.
+use core  #~ unknown_module
+
+function main()
+    print("x")

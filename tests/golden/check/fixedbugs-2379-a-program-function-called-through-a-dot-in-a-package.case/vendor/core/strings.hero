@@ -1,0 +1,6 @@
+# The package's module of defect 2379's case beside it: it calls through a
+# dot a function only the program declares.
+
+# A word.
+function word() -> str
+    return "x".mined()  #~ unknown_name

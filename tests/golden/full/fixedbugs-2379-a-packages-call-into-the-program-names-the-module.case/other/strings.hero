@@ -1,0 +1,6 @@
+# The program's own module of defect 2379's case beside it, which no file of
+# the package can name.
+
+# A word only the program declares.
+function mine() -> str
+    return "p"

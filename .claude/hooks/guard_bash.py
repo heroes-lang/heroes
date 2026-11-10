@@ -33,7 +33,7 @@ import trees
 
 # The modules only a git command needs, imported by `git_rules` the first time
 # one is read.
-commits = discards = staged = unseen = runs = tagged = None
+ahead = commits = discards = staged = unseen = runs = tagged = None
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
@@ -318,15 +318,16 @@ def what_runs():
 
 
 def git_rules():
-    """Import `commits`, `discards`, `staged`, `unseen`, `runs` and `tagged`,
-    which only the git rules use, `runs` for a `find` too. This guard runs before every
+    """Import `ahead`, `commits`, `discards`, `staged`, `unseen`, `runs` and
+    `tagged`, which only the git rules use, `runs` for a `find` too. This guard runs before every
     Bash call and most are not git: imported at the top, the three of
     2026-10-07 and what they import took an `ls` from 235.6 to 251.8 million
     instructions (measured that day, the guard's own process)."""
-    global commits, discards, staged, unseen, runs, tagged
+    global ahead, commits, discards, staged, unseen, runs, tagged
     if commits is None:
         if HOOKS not in sys.path:
             sys.path.insert(0, HOOKS)
+        import ahead as ahead_module
         import commits as commits_module
         import discards as discards_module
         import staged as staged_module
@@ -335,7 +336,7 @@ def git_rules():
         import unseen as unseen_module
 
         commits, discards, staged, unseen = commits_module, discards_module, staged_module, unseen_module
-        runs, tagged = runs_module, tagged_module
+        runs, tagged, ahead = runs_module, tagged_module, ahead_module
 
 
 def git_dir(w, here):
@@ -616,20 +617,81 @@ def verdict(command, cwd=None, seen=frozenset()):
 
     # Each segment, and each command it runs that its first word does not say
     # (defect 534), judged as one command.
+    ran_by_step = []
     for raw, here, segment in steps:
         if "$(" in segment or "`" in segment:
             for inner in what_runs().substitutions(segment):
                 said = verdict(inner, here or cwd, seen)
                 if said is not None:
                     return said
-        for ran_raw, ran, there, ran_seen, script in commands_in(raw, here, seen):
+        ran_by_step.append(commands_in(raw, here, seen))
+        for ran_raw, ran, there, ran_seen, script in ran_by_step[-1]:
             if script is not None:
                 said = verdict(script, there or cwd, ran_seen)
             else:
                 said = judged(ran_raw, ran, there, segment, command, cwd, ran_seen)
             if said is not None:
                 return said
+
+    # **A commit is judged on what its line leaves it** (defect 2380,
+    # `ahead.py`): the files and the index above were read before the line
+    # runs, so whatever runs ahead of the commit must write neither, a
+    # substitution in the commit's own words included.
+    for i, (_raw, here, segment) in enumerate(steps):
+        if not commits_by(ran_by_step[i]):
+            continue
+        for j in range(i):
+            if not inert_step(ran_by_step[j], steps[j][1], steps[j][2], cwd, seen):
+                return ahead.refusal(steps[j][2], segment) + LAST_JUDGE
+        if "$(" in segment or "`" in segment:
+            for inner in what_runs().substitutions(segment):
+                if not inert_line(inner, here or cwd, seen):
+                    return ahead.refusal("$(" + inner + ")", segment) + LAST_JUDGE
     return None
+
+
+def commits_by(ran):
+    """Whether one of the commands `ran` (`commands_in`'s list for a segment)
+    makes a commit the staged-file check judges: a `git commit`, or the
+    `--continue` that concludes a merge, a pick, a revert, a rebase or an am."""
+    for _raw, w, _there, _seen, _script in ran:
+        if not w or os.path.basename(w[0]) != "git":
+            continue
+        git_rules()
+        if git_args(w, "commit") is not None:
+            return True
+        for name in commits.CONCLUDED_BY:
+            more = git_args(w, name)
+            if more is not None and commits.continues(name, more):
+                return True
+    return False
+
+
+def inert_step(ran, here, segment, cwd, seen):
+    """Whether the segment `segment`, run in `here`, whose commands are `ran`,
+    writes neither a file nor an index: each command it runs is one `ahead`
+    reads as inert, and so is every line it substitutes. A command line an
+    alias stands for, or a shell's `-c`, is read whole by `inert_line`."""
+    git_rules()
+    for _raw, w, there, ran_seen, script in ran:
+        if script is not None:
+            if not inert_line(script, there or cwd, ran_seen):
+                return False
+        elif not ahead.inert(w, segment):
+            return False
+    if "$(" in segment or "`" in segment:
+        for inner in what_runs().substitutions(segment):
+            if not inert_line(inner, here or cwd, seen):
+                return False
+    return True
+
+
+def inert_line(command, cwd, seen):
+    """Whether every segment of the command line `command` is inert."""
+    return all(
+        inert_step(commands_in(raw, here, seen), here, segment, cwd, seen)
+        for raw, here, segment in placed(command, cwd)
+    )
 
 
 # **A GitHub write is an outward act, asked for every time** (CLAUDE.md § Hard
@@ -819,17 +881,22 @@ def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
             if said is not None:
                 return said
 
-    rest = git_args(w, "add")
+    # `git stage` is git's other name for `git add` (`git help stage`), and
+    # until 2026-11-10 it went past both refusals below: `git stage -A`
+    # staged the whole tree with this guard silent (found beside defect 2380,
+    # measured that day, git 2.56.0). The verb is named as it was written.
+    rest = git_args(w, "add", "stage")
     if rest is not None:
+        said_as = "git " + runs.verb_of(w)[0]
         if {"-A", "--all", "-u", "--update"} & set(rest):
             return (
-                "refused: `git add` with -A, --all or -u stages every "
+                "refused: `" + said_as + "` with -A, --all or -u stages every "
                 "session's work in this shared checkout. Name each file "
                 "this conversation touched. " + CONTRACT
             )
         if "." in rest:
             return (
-                "refused: `git add .` stages every session's work in this "
+                "refused: `" + said_as + " .` stages every session's work in this "
                 "shared checkout. Name each file this conversation "
                 "touched. " + CONTRACT
             )
