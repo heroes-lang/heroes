@@ -1,0 +1,5 @@
+# The catalogue of defect 2440's case beside it: `json`'s `version` written
+# `1.0.1`, its tree placed at `1.0.0`.
+[dependencies.json]
+version = "1.0.1"
+sum = "sha256-96a0c4d465a105638851e1e956683cf9e83e6a909db8fabedfc96c99ec1f1f1c"

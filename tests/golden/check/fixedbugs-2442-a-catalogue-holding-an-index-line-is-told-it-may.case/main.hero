@@ -1,0 +1,16 @@
+# Fixed defect 2442, 2026-11-10, lane b30-pkg: a catalogue opening with the
+# `index` line `heroes add` writes, its entry holding a key misspelt,
+# `fingerprint` for `sum` (panel 244's spec-warden). The catalogue beside
+# this file holds no comment, so its lines are the issue's own.
+#
+# SYMPTOM: `catalogue_refused`, *… and the catalogue holds nothing but the
+# program's dependencies*, beside the `index` line the reader had accepted,
+# so the message's last clause was false of the file it judged; two other
+# refusals said *the program's dependencies and nothing else*.
+#
+# FIX: every refusal of a line says what a catalogue holds in one sentence,
+# its dependencies and the one `index` line above them, and nothing else.
+use <core>/strings  #~ catalogue_refused
+
+function main()
+    print(strings.trim_space(s: "  hi  "))

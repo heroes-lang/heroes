@@ -1,0 +1,5 @@
+index = "file://../idx"
+
+[dependencies.core]
+version = "0.2.1"
+fingerprint = "sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c"

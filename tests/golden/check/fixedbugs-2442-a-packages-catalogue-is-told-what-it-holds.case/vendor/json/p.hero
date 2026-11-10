@@ -1,0 +1,5 @@
+# A module of the package of defect 2442's case beside it.
+
+# A word.
+function word() -> str
+    return "j"

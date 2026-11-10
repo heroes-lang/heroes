@@ -1,0 +1,11 @@
+# Fixed defect 2440, 2026-11-10, lane b30-pkg, a shape beside it: the
+# catalogue's `version` for a placed `json` changed by hand, `1.0.1`, the
+# tree placed at `1.0.0` standing.
+#
+# The placed tree is named with the version it stands at, read from its
+# folder's name, and that version is offered back: the tree is held to the
+# catalogue's `sum`, unchanged, so writing it back reads this tree.
+use <json>/strconv  #~ package_unread
+
+function main()
+    print(strconv.word())

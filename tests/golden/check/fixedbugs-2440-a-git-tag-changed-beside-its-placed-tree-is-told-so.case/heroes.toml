@@ -1,0 +1,7 @@
+# The catalogue of defect 2440's case beside it: `yaml` from git, its `tag`
+# written `v2`, its tree placed at `v1`.
+[dependencies.yaml]
+git = "https://git.example.org/ana/yaml"
+tag = "v2"
+commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
+sum = "sha256-3466f4837bdc0f8606020f0b99465d13529afb26fac4a6d0e3b36f180af31f1f"

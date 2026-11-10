@@ -1,0 +1,5 @@
+# The package's own catalogue of defect 2442's case beside it, holding a
+# compiler flag, which no catalogue holds.
+[dependencies.core]
+path = "../core"
+flags = "-O2"

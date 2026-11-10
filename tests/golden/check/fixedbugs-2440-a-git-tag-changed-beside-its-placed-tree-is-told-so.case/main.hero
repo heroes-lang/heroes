@@ -1,0 +1,8 @@
+# Fixed defect 2440, 2026-11-10, lane b30-pkg, a shape beside it: a git
+# entry's `tag` changed by hand, `v2`, its tree placed at `v1` standing. A
+# git entry's folder holds its tag where an index entry's holds its version,
+# so the same comparison tells the tag that moved.
+use <yaml>/load  #~ package_unread
+
+function main()
+    print(load.word())
