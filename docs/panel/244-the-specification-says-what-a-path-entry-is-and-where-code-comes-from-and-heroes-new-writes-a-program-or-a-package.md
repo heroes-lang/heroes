@@ -206,7 +206,8 @@ are the decision issue's `## Prior art`.
 
 ## Author's verdict
 
-Pending. The sitting's decision issue, `Panel 244:`, is filed open. **What a yes settles**: R1 to
+Pending. The sitting's decision issue, `Panel 244:`, is filed open:
+https://github.com/heroes-lang/heroes/issues/2461. **What a yes settles**: R1 to
 R5 as adopted, the specification amended by S1c2 in its own commit after the refresh, `heroes new`
 as the sixteenth verb by the author's decision, defect 2446's rule, R4's filings. **What it does
 not**: `internal` in the specification, which waits on the blind reading; the predictions above, on
