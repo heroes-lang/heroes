@@ -1,0 +1,5 @@
+# The package's own catalogue of defect 2431's case beside it: `core`, the
+# folder the program's catalogue also names, so its alias maps to the
+# program's `core`.
+[dependencies.core]
+path = "../core"

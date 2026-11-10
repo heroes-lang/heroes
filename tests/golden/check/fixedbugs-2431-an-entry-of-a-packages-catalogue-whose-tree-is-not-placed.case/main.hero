@@ -1,0 +1,14 @@
+# Fixed defect 2431, 2026-11-10, lane b30-pkg, a shape beside it: `json`'s
+# own catalogue names `core`, an entry of the index whose tree is not
+# placed, and `json`'s files forget the brackets.
+#
+# `use core/strconv` is told `use <core>/strconv`, a `guess`, since no tree
+# is there to say it holds `strconv`; `use core` is told that `core` is an
+# entry, its module written as a stand-in, with no tree to list. The modules
+# are `vendor/json/a.hero` and `vendor/json/b.hero`, each marked where it is
+# told.
+use <json>/a
+use <json>/b
+
+function main()
+    print(a.word() + b.word())

@@ -39,6 +39,7 @@ use module/package_told
 use module/packages
 use module/paths
 use module/placed as places
+use module/private
 use module/reached
 use module/reading
 use module/spelling
@@ -145,7 +146,7 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
-    out @ package_told.private_reaches(s, uses, found: out)
+    out @ private.told(s, uses, found: out)
 
     if out.len() == 0
         out @ cycles(s, uses, found: out)

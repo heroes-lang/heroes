@@ -22,8 +22,8 @@
 use ast
 use diag
 use module/diagnostics
-use module/package_told
 use module/placed
+use module/private
 use resolve/binding as resolve_binding
 use resolve/did_you_mean
 use resolve/errors
@@ -175,7 +175,7 @@ function name_declared_elsewhere(@r: state.Resolver, s: source.Source, text: str
         if one != r.module && one != source.LIBRARY_MODULE && !resolved.top_in(r.out, module: one, name: text).is_err()
             written = placed.written_in(s.reached.aliases, from: r.module, module: one)
 
-            if written != "" && package_told.reaches(from: r.module, name: one)
+            if written != "" && private.reaches(from: r.module, name: one)
                 return ok(diagnostics.needs_a_use(name: text, module: one, written: written, span: span))
             beyond @ beyond.push(one)
 
@@ -364,8 +364,8 @@ test "a name only out-of-reach modules declare is told with them, and a nameable
     q: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
     q.module @ "main"
     resolved.declare_top(@q.out, module: "lib/internal/x", name: "dist2", decl: 0)
-    private = name_declared_elsewhere(@q, s, "dist2", span).must()
-    assert private.code == "unknown_name"
-    assert private.message == "nothing named `dist2` is in scope, and no `use` of this file can name a module declaring it: `lib/internal/x` is private to `lib`"
+    hidden = name_declared_elsewhere(@q, s, "dist2", span).must()
+    assert hidden.code == "unknown_name"
+    assert hidden.message == "nothing named `dist2` is in scope, and no `use` of this file can name a module declaring it: `lib/internal/x` is private to `lib`"
     q.module @ "lib/words"
     assert name_declared_elsewhere(@q, s, "dist2", span).must().code == "needs_qualifying"
