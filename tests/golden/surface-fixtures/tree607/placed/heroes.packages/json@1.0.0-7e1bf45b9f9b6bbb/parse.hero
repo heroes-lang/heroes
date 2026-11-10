@@ -1,0 +1,5 @@
+# Defect 2457's placed module: a cell nothing re-binds, whose certain fix
+# writes `=`, in a tree the build holds to the catalogue's `sum`.
+function two() -> i64
+    y: i64 @= 2  #~ never_rebound
+    return y

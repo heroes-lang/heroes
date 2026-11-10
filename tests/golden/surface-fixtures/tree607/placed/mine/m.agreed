@@ -1,0 +1,5 @@
+# Defect 2457: a `path` package is the author's own folder (panel 235's R6),
+# so its certain fix is written as the program's own are.
+function three() -> i64
+    z: i64 = 3  #~ never_rebound
+    return z
