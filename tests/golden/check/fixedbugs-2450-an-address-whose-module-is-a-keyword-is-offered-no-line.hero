@@ -1,0 +1,21 @@
+# Fixed defect 2450, 2026-11-10, lane b30-pkg: a `use` written as an
+# address whose module part is a keyword, `github.com/acme/json/match`.
+#
+# SYMPTOM: `use_holds_an_address`, told to write `use <json>/match`, with a
+# repair writing `<json>/match`: a line the parser refuses at `match`, the
+# class of defect 2432's entry names.
+#
+# CAUSE: the module after an address was offered whatever its parts were,
+# where its entry was already held to the rule a `use` path is read by.
+#
+# FIX: a module part that is a keyword or a word the lexer refuses leaves
+# the stand-in, `parse`, and no repair, bare, quoted or nested; a module a
+# `use` can write is still offered, as the last line's is.
+use github.com/acme/json/match  #~ use_holds_an_address
+use "github.com/acme/toml/match"  #~ use_holds_an_address
+use github.com/acme/xml/text/match  #~ use_holds_an_address
+use github.com/acme/csv/let  #~ use_holds_an_address
+use github.com/acme/ini/parse  #~ use_holds_an_address
+
+function main()
+    print(1)
