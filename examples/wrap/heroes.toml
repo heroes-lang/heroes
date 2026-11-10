@@ -1,5 +1,5 @@
 index = "file://../../packages"
 
 [dependencies.core]
-version = "0.1.0"
-sum = "sha256-732461c3ff08b9f593d64f214beefdc95306d67643ded67c476a1994502c9998"
+version = "0.2.0"
+sum = "sha256-8a5f9d20346cc82a313d11491b4273b3affeda4b010bc5fedda3cab5174eabf4"

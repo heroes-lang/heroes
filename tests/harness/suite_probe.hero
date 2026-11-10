@@ -195,12 +195,17 @@ function trees() -> [Tree]
     # The tests row raised 2026-11-09 at batch 26's gate, to what the suite
     # asked: 2332 seeds and 20988 variants, past 1798 and 16182 by more than a
     # quarter, the `.hero` files added under `tests/` since 2026-10-20.
+    # The examples and packages rows raised 2026-11-10 at M-core-packages step
+    # 9, to what the suite asked: examples 269 seeds and 2421 variants, past 159
+    # and 1431, the fifteen trees of core 0.2.0 that programs carry, ten files
+    # each, and `examples/json/` down to its one module; packages 14 seeds and
+    # 126 variants, past 4 and 36, the ten files of 0.2.0 beside 0.1.0's four.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
-        Tree(name: "examples, multi", root: "examples", seeds: 159, floor: Floor(family: "multi", generated: 1431, parsing: 1431), known: none)
-        Tree(name: "packages, multi", root: "packages", seeds: 4, floor: Floor(family: "multi", generated: 36, parsing: 36), known: none)
+        Tree(name: "examples, multi", root: "examples", seeds: 269, floor: Floor(family: "multi", generated: 2421, parsing: 2421), known: none)
+        Tree(name: "packages, multi", root: "packages", seeds: 14, floor: Floor(family: "multi", generated: 126, parsing: 126), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
