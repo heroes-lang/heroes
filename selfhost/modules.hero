@@ -232,7 +232,7 @@ function collisions(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnos
         if !f.is_library && f.module == source.LIBRARY_MODULE
             d: diag.Diagnostic @= diag.new_diagnostic(
                 code: "module_name_reserved",
-                message: "`" + f.name + "` would be the module `library`, and that name is the language's own — §1.11's Tier 2 is compiled into every program under it",
+                message: "`" + f.name + "` would be the module `library`, and that name is the language's own — design.md §1.11's Tier 2 is compiled into every program under it",
                 span: token.Span(start: f.start, end: f.start)
             )
             d.notes @ d.notes.push(

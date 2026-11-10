@@ -278,11 +278,11 @@ function extern_across_modules(name: str, module: str, is_library: bool, span: t
     if is_library
         d.message @ "`" + name + "` is the library's own `extern` — an extern is never reachable across a module boundary, and the library is a module"
         d.notes @ d.notes.push(
-            "§4.19: every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have"
+            "every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have"
         )
     else
         d.notes @ d.notes.push(
-            "§4.19: write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks"
+            "write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks"
         )
     return d
 

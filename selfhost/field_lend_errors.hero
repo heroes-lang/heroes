@@ -31,7 +31,7 @@ use token
 function field_lend_escapes(span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_escapes",
-        message: "`.ptr()` lends this field's address to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the record it points into",
+        message: "`.ptr()` lends this field's address to C for the length of one call (spec § 13), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the record it points into",
         span: span
     )
     d.notes @ d.notes.push(
@@ -73,7 +73,7 @@ function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
         span: span
     )
     d.notes @ d.notes.push(
-        "lend at the call that reaches C. A wrapper takes the record by value, or as `@`, and lends the field inside itself — `function total(s: Slot) -> i64` returning `slot_sum(p: s.nsap.ptr(), n: 8)` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
+        "lend at the call that reaches C. A wrapper takes the record by value, or as `@`, and lends the field inside itself — `function total(s: Slot) -> i64` returning `slot_sum(p: s.nsap.ptr(), n: 8)` — which is the shape design.md §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
     )
     return d
 
@@ -174,6 +174,6 @@ function field_lend_written(lend: str, root: str, callee: str, c_type: str, span
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.4: only a declared `@` name can be mutated, and a C write is a mutation. Declare `" + root + "` with `@` — a `@` cell, or a `@` parameter — and the bytes C writes land where this program reads them back. To only READ the field, lend it to a parameter the header declares `const`"
+        "spec § 5: only a declared `@` name can be mutated, and a C write is a mutation. Declare `" + root + "` with `@` — a `@` cell, or a `@` parameter — and the bytes C writes land where this program reads them back. To only READ the field, lend it to a parameter the header declares `const`"
     )
     return d

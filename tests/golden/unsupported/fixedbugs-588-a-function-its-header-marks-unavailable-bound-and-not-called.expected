@@ -4,4 +4,4 @@ error[ffi_unavailable]: `fixedbugs-588-unavailable.h` marks `gone` unavailable, 
   14 |     function gone(x: i64) -> i64  #~ ffi_unavailable
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-588-unavailable.h` says of `gone`: gone for good
-  note: §4.19: an `extern` is checked against the real header, and clang refuses every use of a name it marks unavailable, this binding's own check included: remove the binding, or bind what the header offers in its place
+  note: spec § 13: an `extern` is checked against the real header, and clang refuses every use of a name it marks unavailable, this binding's own check included: remove the binding, or bind what the header offers in its place

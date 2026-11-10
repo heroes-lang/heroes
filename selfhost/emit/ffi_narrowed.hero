@@ -260,7 +260,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
             span: span
         )
         cb.notes @ cb.notes.push(
-            "§4.19: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void"
+            "spec § 13: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void"
         )
 
         # The second note fires only where the header qualifies a pointee THIS
@@ -321,7 +321,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
             span: mark.must()
         )
         bad.notes @ bad.notes.push(
-            "§4.19: the compiler calls this function for you, so it is checked against the header the way your own call would be — and `" + c_type.must() + "` is not what a string is"
+            "spec § 13: the compiler calls this function for you, so it is checked against the header the way your own call would be — and `" + c_type.must() + "` is not what a string is"
         )
         bad.notes @ bad.notes.push(
             "name the function that frees THIS string — `free` for `strdup`, `sqlite3_free` for SQLite's own — or drop the `owned` mark and free it yourself"
@@ -338,12 +338,12 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         # says what the reader must do instead of naming a type that
         # does not exist.
         d.notes @ d.notes.push(
-            "§4.19: a parameter is declared as what the header says. `" + c_type.must() + "` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout"
+            "spec § 13: a parameter is declared as what the header says. `" + c_type.must() + "` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout"
         )
         return ok(d)
     heroes_type = spelled.must().heroes
     d.notes @ d.notes.push(
-        "§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `" + heroes_type + "`, and convert at the call where the value is known to fit"
+        "spec § 13: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `" + heroes_type + "`, and convert at the call where the value is known to fit"
     )
 
     # A SECOND note rather than a longer first one: the width rule is

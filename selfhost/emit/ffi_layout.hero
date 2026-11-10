@@ -170,7 +170,7 @@ function macro_field(s: source.Source, decls: [ast.Decl], line: str, macros: {st
                             span: field.name
                         )
                         d.notes @ d.notes.push(
-                            "a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + t + "` has a member `" + name + "`"
+                            "a group's `record` IS the header's type (spec § 13), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + t + "` has a member `" + name + "`"
                         )
                         return ok(d)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue

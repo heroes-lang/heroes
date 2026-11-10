@@ -3,7 +3,7 @@ error[ffi_return_type]: `ullong_as_i64` returns `unsigned long long` in `fixedbu
      |
   11 |     function ullong_as_i64() -> i64  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_i64`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_i64`
   fix (guess): declare the result `u64`
 
 error[ffi_return_type]: `float_as_i64` returns `float` in `fixedbugs-144-results.h`, not `i64` — clang read the header
@@ -11,7 +11,7 @@ error[ffi_return_type]: `float_as_i64` returns `float` in `fixedbugs-144-results
      |
   12 |     function float_as_i64() -> i64  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `float_as_i64`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `float_as_i64`
   fix (guess): declare the result `f32`
 
 error[ffi_return_type]: `double_as_i64` returns `double` in `fixedbugs-144-results.h`, not `i64` — clang read the header
@@ -19,7 +19,7 @@ error[ffi_return_type]: `double_as_i64` returns `double` in `fixedbugs-144-resul
      |
   13 |     function double_as_i64() -> i64  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_i64`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_i64`
   fix (guess): declare the result `f64`
 
 error[ffi_return_type]: `ldouble_as_i64` returns `long double` in `fixedbugs-144-results.h`, not `i64` — clang read the header
@@ -27,4 +27,4 @@ error[ffi_return_type]: `ldouble_as_i64` returns `long double` in `fixedbugs-144
      |
   14 |     function ldouble_as_i64() -> i64  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_i64`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_i64`

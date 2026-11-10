@@ -3,7 +3,7 @@ error[unknown_name]: nothing named `sqrt` is in scope — did you mean `sort`?
      |
   11 |     print(sqrt(2.0))  #~ unknown_name
      |           ^^^^
-  note: if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function sqrt(…) -> …` (§4.19)
+  note: if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function sqrt(…) -> …` (spec § 13)
   fix (guess): rename to `sort`
 
 error[unknown_function]: no function named `sqrt` — `x.sqrt(…)` means `sqrt(x, …)`, so `sqrt` has to be a top-level function or a built-in — did you mean `sort`?
@@ -11,7 +11,7 @@ error[unknown_function]: no function named `sqrt` — `x.sqrt(…)` means `sqrt(
      |
   12 |     print(2.0.sqrt())  #~ unknown_function
      |               ^^^^
-  note: if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function sqrt(…) -> …` (§4.19)
+  note: if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function sqrt(…) -> …` (spec § 13)
   fix (guess): rename to `sort`
 
 error[unknown_name]: nothing named `sqrt` is in scope — did you mean `sort`?

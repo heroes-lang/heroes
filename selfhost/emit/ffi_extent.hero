@@ -180,7 +180,7 @@ function buffer_pointee(rest: str) -> diag.Diagnostic?
         span: token.Span(start: start.must(), end: end.must())
     )
     d.notes @ d.notes.push(
-        "§4.19: a buffer's element is a number of the width and sign the header's pointee has, as an `@` number is, or the group's record that is that struct; against a `void *` it is `u8`, the byte being the unit where the header gives none"
+        "spec § 13: a buffer's element is a number of the width and sign the header's pointee has, as an `@` number is, or the group's record that is that struct; against a `void *` it is `u8`, the byte being the unit where the header gives none"
     )
     return ok(d)
 

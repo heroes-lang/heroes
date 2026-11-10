@@ -37,7 +37,7 @@ function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, dec
             span: found.span
         )
         k.notes @ k.notes.push(
-            "an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `" + name + "` as `" + declared + "`"
+            "an `extern constant` takes its value and its type from the header (spec § 13), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `" + name + "` as `" + declared + "`"
         )
         return offered(
             k,
@@ -52,14 +52,14 @@ function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, dec
         )
     gives = typed.canonical != "void"
     message: str @= "`" + name + "` returns " + shown + " in `" + header + "`, not `" + declared + "` — clang read the header"
-    note: str @= "an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `" + name + "`"
+    note: str @= "an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `" + name + "`"
 
     if !gives
         message @ "`" + name + "` returns nothing in `" + header + "`, its C result being `void`, not `" + declared + "` — clang read the header"
-        note @ "a C function that returns `void` is bound with no `->`, as one that gives nothing back (§4.19)"
+        note @ "a C function that returns `void` is bound with no `->`, as one that gives nothing back (spec § 13)"
     else if declared == "()"
         message @ "`" + name + "` returns " + shown + " in `" + header + "`, and this declaration takes nothing back — clang read the header"
-        note @ "a result the header gives is declared after `->`, as its type or one that holds every value of it (§4.19)"
+        note @ "a result the header gives is declared after `->`, as its type or one that holds every value of it (spec § 13)"
     d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_return_type", message: message, span: found.span)
     d.notes @ d.notes.push(note)
 

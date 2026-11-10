@@ -3,6 +3,6 @@ error[ffi_writable_parameter]: `b` of `w_second` is declared `cstr`, and the hea
      |
   14 |     function w_second(a: cstr lent, b: cstr lent) -> i32  #~ ffi_writable_parameter
      |                                     ^
-  note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
   note: declare it `ptr` and give `w_second` a buffer C owns, then read the result back
   fix (guess): declare it `ptr`

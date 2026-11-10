@@ -3,5 +3,5 @@ error[ffi_parameter_type]: `p` of `r_pair` is declared `cstr`, and the header's 
      |
   12 |     function r_pair(p: cstr lent) -> i32  #~ ffi_parameter_type
      |                     ^
-  note: §4.19: a `cstr` crosses to a pointer to `const` bytes, `char` of any sign or `void`; for anything else, declare the parameter `ptr` and hand C what its header names
+  note: spec § 13: a `cstr` crosses to a pointer to `const` bytes, `char` of any sign or `void`; for anything else, declare the parameter `ptr` and hand C what its header names
   fix (guess): declare it `ptr`

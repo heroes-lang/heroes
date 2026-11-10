@@ -163,7 +163,7 @@ function told_not_constant(found: ffi_lookup.Declared, name: str, body: str) -> 
     # defect 2101 (2026-10-17) brought statement expressions here: false of
     # `({ int x = 3; x; })`, which gives one answer and is no object.
     d.notes @ d.notes.push(
-        "a `constant` names one value forever (§4.4), and clang reads `" + name + "` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_" + name + "(void) { " + body + " }`"
+        "a `constant` names one value forever (spec § 4), and clang reads `" + name + "` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global spec § 4 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_" + name + "(void) { " + body + " }`"
     )
     return d
 

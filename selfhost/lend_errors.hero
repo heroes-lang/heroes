@@ -53,7 +53,7 @@ use token
 function cstr_escapes(span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cstr_escapes",
-        message: "`.cstr()` lends this string to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into",
+        message: "`.cstr()` lends this string to C for the length of one call (spec § 13), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into",
         span: span
     )
     d.notes @ d.notes.push(
@@ -86,7 +86,7 @@ function cstr_escapes(span: token.Span) -> diag.Diagnostic
 function cstr_out_of_heroes(name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cstr_out_of_heroes",
-        message: "`" + name + "` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (§4.19) — only a function inside an `extern` group may answer one",
+        message: "`" + name + "` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (spec § 13) — only a function inside an `extern` group may answer one",
         span: span
     )
     d.notes @ d.notes.push(
@@ -104,7 +104,7 @@ function cstr_out_of_heroes(name: str, span: token.Span) -> diag.Diagnostic
 function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cstr_in_a_record",
-        message: "`" + holder + "." + field + "` holds a `cstr`, and `" + holder + "` is not a record of an `extern` group — a C pointer parked in a Heroes record outlives the bytes it points into (§4.19)",
+        message: "`" + holder + "." + field + "` holds a `cstr`, and `" + holder + "` is not a record of an `extern` group — a C pointer parked in a Heroes record outlives the bytes it points into (spec § 13)",
         span: span
     )
     d.notes @ d.notes.push(
@@ -133,7 +133,7 @@ function lend_needs_a_header(span: token.Span) -> diag.Diagnostic
         span: span
     )
     d.notes @ d.notes.push(
-        "lend at the call that reaches C: a wrapper takes the `str` and lends inside itself — `function say(text: str) -> i32` returning `puts(s: text.cstr())` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
+        "lend at the call that reaches C: a wrapper takes the `str` and lends inside itself — `function say(text: str) -> i32` returning `puts(s: text.cstr())` — which is the shape design.md §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
     )
     return d
 

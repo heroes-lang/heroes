@@ -3,4 +3,4 @@ error[ffi_parameter_type]: `p` of `read_p` is declared a different kind of thing
      |
   16 |     function read_p(p: i64) -> i32  #~ ffi_parameter_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: §4.19: a parameter is declared as what the header says. `int *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+  note: spec § 13: a parameter is declared as what the header says. `int *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout

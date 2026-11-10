@@ -93,7 +93,7 @@ function number(@l: state.LexState, text: str)
                 if faulted
                     same @ "writes the prefix as this language does, and the digits' own mistake is told beside it"
                 d.notes @ d.notes.push(
-                    "there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` " + same
+                    "there is exactly one way to write any program. The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` " + same
                 )
                 d.fixes @ d.fixes.push(
                     diag.Fix(title: "write the prefix as `" + digits.prefix(base) + "`", replacement: lowered, span: span, certainty: .certain)
@@ -101,7 +101,7 @@ function number(@l: state.LexState, text: str)
             else
                 d.message @ "`" + written + "` writes the base in uppercase and then stops — this language spells it `" + digits.prefix(base) + "`, and a number needs digits"
                 d.notes @ d.notes.push(
-                    "there is exactly one way to write any program (§4.15): " + digits.a_name(base) + " literal is written `" + digits.prefix(base) + "` followed by " + digits.base_digits(base)
+                    "there is exactly one way to write any program: " + digits.a_name(base) + " literal is written `" + digits.prefix(base) + "` followed by " + digits.base_digits(base)
                 )
             state.error_token(@l, d)
             return
@@ -167,7 +167,7 @@ function number(@l: state.LexState, text: str)
         written = text.slice(from: start, to: l.pos)
         state.error_token(
             @l,
-            diag.new_diagnostic(code: "exponent_literal", message: "`" + written + "` is not a number in this language — there are no exponents. Write the digits out, or compute it: `" + digits_written + " * pow(base: 10.0, exponent: …)` through the FFI (§4.19)", span: span)
+            diag.new_diagnostic(code: "exponent_literal", message: "`" + written + "` is not a number in this language — there are no exponents. Write the digits out, or compute it: `" + digits_written + " * pow(base: 10.0, exponent: …)` through the FFI (spec § 13)", span: span)
         )
         return
 

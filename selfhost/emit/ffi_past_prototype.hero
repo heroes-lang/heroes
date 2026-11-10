@@ -199,7 +199,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             span: span
         )
         d.notes @ d.notes.push(
-            "§4.19: a record lent read-only is the caller's own place, which C may read and never write; past a header's `...` the header declares no type for it, so neither clang nor this compiler can hold C to the `const`, and a write there changes a value the program declared unchanged"
+            "spec § 13: a record lent read-only is the caller's own place, which C may read and never write; past a header's `...` the header declares no type for it, so neither clang nor this compiler can hold C to the `const`, and a write there changes a value the program declared unchanged"
         )
         d.notes @ d.notes.push(
             "write a header of your own that includes `" + header + "` and declares a `static inline` function taking `" + param + "` as a pointer to `const` of the struct `" + name + "` reads and handing it on to `" + name + "`; bind that function instead, and its prototype holds the `const`"
@@ -213,7 +213,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             span: span
         )
         d.notes @ d.notes.push(
-            "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+            "spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
         )
         d.notes @ d.notes.push(
             "hand C a copy it may write instead: declare `" + param + ": cstr` without `lent`, pass it a lease, `x: cstr @= text.lease()`, and end the lease with `end_lease(@x)` once the call returns"
@@ -227,7 +227,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             span: span
         )
         d.notes @ d.notes.push(
-            "§4.19: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was"
+            "spec § 13: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was"
         )
         d.notes @ d.notes.push(
             "write a header of your own that includes `" + header + "` and declares a `static inline` function taking `" + param + "` at the C type `" + name + "` writes through it and handing it on to `" + name + "`; bind that function instead, and its prototype holds the width"
@@ -239,7 +239,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.19: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count, so declare `" + param + ": ptr` and hand it memory C gave you"
+        "spec § 13: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count, so declare `" + param + ": ptr` and hand it memory C gave you"
     )
     return ok(d)
 

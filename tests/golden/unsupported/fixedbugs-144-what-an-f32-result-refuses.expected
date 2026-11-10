@@ -3,7 +3,7 @@ error[ffi_return_type]: `bool_as_f32` returns `bool` in `fixedbugs-144-results.h
      |
   11 |     function bool_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `bool_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `bool_as_f32`
   fix (guess): declare the result `bool`
 
 error[ffi_return_type]: `char_as_f32` returns `char` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -11,7 +11,7 @@ error[ffi_return_type]: `char_as_f32` returns `char` in `fixedbugs-144-results.h
      |
   12 |     function char_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `char_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `char_as_f32`
   fix (guess): declare the result `i8`
 
 error[ffi_return_type]: `schar_as_f32` returns `signed char` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -19,7 +19,7 @@ error[ffi_return_type]: `schar_as_f32` returns `signed char` in `fixedbugs-144-r
      |
   13 |     function schar_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `schar_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `schar_as_f32`
   fix (guess): declare the result `i8`
 
 error[ffi_return_type]: `short_as_f32` returns `short` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -27,7 +27,7 @@ error[ffi_return_type]: `short_as_f32` returns `short` in `fixedbugs-144-results
      |
   14 |     function short_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `short_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `short_as_f32`
   fix (guess): declare the result `i16`
 
 error[ffi_return_type]: `int_as_f32` returns `int` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -35,7 +35,7 @@ error[ffi_return_type]: `int_as_f32` returns `int` in `fixedbugs-144-results.h`,
      |
   15 |     function int_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `int_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `int_as_f32`
   fix (guess): declare the result `i32`
 
 error[ffi_return_type]: `long_as_f32` returns `long` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -43,7 +43,7 @@ error[ffi_return_type]: `long_as_f32` returns `long` in `fixedbugs-144-results.h
      |
   16 |     function long_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `long_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `long_as_f32`
   note: `long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `i64` holds every value of it on both
   fix (guess): declare the result `i64`
 
@@ -52,7 +52,7 @@ error[ffi_return_type]: `llong_as_f32` returns `long long` in `fixedbugs-144-res
      |
   17 |     function llong_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `llong_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `llong_as_f32`
   fix (guess): declare the result `i64`
 
 error[ffi_return_type]: `uchar_as_f32` returns `unsigned char` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -60,7 +60,7 @@ error[ffi_return_type]: `uchar_as_f32` returns `unsigned char` in `fixedbugs-144
      |
   18 |     function uchar_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uchar_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uchar_as_f32`
   fix (guess): declare the result `u8`
 
 error[ffi_return_type]: `ushort_as_f32` returns `unsigned short` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -68,7 +68,7 @@ error[ffi_return_type]: `ushort_as_f32` returns `unsigned short` in `fixedbugs-1
      |
   19 |     function ushort_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ushort_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ushort_as_f32`
   fix (guess): declare the result `u16`
 
 error[ffi_return_type]: `uint_as_f32` returns `unsigned int` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -76,7 +76,7 @@ error[ffi_return_type]: `uint_as_f32` returns `unsigned int` in `fixedbugs-144-r
      |
   20 |     function uint_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uint_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uint_as_f32`
   fix (guess): declare the result `u32`
 
 error[ffi_return_type]: `ulong_as_f32` returns `unsigned long` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -84,7 +84,7 @@ error[ffi_return_type]: `ulong_as_f32` returns `unsigned long` in `fixedbugs-144
      |
   21 |     function ulong_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ulong_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ulong_as_f32`
   note: `unsigned long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `u64` holds every value of it on both
   fix (guess): declare the result `u64`
 
@@ -93,7 +93,7 @@ error[ffi_return_type]: `ullong_as_f32` returns `unsigned long long` in `fixedbu
      |
   22 |     function ullong_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_f32`
   fix (guess): declare the result `u64`
 
 error[ffi_return_type]: `double_as_f32` returns `double` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -101,7 +101,7 @@ error[ffi_return_type]: `double_as_f32` returns `double` in `fixedbugs-144-resul
      |
   23 |     function double_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_f32`
   fix (guess): declare the result `f64`
 
 error[ffi_return_type]: `ldouble_as_f32` returns `long double` in `fixedbugs-144-results.h`, not `f32` — clang read the header
@@ -109,4 +109,4 @@ error[ffi_return_type]: `ldouble_as_f32` returns `long double` in `fixedbugs-144
      |
   24 |     function ldouble_as_f32() -> f32  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_f32`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_f32`

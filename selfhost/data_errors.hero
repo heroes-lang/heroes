@@ -86,7 +86,7 @@ function repeated_parameter_name(written: str, span: token.Span) -> diag.Diagnos
         span: span
     )
     d.notes @ d.notes.push(
-        "the names are what §4.9 checks a call against, so two positions of one type need two names a reader can tell apart"
+        "the names are what spec § 9 checks a call against, so two positions of one type need two names a reader can tell apart"
     )
     return d
 
@@ -118,7 +118,7 @@ function needs_parameter_names(shared: str, shown: str, span: token.Span) -> dia
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.9 names the arguments of a call when two parameters share a type; a value of a function type is called through the type, so the names live in the type, a call through it is checked against them, and a function given to it fits where its own names agree"
+        "spec § 9 names the arguments of a call when two parameters share a type; a value of a function type is called through the type, so the names live in the type, a call through it is checked against them, and a function given to it fits where its own names agree"
     )
     return d
 
@@ -181,7 +181,7 @@ function mutable_parameter_as_value(name: str, param: str, span: token.Span) -> 
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.8: the `@` is written at the call too, so a call that changes an argument never looks like one that reads it, and a value called `f(x)` would hide it. To hand the work around as a value, write a function without `@` that returns the new value — `function next(n: i64) -> i64` — and assign what it returns"
+        "spec § 9: the `@` is written at the call too, so a call that changes an argument never looks like one that reads it, and a value called `f(x)` would hide it. To hand the work around as a value, write a function without `@` that returns the new value — `function next(n: i64) -> i64` — and assign what it returns"
     )
     return d
 

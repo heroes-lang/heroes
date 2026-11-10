@@ -266,7 +266,9 @@ function diagnose(a: ast.Ast, s: source.Source, decls: [ast.Decl], cycle: [i64])
     d.notes @ d.notes.push(
         "a `constant`'s value is computed by reading it, and its accessor takes no arguments — so nothing about the second call could differ from the first"
     )
-    d.notes @ d.notes.push("functions may recur freely (§4.2); a cycle is an error only where a `constant` is on it")
+    d.notes @ d.notes.push(
+        "functions may recur freely (spec § 4); a cycle is an error only where a `constant` is on it"
+    )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "give `" + holder + "` a value that does not read the others", replacement: "", span: span, certainty: .guess)
     )

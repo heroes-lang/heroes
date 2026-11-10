@@ -3,5 +3,5 @@ error[ffi_parameter_type]: `s` of `strlen` is declared a different kind of thing
      |
   16 |     function strlen(s: i64) -> u64  #~ ffi_parameter_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: §4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `cstr`, and convert at the call where the value is known to fit
+  note: spec § 13: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `cstr`, and convert at the call where the value is known to fit
   fix (guess): declare it `cstr`

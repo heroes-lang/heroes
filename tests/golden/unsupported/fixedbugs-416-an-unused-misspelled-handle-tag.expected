@@ -3,4 +3,4 @@ error[ffi_unknown_name]: `fixedbugs-400-tags-of-three-kinds.h` declares no `opaq
      |
   15 |     record Opaque tag opaqe  #~ ffi_unknown_name
      |     ^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `opaqe`
+  note: an `extern` names what the header already has (spec § 13): check the spelling, or name the header that does declare `opaqe`

@@ -3,7 +3,7 @@ error[ffi_return_type]: `char_as_u8` returns `char` in `fixedbugs-144-results.h`
      |
   11 |     function char_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `char_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `char_as_u8`
   fix (guess): declare the result `i8`
 
 error[ffi_return_type]: `schar_as_u8` returns `signed char` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -11,7 +11,7 @@ error[ffi_return_type]: `schar_as_u8` returns `signed char` in `fixedbugs-144-re
      |
   12 |     function schar_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `schar_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `schar_as_u8`
   fix (guess): declare the result `i8`
 
 error[ffi_return_type]: `short_as_u8` returns `short` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -19,7 +19,7 @@ error[ffi_return_type]: `short_as_u8` returns `short` in `fixedbugs-144-results.
      |
   13 |     function short_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `short_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `short_as_u8`
   fix (guess): declare the result `i16`
 
 error[ffi_return_type]: `int_as_u8` returns `int` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -27,7 +27,7 @@ error[ffi_return_type]: `int_as_u8` returns `int` in `fixedbugs-144-results.h`, 
      |
   14 |     function int_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `int_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `int_as_u8`
   fix (guess): declare the result `i32`
 
 error[ffi_return_type]: `long_as_u8` returns `long` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -35,7 +35,7 @@ error[ffi_return_type]: `long_as_u8` returns `long` in `fixedbugs-144-results.h`
      |
   15 |     function long_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `long_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `long_as_u8`
   note: `long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `i64` holds every value of it on both
   fix (guess): declare the result `i64`
 
@@ -44,7 +44,7 @@ error[ffi_return_type]: `llong_as_u8` returns `long long` in `fixedbugs-144-resu
      |
   16 |     function llong_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `llong_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `llong_as_u8`
   fix (guess): declare the result `i64`
 
 error[ffi_return_type]: `ushort_as_u8` returns `unsigned short` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -52,7 +52,7 @@ error[ffi_return_type]: `ushort_as_u8` returns `unsigned short` in `fixedbugs-14
      |
   17 |     function ushort_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ushort_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ushort_as_u8`
   fix (guess): declare the result `u16`
 
 error[ffi_return_type]: `uint_as_u8` returns `unsigned int` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -60,7 +60,7 @@ error[ffi_return_type]: `uint_as_u8` returns `unsigned int` in `fixedbugs-144-re
      |
   18 |     function uint_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uint_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uint_as_u8`
   fix (guess): declare the result `u32`
 
 error[ffi_return_type]: `ulong_as_u8` returns `unsigned long` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -68,7 +68,7 @@ error[ffi_return_type]: `ulong_as_u8` returns `unsigned long` in `fixedbugs-144-
      |
   19 |     function ulong_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ulong_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ulong_as_u8`
   note: `unsigned long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `u64` holds every value of it on both
   fix (guess): declare the result `u64`
 
@@ -77,7 +77,7 @@ error[ffi_return_type]: `ullong_as_u8` returns `unsigned long long` in `fixedbug
      |
   20 |     function ullong_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_u8`
   fix (guess): declare the result `u64`
 
 error[ffi_return_type]: `float_as_u8` returns `float` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -85,7 +85,7 @@ error[ffi_return_type]: `float_as_u8` returns `float` in `fixedbugs-144-results.
      |
   21 |     function float_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `float_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `float_as_u8`
   fix (guess): declare the result `f32`
 
 error[ffi_return_type]: `double_as_u8` returns `double` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -93,7 +93,7 @@ error[ffi_return_type]: `double_as_u8` returns `double` in `fixedbugs-144-result
      |
   22 |     function double_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_u8`
   fix (guess): declare the result `f64`
 
 error[ffi_return_type]: `ldouble_as_u8` returns `long double` in `fixedbugs-144-results.h`, not `u8` — clang read the header
@@ -101,4 +101,4 @@ error[ffi_return_type]: `ldouble_as_u8` returns `long double` in `fixedbugs-144-
      |
   23 |     function ldouble_as_u8() -> u8  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_u8`
+  note: an `extern` is checked against the real header (spec § 13): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_u8`

@@ -3,4 +3,4 @@ error[ffi_parameter_type]: `p` of `take_a` is declared a different kind of thing
      |
   18 |     function take_a(p: B) -> i32  #~ ffi_parameter_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: §4.19: a parameter is declared as what the header says. `struct a *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+  note: spec § 13: a parameter is declared as what the header says. `struct a *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout

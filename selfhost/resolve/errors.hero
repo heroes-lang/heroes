@@ -85,7 +85,7 @@ function unknown_called(name: str, near: [str], span: token.Span) -> diag.Diagno
 # How a function of C is called: bound in a group of this file, since an
 # extern is never reached across a module (panel 033 R5).
 function binding_note(name: str) -> str
-    return "if `" + name + "` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern \"<header>.h\"`, and the signature is indented below it, `function " + name + "(…) -> …` (§4.19)"
+    return "if `" + name + "` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern \"<header>.h\"`, and the signature is indented below it, `function " + name + "(…) -> …` (spec § 13)"
 
 # `x.f(y)` is `f(x, y)` and nothing else (§4.11: there are no methods), so
 # an unknown name after the dot is answerable now — before types exist. It
@@ -289,7 +289,7 @@ test "a name nothing binds, called, is told how a function of C is bound"
     assert called.code == "unknown_name"
     assert called.message == "nothing named `sqrt` is in scope — did you mean `sort`?"
     assert called.fixes[0].certainty == .guess
-    assert called.notes == ["if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern \"<header>.h\"`, and the signature is indented below it, `function sqrt(…) -> …` (§4.19)"]
+    assert called.notes == ["if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern \"<header>.h\"`, and the signature is indented below it, `function sqrt(…) -> …` (spec § 13)"]
     assert unknown_name("sqrt", near, span).notes.len() == 0
     assert unknown_function("sqrt", near, span).notes == called.notes
 
