@@ -3942,7 +3942,12 @@ are *on* the closure list.
     whose prototype fixes the shape and calls the variadic through its own, a `long` there bound
     with `i32` as above, the literal format inside it where the callee is a format function, and
     `-Wformat-nonliteral` kept an error in every group header's region, as `-Wformat` is, so a door
-    forwarding its format is refused; never a re-declaration of the variadic (panel 052).
+    forwarding its format with data arguments is refused; never a re-declaration of the variadic
+    (panel 052). **Corrected the same day** (panel 245's critic, its first pass): the flag fires only
+    where data arguments follow the format, so a door forwarding a format with none, `say(f) {
+    return printf(f); }`, builds at exit 0 and reads what its format names (`%s` dies at exit 134,
+    `%n` of SIGABRT), `-Wformat-security` being ignored in the region since defect 2036; the class
+    is defect 2465's, before panel 245.
 11. ~~**A `raw` module for low-level access** — see Part 9.~~ **Left this list for Part 6 at panel 140,
     2026-09-13** (M-deferral-ledger step 5;
     `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md`), refused
