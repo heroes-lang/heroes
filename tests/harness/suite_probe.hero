@@ -212,12 +212,15 @@ function trees() -> [Tree]
     # placed tree out of both is a change to what `heroes probe`'s own walk
     # reads, as `heroes mutate`'s leaves it out (`cli/mutate.hero`,
     # `in_placed_tree`), and would lower the examples row by its 150 copies.
+    # The packages row raised 2026-11-10 at batch 29's gate, to what the suite
+    # asked: 26 seeds and 234 variants, past 14 and 126, the twelve files of
+    # core 0.2.1 (defect 2405) beside 0.2.0's ten and 0.1.0's four.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 269, floor: Floor(family: "multi", generated: 2421, parsing: 2421), known: none)
-        Tree(name: "packages, multi", root: "packages", seeds: 14, floor: Floor(family: "multi", generated: 126, parsing: 126), known: none)
+        Tree(name: "packages, multi", root: "packages", seeds: 26, floor: Floor(family: "multi", generated: 234, parsing: 234), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?

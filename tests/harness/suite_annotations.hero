@@ -204,8 +204,12 @@ constant RUN_ROOTS: [str]
 # lanes (lane b14-resolve's alone read 4,538) took the count past 3581 by
 # more than a quarter, and on the merged tree, with defect 439's case moved to
 # one mark by defect 458's repair, the suite found 4671, none stepped aside.
+#
+# **5861 at batch 29's gate, 2026-11-10**: the cases of batches 15 to 29 took
+# the count past 4671 by more than a quarter, and on the merged round the
+# suite told `FLOOR annotations` at 5861, none stepped aside.
 constant LEAST: i64
-    4671
+    5861
 
 # **The run roots' own floor** (defect 318, 2026-10-04): what the walk of
 # `RUN_ROOTS` reaches, asked or stepped aside. They hold 133 of the marks

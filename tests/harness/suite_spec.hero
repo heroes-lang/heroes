@@ -913,7 +913,7 @@ function numbered_sections() -> [str]
 # tree's files are not judged** (panel 242's R7, feature 2425;
 # `placed_trees.hero`): a package's citation is its author's, against the
 # specification of the day it was published, and the net's own catalogue
-# places one under `tests/harness/heroes.packages/`.
+# places one in the `heroes.packages` folder beside the net's root module.
 function anchors(@r: report.Report)
     offenders: [str] @= []
     other = other_headings()
