@@ -47,6 +47,10 @@ function named_folders(under: compiling.Compiling) -> [str]
 # searches them, so a folder named twice is told by the first that names it:
 # each `--include`, each package by its name, its `-I` and `-F` read from its
 # own words (`pkgconfigs`, `settled.Site.pkgconfig_words`), the program's own.
+# **But the program's own folder is never a package's**, a `.pc` naming it as
+# well: its files are the program's to rename or move, and the refusal judges
+# them as the program's (`shadowed_library.folders`, panel 243's R2), where a
+# note telling them as the library's said no edit of the program could.
 function of_compiler(under: compiling.Compiling, pkgconfigs: {str: [str]}) -> {str: shadowed_words.Origin}
     out: {str: shadowed_words.Origin} @= {}
 
@@ -65,11 +69,10 @@ function of_compiler(under: compiling.Compiling, pkgconfigs: {str: [str]}) -> {s
             out @ taken(out, dir: dir, origin: shadowed_words.Origin(kind: shadowed_words.PKGCONFIG, name: name))
 
     if under.source_dir.len() > 0
-        out @ taken(
-            out,
-            dir: package_reads.lexical(under.source_dir),
-            origin: shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
-        )
+        dir = package_reads.lexical(under.source_dir)
+
+        if out[dir].is_err() || out[dir].must().kind == shadowed_words.PKGCONFIG
+            out[dir] @ shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
     return out
 
 # `found` with `dir` named by `origin`, where nothing named it before.
@@ -133,9 +136,12 @@ test "a folder is told by the first word that names it, the compiler's before th
         runtime: "runtime",
         source_dir: "src"
     )
-    origins = of_compiler(under, pkgconfigs: {"zlib": ["-Ipkg", "-Iboth", "-DZ=1"]})
+    origins = of_compiler(under, pkgconfigs: {"zlib": ["-Ipkg", "-Iboth", "-DZ=1"], "own": ["-Isrc/."]})
     assert origins["inc"].must().kind == shadowed_words.INCLUDE && origins["both"].must().kind == shadowed_words.INCLUDE
     assert origins["pkg"].must().kind == shadowed_words.PKGCONFIG && origins["pkg"].must().name == "zlib"
+
+    # The program's own folder, which the package `own` names as well, is the
+    # program's (panel 243's R2).
     assert origins["src"].must().kind == shadowed_words.PROGRAM && origins["runtime"].is_err()
     assert searched_first(under) == ["runtime", "inc", "both", "pkg", "both", "src"]
     added = clang_added.Edits(

@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case/pc/../sys/timeb.h` stands in for the system's `<sys/timeb.h>`, which `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case/pc/../own.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place
+  at tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case`: the folder is this program's own, which every unit searches before the system's, and every `#include <sys/timeb.h>` of the build reads what it holds

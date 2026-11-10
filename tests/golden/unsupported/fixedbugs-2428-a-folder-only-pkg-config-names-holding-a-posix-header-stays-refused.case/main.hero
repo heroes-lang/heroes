@@ -1,0 +1,12 @@
+#~ shadowed_header
+# fixedbugs, defect 2428, lane b30-shadow, 2026-11-10 (panel 243's R2, the
+# ffi-pragmatist's veto): the POSIX.1 half of the exception. The library's
+# folder holds a `sys/socket.h` that defines `AF_INET` as 99, a name C11 does
+# not list and POSIX.1-2024 does; excusing C11's names alone printed 99 at
+# exit 0 where the platform says 2. Refused; this line is its mark.
+
+extern "own.h" pkgconfig "p2428"
+    constant AF_INET: i64
+
+function main()
+    print(AF_INET)

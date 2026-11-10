@@ -1,0 +1,2 @@
+# The folder clang searches before the platform's, from the repository's root.
+CPATH=tests/golden/unsupported/fixedbugs-2428-a-folder-cpath-names-holding-a-header-the-platform-holds-stays-refused.case/inc

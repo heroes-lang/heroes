@@ -70,6 +70,7 @@ use cli/publish
 use cli/read_back
 use cli/response_file
 use cli/settled
+use cli/shadowed_library
 use cli/shadowed_tree
 use cli/shadowed_words
 use cli/stand_in
@@ -183,9 +184,7 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str],
         found @ shadowed_tree.shadows(
             said: got.must().said,
             paths: got.must().paths,
-            groups: groups,
-            named: named,
-            others: others
+            search: shadowed_tree.Search(groups: groups, named: named, others: others, libraries: shadowed_library.folders(under, pkgconfigs: pkgconfigs))
         )
     else
         found @ stand_in.shadows(paths: got.must().paths, named: named, others: others)
@@ -395,7 +394,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         "stdint.h": "this program's own"
         "stdbool.h": "this program's own"
         "math.h": "`--include` names"
-        "stddef.h": "the library `p2333` names"
+        "stddef.h": "is the library `p2333`'s, named by `pkg-config`'s answer"
     }
 
     for d in told(t, under: under, groups: [], pkgconfigs: {"p2333": ["-I" + root + "/pkg"]}, places: {})

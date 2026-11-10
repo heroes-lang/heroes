@@ -1,0 +1,8 @@
+# A library of the case's own, its folder named from this file's, as
+# Homebrew's keg-only libcurl names its own (defect 2428).
+prefix=${pcfiledir}/..
+Name: p2428
+Description: a library whose folder holds a header the platform names too
+Version: 1.0
+Cflags: -I${prefix}/inc
+Libs:

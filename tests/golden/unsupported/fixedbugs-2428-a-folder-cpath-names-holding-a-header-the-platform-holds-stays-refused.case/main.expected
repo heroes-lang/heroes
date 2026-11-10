@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2428-a-folder-cpath-names-holding-a-header-the-platform-holds-stays-refused.case/inc/sys/timeb.h` stands in for the system's `<sys/timeb.h>`, which `tests/golden/unsupported/fixedbugs-2428-a-folder-cpath-names-holding-a-header-the-platform-holds-stays-refused.case/own.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place
+  at tests/golden/unsupported/fixedbugs-2428-a-folder-cpath-names-holding-a-header-the-platform-holds-stays-refused.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2428-a-folder-cpath-names-holding-a-header-the-platform-holds-stays-refused.case/inc`: `CPATH` names that folder for every clang this build runs, and every `#include <sys/timeb.h>` of the build reads what it holds

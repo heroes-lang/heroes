@@ -1,4 +1,4 @@
-error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2420-a-nested-headers-sibling-named-by-angle-is-offered-its-name-in-that-folder.case/sys/timeb.h` stands in for the C library's `<sys/timeb.h>`, which `tests/golden/unsupported/fixedbugs-2420-a-nested-headers-sibling-named-by-angle-is-offered-its-name-in-that-folder.case/sys/clock.h` includes: a folder this build names is searched before the system's, so its file is read in the library's place
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2420-a-nested-headers-sibling-named-by-angle-is-offered-its-name-in-that-folder.case/sys/timeb.h` stands in for the system's `<sys/timeb.h>`, which `tests/golden/unsupported/fixedbugs-2420-a-nested-headers-sibling-named-by-angle-is-offered-its-name-in-that-folder.case/sys/clock.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place
   at tests/golden/unsupported/fixedbugs-2420-a-nested-headers-sibling-named-by-angle-is-offered-its-name-in-that-folder.case/main.hero:1:1
     |
   1 | #~ shadowed_header

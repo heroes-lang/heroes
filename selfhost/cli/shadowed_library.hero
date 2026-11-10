@@ -1,0 +1,258 @@
+# **What a folder a `pkg-config` answer names may hold for a header of the
+# program's own**: the library's own headers, and never a file named like one
+# of the C library's (design.md §4.19, §1.12; panel 243's R2, defect 2428,
+# 2026-11-10).
+#
+# **What it repairs, measured on this Mac.** Panel 237's R2 refuses a file of a
+# folder the build names where a header of the program's own includes it and
+# a platform folder holds a file of its name (`cli/shadowed_tree.hero`, its
+# second arm), so a `stdio.h` beside a program's `lib.h` is never read where
+# the library's is meant. A folder `pkg-config` names for a library is such a
+# folder, and Homebrew's keg-only libcurl 8.23.0 ships `curl/curl.h`, a name
+# the SDK holds too: a program's `curl_own.h` writing `#include
+# <curl/curl.h>`, built with `PKG_CONFIG_PATH` naming the keg, was refused
+# `shadowed_header`, though the file is the one the build asked `pkg-config`
+# for and the link takes that library's own dylib (`otool -L`, panel 243's
+# ffi-pragmatist). So such a folder's file is the library's, whoever includes
+# it, **unless its name is one of the C library's headers** (`standard`): a
+# `.pc` folder holding a `stdio.h` that defines `BUFSIZ` as 7 printed 7 where
+# the SDK says 1024, and one holding a `sys/socket.h` that defines `AF_INET` as
+# 99 printed 99, each at exit 0 under the prototype that excused every file
+# (that seat's steps 1 and 2). The first arm, a platform or runtime header
+# including the file, is untouched.
+#
+# **A folder pkg-config alone names** (`folders`): one the program's own
+# folder or an `--include` names as well stays theirs, judged by the whole
+# rule, since what decides is who put the file there.
+#
+# **The names, sourced from the documents, never written from memory** (panel
+# 243's R2: the prototype's 56 were, and two of them, `ulimit.h` and
+# `utime.h`, are not POSIX.1-2024's):
+#
+# - `C11`: ISO/IEC 9899:2011 §7.1.2p2, read in its committee draft N1570 of
+#   2011-04-12 at the printed page 181,
+#   https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf, read
+#   2026-11-10: 29 names, in the table's order. Its p3 is the ground every
+#   refusal of this kind rests on: a file of one of those names placed in a
+#   searched place is undefined behaviour.
+# - `POSIX`: POSIX.1-2024, The Open Group Base Specifications Issue 8, the
+#   index of its headers,
+#   https://pubs.opengroup.org/onlinepubs/9799919799/idx/head.html, read
+#   2026-11-10: 86 names, in the page's order (which writes `libintl.h`
+#   before `libgen.h`), C11's 29 among them.
+#
+# **What neither holds, said** (the ffi-pragmatist's question, unrun): a
+# platform's own headers no standard lists, Darwin's `sys/*` past POSIX's,
+# Linux's `linux/*`, Windows' `windows.h`. A file of such a name in a folder
+# only `pkg-config` names, read by a header of the program's own alone, is the
+# library's.
+
+use cli/compiling
+use cli/libraries
+use cli/package_reads
+
+# ISO/IEC 9899:2011 §7.1.2p2, the standard headers.
+constant C11: [str]
+    [
+        "assert.h"
+        "complex.h"
+        "ctype.h"
+        "errno.h"
+        "fenv.h"
+        "float.h"
+        "inttypes.h"
+        "iso646.h"
+        "limits.h"
+        "locale.h"
+        "math.h"
+        "setjmp.h"
+        "signal.h"
+        "stdalign.h"
+        "stdarg.h"
+        "stdatomic.h"
+        "stdbool.h"
+        "stddef.h"
+        "stdint.h"
+        "stdio.h"
+        "stdlib.h"
+        "stdnoreturn.h"
+        "string.h"
+        "tgmath.h"
+        "threads.h"
+        "time.h"
+        "uchar.h"
+        "wchar.h"
+        "wctype.h"
+    ]
+
+# POSIX.1-2024's headers, its index of them.
+constant POSIX: [str]
+    [
+        "aio.h"
+        "arpa/inet.h"
+        "assert.h"
+        "complex.h"
+        "cpio.h"
+        "ctype.h"
+        "devctl.h"
+        "dirent.h"
+        "dlfcn.h"
+        "endian.h"
+        "errno.h"
+        "fcntl.h"
+        "fenv.h"
+        "float.h"
+        "fmtmsg.h"
+        "fnmatch.h"
+        "ftw.h"
+        "glob.h"
+        "grp.h"
+        "iconv.h"
+        "inttypes.h"
+        "iso646.h"
+        "langinfo.h"
+        "libintl.h"
+        "libgen.h"
+        "limits.h"
+        "locale.h"
+        "math.h"
+        "monetary.h"
+        "mqueue.h"
+        "ndbm.h"
+        "net/if.h"
+        "netdb.h"
+        "netinet/in.h"
+        "netinet/tcp.h"
+        "nl_types.h"
+        "poll.h"
+        "pthread.h"
+        "pwd.h"
+        "regex.h"
+        "sched.h"
+        "search.h"
+        "semaphore.h"
+        "setjmp.h"
+        "signal.h"
+        "spawn.h"
+        "stdalign.h"
+        "stdarg.h"
+        "stdatomic.h"
+        "stdbool.h"
+        "stddef.h"
+        "stdint.h"
+        "stdio.h"
+        "stdlib.h"
+        "stdnoreturn.h"
+        "string.h"
+        "strings.h"
+        "sys/ipc.h"
+        "sys/mman.h"
+        "sys/msg.h"
+        "sys/resource.h"
+        "sys/select.h"
+        "sys/sem.h"
+        "sys/shm.h"
+        "sys/socket.h"
+        "sys/stat.h"
+        "sys/statvfs.h"
+        "sys/time.h"
+        "sys/times.h"
+        "sys/types.h"
+        "sys/uio.h"
+        "sys/un.h"
+        "sys/utsname.h"
+        "sys/wait.h"
+        "syslog.h"
+        "tar.h"
+        "termios.h"
+        "tgmath.h"
+        "threads.h"
+        "time.h"
+        "uchar.h"
+        "unistd.h"
+        "utmpx.h"
+        "wchar.h"
+        "wctype.h"
+        "wordexp.h"
+    ]
+
+# Whether `name`, a file's name in the folder that found it, is one of the C
+# library's headers, C11's or POSIX.1-2024's.
+function standard(name: str) -> bool
+    return held(C11, item: name) || held(POSIX, item: name)
+
+# **The folders a `pkg-config` answer of the build names that no other word of
+# the unit's search names**: each `-I` and `-F` of every answer (`pkgconfigs`,
+# `settled.Site.pkgconfig_words`), read lexically, the program's own folder
+# and each `--include` left out, since they are theirs.
+function folders(under: compiling.Compiling, pkgconfigs: {str: [str]}) -> [str]
+    theirs: {str: bool} @= {}
+
+    for one in under.search_include
+        theirs[package_reads.lexical(one)] @ true
+
+    if under.source_dir.len() > 0
+        theirs[package_reads.lexical(under.source_dir)] @ true
+    taken: {str: bool} @= {}
+    out: [str] @= []
+
+    # ORDER: by the package's name, as `sort` orders a `str`; only membership
+    # is read, so nothing observes it.
+    for name in sort(keys(pkgconfigs))
+        for dir in package_reads.answered(libraries.compile_flags(pkgconfigs[name].default([])))
+            if theirs[dir].is_err() && taken[dir].is_err()
+                taken[dir] @ true
+                out @ out.push(dir)
+
+    return out
+
+# Whether `list` holds `item`.
+function held(list: [str], item: str) -> bool
+    for one in list
+        if one == item
+            return true
+
+    return false
+
+## Tests
+
+# **The two lists are the documents' as read on 2026-11-10**: C11's 29 and
+# POSIX.1-2024's 86, no name twice, every one of C11's among POSIX's. The
+# `run` cases of defect 2428 rest on `sys/timeb.h` being neither's (POSIX.1
+# dropped it in its 2008 edition, and every platform's C library still holds
+# it): listed, those cases would be refused, and this test fails first.
+test "the C library's header names are C11's 29 and POSIX.1-2024's 86, C11's among POSIX's (panel 243's R2)"
+    assert C11.len() == 29 && POSIX.len() == 86
+    once: {str: bool} @= {}
+
+    for name in POSIX
+        assert once[name].is_err()
+        once[name] @ true
+
+    for name in C11
+        assert held(POSIX, item: name)
+
+    for name in ["stdio.h", "stdatomic.h", "threads.h", "sys/socket.h", "sys/types.h", "devctl.h", "libintl.h", "endian.h"]
+        assert standard(name)
+
+    for name in ["curl/curl.h", "sqlite3.h", "sys/timeb.h", "getopt.h", "sys/cdefs.h", "_stdio.h", "ulimit.h", "utime.h", "stdio"]
+        assert !standard(name)
+
+# **A folder only `pkg-config` names is a library's**: every `-I` and `-F` of
+# every answer, its value joined to it as the compile reads it, once; one the
+# program's own folder or an `--include` names as well is theirs.
+test "a folder only pkg-config names is a library's, and the program's own folder and an --include are theirs"
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: ["./inc"],
+        pkgconfig_flags: [],
+        runtime: "runtime",
+        source_dir: "src"
+    )
+    got = folders(
+        under,
+        pkgconfigs: {"b": ["-I./pkg/b", "-Iinc", "-Ipkg/a", "-Fframes"], "a": ["-Ipkg/a", "-Isrc/.", "-DX=1"]}
+    )
+    assert got == ["pkg/a", "pkg/b", "frames"]
+    assert folders(under, pkgconfigs: {}).len() == 0

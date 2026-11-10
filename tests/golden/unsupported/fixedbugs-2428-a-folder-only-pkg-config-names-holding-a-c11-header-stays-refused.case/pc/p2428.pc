@@ -1,0 +1,7 @@
+# A library of the case's own, its folder named from this file's (defect 2428).
+prefix=${pcfiledir}/..
+Name: p2428
+Description: a library whose folder holds a file named like a C library header
+Version: 1.0
+Cflags: -I${prefix}/inc
+Libs:

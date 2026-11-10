@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2428, lane b30-shadow, 2026-11-10 (panel 243's R2): the
+# exception is a `pkg-config` answer's alone, which pairs a header with its
+# library's link. The same tree as the `run` case beside it, its folder named
+# by `CPATH` instead: a header read from it is linked against whatever the
+# link finds (the sitting's `CPATH` mispairing), so it stays refused, the
+# header it stands in for told as the system's, since no standard lists
+# `sys/timeb.h`; this line is its mark.
+
+extern "own.h"
+    constant TIMEB_LIB: i64
+
+function main()
+    print(TIMEB_LIB)

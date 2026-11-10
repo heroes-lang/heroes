@@ -1,0 +1,7 @@
+# Library b of the case's own, its folder named from this file's (defect 2428).
+prefix=${pcfiledir}/../b
+Name: p2428b
+Description: library b, holding a header the platform names too
+Version: 1.0
+Cflags: -I${prefix}/inc
+Libs:

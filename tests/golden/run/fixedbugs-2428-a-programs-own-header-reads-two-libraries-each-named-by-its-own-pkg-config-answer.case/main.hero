@@ -1,0 +1,22 @@
+# fixedbugs, defect 2428, lane b30-shadow, 2026-11-10 (panel 243's R2, the
+# completeness critic's item 16).
+#
+# A header of the program's own, `both.h`, bound with the first library's
+# `pkg-config` group, includes a header of each of two libraries, each named
+# like a header the platform holds and each in the folder its own `.pc`
+# answers; the second library's group names its header directly. Each header
+# is its library's, read with that library's answer; a reading that excused
+# only the folders of the includer's own group refused it (route (a), the
+# sitting's conservative alternative). It builds and reads both libraries.
+
+extern "both.h" pkgconfig "p2428a"
+    constant TIMEB_A: i64
+    constant GETOPT_B: i64
+
+extern "getopt.h" pkgconfig "p2428b"
+    function b_twice() -> i64
+
+function main()
+    print(TIMEB_A)
+    print(GETOPT_B)
+    print(b_twice())

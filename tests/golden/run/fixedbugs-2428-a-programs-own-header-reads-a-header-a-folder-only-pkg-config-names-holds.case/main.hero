@@ -1,0 +1,17 @@
+# fixedbugs, defect 2428, lane b30-shadow, 2026-11-10 (panel 243's R2).
+#
+# A header of the program's own, `own.h`, includes `<sys/timeb.h>`, and the
+# library its group asks `pkg-config` for holds a file of that name, a name
+# every platform's C library holds too. It is the library's own header, the
+# one the build asked for, and the library's link comes from the same answer;
+# it was refused `shadowed_header` as standing in for the C library's, so
+# Homebrew's keg-only libcurl 8.23.0, whose `curl/curl.h` the SDK holds as
+# well, could not be bound through a wrapper header. A folder only
+# `pkg-config` names is that library's, but for a file named like one of
+# C11's or POSIX.1-2024's headers. It builds and reads the library's 33.
+
+extern "own.h" pkgconfig "p2428"
+    constant TIMEB_LIB: i64
+
+function main()
+    print(TIMEB_LIB)
