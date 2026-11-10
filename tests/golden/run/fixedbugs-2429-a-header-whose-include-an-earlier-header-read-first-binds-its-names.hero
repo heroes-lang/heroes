@@ -1,0 +1,28 @@
+# fixedbugs, defect 2429, lane b30-msg, 2026-11-10.
+#
+# The correct program beside `run/fixedbugs-2429-a-header-an-earlier-one-
+# includes-binds-its-names` where the header a group names is not read
+# before its group, a file it includes is: `fixedbugs-2429-earlier.h` defines
+# `WANT_SUB` and includes `fixedbugs-2429-sub.h`, which declares a function,
+# a macro constant and a struct under it, and `fixedbugs-2429-top.h`, which
+# includes `sub.h` too, binds them. `top.h` alone, after the headers before
+# it, and renamed while it is read, declares none of them, `sub.h`'s guard
+# skipping it, and the repair's first form refused the program, measured in
+# its lane: `top.h` declares no `sub_extra`. Each declaration stands in
+# `sub.h`, a file `top.h` reads alone, which clang says when each name is
+# declared again, so `top.h` declares them where the unit reads it, and the
+# program builds and runs.
+
+extern "fixedbugs-2429-earlier.h"
+    function sub_plain() -> i64
+
+extern "fixedbugs-2429-top.h"
+    function top_one() -> i64
+    function sub_extra() -> i64
+    constant SUB_MAX: i64
+    record SubRec tag sub_rec
+        a: i64
+
+function main()
+    r = SubRec(a: 5)
+    print(sub_plain() + top_one() + sub_extra() + SUB_MAX + r.a)
