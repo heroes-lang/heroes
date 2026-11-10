@@ -1,0 +1,308 @@
+# Each name a group binds asked of the header its group names, where the
+# module's unit reads it (design.md §4.19, §4.17, spec § 13; defect 2429,
+# 2026-11-10). Defect 2413 asked this of the runtime's `hero_os.h` names
+# alone (`cli/os_bound.hero`, which this module replaces, its messages
+# kept); every other header was read as the union of the unit's.
+#
+# **One question per header list** (`cli/probing.hero`'s probings, since the
+# modules of one list read the same C): its unit's opening with a rung after
+# each header (`cli/declared_ladder.hero`), asked once and kept
+# (`cli/declared_ask.hero`). For a name bound under the header at rung `h`:
+#
+# - declared at `h` and not before it: the header's own, and nothing is told;
+# - undeclared at `h` and declared at a later rung, a later group's header or
+#   one of C's own the unit reads after its groups: refused, that header
+#   named, since its own header read where the unit reads it declares none;
+# - declared before `h`: asked again of the header (`cli/declared_again`),
+#   and refused only where it declares the name neither alone nor after the
+#   headers before it; first declared after `heroes_unit.h`, the runtime's
+#   own, it is `cli/runtime_bound.hero`'s, refused before this asks;
+# - undeclared at every rung, or no answer at its line: no verdict here, and
+#   the unit's own compile tells it as before, with its readers' notes and
+#   clang's spelling guess.
+#
+# A list whose question gives no answer, a header that does not compile
+# where the unit reads it, is no verdict either: the build's compile tells
+# that. **What it costs**: one `clang -fsyntax-only` of a list's headers on a
+# cold build and none on a warm one, the answer kept, and up to four more
+# for a header asked again, a refused binding's path. Measured 2026-11-10 on
+# this Mac against the batch's base, which scanned `hero_os.h` and
+# `heroes_runtime.h` on every build for `os_bound`, two builds each in
+# instructions: a program binding C cold 9 to 37 million more (0.2 % to
+# 2.0 %; `examples/raylib` 1,882 to 1,919 million), warm 0 to 15 million
+# fewer; `examples/gallery/00-first.hero`, binding none, 43 million fewer
+# cold and 20 million fewer warm.
+
+use ast
+use cli/compile
+use cli/compiling
+use cli/declared_again as again
+use cli/declared_ask
+use cli/declared_ladder as ladder
+use cli/declared_told as declared_told
+use cli/probing
+use cli/toolchain
+use diag
+use emit/externs as emit_externs
+use library_source
+use module/reading
+use parse
+use source
+use token
+
+# The build stopped where a group binds a name its header does not declare.
+function stopped(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], permissive: bool) -> ()?
+    stop = compile.stage(told(t, probings: probings, s, decls), s, permissive: permissive)
+
+    if stop.is_err()
+        return ok()
+    _ = compile.leave(stop.must(), stage_name: "the names each group's header declares")?
+    return ok()
+
+# One binding asked: its declaration, what is asked, its group's header, the
+# word its note names, and where it is told.
+record Binding
+    decl: i64
+    asked: ladder.Asked
+    header: str
+    word: str
+    span: token.Span
+
+# Every refusal of every list, in the order the declarations stand.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    found: {i64: diag.Diagnostic} @= {}
+    standard = standard_headers(t)
+    memo: {str: str} @= probing.digests_of(probings)
+
+    for p in probings
+        if p.reach.is_err()
+            continue
+        bound = bindings_of(s, decls, modules: p.modules, library: false)
+
+        if bound.len() == 0
+            continue
+        read = read_of(t, p: p, @memo)
+
+        if !read.is_err()
+            for one in list_told(t, p: p, bound: bound, read: read.must(), standard: standard)
+                found[one.decl] @ one.diagnostic
+
+    out: [diag.Diagnostic] @= []
+
+    for decl in sort(keys(found))
+        out @ out.push(found[decl].must())
+
+    return out
+
+# The headers of C's own every unit reads after its groups, from the
+# runtime's `heroes_standard.h`; none where it cannot be read now.
+function standard_headers(t: toolchain.Toolchain) -> [str]
+    read = reading.source_text(t.runtime + "/heroes_standard.h")
+
+    if read.is_err()
+        return []
+    return ladder.standard_of(read.must().text)
+
+# What a list's headers resolve to: its probe's answer, or asked here where
+# its modules had nothing else to ask (`compiling.reads`).
+function read_of(t: toolchain.Toolchain, p: probing.Probing, @memo: {str: str}) -> str?
+    if !p.probe.is_err()
+        return p.probe.must().read
+    return compiling.reads(t.build, words: compiling.probe_words(p.under), headers: p.headers, @memo)
+
+# Each function, constant and group record with fields that a group of one of
+# `modules` binds, in declaration order. A record with no fields is a handle,
+# which C writes with no declaration (`ladder`'s doc). **The Heroes library's
+# own bindings only where `library` says**: it is compiled into every program
+# and its groups are the compiler's, the same in each, so a build never asks
+# them, which cost every program's cold build a clang run of the library's
+# twelve `hero_os.h` names, 56 million instructions of `examples/gallery/
+# 00-first.hero`'s 892 (measured 2026-11-10); this module's test asks them
+# once, of the runtime the compiler is tested against.
+function bindings_of(s: source.Source, decls: [ast.Decl], modules: [str], library: bool) -> [Binding]
+    out: [Binding] @= []
+    index: i64 @= 0
+
+    for decl in decls
+        mine = library || !source.is_library(s, decl.name.start)
+
+        if mine && holds(modules, one: source.component_at(s, decl.name.start))
+            one = binding(s, decl: decl, index: index)
+
+            if !one.is_err()
+                out @ out.push(one.must())
+        index @ index + 1
+
+    return out
+
+function binding(s: source.Source, decl: ast.Decl, index: i64) -> Binding?
+    name = source.span_text(s, decl.name)
+
+    match decl.kind
+        .function_decl fd =>
+            if !fd.value.header.is_err()
+                return ok(plain(s, decl: decl, index: index, header: fd.value.header.must()))
+        .constant_decl k =>
+            if !k.header.is_err()
+                return ok(plain(s, decl: decl, index: index, header: k.header.must()))
+        .record_decl rec =>
+            if !rec.header.is_err() && rec.fields.len() > 0
+                header = emit_externs.unquoted(s, span: rec.header.must())
+
+                if rec.tag.is_err()
+                    return ok(
+                        Binding(decl: index, asked: ladder.Asked(name: name, sized: name), header: header, word: "record " + name, span: decl.name)
+                    )
+                tag = source.span_text(s, rec.tag.must())
+                asked = ladder.Asked(name: tag, sized: "struct " + tag)
+                return ok(
+                    Binding(decl: index, asked: asked, header: header, word: "record " + name, span: rec.tag.must())
+                )
+        .variant_decl | .test_decl => return fail(code: "none", msg: "not bound")
+
+    return fail(code: "none", msg: "no group")
+
+function plain(s: source.Source, decl: ast.Decl, index: i64, header: token.Span) -> Binding
+    name = source.span_text(s, decl.name)
+    return Binding(
+        decl: index,
+        asked: ladder.Asked(name: name, sized: ""),
+        header: emit_externs.unquoted(s, span: header),
+        word: name,
+        span: decl.name
+    )
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+# What one list's question refuses.
+function list_told(t: toolchain.Toolchain, p: probing.Probing, bound: [Binding], read: str, standard: [str]) -> [declared_told.Told]
+    none: [declared_told.Told] = []
+    asked: [ladder.Asked] @= []
+
+    for b in bound
+        asked @ asked.push(b.asked)
+
+    q = ladder.unit_question(groups: groups_of(p.headers), standard: standard, asked: asked)
+    words = declared_ask.words_of(p.under)
+    states = declared_ask.answered(t, words: words, read: read, q: q, asked: asked)
+
+    if states.is_err()
+        return none
+    width = asked.len()
+    out: [declared_told.Told] @= []
+
+    # ORDER: the bindings' own, declaration order; a header's candidates are
+    # gathered by the rung they stand at, asked again together.
+    again_at: {i64: [again.Candidate]} @= {}
+    index: i64 @= 0
+
+    for b in bound
+        h = rung_of(q, header: b.header)
+
+        if !h.is_err()
+            at = h.must()
+            state = states.must()[at * width + index]
+
+            if state == ladder.UNDECLARED
+                later = first_declared(states.must(), width: width, index: index, from: at + 1, to: q.rungs.len())
+
+                if !later.is_err()
+                    out @ out.push(
+                        declared_told.after(b.decl, word: b.word, asked: b.asked, header: b.header, declarer: q.rungs[later.must()], span: b.span)
+                    )
+            else if state == ladder.DECLARED && at > 0 && states.must()[(at - 1) * width + index] == ladder.DECLARED
+                first = first_declared(states.must(), width: width, index: index, from: 0, to: at).must()
+
+                # Declared after `heroes_unit.h`: the runtime's own.
+                if first > 0
+                    list = again_at[at].default([])
+                    again_at[at] @ list.push(again.Candidate(index: index, asked: b.asked, declarer: first))
+        index @ index + 1
+
+    for at in sort(keys(again_at))
+        for r in again.refused(t, words: words, read: read, q: q, at: at, candidates: again_at[at].must())
+            b = bound[r.index]
+            out @ out.push(
+                declared_told.before(b.decl, word: b.word, asked: b.asked, header: b.header, declarer: q.rungs[r.declarer], read_first: r.after, span: b.span)
+            )
+
+    return out
+
+# A list's headers but the seeds, which every question writes first.
+function groups_of(headers: [str]) -> [str]
+    out: [str] @= []
+
+    for header in headers
+        if !emit_externs.is_own(header)
+            out @ out.push(header)
+
+    return out
+
+# The rung a binding's header stands at: a seed's, or its group's.
+function rung_of(q: ladder.Question, header: str) -> i64?
+    at: i64 @= 0
+
+    for r in q.rungs
+        if r.header == header
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "none", msg: "the header is no rung of this list")
+
+# The first rung in `from` to `to` at which the name at `index` is declared.
+function first_declared(states: [i64], width: i64, index: i64, from: i64, to: i64) -> i64?
+    at: i64 @= from
+
+    while at < to
+        if states[at * width + index] == ladder.DECLARED
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "none", msg: "declared at no rung")
+
+## Tests
+
+# **The library's own bindings are each declared where their group's header
+# stands** (defects 2413 and 2429): a build never asks them
+# (`bindings_of`), so they are asked here, of the runtime the compiler is
+# tested against, with clang, every one declared at its own header's rung.
+test "the Heroes library binds only names its group's header declares, asked of clang (defect 2429)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    text = "function main()\n    print(1)\n"
+    s = source.with_library(name: "t.hero", user: text, library: library_source.text())
+    parsed = parse.parse_source(s)
+    bound = bindings_of(s, parsed.decls, modules: [source.LIBRARY_MODULE], library: true)
+    assert bound.len() == 12
+    assert bindings_of(s, parsed.decls, modules: [source.LIBRARY_MODULE], library: false).len() == 0
+    asked: [ladder.Asked] @= []
+
+    for b in bound
+        asked @ asked.push(b.asked)
+
+    q = ladder.unit_question(groups: [], standard: standard_headers(t), asked: asked)
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [],
+        pkgconfig_flags: [],
+        runtime: t.runtime,
+        source_dir: "."
+    )
+    states = declared_ask.answered(
+        t,
+        words: declared_ask.words_of(under),
+        read: "library-test",
+        q: q,
+        asked: asked
+    ).must()
+    index: i64 @= 0
+
+    for b in bound
+        at = rung_of(q, header: b.header).must()
+        assert states[at * asked.len() + index] == ladder.DECLARED
+        index @ index + 1

@@ -1,0 +1,29 @@
+# fixedbugs, defect 2429, lane b30-msg, 2026-11-10.
+#
+# The correct programs beside `unsupported/fixedbugs-2429-...`: a name
+# declared before the header its group names, which that header declares
+# too. `fixedbugs-2429-own-math.h`, a header of the program's own over
+# `math.h`, declares `sqrt` read alone, after a group naming `math.h`; and
+# `fixedbugs-2429-lib.h` declares `extra` only after the switch
+# `fixedbugs-2429-switch-and-extra.h` defines, which declares `extra` itself:
+# alone, and after the headers before it with that one left out, `lib.h`
+# declares no `extra`, and the repair's first form, which asked no more,
+# refused this shape, measured in its lane; read where the unit reads it,
+# the name renamed while `lib.h` alone is read, it does. Both build and run.
+
+extern "math.h" link "m"
+    function floor(x: f64) -> f64
+
+extern "fixedbugs-2429-own-math.h"
+    function sqrt(x: f64) -> f64
+
+extern "fixedbugs-2429-switch-and-extra.h"
+    constant WANT_EXTRA: i64
+
+extern "fixedbugs-2429-lib.h"
+    function extra() -> i64
+    function plain() -> i64
+
+function main()
+    print(floor(2.5) + sqrt(16.0))
+    print(extra() + plain() + WANT_EXTRA)

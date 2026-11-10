@@ -1,0 +1,27 @@
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `late_count` — `fixedbugs-2429-late.h` does, which this module's unit reads after it, so the name was found whatever header its group names; clang read `fixedbugs-2429-empty.h` where this unit reads it and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-later-header-or-cs-own-declares-is-refused.hero:16:14
+     |
+  16 |     function late_count() -> i64  #~ ffi_unknown_name
+     |              ^^^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `late_count` in a group `extern "fixedbugs-2429-late.h"`, or in one naming a header of your own that includes `fixedbugs-2429-late.h`
+
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `LATE_MAX` — `fixedbugs-2429-late.h` does, which this module's unit reads after it, so the name was found whatever header its group names; clang read `fixedbugs-2429-empty.h` where this unit reads it and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-later-header-or-cs-own-declares-is-refused.hero:17:14
+     |
+  17 |     constant LATE_MAX: i64  #~ ffi_unknown_name
+     |              ^^^^^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `LATE_MAX` in a group `extern "fixedbugs-2429-late.h"`, or in one naming a header of your own that includes `fixedbugs-2429-late.h`
+
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `struct late` — `fixedbugs-2429-late.h` does, which this module's unit reads after it, so the name was found whatever header its group names; clang read `fixedbugs-2429-empty.h` where this unit reads it and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-later-header-or-cs-own-declares-is-refused.hero:18:21
+     |
+  18 |     record Late tag late  #~ ffi_unknown_name
+     |                     ^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `record Late` in a group `extern "fixedbugs-2429-late.h"`, or in one naming a header of your own that includes `fixedbugs-2429-late.h`
+
+error[ffi_unknown_name]: `fixedbugs-2429-empty.h` declares no `fabs` — `math.h`, a header of C's own every unit reads after its groups' headers, does; clang read `fixedbugs-2429-empty.h` where this unit reads it and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-a-name-a-later-header-or-cs-own-declares-is-refused.hero:20:14
+     |
+  20 |     function fabs(x: f64) -> f64  #~ ffi_unknown_name
+     |              ^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `fabs` in a group `extern "math.h"`, or in one naming a header of your own that includes `math.h`

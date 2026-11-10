@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `stdio.h` declares no `sqrt` — `math.h` does, which this module's unit reads after it, so the name was found whatever header its group names; clang read `stdio.h` where this unit reads it and could not find it
+  at tests/golden/unsupported/fixedbugs-2429-sqrt-bound-under-stdio-h-beside-a-math-h-group-is-refused.hero:12:14
+     |
+  12 |     function sqrt(x: f64) -> i64  #~ ffi_unknown_name
+     |              ^^^^
+  note: spec § 13: a group's names are checked against the header it names; bind `sqrt` in a group `extern "math.h"`, or in one naming a header of your own that includes `math.h`
