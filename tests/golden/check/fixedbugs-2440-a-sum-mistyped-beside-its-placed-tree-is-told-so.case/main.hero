@@ -11,9 +11,10 @@
 # asked only whether that folder stood.
 #
 # FIX: where a tree of the same package stands under another key, it is
-# named, with the field the two keys hold apart, here the same version and so
-# another `sum` or `index`; the tree's own sum is never offered, since a tree
-# is held to the catalogue's and never the other way.
+# named with the field that moved, here the same version at another `sum`,
+# read by one reader with defect 2443's (`module/placed_beside.hero`); the
+# tree's own sum is never offered, a tree being held to the catalogue's, and
+# no `heroes fetch` is named, the catalogue writing no `index` line.
 use <json>/strconv  #~ package_unread
 
 function main()
