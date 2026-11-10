@@ -467,8 +467,9 @@ condition from a step into a sequence:
   calls of `fetch/` from `cli/strings`' byte-safe helpers onto `core`'s
   byte-identical loops, deleted 0 functions, and cost every check 0.285 % of its
   instructions and every `core` version a seed refresh. No package of 0.2.0
-  covers a C group of the package manager, and the copy under `selfhost/core/`
-  that 2315's notes name does not compile as written (exit 1). So the step waits
+  covers a C group of the package manager, and the copy that 2315's notes name
+  (under `selfhost/core/`, built and refused on 2026-11-10, never committed)
+  does not compile as written (exit 1). So the step waits
   for the packages it would actually replace something with: `path/filepath`
   (decision 2404's reading above), `os`, `crypto/sha256` and a transport, each
   admitted by the package manager's own need; and then for a full sitting,
