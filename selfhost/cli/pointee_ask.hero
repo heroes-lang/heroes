@@ -41,8 +41,8 @@ constant READ: str
 # whether it stands past a header's `...`, where C reads it as any type it
 # asks for and a read-only lend is refused (panel 217's R3(c), defect 2102,
 # `emit/ffi_past_prototype.hero`). Apart from `READ`, which a `cstr` without
-# `lent` asks too: only a lease reaches that one, a copy C may write, and past
-# `...` it stays open.
+# `lent` asks too: only a lease reaches that one, and past `...` it asks
+# `VALUE` (panel 243's R1, which overturned R3(c)'s lease left open there).
 constant LENT: str
     "lent"
 
@@ -53,6 +53,16 @@ constant LENT: str
 # A counted one asks its `UNIT`, which the same refusal reads there.
 constant AT: str
     "at"
+
+# A parameter that crosses by value, every one that asks none of the lends
+# above and `PLACE` below (`cli/pointee_wants.hero`'s `by_value`): asked only
+# whether it stands past a header's `...`, where the header declares no type,
+# a call converts nothing past C's default promotions and the function reads
+# the argument as whatever type its `va_arg` names, so nothing holds it to the
+# type the program declares (defect 2421, panel 243's R1,
+# `emit/ffi_past_prototype.hero`).
+constant VALUE: str
+    "value"
 
 # A group's record lent read-only with no `@`, `c: Counter lent` (panel 217's
 # R3): the header's pointer must point at `const`, as a `cstr`'s must

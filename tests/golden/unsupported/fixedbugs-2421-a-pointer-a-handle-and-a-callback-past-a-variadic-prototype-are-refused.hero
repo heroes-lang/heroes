@@ -1,0 +1,35 @@
+# FIXED DEFECT 2421, 2026-11-10, lane b30-variadic.
+#
+# SYMPTOM: a `ptr`, a handle and a callback past a header's `...`, each over
+# a body reading the pointer type it was handed, built at exit 0 and printed
+# `0`, `0`, `tick` and `1`: right, and held by nothing, since what the callee
+# reads is no fact a binding can state. A `cstr` lease read by `printf`'s
+# `%d` the same way printed a pointer's low bits, `49289200`, `13408240` and
+# `75306992` in three runs (measured beside this case).
+#
+# CAUSE: past a variadic header's `...` the header declares no type: the call
+# converts nothing beyond C's default promotions, and the function reads the
+# argument as the type its `va_arg` names. A parameter that crosses by value
+# was asked nothing there, so no width, sign or kind held it.
+#
+# FIX: a binding declares no parameter past its header's `...` (panel 243's
+# R1, provisional, author ratification pending): every one is refused on its
+# declaration, a parameter crossing by value as `ffi_parameter_type`, the note
+# naming the door, a function of a new name in a header of the program's own
+# with a fixed prototype that calls the variadic, the literal format inside it
+# where the callee reads one (`emit/ffi_past_prototype.hero`). The doors are
+# `tests/golden/run/fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero`.
+
+extern "fixedbugs-2421-variadic.h"
+    record Slot tag slot_handle
+    function slot_pointer(count: i32, p: ptr) -> i64  #~ ffi_parameter_type
+    function slot_handle_of(count: i32, h: Slot) -> i64  #~ ffi_parameter_type
+    function slot_callback(count: i32, f: (function() -> ())) -> i64  #~ ffi_parameter_type
+
+function tick()
+    print("tick")
+
+function main()
+    print(slot_pointer(count: 1, p: nullptr))
+    print(slot_handle_of(count: 1, h: nullptr))
+    print(slot_callback(count: 1, f: tick))

@@ -1,0 +1,30 @@
+# FIXED DEFECT 2421's route, 2026-11-10, lane b30-variadic (panel 243's R1,
+# provisional, author ratification pending).
+#
+# A binding declares no parameter past its header's `...`, where C reads what
+# a call hands it as whatever type its `va_arg` names and nothing holds it.
+# The door: a header of the program's own defines, for each variadic, a
+# `static inline` function of a new name with a fixed prototype that calls it
+# with the argument at the C type it reads, and the group binds those. Each
+# value is then held as any prototype holds one: `value: i32` is a C `long`
+# converted exactly, where past the `...` -1 was read as `4294967295`; the
+# double, the record by value, the string lent read-only and the pointer cross
+# at their own types. The refused shapes are the
+# `tests/golden/unsupported/fixedbugs-2421-` cases.
+
+extern "fixedbugs-2421-doors.h"
+    record Pair
+        a: i32
+        b: i32
+    function slot_read_long(count: i32, value: i32) -> i64
+    function slot_double_of(count: i32, value: f64) -> f64
+    function slot_pair_of(count: i32, p: Pair) -> i64
+    function slot_length_of(count: i32, s: cstr lent) -> i64
+    function slot_pointer_of(count: i32, p: ptr) -> i64
+
+function main()
+    print(slot_read_long(count: 1, value: -1))
+    print(slot_double_of(count: 1, value: 1.5))
+    print(slot_pair_of(count: 1, p: Pair(a: 1, b: 2)))
+    print(slot_length_of(count: 1, s: "hello".cstr()))
+    print(slot_pointer_of(count: 1, p: nullptr))

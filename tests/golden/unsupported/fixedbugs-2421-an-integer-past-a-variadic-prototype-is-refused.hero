@@ -1,0 +1,30 @@
+# FIXED DEFECT 2421, 2026-11-10, lane b30-variadic.
+#
+# SYMPTOM: `slot_read(count: i32, value: i32)` over a header's `long
+# slot_read(int count, ...)`, which reads `va_arg(ap, long)`, handed -1,
+# built at exit 0 and printed `4294967295`, three runs of three; `i32` is the
+# spelling a C `long` parameter takes through a prototype, and past `...` C
+# converts nothing. `slot_flag(count: i32, on: bool)` over a body reading
+# `int` printed `1`, right by C's promotion, and is refused with it: what the
+# callee reads is no fact a binding can state.
+#
+# CAUSE: past a variadic header's `...` the header declares no type: the call
+# converts nothing beyond C's default promotions, and the function reads the
+# argument as the type its `va_arg` names. A parameter that crosses by value
+# was asked nothing there, so no width, sign or kind held it.
+#
+# FIX: a binding declares no parameter past its header's `...` (panel 243's
+# R1, provisional, author ratification pending): every one is refused on its
+# declaration, a parameter crossing by value as `ffi_parameter_type`, the note
+# naming the door, a function of a new name in a header of the program's own
+# with a fixed prototype that calls the variadic, the literal format inside it
+# where the callee reads one (`emit/ffi_past_prototype.hero`). The doors are
+# `tests/golden/run/fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero`.
+
+extern "fixedbugs-2421-variadic.h"
+    function slot_read(count: i32, value: i32) -> i64  #~ ffi_parameter_type
+    function slot_flag(count: i32, on: bool) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(slot_read(count: 1, value: -1))
+    print(slot_flag(count: 1, on: true))

@@ -1,0 +1,37 @@
+# FIXED DEFECT 2421's lease, 2026-11-10, lane b30-variadic (panel 243's R1,
+# provisional, author ratification pending, which overturns panel 217's
+# R3(c) in this part). This program was defect 2102's legal shape, a run case
+# from 2026-10-17 to this day.
+#
+# SYMPTOM: a `cstr` without `lent` past a variadic header's `...` took a
+# lease, `x: cstr @= a.lease()`, a copy C may write, and R3(c) left it open:
+# here `va_scribble` wrote `Xello` into the copy and `va_length` read `205`,
+# both right. What C READS the argument as was never held: the same lease
+# read by `printf`'s `%d` printed a pointer's low bits at exit 0, a value
+# that moved run to run (`49289200`, `13408240`, `75306992`, measured beside
+# this case).
+#
+# CAUSE: past the `...` the header declares no type, and a parameter that
+# crosses by value, the lease's pointer among them, was asked nothing there.
+#
+# FIX: every parameter past a header's `...` is refused on its declaration,
+# the lease as crossing by value, `ffi_parameter_type`, the note naming the
+# door (`emit/ffi_past_prototype.hero`): a header of the program's own whose
+# function of a new name takes the string as a `const char *` and calls the
+# variadic, bound `cstr lent`, is
+# `tests/golden/run/fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero`.
+
+extern "fixedbugs-2421-lease.h"
+    function va_scribble(k: i32, s: cstr) -> i64  #~ ffi_parameter_type
+    function va_length(k: i32, s: cstr) -> i64  #~ ffi_parameter_type
+
+function main()
+    a = "hel" + "lo"
+    b = a
+    x: cstr @= a.lease()
+    print(va_scribble(k: 1, s: x))
+    print(va_length(k: 2, s: x))
+    print(x.validated().must())
+    end_lease(@x)
+    print(a)
+    print(b)

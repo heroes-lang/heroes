@@ -1,0 +1,15 @@
+error[ffi_parameter_type]: `s` of `va_scribble` is declared `cstr` and crosses by value, and `fixedbugs-2421-lease.h` gives `va_scribble` 1 parameter and then `...`, where `s` stands — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `cstr` this program hands it
+  at tests/golden/unsupported/fixedbugs-2421-a-lease-past-a-variadic-prototype-is-refused.hero:25:34
+     |
+  25 |     function va_scribble(k: i32, s: cstr) -> i64  #~ ffi_parameter_type
+     |                                  ^
+  note: spec § 13: a parameter is declared at the header's own width and sign, and clang holds it to them; past a header's `...` the header declares no type, so the call converts nothing beyond C's default promotions and `va_scribble` reads the bytes as the type its `va_arg` names: an `i32` read as a C `long` gives -1 as 4294967295, and a wider integer, a float, a string, a pointer or a record read as another type is the same mistake
+  note: write a header of your own that includes `fixedbugs-2421-lease.h` and defines a `static inline` function of a new name with a fixed prototype, taking `s` at the C type `va_scribble` reads there and calling `va_scribble` with it; bind that function instead, and its prototype holds it to that type; where `va_scribble` reads a format, write the format inside that function as a literal, and clang reads each conversion against the argument it is given
+
+error[ffi_parameter_type]: `s` of `va_length` is declared `cstr` and crosses by value, and `fixedbugs-2421-lease.h` gives `va_length` 1 parameter and then `...`, where `s` stands — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `cstr` this program hands it
+  at tests/golden/unsupported/fixedbugs-2421-a-lease-past-a-variadic-prototype-is-refused.hero:26:32
+     |
+  26 |     function va_length(k: i32, s: cstr) -> i64  #~ ffi_parameter_type
+     |                                ^
+  note: spec § 13: a parameter is declared at the header's own width and sign, and clang holds it to them; past a header's `...` the header declares no type, so the call converts nothing beyond C's default promotions and `va_length` reads the bytes as the type its `va_arg` names: an `i32` read as a C `long` gives -1 as 4294967295, and a wider integer, a float, a string, a pointer or a record read as another type is the same mistake
+  note: write a header of your own that includes `fixedbugs-2421-lease.h` and defines a `static inline` function of a new name with a fixed prototype, taking `s` at the C type `va_length` reads there and calling `va_length` with it; bind that function instead, and its prototype holds it to that type; where `va_length` reads a format, write the format inside that function as a literal, and clang reads each conversion against the argument it is given

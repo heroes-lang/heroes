@@ -1,5 +1,6 @@
-/* Defect 2102's legal shape: a variadic function that writes the string a
-   call hands it past its `...`, and one that only reads it. */
+/* Defect 2102's legal shape until panel 243's R1, refused since as defect
+   2421's lease: a variadic function that writes the string a call hands it
+   past its `...`, and one that only reads it. */
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
