@@ -568,8 +568,18 @@ catalogue names, and reached as `use <core>/strings` (panel 235's R15, ratified 
 amended R2: until then a program kept a copy under its own `core/`); written in Heroes alone where
 Heroes can say it, over a C library through a binding it carries where it cannot, and verified by
 the checker, by its own `test` blocks and, over C, by clang against the header it names. No
-package is compiled into the compiler or the runtime (panel 097's condition 5: such source is the
-standard library this section forbids), and none ships platform C of its own:
+package is shipped with the compiler or the runtime for programs: nothing a program reaches
+without an entry of its own catalogue is a package's code, and no package's source reaches
+`selfhost/library_source.hero` (panel 097's condition 5; panel 234's R1, whose word was
+*shipped*: such source is the standard library this section forbids). The compiler is a program
+like any other here, and may carry a package through a catalogue of its own beside its root
+module, none of which a program it compiles can reach; it checks every placed tree's fingerprint, its own
+included, with the runtime's SHA-256 door and never with a package's code, so no package verifies
+itself; and it takes one only where its own tree, placed files counted, is smaller after the step
+than before, or a copy the step deletes is measured crashing or answering wrong, the step deleting
+every live copy of that package's contract in the compiler (panel 242's R1 to R4, provisional;
+until 2026-11-10 this sentence read *"No package is compiled into the compiler or the runtime"*,
+wider than R1's *shipped*). And none ships platform C of its own:
 what a package needs of the platform is the runtime's `hero_os.h` or the platform layer archived
 beside the runtime (panel 234's R6, feature 2295). So the language still ships its runtime and
 nothing a program could carry instead.
