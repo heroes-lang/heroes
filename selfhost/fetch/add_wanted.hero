@@ -17,6 +17,7 @@ use fetch/staging
 use fetch/transport
 use fetch/verb_place
 use module/catalogue
+use module/entry_name
 use module/fingerprint
 use module/placed
 use module_text
@@ -49,10 +50,10 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalo
         )
     name = argv.value_of(inv, spelling: "--as").default(last_part(folder))
 
-    if !catalogue.entry_name(name)
+    if entry_name.refused(name).len() > 0
         return fail(
             code: "bad_usage",
-            msg: "`" + name + "` is no entry's name: a name is lowercase letters, digits and `_`, starting with a letter; give one with `--as`"
+            msg: "`" + name + "` is no entry's name: " + entry_name.refused(name) + "; give one with `--as`"
         )
 
     if !process.is_directory(program + folder)
@@ -78,10 +79,10 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
     at = address.judged(address_text, root: root)?
     name = argv.value_of(inv, spelling: "--as").default(module_text.address_entry(address_text))
 
-    if !catalogue.entry_name(name)
+    if entry_name.refused(name).len() > 0
         return fail(
             code: "bad_usage",
-            msg: "`" + address_text + "` ends in no entry's name: give one with `--as`, lowercase letters, digits and `_`, starting with a letter"
+            msg: "the entry of `" + address_text + "` has no name a `use` writes: " + entry_name.refused(name) + "; give one with `--as`"
         )
     s = staging.opened(program)?
     commit = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
@@ -130,10 +131,10 @@ function index_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: trans
     at_sign = verb_place.at_of(asked)
     name = asked.slice(from: 0, to: at_sign)
 
-    if !catalogue.entry_name(name)
+    if entry_name.refused(name).len() > 0
         return fail(
             code: "bad_usage",
-            msg: "`" + name + "` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter"
+            msg: "`" + name + "` is no package's name: " + entry_name.refused(name)
         )
     index = address.judged(index_source.written_index(c.index), root: root)?
     listed = index_source.versions(tools, index: index, name: name, scratch: ledger.folder)?

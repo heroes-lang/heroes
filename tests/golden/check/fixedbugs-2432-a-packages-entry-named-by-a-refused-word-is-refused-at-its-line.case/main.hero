@@ -1,0 +1,11 @@
+# Fixed defect 2432, 2026-11-10, lane b30-pkg, a shape beside it: the
+# package `json`'s own catalogue names an entry `let`, a word of another
+# language Heroes refuses, which no `use` of `json`'s can write.
+#
+# The package's own catalogue is read by the same reader as the program's,
+# so it refuses that entry at its line, and the package is told unread on
+# the `use` that reaches it (panel 235's R3).
+use <json>/p  #~ package_unread
+
+function main()
+    print(p.n())

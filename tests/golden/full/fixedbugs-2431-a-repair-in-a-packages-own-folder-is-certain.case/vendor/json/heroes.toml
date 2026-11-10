@@ -1,0 +1,3 @@
+# The package's own catalogue of defect 2431's case beside it.
+[dependencies.core]
+path = "../core"

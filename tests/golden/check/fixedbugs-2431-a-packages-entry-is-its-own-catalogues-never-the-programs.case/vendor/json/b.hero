@@ -1,0 +1,8 @@
+# A module of the package of defect 2431's case beside it, naming the
+# program's alias `core`, which its own catalogue does not hold.
+
+use core/strconv  #~ unknown_package_module
+
+# A word.
+function word() -> str
+    return strconv.word()

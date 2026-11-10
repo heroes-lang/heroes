@@ -8,7 +8,10 @@
 # that reached it, once a package; the program's catalogue is read again here
 # only to say which entry it lacks or which line of it does not read, once a
 # compilation (R5: told with its line and never applied, the catalogue being
-# no file of the compilation, which a `Fix` edits).
+# no file of the compilation, which a `Fix` edits). A bare `use` whose first
+# part is an entry is asked of the catalogue its own file reads, a package's
+# through the aliases discovery mapped from it, never the program's (defect
+# 2431).
 #
 # Each answer names the file the program must change and what to write
 # (design.md §4.17). **A repair that moves a `use` across the mark is
@@ -28,10 +31,10 @@ use module/catalogue
 use module/packages
 use module/paths
 use module/placed
+use module/private
 use module/reached
 use module/spelling
 use module_text
-use placed_use
 use source
 use token
 
@@ -60,9 +63,7 @@ function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnos
             ]
 
         if p.alias == entry
-            return [
-                diag.new_diagnostic(code: "unknown_package_module", message: "the package `" + entry + "` has no module `" + placed.inside_of(name) + "`: `use " + written + "` reads `" + p.root + placed.inside_of(name) + ".hero`, and that file is not there", span: span)
-            ]
+            return [in_package(s, used, package: p, inside: placed.inside_of(name), written: written)]
 
     base = paths.directory_text(s.name)
     listed = catalogue.read(opened: base, named: base)
@@ -105,34 +106,106 @@ function entries_said(listed: catalogue.Catalogue) -> str
 
     return ", whose entries are " + names.join(", ")
 
+## A bare `use` whose first part is an entry
+
+# The entry a bare `use`'s first part names, in the catalogue its file reads:
+# the program's own for a file of the program, the package's own for a file
+# of a package, never the other (defect 2431; spec § 1, *its brackets name
+# entries of the package's own catalogue*). `written` is the entry as that
+# file's `use` writes it between the brackets, `meant` the program's alias
+# for the same package, which names its tree (`packages.reach`; R3); `whose`
+# says whose file it is, `file` the catalogue, and `said` how the mark's
+# message names it, "" for the program's, the one beside the file you
+# compile; `editable` whether a certain repair may be written into the file,
+# never one in a placed tree (`in_package`).
+record Named
+    written: str
+    meant: str
+    whose: str
+    file: str
+    said: str
+    editable: bool
+
 # A bare `use` no own module answers: told with its mark where its first part
-# is an entry of the catalogue and the package holds the module, the brackets
-# forgotten (R18), the repair certain where the package's placed tree holds
-# the file, since nothing of the program's own answers that path, and a
-# `guess` where the tree is not there to ask; else as a module the directory
-# does not hold (`spelling.unknown`, defect 2290).
+# is an entry of the program's catalogue, else as a module the directory does
+# not hold (`spelling.unknown`, defect 2290).
 function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str) -> diag.Diagnostic
     base = paths.directory_text(s.name)
-    entry = head_of(name)
+    head = head_of(name)
     listed = catalogue.read(opened: base, named: base)
+    plain = spelling.unknown(s, uses, used: used, base: base, name: name)
 
-    if catalogue.entry(listed, name: entry).is_err()
-        return spelling.unknown(s, uses, used: used, base: base, name: name)
+    if catalogue.entry(listed, name: head).is_err()
+        return plain
+    return unmarked(
+        s,
+        used,
+        plain: plain,
+        entry: Named(written: head, meant: head, whose: "this program", file: listed.file, said: "", editable: true),
+        name: name
+    )
 
-    if entry == name
-        return whole_entry(s, uses, used: used, listed: listed, entry: entry)
-    marked = "<" + entry + ">/" + name.slice(from: entry.len() + 1, to: name.len())
+# A `use` of a package's file that no module of the package answers: told as
+# the module its tree does not hold, and with its mark where the line is bare
+# and its first part an entry of the package's own catalogue, read through the
+# aliases discovery mapped from that catalogue (defect 2431: it was told the
+# plain message alone, R18 being asked in the program's own files only).
+# `inside` is the module's path in the package, `written` the line's text.
+function in_package(s: source.Source, used: ast.Use, package: reached.Package, inside: str, written: str) -> diag.Diagnostic
+    plain = diag.new_diagnostic(
+        code: "unknown_package_module",
+        message: "the package `" + package.alias + "` has no module `" + inside + "`: `use " + written + "` reads `" + package.root + inside + ".hero`, and that file is not there",
+        span: used.name
+    )
+    head = head_of(inside)
+
+    if placed.is_package(written)
+        return plain
+
+    for one in s.reached.aliases
+        if one.package == package.alias && one.written == head
+            # A placed tree is held to its fingerprint (R7), so a repair
+            # written into one makes the next build refuse the tree: it is
+            # shown there, and written only into a `path` entry's folder,
+            # the author's own.
+            file = package.root + catalogue.FILE
+            entry = Named(
+                written: head,
+                meant: one.meant,
+                whose: "the package `" + package.alias + "`",
+                file: file,
+                said: " `" + file + "`",
+                editable: package.unverified
+            )
+            return unmarked(s, used, plain: plain, entry: entry, name: inside)
+
+    return plain
+
+# A bare `use` of `name`, its first part `entry`: the line naming the entry
+# whole, or with its mark, the brackets forgotten (R18), the repair certain
+# where the package's tree holds the file, since nothing on the file's own
+# side answers that path, and a `guess` where the tree is not there to ask or
+# the file may not be written; `plain`, what the file's own side says, where
+# the tree does not hold it.
+function unmarked(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry: Named, name: str) -> diag.Diagnostic
+    if entry.written == name
+        return whole_entry(s, used: used, plain: plain, entry: entry)
+    rest = name.slice(from: entry.written.len() + 1, to: name.len())
+    marked = "<" + entry.written + ">/" + rest
+    base = paths.directory_text(s.name)
     book: packages.Book @= packages.book(named: base, opened: base)
-    at = packages.file_of(@book, marked)
+    at = packages.file_of(@book, "<" + entry.meant + ">/" + rest)
     certainty: diag.Certainty @= .guess
 
     if !at.is_err()
         if !present(at.must().opened)
-            return spelling.unknown(s, uses, used: used, base: base, name: name)
-        certainty @ .certain
+            return plain
+
+        if entry.editable
+            certainty @ .certain
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "package_unmarked",
-        message: "there is no module `" + name + "` of this program, and `" + entry + "` is an entry of its catalogue: a package's module is written in angle brackets — `use " + marked + "`",
+        message: "there is no module `" + name + "` of " + entry.whose + ", and `" + entry.written + "` is an entry of its catalogue" + entry.said + ": a package's module is written in angle brackets — `use " + marked + "`",
         span: used.name
     )
     d.fixes @ d.fixes.push(
@@ -141,23 +214,26 @@ function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str
     return d
 
 # A bare `use` naming an entry of the catalogue whole, `use core` with no
-# `core.hero` beside the file (defect 2394): told as the module the directory
-# does not hold, as `spelling.unknown` tells it, and that `core` is an entry,
-# reached through one of its modules in angle brackets. It was told the first
-# half alone, the entry's word given to `use core/strconv` and kept from this
-# line, which `import core`'s certain fix writes. No repair: which module is
-# meant is the author's.
-function whole_entry(s: source.Source, uses: [ast.Use], used: ast.Use, listed: catalogue.Catalogue, entry: str) -> diag.Diagnostic
-    base = paths.directory_text(s.name)
-    d: diag.Diagnostic @= spelling.unknown(s, uses, used: used, base: base, name: entry)
-    found = root_modules(base: base, from: source.module_at(s, used.span.start), entry: entry)
+# `core.hero` where the file's `use` lines start (defect 2394): told as
+# `plain` tells it, and that `core` is an entry, reached through one of its
+# modules in angle brackets. It was told the first half alone, the entry's
+# word given to `use core/strconv` and kept from this line, which `import
+# core`'s certain fix writes. No repair: which module is meant is the
+# author's.
+function whole_entry(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry: Named) -> diag.Diagnostic
+    d: diag.Diagnostic @= plain
+    found = root_modules(
+        base: paths.directory_text(s.name),
+        from: source.module_at(s, used.span.start),
+        meant: entry.meant
+    )
     lines: [str] @= []
 
     for module in found
         if lines.len() < SHOWN
-            lines @ lines.push("`use <" + entry + ">/" + module + "`")
+            lines @ lines.push("`use <" + entry.written + ">/" + module + "`")
 
-    offered: str @= "`use <" + entry + ">/parse`, `parse` standing for one of its modules"
+    offered: str @= "`use <" + entry.written + ">/parse`, `parse` standing for one of its modules"
 
     if found.len() > SHOWN
         offered @ lines.join(", ") + " or another of the modules at its root"
@@ -165,20 +241,21 @@ function whole_entry(s: source.Source, uses: [ast.Use], used: ast.Use, listed: c
         offered @ lines[0] + ", the one module at its root"
     else if lines.len() > 1
         offered @ listed_or(lines) + ", the modules at its root"
-    d.message @ d.message + "; `" + entry + "` is an entry of the catalogue `" + listed.file + "`, and a package is reached through one of its modules, written in angle brackets — " + offered
+    d.message @ d.message + "; `" + entry.written + "` is an entry of the catalogue `" + entry.file + "`, and a package is reached through one of its modules, written in angle brackets — " + offered
     return d
 
 # How many of a package's modules a message names.
 constant SHOWN: i64
     3
 
-# The modules at the root of the package `entry`'s tree that a `use` of the
-# module `from` can name, in their names' byte order: each `.hero` file whose
-# stem is a path the parser reads, and none private to the package's root
-# (R16). None where the package's tree is not there to list.
-function root_modules(base: str, from: str, entry: str) -> [str]
+# The modules at the root of the tree of the package the program calls
+# `meant` that a `use` of the module `from` can name, in their names' byte
+# order: each `.hero` file whose stem is a path the parser reads, and none
+# private to the package's root (R16). None where the package's tree is not
+# there to list.
+function root_modules(base: str, from: str, meant: str) -> [str]
     book: packages.Book @= packages.book(named: base, opened: base)
-    at = packages.reach(@book, alias: entry)
+    at = packages.reach(@book, alias: meant)
     found: [str] @= []
 
     if at < 0 || book.reached[at].problem.len() > 0
@@ -188,7 +265,7 @@ function root_modules(base: str, from: str, entry: str) -> [str]
         if strings.ends_with(text: file, suffix: ".hero")
             stem = file.slice(from: 0, to: file.len() - 5)
 
-            if module_text.is_use_path(stem) && reaches(from: from, name: "<" + entry + ">/" + stem)
+            if module_text.is_use_path(stem) && private.reaches(from: from, name: "<" + meant + ">/" + stem)
                 found @ found.push(stem)
 
     return found
@@ -238,54 +315,6 @@ function present(path: str) -> bool
     match files.entry(path)
         .absent                                        => return false
         .file | .directory | .link | .other | .unknown => return true
-
-## Private modules
-
-# Every `use` naming a private module from outside its owner (panel 235's
-# R16, ratified 2026-11-07, the program's own folders as well as a
-# package's): `<core>/strings/internal/scan` is `<core>/strings`'s, the
-# module before the LAST `internal` part, and only that module and the
-# modules under it name it, Go's rule for `internal` since Go 1.4.
-function private_reaches(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @= found
-
-    for used in uses
-        from = source.module_at(s, used.span.start)
-        name = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
-
-        if !reaches(from: from, name: name)
-            owner = owner_of(name)
-            out @ out.push(
-                diag.new_diagnostic(code: "private_module", message: "`" + name + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `" + owner + "` offers instead", span: used.name)
-            )
-
-    return out
-
-# Whether the module `from` may name `name` (R16): `name` stands under no
-# `internal` folder, or `from` is the module that folder belongs to or a
-# module under it. Asked by the `use` lines above and by what a missing
-# `use` is offered (`module/answering.hero`), one rule in one place.
-function reaches(from: str, name: str) -> bool
-    owner = owner_of(name)
-    return owner.len() == 0 || from == owner || strings.starts_with(text: from, prefix: owner + "/")
-
-# The module a private module belongs to, "" for one under no `internal`:
-# `placed_use.internal_owner`, which the parser asks too of a `use` naming a
-# placed tree (defect 2390), one rule in one place.
-function owner_of(name: str) -> str
-    return placed_use.internal_owner(name)
-
-test "a private module is its owner's and its owner's modules' alone"
-    assert owner_of("<core>/strings/internal/scan") == "<core>/strings"
-    assert owner_of("<core>/strings") == ""
-    assert owner_of("a/internal/b/internal/c") == "a/internal/b"
-    assert owner_of("internalx/y") == ""
-    assert owner_of("a/internals/b") == ""
-    assert reaches(from: "<core>/strings", name: "<core>/strings/internal/scan")
-    assert reaches(from: "<core>/strings/split", name: "<core>/strings/internal/scan")
-    assert !reaches(from: "<core>/stringsx", name: "<core>/strings/internal/scan")
-    assert !reaches(from: "main", name: "lib/internal/strs")
-    assert reaches(from: "main", name: "lib/strs")
 
 test "the lines an entry is offered are listed with an `or` before the last"
     assert listed_or(["`a`"]) == "`a`"

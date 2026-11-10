@@ -20,7 +20,7 @@
 #
 # A leaf but for `bytes` and `module_text`'s reading of a `use` path, read by
 # `package_mark.hero` and, for the `internal` rule, by
-# `module/package_told.hero`, one rule in one place. **What a `use` wrote is
+# `module/private.hero`, one rule in one place. **What a `use` wrote is
 # asked of its bytes and never cut** (defect 2410's shape): a quoted line may
 # hold any character, and `use "heroes.package€x/y"` put the end of
 # `heroes.packages/` inside `€`, which stopped `check` with *string slice
@@ -84,7 +84,7 @@ function read(written: str) -> Placed
 
 # The entry a placed folder's name opens with, before its `@`: lowercase
 # letters, digits and `_` after a letter (the catalogue's rule,
-# `module/catalogue.entry_name`), and a name the mark can hold, no keyword
+# `module/entry_name.shaped`), and a name the mark can hold, no keyword
 # and no word the lexer refuses as a name (defect 2416: `match@1-k` was
 # offered `<match>/…`, which the parser refuses at `match`), else "".
 function entry_of(folder: str) -> str

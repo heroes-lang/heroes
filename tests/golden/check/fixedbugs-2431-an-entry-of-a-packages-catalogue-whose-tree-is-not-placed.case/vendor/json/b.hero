@@ -1,0 +1,8 @@
+# A module of the package of defect 2431's case beside it, naming its own
+# entry whole.
+
+use core  #~ unknown_package_module
+
+# A word.
+function word() -> str
+    return core.word()

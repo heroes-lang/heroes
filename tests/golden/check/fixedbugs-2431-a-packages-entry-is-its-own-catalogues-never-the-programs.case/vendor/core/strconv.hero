@@ -1,0 +1,6 @@
+# The one module at the root of the package of defect 2431's case beside
+# it, which the program calls `core` and `json` calls `text`.
+
+# A word.
+function word() -> str
+    return "s"

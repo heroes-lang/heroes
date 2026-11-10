@@ -1,0 +1,17 @@
+# Fixed defect 2431, 2026-11-10, lane b30-pkg, the shapes beside it: one
+# package under two aliases, `core` in the program's catalogue and `text` in
+# `json`'s own (panel 235's R3), the brackets forgotten in `json`'s files.
+#
+# A bare `use` of a package's file is told the entry its own catalogue
+# names, as its own `use` lines write it: `use text/strconv` is told
+# `use <text>/strconv`, and `use text as t` the modules at `text`'s root.
+# `use core/strconv` is told only that `json` has no module `core/strconv`:
+# `core` is the program's alias, which no line of `json` can write, so it is
+# never offered there. The modules are `vendor/json/a.hero`, `b.hero` and
+# `c.hero`, each marked where it is told.
+use <json>/a
+use <json>/b
+use <json>/c
+
+function main()
+    print(a.word() + b.word() + c.word())

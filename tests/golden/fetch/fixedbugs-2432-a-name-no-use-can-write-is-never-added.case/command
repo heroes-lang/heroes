@@ -1,0 +1,6 @@
+add --path ../match -C <work>/app
+add --path ../match --as while -C <work>/app
+add --path ../match --as let -C <work>/app
+add match -C <work>/app
+add https://git.example.org/ana/match --tag v1 -C <work>/app
+add https://git.example.org/ana/json --tag v1 --as true -C <work>/app

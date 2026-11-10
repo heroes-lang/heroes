@@ -34,6 +34,7 @@
 use bytes
 use fetch/address
 use fetch/address_form
+use module/entry_name
 use module/sums
 use module/toml_line
 
@@ -285,8 +286,16 @@ function table(@c: Catalogue, row: str, at: i64) -> str
     if close == row.len() || toml_line.after_value(row, at: close + 1).len() > 0
         return "a table is `[dependencies.<name>]` and nothing after it but a comment, found `" + row + "`"
 
-    if !entry_name(name)
+    if !entry_name.shaped(name)
         return "an entry's name is lowercase letters, digits and `_`, starting with a letter, as `[dependencies.json]`, found `" + name + "`"
+
+    # A name no `use` writes between the brackets names an entry no line
+    # reaches, and a message quoting the alias would offer a line the parser
+    # refuses (defect 2432).
+    word = entry_name.word(name)
+
+    if word.len() > 0
+        return word + ", so no line reaches the entry: a folder or a git source takes another name, `[dependencies.<name>]`, which its `use` lines write, and a package of the index keeps the index's name, so one called `" + name + "` is reached by no program"
 
     for one in c.entries
         if one.name == name
@@ -350,24 +359,6 @@ function one_package_twice(entries: [Entry]) -> str
         at @ at + 1
 
     return ""
-
-## Small readers
-
-# An entry's name, the alias a `use` writes between `<` `>`: lowercase letters,
-# digits and `_`, starting with a letter.
-function entry_name(name: str) -> bool
-    if name.len() == 0 || !(name[0] >= 'a' && name[0] <= 'z')
-        return false
-    at: i64 @= 1
-
-    while at < name.len()
-        b = name[at]
-
-        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
-            return false
-        at @ at + 1
-
-    return true
 
 ## Tests
 

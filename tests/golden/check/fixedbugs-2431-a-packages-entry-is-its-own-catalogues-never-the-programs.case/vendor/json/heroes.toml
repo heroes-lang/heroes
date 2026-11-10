@@ -1,0 +1,4 @@
+# The package's own catalogue of defect 2431's case beside it: the folder
+# the program calls `core`, under the alias `text`.
+[dependencies.text]
+path = "../core"

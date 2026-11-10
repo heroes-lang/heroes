@@ -1,0 +1,62 @@
+# The private modules (spec § 1; panel 235's R16, ratified 2026-11-07, the
+# program's own folders as well as a package's): a module under an `internal`
+# folder is named only by the module that folder belongs to and by the
+# modules under it, Go's rule for `internal` since Go 1.4. One rule in one
+# place, asked of every `use` line by the graph (`modules.errors`), and of
+# every line a message offers: what a missing `use` is offered
+# (`module/answering.hero`, `resolve/qualified.hero`) and the lines a bare
+# `use` of a package's entry is offered (`module/package_told.hero`).
+#
+# It stood in `package_told.hero`, what a `use` reaching a package is told,
+# until defect 2431's repair took that file past CLAUDE.md §11's ceiling; the
+# rule binds every module and not a package's alone, which was the seam.
+
+use ast
+use cli/strings
+use diag
+use module/placed
+use placed_use
+use source
+
+# Every `use` naming a private module from outside its owner:
+# `<core>/strings/internal/scan` is `<core>/strings`'s, the module before the
+# LAST `internal` part, and only that module and the modules under it name it.
+function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= found
+
+    for used in uses
+        from = source.module_at(s, used.span.start)
+        name = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
+
+        if !reaches(from: from, name: name)
+            owner = owner_of(name)
+            out @ out.push(
+                diag.new_diagnostic(code: "private_module", message: "`" + name + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `" + owner + "` offers instead", span: used.name)
+            )
+
+    return out
+
+# Whether the module `from` may name `name`: `name` stands under no
+# `internal` folder, or `from` is the module that folder belongs to or a
+# module under it.
+function reaches(from: str, name: str) -> bool
+    owner = owner_of(name)
+    return owner.len() == 0 || from == owner || strings.starts_with(text: from, prefix: owner + "/")
+
+# The module a private module belongs to, "" for one under no `internal`:
+# `placed_use.internal_owner`, which the parser asks too of a `use` naming a
+# placed tree (defect 2390), one rule in one place.
+function owner_of(name: str) -> str
+    return placed_use.internal_owner(name)
+
+test "a private module is its owner's and its owner's modules' alone"
+    assert owner_of("<core>/strings/internal/scan") == "<core>/strings"
+    assert owner_of("<core>/strings") == ""
+    assert owner_of("a/internal/b/internal/c") == "a/internal/b"
+    assert owner_of("internalx/y") == ""
+    assert owner_of("a/internals/b") == ""
+    assert reaches(from: "<core>/strings", name: "<core>/strings/internal/scan")
+    assert reaches(from: "<core>/strings/split", name: "<core>/strings/internal/scan")
+    assert !reaches(from: "<core>/stringsx", name: "<core>/strings/internal/scan")
+    assert !reaches(from: "main", name: "lib/internal/strs")
+    assert reaches(from: "main", name: "lib/strs")
