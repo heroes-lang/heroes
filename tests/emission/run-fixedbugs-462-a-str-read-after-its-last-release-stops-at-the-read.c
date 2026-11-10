@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -95,7 +96,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_88572c6, "given back");
 
-#line 99 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 100 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -147,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 152 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +173,7 @@ void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) { HeroSt
     t5 = h0_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero", "fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.main", 25, 20}; t6 = hero_str_lend_at(t5, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero", "fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.main", 25, 5}; (void)release_all(hero_cstr_nonnull_at(t6, &hero_here)); }
     t7 = h0_word; t8 = hero_str_len(t7); hero_print_int(t8); hero_print_end();
     t9 = h0_word; t10 = INT64_C(0); t11 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero", "fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.main", 27, 11}; t12 = hero_str_slice_at(t9, t10, t11, &hero_here); } t15 = h2_own2; h2_own2 = t12; hero_str_decref(t15); hero_print_str(t12); hero_print_end();
-#line 176 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 177 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

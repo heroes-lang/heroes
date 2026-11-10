@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -99,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1e4f0b6f, "grow failed, block kept: ");
 HERO_STR_STATIC(hero_str_614b144d, "grown: ");
 
-#line 103 "handletransferintoanullresultisnotmade.c"
+#line 104 "handletransferintoanullresultisnotmade.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "handletransferintoanullresultisnotmade.c"
+#line 159 "handletransferintoanullresultisnotmade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_0Mem_eq(mem * const *a, mem * const *b);
@@ -191,7 +192,7 @@ void h_handletransferintoanullresultisnotmade_main(void) { mem * h0_p; mem * h1_
 #line 25
     t21 = HERO_STR_LIT(hero_str_614b144d); t22 = h3_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 25, 26}; hero_handle_alive_at(t22, "the argument `m` of `mem_size`", &hero_here); t23 = mem_size(t22); } hero_print_str(t21); hero_print_int(t23); hero_print_end();
     t24 = h3_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 26, 9}; { hero_handle_alive_at(t24, "the argument `m` of `mem_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "mem_free", NULL, &hero_here); (void)mem_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h3_t == t24) h3_t = hero_handle_dead(); } } goto bb4; bb6: goto bb4;
-#line 195 "handletransferintoanullresultisnotmade.c"
+#line 196 "handletransferintoanullresultisnotmade.c"
 }
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_0Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);

@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -91,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 95 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 96 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -141,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 146 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -163,7 +164,7 @@ void h_fixedbugs2075amacrothatnamesitselfisexpandedonce_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
 int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(void) {
-#line 167 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 168 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
     _Static_assert(HERO_RET_I32(SELF_W), "heroes-ffi-return SELF_W i32");
     _Static_assert(__builtin_constant_p(SELF_W), "heroes-ffi-const SELF_W");
 #pragma clang diagnostic push
@@ -175,7 +176,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
     return SELF_W;
-#line 179 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 180 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -193,7 +194,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(void) {
 
 #line 11 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
 int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(void) {
-#line 197 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 198 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
     _Static_assert(HERO_RET_I32(SELF_V), "heroes-ffi-return SELF_V i32");
     _Static_assert(__builtin_constant_p(SELF_V), "heroes-ffi-const SELF_V");
 #pragma clang diagnostic push
@@ -205,7 +206,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
     return SELF_V;
-#line 209 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 210 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -225,7 +226,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(void) {
 void h_fixedbugs2075amacrothatnamesitselfisexpandedonce_main(void) { HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(); hero_print_int(t2); hero_print_end(); return;
-#line 229 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 230 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

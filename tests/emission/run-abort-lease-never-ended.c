@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -94,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_642cda73, "twelve bytes");
 
-#line 98 "abortleaseneverended.c"
+#line 99 "abortleaseneverended.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "abortleaseneverended.c"
+#line 151 "abortleaseneverended.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -168,7 +169,7 @@ void h_abortleaseneverended_main(void);
 void h_abortleaseneverended_main(void) { const char * h0_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3; HERO_NODEBUG uint64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_642cda73); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-lease-never-ended.hero", "abort-lease-never-ended.main", 12, 15}; t2 = hero_str_held_at(t1, &hero_here); } h0_c = t2;
     t3 = h0_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-lease-never-ended.hero", "abort-lease-never-ended.main", 13, 11}; t4 = strlen(hero_cstr_nonnull_at(t3, &hero_here)); } hero_print_uint(t4); hero_print_end(); return;
-#line 172 "abortleaseneverended.c"
+#line 173 "abortleaseneverended.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

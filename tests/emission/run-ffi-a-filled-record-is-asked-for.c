@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -66,7 +67,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 36 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 _Static_assert(sizeof(struct slot) - __builtin_offsetof(struct slot, name) != 0, "heroes-ffi-flex Slot name"); _Static_assert(_Generic(&((struct slot *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot name");
-#line 70 "ffiafilledrecordisaskedfor.c"
+#line 71 "ffiafilledrecordisaskedfor.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "ffiafilledrecordisaskedfor.c"
+#line 160 "ffiafilledrecordisaskedfor.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_0Slot_eq(const struct slot *a, const struct slot *b);
@@ -198,7 +199,7 @@ __attribute__((__noinline__)) void h_ffiafilledrecordisaskedfor_blank(struct slo
 #line 42
     HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot *const hero_big_t10 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = *(struct slot *)__builtin_memset(&t10, 0, sizeof t10); t10.name[0] = t1; t10.name[1] = t2; t10.name[2] = t3; t10.name[3] = t4; t10.name[4] = t5; t10.name[5] = t6; t10.name[6] = t7; t10.name[7] = t8; if (hero_out != NULL) *hero_out = t10; hero_frame_give(hero_big_t10); return;
-#line 202 "ffiafilledrecordisaskedfor.c"
+#line 203 "ffiafilledrecordisaskedfor.c"
 }
 #undef t10
 __attribute__((unused)) struct slot hero_value_h_ffiafilledrecordisaskedfor_blank(void) {
@@ -222,13 +223,13 @@ __attribute__((__noinline__)) void h_ffiafilledrecordisaskedfor_main(void) {
     t12 = h0_s; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t25 = h4_own4; h4_own4 = t14; h_0opt_f87774a_release(&t25); t26 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t26); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
 #line 47
     t8 = h1_f0; t9 = t8.as.err;
-#line 226 "ffiafilledrecordisaskedfor.c"
+#line 227 "ffiafilledrecordisaskedfor.c"
     hero_panic_must_at(t9, "ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 47, 9);
     hero_unreachable();
 bb3:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t21 = h2_f1; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
-#line 232 "ffiafilledrecordisaskedfor.c"
+#line 233 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
@@ -240,7 +241,7 @@ bb3:
 bb4:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t19 = h2_f1; t20 = t19.as.err;
-#line 244 "ffiafilledrecordisaskedfor.c"
+#line 245 "ffiafilledrecordisaskedfor.c"
     hero_panic_must_at(t20, "ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 48, 11);
     hero_unreachable();
 }

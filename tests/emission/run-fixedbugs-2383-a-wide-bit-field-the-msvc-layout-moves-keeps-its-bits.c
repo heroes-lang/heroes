@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -63,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 10 "tests/golden/run/fixedbugs-2383-a-wide-bit-field-the-msvc-layout-moves-keeps-its-bits.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2383_wide *)0)->x) == 1 && sizeof(((struct fixedbugs_2383_wide *)0)->x) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2383_wide *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Wide x");
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2383_wide *)0)->a) == 1 && sizeof(((struct fixedbugs_2383_wide *)0)->a) == sizeof(uint8_t) && (_Generic(((struct fixedbugs_2383_wide *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Wide a");
-#line 67 "fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits.c"
+#line 68 "fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,7 +160,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits.c"
+#line 164 "fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_0Wide_eq(const struct fixedbugs_2383_wide *a, const struct fixedbugs_2383_wide *b);
@@ -217,7 +218,7 @@ __attribute__((__noinline__)) void h_fixedbugs2383awidebitfieldthemsvclayoutmove
     h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held *const hero_big_h0_h = (h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held *)hero_frame_take(sizeof(h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held)); HERO_NODEBUG struct fixedbugs_2383_wide *const hero_big_t1 = (struct fixedbugs_2383_wide *)hero_frame_take(sizeof(struct fixedbugs_2383_wide)); HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held *const hero_big_t3 = (h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held *)hero_frame_take(sizeof(h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held)); HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2383-a-wide-bit-field-the-msvc-layout-moves-keeps-its-bits.hero", "fixedbugs-2383-a-wide-bit-field-the-msvc-layout-moves-keeps-its-bits.main", 20, 26}; t1 = fixedbugs_2383_mk_wide(); } t2 = INT64_C(1); t3 = *(h_fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits_Held *)__builtin_memset(&t3, 0, sizeof t3); t3.f_one = t1; t3.f_k = t2; h0_h = t3;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2383-a-wide-bit-field-the-msvc-layout-moves-keeps-its-bits.hero", "fixedbugs-2383-a-wide-bit-field-the-msvc-layout-moves-keeps-its-bits.main", 21, 11}; hero_pad_fill(&h0_h.f_one, sizeof(struct fixedbugs_2383_wide), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_one, sizeof(struct fixedbugs_2383_wide), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2383_check_wide(&h0_h.f_one); } hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_h); return;
-#line 221 "fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits.c"
+#line 222 "fixedbugs2383awidebitfieldthemsvclayoutmoveskeepsitsbits.c"
 }
 #undef h0_h
 #undef t1

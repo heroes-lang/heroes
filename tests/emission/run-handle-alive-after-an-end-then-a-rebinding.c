@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -97,7 +98,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6f955e8a, "renewed: ");
 
-#line 101 "handlealiveafteranendthenarebinding.c"
+#line 102 "handlealiveafteranendthenarebinding.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "handlealiveafteranendthenarebinding.c"
+#line 156 "handlealiveafteranendthenarebinding.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_0Node_eq(node * const *a, node * const *b);
@@ -178,7 +179,7 @@ void h_handlealiveafteranendthenarebinding_main(void) { node * h0_n; HERO_NODEBU
     t4 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-then-a-rebinding.hero", "handle-alive-after-an-end-then-a-rebinding.main", 14, 9}; t5 = node_new(t4); hero_handle_acquired_at(t5, "node_free", &hero_here); } h0_n = t5;
     t6 = HERO_STR_LIT(hero_str_6f955e8a); t7 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-then-a-rebinding.hero", "handle-alive-after-an-end-then-a-rebinding.main", 15, 24}; hero_handle_alive_at(t7, "the argument `n` of `node_peek`", &hero_here); t8 = node_peek(t7); } hero_print_str(t6); hero_print_int(t8); hero_print_end();
     t9 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-then-a-rebinding.hero", "handle-alive-after-an-end-then-a-rebinding.main", 16, 5}; { hero_handle_alive_at(t9, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t9, "node_free", NULL, &hero_here); (void)node_free(t9); if (hero_handle_ended(t9, hero_life_0_0) && h0_n == t9) h0_n = hero_handle_dead(); } } return;
-#line 182 "handlealiveafteranendthenarebinding.c"
+#line 183 "handlealiveafteranendthenarebinding.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

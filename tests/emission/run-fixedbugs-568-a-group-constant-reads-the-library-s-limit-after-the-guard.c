@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -91,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 95 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 96 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -141,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 146 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -164,7 +165,7 @@ void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(void) {
-#line 168 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 169 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
     _Static_assert(HERO_RET_I32(CASE_LIMIT), "heroes-ffi-return CASE_LIMIT i32");
     _Static_assert(__builtin_constant_p(CASE_LIMIT), "heroes-ffi-const CASE_LIMIT");
 #pragma clang diagnostic push
@@ -176,7 +177,7 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LIMIT;
-#line 180 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 181 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -194,12 +195,12 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(void) {
-#line 198 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 199 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
     _Static_assert(HERO_RET_F64(CASE_HUGE), "heroes-ffi-return CASE_HUGE f64");
     _Static_assert(__builtin_constant_p(CASE_HUGE), "heroes-ffi-const CASE_HUGE");
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_HUGE;
-#line 203 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 204 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -216,7 +217,7 @@ double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(
 
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(void) {
-#line 220 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 221 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
     _Static_assert(HERO_RET_INT(CASE_LOW), "heroes-ffi-return CASE_LOW i64");
     _Static_assert(__builtin_constant_p(CASE_LOW), "heroes-ffi-const CASE_LOW");
 #pragma clang diagnostic push
@@ -228,7 +229,7 @@ int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LOW;
-#line 232 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 233 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -249,7 +250,7 @@ void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void) {
     t1 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(); t3 = 0x1.e848p+19; if (t2 != t2 || t3 != t3) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero", "fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.main", 17, 11); t4 = t2 > t3; hero_print_bool(t4); hero_print_end();
     t5 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(); t6 = INT64_C(0); t7 = t5 < t6; hero_print_bool(t7); hero_print_end(); return;
-#line 253 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 254 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

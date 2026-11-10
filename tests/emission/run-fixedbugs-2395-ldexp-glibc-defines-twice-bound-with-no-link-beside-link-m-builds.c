@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -101,7 +102,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 105 "main.c"
+#line 106 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -155,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "main.c"
+#line 160 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -179,19 +180,19 @@ double h_pair_scaled(void);
 void h_main_main(void) { HERO_NODEBUG double t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_pair_scaled(); hero_print_f64(t1); hero_print_end();
     t2 = h_mathy_root(); hero_print_f64(t2); hero_print_end(); return;
-#line 183 "main.c"
+#line 184 "main.c"
 }
 
 #line 5 "tests/golden/run/fixedbugs-2395-ldexp-glibc-defines-twice-bound-with-no-link-beside-link-m-builds.case/mathy.hero"
 double h_mathy_root(void) { HERO_NODEBUG double t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1p+4; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"mathy.hero", "mathy.root", 6, 12}; t2 = sqrt(t1); } return t2;
-#line 189 "main.c"
+#line 190 "main.c"
 }
 
 #line 5 "tests/golden/run/fixedbugs-2395-ldexp-glibc-defines-twice-bound-with-no-link-beside-link-m-builds.case/pair.hero"
 double h_pair_scaled(void) { HERO_NODEBUG double t1, t3; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.8p+0; t2 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"pair.hero", "pair.scaled", 6, 12}; t3 = ldexp(t1, t2); } return t3;
-#line 195 "main.c"
+#line 196 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

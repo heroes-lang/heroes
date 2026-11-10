@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -100,7 +101,7 @@ HERO_STR_STATIC(hero_str_6d95b666, "ob_up_ref(a: cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 HERO_STR_STATIC(hero_str_2507a7e5, "two releases through one name, and both were owed");
 
-#line 104 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 105 "deadhandletworeleasesthroughonenamewithretains.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 159 "deadhandletworeleasesthroughonenamewithretains.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandletworeleasesthroughonenamewithretains_0X509_eq(ob * const *a, ob * const *b);
@@ -183,7 +184,7 @@ void h_deadhandletworeleasesthroughonenamewithretains_main(void) { ob * h0_cert;
     t11 = HERO_STR_LIT(hero_str_7034b02b); t12 = h0_cert; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-two-releases-through-one-name-with-retains.hero", "dead-handle-two-releases-through-one-name-with-retains.main", 23, 32}; hero_handle_alive_at(t12, "the argument `a` of `ob_refs`", &hero_here); t13 = ob_refs(t12); } hero_print_str(t11); hero_print_int(t13); hero_print_end();
     t14 = h0_cert; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-two-releases-through-one-name-with-retains.hero", "dead-handle-two-releases-through-one-name-with-retains.main", 24, 5}; { hero_handle_alive_at(t14, "the argument `a` of `ob_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t14, "ob_put", NULL, &hero_here); (void)ob_put(t14); if (hero_handle_ended(t14, hero_life_0_0) && h0_cert == t14) h0_cert = hero_handle_dead(); } }
     t15 = HERO_STR_LIT(hero_str_2507a7e5); hero_print_str(t15); hero_print_end(); return; bb2:
-#line 187 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 188 "deadhandletworeleasesthroughonenamewithretains.c"
     hero_panic_assert_shown_at(t2, hero_show_i32, &t4, &t5, 1, "dead-handle-two-releases-through-one-name-with-retains.hero", "dead-handle-two-releases-through-one-name-with-retains.main", 20, 12);
     hero_unreachable();
 }

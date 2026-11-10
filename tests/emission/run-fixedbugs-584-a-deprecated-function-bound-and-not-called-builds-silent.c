@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -93,7 +94,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent.c"
+#line 98 "fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent.c"
+#line 151 "fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -167,7 +168,7 @@ void h_fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent_main(void);
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-function-bound-and-not-called-builds-silent.hero"
 void h_fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(14); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-584-a-deprecated-function-bound-and-not-called-builds-silent.hero", "fixedbugs-584-a-deprecated-function-bound-and-not-called-builds-silent.main", 18, 11}; t2 = thrice(t1); } hero_print_int(t2); hero_print_end(); return;
-#line 171 "fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent.c"
+#line 172 "fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

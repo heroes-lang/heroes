@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -96,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6ec3571b, "b == c: ");
 
-#line 100 "fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace.c"
+#line 101 "fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace.c"
 typedef struct h_fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace_Box {
     outer * f_h;
 } h_fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace_Box;
@@ -153,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace.c"
+#line 158 "fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace_0Outer_eq(outer * const *a, outer * const *b);
@@ -182,7 +183,7 @@ void h_fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace_main(void) { h_fi
     t7 = h0_b.f_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2258-eq-on-records-holding-a-dead-handle-names-its-place.hero", "fixedbugs-2258-eq-on-records-holding-a-dead-handle-names-its-place.main", 20, 5}; { hero_handle_alive_at(t7, "the argument `o` of `release`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t7, "release", NULL, &hero_here); (void)release(t7); if (hero_handle_ended(t7, hero_life_0_0) && h0_b.f_h == t7) h0_b.f_h = hero_handle_dead(); } }
     t8 = HERO_STR_LIT(hero_str_6ec3571b); t9 = h0_b; t10 = h1_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2258-eq-on-records-holding-a-dead-handle-names-its-place.hero", "fixedbugs-2258-eq-on-records-holding-a-dead-handle-names-its-place.main", 21, 23}; hero_handle_eq_from(&hero_here); t11 = h_fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace_0Box_eq(&t9, &t10); hero_handle_eq_from(NULL); } hero_print_str(t8); hero_print_bool(t11); hero_print_end();
     t12 = h1_c.f_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2258-eq-on-records-holding-a-dead-handle-names-its-place.hero", "fixedbugs-2258-eq-on-records-holding-a-dead-handle-names-its-place.main", 22, 5}; { hero_handle_alive_at(t12, "the argument `o` of `release`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t12, "release", NULL, &hero_here); (void)release(t12); if (hero_handle_ended(t12, hero_life_0_0) && h1_c.f_h == t12) h1_c.f_h = hero_handle_dead(); } } return;
-#line 186 "fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace.c"
+#line 187 "fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2258eqonrecordsholdingadeadhandlenamesitsplace_0Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

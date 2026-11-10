@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -96,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6da75841, "kept == a: ");
 
-#line 100 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
+#line 101 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
+#line 154 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2258eqonahandlegivenbacknamesitsplace_0Outer_eq(outer * const *a, outer * const *b);
@@ -173,7 +174,7 @@ void h_fixedbugs2258eqonahandlegivenbacknamesitsplace_main(void);
 #line 14 "tests/golden/run/fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.hero"
 void h_fixedbugs2258eqonahandlegivenbacknamesitsplace_closed(outer * *ph0_x) { HERO_NODEBUG outer *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_x); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.hero", "fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.closed", 15, 5}; { hero_handle_alive_at(t1, "the argument `o` of `release`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "release", NULL, &hero_here); (void)release(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_x) == t1) (*ph0_x) = hero_handle_dead(); } } return;
-#line 177 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
+#line 178 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.hero"
@@ -182,7 +183,7 @@ void h_fixedbugs2258eqonahandlegivenbacknamesitsplace_main(void) { outer * h0_a;
     t3 = h0_a; h1_kept = t3;
     h_fixedbugs2258eqonahandlegivenbacknamesitsplace_closed(&h0_a);
     t4 = HERO_STR_LIT(hero_str_6da75841); t5 = h1_kept; t6 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.hero", "fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.main", 21, 26}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } hero_print_str(t4); hero_print_bool(t7); hero_print_end(); return;
-#line 186 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
+#line 187 "fixedbugs2258eqonahandlegivenbacknamesitsplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2258eqonahandlegivenbacknamesitsplace_0Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

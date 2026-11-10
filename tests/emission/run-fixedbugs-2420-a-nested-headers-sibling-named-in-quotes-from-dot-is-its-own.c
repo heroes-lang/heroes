@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -91,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 95 "main.c"
+#line 96 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -141,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "main.c"
+#line 146 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -162,7 +163,7 @@ void h_main_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-2420-a-nested-headers-sibling-named-in-quotes-from-dot-is-its-own.case/main.hero"
 int64_t h_main_CLOCK_TICKS(void) {
-#line 166 "main.c"
+#line 167 "main.c"
     _Static_assert(HERO_RET_INT(CLOCK_TICKS), "heroes-ffi-return CLOCK_TICKS i64");
     _Static_assert(__builtin_constant_p(CLOCK_TICKS), "heroes-ffi-const CLOCK_TICKS");
 #pragma clang diagnostic push
@@ -174,7 +175,7 @@ int64_t h_main_CLOCK_TICKS(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-2420-a-nested-headers-sibling-named-in-quotes-from-dot-is-its-own.case/main.hero"
     return CLOCK_TICKS;
-#line 178 "main.c"
+#line 179 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -193,7 +194,7 @@ int64_t h_main_CLOCK_TICKS(void) {
 #line 12 "tests/golden/run/fixedbugs-2420-a-nested-headers-sibling-named-in-quotes-from-dot-is-its-own.case/main.hero"
 void h_main_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_main_CLOCK_TICKS(); hero_print_int(t1); hero_print_end(); return;
-#line 197 "main.c"
+#line 198 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -58,7 +59,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 12 "tests/golden/run/fixedbugs-2284-a-partial-record-of-many-nested-named-members-builds.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_nest *)0)->first) == 1 && sizeof(((struct heroes_nest *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_nest *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 62 "fixedbugs2284apartialrecordofmanynestednamedmembersbuilds.c"
+#line 63 "fixedbugs2284apartialrecordofmanynestednamedmembersbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -147,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs2284apartialrecordofmanynestednamedmembersbuilds.c"
+#line 152 "fixedbugs2284apartialrecordofmanynestednamedmembersbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2284apartialrecordofmanynestednamedmembersbuilds_0Held_eq(const struct heroes_nest *a, const struct heroes_nest *b);
@@ -229,7 +230,7 @@ __attribute__((__noinline__)) void h_fixedbugs2284apartialrecordofmanynestedname
     struct heroes_nest *const hero_big_h0_held = (struct heroes_nest *)hero_frame_take(sizeof(struct heroes_nest)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_nest *const hero_big_t2 = (struct heroes_nest *)hero_frame_take(sizeof(struct heroes_nest)); HERO_NODEBUG struct heroes_nest *const hero_big_t3 = (struct heroes_nest *)hero_frame_take(sizeof(struct heroes_nest)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = *(struct heroes_nest *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h0_held = t2; hero_pad_fill(&h0_held, sizeof(struct heroes_nest), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2284-a-partial-record-of-many-nested-named-members-builds.hero", "fixedbugs-2284-a-partial-record-of-many-nested-named-members-builds.main", 17, 11}; t4 = heroes_nest_first(t3); } hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_held); return;
-#line 233 "fixedbugs2284apartialrecordofmanynestednamedmembersbuilds.c"
+#line 234 "fixedbugs2284apartialrecordofmanynestednamedmembersbuilds.c"
 }
 #undef h0_held
 #undef t2

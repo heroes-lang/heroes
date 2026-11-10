@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -97,7 +98,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_210c7913, "on a thread");
 
-#line 101 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 102 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 159 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -190,7 +191,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_lend(
     t1 = INT64_C(0); h0_n = t1;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.lend", 21, 5}; hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n); }
     t2 = h0_n; hero_lend_local_give(hero_lend_h0_n); return t2;
-#line 194 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 195 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 #undef h0_n
 
@@ -199,7 +200,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worke
     t1 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_lend(); h1_got = t1;
     t2 = h0_arg; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.worker", 26, 5}; (void)cell_write_later(t2); }
     t3 = h1_got; return t3;
-#line 203 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 204 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 
 int64_t h_0cb_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker(int64_t h0_arg) {
@@ -212,7 +213,7 @@ void h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_main(voi
     t1 = HERO_STR_LIT(hero_str_210c7913); hero_print_str(t1); hero_print_end();
     t2 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker; t3 = INT64_C(77); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.main", 31, 9}; t4 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } h0_t = t4;
     t5 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.main", 32, 11}; t6 = hero_thread_join(t5); } hero_print_int(t6); hero_print_end(); return;
-#line 216 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 217 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

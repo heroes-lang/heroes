@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -58,7 +59,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 12 "tests/golden/emit/fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2286_small *)0)->first) == 1 && sizeof(((struct fixedbugs_2286_small *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2286_small *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Small first");
-#line 62 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
+#line 63 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -148,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
+#line 153 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_0Small_eq(const struct fixedbugs_2286_small *a, const struct fixedbugs_2286_small *b);
@@ -185,7 +186,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286thethunkofaconvertedfunctionis
 #line 15
     hero_thread_guard("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.make"); HERO_NODEBUG int64_t t1; HERO_NODEBUG struct fixedbugs_2286_small *const hero_big_t2 = (struct fixedbugs_2286_small *)hero_frame_take(sizeof(struct fixedbugs_2286_small)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2286_small *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 189 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
+#line 190 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
 }
 #undef t2
 
@@ -203,7 +204,7 @@ __attribute__((unused)) struct fixedbugs_2286_small hero_value_h_fixedbugs2286th
 #line 18 "tests/golden/emit/fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.hero"
 void h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_main(void) { HERO_NODEBUG h_0fn_42b7cb7f t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make; t2 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.hero", "fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.main", 19, 11}; t3 = fixedbugs_2286_apply((h_0fn_42b7cb7f)hero_callback_of((void (*)(void))t1), t2); } hero_print_int(t3); hero_print_end(); return;
-#line 207 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
+#line 208 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_0Small_eq(const struct fixedbugs_2286_small *a, const struct fixedbugs_2286_small *b) {
     hero_panic("h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_0Small_eq: a partial record has no structural equality");

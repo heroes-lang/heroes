@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -105,7 +106,7 @@ _Static_assert(_Generic(&((struct fixedbugs_2346_p9 *)0)->right, struct fixedbug
 #line 44
 _Static_assert(_Generic(&((struct fixedbugs_2346_p10 *)0)->left, struct fixedbugs_2346_p9 *: 1, default: 0) && sizeof(((struct fixedbugs_2346_p10 *)0)->left) == sizeof(struct fixedbugs_2346_p9), "heroes-ffi-field P10 left");
 _Static_assert(_Generic(&((struct fixedbugs_2346_p10 *)0)->right, struct fixedbugs_2346_p9 *: 1, default: 0) && sizeof(((struct fixedbugs_2346_p10 *)0)->right) == sizeof(struct fixedbugs_2346_p9), "heroes-ffi-field P10 right");
-#line 109 "fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit.c"
+#line 110 "fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -196,7 +197,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 200 "fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit.c"
+#line 201 "fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit_0P0_eq(const struct fixedbugs_2346_p0 *a, const struct fixedbugs_2346_p0 *b);
@@ -255,7 +256,7 @@ __attribute__((__noinline__)) void h_fixedbugs2346thepaddingofachainofnamedhalve
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2346-the-padding-of-a-chain-of-named-halves-is-zero-where-c-reads-it.hero", "fixedbugs-2346-the-padding-of-a-chain-of-named-halves-is-zero-where-c-reads-it.main", 50, 19}; t1 = fixedbugs_2346_p_make(); } h0_chain = t1; hero_pad_fill(&h0_chain, sizeof(struct fixedbugs_2346_p10), 1, hero_pad_g_10, hero_pad_n_10);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2346-the-padding-of-a-chain-of-named-halves-is-zero-where-c-reads-it.hero", "fixedbugs-2346-the-padding-of-a-chain-of-named-halves-is-zero-where-c-reads-it.main", 51, 11}; hero_lend_local_name(hero_lend_h0_chain, "fixedbugs_2346_p_check", "p"); hero_pad_fill(&h0_chain, sizeof(struct fixedbugs_2346_p10), 1, hero_pad_g_10, hero_pad_n_10); t2 = fixedbugs_2346_p_check(&h0_chain); } hero_print_int(t2); hero_print_end();
     t3 = h0_chain.right.right.right.right.right.right.right.right.right.right.b; hero_print_int(t3); hero_print_end(); hero_lend_local_give(hero_lend_h0_chain); hero_frame_give(hero_big_t1); return;
-#line 259 "fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit.c"
+#line 260 "fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit.c"
 }
 #undef h0_chain
 #undef t1

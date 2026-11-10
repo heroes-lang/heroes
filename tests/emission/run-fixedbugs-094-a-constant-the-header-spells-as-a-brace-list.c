@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -59,11 +60,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 21 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 63 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 64 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 
 #line 20 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->x) == sizeof(struct pt), "heroes-ffi-union-narrow Pt x"); _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->y) == sizeof(struct pt), "heroes-ffi-union-narrow Pt y");
-#line 67 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 68 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -151,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 156 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasabracelist_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -182,7 +183,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
-#line 186 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 187 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -194,7 +195,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     static struct pt hero_constant_value = PT_INIT;
-#line 198 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 199 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -217,7 +218,7 @@ void h_fixedbugs094aconstanttheheaderspellsasabracelist_main(void) { struct pt h
     t2 = h0_p.x; hero_print_int(t2); hero_print_end();
     t3 = h0_p.y; hero_print_int(t3); hero_print_end();
     t4 = h0_p; t5 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(); t6 = h_fixedbugs094aconstanttheheaderspellsasabracelist_0Pt_eq(&t4, &t5); hero_print_bool(t6); hero_print_end(); return;
-#line 221 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 222 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasabracelist_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

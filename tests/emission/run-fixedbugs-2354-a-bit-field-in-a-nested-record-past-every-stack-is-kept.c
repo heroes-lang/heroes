@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -62,7 +63,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2354_nested *)0)->a) == 1 && sizeof(((struct fixedbugs_2354_nested *)0)->a) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2354_nested *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nested a");
-#line 66 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
+#line 67 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
+#line 160 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2354abitfieldinanestedrecordpasteverystackiskept_0Nested_eq(const struct fixedbugs_2354_nested *a, const struct fixedbugs_2354_nested *b);
@@ -220,7 +221,7 @@ __attribute__((__noinline__)) void h_fixedbugs2354abitfieldinanestedrecordpastev
     t2 = INT64_C(7); t3 = *(struct fixedbugs_2354_nested *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.a = t2; h0_held = t3; hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_m_0, hero_pad_mn_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.hero", "fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.main", 16, 5}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_nested_dirty", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_m_0, hero_pad_mn_0); (void)fixedbugs_2354_nested_dirty(&h0_held); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.hero", "fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.main", 17, 11}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_nested_check", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2354_nested_check(&h0_held); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_held); hero_frame_give(hero_big_t3); return;
-#line 224 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
+#line 225 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
 }
 #undef h0_held
 #undef t3

@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -96,7 +97,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 100 "fixedbugsacfunctioncrossesasacallback.c"
+#line 101 "fixedbugsacfunctioncrossesasacallback.c"
 typedef void (*h_0fn_406f9b0)(void *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -150,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugsacfunctioncrossesasacallback.c"
+#line 155 "fixedbugsacfunctioncrossesasacallback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -181,7 +182,7 @@ void h_fixedbugsacfunctioncrossesasacallback_main(void) { void * h0_b; HERO_NODE
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 44, 11}; t5 = blob_first(); } hero_print_int(t5); hero_print_end();
 #line 47
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 47, 11}; t6 = blob_frees(); } hero_print_int(t6); hero_print_end(); return;
-#line 185 "fixedbugsacfunctioncrossesasacallback.c"
+#line 186 "fixedbugsacfunctioncrossesasacallback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -112,7 +113,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 116 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 117 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -169,7 +170,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 173 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 174 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed_0Db_eq(sqlite3 * const *a, sqlite3 * const *b);
@@ -197,7 +198,7 @@ __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char
 
 #line 13 "tests/golden/run/fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero"
 int64_t h_fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed_SQLITE_OK(void) {
-#line 201 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 202 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
     _Static_assert(HERO_RET_INT(SQLITE_OK), "heroes-ffi-return SQLITE_OK i64");
     _Static_assert(__builtin_constant_p(SQLITE_OK), "heroes-ffi-const SQLITE_OK");
 #pragma clang diagnostic push
@@ -209,7 +210,7 @@ int64_t h_fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed_SQLITE_O
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero"
     return SQLITE_OK;
-#line 213 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 214 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -240,14 +241,14 @@ void h_fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed_main(void) 
     t8 = ((void *)0); h1_statement = t8;
     t9 = ((void *)0); h2_tail = t9;
     t10 = HERO_STR_LIT(hero_str_5f071f6a); t11 = h0_db; t12 = HERO_STR_LIT(hero_str_5689c81); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 28, 44}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 28, 12}; hero_lend_local_name(hero_lend_h1_statement, "sqlite3_prepare_v2", "statement"); hero_lend_local_name(hero_lend_h2_tail, "sqlite3_prepare_v2", "tail"); hero_handle_alive_at(t11, "the argument `db` of `sqlite3_prepare_v2`", &hero_here); t15 = sqlite3_prepare_v2(t11, hero_cstr_nonnull_at(t13, &hero_here), t14, &h1_statement, &h2_tail); hero_handle_acquired_at(h1_statement, "sqlite3_finalize", &hero_here); } t16 = h_fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed_SQLITE_OK(); t17 = t15 == t16; if (t17) goto bb3; else goto bb4; bb2:
-#line 244 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 245 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
     hero_panic_assert_shown_at(t2, hero_show_i64, &t5, &t6, 1, "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 25, 12);
     hero_unreachable();
 bb3:
 #line 29 "tests/golden/run/fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero"
     t18 = HERO_STR_LIT(hero_str_51010b14); t19 = h0_db; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 29, 50}; { hero_handle_alive_at(t19, "the argument `db` of `sqlite3_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "sqlite3_close", NULL, &hero_here); t20 = sqlite3_close(t19); if (t20 == 0LL) { if (hero_handle_ended(t19, hero_life_0_0) && h0_db == t19) h0_db = hero_handle_dead(); } else { hero_handle_kept(t19, hero_life_0_0); } } } hero_print_str(t18); hero_print_int(t20); hero_print_end();
     t21 = HERO_STR_LIT(hero_str_17ec5cfb); t22 = h0_db; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 30, 28}; hero_handle_alive_at(t22, "the argument `db` of `sqlite3_errmsg`", &hero_here); t23 = (const char *)sqlite3_errmsg(t22); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 30, 28}; t24 = h_library_validated(t23, &hero_here); } t42 = h5_own5; h5_own5 = t24; h_0opt_f87774a_release(&t42); t43 = h3_f0; h_0opt_f87774a_retain(&t24); h3_f0 = t24; h_0opt_f87774a_release(&t43); t25 = h3_f0; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb5; else goto bb6; bb4:
-#line 251 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 252 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
     hero_panic_assert_shown_at(t10, hero_show_i64, &t15, &t16, 1, "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 28, 12);
     hero_unreachable();
 bb5:
@@ -256,7 +257,7 @@ bb5:
     t33 = HERO_STR_LIT(hero_str_3bff8858); t34 = h1_statement; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 31, 42}; hero_handle_alive_at(t34, "the argument `statement` of `sqlite3_step`", &hero_here); t35 = sqlite3_step(t34); } hero_print_str(t33); hero_print_int(t35); hero_print_end();
     t36 = HERO_STR_LIT(hero_str_52630375); t37 = h1_statement; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 32, 26}; { hero_handle_alive_at(t37, "the argument `statement` of `sqlite3_finalize`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t37, "sqlite3_finalize", NULL, &hero_here); t38 = sqlite3_finalize(t37); if (hero_handle_ended(t37, hero_life_0_0) && h1_statement == t37) h1_statement = hero_handle_dead(); } } hero_print_str(t36); hero_print_int(t38); hero_print_end();
     t39 = HERO_STR_LIT(hero_str_68312d6c); t40 = h0_db; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.hero", "fixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed.main", 33, 23}; { hero_handle_alive_at(t40, "the argument `db` of `sqlite3_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t40, "sqlite3_close", NULL, &hero_here); t41 = sqlite3_close(t40); if (t41 == 0LL) { if (hero_handle_ended(t40, hero_life_0_0) && h0_db == t40) h0_db = hero_handle_dead(); } else { hero_handle_kept(t40, hero_life_0_0); } } } hero_print_str(t39); hero_print_int(t41); hero_print_end();
-#line 260 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 261 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
@@ -271,7 +272,7 @@ bb5:
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 275 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 276 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
 }
 
 #line 152 "<heroes library>"
@@ -291,7 +292,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 295 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
+#line 296 "fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

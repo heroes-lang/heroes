@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -95,7 +96,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 99 "cfreesaleasethroughacallback.c"
+#line 100 "cfreesaleasethroughacallback.c"
 typedef void (*h_0fn_2b4640ec)(const char *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -149,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "cfreesaleasethroughacallback.c"
+#line 154 "cfreesaleasethroughacallback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -178,7 +179,7 @@ void h_cfreesaleasethroughacallback_main(void) { HeroStr h0_x = {0}; const char 
     t4 = INT64_C(2); hero_print_int(t4); hero_print_end();
     t5 = h1_c; t6 = eat; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-through-a-callback.hero", "c-frees-a-lease-through-a-callback.main", 16, 5}; (void)take_cb(hero_cstr_nonnull_at(t5, &hero_here), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6)); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-through-a-callback.hero", "c-frees-a-lease-through-a-callback.main", 17, 5}; hero_held_release_at(&h1_c, &hero_here); }
-#line 182 "cfreesaleasethroughacallback.c"
+#line 183 "cfreesaleasethroughacallback.c"
     hero_str_release_at(&h0_x);
     return;
 }

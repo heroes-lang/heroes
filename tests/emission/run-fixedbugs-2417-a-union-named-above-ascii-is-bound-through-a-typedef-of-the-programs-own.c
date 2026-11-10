@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -61,11 +62,11 @@ _Static_assert(__builtin_classify_type(((Via *)0)->fd) == 1 && sizeof(((Via *)0)
 #line 14
 _Static_assert(__builtin_classify_type(((struct tagged *)0)->kind) == 1 && sizeof(((struct tagged *)0)->kind) == sizeof(int32_t) && (_Generic(((struct tagged *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tagged kind");
 _Static_assert(_Generic(&((struct tagged *)0)->via, Via *: 1, default: 0) && sizeof(((struct tagged *)0)->via) == sizeof(Via), "heroes-ffi-field Tagged via");
-#line 65 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
+#line 66 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
 
 #line 13 "tests/golden/run/fixedbugs-2417-a-union-named-above-ascii-is-bound-through-a-typedef-of-the-programs-own.hero"
 _Static_assert(__builtin_classify_type(*(struct tagged *)0) != 13, "heroes-ffi-union Tagged kind via");
-#line 69 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
+#line 70 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -143,7 +144,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
+#line 148 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown_0Via_eq(const Via *a, const Via *b);
@@ -177,7 +178,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown_main(void) { struct tagged h0_t; HERO_NODEBUG int32_t t1, t2, t5, t7; HERO_NODEBUG Via t3; HERO_NODEBUG struct tagged t4; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2); t2 = INT64_C(3); t3 = (Via){.fd = t2}; t4 = (struct tagged){.kind = t1, .via = t3}; h0_t = t4; hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_1, hero_pad_n_1);
     t5 = h0_t.kind; t6 = HERO_STR_LIT(hero_str_20); t7 = h0_t.via.fd; hero_print_int(t5); hero_print_str(t6); hero_print_int(t7); hero_print_end(); return;
-#line 181 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
+#line 182 "fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2417aunionnamedaboveasciiisboundthroughatypedefoftheprogramsown_0Via_eq(const Via *a, const Via *b) {
     if (!(a->fd == b->fd)) return false;

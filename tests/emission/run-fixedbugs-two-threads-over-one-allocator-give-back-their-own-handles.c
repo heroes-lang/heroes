@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -100,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_31c3, "a ");
 HERO_STR_STATIC(hero_str_3246, "b ");
 
-#line 104 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 105 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -157,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 162 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_0S_eq(sn * const *a, sn * const *b);
@@ -197,7 +198,7 @@ int64_t h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int6
     t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.worker", 36, 13); h2_i = t14; goto bb1; bb3:
 #line 38
     t15 = h1_total; t16 = h0_slot; if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.worker", 38, 12); return t17;
-#line 201 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 202 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
 
 int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot) {
@@ -211,7 +212,7 @@ void h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_main(void) { i
     t4 = h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker; t5 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.main", 42, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
     t7 = HERO_STR_LIT(hero_str_31c3); t8 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.main", 43, 17}; t9 = hero_thread_join(t8); } hero_print_str(t7); hero_print_int(t9); hero_print_end();
     t10 = HERO_STR_LIT(hero_str_3246); t11 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.main", 44, 17}; t12 = hero_thread_join(t11); } hero_print_str(t10); hero_print_int(t12); hero_print_end(); return;
-#line 215 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 216 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_0S_eq(sn * const *a, sn * const *b) {
     return hero_handle_eq(*a, *b);

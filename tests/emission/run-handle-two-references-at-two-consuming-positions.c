@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -101,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_24ff3fd9, "refs after: ");
 
-#line 105 "handletworeferencesattwoconsumingpositions.c"
+#line 106 "handletworeferencesattwoconsumingpositions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "handletworeferencesattwoconsumingpositions.c"
+#line 161 "handletworeferencesattwoconsumingpositions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletworeferencesattwoconsumingpositions_0Ob_eq(ob * const *a, ob * const *b);
@@ -183,7 +184,7 @@ void h_handletworeferencesattwoconsumingpositions_main(void) { ob * h0_a; ob * h
     t4 = HERO_STR_LIT(hero_str_7b9bb5d3); t5 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-two-references-at-two-consuming-positions.hero", "handle-two-references-at-two-consuming-positions.main", 24, 21}; hero_handle_alive_at(t5, "the argument `o` of `ob_refs`", &hero_here); t6 = ob_refs(t5); } hero_print_str(t4); hero_print_int(t6); hero_print_end();
     t7 = h0_a; t8 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-two-references-at-two-consuming-positions.hero", "handle-two-references-at-two-consuming-positions.main", 25, 5}; { hero_handle_alive_at(t7, "the argument `a` of `both_put`", &hero_here); hero_handle_alive_at(t8, "the argument `b` of `both_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t7, "both_put", NULL, &hero_here); HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_ending_at(t8, "both_put", NULL, &hero_here); (void)both_put(t7, t8); if (hero_handle_ended(t7, hero_life_0_0) && h0_a == t7) h0_a = hero_handle_dead(); if (hero_handle_ended(t8, hero_life_1_0) && h1_b == t8) h1_b = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_24ff3fd9); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-two-references-at-two-consuming-positions.hero", "handle-two-references-at-two-consuming-positions.main", 26, 27}; t10 = ob_last_refs(); } hero_print_str(t9); hero_print_int(t10); hero_print_end(); return;
-#line 187 "handletworeferencesattwoconsumingpositions.c"
+#line 188 "handletworeferencesattwoconsumingpositions.c"
 }
 HERO_TU_LOCAL bool h_handletworeferencesattwoconsumingpositions_0Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

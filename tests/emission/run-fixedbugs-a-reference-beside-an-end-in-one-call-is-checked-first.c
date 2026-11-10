@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -99,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_18a116ec, "one handle, two positions");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 103 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 104 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -153,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 158 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareferencebesideanendinonecallischeckedfirst_0Ob_eq(ob * const *a, ob * const *b);
@@ -180,7 +181,7 @@ void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void) { ob * h
     t3 = h0_a; t4 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero", "fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.main", 17, 9}; { hero_handle_alive_at(t3, "the argument `eaten` of `ob_swap`", &hero_here); hero_handle_alive_at(t4, "the argument `kept` of `ob_swap`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t3, "ob_swap", NULL, &hero_here); { HERO_NODEBUG __typeof__(ob_swap(t3, t4)) hero_when = ob_swap(t3, t4); hero_handle_retained_at(t4, "ob_other", 1, &hero_here); if (hero_when == 0LL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } } } }
     t6 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero", "fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.main", 18, 5}; { hero_handle_alive_at(t6, "the argument `o` of `ob_other`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "ob_other", NULL, &hero_here); (void)ob_other(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); } }
     t7 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t7); hero_print_end(); return;
-#line 184 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 185 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencebesideanendinonecallischeckedfirst_0Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

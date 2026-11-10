@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -94,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 98 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
+#line 99 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
+#line 151 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -171,7 +172,7 @@ void h_fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder_ma
     t7 = INT64_C(-10000000000000000); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.hero", "fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.main", 13, 11}; t8 = llabs(t7); } t9 = hero_int_to_f64(t8); h2_big = t9;
     t10 = h0_one; t11 = h1_ten; t12 = t10 / t11; h3_tenth = t12;
     t13 = h3_tenth; t14 = h1_ten; t15 = t13 * t14; t16 = h0_one; t17 = t15 - t16; t18 = HERO_STR_LIT(hero_str_20); t19 = h2_big; t20 = h0_one; t21 = t19 + t20; t22 = h2_big; t23 = t21 - t22; hero_print_f64(t17); hero_print_str(t18); hero_print_f64(t23); hero_print_end(); return;
-#line 175 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
+#line 176 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

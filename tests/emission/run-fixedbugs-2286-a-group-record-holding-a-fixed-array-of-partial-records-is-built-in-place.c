@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -60,7 +61,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
 #line 11
 _Static_assert(sizeof(struct fixedbugs_2286_held_array) - __builtin_offsetof(struct fixedbugs_2286_held_array, hs) != 0, "heroes-ffi-flex HeldArray hs"); _Static_assert(_Generic(&((struct fixedbugs_2286_held_array *)0)->hs, struct heroes_held (*)[1]: 1, default: 0) && sizeof(struct fixedbugs_2286_held_array) - __builtin_offsetof(struct fixedbugs_2286_held_array, hs) >= sizeof(struct heroes_held[1]), "heroes-ffi-field HeldArray hs");
-#line 64 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
+#line 65 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -136,7 +137,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
+#line 141 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -188,7 +189,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286agrouprecordholdingafixedarray
 #line 13
     HERO_NODEBUG int64_t t1; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG struct fixedbugs_2286_held_array *const hero_big_t4 = (struct fixedbugs_2286_held_array *)hero_frame_take(sizeof(struct fixedbugs_2286_held_array)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; t4 = *(struct fixedbugs_2286_held_array *)__builtin_memset(&t4, 0, sizeof t4); t4.hs[0] = t2; if (hero_out != NULL) *hero_out = t4; hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t2); return;
-#line 192 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
+#line 193 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
 }
 #undef t2
 #undef t4
@@ -208,7 +209,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286agrouprecordholdingafixedarray
     struct fixedbugs_2286_held_array *const hero_big_h0_a = (struct fixedbugs_2286_held_array *)hero_frame_take(sizeof(struct fixedbugs_2286_held_array)); HERO_NODEBUG int64_t t1, t3, t4; HERO_NODEBUG struct fixedbugs_2286_held_array *const hero_big_t2 = (struct fixedbugs_2286_held_array *)hero_frame_take(sizeof(struct fixedbugs_2286_held_array)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_make(&t2, t1); h0_a = t2; hero_pad_fill(&h0_a, sizeof(struct fixedbugs_2286_held_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_a) + hero_pad_k0 * sizeof(struct fixedbugs_2286_held_array) + __builtin_offsetof(struct fixedbugs_2286_held_array, hs), sizeof(struct heroes_held), sizeof(((struct fixedbugs_2286_held_array *)0)->hs) / sizeof(struct heroes_held), hero_pad_g_0, hero_pad_n_0); }
     t3 = INT64_C(0); t4 = h0_a.hs[((uint64_t)(t3) >= UINT64_C(1) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-group-record-holding-a-fixed-array-of-partial-records-is-built-in-place.hero", "fixedbugs-2286-a-group-record-holding-a-fixed-array-of-partial-records-is-built-in-place.go", 18, 11), (int64_t)0) : (t3))].first; hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_a); return;
-#line 212 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
+#line 213 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
 }
 #undef h0_a
 #undef t2
@@ -217,7 +218,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286agrouprecordholdingafixedarray
 void h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_main(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_go(); return;
-#line 221 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
+#line 222 "fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_0Held_eq: a partial record has no structural equality");

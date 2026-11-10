@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -96,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_c4fd56d, "row-payload");
 
-#line 100 "leasetailpointsintothebytes.c"
+#line 101 "leasetailpointsintothebytes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "leasetailpointsintothebytes.c"
+#line 155 "leasetailpointsintothebytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +173,7 @@ void h_leasetailpointsintothebytes_main(void);
 #line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) { HERO_NODEBUG const char *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.tail_of", 19, 5}; hero_lend_local_name(ph1_out, "after_dash", "tail"); (void)after_dash(hero_cstr_nonnull_at(t1, &hero_here), &(*ph1_out)); } return;
-#line 176 "leasetailpointsintothebytes.c"
+#line 177 "leasetailpointsintothebytes.c"
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
@@ -186,7 +187,7 @@ void h_leasetailpointsintothebytes_main(void) {
     t4 = h0_label; h_leasetailpointsintothebytes_tail_of(t4, &h1_tail);
     t5 = h1_tail; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.main", 25, 11}; t6 = strlen(hero_cstr_nonnull_at(t5, &hero_here)); } hero_print_uint(t6); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.main", 26, 5}; hero_held_release_at(&h0_label, &hero_here); } hero_lend_local_give(hero_lend_h1_tail); return;
-#line 190 "leasetailpointsintothebytes.c"
+#line 191 "leasetailpointsintothebytes.c"
 }
 #undef h1_tail
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

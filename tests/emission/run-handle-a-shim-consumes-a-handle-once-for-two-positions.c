@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -101,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1fadc951, "refs before: ");
 HERO_STR_STATIC(hero_str_4fad0733, "freed through the ssl");
 
-#line 105 "handleashimconsumesahandleoncefortwopositions.c"
+#line 106 "handleashimconsumesahandleoncefortwopositions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -157,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "handleashimconsumesahandleoncefortwopositions.c"
+#line 162 "handleashimconsumesahandleoncefortwopositions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_0Bio_eq(bio * const *a, bio * const *b);
@@ -187,7 +188,7 @@ void h_handleashimconsumesahandleoncefortwopositions_main(void) { ssl * h0_s; bi
     t6 = h0_s; t7 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-shim-consumes-a-handle-once-for-two-positions.hero", "handle-a-shim-consumes-a-handle-once-for-two-positions.main", 19, 5}; { hero_handle_alive_at(t6, "the argument `s` of `ssl_set_one_bio`", &hero_here); hero_handle_alive_at(t7, "the argument `b` of `ssl_set_one_bio`", &hero_here); HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_transferring_at(t7, "bio_free", &hero_here); (void)ssl_set_one_bio(t6, t7); if (hero_handle_ended(t7, hero_life_1_0) && h1_b == t7) h1_b = hero_handle_dead(); } }
     t8 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-shim-consumes-a-handle-once-for-two-positions.hero", "handle-a-shim-consumes-a-handle-once-for-two-positions.main", 20, 5}; { hero_handle_alive_at(t8, "the argument `s` of `ssl_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "ssl_free", NULL, &hero_here); (void)ssl_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_s == t8) h0_s = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_4fad0733); hero_print_str(t9); hero_print_end(); return;
-#line 191 "handleashimconsumesahandleoncefortwopositions.c"
+#line 192 "handleashimconsumesahandleoncefortwopositions.c"
 }
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_0Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);

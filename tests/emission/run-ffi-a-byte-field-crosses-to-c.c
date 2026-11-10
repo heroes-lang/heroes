@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -60,11 +61,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-flex Slot nsap"); _Static_assert(_Generic(&((Slot *)0)->nsap, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot nsap");
 _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, tag) != 0, "heroes-ffi-flex Slot tag"); _Static_assert(_Generic(&((Slot *)0)->tag, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot tag");
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 64 "ffiabytefieldcrossestoc.c"
+#line 65 "ffiabytefieldcrossestoc.c"
 
 #line 34 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(__builtin_classify_type(*(Slot *)0) != 13, "heroes-ffi-union Slot nsap tag id");
-#line 68 "ffiabytefieldcrossestoc.c"
+#line 69 "ffiabytefieldcrossestoc.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -157,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "ffiabytefieldcrossestoc.c"
+#line 162 "ffiabytefieldcrossestoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_0Slot_eq(const Slot *a, const Slot *b);
@@ -201,13 +202,13 @@ void h_ffiabytefieldcrossestoc_main(void) { Slot h0_s; HERO_NODEBUG h_0opt_e2013
     t63 = h2_t; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t63.nsap), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t65 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t65 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t76 = h5_own5; h5_own5 = t65; h_0opt_f87774a_release(&t76); t77 = h3_f1; h_0opt_f87774a_retain(&t65); h3_f1 = t65; h_0opt_f87774a_release(&t77); t66 = h3_f1; t67 = t66.tag; t68 = INT64_C(0); t69 = t67 == t68; if (t69) goto bb3; else goto bb4; bb2:
 #line 56
     t43 = h1_f0; t44 = t43.as.err;
-#line 205 "ffiabytefieldcrossestoc.c"
+#line 206 "ffiabytefieldcrossestoc.c"
     hero_panic_must_at(t44, "ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 56, 11);
     hero_unreachable();
 bb3:
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t72 = h3_f1; t73 = t72.as.ok; hero_print_str(t73); hero_print_end();
-#line 211 "ffiabytefieldcrossestoc.c"
+#line 212 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -216,7 +217,7 @@ bb3:
 bb4:
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t70 = h3_f1; t71 = t70.as.err;
-#line 220 "ffiabytefieldcrossestoc.c"
+#line 221 "ffiabytefieldcrossestoc.c"
     hero_panic_must_at(t71, "ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 61, 11);
     hero_unreachable();
 }

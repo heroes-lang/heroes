@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -91,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 95 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
+#line 96 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -141,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
+#line 146 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -162,7 +163,7 @@ void h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_main(void)
 
 #line 8 "tests/golden/run/fixedbugs-2333-a-group-header-s-bool-macro-leaves-the-unit-s-own-c-as-written.hero"
 int64_t h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_HERO_2333_TWO(void) {
-#line 166 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
+#line 167 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
     _Static_assert(HERO_RET_INT(HERO_2333_TWO), "heroes-ffi-return HERO_2333_TWO i64");
     _Static_assert(__builtin_constant_p(HERO_2333_TWO), "heroes-ffi-const HERO_2333_TWO");
 #pragma clang diagnostic push
@@ -174,7 +175,7 @@ int64_t h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_HERO_23
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 8 "tests/golden/run/fixedbugs-2333-a-group-header-s-bool-macro-leaves-the-unit-s-own-c-as-written.hero"
     return HERO_2333_TWO;
-#line 178 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
+#line 179 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -194,7 +195,7 @@ int64_t h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_HERO_23
 void h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_main(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_HERO_2333_TWO(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten_HERO_2333_TWO(); t3 = INT64_C(2); t4 = t2 == t3; hero_print_bool(t4); hero_print_end(); return;
-#line 198 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
+#line 199 "fixedbugs2333agroupheadersboolmacroleavestheunitsowncaswritten.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

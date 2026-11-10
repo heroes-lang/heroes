@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -103,7 +104,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 107 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 108 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 161 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_0Outer_eq(outer * const *a, outer * const *b);
@@ -184,7 +185,7 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) { o
     t6 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero", "fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.main", 41, 5}; { hero_handle_alive_at(t6, "the argument `o` of `release`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "release", NULL, &hero_here); (void)release(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); } }
     t7 = HERO_STR_LIT(hero_str_2731e935); t8 = h1_kept; t9 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero", "fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.main", 42, 21}; t10 = hero_handle_eq_at(t8, t9, &hero_here); } hero_print_str(t7); hero_print_bool(t10); hero_print_end();
     t11 = HERO_STR_LIT(hero_str_3043d2a7); t12 = h1_kept; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero", "fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.main", 43, 22}; hero_handle_alive_at(t12, "the argument `o` of `value`", &hero_here); t13 = value(t12); } hero_print_str(t11); hero_print_int(t13); hero_print_end(); return;
-#line 188 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 189 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_0Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);
