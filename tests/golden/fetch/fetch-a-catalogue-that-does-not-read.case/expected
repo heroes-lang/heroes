@@ -1,0 +1,17 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:4: error[catalogue_refused]: the entry `yaml` is written twice
+$ heroes add yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: <work>/app/heroes.toml:4: the entry `yaml` is written twice
+heroes.toml:
+[dependencies.yaml]
+git = "file://../git/yaml"
+
+[dependencies.yaml]
+heroes.packages:
+(none)

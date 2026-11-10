@@ -1,0 +1,9 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/add-an-index-of-no-shape.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[index_refused]: line 1 of the index's `json/versions` is not `<version> <sum>`: `1.4.2`
+heroes.toml:
+(none)
+heroes.packages:
+(none)

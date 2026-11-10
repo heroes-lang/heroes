@@ -1,0 +1,8 @@
+# Defect 2392, 2026-11-10, lane b29-pkgmsg, beside the case before it: `use
+# core/strconv`, `core` an entry whose tree is not placed. The mark is told
+# as forgotten, and the repair is a `guess`, no tree being there to say the
+# package holds the module (panel 235's R18).
+use core/strconv  #~ package_unmarked
+
+function main()
+    print(strconv.n())

@@ -1,0 +1,9 @@
+$ heroes add file://../git/yaml --tag a..b -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: `a..b` holds `..`, which git reads as a range of commits and no tag
+heroes.toml:
+(none)
+heroes.packages:
+(none)

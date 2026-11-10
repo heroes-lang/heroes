@@ -426,3 +426,55 @@ test "an add that cannot be is refused with its code, and the catalogue is left 
 
     assert read_file(SCRATCH + "/app/heroes.toml").must() == "version = 1\n"
     assert !process.remove_tree(SCRATCH).is_err()
+
+# Defect 2392: the refusals a machine's state causes, each the tool's at exit
+# 2 and none reaching the network: a curl this machine cannot start, a source
+# on a closed port of this machine, a placement folder that is a file, and git
+# failing on the staging folder's own repository, here one never made. Port 1
+# of the loopback is closed on every machine the tests run on, tcpmux being
+# served by none: were anything to answer there, the second refusal would not
+# be `unreachable`, and this test fails naming it.
+test "a refusal the machine causes is the tool's at exit 2, and the catalogue is left as it was"
+    _ = index_made()
+    no_curl = transport.Tools(git: "git", curl: "heroes-no-such-curl")
+    shapes = [
+        [["add", "json", "-C", SCRATCH + "/app", "--index", "file://../idx"], ["no_curl"]]
+        [["add", "json", "-C", SCRATCH + "/app", "--index", "https://127.0.0.1:1/idx"], ["unreachable"]]
+    ]
+
+    for one in shapes
+        tools: transport.Tools @= transport.path_tools()
+
+        if one[1][0] == "no_curl"
+            tools @ no_curl
+
+        match added(invoked(one[0]), tools: tools)
+            .ok _ => assert false
+            .err e =>
+                assert e.code == one[1][0]
+                assert told.exit_of(e.code) == 2
+
+    assert !process.path_exists(SCRATCH + "/app/heroes.toml")
+    s = staging.opened(SCRATCH + "/app/").must()
+
+    match git_source.own(transport.path_tools(), words: ["--git-dir=" + s.folder + "/git", "rev-parse", "--verify", "-q", "refs/heroes/fetched^{commit}"], out: process.discard(), s: s)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "git_failed"
+            assert told.exit_of(e.code) == 2
+
+    staging.dropped(s)
+    assert !process.remove_tree(SCRATCH + "/app/heroes.packages").is_err()
+
+    # No tree can be staged under a placement folder that is a file.
+    assert !write_file(path: SCRATCH + "/app/heroes.packages", text: "not a folder\n").is_err()
+
+    match added(invoked(["add", "json", "-C", SCRATCH + "/app", "--index", "file://../idx"]), tools: transport.path_tools())
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "cannot_place"
+            assert told.exit_of(e.code) == 2
+
+    assert read_file(SCRATCH + "/app/heroes.packages").must() == "not a folder\n"
+    assert !process.path_exists(SCRATCH + "/app/heroes.toml")
+    assert !process.remove_tree(SCRATCH).is_err()

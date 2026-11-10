@@ -1,0 +1,1 @@
+add json --index file://../../../../../tests/golden/fetch/add-a-package-whose-catalogue-names-a-folder.case/idx -C <work>/app
