@@ -143,6 +143,22 @@ on:
         options:
           - 'no'
           - 'yes'
+      # **The net's own tests alone, after the build** (author instruction
+      # 2026-11-10, meant as: *on GitHub Actions run only the part of Windows
+      # that fails, not the other platforms, and only that: losing five hours
+      # for nothing is useless*). Given when Windows' leg of 87d77dec2 had read
+      # the whole net 11,607 passed and 0 failed in four hours, then failed two
+      # of the net's own tests (defect 2418). With `only: windows` and `net:
+      # own`, that leg builds the compiler and runs the net's own tests, and
+      # skips the compiler's own tests and the whole net; `whole` is the
+      # default, as every push and tag runs.
+      net:
+        description: 'The whole net, or only the net''s own tests after the build'
+        type: choice
+        default: whole
+        options:
+          - whole
+          - own
       # **The sealed suite's attestation, asked for** (author instruction
       # 2026-10-26): the `thesis-attest` job at the end of this file runs on a
       # release tag and when this says `yes`, and on no push to `main`. Its
@@ -788,6 +804,7 @@ jobs:
       # until somebody dispatched or tagged. The gate is cheap and the blind
       # spot was not.
       - name: The compiler's own tests
+        if: inputs.net != 'own'
         shell: bash
         run: ./heroes${{ matrix.exe }} test selfhost/main.hero
 
@@ -807,6 +824,7 @@ jobs:
       # wherever the emitter moved since the seed was refreshed. Until
       # 2026-10-28 this step ran `./heroes${{ matrix.exe }} run` on both sides.
       - name: The net, in Heroes
+        if: inputs.net != 'own'
         shell: bash
         # The token `records` reads the issues with: the job's own, read-only
         # by `permissions` above (`issues: read`), held by `gh` and never read
