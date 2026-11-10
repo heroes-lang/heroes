@@ -4,9 +4,9 @@
 #
 # These four are not about the author's types at all — the declaration
 # may be perfect and the header still absent, the symbol still
-# unresolved, the package still unknown to pkg-config. Two read a
+# unresolved, the library still unknown to pkg-config. Two read a
 # LINKER's output rather than a compiler's, and one reads this
-# compiler's own PACKAGE marker, so the file that groups them is the
+# compiler's own PKGCONFIG marker, so the file that groups them is the
 # one that knows a build has more tools in it than clang.
 
 use ast
@@ -253,7 +253,7 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
     )
     return ok(d)
 
-# A package this program asked about, and the machine could not answer:
+# A library this program asked `pkg-config` about, and the machine could not answer:
 # not installed, or answering with a word the allow-list refuses. The only
 # class whose text this compiler writes itself: `cli/libraries.hero` opens
 # its message with the marker, matched here so one file holds every rule
@@ -270,18 +270,18 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
 # marker's text was quoted with *the package* in its place; panel 188's stage
 # A saw a line end leak the marker the same way. Only the driver writes that
 # head, the group is the one whose own name stands there
-# (`ffi_lookup.package_span`), and only that leading marker is replaced, so no
+# (`ffi_lookup.pkgconfig_span`), and only that leading marker is replaced, so no
 # byte of a name or of `pkg-config`'s answer moves the reading; the driver
 # writes `pkg-config`'s control characters by their code
 # (`cli/shell_split.shown`), a line end among them.
-function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line: str) -> diag.Diagnostic?
-    if !bytes.bytes_at(text: line, at: 0, needle: ffi_lookup.PACKAGE) || !first_line(text: stderr, line: line)
+function pkgconfig_problem(s: source.Source, decls: [ast.Decl], stderr: str, line: str) -> diag.Diagnostic?
+    if !bytes.bytes_at(text: line, at: 0, needle: ffi_lookup.PKGCONFIG) || !first_line(text: stderr, line: line)
         return fail(code: "none", msg: "not the driver's package line")
-    span = ffi_lookup.package_span(s, decls, line: line)
+    span = ffi_lookup.pkgconfig_span(s, decls, line: line)
 
     if span.is_err()
         return fail(code: "none", msg: "no group asked for this package")
-    headline = "the library " + line.slice(from: ffi_lookup.PACKAGE.len(), to: line.len())
+    headline = "the library " + line.slice(from: ffi_lookup.PKGCONFIG.len(), to: line.len())
     d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_pkgconfig", message: headline, span: span.must())
     index: i64 @= 0
 
@@ -348,17 +348,17 @@ test "the linker's two spellings, the library, the header, the package"
     ghost = "main.c:3:10: fatal error: 'ghost.h' file not found"
     assert missing_header(s, parsed.decls, line: ghost, stderr: ghost).is_err()
 
-    # The package: headline keeps its sentence, later lines become
+    # The `pkgconfig` refusal: headline keeps its sentence, later lines become
     # notes, the marker becomes plain words.
     stderr = "heroes-ffi-pkgconfig `raylib` is not installed on this machine\n  install raylib with your package manager\n  or pass --library and --include yourself\n"
     line = "heroes-ffi-pkgconfig `raylib` is not installed on this machine"
-    pk = package_problem(s, parsed.decls, stderr: stderr, line: line)
+    pk = pkgconfig_problem(s, parsed.decls, stderr: stderr, line: line)
     assert pk.must().code == "ffi_pkgconfig"
     assert source.span_text(s, pk.must().span) == "\"raylib\""
     assert pk.must().message == "the library `raylib` is not installed on this machine"
     assert pk.must().notes.len() == 2
     assert pk.must().notes[0] == "install raylib with your package manager"
-    assert package_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-pkgconfig `sdl3` missing").is_err()
+    assert pkgconfig_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-pkgconfig `sdl3` missing").is_err()
 
 # Lines as clang printed them in lane h158's first pass (2026-10-02, this Mac).
 test "a header no group names is asked of the stack, and one a group names keeps its words"
@@ -445,7 +445,7 @@ test "the driver's package line is read at its head, whatever a name or an answe
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     tick = "heroes-ffi-pkgconfig `a`b` is not installed on this machine"
-    said = package_problem(
+    said = pkgconfig_problem(
         s,
         parsed.decls,
         stderr: tick + "\n  pkg-config said: Package a`b was not found\n",
@@ -455,21 +455,21 @@ test "the driver's package line is read at its head, whatever a name or an answe
     assert said.message == "the library `a`b` is not installed on this machine"
     assert said.notes[0] == "pkg-config said: Package a`b was not found"
     quote = "heroes-ffi-pkgconfig `x'y` is not installed on this machine"
-    assert source.span_text(s, package_problem(s, parsed.decls, stderr: quote, line: quote).must().span) == "\"x'y\""
+    assert source.span_text(s, pkgconfig_problem(s, parsed.decls, stderr: quote, line: quote).must().span) == "\"x'y\""
     marker = "heroes-ffi-pkgconfig `heroes-ffi-pkgconfig` is not installed on this machine"
-    named = package_problem(s, parsed.decls, stderr: marker, line: marker).must()
+    named = pkgconfig_problem(s, parsed.decls, stderr: marker, line: marker).must()
     assert source.span_text(s, named.span) == "\"heroes-ffi-pkgconfig\""
     assert named.message == "the library `heroes-ffi-pkgconfig` is not installed on this machine"
     answer = "heroes-ffi-pkgconfig `a` answered with `heroes-ffi-pkgconfig `a`b` is`, which this compiler does not pass on"
-    quoted = package_problem(s, parsed.decls, stderr: answer, line: answer).must()
+    quoted = pkgconfig_problem(s, parsed.decls, stderr: answer, line: answer).must()
     assert source.span_text(s, quoted.span) == "\"a\""
     assert quoted.message == "the library `a` answered with `heroes-ffi-pkgconfig `a`b` is`, which this compiler does not pass on"
     later = "heroes-ffi-pkgconfig `a` is not installed on this machine\nheroes-ffi-pkgconfig `a`b` is not installed on this machine\n"
-    assert package_problem(
+    assert pkgconfig_problem(
         s,
         parsed.decls,
         stderr: later,
         line: "heroes-ffi-pkgconfig `a`b` is not installed on this machine"
     ).is_err()
     clang = "p.c:3:1: error: heroes-ffi-pkgconfig `a` is not installed"
-    assert package_problem(s, parsed.decls, stderr: clang, line: clang).is_err()
+    assert pkgconfig_problem(s, parsed.decls, stderr: clang, line: clang).is_err()

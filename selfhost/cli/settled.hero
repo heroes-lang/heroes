@@ -14,7 +14,7 @@ use cli/compiling
 use cli/libraries
 use cli/package_units
 use cli/toolchain
-use emit/header_packages
+use emit/pkgconfig_headers
 use emit/unit_plan
 use source
 
@@ -33,15 +33,15 @@ record Site
     link: bool
     source_dir: str
     link_names: [str]
-    package_flags: [str]
+    pkgconfig_flags: [str]
 
     # Each package's own words: a unit is compiled with the words of the
     # packages named by the groups whose headers it reads (panel 205's R3,
     # defect 572), the link with every package's.
-    package_words: {str: [str]}
+    pkgconfig_words: {str: [str]}
 
     # Each group's header and the packages its groups name, asked once
-    # (`header_packages.by_header`), which a unit's words are read from.
+    # (`pkgconfig_headers.by_header`), which a unit's words are read from.
     by_header: {str: [str]}
     version: str
     # What the program was compiled from (`emit/provenance.hero`), which its
@@ -59,22 +59,22 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
         level: options.level,
         sanitize: options.sanitize,
         search_include: options.headers_from,
-        package_flags: site.package_flags,
+        pkgconfig_flags: site.pkgconfig_flags,
         runtime: t.runtime,
         source_dir: site.source_dir
     )
 
 # The package words one module's unit compiles under: those of the packages
 # named by the groups whose headers it reads, in their written order (panel
-# 205's R3, defect 572; `emit/header_packages.hero`). A package's `-D`
+# 205's R3, defect 572; `emit/pkgconfig_headers.hero`). A package's `-D`
 # reached every unit until then, so a module binding `wcwidth` from
 # `wchar.h` was told *`wchar.h` declares no `wcwidth`* unless `main` named
 # `ncursesw`, whose `.pc` answers `-D_XOPEN_SOURCE=600`, and another module's
 # package decided its verdict.
 function unit_words(site: Site, headers: [str]) -> [str]
     return libraries.words_of(
-        site.package_words,
-        packages: header_packages.of(site.by_header, listed: headers)
+        site.pkgconfig_words,
+        pkgconfigs: pkgconfig_headers.of(site.by_header, listed: headers)
     )
 
 # What one module's unit compiles under: the build's words with its own
@@ -84,7 +84,7 @@ function unit_words(site: Site, headers: [str]) -> [str]
 # unit took the program's.
 function unit_under(t: toolchain.Toolchain, options: compile.Options, site: Site, s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan) -> compiling.Compiling
     under: compiling.Compiling @= compiled_under(t, options, site)
-    under.package_flags @ unit_words(site, headers: plan.headers)
+    under.pkgconfig_flags @ unit_words(site, headers: plan.headers)
     return package_units.unit_under(under, s, decls, plan: plan)
 
 # The words a unit's value probe compiles it under, its own compile's

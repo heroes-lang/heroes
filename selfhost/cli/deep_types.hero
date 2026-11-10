@@ -285,7 +285,7 @@ test "the debug information meets a type chain past the emitter's depth from its
         level: "-O0",
         sanitize: false,
         search_include: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: "runtime",
         source_dir: ""
     )

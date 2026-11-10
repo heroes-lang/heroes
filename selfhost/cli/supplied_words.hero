@@ -288,7 +288,7 @@ function runtime_told(s: source.Source, decls: [ast.Decl], library: str, names: 
 function the_rule(name: str) -> str
     return "a program holds one definition of `" + name + "`: link one library that defines it, or build the other library with its `" + name + "` kept to itself (`objcopy --localize-symbol=" + name + "` on Linux, `nmedit -R` on macOS, `-fvisibility=hidden` for a shared library)"
 
-# How a binding's group names its library: `library `a``, the package's, or
+# How a binding's group names its library: `library `a``, a `link`'s or a `pkgconfig`'s, or
 # the C library.
 function own_library(s: source.Source, decls: [ast.Decl], at: i64) -> str
     match decls[at].kind

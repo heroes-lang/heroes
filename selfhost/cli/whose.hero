@@ -24,7 +24,7 @@ use cli/macro_twice
 use cli/member_ask
 use cli/name_order
 use cli/opening_told
-use cli/package_missing
+use cli/pkgconfig_missing
 use cli/pointee_ask
 use cli/probing
 use cli/reach_ask
@@ -157,14 +157,14 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
         return authors(theirs, msg: "the author's extern disagrees with the header")
 
     # A package's `-l` the linker found no library for, asked after every
-    # `link` group was (`cli/package_missing.hero`, defect 528).
+    # `link` group was (`cli/pkgconfig_missing.hero`, defect 528).
     if code == link.REFUSED
-        lacked = package_missing.missing(
+        lacked = pkgconfig_missing.missing(
             message: message,
             s: s,
             decls: art.decls,
             build: t.build,
-            linked: under.package_flags
+            linked: under.pkgconfig_flags
         )
 
         if lacked.len() > 0
@@ -176,7 +176,7 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
         # text putting it in the program's object (`cli/header_needs.hero`,
         # defect 2372), and only where every name is one of them
         # (`cli/link_needs.hero`, defect 2381).
-        needs = link_needs.told(message, s, art.decls, t, asking: asking, linked: under.package_flags)
+        needs = link_needs.told(message, s, art.decls, t, asking: asking, linked: under.pkgconfig_flags)
 
         if needs.len() > 0
             return authors(needs, msg: "a name this program's link needs is defined by no library it links")

@@ -115,7 +115,7 @@ function asked_all(t: toolchain.Toolchain, art: compile.Artifact, s: source.Sour
         art.decls,
         components: units.components(s),
         target: .program_build,
-        package_words: no_words,
+        pkgconfig_words: no_words,
         by_header: no_words
     )
     return ask(t, art, s, struct_tags: struct_tags, asking: planned.probings)
@@ -147,7 +147,7 @@ test "a refused round's question is asked of the real header (defect 152)"
         t,
         art,
         s,
-        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: "build"),
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: "build"),
         struct_tags: no_tags
     )
     assert ffi_lookup.has(text: got.said, needle: "build/selftest_header_ask.hero:2:")
@@ -193,7 +193,7 @@ test "a refused round's questions are asked under the build's level and sanitize
         t,
         art,
         s,
-        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir),
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: dir),
         struct_tags: no_tags
     )
     assert plain.macros["thing"].is_err()
@@ -208,7 +208,7 @@ test "a refused round's questions are asked under the build's level and sanitize
             level: level,
             sanitize: sanitize,
             search_include: none,
-            package_flags: none,
+            pkgconfig_flags: none,
             runtime: t.runtime,
             source_dir: dir
         )
@@ -251,7 +251,7 @@ test "a refused round's question names the type the header gives a result and a 
         t,
         art,
         s,
-        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir),
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: dir),
         struct_tags: no_tags
     )
     assert got.results["hero_wide"].must() == ffi_asked.Typed(spelled: "hero_wide_t", canonical: "long long")

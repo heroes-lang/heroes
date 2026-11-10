@@ -23,7 +23,7 @@ use shown_char
 # space, a tab or a newline outside quotes ends a word. Nothing is expanded,
 # so a `$` or a backtick in a `.pc` runs nothing, and a word reaches clang
 # whole, as one argument, whatever it holds.
-function words(package: str, said: str) -> [str]?
+function words(pkgconfig: str, said: str) -> [str]?
     out: [str] @= []
     run: [str] @= []
     in_word: bool @= false
@@ -78,7 +78,7 @@ function words(package: str, said: str) -> [str]?
     if quote.len() > 0
         return fail(
             code: "failed",
-            msg: "heroes-ffi-pkgconfig `" + package + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + one_line(said) + "`"
+            msg: "heroes-ffi-pkgconfig `" + pkgconfig + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + one_line(said) + "`"
         )
 
     if in_word
@@ -145,19 +145,19 @@ function shown(text: str, keep_lines: bool) -> str
 # with a space, each one word, nothing expanded.
 test "pkg-config's answer is read as a shell reads it, and nothing in it is expanded"
     said = "-I/inc/with\\ space -I/inc/two\\ \\ spaces -I/inc/tab\\\there -DNAME=a\\ b -DVERSION=\\\"1.0\\\" -I/inc/back\\\\slash -I/inc/amp\\&x -I/inc/dollar$x -L/lib/with\\ space -lz\n"
-    read = words(package: "spaced", said: said).must()
+    read = words(pkgconfig: "spaced", said: said).must()
     assert read == ["-I/inc/with space", "-I/inc/two  spaces", "-I/inc/tab\there", "-DNAME=a b", "-DVERSION=\"1.0\"", "-I/inc/back\\slash", "-I/inc/amp&x", "-I/inc/dollar$x", "-L/lib/with space", "-lz"]
 
     # The quotes another pkg-config may keep, an empty word, a backslash
     # before a newline and one ending the answer.
     quoted = words(
-        package: "q",
+        pkgconfig: "q",
         said: "-I'/inc/single quoted' -I\"/inc/double \\\"quoted\\\"\" '' -DX=\"$HOME\" -I/a\\\n/b -I/c\\"
     ).must()
     assert quoted == ["-I/inc/single quoted", "-I/inc/double \"quoted\"", "", "-DX=$HOME", "-I/a/b", "-I/c\\"]
 
     # A quote left open is refused, naming it.
-    open_quote = words(package: "q", said: "-I'/inc/open")
+    open_quote = words(pkgconfig: "q", said: "-I'/inc/open")
 
     match open_quote
         .ok    => assert false
@@ -167,10 +167,10 @@ test "pkg-config's answer is read as a shell reads it, and nothing in it is expa
 # (2026-10-02, defect 183): the path comes back as two words.
 test "a word that is no flag is told with the line pkg-config printed and the word before it (defect 183)"
     said = "-I/opt/with space/include -L/opt/with space/lib\n"
-    read = words(package: "s7", said: said).must()
+    read = words(pkgconfig: "s7", said: said).must()
     assert no_flag(said: said, parts: read, at: 1) == ": it is no flag, and `pkg-config` printed `-I/opt/with space/include -L/opt/with space/lib`, where whitespace nothing escapes stands between `-I/opt/with` and it, and ends a word\n  a path holding a space is one word only where `pkg-config` prints the space escaped, `\\ `, or inside quotes"
     assert no_flag(said: said, parts: read, at: 0) == ""
-    alone = words(package: "f", said: "/opt/x/libfoo.a -lz").must()
+    alone = words(pkgconfig: "f", said: "/opt/x/libfoo.a -lz").must()
     assert no_flag(said: "/opt/x/libfoo.a -lz", parts: alone, at: 0) == ": it is no flag, and `pkg-config` printed `/opt/x/libfoo.a -lz`\n  a path holding a space is one word only where `pkg-config` prints the space escaped, `\\ `, or inside quotes"
     assert one_line("-Ia\r\n-Lb\n") == "-Ia<U+000D><U+000A>-Lb"
 
@@ -181,10 +181,10 @@ test "a control character in pkg-config's text is written by its code, a line en
     assert shown("a\tb\rc\nd", keep_lines: false) == "a<U+0009>b<U+000D>c<U+000A>d"
     assert shown("one\r\ntwo\rthree\n", keep_lines: true) == "one\ntwo<U+000D>three\n"
     assert shown("plain é ok", keep_lines: false) == "plain é ok"
-    quoted = words(package: "q", said: "'x\ny' -lz").must()
+    quoted = words(pkgconfig: "q", said: "'x\ny' -lz").must()
     assert quoted[0] == "x\ny"
     assert no_flag(said: "'x\ny' -lz", parts: quoted, at: 0) == ": it is no flag, and `pkg-config` printed `'x<U+000A>y' -lz`\n  a path holding a space is one word only where `pkg-config` prints the space escaped, `\\ `, or inside quotes"
-    open_line = words(package: "q", said: "-I'/a\nb")
+    open_line = words(pkgconfig: "q", said: "-I'/a\nb")
 
     match open_line
         .ok    => assert false

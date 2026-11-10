@@ -161,7 +161,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             level: options.level,
             sanitize: options.sanitize,
             search: compile.search_key(headers_from: options.headers_from, library: options.library),
-            package_flags: under.package_flags,
+            pkgconfig_flags: under.pkgconfig_flags,
             source_dir: under.source_dir,
             search_include: under.search_include,
             memo: @memo,
@@ -250,7 +250,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         objects: objects,
         module: module_names.binary_of(s.name),
         modules: probing.every_module(planned.probings),
-        bound: supplied.bindings(s, art.decls, package_words: site.package_words)
+        bound: supplied.bindings(s, art.decls, pkgconfig_words: site.pkgconfig_words)
     )
 
 # The link over a round's objects, and the round it makes: its verdict, the
@@ -265,7 +265,7 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
         sanitize: options.sanitize,
         target: t.target,
         search_library: options.library,
-        package_flags: site.package_flags,
+        pkgconfig_flags: site.pkgconfig_flags,
         link_names: site.link_names
     )
     linked = link.link_objects(
@@ -276,7 +276,7 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
         level: options.level,
         sanitize: options.sanitize,
         search_library: options.library,
-        package_flags: site.package_flags,
+        pkgconfig_flags: site.pkgconfig_flags,
         link_names: site.link_names,
         judging: supplied.asked(t, line: line, bound: bound, objects: objects)
     )

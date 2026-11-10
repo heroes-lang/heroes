@@ -18,8 +18,8 @@
 
 use diag
 use head_names
-use head_package
 use keywords
+use pkgconfig_head
 use token
 
 # Which of `diagnostics` a head tells instead, one flag each. A text with
@@ -69,9 +69,9 @@ function head_word(tokens: [token.Token], at: i64, text: str) -> str
     if word == keywords.WORD_LINK || word == keywords.WORD_PKGCONFIG
         return word
 
-    # The old word reads as the mark it was (`head_package.retired`), so its
+    # The old word reads as the mark it was (`pkgconfig_head.retired`), so its
     # string is judged once, as a `pkgconfig` string.
-    if word == head_package.RETIRED || head_package.near_width(tokens, at: at, text: text) == 1
+    if word == pkgconfig_head.RETIRED || pkgconfig_head.near_width(tokens, at: at, text: text) == 1
         return keywords.WORD_PKGCONFIG
     return ""
 

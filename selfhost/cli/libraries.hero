@@ -1,8 +1,8 @@
-# What a group's link and package become on clang's command line
+# What a group's `link` and `pkgconfig` become on clang's command line
 # (design.md §4.19; panels 048, 049, 050, 055). Port of
 # heroes-cli/src/commands/libraries.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
-# THE ALLOW-LIST IS THE WHOLE SECURITY OF package, and the precedent
+# THE ALLOW-LIST IS THE WHOLE SECURITY OF pkgconfig, and the precedent
 # is not hypothetical: Go shipped the same idea without a filter and
 # it became CVE-2018-6574 — attack.so beside `#cgo CFLAGS:
 # -fplugin=attack.so`, loaded into the host compiler by `go get`.
@@ -15,7 +15,7 @@
 # the instrument for that class — DECIDE.md holds the pair).
 #
 # pkg-config's answer comes back through two files under build/, and the
-# package name reaches it as one argument word, never a second command.
+# library's name reaches it as one argument word, never a second command.
 # **The two files were `build/pkg-config-out.txt` and `-err.txt` for every
 # build in the tree** until 2026-09-30 (defect 134): two programs naming
 # `libzstd` and `liblz4`, built together, read each other's answers, and the
@@ -23,9 +23,9 @@
 # the other's `-I`) or that `lz4.h` is not on the include path. They are
 # private names now (`cli/publish.hero`), removed once read.
 
-use cli/package_answer
-use cli/package_macros
-use cli/package_words
+use cli/pkgconfig_answer
+use cli/pkgconfig_macros
+use cli/pkgconfig_words
 use cli/process
 use cli/publish
 use cli/shell_split
@@ -64,12 +64,12 @@ function in_the_c_runtime(library: str) -> bool
 
     return library == "m" || library == "c"
 
-# The words a package may hand back, and nothing else. -D and -U are here
+# The words pkg-config may hand back, and nothing else. -D and -U are here
 # on Go's own precedent, measured to unlock 28 of 285 .pc files (SDL2 was
 # bindable through NEITHER clause without them). The two -Wl forms are
 # spellings of things already on the list, checked WHOLE — three
 # comma-parts, the middle one named — which is a fact about the value, not
-# a premise about what packages tend to send.
+# a premise about what `.pc` files tend to send.
 #
 # **EVERY FLAG IN BOTH ITS SPELLINGS** (defect 160, 2026-10-02): clang reads
 # `-D -U -I -L -l -F` with their value joined or as the next word, and
@@ -77,19 +77,19 @@ function in_the_c_runtime(library: str) -> bool
 # over one `.pc` written both ways: `-F <dir>`, `-I <dir>`, `-D X`,
 # `-L <dir>` and `-l m` come back joined, `-U X`, `-framework X` and
 # `-Wl,-rpath -Wl,<dir>` as two words. Only `-F` as a pair was read until
-# then, so a framework's package was refused with a note listing `-F` as
+# then, so a framework's library was refused with a note listing `-F` as
 # accepted. A value in the next word is a value only when it is not itself a
 # flag, so a refused flag stays refused in that slot too, and every value is
 # handed on JOINED, one word per flag: `compile_flags` below keeps a
-# package's compile words by their prefix, and a separate `-I` would have
+# library's compile words by their prefix, and a separate `-I` would have
 # reached a compile without its directory.
 #
 # **The words judged by their whole spelling**, `-pthread`, `-isystem` and
-# the two the compiler's own link line already says, are `cli/package_words`'
-# (panel 198, defect 444): Debian 13 refused 23 correct packages for them.
-function filter_words(package: str, said: str) -> [str]?
+# the two the compiler's own link line already says, are `cli/pkgconfig_words`'
+# (panel 198, defect 444): Debian 13 refused 23 correct libraries for them.
+function filter_words(pkgconfig: str, said: str) -> [str]?
     flags: [str] @= []
-    parts = shell_split.words(package: package, said: said)?
+    parts = shell_split.words(pkgconfig: pkgconfig, said: said)?
     index: i64 @= 0
 
     while index < parts.len()
@@ -99,50 +99,50 @@ function filter_words(package: str, said: str) -> [str]?
         if index + 1 < parts.len()
             next @ parts[index + 1]
 
-        if package_words.separate(word) || package_words.valued(word)
+        if pkgconfig_words.separate(word) || pkgconfig_words.valued(word)
             if index + 1 >= parts.len()
                 return fail(
                     code: "failed",
-                    msg: "heroes-ffi-pkgconfig `" + package + "` answered with `" + shell_split.shown(word, keep_lines: false) + "` and nothing after it"
+                    msg: "heroes-ffi-pkgconfig `" + pkgconfig + "` answered with `" + shell_split.shown(word, keep_lines: false) + "` and nothing after it"
                 )
 
-            if !package_words.is_value(flag: word, value: next)
+            if !pkgconfig_words.is_value(flag: word, value: next)
                 return refused(
-                    package: package,
+                    pkgconfig: pkgconfig,
                     said: word + " " + next,
-                    told: package_words.told(flag: word, value: next)
+                    told: pkgconfig_words.told(flag: word, value: next)
                 )
 
-            if package_words.separate(word)
+            if pkgconfig_words.separate(word)
                 flags @ flags.push(word)
                 flags @ flags.push(next)
             else
-                flags @ flags.push(package_words.spelled(word) + next)
+                flags @ flags.push(pkgconfig_words.spelled(word) + next)
             index @ index + 2
             continue
 
-        if package_words.restates(word)
+        if pkgconfig_words.restates(word)
             index @ index + 1
             continue
-        one = package_words.one_word(word)
+        one = pkgconfig_words.one_word(word)
 
         if !one.is_err()
             flags @ flags.push(one.must())
             index @ index + 1
             continue
-        link = package_words.linked(word: word, next: next)
+        link = pkgconfig_words.linked(word: word, next: next)
 
         if !link.is_err()
-            flags @ strings.with_all(list: flags, more: package_words.linked_words(link.must()))
+            flags @ strings.with_all(list: flags, more: pkgconfig_words.linked_words(link.must()))
             index @ index + link.must().words
             continue
-        told = shell_split.no_flag(said: said, parts: parts, at: index) + package_words.told_word(word: word, next: next)
-        return refused(package: package, said: package_words.named(word: word, next: next), told: told)
+        told = shell_split.no_flag(said: said, parts: parts, at: index) + pkgconfig_words.told_word(word: word, next: next)
+        return refused(pkgconfig: pkgconfig, said: pkgconfig_words.named(word: word, next: next), told: told)
 
     return ok(flags)
 
-# The words of a package's answer a COMPILE needs, `-I -D -U -F` and
-# `-pthread` (panel 198), in the order the package gave them: the one rule
+# The words of a library's answer a COMPILE needs, `-I -D -U -F` and
+# `-pthread` (panel 198), in the order the answer gave them: the one rule
 # for every step that compiles the program's headers, the units
 # (`cli/units.hero`), the pointee and layout probes and the header's
 # questions (`compiling.search_words`), so no step keeps a different subset.
@@ -155,11 +155,11 @@ function filter_words(package: str, said: str) -> [str]?
 # header was told missing. The rule reads `filter_words`' own output, whose
 # contract is that a value is joined to its flag and that `-framework`'s
 # name, the one value in a word of its own, never begins with `-` or `@`
-# (`package_words.is_value`).
-function compile_flags(package_flags: [str]) -> [str]
+# (`pkgconfig_words.is_value`).
+function compile_flags(pkgconfig_flags: [str]) -> [str]
     out: [str] @= []
 
-    for flag in package_flags
+    for flag in pkgconfig_flags
         if flag == "-pthread" || valued_by(flag, prefixes: ["-I", "-D", "-U", "-F"])
             out @ out.push(flag)
 
@@ -175,51 +175,51 @@ function valued_by(flag: str, prefixes: [str]) -> bool
 
     return false
 
-# The words of a package's answer a LINK reads, in the order the package
+# The words of a library's answer a LINK reads, in the order the answer
 # gave them: `-L`, `-l`, `-Wl,-rpath,`, the `-framework` pair, `-pthread`
-# but on Windows (`package_words.link_passes`), and `-F` where the answer
+# but on Windows (`pkgconfig_words.link_passes`), and `-F` where the answer
 # links a framework, since a link reads `-F` only to find one; `-I -D -U` are no link's. The link took the whole answer until defect
 # 206, and clang on Linux calls a `-F` at a link *argument unused during
 # compilation*, the one compile word it warns about there (Debian clang
 # 22.1.8 and 18.1.8, measured 2026-10-03; `-framework` is no Linux link's).
-function link_words(package_flags: [str]) -> [str]
+function link_words(pkgconfig_flags: [str]) -> [str]
     framework: bool @= false
 
-    for flag in package_flags
+    for flag in pkgconfig_flags
         if flag == "-framework"
             framework @ true
 
     out: [str] @= []
     index: i64 @= 0
 
-    while index < package_flags.len()
-        flag = package_flags[index]
+    while index < pkgconfig_flags.len()
+        flag = pkgconfig_flags[index]
 
-        if flag == "-framework" && index + 1 < package_flags.len()
+        if flag == "-framework" && index + 1 < pkgconfig_flags.len()
             out @ out.push(flag)
-            out @ out.push(package_flags[index + 1])
+            out @ out.push(pkgconfig_flags[index + 1])
             index @ index + 2
             continue
 
-        if package_words.link_passes(flag) || valued_by(flag, prefixes: ["-L", "-l", "-Wl,"]) || framework && valued_by(flag, prefixes: ["-F"])
+        if pkgconfig_words.link_passes(flag) || valued_by(flag, prefixes: ["-L", "-l", "-Wl,"]) || framework && valued_by(flag, prefixes: ["-F"])
             out @ out.push(flag)
         index @ index + 1
 
     return out
 
-# The refusal, naming what the package said and what is accepted, `told`
+# The refusal, naming what the answer said and what is accepted, `told`
 # after it where a word is no flag (`shell_split.no_flag`, defect 183) or a
-# value no value (`package_words.told`). The list in it is
-# `cli/package_words`' five tables, word for word, and the test *the
+# value no value (`pkgconfig_words.told`). The list in it is
+# `cli/pkgconfig_words`' five tables, word for word, and the test *the
 # refusal's note names the list word for word* holds it to them (panel 198's
 # R3: the note is the rule's only statement a reader meets).
-function refused(package: str, said: str, told: str) -> [str]?
-    head = "heroes-ffi-pkgconfig `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told
+function refused(pkgconfig: str, said: str, told: str) -> [str]?
+    head = "heroes-ffi-pkgconfig `" + pkgconfig + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told
 
     # A kept name's `-D` or `-U`, a word the list admits refused for its value,
     # is told with notes of its own (defect 2348).
-    if package_macros.refused_said(said)
-        return fail(code: "failed", msg: head + package_macros.notes(package))
+    if pkgconfig_macros.refused_said(said)
+        return fail(code: "failed", msg: head + pkgconfig_macros.notes(pkgconfig))
     return fail(
         code: "failed",
         msg: head + "\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F` and `-isystem`, each with its value joined or as the next word (`-isystem <dir>` handed on as `-I<dir>`), `-pthread`, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted, as are `-Wl,--enable-new-dtags` and `-Wl,--export-dynamic`, which are not sent to the linker because this compiler's own link line says both already: everything else is refused, because a word the list does not name could be one that runs code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
@@ -251,69 +251,69 @@ function key_text(words: [str]) -> str
 
     return parts.join("|")
 
-# Each package's own words, asked one package at a time as `resolve_packages`
-# asks them, so a module's unit can be handed the words of the packages its
+# Each library's own words, asked one library at a time as `resolve_pkgconfigs`
+# asks them, so a module's unit can be handed the words of the libraries its
 # own groups name and no other module's (panel 205's R3, defect 572); the
-# first package that cannot answer stops the build as it would there.
-function resolve_each(packages: [str], build_dir: str) -> {str: [str]}?
+# first library that cannot answer stops the build as it would there.
+function resolve_each(pkgconfigs: [str], build_dir: str) -> {str: [str]}?
     out: {str: [str]} @= {}
 
-    for package in packages
-        out[package] @ resolve_packages(packages: [package], build_dir: build_dir)?
+    for pkgconfig in pkgconfigs
+        out[pkgconfig] @ resolve_pkgconfigs(pkgconfigs: [pkgconfig], build_dir: build_dir)?
 
     return ok(out)
 
-# The words of `packages`, in their order, from what `resolve_each` answered.
-function words_of(each: {str: [str]}, packages: [str]) -> [str]
+# The words of `pkgconfigs`, in their order, from what `resolve_each` answered.
+function words_of(each: {str: [str]}, pkgconfigs: [str]) -> [str]
     out: [str] @= []
 
-    for package in packages
-        for word in each[package].default([])
+    for pkgconfig in pkgconfigs
+        for word in each[pkgconfig].default([])
             out @ out.push(word)
 
     return out
 
-# Ask the machine about each package, and let nothing through that is
+# Ask the machine about each library, and let nothing through that is
 # not on the list. The failure is deliberately not silent and not a
-# fallback: a package that cannot be resolved must stop the build,
+# fallback: a library that cannot be resolved must stop the build,
 # because the alternative is a link error naming C symbols. The
-# message opens with the PACKAGE marker, which is emit_ffi_lookup's
+# message opens with the PKGCONFIG marker, which is emit_ffi_lookup's
 # contract: the one class whose text this compiler writes itself.
-function resolve_packages(packages: [str], build_dir: str) -> [str]?
+function resolve_pkgconfigs(pkgconfigs: [str], build_dir: str) -> [str]?
     flags: [str] @= []
 
-    for package in packages
+    for pkgconfig in pkgconfigs
         process.mkdir_all(build_dir)?
         answer_path = publish.private_name(build_dir + "/pkg-config-out.txt")
         err_path = publish.private_name(build_dir + "/pkg-config-err.txt")
         ran = process.run(
             program: "pkg-config",
-            words: ["pkg-config", "--cflags", "--libs", "--", package],
+            words: ["pkg-config", "--cflags", "--libs", "--", pkgconfig],
             out: answer_path,
             err: err_path
         )
 
         # Read as text where they are text, and never taken for nothing where
-        # they are not (defect 241, `cli/package_answer.hero`).
-        answered = package_answer.answer(path: answer_path, package: package)
-        complained = package_answer.complaint(err_path)
+        # they are not (defect 241, `cli/pkgconfig_answer.hero`).
+        answered = pkgconfig_answer.answer(path: answer_path, pkgconfig: pkgconfig)
+        complained = pkgconfig_answer.complaint(err_path)
         publish.discard(answer_path)
         publish.discard(err_path)
 
-        # A package name reaches `pkg-config` as one word whatever is in
+        # A library's name reaches `pkg-config` as one word whatever is in
         # it, and after `--`, so it is read as a name and never as an
         # option: until panel 188 `package "--atleast-pkgconfig-version=0"`
         # was answered with nothing at exit 0 and the group accepted.
         if !ran.started
-            return fail(code: "no_pkg_config", msg: package_answer.unasked(package: package, why: ran.why))
+            return fail(code: "no_pkg_config", msg: pkgconfig_answer.unasked(pkgconfig: pkgconfig, why: ran.why))
 
         # Installed or not is asked of `pkg-config`, never assumed (defect 292).
         if ran.code != 0
             return fail(
                 code: "failed",
-                msg: package_answer.refused(package: package, complained: complained, build_dir: build_dir)
+                msg: pkgconfig_answer.refused(pkgconfig: pkgconfig, complained: complained, build_dir: build_dir)
             )
-        filtered = filter_words(package: package, said: answered?)
+        filtered = filter_words(pkgconfig: pkgconfig, said: answered?)
 
         if filtered.is_err()
             _ = filtered?
@@ -327,14 +327,14 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
 
 test "the allow-list: the safe words pass, the plugin is refused whole"
     good = filter_words(
-        package: "sdl2",
+        pkgconfig: "sdl2",
         said: "-I/opt/include -D_THREAD_SAFE -L/opt/lib -lSDL2 -framework Cocoa -Wl,-framework,CoreAudio -Wl,-rpath,/opt/homebrew/lib\n"
     )
     assert !good.is_err()
     flags = good.must()
 
-    # A Windows link takes no rpath (`package_words.rpath_words`).
-    assert flags.len() == 8 + package_words.rpath_words("/opt/homebrew/lib").len()
+    # A Windows link takes no rpath (`pkgconfig_words.rpath_words`).
+    assert flags.len() == 8 + pkgconfig_words.rpath_words("/opt/homebrew/lib").len()
     assert flags[0] == "-I/opt/include"
     assert flags[1] == "-D_THREAD_SAFE"
     assert flags[4] == "-framework"
@@ -347,22 +347,22 @@ test "the allow-list: the safe words pass, the plugin is refused whole"
 
     # The vector itself: a plugin flag stops the build and names the
     # precedent.
-    evil = filter_words(package: "trap", said: "-I/x -fplugin=attack.so")
+    evil = filter_words(pkgconfig: "trap", said: "-I/x -fplugin=attack.so")
 
     match evil
         .ok    => assert false
         .err e => assert has_text(text: e.msg, needle: "CVE-2018-6574")
 
     # A bare -Wl, is NOT a spelling of anything on the list.
-    blanket = filter_words(package: "trap", said: "-Wl,-e,evil_entry")
+    blanket = filter_words(pkgconfig: "trap", said: "-Wl,-e,evil_entry")
     assert blanket.is_err()
 
     # -framework at the end with nothing after it is named, not read.
-    hanging = filter_words(package: "trap", said: "-framework")
+    hanging = filter_words(pkgconfig: "trap", said: "-framework")
     assert hanging.is_err()
 
     # A bare -D with no name is not a flag, it is two characters.
-    assert filter_words(package: "trap", said: "-D").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-D").is_err()
 
 # What this Mac's pkg-config 3.0.7 printed, 2026-10-02, for one `.pc` whose
 # `Cflags` and `Libs` wrote every accepted flag both ways (lane h158, defect
@@ -370,8 +370,8 @@ test "the allow-list: the safe words pass, the plugin is refused whole"
 # clang joined.
 test "every accepted flag in both its spellings, and a refused one refused in either"
     said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
-    flags = filter_words(package: "spell", said: said).must()
-    rpaths = strings.with_all(list: package_words.rpath_words("/rp/a"), more: package_words.rpath_words("/rp/b"))
+    flags = filter_words(pkgconfig: "spell", said: said).must()
+    rpaths = strings.with_all(list: pkgconfig_words.rpath_words("/rp/a"), more: pkgconfig_words.rpath_words("/rp/b"))
     head = [
         "-F/fw/a"
         "-I/inc/a"
@@ -389,12 +389,12 @@ test "every accepted flag in both its spellings, and a refused one refused in ei
 
     # The separate spelling of each, as a pkg-config that prints what the
     # file says, or a compiler's own command line, writes it.
-    apart = filter_words(package: "spell", said: "-F /fw -I /inc -D X -U Y -L /lib -l z").must()
+    apart = filter_words(pkgconfig: "spell", said: "-F /fw -I /inc -D X -U Y -L /lib -l z").must()
     assert apart == ["-F/fw", "-I/inc", "-DX", "-UY", "-L/lib", "-lz"]
 
     # A flag in the value's place is a flag: the plugin stays refused, and the
     # refusal names both words.
-    slotted = filter_words(package: "trap", said: "-I -fplugin=attack.so")
+    slotted = filter_words(pkgconfig: "trap", said: "-I -fplugin=attack.so")
 
     match slotted
         .ok => assert false
@@ -402,16 +402,16 @@ test "every accepted flag in both its spellings, and a refused one refused in ei
             assert has_text(text: e.msg, needle: "answered with `-I -fplugin=attack.so`")
             assert has_text(text: e.msg, needle: "each with its value joined or as the next word")
 
-    assert filter_words(package: "trap", said: "-framework -fplugin=attack.so").is_err()
-    assert filter_words(package: "trap", said: "-Wl,-rpath -Wl,-e,evil").is_err()
-    assert filter_words(package: "trap", said: "-Wl,-rpath").is_err()
-    assert filter_words(package: "trap", said: "-Wl,-framework -L/lib").is_err()
-    assert filter_words(package: "trap", said: "-F").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-framework -fplugin=attack.so").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-Wl,-rpath -Wl,-e,evil").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-Wl,-rpath").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-Wl,-framework -L/lib").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-F").is_err()
 
     # A word the list does not hold stays refused in either spelling.
-    assert filter_words(package: "trap", said: "-iquote /sys/a").is_err()
-    assert filter_words(package: "trap", said: "-iquote/sys/a").is_err()
-    assert filter_words(package: "trap", said: "-Xlinker -rpath -Xlinker /rp/c").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-iquote /sys/a").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-iquote/sys/a").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-Xlinker -rpath -Xlinker /rp/c").is_err()
 
 # Panel 198: the answers three machines gave and the frozen list refused (Debian
 # 13's `libcurl` and `glib-2.0`, `gmodule-2.0` beside them, and an SDL 3.2.10 built
@@ -419,7 +419,7 @@ test "every accepted flag in both its spellings, and a refused one refused in ei
 # the words it reached clang as, and the words beside each admitted one refused.
 test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     curl = filter_words(
-        package: "libcurl",
+        pkgconfig: "libcurl",
         said: "-I/usr/include/aarch64-linux-gnu -isystem /usr/include/mit-krb5 -I/usr/include/p11-kit-1 -lcurl\n"
     ).must()
     assert curl == ["-I/usr/include/aarch64-linux-gnu", "-I/usr/include/mit-krb5", "-I/usr/include/p11-kit-1", "-lcurl"]
@@ -427,8 +427,8 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     assert link_words(curl) == ["-lcurl"]
 
     # The directory joined, as clang reads it too.
-    assert filter_words(package: "j", said: "-isystem/usr/include/mit-krb5 -lcurl").must() == ["-I/usr/include/mit-krb5", "-lcurl"]
-    glib = filter_words(package: "glib-2.0", said: "-I/usr/include/glib-2.0 -pthread -lglib-2.0\n").must()
+    assert filter_words(pkgconfig: "j", said: "-isystem/usr/include/mit-krb5 -lcurl").must() == ["-I/usr/include/mit-krb5", "-lcurl"]
+    glib = filter_words(pkgconfig: "glib-2.0", said: "-I/usr/include/glib-2.0 -pthread -lglib-2.0\n").must()
     assert glib == ["-I/usr/include/glib-2.0", "-pthread", "-lglib-2.0"]
     assert compile_flags(glib) == ["-I/usr/include/glib-2.0", "-pthread"]
     windows = process.exe_suffix() == ".exe"
@@ -444,7 +444,7 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     # The source-built SDL3's answer and gmodule's: the two words the compiler's
     # own link line already says are left out, and nothing else moves.
     sdl = filter_words(
-        package: "sdl3",
+        pkgconfig: "sdl3",
         said: "-I/usr/local/include -L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags -lSDL3\n"
     ).must()
 
@@ -454,7 +454,7 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     if windows
         assert sdl == ["-I/usr/local/include", "-L/usr/local/lib", "-lSDL3"]
     gmodule = filter_words(
-        package: "gmodule-2.0",
+        pkgconfig: "gmodule-2.0",
         said: "-pthread -Wl,--export-dynamic -lgmodule-2.0 -pthread -lglib-2.0 -lglib-2.0\n"
     ).must()
     assert gmodule == ["-pthread", "-lgmodule-2.0", "-pthread", "-lglib-2.0", "-lglib-2.0"]
@@ -464,17 +464,17 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     # words (libpsx's whole answer, its first word named), a `-isystem` with no
     # directory or a flag in its place, the near spellings, a warning flag, the
     # other spelling of a linker option.
-    assert filter_words(package: "t", said: "-Wl,--disable-new-dtags").is_err()
-    assert filter_words(package: "t", said: "-Wl,--enable-new-dtags,--plugin,x.so").is_err()
-    assert filter_words(package: "t", said: "-Wl,--export-dynamic,-e,evil").is_err()
-    assert filter_words(package: "t", said: "-isystem").is_err()
-    assert filter_words(package: "t", said: "-isystem -fplugin=attack.so").is_err()
-    assert filter_words(package: "t", said: "-isystem-after /sys/a").is_err()
-    assert filter_words(package: "t", said: "-pthreads").is_err()
-    assert filter_words(package: "t", said: "-Wno-deprecated-declarations").is_err()
-    assert filter_words(package: "t", said: "-Xlinker --enable-new-dtags").is_err()
+    assert filter_words(pkgconfig: "t", said: "-Wl,--disable-new-dtags").is_err()
+    assert filter_words(pkgconfig: "t", said: "-Wl,--enable-new-dtags,--plugin,x.so").is_err()
+    assert filter_words(pkgconfig: "t", said: "-Wl,--export-dynamic,-e,evil").is_err()
+    assert filter_words(pkgconfig: "t", said: "-isystem").is_err()
+    assert filter_words(pkgconfig: "t", said: "-isystem -fplugin=attack.so").is_err()
+    assert filter_words(pkgconfig: "t", said: "-isystem-after /sys/a").is_err()
+    assert filter_words(pkgconfig: "t", said: "-pthreads").is_err()
+    assert filter_words(pkgconfig: "t", said: "-Wno-deprecated-declarations").is_err()
+    assert filter_words(pkgconfig: "t", said: "-Xlinker --enable-new-dtags").is_err()
     psx = filter_words(
-        package: "libpsx",
+        pkgconfig: "libpsx",
         said: "-Wl,--no-as-needed -Wl,--whole-archive -lpsx -Wl,--no-whole-archive -Wl,--as-needed -lpthread\n"
     )
 
@@ -491,7 +491,7 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
             )
             assert has_text(text: e.msg, needle: "CVE-2018-6574")
 
-    tunnel = filter_words(package: "t", said: "-Wl,--enable-new-dtags,--plugin,x.so")
+    tunnel = filter_words(pkgconfig: "t", said: "-Wl,--enable-new-dtags,--plugin,x.so")
 
     match tunnel
         .ok    => assert false
@@ -500,11 +500,11 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
 # PANEL 198's R3, the spec-warden's finding: the refusal's note is the list's only
 # statement a reader meets, and nothing held it to the code. So both ways: every
 # word the note names is accepted, its placeholder filled and a valued flag in
-# both its spellings; and every word of `cli/package_words`' tables is named in
+# both its spellings; and every word of `cli/pkgconfig_words`' tables is named in
 # it. A word added to a table and not to the note, or named in the note and not
 # admitted, fires here.
 test "the refusal's note names the list word for word, and the list admits every word it names (panel 198)"
-    refusal = filter_words(package: "n", said: "-fplugin=x.so")
+    refusal = filter_words(pkgconfig: "n", said: "-fplugin=x.so")
     note: str @= ""
     empty: [str] = []
 
@@ -555,9 +555,9 @@ test "the refusal's note names the list word for word, and the list admits every
     # The value is a word the guard keeps none of: since defect 2333 a `-D` or
     # `-U` of one, `v` among them, the runtime's macros' own, is refused.
     for named in spans
-        if package_words.valued(named)
-            assert !filter_words(package: "n", said: named + " pkgv").is_err()
-            assert !filter_words(package: "n", said: named + "pkgv").is_err()
+        if pkgconfig_words.valued(named)
+            assert !filter_words(pkgconfig: "n", said: named + " pkgv").is_err()
+            assert !filter_words(pkgconfig: "n", said: named + "pkgv").is_err()
             continue
         filled: str @= named
 
@@ -566,18 +566,18 @@ test "the refusal's note names the list word for word, and the list admits every
 
         if strings.ends_with(text: named, suffix: "<name>")
             filled @ named.slice(from: 0, to: named.len() - 6) + "N"
-        assert !filter_words(package: "n", said: filled).is_err()
+        assert !filter_words(pkgconfig: "n", said: filled).is_err()
 
-    for flag in package_words.VALUED
+    for flag in pkgconfig_words.VALUED
         assert has_text(text: listed, needle: "`" + flag + "`")
 
-    for flag in package_words.SEPARATE
+    for flag in pkgconfig_words.SEPARATE
         assert has_text(text: listed, needle: "`" + flag + " <")
 
-    for word in strings.with_all(list: package_words.PASSED, more: package_words.RESTATED)
+    for word in strings.with_all(list: pkgconfig_words.PASSED, more: pkgconfig_words.RESTATED)
         assert has_text(text: listed, needle: "`" + word + "`")
 
-    for option in package_words.LINKED
+    for option in pkgconfig_words.LINKED
         assert has_text(text: listed, needle: "`-Wl," + option + ",<")
 
 # Route V (panel 198, its completeness critic's second pass; defect 527): a
@@ -587,7 +587,7 @@ test "the refusal's note names the list word for word, and the list admits every
 # and why.
 test "a value beginning with @ is refused in every slot, and -l:<file> with it (panel 198, route V)"
     for answer in ["-framework @r", "-I @r", "-I@r", "-D @r", "-D@r", "-U @r", "-U@r", "-L @r", "-L@r", "-l @r", "-l@r", "-F @r", "-F@r", "-isystem @r", "-isystem@r", "-Wl,-rpath,@r", "-Wl,-rpath -Wl,@r", "-Wl,-framework,@r", "-Wl,-framework -Wl,@r"]
-        match filter_words(package: "v", said: answer)
+        match filter_words(pkgconfig: "v", said: answer)
             .ok => assert false
             .err e =>
                 assert has_text(
@@ -596,7 +596,7 @@ test "a value beginning with @ is refused in every slot, and -l:<file> with it (
                 )
 
     for answer in ["-l:libuv.a", "-l :libuv.a"]
-        match filter_words(package: "v", said: answer)
+        match filter_words(pkgconfig: "v", said: answer)
             .ok    => assert false
             .err e => assert has_text(
                 text: e.msg,
@@ -604,35 +604,35 @@ test "a value beginning with @ is refused in every slot, and -l:<file> with it (
             )
 
     # A flag in a joined value's place is refused as it is in the next word's.
-    assert filter_words(package: "v", said: "-I-fplugin=attack.so").is_err()
-    assert filter_words(package: "v", said: "-isystem-after").is_err()
+    assert filter_words(pkgconfig: "v", said: "-I-fplugin=attack.so").is_err()
+    assert filter_words(pkgconfig: "v", said: "-isystem-after").is_err()
 
     # An `@` inside a path is a letter of the path, as in Homebrew's `openssl@4`.
     kept = filter_words(
-        package: "openssl",
+        pkgconfig: "openssl",
         said: "-I/opt/homebrew/Cellar/openssl@4/4.0.3/include -L/opt/homebrew/Cellar/openssl@4/4.0.3/lib -lssl\n"
     ).must()
     assert kept == ["-I/opt/homebrew/Cellar/openssl@4/4.0.3/include", "-L/opt/homebrew/Cellar/openssl@4/4.0.3/lib", "-lssl"]
 
 # Over the same measured answer: a compile is handed every compile word and
-# no link word, in the package's order (defect 161).
+# no link word, in the answer's order (defect 161).
 test "a compile takes a package's -I -D -U -F, and only those, in their order"
     said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
-    flags = filter_words(package: "spell", said: said).must()
+    flags = filter_words(pkgconfig: "spell", said: said).must()
     assert compile_flags(flags) == ["-F/fw/a", "-I/inc/a", "-DNAME_A", "-UNAME_B", "-I/inc/b", "-F/fw/b", "-DNAME_C=1"]
 
     # The framework's name and the libraries stay off a compile.
-    linked = filter_words(package: "sdl", said: "-framework Cocoa -lSDL3 -L/opt/lib -Wl,-framework,Metal").must()
+    linked = filter_words(pkgconfig: "sdl", said: "-framework Cocoa -lSDL3 -L/opt/lib -Wl,-framework,Metal").must()
     assert linked.len() == 6
     assert compile_flags(linked).len() == 0
 
 # Over the same measured answer: a link is handed every link word and no
-# compile word, in the package's order, and `-F` only where a framework is
+# compile word, in the answer's order, and `-F` only where a framework is
 # linked (defect 206); every word reaches a compile or a link.
 test "a link takes a package's link words, and its -F only beside a framework (defect 206)"
     said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
-    flags = filter_words(package: "spell", said: said).must()
-    rpaths = strings.with_all(list: package_words.rpath_words("/rp/a"), more: package_words.rpath_words("/rp/b"))
+    flags = filter_words(pkgconfig: "spell", said: said).must()
+    rpaths = strings.with_all(list: pkgconfig_words.rpath_words("/rp/a"), more: pkgconfig_words.rpath_words("/rp/b"))
     head = ["-F/fw/a", "-F/fw/b", "-L/lib/a", "-lm", "-framework", "Cocoa"]
     assert link_words(flags) == strings.with_all(list: strings.with_all(list: head, more: rpaths), more: ["-framework", "Metal"])
     both = strings.with_all(list: compile_flags(flags), more: link_words(flags))
@@ -647,30 +647,30 @@ test "a link takes a package's link words, and its -F only beside a framework (d
         assert found
 
     # The defect's own `.pc`: a framework's headers, and nothing linked.
-    headers_only = filter_words(package: "fakefw", said: "-F /fw/pc/../frameworks\n").must()
+    headers_only = filter_words(pkgconfig: "fakefw", said: "-F /fw/pc/../frameworks\n").must()
     assert compile_flags(headers_only) == ["-F/fw/pc/../frameworks"]
     assert link_words(headers_only).len() == 0
 
-    # One package's `-F` finds the framework another package links.
-    two = strings.with_all(list: headers_only, more: filter_words(package: "fw", said: "-framework Fake\n").must())
+    # One library's `-F` finds the framework another library links.
+    two = strings.with_all(list: headers_only, more: filter_words(pkgconfig: "fw", said: "-framework Fake\n").must())
     assert link_words(two) == ["-F/fw/pc/../frameworks", "-framework", "Fake"]
 
 # pkgconf 3.0.7's answers on this Mac, 2026-10-02 (lane h158, defect 162),
 # read into the words the list judges: each one word whatever it holds.
 test "a word pkg-config escaped is judged whole, and a key keeps it one"
     said = "-I/inc/with\\ space -DNAME=a\\ b -DVERSION=\\\"1.0\\\" -L/lib/with\\ space -lz\n"
-    assert filter_words(package: "spaced", said: said).must() == ["-I/inc/with space", "-DNAME=a b", "-DVERSION=\"1.0\"", "-L/lib/with space", "-lz"]
+    assert filter_words(pkgconfig: "spaced", said: said).must() == ["-I/inc/with space", "-DNAME=a b", "-DVERSION=\"1.0\"", "-L/lib/with space", "-lz"]
 
     # A refused flag stays refused whatever escapes it, named whole, and a
     # quoted space never makes two flags of one word.
-    escaped = filter_words(package: "trap", said: "\\-fplugin=a\\ b.so")
+    escaped = filter_words(pkgconfig: "trap", said: "\\-fplugin=a\\ b.so")
 
     match escaped
         .ok    => assert false
         .err e => assert has_text(text: e.msg, needle: "answered with `-fplugin=a b.so`")
 
-    assert filter_words(package: "trap", said: "-I'/a -fplugin=attack.so'").must() == ["-I/a -fplugin=attack.so"]
-    assert filter_words(package: "trap", said: "-I ''").is_err()
+    assert filter_words(pkgconfig: "trap", said: "-I'/a -fplugin=attack.so'").must() == ["-I/a -fplugin=attack.so"]
+    assert filter_words(pkgconfig: "trap", said: "-I ''").is_err()
 
     # A word with a space is one word in a key.
     assert key_text(["-I/a b"]) != key_text(["-I/a", "b"])
@@ -682,7 +682,7 @@ test "a word pkg-config escaped is judged whole, and a key keeps it one"
 # tail names the line `pkg-config` printed and the word before it, and a
 # refused flag keeps its words.
 test "a word that is no flag is refused with the line it came from (defect 183)"
-    split = filter_words(package: "s7", said: "-I/opt/with space/include -L/opt/with space/lib\n")
+    split = filter_words(pkgconfig: "s7", said: "-I/opt/with space/include -L/opt/with space/lib\n")
 
     match split
         .ok => assert false
@@ -693,7 +693,7 @@ test "a word that is no flag is refused with the line it came from (defect 183)"
             )
             assert has_text(text: e.msg, needle: "CVE-2018-6574")
 
-    flag = filter_words(package: "trap", said: "-I/x -fplugin=attack.so")
+    flag = filter_words(pkgconfig: "trap", said: "-I/x -fplugin=attack.so")
 
     match flag
         .ok    => assert false
@@ -703,7 +703,7 @@ test "a word that is no flag is refused with the line it came from (defect 183)"
 # the message holds it by its code, so its first line, the one the marker's
 # reader reads, is whole.
 test "a line end in pkg-config's answer is written by its code, and the message's first line stays one (defect 237)"
-    split = filter_words(package: "q", said: "'x\ny' -lz")
+    split = filter_words(pkgconfig: "q", said: "'x\ny' -lz")
 
     match split
         .ok => assert false
@@ -734,9 +734,9 @@ test "the C runtime's own libraries are folded in where the machine folds them"
 
 # Defect 292, asked of this machine's own `pkg-config`: a `.pc` written here,
 # named by its path, which `pkg-config` reads as that file, its `Requires:`
-# naming a package no machine has, is installed and refused; a path holding no
+# naming a library no machine has, is installed and refused; a path holding no
 # `.pc` is not installed. Every `pkg-config` measured reads such a file by one
-# of `package_answer.installed`'s two spellings (pkgconf 3.0.7 and 1.8.1 and
+# of `pkgconfig_answer.installed`'s two spellings (pkgconf 3.0.7 and 1.8.1 and
 # pkg-config 0.29.2, 2026-10-04), so this fires where one no longer does.
 test "a package pkg-config reads and refuses is told installed, and one it cannot find not installed (defect 292)"
     dir = "build/selftest-package-292"
@@ -750,17 +750,17 @@ test "a package pkg-config reads and refuses is told installed, and one it canno
         err: process.discard()
     )
 
-    # Where none starts, as on the Windows box, the package is defect 249's,
+    # Where none starts, as on the Windows box, the library is defect 249's,
     # told by the reason the machine gave (defect 323).
     if !tool.started
-        match resolve_packages(packages: [pc], build_dir: dir)
+        match resolve_pkgconfigs(pkgconfigs: [pc], build_dir: dir)
             .ok => assert false
             .err e =>
                 assert e.code == "no_pkg_config"
-                assert e.msg == package_answer.unasked(package: pc, why: tool.why)
+                assert e.msg == pkgconfig_answer.unasked(pkgconfig: pc, why: tool.why)
 
     if tool.started
-        match resolve_packages(packages: [pc], build_dir: dir)
+        match resolve_pkgconfigs(pkgconfigs: [pc], build_dir: dir)
             .ok => assert false
             .err e =>
                 assert strings.starts_with(
@@ -773,7 +773,7 @@ test "a package pkg-config reads and refuses is told installed, and one it canno
                     suffix: "\n  install what pkg-config says it lacks, or name the library directly with `link`"
                 )
 
-        match resolve_packages(packages: [dir + "/absent292.pc"], build_dir: dir)
+        match resolve_pkgconfigs(pkgconfigs: [dir + "/absent292.pc"], build_dir: dir)
             .ok => assert false
             .err e =>
                 assert strings.starts_with(
@@ -813,12 +813,12 @@ function has_text(text: str, needle: str) -> bool
     return false
 
 test "a package's define of a kept name is refused with notes of its own, joined or apart (defect 2348)"
-    # **Its own reason and a repair that keeps the package's folders** (panel
+    # **Its own reason and a repair that keeps the library's folders** (panel
     # 237's R3), never the allow-list's notes, which said `-D` is accepted, gave
-    # Go's CVE as the reason and advised `link`, which drops the package's
+    # Go's CVE as the reason and advised `link`, which drops the library's
     # `-I`; a word the list does not name keeps them.
     for said in ["-I/inc -Dmain=SDL_main", "-I/inc -D main=SDL_main", "-U__has_feature -I/inc"]
-        match filter_words(package: "p2348", said: said)
+        match filter_words(pkgconfig: "p2348", said: said)
             .ok => assert false
             .err e =>
                 assert strings.holds(text: e.msg, needle: "is a name the C this compiler writes")
@@ -826,6 +826,6 @@ test "a package's define of a kept name is refused with notes of its own, joined
                 assert strings.holds(text: e.msg, needle: "pkg-config --variable=pcfiledir p2348")
                 assert !strings.holds(text: e.msg, needle: "CVE-2018-6574") && !strings.holds(text: e.msg, needle: "directly with `link`")
 
-    match filter_words(package: "p", said: "-fplugin=x.so")
+    match filter_words(pkgconfig: "p", said: "-fplugin=x.so")
         .ok    => assert false
         .err e => assert strings.holds(text: e.msg, needle: "CVE-2018-6574")

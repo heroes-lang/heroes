@@ -59,7 +59,7 @@ record Asking
     tree: ast.Ast
     checked: state.Checked
     typed: {i64: str}
-    package_words: {str: [str]}
+    pkgconfig_words: {str: [str]}
     by_header: {str: [str]}
     plans: [unit_plan.Plan]
     read: {str: str}
@@ -77,7 +77,7 @@ record Tried
     here: {i64: str}
     theirs: {i64: str}
 
-function asking(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], tree: ast.Ast, checked: state.Checked, planned: probing.Planned, package_words: {str: [str]}, by_header: {str: [str]}) -> Asking
+function asking(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], tree: ast.Ast, checked: state.Checked, planned: probing.Planned, pkgconfig_words: {str: [str]}, by_header: {str: [str]}) -> Asking
     typed: {i64: str} @= {}
 
     for one in layout_text.asked(s, decls)
@@ -97,7 +97,7 @@ function asking(t: toolchain.Toolchain, under: compiling.Compiling, s: source.So
         tree: tree,
         checked: checked,
         typed: typed,
-        package_words: package_words,
+        pkgconfig_words: pkgconfig_words,
         by_header: by_header,
         plans: planned.plans,
         read: read
@@ -144,7 +144,7 @@ function plan_of(a: Asking, module: str) -> unit_plan.Plan?
 # (`probing.plan_under`).
 function plan_words(a: Asking, plan: unit_plan.Plan) -> [str]
     return compiling.probe_words(
-        probing.plan_under(a.under, a.s, a.decls, plan: plan, package_words: a.package_words, by_header: a.by_header)
+        probing.plan_under(a.under, a.s, a.decls, plan: plan, pkgconfig_words: a.pkgconfig_words, by_header: a.by_header)
     )
 
 # The records of `wanted` read under `headers` and `words` otherwise than

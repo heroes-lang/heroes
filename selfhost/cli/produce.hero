@@ -41,7 +41,7 @@ use cli/toolchain
 use cli/whose
 use emit/externs as emit_externs
 use emit/ffi_asked
-use emit/header_packages
+use emit/pkgconfig_headers
 use emit/provenance
 use library_source
 use modules
@@ -157,19 +157,19 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     # Asked before clang runs, so a package that is not installed is
     # reported as itself rather than as a header clang could not find.
-    each = libraries.resolve_each(art.must().packages, build_dir: t.build)
-    package_flags: [str]? @= fail(code: "none", msg: "not asked")
+    each = libraries.resolve_each(art.must().pkgconfigs, build_dir: t.build)
+    pkgconfig_flags: [str]? @= fail(code: "none", msg: "not asked")
 
     match each
-        .ok words => package_flags @ ok(libraries.words_of(words, packages: art.must().packages))
-        .err e    => package_flags @ fail(code: e.code, msg: e.msg)
+        .ok words => pkgconfig_flags @ ok(libraries.words_of(words, pkgconfigs: art.must().pkgconfigs))
+        .err e    => pkgconfig_flags @ fail(code: e.code, msg: e.msg)
 
     no_tags: {str: bool} = {}
 
-    if package_flags.is_err()
+    if pkgconfig_flags.is_err()
         # **A package failure is the AUTHOR's, so it goes through the same
         # ffi mapping a clang failure does.** The bootstrap asks
-        # `resolve_packages` from INSIDE toolchain::link, so its marker
+        # `resolve_pkgconfigs` from INSIDE toolchain::link, so its marker
         # text arrives at `explain` with everything else; the port asks it
         # here, one call earlier, and the message used to be printed raw.
         # Measured 2026-08-18 by tests/harness on
@@ -178,7 +178,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # no code, no `at file:line:col`, no source snippet, no notes,
         # which is every part of §4.17 at once, in the one class where the
         # compiler is allowed to blame the author's own `extern` (§7).
-        message = failure_text(package_flags)
+        message = failure_text(pkgconfig_flags)
 
         if whose.blamed(message, art.must(), s, answered, struct_tags: no_tags, asked: ffi_asked.nothing())
             return fail(code: "diagnostics", msg: "the package could not answer")
@@ -204,9 +204,9 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         link: !art.must().emit_c,
         source_dir: source_dir,
         link_names: names,
-        package_flags: package_flags.must(),
-        package_words: each.must(),
-        by_header: header_packages.by_header(art.must().program, s, art.must().decls),
+        pkgconfig_flags: pkgconfig_flags.must(),
+        pkgconfig_words: each.must(),
+        by_header: pkgconfig_headers.by_header(art.must().program, s, art.must().decls),
         version: version,
         sources: sources
     )
@@ -370,7 +370,7 @@ test "the one file reads another module's record as its own module does, beside 
 
     # The file compiled as a unit is, with the runtime's own object.
     words = compiling.unit_words(
-        compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir)
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: dir)
     )
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     line: [str] @= ["clang"]

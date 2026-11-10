@@ -1,8 +1,8 @@
 # What pkg-config answered, read as text where it is text and told where it
 # is not (defect 241, panel 189's R8; design.md §4.19). Its answer and its
 # complaint come back as files under `build/`, and `read_file` failed one
-# that is not UTF-8 as `not_text`, which `libraries.resolve_packages` took for
-# no answer: the flags a package's `.pc` names were dropped and the build went
+# that is not UTF-8 as `not_text`, which `libraries.resolve_pkgconfigs` took for
+# no answer: the flags a library's `.pc` names were dropped and the build went
 # on at exit 0, and a complaint that is not UTF-8 was told as nothing at all.
 # Both are read here through the compiler's own read of a source
 # (`module/reading.source_text`), which holds a file that is not UTF-8 with
@@ -31,26 +31,26 @@ use not_text
 use parse
 use source
 
-# The words pkg-config answered for `package`, or the package failure that
+# The words pkg-config answered for `pkgconfig`, or the `pkgconfig` failure that
 # stops the build. An answer that is not UTF-8 holds a flag no `str` carries,
 # so it can be neither checked against the list nor handed to clang as one
 # word, and it is never taken for no answer; one that cannot be read back is
-# not taken for none either. The message opens with the package marker, which
-# `emit/ffi_build.package_problem` turns into the author's `ffi_pkgconfig`.
-function answer(path: str, package: str) -> str?
+# not taken for none either. The message opens with the `PKGCONFIG` marker, which
+# `emit/ffi_build.pkgconfig_problem` turns into the author's `ffi_pkgconfig`.
+function answer(path: str, pkgconfig: str) -> str?
     read = reading.source_text(path)
 
     if read.is_err()
         return fail(
             code: "failed",
-            msg: "heroes-ffi-pkgconfig `" + package + "` answered pkg-config's question, and its answer could not be read back from " + path
+            msg: "heroes-ffi-pkgconfig `" + pkgconfig + "` answered pkg-config's question, and its answer could not be read back from " + path
         )
 
     if read.must().faults.len() == 0
         return ok(strings.without_returns(read.must().text))
     return fail(
         code: "failed",
-        msg: "heroes-ffi-pkgconfig `" + package + "` answered with bytes that are not UTF-8, `" + one_line(not_text.bytes_written(read.must().text, faults: read.must().faults)) + "`, so its flags can be neither checked nor handed to clang\n  save the library's `.pc` file as UTF-8, or name the library directly with `link`"
+        msg: "heroes-ffi-pkgconfig `" + pkgconfig + "` answered with bytes that are not UTF-8, `" + one_line(not_text.bytes_written(read.must().text, faults: read.must().faults)) + "`, so its flags can be neither checked nor handed to clang\n  save the library's `.pc` file as UTF-8, or name the library directly with `link`"
     )
 
 # What pkg-config said when it refused, each byte of it that is not UTF-8
@@ -63,27 +63,27 @@ function complaint(path: str) -> str
         return ""
     return strings.without_returns(not_text.bytes_written(read.must().text, faults: read.must().faults))
 
-# What the author is told when `pkg-config` refused `package` (defect 292):
-# the package not installed where `pkg-config` does not read its own `.pc`,
-# and where it does, the package installed and `pkg-config`'s own words on
-# what stands in the way, a package it requires or a version of one. Every
-# refusal was *not installed* until then, above `pkg-config` saying a package
-# the named one requires was not found. The message opens with the package
-# marker (`emit/ffi_build.package_problem` reads it into `ffi_pkgconfig`), and
+# What the author is told when `pkg-config` refused `pkgconfig` (defect 292):
+# the library not installed where `pkg-config` does not read its own `.pc`,
+# and where it does, the library installed and `pkg-config`'s own words on
+# what stands in the way, a library it requires or a version of one. Every
+# refusal was *not installed* until then, above `pkg-config` saying a library
+# the named one requires was not found. The message opens with the `PKGCONFIG`
+# marker (`emit/ffi_build.pkgconfig_problem` reads it into `ffi_pkgconfig`), and
 # the not-installed sentence is word for word the one the net reads as a
 # machine lacking the library (`tests/harness/absence.hero`).
-function refused(package: str, complained: str, build_dir: str) -> str
+function refused(pkgconfig: str, complained: str, build_dir: str) -> str
     return worded(
-        package: package,
+        pkgconfig: pkgconfig,
         complained: complained,
-        present: installed(package: package, build_dir: build_dir)
+        present: installed(pkgconfig: pkgconfig, build_dir: build_dir)
     )
 
-# The refusal's words, `present` where `installed` said the package is. **A
+# The refusal's words, `present` where `installed` said the library is. **A
 # complaint that holds no word is told as none** (defect 326): the note read
-# *pkg-config said:* over nothing, and an installed package's way out sent the
+# *pkg-config said:* over nothing, and an installed library's way out sent the
 # author after what pkg-config said it lacks, where it had said nothing.
-function worded(package: str, complained: str, present: bool) -> str
+function worded(pkgconfig: str, complained: str, present: bool) -> str
     said = strings.trimmed(complained)
     note: str @= "\n  pkg-config said: " + shell_split.shown(said, keep_lines: true)
 
@@ -95,11 +95,11 @@ function worded(package: str, complained: str, present: bool) -> str
 
         if said.len() == 0
             way @ "name the library directly with `link`"
-        return "heroes-ffi-pkgconfig `" + package + "` is installed, and pkg-config cannot give its flags" + note + "\n  " + way
-    return "heroes-ffi-pkgconfig `" + package + "` is not installed on this machine" + note + "\n  install its development files, or name the library directly with `link`"
+        return "heroes-ffi-pkgconfig `" + pkgconfig + "` is installed, and pkg-config cannot give its flags" + note + "\n  " + way
+    return "heroes-ffi-pkgconfig `" + pkgconfig + "` is not installed on this machine" + note + "\n  install its development files, or name the library directly with `link`"
 
 # What the author is told where `pkg-config` could not be started, so nothing
-# could be asked about `package` (defect 249): the library's `ffi_pkgconfig` at
+# could be asked about `pkgconfig` (defect 249): the library's `ffi_pkgconfig` at
 # its string, the marker first, and the way out, where it was a bare line with
 # no code, no place and no route.
 #
@@ -112,14 +112,14 @@ function worded(package: str, complained: str, present: bool) -> str
 # other reason is the machine refusing to start one that may well be there, a
 # file of mode 644 on the PATH answering 13 (`EACCES`) on this Mac: it was told
 # *not on this machine* all the same, and is named by its number now.
-function unasked(package: str, why: i64) -> str
+function unasked(pkgconfig: str, why: i64) -> str
     if why == 2
-        return "heroes-ffi-pkgconfig `" + package + "` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
-    return "heroes-ffi-pkgconfig `" + package + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `pkgconfig \"" + package + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
+        return "heroes-ffi-pkgconfig `" + pkgconfig + "` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"" + pkgconfig + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
+    return "heroes-ffi-pkgconfig `" + pkgconfig + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `pkgconfig \"" + pkgconfig + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
 
-# **Whether `package` is installed, asked three ways, any one enough, so *not
+# **Whether `pkgconfig` is installed, asked three ways, any one enough, so *not
 # installed* is said only where all three say no** (defect 292): `pkg-config`
-# reading the package's own `.pc` without following what it requires, in
+# reading the library's own `.pc` without following what it requires, in
 # either of two spellings, and a `.pc` of that name on the search path it
 # reads (`on_search_path`). Measured 2026-10-04 on pkgconf 3.0.7 (this Mac),
 # pkgconf 1.8.1 (Debian, the Linux arm64 image) and pkg-config 0.29.2 (Ubuntu
@@ -128,23 +128,23 @@ function unasked(package: str, why: i64) -> str
 # `--maximum-traverse-depth=1 --modversion`, which 0.29.2 refuses as an
 # unknown option; 0.29.2 reads each with a plain `--modversion`, which 1.8.1
 # answers only by following the requirements. Each reads one of the two, none
-# reads a package that is not there, and their words are not read. The search
+# reads a library that is not there, and their words are not read. The search
 # path is the question every `pkg-config` answers, and it sees what neither
 # spelling does: a `.pc` that pkg-config will not read, which pkgconf calls
 # not found where it has no `Version:`, and which is installed all the same.
-function installed(package: str, build_dir: str) -> bool
-    if read_alone(words: ["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", package])
+function installed(pkgconfig: str, build_dir: str) -> bool
+    if read_alone(words: ["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", pkgconfig])
         return true
 
-    if read_alone(words: ["pkg-config", "--modversion", "--", package])
+    if read_alone(words: ["pkg-config", "--modversion", "--", pkgconfig])
         return true
-    return on_search_path(package: package, build_dir: build_dir)
+    return on_search_path(pkgconfig: pkgconfig, build_dir: build_dir)
 
 function read_alone(words: [str]) -> bool
     ran = process.run(program: "pkg-config", words: words, out: process.discard(), err: process.discard())
     return ran.started && ran.code == 0
 
-# Whether a `.pc` named for `package` stands in a directory `pkg-config`
+# Whether a `.pc` named for `pkgconfig` stands in a directory `pkg-config`
 # searches: `PKG_CONFIG_PATH`'s, then `PKG_CONFIG_LIBDIR`'s where it is set,
 # or else the default `pkg-config --variable=pc_path pkg-config` reports.
 # Measured on the same three, 2026-10-04: the reported default holds neither
@@ -153,7 +153,7 @@ function read_alone(words: [str]) -> bool
 # answers to the plain name unless `PKG_CONFIG_DISABLE_UNINSTALLED` is set.
 # A value this compiler cannot read adds no directory, so the search can miss
 # a `.pc` and never invents one.
-function on_search_path(package: str, build_dir: str) -> bool
+function on_search_path(pkgconfig: str, build_dir: str) -> bool
     rest: str @= ""
 
     if process.is_set(name: "PKG_CONFIG_LIBDIR")
@@ -165,7 +165,11 @@ function on_search_path(package: str, build_dir: str) -> bool
         list: entries(process.env(name: "PKG_CONFIG_PATH").default(""), windows: windows),
         more: entries(rest, windows: windows)
     )
-    return pc_found(dirs: dirs, package: package, uninstalled: !process.is_set(name: "PKG_CONFIG_DISABLE_UNINSTALLED"))
+    return pc_found(
+        dirs: dirs,
+        pkgconfig: pkgconfig,
+        uninstalled: !process.is_set(name: "PKG_CONFIG_DISABLE_UNINSTALLED")
+    )
 
 # The default search path `pkg-config` reports of itself, "" where it reports
 # none or the answer cannot be read.
@@ -202,13 +206,13 @@ function entries(value: str, windows: bool) -> [str]
 
     return out
 
-# Whether `<package>.pc`, or `<package>-uninstalled.pc` where `uninstalled`,
+# Whether `<pkgconfig>.pc`, or `<pkgconfig>-uninstalled.pc` where `uninstalled`,
 # is a file in one of `dirs`, a link to one counting (Homebrew's are links).
-function pc_found(dirs: [str], package: str, uninstalled: bool) -> bool
-    names: [str] @= [package + ".pc"]
+function pc_found(dirs: [str], pkgconfig: str, uninstalled: bool) -> bool
+    names: [str] @= [pkgconfig + ".pc"]
 
     if uninstalled
-        names @ names.push(package + "-uninstalled.pc")
+        names @ names.push(pkgconfig + "-uninstalled.pc")
 
     for dir in dirs
         for name in names
@@ -233,12 +237,12 @@ function one_line(text: str) -> str
 ## Tests
 
 # Defect 241's two answers, committed as the bytes pkg-config gave for a `.pc`
-# whose words hold a Latin-1 `é`: its flags, and its complaint for a package
+# whose words hold a Latin-1 `é`: its flags, and its complaint for a library
 # required by name that is not there.
 test "an answer that is not UTF-8 stops the build naming its bytes, and a complaint that is not is told with them"
     fixtures = "tests/golden/surface-fixtures/notext241/"
 
-    match answer(path: fixtures + "answer-latin1.txt", package: "u")
+    match answer(path: fixtures + "answer-latin1.txt", pkgconfig: "u")
         .ok _ => assert false
         .err e =>
             assert e.code == "failed"
@@ -249,9 +253,9 @@ test "an answer that is not UTF-8 stops the build naming its bytes, and a compla
 
     # Text is itself, and a file that is not there is no answer anyone gave.
     assert !write_file(path: "build/selftest-package-answer.txt", text: "-I/inc -lz\n").is_err()
-    assert answer(path: "build/selftest-package-answer.txt", package: "z").must() == "-I/inc -lz\n"
+    assert answer(path: "build/selftest-package-answer.txt", pkgconfig: "z").must() == "-I/inc -lz\n"
     assert complaint("build/selftest-package-answer-none.txt") == ""
-    assert answer(path: "build/selftest-package-answer-none.txt", package: "z").is_err()
+    assert answer(path: "build/selftest-package-answer-none.txt", pkgconfig: "z").is_err()
 
 # Defect 285: what a `pkg-config` writing `\r\n` says, as lane b9-harness's
 # stand-in said it, and an answer of two flags so written. No return reaches
@@ -263,11 +267,11 @@ test "pkg-config's lines ended by a return and a line end are read as lines (def
     assert !write_file(path: answer_path, text: "-DSEVEN=7 -lz\r\n").is_err()
     said = complaint(complaint_path)
     assert said == "Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n"
-    told = refused(package: "heroes-package-no-machine-has-285", complained: said, build_dir: "build")
+    told = refused(pkgconfig: "heroes-package-no-machine-has-285", complained: said, build_dir: "build")
     assert told == "heroes-ffi-pkgconfig `heroes-package-no-machine-has-285` is not installed on this machine\n  pkg-config said: Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n  install its development files, or name the library directly with `link`"
-    answered = answer(path: answer_path, package: "z").must()
+    answered = answer(path: answer_path, pkgconfig: "z").must()
     assert answered == "-DSEVEN=7 -lz\n"
-    assert shell_split.words(package: "z", said: answered).must() == ["-DSEVEN=7", "-lz"]
+    assert shell_split.words(pkgconfig: "z", said: answered).must() == ["-DSEVEN=7", "-lz"]
     assert !write_file(path: complaint_path, text: "one\rtwo\r").is_err()
     assert complaint(complaint_path) == "one\rtwo\r"
 
@@ -280,18 +284,18 @@ test "a refusal pkg-config gave no reason for is told as one, under either head 
     assert !write_file(path: blank, text: "  \r\n").is_err()
 
     for complained in ["", "  \n\n", complaint(blank)]
-        assert worded(package: "zlib", complained: complained, present: false) == "heroes-ffi-pkgconfig `zlib` is not installed on this machine\n  pkg-config gave no reason\n  install its development files, or name the library directly with `link`"
-        assert worded(package: "zlib", complained: complained, present: true) == "heroes-ffi-pkgconfig `zlib` is installed, and pkg-config cannot give its flags\n  pkg-config gave no reason\n  name the library directly with `link`"
+        assert worded(pkgconfig: "zlib", complained: complained, present: false) == "heroes-ffi-pkgconfig `zlib` is not installed on this machine\n  pkg-config gave no reason\n  install its development files, or name the library directly with `link`"
+        assert worded(pkgconfig: "zlib", complained: complained, present: true) == "heroes-ffi-pkgconfig `zlib` is installed, and pkg-config cannot give its flags\n  pkg-config gave no reason\n  name the library directly with `link`"
 
-    assert worded(package: "zlib", complained: "Package zlib was not found\n", present: false) == "heroes-ffi-pkgconfig `zlib` is not installed on this machine\n  pkg-config said: Package zlib was not found\n  install its development files, or name the library directly with `link`"
+    assert worded(pkgconfig: "zlib", complained: "Package zlib was not found\n", present: false) == "heroes-ffi-pkgconfig `zlib` is not installed on this machine\n  pkg-config said: Package zlib was not found\n  install its development files, or name the library directly with `link`"
     text = "extern \"zlib.h\" pkgconfig \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "silent.hero", text: text)
     head = "heroes-ffi-pkgconfig `zlib` is installed, and pkg-config cannot give its flags"
-    d = ffi_build.package_problem(
+    d = ffi_build.pkgconfig_problem(
         s,
         parsed.decls,
-        stderr: worded(package: "zlib", complained: "", present: true),
+        stderr: worded(pkgconfig: "zlib", complained: "", present: true),
         line: head
     ).must()
     assert d.notes == ["pkg-config gave no reason", "name the library directly with `link`"]
@@ -310,11 +314,11 @@ test "the search path's directories are read as pkg-config reads them (defect 29
     assert !write_file(path: dir + "/two/nover292.pc", text: "Name: nover292\nDescription: no Version\nCflags: -I/nowhere\nLibs:\n").is_err()
     assert !write_file(path: dir + "/one/un292-uninstalled.pc", text: "Name: un292\nDescription: u\nVersion: 1\nLibs:\n").is_err()
     both = [dir + "/one", dir + "/two"]
-    assert pc_found(dirs: both, package: "nover292", uninstalled: true)
-    assert pc_found(dirs: both, package: "un292", uninstalled: true)
-    assert !pc_found(dirs: both, package: "un292", uninstalled: false)
-    assert !pc_found(dirs: both, package: "dirnamed292", uninstalled: true)
-    assert !pc_found(dirs: both, package: "absent292", uninstalled: true)
+    assert pc_found(dirs: both, pkgconfig: "nover292", uninstalled: true)
+    assert pc_found(dirs: both, pkgconfig: "un292", uninstalled: true)
+    assert !pc_found(dirs: both, pkgconfig: "un292", uninstalled: false)
+    assert !pc_found(dirs: both, pkgconfig: "dirnamed292", uninstalled: true)
+    assert !pc_found(dirs: both, pkgconfig: "absent292", uninstalled: true)
     tool = process.run(
         program: "pkg-config",
         words: ["pkg-config", "--version"],
@@ -326,7 +330,7 @@ test "the search path's directories are read as pkg-config reads them (defect 29
         assert default_path("build").len() > 0
 
 # Defect 249: where `pkg-config` does not start, the refusal opens with the
-# package marker, so `emit/ffi_build.package_problem` reads it into the
+# `PKGCONFIG` marker, so `emit/ffi_build.pkgconfig_problem` reads it into the
 # group's `ffi_pkgconfig` at its string, with the way out as its note; the bare
 # line it was named no code, no place and no route.
 test "a package asked where pkg-config does not start is told at its string, with the way out (defect 249)"
@@ -334,9 +338,9 @@ test "a package asked where pkg-config does not start is told at its string, wit
     parsed = parse.parse(text)
     s = source.new_source(name: "nopc.hero", text: text)
     head = "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"zlib\"` asks it where the library is"
-    told = unasked(package: "zlib", why: 2)
+    told = unasked(pkgconfig: "zlib", why: 2)
     assert told == head + "\n  install pkg-config, or name the library directly with `link`"
-    d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
+    d = ffi_build.pkgconfig_problem(s, parsed.decls, stderr: told, line: head).must()
     assert d.code == "ffi_pkgconfig"
     assert source.span_text(s, d.span) == "\"zlib\""
     assert d.message == "the library `zlib` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"zlib\"` asks it where the library is"
@@ -356,7 +360,7 @@ test "a pkg-config the machine refuses to start is told by its reason, never as 
     assert !files.set_mode(path: tool, mode: 420).is_err()
     ran = process.run(program: tool, words: [tool, "--version"], out: process.discard(), err: process.discard())
     assert !ran.started
-    told = unasked(package: "zlib", why: ran.why)
+    told = unasked(pkgconfig: "zlib", why: ran.why)
 
     if process.exe_suffix() != ".exe"
         assert ran.why == 13
@@ -365,6 +369,6 @@ test "a pkg-config the machine refuses to start is told by its reason, never as 
         text = "extern \"zlib.h\" pkgconfig \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
         parsed = parse.parse(text)
         s = source.new_source(name: "refused.hero", text: text)
-        d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
+        d = ffi_build.pkgconfig_problem(s, parsed.decls, stderr: told, line: head).must()
         assert d.code == "ffi_pkgconfig"
         assert source.span_text(s, d.span) == "\"zlib\""

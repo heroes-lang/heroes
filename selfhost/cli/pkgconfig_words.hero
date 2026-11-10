@@ -1,7 +1,7 @@
-# The words of a package's answer that the list judges by their WHOLE spelling,
+# The words of a library's answer that the list judges by their WHOLE spelling,
 # and what becomes of each (design.md §4.19; panel 198). `libraries.filter_words`
 # walks the answer and asks here before it asks about prefixes. Its own module
-# because `cli/libraries.hero` stands at its ceiling, as `cli/package_answer.hero`
+# because `cli/libraries.hero` stands at its ceiling, as `cli/pkgconfig_answer.hero`
 # is.
 #
 # The property the list asks of a word is `libraries.hero`'s: does it name a file,
@@ -23,7 +23,7 @@
 # Ubuntu's GNU ld 2.42 write the same bytes with and without them:
 # `--enable-new-dtags` is the default tag those toolchains write beside the
 # admitted `-Wl,-rpath` (a GNU ld built with upstream's default writes RPATH
-# there, the tag a package that says only `-Wl,-rpath` already gets on it), and
+# there, the tag a `.pc` that says only `-Wl,-rpath` already gets on it), and
 # `--export-dynamic` is what clang hands the linker for the `-rdynamic` every
 # POSIX link carries (`link_flags.link_flags`). The word that MOVES a tag,
 # `--disable-new-dtags`, is not here. Both premises are asked where they can be:
@@ -50,8 +50,8 @@
 # refused), and every check of a binding is raised again after it
 # (`emit/checks_raised.hero`). So the word is still read as the directory it
 # names: as `-isystem` it would quiet what the region keeps, and a header's
-# verdict would again depend on how a package spells its directory. Seven headers under Debian 13's `/usr/include/mit-krb5`, the
-# one directory its nine `-isystem` packages name, compile under `-I` with the
+# verdict would again depend on how a `.pc` spells its directory. Seven headers under Debian 13's `/usr/include/mit-krb5`, the
+# one directory its nine `-isystem` `.pc` files name, compile under `-I` with the
 # compiler's flags (krb5.h, gssapi/gssapi.h, gssapi/gssapi_krb5.h, gssrpc/rpc.h,
 # kadm5/admin.h, kdb.h, profile.h; panel 198's compiler-engineer);
 # gssapi/gssapi_alloc.h does not (implicit malloc and free), and none of the six
@@ -84,7 +84,7 @@
 # library (`libuv-static`'s `-l:libuv.a`, defect 528, which ld64 refused at exit
 # 2). An `@` inside a path (`openssl@4`) is a letter of the path. The refusal says
 # which of these it read (`told`). Its price, refused by construction: an ld64
-# rpath macro leading a value, `-Wl,-rpath,@loader_path/../lib`, which no package
+# rpath macro leading a value, `-Wl,-rpath,@loader_path/../lib`, which no `.pc`
 # of either census answers.
 #
 # **`-pthread` reaches a COMPILE everywhere and a LINK everywhere but Windows**,
@@ -100,7 +100,7 @@
 # and every word of a table is named. What is not here stays refused.
 
 use cli/link_flags
-use cli/package_macros
+use cli/pkgconfig_macros
 use cli/process
 use cli/strings
 
@@ -149,7 +149,7 @@ function separate(word: str) -> bool
 function passes(word: str) -> bool
     return in_table(word: word, table: PASSED)
 
-# The flag a package's valued word is handed to clang as: `-isystem` is `-I`.
+# The flag an answer's valued word is handed to clang as: `-isystem` is `-I`.
 function spelled(word: str) -> str
     if word == "-isystem"
         return "-I"
@@ -174,7 +174,7 @@ constant VALUED: [str]
 function valued(word: str) -> bool
     return in_table(word: word, table: VALUED)
 
-# The one word a package's `word` is handed on as where the list admits it in one
+# The one word an answer's `word` is handed on as where the list admits it in one
 # word: `-pthread` as it is, and a `VALUED` flag with its value joined, that value
 # a value (`is_value`), `-isystem`'s as `-I`'s; an error where the list does not.
 function one_word(word: str) -> str?
@@ -190,7 +190,7 @@ function one_word(word: str) -> str?
 # Whether `value`, written after `flag` or as the value of a `-Wl,` option, is a
 # value: not empty, not a flag, not a response file, for `-l` not `:<file>`,
 # and for `-D` and `-U` no name the C this compiler writes
-# (`cli/package_macros.hero`, defect 2333).
+# (`cli/pkgconfig_macros.hero`, defect 2333).
 function is_value(flag: str, value: str) -> bool
     if value.len() == 0
         return false
@@ -199,7 +199,7 @@ function is_value(flag: str, value: str) -> bool
     if first == "-" || first == "@"
         return false
 
-    if package_macros.refused(flag: flag, value: value)
+    if pkgconfig_macros.refused(flag: flag, value: value)
         return false
     return !(flag == "-l" && first == ":")
 
@@ -215,7 +215,7 @@ function told(flag: str, value: str) -> str
     if flag == "-l" && first == ":"
         return ": `-l:<file>` names a file, where `-l` names a library"
 
-    return package_macros.told(flag: flag, value: value)
+    return pkgconfig_macros.told(flag: flag, value: value)
 
 # The same, for a word refused whole: a joined value, or a `-Wl,` option's.
 function told_word(word: str, next: str) -> str
@@ -360,13 +360,13 @@ test "a value is a name: not empty, not a flag, not a file of words, and -l not 
     assert named(word: "-Wl,-rpath", next: "-lz") == "-Wl,-rpath"
 
 # **A `-D` or `-U` naming a name the C this compiler writes is no value**
-# (defect 2333; `cli/package_macros.hero` holds which), joined or as the next
+# (defect 2333; `cli/pkgconfig_macros.hero` holds which), joined or as the next
 # word, and its refusal says why; a switch a `.pc` sets stays one, and so does
 # a `-D` this compiler's own words hold.
 test "a -D or -U of a name the C this compiler writes is no value, joined or apart (defect 2333)"
     for value in ["__builtin_add_overflow(a,b,r)=0", "main=SDL_main"]
         assert !is_value(flag: "-D", value: value)
-        assert told(flag: "-D", value: value) == package_macros.told(flag: "-D", value: value)
+        assert told(flag: "-D", value: value) == pkgconfig_macros.told(flag: "-D", value: value)
         assert strings.holds(text: told(flag: "-D", value: value), needle: "is a name the C this compiler writes")
 
     assert !is_value(flag: "-U", value: "__has_feature")
@@ -410,7 +410,7 @@ test "an admitted rpath is one word where a loader reads it, and none on Windows
 
 # The premise of the second word `restates` holds, asked of the line itself: the
 # compiler's own POSIX link already carries `-rdynamic`, which clang hands the
-# linker as `-export-dynamic`, so a package's `-Wl,--export-dynamic` adds nothing
+# linker as `-export-dynamic`, so an answer's `-Wl,--export-dynamic` adds nothing
 # (Debian GNU ld 2.44 and LLD 22.1.8: the same bytes with and without it). The day
 # `link_flags.link_flags` stops saying it, the word restates nothing and this fires.
 test "the link line carries -rdynamic on every POSIX link, which --export-dynamic restates"

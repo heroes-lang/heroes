@@ -122,7 +122,7 @@ function group_links(s: source.Source, decls: [ast.Decl], at: Finding) -> bool
             here @ source.span_text(s, decl.name) == at.binding
 
         if here
-            return !library_needs.group_span(decl, want_package: false).is_err() || !library_needs.group_span(decl, want_package: true).is_err()
+            return !library_needs.group_span(decl, want_pkgconfig: false).is_err() || !library_needs.group_span(decl, want_pkgconfig: true).is_err()
 
     return false
 

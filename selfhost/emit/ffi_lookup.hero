@@ -28,11 +28,11 @@ use resolve
 use source
 use token
 
-# The marker the driver puts on a verdict about a PACKAGE — one this
+# The marker the driver puts on a verdict about a PKGCONFIG library — one this
 # compiler wrote itself, unlike the clang and linker lines the other
 # classes read. Held with the lookups so the file that decides whose
 # mistake this is holds every marker it matches.
-constant PACKAGE: str
+constant PKGCONFIG: str
     "heroes-ffi-pkgconfig "
 
 # What clang prints on the line of a _Static_assert that failed.
@@ -160,16 +160,16 @@ function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.S
 
     return fail(code: "none", msg: "no group names this header")
 
-# The span of the `pkgconfig` string of the group whose package the driver's
+# The span of the `pkgconfig` string of the group whose library the driver's
 # line names: the marker, the name between backticks and a space, at the
 # line's head, as `cli/libraries.hero` and `cli/shell_split.hero` write it.
 # Each group's own name is asked, the longest standing there winning, so no
 # byte of a name moves the reading, where the name was cut at its first
-# backtick until defect 237; and a stray line mentioning a package cannot
+# backtick until defect 237; and a stray line mentioning a library cannot
 # become a diagnostic about a program that never asked for it. The string is
 # what the diagnostic is about; it pointed at the group's first member until
 # defect 226 (panel 188's spec-warden).
-function package_span(s: source.Source, decls: [ast.Decl], line: str) -> token.Span?
+function pkgconfig_span(s: source.Source, decls: [ast.Decl], line: str) -> token.Span?
     found: token.Span? @= fail(code: "none", msg: "no group asked for this package")
     longest: i64 @= -1
 
@@ -189,7 +189,7 @@ function package_span(s: source.Source, decls: [ast.Decl], line: str) -> token.S
             .pkgconfig pk =>
                 name = emit_externs.unquoted(s, span: pk.name)
 
-                if name.len() > longest && bytes.bytes_at(text: line, at: 0, needle: PACKAGE + "`" + name + "` ")
+                if name.len() > longest && bytes.bytes_at(text: line, at: 0, needle: PKGCONFIG + "`" + name + "` ")
                     found @ ok(pk.name)
                     longest @ name.len()
             .link => continue
@@ -380,11 +380,11 @@ test "declaration finds all three kinds and refuses the rest"
     assert declaration(s, parsed.decls, name: "local_one").is_err()
     assert declaration(s, parsed.decls, name: "sqlite3_open").is_err()
 
-    # The group lookups: the head line and the package question.
+    # The group lookups: the head line and the `pkgconfig` question.
     assert !group_head(s, parsed.decls, header: "m.h").is_err()
     assert group_head(s, parsed.decls, header: "other.h").is_err()
-    assert source.span_text(s, package_span(s, parsed.decls, line: "heroes-ffi-pkgconfig `raylib` is not installed").must()) == "\"raylib\""
-    assert package_span(s, parsed.decls, line: "heroes-ffi-pkgconfig `sdl3` is not installed").is_err()
+    assert source.span_text(s, pkgconfig_span(s, parsed.decls, line: "heroes-ffi-pkgconfig `raylib` is not installed").must()) == "\"raylib\""
+    assert pkgconfig_span(s, parsed.decls, line: "heroes-ffi-pkgconfig `sdl3` is not installed").is_err()
 
 test "add_once keeps one diagnostic per span, and the splitter reads clang's shapes"
     a = diag.new_diagnostic(code: "x", message: "first", span: token.Span(start: 3, end: 7))

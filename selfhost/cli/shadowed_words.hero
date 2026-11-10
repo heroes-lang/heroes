@@ -8,7 +8,7 @@
 # lines.
 
 use cli/clang_added
-use cli/package_macros
+use cli/pkgconfig_macros
 use cli/stand_in
 use cli/strings
 use diag
@@ -180,7 +180,7 @@ function unlisted(one: clang_added.Added) -> diag.Diagnostic
 # A `-D` or `-U` of a name the guard keeps that the environment hands every
 # clang.
 function macro(one: clang_added.Added) -> diag.Diagnostic
-    name = package_macros.macro_of(one.value)
+    name = pkgconfig_macros.macro_of(one.value)
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: MACRO_CODE,
         message: "`" + one.flag + one.value + "` reaches clang jobs this compiler starts, through " + source_of(one) + ", and `" + name + "` is a name the C this compiler writes: a `" + one.flag + "` stands before every header and every guard, so nothing undoes it",

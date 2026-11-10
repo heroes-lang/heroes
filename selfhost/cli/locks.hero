@@ -273,7 +273,7 @@ test "the element rounds find a lock an array of records holds, and end at a str
         level: "-O0",
         sanitize: false,
         search_include: [headers_at],
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: t.runtime,
         source_dir: ""
     )
@@ -326,7 +326,7 @@ test "a record is asked once for each type it holds, and its lock is told where 
         level: "-O0",
         sanitize: false,
         search_include: [headers_at],
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: t.runtime,
         source_dir: ""
     )

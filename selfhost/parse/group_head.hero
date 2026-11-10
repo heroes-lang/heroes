@@ -9,9 +9,9 @@
 use ast
 use cursor
 use head_names
-use head_package
 use keywords
 use parse/heads
+use pkgconfig_head
 use token
 
 # The head line's header string. A missing one is where the old headerless
@@ -110,7 +110,7 @@ function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
         return fail(code: "absent", msg: "no library clause")
     word = cursor.slice_of(text, cursor.current_span(c))
 
-    if word != keywords.WORD_LINK && word != keywords.WORD_PKGCONFIG && head_package.read_word(@c, text: text, word: word) == 0
+    if word != keywords.WORD_LINK && word != keywords.WORD_PKGCONFIG && pkgconfig_head.read_word(@c, text: text, word: word) == 0
         return fail(code: "absent", msg: "no library clause")
     _ = cursor.bump(@c)
 

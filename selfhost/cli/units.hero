@@ -145,9 +145,9 @@ function components(s: source.Source) -> [str]
 # this answer, so it is another key and a compile. `@opened` holds a build's
 # answers, one per opening and words. Where clang gives none nothing is
 # served warm, and the compile says what a cold build says.
-function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}, @opened: {str: str}, @told: {str: bool}) -> str?
+function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, pkgconfig_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}, @opened: {str: str}, @told: {str: bool}) -> str?
     words = compiling.unit_words(
-        compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, package_flags: package_flags, runtime: t.runtime, source_dir: source_dir)
+        compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, pkgconfig_flags: pkgconfig_flags, runtime: t.runtime, source_dir: source_dir)
     )
     named = digest.digest(
         t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words) + front_check.key_text(tu_text)
@@ -359,7 +359,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -373,7 +373,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -392,7 +392,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -426,7 +426,7 @@ test "a record vouches only for the object its own compile made, and one whose o
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: [headers_at],
         memo: @one,
@@ -443,7 +443,7 @@ test "a record vouches only for the object its own compile made, and one whose o
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: [headers_at],
         memo: @two,
@@ -462,7 +462,7 @@ test "a record vouches only for the object its own compile made, and one whose o
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: [headers_at],
         memo: @three,
@@ -501,7 +501,7 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -515,7 +515,7 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: ["-DHEROES_PACKAGE_VALUE=7"],
+        pkgconfig_flags: ["-DHEROES_PACKAGE_VALUE=7"],
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -529,7 +529,7 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: ["-DHEROES_PACKAGE_VALUE=8"],
+        pkgconfig_flags: ["-DHEROES_PACKAGE_VALUE=8"],
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -546,7 +546,7 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"],
+        pkgconfig_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"],
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -585,7 +585,7 @@ test "a unit whose package words pass what one Windows command line holds compil
             level: "-O0",
             sanitize: false,
             search: "",
-            package_flags: words,
+            pkgconfig_flags: words,
             source_dir: "",
             search_include: none,
             memo: @memo,
@@ -633,7 +633,7 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: one,
         search_include: none,
         memo: @memo,
@@ -647,7 +647,7 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: two,
         search_include: none,
         memo: @memo,

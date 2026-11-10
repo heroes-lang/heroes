@@ -57,7 +57,7 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
         art.decls,
         components: units.components(s),
         target: target,
-        package_words: site.package_words,
+        pkgconfig_words: site.pkgconfig_words,
         by_header: site.by_header
     )
 
@@ -91,7 +91,7 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
         tree: art.tree,
         checked: art.checked,
         planned: probed,
-        package_words: site.package_words,
+        pkgconfig_words: site.pkgconfig_words,
         by_header: site.by_header
     )
     memo: {str: str} @= probing.digests_of(probed.probings)
@@ -145,7 +145,7 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
         s,
         art.decls,
         plans: plans,
-        package_words: site.package_words,
+        pkgconfig_words: site.pkgconfig_words,
         by_header: site.by_header
     )
     return ok(probing.Planned(whole: probed.whole, plans: plans, probings: probings))
@@ -226,7 +226,7 @@ function fused(t: toolchain.Toolchain, under: compiling.Compiling, art: compile.
         tree: art.tree,
         checked: art.checked,
         planned: probed,
-        package_words: site.package_words,
+        pkgconfig_words: site.pkgconfig_words,
         by_header: site.by_header
     )
     memo: {str: str} @= probing.digests_of(probed.probings)

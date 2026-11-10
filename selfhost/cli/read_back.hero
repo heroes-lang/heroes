@@ -12,7 +12,7 @@
 # exit 0, a tag the second round needed was never learned, and the header's
 # warning was shown nowhere. Each such byte is now written by its value,
 # `<0xE9>`, as `not_text.bytes_written` writes one (defect 241's reading of
-# pkg-config's complaint, `cli/package_answer.hero`), so every marker and
+# pkg-config's complaint, `cli/pkgconfig_answer.hero`), so every marker and
 # every other word survives it.
 #
 # Its own module because `cli/clang_floor.hero` reads clang's answer too, and

@@ -62,7 +62,7 @@ record Compiling
     level: str
     sanitize: bool
     search_include: [str]
-    package_flags: [str]
+    pkgconfig_flags: [str]
     runtime: str
     source_dir: str
 
@@ -100,7 +100,7 @@ function search_words(c: Compiling) -> [str]
     for one in c.search_include
         out @ strings.with_all(list: out, more: ["-I", one])
 
-    for flag in libraries.compile_flags(c.package_flags)
+    for flag in libraries.compile_flags(c.pkgconfig_flags)
         out @ out.push(flag)
 
     if c.source_dir.len() > 0
@@ -129,7 +129,7 @@ function of_package(under: Compiling, root: str) -> Compiling
         level: under.level,
         sanitize: under.sanitize,
         search_include: none,
-        package_flags: under.package_flags,
+        pkgconfig_flags: under.pkgconfig_flags,
         runtime: under.runtime,
         source_dir: root
     )
@@ -149,7 +149,7 @@ function within_root(build: str, under: Compiling, root: str, listing: str?) -> 
         own: own,
         root: root,
         runtime: under.runtime,
-        package_flags: libraries.compile_flags(under.package_flags),
+        pkgconfig_flags: libraries.compile_flags(under.pkgconfig_flags),
         listing: listing
     )
 
@@ -301,7 +301,7 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
         level: "-O0",
         sanitize: false,
         search_include: [root + "/inc"],
-        package_flags: [],
+        pkgconfig_flags: [],
         runtime: "runtime",
         source_dir: root + "/src"
     )
@@ -378,7 +378,7 @@ test "a unit's opening reads the runtime's own headers, whatever a directory of 
         level: "-O0",
         sanitize: false,
         search_include: [root + "/inc"],
-        package_flags: ["-I" + root + "/pkg"],
+        pkgconfig_flags: ["-I" + root + "/pkg"],
         runtime: "runtime",
         source_dir: root + "/src"
     )
@@ -424,7 +424,7 @@ test "a fetched package's unit searches the runtime first, then its own packages
         level: "-O2",
         sanitize: false,
         search_include: ["inc"],
-        package_flags: ["-DHERO_PKG", "-Ipkg"],
+        pkgconfig_flags: ["-DHERO_PKG", "-Ipkg"],
         runtime: "rt",
         source_dir: "src"
     )
@@ -456,7 +456,7 @@ test "a fetched package's unit reads its own header and the runtime's, never the
         level: "-O0",
         sanitize: false,
         search_include: [root + "/inc"],
-        package_flags: [],
+        pkgconfig_flags: [],
         runtime: "runtime",
         source_dir: root + "/src"
     )
@@ -508,7 +508,7 @@ test "a fetched package's header that reads a file outside its root is refused w
         level: "-O0",
         sanitize: false,
         search_include: [],
-        package_flags: ["-I" + root + "/machine"],
+        pkgconfig_flags: ["-I" + root + "/machine"],
         runtime: "runtime",
         source_dir: "."
     )
@@ -575,7 +575,7 @@ test "a probe whose words pass what one Windows command line holds reads its hea
         level: "-O0",
         sanitize: false,
         search_include: [],
-        package_flags: answer,
+        pkgconfig_flags: answer,
         runtime: "runtime",
         source_dir: root + "/src"
     )
@@ -590,7 +590,7 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         level: "-O2",
         sanitize: true,
         search_include: ["inc"],
-        package_flags: ["-DHERO_PKG", "-lz", "-Ipkg"],
+        pkgconfig_flags: ["-DHERO_PKG", "-lz", "-Ipkg"],
         runtime: "rt",
         source_dir: "src"
     )
@@ -609,7 +609,7 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         level: "-O0",
         sanitize: false,
         search_include: [],
-        package_flags: [],
+        pkgconfig_flags: [],
         runtime: "rt",
         source_dir: ""
     )

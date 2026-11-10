@@ -287,7 +287,7 @@ test "a header's macro meeting a compiler's name is told whichever note expands 
 test "the unit's opening with C's own headers in a group's place compiles clean (panel 214's R4)"
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-words").must()
     words = compiling.unit_words(
-        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], package_flags: [], runtime: t.runtime, source_dir: ".")
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], pkgconfig_flags: [], runtime: t.runtime, source_dir: ".")
     )
     headers: [str] @= words_of(C11)
 
@@ -308,7 +308,7 @@ test "the unit's opening with C's own headers in a group's place compiles clean 
 test "the runtime's names and macros are of the compiler's own forms or C's own (panel 214's R4)"
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-words").must()
     words = compiling.probe_words(
-        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], package_flags: [], runtime: t.runtime, source_dir: ".")
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], pkgconfig_flags: [], runtime: t.runtime, source_dir: ".")
     )
     runtime_unit = "#include \"heroes_unit.h\"\n#include <hero_os.h>\n"
     clangs_unit = "#include <stdbool.h>\n#include <stddef.h>\n"

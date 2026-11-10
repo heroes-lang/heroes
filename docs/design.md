@@ -2745,7 +2745,7 @@ under `_GNU_SOURCE 1`, and a name found there is *`sched.h` declares
 `sched_getcpu` only under `_GNU_SOURCE`: define it in a header of your own that this module's first
 group names* (`cli/switch_ask.hero`). And a `pkgconfig` answer's words, its `-D` among them,
 reach only the units that read a header a group naming that library names (defect 572,
-`emit/header_packages.hero`), never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
+`emit/pkgconfig_headers.hero`), never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
 where `main` named `ncursesw`, and was told *declares no* otherwise.
 
 **A function a group binds is called from its own library, in every module and every order of the
@@ -3124,7 +3124,7 @@ the first is the one that proves the project's premise:
    names a file, passed through the `-l` prefix. Since the repair every admitted word's
    value is judged as a value in every slot, joined or as the next word: not empty, not
    beginning with `-` or `@`, and for `-l` not beginning with `:`
-   (`selfhost/cli/package_words.hero`, `is_value`), and an `@` inside a path stays a
+   (`selfhost/cli/pkgconfig_words.hero`, `is_value`), and an `@` inside a path stays a
    letter of it. So the parenthesis holds again: on this Mac each of those doors, and
    `-isystem @<file>` and `-I@<file>`, is `ffi_pkgconfig` at exit 1 and leaves no file.
 

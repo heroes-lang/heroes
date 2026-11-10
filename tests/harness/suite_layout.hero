@@ -619,7 +619,7 @@ constant BUDGETS: [str]
 #
 # **403 on 2026-10-04**, re-based when `floors.check` said so at batch 8's
 # gate: the trunk stood at 392, the batch's lanes added eleven modules,
-# `head_names.hero`, `head_package.hero` and `head_windows.hero` among them,
+# `head_names.hero`, `head_package.hero` (`pkgconfig_head.hero` since task 2401) and `head_windows.hero` among them,
 # and 403 is past 322 by more than a quarter.
 #
 # **527 on 2026-10-08**, re-based when `floors.check` said so at batch 15's

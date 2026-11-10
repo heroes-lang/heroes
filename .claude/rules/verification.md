@@ -111,7 +111,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `selfhost/cli/flags.hero` (the words a compile and a link take, `debug_words`, `level_words`) | **`run`** whole and **`cache` alone** (every unit's and the runtime's key moves, so every build directory goes cold once; lane land197, panel 197), **`lldb`** for `debug_words` (the debug info it reads is that word's, and its falsifier is that word taken out; 2026-10-12), plus everything `selfhost/**` already gets, and `emission` where emitted C moved |
 | `selfhost/inventory.hero`, `selfhost/escape.hero` | **`spec`** (its built-ins' and escapes' tables), plus everything `selfhost/**` already gets |
 | `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |
-| `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/package_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |
+| `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/pkgconfig_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |
 | `runtime/**` | **`runtime`**, plus the form that holds the change's cases (`run` for a program that runs) and the platforms (`.claude/rules/platforms.md`) |
 | `docs/**`, `.claude/**` | `records` `unseen` |
 | `CLAUDE.md`, `ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |

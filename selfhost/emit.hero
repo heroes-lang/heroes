@@ -66,7 +66,7 @@ record Emitted
     # The packages a group asked the machine about, kept apart because
     # a name here is a QUESTION, answered by a file this program did
     # not write.
-    packages: [str]
+    pkgconfigs: [str]
 
 # The test blocks in this program, in source order, by their titles.
 # heroes test needs the list before it runs anything: it compiles once
@@ -180,14 +180,14 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     if refused.len() > 0
         none_link: [str] = []
         none_pkg: [str] = []
-        return Emitted(c: "", diagnostics: refused, link: none_link, packages: none_pkg)
+        return Emitted(c: "", diagnostics: refused, link: none_link, pkgconfigs: none_pkg)
 
     if !text
         return Emitted(
             c: "",
             diagnostics: [],
             link: emit_externs.libraries(p, s, decls),
-            packages: emit_externs.packages(p, s, decls)
+            pkgconfigs: emit_externs.pkgconfigs(p, s, decls)
         )
 
     # The ROOT module names exactly two things: the generated .c in a
@@ -312,7 +312,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         c: writer.finish(w),
         diagnostics: [],
         link: emit_externs.libraries(p, s, decls),
-        packages: emit_externs.packages(p, s, decls)
+        pkgconfigs: emit_externs.pkgconfigs(p, s, decls)
     )
 
 ## Tests
@@ -406,7 +406,7 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     assert titles[0] == "\"grab reads the value\""
     assert !entry_point(p).is_err()
     assert got.link.len() == 0
-    assert got.packages.len() == 0
+    assert got.pkgconfigs.len() == 0
 
 test "a descriptor copies its element as bytes, never by an assignment of the struct (defect 469)"
     text = "record Box\n    name: str\n    v: i64?\n\nfunction main()\n    xs = [Box(name: \"a\", v: ok(1))]\n    ys: [i64?] = [ok(2)]\n    print(xs.len() + ys.len())\n"

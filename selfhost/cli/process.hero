@@ -271,7 +271,7 @@ function env(name: str) -> str?
 
 # Whether `name` is set at all, empty included, which `env` answers as unset:
 # a `PKG_CONFIG_LIBDIR` set empty leaves `pkg-config` no default directory
-# (defect 292, `cli/package_answer.hero`).
+# (defect 292, `cli/pkgconfig_answer.hero`).
 function is_set(name: str) -> bool
     status: i64 @= 0
     marks: i64 @= 0

@@ -1,6 +1,6 @@
 # A name a library the program links needs and nothing on the link line
 # defines (design.md §4.19, §4.17; defect 2365, 2026-11-08): told at the
-# group whose `link` names that library, or at the package whose answer
+# group whose `link` names that library, or at the `pkgconfig` group whose answer
 # carried it, as `ffi_missing_link`, the class panel 048 gives a symbol the
 # linker cannot find because no group says which library has it. Until then
 # it was *internal error: linking failed* at exit 2 on every platform: panel
@@ -9,7 +9,7 @@
 # compiler.
 #
 # **The narrowing is the program's own words, as `ffi_build.missing_library`'s
-# is**: a library this program named, by a `link` or through a package's
+# is**: a library this program named, by a `link` or through a `pkgconfig` group's
 # answer, is the author's business, and a name is this reader's only where
 # EVERY reference to it is from such a library (`cli/link_report.hero` reads
 # who refers to each). A name one of the program's own objects, the runtime
@@ -26,7 +26,7 @@
 use ast
 use cli/libraries
 use cli/link_report
-use cli/package_missing
+use cli/pkgconfig_missing
 use cli/shell_split
 use diag
 use emit/externs as emit_externs
@@ -42,18 +42,18 @@ record Needing
     symbols: [str]
 
 # Every library name the program's words link: each `link` group's name, then
-# each `-l<name>` among the packages' link words.
+# each `-l<name>` among the `pkgconfig` answers' link words.
 function names_of(s: source.Source, decls: [ast.Decl], linked: [str]) -> [str]
     names: [str] @= []
 
     for decl in decls
-        span = group_span(decl, want_package: false)
+        span = group_span(decl, want_pkgconfig: false)
 
         if !span.is_err()
             names @ names.push(emit_externs.unquoted(s, span: span.must()))
 
     for word in libraries.link_words(linked)
-        named = package_missing.named_library(word)
+        named = pkgconfig_missing.named_library(word)
 
         if named.len() > 0
             names @ names.push(named)
@@ -61,8 +61,8 @@ function names_of(s: source.Source, decls: [ast.Decl], linked: [str]) -> [str]
     return names
 
 # The string of `decl`'s group's `link`, or of its `pkgconfig` where
-# `want_package`; an error where it has no group or its group names the other.
-function group_span(decl: ast.Decl, want_package: bool) -> token.Span?
+# `want_pkgconfig`; an error where it has no group or its group names the other.
+function group_span(decl: ast.Decl, want_pkgconfig: bool) -> token.Span?
     group: ast.Library? @= fail(code: "none", msg: "no group")
 
     match decl.kind
@@ -76,11 +76,11 @@ function group_span(decl: ast.Decl, want_package: bool) -> token.Span?
 
     match group.must()
         .link l =>
-            if want_package
+            if want_pkgconfig
                 return fail(code: "none", msg: "a `link` group")
             return ok(l.name)
         .pkgconfig pk =>
-            if !want_package
+            if !want_pkgconfig
                 return fail(code: "none", msg: "a package's group")
             return ok(pk.name)
 
@@ -157,30 +157,30 @@ function base_of(file: str) -> str
     return cs.slice(from: start, to: cs.len()).join("")
 
 # Where `need` is told: at the first group whose `link` names its library, or
-# at the first package whose answer, asked again, carries `-l<name>`; an
+# at the first `pkgconfig` group whose answer, asked again, carries `-l<name>`; an
 # error where neither does, which leaves the refusal the compiler's.
 function told_at(s: source.Source, decls: [ast.Decl], need: Needing, build: str) -> diag.Diagnostic?
     for decl in decls
-        span = group_span(decl, want_package: false)
+        span = group_span(decl, want_pkgconfig: false)
 
         if !span.is_err() && emit_externs.unquoted(s, span: span.must()) == need.name
             return ok(linked_told(need, span: span.must()))
 
     asked: {str: bool} @= {}
-    lacked = package_missing.Lacked(name: need.name, kind: "library", words: ["-l" + need.name], found: true)
+    lacked = pkgconfig_missing.Lacked(name: need.name, kind: "library", words: ["-l" + need.name], found: true)
 
     for decl in decls
-        span = group_span(decl, want_package: true)
+        span = group_span(decl, want_pkgconfig: true)
 
         if span.is_err()
             continue
-        package = emit_externs.unquoted(s, span: span.must())
+        pkgconfig = emit_externs.unquoted(s, span: span.must())
 
-        if asked[package].is_err()
-            asked[package] @ true
+        if asked[pkgconfig].is_err()
+            asked[pkgconfig] @ true
 
-            if package_missing.answers(package: package, build: build, lacked: lacked)
-                return ok(answered_told(need, package: package, span: span.must()))
+            if pkgconfig_missing.answers(pkgconfig: pkgconfig, build: build, lacked: lacked)
+                return ok(answered_told(need, pkgconfig: pkgconfig, span: span.must()))
 
     return fail(code: "none", msg: "no group of the program links " + need.name)
 
@@ -197,12 +197,12 @@ function linked_told(need: Needing, span: token.Span) -> diag.Diagnostic
     )
     return d
 
-# What is told at a package's string: the library its answer carried, every
+# What is told at a `pkgconfig` group's string: the library its answer carried, every
 # name that library needs, and the two ways to name the one that defines them.
-function answered_told(need: Needing, package: str, span: token.Span) -> diag.Diagnostic
+function answered_told(need: Needing, pkgconfig: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_link",
-        message: "the library `" + shown(need.name) + "`, which `pkg-config` answered for `" + shown(package) + "`, needs " + listed(need.symbols) + ", and nothing on the link line defines " + pronoun(need.symbols),
+        message: "the library `" + shown(need.name) + "`, which `pkg-config` answered for `" + shown(pkgconfig) + "`, needs " + listed(need.symbols) + ", and nothing on the link line defines " + pronoun(need.symbols),
         span: span
     )
     d.notes @ d.notes.push(
@@ -272,7 +272,7 @@ test "a name a library needs is told with the library, on every linker's report 
     assert two.len() == 2
     assert two[1].name == "cli" && two[1].symbols == ["net_open"]
 
-    # The words told, at the group and at a package.
+    # The words told, at a `link` group and at a `pkgconfig` group.
     d = linked_told(
         Needing(name: "top", file: "libtop.a", symbols: ["base_helper"]),
         span: token.Span(start: 0, end: 0)
@@ -282,7 +282,7 @@ test "a name a library needs is told with the library, on every linker's report 
     assert d.notes == ["`libtop.a` refers to `base_helper` without defining it, and a library is linked only where a group names it: give this program a group for the library that defines it as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"]
     p = answered_told(
         Needing(name: "top", file: "libtop.a", symbols: both),
-        package: "ptop",
+        pkgconfig: "ptop",
         span: token.Span(start: 0, end: 0)
     )
     assert p.code == "ffi_missing_link"

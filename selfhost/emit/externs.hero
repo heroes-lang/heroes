@@ -3,7 +3,7 @@
 #
 # Four walks over the same declarations, together because each answers
 # a question the group's head line asked: which HEADERS the unit
-# includes, which LIBRARIES the link line names, which PACKAGES are a
+# includes, which LIBRARIES the link line names, which PKGCONFIG names are a
 # question for the machine, and the spans behind them.
 #
 # THE WALKS ASK THE DECLARATION, NEVER THE KIND: an extern constant
@@ -200,17 +200,17 @@ function held(records: {i64: bool}?, decl: i64) -> bool
         .ok set => return !set[decl].is_err()
         .err    => return true
 
-# Every library a group named directly, and every package it asked for
+# Every library a `link` group named, and every one a `pkgconfig` group asked about
 # — kept apart all the way to the toolchain, because a library name is
-# handed to the linker as written and a package name is a QUESTION
+# handed to the linker as written and a `pkgconfig` name is a QUESTION
 # whose answer must be validated when it arrives.
 function libraries(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
-    return named(p, s, decls, want_package: false)
+    return named(p, s, decls, want_pkgconfig: false)
 
-function packages(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
-    return named(p, s, decls, want_package: true)
+function pkgconfigs(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
+    return named(p, s, decls, want_pkgconfig: true)
 
-function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_package: bool) -> [str]
+function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_pkgconfig: bool) -> [str]
     seen: [str] @= []
 
     for f in p.functions
@@ -218,7 +218,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
 
         if spans.library.is_err()
             continue
-        wanted = library_span(spans.library.must(), want_package: want_package)
+        wanted = library_span(spans.library.must(), want_pkgconfig: want_pkgconfig)
 
         if wanted.is_err()
             continue
@@ -239,7 +239,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
         match decl.kind
             .record_decl rec =>
                 if !rec.library.is_err()
-                    wanted = library_span(rec.library.must(), want_package: want_package)
+                    wanted = library_span(rec.library.must(), want_pkgconfig: want_pkgconfig)
 
                     if wanted.is_err()
                         continue
@@ -257,7 +257,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
     return seen
 
 # **What no tool can carry, asked once more before any tool is handed a name**
-# (panel 188's guard): every header, library and package this program names,
+# (panel 188's guard): every header, `link` library and `pkgconfig` library this program names,
 # as its value, put to the half of `head_names.judged` that `check` refuses
 # because nothing carries it. A program reaches here through those refusals,
 # so this answers "" unless a name came another way; then `cli/produce.hero`
@@ -265,7 +265,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
 function unjudged(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
     said: [str] @= refused(said: [], names: headers(p, s, decls), what: "header")
     said @ refused(said: said, names: libraries(p, s, decls), what: "link")
-    return refused(said: said, names: packages(p, s, decls), what: "pkgconfig").join("\n  ")
+    return refused(said: said, names: pkgconfigs(p, s, decls), what: "pkgconfig").join("\n  ")
 
 function refused(said: [str], names: [str], what: str) -> [str]
     out: [str] @= said
@@ -283,14 +283,14 @@ function refused(said: [str], names: [str], what: str) -> [str]
 
     return out
 
-function library_span(library: ast.Library, want_package: bool) -> token.Span?
+function library_span(library: ast.Library, want_pkgconfig: bool) -> token.Span?
     match library
         .link l =>
-            if want_package
+            if want_pkgconfig
                 return fail(code: "none", msg: "a link, not a package")
             return ok(l.name)
         .pkgconfig pk =>
-            if !want_package
+            if !want_pkgconfig
                 return fail(code: "none", msg: "a package, not a link")
             return ok(pk.name)
 
@@ -315,7 +315,7 @@ test "headers seed the unit's first header and the os header, dedupe, and see a 
     libs = libraries(low.program, s, parsed.decls)
     assert libs.len() == 1
     assert libs[0] == "sqlite3"
-    pkgs = packages(low.program, s, parsed.decls)
+    pkgs = pkgconfigs(low.program, s, parsed.decls)
     assert pkgs.len() == 1
     assert pkgs[0] == "raylib"
     assert unjudged(low.program, s, parsed.decls) == ""

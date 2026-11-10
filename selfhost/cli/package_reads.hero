@@ -159,15 +159,15 @@ function entries(line: str, word: str) -> [str]
 
 # The folders a package's `pkg-config` answer names, its compile words: each
 # `-I` and `-F` value, joined or the next word.
-function answered(package_flags: [str]) -> [str]
+function answered(pkgconfig_flags: [str]) -> [str]
     out: [str] @= []
     at: i64 @= 0
 
-    while at < package_flags.len()
-        word = package_flags[at]
+    while at < pkgconfig_flags.len()
+        word = pkgconfig_flags[at]
 
-        if (word == "-I" || word == "-F") && at + 1 < package_flags.len()
-            out @ out.push(lexical(package_flags[at + 1]))
+        if (word == "-I" || word == "-F") && at + 1 < pkgconfig_flags.len()
+            out @ out.push(lexical(pkgconfig_flags[at + 1]))
             at @ at + 2
             continue
 
@@ -309,10 +309,10 @@ function outside(listing: str, dirs: [str], files: [str]) -> [str]
 # C2's verdict on one listing of a fetched package's unit: ok where every
 # file it names lies where a package may read, the paths outside named
 # otherwise. `root` is the package's root, `runtime` the runtime's
-# directory, `package_flags` its own groups' compile words, `own` the
+# directory, `pkgconfig_flags` its own groups' compile words, `own` the
 # toolchain's own under its words; a listing clang could not make is no
 # verdict, told, since nothing vouches for what that compile would read.
-function judged(own: Own, root: str, runtime: str, package_flags: [str], listing: str?) -> ()?
+function judged(own: Own, root: str, runtime: str, pkgconfig_flags: [str], listing: str?) -> ()?
     if listing.is_err()
         return fail(
             code: "unread",
@@ -320,7 +320,7 @@ function judged(own: Own, root: str, runtime: str, package_flags: [str], listing
         )
     dirs: [str] @= [lexical(root), lexical(runtime)]
     dirs @ strings.with_all(list: dirs, more: own.dirs)
-    dirs @ strings.with_all(list: dirs, more: answered(package_flags))
+    dirs @ strings.with_all(list: dirs, more: answered(pkgconfig_flags))
     far = outside(listing.must(), dirs: dirs, files: own.files)
 
     if far.len() == 0
@@ -404,7 +404,7 @@ test "a listing is judged row by row: the root, the runtime, the toolchain's own
         own: own,
         root: "heroes.packages/vec",
         runtime: "runtime",
-        package_flags: ["-I/opt/ray/include"],
+        pkgconfig_flags: ["-I/opt/ray/include"],
         listing: ok(listing)
     )
     assert said.is_err()
@@ -419,12 +419,12 @@ test "a listing is judged row by row: the root, the runtime, the toolchain's own
     assert !strings.holds(text: msg, needle: "raylib.h")
     assert !strings.holds(text: msg, needle: "stdint.h")
     clean = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h"
-    assert !judged(own: own, root: "heroes.packages/vec", runtime: "runtime", package_flags: [], listing: ok(clean)).is_err()
+    assert !judged(own: own, root: "heroes.packages/vec", runtime: "runtime", pkgconfig_flags: [], listing: ok(clean)).is_err()
     assert judged(
         own: own,
         root: "heroes.packages/vec",
         runtime: "runtime",
-        package_flags: [],
+        pkgconfig_flags: [],
         listing: fail(code: "unread", msg: "x")
     ).is_err()
 
@@ -438,7 +438,7 @@ test "a path a Windows listing names outside the root is told with `/`, its clim
         own: own,
         root: "heroes.packages/vec",
         runtime: "runtime",
-        package_flags: [],
+        pkgconfig_flags: [],
         listing: ok(listing)
     )
 

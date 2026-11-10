@@ -194,7 +194,7 @@ record Spelling
 function spellings() -> [Spelling]
     build = "selfhost/emit/ffi_build.hero"
     reach = "selfhost/emit/header_reach.hero"
-    answer = "selfhost/cli/package_answer.hero"
+    answer = "selfhost/cli/pkgconfig_answer.hero"
     return [
         Spelling(file: build, heard: "\"" + HEADER_CODE + "\"")
         Spelling(file: reach, heard: "\"" + HEADER_CODE + "\"")
@@ -203,9 +203,9 @@ function spellings() -> [Spelling]
         Spelling(file: build, heard: "\"`\" + header + \"" + HEADER_CLOSE + HEADER_LOOKED + "\"")
         Spelling(file: reach, heard: "\"`\" + missing + \"" + HEADER_CLOSE + OWNER_OPEN + "\" + owner.header + \"" + OWNER_CLOSE + OWNER_TAIL + "\"")
         Spelling(file: "selfhost/emit/ffi_lookup.hero", heard: "\"" + strings.without_suffix(text: PACKAGE_MARK, suffix: "`") + "\"")
-        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + PACKAGE_CLOSE + "\"")
-        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + INSTALLED_CLOSE + "\"")
-        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + UNASKED_CLOSE + as_written(TOOL_OPEN) + "\" + package + \"" + as_written(TOOL_CLOSE) + "\\n  " + TOOL_WAY + "\"")
+        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + pkgconfig + \"" + PACKAGE_CLOSE + "\"")
+        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + pkgconfig + \"" + INSTALLED_CLOSE + "\"")
+        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + pkgconfig + \"" + UNASKED_CLOSE + as_written(TOOL_OPEN) + "\" + pkgconfig + \"" + as_written(TOOL_CLOSE) + "\\n  " + TOOL_WAY + "\"")
         Spelling(file: answer, heard: "\"\\n  " + SAID + "\"")
         Spelling(file: answer, heard: "\"\\n  " + NO_REASON + "\"")
         Spelling(file: answer, heard: "\"\\n  " + NOT_INSTALLED_WAY + "\"")
@@ -681,7 +681,7 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
     # A package, not installed or installed with its flags out of reach: the
     # flags must be refused here, and whether `pkg-config` reads the package
     # itself must agree with the headline (defect 292). It is asked in the two
-    # spellings the compiler asks it in (`selfhost/cli/package_answer.hero`'s
+    # spellings the compiler asks it in (`selfhost/cli/pkgconfig_answer.hero`'s
     # `installed`); a `.pc` that only its third question, the search path, finds
     # reads as not installed here, so a compiler saying *installed* of one is
     # judged, a red and never a skip.
@@ -744,7 +744,7 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
 # Whether `pkg-config` reads `package` itself, its requirements not followed:
 # either of the two spellings the compiler asks answering (pkgconf takes
 # `--maximum-traverse-depth=1`, pkg-config 0.29.2 refuses it and reads a plain
-# `--modversion` alone, `package_answer.installed`'s measurement).
+# `--modversion` alone, `pkgconfig_answer.installed`'s measurement).
 function reads_alone(scratch: str, package: str) -> bool?
     for words in [["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", package], ["pkg-config", "--modversion", "--", package]]
         read = shell.attempted(scratch: scratch, program: "pkg-config", words: words)?
@@ -880,7 +880,7 @@ function closing(rows: [str], from: i64) -> i64?
 
 # This machine's answer for `package`, as the compiler's notes carry it under
 # the headline `kind` names, asked with the compiler's own words
-# (`selfhost/cli/libraries.hero`'s `resolve_packages`).
+# (`selfhost/cli/libraries.hero`'s `resolve_pkgconfigs`).
 function quotation(scratch: str, package: str, kind: str) -> [str]?
     ran = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--libs", "--", package])?
 
@@ -904,7 +904,7 @@ function quoted_notes(answer: str, kind: str) -> [str]
     return out
 
 # `pkg-config`'s complaint as the compiler reads it before it words a note:
-# `\r\n` read as one line end where the bytes enter (`package_answer.complaint`,
+# `\r\n` read as one line end where the bytes enter (`pkgconfig_answer.complaint`,
 # defect 285), then its ends trimmed of spaces, tabs and line ends (`worded`,
 # `selfhost/cli/strings.hero`'s `trimmed`), a lone return kept. Until defect 328
 # the trim came first here, so the last `\r\n` lost its `\n` and left a return
@@ -917,7 +917,7 @@ function said_of(answer: str) -> str
 # complaint, each control character but a line end written by its code
 # (`selfhost/cli/shell_split.hero`'s `shown`), then each line trimmed of spaces
 # and tabs and kept where it holds anything (`selfhost/emit/ffi_lookup.hero`'s
-# `lines` and `trimmed`, read by `ffi_build.package_problem`).
+# `lines` and `trimmed`, read by `ffi_build.pkgconfig_problem`).
 function notes_of(answer: str) -> [str]
     said = said_of(answer)
 
@@ -1074,13 +1074,13 @@ function header_said(path: str, source: str, header: str) -> str?
     return ok(missing_header_said(header: header, tail: HEADER_LOOKED, at: path + ":" + place))
 
 # The compiler's headline for a package `pkg-config` does not know, told at
-# `at`, as `selfhost/cli/package_answer.hero`'s `worded` and
-# `selfhost/emit/ffi_build.hero`'s `package_problem` write it, notes left out.
+# `at`, as `selfhost/cli/pkgconfig_answer.hero`'s `worded` and
+# `selfhost/emit/ffi_build.hero`'s `pkgconfig_problem` write it, notes left out.
 function package_said(package: str, at: str) -> str
     return package_open() + package + PACKAGE_CLOSE + "\n  at " + at + "\n"
 
 # The compiler's words where `pkg-config` is not on this machine, told at `at`
-# (`package_answer.unasked`, defect 249): `ffi_pkgconfig` at the package's
+# (`pkgconfig_answer.unasked`, defect 249): `ffi_pkgconfig` at the package's
 # string, and the way out under it. They were a bare line with no code, no
 # place and no note until that defect, and this net planted the bare line
 # until defect 328.
@@ -1600,7 +1600,7 @@ test "a package answering words the list holds builds and runs, and the words be
 # 2.44, LLD 22.1.8, aarch64 and x86-64). That is a claim about the world, so the
 # day a toolchain writes the other tag (`--disable-new-dtags` is the word that
 # moves it, and upstream GNU ld's own default) this fires, naming what depends on
-# it: `selfhost/cli/package_words.hero`'s `restates`. Where no `readelf` reads
+# it: `selfhost/cli/pkgconfig_words.hero`'s `restates`. Where no `readelf` reads
 # the binary, as on macOS, there is nothing to ask and the case returns.
 test "an admitted -Wl,-rpath leaves a RUNPATH where readelf reads the binary, the tag the left-out word restates (panel 198)"
     if !shell.can_run_scripts()
@@ -2550,7 +2550,7 @@ function built_said(scratch: str, compiler: str, path: str, source: str, bin: st
 # A stand-in `pkg-config` in `dir`: it reads no package installed, or every
 # one where `installed`, has no search path of its own, and refuses every
 # package's flags with `answer` on stderr, as the compiler asks each
-# (`selfhost/cli/libraries.hero`, `selfhost/cli/package_answer.hero`).
+# (`selfhost/cli/libraries.hero`, `selfhost/cli/pkgconfig_answer.hero`).
 function stand_in(dir: str, answer: str, installed: bool) -> ()?
     shell.mkdir_all(dir)?
     write_file(path: dir + "/answer.txt", text: answer)?

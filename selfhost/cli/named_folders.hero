@@ -23,7 +23,7 @@ function searched_first(under: compiling.Compiling) -> [str]
     for one in under.search_include
         out @ out.push(package_reads.lexical(one))
 
-    out @ strings.with_all(list: out, more: package_reads.answered(libraries.compile_flags(under.package_flags)))
+    out @ strings.with_all(list: out, more: package_reads.answered(libraries.compile_flags(under.pkgconfig_flags)))
 
     if under.source_dir.len() > 0
         out @ out.push(package_reads.lexical(under.source_dir))
@@ -46,8 +46,8 @@ function named_folders(under: compiling.Compiling) -> [str]
 # **Who the compiler's own words say named each folder**, in the order a unit
 # searches them, so a folder named twice is told by the first that names it:
 # each `--include`, each package by its name, its `-I` and `-F` read from its
-# own words (`packages`, `settled.Site.package_words`), the program's own.
-function of_compiler(under: compiling.Compiling, packages: {str: [str]}) -> {str: shadowed_words.Origin}
+# own words (`pkgconfigs`, `settled.Site.pkgconfig_words`), the program's own.
+function of_compiler(under: compiling.Compiling, pkgconfigs: {str: [str]}) -> {str: shadowed_words.Origin}
     out: {str: shadowed_words.Origin} @= {}
 
     for one in under.search_include
@@ -60,8 +60,8 @@ function of_compiler(under: compiling.Compiling, packages: {str: [str]}) -> {str
     # ORDER: by the package's name, as `sort` orders a `str`; where two
     # packages answer one folder, the first taken is the origin its note
     # names, so the note observes this order.
-    for name in sort(keys(packages))
-        for dir in package_reads.answered(libraries.compile_flags(packages[name].default([])))
+    for name in sort(keys(pkgconfigs))
+        for dir in package_reads.answered(libraries.compile_flags(pkgconfigs[name].default([])))
             out @ taken(out, dir: dir, origin: shadowed_words.Origin(kind: shadowed_words.PKGCONFIG, name: name))
 
     if under.source_dir.len() > 0
@@ -129,11 +129,11 @@ test "a folder is told by the first word that names it, the compiler's before th
         level: "-O0",
         sanitize: false,
         search_include: ["inc", "./both"],
-        package_flags: ["-Ipkg", "-Iboth"],
+        pkgconfig_flags: ["-Ipkg", "-Iboth"],
         runtime: "runtime",
         source_dir: "src"
     )
-    origins = of_compiler(under, packages: {"zlib": ["-Ipkg", "-Iboth", "-DZ=1"]})
+    origins = of_compiler(under, pkgconfigs: {"zlib": ["-Ipkg", "-Iboth", "-DZ=1"]})
     assert origins["inc"].must().kind == shadowed_words.INCLUDE && origins["both"].must().kind == shadowed_words.INCLUDE
     assert origins["pkg"].must().kind == shadowed_words.PKGCONFIG && origins["pkg"].must().name == "zlib"
     assert origins["src"].must().kind == shadowed_words.PROGRAM && origins["runtime"].is_err()

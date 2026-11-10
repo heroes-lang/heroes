@@ -1834,7 +1834,7 @@ test "a comment in a chain 81 long is worked out once a part, never the chain's 
 # Panel 240: the mark that asks `pkg-config` is printed as the parser reads
 # it, `pkgconfig`, and the word beside it, `link`, as itself, each the head's
 # one line; the old word `package` is the parser's refusal and never reaches a
-# printer (`head_package.retired`), so `fmt` refuses it and never respells it.
+# printer (`pkgconfig_head.retired`), so `fmt` refuses it and never respells it.
 test "fmt prints both marks of a group head as written, and the old word stays the parser's"
     for head in ["extern \"raylib.h\" pkgconfig \"raylib\"", "extern \"m.h\" link \"m\""]
         text = head + "\n    function f() -> i32\n\nfunction main()\n    print(f())\n"

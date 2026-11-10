@@ -33,8 +33,8 @@
 # environment moves, which moves the platform's folders with it.
 
 use cli/deps
-use cli/package_macros
 use cli/package_reads
+use cli/pkgconfig_macros
 use cli/process
 
 # One word of the job this compiler did not pass: its flag as clang wrote it,
@@ -182,10 +182,10 @@ function holds(found: [Added], one: Added) -> bool
     return false
 
 # `found` with a `-D` or `-U` of `value` added where it names a name the guard
-# keeps and is not this compiler's own switch (`package_macros.refused`, the
+# keeps and is not this compiler's own switch (`pkgconfig_macros.refused`, the
 # rule a package's answer is held to).
 function kept(found: [Added], flag: str, value: str) -> [Added]
-    if !package_macros.refused(flag: flag, value: value)
+    if !pkgconfig_macros.refused(flag: flag, value: value)
         return found
     return found.push(Added(flag: flag, value: value, variable: edited_or_own()))
 

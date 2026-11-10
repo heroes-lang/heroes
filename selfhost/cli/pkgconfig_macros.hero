@@ -1,9 +1,9 @@
-# Which `-D` and `-U` words a package's answer may carry: none that names a name
+# Which `-D` and `-U` words a library's answer may carry: none that names a name
 # the C this compiler writes (design.md §4.19, §1.12; defect 2333, 2026-11-08).
-# `cli/package_words.hero` asks it of every `-D` and `-U` value, joined or as
+# `cli/pkgconfig_words.hero` asks it of every `-D` and `-U` value, joined or as
 # the next word, beside its other questions of a value.
 #
-# **Why a package's word and not a header's.** A group's header is read between
+# **Why an answer's word and not a header's.** A group's header is read between
 # `heroes_guard_open.h` and `heroes_guard_close.h`, which save every name the
 # compiler's C writes and give back at the close what stood at the open, so a
 # header's `#define main SDL_main` or `#define __builtin_add_overflow` is undone
@@ -21,7 +21,7 @@
 # `_REENTRANT` or `_XOPEN_SOURCE`, is none of them. **And a `-D` this compiler's
 # own words hold defines nothing new**: `flags.flags()` passes
 # `-D_USE_MATH_DEFINES` and `-D_CRT_SECURE_NO_WARNINGS` to every unit, so a
-# package's same word, or the `=1` clang reads a bare `-D` as, is that switch
+# library's same word, or the `=1` clang reads a bare `-D` as, is that switch
 # again; with another value it is a name kept, which clang refuses as well under
 # `-Werror=macro-redefined` (measured 2026-11-08 on this Mac: the same word
 # twice exit 0, `=0` after it exit 1).
@@ -41,7 +41,7 @@ function refused(flag: str, value: str) -> bool
         return false
     return kept_name(macro_of(value))
 
-# Whether the words a package's refusal names, `-D <value>` apart or
+# Whether the words a library's refusal names, `-D <value>` apart or
 # `-D<value>` joined (`libraries.refused`'s `said`), are a `-D` or `-U` that
 # `refused` refuses.
 function refused_said(said: str) -> bool
@@ -57,14 +57,14 @@ function refused_said(said: str) -> bool
 
     return false
 
-# **The notes of a package's `-D` or `-U` of a kept name** (panel 237's R3,
+# **The notes of a library's `-D` or `-U` of a kept name** (panel 237's R3,
 # defect 2348): its own reason, and a repair that keeps every other word of
 # the answer, the folders its group's header is found in among them. It was
 # told with the allow-list's notes until then, which said `-D` is accepted,
 # gave Go's CVE-2018-6574 as the reason and advised `link`, which hands clang
-# none of the package's `-I`, so the header was no longer found.
-function notes(package: str) -> str
-    return "\n  a `-D` or `-U` stands before every header this compiler's C reads and before every guard it writes around a group's header, so nothing undoes it: the guard gives back a header's own `#define` of such a name after the header, and has nothing to give back for a word that stood before it\n  the word is `pkg-config`'s answer: take it out of the `Cflags` of the `" + package + "` `.pc` file, which `pkg-config --variable=pcfiledir " + package + "` names the folder of, and every other word of its answer, its header folders among them, still reaches the build"
+# none of the library's `-I`, so the header was no longer found.
+function notes(pkgconfig: str) -> str
+    return "\n  a `-D` or `-U` stands before every header this compiler's C reads and before every guard it writes around a group's header, so nothing undoes it: the guard gives back a header's own `#define` of such a name after the header, and has nothing to give back for a word that stood before it\n  the word is `pkg-config`'s answer: take it out of the `Cflags` of the `" + pkgconfig + "` `.pc` file, which `pkg-config --variable=pcfiledir " + pkgconfig + "` names the folder of, and every other word of its answer, its header folders among them, still reaches the build"
 
 # What a refusal owes its reader after the word it names, or "" where `refused`
 # says no.

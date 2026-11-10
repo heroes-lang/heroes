@@ -118,7 +118,7 @@ record Artifact
     c: str
     tests: [str]
     link: [str]
-    packages: [str]
+    pkgconfigs: [str]
     stopped: bool
     # `--emit-c` asked for the C and it is NOT written yet (defect 048,
     # panel 157 R1 and R2). It used to be written here and the pipeline
@@ -151,7 +151,7 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: container
         c: "",
         tests: none_t,
         link: none_c,
-        packages: none_p,
+        pkgconfigs: none_p,
         stopped: true,
         emit_c: false,
         tree: tree,
@@ -327,7 +327,7 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
         if !stop_n.is_err()
             return leave(stop_n.must(), stage_name: "the C emission")
     return ok(
-        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p, resolved: out)
+        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, pkgconfigs: emitted.pkgconfigs, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p, resolved: out)
     )
 
 # **A stage that stops names itself.** This used to answer "a stage

@@ -17,8 +17,8 @@
 
 use diag
 use escape
-use head_package
 use head_windows
+use pkgconfig_head
 use shown_char
 use token
 
@@ -40,10 +40,10 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
         return ok(diag.new_diagnostic(code: "unwritable_name", message: unwritable(what: what, held: held), span: span))
 
     if what == "pkgconfig"
-        package_says = head_package.cannot_carry(value: value, span: span)
+        pkgconfig_says = pkgconfig_head.cannot_carry(value: value, span: span)
 
-        if !package_says.is_err()
-            return package_says
+        if !pkgconfig_says.is_err()
+            return pkgconfig_says
 
     # A `link` too: lld-link reads a name beginning `-` as an option of its own,
     # and `link "-out:x"` wrote a file of the author's naming (panel 188, § 22.5).
@@ -106,7 +106,7 @@ function thesis(spelled: str, value: str, span: token.Span, what: str) -> diag.D
         return windows_said(code: "machine_locked_path", reason: machine, spelled: spelled, span: span, what: what)
 
     if what == "pkgconfig"
-        return head_package.thesis(written: inside(spelled), value: value, span: span)
+        return pkgconfig_head.thesis(written: inside(spelled), value: value, span: span)
 
     if what == "header"
         return header_undefined(spelled: spelled, value: value, span: span)

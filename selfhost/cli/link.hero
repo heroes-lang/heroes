@@ -46,14 +46,14 @@ use module/reading as file_reading
 # **Its words reach clang in a file in the binary's home** (defect 583,
 # `response_file.for_link`): they name every object, and Windows refuses a
 # line past 32,767 characters, which the compiler's own build passed.
-function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str], judging: supplied.Judging) -> str?
+function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], pkgconfig_flags: [str], link_names: [str], judging: supplied.Judging) -> str?
     line: [str] @= link_line(
         objects: objects,
         level: level,
         sanitize: sanitize,
         target: t.target,
         search_library: search_library,
-        package_flags: package_flags,
+        pkgconfig_flags: pkgconfig_flags,
         link_names: link_names
     )
     home = link_output.binary_home(t, line: line, name: module + process.exe_suffix())
@@ -154,7 +154,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # include directory: a link reads none, and until defect 206 the link took
 # the `--include` directories and a package's whole answer, whose `-F` clang
 # on Linux called *argument unused during compilation*.
-function link_line(objects: [str], level: str, sanitize: bool, target: str, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
+function link_line(objects: [str], level: str, sanitize: bool, target: str, search_library: [str], pkgconfig_flags: [str], link_names: [str]) -> [str]
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(list: line, more: link_flags.link_flags())
     line @ strings.with_all(list: line, more: link_flags.target_words(target))
@@ -167,7 +167,7 @@ function link_line(objects: [str], level: str, sanitize: bool, target: str, sear
 
     library: [str] @= []
 
-    for flag in libraries.link_words(package_flags)
+    for flag in libraries.link_words(pkgconfig_flags)
         library @ library.push(flag)
 
     for name in link_names
@@ -287,7 +287,7 @@ function build_beside(index: i64) -> i64
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -309,7 +309,7 @@ function build_beside(index: i64) -> i64
         level: "-O0",
         sanitize: false,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none,
         judging: supplied.nothing()
     )
@@ -392,7 +392,7 @@ test "two cold compiles of one unit, and of the runtime, each write one object b
             level: "-O0",
             sanitize: false,
             search: "",
-            package_flags: none,
+            pkgconfig_flags: none,
             source_dir: "",
             search_include: none,
             memo: @memo,
@@ -446,7 +446,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -462,7 +462,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         level: "-O0",
         sanitize: false,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none,
         judging: supplied.nothing()
     ).must()
@@ -473,7 +473,7 @@ test "a binary's home is named by every word of its link line, and an author's -
     # elsewhere a byte of a name, and neither is split to name the output.
     assert !process.mkdir_all(t.build + "/sub").is_err()
     slashed = t.build + "/sub\\app" + process.exe_suffix()
-    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none, judging: supplied.nothing()).must() == slashed
+    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, pkgconfig_flags: none, link_names: none, judging: supplied.nothing()).must() == slashed
     assert process.path_exists(slashed)
     missing = link_objects(
         t,
@@ -483,7 +483,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         level: "-O0",
         sanitize: false,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none,
         judging: supplied.nothing()
     )
@@ -503,7 +503,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         level: "-O0",
         sanitize: false,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none,
         judging: supplied.nothing()
     ).must()
@@ -534,7 +534,7 @@ test "a link over a package's compile words carries none of them and prints noth
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -548,7 +548,7 @@ test "a link over a package's compile words carries none of them and prints noth
         sanitize: false,
         target: t.target,
         search_library: none,
-        package_flags: words,
+        pkgconfig_flags: words,
         link_names: none
     )
 
@@ -582,7 +582,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -596,7 +596,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -619,7 +619,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         level: "-O0",
         sanitize: false,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none,
         judging: supplied.nothing()
     ).must()
@@ -631,7 +631,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         sanitize: false,
         target: t.target,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none
     )
     home = link_output.binary_home(t, line: line, name: "linklong" + process.exe_suffix())
@@ -672,7 +672,7 @@ test "two links of the same objects into one path are one binary (defect 593)"
         level: "-O0",
         sanitize: false,
         search: "",
-        package_flags: none,
+        pkgconfig_flags: none,
         source_dir: "",
         search_include: none,
         memo: @memo,
@@ -691,7 +691,7 @@ test "two links of the same objects into one path are one binary (defect 593)"
             level: "-O0",
             sanitize: false,
             search_library: none,
-            package_flags: none,
+            pkgconfig_flags: none,
             link_names: none,
             judging: supplied.nothing()
         ).must()
@@ -707,7 +707,7 @@ test "two links of the same objects into one path are one binary (defect 593)"
         sanitize: false,
         target: t.target,
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none
     )
     said: bool @= false
@@ -727,7 +727,7 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
         sanitize: false,
         target: "aarch64-unknown-linux-gnu",
         search_library: none,
-        package_flags: ["-lp"],
+        pkgconfig_flags: ["-lp"],
         link_names: ["top", "base"]
     )
     assert linux.slice(from: linux.len() - 5, to: linux.len()) == ["-Wl,--start-group", "-lp", "-ltop", "-lbase", "-Wl,--end-group"]
@@ -737,7 +737,7 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
         sanitize: false,
         target: "arm64-apple-darwin25.6.0",
         search_library: none,
-        package_flags: ["-lp"],
+        pkgconfig_flags: ["-lp"],
         link_names: ["top", "base"]
     )
     assert apple.slice(from: apple.len() - 4, to: apple.len()) == ["a.o", "-lp", "-ltop", "-lbase"]
@@ -749,7 +749,7 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
         sanitize: false,
         target: "aarch64-unknown-linux-gnu",
         search_library: none,
-        package_flags: none,
+        pkgconfig_flags: none,
         link_names: none
     )
 
@@ -815,7 +815,7 @@ test "a library that needs another links in every order its words are written in
     lib = "-L" + dir
     none: [str] = []
     names = [["top", "base"], ["base", "top"], ["top"], none, none, ["top"]]
-    packages = [
+    pkgconfigs = [
         none
         none
         [lib, "-lbase"]
@@ -833,7 +833,7 @@ test "a library that needs another links in every order its words are written in
             level: "-O0",
             sanitize: false,
             search_library: [dir],
-            package_flags: packages[at],
+            pkgconfig_flags: pkgconfigs[at],
             link_names: names[at],
             judging: supplied.nothing()
         )

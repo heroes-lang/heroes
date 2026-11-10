@@ -42,7 +42,7 @@ use source
 # The build stopped, its refusals told, where a package's search reads where
 # it may not (`told`); ok where nothing does.
 function stopped(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], site: settled.Site) -> ()?
-    found = told(t, probings, s: s, decls: decls, packages: site.package_words, program: site.source_dir)
+    found = told(t, probings, s: s, decls: decls, pkgconfigs: site.pkgconfig_words, program: site.source_dir)
 
     if found.len() == 0
         return ok()
@@ -53,7 +53,7 @@ function stopped(t: toolchain.Toolchain, probings: [probing.Probing], s: source.
 # refuses, since a header reading outside its places is not listed again.
 # `program` is the program's own folder, told as the program's where a unit
 # names it among its `-I` words (`package_units.searching_after`).
-function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], packages: {str: [str]}, program: str) -> [diag.Diagnostic]
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], pkgconfigs: {str: [str]}, program: str) -> [diag.Diagnostic]
     outside = probing.outside(probings, s: s, decls: decls)
 
     if outside.len() > 0
@@ -66,10 +66,10 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
             places = origins(one, program: program)
             groups = order_trial.theirs(one.headers)
 
-            for d in shadowed.told(t, under: one.under, groups: groups, packages: packages, places: places)
+            for d in shadowed.told(t, under: one.under, groups: groups, pkgconfigs: pkgconfigs, places: places)
                 out @ once(out, d: d)
 
-            for d in stood_in(t, one: one, places: places, packages: packages, @memo)
+            for d in stood_in(t, one: one, places: places, pkgconfigs: pkgconfigs, @memo)
                 out @ once(out, d: d)
 
     return out
@@ -102,7 +102,7 @@ function origin_of(place: package_units.Place) -> shadowed_words.Origin
 # that name in a folder its words name before it, which is told as standing
 # in. A listing clang could not make is no verdict: the compile says what it
 # says.
-function stood_in(t: toolchain.Toolchain, one: probing.Probing, places: {str: shadowed_words.Origin}, packages: {str: [str]}, @memo: {str: str}) -> [diag.Diagnostic]
+function stood_in(t: toolchain.Toolchain, one: probing.Probing, places: {str: shadowed_words.Origin}, pkgconfigs: {str: [str]}, @memo: {str: str}) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
 
     if one.reached.len() == 0
@@ -114,7 +114,7 @@ function stood_in(t: toolchain.Toolchain, one: probing.Probing, places: {str: sh
     paths = rows(listing.must())
     named = named_folders.named_folders(one.under)
     others = [package_reads.lexical(one.under.runtime)]
-    compilers = named_folders.of_compiler(one.under, packages: packages)
+    compilers = named_folders.of_compiler(one.under, pkgconfigs: pkgconfigs)
 
     for reach in one.reached
         header = package_reads.lexical(reach.header)

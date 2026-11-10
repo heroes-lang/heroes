@@ -256,7 +256,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !m_hdr.is_err()
             found @ ffi_lookup.add_once(found, d: m_hdr.must())
-        pkg = ffi_build.package_problem(s, decls, stderr: text, line: line)
+        pkg = ffi_build.pkgconfig_problem(s, decls, stderr: text, line: line)
 
         if !pkg.is_err()
             found @ ffi_lookup.add_once(found, d: pkg.must())

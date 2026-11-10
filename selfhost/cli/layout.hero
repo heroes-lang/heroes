@@ -329,7 +329,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_A=1 -DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], pkgconfig_flags: ["-DHERO_A=1 -DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
     )
     assert !one_word.is_err()
 
@@ -341,7 +341,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], pkgconfig_flags: ["-DHERO_A=1", "-DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
     )
     assert two_words.is_err()
     assert layout_rows.byte_index(text: pointee.failure_text(two_words), needle: "heroes-ffi-missing EXTRA y") > 0
@@ -355,7 +355,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], pkgconfig_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"], runtime: t.runtime, source_dir: ""))
     )
     assert pointee.failure_text(linked) == pointee.failure_text(two_words)
     assert process.files_under(t.build).must().len() == held
@@ -407,7 +407,7 @@ test "the layout check asks each directory's own header, and one that appears ea
                 c,
                 s,
                 parsed.decls,
-                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
+                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: dir))
             )
 
             if dir == wider
@@ -423,7 +423,7 @@ test "the layout check asks each directory's own header, and one that appears ea
         level: "-O0",
         sanitize: false,
         search_include: [inc],
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: t.runtime,
         source_dir: whole
     )
@@ -462,7 +462,7 @@ test "the layout check refuses a record named after a typedef with no layout, na
             level: "-O0",
             sanitize: false,
             search_include: [headers_at],
-            package_flags: none,
+            pkgconfig_flags: none,
             runtime: t.runtime,
             source_dir: ""
         )
@@ -505,7 +505,7 @@ test "the layout check judges a record under the build's level and sanitizers (d
             level: level,
             sanitize: false,
             search_include: [headers_at],
-            package_flags: none,
+            pkgconfig_flags: none,
             runtime: t.runtime,
             source_dir: ""
         )
@@ -520,7 +520,7 @@ test "the layout check judges a record under the build's level and sanitizers (d
         level: "-O0",
         sanitize: true,
         search_include: [headers_at],
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: t.runtime,
         source_dir: ""
     )

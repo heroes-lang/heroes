@@ -166,7 +166,7 @@ function strings_hold(list: [str], one: str) -> bool
 function searching_after(under: compiling.Compiling, folders: [str]) -> compiling.Compiling
     if folders.len() == 0
         return under
-    words: [str] @= under.package_flags
+    words: [str] @= under.pkgconfig_flags
 
     if under.source_dir.len() > 0
         words @ words.push("-I" + under.source_dir)
@@ -178,7 +178,7 @@ function searching_after(under: compiling.Compiling, folders: [str]) -> compilin
         level: under.level,
         sanitize: under.sanitize,
         search_include: under.search_include,
-        package_flags: words,
+        pkgconfig_flags: words,
         runtime: under.runtime,
         source_dir: ""
     )

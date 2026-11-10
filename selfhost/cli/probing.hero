@@ -38,9 +38,9 @@ use cli/toolchain
 use diag
 use emit/decls as emit_decls
 use emit/externs as emit_externs
-use emit/header_packages
 use emit/members
 use emit/membership
+use emit/pkgconfig_headers
 use emit/unit_plan
 use ir/containers
 use source
@@ -75,7 +75,7 @@ record Planned
     plans: [unit_plan.Plan]
     probings: [Probing]
 
-function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str], target: emit_decls.BuildTarget, package_words: {str: [str]}, by_header: {str: [str]}) -> Planned
+function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str], target: emit_decls.BuildTarget, pkgconfig_words: {str: [str]}, by_header: {str: [str]}) -> Planned
     no_tags: {str: bool} = {}
     no_units: {str: str} = {}
     whole = members.whole_of(p, c, s, decls, struct_tags: no_tags, lend_units: no_units)
@@ -83,7 +83,7 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
     return Planned(
         whole: whole,
         plans: plans,
-        probings: probings_of(t, under: under, p, c, s, decls, plans: plans, package_words: package_words, by_header: by_header)
+        probings: probings_of(t, under: under, p, c, s, decls, plans: plans, pkgconfig_words: pkgconfig_words, by_header: by_header)
     )
 
 # The plans grouped by the header list their units read, in the order the
@@ -91,7 +91,7 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 # never through an index of a list of them, which would copy what it holds
 # at every write; and every probe shares one memo of the headers' digests,
 # so a header two lists include is hashed once.
-function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan], package_words: {str: [str]}, by_header: {str: [str]}) -> [Probing]
+function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan], pkgconfig_words: {str: [str]}, by_header: {str: [str]}) -> [Probing]
     keys_seen: {str: i64} @= {}
     lists: [[str]] @= []
     unders: [compiling.Compiling] @= []
@@ -99,12 +99,12 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
     group_of: [i64] @= []
 
     # A header list's packages are those of the groups naming its headers
-    # (`emit/header_packages.hero`, defect 572), so one list is one set of
+    # (`emit/pkgconfig_headers.hero`, defect 572), so one list is one set of
     # words, and its probe compiles under them; and a package's modules, and
     # a unit reaching another package's record, search their own folders, so
     # one list under two searches is two.
     for plan in plans
-        words = plan_under(under, s, decls, plan: plan, package_words: package_words, by_header: by_header)
+        words = plan_under(under, s, decls, plan: plan, pkgconfig_words: pkgconfig_words, by_header: by_header)
         key = libraries.key_text(compiling.search_words(words)) + "\n\n" + plan.headers.join("\n")
 
         if keys_seen[key].is_err()
@@ -172,12 +172,12 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
 # search its package and the packages whose records it reaches give it. The
 # probes above and the record layouts' agreement ask this one function
 # (`cli/agreed_layout.plan_words`, panel 239), so the two cannot drift.
-function plan_under(under: compiling.Compiling, s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan, package_words: {str: [str]}, by_header: {str: [str]}) -> compiling.Compiling
+function plan_under(under: compiling.Compiling, s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan, pkgconfig_words: {str: [str]}, by_header: {str: [str]}) -> compiling.Compiling
     base = compiling.Compiling(
         level: under.level,
         sanitize: under.sanitize,
         search_include: under.search_include,
-        package_flags: libraries.words_of(package_words, packages: header_packages.of(by_header, listed: plan.headers)),
+        pkgconfig_flags: libraries.words_of(pkgconfig_words, pkgconfigs: pkgconfig_headers.of(by_header, listed: plan.headers)),
         runtime: under.runtime,
         source_dir: under.source_dir
     )

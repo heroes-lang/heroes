@@ -61,7 +61,7 @@ function nothing() -> Judging
     return Judging(asked: false, bound: no_bound, needs: none, named: none, line: none, map_path: "")
 
 # Every function a group binds, each with its group's libraries.
-function bindings(s: source.Source, decls: [ast.Decl], package_words: {str: [str]}) -> [supplied_judged.Bound]
+function bindings(s: source.Source, decls: [ast.Decl], pkgconfig_words: {str: [str]}) -> [supplied_judged.Bound]
     out: [supplied_judged.Bound] @= []
     none: [str] = []
 
@@ -76,7 +76,7 @@ function bindings(s: source.Source, decls: [ast.Decl], package_words: {str: [str
                     match fd.value.library.must()
                         .link l       => own @ [emit_externs.unquoted(s, span: l.name)]
                         .pkgconfig pk => own @ library_names(
-                            package_words[emit_externs.unquoted(s, span: pk.name)].default(none)
+                            pkgconfig_words[emit_externs.unquoted(s, span: pk.name)].default(none)
                         )
                 out @ out.push(
                     supplied_judged.Bound(name: source.span_text(s, decls[index].name), decl: index, own: own)

@@ -313,7 +313,7 @@ test "the pointee check publishes its answer and its verdict before the record t
         s,
         parsed.decls,
         answered: @first_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert first.is_err()
     records: i64 @= 0
@@ -345,7 +345,7 @@ test "the pointee check publishes its answer and its verdict before the record t
         s,
         parsed.decls,
         answered: @second_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert failure_text(second) == failure_text(first)
     assert second_answers.len() == first_answers.len()
@@ -382,7 +382,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @narrow_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: none, runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], pkgconfig_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert narrow.is_err()
 
@@ -395,7 +395,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @wide_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_WIDE", "-lz"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], pkgconfig_flags: ["-DHERO_WIDE", "-lz"], runtime: t.runtime, source_dir: ""))
     )
     assert !wide.is_err()
 
@@ -410,7 +410,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @again_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_WIDE"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], pkgconfig_flags: ["-DHERO_WIDE"], runtime: t.runtime, source_dir: ""))
     )
     assert !again.is_err()
     assert process.files_under(t.build).must().len() == held
@@ -462,7 +462,7 @@ test "the pointee check asks each directory's own header, and one that appears e
                 s,
                 parsed.decls,
                 answered: @answers,
-                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
+                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, pkgconfig_flags: none, runtime: t.runtime, source_dir: dir))
             )
             assert asked.is_err() == (dir == wide)
 
@@ -475,7 +475,7 @@ test "the pointee check asks each directory's own header, and one that appears e
         level: "-O0",
         sanitize: false,
         search_include: [inc],
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: t.runtime,
         source_dir: narrow
     )
@@ -521,7 +521,7 @@ test "the pointee check judges a parameter under the build's level and sanitizer
             level: level,
             sanitize: false,
             search_include: [headers_at],
-            package_flags: none,
+            pkgconfig_flags: none,
             runtime: t.runtime,
             source_dir: ""
         )
@@ -541,7 +541,7 @@ test "the pointee check judges a parameter under the build's level and sanitizer
         level: "-O0",
         sanitize: true,
         search_include: [headers_at],
-        package_flags: none,
+        pkgconfig_flags: none,
         runtime: t.runtime,
         source_dir: ""
     )
@@ -594,7 +594,7 @@ test "the pointee check refuses a cstr to bytes C may write and takes one to con
             level: "-O0",
             sanitize: false,
             search_include: [headers_at],
-            package_flags: none,
+            pkgconfig_flags: none,
             runtime: t.runtime,
             source_dir: ""
         )

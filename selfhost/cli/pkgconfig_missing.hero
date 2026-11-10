@@ -1,5 +1,5 @@
-# A package whose `-l` or `-framework` the linker found nothing for (design.md §4.19,
-# §4.17; defect 528, 2026-10-09): told at the package's string as
+# A `pkgconfig` answer whose `-l` or `-framework` the linker found nothing for (design.md §4.19,
+# §4.17; defect 528, 2026-10-09): told at the `pkgconfig` group's string as
 # `ffi_missing_library`, the class defect 224 gives a `link` group's name the
 # linker cannot find, where it was exit 2 and the linker's text. Measured on
 # this Mac: `pkgconfig "libiodbc"`, whose `.pc` answers `-I/usr/include -liodbc
@@ -8,21 +8,21 @@
 #
 # **Asked of a link the linker refused, after every `link` group was**
 # (`cli/whose.hero`): `emit/ffi_build.missing_library` tells a name the program
-# wrote, and a package's names are the machine's answer, which the
+# wrote, and a library's `-l` names are the machine's answer, which the
 # explanation of a refused link does not hold. So the linker's lines are asked
-# about each `-l` and `-framework` the link CARRIED from the packages
-# (`libraries.link_words` of the round's package flags), a library the way
+# about each `-l` and `-framework` the link CARRIED from the `pkgconfig` answers
+# (`libraries.link_words` of the round's `pkgconfig` flags), a library the way
 # 224's reader asks it (`ffi_build.names_library`, ld64's, GNU ld's and
 # lld-link's wordings) and a framework in ld64's `framework 'X' not found`
-# (measured on this Mac, a package answering `-framework HeroesAbsent528`), the
-# longest name winning; and only then is each package the program asks asked
+# (measured on this Mac, a `.pc` answering `-framework HeroesAbsent528`), the
+# longest name winning; and only then is each `pkgconfig` library the program names asked
 # again, for which of them answered that word. A name is told only where the
-# link that ran carried it and a package's answer holds it, so an answer that
+# link that ran carried it and a library's answer holds it, so an answer that
 # moved between the two asks is never told as the first's: nothing matching,
 # the refusal stays the compiler's, exit 2.
 #
 # **And a `-framework` a linker that is not ld64 refuses as a word** (defect 533,
-# 2026-10-09): only ld64 takes `-framework`, so a package answering one on Linux
+# 2026-10-09): only ld64 takes `-framework`, so a library answering one on Linux
 # or Windows ended the build at exit 2. GNU ld reads it as its own `-f` and stops
 # (*-f may not be used without -shared*, naming no framework), and the lld family
 # calls it an unknown argument; `framework_unsupported` reads those wordings, and
@@ -54,7 +54,7 @@ record Lacked
     found: bool
 
 # What a refused link's `message` reports missing among the `-l` and
-# `-framework` words the link carried from the packages, `linked`; an error
+# `-framework` words the link carried from the `pkgconfig` answers, `linked`; an error
 # where it reports none of them. A linker that names what it searched for and
 # did not find (ld64 for a framework, ld64, GNU ld and the lld family for a
 # library) is read by name, the longest winning; a linker that refuses
@@ -137,9 +137,9 @@ function named_library(word: str) -> str
     return cs.slice(from: 2, to: cs.len()).join("")
 
 # The diagnostic for a refused link's `message`, at the first group naming the
-# package whose answer holds the reported words; none where no package's
+# library whose answer holds the reported words; none where no library's
 # does. `build` is where `pkg-config`'s answer is read, as the
-# build reads it (`libraries.resolve_packages`).
+# build reads it (`libraries.resolve_pkgconfigs`).
 function missing(message: str, s: source.Source, decls: [ast.Decl], build: str, linked: [str]) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
     lacked = reported(message: message, linked: linked)
@@ -162,22 +162,22 @@ function missing(message: str, s: source.Source, decls: [ast.Decl], build: str, 
 
         match group.must()
             .pkgconfig pk =>
-                package = emit_externs.unquoted(s, span: pk.name)
+                pkgconfig = emit_externs.unquoted(s, span: pk.name)
 
-                if !asked[package].is_err()
+                if !asked[pkgconfig].is_err()
                     continue
-                asked[package] @ true
+                asked[pkgconfig] @ true
 
-                if answers(package: package, build: build, lacked: lacked.must())
-                    return [told(package: package, lacked: lacked.must(), span: pk.name)]
+                if answers(pkgconfig: pkgconfig, build: build, lacked: lacked.must())
+                    return [told(pkgconfig: pkgconfig, lacked: lacked.must(), span: pk.name)]
             .link => continue
 
     return none
 
-# Whether `package`'s answer, asked again, holds `lacked`'s words among its
+# Whether `pkgconfig`'s answer, asked again, holds `lacked`'s words among its
 # link words, one after the other.
-function answers(package: str, build: str, lacked: Lacked) -> bool
-    flags = libraries.resolve_packages(packages: [package], build_dir: build)
+function answers(pkgconfig: str, build: str, lacked: Lacked) -> bool
+    flags = libraries.resolve_pkgconfigs(pkgconfigs: [pkgconfig], build_dir: build)
 
     if flags.is_err()
         return false
@@ -192,11 +192,11 @@ function answers(package: str, build: str, lacked: Lacked) -> bool
     return false
 
 # What is told: the class defect 224 gives a `link` group's name, at the
-# package's string, naming the package and the words its answer carried; a
+# `pkgconfig` string, naming the library and the words its answer carried; a
 # name from `pkg-config` written by its control characters' codes
 # (`shell_split.shown`, defect 237).
-function told(package: str, lacked: Lacked, span: token.Span) -> diag.Diagnostic
-    pkg = shell_split.shown(package, keep_lines: false)
+function told(pkgconfig: str, lacked: Lacked, span: token.Span) -> diag.Diagnostic
+    pkg = shell_split.shown(pkgconfig, keep_lines: false)
     answered = shell_split.shown(lacked.words.join(" "), keep_lines: false)
 
     # A `-framework` this linker does not take (defect 533): not an absence, so
@@ -237,7 +237,7 @@ test "what a refused link reports missing is read from the words the link carrie
     assert framed.name == "Metal2" && framed.kind == "framework" && framed.words == ["-framework", "Metal2"]
     assert framed.found
 
-    # A library the link did not carry from a package, a symbol the linker
+    # A library the link did not carry from a `pkgconfig` answer, a symbol the linker
     # could not find, a name that is another's prefix, a framework named as a
     # library and a library named as a framework are not told.
     assert reported(message: "ld: library 'sqlite3' not found", linked: linked).is_err()
@@ -251,11 +251,11 @@ test "what a refused link reports missing is read from the words the link carrie
     assert reported(message: "ld: framework 'iodbc' not found", linked: linked).is_err()
     assert reported(message: "ld: framework 'Metal' not found", linked: linked).is_err()
 
-    # The words a diagnostic is told with: the package, the kind, the words.
-    d = told(package: "libiodbc", lacked: gnu, span: token.Span(start: 0, end: 0))
+    # The words a diagnostic is told with: the library, the kind, the words.
+    d = told(pkgconfig: "libiodbc", lacked: gnu, span: token.Span(start: 0, end: 0))
     assert d.code == "ffi_missing_library"
     assert d.message == "this machine has no library called `iodbc` — `pkg-config` answered for `libiodbc` with `-liodbc`, and the linker looked"
-    assert told(package: "fw", lacked: framed, span: token.Span(start: 0, end: 0)).message == "this machine has no framework called `Metal2` — `pkg-config` answered for `fw` with `-framework Metal2`, and the linker looked"
+    assert told(pkgconfig: "fw", lacked: framed, span: token.Span(start: 0, end: 0)).message == "this machine has no framework called `Metal2` — `pkg-config` answered for `fw` with `-framework Metal2`, and the linker looked"
     assert named_library("-lz") == "z"
     assert named_library("-l") == ""
     assert named_library("-L/x") == ""
@@ -296,7 +296,7 @@ test "a -framework a non-ld64 linker refuses is read from the carried word and t
     assert reported(message: "ld: framework 'HeroesAbsent533' not found", linked: carried).must().found
 
     # Told at exit 1 as macOS's, no `link` way out, and not as an absence.
-    said = told(package: "pkg533", lacked: gnu.must(), span: token.Span(start: 0, end: 0))
+    said = told(pkgconfig: "pkg533", lacked: gnu.must(), span: token.Span(start: 0, end: 0))
     assert said.code == "ffi_missing_library"
     assert said.message == "`pkg-config` answered for `pkg533` with `-framework HeroesAbsent533`, and this machine's linker does not take a framework — `-framework` is macOS's"
     assert said.notes.len() == 1
