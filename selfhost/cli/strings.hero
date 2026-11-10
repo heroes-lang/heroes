@@ -200,3 +200,19 @@ test "a text is trimmed of its blanks by its bytes, and a character above ASCII 
     assert trimmed("") == ""
     assert trimmed("\r a \r") == "\r a \r"
     assert starts_with(text: "é€😀", prefix: "é€") && !starts_with(text: "é", prefix: "é€") && starts_with(text: "x", prefix: "")
+
+# **The three predicates never cut** (defects 2409, 2410 and 2411): each reads
+# `text[i]`, a byte, so an offset inside a character is asked as any other.
+# Their hand copies sliced `text` at `at + needle.len()`, which aborts where
+# that end falls inside a character of more than one byte; every cut below
+# would have fallen inside `é` or `€`.
+test "a prefix, a needle and a suffix are asked of the bytes where the cut would split a character"
+    assert !starts_with(text: "aé", prefix: "ab")
+    assert starts_with(text: "aé", prefix: "a")
+    assert !starts_with(text: "é", prefix: "e")
+    assert !holds(text: "éx", needle: "y")
+    assert holds(text: "aéb", needle: "b")
+    assert !holds(text: "struct café", needle: " at ")
+    assert !ends_with(text: "éa", suffix: "ba")
+    assert ends_with(text: "x€", suffix: "€")
+    assert !ends_with(text: "a€€", suffix: ".hero")

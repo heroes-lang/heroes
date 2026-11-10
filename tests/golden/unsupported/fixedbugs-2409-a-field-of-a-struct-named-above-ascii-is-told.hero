@@ -1,0 +1,16 @@
+# fixedbugs, defect 2409, 2026-11-10 (panel 241's compiler-engineer, outside
+# its brief): a header declaring `struct café` inside the bound record made
+# `heroes build` stop at exit 134, *string slice splits a character*, in
+# `emit/ffi_nested.hero`'s `has`, a hand copy of *contains* that cut clang's
+# `struct café` at every byte offset and put an end inside `é`. The type is
+# asked of its bytes now (`cli/strings.holds`), and the field is told the
+# header's type at exit 1, as the same header spelled `struct cafe` was.
+
+extern "fixedbugs-2409-a-field-of-a-struct-named-above-ascii-is-told.h"
+    record Holder tag holder
+        kind: i32
+        c: i32  #~ ffi_field_type
+
+function main()
+    h = Holder(kind: 2, c: 3)
+    print(h.kind)

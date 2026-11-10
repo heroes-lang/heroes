@@ -49,6 +49,7 @@
 # the root written with `/`. Its `..` kept, its separators are made `/` by
 # `clang_place.slashed`, the rule every message telling clang's paths follows.
 
+use bytes
 use cli/deps
 use cli/process
 use cli/publish
@@ -140,8 +141,9 @@ function entries(line: str, word: str) -> [str]
     at: i64 @= 0
     n = line.len()
 
+    # Each offset asked of its bytes, never cut (defect 2409's shape).
     while at + word.len() <= n
-        if line.slice(from: at, to: at + word.len()) != word
+        if !bytes.bytes_at(text: line, at: at, needle: word)
             at @ at + 1
             continue
         quoted = at > 0 && line[at - 1] == '"'

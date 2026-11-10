@@ -1,0 +1,6 @@
+error[ffi_field_type]: `Holder.c` is `struct café` in `fixedbugs-2409-a-field-of-a-struct-named-above-ascii-is-told.h`, not `i32` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-2409-a-field-of-a-struct-named-above-ascii-is-told.hero:12:9
+     |
+  12 |         c: i32  #~ ffi_field_type
+     |         ^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `c`, or name the header that spells `Holder` this way

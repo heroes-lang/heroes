@@ -80,6 +80,7 @@
 # target, so the pragma is silent where the extension is off (Apple clang 21
 # and Debian clang 22.1.8, measured at the repair).
 
+use bytes
 use emit/checks_raised
 
 # What a header's own code is not held to.
@@ -224,7 +225,7 @@ function never_words(build_words: [str]) -> [str]
     out: [str] @= KEPT
 
     for word in build_words
-        if word.len() > 8 && word.slice(from: 0, to: 8) == "-Werror="
+        if word.len() > 8 && bytes.bytes_at(text: word, at: 0, needle: "-Werror=")
             plain = "-W" + word.slice(from: 8, to: word.len())
 
             if !holds(QUIETED, one: plain) && !holds(out, one: plain)
@@ -242,11 +243,15 @@ function holds(list: [str], one: str) -> bool
 
     return false
 
+# Where `needle` first stands in `text`, -1 where it never does, each offset
+# asked of its bytes: clang's line quotes the header's code, which may hold a
+# character of more than one byte, and a cut at every offset aborts inside it
+# (defect 2409's shape).
 function index_of(text: str, needle: str) -> i64
     at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
+        if bytes.bytes_at(text: text, at: at, needle: needle)
             return at
         at @ at + 1
 

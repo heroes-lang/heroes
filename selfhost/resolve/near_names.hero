@@ -171,7 +171,10 @@ function part_length(word: str, at: i64) -> i64
     return finish - start + 1
 
 # Whether `b` is `a` with two neighbouring letters swapped, and nothing else
-# changed: `lenght` for `length`.
+# changed: `lenght` for `length`. The rest after the swap is asked byte by
+# byte and never cut (defect 2409's shape): a byte swap inside a character of
+# four bytes leaves both texts well-formed, `😀` and `𘟀`, and put the cut at
+# `i + 2` inside it.
 function swapped(a: str, b: str) -> bool
     if a.len() != b.len()
         return false
@@ -182,7 +185,14 @@ function swapped(a: str, b: str) -> bool
 
     if i + 1 >= a.len() || a[i] != b[i + 1] || a[i + 1] != b[i]
         return false
-    return a.slice(from: i + 2, to: a.len()) == b.slice(from: i + 2, to: b.len())
+    k: i64 @= i + 2
+
+    while k < a.len()
+        if a[k] != b[k]
+            return false
+        k @ k + 1
+
+    return true
 
 # Levenshtein distance, two rows, over bytes — exact for the ASCII names it
 # is asked about. The did-you-mean asks `within` below instead, of every name
@@ -313,6 +323,11 @@ function within(@band: [i64], a: str, b: str, most: i64) -> bool
 test "a swap and one slip read as one name, two names apart do not"
     assert swapped(a: "lenght", b: "length")
     assert !swapped(a: "lenght", b: "lenhtg")
+
+    # Two bytes swapped inside a character of four, each text well-formed: the
+    # rest is asked by its bytes, where a cut at the swap's end split `😀`.
+    assert swapped(a: "😀x", b: "𘟀x")
+    assert !swapped(a: "😀x", b: "𘟀y")
     assert !one_reading(name: "xs", candidate: "ys")
     assert one_reading(name: "Poimt", candidate: "Point")
 
