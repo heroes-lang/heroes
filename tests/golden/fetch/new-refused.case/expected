@@ -1,0 +1,80 @@
+$ heroes new
+exit 2
+stdout:
+stderr:
+error: `new` needs the name of the folder it makes: `heroes new <name>`, or `heroes new <name> --package` for a package
+$ heroes new app -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `<work>/app` is already there, a folder, and `heroes new` writes only into a folder it makes: nothing was written; choose another name
+$ heroes new local --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `<work>/local` is already there, a folder, and `heroes new` writes only into a folder it makes: nothing was written; choose another name
+$ heroes new heroes.toml -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `<work>/app/heroes.toml` is already there, a file, and `heroes new` writes only into a folder it makes: nothing was written; choose another name
+$ heroes new a/b -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `a/b` is no folder's name: a name holding `/` or `\` names a folder inside another, and `heroes new` makes one folder: give the folder it is made in with `-C`
+$ heroes new . -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `.` is no folder's name: `heroes new` makes a new folder, and `.`, `..` and an empty name name none
+$ heroes new .. -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `..` is no folder's name: `heroes new` makes a new folder, and `.`, `..` and an empty name name none
+$ heroes new my app -C <work>
+exit 2
+stdout:
+stderr:
+error: `new` makes one folder, and was given two names, `my` and `app`: `heroes new <name>`
+$ heroes new x -C <work>/nothere
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `-C <work>/nothere` names no folder on this machine
+$ heroes new x --bogus -C <work>
+exit 2
+stdout:
+stderr:
+error: `new` does not accept `--bogus` — it accepts --package, -C
+$ heroes new Greet --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `Greet` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter
+$ heroes new my-lib --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `my-lib` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter
+$ heroes new match --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `match` is no package's name: `match` is a keyword of Heroes, which no `use` writes between `<` `>`
+$ heroes new let --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `let` is no package's name: `let` is a word of another language that Heroes refuses, which no `use` writes between `<` `>`
+$ heroes new internal --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `internal` is no package's name: no program may write `use <internal>/internal`, its face's line, since a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it
+heroes.toml:
+[dependencies.mine]
+path = "../local"
+heroes.packages:
+(none)

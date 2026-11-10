@@ -120,13 +120,23 @@ we can be heroes</code></pre>
     di lavoro in una cartella <code>build/</code> nella directory in cui ti trovi. La seconda
     esecuzione di un file non modificato riusa quello che c&rsquo;è dentro.
   </p>
+  <p>
+    <code>./heroes new hello</code> scrive un primo programma in una cartella
+    nuova, <code>hello/main.hero</code>: una <code>main</code>, una funzione
+    con il commento che dice che cosa restituisce, e un test, un blocco che la
+    controlla, che <code>./heroes test hello/main.hero</code> esegue. Con
+    <code>--package</code> scrive invece un pacchetto, codice che altri
+    programmi raggiungono con <code>use</code>, nella forma che descrive
+    <a href="/it/docs/packages/">il capitolo sui pacchetti</a>. Rifiuta un nome
+    dove c&rsquo;è già una cartella o un file, e allora non scrive niente.
+  </p>
 
-  <h2>Un comando, quindici verbi</h2>
+  <h2>Un comando, sedici verbi</h2>
   <p>
     Tutti gli strumenti si usano tramite <code>heroes</code>:
     <code>lex</code>, <code>parse</code>, <code>check</code>,
     <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
-    <code>add</code>, <code>fetch</code>,
+    <code>add</code>, <code>fetch</code>, <code>new</code>,
     <code>doctor</code>, <code>mutate</code>, <code>probe</code>, <code>measure</code>,
     <code>grammar</code>, <code>this</code>. Non c&rsquo;è un secondo binario, non c&rsquo;è un file di build e
     non ci sono plugin.

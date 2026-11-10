@@ -1,0 +1,393 @@
+# `heroes new` (panel 244's R2, provisional, author ratification pending;
+# feature 2441): a new program or a new package, written into a new folder
+# named for it, of the current folder or of the one `-C` names, in the shape
+# this project's own programs and packages take, so that its writer starts
+# from a tree `heroes run`, `heroes test` and `heroes add --path` accept:
+#
+#     heroes new hello              hello/main.hero
+#     heroes new greet --package    greet/greet.hero, greet/greet/internal/words.hero
+#
+# **A program is `main.hero` alone**: `main()`, one function with its doc
+# comment, and one `test`. A program that uses no package has no catalogue
+# (spec § 1); a program commits the packages it fetches (panel 235's R8), so
+# no ignore file; and no `git init`, since a repository changes which
+# `file://` sources `heroes add` accepts. The folder's name is in no line of
+# the file, so any name a folder can have will do.
+#
+# **A package is its face and one private module**
+# (`examples/packages/README.md` § 1): `<name>.hero`, which declares only what
+# a program calls, with its tests; and `<name>/internal/words.hero`, which only
+# the package's own modules name (panel 235's R16). No catalogue, since it
+# needs no other package; and no card, since a card is written from its face
+# by a program and never by hand (the README's § 8, task 2294). Its name is in
+# its files and in every `use <name>/<name>` a program writes, and `heroes add
+# --path` names its entry after its folder, so the name is held to an entry's
+# rule, the compiler's own (`module/entry_name.hero`): `heroes add` refuses the
+# same names in the same words. And its face, `<name>/<name>`, is held to the
+# private modules' rule (`module/private.hero`): a package named `internal`
+# has a face no program may name, so no program could reach it.
+#
+# **Refused at exit 2, before anything is written**: a name that makes no one
+# new folder (one holding a `/` or a `\`, `.` and `..`, one holding a control
+# character); for a package, a name no `use` writes between `<` `>`, or whose
+# face no `use` outside it may name; a `-C`
+# naming no folder; and a name where anything already stands, a file, a
+# folder or a link, asked as itself so that a link naming nothing is never
+# renamed over. An empty or missing name, and a second one, are the argv
+# parser's refusals (`cli/argv.hero`).
+#
+# **Written whole or not at all**: the files go into a folder staged beside
+# the new one, `.heroes-new-<pid>-<serial>`, which is renamed into place once
+# every file is written, and removed whichever way it ends. So a failure
+# leaves no half folder that a second run would then refuse as already there;
+# a process killed between the two leaves the staged folder, under a name no
+# run of `heroes new` is ever given. Whether the name is free is asked again
+# just before the rename. **What is left is the instant between that question
+# and the rename**: POSIX `rename` replaces an empty folder or a link made
+# there in it, and the runtime offers no rename that refuses an existing
+# target, so that instant is the one window, written down rather than found.
+
+use cli/argv
+use cli/files
+use cli/io
+use cli/process
+use cli/table as cli_table
+use fetch/verb_place
+use module/entry_name
+use module/private
+use placed_use
+
+# One file the verb writes: its path inside the new folder, and its text.
+record Written
+    path: str
+    text: str
+
+# What `heroes new` makes: the folder it makes the new one in, "" for the
+# current one or a path ending with `/`; the new folder's name; and the files.
+record Made
+    within: str
+    name: str
+    package: bool
+    files: [Written]
+
+# The command: a line per file written and the line to run next on stdout,
+# or the refusal on stderr, at exit 2.
+function run(inv: argv.Invocation) -> cli_table.Exit
+    match outcome(inv)
+        .ok lines =>
+            for line in lines
+                print(line)
+
+            return .ok_exit
+        .err e =>
+            io.eprint(text: "error[" + e.code + "]: " + e.msg)
+            return .failed_exit
+
+# What `heroes new` says for `inv`: a line per file written, then the line to
+# run next; or the refusal, and then nothing was written.
+function outcome(inv: argv.Invocation) -> [str]?
+    made = planned(inv)?
+    placed(made)?
+    lines: [str] @= []
+
+    for f in made.files
+        lines @ lines.push("wrote " + folder_of(made) + "/" + f.path)
+
+    lines @ lines.push(next_line(made))
+    return ok(lines)
+
+# The new folder, from the current one.
+function folder_of(made: Made) -> str
+    return made.within + made.name
+
+# What `inv` asks to be made, or why nothing is: each question is asked
+# before a byte is written, the name's shape first, then the folder it would
+# be made in, then whether anything stands there.
+function planned(inv: argv.Invocation) -> Made?
+    name = inv.file.default("")
+    package = argv.has(inv, spelling: "--package")
+    no_folder = folder_refused(name)
+
+    if no_folder.len() > 0
+        return fail(code: "bad_usage", msg: "`" + name + "` is no folder's name: " + no_folder)
+
+    if package && entry_name.refused(name).len() > 0
+        return fail(code: "bad_usage", msg: "`" + name + "` is no package's name: " + entry_name.refused(name))
+
+    if package && private.owner_of("<" + name + ">/" + name).len() > 0
+        return fail(
+            code: "bad_usage",
+            msg: "`" + name + "` is no package's name: no program may write `use <" + name + ">/" + name + "`, its face's line, since " + placed_use.PRIVATE_RULE
+        )
+    within = verb_place.program_of(inv)?
+    free(within + name)?
+
+    if package
+        both = [
+            Written(path: name + ".hero", text: face_text(name))
+            Written(path: name + "/internal/words.hero", text: words_text(name))
+        ]
+        return ok(Made(within: within, name: name, package: true, files: both))
+    return ok(
+        Made(within: within, name: name, package: false, files: [Written(path: "main.hero", text: program_text())])
+    )
+
+# Why `name` makes no one new folder, "" where it makes one: the verb makes a
+# single folder inside another, which a name holding a separator does not
+# name, nor `.` or `..`, which name folders already there; and a control
+# character would break the line that prints the name.
+function folder_refused(name: str) -> str
+    if name.len() == 0 || name == "." || name == ".."
+        return "`heroes new` makes a new folder, and `.`, `..` and an empty name name none"
+
+    for at in range(from: 0, to: name.len())
+        if name[at] == '/' || name[at] == '\\'
+            return "a name holding `/` or `\\` names a folder inside another, and `heroes new` makes one folder: give the folder it is made in with `-C`"
+
+        if name[at] < ' ' || name[at] == 127.to_u8().must()
+            return "a name holding a control character cannot be shown on the line that names the folder: choose one without"
+
+    return ""
+
+# Nothing stands at `folder`, or the refusal saying what does. A link is
+# asked as itself, so one naming nothing is still there.
+function free(folder: str) -> ()?
+    match files.entry(folder)
+        .absent    => return ok()
+        .file      => return taken(folder: folder, what: "a file")
+        .directory => return taken(folder: folder, what: "a folder")
+        .link      => return taken(folder: folder, what: "a symbolic link")
+        .other     => return taken(folder: folder, what: "neither a file nor a folder")
+        .unknown =>
+            return fail(
+                code: "bad_usage",
+                msg: "whether anything stands at `" + folder + "` cannot be asked" + process.because() + ", and nothing was written"
+            )
+
+function taken(folder: str, what: str) -> ()?
+    return fail(
+        code: "bad_usage",
+        msg: "`" + folder + "` is already there, " + what + ", and `heroes new` writes only into a folder it makes: nothing was written; choose another name"
+    )
+
+# `made`'s files written into a folder staged beside the new one, then
+# renamed into place; on any failure the staged folder is removed and nothing
+# is left. A staged name that stands already, a run of this process number
+# killed before it ended, is refused and never removed: it is not this run's.
+function placed(made: Made) -> ()?
+    staged = made.within + ".heroes-new-" + process.pid().to_str() + "-" + process.serial().to_str()
+
+    if files.entry(staged) != .absent
+        return fail(
+            code: "write_failed",
+            msg: "`" + staged + "` stands where `heroes new` stages its folder, and nothing was written: move it away"
+        )
+    done: ()? @= staged_files(staged: staged, wanted: made.files)
+
+    if !done.is_err()
+        done @ free(folder_of(made))
+
+    if !done.is_err()
+        done @ process.rename_over(from: staged, to: folder_of(made))
+
+    if done.is_err()
+        _ = process.remove_tree(staged).is_err()
+        return fail(
+            code: code_of(done),
+            msg: "`" + folder_of(made) + "` was not made, and nothing of it was left: " + verb_place.why(done)
+        )
+    return ok()
+
+# Every file of `wanted` written under `staged`, its folders made first.
+function staged_files(staged: str, wanted: [Written]) -> ()?
+    for f in wanted
+        path = staged + "/" + f.path
+        process.mkdir_all(path.slice(from: 0, to: last_slash(path)))?
+        write_file(path: path, text: f.text)?
+
+    return ok()
+
+# The code a failure keeps: a name taken in the meantime is the author's
+# input, as it is before anything is staged; any other is the machine's.
+function code_of(failed: ()?) -> str
+    match failed
+        .ok _ => return ""
+        .err e =>
+            if e.code == "bad_usage"
+                return e.code
+            return "write_failed"
+
+function last_slash(path: str) -> i64
+    at: i64 @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    return at
+
+# The line after the files: how a program is run and tested, and how a
+# package is reached while it is developed, read where it stands, which a
+# fetch of a published version is not.
+function next_line(made: Made) -> str
+    if !made.package
+        main = folder_of(made) + "/main.hero"
+        return "next: `heroes run " + main + "` runs it, and `heroes test " + main + "` runs its tests"
+    return "next: a program in a folder beside it reaches it by `heroes add --path ../" + made.name + "` and `use <" + made.name + ">/" + made.name + "`; a build reads a `path` folder unverified, and a fetch of a published version may refuse what such a build accepts"
+
+## What it writes
+
+# A program's `main.hero`. The folder's name is in no line of it: a folder
+# may be named what no string or comment of Heroes holds.
+function program_text() -> str
+    text: [str] = [
+        "# A program: `heroes run main.hero` runs it, and `heroes test main.hero` runs"
+        "# its `test` blocks. It reaches a package once `heroes add` has named one in"
+        "# its catalogue, `heroes.toml`, beside this file; until then it has none."
+        ""
+        "function main()"
+        "    print(greeting())"
+        ""
+        "# The line `main` prints."
+        "function greeting() -> str"
+        "    return \"hello\""
+        ""
+        "test \"the greeting is hello\""
+        "    assert greeting() == \"hello\""
+    ]
+    return lines_of(text)
+
+# A package's face, `<name>.hero`, which a program reaches.
+function face_text(name: str) -> str
+    text: [str] = [
+        "# The package `" + name + "`, its face: a program reaches it by `use <" + name + ">/" + name + "`,"
+        "# once `heroes add` has written its entry in the program's catalogue. This"
+        "# module declares only what a program calls; what the package keeps to"
+        "# itself stands under `" + name + "/internal/`, which no module outside it names."
+        ""
+        "use " + name + "/internal/words"
+        ""
+        "# The greeting for `who`: the word a greeting opens with, then `who`."
+        "function hello(who: str) -> str"
+        "    return words.opening() + \", \" + who"
+        ""
+        "test \"hello greets who it is given, an empty name included\""
+        "    assert hello(\"ana\") == \"hello, ana\""
+        "    assert hello(\"\") == \"hello, \""
+    ]
+    return lines_of(text)
+
+# The package's private module, under its own `internal/`.
+function words_text(name: str) -> str
+    text: [str] = [
+        "# The words a greeting is made of, private to the package `" + name + "`: only"
+        "# the package's own modules name this one."
+        ""
+        "# The word a greeting opens with."
+        "function opening() -> str"
+        "    return \"hello\""
+        ""
+        "test \"a greeting opens with hello\""
+        "    assert opening() == \"hello\""
+    ]
+    return lines_of(text)
+
+# Lines as a file holds them, each ending with a line end.
+function lines_of(lines: [str]) -> str
+    return lines.join("\n") + "\n"
+
+## Tests
+
+# The scratch these cases share, under `build/`, which nothing tracks.
+constant SCRATCH: str
+    "build/selftest-stub"
+
+function invoked(words: [str]) -> argv.Invocation
+    return argv.parse(words, dir_probe: process.is_directory).must()
+
+# What `heroes new` with `words` refuses, as its message; "" where it refuses
+# nothing.
+function refusal(words: [str]) -> str
+    match outcome(invoked(words))
+        .ok _  => return ""
+        .err e => return e.code + ": " + e.msg
+
+test "a program is main.hero alone, and a package its face and one private module, each folder written whole"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH).is_err()
+    program = outcome(invoked(["new", "hello", "-C", SCRATCH])).must()
+    assert program == ["wrote " + SCRATCH + "/hello/main.hero", "next: `heroes run " + SCRATCH + "/hello/main.hero` runs it, and `heroes test " + SCRATCH + "/hello/main.hero` runs its tests"]
+    assert read_file(SCRATCH + "/hello/main.hero").must() == program_text()
+    assert process.walk(SCRATCH + "/hello").must().files.len() == 1
+
+    package = outcome(invoked(["new", "greet", "--package", "-C", SCRATCH + "/"])).must()
+    assert package[0] == "wrote " + SCRATCH + "/greet/greet.hero"
+    assert package[1] == "wrote " + SCRATCH + "/greet/greet/internal/words.hero"
+    assert package[2] == "next: a program in a folder beside it reaches it by `heroes add --path ../greet` and `use <greet>/greet`; a build reads a `path` folder unverified, and a fetch of a published version may refuse what such a build accepts"
+    assert read_file(SCRATCH + "/greet/greet.hero").must() == face_text("greet")
+    assert read_file(SCRATCH + "/greet/greet/internal/words.hero").must() == words_text("greet")
+    assert process.walk(SCRATCH + "/greet").must().files.len() == 2
+
+    # Nothing staged is left beside what was made.
+    assert process.walk(SCRATCH).must().files.len() == 3
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a name that makes no one folder, a package no use names, a -C naming no folder and a name taken are refused, and nothing is written"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH + "/taken").is_err()
+    assert !write_file(path: SCRATCH + "/afile", text: "mine\n").is_err()
+    assert !files.symbolic_link(target: "nowhere", name: SCRATCH + "/dangling").is_err() || !process.path_exists(SCRATCH + "/dangling")
+    refusals = [
+        [["new", "a/b", "-C", SCRATCH], ["bad_usage: `a/b` is no folder's name: a name holding `/` or `\\` names a folder inside another, and `heroes new` makes one folder: give the folder it is made in with `-C`"]]
+        [["new", "a\\b", "-C", SCRATCH], ["bad_usage: `a\\b` is no folder's name: a name holding `/` or `\\` names a folder inside another, and `heroes new` makes one folder: give the folder it is made in with `-C`"]]
+        [["new", ".", "-C", SCRATCH], ["bad_usage: `.` is no folder's name: `heroes new` makes a new folder, and `.`, `..` and an empty name name none"]]
+        [["new", "..", "-C", SCRATCH], ["bad_usage: `..` is no folder's name: `heroes new` makes a new folder, and `.`, `..` and an empty name name none"]]
+        [["new", "a\nb", "-C", SCRATCH], ["bad_usage: `a\nb` is no folder's name: a name holding a control character cannot be shown on the line that names the folder: choose one without"]]
+        [["new", "Greet", "--package", "-C", SCRATCH], ["bad_usage: `Greet` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter"]]
+        [["new", "my-lib", "--package", "-C", SCRATCH], ["bad_usage: `my-lib` is no package's name: a name is lowercase letters, digits and `_`, starting with a letter"]]
+        [["new", "match", "--package", "-C", SCRATCH], ["bad_usage: `match` is no package's name: `match` is a keyword of Heroes, which no `use` writes between `<` `>`"]]
+        [["new", "internal", "--package", "-C", SCRATCH], ["bad_usage: `internal` is no package's name: no program may write `use <internal>/internal`, its face's line, since " + placed_use.PRIVATE_RULE]]
+        [["new", "x", "-C", SCRATCH + "/absent"], ["bad_usage: `-C " + SCRATCH + "/absent` names no folder on this machine"]]
+        [["new", "taken", "-C", SCRATCH], ["bad_usage: `" + SCRATCH + "/taken` is already there, a folder, and `heroes new` writes only into a folder it makes: nothing was written; choose another name"]]
+        [["new", "afile", "--package", "-C", SCRATCH], ["bad_usage: `" + SCRATCH + "/afile` is already there, a file, and `heroes new` writes only into a folder it makes: nothing was written; choose another name"]]
+    ]
+
+    for one in refusals
+        assert refusal(one[0]) == one[1][0]
+
+    # A program's name is held to no `use`: `my-lib` and `match` are folders.
+    assert refusal(["new", "my-lib", "-C", SCRATCH]) == ""
+
+    # A link naming nothing stands there all the same, where the platform
+    # makes one.
+    if files.entry(SCRATCH + "/dangling") == .link
+        assert refusal(["new", "dangling", "-C", SCRATCH]) == "bad_usage: `" + SCRATCH + "/dangling` is already there, a symbolic link, and `heroes new` writes only into a folder it makes: nothing was written; choose another name"
+    assert read_file(SCRATCH + "/afile").must() == "mine\n"
+    assert process.walk(SCRATCH + "/taken").must().files.len() == 0
+
+    # Nothing but what stood and the one program made, staged or not.
+    for path in process.walk(SCRATCH).must().files
+        assert path == SCRATCH + "/afile" || path == SCRATCH + "/my-lib/main.hero" || path == SCRATCH + "/dangling"
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a write that fails leaves nothing, staged or made"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH).is_err()
+
+    # A file stands where a later file's folder must be made.
+    clash = Made(
+        within: SCRATCH + "/",
+        name: "half",
+        package: false,
+        files: [Written(path: "a", text: "one\n"), Written(path: "a/b.hero", text: "two\n")]
+    )
+
+    match placed(clash)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "write_failed"
+            assert e.msg.len() > 0
+
+    assert !process.path_exists(SCRATCH + "/half")
+    assert process.walk(SCRATCH).must().files.len() == 0
+    assert !process.remove_tree(SCRATCH).is_err()

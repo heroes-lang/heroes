@@ -18,6 +18,9 @@ variant Operand
     # shows as `[package]` and never as a file; optional, since `--path`
     # names a folder instead.
     package_operand
+    # What `heroes new` makes, the new folder's name, which the help shows as
+    # `<name>`: needed, and never a file the command reads (panel 244's R2).
+    name_operand
 
 variant Tag
     lex_cmd
@@ -29,6 +32,7 @@ variant Tag
     fmt_cmd
     add_cmd
     fetch_cmd
+    new_cmd
     doctor_cmd
     mutate_cmd
     probe_cmd
@@ -148,6 +152,13 @@ function commands() -> [Command]
     fetch_flags: [Flag] = [
         named(spelling: "-C", what: "the program's folder, where its heroes.toml is (default: the current folder)", placeholder: "folder")
     ]
+
+    # The verb that writes a new program or package (panel 244's R2): the kind
+    # a flag, a program by default, and the folder the new one is made in.
+    new_flags: [Flag] = [
+        plain(spelling: "--package", what: "write a package instead: its face module, `<name>.hero`, with its tests, and a private module under `<name>/internal/`")
+        named(spelling: "-C", what: "the folder the new one is made in (default: the current folder)", placeholder: "folder")
+    ]
     mutate_flags: [Flag] = [
         plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
         valued(spelling: "--operator", what: "score this operator alone, by its id")
@@ -182,6 +193,7 @@ function commands() -> [Command]
         Command(tag: .fmt_cmd, name: "fmt", operand: .file_operand, flags: fmt_flags, summary: "print the canonical form")
         Command(tag: .add_cmd, name: "add", operand: .package_operand, flags: add_flags, summary: "add a package to the program's heroes.toml: a name from the index, a git address with --tag, or a folder with --path; writes every package of the build with its sum, and places each")
         Command(tag: .fetch_cmd, name: "fetch", operand: .no_operand, flags: fetch_flags, summary: "place every package heroes.toml names under heroes.packages/, each checked against its sum; build, check and run never fetch")
+        Command(tag: .new_cmd, name: "new", operand: .name_operand, flags: new_flags, summary: "write a new program, its main.hero, into a new folder named for it, or with --package a new package; refuses a name already there, and then writes nothing")
         Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")
         Command(tag: .mutate_cmd, name: "mutate", operand: .optional_operand, flags: mutate_flags, summary: "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)")
         Command(tag: .probe_cmd, name: "probe", operand: .optional_operand, flags: probe_flags, summary: "put a comment at every place one can stand in each file, format every variant, and judge that `fmt` keeps each comment where it was (default: the formatter's fixture directories)")
@@ -260,7 +272,9 @@ test "the table is the pipeline's order and the flags carry their shapes"
     # item 1, the author's decision of 2026-09-26).
     # **13 -> 15 on 2026-11-08**, `add` and `fetch`, design.md §3.5's two
     # (panel 235's R11, ratified 2026-11-07).
-    assert table.len() == 15
+    # **15 -> 16 on 2026-11-10**, `new`, which writes a new program or package
+    # (panel 244's R2, provisional, author ratification pending; feature 2441).
+    assert table.len() == 16
     assert table[0].name == "lex"
     assert table[3].name == "build"
 
