@@ -262,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("14c3fb6552292e0f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c183af3394d28b9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2274keyscomeintheordertheywerefirstwritten\tfixedbugs-2274-keys-come-in-the-order-they-were-first-written\n");

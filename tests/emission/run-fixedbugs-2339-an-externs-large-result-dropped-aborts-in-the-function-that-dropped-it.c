@@ -290,7 +290,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7bfdd7574fcc9b17", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("335216e636f095c1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit\tfixedbugs-2339-an-externs-large-result-dropped-aborts-in-the-function-that-dropped-it\n");

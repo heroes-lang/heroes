@@ -386,7 +386,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("24b53d341f1b1c8d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c097cc2063f1737", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroaunionnoneofwhosemembersisnamed\tffi-rest-zero-a-union-none-of-whose-members-is-named\n");

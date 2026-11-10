@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d3208ac5409b36f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0486483b3b2dae19", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396anextentaboveapageaborts\tfixedbugs-396-an-extent-above-a-page-aborts\n");

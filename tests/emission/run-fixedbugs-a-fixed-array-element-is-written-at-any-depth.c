@@ -537,7 +537,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("034eec357dee89d9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3aa32bc365128483", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafixedarrayelementiswrittenatanydepth\tfixedbugs-a-fixed-array-element-is-written-at-any-depth\n");

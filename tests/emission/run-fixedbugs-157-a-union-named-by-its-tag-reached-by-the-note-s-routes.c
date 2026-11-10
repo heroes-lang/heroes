@@ -289,7 +289,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("405f5b5d1cb441cf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77b39aeb03d83c79", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs157aunionnamedbyitstagreachedbythenotesroutes\tfixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes\n");

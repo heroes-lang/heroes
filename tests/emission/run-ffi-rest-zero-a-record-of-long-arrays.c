@@ -699,7 +699,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("68a02bca5313442f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ff46b593a373ed9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroarecordoflongarrays\tffi-rest-zero-a-record-of-long-arrays\n");

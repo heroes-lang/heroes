@@ -210,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("107fdf9e607bdaa1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("47d41f2c479fd54b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs567ani8divisionatitssmallestbyminusoneaborts\tfixedbugs-567-an-i8-division-at-its-smallest-by-minus-one-aborts\n");

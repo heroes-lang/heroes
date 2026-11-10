@@ -910,7 +910,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4dcc3b8c3c9f8477", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("05207b1b23c37f21", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall\tfixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call\n");

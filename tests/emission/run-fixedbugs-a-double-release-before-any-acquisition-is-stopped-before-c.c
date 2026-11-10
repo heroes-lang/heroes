@@ -287,7 +287,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2413c1fd778c654e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b68018b5eb05ff8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec\tfixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c\n");

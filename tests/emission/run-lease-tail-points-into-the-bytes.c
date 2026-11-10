@@ -286,7 +286,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e1323997592e824", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("256763285cb6e2ce", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("leasetailpointsintothebytes\tlease-tail-points-into-the-bytes\n");

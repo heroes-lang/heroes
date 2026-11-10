@@ -270,7 +270,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("62c24ee6421c83bf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a168e7529407e69", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush\tfixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push\n");

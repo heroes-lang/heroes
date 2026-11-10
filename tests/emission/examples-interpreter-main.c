@@ -1212,19 +1212,19 @@ bb2:
 #line 1213 "main.c"
 }
 
-#line 272 "examples/interpreter/main.hero"
+#line 290 "examples/interpreter/main.hero"
 HeroStr h_main_refusal_code(HeroStr h0_source) { h_0opt_60498281 h1_nodes = {0}; HERO_NODEBUG h_0opt_60498281 h2_f0 = {0}, h3_f1 = {0}, h5_own5 = {0}, t2, t3, t4, t8, t10, t11, t15, t17, t22, t23, t24, t25; HERO_NODEBUG HeroStr h4_ret0 = {0}, h6_own6 = {0}, h8_own8 = {0}, t1, t9, t20, t21, t26, t28; HERO_NODEBUG h_0opt_1be8f195 h7_own7 = {0}, t19, t27; HERO_NODEBUG int64_t t5, t6, t12, t13; HERO_NODEBUG bool t7, t14; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_syntree_Tree t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_source; t2 = h_synparse_program(t1); t22 = h5_own5; h5_own5 = t2; h_0opt_60498281_release(&t22); t23 = h1_nodes; h_0opt_60498281_retain(&t2); h1_nodes = t2; h_0opt_60498281_release(&t23);
-#line 275
+#line 293
     t3 = h1_nodes; t24 = h2_f0; h_0opt_60498281_retain(&t3); h2_f0 = t3; h_0opt_60498281_release(&t24); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto bb2; else goto bb3; bb1:
-#line 278
+#line 296
     t10 = h1_nodes; t25 = h3_f1; h_0opt_60498281_retain(&t10); h3_f1 = t10; h_0opt_60498281_release(&t25); t11 = h3_f1; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb2:
-#line 276
+#line 294
     t8 = h1_nodes; t9 = h_main_code_of_tree(t8); t26 = h6_own6; h6_own6 = t9; hero_str_decref(t26); h4_ret0 = t9; goto bb6; bb3: goto bb1; bb4:
-#line 278
+#line 296
     t17 = h3_f1; t18 = t17.as.ok; t19 = h_runeval_run(t18); t27 = h7_own7; h7_own7 = t19; h_0opt_1be8f195_release(&t27); t20 = h_main_code_of_frame(t19); t28 = h8_own8; h8_own8 = t20; hero_str_decref(t28); h4_ret0 = t20; goto bb6; bb5: t15 = h3_f1; t16 = t15.as.err;
 #line 1227 "main.c"
-    hero_panic_must_at(t16, "main.hero", "main.refusal_code", 278, 35);
+    hero_panic_must_at(t16, "main.hero", "main.refusal_code", 296, 35);
     hero_unreachable();
 bb6:
     t21 = h4_ret0;
@@ -1239,7 +1239,7 @@ bb6:
     return t21;
 }
 
-#line 280 "examples/interpreter/main.hero"
+#line 298 "examples/interpreter/main.hero"
 HeroStr h_main_code_of_tree(h_0opt_60498281 h0_said) { HERO_NODEBUG h_0opt_60498281 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_said; t9 = h1_s0; h_0opt_60498281_retain(&t1); h1_s0 = t1; h_0opt_60498281_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 1246 "main.c"
@@ -1249,18 +1249,18 @@ HeroStr h_main_code_of_tree(h_0opt_60498281 h0_said) { HERO_NODEBUG h_0opt_60498
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 282 "examples/interpreter/main.hero"
+#line 300 "examples/interpreter/main.hero"
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
-#line 281
+#line 299
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
-#line 283
+#line 301
     t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.code;
-#line 281
+#line 299
     t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
 #line 1261 "main.c"
 }
 
-#line 285 "examples/interpreter/main.hero"
+#line 303 "examples/interpreter/main.hero"
 HeroStr h_main_code_of_frame(h_0opt_1be8f195 h0_said) { HERO_NODEBUG h_0opt_1be8f195 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_said; t9 = h1_s0; h_0opt_1be8f195_retain(&t1); h1_s0 = t1; h_0opt_1be8f195_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 1267 "main.c"
@@ -1270,28 +1270,28 @@ HeroStr h_main_code_of_frame(h_0opt_1be8f195 h0_said) { HERO_NODEBUG h_0opt_1be8
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 287 "examples/interpreter/main.hero"
+#line 305 "examples/interpreter/main.hero"
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
-#line 286
+#line 304
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
-#line 288
+#line 306
     t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.code;
-#line 286
+#line 304
     t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
 #line 1282 "main.c"
 }
 
-#line 292 "examples/interpreter/main.hero"
+#line 310 "examples/interpreter/main.hero"
 HeroStr h_main_ran(HeroStr h0_source) { HERO_NODEBUG h_0opt_60498281 h1_f0 = {0}, h5_own5 = {0}, t2, t3, t7, t9, t24, t25; h_syntree_Tree h2_nodes = {0}; HERO_NODEBUG h_0opt_1be8f195 h3_f1 = {0}, h6_own6 = {0}, t12, t13, t17, t19, t27, t28; h_runvalue_Frame h4_f = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, t1, t22, t23, t30; HERO_NODEBUG int64_t t4, t5, t14, t15; HERO_NODEBUG bool t6, t16; HERO_NODEBUG HeroFailure t8, t18; HERO_NODEBUG h_syntree_Tree t10, t11, t26; HERO_NODEBUG h_runvalue_Frame t20, t29; HERO_NODEBUG HeroArrayHeader *t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_source; t2 = h_synparse_program(t1); t24 = h5_own5; h5_own5 = t2; h_0opt_60498281_release(&t24); t25 = h1_f0; h_0opt_60498281_retain(&t2); h1_f0 = t2; h_0opt_60498281_release(&t25); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t26 = h2_nodes; h_syntree_0Tree_retain(&t10); h2_nodes = t10; h_syntree_0Tree_release(&t26);
     t11 = h2_nodes; t12 = h_runeval_run(t11); t27 = h6_own6; h6_own6 = t12; h_0opt_1be8f195_release(&t27); t28 = h3_f1; h_0opt_1be8f195_retain(&t12); h3_f1 = t12; h_0opt_1be8f195_release(&t28); t13 = h3_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb3; else goto bb4; bb2:
-#line 293
+#line 311
     t7 = h1_f0; t8 = t7.as.err;
 #line 1291 "main.c"
-    hero_panic_must_at(t8, "main.hero", "main.ran", 293, 13);
+    hero_panic_must_at(t8, "main.hero", "main.ran", 311, 13);
     hero_unreachable();
 bb3:
-#line 294 "examples/interpreter/main.hero"
+#line 312 "examples/interpreter/main.hero"
     t19 = h3_f1; t20 = t19.as.ok; t29 = h4_f; h_runvalue_0Frame_retain(&t20); h4_f = t20; h_runvalue_0Frame_release(&t29);
     t21 = h4_f.f_lines; t22 = HERO_STR_LIT(hero_str_a); t23 = hero_str_join(t21, t22); t30 = h7_own7; h7_own7 = t23; hero_str_decref(t30);
 #line 1298 "main.c"
@@ -1305,26 +1305,26 @@ bb3:
     hero_str_release_at(&h7_own7);
     return t23;
 bb4:
-#line 294 "examples/interpreter/main.hero"
+#line 312 "examples/interpreter/main.hero"
     t17 = h3_f1; t18 = t17.as.err;
 #line 1311 "main.c"
-    hero_panic_must_at(t18, "main.hero", "main.ran", 294, 9);
+    hero_panic_must_at(t18, "main.hero", "main.ran", 312, 9);
     hero_unreachable();
 }
 
-#line 299 "examples/interpreter/main.hero"
+#line 317 "examples/interpreter/main.hero"
 HeroStr h_main_rendering(HeroStr h0_source) { HERO_NODEBUG h_0opt_7f1de476 h1_f0 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t26, t27; HeroArrayHeader * h2_tokens = {0}; h_syncursor_Cursor h3_c = {0}; h_syntree_Tree h4_t = {0}; HERO_NODEBUG h_0opt_e201354 h5_f1 = {0}, h10_own10 = {0}, t14, t15, t19, t21, t33, t34; int64_t h6_id; HERO_NODEBUG h_syncursor_Cursor h8_own8 = {0}, t12, t29, t30; HERO_NODEBUG h_syntree_Tree h9_own9 = {0}, t13, t23, t31, t32; HERO_NODEBUG HeroStr h11_own11 = {0}, t1, t25, t35; HERO_NODEBUG int64_t t4, t5, t16, t17, t22, t24; HERO_NODEBUG bool t6, t18; HERO_NODEBUG HeroFailure t8, t20; HERO_NODEBUG HeroArrayHeader *t10, *t11, *t28; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_source; t2 = h_lexscan_scanned(t1); t26 = h7_own7; h7_own7 = t2; h_0opt_7f1de476_release(&t26); t27 = h1_f0; h_0opt_7f1de476_retain(&t2); h1_f0 = t2; h_0opt_7f1de476_release(&t27); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t28 = h2_tokens; hero_array_incref(t10); h2_tokens = t10; hero_array_decref(t28);
     t11 = h2_tokens; t12 = h_syncursor_over(t11); t29 = h8_own8; h8_own8 = t12; h_syncursor_0Cursor_release(&t29); t30 = h3_c; h_syncursor_0Cursor_retain(&t12); h3_c = t12; h_syncursor_0Cursor_release(&t30);
     t13 = h_syntree_empty(); t31 = h9_own9; h9_own9 = t13; h_syntree_0Tree_release(&t31); t32 = h4_t; h_syntree_0Tree_retain(&t13); h4_t = t13; h_syntree_0Tree_release(&t32);
     t14 = h_synexpr_parsed(&h3_c, &h4_t); t33 = h10_own10; h10_own10 = t14; h_0opt_e201354_release(&t33); t34 = h5_f1; h_0opt_e201354_retain(&t14); h5_f1 = t14; h_0opt_e201354_release(&t34); t15 = h5_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
-#line 300
+#line 318
     t7 = h1_f0; t8 = t7.as.err;
 #line 1324 "main.c"
-    hero_panic_must_at(t8, "main.hero", "main.rendering", 300, 14);
+    hero_panic_must_at(t8, "main.hero", "main.rendering", 318, 14);
     hero_unreachable();
 bb3:
-#line 303 "examples/interpreter/main.hero"
+#line 321 "examples/interpreter/main.hero"
     t21 = h5_f1; t22 = t21.as.ok; h6_id = t22;
     t23 = h4_t; t24 = h6_id; t25 = h_syntree_shown_expr(t23, t24); t35 = h11_own11; h11_own11 = t25; hero_str_decref(t35);
 #line 1331 "main.c"
@@ -1341,10 +1341,10 @@ bb3:
     hero_str_release_at(&h11_own11);
     return t25;
 bb4:
-#line 303 "examples/interpreter/main.hero"
+#line 321 "examples/interpreter/main.hero"
     t19 = h5_f1; t20 = t19.as.err;
 #line 1347 "main.c"
-    hero_panic_must_at(t20, "main.hero", "main.rendering", 303, 10);
+    hero_panic_must_at(t20, "main.hero", "main.rendering", 321, 10);
     hero_unreachable();
 }
 
@@ -6825,7 +6825,7 @@ HERO_TU_LOCAL uint64_t h_0opt_5a58f2ca_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("331c352772f2f733", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f242e6706431077", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lexscan\tscan\nlextoken\ttoken\nruneval\teval\nrunexpr\texpr\nrunvalue\tvalue\nsyncursor\tcursor\nsynexpr\texpr\nsynparse\tparse\nsyntree\ttree\nutileach\teach\n");

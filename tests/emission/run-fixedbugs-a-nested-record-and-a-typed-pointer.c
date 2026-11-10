@@ -424,7 +424,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0683b1dc5457bc93", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3dd7f16a3b7bb73d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsanestedrecordandatypedpointer\tfixedbugs-a-nested-record-and-a-typed-pointer\n");

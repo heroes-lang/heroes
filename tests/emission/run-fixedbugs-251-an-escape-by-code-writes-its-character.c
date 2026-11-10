@@ -306,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("17d049415a9b9276", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f2488cf41bf8d20", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs251anescapebycodewritesitscharacter\tfixedbugs-251-an-escape-by-code-writes-its-character\n");

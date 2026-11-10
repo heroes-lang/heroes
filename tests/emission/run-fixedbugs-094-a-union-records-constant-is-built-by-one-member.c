@@ -370,7 +370,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("69caef9e2e7ecd3e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("211f2f2d15a2c7e8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094aunionrecordsconstantisbuiltbyonemember\tfixedbugs-094-a-union-records-constant-is-built-by-one-member\n");

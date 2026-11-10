@@ -320,7 +320,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("55700a7d1e6782ca", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cc44a0c058b7d74", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit\tfixedbugs-2364-a-record-is-read-after-the-header-its-own-module-reads-before-it\nfixedbugs2364rsconfigured\trs_configured\n");

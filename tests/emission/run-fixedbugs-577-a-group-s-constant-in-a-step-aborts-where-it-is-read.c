@@ -300,7 +300,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a6e2760681adb7a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("51c266ee4f3ed624", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs577agroupsconstantinastepabortswhereitisread\tfixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read\n");

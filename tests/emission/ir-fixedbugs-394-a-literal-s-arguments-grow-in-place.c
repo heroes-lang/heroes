@@ -322,7 +322,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("44b6d1c6001ad830", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c0b1154673ed2d9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs394aliteralsargumentsgrowinplace\tfixedbugs-394-a-literal-s-arguments-grow-in-place\n");

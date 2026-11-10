@@ -16678,7 +16678,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4fa0ac60094f5d0b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("06f4ebef707357b4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield\tfixedbugs-2288-a-record-of-four-thousand-one-byte-fields-built-once-keeps-each-field\n");

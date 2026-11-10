@@ -5876,7 +5876,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5409d7207ffa8b48", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b5e16af671e85f2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes\tfixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes\n");

@@ -249,7 +249,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("15e97e4a33b2e84d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d3dbdd81ad6e2f7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2050hiddendeclarationsofonespellingshareonemark\tfixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark\n");

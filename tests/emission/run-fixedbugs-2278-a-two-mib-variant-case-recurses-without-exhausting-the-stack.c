@@ -681,7 +681,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("62b842d1677d0f9c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a0c82604ea10a46", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack\tfixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack\n");

@@ -305,7 +305,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d443de00cf43563", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("74987d6e7418300c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs092acountinacellpasttherecordaborts\tfixedbugs-092-a-count-in-a-cell-past-the-record-aborts\n");

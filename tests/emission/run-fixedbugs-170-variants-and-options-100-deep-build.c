@@ -12169,7 +12169,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b1185640ef69560", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1265c4f3761a9009", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs170variantsandoptions100deepbuild\tfixedbugs-170-variants-and-options-100-deep-build\n");

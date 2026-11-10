@@ -490,7 +490,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d384b6417706815", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("648c8af27e9462be", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs231everywayoutofmanyistaken\tfixedbugs-231-every-way-out-of-many-is-taken\n");

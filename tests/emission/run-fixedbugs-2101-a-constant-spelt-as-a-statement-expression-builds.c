@@ -324,7 +324,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ee233fd745048ca", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0636738c5b744374", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2101aconstantspeltasastatementexpressionbuilds\tfixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds\n");

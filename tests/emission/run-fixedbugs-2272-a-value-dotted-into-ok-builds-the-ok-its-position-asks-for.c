@@ -426,7 +426,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("30d7aa4c5f2db6d3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("682be9da4651b17d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2272avaluedottedintookbuildstheokitspositionasksfor\tfixedbugs-2272-a-value-dotted-into-ok-builds-the-ok-its-position-asks-for\n");
