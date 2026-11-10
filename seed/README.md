@@ -139,6 +139,15 @@ The CI checks both at every push: where stage 1 and stage 2 say they were
 compiled from the same sources, this file must be what stage 2 emits; where
 they differ, stage 2 must reproduce itself one stage later.
 
+**And a module of `selfhost/` renamed or deleted refreshes this file in the
+same round** (2026-11-10, task 2401's lane, the first rename since the rhythm
+began): this file's `#line` directives name the modules it was emitted from,
+and `records/citations` reads each as a citation of a path the tree must hold,
+so a rename the two-stage build accepts still leaves `records` red until the
+refresh. Measured that day: 86 lines of the old seed named one of the six
+renamed modules by its `selfhost/` path (`grep -c`), and `records` read 27
+passed and 1 failed over the old seed and 28 and 0 over the refresh.
+
 **And one invariant binds every commit** (panel 222's R3): no commit holds a
 reader of what the emitter writes into every program while this file's compiler
 does not write it, or stage 2 cannot link; the net's `seed` suite asks it. A
