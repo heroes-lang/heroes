@@ -1,0 +1,14 @@
+# fixedbugs, defect 2413, lane b29-boundary, 2026-11-10.
+#
+# The shape beside `unsupported/fixedbugs-2413-a-hero-os-name-bound-under-a-
+# header-that-does-not-declare-it-is-refused`: a header of the program's own
+# that includes `hero_os.h` declares its names, so a group naming it binds
+# them; the header compiled alone finds each one, and the program builds and
+# runs as it did before the refusal landed.
+
+extern "fixedbugs-2413-my-os.h"
+    function hero_os_pid() -> i64
+    constant HERO_OS_OK: i64
+
+function main()
+    print(hero_os_pid() > 0, HERO_OS_OK)

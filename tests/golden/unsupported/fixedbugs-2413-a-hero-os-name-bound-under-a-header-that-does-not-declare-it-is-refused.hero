@@ -1,0 +1,29 @@
+# fixedbugs, defect 2413, lane b29-boundary, 2026-11-10.
+#
+# Every unit reads the runtime's `hero_os.h` before its groups' headers, so a
+# group naming `stdio.h` found `hero_env_shown` declared and built at exit 0,
+# and the same binding with `-> i64` was told *`hero_env_shown` returns
+# `HeroStr` in `stdio.h`*, a header that declares no such function. Spec § 13
+# checks a group's names against the header it names, so each binding of a
+# `hero_os.h` name is asked of that header compiled alone, and refused where
+# clang cannot find it there: a function, a constant, and a header that needs
+# an earlier group's macro, asked after that group's header (the
+# `second.h` shape). A header of the program's own that includes `hero_os.h`
+# binds as before (`run/fixedbugs-2413-...-includes-hero-os-binds-its-names`).
+
+extern "stdio.h"
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str  #~ ffi_unknown_name
+    constant HERO_OS_OK: i64  #~ ffi_unknown_name
+
+extern "fixedbugs-2413-first.h"
+    constant MY_ONE: i64
+
+extern "fixedbugs-2413-second.h"
+    function second_count() -> i64
+    function hero_os_pid() -> i64  #~ ffi_unknown_name
+
+function main()
+    status: i64 @= 0
+    marks: i64 @= 0
+    got = hero_env_shown("HOME".cstr(), status: @status, marks: @marks)
+    print(got.len() >= 0, HERO_OS_OK, second_count() + MY_ONE + hero_os_pid() * 0)
