@@ -1,6 +1,7 @@
 # A core package's card, written from its face (task 2294; panel 234's R5): the
 # `use` line, the module doc's first sentence, each record with its fields,
-# each function's signature with the call a program writes beside it, and each
+# each variant with its cases as a program builds them, each function's
+# signature with the call a program writes beside it, and each
 # code with what the face's docs say of it. The form is the one panel 234's
 # reader test measured as E2, whose exemplar is
 # `docs/panel/234-briefs/blind/S/card-H-call.md`: with each function's call
@@ -34,11 +35,14 @@ function card_text(face: package_face.Face, codes: [package_codes.Code]) -> str
         "# " + face.binding + ": `use <" + package_rules.PACKAGE + ">/" + face.path + "`\n\n" + face.said + "\n"
     ]
 
-    if face.shapes.len() > 0
+    if face.shapes.len() + face.choices.len() > 0
         lines: [str] @= []
 
         for shape in face.shapes
             lines @ lines.push(shape_line(shape))
+
+        for choice in face.choices
+            lines @ lines.push(choice_line(choice))
 
         out @ out.push("\n## Types\n\n" + lines.join("\n\n") + "\n")
 
@@ -84,6 +88,35 @@ function shape_line(shape: package_face.Shape) -> str
 
     return "`record " + shape.name + "` with " + listed(named) + ": " + shape.said
 
+# A variant's line: each case as a program builds it, the type of each field
+# where the value goes, `` `variant Value`, one of `.nothing` or
+# `.number(value: f64)`: ``, and its doc's first sentence.
+function choice_line(choice: package_face.Choice) -> str
+    built: [str] @= []
+
+    for one in choice.cases
+        built @ built.push("`" + case_written(one) + "`")
+
+    return "`variant " + choice.name + "`, one of " + listed_or(built) + ": " + choice.said
+
+# A case as a program builds it, each field's type where its value goes:
+# `.nothing`, `.number(value: f64)`.
+function case_written(one: package_face.Case) -> str
+    if one.fields.len() == 0
+        return "." + one.name
+    named: [str] @= []
+
+    for field in one.fields
+        named @ named.push(field.name + ": " + field.ty)
+
+    return "." + one.name + "(" + named.join(", ") + ")"
+
+# `a`, `a or b`, `a, b or c`.
+function listed_or(items: [str]) -> str
+    if items.len() == 1
+        return items[0]
+    return items.slice(from: 0, to: items.len() - 1).join(", ") + " or " + items[items.len() - 1]
+
 # `a`, `a and b`, `a, b and c`.
 function listed(items: [str]) -> str
     if items.len() == 1
@@ -118,8 +151,9 @@ function call_of(binding: str, f: package_face.Callable) -> str
 # A program that calls every function as the card writes the call, built by the
 # check: one function per call, whose parameters are the face's own, so each
 # argument is a value of its parameter's type under the parameter's own name,
-# the face's records written through the binding, and its `main` naming each
-# `str` constant as the card does. A `use` of the face that a parameter's type
+# the face's records and variants written through the binding, one function
+# per case of a variant building it as the card writes it, and its `main`
+# naming each `str` constant as the card does. A `use` of the face that a parameter's type
 # needs is repeated, and no other. `card` is the card's path, for the program's
 # own doc.
 function proof_source(face: package_face.Face, card: str) -> str
@@ -135,6 +169,12 @@ function proof_source(face: package_face.Face, card: str) -> str
 
         for b in bindings_in(f.result)
             needed[b] @ true
+
+    for choice in face.choices
+        for one in choice.cases
+            for field in one.fields
+                for b in bindings_in(field.ty)
+                    needed[b] @ true
 
     for row in face.uses
         named = use_binding(row)
@@ -155,6 +195,25 @@ function proof_source(face: package_face.Face, card: str) -> str
 
     for shape in face.shapes
         local @ local.push(shape.name)
+
+    for choice in face.choices
+        local @ local.push(choice.name)
+
+    for choice in face.choices
+        for one in choice.cases
+            params: [str] @= []
+            labelled: [str] @= []
+
+            for field in one.fields
+                params @ params.push(field.name + ": " + qualified(ty: field.ty, binding: face.binding, local: local))
+                labelled @ labelled.push(field.name + ": " + field.name)
+
+            head = "\nfunction case_" + choice.name + "_" + one.name + "(" + params.join(", ") + ") -> " + face.binding + "." + choice.name
+
+            if one.fields.len() == 0
+                out @ out.push(head + "\n    return ." + one.name + "\n")
+            else
+                out @ out.push(head + "\n    return ." + one.name + "(" + labelled.join(", ") + ")\n")
 
     for f in face.callables
         params: [str] @= []
@@ -322,3 +381,14 @@ test "the budget's number is the `maximum` row of `heroes measure`"
     said = "card.md\n  claude-legacy       809   (64995 ranks)\n  cl100k_base         808   (100256 ranks)\n  maximum             809   a lower bound, not the reader's tokeniser\n"
     assert maximum_in(said).must() == 809
     assert maximum_in("card.md\n  real  12\n").is_err()
+
+test "a variant's line builds each case, and its proof builds each as the line does"
+    text = "# J.\n\n# A value. More.\nvariant Value\n    nothing\n    number\n        value: f64\n    array\n        items: [Value]\n\n# The value, failing `not_json` where it is none.\nfunction parse(s: str) -> Value?\n    return ok(.nothing)\n"
+    face = package_face.face_of(path: "encoding/json", text: text)
+    nothing: [package_codes.Code] = []
+    assert card_text(face: face, codes: nothing) == "# json: `use <core>/encoding/json`\n\nJ.\n\n## Types\n\n`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value.\n\n## Functions\n\n- `parse(s: str) -> Value?`, called `json.parse(s)`: The value, failing `not_json` where it is none.\n"
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction case_Value_nothing() -> json.Value\n    return .nothing\n\nfunction case_Value_number(value: f64) -> json.Value\n    return .number(value: value)\n\nfunction case_Value_array(items: [json.Value]) -> json.Value\n    return .array(items: items)\n\nfunction call_parse(s: str) -> json.Value?\n    return json.parse(s)\n"
+    assert listed_or(["`a`"]) == "`a`"
+    assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"
+    assert case_written(face.choices[0].cases[1]) == ".number(value: f64)"
+    assert choice_line(face.choices[0]) == "`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value."

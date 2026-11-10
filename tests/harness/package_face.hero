@@ -1,7 +1,7 @@
 # A core package's face read for its card (task 2294): the module doc's first
-# sentence, each record with its fields, each function with its signature, its
-# parameters and its doc, each `str` constant, and what the card's form has no
-# line for. The codes the package writes, and what the face says of each, are
+# sentence, each record with its fields, each variant with its cases, each
+# function with its signature, its parameters and its doc, each `str`
+# constant, and what the card's form has no line for. The codes the package writes, and what the face says of each, are
 # `package_codes.hero`'s.
 #
 # The face is read as text in canonical form, which the `canonical` suite holds
@@ -9,10 +9,12 @@
 # (measured 2026-11-06: a signature written over two lines comes back as one).
 # A signature that does not close on its line is refused rather than guessed.
 #
-# **What the form has no line for is refused, by name, never left out.** A
-# `variant`, an `extern` group and a constant that names no code are each a
-# name a program writes, so a card that left them out would be a card that lies
-# by omission; the refusal says what to teach this module first. A `str`
+# **What the form has no line for is refused, by name, never left out.** An
+# `extern` group and a constant that names no code are each a name a program
+# writes, so a card that left them out would be a card that lies by omission;
+# the refusal says what to teach this module first. A `variant` was refused so
+# until 2026-11-10, when `encoding/json`'s `Value` was the first a face
+# declared, and its card line was taught (`Choice`). A `str`
 # constant a `fail` writes its code through is a code the package adds (the
 # conventions' § 3.3), and the card lists it among the codes.
 
@@ -31,6 +33,19 @@ record Slot
 record Shape
     name: str
     fields: [Slot]
+    said: str
+
+# A case of a variant: its name, and its fields, none for a case that holds
+# nothing.
+record Case
+    name: str
+    fields: [Slot]
+
+# A variant of the face, for the card's `## Types`: its name, its cases in
+# their order, and its doc's first sentence.
+record Choice
+    name: str
+    cases: [Case]
     said: str
 
 # A function of the face, for the card's `## Functions`: its signature as the
@@ -56,13 +71,14 @@ record Named
 
 # What a face is to its card: its path under the package's root, what
 # `use <core>/<path>` binds, its module doc's first sentence, its records,
-# functions and `str` constants, its `use` lines, and what the card's form
-# cannot say of it.
+# variants, functions and `str` constants, its `use` lines, and what the
+# card's form cannot say of it.
 record Face
     path: str
     binding: str
     said: str
     shapes: [Shape]
+    choices: [Choice]
     callables: [Callable]
     constants: [Named]
     uses: [str]
@@ -77,6 +93,7 @@ function face_of(path: str, text: str) -> Face
     if said.len() == 0
         refused @ refused.push("the module has no doc, whose first sentence a card opens with")
     shapes: [Shape] @= []
+    choices: [Choice] @= []
     callables: [Callable] @= []
     constants: [Named] @= []
     uses: [str] @= []
@@ -87,6 +104,8 @@ function face_of(path: str, text: str) -> Face
             uses @ uses.push(row)
         else if strings.starts_with(text: row, prefix: "record ")
             shapes @ shapes.push(shape_at(rows: rows, at: at))
+        else if strings.starts_with(text: row, prefix: "variant ")
+            choices @ choices.push(choice_at(rows: rows, at: at))
         else if strings.starts_with(text: row, prefix: "function ")
             got = callable_at(rows: rows, at: at)
 
@@ -105,17 +124,21 @@ function face_of(path: str, text: str) -> Face
                 constants @ constants.push(
                     Named(name: module_docs.name_after(text: row, start: 9), value: value.must(), said: first_said(module_docs.doc_above(rows: rows, at: at)))
                 )
-        else
-            for word in ["variant ", "extern "]
-                if strings.starts_with(text: row, prefix: word)
-                    refused @ refused.push(
-                        "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has no line for a " + strings.trimmed(word) + " yet: teach `package_face.hero` one before a face declares it"
-                    )
+        else if strings.starts_with(text: row, prefix: "extern ")
+            refused @ refused.push(
+                "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has no line for an extern yet: teach `package_face.hero` one before a face declares it"
+            )
         at @ at + 1
 
     for shape in shapes
         if shape.said.len() == 0
             refused @ refused.push("`record " + shape.name + "` has no doc, whose first sentence its card line writes")
+
+    for choice in choices
+        if choice.said.len() == 0
+            refused @ refused.push(
+                "`variant " + choice.name + "` has no doc, whose first sentence its card line writes"
+            )
 
     for f in callables
         if f.said.len() == 0
@@ -126,6 +149,7 @@ function face_of(path: str, text: str) -> Face
         binding: binding_of(path),
         said: said,
         shapes: shapes,
+        choices: choices,
         callables: callables,
         constants: constants,
         uses: uses,
@@ -165,6 +189,37 @@ function shape_at(rows: [str], at: i64) -> Shape
         below @ below + 1
 
     return Shape(name: name, fields: fields, said: first_said(module_docs.doc_above(rows: rows, at: at)))
+
+# The variant declared at row `at`: each case a row indented once, each of
+# its fields a row indented twice below it, a comment among them skipped, and
+# its doc's first sentence.
+function choice_at(rows: [str], at: i64) -> Choice
+    name = module_docs.name_after(text: rows[at], start: 8)
+    cases: [Case] @= []
+    names: [str] @= []
+    fields: [[Slot]] @= []
+    below: i64 @= at + 1
+
+    while below < rows.len() && strings.starts_with(text: rows[below], prefix: "    ")
+        row = strings.trimmed(rows[below])
+
+        if strings.starts_with(text: row, prefix: "#")
+            below @ below + 1
+            continue
+
+        if strings.starts_with(text: rows[below], prefix: "        ") && names.len() > 0
+            last = fields.len() - 1
+            fields[last] @ fields[last].push(slot_of(row))
+        else
+            nothing: [Slot] = []
+            names @ names.push(row)
+            fields @ fields.push(nothing)
+        below @ below + 1
+
+    for i in range(from: 0, to: names.len())
+        cases @ cases.push(Case(name: names[i], fields: fields[i]))
+
+    return Choice(name: name, cases: cases, said: first_said(module_docs.doc_above(rows: rows, at: at)))
 
 # The function declared at row `at`, or why it cannot be read: a signature that
 # does not close on its row, a parameter named `_`, which a call cannot write.
@@ -300,15 +355,31 @@ test "a parameter's type keeps its brackets and its commas whole"
 test "what the form has no line for is refused by name, and so is what cannot be read"
     face = face_of(
         path: "x",
-        text: "# X.\n\nconstant MOST: i64\n    3\n\nvariant Shape\n    dot\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n"
+        text: "# X.\n\nconstant MOST: i64\n    3\n\nextern \"x.h\"\n    function x_f()\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n\nvariant Shape\n    dot\n"
     )
-    assert face.refused.len() == 5
+    assert face.refused.len() == 6
     assert strings.contains(
         text: face.refused[0],
         needle: "line 3: `constant MOST: i64`, and a card has a line for a `str` constant naming a code alone"
     )
-    assert strings.contains(text: face.refused[1], needle: "a card has no line for a variant yet")
+    assert strings.contains(text: face.refused[1], needle: "a card has no line for an extern yet")
     assert strings.contains(text: face.refused[2], needle: "do not close on its line")
     assert strings.contains(text: face.refused[3], needle: "no name a call can write")
-    assert face.refused[4] == "`function h` has no doc, whose first sentence its card line writes"
+    assert face.refused[4] == "`variant Shape` has no doc, whose first sentence its card line writes"
+    assert face.refused[5] == "`function h` has no doc, whose first sentence its card line writes"
     assert face_of(path: "y", text: "# Documents f.\nfunction f()\n    _ = 0\n").refused[0] == "the module has no doc, whose first sentence a card opens with"
+
+test "a variant is read with its cases, each with its fields, a comment among them skipped"
+    text = "# J.\n\n# A value. More.\nvariant Value\n    nothing\n    # a comment inside\n    number\n        value: f64\n    pair\n        left: [Value]\n        right: {str: Value}\n\n# After.\nfunction f(v: Value) -> Value\n    return v\n"
+    face = face_of(path: "encoding/json", text: text)
+    assert face.refused.len() == 0
+    assert face.binding == "json"
+    assert face.choices.len() == 1
+    choice = face.choices[0]
+    assert choice.name == "Value" && choice.said == "A value."
+    assert choice.cases.len() == 3
+    assert choice.cases[0].name == "nothing" && choice.cases[0].fields.len() == 0
+    assert choice.cases[1].name == "number" && choice.cases[1].fields[0].name == "value"
+    assert choice.cases[1].fields[0].ty == "f64"
+    assert choice.cases[2].fields.len() == 2 && choice.cases[2].fields[1].ty == "{str: Value}"
+    assert face.callables.len() == 1
