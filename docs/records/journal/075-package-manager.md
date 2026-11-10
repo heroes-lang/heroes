@@ -275,3 +275,16 @@ equal to the round's by `diff -r`; the site's build green. The author asked, as 
 that GitHub run only the part of Windows that fails and not five hours of the rest, so the push
 carries `[skip ci]`, and the workflow gained `net: own`, which with `only: windows` builds the
 compiler and runs the net's own tests alone; the tag waits on that dispatch reading 0 failed.
+
+**And the tag, 2026-11-10.** The round's push (`a090af316`) carried `[skip ci]`, by the author's
+instruction that GitHub run only the part of Windows that failed, and the author dispatched it at
+11:13 with `only: windows` and `net: own` (CI run 42797273588): the Windows leg built the compiler
+in two stages, skipped the compiler's own tests and the whole net, and read the net's own tests 589,
+all passed, defect 238's two tests among them and defect 2418's new one. The round's defects were
+closed after that push, 2409 to 2412 and 2418, so `records/tagged` refused the tag placed on
+`a090af316` itself, whose commit is older than their closing; the list now holds no `blocking` and
+no `systemic` defect, nine `adjacent` ones at their first tag, three `improvement` ones, and one
+decision, panel 241's ratification (2415). So `m-package-manager` stands on this commit, the one
+after those closes, as `m-latency-ceiling` stood on the commit after defect 2278's; `a090af316`
+beneath it is the tree both Windows runs judged, and this commit adds only this paragraph and the
+page's.

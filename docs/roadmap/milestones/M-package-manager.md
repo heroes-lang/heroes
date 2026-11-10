@@ -201,3 +201,11 @@ the first version owes, in its lanes**: R12's wording for design.md §3.5,
 specification's text with the code that makes it true (R13); the `use`
 cluster, defects 2290, 2292, 2308 and 2325, and the header search of C1 with
 defect 2324, in the first lane; R19's goldens before the close.
+
+**The tag, 2026-11-10.** `m-package-manager` stands on the commit after the
+closes of defects 2409 to 2412 and 2418, the round that panel 241's crashes
+opened and 87d77dec2's Windows leg widened; its parent `a090af316` is the tree
+the Windows leg judged twice that day, the whole net 11,607 and 0 with
+`unsupported` 393 and 0 (CI run 42760969959, defect 2398 confirmed), then, by
+the author's dispatch with `net: own`, the net's own tests 589 and 0 (CI run
+42797273588). Journal 075 tells the day.
