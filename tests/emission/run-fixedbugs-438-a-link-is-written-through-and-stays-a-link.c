@@ -683,7 +683,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("31a9989b786ffce1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("360a441f189e7f4f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs438alinkiswrittenthroughandstaysalink\tfixedbugs-438-a-link-is-written-through-and-stays-a-link\n");

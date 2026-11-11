@@ -335,7 +335,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("44f6621464038824", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("49570d9804320a92", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten\tfixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written\n");

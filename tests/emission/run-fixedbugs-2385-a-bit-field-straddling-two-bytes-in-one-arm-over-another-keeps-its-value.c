@@ -358,7 +358,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6dc6cd0927c43f78", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7227788d47f2c1e5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2385abitfieldstraddlingtwobytesinonearmoveranotherkeepsitsvalue\tfixedbugs-2385-a-bit-field-straddling-two-bytes-in-one-arm-over-another-keeps-its-value\n");

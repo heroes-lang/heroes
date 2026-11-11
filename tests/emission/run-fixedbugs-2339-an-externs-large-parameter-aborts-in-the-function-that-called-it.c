@@ -319,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("53bb3c897c85bef8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("581be80d1cb44166", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2339anexternslargeparameterabortsinthefunctionthatcalledit\tfixedbugs-2339-an-externs-large-parameter-aborts-in-the-function-that-called-it\n");

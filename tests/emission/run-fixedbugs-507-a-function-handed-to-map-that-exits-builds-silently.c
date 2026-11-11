@@ -295,7 +295,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1dc7b24d750ebc9f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("22285dd1153d3f0d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs507afunctionhandedtomapthatexitsbuildssilently\tfixedbugs-507-a-function-handed-to-map-that-exits-builds-silently\n");

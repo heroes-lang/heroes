@@ -254,7 +254,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13133c2f19773f50", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1773e7b339a5c1bd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsalibraryfunctionasavalue\tfixedbugs-a-library-function-as-a-value\n");

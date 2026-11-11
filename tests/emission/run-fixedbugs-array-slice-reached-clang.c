@@ -220,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0fc598cc45a380ef", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1426445065d2035c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsarrayslicereachedclang\tfixedbugs-array-slice-reached-clang\n");

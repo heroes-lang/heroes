@@ -262,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("452cad06498a74d9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("498d588a69b8f746", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs507acalleethatexitsononepathbuildssilently\tfixedbugs-507-a-callee-that-exits-on-one-path-builds-silently\n");

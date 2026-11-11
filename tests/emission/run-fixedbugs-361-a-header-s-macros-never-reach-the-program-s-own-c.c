@@ -303,7 +303,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("094b01396804a13e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dabacbd083323ac", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs361aheadersmacrosneverreachtheprogramsownc\tfixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c\n");

@@ -276,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("574807026513a561", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ba8b286054227cf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder\tfixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order\n");

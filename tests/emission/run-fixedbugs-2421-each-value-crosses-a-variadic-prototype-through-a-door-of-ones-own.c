@@ -318,7 +318,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("549003377f3f7d2d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("58f0aebb1f6dff9b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown\tfixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own\n");

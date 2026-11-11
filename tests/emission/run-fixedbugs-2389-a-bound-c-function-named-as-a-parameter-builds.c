@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7398d81751c0fc80", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77f9839b71ef7eed", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2389aboundcfunctionnamedasaparameterbuilds\tfixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds\n");

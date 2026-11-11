@@ -349,7 +349,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("15e1fa655ccb0490", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a42a5e97cf986fd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname\tfixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name\n");

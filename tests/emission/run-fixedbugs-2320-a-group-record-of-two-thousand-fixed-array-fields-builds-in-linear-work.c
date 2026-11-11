@@ -10535,7 +10535,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("363707bc44f19b6f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a97b34065201ddc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork\tfixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work\n");

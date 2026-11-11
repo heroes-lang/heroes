@@ -320,7 +320,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("569612481505c71b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5af6bdcc35344988", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apartialrecordtakenbyvalueishandedasapointer\tfixedbugs-2286-a-partial-record-taken-by-value-is-handed-as-a-pointer\n");

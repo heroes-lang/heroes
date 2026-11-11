@@ -369,7 +369,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("47b31a5a60f8a5fe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c13c5de0127286c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs354abytearraybecomeseverybyteitholds\tfixedbugs-354-a-byte-array-becomes-every-byte-it-holds\n");

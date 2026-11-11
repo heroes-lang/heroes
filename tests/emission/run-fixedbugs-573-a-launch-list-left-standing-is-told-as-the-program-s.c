@@ -340,7 +340,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5cfe817f22f4d6a2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("615f2d034323590f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs573alaunchlistleftstandingistoldastheprograms\tfixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s\n");

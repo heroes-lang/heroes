@@ -270,7 +270,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b45c3bf11ead8e5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4fa66f4332195b52", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("inferredcelleveryshaperuns\tinferred-cell-every-shape-runs\n");
