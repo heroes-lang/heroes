@@ -1091,7 +1091,15 @@ test "the tables are what this module is, so they are counted"
     # binding the macro rewrites since defect 2369, the same day.
     # 30 -> 31 the same day, lane b26-cli (defect 2369): a constant a module
     # walked first rewrites with its macro, told at the binding.
-    assert ffi_probes().len() == 31
+    # 31 -> 40 on 2026-11-11, lane b31-245 (panel 245's landing): four rows of
+    # the level, `level2464/` refused at `-O0`, at `-O2` by the `-O0` compile
+    # and under `run`, and its unused `static inline` built; five of the
+    # pairing, `paired2448/`, a named header beside the platform's library and
+    # the platform's header beside a named library refused, the program's own
+    # declaration, the platform's own pair and both halves named built. The
+    # lane ran `surface` and not the net's own tests, so this count read 1
+    # failed at batch 31's gate A until this line.
+    assert ffi_probes().len() == 40
 
     # 33 -> 35 on 2026-09-03, M-robustness-guards step 2: `qualifyptr`'s two
     # rows — the program whose `certain` fix reproduced itself, now a guess,
