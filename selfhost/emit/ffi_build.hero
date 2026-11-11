@@ -15,6 +15,7 @@ use checker
 use diag
 use emit/clang_name
 use emit/externs as emit_externs
+use emit/ffi_linked
 use emit/ffi_lookup
 use emit/header_reach
 use parse
@@ -32,7 +33,8 @@ use token
 # the compiler does not know the name — a table mapping math.h to m
 # would be a premise about the world with an entry for every library
 # anyone ever binds (panel 048 declined a spec clause on four judges'
-# evidence).
+# evidence). A group of the header that names a library is told by
+# `emit/ffi_linked.hero` (defect 2466): these words are false of it.
 function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     name = undefined_symbol(line)
 
@@ -42,6 +44,10 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this symbol")
+    linked = ffi_linked.told(s, decls, name: name.must(), at: found.must())
+
+    if !linked.is_err()
+        return linked
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_link",
         message: "the linker cannot find `" + name.must() + "`, and no group in this program says which library has it",
