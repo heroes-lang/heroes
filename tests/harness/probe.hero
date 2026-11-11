@@ -49,6 +49,7 @@ record Probe
     err_lines: i64
     out_lines_max: i64
     library_skip: bool
+    library: str
 
 # A probe with everything unasked. `code` is -1 for "do not care", which
 # is what the exit-code-only tests need to say about the streams.
@@ -70,7 +71,8 @@ function probe(name: str, argv: str, code: i64) -> Probe
         err_state: "",
         err_lines: -1,
         out_lines_max: -1,
-        library_skip: false
+        library_skip: false,
+        library: ""
     )
 
 # One sentence, as the words a shell would have made of it — separated by
@@ -109,6 +111,14 @@ record Outcome
     text: str
 
 function outcome(scratch: str, compiler: str, p: Probe) -> Outcome
+    # A row whose case binds a library of the platform's asks the machine for
+    # it first, and is skipped where its linker has none (defect 2481).
+    if p.library.len() > 0
+        asked = library_asked(scratch: scratch, p: p)
+
+        if asked.kind != "asked"
+            return asked
+
     # **`argv` is a sentence and the runtime wants words**, so it is split
     # here, on spaces, once. The table's 91 rows were checked: not one of
     # them carries an argument with a space inside it, so the split is
@@ -151,6 +161,36 @@ function skip_of(scratch: str, p: Probe, said: shell.Run) -> Outcome
     if !lacks.is_err()
         return Outcome(kind: "skipped", text: lacks.must())
     return Outcome(kind: "held", text: absence.refused(lacks))
+
+# **What the machine says of the `link` library a row names, before the row
+# runs** (defect 2481): `skipped` with the machine's words where its linker
+# finds no such library (`absence.library_lacked`), `asked` where it finds one
+# or cannot say, so the row runs and is judged; and `failed` where the row's
+# own case binds no such library, since a row's word about its case is a
+# premise, and one that died is told rather than kept as a skip.
+function library_asked(scratch: str, p: Probe) -> Outcome
+    path = case_of(p.argv)
+    source = read_file(path)
+
+    if path.len() == 0 || source.is_err()
+        return Outcome(
+            kind: "failed",
+            text: "  `" + p.argv + "`: the row says its case binds library `" + p.library + "`, and it names no case that can be read"
+        )
+
+    if !absence.links(source: source.must(), library: p.library)
+        return Outcome(
+            kind: "failed",
+            text: "  `" + p.argv + "`: the row says its case binds library `" + p.library + "`, and " + path + " names it in no `link` group"
+        )
+    lacked = absence.library_lacked(scratch: scratch, library: p.library)
+
+    if !lacked.is_err()
+        return Outcome(
+            kind: "skipped",
+            text: "this machine lacks what the case binds, so it is judged where that is: " + lacked.must()
+        )
+    return Outcome(kind: "asked", text: "")
 
 # The case a row's argv hands the compiler: its first word ending in `.hero`,
 # "" where there is none.
@@ -327,4 +367,39 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     assert r.skips.len() == 1
     assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP surface/lacks\n")
     assert r.failed == 1
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2481's question, made to fire: a row naming a `link` library its
+# case binds is asked of the machine before anything runs, skipped where the
+# linker has no such library, and told where its case binds none; a library
+# every machine of the net links is present, `m`, or `kernel32` on Windows,
+# whose C library is in no `m.lib`, so the row runs and is judged.
+test "fixedbugs: a row naming a library its case binds is skipped where the machine's linker has none (defect 2481)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/probe-library"
+    assert !shell.mkdir_all(tree).is_err()
+    program = tree + "/main.hero"
+    absent = "heroes_no_machine_has_2481"
+    assert !write_file(path: program, text: "extern \"stdio.h\" link \"" + absent + "\"\n    function puts(s: cstr) -> i32\n").is_err()
+    lacking: Probe @= probe(name: "lacking", argv: "build " + program, code: 0)
+    lacking.library @ absent
+    got = outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: lacking)
+    assert got.kind == "skipped"
+    assert core_strings.contains(
+        s: got.text,
+        substr: "the library `" + absent + "`, which clang's linker does not find here"
+    )
+    unbound: Probe @= lacking
+    unbound.library @ "heroes_unbound_2481"
+    told = outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: unbound)
+    assert told.kind == "failed" && core_strings.contains(s: told.text, substr: "names it in no `link` group")
+    present: str @= "m"
+
+    if shell.exe_suffix() == ".exe"
+        present @ "kernel32"
+    assert absence.library_lacked(scratch: scratch, library: present).is_err()
+    assert absence.links(source: "extern \"zlib.h\" link \"z\"\n", library: "z")
+    assert !absence.links(source: "extern \"zlib.h\" pkgconfig \"z\"\n", library: "z")
     assert !shell.remove_tree(scratch).is_err()
