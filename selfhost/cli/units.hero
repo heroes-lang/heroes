@@ -11,9 +11,11 @@
 # is not enough. **And, since defect 122, the C compiler and its flags**
 # (`Toolchain.compiler_key`, what this machine's clang says it runs for the
 # flag list), with the sanitizer flags themselves in place of the bit. The
-# fingerprint is the Heroes `VERSION`, so until then an object compiled by
+# fingerprint was the Heroes `VERSION`, so until then an object compiled by
 # Apple clang 21 was a warm hit for Homebrew clang 22.1.8, and one compiled
-# without a flag for a compiler that passes it (panel 182's critic). Link names deliberately do NOT enter it: the link line
+# without a flag for a compiler that passes it (panel 182's critic). **And,
+# since defect 2472, the compiler's own sources** (`toolchain.fingerprint_of`), so
+# a cold compile's verdict a warm hit serves is never another compiler's. Link names deliberately do NOT enter it: the link line
 # is re-run on every build (it is one clang call over cached objects),
 # so a `link` edit takes effect without a recompile — which is the
 # 093 ffi-pragmatist's falsifier answered by construction.
@@ -384,6 +386,68 @@ test "a unit compiled under one clang answer is compiled again under another (de
     again = tu_object(
         here,
         module: "keyprobe",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        pkgconfig_flags: none,
+        source_dir: "",
+        search_include: none,
+        memo: @memo,
+        opened: @opened,
+        @told
+    ).must()
+    assert again == first
+
+# Defect 2472: a unit one compiler kept is never served to another of the
+# same release, whose judges may refuse it; the two told apart by their own
+# sources alone, as `--version` prints them.
+test "a unit compiled by one compiler is compiled again by another of the same release (defect 2472)"
+    here = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    other: toolchain.Toolchain @= here
+    other.fingerprint @ toolchain.fingerprint_of(release: "port-test", sources: "0123456789abcdef")
+    assert other.fingerprint != here.fingerprint
+    text = "#include <stdint.h>\nint64_t heroes_key_2472(void);\nint64_t heroes_key_2472(void) { return 2472; }\n"
+    none: [str] = []
+    memo: {str: str} @= {}
+    opened: {str: str} @= {}
+    told: {str: bool} @= {}
+    first = tu_object(
+        here,
+        module: "keyprobe2472",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        pkgconfig_flags: none,
+        source_dir: "",
+        search_include: none,
+        memo: @memo,
+        opened: @opened,
+        @told
+    ).must()
+    second = tu_object(
+        other,
+        module: "keyprobe2472",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        pkgconfig_flags: none,
+        source_dir: "",
+        search_include: none,
+        memo: @memo,
+        opened: @opened,
+        @told
+    ).must()
+
+    # Another directory, compiled there, and the first compiler's own still its own.
+    assert first != second
+    assert process.path_exists(path: first)
+    assert process.path_exists(path: second)
+    again = tu_object(
+        here,
+        module: "keyprobe2472",
         tu_text: text,
         level: "-O0",
         sanitize: false,

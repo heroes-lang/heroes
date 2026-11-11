@@ -20,9 +20,10 @@
 #   2026-08-26 because the runtime object's freshness check needs
 #   `cli_deps`, `cli_deps` needs to hash a file, and Heroes refuses
 #   module cycles.
-# - the compiler fingerprint and the runtime hint arrive as PARAMETERS
-#   from the driver; where the compiler itself stands is the runtime's
-#   answer (`hero_exe_path_shown`, defect 277), the one file that knows
+# - the release's fingerprint and the runtime hint arrive as PARAMETERS
+#   from the driver; what this compiler was compiled from is its own
+#   answer (`hero_program_sources`, defect 2472), and where it stands the
+#   runtime's (`hero_exe_path_shown`, defect 277), the one file that knows
 #   what machine it is on.
 # - the runtime's contents are gathered by one shell glob (`cat` in
 #   the shell's sorted order) because the language has no readdir;
@@ -46,19 +47,37 @@ use cli/strings
 use emit/runtime_abi
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
-# `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
-# compiler that changes what it writes there between releases would read
-# what an older one left: before defect 134 records, replays and C were
-# written in place, and a build killed half-way left files no later build
-# can trust (an empty pointee verdict failed every build after it). A new
-# word here is a new directory for every key; the old ones are never read:
-# `sealed` since every kept text carries its seal (`cli/kept.hero`, 357).
+# `fingerprint` was the Heroes `VERSION` alone until defect 2472 (below),
+# which moves at a release, so a compiler that changes what it writes there
+# between releases would read what an older one left: before defect 134
+# records, replays and C were written in place, and a build killed half-way
+# left files no later build can trust (an empty pointee verdict failed every
+# build after it). A new word here is a new directory for every key; the old
+# ones are never read: `sealed` since every kept text carries its seal
+# (`cli/kept.hero`, 357).
 constant LAYOUT: str
     "sealed"
+
+# **And every key names the compiler that wrote it** (defect 2472,
+# 2026-11-11): `fingerprint` carries this compiler's own sources, the key
+# `heroes --version` prints on its second line (`emit/provenance.hero`,
+# panel 222's R1), beside the release and the layout word, and every key
+# under `build/` opens with it. A verdict a cold compile reaches and a warm
+# hit serves (`cli/unit_verdict.hero`) was served to every compiler of one
+# `VERSION` until then: measured on the base with two compilers one judge
+# apart, the one whose judge refused a unit built it at exit 0 from the
+# object the other had kept, and refused it cold at exit 2. A compiler moves
+# between two releases, and its release's word does not. The openings were
+# keyed by these sources for that reason already (`cli/opening.hero`,
+# defect 2289), and the pointee and layout checks each named one more text.
+extern "hero_os.h"
+    function hero_program_sources() -> str
 
 record Toolchain
     runtime: str
     build: str
+    # The release, the layout word and this compiler's own sources
+    # (`fingerprint_of`), with which every key under `build/` opens.
     fingerprint: str
     # The runtime's whole contents, already hashed. It is a FIELD and
     # not a call because the per-module path asks for it once per
@@ -142,8 +161,14 @@ function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
     said = clang_floor.identity(build_dir: "build", runtime: runtime, words: asked)
 
     return ok(
-        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""))
+        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint_of(release: fingerprint, sources: hero_program_sources()), runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""))
     )
+
+# The fingerprint every key opens with: the release the driver names, the
+# layout of what a build leaves, and the sources of the compiler that leaves
+# it, so no two compilers read each other's objects or answers.
+function fingerprint_of(release: str, sources: str) -> str
+    return release + "|" + LAYOUT + "|sources:" + sources
 
 # What the key is given for clang's answer: the answer, or what was said instead, so a
 # clang that did not answer keys apart, its build saying why; and `CCC_OVERRIDE_OPTIONS`,
@@ -505,6 +530,15 @@ test "a header written into the runtime's search after a build is another runtim
 
     for dir in [t.build, copy]
         assert !process.remove_tree(dir).is_err()
+
+# Defect 2472: the fingerprint names this compiler's own sources, as its
+# `--version` prints them, so two compilers of one release open every key
+# apart; the units' half is `cli/units.hero`'s test of the same defect.
+test "every key opens with the compiler's own sources, so two compilers of one release share none (defect 2472)"
+    t = locate_toolchain(hint: "", fingerprint: "port-test").must()
+    assert t.fingerprint == fingerprint_of(release: "port-test", sources: hero_program_sources())
+    assert hero_program_sources().len() == 16
+    assert fingerprint_of(release: "port-test", sources: "0123456789abcdef") != fingerprint_of(release: "port-test", sources: "fedcba9876543210")
 
 test "an object compiled under one clang answer is never served under another (defect 122)"
     found = locate_toolchain(hint: "", fingerprint: "port-test")

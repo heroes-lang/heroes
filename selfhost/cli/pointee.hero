@@ -127,10 +127,10 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # renames one of them, replayed that refusal onto a program in another
     # directory with no such header, measured 2026-10-02 both ways on one
     # `build/`. **And it names the dump unit's own text** (2026-10-07, defect
-    # 411's function pointers): the fingerprint moves only at a release, so a
-    # compiler that writes the dump another way replayed the answer an older
-    # one had read, measured on one `build/` the day the dump began to read a
-    # function pointer through `*`.
+    # 411's function pointers): the fingerprint moved only at a release until
+    # defect 2472, so a compiler that writes the dump another way replayed the
+    # answer an older one had read, measured on one `build/` the day the dump
+    # began to read a function pointer through `*`.
     dump_text = header_types.dump_unit(headers, wanted)
     key = digest.digest(
         t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|words:" + libraries.key_text(words) + "|reads:" + probe.read.must() + "|" + t.runtime_key + "|dump:" + digest.digest(dump_text)
@@ -142,12 +142,12 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # **The verdict is keyed by the check unit's own text, not only by what
     # was asked.** Until 2026-09-04 it was `verdict.txt` under a key of
     # (compiler fingerprint, asks, headers, search, runtime) — and the
-    # fingerprint is a constant, so a compiler that learned to WRITE the
-    # assertion differently (defect 010's guard) replayed a verdict the old
-    # compiler had reached about the old unit, measured: the repaired
-    # compiler answered exit 2 on the defect's own reproducer until
-    # `build/pointee-*` was cleared. It carries the record's digest as well,
-    # since the check unit compiles the same headers the dump read.
+    # fingerprint was a constant until defect 2472, so a compiler that
+    # learned to WRITE the assertion differently (defect 010's guard)
+    # replayed a verdict the old compiler had reached about the old unit,
+    # measured: the repaired compiler answered exit 2 on the defect's own
+    # reproducer until `build/pointee-*` was cleared. It carries the record's
+    # digest as well, since the check unit compiles the headers the dump read.
     if !known.is_err()
         kept_json = kept.read(dump_of(dir: dir, sum: known.must()))
 

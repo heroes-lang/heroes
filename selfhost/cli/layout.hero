@@ -36,8 +36,9 @@
 # text; a dump too large to keep is asked of clang again
 # (`layout_runs.KEPT_DUMP`). A compiler that reads the dump differently asks
 # clang again where it must, which is the lesson `cli/pointee.hero` paid for
-# on 2026-09-04: the key's fingerprint is the release's `VERSION`, a constant
-# between releases, and a kept reading outlives the reader that made it.
+# on 2026-09-04: the key's fingerprint was the release's `VERSION`, a constant
+# between releases, until defect 2472 named the compiler's own sources in it,
+# and a kept reading outlived the reader that made it.
 #
 # **A screen that fails on no record is not this check's to report**: the
 # headers did not compile alone, and the build's own compile says so on the
