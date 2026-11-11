@@ -28,6 +28,7 @@ use ast
 use cli/compiling
 use cli/order_groups
 use cli/order_trial
+use cli/process
 use cli/toolchain
 use source
 
@@ -89,7 +90,7 @@ function search(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, und
             else
                 order @ order_groups.moved(written, from: here, to: other)
 
-            if compiles(t, words: words, text: order_trial.opening(order, question: question), generating: generating)
+            if asks(t, words: words, order: order, target: target, question: question, generating: generating)
                 return ok(Move(other: written[other], before: other > here, written: written, order: order))
         other @ other + 1
 
@@ -139,10 +140,42 @@ function standard(t: toolchain.Toolchain, under: compiling.Compiling, written: [
             for one in written.slice(from: here, to: written.len())
                 order @ order.push(one)
 
-            if compiles(t, words: words, text: order_trial.opening(order, question: question), generating: generating)
+            if asks(t, words: words, order: order, target: target, question: question, generating: generating)
                 return ok(candidate)
 
     return fail(code: "none", msg: "no header of C's own is what it needs")
+
+# Whether `order` answers a search: with no `question`, the unit's opening in
+# that order compiles; with one, `target` declares what it asks there.
+function asks(t: toolchain.Toolchain, words: [str], order: [str], target: str, question: str, generating: bool) -> bool
+    if question == ""
+        return compiles(t, words: words, text: order_trial.opening(order, question: ""), generating: generating)
+    return declares(t, words: words, order: order, target: target, question: question, generating: generating)
+
+# **Whether `target`, read where `order` puts it, declares what `question`
+# asks** (defect 2445, 2026-11-11), the question `cli/declared_ladder.hero`
+# asks at a header's rung: asked right after it, so no header read after it
+# answers, `heroes_standard.h`'s `<math.h>` among them; and not answered by
+# the headers before it, which compile without the question and refuse it.
+# Asked after the whole order until then, a header another one declares the
+# name for was told it declares it: `t.h` read alone after `d.h`, which
+# declares the name where it stands first, was told it declares it *only in
+# another order of this module's headers*, and a `<math.h>` read as a
+# prerequisite was told what `stdio.h` needs for `sqrt`.
+function declares(t: toolchain.Toolchain, words: [str], order: [str], target: str, question: str, generating: bool) -> bool
+    here = order_groups.index_of(order, one: target)
+
+    if here < 0
+        return false
+    through = order.slice(from: 0, to: here + 1)
+    before = order.slice(from: 0, to: here)
+
+    if !compiles(t, words: words, text: order_trial.opening(through, question: question), generating: generating)
+        return false
+
+    if !compiles(t, words: words, text: order_trial.opening(before, question: ""), generating: generating)
+        return false
+    return !compiles(t, words: words, text: order_trial.opening(before, question: question), generating: generating)
 
 # How a trial sees the unit's refusal: by clang's syntax pass (`false`), by
 # generating code (`true`), or not at all, where the order as written
@@ -164,3 +197,56 @@ function compiles(t: toolchain.Toolchain, words: [str], text: str, generating: b
     if generating
         return order_trial.generated(t, words: words, text: text).compiles
     return order_trial.compiled(t, words: words, text: text).compiles
+
+## Tests
+
+# DEFECT 2445: the question is the header's own, asked where it stands. Run
+# against this machine's C library: `stdio.h` declares no `sqrt` on any of
+# the three, and `heroes_standard.h` reads `<math.h>` after the groups.
+test "a header is told it declares a name only where the name is its own, never another header's (defect 2445)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-order-search-2445"
+    _ = process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root).is_err()
+    assert !write_file(path: root + "/t2445.h", text: "#define T2445_READ 1\n").is_err()
+    assert !write_file(path: root + "/d2445.h", text: "#ifndef T2445_READ\nint x2445(void);\n#endif\n").is_err()
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [root],
+        pkgconfig_flags: [],
+        runtime: t.runtime,
+        source_dir: root
+    )
+    words = compiling.unit_words(under)
+    sqrt = "__attribute__((unused)) static void hero_order_q(void) { (void)(sqrt); }"
+    x = "__attribute__((unused)) static void hero_order_q(void) { (void)(x2445); }"
+
+    # Read alone, `stdio.h` declares no `sqrt`, which `<math.h>` declares
+    # alone and after it, and not after itself read first.
+    assert !declares(t, words: words, order: ["stdio.h"], target: "stdio.h", question: sqrt, generating: false)
+    assert declares(t, words: words, order: ["math.h"], target: "math.h", question: sqrt, generating: false)
+    assert declares(t, words: words, order: ["stdio.h", "math.h"], target: "math.h", question: sqrt, generating: false)
+    assert !declares(t, words: words, order: ["math.h", "stdio.h"], target: "stdio.h", question: sqrt, generating: false)
+
+    # A header of the program's that declares `x2445` only read before
+    # `t2445.h`: its own where it stands first, never `t2445.h`'s.
+    assert declares(t, words: words, order: ["d2445.h", "t2445.h"], target: "d2445.h", question: x, generating: false)
+    assert !declares(t, words: words, order: ["d2445.h", "t2445.h"], target: "t2445.h", question: x, generating: false)
+    assert !declares(t, words: words, order: ["t2445.h", "d2445.h"], target: "d2445.h", question: x, generating: false)
+    assert !declares(t, words: words, order: ["t2445.h"], target: "missing2445.h", question: x, generating: false)
+
+    # No header of C's own is what `stdio.h` needs for `sqrt`: `<tgmath.h>`
+    # read before it declares the name itself.
+    assert standard(
+        t,
+        under: under,
+        written: ["stdio.h"],
+        target: "stdio.h",
+        question: sqrt,
+        generating: false
+    ).is_err()
+
+    # With no question a search asks the order whole, as before.
+    assert asks(t, words: words, order: ["stdio.h", "math.h"], target: "stdio.h", question: "", generating: false)
+    assert !process.remove_tree(root).is_err()

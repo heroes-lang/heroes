@@ -1,0 +1,16 @@
+# fixedbugs, defect 2445, lane b32-ffi, 2026-11-11: `t2445.h` declares no
+# `x2445`, and `d2445.h`, the other group's header, declares it only where
+# `t2445.h` was not read first. The order search asked its question after
+# the whole opening, so the order putting `d2445.h` first compiled and
+# `t2445.h` was told it *declares `x2445` only in another order*, false, its
+# note sending the author to move the other group. Each trial now asks
+# whether the header itself declares the name where it stands, right after
+# it and not answered by the headers before it, and none does here.
+extern "t2445.h"
+    function x2445() -> i64  #~ ffi_unknown_name
+
+extern "d2445.h"
+    constant D2445_LIMIT: i64
+
+function main()
+    print(x2445() + D2445_LIMIT)

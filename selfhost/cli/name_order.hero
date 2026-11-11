@@ -15,6 +15,16 @@
 # (`order_search.standard`). The first that declares it is told in place of
 # the false headline and its note. A headline the switch reader told
 # (`emit/ffi_switched.hero`, defect 585) is true, and is left as it was.
+#
+# **Each asks whether the header itself declares the name where it stands**
+# (`order_search.declares`, defect 2445): right after it, before
+# `heroes_standard.h`, and not answered by the headers before it. Asked after
+# the whole opening until then, a header was told it declares a name read
+# alone that `heroes_standard.h`'s `<math.h>` declared, or in another order
+# that another group's header declared: measured 2026-11-11, `extern
+# "stdio.h"` binding `sqrt` after a group whose header stands in for
+# `<math.h>` by its include guard was told *`stdio.h` declares `sqrt` read
+# alone*.
 
 use ast
 use cli/compiling
@@ -48,7 +58,18 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     # was ever told (batch 31's gate B, 2026-11-11).
     question = "__attribute__((unused)) static void hero_order_q(void) { (void)(" + name + "); }"
     written = order_trial.theirs(unit_headers)
-    alone = order_trial.compiled(t, words: compiling.unit_words(under), text: order_trial.opening([header], question: question)).compiles
+
+    # Read alone: right after the header and before `heroes_standard.h`,
+    # whose `<math.h>` declared `sqrt` for `stdio.h` (defect 2445), and not
+    # declared by the seeds before it.
+    alone = order_search.declares(
+        t,
+        words: compiling.unit_words(under),
+        order: [header],
+        target: header,
+        question: question,
+        generating: false
+    )
     found = order_search.search(
         s,
         decls,
