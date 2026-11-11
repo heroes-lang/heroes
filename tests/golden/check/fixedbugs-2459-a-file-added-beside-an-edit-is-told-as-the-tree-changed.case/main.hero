@@ -1,0 +1,7 @@
+# Defect 2459, 2026-11-11: `Thumbs.db` added and `parse.hero` edited. No
+# file taken out of the tree gives back the catalogue's `sum`, so nothing is
+# named by a guess: the tree is told as changed, which is all the sum says.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

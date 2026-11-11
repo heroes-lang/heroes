@@ -1,0 +1,5 @@
+# The module of the package the case beside it names, `<json>/parse`.
+function value() -> i64
+    return 7
+
+# edited after it was placed

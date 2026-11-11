@@ -1,0 +1,7 @@
+# Defect 2459, 2026-11-11: a system writes its file into each folder it
+# shows, here `Thumbs.db` into the tree's root and its `sub/`. The tree less
+# every file of that name sums to the catalogue's `sum`, so both are named.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

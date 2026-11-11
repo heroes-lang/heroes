@@ -1,0 +1,6 @@
+# Defect 2459, 2026-11-11: a module of the author's written into a placed
+# tree is a file added like any other, and the sum proves it so: named.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

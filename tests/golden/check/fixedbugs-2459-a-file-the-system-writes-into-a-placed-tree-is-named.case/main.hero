@@ -1,0 +1,8 @@
+# Defect 2459, 2026-11-11: a `.DS_Store` written into a placed tree moved
+# its sum, and the refusal could not say which file was added. The tree
+# less that one file sums to the catalogue's `sum`, which proves it the file
+# added, so the refusal names it and its removal beside `heroes fetch`.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

@@ -34,6 +34,12 @@ function of(root: str) -> str?
 
 # The listing the fingerprint hashes: one line per regular file under `root`.
 function listing(root: str) -> str?
+    got = listed_lines(root)?
+    return ok(got.join(""))
+
+# The listing's lines, in its order, each `<sha256>  <name>` and a line end,
+# the name opening at `NAME_AT`.
+function listed_lines(root: str) -> [str]?
     base = without_slash(root)
     walked = process.walk(base)?
 
@@ -54,12 +60,128 @@ function listing(root: str) -> str?
             return fail(code: "unreadable", msg: "`" + base + "/" + name + "` cannot be read")
         lines @ lines.push(sum + "  " + name + "\n")
 
-    return ok(lines.join(""))
+    return ok(lines)
 
 function without_slash(root: str) -> str
     if root.len() > 1 && root[root.len() - 1] == '/'
         return root.slice(from: 0, to: root.len() - 1)
     return root
+
+## The files a placed tree gained, named only where its sum proves them
+
+# Where a line's name opens: 64 hexadecimal digits and two spaces.
+constant NAME_AT: i64
+    66
+
+# The most bytes `added` hashes in its trials, 256 MiB, a fraction of a
+# second of the runtime's SHA-256; a trial hashes the whole listing less its
+# lines, so a tree of about a thousand files is searched whole, and past the
+# cap the trials stop and the tree is told as changed, which it is.
+constant TRIAL_CAP: i64
+    268435456
+
+# The files of the tree at `root` added since it was placed, where `sum`, the
+# catalogue's fingerprint of it, proves them (defect 2459); empty where it
+# does not. The sum is the SHA-256 of the listing the tree had when it was
+# placed, so a listing of the tree as it stands, with some lines taken out,
+# that hashes to `sum` IS that listing, and the files of those lines are the
+# ones added: a trial that hits is a proof, and nothing is named by a guess.
+#
+# Tried, the first hit answering: every file of one name together, for each
+# name more than one of the tree's folders holds (what a system writes into
+# each folder it shows, `.DS_Store` or `Thumbs.db`); then each file alone. A
+# file changed or taken out leaves no listing to subtract back to, and is
+# told by the caller as the tree changed, which is all the sum can say.
+function added(root: str, sum: str) -> [str]
+    got = listed_lines(root)
+
+    if got.is_err()
+        return []
+    listed = got.must()
+    trials: i64 @= TRIAL_CAP / (listed.join("").len() + 1)
+
+    for name in repeated_names(listed)
+        if trials <= 0
+            return []
+        trials @ trials - 1
+        out: [bool] @= []
+
+        for line in listed
+            out @ out.push(last_part(name_of(line)) == name)
+
+        if hits(listed, out: out, sum: sum)
+            return names_out(listed, out: out)
+
+    for at in range(from: 0, to: listed.len())
+        if trials <= 0
+            return []
+        trials @ trials - 1
+        out: [bool] @= []
+
+        for other in range(from: 0, to: listed.len())
+            out @ out.push(other == at)
+
+        if hits(listed, out: out, sum: sum)
+            return [name_of(listed[at])]
+
+    return []
+
+# Whether the listing `listed` less the lines `out` marks hashes to `sum`.
+function hits(listed: [str], out: [bool], sum: str) -> bool
+    kept: [str] @= []
+
+    for at in range(from: 0, to: listed.len())
+        if !out[at]
+            kept @ kept.push(listed[at])
+
+    return "sha256-" + hero_text_sha256(text: kept.join("")) == sum
+
+# The names of the lines `out` marks, in the listing's order.
+function names_out(listed: [str], out: [bool]) -> [str]
+    names: [str] @= []
+
+    for at in range(from: 0, to: listed.len())
+        if out[at]
+            names @ names.push(name_of(listed[at]))
+
+    return names
+
+# Every last part of a name that more than one line of `listed` ends with, in
+# the order the listing first meets each.
+function repeated_names(listed: [str]) -> [str]
+    counts: {str: i64} @= {}
+    order: [str] @= []
+
+    for line in listed
+        part = last_part(name_of(line))
+        held = counts[part]
+
+        if held.is_err()
+            counts[part] @ 1
+            order @ order.push(part)
+        else
+            counts[part] @ held.must() + 1
+
+    repeated: [str] @= []
+
+    for part in order
+        if counts[part].default(0) > 1
+            repeated @ repeated.push(part)
+
+    return repeated
+
+# A line's name, without its sum and its line end.
+function name_of(line: str) -> str
+    return line.slice(from: NAME_AT, to: line.len() - 1)
+
+# A name's last part, after its last `/`.
+function last_part(name: str) -> str
+    at: i64 @= name.len() - 1
+
+    while at >= 0 && name[at] != '/'
+        at @ at - 1
+
+    return name.slice(from: at + 1, to: name.len())
 
 ## Tests
 
@@ -92,4 +214,31 @@ test "a tree's fingerprint is the SHA-256 of its sorted listing, Go's h1 in hexa
     assert !write_file(path: dir + "/sub/note.txt", text: "deep\n").is_err()
     assert !write_file(path: dir + "/extra", text: "").is_err()
     assert of(dir + "/").must() != "sha256-9f01a7eb6e9a9cf4537051b2084f3fc1995c33764b1fe8628f4db71c132a70b8"
+    assert !process.remove_tree(dir).is_err()
+
+# Defect 2459: a file added is named only where the tree less it sums to the
+# sum it was placed at; one name written into two folders is named twice; a
+# file changed, or one added beside a change, is named by nothing.
+test "the files a tree gained are named where its sum proves them, and nothing is guessed"
+    dir = "build/selftest-fingerprint-added"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(path: dir)
+    assert !process.mkdir_all(dir + "/sub").is_err()
+    assert !write_file(path: dir + "/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: dir + "/sub/note.txt", text: "deep\n").is_err()
+    placed = of(dir).must()
+    assert added(root: dir, sum: placed) == []
+
+    assert !write_file(path: dir + "/.DS_Store", text: "Bud1").is_err()
+    assert added(root: dir, sum: placed) == [".DS_Store"]
+    assert !write_file(path: dir + "/sub/.DS_Store", text: "other").is_err()
+    assert added(root: dir, sum: placed) == [".DS_Store", "sub/.DS_Store"]
+    assert !process.remove_file(dir + "/.DS_Store").is_err()
+    assert !process.remove_file(dir + "/sub/.DS_Store").is_err()
+
+    assert !write_file(path: dir + "/sub/mine.hero", text: "").is_err()
+    assert added(root: dir, sum: placed) == ["sub/mine.hero"]
+    assert !write_file(path: dir + "/sub/note.txt", text: "deep!\n").is_err()
+    assert added(root: dir, sum: placed) == []
+    assert !process.remove_file(dir + "/sub/mine.hero").is_err()
+    assert added(root: dir, sum: placed) == []
     assert !process.remove_tree(dir).is_err()
