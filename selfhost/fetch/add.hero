@@ -32,6 +32,7 @@ use cli/publish
 use cli/strings
 use cli/table as cli_table
 use fetch/add_wanted
+use fetch/address_form
 use fetch/build_list
 use fetch/catalogue_edit
 use fetch/git_source
@@ -121,14 +122,19 @@ function placed_and_written(@ledger: staging.Ledger, inv: argv.Invocation, tools
     return ok(lines)
 
 # The index line the catalogue will hold: its own, or the one `--index`
-# gives where it has none; refused where the two differ.
+# gives where it has none; refused where the two name two indexes, each read
+# in its one form (defect 2455: `file://./../idx` beside a line reading
+# `file://../idx` was refused as another index), the line kept as written.
 function index_line(inv: argv.Invocation, c: catalogue.Catalogue) -> str?
     given = argv.value_of(inv, spelling: "--index")
 
     if given.is_err()
         return ok(c.index)
 
-    if c.index.len() > 0 && c.index != given.must()
+    if c.index.len() > 0 && address_form.canonical(c.index) == address_form.canonical(given.must())
+        return ok(c.index)
+
+    if c.index.len() > 0
         return fail(
             code: "bad_usage",
             msg: "the catalogue reads the index `" + c.index + "`, and `--index` names `" + given.must() + "`: a program reads one index, which its catalogue's `index` line names"

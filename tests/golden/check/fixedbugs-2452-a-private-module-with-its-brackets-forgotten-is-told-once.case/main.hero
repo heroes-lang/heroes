@@ -1,0 +1,9 @@
+# Defect 2452, 2026-11-11: `use core/internal/scan`, its brackets forgotten,
+# where `core` is an entry and its tree holds `internal/scan.hero`. It was told
+# `package_unmarked` with a certain fix, `use <core>/internal/scan`, a line the
+# private rule refuses, and `private_module` of `core/internal/scan`, a module
+# no tree holds. One message now says both, and offers no line.
+use core/internal/scan  #~ package_unmarked
+
+function main()
+    print(scan.word())

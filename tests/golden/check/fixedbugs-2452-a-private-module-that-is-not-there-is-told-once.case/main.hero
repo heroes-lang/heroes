@@ -1,0 +1,11 @@
+# Defect 2452, 2026-11-11: three `use` lines naming a private module no
+# file holds, the program's own, a package's, and one written bare over an
+# entry whose tree lacks it. Each was told the module is not there and, a
+# second time, that it is private; it is told once, as not there.
+use <core>/internal/nothere  #~ unknown_package_module
+
+use core/internal/nothere  #~ unknown_module
+use lib/internal/x  #~ unknown_module
+
+function main()
+    print(1)

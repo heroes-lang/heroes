@@ -1,0 +1,4 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-a-binary-written-into-a-placed-tree-is-refused.case/idx -C <work>/app
+build <work>/app/main.hero -o <work>/app/heroes.packages/json@1.4.2-0f92593eed04a17f/app
+run <work>/app/main.hero -o <work>/app/heroes.packages/json@1.4.2-0f92593eed04a17f/app
+check <work>/app/main.hero

@@ -1,0 +1,129 @@
+# What a `use` line's three refusals say (design.md §3.1; panels 031, 099
+# and 100): the module's name missing after `use`, a part missing after a
+# `/`, and the name missing after `as`. Read from the line's tokens and its
+# text and never the cursor: `parse/use_line.hero` says each answer and moves
+# the cursor past the line, along the seam `package_mark.hero` stands on, the
+# parser's line budget (`tests/harness/suite_layout.hero`, `BUDGETS`).
+#
+# **A word of the language where a name stands is told as the word**
+# (defect 2451): a keyword, `use match/x`, `use a/match`, `use a as match`,
+# or a word the lexer refuses as a name, `use let/x`, told at it under the
+# place's own code, with why no `use` writes it (`entry_name.in_path`). It
+# was told *expected the module's name after `use`, found `match`*, and past
+# a `/` that the `/` joins two names with nothing between them, false with
+# the word standing there. The lexer's report of a refused word, which gives
+# a binding's repair, is taken back where this is said
+# (`use_path_reports.hero`), so the word is told once, as what it is here.
+
+use describe
+use diag
+use module/entry_name
+use module_text
+use token
+
+constant GEOM: str
+    " — `use geom`, which reads `geom.hero` beside this file"
+
+constant SD: str
+    " — `use syntax/decl as sd`, and then this file calls it `sd`"
+
+# `use` with nothing after it, at `tokens[at]`; none where the token there
+# is one the lexer reported, which says it, and no word of the language.
+#
+# `use` is not in panel 007's ender list, so a `use` with nothing after it
+# inserts no terminator and the next token is the NEXT LINE's first word.
+# Naming it would blame an innocent declaration, so the caret goes on the
+# keyword and the found token is quoted only when it really is on this line.
+function missing_name(tokens: [token.Token], at: i64, text: str, keyword: token.Span) -> [diag.Diagnostic]
+    here = tokens[at]
+    same_line = module_text.one_line(text, from: keyword.start, to: here.span.start)
+    word = entry_name.in_path(text.slice(from: here.span.start, to: here.span.end))
+
+    if same_line && word.len() > 0
+        return [diag.new_diagnostic(code: "expected_module_name", message: word + GEOM, span: here.span)]
+
+    if here.kind == .error
+        none: [diag.Diagnostic] = []
+        return none
+    message: str @= "`use` names one module and this line names none" + GEOM
+
+    if same_line
+        message @ "expected the module's name after `use`, found " + describe.found(here, text) + GEOM
+    return [diag.new_diagnostic(code: "expected_module_name", message: message, span: keyword)]
+
+# `use syntax/` and `use syntax /decl`, at `tokens[at]` after the separator
+# `slash` that follows the path `name`: a separator with no part after it,
+# and a part the separator does not touch.
+#
+# Adjacency is the rule the path's loop enforces, and it is worth its own
+# message: `use a / b` lexes as the same three tokens as `use a/b`, so a path
+# with a space in it would otherwise become a path silently. The caret goes
+# on the separator, which is the character that made the line a path.
+function part_missing(tokens: [token.Token], at: i64, text: str, name: token.Span, slash: token.Span) -> diag.Diagnostic
+    here = tokens[at].span
+    word = entry_name.in_path(text.slice(from: here.start, to: here.end))
+
+    if here.start == slash.end && word.len() > 0
+        return diag.new_diagnostic(code: "module_path_wants_a_part", message: word, span: here)
+    written = text.slice(from: name.start, to: name.end)
+    return diag.new_diagnostic(
+        code: "module_path_wants_a_part",
+        message: "a `/` in a `use` joins two names with nothing between them — `use " + written + "/decl` names one module, and `use " + written + "` names another",
+        span: slash
+    )
+
+# `use syntax/decl as`, at `tokens[at]` after the word `as`: the word is
+# there and the name is not. The caret stays on `as` for `missing_name`'s
+# reason about this same line: the token may already be the next
+# declaration's, and naming it blames an innocent line.
+function alias_missing(tokens: [token.Token], at: i64, text: str, word: token.Span) -> diag.Diagnostic
+    here = tokens[at]
+    same_line = module_text.one_line(text, from: word.start, to: here.span.start)
+    named = entry_name.language_word(text.slice(from: here.span.start, to: here.span.end))
+
+    if same_line && named.len() > 0
+        return diag.new_diagnostic(
+            code: "expected_alias_name",
+            message: named + ", and the name after `as` is one this file binds, never a word of the language" + SD,
+            span: here.span
+        )
+    message: str @= "`as` renames the module and this line names nothing" + SD
+
+    if same_line
+        message @ "expected a name after `as`, found " + describe.found(here, text) + SD
+    return diag.new_diagnostic(code: "expected_alias_name", message: message, span: word)
+
+## Tests
+
+# Defect 2451: `let`, a word the lexer refuses and reports, is told at the
+# word as no part a path holds; a token the lexer reported that is no word
+# of the language is left to that report; a keyword past a `/` that touches
+# it is told at it, and one apart from it is the old message at the `/`.
+test "a word of the language is told at the word, and a reported token that is none is left to its report"
+    keyword = token.Span(start: 0, end: 3)
+    refused: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.error, start: 4, end: 7)
+        token.made(.eof, start: 7, end: 7)
+    ]
+    said = missing_name(refused, at: 1, text: "use let", keyword: keyword)
+    assert said.len() == 1 && said[0].span == token.Span(start: 4, end: 7)
+    assert said[0].message == entry_name.in_path("let") + GEOM
+    assert missing_name(refused, at: 1, text: "use $$$", keyword: keyword).len() == 0
+
+    past: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.slash, start: 5, end: 6)
+        token.made(.kw_match, start: 6, end: 11)
+    ]
+    name = token.Span(start: 4, end: 5)
+    slash = token.Span(start: 5, end: 6)
+    assert part_missing(past, at: 3, text: "use a/match", name: name, slash: slash).span == token.Span(start: 6, end: 11)
+    apart: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.slash, start: 5, end: 6)
+        token.made(.kw_match, start: 7, end: 12)
+    ]
+    assert part_missing(apart, at: 3, text: "use a/ match", name: name, slash: slash).span == slash

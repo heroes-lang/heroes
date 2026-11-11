@@ -19,6 +19,7 @@ use cli/environment
 use cli/files
 use cli/input
 use cli/io
+use cli/placed_files
 use cli/process
 use cli/produce
 use cli/publish
@@ -38,6 +39,11 @@ function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolcha
     level = compile.level_from(inv, default_level: "-O0")
 
     if level.is_err()
+        return .failed_exit
+
+    # A place in a placed package's tree is written by no build (defect
+    # 2462): told before anything compiles.
+    if output_refused(inv)
         return .failed_exit
     options = compile.Options(
         level: level.must(),
@@ -64,6 +70,11 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
     level = compile.level_from(inv, default_level: "-O2")
 
     if level.is_err()
+        return .failed_exit
+
+    # A place in a placed package's tree is written by no build (defect
+    # 2462): told before anything compiles.
+    if output_refused(inv)
         return .failed_exit
     options = compile.Options(
         level: level.must(),
@@ -111,6 +122,16 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
     # from the person holding it), but the runtime computes it now, on
     # the platform that knows.
     return .program_exit(status: ran.code)
+
+# Whether `-o` names a place in a placed package's tree, which no build
+# writes (`cli/placed_files`), the refusal told on stderr where it does.
+function output_refused(inv: argv.Invocation) -> bool
+    out = argv.value_of(inv, spelling: "-o")
+
+    if out.is_err() || !placed_files.within(out.must())
+        return false
+    io.eprint(text: "error: " + placed_files.named_refused(flag: "-o", place: out.must()))
+    return true
 
 function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
     level = compile.level_from(inv, default_level: "-O0")

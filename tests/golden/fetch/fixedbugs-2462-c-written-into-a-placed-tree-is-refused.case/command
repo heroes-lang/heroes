@@ -1,0 +1,4 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-c-written-into-a-placed-tree-is-refused.case/idx -C <work>/app
+build <work>/app/main.hero --emit-c -o <work>/app/heroes.packages/json@1.4.2-82b3619c6ee7073d/out.c
+build <work>/app/main.hero --emit-c -o <work>/app/heroes.packages/json@1.4.2-82b3619c6ee7073d/parse.hero
+check <work>/app/main.hero

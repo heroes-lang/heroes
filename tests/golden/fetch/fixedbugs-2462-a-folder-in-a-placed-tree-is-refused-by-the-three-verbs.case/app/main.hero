@@ -1,0 +1,4 @@
+use <json>/parse
+
+function main()
+    print(parse.value())

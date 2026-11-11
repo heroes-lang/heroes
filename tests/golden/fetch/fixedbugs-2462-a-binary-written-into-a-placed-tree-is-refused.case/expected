@@ -1,0 +1,28 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-a-binary-written-into-a-placed-tree-is-refused.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes build <work>/app/main.hero -o <work>/app/heroes.packages/json@1.4.2-0f92593eed04a17f/app
+exit 2
+stdout:
+stderr:
+error: `-o <work>/app/heroes.packages/json@1.4.2-0f92593eed04a17f/app` names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes run <work>/app/main.hero -o <work>/app/heroes.packages/json@1.4.2-0f92593eed04a17f/app
+exit 2
+stdout:
+stderr:
+error: `-o <work>/app/heroes.packages/json@1.4.2-0f92593eed04a17f/app` names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2462-a-binary-written-into-a-placed-tree-is-refused.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-5e8071f88bf13e425708618c8a81e6caaf041ac1faf04e3b5bc94cdbf855f30b"
+heroes.packages:
+json@1.4.2-0f92593eed04a17f

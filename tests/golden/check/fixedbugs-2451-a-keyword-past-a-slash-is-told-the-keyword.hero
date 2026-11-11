@@ -1,0 +1,9 @@
+# Defect 2451, 2026-11-11: a keyword past a `/` was told that the `/` joins
+# two names with nothing between them, a false message, the keyword being
+# there; it is told as the keyword, after a package's mark as well.
+use <json>/a/match  #~ module_path_wants_a_part
+use a/match  #~ module_path_wants_a_part
+use a/match/b  #~ module_path_wants_a_part
+
+function main()
+    print(1)

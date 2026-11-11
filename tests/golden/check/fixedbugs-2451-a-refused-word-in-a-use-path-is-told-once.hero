@@ -1,0 +1,8 @@
+# Defect 2451, 2026-11-11: a word of another language in a `use` path was
+# told by the lexer as a binding's word, `bind with =`, and past a `/` a
+# second time as no part at all; told once, as the word a path cannot hold.
+use a/let  #~ module_path_wants_a_part
+use let/x  #~ expected_module_name
+
+function main()
+    print(1)

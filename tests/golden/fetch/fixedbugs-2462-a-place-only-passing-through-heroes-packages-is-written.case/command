@@ -1,0 +1,3 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-a-place-only-passing-through-heroes-packages-is-written.case/idx -C <work>/app
+build <work>/app/main.hero --emit-c -o <work>/app/heroes.packages/../out.c
+check <work>/app/main.hero

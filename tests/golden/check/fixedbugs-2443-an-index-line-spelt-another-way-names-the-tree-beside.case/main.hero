@@ -1,7 +1,0 @@
-# Defect 2443, 2026-11-10: the `index` line written another way, `file://./`
-# for `file://`, names another key, beside the tree placed from the first
-# spelling at the same version and sum.
-use <json>/parse  #~ package_unread
-
-function main()
-    print(parse.value())

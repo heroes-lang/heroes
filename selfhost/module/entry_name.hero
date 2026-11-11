@@ -54,11 +54,30 @@ function word(name: str) -> str
     if name == ENTRY_POINT
         return "`main` is the entry point every program declares, `function main()`, so a package named so cannot be named from a program: its `use <main>/main` is shadowed by that function"
 
+    if language_word(name).len() > 0
+        return language_word(name) + ", which no `use` writes between `<` `>`"
+    return ""
+
+# Why no `use` path writes `name` as one of its parts, its first, one after
+# a `/` or one after a package's mark, or as the name after its `as`, as the
+# clause a message says it in; "" where one can (defect 2451). A keyword
+# lexes as itself and a word the lexer refuses as an error token, so the
+# parser asks the word's text; `main` is a module's name like another there.
+function in_path(name: str) -> str
+    what = language_word(name)
+
+    if what.len() == 0
+        return ""
+    return what + ", and each part of a `use` path is a name, never a word of the language, so a module or a folder named `" + name + "` is one no `use` reaches"
+
+# What `name` is where it is a word of the language or one the lexer
+# refuses as a name, "" for any other.
+function language_word(name: str) -> str
     if !keywords.keyword(name).is_err()
-        return "`" + name + "` is a keyword of Heroes, which no `use` writes between `<` `>`"
+        return "`" + name + "` is a keyword of Heroes"
 
     if !foreign_words.declared_word(name).is_err()
-        return "`" + name + "` is a word of another language that Heroes refuses, which no `use` writes between `<` `>`"
+        return "`" + name + "` is a word of another language that Heroes refuses"
     return ""
 
 # The name of a program's entry point (spec § 1, *the file you compile holds
@@ -84,6 +103,11 @@ test "an entry is named as a `use` writes it between the brackets"
     assert refused("Json") == "a name is lowercase letters, digits and `_`, starting with a letter"
     assert refused("match") == "`match` is a keyword of Heroes, which no `use` writes between `<` `>`"
     assert refused("let") == "`let` is a word of another language that Heroes refuses, which no `use` writes between `<` `>`"
+
+    # Defect 2451: the same words where a path's part stands.
+    assert in_path("match") == "`match` is a keyword of Heroes, and each part of a `use` path is a name, never a word of the language, so a module or a folder named `match` is one no `use` reaches"
+    assert in_path("let") == "`let` is a word of another language that Heroes refuses, and each part of a `use` path is a name, never a word of the language, so a module or a folder named `let` is one no `use` reaches"
+    assert in_path("main") == "" && in_path("as") == "" && in_path("geom") == ""
 
     # A contextual word is a name everywhere but its one position, so a
     # `use` writes it: `use <as>/x` compiles.

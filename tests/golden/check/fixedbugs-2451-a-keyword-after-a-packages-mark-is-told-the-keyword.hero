@@ -1,0 +1,8 @@
+# Defect 2451, 2026-11-11: a keyword, or a word Heroes refuses, as the
+# first part after a package's mark was told that a module was wanted, and
+# the refused word a second time as a binding's word; told once, at it.
+use <json>/let  #~ package_wants_a_module
+use <json>/match  #~ package_wants_a_module
+
+function main()
+    print(1)

@@ -1,0 +1,3 @@
+# The module of the package `text` the case adds second.
+function count() -> i64
+    return 2

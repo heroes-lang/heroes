@@ -9,6 +9,7 @@
 # name asks here which of the two it holds, and none looks for a `<` itself.
 
 use cli/sha256
+use fetch/address_form
 use module/catalogue
 use module/reached
 use module_text
@@ -107,14 +108,31 @@ function written_in(aliases: [reached.Alias], from: str, module: str) -> str
 # and version, or its address's last part and tag, as a reader finds it, then
 # the first sixteen hexadecimal digits of the SHA-256 of every field that
 # names the package, so a field mistyped names a tree that is not there.
+#
+# **The source is keyed in its one form** (defect 2455): the `index` line or
+# the `git` address as `fetch/address_form.hero` writes it, so one index or
+# one repository written two ways keys one tree, as `catalogue.source_of`
+# reads them one package. Until then the line's text was hashed, and
+# `file://./../idx` beside a tree placed while the line read `file://../idx`
+# named a second folder for the same package.
 function key(e: catalogue.Entry, index: str) -> str
+    return keyed(e, index: address_form.canonical(index), git: address_form.canonical(e.git))
+
+# The key the entry's own text named before defect 2455, the `index` line
+# and the `git` address hashed as written: read by `module/placed_beside.hero`
+# alone, so a tree an earlier compiler placed so is told for what it is, the
+# same source keyed again, and never as a line that moved.
+function written_key(e: catalogue.Entry, index: str) -> str
+    return keyed(e, index: index, git: e.git)
+
+function keyed(e: catalogue.Entry, index: str, git: str) -> str
     if e.version.len() > 0
         return e.name + "@" + e.version + "-" + sha256.of("index\n" + index + "\n" + e.name + "\n" + e.version + "\n" + e.sum + "\n").slice(from: 0, to: 16)
-    named: str @= module_text.address_entry(e.git)
+    named: str @= module_text.address_entry(git)
 
     if named.len() == 0
         named @ "package"
-    return named + "@" + plain(e.tag) + "-" + sha256.of("git\n" + e.git + "\n" + e.tag + "\n" + e.commit + "\n" + e.sum + "\n").slice(from: 0, to: 16)
+    return named + "@" + plain(e.tag) + "-" + sha256.of("git\n" + git + "\n" + e.tag + "\n" + e.commit + "\n" + e.sum + "\n").slice(from: 0, to: 16)
 
 # A tag as a folder's name may hold it: letters, digits, `.`, `-` and `_`
 # kept, any other character written `_`, at most 40.
@@ -199,3 +217,23 @@ test "a placed tree is keyed by the package's identity, and every field moves th
         sum: sum
     )
     assert key(g, index: "").slice(from: 0, to: 15) == "yaml@v0.3_rc_1-"
+
+    # Defect 2455: one index, or one repository, written two ways keys one
+    # tree; the text as written keys it apart only where it is not its one
+    # form, which `placed_beside` alone asks.
+    assert key(e, index: "file://./../idx") == key(e, index: "file://../idx")
+    assert key(e, index: "https://Index.Example.org:443/a/../b") == key(e, index: "https://index.example.org/b")
+    assert key(e, index: "file://../idx") != key(e, index: "file://../other")
+    assert written_key(e, index: "file://../idx") == key(e, index: "file://../idx")
+    assert written_key(e, index: "file://./../idx") != key(e, index: "file://./../idx")
+    moved = catalogue.Entry(
+        name: "y",
+        version: "",
+        git: "https://GIT.example.org/ana/yaml.git",
+        tag: g.tag,
+        commit: g.commit,
+        path: "",
+        sum: sum
+    )
+    assert key(moved, index: "") == key(g, index: "")
+    assert written_key(moved, index: "") != key(moved, index: "")

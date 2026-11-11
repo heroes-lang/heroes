@@ -32,6 +32,7 @@
 
 use fetch/address
 use fetch/address_form
+use fetch/index_source
 use fetch/placing
 use fetch/staging
 use fetch/transport
@@ -112,7 +113,7 @@ function required_id(r: catalogue.Entry, own: catalogue.Catalogue, of: catalogue
     if r.version.len() > 0 && address_form.canonical(own.index) != address_form.canonical(c.index)
         return fail(
             code: "requirement_refused",
-            msg: "the catalogue of `" + of.name + "` reads `" + r.name + "` from the index `" + index_index(own.index) + "`, and the program's reads `" + index_index(c.index) + "`: a program reads one index, which its catalogue's `index` line names"
+            msg: "the catalogue of `" + of.name + "` reads `" + r.name + "` from " + index_said(own.index) + ", and the program's catalogue from " + index_said(c.index) + ": a program reads one index, which its catalogue's `index` line names"
         )
     return ok(catalogue.source_of(from_program(r: r, of: of), index: c.index, folder: program))
 
@@ -127,10 +128,14 @@ function from_program(r: catalogue.Entry, of: catalogue.Entry) -> catalogue.Entr
     moved.path @ sums.folded(of.path + "/" + r.path)
     return moved
 
-function index_index(line: str) -> str
+# A catalogue's index as a message names it, from its `index` line: the
+# address in backticks, or, where the line is not there, the Heroes index by
+# name and by its address, and why that one is read (defect 2454: the name
+# stood in the backticks an address takes, ``the index `the Heroes index` ``).
+function index_said(line: str) -> str
     if line.len() == 0
-        return "the Heroes index"
-    return line
+        return "the Heroes index, `" + index_source.HEROES_INDEX + "`, which a catalogue holding no `index` line reads"
+    return "the index `" + line + "`"
 
 # Whether `by`, a requirement of `of`'s, raises `held` above the version it
 # names; refused where the two name one version two ways or two tags no order
@@ -214,3 +219,11 @@ test "a requirement read from the program's index written another way is the pro
     match required_id(r: text, own: other, of: json, program: "app/", c: program)
         .ok _  => assert false
         .err e => assert e.code == "requirement_refused"
+
+    # Defect 2454: a catalogue with no `index` line reads the Heroes index,
+    # named by its address and never quoted as one.
+    none = catalogue.parsed(file: "own", text: "")
+
+    match required_id(r: text, own: none, of: json, program: "app/", c: program)
+        .ok _  => assert false
+        .err e => assert e.msg == "the catalogue of `json` reads `text` from the Heroes index, `" + index_source.HEROES_INDEX + "`, which a catalogue holding no `index` line reads, and the program's catalogue from the index `file://../idx`: a program reads one index, which its catalogue's `index` line names"

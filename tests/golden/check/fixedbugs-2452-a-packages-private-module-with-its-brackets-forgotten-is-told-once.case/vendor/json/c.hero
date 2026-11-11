@@ -1,0 +1,7 @@
+# A module of the package `json`, its brackets forgotten on its own entry's
+# private module: told once, at this line, and offered no line.
+use core/internal/scan  #~ package_unmarked
+
+# w
+function word() -> str
+    return scan.word()
