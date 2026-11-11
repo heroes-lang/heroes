@@ -475,7 +475,7 @@ function argv_probes() -> [probe.Probe]
         row(name: "a stage is silent unless asked", argv: "lex examples/gallery/00-first.hero", code: 0).out_empty()
         row(name: "a dump prints the tokens", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_has("ident main")
         row(name: "json changes how, not what", argv: "lex examples/gallery/00-first.hero --dump-tokens --json", code: 0).out_starts("[\n").out_has("\"kind\"")
-        row(name: "json alone selects no output", argv: "lex examples/gallery/00-first.hero --json", code: 0).out_empty()
+        row(name: "json alone selects no output, and is refused naming the dump it formats (defect 2483)", argv: "lex examples/gallery/00-first.hero --json", code: 2).out_empty().err_is("error: `--json` prints the token stream as JSON, and `--dump-tokens` was not given: `heroes lex <file.hero> --dump-tokens --json`\n")
         row(name: "json writes a tab inside a token as an escape and never raw, so the output is JSON (defect 102; in a comment since panel 192)", argv: "lex tests/golden/surface-fixtures/json102/tab.hero --dump-tokens --json", code: 0).out_has("a\\tb").out_lacks("\t")
         row(name: "and a control byte by its code, where it arrives inside an error token", argv: "lex tests/golden/surface-fixtures/json102/control.hero --dump-tokens --json", code: 1).out_has("\\u0001")
         row(name: "a control byte the language refuses is named by its code in check's JSON, where the byte went raw", argv: "check tests/golden/surface-fixtures/json102/control.hero --json", code: 1).err_has("\"message\": \"the control character U+0001 is not part of the language's syntax\"")
