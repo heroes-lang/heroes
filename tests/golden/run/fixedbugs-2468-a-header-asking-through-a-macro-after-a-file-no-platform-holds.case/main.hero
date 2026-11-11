@@ -5,6 +5,12 @@
 # program's own folder finding a file of a name the platform does not hold
 # is judged as its include would be (design.md §4.19): the program's own.
 # Refused `shadowed_header` until this defect.
+#
+# Corrected 2026-11-11, defect 2482: the file is `cfg2482.h`. A folder of the
+# CI's Windows leg holds a `cfg.h`, so the name this case says no platform
+# holds was held there, and the case refused as the system's; a name with
+# that defect's number is held by no folder of this Mac's search or the
+# Linux image's, and the Windows runner's is read by the CI after the push.
 extern "own.h"
     constant OWN_CFG: i64
 
