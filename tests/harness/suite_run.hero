@@ -665,6 +665,14 @@ test "fixedbugs: a program that does not build is skipped only where the machine
 # folder that asks nothing, are started plainly; and a `directory` is refused
 # by the case's name, since the form writes the binary from the repository's
 # root.
+#
+# **Asked as the form asks it** (defect 2471, 2026-11-11): the form skips a
+# case `case_setting.skip_here` names before it starts the case's compiler,
+# and this test started it on every platform, so on the CI's Windows x86-64
+# leg, which has no `/usr/bin/env`, it panicked on `.must()` with *could not
+# be started* (job 130235552214). Where the skip names this case, the form's
+# answer is the skip, on Windows alone; elsewhere the run prints the case's
+# folder back.
 test "the run form starts a case folder's compiler as its setting asks, and refuses a folder to start in (defect 2428)"
     scratch = "build/selftest-run-starter"
     assert !shell.remove_tree(scratch).is_err()
@@ -674,8 +682,12 @@ test "the run form starts a case folder's compiler as its setting asks, and refu
     item = cases.Case(source: dir + "/main.hero", expected: dir + "/main.expected", name: "x")
     by = starter_of(scratch: scratch, item: item).must()
     assert by.dir == dir && by.setting.environment.len() == 2 && by.root.len() > 0
-    said = compiled(scratch: scratch, by: by, words: ["sh", "-c", "printf '%s' \"$PKG_CONFIG_LIBDIR\""]).must()
-    assert said.code == 0 && said.out == dir + "/pc"
+
+    if case_setting.skip_here(by.setting).len() > 0
+        assert shell.exe_suffix() == ".exe"
+    else
+        said = compiled(scratch: scratch, by: by, words: ["sh", "-c", "printf '%s' \"$PKG_CONFIG_LIBDIR\""]).must()
+        assert said.code == 0 && said.out == dir + "/pc"
     one = starter_of(scratch: scratch, item: cases.Case(source: scratch + "/y.hero", expected: "", name: "y")).must()
     assert !case_setting.asks(one.setting) && one.root == ""
     assert !write_file(path: dir + "/directory", text: "here\n").is_err()
