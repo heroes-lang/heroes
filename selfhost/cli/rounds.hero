@@ -153,6 +153,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             planned: planned,
             modules: refused_in,
             units: units_refused,
+            library: options.library,
             beside: found
         )
         return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)

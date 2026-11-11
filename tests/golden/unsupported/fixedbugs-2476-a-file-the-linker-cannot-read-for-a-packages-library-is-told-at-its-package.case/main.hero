@@ -1,0 +1,13 @@
+# fixedbugs, defect 2476, lane b32-ffi, 2026-11-11: the package's answer
+# names a folder of its own and `-lh2476`, and the file the linker finds
+# there for it is a text file, no library. Until this defect the link's
+# refusal was *internal error: linking failed* at exit 2, the linker's words
+# printed as the compiler's own failure; it is told now at the package's
+# string, the file named and what is wrong with it in words every linker's
+# refusal of such a file is read as (ld64's *unknown file type*, GNU ld's
+# *file format not recognized*), and the folder by the answer's own `-L`.
+extern "h2476.h" pkgconfig "p2476"  #~ ffi_missing_library
+    function h2476_value() -> i64
+
+function main()
+    print(h2476_value())

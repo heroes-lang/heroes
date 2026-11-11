@@ -1,0 +1,3 @@
+# The case's own .pc, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package.case/pc

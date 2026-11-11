@@ -1,0 +1,6 @@
+error[ffi_missing_library]: the linker cannot use `tests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it.case/pc/../lib/libh2476.a`, the file it found for the library `h2476` this group links: it is no library this linker can read
+  at tests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it.case/main.hero:10:23
+     |
+  10 | extern "h2476.h" link "h2476"  #~ ffi_missing_library
+     |                       ^^^^^^^
+  note: a `pkg-config` answer of this build names that folder, `-Ltests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it.case/pc/../lib`: put a library this machine's linker can use in its place, or point `PKG_CONFIG_PATH` at a `.pc` naming one

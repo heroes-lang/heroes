@@ -1,0 +1,7 @@
+# A .pc naming a folder of the case and its library (defect 2476).
+prefix=${pcfiledir}/..
+Name: p2476
+Description: a library whose file is no library
+Version: 1.0
+Cflags: -I${prefix}
+Libs: -L${prefix}/lib -lh2476

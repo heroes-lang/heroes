@@ -1,0 +1,14 @@
+# fixedbugs, defect 2476, lane b32-ffi, 2026-11-11: a `link` group names the
+# library, and the file the linker finds for it, in the folder a package's
+# answer names with `-L` and no library, is a text file, no library. Until
+# this defect it was *internal error: linking failed* at exit 2; it is told
+# now at the string of the group that links the library, the file named and
+# what is wrong with it, and the folder by the package's `-L` word.
+extern "h2476.h" pkgconfig "p2476l"
+    constant H2476_LIMIT: i64
+
+extern "h2476.h" link "h2476"  #~ ffi_missing_library
+    function h2476_value() -> i64
+
+function main()
+    print(h2476_value() + H2476_LIMIT)

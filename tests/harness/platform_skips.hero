@@ -77,6 +77,9 @@ constant FRAME_NAMED_ON_WINDOWS: str
 constant INSTANCE_NAMED_ON_WINDOWS: str
     "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, and its room's bound says it without a name too, so a case pinning a generic function's instance by name, the frame or the room it ran out of, is judged where a name is said, Darwin and Linux, and defect 2253's cases judge Windows (defect 2371)"
 
+constant LIBRARY_FILE_ON_WINDOWS: str
+    "the Windows target links `-lh2476` as `h2476.lib` (`ffi_build.names_library`, measured on the box by panel 188 and beside defect 2398), a file of another name than the `libh2476.a` the case's folder holds for this Mac's ld64 and Linux's GNU ld, which read it under one name and refuse it in words read alike; so the file the expectation names cannot be the one the Windows link opens, and `link.exe`'s words for a file it cannot read are unrun (defect 2476)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
@@ -97,6 +100,8 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level", why: FRAME_NAMED_ON_WINDOWS)
         Skip(name: "fixedbugs-2371-a-generic-instance-that-recurses-for-ever-is-named", why: INSTANCE_NAMED_ON_WINDOWS)
         Skip(name: "fixedbugs-2371-a-generic-instance-whose-room-is-full-is-named", why: INSTANCE_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package", why: LIBRARY_FILE_ON_WINDOWS)
+        Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -218,10 +223,15 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 17
+    assert windows().len() == 19
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
+
+    # Defect 2476's two folder cases, whose library file the Windows link
+    # opens under another name.
+    for one in windows().slice(from: 17, to: 19)
+        assert shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).

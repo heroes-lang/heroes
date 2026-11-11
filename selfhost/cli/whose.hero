@@ -14,6 +14,7 @@ use cli/header_ask
 use cli/header_told
 use cli/inline_only
 use cli/io
+use cli/library_file
 use cli/link
 use cli/link_needs
 use cli/member_ask
@@ -56,7 +57,13 @@ record Reading
 # `unit_headers` are the headers the refused unit includes, in its order: a
 # header clang refused there that compiles alone is told after the earlier
 # one it does not compile after (`cli/header_alone.hero`, defect 557).
+#
+# **An artifact's refusal, which links nothing**: `--emit-c` asks it, and a
+# round's refusal, a link's among them, is read by `cli/refused_units.hero`
+# with the folders `--library` names. Given none here, a library file a link
+# could not use would still be told, its note the one true of every folder.
 function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str, beside: [diag.Diagnostic]) -> ()?
+    no_folders: [str] = []
     read = reading(
         failed,
         art,
@@ -68,6 +75,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         asked: asked,
         asking: asking,
         unit_headers: unit_headers,
+        library: no_folders,
         refused: refused
     )
     return tell(read, s: s, beside: beside)
@@ -82,8 +90,9 @@ function tell(read: Reading, s: source.Source, beside: [diag.Diagnostic]) -> ()?
         io.eprint(text: "internal error: " + read.internal)
     return read.verdict
 
-# `of_refusal`'s reading, each class asked in its order.
-function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str) -> Reading
+# `of_refusal`'s reading, each class asked in its order; `library` are the
+# folders `--library` names, which the link searched.
+function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], library: [str], refused: str) -> Reading
     code = failure_code(failed)
     message = failure_message(failed) + deep_types.note(code, art.decls, art.checked, s)
     none: [diag.Diagnostic] = []
@@ -103,8 +112,22 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
     # A C name another library than its group's supplies (`cli/supplied.hero`,
     # defect 2363), then a function the linker found no definition of whose
     # header defines it only `inline` (defect 562, `cli/inline_only.hero`),
-    # told before the reading of a missing `link` would tell it as one.
+    # told before the reading of a missing `link` would tell it as one. First
+    # a library file the linker found and could not use (defect 2476,
+    # `cli/library_file.hero`): the link stopped at it, or left undefined the
+    # names it held.
     if code == link.REFUSED
+        unusable = library_file.told(
+            message: message,
+            s,
+            art.decls,
+            library: library,
+            linked: under.pkgconfig_flags,
+            build: t.build
+        )
+
+        if unusable.len() > 0
+            return authors(unusable, msg: "a library file the linker found cannot be used")
         elsewhere = supplied_words.told(message, s, art.decls)
 
         if elsewhere.len() > 0
