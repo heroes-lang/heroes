@@ -33,6 +33,7 @@ use cli/probing
 use cli/settled
 use cli/supplied
 use cli/supplied_judged
+use cli/supplied_paired
 use cli/toolchain
 use cli/units
 use cli/value_ask
@@ -250,13 +251,14 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         objects: objects,
         module: module_names.binary_of(s.name),
         modules: probing.every_module(planned.probings),
-        bound: supplied.bindings(s, art.decls, pkgconfig_words: site.pkgconfig_words)
+        bound: supplied.bindings(s, art.decls, pkgconfig_words: site.pkgconfig_words),
+        asking: supplied_paired.Asking(decls: art.decls, s: s, probings: planned.probings)
     )
 
 # The link over a round's objects, and the round it makes: its verdict, the
 # refusal that verdict is, and where the binary landed. A link's refusal is
 # no one unit's, so `modules` are every one.
-function linked_round(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, objects: [str], module: str, modules: [str], bound: [supplied_judged.Bound]) -> Round
+function linked_round(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, objects: [str], module: str, modules: [str], bound: [supplied_judged.Bound], asking: supplied_paired.Asking) -> Round
     # Which library supplies each bound name and each name the runtime calls,
     # asked of the link (`cli/supplied.hero`, panel 239; defect 2363).
     line = link.link_line(
@@ -278,7 +280,7 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
         search_library: options.library,
         pkgconfig_flags: site.pkgconfig_flags,
         link_names: site.link_names,
-        judging: supplied.asked(t, line: line, bound: bound, objects: objects)
+        judging: supplied.asked(t, line: line, bound: bound, declared: supplied_paired.asked_of(t, asking, line: line, bound: bound, pkgconfigs: site.pkgconfig_words), objects: objects)
     )
     return Round(
         verdict: carry_failure(linked),

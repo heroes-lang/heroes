@@ -207,6 +207,56 @@ function dirs_of(line: [str]) -> [str]
 
     return dirs
 
+# **The folders clang's link job adds on its own** (panel 245): each folder
+# `job` holds more often than the line's `-L` words (`named`) and the
+# elements of `LIBRARY_PATH` (`elements`) name it, all read lexically. Such
+# a folder is the platform's whichever way it is also named, a tie, as
+# `stand_in.finder` gives a header's. clang writes each of those words and
+# elements as one `-L` beside its own folders and merges none (measured with
+# Apple clang 21 on this Mac and Debian clang 22.1.8 on Linux arm64); were
+# it to merge two, the folder would read as named and its library be
+# judged, the loud direction.
+function clang_own(job: [str], named: [str], elements: [str]) -> [str]
+    out: [str] @= []
+
+    for dir in job
+        if !named_in(out, name: dir) && times(job, name: dir) > times(named, name: dir) + times(elements, name: dir)
+            out @ out.push(dir)
+
+    return out
+
+function times(list: [str], name: str) -> i64
+    count: i64 @= 0
+
+    for one in list
+        if one == name
+            count @ count + 1
+
+    return count
+
+# **Whether a folder the build names is clang's own for `file`** (panel
+# 245): it is one of `own` (`clang_own`), and no other of them holds a file
+# of `file`'s name with other bytes. Naming a folder clang also adds moves it
+# before the others, so the tie goes to the platform only where the
+# platform's own search could have taken no other release of that name;
+# the same bytes, as Debian's merged `/usr` gives `/lib/<triple>`, are one
+# release. A second release under another name (a `.a` beside a `.so`) is
+# not seen.
+function tied(own: [str], dir: str, file: str) -> bool
+    if !named_in(own, name: dir)
+        return false
+    archive = archive_of(without_index(file))
+    base = base_of(archive)
+    key = file_reading.key_of(archive).default("")
+
+    for other in own
+        candidate = other + "/" + base
+
+        if candidate != archive && process.path_exists(candidate) && (key == "" || file_reading.key_of(candidate).default("") != key)
+            return false
+
+    return true
+
 # The one name a note gives the definition in `file`, whichever answer named
 # it (defect 2384: Apple's linker writes a duplicate's file by its absolute
 # path and its map by the path the line gave, and a definition was told
@@ -318,3 +368,37 @@ test "a library file is the one its -l name reads, and no other (panel 239)"
     assert base_of("/lib/aarch64-linux-gnu/libc.so.6") == "libc.so.6"
     assert without_index("/w/libab.a[2](ab.o)") == "/w/libab.a(ab.o)"
     assert without_index("/w/libab.a(ab.o)") == "/w/libab.a(ab.o)"
+
+test "a folder clang's link job adds on its own is clang's, however the line or LIBRARY_PATH also names it (panel 245)"
+    triple = "/usr/lib/aarch64-linux-gnu"
+    debian = [
+        "/usr/lib/gcc/aarch64-linux-gnu/14"
+        "/lib/aarch64-linux-gnu"
+        triple
+        "/usr/lib/llvm-22/lib"
+        "/lib"
+        "/usr/lib"
+    ]
+    plain = clang_own(job: debian, named: [], elements: [])
+    assert plain == debian
+    line = clang_own(job: strings.with_all(list: [triple], more: debian), named: [triple], elements: [])
+    assert sort(line) == sort(debian)
+    variable = clang_own(job: debian.push(triple), named: [], elements: [triple])
+    assert variable == debian
+    stray = clang_own(job: strings.with_all(list: ["/s"], more: debian).push("/e"), named: ["/s"], elements: ["/e"])
+    assert stray == debian
+    assert clang_own(job: ["/a", ".", "/b", "/usr/local/lib"], named: [], elements: ["/a", ".", "/b"]) == ["/usr/local/lib"]
+    assert clang_own(job: ["/usr/local/lib", "/usr/local/lib"], named: ["/usr/local/lib"], elements: []) == ["/usr/local/lib"]
+
+test "a tie goes to the platform only where no other of clang's folders holds a second release (panel 245)"
+    dir = "build/selftest-tied-245"
+    assert !process.mkdir_all(dir + "/named").is_err() && !process.mkdir_all(dir + "/alias").is_err()
+    assert !process.mkdir_all(dir + "/toolchain").is_err()
+    assert !write_file(path: dir + "/named/libz.so", text: "zlib 1.3.1\n").is_err()
+    assert !write_file(path: dir + "/alias/libz.so", text: "zlib 1.3.1\n").is_err()
+    own = [dir + "/alias", dir + "/named"]
+    assert tied(own: own, dir: dir + "/named", file: dir + "/named/libz.so")
+    assert !tied(own: own, dir: dir + "/elsewhere", file: dir + "/elsewhere/libz.so")
+    assert !write_file(path: dir + "/toolchain/libz.so", text: "zlib 9.9.9\n").is_err()
+    assert !tied(own: own.push(dir + "/toolchain"), dir: dir + "/named", file: dir + "/named/libz.so")
+    assert !process.remove_tree(dir).is_err()

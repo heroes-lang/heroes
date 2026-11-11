@@ -25,6 +25,7 @@ use ast
 use cli/strings
 use cli/supplied_judged
 use cli/supplied_names
+use cli/supplied_paired_words
 use cli/supplied_read
 use diag
 use emit/externs as emit_externs
@@ -50,7 +51,7 @@ function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagno
     for line in ffi_lookup.lines(text: message)
         f = supplied_judged.fields(line)
 
-        if f.len() != 7 || f[1] == "dirs"
+        if f.len() != 7 || f[1] == "dirs" || f[1] == supplied_paired_words.KIND
             continue
 
         if f[1] == "runtime"
@@ -101,6 +102,9 @@ function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagno
         out @ out.push(
             runtime_told(s, decls, library: library, names: runtime[library].default(none), files: runtime_files[library].default(none), dirs: dirs)
         )
+
+    for d in supplied_paired_words.told(message, s, decls)
+        out @ out.push(d)
 
     if out.len() > 0
         return out

@@ -2830,6 +2830,35 @@ spec § 13's *`link` a library when the symbols need one* already gives the mean
 refused is what no order and no name can make mean it, as with the other refusals this section
 names.
 
+**A library and the header that declares its names come from folders the build names, or
+neither** (panel 245's R3, provisional, author ratification pending,
+https://github.com/heroes-lang/heroes/issues/2475; defect 2448). A header the build finds through
+`CPATH` or `--include` describes the release of its folder, and the link takes `-lcurl` from
+wherever the line's folders and the platform's hold one: `extern "curl/curl.h" link "curl"` built
+under `CPATH=/opt/homebrew/opt/curl/include` printed `header 530176` beside `library libcurl/8.7.1`
+at exit 0 (batch 31's base, 9febdd6c3), and the sitting measured readline 8.3's library under
+`--library` beside the SDK's libedit header, its own record read back `0` for `42` and a heap
+overflow under `--sanitize`. So for every name a library the program names supplies, the names a
+door's body reaches included (`cli/header_bodies.hero`), the header clang read for its declaration
+and the library file the link took come both from folders the build names or both from neither
+(`cli/supplied_paired.hero`, from the link's own answer above): for a header the folders panel 237
+counts (the program's own, `--include`, a package's `-I`, `CPATH`, `C_INCLUDE_PATH` and
+`CCC_OVERRIDE_OPTIONS`), for a library `--library`, a package's `-L` and `LIBRARY_PATH`, read from
+clang's own link job, an empty element naming the working folder. Otherwise the build is refused,
+`ffi_unpaired_release`, exit 1, one refusal per library on its first binding, both files named and
+a remedy measured to build (`cli/supplied_paired_words.hero`), never `pkgconfig` to a group that
+asks it already. A name only the program's own folder declares is the program's word and is not
+judged. **The tie**: a folder clang's link job adds on its own is the platform's whichever way the
+line or `LIBRARY_PATH` also names it, but only where no other folder clang adds holds a file of that
+name with other bytes (`supplied_names.tied`), measured by the sitting on Linux arm64, where without
+it a paired zlib build was refused four ways, and as first worded a planted second release built and
+ran. **And `machine_locked_path`'s note names both halves** (its P4): an absolute header path is
+told to set `CPATH` and pass `--library` with the folder holding its library, the two halves of one
+release, or to let `pkg-config` answer both. **What it does not see, said**: two halves each named
+by unrelated words build at exit 0, and the loader may pair another release at run time
+(`DYLD_LIBRARY_PATH`); the rule judges what the build names and stops at the link. The
+conservative alternative, P4 with the rule in the fault's direction only, is the sitting's record.
+
 **A record a group binds is laid out, in every unit that spells it, as its own module's unit lays it
 out** (panel 239's R4 and R5, ratified 2026-11-09; defect 2364). Where another
 module's unit reads the record's header after headers its own module's unit does not read before

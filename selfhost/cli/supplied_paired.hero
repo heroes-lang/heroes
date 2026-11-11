@@ -1,0 +1,400 @@
+# A header and a library of one release: each name a library the program
+# names supplies, judged by where its declaration and its definition were
+# found (design.md §4.19, §1.12; defect 2448; panel 245's Q3, its P1,
+# provisional, author ratification pending).
+#
+# **What it closes, measured on this Mac.** `extern "hist.h" link
+# "readline"`, whose `hist.h` includes `<readline/readline.h>`, read the
+# SDK's header, libedit's, and with `--library` naming GNU readline 8.3's
+# folder linked that library: `HIST_ENTRY` was 16 bytes against the
+# library's 24, a correct program read its record back as 0 at exit 0, and
+# under `--sanitize` died of a heap overflow (panel 245's critic, item 16).
+# `LIBRARY_PATH` does the same without a word, and so does an empty element
+# of it, `.`, with a `libcurl.dylib` in the folder a build runs in.
+#
+# **The rule, per supplied name** (the sitting's critic, items 19 and 22):
+# for every name the link takes from a library the program names, the
+# header whose declaration of it clang read first and the library file that
+# defined it were both found in folders the build names, or neither. A
+# header's folders are the program's own, `--include`'s, a package's `-I`
+# and the environment's (`cli/named_folders.hero`, as panel 237 counts them);
+# a library's, the line's own `-L` words, `--library`'s and a package's, and
+# each `-L` clang's link job adds that an element of `LIBRARY_PATH` names, an
+# empty one naming `.`. clang's own folders are neither, the platform's,
+# however the line or the variable also names one: a tie goes to the
+# platform, as a header's does (`supplied_names.clang_own`).
+#
+# **Which names**: every name a group binds, and every name a body its
+# header defines calls or reads, followed through the bodies it calls
+# (`cli/header_bodies.hero`), since a door's own C is where 2448's fault
+# was. **A declaration the program's own folder found is the program's**,
+# its own word, paired with no release: such a name is judged by its first
+# declaration elsewhere, or not at all.
+
+use ast
+use cli/bound_names
+use cli/clang_added
+use cli/defined_twice
+use cli/deps
+use cli/dump_tops
+use cli/header_bodies
+use cli/label_dump
+use cli/link_flags
+use cli/named_folders
+use cli/package_reads
+use cli/probing
+use cli/process
+use cli/publish
+use cli/reach_ask
+use cli/read_back
+use cli/shadowed_words
+use cli/stand_in
+use cli/supplied_judged
+use cli/supplied_names
+use cli/toolchain
+use source
+
+# One name a library may supply: the binding it is reached from, the file
+# whose declaration of it clang read first outside the program's own folder,
+# the folder of the build's that found that file, "" for none, and the
+# package whose `pkg-config` answer named that folder, "" for none: its
+# refusal's remedy is that package's `.pc`, never `pkgconfig` again.
+record Declared
+    name: str
+    decl: i64
+    file: str
+    folder: str
+    package: str
+
+# What the header half reads (`cli/assemble.hero`'s link round): the
+# program's declarations and source, and its probed header lists.
+record Asking
+    decls: [ast.Decl]
+    s: source.Source
+    probings: [probing.Probing]
+
+# Every name the bindings reach with where it is declared, asked only where
+# the link line names a library, an `-l` word of it (`supplied.library_names`'
+# reading, which this module cannot use: that module uses this one).
+function asked_of(t: toolchain.Toolchain, asking: Asking, line: [str], bound: [supplied_judged.Bound], pkgconfigs: {str: [str]}) -> [Declared]
+    for word in line
+        if word.len() > 2 && word[0] == '-' && word[1] == 'l'
+            return of_probings(t, asking.probings, asking.s, asking.decls, bound: bound, pkgconfigs: pkgconfigs)
+
+    return []
+
+# The header folders of one header list: those the build names, the
+# runtime's and clang's own, the program's own, and the package whose answer
+# named each folder a package's answer named.
+record Folders
+    named: [str]
+    others: [str]
+    program: str
+    packages: {str: str}
+
+# Every name the bindings of each probed header list reach, with the file
+# that declares it and the named folder that found the file.
+function of_probings(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], bound: [supplied_judged.Bound], pkgconfigs: {str: [str]}) -> [Declared]
+    out: [Declared] @= []
+    seen: {str: bool} @= {}
+
+    for one in probings
+        if one.probe.is_err() || one.probe.must().read.is_err()
+            continue
+        dumped = defined_twice.dump_of(t, one.probe.must())
+
+        if dumped.is_err()
+            continue
+        files = declaring(dumped.must())
+        bodies = header_bodies.of_dump(dumped.must())
+        where = folders(t, one: one, pkgconfigs: pkgconfigs)
+
+        for binding in reach_ask.names_of(s, decls, headers: bound_names.groups_of(one.headers))
+            at = decl_of(bound, name: binding)
+
+            if at < 0
+                continue
+
+            for name in reached(bodies, from: binding)
+                if !seen[name].is_err()
+                    continue
+                seen[name] @ true
+                d = judged_file(name: name, decl: at, files: files[name].default([]), where: where)
+
+                if !d.is_err()
+                    out @ out.push(d.must())
+
+    return out
+
+# A probed list's header folders, as the refusal of a stand-in counts them
+# (`cli/shadowed.hero`), clang's own configuration the platform's.
+function folders(t: toolchain.Toolchain, one: probing.Probing, pkgconfigs: {str: [str]}) -> Folders
+    first = named_folders.searched_first(one.under)
+    asked = clang_added.edits(t.asked_answer)
+    environment = named_folders.of_environment(platform: asked.platform, compilers: first, both: [asked])
+    named: [str] @= named_folders.named_folders(one.under)
+    others: [str] @= [first[0]]
+
+    for dir in asked.platform
+        others @ others.push(dir)
+
+    # ORDER: by the folder's path; a folder is named or not whatever the order.
+    for dir in sort(keys(environment))
+        if environment[dir].must().kind == shadowed_words.CLANG
+            others @ others.push(dir)
+        else
+            named @ named.push(dir)
+
+    program: str @= ""
+    compilers = named_folders.of_compiler(one.under, pkgconfigs: pkgconfigs)
+    packages: {str: str} @= {}
+
+    # ORDER: by the folder's path; each folder's package is its own.
+    for dir in sort(keys(compilers))
+        if compilers[dir].must().kind == shadowed_words.PKGCONFIG
+            packages[dir] @ compilers[dir].must().name
+
+    if one.under.source_dir.len() > 0
+        dir = package_reads.lexical(one.under.source_dir)
+
+        if !compilers[dir].is_err() && compilers[dir].must().kind == shadowed_words.PROGRAM
+            program @ dir
+    return Folders(named: named, others: others, program: program, packages: packages)
+
+# `name`'s first declaring file a folder other than the program's own found,
+# and the named folder that found it; absent where every one is the
+# program's own, or none is known.
+function judged_file(name: str, decl: i64, files: [str], where: Folders) -> Declared?
+    for file in files
+        path = package_reads.lexical(file)
+        folder = stand_in.finder(path: path, named: where.named, others: where.others)
+
+        if folder.len() > 0 && folder == where.program
+            continue
+        return ok(
+            Declared(name: name, decl: decl, file: file, folder: folder, package: where.packages[folder].default(""))
+        )
+
+    return fail(code: "none", msg: "declared by the program's own headers alone")
+
+# Every file of the dump that declares each top-level function or object,
+# in the dump's order, each once.
+function declaring(dumped: str) -> {str: [str]}
+    out: {str: [str]} @= {}
+    place: label_dump.Located @= label_dump.Located(file: "", line: 0)
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= dumped.len()
+        if at == dumped.len() || dumped[at] == 10
+            row = dumped.slice(from: start, to: at)
+            place @ label_dump.located(row, at: place)
+
+            if header_bodies.is_top(row)
+                top = dump_tops.top_of(row)
+
+                if (top.kind == "FunctionDecl" || top.kind == "VarDecl") && !top.implicit && top.name.len() > 0
+                    held = out[top.name].default([])
+
+                    if !supplied_names.named_in(held, name: place.file)
+                        out[top.name] @ held.push(place.file)
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# `from` and every name a body it reaches calls or reads, breadth first
+# through the bodies the list defines, each once.
+function reached(bodies: [header_bodies.Body], from: str) -> [str]
+    out: [str] @= [from]
+    seen: {str: bool} @= {}
+    seen[from] @ true
+    at: i64 @= 0
+
+    while at < out.len()
+        body = header_bodies.body_of(bodies, name: out[at])
+        at @ at + 1
+
+        if body.is_err()
+            continue
+
+        for name in strings_of(body.must())
+            if seen[name].is_err()
+                seen[name] @ true
+                out @ out.push(name)
+
+    return out
+
+function strings_of(body: header_bodies.Body) -> [str]
+    out: [str] @= body.calls
+
+    for name in body.reads
+        out @ out.push(name)
+
+    return out
+
+function decl_of(bound: [supplied_judged.Bound], name: str) -> i64
+    for b in bound
+        if b.name == name
+            return b.decl
+
+    return -1
+
+# The library folders of a link line: the line's own `-L` words and each one
+# clang's link job adds that an element of `LIBRARY_PATH` names (`named`),
+# those of the variable among them (`environment`), and the folders the job
+# adds on its own (`own`), a tie among them (`supplied_names.clang_own`).
+record Searched
+    named: [str]
+    environment: [str]
+    own: [str]
+
+# Asked of clang's `-###` of the line, its link job's `-L` words read as
+# `cli/clang_added.hero` reads a compile's. A Windows linker is asked
+# nothing: lld-link reads no `LIBRARY_PATH` (design.md §4.19; unrun there).
+function searched(t: toolchain.Toolchain, line: [str]) -> Searched
+    out: Searched @= Searched(named: [], environment: [], own: [])
+
+    for dir in supplied_names.dirs_of(line)
+        out.named @ out.named.push(package_reads.lexical(dir))
+
+    if link_flags.msvc(t.target)
+        return out
+    err = publish.private_name(t.build + "/paired-link.txt")
+    ran = process.run(program: line[0], words: line.push("-###"), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started || ran.code != 0 || said.is_err()
+        return out
+
+    job: [str] @= []
+
+    for row in deps.lines(said.must())
+        if !clang_added.opens_quoted(row)
+            continue
+        words = clang_added.words_of(row)
+
+        if words.len() > 1 && words[1] == "-cc1"
+            continue
+
+        for dir in supplied_names.dirs_of(words)
+            job @ job.push(package_reads.lexical(dir))
+
+    out.own @ supplied_names.clang_own(job: job, named: out.named, elements: clang_added.elements_of("LIBRARY_PATH"))
+
+    for dir in job
+        if !supplied_names.named_in(out.named, name: dir) && !supplied_names.named_in(out.own, name: dir)
+            out.named @ out.named.push(dir)
+            out.environment @ out.environment.push(dir)
+
+    return out
+
+# A marker for each of `declared` a library the program names supplied
+# (`supplied`, each traced name's file) where one of its header and its
+# library was found in a folder the build names and the other was not:
+# `paired`, the binding, the name, the library file, the library's name,
+# and the header's folder, its file, the library's folder, `LIBRARY_PATH`
+# where that variable named it, and the package whose answer named the
+# header's folder, `|` between.
+function judged(t: toolchain.Toolchain, declared: [Declared], supplied: {str: str}, named: [str], line: [str]) -> [str]
+    out: [str] @= []
+    asked: bool @= false
+    where: Searched @= Searched(named: [], environment: [], own: [])
+
+    for d in declared
+        from = supplied[d.name]
+
+        if from.is_err()
+            continue
+        theirs = supplied_names.naming(file: from.must(), named: named)
+
+        if theirs.len() == 0
+            continue
+
+        if !asked
+            where @ searched(t, line: line)
+            asked @ true
+        dir = folder_of(supplied_names.archive_of(from.must()))
+        library_named = supplied_names.named_in(where.named, name: dir) && !supplied_names.tied(where.own, dir: dir, file: from.must())
+        header_named = d.folder.len() > 0
+
+        if library_named == header_named
+            continue
+        library: str @= ""
+        variable: str @= ""
+
+        if library_named
+            library @ dir
+
+        if supplied_names.named_in(where.environment, name: dir)
+            variable @ "LIBRARY_PATH"
+        out @ out.push(
+            supplied_judged.marker(kind: KIND, decl: d.decl, name: d.name, file: from.must(), library: theirs[0], order: d.folder + "|" + d.file + "|" + library + "|" + variable + "|" + d.package)
+        )
+
+    return out
+
+constant KIND: str
+    "paired"
+
+# The folder holding `file`, read lexically, `.` for a bare name.
+function folder_of(file: str) -> str
+    path = package_reads.lexical(file)
+    slash: i64 @= -1
+
+    for i in range(from: 0, to: path.len())
+        if path[i] == '/'
+            slash @ i
+
+    if slash < 0
+        return "."
+
+    if slash == 0
+        return "/"
+    return path.slice(from: 0, to: slash)
+
+## Tests
+
+test "a dump's declarations are read with the file clang placed each in (panel 245)"
+    rows: [str] = [
+        "TranslationUnitDecl 0x1 <<invalid sloc>> <invalid sloc>"
+        "|-FunctionDecl 0x2 </sdk/usr/include/readline/readline.h:153:1, col:28> col:13 used history_get 'HIST_ENTRY *(int)'"
+        "|-VarDecl 0x3 <line:106:1, col:14> col:14 used history_base 'int' extern"
+        "|-FunctionDecl 0x4 <./hist.h:7:1, line:13:1> line:7:23 data_is_null 'int64_t (void)' static inline"
+        "| `-CompoundStmt 0x5 <col:39, line:13:1>"
+        "|   `-CallExpr 0x6 <line:9:5, col:22> 'HIST_ENTRY *'"
+        "|     `-DeclRefExpr 0x7 <col:5> 'HIST_ENTRY *(int)' Function 0x2 'history_get' 'HIST_ENTRY *(int)'"
+        "|-FunctionDecl 0x8 <line:20:1, col:30> col:13 history_get 'HIST_ENTRY *(int)'"
+    ]
+    dumped = rows.join("\n")
+    files = declaring(dumped)
+    assert files["history_get"].must() == ["/sdk/usr/include/readline/readline.h", "./hist.h"]
+    assert files["history_base"].must() == ["/sdk/usr/include/readline/readline.h"]
+    assert reached(header_bodies.of_dump(dumped), from: "data_is_null") == ["data_is_null", "history_get"]
+
+test "a name the program's own folder declares first is judged by its next declaration, or not at all (panel 245)"
+    packages: {str: str} @= {}
+    packages["/opt/pk/include"] @ "pk"
+    where = Folders(
+        named: [".", "/opt/keg/include", "/opt/pk/include"],
+        others: ["runtime", "/sdk/usr/include"],
+        program: ".",
+        packages: packages
+    )
+    sdk = judged_file(
+        name: "history_get",
+        decl: 3,
+        files: ["./hist.h", "/sdk/usr/include/readline/readline.h"],
+        where: where
+    ).must()
+    assert sdk.file == "/sdk/usr/include/readline/readline.h" && sdk.folder == ""
+    keg = judged_file(name: "curl_version", decl: 4, files: ["/opt/keg/include/curl/curl.h"], where: where).must()
+    assert keg.folder == "/opt/keg/include" && keg.package == ""
+
+    # A folder a package's answer named carries the package, for the remedy.
+    answered = judged_file(name: "pk_version", decl: 6, files: ["/opt/pk/include/pk.h"], where: where).must()
+    assert answered.folder == "/opt/pk/include" && answered.package == "pk"
+    assert judged_file(name: "mine", decl: 5, files: ["./mine.h"], where: where).is_err()
+    assert folder_of("./libcurl.dylib") == "." && folder_of("/opt/keg/lib/libcurl.dylib") == "/opt/keg/lib"
+    assert folder_of("/w/lib/liba.a") == "/w/lib"

@@ -1,0 +1,240 @@
+# What a program is told where a library's name was declared by a header
+# found in one kind of folder and defined by a library found in the other
+# (design.md §4.17, §4.19; defect 2448; panel 245's Q3, its P1 with P4's
+# note, provisional, author ratification pending). `cli/supplied_paired.hero`
+# judges, from the link's own answer.
+#
+# **Told on the binding** the name is reached from, the name, the header and
+# the library each named by its file and by whether a folder the build names
+# holds it, and the remedy naming both halves, as P4's note names them for a
+# header path. **No `Fix`**: the repair is a flag or a variable, the header's
+# folder named beside the library's or neither named, which no edit of the
+# binding writes (panel 237's `shadowed_header` precedent).
+
+use ast
+use cli/supplied_judged
+use cli/supplied_names
+use diag
+use emit/ffi_lookup
+use parse
+use source
+
+constant CODE: str
+    "ffi_unpaired_release"
+
+# The diagnostics of a refused link's `paired` markers: one per library and
+# pair of folders, a mistake of one build's words, on the binding of the
+# first name, every name in a note, in the markers' order.
+function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    order: [str] @= []
+    told_of: {str: Told} @= {}
+
+    for line in ffi_lookup.lines(text: message)
+        f = supplied_judged.fields(line)
+
+        if f.len() != 7 || f[1] != KIND
+            continue
+        at = ffi_lookup.number(f[2])
+        parts = supplied_names.split_on(field: f[6], separator: "|")
+
+        if at.is_err() || at.must() < 0 || at.must() >= decls.len() || parts.len() != 5
+            continue
+        key = f[5] + "|" + parts[0] + "|" + parts[2] + "|" + parts[3]
+        held = told_of[key]
+
+        if held.is_err()
+            order @ order.push(key)
+            told_of[key] @ Told(
+                at: at.must(),
+                names: [f[3]],
+                defined: f[4],
+                library: f[5],
+                halves: Halves(header_folder: parts[0], header: parts[1], library_folder: parts[2], variable: parts[3], package: parts[4])
+            )
+        else if !supplied_names.named_in(held.must().names, name: f[3])
+            told_of[key] @ Told(
+                at: held.must().at,
+                names: held.must().names.push(f[3]),
+                defined: held.must().defined,
+                library: held.must().library,
+                halves: held.must().halves
+            )
+
+    for key in order
+        out @ out.push(one(s, decls, t: told_of[key].must()))
+
+    return out
+
+constant KIND: str
+    "paired"
+
+# Where the two halves were found: the header's named folder and file, the
+# library's named folder, "" for a folder the build does not name,
+# `LIBRARY_PATH` where that variable named the library's, and the package
+# whose `pkg-config` answer named the header's folder, "" for none.
+record Halves
+    header_folder: str
+    header: str
+    library_folder: str
+    variable: str
+    package: str
+
+# One refusal: the binding of its first name, its names, the first one's
+# definition, the library's name and where the halves were found.
+record Told
+    at: i64
+    names: [str]
+    defined: str
+    library: str
+    halves: Halves
+
+function one(s: source.Source, decls: [ast.Decl], t: Told) -> diag.Diagnostic
+    binding = source.span_text(s, decls[t.at].name)
+    name = t.names[0]
+    said: str @= "`" + name + "`, bound here, is"
+
+    if t.names.len() == 2
+        said @ "`" + name + "` and one more name this group's bindings reach are"
+    else if t.names.len() > 2
+        said @ "`" + name + "` and " + (t.names.len() - 1).to_str() + " more names this group's bindings reach are"
+    else if binding != name
+        said @ "`" + name + "`, which `" + binding + "`, bound here, reaches through its header's C, is"
+    header_side: str @= "a header no folder this build names holds"
+
+    if t.halves.header_folder.len() > 0
+        header_side @ "a header of `" + t.halves.header_folder + "`, a folder this build names"
+    library_side: str @= "a library no folder this build names holds"
+
+    if t.halves.library_folder.len() > 0 && t.halves.variable.len() > 0
+        library_side @ "a library of `" + t.halves.library_folder + "`, which `" + t.halves.variable + "` names"
+    else if t.halves.library_folder.len() > 0
+        library_side @ "a library of `" + t.halves.library_folder + "`, a folder this build names"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: said + " declared by " + header_side + ", and defined by " + library_side + ": they may be two releases of library `" + t.library + "`, and nothing holds one to the other",
+        span: decls[t.at].span
+    )
+
+    if t.names.len() > 1
+        d.notes @ d.notes.push("the names: `" + t.names.join("`, `") + "`")
+    d.notes @ d.notes.push("the declaration clang read is in `" + t.halves.header + "`")
+    d.notes @ d.notes.push("the definition the link took is in `" + t.defined + "`")
+    d.notes @ d.notes.push(remedy(t.halves, asked: asked_of(decls[t.at])))
+    return d
+
+# Whether a binding's group asks `pkg-config` for its library, never for a
+# `link` group: such a group's remedy never offers `pkgconfig`, which it
+# already is.
+function asked_of(decl: ast.Decl) -> bool
+    match decl.kind
+        .function_decl fd =>
+            if fd.value.library.is_err()
+                return false
+
+            match fd.value.library.must()
+                .link      => return false
+                .pkgconfig => return true
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# The repair, both halves named, and only the ones measured to build on this
+# Mac. **Where the header is the platform's**, the library's folder is taken
+# out; a package answering both is offered only where the build's own words
+# named that folder, since a `LIBRARY_PATH` folder is searched before the
+# platform's whatever a package answers with no `-L` of its own (the SDK's
+# `libcurl.pc` answers `-lcurl` alone, and `.` kept its stray `libcurl`). A
+# folder named for the header is never offered: it is refused as a stand-in
+# wherever another header reaches it (panel 237's `shadowed_header`).
+#
+# **And never `pkgconfig` to a group that asks it already** (`asked`): a
+# `.pc` whose `Cflags` name the header's folder and whose `Libs` name none
+# left the platform's library linked, and the note told that build to name
+# the library with `pkgconfig`, which it does, and nothing would move (the
+# lane's measurement at the landing, a toy `.pc` beside the platform's
+# zlib). Where the package's own answer named the header's folder, its `.pc`
+# is what is told, `-L` in its `Libs`, measured to build, as `--library` is.
+function remedy(halves: Halves, asked: bool) -> str
+    rule = "a library's header and its definitions come both from folders the build names, or neither"
+    both: str @= ", or name the library with `pkgconfig` and let `pkg-config` answer both"
+
+    if asked
+        both @ ""
+
+    if halves.header_folder.len() > 0 && halves.package.len() > 0
+        return rule + ": `pkg-config`'s answer for `" + halves.package + "` names the folder of this header and no folder holding its library; pass `--library <dir>` with the folder holding the library of `" + halves.header_folder + "`'s release, or give `" + halves.package + "`'s `.pc` that folder in its `Libs`, as `-L<dir>`"
+
+    if halves.header_folder.len() > 0
+        return rule + ": pass `--library <dir>` with the folder holding the library of `" + halves.header_folder + "`'s release" + both
+    platform = ", so the platform's library is linked with the platform's header"
+
+    if halves.variable.len() > 0 && halves.library_folder == "."
+        return rule + ": take the empty element out of `" + halves.variable + "` for this build, which names `.`, the folder the build runs in" + platform
+
+    if halves.variable.len() > 0
+        return rule + ": take `" + halves.library_folder + "` out of `" + halves.variable + "` for this build" + platform
+    return rule + ": take `" + halves.library_folder + "` out of `--library` or a package's answer for this build" + platform + both
+
+## Tests
+
+test "a paired marker is told once on its binding, both halves and the remedy named (panel 245)"
+    text = "extern \"hist.h\" link \"readline\"\n    function data_is_null() -> i64\n\nfunction main()\n    print(data_is_null())\n"
+    s = source.new_source(name: "rl.hero", text: text)
+    decls = parse.parse(text).decls
+    marker = supplied_judged.marker(
+        kind: KIND,
+        decl: 0,
+        name: "history_get",
+        file: "/keg/lib/libreadline.dylib",
+        library: "readline",
+        order: "|/sdk/usr/include/readline/readline.h|/keg/lib||"
+    )
+    said = told(marker + "\n" + marker, s, decls)
+    assert said.len() == 1 && said[0].code == CODE
+    assert said[0].message == "`history_get`, which `data_is_null`, bound here, reaches through its header's C, is declared by a header no folder this build names holds, and defined by a library of `/keg/lib`, a folder this build names: they may be two releases of library `readline`, and nothing holds one to the other"
+    assert said[0].notes.len() == 3
+    assert said[0].notes[2] == "a library's header and its definitions come both from folders the build names, or neither: take `/keg/lib` out of `--library` or a package's answer for this build, so the platform's library is linked with the platform's header, or name the library with `pkgconfig` and let `pkg-config` answer both"
+    other = supplied_judged.marker(
+        kind: KIND,
+        decl: 0,
+        name: "history_base",
+        file: "/keg/lib/libreadline.dylib",
+        library: "readline",
+        order: "|/sdk/usr/include/readline/history.h|/keg/lib||"
+    )
+    both = told(marker + "\n" + other + "\n" + marker, s, decls)
+    assert both.len() == 1 && both[0].notes.len() == 4
+    assert both[0].notes[0] == "the names: `history_get`, `history_base`"
+    assert both[0].message == "`history_get` and one more name this group's bindings reach are declared by a header no folder this build names holds, and defined by a library of `/keg/lib`, a folder this build names: they may be two releases of library `readline`, and nothing holds one to the other"
+    dotted = Halves(
+        header_folder: "",
+        header: "/sdk/curl.h",
+        library_folder: ".",
+        variable: "LIBRARY_PATH",
+        package: ""
+    )
+    assert remedy(dotted, asked: false) == "a library's header and its definitions come both from folders the build names, or neither: take the empty element out of `LIBRARY_PATH` for this build, which names `.`, the folder the build runs in, so the platform's library is linked with the platform's header"
+    forward = Halves(
+        header_folder: "/opt/keg/include",
+        header: "/opt/keg/include/lzma.h",
+        library_folder: "",
+        variable: "",
+        package: ""
+    )
+    assert remedy(forward, asked: false) == "a library's header and its definitions come both from folders the build names, or neither: pass `--library <dir>` with the folder holding the library of `/opt/keg/include`'s release, or name the library with `pkgconfig` and let `pkg-config` answer both"
+
+    # A group asking `pkg-config` already is never told to (the lane's
+    # measurement at panel 245's landing): where the package's answer named
+    # the header's folder, its `.pc` is told; elsewhere `--library` alone.
+    answered = Halves(
+        header_folder: "/w/inc",
+        header: "/w/inc/zver.h",
+        library_folder: "",
+        variable: "",
+        package: "z245"
+    )
+    assert remedy(answered, asked: true) == "a library's header and its definitions come both from folders the build names, or neither: `pkg-config`'s answer for `z245` names the folder of this header and no folder holding its library; pass `--library <dir>` with the folder holding the library of `/w/inc`'s release, or give `z245`'s `.pc` that folder in its `Libs`, as `-L<dir>`"
+    assert remedy(forward, asked: true) == "a library's header and its definitions come both from folders the build names, or neither: pass `--library <dir>` with the folder holding the library of `/opt/keg/include`'s release"
+    library = Halves(header_folder: "", header: "/sdk/zlib.h", library_folder: "/w/lib", variable: "", package: "")
+    assert remedy(library, asked: true) == "a library's header and its definitions come both from folders the build names, or neither: take `/w/lib` out of `--library` or a package's answer for this build, so the platform's library is linked with the platform's header"

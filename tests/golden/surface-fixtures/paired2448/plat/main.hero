@@ -1,0 +1,9 @@
+# Panel 245's R3: the platform's header and the platform's library, neither
+# named, are one release, and build. With `--library` naming a folder that
+# holds another library `z` (`../lib/`, Darwin's stub), the build is refused.
+
+extern "zlib.h" link "z"
+    function zlibVersion() -> cstr
+
+function main()
+    print(validated(c: zlibVersion()).default("").len() > 0)
