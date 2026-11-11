@@ -166,7 +166,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 int64_t h_main_OWN_CFG(void);
 void h_main_main(void);
 
-#line 9 "tests/golden/run/fixedbugs-2468-a-header-asking-in-quotes-after-its-own-file-no-platform-holds.case/main.hero"
+#line 15 "tests/golden/run/fixedbugs-2468-a-header-asking-in-quotes-after-its-own-file-no-platform-holds.case/main.hero"
 int64_t h_main_OWN_CFG(void) {
 #line 172 "main.c"
     _Static_assert(HERO_RET_INT(OWN_CFG), "heroes-ffi-return OWN_CFG i64");
@@ -178,7 +178,7 @@ int64_t h_main_OWN_CFG(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 9 "tests/golden/run/fixedbugs-2468-a-header-asking-in-quotes-after-its-own-file-no-platform-holds.case/main.hero"
+#line 15 "tests/golden/run/fixedbugs-2468-a-header-asking-in-quotes-after-its-own-file-no-platform-holds.case/main.hero"
     return OWN_CFG;
 #line 184 "main.c"
 #pragma clang diagnostic pop
@@ -196,7 +196,7 @@ int64_t h_main_OWN_CFG(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 11 "tests/golden/run/fixedbugs-2468-a-header-asking-in-quotes-after-its-own-file-no-platform-holds.case/main.hero"
+#line 17 "tests/golden/run/fixedbugs-2468-a-header-asking-in-quotes-after-its-own-file-no-platform-holds.case/main.hero"
 void h_main_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_main_OWN_CFG(); hero_print_int(t1); hero_print_end(); return;
 #line 203 "main.c"
@@ -298,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("652324776f2b71d0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("51f532c3100ea099", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

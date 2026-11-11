@@ -5,6 +5,12 @@
 # spelling read from the asker's own folder, of a name the platform does not
 # hold, is the program's own. Until this defect every such file was refused
 # `shadowed_header` as standing in for the system's `<cfg.h>`.
+#
+# Corrected 2026-11-11, defect 2482: the file is `cfg2482.h`. A folder of the
+# CI's Windows leg holds a `cfg.h`, so the name this case says no platform
+# holds was held there, and the case refused as the system's; a name with
+# that defect's number is held by no folder of this Mac's search or the
+# Linux image's, and the Windows runner's is read by the CI after the push.
 extern "own.h"
     constant OWN_CFG: i64
 

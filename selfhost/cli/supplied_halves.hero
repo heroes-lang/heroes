@@ -1,0 +1,309 @@
+# Where the two halves of a name a library supplies were found, read past the
+# build's own words where those say half of it: the package a `pkgconfig`
+# group asks, by its whole answer, and the library file a Windows map names
+# by its name alone (design.md §4.19, §1.12; defect 2480; panel 245's R3,
+# provisional, author ratification pending). `cli/supplied_paired.hero`
+# judges each pair, and asks this only where it would refuse one.
+#
+# **What it closes, measured.** The CI's Linux legs install SDL3 3.2.10 under
+# `/usr/local` alone (run 43032370454, jobs 130562413471 and 130562413603),
+# and `pkg-config` answers `-I/usr/local/include -L/usr/local/lib ... -lSDL3`
+# (Debian's pkgconf 1.8.1 in the `heroes-linux-arm64` image, SDL3's files
+# moved there, 2026-11-11). clang searches `/usr/local/include` on its own,
+# so the header's folder went to the platform as a tie does, while
+# `/usr/local/lib` is no folder of clang's link job: the case and the example
+# that bind SDL3 were refused `ffi_unpaired_release` on both legs. And in the
+# same image glib's answer is `-I/usr/include/glib-2.0 ... -lglib-2.0`, its
+# `-L/usr/lib/aarch64-linux-gnu` stripped as the system's: a correct program
+# binding glib was refused the other way round, its header named and its
+# library not. Each pair was judged on half of what the package says.
+#
+# **The rule**: where R3 finds one half in a folder the build names and the
+# other in none, and the binding's group asks `pkg-config` for a package, the
+# pair is that package's one release, by its own word, where its answer with
+# the system's folders kept names the library by an `-l`, names the folder
+# that found the header (`holds_header`) and names a folder holding the very
+# file the link took (`holds_library`). A `link` group is never asked, so R3
+# stands whole for it; and a package whose answer names no folder holding
+# the library the link took, a file of other bytes, or another folder of the
+# search for the header, stays refused, which is the shape R3 exists for.
+#
+# **The system's folders kept, by two variables**: `PKG_CONFIG_ALLOW_SYSTEM_
+# CFLAGS` and `PKG_CONFIG_ALLOW_SYSTEM_LIBS` put back exactly the words
+# pkg-config strips, measured on pkgconf 1.8.1 (Debian's SDL3: `-I/usr/include`
+# and `-L/usr/lib/aarch64-linux-gnu`) and 3.0.10 (this Mac's SDL3:
+# `-L/opt/homebrew/lib`, which pkgconf strips because `LIBRARY_PATH` names
+# it), the words pkgconf's `--keep-system-cflags --keep-system-libs` give on
+# both. The variables are the spelling freedesktop's pkg-config documents as
+# well: unrun, no machine of this project carrying it.
+#
+# **Its `-I` and `-L` words, never its `includedir` and `libdir`**: the two
+# agree for SDL3 under `/usr`, `/usr/local` and Homebrew, and differ where it
+# matters. Homebrew's `zlib.pc` gives `includedir` the CommandLineTools SDK
+# where clang reads the Xcode SDK's `zlib.h`; glib's `glibconfig.h` stands in
+# `/usr/lib/aarch64-linux-gnu/glib-2.0/include`, which its `-I` names and its
+# `includedir` does not hold; and a `.pc` need define neither variable. The
+# words are what the package told the compiler to search, so they are the
+# package's word.
+#
+# **Its cost**: nothing on a build R3 passes. On a refusal's path, one
+# `pkg-config` per package asked, each kept for the build's other names.
+
+use ast
+use cli/libraries
+use cli/package_reads
+use cli/pkgconfig_answer
+use cli/process
+use cli/publish
+use cli/shell_split
+use cli/stand_in
+use cli/supplied_names
+use emit/ffi_linked
+use module/reading as file_reading
+use parse
+use source
+
+# The package `decl`'s group asks `pkg-config` for, as `emit/ffi_linked.hero`
+# reads a group's library, "" for a `link` group or no group at all.
+function package_of(s: source.Source, decl: ast.Decl) -> str
+    named = ffi_linked.library_of(s, decl: decl, own: true)
+
+    if named.is_err() || !named.must().package
+        return ""
+    return named.must().name
+
+# What a package's answer says with the system's folders kept: the folders
+# its `-I` and `-F` words name for headers and its `-L` words for libraries,
+# each read lexically, and the libraries its `-l` words name. All three are
+# empty where the package could not be asked, so nothing is ever paired by a
+# word nobody said.
+record Answer
+    includes: [str]
+    libraries: [str]
+    names: [str]
+
+# Whether the halves of a name the library `theirs` names supplied are the
+# package's that `group` names, one release by its word: its answer names
+# one of `theirs`, the folder of the search (`searched`) that found
+# `header`, and a folder holding `file`, the library file the link took.
+# Never for a group that asks no package, `group` "". Each package is asked
+# once into `answers`, under `build_dir`.
+function pairs(@answers: {str: Answer}, build_dir: str, group: str, theirs: [str], header: str, searched: [str], file: str) -> bool
+    if group.len() == 0
+        return false
+
+    if answers[group].is_err()
+        answers[group] @ asked(package: group, build_dir: build_dir)
+    answer = answers[group].must()
+    return supplied_names.shares(a: theirs, b: answer.names) && holds_header(answer, header: header, searched: searched) && holds_library(answer, file: file)
+
+# The variables that keep the system's folders in an answer.
+function kept() -> [process.Variable]
+    return [
+        process.Variable(name: "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS", value: "1")
+        process.Variable(name: "PKG_CONFIG_ALLOW_SYSTEM_LIBS", value: "1")
+    ]
+
+# `package`'s answer, asked as `cli/libraries.hero` asks it, the library's
+# name after `--`, and read as text as it reads one; an empty answer where
+# `pkg-config` does not start, refuses, or answers what cannot be read, and
+# so pairs nothing: the build stays refused, the loud way.
+function asked(package: str, build_dir: str) -> Answer
+    none = Answer(includes: [], libraries: [], names: [])
+
+    if process.mkdir_all(build_dir).is_err()
+        return none
+    out = publish.private_name(build_dir + "/pkg-config-kept.txt")
+    ran = process.run_given(
+        program: "pkg-config",
+        words: ["pkg-config", "--cflags", "--libs", "--", package],
+        out: out,
+        err: process.discard(),
+        given: kept()
+    )
+    said = pkgconfig_answer.answer(path: out, pkgconfig: package)
+    publish.discard(out)
+
+    if !ran.started || ran.code != 0 || said.is_err()
+        return none
+    words = shell_split.words(pkgconfig: package, said: said.must())
+
+    if words.is_err()
+        return none
+    return of_words(words.must())
+
+# The answer `words` say, read as the build reads the folders of an answer
+# it was given (`package_reads.answered`, `supplied_names.dirs_of`).
+function of_words(words: [str]) -> Answer
+    folders: [str] @= []
+
+    for dir in supplied_names.dirs_of(words)
+        folders @ folders.push(package_reads.lexical(dir))
+
+    names: [str] @= []
+
+    for word in words
+        if word.len() > 2 && word[0] == '-' && word[1] == 'l'
+            names @ names.push(word.slice(from: 2, to: word.len()))
+
+    return Answer(includes: package_reads.answered(libraries.compile_flags(words)), libraries: folders, names: names)
+
+# Whether a folder the package names found `header`: the longest directory
+# holding it among the package's and the rest of the search is one of the
+# package's (`stand_in.finder`), a folder both name going to the package,
+# since its answer names it whoever else does; a longer folder of the search
+# holding the file found it, and the half is not the package's.
+function holds_header(answer: Answer, header: str, searched: [str]) -> bool
+    others: [str] @= []
+
+    for dir in searched
+        if !supplied_names.named_in(answer.includes, name: dir)
+            others @ others.push(dir)
+
+    return stand_in.finder(path: package_reads.lexical(header), named: answer.includes, others: others).len() > 0
+
+# Whether a folder the package names holds `file`, the library file the link
+# took, its object or index taken off: that very path, or a file of its name
+# with the same bytes, which Debian's merged `/usr` gives: glib's answer says
+# `/usr/lib/aarch64-linux-gnu` and GNU ld took `/lib/aarch64-linux-gnu/
+# libglib-2.0.so`, one file. A file of that name with other bytes is another
+# release, and a file that cannot be read is matched by its path alone.
+function holds_library(answer: Answer, file: str) -> bool
+    archive = package_reads.lexical(supplied_names.archive_of(supplied_names.without_index(file)))
+    base = supplied_names.base_of(archive)
+    key = file_reading.key_of(archive).default("")
+
+    for dir in answer.libraries
+        candidate = dir + "/" + base
+
+        if package_reads.lexical(candidate) == archive
+            return true
+
+        if key != "" && process.path_exists(candidate) && file_reading.key_of(candidate).default("") == key
+            return true
+
+    return false
+
+# **The library file a link took, as a path a folder holds** (defect 2480's
+# Windows leg). A link names its files by their paths, but a Windows map
+# names a library by its name alone, `SDL3.lib(SDL3.dll)`
+# (`cli/supplied_windows.hero`), which read as the folder the link runs in,
+# `.`, that no word of the build names: vcpkg's SDL3, its header and its
+# library both in folders `pkg-config` named, was refused (job 130562413466).
+# A name alone is the first file of that name the linker searches: the
+# folder it runs in, then the line's `-L` folders, `dirs`, in their order;
+# the name as written where none holds one, a folder of the platform's.
+# **A question, unrun** (the box was off): that lld-link and link.exe search
+# the folder they run in before their `-libpath:` folders, as Microsoft's
+# documentation of `LINK`'s input libraries orders it, and that no folder
+# clang's own job adds (the toolchain's, the SDK's) comes before the line's.
+# Were the order the other way, a stray file in the folder a build runs in
+# would read as the platform's and refuse a correct build: the loud way.
+function located(file: str, dirs: [str]) -> str
+    archive = supplied_names.archive_of(supplied_names.without_index(file))
+
+    if archive != supplied_names.base_of(archive) || process.path_exists(archive)
+        return archive
+
+    for dir in dirs
+        candidate = dir + "/" + archive
+
+        if process.path_exists(candidate)
+            return candidate
+
+    return archive
+
+## Tests
+
+# Debian's answers with the system's folders kept, as the `heroes-linux-arm64`
+# image gave them on 2026-11-11: glib's, whose own `-I` folders stand under
+# the system's, and SDL3's moved under `/usr/local`, as the CI's legs hold it.
+test "a package's answer is read for its header folders, its library folders and its libraries (defect 2480)"
+    glib = of_words(
+        ["-I/usr/include/glib-2.0", "-I/usr/lib/aarch64-linux-gnu/glib-2.0/include", "-I/usr/include/sysprof-6", "-I/usr/include", "-L/usr/lib/aarch64-linux-gnu", "-pthread", "-lglib-2.0"]
+    )
+    assert glib.includes == ["/usr/include/glib-2.0", "/usr/lib/aarch64-linux-gnu/glib-2.0/include", "/usr/include/sysprof-6", "/usr/include"]
+    assert glib.libraries == ["/usr/lib/aarch64-linux-gnu"] && glib.names == ["glib-2.0"]
+    sdl = of_words(
+        ["-I/usr/local/include", "-L/usr/local/lib", "-Wl,-rpath,/usr/local/lib", "-Wl,--enable-new-dtags", "-lSDL3"]
+    )
+    assert sdl.includes == ["/usr/local/include"] && sdl.libraries == ["/usr/local/lib"] && sdl.names == ["SDL3"]
+
+    # A package no machine holds answers nothing, so it pairs nothing.
+    none = asked(package: "heroes-package-no-machine-has-2480", build_dir: "build")
+    assert none.includes.len() == 0 && none.libraries.len() == 0 && none.names.len() == 0
+
+    # The package is the binding's group's own, and a `link` group asks none.
+    text = "extern \"SDL3/SDL.h\" pkgconfig \"sdl3\"\n    function SDL_Quit()\n\nextern \"zlib.h\" link \"z\"\n    function zlibVersion() -> cstr\n"
+    s = source.new_source(name: "halves.hero", text: text)
+    decls = parse.parse(text).decls
+    assert package_of(s, decl: decls[0]) == "sdl3" && package_of(s, decl: decls[1]) == ""
+
+# **A folder the package names found the header, ties going to the package**:
+# `/usr/local/include`, which clang searches on its own as well, and glib's
+# own folder under `/usr/include`; but a longer folder of the search that is
+# not the package's found the file, and no folder of the package holds it.
+test "a header is the package's where a folder its answer names found it (defect 2480)"
+    platform = [
+        "runtime"
+        "/usr/lib/llvm-22/lib/clang/22/include"
+        "/usr/local/include"
+        "/usr/include/aarch64-linux-gnu"
+        "/usr/include"
+    ]
+    sdl = of_words(["-I/usr/local/include", "-L/usr/local/lib", "-lSDL3"])
+    assert holds_header(sdl, header: "/usr/local/include/SDL3/SDL_init.h", searched: platform)
+    glib = of_words(["-I/usr/include/glib-2.0", "-I/usr/include", "-L/usr/lib/aarch64-linux-gnu", "-lglib-2.0"])
+    assert holds_header(
+        glib,
+        header: "/usr/include/glib-2.0/glib/gthread.h",
+        searched: platform.push("/usr/include/glib-2.0")
+    )
+    assert !holds_header(glib, header: "/usr/include/aarch64-linux-gnu/zconf.h", searched: platform)
+    assert !holds_header(sdl, header: "/usr/include/SDL3/SDL_init.h", searched: platform)
+    assert !holds_header(sdl, header: "/opt/keg/include/SDL3/SDL_init.h", searched: platform.push("/opt/keg/include"))
+
+# The library half, the files made under `build/`: the very path, the same
+# bytes under another folder, as merged `/usr` gives, and a second release of
+# that name, which stays another library's; and the whole of a pair asks the
+# library's name and both halves, and never pairs a group asking no package.
+test "a library file is the package's where a folder its answer names holds it, or its bytes (defect 2480)"
+    dir = "build/selftest-halves-2480"
+    assert !process.mkdir_all(dir + "/usr/lib").is_err() && !process.mkdir_all(dir + "/lib").is_err()
+    assert !process.mkdir_all(dir + "/other").is_err()
+    assert !write_file(path: dir + "/usr/lib/libg.so", text: "glib 2.84.4\n").is_err()
+    assert !write_file(path: dir + "/lib/libg.so", text: "glib 2.84.4\n").is_err()
+    assert !write_file(path: dir + "/other/libg.so", text: "glib 2.90.1\n").is_err()
+    answer = of_words(["-I" + dir + "/include", "-L" + dir + "/usr/lib", "-lg"])
+    assert holds_library(answer, file: dir + "/usr/lib/libg.so") && holds_library(answer, file: dir + "/./usr/lib/libg.so")
+    assert holds_library(answer, file: dir + "/lib/libg.so")
+    assert !holds_library(answer, file: dir + "/other/libg.so")
+    answers: {str: Answer} @= {}
+    answers["g"] @ answer
+    header = dir + "/include/g.h"
+    assert pairs(
+        @answers,
+        build_dir: dir,
+        group: "g",
+        theirs: ["g"],
+        header: header,
+        searched: [],
+        file: dir + "/lib/libg.so"
+    )
+    assert !pairs(@answers, build_dir: dir, group: "g", theirs: ["h"], header: header, searched: [], file: dir + "/lib/libg.so")
+    assert !pairs(@answers, build_dir: dir, group: "g", theirs: ["g"], header: header, searched: [], file: dir + "/other/libg.so")
+    assert !pairs(@answers, build_dir: dir, group: "", theirs: ["g"], header: header, searched: [], file: dir + "/lib/libg.so")
+    assert !process.remove_tree(dir).is_err()
+
+# A Windows map's name alone is the file of the first folder holding it, the
+# folder the link runs in before the line's; a path keeps its own folder, and
+# a name no folder holds is kept as written.
+test "a library a link names by its name alone is the file of the first folder holding it (defect 2480)"
+    dir = "build/selftest-located-2480"
+    assert !process.mkdir_all(dir + "/a").is_err() && !process.mkdir_all(dir + "/b").is_err()
+    assert !write_file(path: dir + "/b/SDL2480.lib", text: "import library\n").is_err()
+    assert located(file: "SDL2480.lib(SDL2480.dll)", dirs: [dir + "/a", dir + "/b"]) == dir + "/b/SDL2480.lib"
+    assert located(file: "SDL2480.lib", dirs: [dir + "/a"]) == "SDL2480.lib"
+    assert located(file: "/opt/lib/libz.a(deflate.o)", dirs: [dir + "/b"]) == "/opt/lib/libz.a"
+    assert located(file: "C:/vcpkg/lib/SDL3.lib", dirs: [dir + "/b"]) == "C:/vcpkg/lib/SDL3.lib"
+    assert !process.remove_tree(dir).is_err()

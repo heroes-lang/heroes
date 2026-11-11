@@ -756,6 +756,70 @@ function reads_alone(scratch: str, package: str) -> bool?
 
     return ok(false)
 
+# **A library a `link` group names, asked of the machine before a row that
+# binds it runs** (defect 2481). The compiler tells a `link` library its
+# linker did not find as `ffi_missing_library`, which no spelling above
+# reads, so a case whose header is its own and whose library the machine
+# lacks was judged and read red: panel 245's two rows over the platform's
+# `libz` on the CI's Windows leg, which has no `z.lib`. A row that rests on
+# a library of the platform's asks first, and here, never by the platform's
+# name: clang links an empty program, and the same program with `-l<name>`,
+# and only the second refused is the machine lacking the library. An empty
+# program clang will not link, or a clang that does not start, asks nothing,
+# so the row runs and is judged, the loud way.
+constant LINK_WORD: str
+    " link "
+
+# Whether `source` holds an `extern` group whose `link` names `library`, the
+# second witness a skip asks of (`binds` reads a group's header and package).
+function links(source: str, library: str) -> bool
+    for row in strings.lines(source)
+        if !core_strings.has_prefix(s: row, prefix: "extern ")
+            continue
+        rest = strings.without_prefix(text: row, prefix: "extern ")
+        header = quoted(rest)
+
+        if header.is_err()
+            continue
+        tail = rest.slice(from: header.must().after, to: rest.len())
+
+        if !core_strings.has_prefix(s: tail, prefix: LINK_WORD)
+            continue
+        named = quoted(tail.slice(from: LINK_WORD.len(), to: tail.len()))
+
+        if !named.is_err() && named.must().value == library
+            return true
+
+    return false
+
+# What this machine's linker says of `library`: ok with its words where clang
+# links an empty program and refuses it with `-l<library>`; an error where it
+# links both (`present`), or where it can say nothing (`unasked`).
+function library_lacked(scratch: str, library: str) -> str?
+    shell.mkdir_all(scratch)?
+    program = scratch + "/library-probe.c"
+    write_file(path: program, text: "int main(void) { return 0; }\n")?
+    plain = shell.attempted(scratch: scratch, program: "clang", words: ["clang", program, "-o", scratch + "/library-probe-plain" + shell.exe_suffix()])?
+
+    if !plain.started
+        return fail(
+            code: "unasked",
+            msg: "clang could not be started to ask whether this machine links library `" + library + "`"
+        )
+
+    if plain.code != 0
+        return fail(
+            code: "unasked",
+            msg: "clang links no empty program here, so it cannot say whether library `" + library + "` is on this machine: " + first_line(plain.err)
+        )
+    linked = shell.attempted(scratch: scratch, program: "clang", words: ["clang", program, "-l" + library, "-o", scratch + "/library-probe" + shell.exe_suffix()])?
+
+    if linked.code == 0
+        return fail(code: "present", msg: "clang links library `" + library + "` on this machine")
+    return ok(
+        "the library `" + library + "`, which clang's linker does not find here, where it links an empty program: " + first_line(linked.err)
+    )
+
 # How a message names an absence.
 function shown(one: Absence) -> str
     if one.kind == "pkg-config"

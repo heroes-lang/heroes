@@ -22,7 +22,8 @@
 # each `-L` clang's link job adds that an element of `LIBRARY_PATH` names, an
 # empty one naming `.`. clang's own folders are neither, the platform's,
 # however the line or the variable also names one: a tie goes to the
-# platform, as a header's does (`supplied_names.clang_own`).
+# platform, as a header's does (`supplied_names.clang_own`), but by its
+# package's whole answer for a `pkgconfig` group (`cli/supplied_halves.hero`).
 #
 # **Which names**: every name a group binds, and every name a body its
 # header defines calls or reads, followed through the bodies it calls
@@ -49,6 +50,8 @@ use cli/reach_ask
 use cli/read_back
 use cli/shadowed_words
 use cli/stand_in
+use cli/strings
+use cli/supplied_halves
 use cli/supplied_judged
 use cli/supplied_names
 use cli/toolchain
@@ -58,13 +61,16 @@ use source
 # whose declaration of it clang read first outside the program's own folder,
 # the folder of the build's that found that file, "" for none, and the
 # package whose `pkg-config` answer named that folder, "" for none: its
-# refusal's remedy is that package's `.pc`, never `pkgconfig` again.
+# refusal's remedy is that package's `.pc`, never `pkgconfig` again; the
+# package its group asks, "" for none, and every folder of the search.
 record Declared
     name: str
     decl: i64
     file: str
     folder: str
     package: str
+    group: str
+    searched: [str]
 
 # What the header half reads (`cli/assemble.hero`'s link round): the
 # program's declarations and source, and its probed header lists.
@@ -114,12 +120,13 @@ function of_probings(t: toolchain.Toolchain, probings: [probing.Probing], s: sou
 
             if at < 0
                 continue
+            group = supplied_halves.package_of(s, decl: decls[at])
 
             for name in reached(bodies, from: binding)
                 if !seen[name].is_err()
                     continue
                 seen[name] @ true
-                d = judged_file(name: name, decl: at, files: files[name].default([]), where: where)
+                d = judged_file(name: name, decl: at, files: files[name].default([]), where: where, group: group)
 
                 if !d.is_err()
                     out @ out.push(d.must())
@@ -164,7 +171,7 @@ function folders(t: toolchain.Toolchain, one: probing.Probing, pkgconfigs: {str:
 # `name`'s first declaring file a folder other than the program's own found,
 # and the named folder that found it; absent where every one is the
 # program's own, or none is known.
-function judged_file(name: str, decl: i64, files: [str], where: Folders) -> Declared?
+function judged_file(name: str, decl: i64, files: [str], where: Folders, group: str) -> Declared?
     for file in files
         path = package_reads.lexical(file)
         folder = stand_in.finder(path: path, named: where.named, others: where.others)
@@ -172,7 +179,7 @@ function judged_file(name: str, decl: i64, files: [str], where: Folders) -> Decl
         if folder.len() > 0 && folder == where.program
             continue
         return ok(
-            Declared(name: name, decl: decl, file: file, folder: folder, package: where.packages[folder].default(""))
+            Declared(name: name, decl: decl, file: file, folder: folder, package: where.packages[folder].default(""), group: group, searched: strings.with_all(list: where.named, more: where.others))
         )
 
     return fail(code: "none", msg: "declared by the program's own headers alone")
@@ -301,6 +308,8 @@ function judged(t: toolchain.Toolchain, declared: [Declared], supplied: {str: st
     out: [str] @= []
     asked: bool @= false
     where: Searched @= Searched(named: [], environment: [], own: [])
+    answers: {str: supplied_halves.Answer} @= {}
+    dirs = supplied_names.dirs_of(line)
 
     for d in declared
         from = supplied[d.name]
@@ -315,11 +324,12 @@ function judged(t: toolchain.Toolchain, declared: [Declared], supplied: {str: st
         if !asked
             where @ searched(t, line: line)
             asked @ true
-        dir = folder_of(supplied_names.archive_of(from.must()))
-        library_named = supplied_names.named_in(where.named, name: dir) && !supplied_names.tied(where.own, dir: dir, file: from.must())
+        file = supplied_halves.located(file: from.must(), dirs: dirs)
+        dir = folder_of(file)
+        library_named = supplied_names.named_in(where.named, name: dir) && !supplied_names.tied(where.own, dir: dir, file: file)
         header_named = d.folder.len() > 0
 
-        if library_named == header_named
+        if library_named == header_named || supplied_halves.pairs(@answers, build_dir: t.build, group: d.group, theirs: theirs, header: d.file, searched: d.searched, file: file)
             continue
         library: str @= ""
         variable: str @= ""
@@ -386,15 +396,32 @@ test "a name the program's own folder declares first is judged by its next decla
         name: "history_get",
         decl: 3,
         files: ["./hist.h", "/sdk/usr/include/readline/readline.h"],
-        where: where
+        where: where,
+        group: ""
     ).must()
     assert sdk.file == "/sdk/usr/include/readline/readline.h" && sdk.folder == ""
-    keg = judged_file(name: "curl_version", decl: 4, files: ["/opt/keg/include/curl/curl.h"], where: where).must()
+    keg = judged_file(
+        name: "curl_version",
+        decl: 4,
+        files: ["/opt/keg/include/curl/curl.h"],
+        where: where,
+        group: ""
+    ).must()
     assert keg.folder == "/opt/keg/include" && keg.package == ""
 
+    # The package the binding's group asks, and every folder of the search,
+    # go with each name to be judged against that package's word (defect 2480).
+    assert keg.group == "" && keg.searched == [".", "/opt/keg/include", "/opt/pk/include", "runtime", "/sdk/usr/include"]
+
     # A folder a package's answer named carries the package, for the remedy.
-    answered = judged_file(name: "pk_version", decl: 6, files: ["/opt/pk/include/pk.h"], where: where).must()
-    assert answered.folder == "/opt/pk/include" && answered.package == "pk"
-    assert judged_file(name: "mine", decl: 5, files: ["./mine.h"], where: where).is_err()
+    answered = judged_file(
+        name: "pk_version",
+        decl: 6,
+        files: ["/opt/pk/include/pk.h"],
+        where: where,
+        group: "pk"
+    ).must()
+    assert answered.folder == "/opt/pk/include" && answered.package == "pk" && answered.group == "pk"
+    assert judged_file(name: "mine", decl: 5, files: ["./mine.h"], where: where, group: "").is_err()
     assert folder_of("./libcurl.dylib") == "." && folder_of("/opt/keg/lib/libcurl.dylib") == "/opt/keg/lib"
     assert folder_of("/w/lib/liba.a") == "/w/lib"
