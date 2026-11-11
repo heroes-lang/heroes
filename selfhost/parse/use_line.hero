@@ -34,6 +34,7 @@ use package_mark
 use parse/use_mark
 use token
 use use_dots
+use use_told
 
 ## The declaration
 
@@ -193,34 +194,17 @@ function climbs(@c: cursor.Cursor, text: str, keyword: token.Span, path: i64)
     cursor.say(@c, use_dots.told(c.tokens, at: c.pos, text: text, start: path))
     skip_rest_of_line(@c, text, from: keyword)
 
-# `use syntax/` and `use syntax /decl` — a separator with no part after it,
-# and a part the separator does not touch.
-#
-# Adjacency is the rule the loop enforces, and it is worth its own message:
-# `use a / b` lexes as the same three tokens as `use a/b`, so a path with a
-# space in it would otherwise become a path silently. The caret goes on the
-# separator, which is the character that made the line a path.
+# `use syntax/` and `use syntax /decl`: a separator with no part after it,
+# or one the part does not touch, told as `use_told.part_missing` says.
 function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: token.Span)
-    written = cursor.slice_of(text, name)
-    d: diag.Diagnostic = diag.new_diagnostic(
-        code: "module_path_wants_a_part",
-        message: "a `/` in a `use` joins two names with nothing between them — `use " + written + "/decl` names one module, and `use " + written + "` names another",
-        span: slash
-    )
-    cursor.say(@c, d)
+    cursor.say(@c, use_told.part_missing(c.tokens, at: c.pos, text: text, name: name, slash: slash))
     skip_rest_of_line(@c, text, from: name)
 
-# `use syntax/decl as` — the word is there and the name is not. The caret
-# stays on `as` for `missing_name`'s reason about this same line: the cursor
-# may already be on the next declaration, and naming it blames an innocent
-# line.
+# `use syntax/decl as`: the word is there and the name is not, told as
+# `use_told.alias_missing` says, the line dropped only where it is this one.
 function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
     same_line = module_text.one_line(text, from: word.start, to: cursor.current_span(c).start)
-    message: str @= "`as` renames the module and this line names nothing — `use syntax/decl as sd`, and then this file calls it `sd`"
-
-    if same_line
-        message @ "expected a name after `as`, found " + cursor.found(c, text) + " — `use syntax/decl as sd`, and then this file calls it `sd`"
-    cursor.error(@c, code: "expected_alias_name", message: message, span: word)
+    cursor.say(@c, use_told.alias_missing(c.tokens, at: c.pos, text: text, word: word))
 
     if same_line
         skip_rest_of_line(@c, text, from: word)
@@ -288,31 +272,21 @@ function quoted_module(@c: cursor.Cursor, text: str)
             return
         _ = cursor.bump(@c)
 
-# `use` with nothing after it.
-#
-# `use` is not in panel 007's ender list, so a `use` with nothing after it
-# inserts no terminator and the next token is the NEXT LINE's first word. Naming
-# it would blame an innocent declaration, so the caret goes on the keyword and
-# the found token is quoted only when it really is on this line.
+# `use` with nothing after it, told as `use_told.missing_name` says.
 function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
-    if cursor.at_reported_error(c)
-        return
-    same_line = module_text.one_line(text, from: keyword.start, to: cursor.current_span(c).start)
-    message: str @= "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
+    for d in use_told.missing_name(c.tokens, at: c.pos, text: text, keyword: keyword)
+        cursor.say(@c, d)
 
-    if same_line
-        message @ "expected the module's name after `use`, found " + cursor.found(c, text) + " — `use geom`, which reads `geom.hero` beside this file"
-    cursor.error(@c, code: "expected_module_name", message: message, span: keyword)
-
-    # Nothing is left of the broken line when the cursor has already crossed
-    # onto the next one, and recovering anyway would eat an innocent
-    # declaration whole — the failure panel 018's keyword-first shape exists to
-    # prevent. It reappears here because `use` plants no terminator. **Only
-    # the line goes**: a block below it is no `use`'s, and the dispatcher
-    # names it and reads it (defect 130's class, lane recovery-b8), where the
-    # recovery to the next declaration took it whole until 2026-10-02.
-    if same_line
-        skip_rest_of_line(@c, text, from: keyword)
+        # Nothing is left of the broken line when the cursor has already
+        # crossed onto the next one, and recovering anyway would eat an
+        # innocent declaration whole — the failure panel 018's keyword-first
+        # shape exists to prevent; it reappears because `use` plants no
+        # terminator. **Only the line goes**: a block below it is no `use`'s,
+        # and the dispatcher names it and reads it (defect 130's class, lane
+        # recovery-b8), where the recovery to the next declaration took it
+        # whole until 2026-10-02.
+        if module_text.one_line(text, from: keyword.start, to: cursor.current_span(c).start)
+            skip_rest_of_line(@c, text, from: keyword)
 
 ## Tests
 
@@ -556,3 +530,39 @@ test "a use whose mistake IS on its line quotes what it found"
     declaration(@c, @uses, text)
     assert c.diagnostics[0].code == "expected_module_name"
     assert c.diagnostics[0].message == "expected the module's name after `use`, found a number (`42`) — `use geom`, which reads `geom.hero` beside this file"
+
+# Defect 2451: a keyword where the path begins, and one past a `/`, is told
+# as the keyword at the word, under the place's own code, and the line read
+# no further; it was told a name was expected, and past a `/` that the `/`
+# joins two names with nothing between them.
+test "a word of the language where a path's part stands is told as the word"
+    first: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.kw_match, start: 4, end: 9)
+        token.made(.slash, start: 9, end: 10)
+        token.made(.ident, start: 10, end: 11)
+        token.made(.eof, start: 11, end: 11)
+    ]
+    c: cursor.Cursor @= cursor.new_cursor(first)
+    uses: [ast.Use] @= []
+    declaration(@c, @uses, "use match/x")
+    assert uses.len() == 0
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "expected_module_name"
+    assert c.diagnostics[0].span == token.Span(start: 4, end: 9)
+    assert c.diagnostics[0].message.slice(from: 0, to: 30) == "`match` is a keyword of Heroes"
+
+    later: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.slash, start: 5, end: 6)
+        token.made(.kw_match, start: 6, end: 11)
+        token.made(.eof, start: 11, end: 11)
+    ]
+    d: cursor.Cursor @= cursor.new_cursor(later)
+    declaration(@d, @uses, "use a/match")
+    assert uses.len() == 0
+    assert d.diagnostics.len() == 1
+    assert d.diagnostics[0].code == "module_path_wants_a_part"
+    assert d.diagnostics[0].span == token.Span(start: 6, end: 11)
+    assert d.diagnostics[0].message.slice(from: 0, to: 30) == "`match` is a keyword of Heroes"

@@ -1,0 +1,8 @@
+# Defect 2451, 2026-11-11: a keyword, or a word Heroes refuses, after `as`
+# was told that a name was expected, the refused word a second time by the
+# lexer; told once, as the word the file cannot bind.
+use a as fn  #~ expected_alias_name
+use b as match  #~ expected_alias_name
+
+function main()
+    print(1)

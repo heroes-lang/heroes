@@ -8,7 +8,9 @@
 # reaching past the path is kept. A report at the word a mark holds where
 # the entry's name stands is taken back too, `let` in `use <let>/x`, which
 # the parser tells with the entry (`package_wants_a_name`, defect 2432) and
-# the lexer told as a binding, `x = 5`. The parser applies it where it applies
+# the lexer told as a binding, `x = 5`; and so is a refused word where a
+# path's part or its alias stands, `let` in `use a/let`, which the parser
+# tells at the word (`use_told.hero`, defect 2451). The parser applies it where it applies
 # `unclosed.withdrawn` (`parse.hero`), for the strict and the control arm alike.
 #
 # Split from `package_mark.hero` at its line ceiling
@@ -24,7 +26,7 @@ function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic]) -> [diag.D
     out: [diag.Diagnostic] @= []
 
     for d in lexed
-        if !inside_a_path(said, span: d.span)
+        if !inside_a_path(said, span: d.span) && !word_retold(said, lexed: d)
             out @ out.push(d)
 
     return out
@@ -35,6 +37,24 @@ function inside_a_path(said: [diag.Diagnostic], span: token.Span) -> bool
         whole = d.code == "use_holds_an_address" || d.code == "package_unmarked" || d.code == "package_wants_a_name"
 
         if whole && d.span.start <= span.start && span.end <= d.span.end
+            return true
+
+    return false
+
+# Whether `lexed` is the lexer's report of a refused word that the parser
+# told again at the same word, where a `use` line's part or alias stands
+# (defect 2451: `let` in `use a/let`, told by the lexer as a binding's word):
+# the report's code is `reserved_word`, the lexer's one code for such a
+# word, and a parser report under one of the codes `use_told.hero` tells a
+# word with stands at its very span. Both are asked, since those codes stand
+# at the `use` keyword or a `/` too, where the lexer may report another
+# mistake (`continuation_outside_brackets` at a `use` alone on its line).
+function word_retold(said: [diag.Diagnostic], lexed: diag.Diagnostic) -> bool
+    if lexed.code != "reserved_word"
+        return false
+
+    for d in said
+        if d.span == lexed.span && (d.code == "expected_module_name" || d.code == "module_path_wants_a_part" || d.code == "package_wants_a_module" || d.code == "expected_alias_name")
             return true
 
     return false

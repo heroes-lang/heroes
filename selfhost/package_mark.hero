@@ -29,7 +29,9 @@
 # - `use <match>/parse`, a keyword or a word the lexer refuses as the entry's
 #   name, bare or quoted (defect 2432): no repair, the entry's name being the
 #   catalogue's to change (`module/entry_name.hero`, which the catalogue's
-#   reader asks too).
+#   reader asks too); and `use <json>/match`, such a word where the module's
+#   first part stands (defect 2451), told at it with no repair, as
+#   `parse/use_line.hero` tells it at any other part.
 
 use describe
 use diag
@@ -84,6 +86,13 @@ function read(tokens: [token.Token], at: i64, text: str) -> [diag.Diagnostic]
 
     if line.len() > 4 && line[3].kind == .dot && line[4].kind == .ident
         return [dot_after(line, text)]
+
+    # `use <json>/match`: the module's first part a word of the language
+    # (defect 2451), told at the word.
+    if line.len() > 4 && line[3].kind == .slash && line[4].span.start == line[3].span.end && entry_name.in_path(mark_line.text_of(text, line[4])).len() > 0
+        return [
+            refused(code: "package_wants_a_module", message: entry_name.in_path(mark_line.text_of(text, line[4])), span: line[4].span)
+        ]
 
     if line.len() < 5 || line[3].kind != .slash || line[4].kind != .ident
         return [

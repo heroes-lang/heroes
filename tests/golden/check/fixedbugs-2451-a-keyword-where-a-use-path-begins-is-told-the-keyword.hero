@@ -1,0 +1,9 @@
+# Defect 2451, 2026-11-11: a keyword where a `use` path begins was told only
+# that a module's name was expected, `found `match``; it is told as the
+# keyword it is, which no module or folder a `use` reaches is named.
+use match  #~ expected_module_name
+use match/x  #~ expected_module_name
+use true/x  #~ expected_module_name
+
+function main()
+    print(1)
