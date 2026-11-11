@@ -35,7 +35,7 @@
 # is one somebody made in a fetched tree, which is that tree's change.
 #
 # **And the folder a verb runs in, where it writes there** (defect 2479):
-# the build's cache, `build/` of that folder (`toolchain.cache_refused`),
+# the build's cache, `build/` of that folder (`cache_refused`),
 # and the program's folder of `new`, `add` and `fetch` when no `-C` names
 # one (`fetch/verb_place.hero`). Where the cache lives stays the compiler's
 # own; a verb that would write it into a placed tree is refused instead.
@@ -168,6 +168,24 @@ function refused(path: str) -> str
 # certain fix it leaves, the program's other files written all the same.
 function left(path: str) -> str
     return path + " was not written: it stands in a placed package's tree" + shown(path) + " under `" + placed_use.FOLDER + "/`, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; its certain fix is written where the package's source is"
+
+# Why the build's cache may not be written at `build`, `build/` of the folder
+# a command runs in, or "" where it may (defect 2479): a placed package's
+# tree is written by no writer, so a build, a run or a test started from
+# inside one is refused before the folder is made (`main.compiling`), and
+# `heroes doctor` tells it on the cache's row. Asked apart from
+# `toolchain.locate_toolchain`, which `doctor` asks for the runtime's row:
+# there the refusal read as a runtime not found. Moved here from
+# `cli/toolchain.hero` at batch 32's gate, which that file had passed §11's
+# 300 lines for, beside the two questions it asks.
+function cache_refused(build: str) -> str
+    if folder_within(build)
+        return here_refused(
+            writes: "the build's cache, `" + build + "/` of the folder this command runs in,",
+            place: build + "/",
+            instead: "run it from a folder outside them"
+        )
+    return ""
 
 ## Tests
 

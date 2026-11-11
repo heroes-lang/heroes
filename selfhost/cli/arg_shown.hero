@@ -1,0 +1,19 @@
+# An argument of the compiler's own command line as a message may quote it
+# (design.md §3.5): each byte that is not UTF-8 written by its value,
+# `caf<0xE9>.hero`, as `process.walk` names a file; `args_checked()` says
+# which argument is not text, and this what it holds. Split out of
+# `selfhost/main.hero` at batch 32's gate (2026-11-11), when two lanes'
+# additions met there and took it past §11's 300 lines.
+
+use cli/process
+
+extern "hero_os.h"
+    # An argument as the shown read gives a file.
+    function hero_args_shown(index: i64, @status: i64, @marks: i64) -> str
+
+# Argument `index`, after the compiler's own name, as a message may quote it.
+function written(index: i64) -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    got = hero_args_shown(index: index, status: @status, marks: @marks)
+    return process.written_value(answer: got, marks: marks)

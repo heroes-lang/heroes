@@ -24,6 +24,7 @@
 # environment, because "the language has no getenv" was a fact about
 # nobody having tried, not about the language: it is one extern.
 
+use cli/arg_shown
 use cli/argv
 use cli/before_reading
 use cli/check
@@ -37,6 +38,7 @@ use cli/io
 use cli/lex
 use cli/measure
 use cli/mutate
+use cli/placed_files
 use cli/probe
 use cli/process
 use cli/runtime_places
@@ -90,8 +92,6 @@ extern "hero_os.h"
     # 2250). A literal status below still goes through `exit`, whose path the
     # checker knows ends there.
     function hero_exit(code: i64)
-    # An argument as the shown read gives a file (`arg_written` below).
-    function hero_args_shown(index: i64, @status: i64, @marks: i64) -> str
 
 constant STACK_BYTES: i64
     268435456
@@ -146,7 +146,7 @@ function command(_: i64) -> i64
 
         match one
             .ok word => given @ given.push(word)
-            .err _   => given @ given.push(arg_written(at))
+            .err _   => given @ given.push(arg_shown.written(at))
 
         at @ at + 1
 
@@ -273,23 +273,13 @@ function command(_: i64) -> i64
 
     return cli_table.exit_code(verdict)
 
-# Argument `index`, after the compiler's own name, as a message may quote it:
-# each byte that is not UTF-8 written by its value, `caf<0xE9>.hero`, as
-# `process.walk` names a file. `args_checked()` says which argument is not
-# text, and not what it holds.
-function arg_written(index: i64) -> str
-    status: i64 @= 0
-    marks: i64 @= 0
-    got = hero_args_shown(index: index, status: @status, marks: @marks)
-    return process.written_value(answer: got, marks: marks)
-
 # The three verbs that need the toolchain, and the one place it is
 # located: a missing runtime is the tool being unable to run, which is
 # exit 2 whatever the verb.
 function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     # A build started from inside a placed package's tree would write its
     # cache there (defect 2479): refused before the toolchain is looked for.
-    placed = toolchain.cache_refused("build")
+    placed = placed_files.cache_refused("build")
 
     if placed.len() > 0
         io.eprint(text: "error: " + placed)

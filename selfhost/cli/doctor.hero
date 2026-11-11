@@ -12,6 +12,7 @@
 
 use cli/clang_floor
 use cli/io
+use cli/placed_files
 use cli/process
 use cli/publish
 use cli/read_back
@@ -123,7 +124,7 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
     # build/ must be creatable and writable, probed by writing, and never in
     # a placed package's tree, where a build refuses to write it (defect
     # 2479): until then the row said `writable` there.
-    placed = toolchain.cache_refused(build_dir)
+    placed = placed_files.cache_refused(build_dir)
 
     if placed.len() > 0
         out @ out.push(Check(name: "build cache", ok: false, detail: placed))
@@ -455,7 +456,7 @@ test "the build cache's row fails where the cache would stand in a placed packag
     assert got[4].ok
     assert got[5].name == "build cache"
     assert !got[5].ok
-    assert got[5].detail == toolchain.cache_refused(build)
+    assert got[5].detail == placed_files.cache_refused(build)
     assert got[5].detail == "the build's cache, `" + build + "/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
-    assert toolchain.cache_refused("build") == ""
+    assert placed_files.cache_refused("build") == ""
     assert !process.remove_tree(root).is_err()
