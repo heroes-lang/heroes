@@ -1,0 +1,31 @@
+# Fixed defect 2444, 2026-11-11, lane b31-ffi (found by lane b30-msg beside
+# defect 2430): a name another module declares as a function or a constant,
+# written where a type stands, was told only *no type named `Maker`*, and a
+# function of a module this file does not name was offered a near name's
+# rename, `bool`, where the same name of this file's own is told what it is.
+# Each is told so now, `not_a_type`, its module named: a function, a constant
+# in an array's element, an extern function, and a function only a module
+# this file does not name declares. No fix: which type was meant is the
+# author's. A file naming the module for nothing else is no longer told its
+# `use` is never used.
+use fixedbugs2444/geom
+use fixedbugs2444/mid
+
+function one(p: Maker) -> i64  #~ not_a_type
+    print(p)
+    return 1
+
+function two(p: [Limit]) -> i64  #~ not_a_type
+    print(p)
+    return 2
+
+function three(p: abs) -> i64  #~ not_a_type
+    print(p)
+    return 3
+
+function four(p: Tool) -> i64  #~ not_a_type
+    print(p)
+    return 4
+
+function main()
+    print(geom.Maker() + geom.Limit + mid.made() + geom.absolute(n: -2).to_i64() + geom.Spot(x: 1).x)

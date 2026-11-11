@@ -6,7 +6,9 @@
 # module this file does not name declares, `fixedbugs2430/far`'s `Tile`, is
 # told with the `use` the file lacks, as a value of it is. A used module's
 # function named as the type, `geom.Maker`, is no type there, and stays
-# `unknown_type`.
+# `unknown_type`. Since defect 2444 (2026-11-11) it is told what it is,
+# `not_a_type`, a function of `fixedbugs2430/geom`, as this file's own
+# function of the name would be.
 use fixedbugs2430/geom
 use fixedbugs2430/mid
 use fixedbugs2430/other
@@ -19,7 +21,7 @@ function far_one(t: Tile) -> i64  #~ needs_qualifying
     print(t)
     return 2
 
-function made(m: Maker) -> i64  #~ unknown_type
+function made(m: Maker) -> i64  #~ not_a_type
     print(m)
     return 3
 

@@ -313,6 +313,20 @@ test "a value in type position is named for what it is"
     assert r.out.diagnostics[0].code == "not_a_type"
     assert r.out.diagnostics[0].message == "`f` is a function, not a type"
 
+    # Another module's function is told the same, its module named, whether
+    # this file names the module or not (defect 2444).
+    for used in [true, false]
+        other: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 1)
+        other.module @ "u"
+
+        if used
+            resolved.declare_use(@other.out, from: "u", binding: "geom", module: "geom")
+        resolved.declare_top(@other.out, module: "geom", name: "f", decl: 0)
+        resolve_type(@other, a, s, decls, fn_node)
+        assert other.out.diagnostics.len() == 1 && other.out.diagnostics[0].code == "not_a_type"
+        assert other.out.diagnostics[0].message == "`f` is a function of module `geom`, not a type"
+        assert other.out.diagnostics[0].fixes.len() == 0
+
 test "a qualified type reaches next door, and only through a use"
     s = fixture()
     a: ast.Ast @= ast.new_ast()

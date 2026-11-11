@@ -26,10 +26,20 @@
 # resolves the name and asks nothing again. Where two such modules declare
 # it, which one was meant is the author's: a `guess`, the others named in a
 # note as this file writes them.
+#
+# **And a name another module declares only as a function or a constant**
+# (defect 2444): `use geom` and `p: Maker`, `geom` declaring `function
+# Maker()`, was told *no type named `Maker`*, and a function of a module
+# this file does not name was offered a near name's rename, where the same
+# name of this module's is told what it is (`resolve/types.hero`). It is told
+# so, `not_a_type`, the module named: the first in ascending order that this
+# file names, else the first of any. No fix: which type was meant is the
+# author's.
 
 use ast
 use diag
 use module/diagnostics
+use resolve/errors
 use resolve/qualified
 use resolve/state
 use resolved
@@ -50,6 +60,9 @@ function told(@r: state.Resolver, s: source.Source, decls: [ast.Decl], text: str
                 named @ named.push(one)
                 qualifiers @ qualifiers.push(local.must())
 
+    if declaring.len() == 0
+        return no_type_there(@r, decls, text: text, span: span)
+
     if named.len() == 0
         return qualified.outside_the_file(s, from: r.module, text: text, span: span, declaring: declaring)
     state.keyed_add(@r.module_reads, module: r.module, name: named[0])
@@ -67,6 +80,47 @@ function declares_type(out: resolved.Resolved, decls: [ast.Decl], module: str, n
     match decls[at.must()].kind
         .record_decl | .variant_decl                 => return true
         .function_decl | .constant_decl | .test_decl => return false
+
+# **A function or a constant of another module where a type stands**: told
+# as this module's own is, the module named, the first this file names read
+# by this file as the type case reads one; none where no other module
+# declares the name.
+function no_type_there(@r: state.Resolver, decls: [ast.Decl], text: str, span: token.Span) -> diag.Diagnostic?
+    first: diag.Diagnostic? @= fail(code: "absent", msg: "no other module declares this name")
+
+    for one in sort(resolved.modules_declaring(r.out))
+        if one == r.module || one == source.LIBRARY_MODULE
+            continue
+        what = declared_as(r.out, decls, module: one, name: text)
+
+        if what.is_err()
+            continue
+        said = errors.not_a_type(name: text, what: what.must() + " of module `" + one + "`", span: span)
+
+        if !resolved.binding_in(r.out, from: r.module, module: one).is_err()
+            state.keyed_add(@r.module_reads, module: r.module, name: one)
+            return ok(said)
+
+        if first.is_err()
+            first @ ok(said)
+
+    return first
+
+# What `module`'s top-level declaration named `name` is where it is no type,
+# as `resolve/types.hero` words this module's own; none for a type or none.
+function declared_as(out: resolved.Resolved, decls: [ast.Decl], module: str, name: str) -> str?
+    at = resolved.top_in(out, module: module, name: name)
+
+    if at.is_err()
+        return fail(code: "absent", msg: "no such name")
+
+    match decls[at.must()].kind
+        .function_decl fd =>
+            if fd.value.is_extern
+                return ok("an extern function")
+            return ok("a function")
+        .constant_decl                            => return ok("a constant")
+        .record_decl | .variant_decl | .test_decl => return fail(code: "absent", msg: "a type, or no value")
 
 # `needs_qualifying`'s words, and its fix `certain` where `others`, what this
 # file calls the other modules it names that declare the type, is empty.
