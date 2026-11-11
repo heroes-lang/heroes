@@ -33,16 +33,19 @@ use cli/response_file
 use cli/strings
 use cli/units
 use emit/ffi_lookup
+use emit/header_region
 
 # How clang marks an error a `-Werror` made, the bare word or one naming
 # its group.
 constant PROMOTED: str
     "[-Werror"
 
-# The line's own word (`emit/header_region.LINE_WORDS`), the one this
-# reading takes out.
-constant PROMOTING: str
-    "-Werror"
+# The line's own bare word, the one this reading takes out: the first of
+# `emit/header_region.LINE_WORDS`, which that module's test holds, so no
+# word this module could hand clang is written here (`cli/clang_jobs.hero`'s
+# defect 2355 test reads every flag a module writes).
+function promoting() -> str
+    return header_region.LINE_WORDS[0]
 
 # The refusal to read instead: clang's words without the line's `-Werror`,
 # the unit named on its last line as a refusal names it, and the words it
@@ -76,7 +79,7 @@ function without_line(words: [str]) -> [str]
     out: [str] @= []
 
     for word in words
-        if word != PROMOTING
+        if word != promoting()
             out @ out.push(word)
 
     return out
@@ -105,6 +108,7 @@ function asked(words: [str], unit: str, dir: str) -> str?
 ## Tests
 
 test "the line's bare -Werror alone is taken out, every -Werror= word kept"
+    assert promoting() == "-Werror"
     got = without_line(["-O0", "-Werror=return-type", "-Werror", "-Wno-error=#warnings"])
     assert got == ["-O0", "-Werror=return-type", "-Wno-error=#warnings"]
 
