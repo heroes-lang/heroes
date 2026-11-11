@@ -32,6 +32,7 @@ use module/offered_modules
 use module/packages
 use module/paths
 use module/placed
+use module/private
 use module/reached
 use module/spelling
 use source
@@ -202,9 +203,26 @@ function unmarked(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry
 
         if entry.editable
             certainty @ .certain
+    opening = "there is no module `" + name + "` of " + entry.whose + ", and `" + entry.written + "` is an entry of its catalogue" + entry.said + ": a package's module is written in angle brackets"
+
+    # A line the private rule refuses is offered by no message (defect
+    # 2452): this one says so in the line's place, the one message for the
+    # brackets forgotten on a module of a package's own `internal` folder.
+    private_said = private.offered_said(
+        from: source.module_at(s, used.span.start),
+        meant: "<" + entry.meant + ">/" + rest,
+        marked: marked
+    )
+
+    if private_said.len() > 0
+        return diag.new_diagnostic(
+            code: "package_unmarked",
+            message: opening + ", and " + private_said,
+            span: used.name
+        )
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "package_unmarked",
-        message: "there is no module `" + name + "` of " + entry.whose + ", and `" + entry.written + "` is an entry of its catalogue" + entry.said + ": a package's module is written in angle brackets — `use " + marked + "`",
+        message: opening + " — `use " + marked + "`",
         span: used.name
     )
     d.fixes @ d.fixes.push(

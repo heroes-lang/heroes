@@ -4,8 +4,10 @@
 # modules under it, Go's rule for `internal` since Go 1.4. One rule in one
 # place, asked of every `use` line by the graph (`modules.errors`), and of
 # every line a message offers: what a missing `use` is offered
-# (`module/answering.hero`, `resolve/qualified.hero`) and the lines a bare
-# `use` of a package's entry is offered (`module/package_told.hero`).
+# (`module/answering.hero`, `resolve/qualified.hero`), the lines a bare
+# `use` of a package's entry is offered (`module/package_told.hero`), and
+# the line a `use` with its brackets forgotten is offered
+# (`package_told.unmarked`, defect 2452, through `offered_said`).
 #
 # It stood in `package_told.hero`, what a `use` reaching a package is told,
 # until defect 2431's repair took that file past CLAUDE.md §11's ceiling; the
@@ -21,12 +23,22 @@ use source
 # Every `use` naming a private module from outside its owner:
 # `<core>/strings/internal/scan` is `<core>/strings`'s, the module before the
 # LAST `internal` part, and only that module and the modules under it name it.
+#
+# **Asked of a module the compilation holds, and of no other** (defect
+# 2452): a line naming a module no file holds is told by the graph's unknown
+# tellers, which `modules.errors` asks first, once a line. It was told here
+# as well, a second message, and of a name no tree holds: `use
+# core/internal/scan`, its brackets forgotten, was refused as private to a
+# folder `core` the program does not have.
 function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= found
 
     for used in uses
         from = source.module_at(s, used.span.start)
         name = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
+
+        if !held(s, name: name)
+            continue
 
         if !reaches(from: from, name: name)
             owner = owner_of(name)
@@ -35,6 +47,25 @@ function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [d
             )
 
     return out
+
+# Whether a file of the compilation is the module `name`.
+function held(s: source.Source, name: str) -> bool
+    for f in s.files
+        if f.module == name
+            return true
+
+    return false
+
+# What a line a message would offer is told where the module `from`, which
+# the line stands in, may not name it, "" where it may (defect 2452): the
+# line, `use <marked>`, and the module it reaches, `meant`, the line's own
+# spelling and the compilation's. The message says it in the offered line's
+# place, and offers no line the graph would refuse.
+function offered_said(from: str, meant: str, marked: str) -> str
+    if reaches(from: from, name: meant)
+        return ""
+    owner = owner_of(marked)
+    return "`use " + marked + "` would name a module private to `" + owner + "`: " + placed_use.PRIVATE_RULE + "; name what `" + owner + "` offers instead"
 
 # Whether the module `from` may name `name`: `name` stands under no
 # `internal` folder, or `from` is the module that folder belongs to or a
@@ -60,3 +91,6 @@ test "a private module is its owner's and its owner's modules' alone"
     assert !reaches(from: "<core>/stringsx", name: "<core>/strings/internal/scan")
     assert !reaches(from: "main", name: "lib/internal/strs")
     assert reaches(from: "main", name: "lib/strs")
+    assert offered_said(from: "main", meant: "<core>/strs", marked: "<core>/strs") == ""
+    assert offered_said(from: "<core>/strings", meant: "<core>/internal/scan", marked: "<core>/internal/scan") == ""
+    assert offered_said(from: "<json>/c", meant: "<core>/internal/scan", marked: "<text>/internal/scan") == "`use <text>/internal/scan` would name a module private to `<text>`: " + placed_use.PRIVATE_RULE + "; name what `<text>` offers instead"

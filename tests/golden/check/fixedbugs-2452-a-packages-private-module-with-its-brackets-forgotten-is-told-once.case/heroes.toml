@@ -1,0 +1,5 @@
+[dependencies.core]
+path = "vendor/core"
+
+[dependencies.json]
+path = "vendor/json"
