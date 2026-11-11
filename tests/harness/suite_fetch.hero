@@ -19,7 +19,15 @@
 #                    by the lines of `git/<name>.tags`
 #     idx/           a static index, read where it stands and never copied,
 #                    so its file that is not text needs no copy
+#     links          `<name> <target>` a line, a symbolic link made in the
+#                    case's scratch folder before its first command,
+#                    holding `<target>` as written (defect 2474)
 #     expected       the transcript, byte for byte
+#
+# **No link is ever made in the tree**: a case's links are made in its
+# scratch folder with `ln -s`, as `case_setting.hero` makes a folder case's,
+# and a case with links is skipped by name where `ln` is not the machine's,
+# Windows.
 #
 # **No case reaches the network**: an index is a folder of this repository,
 # read over `file://`, and a git source a repository made on the fly; the
@@ -118,10 +126,23 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
     name = last_part(dir)
     work = scratch + "/fetch/" + name.slice(from: 0, to: name.len() - 5)
     label = "fetch/" + name
+
+    if links_of(dir).len() > 0 && shell.exe_suffix() == ".exe"
+        report.keep_skip(
+            @r,
+            label: label,
+            detail: "  the case makes a symbolic link with `ln -s` before its first command, and this platform has no `ln`"
+        )
+        return
     made = made_work(scratch: scratch, dir: dir, work: work)
 
     if made.is_err()
         report.keep_failure(@r, label: label, detail: "  the case's folders could not be made: " + why(made))
+        return
+    linked = links_made(scratch: scratch, dir: dir, work: work)
+
+    if linked.is_err()
+        report.keep_failure(@r, label: label, detail: "  the case's links could not be made: " + why(linked))
         return
     got = transcript(scratch: scratch, compiler: compiler, dir: dir, work: work)
 
@@ -170,6 +191,37 @@ function made_work(scratch: str, dir: str, work: str) -> ()?
             copied(from: source, to: at)?
             tags = read_file(source + ".tags").default("")
             committed(scratch: scratch, at: at, tags: lines_of(tags))?
+
+    return ok()
+
+# The case's `links` lines, blank ones left out.
+function links_of(dir: str) -> [str]
+    out: [str] @= []
+
+    for line in lines_of(read_file(dir + "/links").default(""))
+        if line.len() > 0
+            out @ out.push(line)
+
+    return out
+
+# Each link the case names made in its scratch folder, `ln -s <target>
+# <work>/<name>`, the target as written, so a relative one is read from the
+# link's own folder, as the kernel reads it; a line that is not two words
+# is refused with the case's file named.
+function links_made(scratch: str, dir: str, work: str) -> ()?
+    for line in links_of(dir)
+        parts = strings.split_on(text: line, byte: 32)
+
+        if parts.len() != 2
+            return fail(code: "links", msg: dir + "/links holds `" + line + "`, and a link is `<name> <target>`")
+        name = work + "/" + parts[0]
+        made = shell.run(scratch: scratch, program: "ln", words: ["ln", "-s", parts[1], name])?
+
+        if made.code != 0
+            return fail(
+                code: "links",
+                msg: "`ln -s " + parts[1] + " " + name + "` exited " + made.code.to_str() + ": " + made.err
+            )
 
     return ok()
 
@@ -366,3 +418,18 @@ test "a path's last part and folder are asked of every byte, the first included 
     assert folder_of("..") == "."
     assert folder_of("file.tar.gz") == "."
     assert folder_of("tests/golden/fetch/file.tar.gz") == "tests/golden/fetch"
+
+test "a case's link is two words, and a line of another shape is refused before any link is made (defect 2474)"
+    dir = "build/selftest-fetch-links"
+    assert !shell.remove_tree(dir).is_err()
+    assert !shell.mkdir_all(dir).is_err()
+    assert links_of(dir).len() == 0
+    assert !write_file(path: dir + "/links", text: "alone\n\nlnk app/heroes.packages\n").is_err()
+    assert links_of(dir) == ["alone", "lnk app/heroes.packages"]
+
+    match links_made(scratch: dir, dir: dir, work: dir + "/work")
+        .ok _  => assert false
+        .err e => assert e.msg == dir + "/links holds `alone`, and a link is `<name> <target>`"
+
+    assert !shell.is_directory(dir + "/work")
+    assert !shell.remove_tree(dir).is_err()

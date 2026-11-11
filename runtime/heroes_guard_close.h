@@ -296,6 +296,7 @@
 #pragma pop_macro("hero_fs_remove")
 #pragma pop_macro("hero_fs_rename")
 #pragma pop_macro("hero_fs_replace")
+#pragma pop_macro("hero_fs_resolved_shown")
 #pragma pop_macro("hero_fs_set_flag")
 #pragma pop_macro("hero_fs_set_mode")
 #pragma pop_macro("hero_fs_symlink")

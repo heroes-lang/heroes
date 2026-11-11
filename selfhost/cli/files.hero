@@ -1,8 +1,9 @@
 # What is at a path, and a file replaced whole: the machine's half of
 # rewriting a file whose name the author gave (design.md §1.12, §3.1; defect
-# 136). Where a write lands once its links are followed, what is there,
-# whether it may be written, and a new file staged with the old one's
-# identity and then put in its place. The C is `runtime/parts/replace.c`,
+# 136). Where a write lands once its links are followed, the place a path
+# names as the filesystem resolves it (defect 2474), what is there, whether
+# it may be written, and a new file staged with the old one's identity and
+# then put in its place. The C is `runtime/parts/replace.c`,
 # which carries why each call exists and what was measured; the policy that
 # asks these questions, and the words said when one refuses, are
 # `cli/publish.hero`'s.
@@ -17,6 +18,7 @@ use cli/process
 # of it (panel 171).
 extern "hero_os.h"
     function hero_fs_landing(path: cstr lent) -> str
+    function hero_fs_resolved_shown(path: cstr lent, @status: i64, @marks: i64) -> str
     function hero_fs_kind(path: cstr lent) -> i64
     function hero_fs_links(path: cstr lent) -> i64
     function hero_fs_writable(path: cstr lent) -> i64
@@ -32,6 +34,7 @@ extern "hero_os.h"
     function hero_fs_flagged(path: cstr lent) -> i64
     function hero_fs_set_flag(path: cstr lent) -> i64
     constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_TEXT: i64
     constant HERO_OS_UNSUPPORTED: i64
     constant HERO_FS_ABSENT: i64
     constant HERO_FS_FILE: i64
@@ -100,6 +103,25 @@ function landing(path: str) -> str?
     if found.len() == 0
         return fail(code: "no_landing", msg: process.because())
     return ok(found)
+
+# The place `path` names as the filesystem resolves it (defect 2474): whole,
+# every symbolic link on the way followed, a folder's and the last part's
+# alike, and the parts not there yet written as `path` writes them. A byte
+# that is not UTF-8, which a link's target may hold, is written by its value,
+# as a walk names such a file, so the answer is a place to ask about and to
+# tell, never one to open. The failure's message is the reason alone: a loop
+# of links, a folder that cannot be searched, a path too long.
+function resolved(path: str) -> str?
+    status: i64 @= 0
+    marks: i64 @= 0
+    found = hero_fs_resolved_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_OK
+        return ok(found)
+
+    if status == HERO_OS_NOT_TEXT
+        return ok(process.written_value(answer: found, marks: marks))
+    return fail(code: "unresolved", msg: process.because())
 
 # How many names the file at `path` has, following a link; -1 where it
 # cannot be asked.

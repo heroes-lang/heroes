@@ -208,6 +208,205 @@ HeroStr hero_fs_landing(const char *path) {
 #endif
 }
 
+/* THE PLACE A PATH NAMES, AS THE FILESYSTEM RESOLVES IT (defect 2474): its
+ * absolute path, every symbolic link on the way followed, a folder's as well
+ * as the last part's, so a question of its folders' names is asked of where
+ * a write through it lands and never of how it was spelled. Until it,
+ * `selfhost/cli/placed_files.hero` asked the letters alone, and `-o lnk/out.c`,
+ * `lnk` a link to `heroes.packages/`, wrote into a placed tree at exit 0, as
+ * a relative `-o` did from a folder inside one (measured on this Mac).
+ *
+ * `hero_fs_landing` follows the LAST part alone; this follows every part,
+ * and `..` after a link is read as the kernel reads it, from the link's
+ * target: `lnk/..` is the folder holding `heroes.packages/`, never the one
+ * holding `lnk`. The parts after the last one that is there are written as
+ * the path writes them, a separator before each, so a file not made yet has
+ * a place: being nothing yet, they hold no link. A dangling link is followed
+ * as `hero_fs_landing` follows one, since a write through it creates what it
+ * names, forty deep at most (ELOOP). Separators at the end say nothing a
+ * place has, and the caller keeps its own.
+ *
+ * The answer is the shown read's (`hero_bytes_shown`, parts/os.c): HERO_OS_OK
+ * and the place, HERO_OS_NOT_TEXT and its marks where its bytes are not UTF-8,
+ * a link's target holding whatever bytes were written into it. HERO_OS_FAILED
+ * and "", `hero_fs_why` saying why, where the place cannot be resolved: an
+ * empty path, a loop of links, a folder on the way that cannot be searched, a
+ * path past HERO_FS_PATH_MAX. On POSIX each of those is a path the kernel's
+ * own walk refuses at a write as well, which the caller's test holds where a
+ * loop can be made.
+ *
+ * POSIX asks `realpath`, the C library's own walk, of the longest part of the
+ * path that is there. Windows opens that part as `hero_fs_landing` opens a
+ * link, FILE_FLAG_BACKUP_SEMANTICS following every link and junction, and asks
+ * `GetFinalPathNameByHandleW`; a device, `NUL`, has no folders and answers as
+ * it is written; a dangling link there is no answer, as `hero_fs_landing`'s
+ * Windows arm gives none. UNRUN on Windows, and not compiled there either:
+ * every measurement of this door is this Mac's. */
+
+/* `path` with its separators at the end taken away, the root's own kept:
+ * `/`, and on Windows `\` and `C:\`. */
+static void hero_fs_unslashed(char *path) {
+    size_t n = strlen(path);
+#if defined(_WIN32)
+    while (n > 1 && (path[n - 1] == '/' || path[n - 1] == '\\') && !(n == 3 && path[1] == ':')) path[--n] = '\0';
+#else
+    while (n > 1 && path[n - 1] == '/') path[--n] = '\0';
+#endif
+}
+
+/* Where `path`'s last separator stands, NULL where it holds none. */
+static char *hero_fs_last_separator(char *path) {
+    char *slash = strrchr(path, '/');
+#if defined(_WIN32)
+    char *back = strrchr(path, '\\');
+    if (back != NULL && (slash == NULL || back > slash)) slash = back;
+#endif
+    return slash;
+}
+
+/* `found`, the resolved part, and `tail`, the parts not there yet, as one
+ * shown answer; the root's own separator never doubled. */
+static HeroStr hero_fs_joined_shown(const char *found, const char *tail, int64_t *status, int64_t *marks) {
+    char whole[HERO_FS_PATH_MAX];
+    size_t f = strlen(found);
+    size_t t = strlen(tail);
+    if (f > 0 && t > 0 && (found[f - 1] == '/' || found[f - 1] == '\\')) f -= 1;
+    if (f + t >= sizeof whole) {
+        hero_fs_why_code = -(int64_t)ENAMETOOLONG;
+        *status = HERO_OS_FAILED;
+        return hero_str_from_bytes("", 0);
+    }
+    memcpy(whole, found, f);
+    memcpy(whole + f, tail, t + 1);
+    return hero_bytes_shown(whole, (int64_t)(f + t), status, marks);
+}
+
+HeroStr hero_fs_resolved_shown(const char *path, int64_t *status, int64_t *marks) {
+    hero_fs_why_code = 0;
+    *marks = 0;
+    *status = HERO_OS_FAILED;
+    char pending[HERO_FS_PATH_MAX];
+    char tail[HERO_FS_PATH_MAX];
+    size_t length = strlen(path);
+    if (length == 0 || length >= sizeof pending) {
+        hero_fs_why_code = length == 0 ? -(int64_t)ENOENT : -(int64_t)ENAMETOOLONG;
+        return hero_str_from_bytes("", 0);
+    }
+    memcpy(pending, path, length + 1);
+    tail[0] = '\0';
+    size_t tail_length = 0;
+#if defined(_WIN32)
+    const char separator = '\\';
+#else
+    const char separator = '/';
+    int hops = 0;
+#endif
+    for (;;) {
+        hero_fs_unslashed(pending);
+#if defined(_WIN32)
+        HANDLE h = CreateFileA(pending, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (h != INVALID_HANDLE_VALUE) {
+            /* A device has no folders: `NUL` answers as it is written. */
+            if (GetFileType(h) != FILE_TYPE_DISK) {
+                CloseHandle(h);
+                return hero_fs_joined_shown(pending, tail, status, marks);
+            }
+            wchar_t final[HERO_FS_PATH_MAX];
+            DWORD got = GetFinalPathNameByHandleW(h, final, (DWORD)HERO_FS_PATH_MAX, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+            if (got == 0 || got >= (DWORD)HERO_FS_PATH_MAX) {
+                hero_fs_why_code = got == 0 ? (int64_t)GetLastError() : -(int64_t)ERROR_FILENAME_EXCED_RANGE;
+                CloseHandle(h);
+                return hero_str_from_bytes("", 0);
+            }
+            CloseHandle(h);
+            /* `\\?\C:\dir` as `hero_fs_landing` reads it: the prefix goes
+             * for a path on a drive, a UNC or volume path keeps it. */
+            const wchar_t *at = final;
+            if (got > 6 && wcsncmp(final, L"\\\\?\\", 4) == 0 && final[5] == L':') at = final + 4;
+            int64_t bytes_length = 0;
+            char *bytes = hero_win_bytes(at, &bytes_length);
+            HeroStr shown = hero_fs_joined_shown(bytes, tail, status, marks);
+            hero_release(bytes);
+            return shown;
+        }
+        DWORD e = GetLastError();
+        int absent = e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND;
+        /* A dangling link: no answer, as `hero_fs_landing` gives none here. */
+        if (!absent || hero_fs_is_surrogate(pending)) {
+            hero_fs_why_code = (int64_t)e;
+            return hero_str_from_bytes("", 0);
+        }
+#else
+        char found[HERO_FS_PATH_MAX];
+        if (realpath(pending, found) != NULL) return hero_fs_joined_shown(found, tail, status, marks);
+        int e = errno;
+        if (e != ENOENT && e != ENOTDIR) {
+            hero_fs_why_code = (int64_t)e;
+            return hero_str_from_bytes("", 0);
+        }
+        struct stat info;
+        if (lstat(pending, &info) == 0 && S_ISLNK(info.st_mode)) {
+            /* A dangling link: its target takes its place, read from the
+             * folder holding the link where it is relative. */
+            hops += 1;
+            if (hops > 40) {
+                hero_fs_why_code = -(int64_t)ELOOP;
+                return hero_str_from_bytes("", 0);
+            }
+            char target[HERO_FS_PATH_MAX];
+            ssize_t got = readlink(pending, target, sizeof target - 1);
+            if (got < 0) {
+                hero_fs_why_code = (int64_t)errno;
+                return hero_str_from_bytes("", 0);
+            }
+            if ((size_t)got >= sizeof target - 1) {
+                hero_fs_why_code = -(int64_t)ENAMETOOLONG;
+                return hero_str_from_bytes("", 0);
+            }
+            target[got] = '\0';
+            char *slash = strrchr(pending, '/');
+            size_t keep = target[0] == '/' || slash == NULL ? 0 : (size_t)(slash - pending) + 1;
+            if (keep + (size_t)got >= sizeof pending) {
+                hero_fs_why_code = -(int64_t)ENAMETOOLONG;
+                return hero_str_from_bytes("", 0);
+            }
+            memcpy(pending + keep, target, (size_t)got + 1);
+            continue;
+        }
+#endif
+        /* Not there: its last part goes before the tail, and the folder
+         * holding it is asked. The working folder and a root that are not
+         * there leave nothing to ask. */
+        char *slash = hero_fs_last_separator(pending);
+        const char *last = slash == NULL ? pending : slash + 1;
+        size_t last_length = strlen(last);
+        if (last_length == 0 || strcmp(pending, ".") == 0) {
+            hero_fs_why_code = (int64_t)e;
+            return hero_str_from_bytes("", 0);
+        }
+        if (1 + last_length + tail_length >= sizeof tail) {
+            hero_fs_why_code = -(int64_t)ENAMETOOLONG;
+            return hero_str_from_bytes("", 0);
+        }
+        memmove(tail + 1 + last_length, tail, tail_length + 1);
+        tail[0] = separator;
+        memcpy(tail + 1, last, last_length);
+        tail_length += 1 + last_length;
+        if (slash == NULL) {
+            memcpy(pending, ".", 2);
+        } else if (slash == pending) {
+            slash[1] = '\0';
+#if defined(_WIN32)
+        } else if (slash == pending + 2 && pending[1] == ':') {
+            slash[1] = '\0';
+#endif
+        } else {
+            *slash = '\0';
+        }
+    }
+}
+
 /* What is at `path`: the LINK itself where it is one, as `lstat` answers.
  * HERO_FS_OTHER is what is neither a file, a directory nor a link: a device, a
  * FIFO, a socket, on Windows `NUL`. HERO_FS_UNKNOWN when the question itself

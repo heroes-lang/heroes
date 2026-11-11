@@ -27,7 +27,7 @@ function program_of(inv: argv.Invocation) -> str?
     # A placed package's tree is written by no verb (defect 2462): a
     # catalogue, a program or a placed tree made there moves its sum.
     if placed_files.folder_within(folder.must())
-        return fail(code: "bad_usage", msg: placed_files.named_refused(flag: "-C", place: folder.must()))
+        return fail(code: "bad_usage", msg: placed_files.folder_refused(flag: "-C", folder: folder.must()))
 
     if folder.must()[folder.must().len() - 1] == '/'
         return ok(folder.must())

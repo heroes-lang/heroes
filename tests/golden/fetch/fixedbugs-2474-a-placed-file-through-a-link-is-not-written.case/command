@@ -1,0 +1,4 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2474-a-placed-file-through-a-link-is-not-written.case/idx -C <work>/app
+check <work>/file.hero --apply --in-place
+build <work>/app/main.hero --emit-c -o <work>/file.hero
+check <work>/app/main.hero
