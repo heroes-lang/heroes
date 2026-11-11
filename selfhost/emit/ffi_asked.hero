@@ -151,6 +151,12 @@ record Asked
     # 2062), asked of a refused build whose clang found no such member.
     nested: {str: Nested}
 
+    # Each bound function whose result question a function-like macro of its
+    # name refused for the count of its arguments (defect 2467), with whether
+    # the macro takes `more` or `fewer` than the declaration gives it: the
+    # call never reached a function, so no result type is read for it.
+    miscounted: {str: str}
+
 # Where a bound name's object-like macros end (defect 2061): the name its
 # expansion leaves standing, whether that name is a macro that expands only
 # where it is called, which the parenthesised probe never expands, and the
@@ -188,7 +194,8 @@ function nothing() -> Asked
         widths: {},
         switched: {},
         reached: {},
-        nested: {}
+        nested: {},
+        miscounted: {}
     )
 
 # The unit's C: `headers`, then what is said again and asked of each

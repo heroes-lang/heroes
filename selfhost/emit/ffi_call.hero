@@ -238,6 +238,44 @@ function macro_call(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: conta
         return fail(code: "none", msg: "no macro is declared at that line")
     return ffi_declared.macro_name(s, tree, decls, name: found.must().name)
 
+# **A declaration with parameters of a name the header defines as a macro
+# that takes another count of them** (defect 2467): `curl/curl.h` writes
+# `#define curl_easy_setopt(handle,opt,param) curl_easy_setopt(handle,opt,param)`
+# so that a call passes exactly three, and a declaration of two was told it
+# *returns `CURLcode (CURL *, CURLoption, ...)`*, the function's type clang
+# names once it has refused the macro's invocation and read the bare name.
+# Every call this program's C writes of the name goes through the macro,
+# whatever function stands behind it, so the declaration is panel 185 R1's
+# bound macro, `ffi_macro_name`, its draft leaving the parameters to the
+# macro's documentation, since the declaration's count is the mistake. Told
+# at each declaration in order; one with no parameters is `macro_call`'s.
+function macro_counted(s: source.Source, tree: ast.Ast, decls: [ast.Decl], miscounted: {str: str}) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for index in range(from: 0, to: decls.len())
+        name = source.span_text(s, decls[index].name)
+        count = miscounted[name]
+        found = ffi_lookup.declared_at(s, decls, index: index)
+
+        if count.is_err() || found.is_err() || found.must().is_constant || source.is_library(s, decls[index].name.start)
+            continue
+        given: i64 @= 0
+
+        match decls[index].kind
+            .function_decl fd                                          => given @ fd.value.params.len()
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+        if given > 0
+            d: diag.Diagnostic @= diag.new_diagnostic(
+                code: "ffi_macro_name",
+                message: "`" + found.must().header + "` defines `" + name + "` as a macro that takes " + count.must() + " arguments than the " + given.to_str() + " this declaration gives it, and every call of it this program's C writes goes through the macro, which has no parameter types for clang to hold this declaration to",
+                span: found.must().span
+            )
+            d.notes @ d.notes.push(ffi_declared.macro_repair(s, tree, decls, name: name, counted: false))
+            out @ out.push(d)
+
+    return out
+
 # The type a `constant` of the declared result would carry, or the words for
 # the one a declaration with no result leaves to the author.
 function constant_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> str
@@ -375,3 +413,26 @@ test "a name the header has as an object, a value or a type is told as what it i
     ).is_err()
     assert returning(c_type: "FILE *", callee: "hero_stdin") == "FILE *hero_stdin"
     assert returning(c_type: "char[10]", callee: "hero_buf") == "<its C type> hero_buf"
+
+# **A bound function a macro refused for its count is told as the macro**
+# (defect 2467): at each declaration with parameters, the count and which
+# way named, the draft's parameters left to the macro; a declaration with
+# none is `macro_call`'s, and a name no macro refused is told nothing.
+test "a bound function a macro refused for its count is told as the macro, its draft's parameters the macro's (defect 2467)"
+    text = "extern \"own.h\"\n    function f2467(a: i32, b: i32) -> i32\n    function g2467() -> i32\n    function h2467(a: i32) -> i32\n\nfunction main()\n    print(f2467(a: 1, b: 2) + g2467() + h2467(a: 3))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    miscounted: {str: str} @= {}
+    miscounted["f2467"] @ "fewer"
+    miscounted["g2467"] @ "more"
+    told = macro_counted(s, parsed.tree, parsed.decls, miscounted: miscounted)
+    assert told.len() == 1 && told[0].code == "ffi_macro_name" && told[0].fixes.len() == 0
+    assert told[0].message == "`own.h` defines `f2467` as a macro that takes fewer arguments than the 2 this declaration gives it, and every call of it this program's C writes goes through the macro, which has no parameter types for clang to hold this declaration to"
+    assert ffi_lookup.has(
+        text: told[0].notes[0],
+        needle: "`static inline <C result> hero_f2467(<its parameters, in C>) { return f2467(<their names>); }`"
+    )
+    assert macro_counted(s, parsed.tree, parsed.decls, miscounted: {}).len() == 0

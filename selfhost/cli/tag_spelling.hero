@@ -122,7 +122,8 @@ function asked_with(types: {str: str}) -> ffi_asked.Asked
         widths: unsized,
         switched: {},
         reached: {},
-        nested: {}
+        nested: {},
+        miscounted: {}
     )
 
 test "a bare tag the header answers as a struct's is learned, and no other answer is (defect 400)"

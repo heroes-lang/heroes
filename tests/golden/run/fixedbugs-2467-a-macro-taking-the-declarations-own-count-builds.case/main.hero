@@ -1,0 +1,9 @@
+# fixedbugs, defect 2467, lane b31-ffi, 2026-11-11: `own.h` defines `f2467`
+# as a function and again as a macro of the same two arguments, which the
+# declaration gives. The call through the macro is the function's, so nothing
+# is refused: a macro is told for its count only where the count differs.
+extern "own.h"
+    function f2467(a: i32, b: i32) -> i32
+
+function main()
+    print(f2467(a: 1, b: 2))

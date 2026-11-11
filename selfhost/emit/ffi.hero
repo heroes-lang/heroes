@@ -111,6 +111,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         for told in ffi_reach.told(s, tree, decls, line: line, reached: asked.reached)
             found @ ffi_lookup.add_once(found, d: told)
 
+    # A bound function whose call a function-like macro of its name refuses
+    # for the count of its arguments (`emit/ffi_call.hero`, defect 2467): the
+    # return assertion's call never reached a function, so no reader of it
+    # speaks for the result.
+    for told in ffi_call.macro_counted(s, tree, decls, miscounted: asked.miscounted)
+        found @ ffi_lookup.add_once(found, d: told)
+
     # A number's constant whose value C leaves undefined (defect 2072), FIRST:
     # its accessor's line comes after the constancy assertion's, which refuses
     # `1 / 0` too, and *an object or a macro that expands to one* is not why.
@@ -121,7 +128,15 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
             found @ ffi_lookup.add_once(found, d: undefined.must())
 
     for line in ffi_constant_value.assertion_lines(text: text)
-        wrong = ffi_declared.wrong_type(s, decls, tree, line: line, results: asked.results, word_bits: word_bits)
+        wrong = ffi_declared.wrong_type(
+            s,
+            decls,
+            tree,
+            line: line,
+            results: asked.results,
+            miscounted: asked.miscounted,
+            word_bits: word_bits
+        )
 
         if !wrong.is_err()
             found @ ffi_lookup.add_once(found, d: wrong.must())
