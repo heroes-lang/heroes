@@ -37,6 +37,7 @@ use cli/flags
 use cli/io
 use cli/link_flags
 use cli/opening
+use cli/placed_files
 use cli/process
 use cli/publish
 use cli/runtime_key
@@ -108,6 +109,22 @@ record Toolchain
 # unit is written** (defect 2259): one of another release was refused by the
 # stamp in every unit, told as *internal error* at exit 2, twice a build, and
 # `heroes doctor`, which asks here too, called it ok.
+# Why the build's cache may not be written at `build`, `build/` of the folder
+# a command runs in, or "" where it may (defect 2479): a placed package's
+# tree is written by no writer, so a build, a run or a test started from
+# inside one is refused before the folder is made (`main.compiling`), and
+# `heroes doctor` tells it on the cache's row. Asked apart from
+# `locate_toolchain`, which `doctor` asks for the runtime's row: there the
+# refusal read as a runtime not found.
+function cache_refused(build: str) -> str
+    if placed_files.folder_within(build)
+        return placed_files.here_refused(
+            writes: "the build's cache, `" + build + "/` of the folder this command runs in,",
+            place: build + "/",
+            instead: "run it from a folder outside them"
+        )
+    return ""
+
 function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
     if hint.len() > 0
         missing = runtime_places.missing_at(hint)

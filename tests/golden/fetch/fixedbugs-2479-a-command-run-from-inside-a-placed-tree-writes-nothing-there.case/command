@@ -1,0 +1,11 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2479-a-command-run-from-inside-a-placed-tree-writes-nothing-there.case/idx -C <work>/app
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && build ../../main.hero --emit-c -o <work>/out.c
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && build ../../main.hero -o <work>/out
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && run ../../main.hero
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && test ../../main.hero
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && new mine
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && add json --index file://../../../../../tests/golden/fetch/fixedbugs-2479-a-command-run-from-inside-a-placed-tree-writes-nothing-there.case/idx
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && fetch
+cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && check parse.hero
+cd <work>/app && build main.hero --emit-c -o <work>/out.c
+check <work>/app/main.hero

@@ -280,6 +280,13 @@ function arg_written(index: i64) -> str
 # located: a missing runtime is the tool being unable to run, which is
 # exit 2 whatever the verb.
 function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
+    # A build started from inside a placed package's tree would write its
+    # cache there (defect 2479): refused before the toolchain is looked for.
+    placed = toolchain.cache_refused("build")
+
+    if placed.len() > 0
+        io.eprint(text: "error: " + placed)
+        return .failed_exit
     hint = runtime_places.runtime_hint()
 
     if hint.is_err()

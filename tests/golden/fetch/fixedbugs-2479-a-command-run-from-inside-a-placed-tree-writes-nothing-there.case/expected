@@ -1,0 +1,61 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2479-a-command-run-from-inside-a-placed-tree-writes-nothing-there.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes build ../../main.hero --emit-c -o <work>/out.c
+exit 2
+stdout:
+stderr:
+error: the build's cache, `build/` of the folder this command runs in, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/build/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes build ../../main.hero -o <work>/out
+exit 2
+stdout:
+stderr:
+error: the build's cache, `build/` of the folder this command runs in, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/build/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes run ../../main.hero
+exit 2
+stdout:
+stderr:
+error: the build's cache, `build/` of the folder this command runs in, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/build/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes test ../../main.hero
+exit 2
+stdout:
+stderr:
+error: the build's cache, `build/` of the folder this command runs in, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/build/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes new mine
+exit 2
+stdout:
+stderr:
+error[bad_usage]: the program's folder, the one this command runs in with no `-C`, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them, or name one with `-C`; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2479-a-command-run-from-inside-a-placed-tree-writes-nothing-there.case/idx
+exit 2
+stdout:
+stderr:
+error[bad_usage]: the program's folder, the one this command runs in with no `-C`, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them, or name one with `-C`; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes fetch
+exit 2
+stdout:
+stderr:
+error[bad_usage]: the program's folder, the one this command runs in with no `-C`, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-69906500256b6ec6/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them, or name one with `-C`; nothing was written
+$ cd <work>/app/heroes.packages/json@1.4.2-69906500256b6ec6 && heroes check parse.hero
+exit 0
+stdout:
+stderr:
+$ cd <work>/app && heroes build main.hero --emit-c -o <work>/out.c
+exit 0
+stdout:
+stderr:
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2479-a-command-run-from-inside-a-placed-tree-writes-nothing-there.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-5e8071f88bf13e425708618c8a81e6caaf041ac1faf04e3b5bc94cdbf855f30b"
+heroes.packages:
+json@1.4.2-69906500256b6ec6
