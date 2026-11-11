@@ -1,0 +1,193 @@
+# The flags of `build` that its stop cannot answer, refused before anything
+# is read (CLAUDE.md §10: the artifact on stdout, and a flag the author gave
+# is never dropped in silence; panel 016's R5 and R6; `cli/check_flags.hero`
+# is `check`'s, defect 371). `build` has two stops and they are not alike.
+# `--emit-c` is an output: the rounds compile it under every flag `build`
+# takes, and `-o` writes it where one is given (`cli/artifact.hero`).
+# `--dump-ir` is a dump: printed on stdout once the program is lowered
+# (`cli/compile.hero`), before clang compiles anything, and no file is
+# written. So beside `--dump-ir`:
+#
+# - `--emit-c` is a second stop: one artifact at a time;
+# - `-o` names a file the dump never writes. `build x.hero --dump-ir -o
+#   ir.txt` printed the IR at exit 0 and wrote nothing, so an `ir.txt` an
+#   earlier run left stood there for its reader as if it were this one's
+#   (defect 2473, 2026-11-11);
+# - every other flag but `--permissive`, the levels, `--sanitize`,
+#   `--include` and `--library` today, is read by clang and the link alone,
+#   which the dump stops before: each was dropped in the same silence.
+#
+# `--permissive` is read: it decides which diagnostics stop the lowering.
+# **The flags refused are the ones given, never a list of this file's**: a
+# flag the table gives `build` tomorrow is refused beside `--dump-ir` until
+# the dump reads it and `DUMP_READS` names it, the loud direction.
+#
+# **And that rests on a premise about `cli/compile.hero`, not on the value in
+# hand**: `to_unit` reads `options.permissive` alone before its dump returns.
+# A claim, falsified by the last test below, which lowers one program under
+# each flag refused here and asks the IR not to move. The day a stage before
+# the dump reads one of them, that test fails and names this refusal, which
+# then refuses a flag that applies.
+
+use cli/argv
+use cli/compile
+use cli/io
+use cli/strings
+use cli/table as cli_table
+use ir/print
+use source
+
+# The flags of `build` its IR dump reads: itself, and `--permissive`.
+constant DUMP_READS: [str]
+    ["--dump-ir", "--permissive"]
+
+# The refusal of each flag of this invocation that `build`'s stop cannot
+# answer, a line each, ready for `error: `; none where they agree.
+function refused(inv: argv.Invocation) -> [str]
+    none: [str] = []
+
+    if !argv.has(inv, spelling: "--dump-ir")
+        return none
+
+    if argv.has(inv, spelling: "--emit-c")
+        return ["`--dump-ir` and `--emit-c` are both stops — ask for one artifact at a time"]
+    lines: [str] @= []
+    out = argv.value_of(inv, spelling: "-o")
+
+    if !out.is_err()
+        lines @ lines.push(
+            "`--dump-ir` prints the IR on stdout and writes no file, and `-o " + out.must() + "` names one: redirect stdout instead, `heroes build <file.hero> --dump-ir > <path>`"
+        )
+
+    # In the order written, each spelling once: `--include` may repeat.
+    named: [str] @= []
+
+    for hit in inv.flags
+        quoted = "`" + hit.spelling + "`"
+
+        if hit.spelling != "-o" && !held(hit.spelling, list: DUMP_READS) && !held(quoted, list: named)
+            named @ named.push(quoted)
+
+    if named.len() == 1
+        lines @ lines.push(
+            "`--dump-ir` stops before clang compiles anything, and " + named[0] + " is read by clang and the link alone, so the IR is the same without it: leave it out"
+        )
+
+    if named.len() > 1
+        lines @ lines.push(
+            "`--dump-ir` stops before clang compiles anything, and " + listed(named) + " are read by clang and the link alone, so the IR is the same without them: leave them out"
+        )
+    return lines
+
+# Whether this invocation holds a flag `build`'s stop cannot answer, each
+# refusal told on stderr where it does: the caller exits 2, the tool unable
+# to run what was asked, as for an unknown flag.
+function told(inv: argv.Invocation) -> bool
+    lines = refused(inv)
+
+    for line in lines
+        io.eprint(text: "error: " + line)
+
+    return lines.len() > 0
+
+# Whether `word` is one of `list`.
+function held(word: str, list: [str]) -> bool
+    for one in list
+        if one == word
+            return true
+
+    return false
+
+# `a`, `a and b`, `a, b and c`.
+function listed(names: [str]) -> str
+    if names.len() < 2
+        return names.join("")
+    return names.slice(from: 0, to: names.len() - 1).join(", ") + " and " + names[names.len() - 1]
+
+## Tests
+
+function any_dir(path: str) -> bool
+    _ = path
+    return true
+
+function asked(given: [str]) -> [str]
+    return refused(argv.parse(given, dir_probe: any_dir).must())
+
+# Defect 2473's case and the shapes beside it: `-o`, a level, the sanitizer and
+# the search paths beside `--dump-ir`, each told at once; `--permissive`, the
+# flag the dump reads, let through; and none of it asked without the dump.
+test "beside --dump-ir, -o and each flag only clang reads are refused at once, each named (defect 2473)"
+    assert asked(["build", "x.hero", "--dump-ir", "-o", "ir.txt"]) == ["`--dump-ir` prints the IR on stdout and writes no file, and `-o ir.txt` names one: redirect stdout instead, `heroes build <file.hero> --dump-ir > <path>`"]
+    assert asked(["build", "x.hero", "-O2", "--dump-ir"]) == ["`--dump-ir` stops before clang compiles anything, and `-O2` is read by clang and the link alone, so the IR is the same without it: leave it out"]
+    two = asked(
+        ["build", "x.hero", "--dump-ir", "--sanitize", "-o", "o", "--include", "a", "--include", "b", "-O0", "--library", "c"]
+    )
+    assert two.len() == 2
+    assert two[0] == "`--dump-ir` prints the IR on stdout and writes no file, and `-o o` names one: redirect stdout instead, `heroes build <file.hero> --dump-ir > <path>`"
+    assert two[1] == "`--dump-ir` stops before clang compiles anything, and `--sanitize`, `--include`, `-O0` and `--library` are read by clang and the link alone, so the IR is the same without them: leave them out"
+
+    # The two stops are one refusal, whatever else is given: which file `-o`
+    # names depends on the stop kept.
+    assert asked(["build", "x.hero", "--dump-ir", "--emit-c", "-o", "x.c"]) == ["`--dump-ir` and `--emit-c` are both stops — ask for one artifact at a time"]
+    assert asked(["build", "x.hero", "--dump-ir", "--permissive"]).len() == 0
+    assert asked(["build", "x.hero", "--dump-ir"]).len() == 0
+    assert asked(["build", "x.hero", "--emit-c", "-o", "x.c", "-O2", "--sanitize"]).len() == 0
+    assert asked(["build", "x.hero", "-o", "x", "-O2", "--include", "a"]).len() == 0
+
+# Asked of the table, so a flag `build` gains is asked too: beside `--dump-ir`
+# each is either one the dump reads or refused by its own name.
+test "every flag of build beside --dump-ir is read by the dump or refused by name (defect 2473)"
+    walked: i64 @= 0
+
+    for c in cli_table.commands()
+        if c.tag == .build_cmd
+            for f in c.flags
+                given: [str] @= ["build", "x.hero", "--dump-ir", f.spelling]
+
+                if f.value
+                    given @ given.push("v")
+                lines = asked(given)
+                walked @ walked + 1
+
+                if held(f.spelling, list: DUMP_READS)
+                    assert lines.len() == 0
+                else
+                    assert lines.len() == 1
+                    assert strings.holds(text: lines[0], needle: "`" + f.spelling)
+
+    assert walked > DUMP_READS.len()
+
+# The IR of `s` as `to_unit` lowers it under these flags: the program it
+# returns is the one its dump prints, since nothing after the dump takes the
+# program as `@`, and with `dump_ir` unset nothing is printed here.
+function ir_under(s: source.Source, level: str, sanitize: bool, searched: [str], output: str?) -> str
+    options = compile.Options(
+        level: level,
+        dump_ir: false,
+        emit_c: false,
+        output: output,
+        sanitize: sanitize,
+        target: .program_build,
+        headers_from: searched,
+        library: searched,
+        permissive: false
+    )
+    art = compile.to_unit(s, options, version: "0.0.0-test", sources: "0123456789abcdef").must()
+    return print.dump(art.program, art.checked, s, art.decls)
+
+# The premise this module's refusal rests on, as a test that fires when it
+# dies: if a stage before the dump reads a level, the sanitizer, a search path
+# or `-o`, this IR moves, and `refused` then refuses a flag that applies.
+test "the IR is the same under every flag refused beside --dump-ir, the premise of its refusal (defect 2473)"
+    s = source.new_source(
+        name: "t.hero",
+        text: "record Point\n    x: i64\n    y: i64\n\nfunction far(p: Point) -> i64\n    total: i64 @= 0\n\n    for n in [p.x, p.y]\n        total @ total + n * n\n\n    return total\n\nfunction main()\n    print(far(p: Point(x: 3, y: 4)).to_str() + \" away\")\n"
+    )
+    none: [str] = []
+    no_out: str? = fail(code: "none", msg: "no -o")
+    base = ir_under(s, level: "-O0", sanitize: false, searched: none, output: no_out)
+    assert strings.holds(text: base, needle: "function far(")
+    assert ir_under(s, level: "-O2", sanitize: false, searched: none, output: no_out) == base
+    assert ir_under(s, level: "-O0", sanitize: true, searched: none, output: no_out) == base
+    assert ir_under(s, level: "-O0", sanitize: false, searched: ["inc", "lib"], output: no_out) == base
+    assert ir_under(s, level: "-O2", sanitize: true, searched: ["inc"], output: ok("ir.txt")) == base
