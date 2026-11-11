@@ -6,6 +6,7 @@
 # run made it: until then any empty one went, an author's own included.
 
 use cli/argv
+use cli/placed_files
 use cli/process
 use fetch/index_source
 use fetch/versions
@@ -13,7 +14,7 @@ use module/sums
 
 # The program's folder as a prefix of its files' paths: "" for the current
 # folder, else `-C`'s folder with a `/` after it; refused where `-C` names no
-# folder.
+# folder, or one under `heroes.packages/`.
 function program_of(inv: argv.Invocation) -> str?
     folder = argv.value_of(inv, spelling: "-C")
 
@@ -22,6 +23,11 @@ function program_of(inv: argv.Invocation) -> str?
 
     if !process.is_directory(folder.must())
         return fail(code: "bad_usage", msg: "`-C " + folder.must() + "` names no folder on this machine")
+
+    # A placed package's tree is written by no verb (defect 2462): a
+    # catalogue, a program or a placed tree made there moves its sum.
+    if placed_files.folder_within(folder.must())
+        return fail(code: "bad_usage", msg: placed_files.named_refused(flag: "-C", place: folder.must()))
 
     if folder.must()[folder.must().len() - 1] == '/'
         return ok(folder.must())

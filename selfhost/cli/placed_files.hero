@@ -8,7 +8,10 @@
 # `check` refused the program; `check <file> --apply --in-place` and `fmt
 # --in-place` wrote one named directly. A package's fix is written where its
 # source is, and a `path` entry's folder is the author's own source, written
-# like the program's.
+# like the program's. **And no place the author names for a verb to write**
+# (defect 2462): `-o` of `build` and `run`, asked in `cli/verbs.hero`, and
+# `-C` of `new`, `add` and `fetch`, asked in `fetch/verb_place.hero`, the
+# one door of the three.
 #
 # What is asked is a FOLDER's name, every part of the path but its last,
 # named exactly `heroes.packages`, as the net's walks ask it
@@ -16,10 +19,17 @@
 # (`cli/mutate.hero`'s `in_placed_tree`): a file named `heroes.packages`, or
 # a folder whose name only holds the word, `my.heroes.packages`, is the
 # author's. A `/` parts a path everywhere, and a `\` where Windows writes
-# paths, the runtime's rule (`shell.started_as`'s, `cli/process`).
+# paths, the runtime's rule (`shell.started_as`'s, `cli/process`). The
+# question is asked of the path's letters, never of the folders it resolves
+# through, so a link into a placed tree is not seen (the runtime has no door
+# that resolves a path).
+#
+# The folder's name is `placed_use.FOLDER`'s, the leaf that spells it, since
+# `module/packages`, which spells it too, reaches `fetch/verb_place` through
+# `module/unplaced`, and a `use` of it here would close a cycle.
 
 use cli/process
-use module/packages
+use placed_use
 
 # Whether `path` stands in a placed package's tree: one of its folders,
 # never its own last part, is named `heroes.packages`.
@@ -29,21 +39,36 @@ function within(path: str) -> bool
 
     for at in range(from: 0, to: path.len())
         if path[at] == '/' || windows && path[at] == '\\'
-            if at - from == packages.PLACED.len() && path.slice(from: from, to: at) == packages.PLACED
+            if at - from == placed_use.FOLDER.len() && path.slice(from: from, to: at) == placed_use.FOLDER
                 return true
             from @ at + 1
 
     return false
 
+# Whether the folder `folder` is `heroes.packages` or stands in it, where a
+# verb would write what it makes (defect 2462): the folder's own last part is
+# asked as well, since everything is written below it.
+function folder_within(folder: str) -> bool
+    return within(folder + "/")
+
+# What a verb says of a place the author named for it to write, `-o`'s file
+# or `-C`'s folder, that stands under `heroes.packages/` (defect 2462): the
+# flag and its place, why, and that nothing was written. Until then `build
+# --emit-c -o` wrote its C into a placed tree at exit 0, over a package's own
+# module where the path named one, and `new -C` and `add -C` wrote a program
+# and a catalogue there; the next build refused the program by its sum.
+function named_refused(flag: str, place: str) -> str
+    return "`" + flag + " " + place + "` names a place under `" + placed_use.FOLDER + "/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
+
 # What a writer says of a file it was asked to write and will not: the
 # file, why, and that nothing was written.
 function refused(path: str) -> str
-    return "cannot write " + path + ": it stands in a placed package's tree, under `" + packages.PLACED + "/`, which the build holds to the catalogue's `sum`, so a byte written there refuses the program; a package's fix is written where its source is; nothing was written"
+    return "cannot write " + path + ": it stands in a placed package's tree, under `" + placed_use.FOLDER + "/`, which the build holds to the catalogue's `sum`, so a byte written there refuses the program; a package's fix is written where its source is; nothing was written"
 
 # What `check <directory> --apply --in-place` says of a placed file whose
 # certain fix it leaves, the program's other files written all the same.
 function left(path: str) -> str
-    return path + " was not written: it stands in a placed package's tree, under `" + packages.PLACED + "/`, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; its certain fix is written where the package's source is"
+    return path + " was not written: it stands in a placed package's tree, under `" + placed_use.FOLDER + "/`, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; its certain fix is written where the package's source is"
 
 ## Tests
 
@@ -57,4 +82,11 @@ test "a placed package's file is one whose folder is named heroes.packages, and 
     assert !within("app/mine/parse.hero")
     assert !within("heroes.packages.hero")
     assert !within("")
+    assert folder_within("app/heroes.packages/json@1.0.0-0123456789abcdef")
+    assert folder_within("heroes.packages/json@1.0.0-0123456789abcdef/sub/")
+    assert folder_within("heroes.packages")
+    assert folder_within("heroes.packages/")
+    assert !folder_within("app/my.heroes.packages")
+    assert !folder_within("app")
+    assert named_refused(flag: "-o", place: "heroes.packages/t/out.c") == "`-o heroes.packages/t/out.c` names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
     assert refused("p/heroes.packages/t/a.hero") == "cannot write p/heroes.packages/t/a.hero: it stands in a placed package's tree, under `heroes.packages/`, which the build holds to the catalogue's `sum`, so a byte written there refuses the program; a package's fix is written where its source is; nothing was written"

@@ -1,0 +1,6 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-a-folder-in-a-placed-tree-is-refused-by-the-three-verbs.case/idx -C <work>/app
+new mine -C <work>/app/heroes.packages/json@1.4.2-51c1e23450bd2c1f
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-a-folder-in-a-placed-tree-is-refused-by-the-three-verbs.case/idx -C <work>/app/heroes.packages/json@1.4.2-51c1e23450bd2c1f
+fetch -C <work>/app/heroes.packages/json@1.4.2-51c1e23450bd2c1f
+new mine -C <work>/app/heroes.packages
+check <work>/app/main.hero
