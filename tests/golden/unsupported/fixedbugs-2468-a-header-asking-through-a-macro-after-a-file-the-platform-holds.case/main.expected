@@ -1,0 +1,7 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2468-a-header-asking-through-a-macro-after-a-file-the-platform-holds.case/stdio.h` stands in for the C library's `<stdio.h>`, which `tests/golden/unsupported/fixedbugs-2468-a-header-asking-through-a-macro-after-a-file-the-platform-holds.case/own.h` asks after and never includes: a folder this build names is searched before the system's, so the question finds its file in the library's place
+  at tests/golden/unsupported/fixedbugs-2468-a-header-asking-through-a-macro-after-a-file-the-platform-holds.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: a header asks only whether `stdio.h` exists, with `__has_include`, and the file standing in `tests/golden/unsupported/fixedbugs-2468-a-header-asking-through-a-macro-after-a-file-the-platform-holds.case` answers yes in the library's place: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2468-a-header-asking-through-a-macro-after-a-file-the-platform-holds.case`: the folder is this program's own, which every unit searches before the system's, and every `__has_include(<stdio.h>)` and `#include <stdio.h>` of the build finds it there
+  note: or, where `tests/golden/unsupported/fixedbugs-2468-a-header-asking-through-a-macro-after-a-file-the-platform-holds.case/own.h` means its own `stdio.h` beside it, ask after it as `__has_include("stdio.h")`: C looks for a quoted name in the asking header's own folder first, where `<stdio.h>` asks the system's places, which hold a `stdio.h` of their own

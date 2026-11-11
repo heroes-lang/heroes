@@ -1,0 +1,13 @@
+#~ shadowed_header
+# fixedbugs, defect 2468, lane b31-ffi, 2026-11-11: `own.h` asks
+# `__has_include(OWN_STDIO)`, a macro its text defines as `<stdio.h>`, and
+# the program's own `stdio.h` answers in the library's place, a name the
+# platform holds. A question a macro builds spells nothing the text holds, so
+# it is read as finding every file, in the loud direction, and the program's
+# file is refused as the angle form's is, the asking header named; this line
+# is its mark.
+extern "own.h"
+    constant OWN_CFG: i64
+
+function main()
+    print(OWN_CFG)

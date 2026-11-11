@@ -1,0 +1,399 @@
+# What a header asks after with `__has_include`, read from its text, and which
+# question finds a file of a named folder that no header includes (design.md
+# §4.19, §1.12; defect 2468, beside defect 2356).
+#
+# **What it closes, measured on this Mac.** Clang's `-M` lists a file a
+# header's `__has_include` found, and its `-H` shows it entered nowhere and
+# says nothing of who asked, so the refusal (`cli/shadowed_tree.hero`)
+# refused every such file wherever a named folder found it: a program's own
+# `own.h` asking `__has_include("cfg.h")` of its own `cfg.h`, a name no
+# platform folder holds, was told it stands in for the system's `<cfg.h>`, a
+# correct program refused with a false message. design.md §4.19 judges a file
+# a header only asks after alike to one it includes, by who includes it, so
+# every header the listing entered is read here for its questions, and the
+# include's rule is asked of each question that finds the file.
+#
+# **Read from the text, in the loud direction.** A question whose argument a
+# macro builds spells nothing the text holds, so it is taken as finding every
+# file; a header that cannot be read is taken as asking one; and a spelling
+# read through the search is taken as finding the file wherever a named folder
+# holds it, a folder searched before that one notwithstanding. A file no
+# question of the listing finds, an `#embed`'s or a forced file's, keeps the
+# landed rule (`refusing`): the refusal never waits on a question this reader
+# cannot read.
+
+use bytes
+use cli/package_reads
+use cli/shadowed_quoted
+use cli/stand_in
+use module/reading as file_reading
+
+constant OPERATOR: str
+    "__has_include"
+
+constant NEXT: str
+    "_next"
+
+# One question a header's text asks: what it spells between its quotes or its
+# angles, "" where a macro builds the argument (`literal` false); whether it
+# is quoted; and whether it is `__has_include_next`, which skips the asking
+# header's own folder.
+record Question
+    spelled: str
+    quoted: bool
+    next: bool
+    literal: bool
+
+# A header the listing entered that asks something: its path as clang wrote
+# it, and its questions.
+record Asker
+    path: str
+    questions: [Question]
+
+# The question that refuses a file only asked after: the header that asks it,
+# as clang wrote its path, "" where no question of the listing finds the
+# file; the named folder that holds that header, "" for the platform's or the
+# runtime's; and the question itself.
+record Asking
+    asker: str
+    home: str
+    question: Question
+
+# Each of `paths` that asks something, its file read once; one that cannot be
+# read asks a question no spelling names.
+function askers_of(paths: [str]) -> [Asker]
+    out: [Asker] @= []
+
+    for path in paths
+        read = file_reading.source_text(path)
+
+        if read.is_err()
+            out @ out.push(Asker(path: path, questions: [built(next: false)]))
+        else
+            asked = questions(read.must().text)
+
+            if asked.len() > 0
+                out @ out.push(Asker(path: path, questions: asked))
+
+    return out
+
+# **The question that refuses the file at the lexical `path`**, `name` in the
+# named folder that found it (`stand_in.finder`), judged as `cli/
+# shadowed_tree.hero` judges an include of it: the first question that finds
+# it from a header no named folder holds, which knows no exception; else,
+# where a platform folder holds `name` (`held`) and the file is no library's
+# own (`library`, panel 243's R2), the first of a named folder's header that
+# is not its own (`own`); none where every question that finds it is its
+# header's own; and, where no question finds it, an `Asking` naming no
+# header, the landed rule, which a library's own file is spared.
+function refusing(askers: [Asker], path: str, name: str, named: [str], others: [str], held: bool, library: bool) -> Asking?
+    found: bool @= false
+    first: Asking? @= fail(code: "own", msg: "every question that finds the file is its header's own")
+
+    for one in askers
+        from = package_reads.lexical(one.path)
+        home = stand_in.finder(path: from, named: named, others: others)
+
+        for q in one.questions
+            if finds(q, asker: from, path: path, named: named)
+                found @ true
+
+                if home.len() == 0
+                    return ok(Asking(asker: one.path, home: "", question: q))
+
+                if held && !library && first.is_err() && !own(q, asker: from, path: path, name: name)
+                    first @ ok(Asking(asker: one.path, home: home, question: q))
+
+    if found
+        return first
+
+    if library
+        return fail(code: "own", msg: "a library's own file no question of the listing finds")
+    return ok(Asking(asker: "", home: "", question: built(next: false)))
+
+# Whether `q`, asked by the header at the lexical `asker`, can find the file
+# at the lexical `path`: a quoted spelling read from the asker's own folder,
+# where C looks first, or any spelling read from a folder of `named`; a
+# question a macro builds finds every file.
+function finds(q: Question, asker: str, path: str, named: [str]) -> bool
+    if !q.literal || own_folder(q, asker: asker, path: path)
+        return true
+
+    for dir in named
+        if package_reads.lexical(shadowed_quoted.from_folder(folder: dir, spelled: q.spelled)) == path
+            return true
+
+    return false
+
+# **Whether `q` is its asker's own question of the file**, as an include of it
+# is its includer's own (panel 243's R3): a quoted spelling that names it from
+# the asker's own folder, or a sibling of the asker named in quotes as the
+# search names it, `name`; never `__has_include_next`, which skips that
+# folder, as `#include_next` is no quoted include of its includer's.
+function own(q: Question, asker: str, path: str, name: str) -> bool
+    sibling = q.literal && q.quoted && !q.next && q.spelled == name && shadowed_quoted.folder_of(asker) == shadowed_quoted.folder_of(path)
+    return sibling || own_folder(q, asker: asker, path: path)
+
+# Whether `q` is a quoted `__has_include` that names the file at `path` from
+# the asker's own folder; `__has_include_next` never looks there.
+function own_folder(q: Question, asker: str, path: str) -> bool
+    if !q.literal || !q.quoted || q.next
+        return false
+    return shadowed_quoted.found_from([q.spelled], folder: shadowed_quoted.folder_of(asker), path: path)
+
+# A question whose argument a macro builds.
+function built(next: bool) -> Question
+    return Question(spelled: "", quoted: false, next: next, literal: false)
+
+# **Every `__has_include` and `__has_include_next` a header's text asks**,
+# its bytes walked once: comments, strings and character literals passed
+# over, a line splice or a comment between the operator and its `(` read as a
+# space, and the name a `#define` or `#undef` writes asking nothing (the
+# SDK's `sys/cdefs.h` defines `__has_include(x)` as `0` for a compiler that
+# has none). Every cut falls beside an ASCII byte, so no slice splits a
+# character.
+function questions(text: str) -> [Question]
+    out: [Question] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == '/' && at + 1 < text.len() && text[at + 1] == '*'
+            at @ past_comment(text, from: at + 2)
+        else if b == '/' && at + 1 < text.len() && text[at + 1] == '/'
+            at @ line_end(text, from: at)
+        else if b == '"' || b == '\''
+            at @ past_quote(text, from: at + 1, close: b)
+        else if b == '_' && bytes.bytes_at(text: text, at: at, needle: OPERATOR) && (at == 0 || !word_byte(text[at - 1]))
+            next = bytes.bytes_at(text: text, at: at + OPERATOR.len(), needle: NEXT)
+            end: i64 @= at + OPERATOR.len()
+
+            if next
+                end @ end + NEXT.len()
+            open = past_blanks(text, from: end)
+            whole = end == text.len() || !word_byte(text[end])
+
+            if whole && open < text.len() && text[open] == '(' && !defined_here(text, at: at)
+                out @ out.push(argument(text, from: past_blanks(text, from: open + 1), next: next))
+            at @ end
+        else
+            at @ at + 1
+
+    return out
+
+# The question whose argument starts at `from`: a spelling closed on its line
+# by its quote or its angle, or one a macro builds.
+function argument(text: str, from: i64, next: bool) -> Question
+    if from < text.len() && (text[from] == '"' || text[from] == '<')
+        close: u8 @= '"'
+
+        if text[from] == '<'
+            close @ '>'
+        at: i64 @= from + 1
+
+        while at < text.len() && text[at] != close && text[at] != '\n'
+            at @ at + 1
+
+        if at < text.len() && text[at] == close && at > from + 1
+            return Question(
+                spelled: text.slice(from: from + 1, to: at),
+                quoted: close == '"',
+                next: next,
+                literal: true
+            )
+    return built(next: next)
+
+# Whether the operator at `at` is the name a `#define` or an `#undef` writes.
+function defined_here(text: str, at: i64) -> bool
+    start = before_blanks(text, at: at)
+
+    for word in ["define", "undef"]
+        from = start - word.len()
+
+        if from >= 0 && bytes.bytes_at(text: text, at: from, needle: word) && (from == 0 || !word_byte(text[from - 1]))
+            hash = before_blanks(text, at: from)
+            return hash > 0 && text[hash - 1] == '#'
+
+    return false
+
+# The first offset at or after `from` that is no space, tab, line splice or
+# comment.
+function past_blanks(text: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < text.len()
+        b = text[at]
+
+        if b == ' ' || b == '\t' || b == '\r'
+            at @ at + 1
+        else if b == '\\' && at + 1 < text.len() && (text[at + 1] == '\n' || text[at + 1] == '\r')
+            at @ at + 2
+        else if b == '/' && at + 1 < text.len() && text[at + 1] == '*'
+            at @ past_comment(text, from: at + 2)
+        else
+            return at
+
+    return at
+
+# The offset where the spaces and tabs before `at` begin.
+function before_blanks(text: str, at: i64) -> i64
+    back: i64 @= at
+
+    while back > 0 && (text[back - 1] == ' ' || text[back - 1] == '\t')
+        back @ back - 1
+
+    return back
+
+# The offset past the `*/` that closes a comment opened before `from`.
+function past_comment(text: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at + 1 < text.len()
+        if text[at] == '*' && text[at + 1] == '/'
+            return at + 2
+        at @ at + 1
+
+    return text.len()
+
+# The offset of the line feed that ends the line holding `from`.
+function line_end(text: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < text.len() && text[at] != '\n'
+        at @ at + 1
+
+    return at
+
+# The offset past a literal opened before `from` by `close`, a `\` escaping
+# the byte after it; a literal left open ends at its line, as an `#error`'s
+# apostrophe does.
+function past_quote(text: str, from: i64, close: u8) -> i64
+    at: i64 @= from
+
+    while at < text.len()
+        if text[at] == '\\'
+            at @ at + 2
+        else if text[at] == close
+            return at + 1
+        else if text[at] == '\n'
+            return at
+        else
+            at @ at + 1
+
+    return text.len()
+
+# Whether `b` can stand in an identifier, a byte above ASCII included.
+function word_byte(b: u8) -> bool
+    return bytes.is_alnum(b) || b == '_' || b >= 128
+
+## Tests
+
+# **A header's questions are read from its text, past what C does not read as
+# one**: both operators and both forms, a macro's argument, a splice and a
+# comment before the `(`; never a comment's or a string's, `defined(...)`,
+# a longer name, or the name a `#define` or an `#undef` writes.
+test "a header's questions are read from its text, and a definition, a comment and a string ask nothing (defect 2468)"
+    lines = [
+        "#if __has_include(\"cfg.h\") && __has_include_next( <sys/x.h> )"
+        "#if __has_include \\"
+        "  (CFG_HEADER) || __has_include /* c */ (<b.h>)"
+        "#ifndef __has_include"
+        "#  define __has_include(x) 0"
+        "#undef __has_include"
+        "#if defined(__has_include) && my__has_include(<n.h>) || __has_include_nexter(<n.h>)"
+        "/* __has_include(<c.h>) */ // __has_include(<d.h>)"
+        "char *s = \"__has_include(<e.h>)\"; char q = '\"';"
+        "#error don't __has_include(<f.h>)"
+        "#if __has_include(\"\") || __has_include(<open.h"
+    ]
+    got = questions(lines.join("\n"))
+    assert got.len() == 6
+    assert got[0].spelled == "cfg.h" && got[0].quoted && !got[0].next && got[0].literal
+    assert got[1].spelled == "sys/x.h" && !got[1].quoted && got[1].next
+    assert !got[2].literal && got[3].spelled == "b.h"
+    assert !got[4].literal && !got[5].literal
+    assert questions("no question here\n").len() == 0
+
+# **A question finds a file from its asker's own folder or through a named
+# folder, and is its asker's own only from that folder**: `"cfg.h"` from
+# `own.h` beside it; `<cfg.h>` through `.`; `"sys/t.h"` from `sys/c.h`,
+# the sibling named as the search names it. A named folder's header asking by
+# angle refuses a file of a name the platform holds, but a library's own; a
+# platform header's question refuses it whatever it is, a library's own
+# included, as its include does; and a file no question finds keeps the
+# landed rule, a library's own spared.
+test "a question is its asker's own from its own folder, and a platform header's question refuses (defect 2468)"
+    quoted = Question(spelled: "cfg.h", quoted: true, next: false, literal: true)
+    angled = Question(spelled: "cfg.h", quoted: false, next: false, literal: true)
+    assert finds(quoted, asker: "own.h", path: "cfg.h", named: []) && own(quoted, asker: "own.h", path: "cfg.h", name: "cfg.h")
+    assert finds(angled, asker: "own.h", path: "cfg.h", named: ["."]) && !own(angled, asker: "own.h", path: "cfg.h", name: "cfg.h")
+    assert !finds(angled, asker: "own.h", path: "cfg.h", named: ["inc"])
+    sibling = Question(spelled: "sys/t.h", quoted: true, next: false, literal: true)
+    assert own(sibling, asker: "src/sys/c.h", path: "src/sys/t.h", name: "sys/t.h")
+    assert !own(Question(spelled: "cfg.h", quoted: true, next: true, literal: true), asker: "own.h", path: "cfg.h", name: "cfg.h")
+    mine = Asker(path: "./own.h", questions: [quoted])
+    sdk = Asker(path: "/sdk/x.h", questions: [angled])
+    by_angle = Asker(path: "own.h", questions: [angled])
+    platforms = ["/rt", "/sdk"]
+    assert refusing(
+        [mine],
+        path: "cfg.h",
+        name: "cfg.h",
+        named: ["."],
+        others: platforms,
+        held: true,
+        library: false
+    ).is_err()
+    assert refusing(
+        [by_angle],
+        path: "cfg.h",
+        name: "cfg.h",
+        named: ["."],
+        others: ["/rt"],
+        held: false,
+        library: false
+    ).is_err()
+    held = refusing(
+        [by_angle],
+        path: "cfg.h",
+        name: "cfg.h",
+        named: ["."],
+        others: platforms,
+        held: true,
+        library: false
+    )
+    assert held.must().asker == "own.h" && held.must().home == "."
+    assert refusing(
+        [by_angle],
+        path: "cfg.h",
+        name: "cfg.h",
+        named: ["."],
+        others: platforms,
+        held: true,
+        library: true
+    ).is_err()
+
+    for library in [false, true]
+        platform = refusing(
+            [mine, sdk],
+            path: "cfg.h",
+            name: "cfg.h",
+            named: ["."],
+            others: platforms,
+            held: false,
+            library: library
+        ).must()
+        assert platform.asker == "/sdk/x.h" && platform.home == ""
+
+    assert refusing([], path: "cfg.h", name: "cfg.h", named: ["."], others: ["/rt"], held: false, library: false).must().asker == ""
+    assert refusing(
+        [],
+        path: "cfg.h",
+        name: "cfg.h",
+        named: ["."],
+        others: ["/rt"],
+        held: false,
+        library: true
+    ).is_err()
+    assert askers_of(["build/selftest-shadowed-asked-absent.h"])[0].questions[0] == built(next: false)

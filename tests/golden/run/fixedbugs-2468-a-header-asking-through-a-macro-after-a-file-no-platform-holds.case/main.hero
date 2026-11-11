@@ -1,0 +1,12 @@
+# fixedbugs, defect 2468, lane b31-ffi, 2026-11-11: `own.h` asks
+# `__has_include(OWN_CFG_HEADER)`, a macro naming the program's own `cfg.h`,
+# a name no platform folder holds. A question a macro builds is read as
+# finding every file (`cli/shadowed_asked.hero`), and a header of the
+# program's own folder finding a file of a name the platform does not hold
+# is judged as its include would be (design.md §4.19): the program's own.
+# Refused `shadowed_header` until this defect.
+extern "own.h"
+    constant OWN_CFG: i64
+
+function main()
+    print(OWN_CFG)

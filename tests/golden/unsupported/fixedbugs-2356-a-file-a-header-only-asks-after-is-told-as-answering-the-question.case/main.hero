@@ -6,7 +6,10 @@
 # the refusal stands; until this defect it said the C this compiler writes
 # reads the file, where only the header's question finds it. Told at the
 # program's first byte, the note naming the question and the folder; this
-# line is its mark.
+# line is its mark. Since defect 2468 (2026-11-11) the file is judged by the
+# question that finds it, as an include of it is: `lib.h` asks by angle for
+# a name the platform holds, so it stays refused, the message naming `lib.h`
+# and the note offering the question in quotes from its folder.
 extern "lib.h"
     constant HAS: i64
 

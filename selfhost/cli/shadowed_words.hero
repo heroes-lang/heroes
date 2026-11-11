@@ -97,9 +97,17 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
         reads @ "which " + one.reader + " includes as `\"" + one.written + "\"`, a name C does not find in that header's own folder and so searches for"
 
     # A file a header only asks after (defect 2356): nothing reads it, and the
-    # question is what it answers.
+    # question is what it answers, the header named where its text says it
+    # asks (defect 2468).
     if one.asked
-        reads @ "which a header of this build asks after and never includes"
+        asker: str @= "a header of this build"
+
+        if one.reader.len() > 0
+            asker @ one.reader
+        reads @ "which " + asker + " asks after and never includes"
+
+        if one.written.len() > 0
+            reads @ "which " + asker + " asks after with `__has_include(\"" + one.written + "\")`, a name C does not find in that header's own folder and so searches for, and never includes"
         read_in @ "the question finds its file"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: CODE,
@@ -137,13 +145,23 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
         if one.written.len() > 0
             asked @ "`\"" + one.written + "\"`, not in that folder,"
 
+        # A question is offered as a question (defect 2468).
+        form: str @= "include it as `#include \"" + one.quoted + "\"`"
+        looks: str @= "C reads a quoted name from the including header's own folder first"
+        there: str @= "C reads a quoted name from there first"
+
+        if one.asked
+            form @ "ask after it as `__has_include(\"" + one.quoted + "\")`"
+            looks @ "C looks for a quoted name in the asking header's own folder first"
+            there @ "C looks for a quoted name there first"
+
         if !strings.holds(text: one.quoted, needle: "/")
             d.notes @ d.notes.push(
-                "or, where " + one.reader + " means its own `" + one.quoted + "` beside it, include it as `#include \"" + one.quoted + "\"`: C reads a quoted name from the including header's own folder first, where " + asked + " asks the system's places, which hold a `" + one.named + "` of their own"
+                "or, where " + one.reader + " means its own `" + one.quoted + "` beside it, " + form + ": " + looks + ", where " + asked + " asks the system's places, which hold a `" + one.named + "` of their own"
             )
         else
             d.notes @ d.notes.push(
-                "or, where " + one.reader + " means `" + clang_place.slashed(one.path) + "`, include it as `#include \"" + one.quoted + "\"`, its path from that header's own folder: C reads a quoted name from there first, where " + asked + " asks the system's places, which hold a `" + one.named + "` of their own"
+                "or, where " + one.reader + " means `" + clang_place.slashed(one.path) + "`, " + form + ", its path from that header's own folder: " + there + ", where " + asked + " asks the system's places, which hold a `" + one.named + "` of their own"
             )
     return d
 
@@ -283,6 +301,25 @@ test "a file a header only asks after is told as answering the question, and a f
     )
     assert read.message == "`inc/stdio.h` stands in for the C library's `<stdio.h>`, which the C this compiler writes reads: a folder this build names is searched before the system's, so its file is read in the library's place"
     assert read.notes == ["rename the file, or move it out of `inc`: `--include` names that folder, and every `#include <stdio.h>` of the build reads what it holds"]
+
+# **The header that asks is named, and the quoted question offered** (defect
+# 2468): where a header's text says it asks, the message names it and the
+# quoted spelling C searched for, and the note offers the file's path in
+# quotes from that header's own folder as a question, never as an include.
+test "a file only asked after names the header that asks and offers the quoted question (defect 2468)"
+    one = header(
+        stand_in.Shadow(path: "./stdio.h", folder: ".", named: "stdio.h", reader: "`sub/lib.h`", quoted: "../stdio.h", written: "stdio.h", asked: true),
+        origin: Origin(kind: PROGRAM, name: ""),
+        runtime: false
+    )
+    assert strings.holds(
+        text: one.message,
+        needle: "which `sub/lib.h` asks after with `__has_include(\"stdio.h\")`, a name C does not find"
+    )
+    assert strings.holds(
+        text: one.notes[1],
+        needle: "ask after it as `__has_include(\"../stdio.h\")`, its path from that header's own folder: C looks for a quoted name there first"
+    )
 
 # **A file or a folder clang's job names is told one way in the message and
 # its note** (defect 2382): the message told it with `/` and the note as
