@@ -1,0 +1,12 @@
+#~ shadowed_header
+# fixedbugs, defect 2468, lane b31-ffi, 2026-11-11: `sub/own.h` asks
+# `__has_include("stdio.h")`, a name not in its own folder, so C searches
+# for it and finds the program's own `stdio.h` in the library's place, a name
+# the platform holds. Judged as a quoted include found only through the search
+# is (panel 243's R3), it is refused, the header and its spelling named and
+# the path from its folder offered; this line is its mark.
+extern "sub/own.h"
+    constant OWN_CFG: i64
+
+function main()
+    print(OWN_CFG)

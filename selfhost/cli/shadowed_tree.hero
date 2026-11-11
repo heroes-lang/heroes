@@ -48,14 +48,17 @@
 #   `util.h` is refused, its note naming the quoted form (panel 237's ruling;
 #   CERT C's PRE04-C);
 # - and a file `-M` lists and `-H` does not, found by `__has_include` alone, is
-#   refused wherever a named folder found it, the landed rule, and told as a
-#   file a header only asks after (`asked`, defect 2356): its words said the
-#   C this compiler writes reads it, where nothing does.
+#   judged by the questions that find it as an include of it is by its
+#   includers (`cli/shadowed_asked.hero`, defect 2468; design.md §4.19), told
+#   as a file a header only asks after (`asked`, defect 2356); where no
+#   question the listing's headers write finds it, the landed rule refuses it
+#   wherever a named folder found it.
 
 use cli/deps
 use cli/order_trial
 use cli/package_reads
 use cli/process
+use cli/shadowed_asked
 use cli/shadowed_library
 use cli/shadowed_quoted
 use cli/stand_in
@@ -154,6 +157,11 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
     seen: {str: bool} @= {}
     told_of: {str: bool} @= {}
 
+    # Every file `-H` listed, once, as clang wrote it: who may ask after a
+    # file nothing includes (defect 2468).
+    entered: [str] @= []
+    listed: {str: bool} @= {}
+
     # The file each depth's last entry is, the unit's own at depth 0, so a
     # file's includer is the entry one level up.
     chain: [str] @= [""]
@@ -167,6 +175,10 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
         path = package_reads.lexical(one.path)
         folder = stand_in.finder(path: path, named: named, others: others)
 
+        if listed[path].is_err()
+            listed[path] @ true
+            entered @ entered.push(one.path)
+
         if folder.len() > 0 && told_of[path].is_err()
             seen[path] @ true
             name = stand_in.relative(path: path, dir: folder)
@@ -178,6 +190,11 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
                     stand_in.Shadow(path: one.path, folder: folder, named: name, reader: told.must().reader, quoted: told.must().quoted, written: told.must().written, asked: false)
                 )
 
+    # The headers' questions, read once and only where a file is only asked
+    # after.
+    askers: [shadowed_asked.Asker] @= []
+    read: bool @= false
+
     for written in paths
         path = package_reads.lexical(written)
         folder = stand_in.finder(path: path, named: named, others: others)
@@ -185,15 +202,55 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
         if folder.len() > 0 && seen[path].is_err() && process.path_exists(written)
             name = stand_in.relative(path: path, dir: folder)
 
-            # A library's own file only asked after is the library's, as one
-            # its headers include is (panel 243's R2).
-            if !library_own(folder: folder, name: name, search: search)
+            if !read
+                askers @ shadowed_asked.askers_of(entered)
+                read @ true
+
+            # A library's own file is the library's where its own headers or
+            # the program's ask after it, as where they include it, and never
+            # where a platform header does (panel 243's R2).
+            asking = shadowed_asked.refusing(
+                askers,
+                path: path,
+                name: name,
+                named: named,
+                others: others,
+                held: stand_in.twin(others, name: name),
+                library: library_own(folder: folder, name: name, search: search)
+            )
+
+            if !asking.is_err()
+                told = asked_reader(asking.must(), path: path, folder: folder, search: search)
                 seen[path] @ true
                 out @ out.push(
-                    stand_in.Shadow(path: written, folder: folder, named: name, reader: "", quoted: "", written: "", asked: true)
+                    stand_in.Shadow(path: written, folder: folder, named: name, reader: told.reader, quoted: told.quoted, written: told.written, asked: true)
                 )
 
     return out
+
+# What a refusal of a file only asked after says of the question that refused
+# it (defect 2468), as `refused` says of an includer: none where no question
+# finds it; a header no named folder holds by its name there; and a named
+# folder's header by its path, the quoted spelling from its own folder offered
+# where the two lie in one folder that is no library's, and the quoted
+# spelling it wrote, which C searched for; never a `__has_include_next`'s,
+# which skips that folder, as `#include_next` is told by no spelling.
+function asked_reader(one: shadowed_asked.Asking, path: str, folder: str, search: Search) -> Reader
+    if one.asker.len() == 0
+        return Reader(reader: "", quoted: "", written: "")
+    from = package_reads.lexical(one.asker)
+
+    if one.home.len() == 0
+        return Reader(reader: stand_in.told_reader(from, others: search.others), quoted: "", written: "")
+    offered: str @= ""
+
+    if !shadowed_library.held(search.libraries, item: folder) && one.home == folder
+        offered @ shadowed_quoted.spelled_from(folder: shadowed_quoted.folder_of(from), path: path)
+    written: str @= ""
+
+    if one.question.literal && one.question.quoted && !one.question.next
+        written @ one.question.spelled
+    return Reader(reader: "`" + clang_place.slashed(one.asker) + "`", quoted: offered, written: written)
 
 # What a refusal says of a file's includer: who it is, "" for the C this
 # compiler writes; the spelling that would name the file in quotes from the
@@ -217,9 +274,9 @@ function refused(one: Entry, reader: str, name: str, folder: str, search: Search
     home = stand_in.finder(path: from, named: search.named, others: search.others)
 
     if home.len() == 0
-        return ok(Reader(reader: told_reader(from, others: search.others), quoted: "", written: ""))
+        return ok(Reader(reader: stand_in.told_reader(from, others: search.others), quoted: "", written: ""))
 
-    if !twin(search.others, name: name)
+    if !stand_in.twin(search.others, name: name)
         return fail(code: "own", msg: "a name the platform does not hold")
 
     if library_own(folder: folder, name: name, search: search)
@@ -263,36 +320,6 @@ function of_group(path: str, groups: [str]) -> bool
     for header in groups
         if written == header || strings.ends_with(text: written, suffix: "/" + header)
             return true
-
-    return false
-
-# An includer as a refusal names it: "" for the runtime's, which the landed
-# sentence tells, a platform header by the name it has there, `<stdio.h>`,
-# the C library's where C11 or POSIX.1 lists the name and the system's where
-# neither does, the SDK's `sqlite3ext.h` among them (panel 243's R2).
-function told_reader(from: str, others: [str]) -> str
-    if package_reads.holds(dir: others[0], path: from)
-        return ""
-
-    for dir in others
-        if package_reads.holds(dir: dir, path: from)
-            name = stand_in.relative(path: from, dir: dir)
-
-            if shadowed_library.standard(name)
-                return "the C library's `<" + name + ">`"
-            return "the system's `<" + name + ">`"
-
-    return "`" + from + "`"
-
-# Whether a platform folder, any of `others` but the runtime's, holds a file
-# `name` names.
-function twin(others: [str], name: str) -> bool
-    at: i64 @= 1
-
-    while at < others.len()
-        if process.path_exists(others[at] + "/" + name)
-            return true
-        at @ at + 1
 
     return false
 
@@ -408,11 +435,14 @@ test "a file of a folder only pkg-config names is the library's, but where its n
     root = "build/selftest-shadowed-library"
     assert !process.remove_tree(root).is_err()
 
-    for dir in ["/rt", "/sdk/curl", "/sdk/sys", "/src", "/lib", "/inc"]
+    for dir in ["/rt", "/sdk/curl", "/sdk/sys", "/src", "/lib/curl", "/lib/sys", "/lib/k", "/inc/curl"]
         assert !process.mkdir_all(root + dir).is_err()
 
-    for name in ["curl/curl.h", "stdio.h", "sys/socket.h"]
-        assert !write_file(path: root + "/sdk/" + name, text: "").is_err()
+    # Every file `-H` lists exists, and a header that cannot be read is taken
+    # as asking after every file (`cli/shadowed_asked.hero`), so each is
+    # written, asking nothing.
+    for name in ["/sdk/curl/curl.h", "/sdk/stdio.h", "/sdk/sys/socket.h", "/sdk/sqlite3ext.h", "/lib/curl/curl.h", "/lib/stdio.h", "/lib/sys/socket.h", "/lib/_stdio.h", "/lib/sqlite3.h", "/inc/curl/curl.h", "/lib/k/opt.h", "/lib/stdbool.h"]
+        assert !write_file(path: root + name, text: "").is_err()
 
     assert !write_file(path: root + "/src/own.h", text: "#include <curl/curl.h>\n#include <stdio.h>\n#include <sys/socket.h>\n").is_err()
     assert !write_file(path: root + "/src/two.h", text: "#include <curl/curl.h>\n").is_err()
@@ -428,10 +458,6 @@ test "a file of a folder only pkg-config names is the library's, but where its n
         ". " + root + "/src/two.h"
         ".. " + root + "/inc/curl/curl.h"
     ]
-    assert !process.mkdir_all(root + "/lib/k").is_err()
-
-    for name in ["/lib/k/opt.h", "/lib/stdbool.h"]
-        assert !write_file(path: root + name, text: "").is_err()
 
     got = shadows(
         said: lines.join("\n") + "\n",
@@ -490,4 +516,47 @@ test "every include of a file is judged, so a platform header reading the progra
     # pass does not tell it as asked after.
     alone = shadows(said: clock.join("\n") + "\n", paths: [root + "/src/sys/types.h"], search: search)
     assert alone.len() == 0
+    assert !process.remove_tree(root).is_err()
+
+# **A file only asked after is judged by the questions that find it** (defect
+# 2468): the program's `own.h` asking `"cfg.h"` of its own `cfg.h`, a name no
+# platform folder holds, is told nothing; a platform header asking `<cfg.h>`
+# of it refuses it, told as that header's; a header of the program's asking
+# `<stdio.h>` of its own `stdio.h`, a name the platform holds, refuses it,
+# the quoted question offered; and a file no question of the listing finds
+# keeps the landed rule, refused and told as a header of this build's. A
+# library's own `k/opt.h`, a name the platform holds too, is the library's
+# where the program's header asks after it and refused where a platform
+# header does, as its includes are (panel 243's R2); and a
+# `__has_include_next` is told by no spelling, as `#include_next` is not.
+test "a file only asked after is judged by the questions that find it, the program's own or a platform header's (defect 2468)"
+    root = "build/selftest-shadowed-asked"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/rt", "/sdk/k", "/src", "/lib/k"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    for pair in [["/src/own.h", "#if __has_include(\"cfg.h\")\n#endif\n"], ["/src/cfg.h", ""], ["/sdk/x.h", "#if __has_include(<cfg.h>)\n#endif\n"], ["/sdk/stdio.h", ""], ["/src/stdio.h", ""], ["/src/two.h", "#if __has_include(<stdio.h>)\n#endif\n"], ["/src/plain.h", ""], ["/src/three.h", "#if __has_include(<k/opt.h>)\n#endif\n"], ["/sdk/k/opt.h", ""], ["/lib/k/opt.h", ""], ["/sdk/y.h", "#if __has_include(<k/opt.h>)\n#endif\n"], ["/src/next.h", "#if __has_include_next(\"stdio.h\")\n#endif\n"]]
+        assert !write_file(path: root + pair[0], text: pair[1]).is_err()
+
+    search = Search(
+        groups: ["own.h", "x.h", "two.h", "plain.h", "three.h", "y.h", "next.h"],
+        named: [root + "/src", root + "/lib"],
+        others: [root + "/rt", root + "/sdk"],
+        libraries: [root + "/lib"]
+    )
+    opt = [root + "/lib/k/opt.h"]
+    assert shadows(said: ". " + root + "/src/three.h\n", paths: opt, search: search).len() == 0
+    asked = shadows(said: ". " + root + "/src/three.h\n. " + root + "/sdk/y.h\n", paths: opt, search: search)
+    assert asked.len() == 1 && asked[0].asked && asked[0].reader == "the system's `<y.h>`"
+    next = shadows(said: ". " + root + "/src/next.h\n", paths: [root + "/src/stdio.h"], search: search)
+    assert next.len() == 1 && next[0].reader == "`" + root + "/src/next.h`" && next[0].written == ""
+    cfg = [root + "/src/cfg.h"]
+    assert shadows(said: ". " + root + "/src/own.h\n", paths: cfg, search: search).len() == 0
+    platform = shadows(said: ". " + root + "/src/own.h\n. " + root + "/sdk/x.h\n", paths: cfg, search: search)
+    assert platform.len() == 1 && platform[0].asked && platform[0].reader == "the system's `<x.h>`"
+    held = shadows(said: ". " + root + "/src/two.h\n", paths: [root + "/src/stdio.h"], search: search)
+    assert held.len() == 1 && held[0].reader == "`" + root + "/src/two.h`" && held[0].quoted == "stdio.h" && held[0].written == ""
+    unasked = shadows(said: ". " + root + "/src/plain.h\n", paths: cfg, search: search)
+    assert unasked.len() == 1 && unasked[0].asked && unasked[0].reader == ""
     assert !process.remove_tree(root).is_err()

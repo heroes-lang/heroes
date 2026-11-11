@@ -1,0 +1,11 @@
+# fixedbugs, defect 2468, lane b31-ffi, 2026-11-11: `own.h` asks
+# `__has_include("stdio.h")` of the program's own `stdio.h` beside it, a name
+# the platform holds. A quoted spelling read from the asking header's own
+# folder names its own file, as a quoted include does (panel 243's R3), so it
+# is the program's own and the build goes on; asked by angle it stays refused
+# (defect 2356's case).
+extern "own.h"
+    constant OWN_CFG: i64
+
+function main()
+    print(OWN_CFG)

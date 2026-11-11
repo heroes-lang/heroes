@@ -1,0 +1,11 @@
+# fixedbugs, defect 2468, lane b31-ffi, 2026-11-11: `own.h` asks
+# `__has_include(<cfg.h>)` of the program's own `cfg.h`, a name no platform
+# folder holds. Judged as an include of it is (design.md §4.19), a file of a
+# name the platform does not hold that a header of the program's own folder
+# asks after is the program's own, in either form; refused `shadowed_header`
+# until this defect.
+extern "own.h"
+    constant OWN_CFG: i64
+
+function main()
+    print(OWN_CFG)
