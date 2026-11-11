@@ -1,0 +1,22 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2462-a-place-only-passing-through-heroes-packages-is-written.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes build <work>/app/main.hero --emit-c -o <work>/app/heroes.packages/../out.c
+exit 0
+stdout:
+stderr:
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2462-a-place-only-passing-through-heroes-packages-is-written.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-5e8071f88bf13e425708618c8a81e6caaf041ac1faf04e3b5bc94cdbf855f30b"
+heroes.packages:
+json@1.4.2-bfb4dba280cd6136

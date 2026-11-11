@@ -32,16 +32,28 @@ use cli/process
 use placed_use
 
 # Whether `path` stands in a placed package's tree: one of its folders,
-# never its own last part, is named `heroes.packages`.
+# never its own last part, is named `heroes.packages`, once its `.` and `..`
+# are taken out where a folder before them answers them (defect 2462's shape
+# beside: `-o heroes.packages/../out.c` names a file outside every tree, and
+# was refused as one inside), a last part `..` read as a folder's.
 function within(path: str) -> bool
     windows = process.exe_suffix() == ".exe"
+    folders: [str] @= []
     from: i64 @= 0
 
-    for at in range(from: 0, to: path.len())
-        if path[at] == '/' || windows && path[at] == '\\'
-            if at - from == placed_use.FOLDER.len() && path.slice(from: from, to: at) == placed_use.FOLDER
-                return true
+    for at in range(from: 0, to: path.len() + 1)
+        if at == path.len() || path[at] == '/' || windows && path[at] == '\\'
+            part = path.slice(from: from, to: at)
             from @ at + 1
+
+            if part == ".." && folders.len() > 0 && folders[folders.len() - 1] != ".."
+                folders @ folders.slice(from: 0, to: folders.len() - 1)
+            else if part == ".." || at < path.len() && part.len() > 0 && part != "."
+                folders @ folders.push(part)
+
+    for one in folders
+        if one == placed_use.FOLDER
+            return true
 
     return false
 
@@ -82,6 +94,16 @@ test "a placed package's file is one whose folder is named heroes.packages, and 
     assert !within("app/mine/parse.hero")
     assert !within("heroes.packages.hero")
     assert !within("")
+
+    # Defect 2462's shape beside: a path passing through the folder and out
+    # of it again names no place in a tree; one coming back into it does.
+    assert !within("heroes.packages/../out.c")
+    assert !within("app/heroes.packages/json@1.0.0-0123456789abcdef/../../out.c")
+    assert within("heroes.packages/t/../u/x.hero")
+    assert within("a/../heroes.packages/t/x.hero")
+    assert within("./heroes.packages/t/x.hero")
+    assert !folder_within("heroes.packages/..")
+    assert !within("heroes.packages/..")
     assert folder_within("app/heroes.packages/json@1.0.0-0123456789abcdef")
     assert folder_within("heroes.packages/json@1.0.0-0123456789abcdef/sub/")
     assert folder_within("heroes.packages")
