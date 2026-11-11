@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -102,7 +104,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 106 "placeadeadhandlehandedtocnamesthecall.c"
+#line 108 "placeadeadhandlehandedtocnamesthecall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -155,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "placeadeadhandlehandedtocnamesthecall.c"
+#line 161 "placeadeadhandlehandedtocnamesthecall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_placeadeadhandlehandedtocnamesthecall_0Json_eq(Obj * const *a, Obj * const *b);
@@ -186,7 +188,7 @@ void h_placeadeadhandlehandedtocnamesthecall_main(void) { Obj * h0_a; Obj * h1_b
     t12 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-dead-handle-handed-to-c-names-the-call.hero", "place-a-dead-handle-handed-to-c-names-the-call.main", 19, 5}; { hero_handle_alive_at(t12, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t12, "obj_delete", NULL, &hero_here); (void)obj_delete(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_a == t12) h0_a = hero_handle_dead(); } } return; bb2:
 #line 17
     t6 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-dead-handle-handed-to-c-names-the-call.hero", "place-a-dead-handle-handed-to-c-names-the-call.main", 17, 9}; { hero_handle_alive_at(t6, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "obj_delete", NULL, &hero_here); (void)obj_delete(t6); if (hero_handle_ended(t6, hero_life_0_0) && h1_b == t6) h1_b = hero_handle_dead(); } } goto bb1; bb3: goto bb1;
-#line 190 "placeadeadhandlehandedtocnamesthecall.c"
+#line 192 "placeadeadhandlehandedtocnamesthecall.c"
 }
 HERO_TU_LOCAL bool h_placeadeadhandlehandedtocnamesthecall_0Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

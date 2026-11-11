@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -97,7 +99,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 101 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 103 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 155 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -173,7 +175,7 @@ int64_t h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill
     t1 = hero_array_new(&hero_desc_u8, 1); t5 = h1_own1; h1_own1 = t1; hero_array_decref(t5); t6 = h0_md; hero_array_incref(t1); h0_md = t1; hero_array_decref(t6);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero", "fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.fill", 17, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer bytes_keep md 717 719 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(2000000); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h0_md, hero_lend_e0_0, "bytes_keep", "md", &hero_here); (void)bytes_keep((void *)hero_lend_b0_0); h0_md = hero_lend_give_at(h0_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } }
     t3 = h0_md; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 177 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 179 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return t4;
@@ -183,7 +185,7 @@ int64_t h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill
 void h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill(); hero_print_int(t1); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero", "fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.main", 22, 11}; t2 = bytes_write_later(); } hero_print_int(t2); hero_print_end(); return;
-#line 187 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 189 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

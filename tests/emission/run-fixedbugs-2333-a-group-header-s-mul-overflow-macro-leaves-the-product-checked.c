@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -95,7 +97,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 99 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
+#line 101 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
+#line 151 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -166,7 +168,7 @@ void h_fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked_main(vo
 
 #line 9 "tests/golden/run/fixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked.hero"
 int64_t h_fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked_HERO_2333_ONE(void) {
-#line 170 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
+#line 172 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
     _Static_assert(HERO_RET_INT(HERO_2333_ONE), "heroes-ffi-return HERO_2333_ONE i64");
     _Static_assert(__builtin_constant_p(HERO_2333_ONE), "heroes-ffi-const HERO_2333_ONE");
 #pragma clang diagnostic push
@@ -178,7 +180,7 @@ int64_t h_fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked_HERO
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 9 "tests/golden/run/fixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked.hero"
     return HERO_2333_ONE;
-#line 182 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
+#line 184 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -199,7 +201,7 @@ void h_fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked_main(vo
     t1 = INT64_C(4611686018427387904); h0_half = t1;
     t2 = h_fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked_HERO_2333_ONE(); hero_print_int(t2); hero_print_end();
     t3 = h0_half; t4 = h_fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked_HERO_2333_ONE(); t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked.hero", "fixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked.main", 14, 19); if (__builtin_mul_overflow(t3, t6, &t7)) hero_panic_overflow_at("fixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked.hero", "fixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked.main", 14, 11); hero_print_int(t7); hero_print_end(); return;
-#line 203 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
+#line 205 "fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

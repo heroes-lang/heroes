@@ -28,6 +28,10 @@ use source
 use token
 use type_text
 
+# The class a function a macro of another count names is told by.
+constant MACRO: str
+    "ffi_macro_name"
+
 # The classes that refuse a record at its own declaration.
 constant OWN: [str]
     [
@@ -51,6 +55,39 @@ function without_consequences(s: source.Source, tree: ast.Ast, decls: [ast.Decl]
             out @ out.push(d)
 
     return out
+
+# `found` without what is told inside a function's declaration that `found`
+# tells as a macro of another count (`ffi_macro_name`, `emit/ffi_call.hero`'s
+# `macro_counted`, defect 2467): every call of it this program's C writes
+# goes through the macro, so nothing the function's prototype says reaches a
+# call, and the macro's door is the one repair. Batch 31's gate B
+# (2026-11-11) found a variadic behind a macro of one more argument told
+# both as the macro and as the variadic panel 245's R2 refuses bound with
+# nothing past its `...`, one binding with two repairs that are one door.
+function without_macro_told(found: [diag.Diagnostic]) -> [diag.Diagnostic]
+    macros: [token.Span] @= []
+
+    for d in found
+        if d.code == MACRO
+            macros @ macros.push(d.span)
+
+    if macros.len() == 0
+        return found
+    out: [diag.Diagnostic] @= []
+
+    for d in found
+        if d.code == MACRO || !inside(d.span, spans: macros)
+            out @ out.push(d)
+
+    return out
+
+# Whether `span` lies within one of `spans`.
+function inside(span: token.Span, spans: [token.Span]) -> bool
+    for one in spans
+        if span.start >= one.start && span.end <= one.end
+            return true
+
+    return false
 
 # The names of the group records `found` refuses at their own declaration.
 function refused_records(s: source.Source, decls: [ast.Decl], found: [diag.Diagnostic]) -> {str: bool}
@@ -159,3 +196,21 @@ function record_tag(decls: [ast.Decl]) -> token.Span
         .constant_decl | .function_decl | .variant_decl | .test_decl => return decls[0].span
 
     return decls[0].span
+
+# A function told as a macro of another count takes what is told inside its
+# declaration with it, its name's variadic refusal among them, and nothing
+# told elsewhere (defect 2467 beside panel 245's R2; batch 31's gate B).
+test "a function told as a macro is told once, and a declaration beside it keeps its own"
+    whole = token.Span(start: 40, end: 70)
+    name = token.Span(start: 49, end: 54)
+    beside = token.Span(start: 80, end: 99)
+    found = [
+        diag.new_diagnostic(code: "ffi_macro_name", message: "the macro", span: whole)
+        diag.new_diagnostic(code: "ffi_call_shape", message: "the variadic", span: name)
+        diag.new_diagnostic(code: "ffi_call_shape", message: "another function", span: beside)
+    ]
+    kept = without_macro_told(found)
+    assert kept.len() == 2
+    assert kept[0].message == "the macro"
+    assert kept[1].message == "another function"
+    assert without_macro_told([found[1], found[2]]).len() == 2

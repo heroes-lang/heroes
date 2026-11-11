@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -97,7 +99,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 101 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
+#line 103 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
+#line 156 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
 #pragma clang diagnostic pop
 
 static inline __typeof__(h0_x) *hero_bound_h0_x(void) { return &h0_x; }
@@ -176,13 +178,13 @@ void h_fixedbugs2389aboundcfunctionnamedasaparameterbuilds_main(void);
 #line 15 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.hero"
 int64_t h_fixedbugs2389aboundcfunctionnamedasaparameterbuilds_twice(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.twice", 16, 12}; t2 = (*hero_bound_h0_x())(t1); } return t2;
-#line 180 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
+#line 182 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.hero"
 void h_fixedbugs2389aboundcfunctionnamedasaparameterbuilds_bump(int64_t *ph0_n) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.bump", 19, 9}; t2 = (*hero_bound_ph0_n())(t1); } (*ph0_n) = t2; return;
-#line 186 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
+#line 188 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.hero"
@@ -191,7 +193,7 @@ void h_fixedbugs2389aboundcfunctionnamedasaparameterbuilds_main(void) { int64_t 
     t3 = INT64_C(40); h0_n = t3;
     h_fixedbugs2389aboundcfunctionnamedasaparameterbuilds_bump(&h0_n);
     t4 = h0_n; hero_print_int(t4); hero_print_end(); return;
-#line 195 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
+#line 197 "fixedbugs2389aboundcfunctionnamedasaparameterbuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -102,7 +104,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 106 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 108 "handleahelperthatendsitsparameteristheruntimes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 162 "handleahelperthatendsitsparameteristheruntimes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_0Node_eq(node * const *a, node * const *b);
@@ -180,7 +182,7 @@ void h_handleahelperthatendsitsparameteristheruntimes_main(void);
 #line 15 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_finish(node * *ph0_n) { HERO_NODEBUG node *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.finish", 16, 5}; { hero_handle_alive_at(t1, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "node_free", NULL, &hero_here); (void)node_free(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_n) == t1) (*ph0_n) = hero_handle_dead(); } } return;
-#line 184 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 186 "handleahelperthatendsitsparameteristheruntimes.c"
 }
 
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
@@ -192,7 +194,7 @@ void h_handleahelperthatendsitsparameteristheruntimes_main(void) { node * h0_a; 
     t8 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 23, 5}; { hero_handle_alive_at(t8, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "node_free", NULL, &hero_here); (void)node_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_b == t8) h1_b = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t9); hero_print_end();
     t10 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 25, 5}; { hero_handle_alive_at(t10, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "node_free", NULL, &hero_here); (void)node_free(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); } } return;
-#line 196 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 198 "handleahelperthatendsitsparameteristheruntimes.c"
 }
 HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

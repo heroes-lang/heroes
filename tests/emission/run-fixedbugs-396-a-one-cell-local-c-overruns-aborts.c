@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 103 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 105 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 157 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -179,7 +181,7 @@ void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
     t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero", "fixedbugs-396-a-one-cell-local-c-overruns-aborts.main", 12, 11}; hero_lend_local_name(hero_lend_h0_m, "digest32", "md"); t3 = digest32((void *)&h0_m); } hero_print_int(t3); hero_print_end();
     t4 = HERO_STR_LIT(hero_str_5687795c); t5 = h0_m; hero_print_str(t4); hero_print_int(t5); hero_print_end(); hero_lend_local_give(hero_lend_h0_m); return;
-#line 183 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 185 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 }
 #undef h0_m
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

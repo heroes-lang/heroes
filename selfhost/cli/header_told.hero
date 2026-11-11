@@ -1,0 +1,115 @@
+# A bound header clang refused, told as the author's (design.md §4.19,
+# §4.17; CLAUDE.md §7's named exception; defect 360): every reader that
+# tells a refusal as a header's own, asked in its order, on the group's
+# string. Split out of `cli/whose.hero` at panel 245's R1's landing (batch
+# 31's gate B, 2026-11-11), when a first error the line's `-Werror` made
+# was read again as clang's own refusal (`cli/promoted.hero`) and took that
+# file past §11's 300 lines: `whose` decides whose a refusal is, and this
+# tells the one that is a header's.
+
+use cli/caret_bytes
+use cli/compile
+use cli/compiling
+use cli/group_file
+use cli/header_alone
+use cli/header_order
+use cli/header_refused
+use cli/header_whose
+use cli/macro_twice
+use cli/promoted
+use cli/system_paths
+use cli/toolchain
+use cli/units
+use diag
+use source
+
+# What tells clang's refusal as a header a group binds that does not compile
+# (`cli/header_refused.hero`, defect 360), on the group's string; nothing
+# where the refusal is not that. A first error the line's `-Werror` made,
+# where clang refuses the unit without it too, is read first as that
+# refusal, which the readers know how to tell, and as it was where that
+# reading tells nothing (`cli/promoted.hero`, panel 245's R1 at its landing).
+function of(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
+    words = compiling.unit_words(under)
+    own = promoted.beneath(message: message, words: words, dir: t.build + "/order")
+
+    if !own.is_err()
+        first = told_under(
+            own.must().message,
+            words: own.must().words,
+            art,
+            s,
+            t,
+            under: under,
+            unit_headers: unit_headers
+        )
+
+        if first.len() > 0
+            return first
+    return told_under(message, words: words, art, s, t, under: under, unit_headers: unit_headers)
+
+# `of` of one reading of clang's words, `words` those it was said
+# under.
+function told_under(message: str, words: [str], art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
+    # The refused unit, compiled again once where a reader asks the name
+    # under one of clang's carets (`cli/caret_bytes.hero`, defect 2117).
+    again: caret_bytes.Again @= caret_bytes.of(
+        words: words,
+        unit: units.generated_at(message),
+        dir: t.build + "/order"
+    )
+
+    # A macro two groups' headers define two ways (panel 204's R2).
+    macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers, @again)
+
+    if macro.len() > 0
+        return macro
+    refusal: [diag.Diagnostic] @= header_refused.refused(
+        stderr: message,
+        s: s,
+        decls: art.decls,
+        runtime: t.runtime,
+        @again
+    )
+
+    if refusal.len() == 0
+        return refusal
+
+    # Two headers told together where the one clang's first error lies in
+    # does not compile alone are that header's own refusal, the other's line
+    # the declaration clang's note names (defect 2414).
+    beside = header_whose.refused_beside(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
+
+    if !beside.is_err() && !header_alone.compiles(t, under: under, headers: [beside.must().header])
+        refusal @ header_whose.refused_own(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
+
+    # A header refused on its own that compiles alone is two headers'
+    # refusal, the earlier named (defect 557).
+    alone = header_whose.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
+
+    if !alone.is_err()
+        before = header_alone.earlier(t, under: under, header: alone.must().header, headers: unit_headers)
+
+        if !before.is_err()
+            other = group_file.group_of(s, art.decls, path: before.must())
+
+            if !other.is_err()
+                refusal @ header_whose.refused_after(
+                    stderr: message,
+                    s: s,
+                    decls: art.decls,
+                    runtime: t.runtime,
+                    earlier: other.must(),
+                    @again
+                )
+
+    # What the program needs instead of a repair, where clang says an order
+    # of its groups or a header before it compiles (panel 204's R3).
+    told: [diag.Diagnostic] @= []
+
+    for d in refusal
+        told @ told.push(header_order.refused(d, s, art.decls, t, under: under, unit_headers: unit_headers))
+
+    # A file of the C library or the toolchain named as an include names it
+    # (`cli/system_paths.hero`, defect 2047).
+    return system_paths.shown(t, under: under, told: told)

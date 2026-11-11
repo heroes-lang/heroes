@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -108,7 +110,7 @@ HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every a
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 112 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 114 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
 typedef void (*h_0fn_71885b7d)(int32_t);
 typedef void (*h_0fn_634dc79f)(int32_t);
 typedef struct h_0opt_f87774a {
@@ -162,7 +164,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 168 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -198,7 +200,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 13 "tests/golden/run/fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero"
 int32_t h_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_SIGABRT(void) {
-#line 202 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 204 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     _Static_assert(HERO_RET_I32(SIGABRT), "heroes-ffi-return SIGABRT i32");
     _Static_assert(__builtin_constant_p(SIGABRT), "heroes-ffi-const SIGABRT");
 #pragma clang diagnostic push
@@ -210,7 +212,7 @@ int32_t h_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_SIGAB
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero"
     return SIGABRT;
-#line 214 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 216 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -230,7 +232,7 @@ int32_t h_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_SIGAB
 void h_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_on_abort(int32_t h0_sig) { hero_thread_guard("fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.on_abort"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_29b2b840); t2 = h0_sig; hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero", "fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.on_abort", 18, 5}; h_library_exit(t3, &hero_here); } hero_unreachable(); return;
-#line 234 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 236 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
 }
 
 void h_0cb_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_on_abort(int32_t h0_sig) {
@@ -244,7 +246,7 @@ void h_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_main(voi
     t7 = HERO_STR_LIT(hero_str_2a70b79f); hero_print_str(t7); hero_print_end();
     t8 = h0_xs; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero", "fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.main", 24, 18}; t9 = h_library_args(&hero_here); } t17 = h2_own2; h2_own2 = t9; hero_array_decref(t17); t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(4); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero", "fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.main", 24, 14); t13 = ((void)((t8 == NULL || t12 < 0 || t12 >= t8->len) ? hero_panic_index_at(t8, t12, "fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero", "fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.main", 24, 11) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t12]); hero_print_int(t13); hero_print_end();
     t14 = HERO_STR_LIT(hero_str_19cafbb3); hero_print_str(t14); hero_print_end();
-#line 248 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 250 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -253,7 +255,7 @@ void h_fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop_main(voi
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 257 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 259 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
 }
 
 #line 152 "<heroes library>"
@@ -273,7 +275,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 277 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 279 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -299,7 +301,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 303 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 305 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -324,13 +326,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 328 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 330 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 334 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 336 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -344,7 +346,7 @@ void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBU
     t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
 #line 235
     t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 348 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 350 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
@@ -356,7 +358,7 @@ bb2:
     t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
     t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 360 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
+#line 362 "fixedbugs2257aheroesfunctionhandedcforsigabrtneverrunsafterastop.c"
     hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }

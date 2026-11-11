@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -110,7 +112,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 114 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
+#line 116 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -164,7 +166,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
+#line 170 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -185,7 +187,7 @@ void h_fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit_main(voi
 
 #line 21 "tests/golden/run/fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero"
 int64_t h_fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit_WANT_EXTRA(void) {
-#line 189 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
+#line 191 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
     _Static_assert(HERO_RET_INT(WANT_EXTRA), "heroes-ffi-return WANT_EXTRA i64");
     _Static_assert(__builtin_constant_p(WANT_EXTRA), "heroes-ffi-const WANT_EXTRA");
 #pragma clang diagnostic push
@@ -197,7 +199,7 @@ int64_t h_fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit_WANT_
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero"
     return WANT_EXTRA;
-#line 201 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
+#line 203 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -217,7 +219,7 @@ int64_t h_fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit_WANT_
 void h_fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG int64_t t6, t7, t8, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.4p+1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero", "fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.main", 28, 11}; t2 = floor(t1); } t3 = 0x1p+4; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero", "fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.main", 28, 24}; t4 = sqrt(t3); } t5 = t2 + t4; hero_print_f64(t5); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero", "fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.main", 29, 11}; t6 = extra(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero", "fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.main", 29, 21}; t7 = plain(); } if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero", "fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.main", 29, 11); t9 = h_fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit_WANT_EXTRA(); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.hero", "fixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it.main", 29, 11); hero_print_int(t10); hero_print_end(); return;
-#line 221 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
+#line 223 "fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

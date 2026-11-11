@@ -11,7 +11,8 @@
 #
 # **Since panel 245's R1 the note says the rule whole**: every warning clang
 # gives in a header's code is an error but those the region passes over,
-# `-Wall`'s, sign conversions and deprecations, and a `#warning` or a
+# `-Wall`'s, sign conversions, deprecations and a byte of a literal that is
+# not UTF-8 (`header_region.ADVICE`), and a `#warning` or a
 # `#pragma message`, told and never refused; the kinds it lists are what
 # the author most often meets, never the whole of what is refused. Split out
 # of `emit/header_region.hero` at the landing, which took that module past
@@ -95,7 +96,7 @@ function werror_notes(message: str, build_words: [str]) -> [str]
     if holds(header_region.LITERAL, one: flag)
         head @ "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code alone, wherever the header was found: a format the header's code hands arguments to is written there as a literal, so clang reads each conversion against its argument, and the C this compiler writes binds no argument past a `...`"
     return [
-        head + ": a header's code is passed over for `-Wall`'s warnings, sign conversions and deprecations alone, and a `#warning` or a `#pragma message` there is told and never refused; every other warning clang gives there is an error, and none is passed over for " + listed
+        head + ": a header's code is passed over for `-Wall`'s warnings, sign conversions, deprecations and a byte of a literal that is not UTF-8 alone, and a `#warning` or a `#pragma message` there is told and never refused; every other warning clang gives there is an error, and none is passed over for " + listed
     ]
 
 # Every word a note names that a header's code is held to: `KEPT`, the
@@ -160,7 +161,7 @@ test "a header's -Werror note names every kind its code is held to, and says too
         build_words: words
     )
     assert noted.len() == 1
-    assert noted[0] == "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings, sign conversions and deprecations alone, and a `#warning` or a `#pragma message` there is told and never refused; every other warning clang gives there is an error, and none is passed over for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a call to a function nobody declared, a value narrowed to 32 bits, a pointer of another type, a format handed arguments that is not a literal, a `static` definition of a name declared external before it, a declaration with no type, or a call the header's own `diagnose_if` warns of"
+    assert noted[0] == "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings, sign conversions, deprecations and a byte of a literal that is not UTF-8 alone, and a `#warning` or a `#pragma message` there is told and never refused; every other warning clang gives there is an error, and none is passed over for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a call to a function nobody declared, a value narrowed to 32 bits, a pointer of another type, a format handed arguments that is not a literal, a `static` definition of a name declared external before it, a declaration with no type, or a call the header's own `diagnose_if` warns of"
 
     # A word only the line's `-Werror` makes an error (panel 245's R1) is
     # told with the same note.

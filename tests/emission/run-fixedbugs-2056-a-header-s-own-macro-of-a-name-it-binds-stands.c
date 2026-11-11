@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -106,7 +108,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 110 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+#line 112 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -160,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+#line 166 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -182,7 +184,7 @@ void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void);
 void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.8p+1; t2 = -t1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero", "fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.main", 17, 11}; t3 = fabs(t2); } hero_print_f64(t3); hero_print_end();
     t4 = 0x1p+2; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero", "fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.main", 18, 11}; t5 = sqrt(t4); } hero_print_f64(t5); hero_print_end(); return;
-#line 186 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+#line 188 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

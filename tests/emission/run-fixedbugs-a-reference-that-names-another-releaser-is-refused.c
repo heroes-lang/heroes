@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -103,7 +105,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_39c57242, "acquired");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 107 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 109 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -157,7 +159,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 163 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareferencethatnamesanotherreleaserisrefused_0Ob_eq(ob * const *a, ob * const *b);
@@ -185,7 +187,7 @@ void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void) { ob * h0
     t5 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-reference-that-names-another-releaser-is-refused.hero", "fixedbugs-a-reference-that-names-another-releaser-is-refused.main", 17, 5}; { hero_handle_alive_at(t5, "the argument `o` of `ob_drop`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "ob_drop", NULL, &hero_here); (void)ob_drop(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_b == t5) h1_b = hero_handle_dead(); } }
     t6 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-reference-that-names-another-releaser-is-refused.hero", "fixedbugs-a-reference-that-names-another-releaser-is-refused.main", 18, 5}; { hero_handle_alive_at(t6, "the argument `o` of `ob_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "ob_put", NULL, &hero_here); (void)ob_put(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); } }
     t7 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t7); hero_print_end(); return;
-#line 189 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 191 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencethatnamesanotherreleaserisrefused_0Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

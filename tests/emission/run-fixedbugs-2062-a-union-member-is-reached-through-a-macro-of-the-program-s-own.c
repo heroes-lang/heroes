@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -68,11 +70,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct tagged *)0)->kind) == 1 && sizeof(((struct tagged *)0)->kind) == sizeof(int32_t) && (_Generic(((struct tagged *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tagged kind");
 _Static_assert(__builtin_classify_type(((struct tagged *)0)->fd) == 1 && sizeof(((struct tagged *)0)->fd) == sizeof(int32_t) && (_Generic(((struct tagged *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tagged fd");
 _Static_assert(__builtin_classify_type(((struct tagged *)0)->handle) == 5 && _Generic(((struct tagged *)0)->handle, __typeof__(((struct tagged *)0)->handle): 1, default: 0) && sizeof(((struct tagged *)0)->handle) == sizeof(void *), "heroes-ffi-field Tagged handle");
-#line 72 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 74 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 
 #line 9 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
 _Static_assert(__builtin_classify_type(*(struct tagged *)0) != 13, "heroes-ffi-union Tagged kind fd handle");
-#line 76 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 78 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,7 +165,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 169 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_0Tagged_eq(const struct tagged *a, const struct tagged *b);
@@ -212,7 +214,7 @@ void h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_main(void
     t1 = INT64_C(2); t2 = INT64_C(7); t3 = (struct tagged){.kind = t1, .fd = t2}; h0_t = t3; hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero", "fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.main", 17, 11}; hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); t4 = tg_kind(&h0_t); } hero_print_int(t4); hero_print_end();
     t5 = h0_t.fd; hero_print_int(t5); hero_print_end(); hero_lend_local_give(hero_lend_h0_t); return;
-#line 216 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 218 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_0Tagged_eq(const struct tagged *a, const struct tagged *b) {

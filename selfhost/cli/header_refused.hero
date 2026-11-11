@@ -56,8 +56,8 @@
 # compiler makes an error in a header's own code (`emit/region_note.hero`),
 # which since panel 205 is judged by one region wherever the header was found
 # (`emit/header_region.hero`, defect 569), and since panel 245's R1 passes
-# over `-Wall`'s warnings, sign conversions and deprecations alone there,
-# every other warning an error.
+# over `-Wall`'s warnings, sign conversions, deprecations and a byte of a
+# literal that is not UTF-8 alone there, every other warning an error.
 
 use ast
 use checker

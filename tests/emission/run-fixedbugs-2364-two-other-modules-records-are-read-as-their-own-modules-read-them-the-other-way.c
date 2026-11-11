@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -74,7 +76,7 @@ _Static_assert(__builtin_classify_type(((Rs *)0)->a) == 1 && sizeof(((Rs *)0)->a
 _Static_assert(__builtin_classify_type(((Rs *)0)->b) == 1 && sizeof(((Rs *)0)->b) == sizeof(int32_t) && (_Generic(((Rs *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rs b");
 #line 6 "tests/golden/run/fixedbugs2364/then_wide.hero"
 _Static_assert(__builtin_classify_type(((Pw *)0)->w) == 1 && sizeof(((Pw *)0)->w) == sizeof(int32_t) && (_Generic(((Pw *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pw w");
-#line 78 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
+#line 80 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -167,7 +169,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 171 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
+#line 173 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364rs_0Rs_eq(const Rs *a, const Rs *b);
@@ -208,19 +210,19 @@ void h_fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheoth
     t1 = INT64_C(4); t2 = h_fixedbugs2364thenwide_make(t1); h0_p = t2; hero_pad_fill(&h0_p, sizeof(Pw), 1, hero_pad_g_4, hero_pad_n_4);
     t3 = INT64_C(3); t4 = h_fixedbugs2364rs_make(t3); h1_r = t4; hero_pad_fill(&h1_r, sizeof(Rs), 1, hero_pad_g_1, hero_pad_n_1);
     t5 = h0_p.w; t6 = h1_r.a; if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-2364-two-other-modules-records-are-read-as-their-own-modules-read-them-the-other-way.hero", "fixedbugs-2364-two-other-modules-records-are-read-as-their-own-modules-read-them-the-other-way.main", 12, 11); t8 = h1_r.b; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-2364-two-other-modules-records-are-read-as-their-own-modules-read-them-the-other-way.hero", "fixedbugs-2364-two-other-modules-records-are-read-as-their-own-modules-read-them-the-other-way.main", 12, 11); hero_print_int(t9); hero_print_end(); return;
-#line 212 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
+#line 214 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs2364/rs.hero"
 Rs h_fixedbugs2364rs_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Rs t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rs.hero", "rs.make", 11, 12}; t2 = rs_make(t1); } return t2;
-#line 218 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
+#line 220 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs2364/then_wide.hero"
 Pw h_fixedbugs2364thenwide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pw t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/then_wide.hero", "then_wide.make", 10, 12}; t2 = pw_make(t1); } return t2;
-#line 224 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
+#line 226 "fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364rs_0Rs_eq(const Rs *a, const Rs *b) {
     if (!(a->a == b->a)) return false;

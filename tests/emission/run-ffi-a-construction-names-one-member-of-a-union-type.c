@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -71,7 +73,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 _Static_assert(__builtin_classify_type(((UT *)0)->i) == 1 && sizeof(((UT *)0)->i) == sizeof(int32_t) && (_Generic(((UT *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UT i");
 _Static_assert(_Generic(&((UT *)0)->f, float *: 1, default: 0) && sizeof(((UT *)0)->f) == sizeof(float), "heroes-ffi-field UT f");
-#line 75 "ffiaconstructionnamesonememberofauniontype.c"
+#line 77 "ffiaconstructionnamesonememberofauniontype.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -160,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "ffiaconstructionnamesonememberofauniontype.c"
+#line 166 "ffiaconstructionnamesonememberofauniontype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_0UT_eq(const UT *a, const UT *b);
@@ -199,7 +201,7 @@ void h_ffiaconstructionnamesonememberofauniontype_main(void) { UT h0_u; HERO_NOD
     t1 = 0x1.8p+0; t2 = (UT){.f = t1}; h0_u = t2; hero_pad_fill(&h0_u, sizeof(UT), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_u; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-names-one-member-of-a-union-type.hero", "ffi-a-construction-names-one-member-of-a-union-type.main", 18, 11}; t4 = ut_i(t3); } hero_print_int(t4); hero_print_end();
     t5 = h0_u.i; hero_print_int(t5); hero_print_end(); return;
-#line 203 "ffiaconstructionnamesonememberofauniontype.c"
+#line 205 "ffiaconstructionnamesonememberofauniontype.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_0UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -100,7 +102,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 104 "fixedbugs2059aboundmacrokeepsthemathnameitexpandsto.c"
+#line 106 "fixedbugs2059aboundmacrokeepsthemathnameitexpandsto.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -152,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "fixedbugs2059aboundmacrokeepsthemathnameitexpandsto.c"
+#line 158 "fixedbugs2059aboundmacrokeepsthemathnameitexpandsto.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -173,7 +175,7 @@ void h_fixedbugs2059aboundmacrokeepsthemathnameitexpandsto_main(void);
 #line 18 "tests/golden/run/fixedbugs-2059-a-bound-macro-keeps-the-math-name-it-expands-to.hero"
 void h_fixedbugs2059aboundmacrokeepsthemathnameitexpandsto_main(void) { HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.8p+1; t2 = -t1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2059-a-bound-macro-keeps-the-math-name-it-expands-to.hero", "fixedbugs-2059-a-bound-macro-keeps-the-math-name-it-expands-to.main", 19, 11}; t3 = absval(t2); } hero_print_f64(t3); hero_print_end(); return;
-#line 177 "fixedbugs2059aboundmacrokeepsthemathnameitexpandsto.c"
+#line 179 "fixedbugs2059aboundmacrokeepsthemathnameitexpandsto.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

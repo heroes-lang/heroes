@@ -337,8 +337,9 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         if !valued.is_err()
             found @ ffi_lookup.add_once(found, d: valued.must())
 
-    # A record refused at its declaration is told once (defect 2060).
-    return ffi_cascade.without_consequences(s, tree, decls, found: found)
+    # A record refused at its declaration is told once (defect 2060), and so
+    # is a function told as a macro of another count (defect 2467).
+    return ffi_cascade.without_consequences(s, tree, decls, found: ffi_cascade.without_macro_told(found))
 
 ## Tests
 

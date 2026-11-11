@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -73,11 +75,11 @@ _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 77 "fixedbugsagrouprecordineverycontainer.c"
+#line 79 "fixedbugsagrouprecordineverycontainer.c"
 
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->r) == sizeof(Color), "heroes-ffi-union-narrow Color r"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->g) == sizeof(Color), "heroes-ffi-union-narrow Color g"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->b) == sizeof(Color), "heroes-ffi-union-narrow Color b"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->a) == sizeof(Color), "heroes-ffi-union-narrow Color a");
-#line 81 "fixedbugsagrouprecordineverycontainer.c"
+#line 83 "fixedbugsagrouprecordineverycontainer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -176,7 +178,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "fixedbugsagrouprecordineverycontainer.c"
+#line 182 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *a, const Color *b);
@@ -246,7 +248,7 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) { Color h0_a; Color h1_b
     t51 = h6_keyed; t52 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t51, &t52, &hero_here); if (found == NULL) { t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t53 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t53.as.ok, found); } } t79 = h14_own14; h14_own14 = t53; h_0opt_e201354_release(&t79); t80 = h7_f1; h_0opt_e201354_retain(&t53); h7_f1 = t53; h_0opt_e201354_release(&t80); t54 = h7_f1; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb3; else goto bb4; bb2:
 #line 58
     t42 = h5_f0; t43 = t42.as.err;
-#line 250 "fixedbugsagrouprecordineverycontainer.c"
+#line 252 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must_at(t43, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 58, 11);
     hero_unreachable();
 bb3:
@@ -257,7 +259,7 @@ bb3:
     t64 = h8_maybe; t83 = h9_f2; h_0opt_31fbd75_retain(&t64); h9_f2 = t64; h_0opt_31fbd75_release(&t83); t65 = h9_f2; t66 = t65.tag; t67 = INT64_C(1); t68 = t66 == t67; hero_print_bool(t68); hero_print_end();
 #line 68
     t69 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 68, 11}; t70 = ColorToInt(t69); } hero_print_int(t70); hero_print_end();
-#line 261 "fixedbugsagrouprecordineverycontainer.c"
+#line 263 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -275,7 +277,7 @@ bb3:
 bb4:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t58 = h7_f1; t59 = t58.as.err;
-#line 279 "fixedbugsagrouprecordineverycontainer.c"
+#line 281 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must_at(t59, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11);
     hero_unreachable();
 }

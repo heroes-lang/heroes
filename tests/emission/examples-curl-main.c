@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -112,7 +114,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 116 "main.c"
+#line 118 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -174,7 +176,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 178 "main.c"
+#line 180 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_0Curl_eq(CURL * const *a, CURL * const *b);
@@ -205,7 +207,7 @@ __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char
 
 #line 53 "examples/curl/main.hero"
 int64_t h_main_CURLE_OK(void) {
-#line 209 "main.c"
+#line 211 "main.c"
     _Static_assert(HERO_RET_INT(CURLE_OK), "heroes-ffi-return CURLE_OK i64");
     _Static_assert(__builtin_constant_p(CURLE_OK), "heroes-ffi-const CURLE_OK");
 #pragma clang diagnostic push
@@ -217,7 +219,7 @@ int64_t h_main_CURLE_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 53 "examples/curl/main.hero"
     return CURLE_OK;
-#line 221 "main.c"
+#line 223 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -235,7 +237,7 @@ int64_t h_main_CURLE_OK(void) {
 
 #line 54 "examples/curl/main.hero"
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
-#line 239 "main.c"
+#line 241 "main.c"
     _Static_assert(HERO_RET_INT(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-return CURLE_UNSUPPORTED_PROTOCOL i64");
     _Static_assert(__builtin_constant_p(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-const CURLE_UNSUPPORTED_PROTOCOL");
 #pragma clang diagnostic push
@@ -247,7 +249,7 @@ int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 54 "examples/curl/main.hero"
     return CURLE_UNSUPPORTED_PROTOCOL;
-#line 251 "main.c"
+#line 253 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -278,7 +280,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h5_f2 = {0}, h
     t20 = HERO_STR_LIT(hero_str_58166374); hero_print_str(t20); hero_print_end(); goto bb4; bb6:
 #line 89
     t21 = HERO_STR_LIT(hero_str_52331108); t22 = h3_rc; if (t22 >= 0LL && t22 <= 4294967295LL) { t23 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t22}; } else { t23 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t70 = h12_own12; h12_own12 = t23; h_0opt_fbaec77_release(&t70); t71 = h4_f1; h_0opt_fbaec77_retain(&t23); h4_f1 = t23; h_0opt_fbaec77_release(&t71); t24 = h4_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb7: t30 = h4_f1; t31 = t30.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 89, 51}; t32 = (const char *)curl_easy_strerror(t31); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 89, 38}; t33 = h_library_validated(t32, &hero_here); } t72 = h13_own13; h13_own13 = t33; h_0opt_f87774a_release(&t72); t73 = h5_f2; h_0opt_f87774a_retain(&t33); h5_f2 = t33; h_0opt_f87774a_release(&t73); t34 = h5_f2; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb9; else goto bb10; bb8: t28 = h4_f1; t29 = t28.as.err;
-#line 282 "main.c"
+#line 284 "main.c"
     hero_panic_must_at(t29, "main.hero", "main.main", 89, 70);
     hero_unreachable();
 bb9:
@@ -286,7 +288,7 @@ bb9:
     t38 = h5_f2; t39 = t38.as.ok; t74 = h6_r1; hero_str_incref(t39); h6_r1 = t39; hero_str_decref(t74); goto bb11; bb10: t40 = HERO_STR_LIT(hero_str_7125eeac); t75 = h6_r1; hero_str_incref(t40); h6_r1 = t40; hero_str_decref(t75); goto bb11; bb11: t41 = h6_r1; hero_print_str(t21); hero_print_str(t41); hero_print_end(); goto bb4; bb12:
 #line 95
     t51 = h7_f3; t52 = t51.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 95, 22}; t53 = (const char *)curl_easy_strerror(t52); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 95, 9}; t54 = h_library_validated(t53, &hero_here); } t76 = h14_own14; h14_own14 = t54; h_0opt_f87774a_release(&t76); t77 = h8_f4; h_0opt_f87774a_retain(&t54); h8_f4 = t54; h_0opt_f87774a_release(&t77); t55 = h8_f4; t56 = t55.tag; t57 = INT64_C(0); t58 = t56 == t57; if (t58) goto bb14; else goto bb15; bb13: t49 = h7_f3; t50 = t49.as.err;
-#line 290 "main.c"
+#line 292 "main.c"
     hero_panic_must_at(t50, "main.hero", "main.main", 95, 41);
     hero_unreachable();
 bb14:
@@ -296,7 +298,7 @@ bb14:
     hero_print_str(t42); hero_print_str(t62); hero_print_end();
 #line 97
     t63 = h2_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 97, 5}; { hero_handle_alive_at(t63, "the argument `handle` of `curl_easy_cleanup`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t63, "curl_easy_cleanup", NULL, &hero_here); (void)curl_easy_cleanup(t63); if (hero_handle_ended(t63, hero_life_0_0) && h2_handle == t63) h2_handle = hero_handle_dead(); } }
-#line 300 "main.c"
+#line 302 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
@@ -315,7 +317,7 @@ bb14:
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 319 "main.c"
+#line 321 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -335,7 +337,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 339 "main.c"
+#line 341 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -103,7 +105,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_1ca80789, "wrote into a deleted object");
 
-#line 107 "deadhandlereadafterconsumethroughonename.c"
+#line 109 "deadhandlereadafterconsumethroughonename.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "deadhandlereadafterconsumethroughonename.c"
+#line 162 "deadhandlereadafterconsumethroughonename.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_0Json_eq(Obj * const *a, Obj * const *b);
@@ -187,7 +189,7 @@ void h_deadhandlereadafterconsumethroughonename_main(void) { Obj * h0_b; Obj * h
     t12 = HERO_STR_LIT(hero_str_1ca80789); hero_print_str(t12); hero_print_end(); return; bb2:
 #line 25
     t5 = h0_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-read-after-consume-through-one-name.hero", "dead-handle-read-after-consume-through-one-name.main", 25, 9}; { hero_handle_alive_at(t5, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "obj_delete", NULL, &hero_here); (void)obj_delete(t5); if (hero_handle_ended(t5, hero_life_0_0) && h0_b == t5) h0_b = hero_handle_dead(); } } goto bb1; bb3: goto bb1;
-#line 191 "deadhandlereadafterconsumethroughonename.c"
+#line 193 "deadhandlereadafterconsumethroughonename.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_0Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

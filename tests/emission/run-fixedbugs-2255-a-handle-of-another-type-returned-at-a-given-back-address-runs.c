@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -102,7 +104,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3ff80b44, "b_read: ");
 
-#line 106 "fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns.c"
+#line 108 "fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns.c"
+#line 162 "fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns_0A_eq(ta * const *a, ta * const *b);
@@ -184,7 +186,7 @@ void h_fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns_main(voi
     t2 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs.hero", "fixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs.main", 21, 5}; { hero_handle_alive_at(t2, "the argument `x` of `a_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t2, "a_close", NULL, &hero_here); (void)a_close(t2); if (hero_handle_ended(t2, hero_life_0_0) && h0_a == t2) h0_a = hero_handle_dead(); } }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs.hero", "fixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs.main", 22, 9}; t3 = b_get(); hero_handle_lent(t3); } h1_b = t3;
     t4 = HERO_STR_LIT(hero_str_3ff80b44); t5 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs.hero", "fixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs.main", 23, 23}; hero_handle_alive_at(t5, "the argument `x` of `b_read`", &hero_here); t6 = b_read(t5); } hero_print_str(t4); hero_print_int(t6); hero_print_end(); return;
-#line 188 "fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns.c"
+#line 190 "fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns_0A_eq(ta * const *a, ta * const *b) {
     return hero_handle_eq(*a, *b);

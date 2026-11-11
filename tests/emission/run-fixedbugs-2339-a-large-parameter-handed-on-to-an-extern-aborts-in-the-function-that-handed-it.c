@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 10 "tests/golden/run/fixedbugs-2339-a-large-parameter-handed-on-to-an-extern-aborts-in-the-function-that-handed-it.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 66 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
+#line 68 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -153,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
+#line 159 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -184,7 +186,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2339alargeparameterhandedontoan
 #line 13
     HERO_NODEBUG struct heroes_held *const hero_big_t1 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2339-a-large-parameter-handed-on-to-an-extern-aborts-in-the-function-that-handed-it.hero", "fixedbugs-2339-a-large-parameter-handed-on-to-an-extern-aborts-in-the-function-that-handed-it.pass", 14, 12}; t2 = heroes_held_first(t1); } hero_frame_give(hero_big_t1); return t2;
-#line 188 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
+#line 190 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
 }
 #undef h0_h
 #undef t1
@@ -200,7 +202,7 @@ __attribute__((__noinline__)) void h_fixedbugs2339alargeparameterhandedontoanext
     HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(7); t3 = *(struct heroes_held *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.first = t2; t4 = h_fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit_pass(&t3); hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); return;
-#line 204 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
+#line 206 "fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit.c"
 }
 #undef t3
 HERO_TU_LOCAL bool h_fixedbugs2339alargeparameterhandedontoanexternabortsinthefunctionthathandedit_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -70,7 +72,7 @@ _Static_assert(__builtin_classify_type(((Pk *)0)->w) == 1 && sizeof(((Pk *)0)->w
 #line 6 "tests/golden/run/fixedbugs2364/rp.hero"
 _Static_assert(__builtin_classify_type(((Rp *)0)->c) == 1 && sizeof(((Rp *)0)->c) == sizeof(int8_t) && (_Generic(((Rp *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rp c");
 _Static_assert(__builtin_classify_type(((Rp *)0)->b) == 1 && sizeof(((Rp *)0)->b) == sizeof(int32_t) && (_Generic(((Rp *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rp b");
-#line 74 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
+#line 76 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -163,7 +165,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
+#line 169 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364definespacked_0Pk_eq(const Pk *a, const Pk *b);
@@ -206,19 +208,19 @@ void h_fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown_main(void) 
     t5 = h0_p.w; hero_print_int(t5); hero_print_end();
     t6 = h1_r.c; hero_print_int(t6); hero_print_end();
     t7 = h1_r.b; hero_print_int(t7); hero_print_end(); return;
-#line 210 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
+#line 212 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs2364/defines_packed.hero"
 Pk h_fixedbugs2364definespacked_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pk t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/defines_packed.hero", "defines_packed.make", 10, 12}; t2 = pk_make(t1); } return t2;
-#line 216 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
+#line 218 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs2364/rp.hero"
 Rp h_fixedbugs2364rp_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Rp t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rp.hero", "rp.make", 11, 12}; t2 = rp_make(t1); } return t2;
-#line 222 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
+#line 224 "fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364definespacked_0Pk_eq(const Pk *a, const Pk *b) {
     if (!(a->w == b->w)) return false;

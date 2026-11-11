@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 10 "tests/golden/run/lent-a-record-holding-a-union-is-read-from-a-binding.hero"
 _Static_assert(__builtin_classify_type(((struct tagged *)0)->kind) == 1 && sizeof(((struct tagged *)0)->kind) == sizeof(int32_t) && (_Generic(((struct tagged *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tagged kind");
-#line 66 "lentarecordholdingaunionisreadfromabinding.c"
+#line 68 "lentarecordholdingaunionisreadfromabinding.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -151,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "lentarecordholdingaunionisreadfromabinding.c"
+#line 157 "lentarecordholdingaunionisreadfromabinding.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_lentarecordholdingaunionisreadfromabinding_0Tagged_eq(const struct tagged *a, const struct tagged *b);
@@ -201,7 +203,7 @@ __attribute__((__noinline__)) void h_lentarecordholdingaunionisreadfromabinding_
     struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "lentarecordholdingaunionisreadfromabinding.main", "t"); HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG struct tagged *const hero_big_t2 = (struct tagged *)hero_frame_take(sizeof(struct tagged)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2); t2 = *(struct tagged *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; h0_t = t2; hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-holding-a-union-is-read-from-a-binding.hero", "lent-a-record-holding-a-union-is-read-from-a-binding.main", 15, 11}; hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); t3 = tg_kind(&h0_t); } hero_print_int(t3); hero_print_end(); hero_lend_local_give(hero_lend_h0_t); hero_frame_give(hero_big_t2); return;
-#line 205 "lentarecordholdingaunionisreadfromabinding.c"
+#line 207 "lentarecordholdingaunionisreadfromabinding.c"
 }
 #undef h0_t
 #undef t2

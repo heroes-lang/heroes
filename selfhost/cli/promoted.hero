@@ -1,0 +1,117 @@
+# A refused unit whose first error is a warning the line's `-Werror` made
+# one, read again as clang's own refusal where clang has one (design.md
+# §4.19, §4.17; panel 245's R1, provisional, author ratification pending, at
+# its landing: batch 31's gate B, 2026-11-11).
+#
+# Since R1 every warning clang gives in a header's code is an error, so the
+# first error can be a warning standing before the refusal C itself makes:
+# a header's `static int main(void)` was told *'main' should not be declared
+# static* (`-Wmain`) before *static declaration of 'main' follows
+# non-static declaration*, and `double floor(int x);` *incompatible
+# redeclaration of library function* before `<math.h>`'s *conflicting types
+# for 'floor'*. A warning changes nothing clang parses, so the refusal after
+# it is clang's verdict on the same text, and the readers that tell a
+# refusal as a header's own know that one: the runtime's name and C's name
+# after the groups (`cli/runtime_name.hero`, `cli/declared_after.hero`,
+# defects 2045 and 2049) each lost its note and its `guess` fix at the gate.
+#
+# **Which first error a `-Werror` made is asked of clang, never read from
+# its words**: clang writes `[-Werror,-Wreturn-type]` alike for a word the
+# region raises by pragma, one the build's own flags raise and one only the
+# bare `-Werror` raised (measured on Apple clang 21 that day). So where the
+# first error carries `[-Werror`, the unit is compiled once more,
+# `-fsyntax-only` under its own words without the line's `-Werror`; where
+# clang still refuses it, at another first error, that refusal is read
+# under those words, and where it does not, or refuses it at the same, the
+# refusal stands as it was. On the failure path alone, once per refusal.
+
+use cli/clang_first
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/units
+use emit/ffi_lookup
+
+# How clang marks an error a `-Werror` made, the bare word or one naming
+# its group.
+constant PROMOTED: str
+    "[-Werror"
+
+# The line's own word (`emit/header_region.LINE_WORDS`), the one this
+# reading takes out.
+constant PROMOTING: str
+    "-Werror"
+
+# The refusal to read instead: clang's words without the line's `-Werror`,
+# the unit named on its last line as a refusal names it, and the words it
+# was asked under.
+record Beneath
+    message: str
+    words: [str]
+
+# Clang's own refusal beneath a first error a `-Werror` made, or absent
+# where the first error is clang's own, the unit is not named, clang cannot
+# be asked, or clang refuses the unit at the same first error without it.
+function beneath(message: str, words: [str], dir: str) -> Beneath?
+    first = clang_first.first_error(ffi_lookup.lines(text: message))?
+
+    if !strings.holds(text: first.message, needle: PROMOTED)
+        return fail(code: "none", msg: "the first error is clang's own")
+    unit = units.generated_at(message)
+
+    if unit == ""
+        return fail(code: "none", msg: "the refusal names no unit")
+    fewer = without_line(words)
+    said = asked(words: fewer, unit: unit, dir: dir)?
+    own = clang_first.first_error(ffi_lookup.lines(text: said))?
+
+    if own.message == first.message && own.place.path == first.place.path && own.place.row == first.place.row
+        return fail(code: "none", msg: "clang refuses the unit at the same first error")
+    return ok(Beneath(message: said + "\n" + units.GENERATED + unit, words: fewer))
+
+# `words` without the line's bare `-Werror`, every `-Werror=` word kept.
+function without_line(words: [str]) -> [str]
+    out: [str] @= []
+
+    for word in words
+        if word != PROMOTING
+            out @ out.push(word)
+
+    return out
+
+# What clang says of `unit` under `words`, syntax alone.
+function asked(words: [str], unit: str, dir: str) -> str?
+    process.mkdir_all(dir)?
+    said_at = publish.private_name(dir + "/promoted-stderr.txt")
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only"], more: words),
+        dir: dir
+    )
+    ran = process.run(
+        program: "clang",
+        words: line.push("-x").push("c").push(unit),
+        out: process.discard(),
+        err: said_at
+    )
+    said = read_back.words(said_at)
+    publish.discard(said_at)
+
+    if !ran.started
+        return fail(code: "failed", msg: "clang did not start for the unit asked without `-Werror`")
+    return said
+
+## Tests
+
+test "the line's bare -Werror alone is taken out, every -Werror= word kept"
+    got = without_line(["-O0", "-Werror=return-type", "-Werror", "-Wno-error=#warnings"])
+    assert got == ["-O0", "-Werror=return-type", "-Wno-error=#warnings"]
+
+test "a first error clang makes itself is read as it is, and clang is not asked"
+    said = "./h.h:2:5: error: static declaration of 'main' follows non-static declaration\n" + units.GENERATED + "build/tu-1/t.c"
+    assert beneath(message: said, words: ["-Werror"], dir: "build/promoted-test").is_err()
+
+test "a first error a -Werror made, in a refusal that names no unit, is read as it is"
+    said = "./h.h:2:12: error: 'main' should not be declared static [-Werror,-Wmain]\n"
+    assert beneath(message: said, words: ["-Werror"], dir: "build/promoted-test").is_err()

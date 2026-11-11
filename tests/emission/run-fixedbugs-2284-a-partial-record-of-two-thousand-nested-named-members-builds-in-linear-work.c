@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/fixedbugs-2284-a-partial-record-of-two-thousand-nested-named-members-builds-in-linear-work.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2284_nest *)0)->first) == 1 && sizeof(((struct fixedbugs_2284_nest *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2284_nest *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 66 "fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork.c"
+#line 68 "fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -151,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork.c"
+#line 157 "fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork_0Held_eq(const struct fixedbugs_2284_nest *a, const struct fixedbugs_2284_nest *b);
@@ -239,7 +241,7 @@ __attribute__((__noinline__)) void h_fixedbugs2284apartialrecordoftwothousandnes
     struct fixedbugs_2284_nest *const hero_big_h0_held = (struct fixedbugs_2284_nest *)hero_frame_take(sizeof(struct fixedbugs_2284_nest)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct fixedbugs_2284_nest *const hero_big_t2 = (struct fixedbugs_2284_nest *)hero_frame_take(sizeof(struct fixedbugs_2284_nest)); HERO_NODEBUG struct fixedbugs_2284_nest *const hero_big_t3 = (struct fixedbugs_2284_nest *)hero_frame_take(sizeof(struct fixedbugs_2284_nest)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = *(struct fixedbugs_2284_nest *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h0_held = t2; hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2284_nest), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2284-a-partial-record-of-two-thousand-nested-named-members-builds-in-linear-work.hero", "fixedbugs-2284-a-partial-record-of-two-thousand-nested-named-members-builds-in-linear-work.main", 18, 11}; t4 = fixedbugs_2284_nest_first(t3); } hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_held); return;
-#line 243 "fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork.c"
+#line 245 "fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork.c"
 }
 #undef h0_held
 #undef t2

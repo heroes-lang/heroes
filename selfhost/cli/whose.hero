@@ -7,21 +7,15 @@
 # compiler blames itself at exit 2. `build` and `--emit-c` ask it the same
 # question in the same order, which stood written twice there.
 
-use cli/caret_bytes
 use cli/compile
 use cli/compiling
 use cli/deep_types
-use cli/group_file
-use cli/header_alone
 use cli/header_ask
-use cli/header_order
-use cli/header_refused
-use cli/header_whose
+use cli/header_told
 use cli/inline_only
 use cli/io
 use cli/link
 use cli/link_needs
-use cli/macro_twice
 use cli/member_ask
 use cli/name_order
 use cli/opening_told
@@ -33,7 +27,6 @@ use cli/renamed
 use cli/supplied_words
 use cli/system_paths
 use cli/toolchain
-use cli/units
 use diag
 use emit/ffi
 use emit/ffi_asked
@@ -102,7 +95,7 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
     # told before any question is asked of the header after it. The unit's
     # headers are asked under the unit's own words (defect 572).
     words = unit_words(under, asking: asking, unit_headers: unit_headers)
-    header = header_told(message, art, s, t, under: words, unit_headers: unit_headers)
+    header = header_told.of(message, art, s, t, under: words, unit_headers: unit_headers)
 
     if header.len() > 0
         return authors(header, msg: "a header this program binds does not compile")
@@ -247,73 +240,6 @@ function unit_words(under: compiling.Compiling, asking: [probing.Probing], unit_
             return one.under
 
     return under
-
-# What tells clang's refusal as a header a group binds that does not compile
-# (`cli/header_refused.hero`, defect 360), on the group's string; nothing
-# where the refusal is not that.
-function header_told(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
-    # The refused unit, compiled again once where a reader asks the name
-    # under one of clang's carets (`cli/caret_bytes.hero`, defect 2117).
-    again: caret_bytes.Again @= caret_bytes.of(
-        words: compiling.unit_words(under),
-        unit: units.generated_at(message),
-        dir: t.build + "/order"
-    )
-
-    # A macro two groups' headers define two ways (panel 204's R2).
-    macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers, @again)
-
-    if macro.len() > 0
-        return macro
-    refusal: [diag.Diagnostic] @= header_refused.refused(
-        stderr: message,
-        s: s,
-        decls: art.decls,
-        runtime: t.runtime,
-        @again
-    )
-
-    if refusal.len() == 0
-        return refusal
-
-    # Two headers told together where the one clang's first error lies in
-    # does not compile alone are that header's own refusal, the other's line
-    # the declaration clang's note names (defect 2414).
-    beside = header_whose.refused_beside(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
-
-    if !beside.is_err() && !header_alone.compiles(t, under: under, headers: [beside.must().header])
-        refusal @ header_whose.refused_own(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
-
-    # A header refused on its own that compiles alone is two headers'
-    # refusal, the earlier named (defect 557).
-    alone = header_whose.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
-
-    if !alone.is_err()
-        before = header_alone.earlier(t, under: under, header: alone.must().header, headers: unit_headers)
-
-        if !before.is_err()
-            other = group_file.group_of(s, art.decls, path: before.must())
-
-            if !other.is_err()
-                refusal @ header_whose.refused_after(
-                    stderr: message,
-                    s: s,
-                    decls: art.decls,
-                    runtime: t.runtime,
-                    earlier: other.must(),
-                    @again
-                )
-
-    # What the program needs instead of a repair, where clang says an order
-    # of its groups or a header before it compiles (panel 204's R3).
-    told: [diag.Diagnostic] @= []
-
-    for d in refusal
-        told @ told.push(header_order.refused(d, s, art.decls, t, under: under, unit_headers: unit_headers))
-
-    # A file of the C library or the toolchain named as an include names it
-    # (`cli/system_paths.hero`, defect 2047).
-    return system_paths.shown(t, under: under, told: told)
 
 # What a refusal is told with, then what the value probe found beside it
 # (`cli/value_beside.hero`, defect 2128), as one list: one staging, so a

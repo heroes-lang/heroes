@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -104,7 +106,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 108 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 110 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -159,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 165 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_0Stream_eq(st * const *a, st * const *b);
@@ -188,7 +190,7 @@ void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) 
     t3 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero", "fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.main", 19, 9}; { hero_handle_alive_at(t3, "the argument `s` of `wr_new`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring_at(t3, "st_fclose", &hero_here); t4 = wr_new(t3); if (t4 != NULL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_s == t3) h0_s = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } hero_handle_acquired_at(t4, "wr_free", &hero_here); } } h1_w = t4;
     t5 = h1_w; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero", "fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.main", 20, 5}; { hero_handle_alive_at(t5, "the argument `w` of `wr_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "wr_free", NULL, &hero_here); (void)wr_free(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_w == t5) h1_w = hero_handle_dead(); } }
     t6 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t6); hero_print_end(); return;
-#line 192 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 194 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_0Stream_eq(st * const *a, st * const *b) {
     return hero_handle_eq(*a, *b);

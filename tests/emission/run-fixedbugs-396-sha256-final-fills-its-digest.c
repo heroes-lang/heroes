@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 18 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 66 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 68 "fixedbugs396sha256finalfillsitsdigest.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -171,7 +173,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 177 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -223,7 +225,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 227 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 229 "fixedbugs396sha256finalfillsitsdigest.c"
     _Static_assert(HERO_RET_INT(SHA256_DIGEST_LENGTH), "heroes-ffi-return SHA256_DIGEST_LENGTH i64");
     _Static_assert(__builtin_constant_p(SHA256_DIGEST_LENGTH), "heroes-ffi-const SHA256_DIGEST_LENGTH");
 #pragma clang diagnostic push
@@ -235,7 +237,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
-#line 239 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 241 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -253,7 +255,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 257 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 259 "fixedbugs396sha256finalfillsitsdigest.c"
     _Static_assert(HERO_RET_INT(EVP_MAX_MD_SIZE), "heroes-ffi-return EVP_MAX_MD_SIZE i64");
     _Static_assert(__builtin_constant_p(EVP_MAX_MD_SIZE), "heroes-ffi-const EVP_MAX_MD_SIZE");
 #pragma clang diagnostic push
@@ -265,7 +267,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return EVP_MAX_MD_SIZE;
-#line 269 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 271 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -310,7 +312,7 @@ __attribute__((__noinline__)) void h_fixedbugs396sha256finalfillsitsdigest_main(
 #line 46
     t49 = h5_s; t50 = HERO_STR_LIT(hero_str_20); t51 = h4_out; t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len); t53 = HERO_STR_LIT(hero_str_20); t54 = h4_out; t55 = INT64_C(0); t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? hero_panic_index_at(t54, t55, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 46, 35) : (void)0), (void)(t54->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t54 + 1))[t55]); t57 = HERO_STR_LIT(hero_str_20); t58 = h4_out; t59 = INT64_C(63); t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? hero_panic_index_at(t58, t59, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 46, 48) : (void)0), (void)(t58->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t58 + 1))[t59]); hero_print_int(t49); hero_print_str(t50); hero_print_int(t52); hero_print_str(t53); hero_print_int(t56); hero_print_str(t57); hero_print_int(t60); hero_print_end();
     t61 = h3_ctx; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 47, 5}; { hero_handle_alive_at(t61, "the argument `ctx` of `EVP_MD_CTX_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t61, "EVP_MD_CTX_free", NULL, &hero_here); (void)EVP_MD_CTX_free(t61); if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead(); } }
-#line 314 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 316 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

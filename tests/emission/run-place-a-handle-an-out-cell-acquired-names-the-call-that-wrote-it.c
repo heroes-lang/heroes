@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -102,7 +104,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_c10bd3d, "after the swap: ");
 
-#line 106 "placeahandleanoutcellacquirednamesthecallthatwroteit.c"
+#line 108 "placeahandleanoutcellacquirednamesthecallthatwroteit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "placeahandleanoutcellacquirednamesthecallthatwroteit.c"
+#line 162 "placeahandleanoutcellacquirednamesthecallthatwroteit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_placeahandleanoutcellacquirednamesthecallthatwroteit_0Node_eq(node * const *a, node * const *b);
@@ -185,7 +187,7 @@ void h_placeahandleanoutcellacquirednamesthecallthatwroteit_main(void) {
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.hero", "place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.main", 15, 16}; t1 = node_new(); hero_handle_acquired_at(t1, "node_free", &hero_here); } h0_a = t1;
     t2 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.hero", "place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.main", 16, 5}; hero_lend_local_name(hero_lend_h0_a, "node_swap", "out"); { hero_handle_alive_at(t2, "the argument `n` of `node_swap`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t2, "node_swap", "node_free", &hero_here); (void)node_swap(t2, &h0_a); hero_handle_ended(t2, hero_life_0_0); hero_handle_acquired_at(h0_a, "node_free", &hero_here); } }
     t3 = HERO_STR_LIT(hero_str_c10bd3d); t4 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.hero", "place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.main", 17, 31}; hero_handle_alive_at(t4, "the argument `n` of `node_value`", &hero_here); t5 = node_value(t4); } hero_print_str(t3); hero_print_int(t5); hero_print_end(); hero_lend_local_give(hero_lend_h0_a); return;
-#line 189 "placeahandleanoutcellacquirednamesthecallthatwroteit.c"
+#line 191 "placeahandleanoutcellacquirednamesthecallthatwroteit.c"
 }
 #undef h0_a
 HERO_TU_LOCAL bool h_placeahandleanoutcellacquirednamesthecallthatwroteit_0Node_eq(node * const *a, node * const *b) {

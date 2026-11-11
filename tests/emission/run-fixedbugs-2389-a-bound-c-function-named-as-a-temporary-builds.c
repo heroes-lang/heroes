@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -97,7 +99,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 101 "fixedbugs2389aboundcfunctionnamedasatemporarybuilds.c"
+#line 103 "fixedbugs2389aboundcfunctionnamedasatemporarybuilds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs2389aboundcfunctionnamedasatemporarybuilds.c"
+#line 156 "fixedbugs2389aboundcfunctionnamedasatemporarybuilds.c"
 #pragma clang diagnostic pop
 
 static inline __typeof__(t1) *hero_bound_t1(void) { return &t1; }
@@ -180,7 +182,7 @@ void h_fixedbugs2389aboundcfunctionnamedasatemporarybuilds_main(void) { int64_t 
     t10 = h2_c; t11 = INT64_C(4); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.main", 22, 9); h3_d = t12;
     t13 = h3_d; t14 = INT64_C(5); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.main", 23, 9); h4_e = t15;
     t16 = h4_e; t17 = INT64_C(15); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.main", 24, 18); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.main", 24, 11}; t19 = (*hero_bound_t12())(t18); } hero_print_int(t19); hero_print_end(); return;
-#line 184 "fixedbugs2389aboundcfunctionnamedasatemporarybuilds.c"
+#line 186 "fixedbugs2389aboundcfunctionnamedasatemporarybuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

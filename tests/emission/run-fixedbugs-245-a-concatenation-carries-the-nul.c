@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -116,7 +118,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 120 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 122 "fixedbugs245aconcatenationcarriesthenul.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -180,7 +182,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 184 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 186 "fixedbugs245aconcatenationcarriesthenul.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -213,7 +215,7 @@ __attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0
 #line 16 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
 HeroStr h_fixedbugs245aconcatenationcarriesthenul_HELD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5167ba47);
-#line 217 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 219 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -224,7 +226,7 @@ HeroStr h_fixedbugs245aconcatenationcarriesthenul_held(void) { void * h0_handle;
     t6 = HERO_STR_LIT(hero_str_298a6604); t7 = h0_handle; t8 = ((void *)0); t9 = t7 != t8; if (t9) goto bb1; else goto bb2; bb1:
 #line 23
     t10 = INT64_C(97); t11 = INT64_C(0); t12 = INT64_C(98); t13 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t13, &t10); hero_array_push_owned(&t13, &t11); hero_array_push_owned(&t13, &t12); t50 = h7_own7; h7_own7 = t13; hero_array_decref(t50); t51 = h1_xs0; hero_array_incref(t13); h1_xs0 = t13; hero_array_decref(t51); t14 = INT64_C(0); h2_i0 = t14; goto bb3; bb2:
-#line 228 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 230 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_panic_assert_shown_at(t6, hero_show_pointer, &t7, &t8, 0, "fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.held", 21, 12);
     hero_unreachable();
 bb3:
@@ -238,13 +240,13 @@ bb3:
     t39 = h_fixedbugs245aconcatenationcarriesthenul_HELD(); t54 = h9_own9; h9_own9 = t39; hero_str_decref(t54); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.held", 27, 12}; t40 = h_library_read_file(t39, &hero_here); } t55 = h10_own10; h10_own10 = t40; h_0opt_f87774a_release(&t55); t56 = h5_f1; h_0opt_f87774a_retain(&t40); h5_f1 = t40; h_0opt_f87774a_release(&t56); t41 = h5_f1; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb9; else goto bb10; bb7:
 #line 24
     t30 = h4_f0; t31 = t30.as.ok; t32 = h0_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.held", 24, 13}; (void)fputc(t31, t32); } goto bb5; bb8: t28 = h4_f0; t29 = t28.as.err;
-#line 242 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 244 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_panic_must_at(t29, "fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.held", 24, 22);
     hero_unreachable();
 bb9:
 #line 27 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
     t47 = h5_f1; t48 = t47.as.ok;
-#line 248 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 250 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -258,7 +260,7 @@ bb9:
 bb10:
 #line 27 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
     t45 = h5_f1; t46 = t45.as.err;
-#line 262 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 264 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_panic_must_at(t46, "fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.held", 27, 12);
     hero_unreachable();
 }
@@ -269,7 +271,7 @@ void h_fixedbugs245aconcatenationcarriesthenul_main(void) { HeroStr h0_s = {0}; 
     t2 = HERO_STR_LIT(hero_str_78); t3 = h0_s; t4 = hero_str_concat(t2, t3); t15 = h3_own3; h3_own3 = t4; hero_str_decref(t15); t16 = h1_made; hero_str_incref(t4); h1_made = t4; hero_str_decref(t16);
     t5 = HERO_STR_LIT(hero_str_41d10789); t6 = h1_made; t7 = hero_str_len(t6); t8 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t5); hero_print_int(t7); hero_print_str(t8); hero_print_end();
     t9 = HERO_STR_LIT(hero_str_521d74b5); t10 = h1_made; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.main", 33, 33}; t11 = hero_str_lend_at(t10, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-concatenation-carries-the-nul.hero", "fixedbugs-245-a-concatenation-carries-the-nul.main", 33, 23}; t12 = strlen(hero_cstr_nonnull_at(t11, &hero_here)); } hero_print_str(t9); hero_print_uint(t12); hero_print_end();
-#line 273 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 275 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_made);
     hero_str_release_at(&h2_own2);
@@ -279,22 +281,22 @@ void h_fixedbugs245aconcatenationcarriesthenul_main(void) { HeroStr h0_s = {0}; 
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 283 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 285 "fixedbugs245aconcatenationcarriesthenul.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 288 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 290 "fixedbugs245aconcatenationcarriesthenul.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 293 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 295 "fixedbugs245aconcatenationcarriesthenul.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 298 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 300 "fixedbugs245aconcatenationcarriesthenul.c"
 }
 
 #line 166 "<heroes library>"
@@ -322,7 +324,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 181
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 326 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 328 "fixedbugs245aconcatenationcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

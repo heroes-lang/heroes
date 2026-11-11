@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -78,7 +80,7 @@ _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((str
 #line 11
 _Static_assert(_Generic(&((struct line *)0)->a, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->a) == sizeof(struct pt), "heroes-ffi-field Line a");
 _Static_assert(_Generic(&((struct line *)0)->b, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->b) == sizeof(struct pt), "heroes-ffi-field Line b");
-#line 82 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 84 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -164,7 +166,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 170 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -198,7 +200,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void) {
-#line 202 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 204 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -210,7 +212,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     static struct line hero_constant_value = LINE_INIT;
-#line 214 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 216 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -229,7 +231,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void) {
-#line 233 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 235 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -241,7 +243,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     static struct line hero_constant_value = LINE_FLAT;
-#line 245 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 247 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -267,7 +269,7 @@ void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) { struct li
     t5 = h0_l.b.y; hero_print_int(t5); hero_print_end();
     t6 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(); h1_f = t6; hero_pad_fill(&h1_f, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
     t7 = h1_f.a.x; t8 = h1_f.b.y; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero", "fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.main", 23, 11); hero_print_int(t9); hero_print_end(); return;
-#line 271 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 273 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

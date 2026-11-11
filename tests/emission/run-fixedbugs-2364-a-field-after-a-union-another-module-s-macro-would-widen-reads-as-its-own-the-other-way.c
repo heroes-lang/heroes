@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -72,7 +74,7 @@ _Static_assert(_Generic(&((Box *)0)->u, Un *: 1, default: 0) && sizeof(((Box *)0
 _Static_assert(__builtin_classify_type(((Box *)0)->t) == 1 && sizeof(((Box *)0)->t) == sizeof(int32_t) && (_Generic(((Box *)0)->t, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Box t");
 #line 6 "tests/golden/run/fixedbugs2364/then_wide.hero"
 _Static_assert(__builtin_classify_type(((Pw *)0)->w) == 1 && sizeof(((Pw *)0)->w) == sizeof(int32_t) && (_Generic(((Pw *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pw w");
-#line 76 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 78 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -165,7 +167,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 171 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364rbox_0Un_eq(const Un *a, const Un *b);
@@ -220,7 +222,7 @@ __attribute__((__noinline__)) void h_fixedbugs2364afieldafteraunionanothermodule
     t5 = h0_p.w; hero_print_int(t5); hero_print_end();
     t6 = h1_b.u.i; hero_print_int(t6); hero_print_end();
     t7 = h1_b.t; hero_print_int(t7); hero_print_end(); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_h1_b); return;
-#line 224 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 226 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 #undef h1_b
 #undef t4
@@ -232,7 +234,7 @@ __attribute__((__noinline__)) void h_fixedbugs2364rbox_make(Box *hero_out, int32
 #line 12
     HERO_NODEBUG int32_t t1; HERO_NODEBUG Box *const hero_big_t2 = (Box *)hero_frame_take(sizeof(Box)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rbox.hero", "rbox.make", 13, 12}; t2 = box_make(t1); } if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 236 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 238 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 #undef t2
 __attribute__((unused)) Box hero_value_h_fixedbugs2364rbox_make(int32_t h0_v) {
@@ -244,7 +246,7 @@ __attribute__((unused)) Box hero_value_h_fixedbugs2364rbox_make(int32_t h0_v) {
 #line 9 "tests/golden/run/fixedbugs2364/then_wide.hero"
 Pw h_fixedbugs2364thenwide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pw t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/then_wide.hero", "then_wide.make", 10, 12}; t2 = pw_make(t1); } return t2;
-#line 248 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 250 "fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364rbox_0Un_eq(const Un *a, const Un *b) {
     hero_panic("h_fixedbugs2364rbox_0Un_eq: a partial record has no structural equality");

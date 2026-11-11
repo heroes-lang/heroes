@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -114,7 +116,7 @@ HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8")
 HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 
-#line 118 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 120 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -171,7 +173,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 177 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -198,7 +200,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
 
 #line 20 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
-#line 202 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 204 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     _Static_assert(HERO_RET_I32(SIGSTOP), "heroes-ffi-return SIGSTOP i32");
     _Static_assert(__builtin_constant_p(SIGSTOP), "heroes-ffi-const SIGSTOP");
 #pragma clang diagnostic push
@@ -210,7 +212,7 @@ int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     return SIGSTOP;
-#line 214 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 216 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -237,7 +239,7 @@ HeroStr h_fixedbugs436achildthatstopsiswaitedonandnotkilled_itself(void) {
     t1 = INT64_C(0); h0_status = t1;
     t2 = INT64_C(0); h1_marks = t2;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero", "fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.itself", 36, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 241 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 243 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -267,7 +269,7 @@ void h_fixedbugs436achildthatstopsiswaitedonandnotkilled_main(void) {
 #line 41
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero", "fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.main", 41, 23}; t5 = getpid(); } t6 = h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero", "fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.main", 41, 13}; (void)kill(t5, t6); }
     t8 = HERO_STR_LIT(hero_str_5f1d4b1c); hero_print_str(t8); hero_print_end(); goto bb4; bb3: goto bb1; bb4:
-#line 271 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 273 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_release_at(&h0_program);
     hero_array_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -278,7 +280,7 @@ void h_fixedbugs436achildthatstopsiswaitedonandnotkilled_main(void) {
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 282 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 284 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 }
 
 #line 152 "<heroes library>"
@@ -298,7 +300,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 302 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 304 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -324,7 +326,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 328 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 330 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -349,13 +351,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 353 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 355 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 359 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 361 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }

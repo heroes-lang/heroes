@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -106,7 +108,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 HERO_STR_STATIC(hero_str_7a, "z");
 
-#line 110 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 112 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -165,7 +167,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 171 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -200,7 +202,7 @@ void h_fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning_main(void) { Her
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero", "fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.main", 40, 5}; hero_held_release_at(&h2_x, &hero_here); }
     t33 = HERO_STR_LIT(hero_str_7a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero", "fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.main", 41, 19}; t34 = hero_str_lend_at(t33, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero", "fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.main", 41, 11}; t35 = r_u8((const uint8_t *)hero_cstr_nonnull_at(t34, &hero_here)); } hero_print_int(t35); hero_print_end();
     t36 = h1_t; hero_print_str(t36); hero_print_end();
-#line 204 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 206 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);

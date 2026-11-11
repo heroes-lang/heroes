@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 103 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 105 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 157 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +177,7 @@ void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) { void * h
     t2 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero", "fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.main", 27, 5}; (void)release(t2); }
     t3 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero", "fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.main", 28, 5}; (void)release(t3); }
     t4 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t4); hero_print_end(); return;
-#line 179 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 181 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

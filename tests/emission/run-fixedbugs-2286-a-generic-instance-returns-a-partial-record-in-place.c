@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 8 "tests/golden/run/fixedbugs-2286-a-generic-instance-returns-a-partial-record-in-place.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 66 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
+#line 68 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -138,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
+#line 144 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -187,7 +189,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286agenericinstancereturnsapartia
     struct heroes_held *const hero_big_h0_h = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_0same_52d4fd5f(&t3, &t2); h0_h = t3; hero_pad_fill(&h0_h, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h0_h.first; hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_h); return;
-#line 191 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
+#line 193 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
 }
 #undef h0_h
 #undef t2
@@ -197,7 +199,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286agenericinstancereturnsapartia
 void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_main(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_go(); return;
-#line 201 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
+#line 203 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs-2286-a-generic-instance-returns-a-partial-record-in-place.hero"
@@ -209,7 +211,7 @@ void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_main(void) { HE
 #line 10
     HERO_NODEBUG struct heroes_held *const hero_big_t1 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; if (hero_out != NULL) *hero_out = t1; hero_frame_give(hero_big_t1); return;
-#line 213 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
+#line 215 "fixedbugs2286agenericinstancereturnsapartialrecordinplace.c"
 }
 #undef h0_x
 #undef t1

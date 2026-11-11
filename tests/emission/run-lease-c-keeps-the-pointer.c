@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -100,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 HERO_STR_STATIC(hero_str_3390715c, "-payload");
 
-#line 104 "leaseckeepsthepointer.c"
+#line 106 "leaseckeepsthepointer.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -152,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "leaseckeepsthepointer.c"
+#line 158 "leaseckeepsthepointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -180,7 +182,7 @@ void h_leaseckeepsthepointer_main(void) { int64_t h0_at; const char * h1_label; 
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-c-keeps-the-pointer.hero", "lease-c-keeps-the-pointer.main", 21, 15}; t13 = stash_len(); } hero_print_uint(t13); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-c-keeps-the-pointer.hero", "lease-c-keeps-the-pointer.main", 22, 9}; hero_held_release_at(&h1_label, &hero_here); }
     t14 = h0_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lease-c-keeps-the-pointer.hero", "lease-c-keeps-the-pointer.main", 23, 14); h0_at = t16; goto bb1; bb3:
-#line 184 "leaseckeepsthepointer.c"
+#line 186 "leaseckeepsthepointer.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);

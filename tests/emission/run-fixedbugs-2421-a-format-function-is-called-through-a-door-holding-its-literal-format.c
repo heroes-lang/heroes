@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_7b355a2f, "forty-two");
 
-#line 103 "fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat.c"
+#line 105 "fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -152,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat.c"
+#line 158 "fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +177,7 @@ void h_fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat_m
     t1 = INT64_C(4294967338); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.hero", "fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.main", 20, 9}; (void)say_count(t1); }
     t3 = HERO_STR_LIT(hero_str_7b355a2f); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.hero", "fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.main", 21, 21}; t4 = hero_str_lend_at(t3, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.hero", "fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.main", 21, 9}; (void)say_text(hero_cstr_nonnull_at(t4, &hero_here)); }
     t6 = INT64_C(7); hero_print_int(t6); hero_print_end(); return;
-#line 179 "fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat.c"
+#line 181 "fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

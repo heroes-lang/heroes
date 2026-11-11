@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -105,7 +107,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 109 "ffireadbackacstr.c"
+#line 111 "ffireadbackacstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -159,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "ffireadbackacstr.c"
+#line 165 "ffireadbackacstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -186,7 +188,7 @@ void h_ffireadbackacstr_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h2
     t12 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 45, 14}; t13 = (const char *)strerror(t12); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 45, 14}; t14 = h_library_validated(t13, &hero_here); } t47 = h9_own9; h9_own9 = t14; h_0opt_f87774a_release(&t47); t48 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t48); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
 #line 44
     t8 = h0_f0; t9 = t8.as.err;
-#line 190 "ffireadbackacstr.c"
+#line 192 "ffireadbackacstr.c"
     hero_panic_must_at(t9, "ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 44, 13);
     hero_unreachable();
 bb3:
@@ -201,7 +203,7 @@ bb3:
     t33 = h4_absent; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 58, 11}; t34 = h_library_validated(t33, &hero_here); } t50 = h10_own10; h10_own10 = t34; h_0opt_f87774a_release(&t50); t51 = h5_s0; h_0opt_f87774a_retain(&t34); h5_s0 = t34; h_0opt_f87774a_release(&t51); t35 = h5_s0; t36 = t35.tag; switch (t36) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb4:
 #line 45
     t19 = h2_f1; t20 = t19.as.err;
-#line 205 "ffireadbackacstr.c"
+#line 207 "ffireadbackacstr.c"
     hero_panic_must_at(t20, "ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 45, 14);
     hero_unreachable();
 bb5:
@@ -220,12 +222,12 @@ bb6:
 #line 59 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t37 = h5_s0; t38 = t37.as.ok; t52 = h6_text; hero_str_incref(t38); h6_text = t38; hero_str_decref(t52); t39 = h6_text; hero_print_str(t39); hero_print_end(); goto bb5; bb7:
     t40 = h5_s0; t41 = t40.as.err; t53 = h7_e; hero_failure_retain(&t41); h7_e = t41; hero_failure_release(&t53); t42 = HERO_STR_LIT(hero_str_63ebf303); t43 = h7_e.code; hero_print_str(t42); hero_print_str(t43); hero_print_end(); goto bb5;
-#line 224 "ffireadbackacstr.c"
+#line 226 "ffireadbackacstr.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 229 "ffireadbackacstr.c"
+#line 231 "ffireadbackacstr.c"
 }
 
 #line 152 "<heroes library>"
@@ -245,7 +247,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 249 "ffireadbackacstr.c"
+#line 251 "ffireadbackacstr.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

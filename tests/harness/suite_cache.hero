@@ -224,6 +224,13 @@ constant AHEAD_PROBED: str
 # Since panel 237's R2 such a file of a folder the build names is refused
 # wherever clang lists it and enters it nowhere (its words are defect 2356's
 # question), so a later build is refused, warm as cold.
+#
+# Corrected 2026-11-11, batch 31's gate B: since defect 2468 a file a header
+# only asks after is judged by the question that finds it, as an include is
+# (`cli/shadowed_asked.hero`), and `hero-probe-2289.h` is a name no
+# platform folder holds, so the program builds and prints 2, cold (measured
+# that day, exit 0) as warm. The step asks the warm build for that 2: an
+# object kept from before the file was written would print 1.
 constant AHEAD_ASKED: str
     "#if __has_include(<hero-probe-2289.h>)\n#define CONF_LIMIT 2\n#else\n#define CONF_LIMIT 1\n#endif\n"
 
@@ -260,7 +267,9 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # and `1` where it prints `2`, twice). **The `__has_include` is asked in
 # quotes and its file included since panel 237** (batch 25's gate B): asked
 # by angle and read by nothing, the program's file is refused
-# `shadowed_header`, warm as cold, which the last two steps hold.
+# `shadowed_header`, warm as cold, which the last two steps hold. Since
+# defect 2468 (2026-11-11) that file builds, its name no platform folder's,
+# and the last two steps hold `1` before it is written and `2` after.
 function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler: str)
     label = "cache/a header found ahead of the one a build read is seen"
     home = scratch + "/" + AHEAD_HOME
@@ -292,7 +301,7 @@ function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler:
         ["", "", "1"]
         ["/probe/hero-probe-2289.h", "#define HERO_PROBE_2289 1\n", "2"]
         ["", "", "1"]
-        ["/asked/hero-probe-2289.h", "\n", ""]
+        ["/asked/hero-probe-2289.h", "\n", "2"]
     ]
     asked = [compiler, "run", home + "/asked/prog.hero"]
     runs = [system, system, searched, searched, probe, probe, asked, asked]
@@ -309,12 +318,8 @@ function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler:
 
         if step[2] == ""
             refused = !said.is_err() && said.must().code == 1
-            needle: str @= "ffi_header_refused"
-
-            # The angled probe's file is the refusal's, not the decoy's.
-            if runs[at] == asked
-                needle @ "error[shadowed_header]"
-            told = refused && core_strings.contains(s: said.must().err, substr: needle) && (runs[at] == asked || core_strings.contains(s: said.must().err, substr: AHEAD_DECOY))
+            needle = "ffi_header_refused"
+            told = refused && core_strings.contains(s: said.must().err, substr: needle) && core_strings.contains(s: said.must().err, substr: AHEAD_DECOY)
 
             if !told
                 wrong @ wrong.push(

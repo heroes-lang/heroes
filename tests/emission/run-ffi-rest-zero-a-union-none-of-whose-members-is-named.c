@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -68,7 +70,7 @@ _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x
 #line 19
 _Static_assert(__builtin_classify_type(((UD *)0)->c) == 1 && sizeof(((UD *)0)->c) == sizeof(int8_t) && (_Generic(((UD *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UD c");
 _Static_assert(_Generic(&((UD *)0)->d, double *: 1, default: 0) && sizeof(((UD *)0)->d) == sizeof(double), "heroes-ffi-field UD d");
-#line 72 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 74 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -164,7 +166,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 170 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroaunionnoneofwhosemembersisnamed_0SA_eq(const SA *a, const SA *b);
@@ -222,19 +224,19 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 26 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
 SA h_ffirestzeroaunionnoneofwhosemembersisnamed_in_a_struct(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG SA t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = (SA){0}; __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; return t2;
-#line 226 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 228 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
 UD h_ffirestzeroaunionnoneofwhosemembersisnamed_a_union_type(void) { HERO_NODEBUG UD t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (UD){0}; __builtin_memset(&t1, 0, sizeof t1); return t1;
-#line 232 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 234 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 32 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
 SA h_ffirestzeroaunionnoneofwhosemembersisnamed_nothing_named(void) { HERO_NODEBUG SA t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (SA){0}; __builtin_memset(&t1, 0, sizeof t1); return t1;
-#line 238 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 240 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 35 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -256,7 +258,7 @@ void h_ffirestzeroaunionnoneofwhosemembersisnamed_main(void) {
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-none-of-whose-members-is-named.hero", "ffi-rest-zero-a-union-none-of-whose-members-is-named.main", 42, 5}; (void)dirty(); }
     t11 = h_ffirestzeroaunionnoneofwhosemembersisnamed_nothing_named(); h2_n = t11; hero_pad_fill(&h2_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t12 = h2_n.kind; t13 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-none-of-whose-members-is-named.hero", "ffi-rest-zero-a-union-none-of-whose-members-is-named.main", 44, 24}; hero_lend_local_name(hero_lend_h2_n, "sa_union", "s"); hero_pad_fill(&h2_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t14 = sa_union(&h2_n); } t15 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-none-of-whose-members-is-named.hero", "ffi-rest-zero-a-union-none-of-whose-members-is-named.main", 44, 43}; hero_lend_local_name(hero_lend_h2_n, "sa_x", "s"); hero_pad_fill(&h2_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t16 = sa_x(&h2_n); } hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_str(t15); hero_print_int(t16); hero_print_end(); hero_lend_local_give(hero_lend_h2_n); hero_lend_local_give(hero_lend_h1_u); hero_lend_local_give(hero_lend_h0_s); return;
-#line 260 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 262 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 #undef h0_s
 #undef h1_u

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -100,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3615c7bd, "a given back twice, and nothing said");
 
-#line 104 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 106 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -152,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 158 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_0H_eq(hh * const *a, hh * const *b);
@@ -176,7 +178,7 @@ void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void);
 #line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_closed(hh * *ph0_x) { HERO_NODEBUG hh *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_x); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-compared-after-its-address-was-handed-out-again.hero", "dead-handle-compared-after-its-address-was-handed-out-again.closed", 19, 5}; { hero_handle_alive_at(t1, "the argument `x` of `f_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "f_close", NULL, &hero_here); (void)f_close(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_x) == t1) (*ph0_x) = hero_handle_dead(); } } return;
-#line 180 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 182 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
@@ -187,7 +189,7 @@ void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void) { hh * h0_a
     t3 = h0_a; t4 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-compared-after-its-address-was-handed-out-again.hero", "dead-handle-compared-after-its-address-was-handed-out-again.main", 25, 11}; t5 = hero_handle_eq_at(t3, t4, &hero_here); } hero_print_bool(t5); hero_print_end();
     t6 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-compared-after-its-address-was-handed-out-again.hero", "dead-handle-compared-after-its-address-was-handed-out-again.main", 26, 5}; { hero_handle_alive_at(t6, "the argument `x` of `f_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "f_close", NULL, &hero_here); (void)f_close(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); } }
     t7 = HERO_STR_LIT(hero_str_3615c7bd); hero_print_str(t7); hero_print_end(); return;
-#line 191 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 193 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_0H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -95,7 +97,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 99 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
+#line 101 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
+#line 151 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -166,7 +168,7 @@ void h_fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes_main(v
 
 #line 15 "tests/golden/run/fixedbugs-2146-a-header-asking-whether-main-is-a-macro-reads-as-the-program-does.hero"
 int64_t h_fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes_K_M(void) {
-#line 170 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
+#line 172 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
     _Static_assert(HERO_RET_INT(K_M), "heroes-ffi-return K_M i64");
     _Static_assert(__builtin_constant_p(K_M), "heroes-ffi-const K_M");
 #pragma clang diagnostic push
@@ -178,7 +180,7 @@ int64_t h_fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes_K_M
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-2146-a-header-asking-whether-main-is-a-macro-reads-as-the-program-does.hero"
     return K_M;
-#line 182 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
+#line 184 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -197,7 +199,7 @@ int64_t h_fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes_K_M
 #line 17 "tests/golden/run/fixedbugs-2146-a-header-asking-whether-main-is-a-macro-reads-as-the-program-does.hero"
 void h_fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes_K_M(); hero_print_int(t1); hero_print_end(); return;
-#line 201 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
+#line 203 "fixedbugs2146aheaderaskingwhethermainisamacroreadsastheprogramdoes.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -98,7 +100,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 104 "fixedbugs171aloaderspointerssetthencalled.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 157 "fixedbugs171aloaderspointerssetthencalled.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -174,7 +176,7 @@ void h_fixedbugs171aloaderspointerssetthencalled_main(void) { HERO_NODEBUG int32
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-171-a-loaders-pointers-set-then-called.hero", "fixedbugs-171-a-loaders-pointers-set-then-called.main", 16, 5}; (void)load_all(); }
     t1 = INT64_C(2); t2 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-171-a-loaders-pointers-set-then-called.hero", "fixedbugs-171-a-loaders-pointers-set-then-called.main", 17, 11}; t3 = vkAdd(t1, t2); } hero_print_int(t3); hero_print_end();
     t4 = INT64_C(4); t5 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-171-a-loaders-pointers-set-then-called.hero", "fixedbugs-171-a-loaders-pointers-set-then-called.main", 18, 11}; t6 = glAdd(t4, t5); } hero_print_int(t6); hero_print_end(); return;
-#line 178 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 180 "fixedbugs171aloaderspointerssetthencalled.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

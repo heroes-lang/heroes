@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -96,7 +98,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 100 "fixedbugs2206theroutepastakeywordruns.c"
+#line 102 "fixedbugs2206theroutepastakeywordruns.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs2206theroutepastakeywordruns.c"
+#line 154 "fixedbugs2206theroutepastakeywordruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -169,7 +171,7 @@ void h_fixedbugs2206theroutepastakeywordruns_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-2206-the-route-past-a-keyword-runs.hero"
 int64_t h_fixedbugs2206theroutepastakeywordruns_kw_test(void) {
-#line 173 "fixedbugs2206theroutepastakeywordruns.c"
+#line 175 "fixedbugs2206theroutepastakeywordruns.c"
     _Static_assert(HERO_RET_INT(kw_test), "heroes-ffi-return kw_test i64");
     _Static_assert(__builtin_constant_p(kw_test), "heroes-ffi-const kw_test");
 #pragma clang diagnostic push
@@ -181,7 +183,7 @@ int64_t h_fixedbugs2206theroutepastakeywordruns_kw_test(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-2206-the-route-past-a-keyword-runs.hero"
     return kw_test;
-#line 185 "fixedbugs2206theroutepastakeywordruns.c"
+#line 187 "fixedbugs2206theroutepastakeywordruns.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -201,7 +203,7 @@ int64_t h_fixedbugs2206theroutepastakeywordruns_kw_test(void) {
 void h_fixedbugs2206theroutepastakeywordruns_main(void) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2206-the-route-past-a-keyword-runs.hero", "fixedbugs-2206-the-route-past-a-keyword-runs.main", 13, 11}; t2 = kw_match(t1); } hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs2206theroutepastakeywordruns_kw_test(); hero_print_int(t3); hero_print_end(); return;
-#line 205 "fixedbugs2206theroutepastakeywordruns.c"
+#line 207 "fixedbugs2206theroutepastakeywordruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

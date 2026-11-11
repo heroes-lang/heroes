@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -75,7 +77,7 @@ _Static_assert(__builtin_classify_type(((Pw *)0)->w) == 1 && sizeof(((Pw *)0)->w
 #line 6 "tests/golden/run/fixedbugs2364/rs.hero"
 _Static_assert(__builtin_classify_type(((Rs *)0)->a) == 1 && sizeof(((Rs *)0)->a) == sizeof(int32_t) && (_Generic(((Rs *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rs a");
 _Static_assert(__builtin_classify_type(((Rs *)0)->b) == 1 && sizeof(((Rs *)0)->b) == sizeof(int32_t) && (_Generic(((Rs *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rs b");
-#line 79 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 81 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -172,7 +174,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 178 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364defineswide_0Pw_eq(const Pw *a, const Pw *b);
@@ -219,31 +221,31 @@ void h_fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones_main(
     t4 = INT64_C(3); t5 = h_fixedbugs2364rs_make(t4); h2_r = t5; hero_pad_fill(&h2_r, sizeof(Rs), 1, hero_pad_g_9, hero_pad_n_9);
     t6 = h1_p.w; t7 = h2_r.a; if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs-2364-a-third-module-s-handle-keeps-its-header-after-the-reordered-ones.hero", "fixedbugs-2364-a-third-module-s-handle-keeps-its-header-after-the-reordered-ones.main", 19, 11); t9 = h2_r.b; if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-2364-a-third-module-s-handle-keeps-its-header-after-the-reordered-ones.hero", "fixedbugs-2364-a-third-module-s-handle-keeps-its-header-after-the-reordered-ones.main", 19, 11); hero_print_int(t10); hero_print_end();
     t11 = h0_h; t12 = h_fixedbugs2364hd_is_none(t11); hero_print_int(t12); hero_print_end(); return;
-#line 223 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 225 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs2364/defines_wide.hero"
 Pw h_fixedbugs2364defineswide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pw t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/defines_wide.hero", "defines_wide.make", 10, 12}; t2 = pw_make(t1); } return t2;
-#line 229 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 231 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs2364/hd.hero"
 Hd * h_fixedbugs2364hd_none(void) { HERO_NODEBUG Hd *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/hd.hero", "hd.none", 9, 12}; t1 = hd_none(); hero_handle_lent(t1); } return t1;
-#line 235 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 237 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 }
 
 #line 11 "tests/golden/run/fixedbugs2364/hd.hero"
 int32_t h_fixedbugs2364hd_is_none(Hd * h0_h) { HERO_NODEBUG Hd *t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/hd.hero", "hd.is_none", 12, 12}; hero_handle_alive_at(t1, "the argument `h` of `hd_is_none`", &hero_here); t2 = hd_is_none(t1); } return t2;
-#line 241 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 243 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs2364/rs.hero"
 Rs h_fixedbugs2364rs_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Rs t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rs.hero", "rs.make", 11, 12}; t2 = rs_make(t1); } return t2;
-#line 247 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
+#line 249 "fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364defineswide_0Pw_eq(const Pw *a, const Pw *b) {
     if (!(a->w == b->w)) return false;

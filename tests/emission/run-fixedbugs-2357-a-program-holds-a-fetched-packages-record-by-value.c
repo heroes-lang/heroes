@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -63,7 +65,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 6 "tests/golden/run/fixedbugs-2357-a-program-holds-a-fetched-packages-record-by-value.case/heroes.packages/pt@1.0.0-a3ae65015eed2dcb/pt.hero"
 _Static_assert(__builtin_classify_type(((struct pt_point *)0)->x) == 1 && sizeof(((struct pt_point *)0)->x) == sizeof(int64_t) && (_Generic(((struct pt_point *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Point x");
 _Static_assert(__builtin_classify_type(((struct pt_point *)0)->y) == 1 && sizeof(((struct pt_point *)0)->y) == sizeof(int64_t) && (_Generic(((struct pt_point *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Point y");
-#line 67 "main.c"
+#line 69 "main.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -153,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "main.c"
+#line 159 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_1ptpt_0Point_eq(const struct pt_point *a, const struct pt_point *b);
@@ -188,20 +190,20 @@ void h_main_main(void) { struct pt_point h0_p; HERO_NODEBUG int64_t t1, t2, t4, 
     t1 = INT64_C(3); t2 = INT64_C(4); t3 = h_1ptpt_make(t1, t2); h0_p = t3; hero_pad_fill(&h0_p, sizeof(struct pt_point), 1, hero_pad_g_1, hero_pad_n_1);
     t4 = h0_p.x; t5 = h0_p.y; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.main", 17, 11); hero_print_int(t6); hero_print_end();
     t7 = h_geoshape_sum(); hero_print_int(t7); hero_print_end(); return;
-#line 192 "main.c"
+#line 194 "main.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs-2357-a-program-holds-a-fetched-packages-record-by-value.case/heroes.packages/pt@1.0.0-a3ae65015eed2dcb/pt.hero"
 struct pt_point h_1ptpt_make(int64_t h0_x, int64_t h1_y) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG struct pt_point t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = h1_y; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<pt>/pt.hero", "pt.make", 11, 12}; t3 = pt_make(t1, t2); } return t3;
-#line 198 "main.c"
+#line 200 "main.c"
 }
 
 #line 6 "tests/golden/run/fixedbugs-2357-a-program-holds-a-fetched-packages-record-by-value.case/geo/shape.hero"
 int64_t h_geoshape_sum(void) { struct pt_point h0_p; HERO_NODEBUG int64_t t1, t2, t4, t5, t6; HERO_NODEBUG struct pt_point t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(5); t2 = INT64_C(6); t3 = h_1ptpt_make(t1, t2); h0_p = t3; hero_pad_fill(&h0_p, sizeof(struct pt_point), 1, hero_pad_g_1, hero_pad_n_1);
     t4 = h0_p.x; t5 = h0_p.y; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("geo/shape.hero", "shape.sum", 8, 12); return t6;
-#line 205 "main.c"
+#line 207 "main.c"
 }
 HERO_TU_LOCAL bool h_1ptpt_0Point_eq(const struct pt_point *a, const struct pt_point *b) {
     if (!(a->x == b->x)) return false;

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -97,7 +99,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 101 "fixedbugs569alibrarysownsignconversionisnottheprograms.c"
+#line 103 "fixedbugs569alibrarysownsignconversionisnottheprograms.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs569alibrarysownsignconversionisnottheprograms.c"
+#line 156 "fixedbugs569alibrarysownsignconversionisnottheprograms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +174,7 @@ void h_fixedbugs569alibrarysownsignconversionisnottheprograms_main(void);
 void h_fixedbugs569alibrarysownsignconversionisnottheprograms_main(void) { HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG uint32_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(21); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.hero", "fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.main", 20, 11}; t2 = twice(t1); } hero_print_int(t2); hero_print_end();
     t3 = INT64_C(-5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.hero", "fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.main", 21, 11}; t4 = magnitude(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 176 "fixedbugs569alibrarysownsignconversionisnottheprograms.c"
+#line 178 "fixedbugs569alibrarysownsignconversionisnottheprograms.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

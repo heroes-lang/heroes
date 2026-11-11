@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 66 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 68 "fixedbugs396sha256finalintoonecellaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 165 "fixedbugs396sha256finalintoonecellaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalintoonecellaborts_0Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -220,7 +222,7 @@ __attribute__((__noinline__)) void h_fixedbugs396sha256finalintoonecellaborts_ma
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 19, 11}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t4 = SHA256_Init(&h0_c); } t5 = HERO_STR_LIT(hero_str_20); t6 = HERO_STR_LIT(hero_str_1998f2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 19, 57}; t7 = hero_str_lend_at(t6, &hero_here); } t8 = UINT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 19, 33}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t9 = SHA256_Update(&h0_c, hero_cstr_nonnull_at(t7, &hero_here), t8); } hero_print_int(t4); hero_print_str(t5); hero_print_int(t9); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 20, 11}; hero_lend_local_name(hero_lend_h1_m, "SHA256_Final", "md"); hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t10 = SHA256_Final((void *)&h1_m, &h0_c); } hero_print_int(t10); hero_print_end();
     t11 = HERO_STR_LIT(hero_str_5687795c); t12 = h1_m; hero_print_str(t11); hero_print_int(t12); hero_print_end(); hero_lend_local_give(hero_lend_h1_m); hero_lend_local_give(hero_lend_h0_c); hero_frame_give(hero_big_t2); return;
-#line 224 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 226 "fixedbugs396sha256finalintoonecellaborts.c"
 }
 #undef h0_c
 #undef h1_m

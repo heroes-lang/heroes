@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -104,7 +106,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_71bccdbe, "sqlite3_prepare_v2(db: db, sql: \"select 1\".cstr(), length: -1, statement: @statement, tail: @tail) == 0");
 HERO_STR_STATIC(hero_str_5689c81, "select 1");
 
-#line 108 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
+#line 110 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -159,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
+#line 165 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2291arefusedclosenobodyrepeatsisowedatexit_0Db_eq(sqlite3 * const *a, sqlite3 * const *b);
@@ -196,14 +198,14 @@ void h_fixedbugs2291arefusedclosenobodyrepeatsisowedatexit_main(void) {
     t8 = ((void *)0); h1_statement = t8;
     t9 = ((void *)0); h2_tail = t9;
     t10 = HERO_STR_LIT(hero_str_71bccdbe); t11 = h0_db; t12 = HERO_STR_LIT(hero_str_5689c81); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero", "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main", 22, 44}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero", "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main", 22, 12}; hero_lend_local_name(hero_lend_h1_statement, "sqlite3_prepare_v2", "statement"); hero_lend_local_name(hero_lend_h2_tail, "sqlite3_prepare_v2", "tail"); hero_handle_alive_at(t11, "the argument `db` of `sqlite3_prepare_v2`", &hero_here); t15 = sqlite3_prepare_v2(t11, hero_cstr_nonnull_at(t13, &hero_here), t14, &h1_statement, &h2_tail); hero_handle_acquired_at(h1_statement, "sqlite3_finalize", &hero_here); } t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb3; else goto bb4; bb2:
-#line 200 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
+#line 202 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
     hero_panic_assert_shown_at(t2, hero_show_i64, &t5, &t6, 1, "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero", "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main", 19, 12);
     hero_unreachable();
 bb3:
 #line 23 "tests/golden/run/fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero"
     t18 = h0_db; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero", "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main", 23, 11}; { hero_handle_alive_at(t18, "the argument `db` of `sqlite3_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t18, "sqlite3_close", NULL, &hero_here); t19 = sqlite3_close(t18); if (t19 == 0LL) { if (hero_handle_ended(t18, hero_life_0_0) && h0_db == t18) h0_db = hero_handle_dead(); } else { hero_handle_kept(t18, hero_life_0_0); } } } hero_print_int(t19); hero_print_end();
     t20 = h1_statement; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero", "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main", 24, 11}; { hero_handle_alive_at(t20, "the argument `statement` of `sqlite3_finalize`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t20, "sqlite3_finalize", NULL, &hero_here); t21 = sqlite3_finalize(t20); if (hero_handle_ended(t20, hero_life_0_0) && h1_statement == t20) h1_statement = hero_handle_dead(); } } hero_print_int(t21); hero_print_end(); hero_lend_local_give(hero_lend_h2_tail); hero_lend_local_give(hero_lend_h1_statement); hero_lend_local_give(hero_lend_h0_db); return; bb4:
-#line 207 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
+#line 209 "fixedbugs2291arefusedclosenobodyrepeatsisowedatexit.c"
     hero_panic_assert_shown_at(t10, hero_show_i64, &t15, &t16, 1, "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero", "fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main", 22, 12);
     hero_unreachable();
 }

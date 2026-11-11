@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -63,11 +65,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 30 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(((struct addrinfo *)0)->ai_family) == 1 && sizeof(((struct addrinfo *)0)->ai_family) == sizeof(int32_t) && (_Generic(((struct addrinfo *)0)->ai_family, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Hints ai_family");
 _Static_assert(__builtin_classify_type(((struct addrinfo *)0)->ai_socktype) == 1 && sizeof(((struct addrinfo *)0)->ai_socktype) == sizeof(int32_t) && (_Generic(((struct addrinfo *)0)->ai_socktype, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Hints ai_socktype");
-#line 67 "fixedbugsatagnamesahandleandarecord.c"
+#line 69 "fixedbugsatagnamesahandleandarecord.c"
 
 #line 29 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(*(struct addrinfo *)0) != 13, "heroes-ffi-union Hints ai_family ai_socktype");
-#line 71 "fixedbugsatagnamesahandleandarecord.c"
+#line 73 "fixedbugsatagnamesahandleandarecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -162,7 +164,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "fixedbugsatagnamesahandleandarecord.c"
+#line 168 "fixedbugsatagnamesahandleandarecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_0AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -231,7 +233,7 @@ __attribute__((__noinline__)) void h_fixedbugsatagnamesahandleandarecord_main(vo
     t5 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 38, 28}; t6 = hero_str_lend_at(t5, &hero_here); } t7 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 38, 10}; hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints"); hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res"); hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1); t8 = getaddrinfo(hero_cstr_nonnull_at(t6, &hero_here), t7, &h0_h, &h1_r); hero_handle_acquired_at(h1_r, "freeaddrinfo", &hero_here); } h2_rc = t8;
     t9 = h2_rc; hero_print_int(t9); hero_print_end();
     t10 = h1_r; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 40, 5}; { hero_handle_alive_at(t10, "the argument `ai` of `freeaddrinfo`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "freeaddrinfo", NULL, &hero_here); (void)freeaddrinfo(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead(); } } hero_lend_local_give(hero_lend_h1_r); hero_lend_local_give(hero_lend_h0_h); hero_frame_give(hero_big_t3); return;
-#line 235 "fixedbugsatagnamesahandleandarecord.c"
+#line 237 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

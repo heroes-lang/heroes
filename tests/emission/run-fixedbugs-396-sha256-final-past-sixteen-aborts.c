@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 66 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 68 "fixedbugs396sha256finalpastsixteenaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 165 "fixedbugs396sha256finalpastsixteenaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalpastsixteenaborts_0Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -218,7 +220,7 @@ __attribute__((__noinline__)) void h_fixedbugs396sha256finalpastsixteenaborts_ma
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-past-sixteen-aborts.hero", "fixedbugs-396-sha256-final-past-sixteen-aborts.main", 17, 11}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t4 = SHA256_Init(&h0_c); } t5 = HERO_STR_LIT(hero_str_20); t6 = HERO_STR_LIT(hero_str_1998f2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-past-sixteen-aborts.hero", "fixedbugs-396-sha256-final-past-sixteen-aborts.main", 17, 57}; t7 = hero_str_lend_at(t6, &hero_here); } t8 = UINT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-past-sixteen-aborts.hero", "fixedbugs-396-sha256-final-past-sixteen-aborts.main", 17, 33}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t9 = SHA256_Update(&h0_c, hero_cstr_nonnull_at(t7, &hero_here), t8); } hero_print_int(t4); hero_print_str(t5); hero_print_int(t9); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-past-sixteen-aborts.hero", "fixedbugs-396-sha256-final-past-sixteen-aborts.main", 18, 11}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer SHA256_Final md 697 699 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e8_0 = INT64_C(16); HERO_NODEBUG void *hero_lend_b8_0 = hero_lend_take_at(h1_md, hero_lend_e8_0, "SHA256_Final", "md", &hero_here); t10 = SHA256_Final((void *)hero_lend_b8_0, &h0_c); h1_md = hero_lend_give_at(h1_md, hero_lend_b8_0, hero_lend_e8_0, &hero_here); } } hero_print_int(t10); hero_print_end();
     t11 = HERO_STR_LIT(hero_str_5687795c); t12 = h1_md; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); hero_print_str(t11); hero_print_int(t13); hero_print_end();
-#line 222 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 224 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h0_c);

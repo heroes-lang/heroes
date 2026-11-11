@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -96,7 +98,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 100 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
+#line 102 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -149,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
+#line 155 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
 #pragma clang diagnostic pop
 
 static inline __typeof__(t1) *hero_bound_t1(void) { return &t1; }
@@ -173,13 +175,13 @@ void h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_main(void);
 #line 13 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value.hero"
 int64_t h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_apply(h_0fn_48ac9712 h0_g, int64_t h1_x) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g; t2 = h1_x; t3 = t1(t2); return t3;
-#line 177 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
+#line 179 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value.hero"
 void h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_main(void) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*hero_bound_t1()); t2 = INT64_C(41); t3 = h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_apply(t1, t2); hero_print_int(t3); hero_print_end(); return;
-#line 183 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
+#line 185 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

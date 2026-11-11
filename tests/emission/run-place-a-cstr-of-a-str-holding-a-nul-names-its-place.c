@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -98,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 102 "placeacstrofastrholdinganulnamesitsplace.c"
+#line 104 "placeacstrofastrholdinganulnamesitsplace.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "placeacstrofastrholdinganulnamesitsplace.c"
+#line 156 "placeacstrofastrholdinganulnamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +177,7 @@ void h_placeacstrofastrholdinganulnamesitsplace_main(void) { HeroStr h0_clean = 
     t5 = UINT64_C(97); t6 = UINT64_C(0); t7 = UINT64_C(98); t8 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t23 = h4_own4; h4_own4 = t8; hero_array_decref(t23); t24 = h1_bytes; hero_array_incref(t8); h1_bytes = t8; hero_array_decref(t24);
     t9 = h1_bytes; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t9, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t10 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t25 = h5_own5; h5_own5 = t10; h_0opt_f87774a_release(&t25); t26 = h2_f0; h_0opt_f87774a_retain(&t10); h2_f0 = t10; h_0opt_f87774a_release(&t26); t11 = h2_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t17 = h2_f0; t18 = t17.as.ok; t27 = h3_held; hero_str_incref(t18); h3_held = t18; hero_str_decref(t27);
     t19 = h3_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-cstr-of-a-str-holding-a-nul-names-its-place.hero", "place-a-cstr-of-a-str-holding-a-nul-names-its-place.main", 13, 21}; t20 = hero_str_lend_at(t19, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-cstr-of-a-str-holding-a-nul-names-its-place.hero", "place-a-cstr-of-a-str-holding-a-nul-names-its-place.main", 13, 11}; t21 = strlen(hero_cstr_nonnull_at(t20, &hero_here)); } hero_print_uint(t21); hero_print_end();
-#line 179 "placeacstrofastrholdinganulnamesitsplace.c"
+#line 181 "placeacstrofastrholdinganulnamesitsplace.c"
     hero_str_release_at(&h0_clean);
     hero_array_release_at(&h1_bytes);
     h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
@@ -186,7 +188,7 @@ void h_placeacstrofastrholdinganulnamesitsplace_main(void) { HeroStr h0_clean = 
 bb2:
 #line 12 "tests/golden/run/place-a-cstr-of-a-str-holding-a-nul-names-its-place.hero"
     t15 = h2_f0; t16 = t15.as.err;
-#line 190 "placeacstrofastrholdinganulnamesitsplace.c"
+#line 192 "placeacstrofastrholdinganulnamesitsplace.c"
     hero_panic_must_at(t16, "place-a-cstr-of-a-str-holding-a-nul-names-its-place.hero", "place-a-cstr-of-a-str-holding-a-nul-names-its-place.main", 12, 12);
     hero_unreachable();
 }

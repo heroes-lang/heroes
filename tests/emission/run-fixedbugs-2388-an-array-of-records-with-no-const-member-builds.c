@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -76,13 +78,13 @@ _Static_assert(sizeof(struct fixedbugs_2388_plain) - __builtin_offsetof(struct f
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2388_plain *)0)->n) == 1 && sizeof(((struct fixedbugs_2388_plain *)0)->n) == sizeof(int32_t) && (_Generic(((struct fixedbugs_2388_plain *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Plain n");
 #line 16
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2388_pointing *)0)->n) == 1 && sizeof(((struct fixedbugs_2388_pointing *)0)->n) == sizeof(int32_t) && (_Generic(((struct fixedbugs_2388_pointing *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pointing n");
-#line 80 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+#line 82 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 
 #line 9 "tests/golden/run/fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero"
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2388_cell *)0) != 13, "heroes-ffi-union Cell k v");
 #line 12
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2388_plain *)0) != 13, "heroes-ffi-union Plain items n");
-#line 86 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+#line 88 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -173,7 +175,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 177 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+#line 179 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(const struct fixedbugs_2388_cell *a, const struct fixedbugs_2388_cell *b);
@@ -243,7 +245,7 @@ __attribute__((__noinline__)) void h_fixedbugs2388anarrayofrecordswithnoconstmem
     t18 = INT64_C(7); t19 = *(struct fixedbugs_2388_pointing *)__builtin_memset(&t19, 0, sizeof t19); __builtin_memset(&t19, 0, sizeof t19); t19.n = t18; h2_pointing = t19; hero_pad_fill(&h2_pointing, sizeof(struct fixedbugs_2388_pointing), 1, hero_pad_g_2, hero_pad_n_2);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 25, 14}; t20 = fixedbugs_2388_pointing_make(); } h3_handed = t20; hero_pad_fill(&h3_handed, sizeof(struct fixedbugs_2388_pointing), 1, hero_pad_g_2, hero_pad_n_2);
     t21 = h2_pointing.n; t22 = h3_handed.n; if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 26, 11); hero_print_int(t23); hero_print_end(); hero_frame_give(hero_big_t20); hero_frame_give(hero_big_t19); hero_frame_give(hero_big_h3_handed); hero_frame_give(hero_big_h2_pointing); return;
-#line 247 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+#line 249 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 }
 #undef h2_pointing
 #undef h3_handed

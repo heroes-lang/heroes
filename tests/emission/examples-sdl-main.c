@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -105,7 +107,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 109 "main.c"
+#line 111 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -155,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "main.c"
+#line 161 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -182,7 +184,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h2_own2 = {0},
     t1 = HERO_STR_LIT(hero_str_32e30c02); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 56, 54}; t2 = (const char *)SDL_GetRevision(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 56, 41}; t3 = h_library_validated(t2, &hero_here); } t19 = h2_own2; h2_own2 = t3; h_0opt_f87774a_release(&t19); t20 = h0_f0; h_0opt_f87774a_retain(&t3); h0_f0 = t3; h_0opt_f87774a_release(&t20); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h0_f0; t9 = t8.as.ok; t21 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t21); goto bb3; bb2: t10 = HERO_STR_LIT(hero_str_0); t22 = h1_r0; hero_str_incref(t10); h1_r0 = t10; hero_str_decref(t22); goto bb3; bb3: t11 = h1_r0; t12 = hero_str_len(t11); t13 = INT64_C(0); t14 = t12 > t13; hero_print_str(t1); hero_print_bool(t14); hero_print_end();
 #line 61
     t15 = HERO_STR_LIT(hero_str_43f12da5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 61, 41}; t16 = SDL_GetNumVideoDrivers(); } t17 = INT64_C(0); t18 = t16 > t17; hero_print_str(t15); hero_print_bool(t18); hero_print_end();
-#line 186 "main.c"
+#line 188 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
@@ -191,7 +193,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h2_own2 = {0},
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 195 "main.c"
+#line 197 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -211,7 +213,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 215 "main.c"
+#line 217 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

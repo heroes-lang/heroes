@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -63,7 +65,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 13 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 67 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 69 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -149,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 155 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -173,7 +175,7 @@ void h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_LIT(void) {
-#line 177 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 179 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -185,7 +187,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_LIT
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 15 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
     static struct pt hero_constant_value = PT_LIT;
-#line 189 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 191 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -204,7 +206,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_LIT
 
 #line 16 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_OBJ(void) {
-#line 208 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 210 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -216,7 +218,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_OBJ
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 16 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
     static struct pt hero_constant_value = PT_OBJ;
-#line 220 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 222 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -237,7 +239,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_OBJ
 void h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_main(void) { HERO_NODEBUG struct pt t1, t3; HERO_NODEBUG int32_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_LIT(); t2 = t1.y; hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_OBJ(); t4 = t3.y; hero_print_int(t4); hero_print_end(); return;
-#line 241 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 243 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -66,7 +68,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 _Static_assert(__builtin_classify_type(((UI *)0)->i) == 1 && sizeof(((UI *)0)->i) == sizeof(int32_t) && (_Generic(((UI *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UI i");
-#line 70 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 72 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -158,7 +160,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 164 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_eq(const UI *a, const UI *b);
@@ -182,7 +184,7 @@ void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void);
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) { HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG void *t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 15, 11}; t1 = make_u(); } t2 = t1.i; hero_print_int(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 16, 21}; t3 = (void *)one_u(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 16, 11}; t4 = read_u(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 186 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 188 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_eq(const UI *a, const UI *b) {
     if (!(a->i == b->i)) return false;

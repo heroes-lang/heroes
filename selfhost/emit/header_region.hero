@@ -212,10 +212,21 @@ constant EXTENDED: [str]
 # that names it: quiet in a header's code as on every line after the region
 # (`emit/deprecation.hero`, panel 208's R1), so a door calling a deprecated
 # `sprintf` builds silent (defect 2464; panel 245's R1).
+#
+# Two more at the sitting's landing, batch 31's gate B of 2026-11-11, each a
+# header C11 defines whole that the region's `-Werror` refused where it had
+# built: a definition in the old style, `int f(p) char *p; {...}`, which
+# C11 6.9.1 still gives a meaning and clang calls deprecated; and a byte of
+# a literal that is not UTF-8, which clang keeps as it is (defect 337's
+# fixture, measured a warning on four clangs). A call that gives such a
+# function the wrong count stays an error, `[-Werror]` with no word of its
+# own (measured that day on Apple clang 21).
 constant ADVICE: [str]
     [
         "-Wdeprecated-declarations"
         "-Wdeprecated-pragma"
+        "-Wdeprecated-non-prototype"
+        "-Winvalid-source-encoding"
     ]
 
 # Two words `-Wall`'s ignore reaches that are no library's style (panel
@@ -236,10 +247,20 @@ constant HELD: [str]
 # warning an error, a `#warning` still told. A probe of a type takes none
 # (`compiling.probe_words`), since a header's warning is no answer about a
 # type (defect 163).
+#
+# A word on the line clang reads before any code, a word of
+# `CCC_OVERRIDE_OPTIONS` such as `-Wl,-S` that a compile does not use, is
+# the driver's and no header's, so it stays told and never refused: under
+# the bare `-Werror` it was an error and every unit's compile ended at exit
+# 2 (the `special` suite's linker edit, batch 31's gate B, 2026-11-11).
+# Clang's other words of the driver are no line this compiler writes, and
+# one named here that a clang does not know would itself be refused there,
+# so they are left to a run that finds one.
 constant LINE_WORDS: [str]
     [
         "-Werror"
         "-Wno-error=#warnings"
+        "-Wno-error=unused-command-line-argument"
     ]
 
 # The lines before the groups' includes: the push, the ignores, the kept,
@@ -325,8 +346,18 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
 
         assert found
 
-# Each unit's line makes every warning an error and keeps a `#warning` told
-# (panel 245's R1): the order of the two is clang's, the second deciding the
-# one group it names.
-test "a unit's line makes every warning an error but a #warning, which stays told"
-    assert LINE_WORDS == ["-Werror", "-Wno-error=#warnings"]
+# Each unit's line makes every warning an error and keeps a `#warning` and
+# a word the driver does not use told (panel 245's R1; batch 31's gate B):
+# the order is clang's, each later word deciding the one group it names.
+test "a unit's line makes every warning an error but a #warning and an unused word of the driver, which stay told"
+    assert LINE_WORDS == ["-Werror", "-Wno-error=#warnings", "-Wno-error=unused-command-line-argument"]
+
+# The two advice words the gate found, each a header C11 defines whole that
+# the line's `-Werror` refused (batch 31's gate B, 2026-11-11), are quiet in
+# the region, after the deprecations before them.
+test "a definition in the old style and a literal's byte that is not UTF-8 are passed over in a header's code"
+    assert ADVICE == ["-Wdeprecated-declarations", "-Wdeprecated-pragma", "-Wdeprecated-non-prototype", "-Winvalid-source-encoding"]
+    got = opening()
+    tail = 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len() + LITERAL.len() + EXTENDED.len()
+    assert got[tail + 2] == "#pragma clang diagnostic ignored \"-Wdeprecated-non-prototype\""
+    assert got[tail + 3] == "#pragma clang diagnostic ignored \"-Winvalid-source-encoding\""

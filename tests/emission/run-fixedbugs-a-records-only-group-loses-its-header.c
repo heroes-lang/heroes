@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -73,11 +75,11 @@ _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 77 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 79 "fixedbugsarecordsonlygrouplosesitsheader.c"
 
 #line 22 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
-#line 81 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 83 "fixedbugsarecordsonlygrouplosesitsheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -153,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 159 "fixedbugsarecordsonlygrouplosesitsheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_0Color_eq(const Color *a, const Color *b);
@@ -186,7 +188,7 @@ void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) { Color h0_red; HERO_
     t1 = UINT64_C(255); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(255); t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4}; h0_red = t5; hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t6 = h0_red.r; hero_print_int(t6); hero_print_end();
     t7 = h0_red.a; hero_print_int(t7); hero_print_end(); return;
-#line 190 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 192 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_0Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

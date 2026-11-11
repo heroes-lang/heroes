@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -98,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 102 "placealeaseofastrholdinganulnamesitsplace.c"
+#line 104 "placealeaseofastrholdinganulnamesitsplace.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "placealeaseofastrholdinganulnamesitsplace.c"
+#line 156 "placealeaseofastrholdinganulnamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -178,7 +180,7 @@ void h_placealeaseofastrholdinganulnamesitsplace_main(void) { const char * h0_cl
     t19 = h3_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-lease-of-a-str-holding-a-nul-names-its-place.hero", "place-a-lease-of-a-str-holding-a-nul-names-its-place.main", 14, 10}; t20 = hero_str_held_at(t19, &hero_here); } h4_c = t20;
     t21 = h4_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-lease-of-a-str-holding-a-nul-names-its-place.hero", "place-a-lease-of-a-str-holding-a-nul-names-its-place.main", 15, 11}; t22 = strlen(hero_cstr_nonnull_at(t21, &hero_here)); } hero_print_uint(t22); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-lease-of-a-str-holding-a-nul-names-its-place.hero", "place-a-lease-of-a-str-holding-a-nul-names-its-place.main", 16, 5}; hero_held_release_at(&h4_c, &hero_here); }
-#line 182 "placealeaseofastrholdinganulnamesitsplace.c"
+#line 184 "placealeaseofastrholdinganulnamesitsplace.c"
     hero_array_release_at(&h1_bytes);
     h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
     hero_str_release_at(&h3_held);
@@ -188,7 +190,7 @@ void h_placealeaseofastrholdinganulnamesitsplace_main(void) { const char * h0_cl
 bb2:
 #line 13 "tests/golden/run/place-a-lease-of-a-str-holding-a-nul-names-its-place.hero"
     t15 = h2_f0; t16 = t15.as.err;
-#line 192 "placealeaseofastrholdinganulnamesitsplace.c"
+#line 194 "placealeaseofastrholdinganulnamesitsplace.c"
     hero_panic_must_at(t16, "place-a-lease-of-a-str-holding-a-nul-names-its-place.hero", "place-a-lease-of-a-str-holding-a-nul-names-its-place.main", 13, 12);
     hero_unreachable();
 }

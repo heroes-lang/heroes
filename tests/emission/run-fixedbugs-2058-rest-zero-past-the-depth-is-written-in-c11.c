@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -201,7 +203,7 @@ _Static_assert(__builtin_classify_type(((D39 *)0)->n) == 1 && sizeof(((D39 *)0)-
 _Static_assert(_Generic(&((W *)0)->deep, D39 *: 1, default: 0) && sizeof(((W *)0)->deep) == sizeof(D39), "heroes-ffi-field W deep");
 _Static_assert(sizeof(W) - __builtin_offsetof(W, pair) != 0, "heroes-ffi-flex W pair"); _Static_assert(_Generic(&((W *)0)->pair, D38 (*)[2]: 1, default: 0) && sizeof(W) - __builtin_offsetof(W, pair) >= sizeof(D38[2]), "heroes-ffi-field W pair");
 _Static_assert(__builtin_classify_type(((W *)0)->tag) == 1 && sizeof(((W *)0)->tag) == sizeof(int32_t) && (_Generic(((W *)0)->tag, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W tag");
-#line 205 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 207 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -290,7 +292,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 294 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 296 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_eq(const D0 *a, const D0 *b);
@@ -471,7 +473,7 @@ void h_fixedbugs2058restzeropastthedepthiswritteninc11_main(void) {
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero", "fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.main", 146, 11}; hero_lend_local_name(hero_lend_h0_w, "w_deepest", "w"); hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38); } t4 = w_deepest(&h0_w); } hero_print_int(t4); hero_print_end();
     t5 = INT64_C(3); t6 = *(D33 *)__builtin_memset(&t6, 0, sizeof t6); __builtin_memset(&t6, 0, sizeof t6); t6.n = t5; h1_d = t6; hero_pad_fill(&h1_d, sizeof(D33), 1, hero_pad_g_33, hero_pad_n_33);
     t7 = h1_d.n; hero_print_int(t7); hero_print_end(); hero_lend_local_give(hero_lend_h0_w); return;
-#line 475 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 477 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 }
 #undef h0_w
 HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_eq(const D0 *a, const D0 *b) {

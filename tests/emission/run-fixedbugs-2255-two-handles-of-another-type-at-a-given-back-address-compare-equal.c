@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -103,7 +105,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6ec3571b, "b == c: ");
 HERO_STR_STATIC(hero_str_4b6b65cc, ", b_read: ");
 
-#line 107 "fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal.c"
+#line 109 "fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -157,7 +159,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal.c"
+#line 163 "fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal_0A_eq(ta * const *a, ta * const *b);
@@ -186,7 +188,7 @@ void h_fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal_main(
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.hero", "fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.main", 23, 9}; t3 = b_get(); hero_handle_lent(t3); } h1_b = t3;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.hero", "fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.main", 24, 9}; t4 = b_get(); hero_handle_lent(t4); } h2_c = t4;
     t5 = HERO_STR_LIT(hero_str_6ec3571b); t6 = h1_b; t7 = h2_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.hero", "fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.main", 25, 23}; t8 = hero_handle_eq_at(t6, t7, &hero_here); } t9 = HERO_STR_LIT(hero_str_4b6b65cc); t10 = h2_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.hero", "fixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal.main", 25, 45}; hero_handle_alive_at(t10, "the argument `x` of `b_read`", &hero_here); t11 = b_read(t10); } hero_print_str(t5); hero_print_bool(t8); hero_print_str(t9); hero_print_int(t11); hero_print_end(); return;
-#line 190 "fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal.c"
+#line 192 "fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal_0A_eq(ta * const *a, ta * const *b) {
     return hero_handle_eq(*a, *b);

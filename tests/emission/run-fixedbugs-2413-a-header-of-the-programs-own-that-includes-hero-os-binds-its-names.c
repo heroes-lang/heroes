@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -104,7 +106,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 108 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
+#line 110 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
+#line 160 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +177,7 @@ void h_fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames_main(
 
 #line 11 "tests/golden/run/fixedbugs-2413-a-header-of-the-programs-own-that-includes-hero-os-binds-its-names.hero"
 int64_t h_fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames_HERO_OS_OK(void) {
-#line 179 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
+#line 181 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
     _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
     _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 #pragma clang diagnostic push
@@ -187,7 +189,7 @@ int64_t h_fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames_HE
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-2413-a-header-of-the-programs-own-that-includes-hero-os-binds-its-names.hero"
     return HERO_OS_OK;
-#line 191 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
+#line 193 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -206,7 +208,7 @@ int64_t h_fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames_HE
 #line 13 "tests/golden/run/fixedbugs-2413-a-header-of-the-programs-own-that-includes-hero-os-binds-its-names.hero"
 void h_fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames_main(void) { HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2413-a-header-of-the-programs-own-that-includes-hero-os-binds-its-names.hero", "fixedbugs-2413-a-header-of-the-programs-own-that-includes-hero-os-binds-its-names.main", 14, 11}; t1 = hero_os_pid(); } t2 = INT64_C(0); t3 = t1 > t2; t4 = h_fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames_HERO_OS_OK(); hero_print_bool(t3); hero_print_int(t4); hero_print_end(); return;
-#line 210 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
+#line 212 "fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

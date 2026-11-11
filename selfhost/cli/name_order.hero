@@ -40,7 +40,13 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     name = bound.must().name
     header = bound.must().header
     module = source.component_at(s, d.span.start)
-    question = "static void hero_order_q(void) { (void)(" + name + "); }"
+
+    # Marked unused, as every probe of the compiler's is: the trials compile
+    # under the unit's words since panel 245's R1, `-Wall` and `-Werror`
+    # among them, and an unused `static` function is `-Wall`'s, so with no
+    # mark every order was refused for the question itself and no order note
+    # was ever told (batch 31's gate B, 2026-11-11).
+    question = "__attribute__((unused)) static void hero_order_q(void) { (void)(" + name + "); }"
     written = order_trial.theirs(unit_headers)
     alone = order_trial.compiled(t, words: compiling.unit_words(under), text: order_trial.opening([header], question: question)).compiles
     found = order_search.search(

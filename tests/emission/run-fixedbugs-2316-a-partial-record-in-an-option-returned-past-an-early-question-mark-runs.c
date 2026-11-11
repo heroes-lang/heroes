@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2316_held *)0)->first) == 1 && sizeof(((struct fixedbugs_2316_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2316_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 66 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 68 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -147,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 153 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_0Held_eq(const struct fixedbugs_2316_held *a, const struct fixedbugs_2316_held *b);
@@ -215,7 +217,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordinanoptionret
     struct fixedbugs_2316_held *const hero_big_h1_h = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 219 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 221 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
 }
 #undef h1_h
 #undef t2
@@ -227,7 +229,7 @@ h_0opt_e201354 h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestio
     t7 = h0_n; t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t7}; t10 = h2_own2; h2_own2 = t8; h_0opt_e201354_release(&t10); h1_ret0 = t8; goto bb4; bb2:
 #line 19
     t4 = HERO_STR_LIT(hero_str_2cc761e); t5 = HERO_STR_LIT(hero_str_e5ff7da); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t11 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t11); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 231 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 233 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
     t9 = h1_ret0;
     h_0opt_e201354_retain(&t9);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -267,7 +269,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordinanoptionreturn
     t18 = h1_out; t19 = *(h_0opt_5fa67f06 *)__builtin_memset(&t19, 0, sizeof t19); t19.tag = INT64_C(0); t19.as.ok = t18; t23 = h5_own5; h5_own5 = t19; h_0opt_5fa67f06_release(&t23); h3_ret0 = t19; goto bb3; bb2:
 #line 25
     t13 = h2_f0; t14 = t13.as.err; hero_failure_retain(&t14); t15 = *(h_0opt_5fa67f06 *)__builtin_memset(&t15, 0, sizeof t15); t15.tag = INT64_C(1); t15.as.err = t14; t24 = h6_own6; h6_own6 = t15; h_0opt_5fa67f06_release(&t24); h3_ret0 = t15; goto bb3; bb3:
-#line 271 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 273 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
     t20 = h3_ret0;
     h_0opt_5fa67f06_retain(&t20);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -336,7 +338,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordinanoptionreturn
     HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_h0_f0 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); __builtin_memset(hero_big_h0_f0, 0, sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_h1_f1 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); __builtin_memset(hero_big_h1_f1, 0, sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_h2_own2 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); __builtin_memset(hero_big_h2_own2, 0, sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_h3_own3 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); __builtin_memset(hero_big_h3_own3, 0, sizeof(h_0opt_5fa67f06)); HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t15, t16; HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t2 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t3 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG bool t6, t17; HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t7 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t9 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t10 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t13 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t14 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t18 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t19 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t20 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_NODEBUG h_0opt_5fa67f06 *const hero_big_t21 = (h_0opt_5fa67f06 *)hero_frame_take(sizeof(h_0opt_5fa67f06)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_make(&t2, t1); t18 = h2_own2; h2_own2 = t2; h_0opt_5fa67f06_release(&t18); t19 = h0_f0; h_0opt_5fa67f06_retain(&t2); h0_f0 = t2; h_0opt_5fa67f06_release(&t19); t3 = h0_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h0_f0; t10 = t9.as.ok; t11 = t10.first; hero_print_int(t11); hero_print_end();
     t12 = INT64_C(-1); h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_make(&t13, t12); t20 = h3_own3; h3_own3 = t13; h_0opt_5fa67f06_release(&t20); t21 = h1_f1; h_0opt_5fa67f06_retain(&t13); h1_f1 = t13; h_0opt_5fa67f06_release(&t21); t14 = h1_f1; t15 = t14.tag; t16 = INT64_C(1); t17 = t15 == t16; hero_print_bool(t17); hero_print_end();
-#line 340 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 342 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
     h_0opt_5fa67f06_release(hero_slot_escape(&h0_f0));
     h_0opt_5fa67f06_release(hero_slot_escape(&h1_f1));
     h_0opt_5fa67f06_release(hero_slot_escape(&h2_own2));
@@ -360,7 +362,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordinanoptionreturn
 bb2:
 #line 29 "tests/golden/run/fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.hero"
     t7 = h0_f0; t8 = t7.as.err;
-#line 364 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
+#line 366 "fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns.c"
     hero_panic_must_at(t8, "fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.hero", "fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.main", 29, 11);
     hero_unreachable();
 }

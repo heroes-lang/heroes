@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -65,11 +67,11 @@ _Static_assert(__builtin_classify_type(((struct fixedbugs_2316_held *)0)->first)
 #line 16
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2316_box *)0)->tag) == 1 && sizeof(((struct fixedbugs_2316_box *)0)->tag) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2316_box *)0)->tag, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Box tag");
 _Static_assert(_Generic(&((struct fixedbugs_2316_box *)0)->inner, struct fixedbugs_2316_held *: 1, default: 0) && sizeof(((struct fixedbugs_2316_box *)0)->inner) == sizeof(struct fixedbugs_2316_held), "heroes-ffi-field Box inner");
-#line 69 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
+#line 71 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
 
 #line 15 "tests/golden/run/fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero"
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2316_box *)0) != 13, "heroes-ffi-union Box tag inner");
-#line 73 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
+#line 75 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -145,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
+#line 151 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_0Held_eq(const struct fixedbugs_2316_held *a, const struct fixedbugs_2316_held *b);
@@ -196,7 +198,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2316agrouprecordholdingapartial
     struct fixedbugs_2316_box *const hero_big_h1_b = (struct fixedbugs_2316_box *)hero_frame_take(sizeof(struct fixedbugs_2316_box)); HERO_NODEBUG int64_t t1, t2, t5; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t3 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_box *const hero_big_t4 = (struct fixedbugs_2316_box *)hero_frame_take(sizeof(struct fixedbugs_2316_box)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h0_n; t3 = *(struct fixedbugs_2316_held *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.first = t2; t4 = *(struct fixedbugs_2316_box *)__builtin_memset(&t4, 0, sizeof t4); t4.tag = t1; t4.inner = t3; h1_b = t4; hero_pad_fill(&h1_b, sizeof(struct fixedbugs_2316_box), 1, hero_pad_g_1, hero_pad_n_1);
     t5 = h1_b.tag; hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_h1_b); return t5;
-#line 200 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
+#line 202 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_b
 #undef t3
@@ -217,7 +219,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316agrouprecordholdingapartialone
     t1 = h0_n; t2 = h0_n; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.make", 26, 42); t5 = *(struct fixedbugs_2316_held *)__builtin_memset(&t5, 0, sizeof t5); __builtin_memset(&t5, 0, sizeof t5); t5.first = t4; t6 = *(struct fixedbugs_2316_box *)__builtin_memset(&t6, 0, sizeof t6); t6.tag = t1; t6.inner = t5; h1_out = t6; hero_pad_fill(&h1_out, sizeof(struct fixedbugs_2316_box), 1, hero_pad_g_1, hero_pad_n_1);
     t7 = h0_n; t8 = INT64_C(2); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.make", 27, 21); t10 = h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_helper(t9); hero_print_int(t10); hero_print_end();
     t11 = h1_out; if (hero_out != NULL) *hero_out = t11; hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_h1_out); return;
-#line 221 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
+#line 223 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_out
 #undef t5
@@ -239,7 +241,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316agrouprecordholdingapartialone
     struct fixedbugs_2316_box *const hero_big_h0_b = (struct fixedbugs_2316_box *)hero_frame_take(sizeof(struct fixedbugs_2316_box)); HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2316_box *const hero_big_t2 = (struct fixedbugs_2316_box *)hero_frame_take(sizeof(struct fixedbugs_2316_box)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_make(&t2, t1); h0_b = t2; hero_pad_fill(&h0_b, sizeof(struct fixedbugs_2316_box), 1, hero_pad_g_1, hero_pad_n_1);
     t3 = h0_b.tag; t4 = h0_b.inner.first; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.main", 32, 11); hero_print_int(t5); hero_print_end(); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_b); return;
-#line 243 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
+#line 245 "fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback.c"
 }
 #undef h0_b
 #undef t2

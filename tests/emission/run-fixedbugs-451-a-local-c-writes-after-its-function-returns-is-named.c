@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -100,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_42bddec1, "written");
 
-#line 104 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 106 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 160 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -183,7 +185,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(void) {
     t1 = INT64_C(0); h0_n = t1;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.lend", 26, 5}; hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n); }
     t2 = h0_n; hero_lend_local_give(hero_lend_h0_n); return t2;
-#line 187 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 189 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_n
 
@@ -196,7 +198,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(voi
     t1 = INT64_C(0); h0_m = t1;
     t2 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.lend_again", 31, 5}; hero_lend_local_name(hero_lend_h0_m, "put_one", "x"); (void)put_one((void *)&h0_m, t2); }
     t3 = h0_m; hero_lend_local_give(hero_lend_h0_m); return t3;
-#line 200 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 202 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_m
 
@@ -206,7 +208,7 @@ void h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main(void) { HERO
     t2 = INT64_C(77); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.main", 36, 5}; (void)cell_write_later(t2); }
     t3 = HERO_STR_LIT(hero_str_42bddec1); hero_print_str(t3); hero_print_end();
     t4 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(); hero_print_int(t4); hero_print_end(); return;
-#line 210 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 212 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

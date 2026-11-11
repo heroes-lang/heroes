@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -96,7 +98,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 100 "fixedbugs2389aboundcfunctionnamedasalocalbuilds.c"
+#line 102 "fixedbugs2389aboundcfunctionnamedasalocalbuilds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs2389aboundcfunctionnamedasalocalbuilds.c"
+#line 154 "fixedbugs2389aboundcfunctionnamedasalocalbuilds.c"
 #pragma clang diagnostic pop
 
 static inline __typeof__(h0_p) *hero_bound_h0_p(void) { return &h0_p; }
@@ -172,7 +174,7 @@ void h_fixedbugs2389aboundcfunctionnamedasalocalbuilds_main(void);
 void h_fixedbugs2389aboundcfunctionnamedasalocalbuilds_main(void) { int64_t h0_p; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(40); h0_p = t1;
     t2 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-local-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-local-builds.main", 14, 11}; t3 = (*hero_bound_h0_p())(t2); } hero_print_int(t3); hero_print_end(); return;
-#line 176 "fixedbugs2389aboundcfunctionnamedasalocalbuilds.c"
+#line 178 "fixedbugs2389aboundcfunctionnamedasalocalbuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -73,11 +75,11 @@ _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)
 _Static_assert(__builtin_classify_type(((SA *)0)->i) == 1 && sizeof(((SA *)0)->i) == sizeof(int32_t) && (_Generic(((SA *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA i");
 _Static_assert(_Generic(&((SA *)0)->f, float *: 1, default: 0) && sizeof(((SA *)0)->f) == sizeof(float), "heroes-ffi-field SA f");
 _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x) == sizeof(int32_t) && (_Generic(((SA *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA x");
-#line 77 "ffiaconstructionnamesonearmofeachunion.c"
+#line 79 "ffiaconstructionnamesonearmofeachunion.c"
 
 #line 13 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13, "heroes-ffi-union SA kind i f x");
-#line 81 "ffiaconstructionnamesonearmofeachunion.c"
+#line 83 "ffiaconstructionnamesonearmofeachunion.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -172,7 +174,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "ffiaconstructionnamesonearmofeachunion.c"
+#line 178 "ffiaconstructionnamesonearmofeachunion.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_0SA_eq(const SA *a, const SA *b);
@@ -222,7 +224,7 @@ void h_ffiaconstructionnamesonearmofeachunion_main(void) { SA h0_s; SA h1_t; SA 
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-names-one-arm-of-each-union.hero", "ffi-a-construction-names-one-arm-of-each-union.main", 28, 9}; t11 = make_sa(); } h2_a = t11; hero_pad_fill(&h2_a, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-names-one-arm-of-each-union.hero", "ffi-a-construction-names-one-arm-of-each-union.main", 29, 9}; t12 = make_sa(); } h3_b = t12; hero_pad_fill(&h3_b, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t13 = h2_a.kind; t14 = h3_b.kind; t15 = t13 == t14; h5_b1 = t15; if (t15) goto bb1; else goto bb2; bb1: t16 = h2_a.i; t17 = h3_b.i; t18 = t16 == t17; h5_b1 = t18; goto bb2; bb2: t19 = h5_b1; h4_b0 = t19; if (t19) goto bb3; else goto bb4; bb3: t20 = h2_a.x; t21 = h3_b.x; t22 = t20 == t21; h4_b0 = t22; goto bb4; bb4: t23 = h4_b0; hero_print_bool(t23); hero_print_end(); return;
-#line 226 "ffiaconstructionnamesonearmofeachunion.c"
+#line 228 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_0SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

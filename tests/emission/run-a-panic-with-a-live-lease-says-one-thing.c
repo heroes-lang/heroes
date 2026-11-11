@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -98,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 102 "apanicwithaliveleasesaysonething.c"
+#line 104 "apanicwithaliveleasesaysonething.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "apanicwithaliveleasesaysonething.c"
+#line 156 "apanicwithaliveleasesaysonething.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -176,7 +178,7 @@ void h_apanicwithaliveleasesaysonething_main(void) { HeroStr h0_x = {0}; const c
     t5 = INT64_C(1); t6 = INT64_C(2); t7 = INT64_C(3); t8 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t14 = h3_own3; h3_own3 = t8; hero_array_decref(t14); t15 = h2_a; hero_array_incref(t8); h2_a = t8; hero_array_decref(t15);
     t9 = h2_a; t10 = INT64_C(9); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "a-panic-with-a-live-lease-says-one-thing.hero", "a-panic-with-a-live-lease-says-one-thing.main", 15, 18) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); t12 = hero_int_to_str(t11); t16 = h4_own4; h4_own4 = t12; hero_str_decref(t16); hero_print_str(t12); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-panic-with-a-live-lease-says-one-thing.hero", "a-panic-with-a-live-lease-says-one-thing.main", 16, 5}; hero_held_release_at(&h1_c, &hero_here); }
-#line 180 "apanicwithaliveleasesaysonething.c"
+#line 182 "apanicwithaliveleasesaysonething.c"
     hero_str_release_at(&h0_x);
     hero_array_release_at(&h2_a);
     hero_array_release_at(&h3_own3);

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_19e7c2, "bye");
 HERO_STR_STATIC(hero_str_7bcd5f24, "atexit refused the handler");
 
-#line 103 "fficallbacktypedefreachestheprobe.c"
+#line 105 "fficallbacktypedefreachestheprobe.c"
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -152,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "fficallbacktypedefreachestheprobe.c"
+#line 158 "fficallbacktypedefreachestheprobe.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -181,7 +183,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 27 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
 void h_fficallbacktypedefreachestheprobe_bye(void) { hero_thread_guard("fficallbacktypedefreachestheprobe.bye"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_19e7c2); hero_print_str(t1); hero_print_end(); return;
-#line 185 "fficallbacktypedefreachestheprobe.c"
+#line 187 "fficallbacktypedefreachestheprobe.c"
 }
 
 void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
@@ -192,7 +194,7 @@ void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
 void h_fficallbacktypedefreachestheprobe_main(void) { HERO_NODEBUG h_0fn_294870dd t1; HERO_NODEBUG int32_t t2, t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fficallbacktypedefreachestheprobe_bye; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-callback-typedef-reaches-the-probe.hero", "ffi-callback-typedef-reaches-the-probe.main", 31, 8}; t2 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t1)); } t3 = INT64_C(0); t4 = t2 != t3; if (t4) goto bb2; else goto bb3; bb1: return; bb2:
     t5 = HERO_STR_LIT(hero_str_7bcd5f24); hero_print_str(t5); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 196 "fficallbacktypedefreachestheprobe.c"
+#line 198 "fficallbacktypedefreachestheprobe.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

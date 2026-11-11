@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -62,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-2339-an-externs-large-result-dropped-aborts-in-the-function-that-dropped-it.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 66 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
+#line 68 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
+#line 161 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -180,14 +182,14 @@ void h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_
 __attribute__((__noinline__)) void h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_go(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2339-an-externs-large-result-dropped-aborts-in-the-function-that-dropped-it.hero", "fixedbugs-2339-an-externs-large-result-dropped-aborts-in-the-function-that-dropped-it.go", 13, 9}; (void)heroes_held_make(t1); }
     t3 = HERO_STR_LIT(hero_str_347b94b5); hero_print_str(t3); hero_print_end(); return;
-#line 184 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
+#line 186 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-2339-an-externs-large-result-dropped-aborts-in-the-function-that-dropped-it.hero"
 void h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_main(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_go(); return;
-#line 191 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
+#line 193 "fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2339anexternslargeresultdroppedabortsinthefunctionthatdroppedit_0Held_eq: a partial record has no structural equality");

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -67,11 +69,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 19 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a"); _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
 _Static_assert(__builtin_classify_type(((struct nums *)0)->after) == 1 && sizeof(((struct nums *)0)->after) == sizeof(int64_t) && (_Generic(((struct nums *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nums after");
-#line 71 "abortafixedarrayelementwrittenpastitslength.c"
+#line 73 "abortafixedarrayelementwrittenpastitslength.c"
 
 #line 18 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(__builtin_classify_type(*(struct nums *)0) != 13, "heroes-ffi-union Nums a after");
-#line 75 "abortafixedarrayelementwrittenpastitslength.c"
+#line 77 "abortafixedarrayelementwrittenpastitslength.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -166,7 +168,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 170 "abortafixedarrayelementwrittenpastitslength.c"
+#line 172 "abortafixedarrayelementwrittenpastitslength.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_0Nums_eq(const struct nums *a, const struct nums *b);
@@ -207,7 +209,7 @@ void h_abortafixedarrayelementwrittenpastitslength_main(void) { struct nums h0_n
     t28 = h2_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 26, 9); h2_i0 = t30; goto bb1; bb4:
 #line 30
     t31 = HERO_STR_LIT(hero_str_19048391); t32 = INT64_C(3); t33 = h0_n.a[((uint64_t)(t32) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 30, 26), (int64_t)0) : (t32))]; hero_print_str(t31); hero_print_int(t33); hero_print_end();
-#line 211 "abortafixedarrayelementwrittenpastitslength.c"
+#line 213 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return;
@@ -221,7 +223,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 225 "abortafixedarrayelementwrittenpastitslength.c"
+#line 227 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

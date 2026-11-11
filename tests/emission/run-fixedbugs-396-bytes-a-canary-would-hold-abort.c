@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 103 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 105 "fixedbugs396bytesacanarywouldholdabort.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 157 "fixedbugs396bytesacanarywouldholdabort.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +177,7 @@ void h_fixedbugs396bytesacanarywouldholdabort_main(void) { HeroArrayHeader * h0_
     t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
     t3 = INT64_C(48); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-bytes-a-canary-would-hold-abort.hero", "fixedbugs-396-bytes-a-canary-would-hold-abort.main", 13, 5}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), char) && (char)-1 < 0), "heroes-ffi-buffer fill_a5 s 509 510 i8 char *"); HERO_NODEBUG int64_t hero_lend_e1_0 = INT64_C(16); HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take_at(h0_s, hero_lend_e1_0, "fill_a5", "s", &hero_here); (void)fill_a5((void *)hero_lend_b1_0, t3); h0_s = hero_lend_give_at(h0_s, hero_lend_b1_0, hero_lend_e1_0, &hero_here); } }
     t4 = HERO_STR_LIT(hero_str_5687795c); t5 = h0_s; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); hero_print_str(t4); hero_print_int(t6); hero_print_end();
-#line 179 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 181 "fixedbugs396bytesacanarywouldholdabort.c"
     hero_array_release_at(&h0_s);
     hero_array_release_at(&h1_own1);
     return;

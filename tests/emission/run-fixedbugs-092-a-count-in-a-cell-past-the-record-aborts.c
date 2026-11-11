@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -66,7 +68,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct one *)0)->a) == 1 && sizeof(((struct one *)0)->a) == sizeof(int32_t) && (_Generic(((struct one *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field One a");
-#line 70 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 72 "fixedbugs092acountinacellpasttherecordaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 161 "fixedbugs092acountinacellpasttherecordaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092acountinacellpasttherecordaborts_0One_eq(const struct one *a, const struct one *b);
@@ -196,7 +198,7 @@ void h_fixedbugs092acountinacellpasttherecordaborts_main(void) {
     t4 = h0_o.a; hero_print_int(t4); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero", "fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.main", 18, 11}; if ((uint64_t)(h1_n) > (uint64_t)(sizeof(h0_o) / sizeof(*(void *)0))) hero_panic_at(sizeof(*(void *)0) == 1 ? "`fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in bytes" : "`fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in what the header's `void *` points at", "fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero", "fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.main", 18, 11); hero_lend_local_name(hero_lend_h0_o, "fill_len", "buf"); hero_lend_local_name(hero_lend_h1_n, "fill_len", "n"); hero_pad_fill(&h0_o, sizeof(struct one), 1, hero_pad_g_0, hero_pad_n_0); t5 = fill_len(&h0_o, (void *)&h1_n); } hero_print_int(t5); hero_print_end();
     t6 = h0_o.a; hero_print_int(t6); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_o); return;
-#line 200 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 202 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

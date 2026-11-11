@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -67,7 +69,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 24 "tests/golden/run/fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero"
 _Static_assert(__builtin_classify_type(((struct sub_rec *)0)->a) == 1 && sizeof(((struct sub_rec *)0)->a) == sizeof(int64_t) && (_Generic(((struct sub_rec *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SubRec a");
-#line 71 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
+#line 73 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -156,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
+#line 162 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_0SubRec_eq(const struct sub_rec *a, const struct sub_rec *b);
@@ -187,7 +189,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 22 "tests/golden/run/fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero"
 int64_t h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_SUB_MAX(void) {
-#line 191 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
+#line 193 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
     _Static_assert(HERO_RET_INT(SUB_MAX), "heroes-ffi-return SUB_MAX i64");
     _Static_assert(__builtin_constant_p(SUB_MAX), "heroes-ffi-const SUB_MAX");
 #pragma clang diagnostic push
@@ -199,7 +201,7 @@ int64_t h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 22 "tests/golden/run/fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero"
     return SUB_MAX;
-#line 203 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
+#line 205 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -219,7 +221,7 @@ int64_t h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_
 void h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_main(void) { struct sub_rec h0_r; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG struct sub_rec t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(5); t2 = (struct sub_rec){.a = t1}; h0_r = t2; hero_pad_fill(&h0_r, sizeof(struct sub_rec), 1, hero_pad_g_4, hero_pad_n_4);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 11}; t3 = sub_plain(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 25}; t4 = top_one(); } if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 11); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 37}; t6 = sub_extra(); } if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 11); t8 = h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_SUB_MAX(); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 11); t10 = h0_r.a; if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.hero", "fixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names.main", 28, 11); hero_print_int(t11); hero_print_end(); return;
-#line 223 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
+#line 225 "fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames_0SubRec_eq(const struct sub_rec *a, const struct sub_rec *b) {
     if (!(a->a == b->a)) return false;

@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -95,7 +97,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 99 "fixedbugs416handlesnothingreachesrun.c"
+#line 101 "fixedbugs416handlesnothingreachesrun.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -133,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 137 "fixedbugs416handlesnothingreachesrun.c"
+#line 139 "fixedbugs416handlesnothingreachesrun.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs416handlesnothingreachesrun_0ByTag_eq(struct only_tag * const *a, struct only_tag * const *b);
@@ -158,7 +160,7 @@ void h_fixedbugs416handlesnothingreachesrun_main(void);
 #line 16 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
 void h_fixedbugs416handlesnothingreachesrun_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); hero_print_int(t1); hero_print_end(); return;
-#line 162 "fixedbugs416handlesnothingreachesrun.c"
+#line 164 "fixedbugs416handlesnothingreachesrun.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs416handlesnothingreachesrun_0ByTag_eq(struct only_tag * const *a, struct only_tag * const *b) {
     return hero_handle_eq(*a, *b);

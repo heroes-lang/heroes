@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -63,7 +65,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 10 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 67 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 69 "fixedbugs094designatedinitialisersleavetherestzero.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -149,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 155 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -181,7 +183,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 12 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
-#line 185 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 187 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -193,7 +195,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     static struct pt hero_constant_value = PT_Y;
-#line 197 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 199 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -212,7 +214,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
-#line 216 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 218 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -224,7 +226,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     static struct pt hero_constant_value = PT_TWICE;
-#line 228 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 230 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -249,7 +251,7 @@ void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) { struct pt
     t4 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(); h1_t = t4; hero_pad_fill(&h1_t, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = h1_t.x; hero_print_int(t5); hero_print_end();
     t6 = h1_t.y; hero_print_int(t6); hero_print_end(); return;
-#line 253 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 255 "fixedbugs094designatedinitialisersleavetherestzero.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

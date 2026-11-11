@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -69,11 +71,11 @@ _Static_assert(__builtin_classify_type(((Cell *)0)->v) == 1 && sizeof(((Cell *)0
 #line 18
 _Static_assert(__builtin_classify_type(((Holder *)0)->count) == 1 && sizeof(((Holder *)0)->count) == sizeof(int32_t) && (_Generic(((Holder *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Holder count");
 _Static_assert(sizeof(Holder) - __builtin_offsetof(Holder, cells) != 0, "heroes-ffi-flex Holder cells"); _Static_assert(_Generic(&((Holder *)0)->cells, Cell (*)[2]: 1, default: 0) && sizeof(Holder) - __builtin_offsetof(Holder, cells) >= sizeof(Cell[2]), "heroes-ffi-field Holder cells");
-#line 73 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 75 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 
 #line 17 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(*(Holder *)0) != 13, "heroes-ffi-union Holder count cells");
-#line 77 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 79 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -164,7 +166,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 170 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_0Cell_eq(const Cell *a, const Cell *b);
@@ -203,7 +205,7 @@ void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) { Holde
     t1 = INT64_C(2); t2 = INT64_C(3); t3 = (Cell){.v = t2}; t4 = INT64_C(4); t5 = (Cell){.v = t4}; t7 = (Holder){.count = t1, .cells = {t3, t5}}; h0_h = t7; hero_pad_fill(&h0_h, sizeof(Holder), 1, hero_pad_g_3, hero_pad_n_3); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h) + hero_pad_k0 * sizeof(Holder) + __builtin_offsetof(Holder, cells), sizeof(Cell), sizeof(((Holder *)0)->cells) / sizeof(Cell), hero_pad_g_2, hero_pad_n_2); }
     t8 = INT64_C(0); t9 = h0_h.cells[((uint64_t)(t8) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 11), (int64_t)0) : (t8))].v; t10 = INT64_C(1); t11 = h0_h.cells[((uint64_t)(t10) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 26), (int64_t)0) : (t10))].v; if (__builtin_add_overflow(t9, t11, &t12)) hero_panic_overflow_at("fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 11); hero_print_int(t12); hero_print_end();
     t13 = h0_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 11, 11}; t14 = total(t13); } hero_print_int(t14); hero_print_end(); return;
-#line 207 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 209 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_0Cell_eq(const Cell *a, const Cell *b) {
     if (!(a->v == b->v)) return false;

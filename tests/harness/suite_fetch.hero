@@ -53,9 +53,11 @@ constant ROOT: str
 # round's gate told `FLOOR fetch`; nineteen at batch 29's gate the same day,
 # defect 2392's five cases for the refusals no case held; thirty-four at batch
 # 30's gate, 2026-11-11, the round's fifteen: defects 2432 (two), 2433 (two),
-# 2434 (five), 2446 (two), 2463 (one) and `heroes new` (three).
+# 2434 (five), 2446 (two), 2463 (one) and `heroes new` (three); forty-three at
+# batch 31's gate the same day, defects 2454 (two), 2455 (one) and 2462
+# (four), and panel 244's two building cases.
 constant LEAST: i64
-    34
+    43
 
 # The identity and the date every git source of a case is committed with.
 constant IDENTITY: [str]

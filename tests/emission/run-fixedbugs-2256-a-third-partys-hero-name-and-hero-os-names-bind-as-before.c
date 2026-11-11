@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -104,7 +106,7 @@ HERO_STR_STATIC(hero_str_60e900f9, "pid positive: ");
 HERO_STR_STATIC(hero_str_cc378ff, "sources: ");
 HERO_STR_STATIC(hero_str_1958b0af, " characters");
 
-#line 108 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
+#line 110 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
+#line 162 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -177,7 +179,7 @@ void h_fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.hero"
 int64_t h_fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore_HERO_LEVEL(void) {
-#line 181 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
+#line 183 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
     _Static_assert(HERO_RET_INT(HERO_LEVEL), "heroes-ffi-return HERO_LEVEL i64");
     _Static_assert(__builtin_constant_p(HERO_LEVEL), "heroes-ffi-const HERO_LEVEL");
 #pragma clang diagnostic push
@@ -189,7 +191,7 @@ int64_t h_fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore_HERO_LEVEL
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.hero"
     return HERO_LEVEL;
-#line 193 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
+#line 195 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -210,7 +212,7 @@ void h_fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore_main(void) { 
     t1 = HERO_STR_LIT(hero_str_394414e0); t2 = INT64_C(41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.hero", "fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.main", 18, 21}; t3 = hero_jump(t2); } t4 = HERO_STR_LIT(hero_str_41b8354c); t5 = h_fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore_HERO_LEVEL(); hero_print_str(t1); hero_print_int(t3); hero_print_str(t4); hero_print_int(t5); hero_print_end();
     t6 = HERO_STR_LIT(hero_str_60e900f9); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.hero", "fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.main", 19, 29}; t7 = hero_os_pid(); } t8 = INT64_C(0); t9 = t7 > t8; hero_print_str(t6); hero_print_bool(t9); hero_print_end();
     t10 = HERO_STR_LIT(hero_str_cc378ff); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.hero", "fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before.main", 20, 24}; t11 = hero_program_sources(); } t14 = h0_own0; h0_own0 = t11; hero_str_decref(t14); t12 = hero_str_len(t11); t13 = HERO_STR_LIT(hero_str_1958b0af); hero_print_str(t10); hero_print_int(t12); hero_print_str(t13); hero_print_end();
-#line 214 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
+#line 216 "fixedbugs2256athirdpartysheronameandheroosnamesbindasbefore.c"
     hero_str_release_at(&h0_own0);
     return;
 }

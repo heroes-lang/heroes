@@ -18,6 +18,8 @@
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -98,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 102 "cfreesaleaseandtheruntimenamesit.c"
+#line 104 "cfreesaleaseandtheruntimenamesit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "cfreesaleaseandtheruntimenamesit.c"
+#line 156 "cfreesaleaseandtheruntimenamesit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +177,7 @@ void h_cfreesaleaseandtheruntimenamesit_main(void) { HeroStr h0_x = {0}; const c
     t4 = INT64_C(1); hero_print_int(t4); hero_print_end();
     t5 = h1_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-and-the-runtime-names-it.hero", "c-frees-a-lease-and-the-runtime-names-it.main", 30, 5}; (void)eat(hero_cstr_nonnull_at(t5, &hero_here)); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-and-the-runtime-names-it.hero", "c-frees-a-lease-and-the-runtime-names-it.main", 31, 5}; hero_held_release_at(&h1_c, &hero_here); }
-#line 179 "cfreesaleaseandtheruntimenamesit.c"
+#line 181 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }
