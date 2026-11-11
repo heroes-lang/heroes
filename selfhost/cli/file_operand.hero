@@ -1,0 +1,111 @@
+# A verb that reads one `.hero` file, given a directory, refused before
+# anything is read, from the fact that its operand is one (CLAUDE.md §10;
+# defect 2484, 2026-11-11). Each such verb said *cannot read `<dir>`*: true,
+# and less exact than the author needs, since the reader learned of the
+# directory only by failing to read it (`cli/input.hero`'s `unread`, defect
+# 295, which still tells a file that is there and does not read, a mode of
+# 000 or a link to nothing). The refusal names what the verb takes and the
+# line that works.
+#
+# **Which verbs is the table's answer**: those whose operand is one file
+# (`.file_operand`), so a verb added to the table is asked too. `check` reads
+# a directory with `--apply --in-place` (`cli/consensus.hero`), which this
+# lets through and its refusal names. A link to a directory is one
+# (`process.is_directory` follows it), and a link to a file reads.
+
+use cli/argv
+use cli/files
+use cli/io
+use cli/process
+use cli/strings
+use cli/table as cli_table
+
+# The refusal of this invocation's operand, none where it is no directory or
+# the verb reads one.
+function refused(inv: argv.Invocation) -> str?
+    none: str? = fail(code: "none", msg: "the operand is no directory this verb refuses")
+
+    if inv.file.is_err() || !process.is_directory(inv.file.must())
+        return none
+
+    if inv.tag == .check_cmd && argv.has(inv, spelling: "--apply") && argv.has(inv, spelling: "--in-place")
+        return none
+
+    for c in cli_table.commands()
+        if c.tag == inv.tag && one_file(c.operand)
+            return ok(said(c, path: inv.file.must()))
+
+    return none
+
+# Whether this invocation's operand is refused, told on stderr where it is.
+function told(inv: argv.Invocation) -> bool
+    got = refused(inv)
+
+    if got.is_err()
+        return false
+    io.eprint(text: "error: " + got.must())
+    return true
+
+# Whether the table's operand is one file.
+function one_file(operand: cli_table.Operand) -> bool
+    match operand
+        .file_operand                                                      => return true
+        .no_operand | .optional_operand | .package_operand | .name_operand => return false
+
+# The refusal of `path` as the operand of `c`.
+function said(c: cli_table.Command, path: str) -> str
+    return "`" + c.name + "` " + takes(c.tag) + ", and `" + path + "` is a directory: `heroes " + c.name + argv.operand_said(c) + "`"
+
+# What a verb does with its one file, as its refusal says it.
+function takes(tag: cli_table.Tag) -> str
+    match tag
+        .lex_cmd   => return "lexes one `.hero` file"
+        .parse_cmd => return "parses one `.hero` file"
+        .check_cmd => return "checks one `.hero` file, and a directory only with `--apply --in-place`"
+        .build_cmd => return "builds the program whose root is one `.hero` file"
+        .run_cmd   => return "builds and runs the program whose root is one `.hero` file"
+        .test_cmd  => return "runs the tests of the program whose root is one `.hero` file"
+        .fmt_cmd   => return "formats one `.hero` file"
+        .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .mutate_cmd | .probe_cmd | .measure_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd =>
+            return "takes one `.hero` file"
+
+## Tests
+
+function any_dir(path: str) -> bool
+    _ = path
+    return true
+
+function asked(given: [str]) -> str?
+    return refused(argv.parse(given, dir_probe: any_dir).must())
+
+# Defect 2484's case and the shapes beside it: `fmt` on a directory with and
+# without `--in-place`, by a link to one, every verb of the table that reads
+# one file, and `check`'s directory with `--apply --in-place` let through.
+test "a verb that reads one file refuses a directory, by a link too, naming what it takes (defect 2484)"
+    dir = "build/selftest-file-operand-2484"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/inner").is_err()
+    assert !write_file(path: dir + "/x.hero", text: "function main()\n    print(1)\n").is_err()
+    inner = dir + "/inner"
+    assert asked(["fmt", inner]).must() == "`fmt` formats one `.hero` file, and `" + inner + "` is a directory: `heroes fmt <file.hero>`"
+    assert asked(["fmt", inner, "--in-place"]).must() == asked(["fmt", inner]).must()
+    assert asked(["fmt", dir + "/x.hero"]).is_err()
+    assert asked(["fmt", dir + "/nothere.hero"]).is_err()
+
+    if !files.symbolic_link(target: "inner", name: dir + "/linked").is_err()
+        assert asked(["fmt", dir + "/linked"]).must() == "`fmt` formats one `.hero` file, and `" + dir + "/linked` is a directory: `heroes fmt <file.hero>`"
+        assert !files.symbolic_link(target: "x.hero", name: dir + "/file.hero").is_err()
+        assert asked(["fmt", dir + "/file.hero"]).is_err()
+
+    assert asked(["check", inner, "--apply", "--in-place"]).is_err()
+    assert asked(["check", inner, "--apply"]).must() == "`check` checks one `.hero` file, and a directory only with `--apply --in-place`, and `" + inner + "` is a directory: `heroes check <file.hero>`"
+    walked: i64 @= 0
+
+    for c in cli_table.commands()
+        if one_file(c.operand)
+            walked @ walked + 1
+            assert asked([c.name, inner]).must() == said(c, path: inner)
+            assert strings.holds(text: said(c, path: inner), needle: "`" + c.name + "` ")
+
+    assert walked == 7
+    assert !process.remove_tree(dir).is_err()

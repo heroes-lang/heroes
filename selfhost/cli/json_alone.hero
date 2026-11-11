@@ -1,0 +1,132 @@
+# A command's `--json` where it has nothing to format, refused before anything
+# is read (CLAUDE.md §10: `--json` says how to print, never what; panel 016's
+# R2; defect 371's rule, a flag the author gave is never dropped in silence).
+# `check --json` formats the diagnostics `check` always prints (design.md
+# §4.17), so it stands alone. `lex --json` formats the token stream, which only
+# `--dump-tokens` prints: `lex x.hero --json` printed its diagnostics as text
+# and nothing as JSON, at exit 0 on a clean file, `--json` taken and dropped
+# (defect 2483, 2026-11-11). It is refused now as `check` refuses `--in-place`
+# without `--apply` (`cli/check_flags.hero`), naming the line that works.
+#
+# **Every command of the table that takes `--json` is in one of the two lists
+# below, and a test walks the table to hold it so**: a command given `--json`
+# tomorrow fails that test until its author says which kind its `--json` is.
+
+use cli/argv
+use cli/io
+use cli/table as cli_table
+
+# A command whose `--json` formats only what another of its flags prints.
+record Needs
+    tag: cli_table.Tag
+    flag: str
+    # What that flag prints, as the refusal names it.
+    prints: str
+
+# The commands whose `--json` formats what they print with no other flag.
+constant ALONE: [str]
+    ["check"]
+
+# The commands whose `--json` needs another flag, and that flag.
+function needing() -> [Needs]
+    return [Needs(tag: .lex_cmd, flag: "--dump-tokens", prints: "the token stream")]
+
+# The refusal of this invocation's `--json`, none where it has something to
+# format.
+function refused(inv: argv.Invocation) -> str?
+    if argv.has(inv, spelling: "--json")
+        for n in needing()
+            if n.tag == inv.tag && !argv.has(inv, spelling: n.flag)
+                return ok(said(n))
+
+    return fail(code: "none", msg: "`--json` has something to format")
+
+# Whether this invocation's `--json` is refused, the refusal told on stderr
+# where it is: the caller exits 2, as for an unknown flag.
+function told(inv: argv.Invocation) -> bool
+    got = refused(inv)
+
+    if got.is_err()
+        return false
+    io.eprint(text: "error: " + got.must())
+    return true
+
+# The refusal of `--json` without the flag whose output it formats, naming the
+# line that works, its command and operand as the table writes them.
+function said(n: Needs) -> str
+    for c in cli_table.commands()
+        if c.tag == n.tag
+            return "`--json` prints " + n.prints + " as JSON, and `" + n.flag + "` was not given: `heroes " + c.name + argv.operand_said(c) + " " + n.flag + " --json`"
+
+    return "`--json` prints " + n.prints + " as JSON, and `" + n.flag + "` was not given"
+
+## Tests
+
+function any_dir(path: str) -> bool
+    _ = path
+    return true
+
+function asked(given: [str]) -> str?
+    return refused(argv.parse(given, dir_probe: any_dir).must())
+
+test "lex --json without --dump-tokens is refused, naming the line that works (defect 2483)"
+    match asked(["lex", "x.hero", "--json"])
+        .err _ => assert false
+        .ok m  => assert m == "`--json` prints the token stream as JSON, and `--dump-tokens` was not given: `heroes lex <file.hero> --dump-tokens --json`"
+
+    assert asked(["lex", "x.hero", "--dump-tokens", "--json"]).is_err()
+    assert asked(["lex", "x.hero", "--json", "--dump-tokens"]).is_err()
+    assert asked(["lex", "x.hero", "--dump-tokens"]).is_err()
+    assert asked(["lex", "x.hero"]).is_err()
+    assert asked(["check", "x.hero", "--json"]).is_err()
+    assert asked(["check", "x.hero", "--json", "--dump-scopes"]).is_err()
+
+# Every command the table gives `--json` is in one list, never both and never
+# none, and no entry names a command without it; each is then asked alone and
+# with its companion.
+test "every command that takes --json formats something alone or names what it formats (defect 2483)"
+    walked: i64 @= 0
+
+    for c in cli_table.commands()
+        takes: bool @= false
+
+        for f in c.flags
+            if f.spelling == "--json"
+                takes @ true
+
+        alone: i64 @= 0
+
+        for name in ALONE
+            if name == c.name
+                alone @ alone + 1
+
+        needs: [Needs] @= []
+
+        for n in needing()
+            if n.tag == c.tag
+                needs @ needs.push(n)
+
+        if !takes
+            assert alone == 0 && needs.len() == 0
+            continue
+        walked @ walked + 1
+        assert alone + needs.len() == 1
+        given: [str] @= [c.name, "x.hero", "--json"]
+
+        if argv.operand_said(c).len() == 0
+            given @ [c.name, "--json"]
+
+        if alone == 1
+            assert asked(given).is_err()
+        else
+            companion: bool @= false
+
+            for f in c.flags
+                if f.spelling == needs[0].flag
+                    companion @ true
+
+            assert companion
+            assert asked(given).must() == said(needs[0])
+            assert asked(given.push(needs[0].flag)).is_err()
+
+    assert walked == ALONE.len() + needing().len()
