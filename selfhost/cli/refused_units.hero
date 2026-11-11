@@ -28,10 +28,11 @@ use source
 use token
 
 # What a refused round tells, and its verdict: `failed` the round's, `modules`
-# those it names, `units` every unit clang refused in it.
-function tell(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, planned: probing.Planned, modules: [str], units: [assemble.Refused], beside: [diag.Diagnostic]) -> ()?
+# those it names, `units` every unit clang refused in it, `library` the
+# folders `--library` names, which a refused link searched (defect 2476).
+function tell(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, planned: probing.Planned, modules: [str], units: [assemble.Refused], library: [str], beside: [diag.Diagnostic]) -> ()?
     if units.len() == 0
-        return whose.of_refusal(
+        read = whose.reading(
             failed,
             art,
             s,
@@ -42,14 +43,15 @@ function tell(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain
             asked: asked,
             asking: probing.holding(planned.probings, modules: modules),
             unit_headers: headers_of(planned: planned, modules: modules),
-            refused: REFUSED,
-            beside: beside
+            library: library,
+            refused: REFUSED
         )
+        return whose.tell(read, s: s, beside: beside)
     readings: [whose.Reading] @= []
 
     for one in units
         readings @ readings.push(
-            whose.reading(one.failed, art, s, t, under: under, answered: answered, struct_tags: struct_tags, asked: asked, asking: probing.holding(planned.probings, modules: [one.module]), unit_headers: headers_of(planned: planned, modules: [one.module]), refused: REFUSED)
+            whose.reading(one.failed, art, s, t, under: under, answered: answered, struct_tags: struct_tags, asked: asked, asking: probing.holding(planned.probings, modules: [one.module]), unit_headers: headers_of(planned: planned, modules: [one.module]), library: library, refused: REFUSED)
         )
 
     return whose.tell(merged(readings), s: s, beside: beside)

@@ -1,0 +1,6 @@
+error[ffi_missing_library]: the linker cannot use `tests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package.case/pc/../lib/libh2476.a`, the file it found for the library `h2476`, which `pkg-config` answered for `p2476` with `-lh2476`: it is no library this linker can read
+  at tests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package.case/main.hero:9:28
+    |
+  9 | extern "h2476.h" pkgconfig "p2476"  #~ ffi_missing_library
+    |                            ^^^^^^^
+  note: a `pkg-config` answer of this build names that folder, `-Ltests/golden/unsupported/fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package.case/pc/../lib`: put a library this machine's linker can use in its place, or point `PKG_CONFIG_PATH` at a `.pc` naming one

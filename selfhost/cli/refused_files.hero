@@ -1,0 +1,363 @@
+# Every file a refused link says the linker could not use, read from the
+# linker's own words (design.md §4.19; defect 2476, 2026-11-11), with what
+# is wrong with each in words true of every wording read as it, so one
+# program is told alike by every linker that refuses it the same way.
+# `cli/library_file.hero` asks whether each file is a library the program
+# links, and tells the author where.
+#
+# **What each linker writes**, measured 2026-11-11 by lane b32-ffi with a file
+# of each shape standing for `-lz` in a folder `-L` names: ld64-27106.1 on
+# this Mac, and GNU ld 2.44, `ld.lld` 22.1.8 and `lld-link` 22.1.8 (clang's
+# `--target=aarch64-pc-windows-msvc`) in the `heroes-linux-arm64` container:
+#
+#     ld64      ld: unknown file type in 'lib/libz.tbd'
+#               ld: file is empty in 'lib/libz.dylib'
+#               ld: malformed archive, member exceeds file size in 'lib/libz.a'
+#               ld: file cannot be mmap()ed, errno=22 (Invalid argument) path=lib/libz.a in 'lib/libz.a'
+#               ld: file cannot be open()ed, errno=13 (Permission denied) path=lib/libz.a in 'lib/libz.a'
+#               ld: warning: ignoring file 'lib/libz.a(zv.o)': found architecture 'x86_64', required architecture 'arm64'
+#               ld: warning: ignoring file 'lib/libz.tbd': tapi error: missing required architecture arm64 in file /w/lib/libz.tbd
+#     GNU ld    /usr/bin/ld:lib/libz.a: file format not recognized; treating as linker script
+#               lib/libz.so: file not recognized: file format not recognized
+#               /usr/bin/ld: lib/libz.a: error adding symbols: archive has no index; run ranlib to add one
+#               /usr/bin/ld: skipping incompatible lib/libz.a when searching for -lz
+#     ld.lld    ld.lld: error: lib/libz.a:1: unknown directive: not
+#               ld.lld: error: lib/libz.a: Archive::children failed: truncated or malformed archive (...)
+#               ld.lld: error: lib/libz.so: section header table goes past the end of the file: e_shoff = 0x10938
+#               ld.lld: error: cannot open lib/libz.a: Is a directory
+#               ld.lld: error: lib/libz.a(zv.o) is incompatible with elf64-littleaarch64
+#     lld-link  lld-link: error: lib/z.lib: unknown file type
+#
+# a text file, a `.tbd` whose first line is a comment, a file cut short, a
+# directory, a file this user may not read and a file of another machine, in
+# that order where a linker wrote one. ld64's two warnings end the link where
+# the names the file held stay undefined, and GNU ld's skip where it found no
+# other file for the library, `cannot find -lz` after it. A shape no line
+# names is no refusal here: GNU ld and `ld.lld` read an empty file as an
+# empty linker script, GNU ld passes a directory over, and `lld-link` names an
+# ELF archive's member alone, `unknown file type: zv.o`.
+#
+# **Unrun, and so not read**: MSVC's `link.exe`, the CI's Windows linker,
+# whose words for such a file nobody here has measured (its `LNK1107` is a
+# question, not a premise); an ld64 older than this Mac's, whose warning for
+# another architecture is said to read *ignoring file X, building for
+# macOS-arm64 but attempting to link with file built for macOS-x86_64*; and
+# GNU ld's and `ld.lld`'s words for a file they may not read, which the
+# container's mount, reading every file whatever its mode, could not show.
+# A reason these wordings do not measure is no refusal either, so a line
+# that names a file for another cause, an undefined name above all, is never
+# read as the file's fault.
+
+use cli/link_report
+use cli/strings
+use emit/ffi_build
+use emit/ffi_lookup
+
+# One file a refused link names: as the linker wrote it, an archive's member
+# taken off; what the linker did, `cannot use`, `ignored` or `skipped`; and
+# what is wrong with it.
+record Refused
+    file: str
+    did: str
+    wrong: str
+
+# Every file `message` says the linker could not use, in its order, a file
+# as often as a line names it.
+function refusals(message: str) -> [Refused]
+    out: [Refused] @= []
+
+    for raw in ffi_lookup.lines(text: message)
+        line = link_report.unreturned(raw)
+        one: Refused? @= ld64(line)
+
+        if one.is_err()
+            one @ gnu(line: line, message: message)
+
+        if one.is_err()
+            one @ lld(line)
+
+        if !one.is_err()
+            out @ out.push(one.must())
+
+    return out
+
+# What a line of ld64 says it could not use: an error, `ld: <reason> in
+# '<file>'`, the reason ending at the first ` in '`, since of ld64's reasons
+# only `path=<file>` names the file again; or the warning `ld: warning:
+# ignoring file '<file>': <reason>` that leaves the file's names undefined.
+function ld64(line: str) -> Refused?
+    warned = "ld: warning: ignoring file '"
+
+    if strings.starts_with(text: line, prefix: warned)
+        rest = ffi_lookup.after(text: line, marker: warned)?
+        file = link_report.before(text: rest, marker: "': ")?
+        return refused(
+            file: link_report.placed(file),
+            did: "ignored",
+            wrong: machine_of(ffi_lookup.after(text: rest, marker: "': ")?)
+        )
+
+    if !strings.starts_with(text: line, prefix: "ld: ") || strings.starts_with(text: line, prefix: "ld: warning: ") || !strings.ends_with(text: line, suffix: "'")
+        return fail(code: "none", msg: "no refusal of ld64's")
+    body = ffi_lookup.after(text: line, marker: "ld: ")?
+    cs = body.chars()
+    at = ffi_lookup.char_index_of(text: body, needle: " in '")?
+
+    # The file stands between the marker and the line's last quote.
+    if at + 5 > cs.len() - 1
+        return fail(code: "none", msg: "no file after ld64's reason")
+    return refused(
+        file: cs.slice(from: at + 5, to: cs.len() - 1).join(""),
+        did: "cannot use",
+        wrong: ld64_wrong(cs.slice(from: 0, to: at).join(""))
+    )
+
+# What ld64's reason says is wrong, "" for a reason not measured.
+function ld64_wrong(reason: str) -> str
+    if reason == "unknown file type"
+        return NO_LIBRARY
+
+    if reason == "file is empty"
+        return "it is empty"
+
+    if strings.starts_with(text: reason, prefix: "malformed")
+        return TRUNCATED
+
+    # `open()` and `mmap()`, each with the system's words for its errno.
+    for call in ["open", "mmap"]
+        failed = ffi_lookup.after(text: reason, marker: "file cannot be " + call + "()ed, errno=")
+
+        if !failed.is_err()
+            told = ffi_lookup.after(text: failed.must(), marker: "(").default("")
+            why = link_report.before(text: told, marker: ")").default("")
+
+            if why == ""
+                return ""
+
+            if call == "open"
+                return "it cannot be opened: " + why
+
+            if strings.starts_with(text: failed.must(), prefix: "22 ")
+                return "it cannot be mapped: " + why + ", which a directory named like a library gives"
+            return "it cannot be mapped: " + why
+
+    return ""
+
+# What ld64's warning says of a file built for another machine, "" for a
+# warning not measured.
+function machine_of(reason: str) -> str
+    found = ffi_lookup.after(text: reason, marker: "found architecture '")
+    required = ffi_lookup.after(text: reason, marker: "required architecture '")
+
+    if !found.is_err() && !required.is_err()
+        return "it is built for `" + ffi_lookup.up_to_quote(found.must()) + "`, and this program is linked for `" + ffi_lookup.up_to_quote(required.must()) + "`"
+    tapi = ffi_lookup.words(text: ffi_lookup.after(text: reason, marker: "missing required architecture ").default(""))
+
+    if tapi.len() > 0
+        return "it lists no `" + tapi[0] + "` among the machines it is for, and this program is linked for `" + tapi[0] + "`"
+    return ""
+
+# What a line of GNU ld says it could not use: a file read as no library and
+# no linker script, one it does not recognise, an archive with no index, or a
+# file of another machine it skipped where it found no other for the library.
+function gnu(line: str, message: str) -> Refused?
+    script = without_end(text: line, suffix: ": file format not recognized; treating as linker script")
+
+    # GNU ld writes its own name and a colon before the file, with no space.
+    if !script.is_err()
+        file = ffi_lookup.after(text: script.must(), marker: ":").default(script.must())
+        return refused(file: strings.trimmed(file), did: "cannot use", wrong: NO_LIBRARY)
+    unknown = link_report.before(text: line, marker: ": file not recognized: file format not recognized")
+
+    if !unknown.is_err()
+        return refused(file: link_report.unprefixed(unknown.must()), did: "cannot use", wrong: NO_LIBRARY)
+    indexless = link_report.before(text: line, marker: ": error adding symbols: archive has no index")
+
+    if !indexless.is_err()
+        return refused(
+            file: link_report.placed(link_report.unprefixed(indexless.must())),
+            did: "cannot use",
+            wrong: "it is an archive with no index of its names, which `ranlib` writes"
+        )
+    skipping = ffi_lookup.after(text: line, marker: ": skipping incompatible ")
+
+    if skipping.is_err()
+        return fail(code: "none", msg: "no refusal of GNU ld's")
+    searching = " when searching for -l"
+    file = link_report.before(text: skipping.must(), marker: searching)?
+    name = ffi_lookup.after(text: skipping.must(), marker: searching)?
+
+    for other in ffi_lookup.lines(text: message)
+        if ffi_build.names_library(line: link_report.unreturned(other), name: name)
+            return refused(file: file, did: "skipped", wrong: SKIPPED)
+
+    return fail(code: "none", msg: "the linker found another file for the library")
+
+# What a line of the lld family says it could not use: a directory, a file of
+# another format, or a file it read as no library, the file being the line's
+# first part before a `:` that is a file, so a Windows path's drive is passed.
+function lld(line: str) -> Refused?
+    rest: str @= ffi_lookup.after(text: line, marker: "lld: error: ").default("")
+
+    if rest == ""
+        rest @ ffi_lookup.after(text: line, marker: "lld-link: error: ").default("")
+
+    if strings.starts_with(text: rest, prefix: "cannot open ")
+        folder = without_end(
+            text: ffi_lookup.after(text: rest, marker: "cannot open ").must(),
+            suffix: ": Is a directory"
+        )
+
+        if folder.is_err()
+            return fail(code: "none", msg: "a file lld could not open for another cause")
+        return refused(file: folder.must(), did: "cannot use", wrong: "it is a directory")
+    other = link_report.before(text: rest, marker: " is incompatible with ")
+
+    if !other.is_err()
+        format = ffi_lookup.after(text: rest, marker: " is incompatible with ").must()
+        return refused(
+            file: link_report.placed(other.must()),
+            did: "cannot use",
+            wrong: "it is no `" + format + "` file, the format this program is linked in"
+        )
+    cs = rest.chars()
+
+    for at in range(from: 0, to: cs.len())
+        file = link_report.placed(cs.slice(from: 0, to: at).join(""))
+
+        if cs[at] == ":" && link_report.is_file(file)
+            return refused(
+                file: file,
+                did: "cannot use",
+                wrong: lld_wrong(strings.trimmed(cs.slice(from: at + 1, to: cs.len()).join("")))
+            )
+
+    return fail(code: "none", msg: "no refusal of the lld family's")
+
+# What the lld family's words after the file say is wrong, "" for words not
+# measured: a line number first is the file read as a linker script.
+function lld_wrong(said: str) -> str
+    if said == "unknown file type" || !ffi_lookup.number(text: link_report.before(text: said, marker: ":").default("")).is_err()
+        return NO_LIBRARY
+
+    if ffi_lookup.has(text: said, needle: "truncated or malformed archive") || strings.starts_with(text: said, prefix: "section header table goes past the end of the file")
+        return TRUNCATED
+    return ""
+
+# A refusal of `file`, where a measured wording says what is wrong with it
+# and the file is one a linker reads, an object or a library.
+function refused(file: str, did: str, wrong: str) -> Refused?
+    if wrong == "" || !link_report.is_file(file)
+        return fail(code: "none", msg: "no measured refusal of a file")
+    return ok(Refused(file: file, did: did, wrong: wrong))
+
+# `text` without `suffix` at its end, an error where it does not end so.
+function without_end(text: str, suffix: str) -> str?
+    if !strings.ends_with(text: text, suffix: suffix)
+        return fail(code: "none", msg: "not its end")
+    cs = text.chars()
+    return ok(cs.slice(from: 0, to: cs.len() - suffix.chars().len()).join(""))
+
+constant NO_LIBRARY: str
+    "it is no library this linker can read"
+
+constant TRUNCATED: str
+    "it is truncated or malformed"
+
+constant SKIPPED: str
+    "it is built for another machine than this program is linked for, and the linker found no other file for it"
+
+## Tests
+
+# DEFECT 2476: every wording measured on 2026-11-11, word for word, ld64 on
+# this Mac and the rest in the `heroes-linux-arm64` container.
+test "every linker's words for a library file it could not use are read, the file and what is wrong (defect 2476)"
+    tbd = refusals(
+        "linking failed:\nld: unknown file type in 'lib/libz.tbd'\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    )
+    assert tbd.len() == 1
+    assert tbd[0].file == "lib/libz.tbd" && tbd[0].did == "cannot use" && tbd[0].wrong == NO_LIBRARY
+    assert refusals("ld: file is empty in 'lib/libz.dylib'")[0].wrong == "it is empty"
+    assert refusals("ld: malformed archive, member exceeds file size in 'lib/libz.a'")[0].wrong == TRUNCATED
+    folder = refusals("ld: file cannot be mmap()ed, errno=22 (Invalid argument) path=lib/libz.a in 'lib/libz.a'")[0]
+    assert folder.file == "lib/libz.a"
+    assert folder.wrong == "it cannot be mapped: Invalid argument, which a directory named like a library gives"
+    assert refusals("ld: file cannot be open()ed, errno=13 (Permission denied) path=lib/libz.a in 'lib/libz.a'")[0].wrong == "it cannot be opened: Permission denied"
+
+    # A quote and a space in the folder: the file stands between the first
+    # ` in '` and the line's last quote.
+    assert refusals("ld: unknown file type in 's x'q/libz.a'")[0].file == "s x'q/libz.a"
+
+    # ld64's warnings, an archive's member taken off.
+    other = refusals(
+        "ld: warning: ignoring file 'a b/libz.a(zv86.o)': found architecture 'x86_64', required architecture 'arm64'\nUndefined symbols for architecture arm64:\n  \"_zlibVersion\", referenced from:\n"
+    )
+    assert other.len() == 1
+    assert other[0].file == "a b/libz.a" && other[0].did == "ignored"
+    assert other[0].wrong == "it is built for `x86_64`, and this program is linked for `arm64`"
+    tapi = refusals(
+        "ld: warning: ignoring file 'lib/libz.tbd': tapi error: missing required architecture arm64 in file /w/lib/libz.tbd"
+    )
+    assert tapi[0].wrong == "it lists no `arm64` among the machines it is for, and this program is linked for `arm64`"
+
+    # GNU ld 2.44: the script's second line is no second refusal.
+    script = refusals(
+        "/usr/bin/ld:L/text-a/libz.a: file format not recognized; treating as linker script\n/usr/bin/ld:L/text-a/libz.a:1: syntax error\n"
+    )
+    assert script.len() == 1 && script[0].file == "L/text-a/libz.a" && script[0].wrong == NO_LIBRARY
+    assert refusals("L/trunc-so/libz.so: file not recognized: file format not recognized")[0].file == "L/trunc-so/libz.so"
+    indexless = refusals("/usr/bin/ld: L/trunc-a/libz.a: error adding symbols: archive has no index; run ranlib to add one")[0]
+    assert indexless.file == "L/trunc-a/libz.a"
+    assert indexless.wrong == "it is an archive with no index of its names, which `ranlib` writes"
+    skipped = refusals(
+        "/usr/bin/ld: skipping incompatible L2/x86-so/libhz2476.so when searching for -lhz2476\n/usr/bin/ld: cannot find -lhz2476: No such file or directory\n/usr/bin/ld: skipping incompatible L2/x86-so/libhz2476.so when searching for -lhz2476\n"
+    )
+    assert skipped.len() == 2
+    assert skipped[0].file == "L2/x86-so/libhz2476.so" && skipped[0].did == "skipped" && skipped[0].wrong == SKIPPED
+
+    # `ld.lld` and `lld-link` 22.1.8.
+    lines = refusals("ld.lld: error: L/text-a/libz.a:1: unknown directive: not\n>>> not an archive\n>>> ^\n")
+    assert lines.len() == 1 && lines[0].file == "L/text-a/libz.a" && lines[0].wrong == NO_LIBRARY
+    assert refusals("ld.lld: error: L/trunc-a/libz.a: Archive::children failed: truncated or malformed archive (offset to next archive member past the end of the archive after member zlib.o)")[0].wrong == TRUNCATED
+    assert refusals("ld.lld: error: L/trunc-so/libz.so: section header table goes past the end of the file: e_shoff = 0x10938")[0].wrong == TRUNCATED
+    directory = refusals("ld.lld: error: cannot open L/dir-so/libz.so: Is a directory")[0]
+    assert directory.file == "L/dir-so/libz.so" && directory.wrong == "it is a directory"
+    format = refusals("ld.lld: error: L/x86-a/libz.a(zv86.o) is incompatible with elf64-littleaarch64")[0]
+    assert format.file == "L/x86-a/libz.a"
+    assert format.wrong == "it is no `elf64-littleaarch64` file, the format this program is linked in"
+    assert refusals("lld-link: error: W/text/z.lib: unknown file type")[0].file == "W/text/z.lib"
+
+    # A Windows path's drive and a CRLF line end, written here as `lld-link`
+    # would write them on the box (unrun there for this wording).
+    assert refusals("lld-link: error: C:\\w\\lib\\z.lib: unknown file type\r\n")[0].file == "C:\\w\\lib\\z.lib"
+
+test "a line naming a file for another cause, or no file, is no refusal of it (defect 2476)"
+    # GNU ld's skip where it found another file and the link went on.
+    assert refusals("/usr/bin/ld: skipping incompatible L/x86-a/libz.a when searching for -lz\n").len() == 0
+
+    # A name a library needs, in GNU ld's and in an `ld.lld` wording no linker
+    # here wrote, and every linker's undefined names: `cli/library_needs.hero`'s.
+    assert refusals("/usr/bin/ld: s/libtop.so: undefined reference to `base_helper'\n").len() == 0
+    assert refusals("ld.lld: error: s/libtop.so: undefined reference to base_helper [--no-allow-shlib-undefined]\n").len() == 0
+    assert refusals("ld.lld: error: undefined symbol: zlibVersion\n>>> referenced by m.c\n>>>               /tmp/m-57f411.o:(main)\n").len() == 0
+    assert refusals("Undefined symbols for architecture arm64:\n  \"_zlibVersion\", referenced from:\n      _main in m-ccca25.o\nld: symbol(s) not found for architecture arm64\n").len() == 0
+
+    # A library the machine lacks: `emit/ffi_build.hero`'s.
+    assert refusals("ld: library 'z' not found\n").len() == 0
+    assert refusals("/usr/bin/ld: cannot find -lz: No such file or directory\n").len() == 0
+    assert refusals("ld.lld: error: unable to find library -lz\n").len() == 0
+
+    # `lld-link` naming an archive's member alone, a reason not measured, and
+    # lines cut short, where a slice past an end would end the compiler.
+    assert refusals("lld-link: error: unknown file type: zw.o").len() == 0
+    assert refusals("ld: too many personality routines for compact unwind to encode in 'lib/libz.a'").len() == 0
+    assert refusals("ld: x in '").len() == 0
+    assert refusals("ld: in ''").len() == 0
+    assert refusals("ld: warning: ignoring file '").len() == 0
+    assert refusals("ld: warning: ignoring file 'lib/libz.tbd': tapi error: missing required architecture ").len() == 0
+    assert refusals("ld.lld: error: cannot open L/libz.a: No such file or directory").len() == 0
+    assert refusals("").len() == 0
+
+    # The compiler's own object is a file all the same: whose it is is
+    # `cli/library_file.hero`'s question.
+    assert refusals("ld: unknown file type in 'build/tu-1/main-3f.o'")[0].file == "build/tu-1/main-3f.o"

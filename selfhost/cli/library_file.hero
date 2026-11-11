@@ -1,0 +1,333 @@
+# A library file the linker found for a library the program links and could
+# not use (design.md §4.19, §4.17; defect 2476, 2026-11-11): told at the
+# group that names the library as `ffi_missing_library`, the class panel 055
+# gives a library the group names and the machine does not have, the file
+# named, what is wrong with it, and the folder it stands in, with the word of
+# this build that named the folder. Until then it was *internal error:
+# linking failed* at exit 2: a `libz.tbd` opening with a comment line before
+# `--- !tapi-tbd`, in a folder `--library` named, was the compiler's failure.
+# `cli/refused_files.hero` reads the files out of each linker's words.
+#
+# **The narrowing is the program's own words**, `ffi_build.missing_library`'s
+# and `cli/library_needs.hero`'s: a file is told only where its last part is
+# the library file of a name the program links, a `link` name or a
+# `pkgconfig` answer's `-l` (`library_needs.names_of`): `lib<name>.tbd`,
+# `.dylib`, `.so` or `.a`, the four ld64 searches for, GNU ld the last two,
+# or `<name>.lib`, `lld-link`'s; each name asked of the file, the file never
+# parsed for one (panel 188's rule). Every file the refusal names must be
+# one, else nothing is told and the refusal goes on to the readers after
+# this one: an object this compiler made, its runtime, or a library the
+# driver links of its own is the compiler's, exit 2. A `pkgconfig` answer
+# names no file alone, `shell_split.no_flag` refusing such a word (defect
+# 183), so every file the link holds of the program's is a name looked up.
+#
+# **The note says where the file stands, and only what is true of every
+# folder**: the folder `--library` names, a folder a `pkg-config` answer
+# names with `-L`, or one the linker searched of its own, each with the
+# remedy its word allows. The folders `--library` names are the build's
+# (`compile.Options.library`), asked by `cli/whose.hero` of no refusal but a
+# link's.
+
+use ast
+use cli/libraries
+use cli/library_needs
+use cli/pkgconfig_missing
+use cli/refused_files
+use cli/strings
+use diag
+use emit/externs as emit_externs
+use parse
+use source
+use token
+
+# Which library of the program a file is: the name, and the file's last part.
+record Found
+    name: str
+    base: str
+
+# What is told of `message`, a link's refusal: each file it names that the
+# linker could not use, once, at the group of its library, in the linker's
+# order; none where it names no such file, or one that is not a library the
+# program links. `library` are the folders `--library` names, `linked` the
+# `pkgconfig` answers' words, and `build` where `pkg-config` is asked again.
+function told(message: str, s: source.Source, decls: [ast.Decl], library: [str], linked: [str], build: str) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    names = library_needs.names_of(s, decls, linked)
+    out: [diag.Diagnostic] @= []
+    seen: {str: bool} @= {}
+
+    for one in refused_files.refusals(message)
+        found = library_of(file: one.file, names: names)
+
+        if found.is_err()
+            return none
+
+        if !seen[one.file].is_err()
+            continue
+        seen[one.file] @ true
+        d = at_group(s, decls, one: one, found: found.must(), library: library, linked: linked, build: build)
+
+        if d.is_err()
+            return none
+        out @ out.push(d.must())
+
+    return out
+
+# Which of `names` `file` is the library file of, the longest winning, its
+# file name whole at the end, after a path's separator or nothing.
+function library_of(file: str, names: [str]) -> Found?
+    best: Found? @= fail(code: "none", msg: "no library the program links")
+    longest: i64 @= 0
+
+    for name in names
+        for base in ["lib" + name + ".tbd", "lib" + name + ".dylib", "lib" + name + ".so", "lib" + name + ".a", name + ".lib"]
+            if name.len() > longest && ends_whole(file: file, base: base)
+                best @ ok(Found(name: name, base: base))
+                longest @ name.len()
+
+    return best
+
+function ends_whole(file: str, base: str) -> bool
+    cs = file.chars()
+    rest = cs.len() - base.chars().len()
+
+    if rest < 0 || cs.slice(from: rest, to: cs.len()).join("") != base
+        return false
+    return rest == 0 || cs[rest - 1] == "/" || cs[rest - 1] == "\\"
+
+# The folder `file` stands in, as the linker wrote it, the separators that end
+# it taken off; `.` for a file named alone, `/` for one at the root.
+function folder_of(file: str, base: str) -> str
+    cs = file.chars()
+    written = cs.slice(from: 0, to: cs.len() - base.chars().len())
+    end: i64 @= written.len()
+
+    while end > 0 && (written[end - 1] == "/" || written[end - 1] == "\\")
+        end @ end - 1
+
+    if end == 0 && written.len() > 0
+        return "/"
+
+    if end == 0
+        return "."
+    return written.slice(from: 0, to: end).join("")
+
+# `path` read as text with its `.` parts and each `<folder>/..` taken out,
+# its separators one `/` each. A linker writes the folder `-L` gave it as
+# given, GNU ld's `lib/` as `lib//libz.a` and ld64 an absolute folder's
+# `pc/../lib` as `lib` (measured 2026-11-11, beside a relative `pc/../lib`
+# and an absolute `./lib` it kept), so a folder is compared in this form.
+function lexical(path: str) -> str
+    parts: [str] @= []
+    run: [str] @= []
+    cs = path.chars()
+
+    for at in range(from: 0, to: cs.len() + 1)
+        if at < cs.len() && cs[at] != "/" && cs[at] != "\\"
+            run @ run.push(cs[at])
+            continue
+        part = run.join("")
+        run @ []
+
+        if part == ".." && parts.len() > 0 && parts[parts.len() - 1] != ".."
+            parts @ parts.slice(from: 0, to: parts.len() - 1)
+        else if part != "" && part != "."
+            parts @ parts.push(part)
+
+    joined = parts.join("/")
+
+    if cs.len() > 0 && (cs[0] == "/" || cs[0] == "\\")
+        return "/" + joined
+
+    if joined == ""
+        return "."
+    return joined
+
+# The diagnostic for `one`, at the first group whose `link` names its
+# library, or the first `pkgconfig` group whose answer, asked again, carries
+# `-l<name>`; an error where neither does, which leaves the refusal the
+# compiler's.
+function at_group(s: source.Source, decls: [ast.Decl], one: refused_files.Refused, found: Found, library: [str], linked: [str], build: str) -> diag.Diagnostic?
+    for decl in decls
+        span = library_needs.group_span(decl, want_pkgconfig: false)
+
+        if !span.is_err() && emit_externs.unquoted(s, span: span.must()) == found.name
+            return ok(
+                diagnostic(one: one, found: found, whose: " this group links", span: span.must(), library: library, linked: linked)
+            )
+
+    asked: {str: bool} @= {}
+    lacked = pkgconfig_missing.Lacked(name: found.name, kind: "library", words: ["-l" + found.name], found: true)
+
+    for decl in decls
+        span = library_needs.group_span(decl, want_pkgconfig: true)
+
+        if span.is_err()
+            continue
+        package = emit_externs.unquoted(s, span: span.must())
+
+        if asked[package].is_err()
+            asked[package] @ true
+
+            if pkgconfig_missing.answers(pkgconfig: package, build: build, lacked: lacked)
+                whose = ", which `pkg-config` answered for `" + library_needs.shown(package) + "` with `-l" + library_needs.shown(found.name) + "`"
+                return ok(
+                    diagnostic(one: one, found: found, whose: whose, span: span.must(), library: library, linked: linked)
+                )
+
+    return fail(code: "none", msg: "no group of the program links " + found.name)
+
+# What is told: the file, what the linker did with it and why, at `span`;
+# the note names the folder, and where this build named it, by which word.
+function diagnostic(one: refused_files.Refused, found: Found, whose: str, span: token.Span, library: [str], linked: [str]) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_missing_library",
+        message: "the linker " + one.did + " `" + library_needs.shown(one.file) + "`, the file it found for the library `" + library_needs.shown(found.name) + "`" + whose + ": " + one.wrong,
+        span: span
+    )
+    folder = folder_of(file: one.file, base: found.base)
+    remedy = "put a library this machine's linker can use in its place"
+    note: str @= "the linker found it in `" + library_needs.shown(folder) + "`: " + remedy + ", or pass `--library <dir>` a folder holding one"
+    by_flag = named(folder: folder, among: library)
+    by_package = named(folder: folder, among: package_folders(linked))
+
+    if !by_flag.is_err()
+        note @ "`--library " + library_needs.shown(by_flag.must()) + "` names that folder: " + remedy + ", or take `" + library_needs.shown(found.base) + "` out of it"
+    else if !by_package.is_err()
+        note @ "a `pkg-config` answer of this build names that folder, `-L" + library_needs.shown(by_package.must()) + "`: " + remedy + ", or point `PKG_CONFIG_PATH` at a `.pc` naming one"
+    d.notes @ d.notes.push(note)
+    return d
+
+# The first of `among` that names `folder`, as written, the two read in
+# their `lexical` form; an error where none does.
+function named(folder: str, among: [str]) -> str?
+    for one in among
+        if lexical(one) == lexical(folder)
+            return ok(one)
+
+    return fail(code: "none", msg: "no word of this build names the folder")
+
+# The folders the `pkgconfig` answers' link words name with `-L`.
+function package_folders(linked: [str]) -> [str]
+    out: [str] @= []
+
+    for word in libraries.link_words(linked)
+        if strings.starts_with(text: word, prefix: "-L") && word.len() > 2
+            out @ out.push(word.slice(from: 2, to: word.len()))
+
+    return out
+
+## Tests
+
+# DEFECT 2476's own words and the shapes beside them, as ld64 and GNU ld
+# wrote them on 2026-11-11 (`cli/refused_files.hero`), over a program
+# linking `z` and `zz`.
+test "a library file the linker could not use is told at the group that links it, its folder by this build's word (defect 2476)"
+    text = "extern \"zlib.h\" link \"z\"\n    function zlibVersion() -> cstr\n\nextern \"zz.h\" link \"zz\"\n    function zz_version() -> cstr\n\nfunction main()\n    print(zlibVersion().validated().default(\"none\"))\n    print(zz_version().validated().default(\"none\"))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    none: [str] = []
+    remedy = "put a library this machine's linker can use in its place"
+
+    # The defect: a `.tbd` ld64 cannot read, in the folder `--library lib/` names.
+    tbd = told(
+        message: "linking failed:\nld: unknown file type in 'lib/libz.tbd'\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n",
+        s,
+        parsed.decls,
+        library: ["lib/"],
+        linked: none,
+        build: "build"
+    )
+    assert tbd.len() == 1
+    assert tbd[0].code == "ffi_missing_library"
+    assert source.span_text(s, tbd[0].span) == "\"z\""
+    assert tbd[0].message == "the linker cannot use `lib/libz.tbd`, the file it found for the library `z` this group links: it is no library this linker can read"
+    assert tbd[0].notes == ["`--library lib/` names that folder: " + remedy + ", or take `libz.tbd` out of it"]
+
+    # GNU ld's `lib//` for that folder, and ld64's absolute `pc/..` read as
+    # `lib`: the folder is named by the word as this build wrote it.
+    gnu = told(
+        message: "/usr/bin/ld:lib//libzz.a: file format not recognized; treating as linker script\n/usr/bin/ld:lib//libzz.a:1: syntax error\n",
+        s,
+        parsed.decls,
+        library: ["lib/"],
+        linked: none,
+        build: "build"
+    )
+    assert gnu.len() == 1
+    assert source.span_text(s, gnu[0].span) == "\"zz\""
+    assert gnu[0].notes == ["`--library lib/` names that folder: " + remedy + ", or take `libzz.a` out of it"]
+    resolved = told(
+        message: "ld: unknown file type in '/w/case/lib/libz.a'\n",
+        s,
+        parsed.decls,
+        library: ["/w/case/pc/../lib"],
+        linked: none,
+        build: "build"
+    )
+    assert resolved[0].notes == ["`--library /w/case/pc/../lib` names that folder: " + remedy + ", or take `libz.a` out of it"]
+
+    # A file of another machine in a folder the linker searched of its own,
+    # its names left undefined: the note is the one true of every folder.
+    x86 = told(
+        message: "ld: warning: ignoring file '/usr/local/lib/libz.dylib': found architecture 'x86_64', required architecture 'arm64'\nUndefined symbols for architecture arm64:\n  \"_zlibVersion\", referenced from:\n      _hero_extern_refs in main-1.o\nld: symbol(s) not found for architecture arm64\n",
+        s,
+        parsed.decls,
+        library: ["lib"],
+        linked: none,
+        build: "build"
+    )
+    assert x86.len() == 1
+    assert x86[0].message == "the linker ignored `/usr/local/lib/libz.dylib`, the file it found for the library `z` this group links: it is built for `x86_64`, and this program is linked for `arm64`"
+    assert x86[0].notes == ["the linker found it in `/usr/local/lib`: " + remedy + ", or pass `--library <dir>` a folder holding one"]
+
+    # Two of the program's files, each at its group in the linker's order,
+    # and a file named twice told once.
+    warned = "ld: warning: ignoring file 'lib/libzz.dylib': found architecture 'x86_64', required architecture 'arm64'\nld: warning: ignoring file 'lib/libz.dylib': found architecture 'x86_64', required architecture 'arm64'\n"
+    both = told(message: warned + warned, s, parsed.decls, library: none, linked: none, build: "build")
+    assert both.len() == 2
+    assert source.span_text(s, both[0].span) == "\"zz\"" && source.span_text(s, both[1].span) == "\"z\""
+
+    # A folder a package's answer names, by the answer's own word.
+    package = diagnostic(
+        one: refused_files.Refused(file: "/opt/z/lib/libz.a", did: "cannot use", wrong: "it is empty"),
+        found: Found(name: "z", base: "libz.a"),
+        whose: ", which `pkg-config` answered for `zlib` with `-lz`",
+        span: token.Span(start: 0, end: 0),
+        library: none,
+        linked: ["-I/opt/z/include", "-L/opt/z/pc/../lib", "-lz"]
+    )
+    assert package.message == "the linker cannot use `/opt/z/lib/libz.a`, the file it found for the library `z`, which `pkg-config` answered for `zlib` with `-lz`: it is empty"
+    assert package.notes == ["a `pkg-config` answer of this build names that folder, `-L/opt/z/pc/../lib`: " + remedy + ", or point `PKG_CONFIG_PATH` at a `.pc` naming one"]
+
+test "a file the program's words did not put on the line is not told, so the refusal stays the compiler's (defect 2476)"
+    text = "extern \"zlib.h\" link \"z\"\n    function zlibVersion() -> cstr\n\nfunction main()\n    print(zlibVersion().validated().default(\"none\"))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    none: [str] = []
+
+    # The compiler's own object, a library the driver links of its own, a
+    # library whose name ends in the program's, and the program's file beside
+    # the compiler's object: each leaves the refusal to the readers after.
+    for message in ["ld: unknown file type in 'build/tu-1/main-3f.o'\n", "ld: file is empty in '/usr/lib/libm.tbd'\n", "ld: unknown file type in 'lib/libxz.a'\n", "ld: warning: ignoring file 'lib/libz.dylib': found architecture 'x86_64', required architecture 'arm64'\nld: warning: ignoring file 'build/tu-1/main-3f.o': found architecture 'x86_64', required architecture 'arm64'\n"]
+        assert told(message: message, s, parsed.decls, library: none, linked: none, build: "build").len() == 0
+
+    # Which library a file is: the longest name, the file's name whole,
+    # Windows' `<name>.lib`.
+    assert library_of(file: "lib/libzz.a", names: ["z", "zz"]).must().name == "zz"
+    assert library_of(file: "C:\\w\\lib\\z.lib", names: ["z"]).must().base == "z.lib"
+    assert library_of(file: "lib/libz.a.bak", names: ["z"]).is_err()
+    assert library_of(file: "libz.dylib", names: ["z"]).must().base == "libz.dylib"
+
+    # The folder as the linker wrote it, and the form two spellings meet in.
+    assert folder_of(file: "libz.a", base: "libz.a") == "."
+    assert folder_of(file: "/libz.a", base: "libz.a") == "/"
+    assert folder_of(file: "lib//libz.a", base: "libz.a") == "lib"
+    assert lexical("/w/case/pc/../lib") == "/w/case/lib"
+    assert lexical("./lib/.") == "lib"
+    assert lexical("../x/../../y") == "../../y"
+    assert lexical("/") == "/"
+    assert lexical("") == "."
+    assert lexical("C:\\w\\lib\\") == "C:/w/lib"
+    assert named(folder: "lib", among: ["other", "./lib/"]).must() == "./lib/"
+    assert named(folder: "lib", among: ["lib2"]).is_err()
