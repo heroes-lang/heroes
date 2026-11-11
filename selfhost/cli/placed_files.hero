@@ -130,6 +130,14 @@ function named_refused(flag: str, place: str) -> str
 function folder_refused(flag: str, folder: str) -> str
     return told_named(flag: flag, place: folder, where: shown(folder + "/"))
 
+# What `check <directory> --apply --in-place` says of a directory in a
+# placed package's tree, or of `heroes.packages/` itself, asked as
+# `folder_within` asks it (defect 2478): refused as a placed file named alone
+# is, since every fix it would write lands in a tree. Until then it was
+# told the directory held no root, of a tree whose `main.hero` declared one.
+function directory_refused(folder: str) -> str
+    return "cannot write under " + folder + ": it names a place under `" + placed_use.FOLDER + "/`" + shown(folder + "/") + " in the placed packages' trees, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; a package's fix is written where its source is; nothing was checked and nothing written"
+
 function told_named(flag: str, place: str, where: str) -> str
     return "`" + flag + " " + place + "` names a place under `" + placed_use.FOLDER + "/`" + where + " in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
 
@@ -177,6 +185,7 @@ test "a placed package's file is one whose folder is named heroes.packages, and 
     assert !folder_within("app")
     assert named_refused(flag: "-o", place: "heroes.packages/t/out.c") == "`-o heroes.packages/t/out.c` names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
     assert folder_refused(flag: "-C", folder: "app/heroes.packages") == "`-C app/heroes.packages` names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
+    assert directory_refused("app/heroes.packages") == "cannot write under app/heroes.packages: it names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; a package's fix is written where its source is; nothing was checked and nothing written"
     assert refused("p/heroes.packages/t/a.hero") == "cannot write p/heroes.packages/t/a.hero: it stands in a placed package's tree, under `heroes.packages/`, which the build holds to the catalogue's `sum`, so a byte written there refuses the program; a package's fix is written where its source is; nothing was written"
 
 # Defect 2474: every link shape the lane measured, made by the runtime's own
@@ -233,6 +242,7 @@ test "a path whose place the filesystem resolves into heroes.packages is a place
         assert !within(dir + "/elsewhere/x.c")
         assert named_refused(flag: "-o", place: dir + "/lnk/out.c") == "`-o " + dir + "/lnk/out.c` names a place under `heroes.packages/` as the filesystem resolves it, `" + whole + "/app/heroes.packages/out.c`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
         assert folder_refused(flag: "-C", folder: dir + "/treelnk") == "`-C " + dir + "/treelnk` names a place under `heroes.packages/` as the filesystem resolves it, `" + whole + "/" + tree + "/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written"
+        assert directory_refused(dir + "/treelnk") == "cannot write under " + dir + "/treelnk: it names a place under `heroes.packages/` as the filesystem resolves it, `" + whole + "/" + tree + "/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; a package's fix is written where its source is; nothing was checked and nothing written"
         assert refused(dir + "/file.hero") == "cannot write " + dir + "/file.hero: it stands in a placed package's tree as the filesystem resolves it, `" + whole + "/" + tree + "/parse.hero`, under `heroes.packages/`, which the build holds to the catalogue's `sum`, so a byte written there refuses the program; a package's fix is written where its source is; nothing was written"
 
         # The premise: a loop resolves to no place, and nothing lands there.

@@ -1,0 +1,141 @@
+# The roots of a directory, the programs `heroes check <directory> --apply
+# --in-place` asks (design.md §4.17; panel 211, route C; defect 607): every
+# `.hero` file under it that declares `function main`, outside the folders
+# that are a tool's and not the author's, and what the directory is told
+# where it holds none. Split out of `cli/consensus.hero` on 2026-11-11, the
+# day defect 2478's note took that module past §11's 300 lines: which files
+# are roots is a question of its own, asked once before the rounds of votes
+# that module holds.
+#
+# **A folder whose only roots stand where none is asked is told which they
+# are** (defect 2478). Until then `heroes.packages/` was left out of the walk
+# in silence (defect 2457), and a folder whose one `main` stood in a placed
+# tree was told it held no `.hero` file declaring `function main`, a false
+# note at exit 0; a hidden folder and a `build/` were the same. A directory
+# that is itself in a placed tree is refused before the walk
+# (`consensus.run`, `placed_files.directory_refused`).
+
+use cli/agreed_writes
+use cli/placed_files
+use cli/process
+use cli/strings
+use lexer
+use module/reading
+use token
+
+# Every root under `dir`, in order of name: a `.hero` file declaring
+# `function main`, outside every hidden directory, every `build/` and every
+# placed package's tree, which are a tool's and not the author's (`.git`, the
+# lanes of `.claude/worktrees`, `heroes.packages/`, defect 2457).
+# A root that is not text is one: it reads its modules all the same, and
+# `consensus.votes_of` has it leave them as they stand.
+function under(dir: str) -> [str]?
+    out: [str] @= []
+
+    for path in process.files_under(dir)?.sort()
+        if !strings.ends_with(text: path, suffix: ".hero") || left_out(dir: dir, path: path)
+            continue
+        text = reading.source_text(path)?
+
+        if declares_main(text.text)
+            out @ out.push(path)
+
+    return ok(out)
+
+# The files under `dir` that declare `function main` and that `under`
+# leaves out, in order of name; none where the walk or a file cannot be
+# read, which `under` has already told.
+function passed_over(dir: str) -> [str]
+    out: [str] @= []
+    walked = process.files_under(dir)
+
+    if walked.is_err()
+        return out
+
+    for path in walked.must().sort()
+        if strings.ends_with(text: path, suffix: ".hero") && left_out(dir: dir, path: path)
+            text = reading.source_text(path)
+
+            if !text.is_err() && declares_main(text.must().text)
+                out @ out.push(path)
+
+    return out
+
+# What a directory holding no root is told (defect 2478): that it holds
+# none, or, where its only roots stand where none is asked, the first of
+# them and how many more.
+function no_root(dir: str, passed: [str]) -> str
+    if passed.len() == 0
+        return dir + " holds no root, a `.hero` file declaring `function main`, so nothing was checked and nothing written"
+    which: str @= passed[0] + " declares"
+
+    if passed.len() > 1
+        which @ passed[0] + " and " + (passed.len() - 1).to_str() + " more declare"
+    return dir + " holds no root outside every hidden folder, every `build/` and every placed package's tree, which are a tool's and not the author's: " + which + " `function main` there, left as it stands, so nothing was checked and nothing written"
+
+# Whether `path`, a file under `dir`, stands where no root is asked: a
+# hidden folder or a `build/` below `dir`, or a placed package's tree.
+function left_out(dir: str, path: str) -> bool
+    return hidden(path.slice(from: dir.len() + 1, to: path.len())) || placed_files.within(path)
+
+function hidden(rest: str) -> bool
+    for part in agreed_writes.parts_of(rest)
+        if strings.starts_with(text: part, prefix: ".") || part == "build"
+            return true
+
+    return false
+
+# Whether `text` declares `function main` at its margin, read off the tokens
+# as discovery reads its `use` lines (`module/paths.hero`).
+function declares_main(text: str) -> bool
+    tokens = lexer.lex_one(text).tokens
+    at: i64 @= 0
+
+    while at + 1 < tokens.len()
+        start = tokens[at].span.start
+
+        if tokens[at].kind == .kw_function && (start == 0 || text[start - 1] == '\n') && word(tokens[at + 1], text: text) == "main"
+            return true
+        at @ at + 1
+
+    return false
+
+function word(t: token.Token, text: str) -> str
+    return text.slice(from: t.span.start, to: t.span.end)
+
+## Tests
+
+test "a root is a file declaring function main at its margin"
+    assert declares_main("use geom\n\nfunction main()\n    print(1)\n")
+    assert !declares_main("function two() -> i64\n    return 2\n")
+    assert !declares_main("# function main\nfunction mains()\n    return\n")
+    assert hidden(".claude/worktrees/x/a.hero")
+    assert hidden("tests/build/a.hero")
+    assert !hidden("tests/golden/a.hero")
+
+# Defect 2478: a folder whose only roots are a placed tree's, a hidden
+# folder's and a `build/`'s is told so, the first of them named; a folder
+# with no `main` anywhere keeps the note it had.
+test "a directory whose only roots are passed over is told which they are (defect 2478)"
+    dir = "build/selftest-dir-roots"
+    main = "function main()\n    print(1)\n"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/heroes.packages/pkg@1.0.0-0123456789abcdef").is_err()
+    assert !process.mkdir_all(dir + "/.hidden").is_err()
+    assert !process.mkdir_all(dir + "/build").is_err()
+    assert !write_file(path: dir + "/lib.hero", text: "function f() -> i64\n    return 1\n").is_err()
+    assert no_root(dir: dir, passed: passed_over(dir)) == dir + " holds no root, a `.hero` file declaring `function main`, so nothing was checked and nothing written"
+    assert !write_file(path: dir + "/heroes.packages/pkg@1.0.0-0123456789abcdef/main.hero", text: main).is_err()
+    assert under(dir).must().len() == 0
+    assert passed_over(dir) == [dir + "/heroes.packages/pkg@1.0.0-0123456789abcdef/main.hero"]
+    assert no_root(dir: dir, passed: passed_over(dir)) == dir + " holds no root outside every hidden folder, every `build/` and every placed package's tree, which are a tool's and not the author's: " + dir + "/heroes.packages/pkg@1.0.0-0123456789abcdef/main.hero declares `function main` there, left as it stands, so nothing was checked and nothing written"
+    assert !write_file(path: dir + "/.hidden/main.hero", text: main).is_err()
+    assert !write_file(path: dir + "/build/main.hero", text: main).is_err()
+    assert passed_over(dir).len() == 3
+    assert strings.holds(
+        text: no_root(dir: dir, passed: passed_over(dir)),
+        needle: ": " + dir + "/.hidden/main.hero and 2 more declare `function main` there"
+    )
+    assert !write_file(path: dir + "/main.hero", text: main).is_err()
+    assert under(dir).must() == [dir + "/main.hero"]
+    assert !process.remove_tree(dir).is_err()

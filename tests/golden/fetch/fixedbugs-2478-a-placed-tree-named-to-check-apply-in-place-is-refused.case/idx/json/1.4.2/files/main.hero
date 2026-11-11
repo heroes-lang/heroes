@@ -1,0 +1,8 @@
+# The package the case beside it adds holds a program of its own, whose
+# call writes a label `twice` does not have, so `check --apply` has a
+# certain fix to write in its tree.
+function main()
+    print(twice(n: 7))
+
+function twice(x: i64) -> i64
+    return x * 2
