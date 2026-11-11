@@ -1,0 +1,6 @@
+error[ffi_missing_link]: the linker cannot find `heroes_2466_absent`: this group links `m`, and no library on the link line defines it
+  at tests/golden/unsupported/fixedbugs-2466-a-group-that-links-its-library-is-never-told-to-write-link.case/main.hero:9:5
+    |
+  9 |     function heroes_2466_absent(x: f64) -> f64  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `own.h` declares `heroes_2466_absent`, and the library this build links for `m` does not define it: either the header this build read and that library are two releases or two builds of it, and the remedy is to read and link one copy, the header's folder and the library's both named to this build (`--include` and `--library`), or both answered by one `pkgconfig`; or `heroes_2466_absent` lives in another library, and the remedy is a group for that one as well, `extern "<its header>" link "<library>"`, holding a function its header declares

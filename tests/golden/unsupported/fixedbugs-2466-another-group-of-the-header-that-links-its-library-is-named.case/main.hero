@@ -1,0 +1,14 @@
+# fixedbugs, defect 2466, lane b31-ffi, 2026-11-11: one group of `own.h`
+# says `link "m"`, and a second group of the same header, naming no library,
+# binds a name nothing this build links defines. The binding's own group
+# names no library, but the program does for that header, so writing the
+# `link` again is no repair: the refusal names the group of the header that
+# links `m`, where until this defect it said no group names one.
+extern "own.h" link "m"
+    function sqrt(x: f64) -> f64
+
+extern "own.h"
+    function heroes_2466_absent(x: f64) -> f64  #~ ffi_missing_link
+
+function main()
+    print(sqrt(x: 4.0) + heroes_2466_absent(x: 2.0))

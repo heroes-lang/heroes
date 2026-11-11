@@ -1,0 +1,162 @@
+# A name the linker cannot find that a group binds, where a group of its
+# header already names a library (design.md §4.19, §4.17; defect 2466).
+#
+# **What it closes, measured on this Mac.** Panel 048's class is the `link`
+# the author forgot, and `emit/ffi_build.hero`'s `missing_link` told every
+# such name in its words, *no group in this program says which library has
+# it*, its note to write `link "<library>"`. A group that says `link "curl"`
+# was told the same: `curl_multi_waitfds`, which libcurl 8.23.0's
+# `curl/curl.h` declares, read through `CPATH`, while the linker found the
+# SDK's libcurl 8.7.1, which defines no such name (panel 245's critic); so
+# was `link "m"` beside a header declaring a name libm lacks, and a second
+# group of `curl/curl.h` naming no library beside one naming `curl`. The
+# claim was false of the program and its fix already written. So the
+# group is asked first: one that names a library, or a group of the same
+# header that does, is told that no library on the link line defines the
+# name, the header and the library named, and the note says what each of
+# the two causes the line cannot tell apart asks of the author; where no
+# group of that header names one, panel 048's words stand.
+#
+# **What it does not judge**: whether the header read and the library
+# linked are one copy's. The linker says a name is missing, never why, and
+# a build that pairs a header with another release's library at exit 0,
+# where no name is missing, is defect 2448's, which panel 245 rules on.
+
+use ast
+use diag
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use parse
+use source
+use token
+
+# **The refusal of `name`, which a group binds at `at`, where a group of its
+# header names a library**; none where none does, for panel 048's words.
+function told(s: source.Source, decls: [ast.Decl], name: str, at: ffi_lookup.Declared) -> diag.Diagnostic?
+    named = named_by(s, decls, name: name)
+
+    if named.is_err()
+        return fail(code: "none", msg: "no group of its header names a library")
+    return ok(diagnostic(name: name, header: at.header, library: named.must(), span: at.span))
+
+# The library a group names, as written; whether it is a `pkgconfig` package
+# rather than a `link` library; and whether the group is the binding's own,
+# or another group of the same header.
+record Named
+    name: str
+    package: bool
+    own: bool
+
+# **The library a group of `name`'s header names**: the group that
+# `ffi_lookup.declaration` finds binding `name`, else the first other group
+# reading the same header that names one; none where no group of that
+# header names a library or a package.
+function named_by(s: source.Source, decls: [ast.Decl], name: str) -> Named?
+    for index in range(from: 0, to: decls.len())
+        if ffi_lookup.bound_as(s, decl: decls[index], name: name)
+            found = ffi_lookup.declared_at(s, decls, index: index)
+
+            if !found.is_err()
+                own = library_of(s, decl: decls[index], own: true)
+
+                if !own.is_err()
+                    return own
+                return of_header(s, decls, header: found.must().header)
+
+    return fail(code: "none", msg: "no group binds this name")
+
+# The first group reading `header` that names a library, told as another
+# group's.
+function of_header(s: source.Source, decls: [ast.Decl], header: str) -> Named?
+    for index in range(from: 0, to: decls.len())
+        found = ffi_lookup.declared_at(s, decls, index: index)
+
+        if !found.is_err() && found.must().header == header
+            named = library_of(s, decl: decls[index], own: false)
+
+            if !named.is_err()
+                return named
+
+    return fail(code: "none", msg: "no group of this header names a library")
+
+# The library a group declaration names by its `link` or its `pkgconfig`,
+# none where it names neither.
+function library_of(s: source.Source, decl: ast.Decl, own: bool) -> Named?
+    library: ast.Library? @= fail(code: "none", msg: "no library")
+
+    match decl.kind
+        .function_decl fd          => library @ fd.value.library
+        .constant_decl k           => library @ k.library
+        .record_decl rec           => library @ rec.library
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no group")
+
+    if library.is_err()
+        return fail(code: "none", msg: "the group names no library")
+
+    match library.must()
+        .link l      => return ok(Named(name: emit_externs.unquoted(s, span: l.name), package: false, own: own))
+        .pkgconfig p => return ok(Named(name: emit_externs.unquoted(s, span: p.name), package: true, own: own))
+
+# **The refusal of `name`**, which `header` declares and the group at `span`
+# binds, where a group of that header names `library`: no library on the
+# link line defines it, and the note tells the two causes apart by what
+# each asks of the author, the copy of the library the header and the link
+# share, or a group for the library that holds the name. No fix: each
+# repair is a folder, a package or a library only the author can name
+# (panel 048's reason).
+function diagnostic(name: str, header: str, library: Named, span: token.Span) -> diag.Diagnostic
+    group: str @= "this group"
+
+    if !library.own
+        group @ "a group of `" + header + "`"
+    says: str @= group + " links `" + library.name + "`"
+    lacks: str @= "the library this build links for `" + library.name + "` does not define it"
+    them: str @= "that library are"
+    one_copy: str @= "read and link one copy, the header's folder and the library's both named to this build (`--include` and `--library`), or both answered by one `pkgconfig`"
+
+    if library.package
+        says @ group + " asks `pkg-config` for `" + library.name + "`"
+        lacks @ "no library `pkg-config`'s answer for `" + library.name + "` names defines it"
+        them @ "those libraries are"
+        one_copy @ "build against one copy, the `.pc` of the copy whose header was read named in `PKG_CONFIG_PATH`, or the folder holding the other header taken out of this build's search"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_missing_link",
+        message: "the linker cannot find `" + name + "`: " + says + ", and no library on the link line defines it",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`" + header + "` declares `" + name + "`, and " + lacks + ": either the header this build read and " + them + " two releases or two builds of it, and the remedy is to " + one_copy + "; or `" + name + "` lives in another library, and the remedy is a group for that one as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    )
+    return d
+
+## Tests
+
+# **A group that names its library is told so, never to write one**: the
+# binding's own `link` and `pkgconfig`, and another group of its header that
+# names one; a header no group of which names a library is none, for
+# panel 048's words.
+test "a name the linker cannot find is told by the library a group of its header names (defect 2466)"
+    text = "extern \"curl/curl.h\" link \"curl\"\n    function curl_multi_init() -> ptr\n\nextern \"curl/curl.h\"\n    function curl_multi_waitfds(m: ptr) -> i32\n\nextern \"zlib.h\" pkgconfig \"zlib\"\n    function zlibVersion() -> cstr\n\nextern \"math.h\"\n    function sqrt(x: f64) -> f64\n"
+    s = source.new_source(name: "t.hero", text: text)
+    decls = parse.parse(text).decls
+    own = named_by(s, decls, name: "curl_multi_init").must()
+    assert own.name == "curl" && !own.package && own.own
+    other = named_by(s, decls, name: "curl_multi_waitfds").must()
+    assert other.name == "curl" && !other.own
+    package = named_by(s, decls, name: "zlibVersion").must()
+    assert package.name == "zlib" && package.package && package.own
+    assert named_by(s, decls, name: "sqrt").is_err() && named_by(s, decls, name: "absent").is_err()
+
+    at = token.Span(start: 0, end: 0)
+    linked = diagnostic(name: "curl_multi_waitfds", header: "curl/curl.h", library: own, span: at)
+    assert linked.code == "ffi_missing_link"
+    assert linked.message == "the linker cannot find `curl_multi_waitfds`: this group links `curl`, and no library on the link line defines it"
+    assert diagnostic(name: "curl_multi_waitfds", header: "curl/curl.h", library: other, span: at).message == "the linker cannot find `curl_multi_waitfds`: a group of `curl/curl.h` links `curl`, and no library on the link line defines it"
+    assert linked.notes.len() == 1 && linked.fixes.len() == 0
+    assert linked.notes[0] == "`curl/curl.h` declares `curl_multi_waitfds`, and the library this build links for `curl` does not define it: either the header this build read and that library are two releases or two builds of it, and the remedy is to read and link one copy, the header's folder and the library's both named to this build (`--include` and `--library`), or both answered by one `pkgconfig`; or `curl_multi_waitfds` lives in another library, and the remedy is a group for that one as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    asked = diagnostic(name: "deflateBound2", header: "zlib.h", library: package, span: at)
+    assert asked.message == "the linker cannot find `deflateBound2`: this group asks `pkg-config` for `zlib`, and no library on the link line defines it"
+    assert ffi_lookup.has(
+        text: asked.notes[0],
+        needle: "no library `pkg-config`'s answer for `zlib` names defines it: either the header this build read and those libraries are two releases"
+    )

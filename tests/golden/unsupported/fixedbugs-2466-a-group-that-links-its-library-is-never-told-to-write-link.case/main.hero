@@ -1,0 +1,12 @@
+# fixedbugs, defect 2466, lane b31-ffi, 2026-11-11: the group says `link
+# "m"`, and its header declares a name the library this build links for `m`
+# does not define. Until this defect the missing name was told as one no
+# group names a library for, *no group in this program says which library
+# has it*, its note to write the `link` already written; it is told now by
+# the library the group names, the note naming the two causes the linker's
+# line cannot tell apart.
+extern "own.h" link "m"
+    function heroes_2466_absent(x: f64) -> f64  #~ ffi_missing_link
+
+function main()
+    print(heroes_2466_absent(x: 2.0))
