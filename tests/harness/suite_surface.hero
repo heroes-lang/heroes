@@ -463,7 +463,8 @@ function argv_probes() -> [probe.Probe]
         row(name: "a file with diagnostics exits 1", argv: "check tests/golden/check/shadowing.hero", code: 1)
         row(name: "a file that is not there exits 2", argv: "check no/such/file.hero", code: 2)
         row(name: "a root that does not exist is told so, never as unreadable (defect 295)", argv: "check no/such/file.hero", code: 2).err_has("no file is named `no/such/file.hero`").err_lacks("cannot read")
-        row(name: "and a root that is there and is no file, a directory, is told unreadable (defect 295)", argv: "check tests/golden", code: 2).err_has("cannot read `tests/golden`").err_lacks("no file is named")
+        row(name: "and a root that is there and is no file, a directory, is told so by what the verb takes (defects 295 and 2484)", argv: "check tests/golden", code: 2).err_is("error: `check` checks one `.hero` file, and a directory only with `--apply --in-place`, and `tests/golden` is a directory: `heroes check <file.hero>`\n").err_lacks("no file is named")
+        row(name: "fmt given a directory, in place or not, is refused naming what it formats, where it said it could not read it (defect 2484)", argv: "fmt examples/gallery --in-place", code: 2).out_empty().err_is("error: `fmt` formats one `.hero` file, and `examples/gallery` is a directory: `heroes fmt <file.hero>`\n")
         row(name: "an unknown flag exits 2", argv: "check --nonsense examples/gallery/00-first.hero", code: 2)
         row(name: "an unknown command exits 2", argv: "frobnicate", code: 2)
         row(name: "a dump is the artifact", argv: "parse examples/gallery/00-first.hero --dump-ast", code: 0).out_nonempty().err_empty()
@@ -1048,7 +1049,9 @@ test "the tables are what this module is, so they are counted"
     # 35 -> 38 on 2026-11-11, defect 2473 (lane b32-cli): beside `--dump-ir`,
     # an `-o` refused, the words only clang reads refused on one line, and
     # `--permissive`, which the dump reads, let through.
-    assert argv_probes().len() == 38
+    # 38 -> 39 the same day, defect 2484 (lane b32-cli): `fmt` given a
+    # directory, told as one where it said it could not read it.
+    assert argv_probes().len() == 39
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
     # 5 -> 4 on 2026-10-07, defect 379: `measure` with no operand left the

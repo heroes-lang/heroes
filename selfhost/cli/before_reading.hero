@@ -1,0 +1,24 @@
+# What an invocation is refused before anything is read, past its words'
+# parse (`cli/argv.hero`) and `check`'s own flags (`cli/check_flags.hero`),
+# every refusal told at once, so a second mistake is never told only after the
+# first is mended (CLAUDE.md §10; batch 32): an operand that is a directory
+# where the verb reads one file (`cli/file_operand.hero`, defect 2484), a flag
+# of `build` its stop cannot answer (`cli/build_stops.hero`, defect 2473), and
+# a `--json` with nothing to format (`cli/json_alone.hero`, defect 2483).
+# The caller exits 2 where any is told, the tool unable to run what was asked.
+
+use cli/argv
+use cli/build_stops
+use cli/file_operand
+use cli/json_alone
+
+# Whether this invocation holds a refusal, each one told on stderr: the
+# operand first, the thing named, then the flags.
+function told(inv: argv.Invocation) -> bool
+    operand = file_operand.told(inv)
+    stops: bool @= false
+
+    if inv.tag == .build_cmd
+        stops @ build_stops.told(inv)
+    json = json_alone.told(inv)
+    return operand || stops || json

@@ -25,7 +25,7 @@
 # nobody having tried, not about the language: it is one extern.
 
 use cli/argv
-use cli/build_stops
+use cli/before_reading
 use cli/check
 use cli/check_flags
 use cli/consensus
@@ -34,7 +34,6 @@ use cli/grammar
 use cli/help
 use cli/input
 use cli/io
-use cli/json_alone
 use cli/lex
 use cli/measure
 use cli/mutate
@@ -175,11 +174,10 @@ function command(_: i64) -> i64
         if process.is_directory(inv.file.default("")) && argv.has(inv, spelling: "--apply") && argv.has(inv, spelling: "--in-place")
             hero_exit(code: cli_table.exit_code(consensus.run(dir: inv.file.default(""), inv: inv)))
 
-    # So are the flags of `build` its stop cannot answer, every one told at
-    # once (`cli/build_stops.hero`, defect 2473): beside `--dump-ir`, `-o`
-    # and each word only clang reads were dropped in silence; and a `--json`
-    # with nothing to format, `lex`'s without `--dump-tokens` (defect 2483).
-    if inv.tag == .build_cmd && build_stops.told(inv) || json_alone.told(inv)
+    # So are a directory where a verb reads one file, a flag of `build` its
+    # stop cannot answer and a `--json` with nothing to format, every one told
+    # at once (`cli/before_reading.hero`; defects 2484, 2473 and 2483).
+    if before_reading.told(inv)
         exit(code: 2)
     reading: bool @= false
 
