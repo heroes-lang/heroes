@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -93,11 +96,11 @@ _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensSeparationDistance, float *: 1
 _Static_assert(_Generic(&((VrDeviceInfo *)0)->interpupillaryDistance, float *: 1, default: 0) && sizeof(((VrDeviceInfo *)0)->interpupillaryDistance) == sizeof(float), "heroes-ffi-field VrDeviceInfo interpupillaryDistance");
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) != 0, "heroes-ffi-flex VrDeviceInfo lensDistortionValues"); _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensDistortionValues, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo lensDistortionValues");
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) != 0, "heroes-ffi-flex VrDeviceInfo chromaAbCorrection"); _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
-#line 97 "ffiacarraymember.c"
+#line 100 "ffiacarraymember.c"
 
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 101 "ffiacarraymember.c"
+#line 104 "ffiacarraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -191,7 +194,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 195 "ffiacarraymember.c"
+#line 198 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacarraymember_0Matrix_eq(const Matrix *a, const Matrix *b);
@@ -252,7 +255,7 @@ void h_ffiacarraymember_main(void) { VrDeviceInfo h0_device; VrStereoConfig h1_c
     t24 = INT64_C(0); t25 = h1_config.scale[((uint64_t)(t24) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 99, 11), (int64_t)0) : (t24))]; t26 = 0x0p+0; if (t25 != t25 || t26 != t26) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 99, 11); t27 = t25 > t26; hero_print_bool(t27); hero_print_end();
     t28 = INT64_C(1); t29 = h1_config.leftScreenCenter[((uint64_t)(t28) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 100, 11), (int64_t)0) : (t28))]; t30 = 0x0p+0; if (t29 != t29 || t30 != t30) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 100, 11); t31 = t29 > t30; hero_print_bool(t31); hero_print_end();
     t32 = h1_config; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 101, 5}; (void)UnloadVrStereoConfig(t32); } return;
-#line 256 "ffiacarraymember.c"
+#line 259 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_0Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

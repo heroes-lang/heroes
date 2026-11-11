@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -64,11 +67,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 9 "tests/golden/run/fixedbugs-016-an-assert-on-a-union-writes-each-member.hero"
 _Static_assert(__builtin_classify_type(((Num *)0)->i) == 1 && sizeof(((Num *)0)->i) == sizeof(int32_t) && (_Generic(((Num *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Num i");
 _Static_assert(__builtin_classify_type(((Num *)0)->u) == 1 && sizeof(((Num *)0)->u) == sizeof(uint32_t) && (_Generic(((Num *)0)->u, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Num u");
-#line 68 "fixedbugs016anassertonaunionwriteseachmember.c"
+#line 71 "fixedbugs016anassertonaunionwriteseachmember.c"
 
 #line 8 "tests/golden/run/fixedbugs-016-an-assert-on-a-union-writes-each-member.hero"
 _Static_assert(__builtin_classify_type(*(Num *)0) != 13 || sizeof(((Num *)0)->i) == sizeof(Num), "heroes-ffi-union-narrow Num i"); _Static_assert(__builtin_classify_type(*(Num *)0) != 13 || sizeof(((Num *)0)->u) == sizeof(Num), "heroes-ffi-union-narrow Num u");
-#line 72 "fixedbugs016anassertonaunionwriteseachmember.c"
+#line 75 "fixedbugs016anassertonaunionwriteseachmember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -146,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs016anassertonaunionwriteseachmember.c"
+#line 153 "fixedbugs016anassertonaunionwriteseachmember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs016anassertonaunionwriteseachmember_0Num_eq(const Num *a, const Num *b);
@@ -187,7 +190,7 @@ void h_fixedbugs016anassertonaunionwriteseachmember_main(void) { Num h0_a; Num h
     t1 = INT64_C(1); t2 = (Num){.i = t1}; h0_a = t2; hero_pad_fill(&h0_a, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = INT64_C(2); t4 = (Num){.i = t3}; h1_b = t4; hero_pad_fill(&h1_b, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = HERO_STR_LIT(hero_str_713ef5c); t6 = h0_a; t7 = h1_b; t8 = h_fixedbugs016anassertonaunionwriteseachmember_0Num_eq(&t6, &t7); if (t8) goto bb1; else goto bb2; bb1: return; bb2:
-#line 191 "fixedbugs016anassertonaunionwriteseachmember.c"
+#line 194 "fixedbugs016anassertonaunionwriteseachmember.c"
     hero_panic_assert_shown_at(t5, h_0show_610e812c, &t6, &t7, 1, "fixedbugs-016-an-assert-on-a-union-writes-each-member.hero", "fixedbugs-016-an-assert-on-a-union-writes-each-member.main", 15, 12);
     hero_unreachable();
 }

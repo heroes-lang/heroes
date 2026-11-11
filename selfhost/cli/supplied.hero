@@ -36,6 +36,7 @@ use cli/strings
 use cli/supplied_judged
 use cli/supplied_kept
 use cli/supplied_names
+use cli/supplied_paired
 use cli/supplied_probe
 use cli/supplied_read
 use cli/supplied_versions
@@ -45,11 +46,14 @@ use emit/externs as emit_externs
 use source
 
 # What the real link is asked and of what: whether it is asked at all, every
-# bound function, every name the runtime needs, the library names the line
-# carries, the line's own words, and where Apple's linker writes its map.
+# bound function, every name the bindings reach with where its declaration
+# was found (`cli/supplied_paired.hero`, panel 245), every name the runtime
+# needs, the library names the line carries, the line's own words, and where
+# Apple's linker writes its map.
 record Judging
     asked: bool
     bound: [supplied_judged.Bound]
+    declared: [supplied_paired.Declared]
     needs: [str]
     named: [str]
     line: [str]
@@ -58,7 +62,16 @@ record Judging
 function nothing() -> Judging
     none: [str] = []
     no_bound: [supplied_judged.Bound] = []
-    return Judging(asked: false, bound: no_bound, needs: none, named: none, line: none, map_path: "")
+    no_declared: [supplied_paired.Declared] = []
+    return Judging(
+        asked: false,
+        bound: no_bound,
+        declared: no_declared,
+        needs: none,
+        named: none,
+        line: none,
+        map_path: ""
+    )
 
 # Every function a group binds, each with its group's libraries.
 function bindings(s: source.Source, decls: [ast.Decl], pkgconfig_words: {str: [str]}) -> [supplied_judged.Bound]
@@ -106,6 +119,11 @@ function traced(j: Judging) -> [str]
             seen[b.name] @ true
             out @ out.push(b.name)
 
+    for d in j.declared
+        if seen[d.name].is_err()
+            seen[d.name] @ true
+            out @ out.push(d.name)
+
     for name in j.needs
         if seen[name].is_err()
             seen[name] @ true
@@ -115,7 +133,7 @@ function traced(j: Judging) -> [str]
 
 # What the link of `line` over `objects` is asked: nothing where the program
 # names no library, or the target's linker is not one this reads.
-function asked(t: toolchain.Toolchain, line: [str], bound: [supplied_judged.Bound], objects: [str]) -> Judging
+function asked(t: toolchain.Toolchain, line: [str], bound: [supplied_judged.Bound], declared: [supplied_paired.Declared], objects: [str]) -> Judging
     named = library_names(line)
 
     if named.len() == 0
@@ -123,6 +141,7 @@ function asked(t: toolchain.Toolchain, line: [str], bound: [supplied_judged.Boun
     return Judging(
         asked: true,
         bound: bound,
+        declared: declared,
         needs: supplied_kept.runtime_needs(t, objects),
         named: named,
         line: line,
@@ -164,6 +183,10 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
     names = traced(j)
     msvc = link_flags.msvc(t.target)
     first = supplied_read.taken(said: said, listing: listing, apple: apple, msvc: msvc, names: names)
+
+    # A header and a library of two releases (panel 245's Q3, P1): judged
+    # from the same answer, and told beside the rest.
+    paired = supplied_paired.judged(t, declared: j.declared, supplied: first, named: j.named, line: j.line)
     opened: [str] @= []
 
     if j.named.len() > 1 && msvc
@@ -235,7 +258,7 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
     if fresh
         supplied_kept.keep(path: at, p: probes, opened: opened)
 
-    if found.len() == 0
+    if found.len() == 0 && paired.len() == 0
         return ok()
     found @ strings.with_all(
         list: found,
@@ -245,6 +268,7 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
         list: found,
         more: supplied_judged.own_lines(j.bound, found: found, supplied: probes.taken, order: "reversed")
     )
+    found @ strings.with_all(list: found, more: paired)
     return fail(code: "clang_link", msg: found.push(folders(j)).join("\n"))
 
 # What the probes found, the libraries in the other order first, then every
@@ -297,7 +321,8 @@ test "a program naming no library asks its link nothing (panel 239)"
     none: [str] = []
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     no_bound: [supplied_judged.Bound] = []
-    j = asked(t, line: ["clang", "x.o"], bound: no_bound, objects: ["x.o"])
+    no_declared: [supplied_paired.Declared] = []
+    j = asked(t, line: ["clang", "x.o"], bound: no_bound, declared: no_declared, objects: ["x.o"])
     assert !j.asked
     assert real_words(t, j: j) == none
     assert !after_link(t, j: j, said: "").is_err()

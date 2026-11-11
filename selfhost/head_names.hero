@@ -219,7 +219,7 @@ function locked(written: str, what: str) -> str
 
 function route(what: str) -> str
     if what == "header"
-        return "set `CPATH` to the directory holding it, or name its library with `pkgconfig` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
+        return "set `CPATH` to the directory holding it and pass `--library <dir>` with the directory holding the library its group links, the two halves of one release, or name its library with `pkgconfig` and let `pkg-config` answer both; a header beside this file is written relative, as `sub/foo.h`"
 
     if what == "pkgconfig"
         return "name the library, as `pkgconfig \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`"

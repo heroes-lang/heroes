@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -99,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_36f6e615, "kept through ");
 HERO_STR_STATIC(hero_str_21ae9a8f, " turns: ");
 
-#line 103 "handlealiveafteraloopthatendsonbreak.c"
+#line 106 "handlealiveafteraloopthatendsonbreak.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -153,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "handlealiveafteraloopthatendsonbreak.c"
+#line 160 "handlealiveafteraloopthatendsonbreak.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_0Node_eq(node * const *a, node * const *b);
@@ -191,7 +194,7 @@ void h_handlealiveafteraloopthatendsonbreak_main(void) { node * h0_n; bool h1_en
 #line 26
     t19 = HERO_STR_LIT(hero_str_36f6e615); t20 = h2_k; t21 = HERO_STR_LIT(hero_str_21ae9a8f); t22 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 26, 47}; hero_handle_alive_at(t22, "the argument `n` of `node_peek`", &hero_here); t23 = node_peek(t22); } hero_print_str(t19); hero_print_int(t20); hero_print_str(t21); hero_print_int(t23); hero_print_end();
     t24 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 27, 9}; { hero_handle_alive_at(t24, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "node_free", NULL, &hero_here); (void)node_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_n == t24) h0_n = hero_handle_dead(); } } goto bb7; bb9: goto bb7;
-#line 195 "handlealiveafteraloopthatendsonbreak.c"
+#line 198 "handlealiveafteraloopthatendsonbreak.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

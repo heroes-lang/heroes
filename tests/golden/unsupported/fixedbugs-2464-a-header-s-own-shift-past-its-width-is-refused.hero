@@ -1,0 +1,19 @@
+# fixedbugs, defect 2464 (panel 245's R1, provisional), 2026-11-11.
+#
+# SYMPTOM: a door of the program's own header shifting an `int` by 40 built
+# at exit 0, clang's `shift count >= width of type [-Wshift-count-overflow]`
+# printed raw, and the program printed `2` (measured at batch 31's base,
+# 9febdd6c3), what the machine gave: a header's code was held to a list of
+# what stays an error, and a word of undefined behaviour outside it was a
+# warning.
+#
+# FIX: a header's own code fails closed: every warning clang gives there is
+# an error but `-Wall`'s, sign conversions and deprecations, a `#warning` and
+# a `#pragma message` told and never refused (`emit/header_region.hero`'s
+# `LINE_WORDS`), so the header is refused at its line, at exit 1.
+
+extern "fixedbugs-2464-a-header-s-own-shift-past-its-width-is-refused.h"  #~ ffi_header_refused
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 1))

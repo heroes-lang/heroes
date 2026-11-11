@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -74,7 +77,7 @@ _Static_assert(__builtin_classify_type(((In *)0)->b) == 1 && sizeof(((In *)0)->b
 #line 8
 _Static_assert(__builtin_classify_type(((Outer *)0)->c) == 1 && sizeof(((Outer *)0)->c) == sizeof(int32_t) && (_Generic(((Outer *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Outer c");
 _Static_assert(_Generic(&((Outer *)0)->r, In *: 1, default: 0) && sizeof(((Outer *)0)->r) == sizeof(In), "heroes-ffi-field Outer r");
-#line 78 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
+#line 81 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -167,7 +170,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 171 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
+#line 174 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364defineswide_0Pw_eq(const Pw *a, const Pw *b);
@@ -213,19 +216,19 @@ void h_fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown_main(void) {
     t6 = h1_o.c; hero_print_int(t6); hero_print_end();
     t7 = h1_o.r.a; hero_print_int(t7); hero_print_end();
     t8 = h1_o.r.b; hero_print_int(t8); hero_print_end(); return;
-#line 217 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
+#line 220 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs2364/defines_wide.hero"
 Pw h_fixedbugs2364defineswide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pw t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/defines_wide.hero", "defines_wide.make", 10, 12}; t2 = pw_make(t1); } return t2;
-#line 223 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
+#line 226 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs2364/outer.hero"
 Outer h_fixedbugs2364outer_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Outer t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/outer.hero", "outer.make", 13, 12}; t2 = outer_make(t1); } return t2;
-#line 229 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
+#line 232 "fixedbugs2364arecordreachedthroughanothersfieldreadsasitsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364defineswide_0Pw_eq(const Pw *a, const Pw *b) {
     if (!(a->w == b->w)) return false;

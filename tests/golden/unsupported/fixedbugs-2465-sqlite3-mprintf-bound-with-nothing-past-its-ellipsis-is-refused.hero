@@ -1,0 +1,20 @@
+# fixedbugs, defect 2465 (panel 245's R2, provisional), 2026-11-11.
+#
+# SYMPTOM: `sqlite3_mprintf`, which no `format` attribute marks, bound with
+# its format alone and handed `n=%ld` built at exit 0 and printed
+# `n=6160212704` at batch 31's base (9febdd6c3), a `long` read from where no
+# argument was passed.
+#
+# FIX: a function its header declares variadic, bound with nothing past its
+# `...`, is refused at the binding, `ffi_call_shape` (panel 245's R2, its D;
+# `emit/ffi_bare_variadic.hero`): the route is a door of the program's own
+# header, whose call is C's and whose arguments are the ones written there.
+
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_free(p: ptr)
+    function sqlite3_mprintf(f: cstr lent) -> cstr owned sqlite3_free  #~ ffi_call_shape
+
+function main()
+    tail = "ld"
+    format = "n=%" + tail
+    print(sqlite3_mprintf(f: format.cstr()).default("?"))

@@ -1,0 +1,16 @@
+# fixedbugs, defect 2464 (panel 245's R1, provisional), 2026-11-11.
+#
+# SYMPTOM: a door calling a function its header marks deprecated built with
+# clang's `-Wdeprecated-declarations` printed raw at exit 0: the region kept
+# its checks raised over a door's body and quieted the deprecation words only
+# after its close (`emit/deprecation.hero`, panel 208's R1).
+#
+# FIX: a deprecation is advice about a name, quiet in a header's code too
+# (`emit/header_region.hero`'s `ADVICE`), so the door builds silent at every
+# level and prints `8`.
+
+extern "fixedbugs-2464-a-door-calling-a-deprecated-function-builds-silent.h"
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 7))

@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -95,7 +98,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 99 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 102 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
 typedef struct h_fixedbugs582pair_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -175,7 +178,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 179 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 182 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582pair_0Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
@@ -210,25 +213,25 @@ void h_fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout_main(void)
     t1 = INT64_C(-123456789); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.hero", "fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.main", 13, 19}; t2 = llabs(t1); } t3 = h_fixedbugs582pair_make(t2); h0_p = t3;
     t4 = h0_p.f_b; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p; t7 = h_fixedbugs582pair_second(t6); t8 = HERO_STR_LIT(hero_str_20); t9 = UINT64_C(2); t10 = INT64_C(-987654321); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.hero", "fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.main", 14, 73}; t11 = llabs(t10); } t12 = (h_fixedbugs582pair_Pair){.f_a = t9, .f_b = t11}; t13 = h_fixedbugs582pair_second(t12); hero_print_int(t4); hero_print_str(t5); hero_print_int(t7); hero_print_str(t8); hero_print_int(t13); hero_print_end();
     t14 = INT64_C(-7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.hero", "fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.main", 15, 32}; t15 = llabs(t14); } t16 = h_fixedbugs582pair_shape(t15); t17 = h_fixedbugs582pair_area(t16); hero_print_int(t17); hero_print_end(); return;
-#line 214 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 217 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) { HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); t2 = h0_n; t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2}; return t3;
-#line 220 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 223 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p.f_b; return t1;
-#line 226 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 229 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h0_n; t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_0Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}}; return t3;
-#line 232 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 235 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
@@ -239,7 +242,7 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) { HERO_NODEBUG h_
     t17 = h1_s0; t18 = t17.as.c_rect; h4_r = t18; t19 = h4_r.f_w; t20 = h4_r.f_h; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs582/pair.hero", "pair.area", 30, 27); h5_ret0 = t21; goto bb7; bb5:
 #line 29
     t15 = h3_f0; t16 = t15.as.ok; h5_ret0 = t16; goto bb7; bb6: t13 = h3_f0; t14 = t13.as.err;
-#line 243 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
+#line 246 "fixedbugs582aheaderspack2withnopushleavestherecordstheirlayout.c"
     hero_panic_must_at(t14, "fixedbugs582/pair.hero", "pair.area", 29, 27);
     hero_unreachable();
 bb7:

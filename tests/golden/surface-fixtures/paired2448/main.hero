@@ -1,0 +1,11 @@
+# Panel 245's R3 (defect 2448): `zver2448.h` stands for another release's
+# header. Found through `--include` beside the platform's library, the build
+# is refused `ffi_unpaired_release`; with `--library` naming a folder that
+# holds a library `z` too (`lib/`, Darwin's stub), both halves are named and
+# it builds.
+
+extern "zver2448.h" link "z"
+    function zlibVersion() -> cstr
+
+function main()
+    print(validated(c: zlibVersion()).default("").len() > 0)

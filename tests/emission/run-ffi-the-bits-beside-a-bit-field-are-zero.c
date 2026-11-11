@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -81,7 +84,7 @@ _Static_assert(_Generic(&((struct ob *)0)->inr, struct bf *: 1, default: 0) && s
 #line 26
 _Static_assert(sizeof(struct ar) - __builtin_offsetof(struct ar, e) != 0, "heroes-ffi-flex Ar e"); _Static_assert(_Generic(&((struct ar *)0)->e, struct bf (*)[2]: 1, default: 0) && sizeof(struct ar) - __builtin_offsetof(struct ar, e) >= sizeof(struct bf[2]), "heroes-ffi-field Ar e");
 _Static_assert(__builtin_classify_type(((struct ar *)0)->n) == 1 && sizeof(((struct ar *)0)->n) == sizeof(int32_t) && (_Generic(((struct ar *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Ar n");
-#line 85 "ffithebitsbesideabitfieldarezero.c"
+#line 88 "ffithebitsbesideabitfieldarezero.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -199,7 +202,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 203 "ffithebitsbesideabitfieldarezero.c"
+#line 206 "ffithebitsbesideabitfieldarezero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Bf_eq(const struct bf *a, const struct bf *b);
@@ -397,7 +400,7 @@ __attribute__((__noinline__)) void h_ffithebitsbesideabitfieldarezero_main(void)
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 56, 9}; hero_pad_fill(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_g_4, hero_pad_n_4); hero_pad_clear(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_m_4, hero_pad_mn_4); t13 = check_ob(&h0_h.f_ob); } h5_e = t13;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 57, 9}; hero_pad_fill(&h0_h.f_ar, sizeof(struct ar), 1, hero_pad_g_5, hero_pad_n_5); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_m_0, hero_pad_mn_0); } t14 = check_ar(&h0_h.f_ar); } h6_f = t14;
     t15 = h1_a; t16 = HERO_STR_LIT(hero_str_20); t17 = h2_b; t18 = HERO_STR_LIT(hero_str_20); t19 = h3_c; t20 = HERO_STR_LIT(hero_str_20); t21 = h4_d; t22 = HERO_STR_LIT(hero_str_20); t23 = h5_e; t24 = HERO_STR_LIT(hero_str_20); t25 = h6_f; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_int(t23); hero_print_str(t24); hero_print_int(t25); hero_print_end(); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_h); return;
-#line 401 "ffithebitsbesideabitfieldarezero.c"
+#line 404 "ffithebitsbesideabitfieldarezero.c"
 }
 #undef h0_h
 #undef t1

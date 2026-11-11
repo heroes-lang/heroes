@@ -1,0 +1,22 @@
+# fixedbugs, defect 2469 (panel 245's R1, provisional), 2026-11-11, the
+# first of the defect's two programs.
+#
+# SYMPTOM: a header declaring `static implicit_x = 3;` was refused at clang's
+# `-Wimplicit-int`, rightly, and told *`fixedbugs-2469-own.h` compiles after
+# `stdio.h`, a header of C's own it uses and does not include: write a group
+# naming `stdio.h` above this one*, false: the header uses nothing of
+# `stdio.h`. The region ignored `-Wall`, which holds `-Wimplicit-int`, so the
+# order trials, compiling the opening's region, compiled the header after
+# `stdio.h` as they compiled it anywhere.
+#
+# FIX: `-Wimplicit-int` is raised again after the region's `-Wall` ignore
+# (`emit/header_region.hero`'s `HELD`), and every trial is first asked the
+# order as written (`cli/order_search.hero`'s `sees`): no order compiles, so
+# none is told, and the note says to repair the header, whose line 4 it
+# quotes.
+
+extern "fixedbugs-2469-own.h"  #~ ffi_header_refused
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 4))

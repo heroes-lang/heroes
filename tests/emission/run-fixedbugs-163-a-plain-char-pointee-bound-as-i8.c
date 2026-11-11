@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -93,7 +96,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 100 "fixedbugs163aplaincharpointeeboundasi8.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 152 "fixedbugs163aplaincharpointeeboundasi8.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +175,7 @@ void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
     t1 = INT64_C(0); h0_v = t1;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero", "fixedbugs-163-a-plain-char-pointee-bound-as-i8.main", 17, 5}; hero_lend_local_name(hero_lend_h0_v, "fill", "p"); (void)fill((void *)&h0_v); }
     t2 = h0_v; hero_print_int(t2); hero_print_end(); hero_lend_local_give(hero_lend_h0_v); return;
-#line 176 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 179 "fixedbugs163aplaincharpointeeboundasi8.c"
 }
 #undef h0_v
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

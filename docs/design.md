@@ -2676,6 +2676,35 @@ documentation, never the declaration's.
 A name its header marks deprecated binds and builds silent: a deprecation is advice about a
 program, not a mistake in it, and this language has no warning level (panel 208).
 
+**And a header's own code fails closed** (panel 245's R1, provisional, author ratification pending,
+https://github.com/heroes-lang/heroes/issues/2475; defects 2464 and 2469). In the region a group's
+header is compiled in (`emit/header_region.hero`), every warning clang gives is an error, `-Werror`
+on each unit's line, but those the region passes over as a library's style, `-Wall`'s and sign
+conversions, and a deprecation, quiet there as after the region, so a door calling a deprecated
+`sprintf` builds silent; and those it tells and never refuses, a `#warning` (defect 248) and a
+`#pragma message`. `-Wimplicit-int` and `-Wuser-defined-warnings`, which the region's `-Wall` ignore
+took, are errors again after it. Until then the region was a list of what stays an error, and every
+other warning clang gave in a door's body printed at exit 0: an `int` shifted by 40 printed `2`, a
+call its header's `diagnose_if` warns of built silent (both at batch 31's base, 9febdd6c3), and the
+sitting measured a `strncat` sized wrong dying of SIGTRAP, a `free` of no heap object of SIGABRT,
+and libcurl's own checker of a value handed past `curl_easy_setopt`'s `...` raw, 14 of its critic's
+17 shapes refused at `-O0` since and none at exit 2; a list of words would have left raw a word clang
+adds later. **No note tells an order the unit refuses**: the trials that tell one compile under the
+unit's words, and where the order as written compiles under clang's syntax pass, the unit was
+refused for what only code generation says, so every trial generates code (`-c -femit-all-decls`),
+and where that compiles too no order is told (`cli/order_search.hero`): until then a header's
+`static implicit_x = 3;` was told to go below `stdio.h`, and then above it (defect 2469), and curl's
+checker *compiles after `stdio.h`*. **One verdict at every level**: a unit compiled above `-O0` that
+includes a group's header is compiled once more at `-O0` with its own words, its object discarded,
+and a refusal there is the unit's and says that compile made it (`cli/region_level.hero`), since a
+call to a function a header marks `warning` is told at `-O0` and, inlined away, not at `-O2`. It
+costs one more compile of such a unit on a cold build above `-O0`, +24 % to +95 % of that unit's own
+compile in instructions retired over the sitting's three units, nothing warm and nothing at `-O0`,
+and the unit's key names that compile's words. The cost kept, said: a default warning outside
+`-Wall` about a construct C defines is refused with the rest (`-Winitializer-overrides`), which met
+none of the 496 tracked programs binding a header; the conservative alternative, an enumerated list
+leaving six words raw, is the sitting's record for the author.
+
 ***The contextual words are one family, and this is its rule*** (panel 234's R8, ratified
 2026-11-06, on question (vii) of M-core-packages' page; panels 094, 109 and 114 had each stated a
 part of it). A word the compiler reads in one position and nowhere else is a contextual word, never
@@ -2800,6 +2829,35 @@ libraries +6.5%, none +0%, where the sitting's route without the kept answers co
 spec § 13's *`link` a library when the symbols need one* already gives the meaning, and what is
 refused is what no order and no name can make mean it, as with the other refusals this section
 names.
+
+**A library and the header that declares its names come from folders the build names, or
+neither** (panel 245's R3, provisional, author ratification pending,
+https://github.com/heroes-lang/heroes/issues/2475; defect 2448). A header the build finds through
+`CPATH` or `--include` describes the release of its folder, and the link takes `-lcurl` from
+wherever the line's folders and the platform's hold one: `extern "curl/curl.h" link "curl"` built
+under `CPATH=/opt/homebrew/opt/curl/include` printed `header 530176` beside `library libcurl/8.7.1`
+at exit 0 (batch 31's base, 9febdd6c3), and the sitting measured readline 8.3's library under
+`--library` beside the SDK's libedit header, its own record read back `0` for `42` and a heap
+overflow under `--sanitize`. So for every name a library the program names supplies, the names a
+door's body reaches included (`cli/header_bodies.hero`), the header clang read for its declaration
+and the library file the link took come both from folders the build names or both from neither
+(`cli/supplied_paired.hero`, from the link's own answer above): for a header the folders panel 237
+counts (the program's own, `--include`, a package's `-I`, `CPATH`, `C_INCLUDE_PATH` and
+`CCC_OVERRIDE_OPTIONS`), for a library `--library`, a package's `-L` and `LIBRARY_PATH`, read from
+clang's own link job, an empty element naming the working folder. Otherwise the build is refused,
+`ffi_unpaired_release`, exit 1, one refusal per library on its first binding, both files named and
+a remedy measured to build (`cli/supplied_paired_words.hero`), never `pkgconfig` to a group that
+asks it already. A name only the program's own folder declares is the program's word and is not
+judged. **The tie**: a folder clang's link job adds on its own is the platform's whichever way the
+line or `LIBRARY_PATH` also names it, but only where no other folder clang adds holds a file of that
+name with other bytes (`supplied_names.tied`), measured by the sitting on Linux arm64, where without
+it a paired zlib build was refused four ways, and as first worded a planted second release built and
+ran. **And `machine_locked_path`'s note names both halves** (its P4): an absolute header path is
+told to set `CPATH` and pass `--library` with the folder holding its library, the two halves of one
+release, or to let `pkg-config` answer both. **What it does not see, said**: two halves each named
+by unrelated words build at exit 0, and the loader may pair another release at run time
+(`DYLD_LIBRARY_PATH`); the rule judges what the build names and stops at the link. The
+conservative alternative, P4 with the rule in the fault's direction only, is the sitting's record.
 
 **A record a group binds is laid out, in every unit that spells it, as its own module's unit lays it
 out** (panel 239's R4 and R5, ratified 2026-11-09; defect 2364). Where another
@@ -3963,6 +4021,21 @@ are *on* the closure list.
     return printf(f); }`, builds at exit 0 and reads what its format names (`%s` dies at exit 134,
     `%n` of SIGABRT), `-Wformat-security` being ignored in the region since defect 2036; the class
     is defect 2465's, before panel 245.
+    **Corrected 2026-11-11** (panel 245's R2, provisional, author ratification pending,
+    https://github.com/heroes-lang/heroes/issues/2475; defects 2465 and 2470): `-Wformat-security`
+    is kept an error with `-Wformat` in the region (its S), so that door is refused at its line,
+    its fix a literal format, `printf("%s", f)`; the one tracked program it refuses, defect 2036's
+    correct `printf(m)`, is pinned as a known cost beside its fix. And **a function its header
+    declares variadic is bound only through a door** (its D): a binding naming one with nothing
+    past its `...` is refused at the binding, `ffi_call_shape`, since what the callee reads there
+    is decided by a value only the run gives, `open` given `O_CREAT` creating its file `-rw-------`
+    from the `va_list` and `sqlite3_mprintf` handed `n=%ld` printing `n=6160212704`, each at exit 0
+    at batch 31's base (9febdd6c3), a correct `open(p, O_RDONLY)` refused with them, its door one
+    line of C. The refusals past `...` cite spec § 13 only for what § 13 holds, and C11 6.5.2.2p7
+    and 7.16.1.1p2 for what C does there (defect 2470's five sentences, and a sixth in
+    `emit/ffi_mutable.hero`). The specification gains no sentence: the sitting's W0 waits on its
+    payment and on the author, and the conservative alternative, S alone with C's contract stated
+    here, is the sitting's record.
 11. ~~**A `raw` module for low-level access** — see Part 9.~~ **Left this list for Part 6 at panel 140,
     2026-09-13** (M-deferral-ledger step 5;
     `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md`), refused

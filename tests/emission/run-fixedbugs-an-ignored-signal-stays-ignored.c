@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -96,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_628aec41, "ignored: ");
 
-#line 100 "fixedbugsanignoredsignalstaysignored.c"
+#line 103 "fixedbugsanignoredsignalstaysignored.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugsanignoredsignalstaysignored.c"
+#line 153 "fixedbugsanignoredsignalstaysignored.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -170,7 +173,7 @@ void h_fixedbugsanignoredsignalstaysignored_main(void) { HeroStr h0_word = {0}; 
     t4 = h0_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-ignored-signal-stays-ignored.hero", "fixedbugs-an-ignored-signal-stays-ignored.main", 17, 19}; t5 = hero_str_held_at(t4, &hero_here); } h1_held = t5;
     t6 = HERO_STR_LIT(hero_str_628aec41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-ignored-signal-stays-ignored.hero", "fixedbugs-an-ignored-signal-stays-ignored.main", 18, 24}; t7 = raise_ignored(); } hero_print_str(t6); hero_print_int(t7); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-ignored-signal-stays-ignored.hero", "fixedbugs-an-ignored-signal-stays-ignored.main", 19, 5}; hero_held_release_at(&h1_held, &hero_here); }
-#line 174 "fixedbugsanignoredsignalstaysignored.c"
+#line 177 "fixedbugsanignoredsignalstaysignored.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

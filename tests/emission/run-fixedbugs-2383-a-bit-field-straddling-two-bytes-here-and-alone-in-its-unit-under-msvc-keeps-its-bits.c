@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-2383-a-bit-field-straddling-two-bytes-here-and-alone-in-its-unit-under-msvc-keeps-its-bits.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2383_across *)0)->c) == 1 && sizeof(((struct fixedbugs_2383_across *)0)->c) == sizeof(int8_t) && (_Generic(((struct fixedbugs_2383_across *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Across c");
-#line 63 "fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits.c"
+#line 66 "fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits.c"
+#line 162 "fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_0Across_eq(const struct fixedbugs_2383_across *a, const struct fixedbugs_2383_across *b);
@@ -213,7 +216,7 @@ __attribute__((__noinline__)) void h_fixedbugs2383abitfieldstraddlingtwobytesher
     h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held *const hero_big_h0_h = (h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held *)hero_frame_take(sizeof(h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held)); HERO_NODEBUG struct fixedbugs_2383_across *const hero_big_t1 = (struct fixedbugs_2383_across *)hero_frame_take(sizeof(struct fixedbugs_2383_across)); HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held *const hero_big_t3 = (h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held *)hero_frame_take(sizeof(h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held)); HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2383-a-bit-field-straddling-two-bytes-here-and-alone-in-its-unit-under-msvc-keeps-its-bits.hero", "fixedbugs-2383-a-bit-field-straddling-two-bytes-here-and-alone-in-its-unit-under-msvc-keeps-its-bits.main", 20, 26}; t1 = fixedbugs_2383_mk_across(); } t2 = INT64_C(1); t3 = *(h_fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits_Held *)__builtin_memset(&t3, 0, sizeof t3); t3.f_one = t1; t3.f_k = t2; h0_h = t3;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2383-a-bit-field-straddling-two-bytes-here-and-alone-in-its-unit-under-msvc-keeps-its-bits.hero", "fixedbugs-2383-a-bit-field-straddling-two-bytes-here-and-alone-in-its-unit-under-msvc-keeps-its-bits.main", 21, 11}; hero_pad_fill(&h0_h.f_one, sizeof(struct fixedbugs_2383_across), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_one, sizeof(struct fixedbugs_2383_across), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2383_check_across(&h0_h.f_one); } hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_h); return;
-#line 217 "fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits.c"
+#line 220 "fixedbugs2383abitfieldstraddlingtwobyteshereandaloneinitsunitundermsvckeepsitsbits.c"
 }
 #undef h0_h
 #undef t1

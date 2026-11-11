@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -68,7 +71,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 16 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->i) == 1 && sizeof(((W *)0)->i) == sizeof(int32_t) && (_Generic(((W *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W i");
 _Static_assert(__builtin_classify_type(((W *)0)->n) == 1 && sizeof(((W *)0)->n) == sizeof(uint32_t) && (_Generic(((W *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field W n");
-#line 72 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 75 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -156,7 +159,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 163 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_0W_eq(const W *a, const W *b);
@@ -195,7 +198,7 @@ void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) { W h0_w
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-150-a-union-read-through-two-members-builds-silently.hero", "fixedbugs-150-a-union-read-through-two-members-builds-silently.main", 21, 9}; t1 = make_w(); } h0_w = t1; hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_w.i; hero_print_int(t2); hero_print_end();
     t3 = h0_w.n; hero_print_int(t3); hero_print_end(); return;
-#line 199 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 202 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_0W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;

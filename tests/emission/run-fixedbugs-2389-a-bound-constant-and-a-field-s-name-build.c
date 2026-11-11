@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -93,7 +96,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
+#line 100 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
 typedef struct h_fixedbugs2389aboundconstantandafieldsnamebuild_Pair {
     int64_t f_left;
     int64_t f_right;
@@ -150,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
+#line 157 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2389aboundconstantandafieldsnamebuild_0Pair_eq(const h_fixedbugs2389aboundconstantandafieldsnamebuild_Pair *a, const h_fixedbugs2389aboundconstantandafieldsnamebuild_Pair *b);
@@ -173,7 +176,7 @@ void h_fixedbugs2389aboundconstantandafieldsnamebuild_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.hero"
 int64_t h_fixedbugs2389aboundconstantandafieldsnamebuild_h0_p(void) {
-#line 177 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
+#line 180 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
     _Static_assert(HERO_RET_INT(h0_p), "heroes-ffi-return h0_p i64");
     _Static_assert(__builtin_constant_p(h0_p), "heroes-ffi-const h0_p");
 #pragma clang diagnostic push
@@ -185,7 +188,7 @@ int64_t h_fixedbugs2389aboundconstantandafieldsnamebuild_h0_p(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 9 "tests/golden/run/fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.hero"
     return h0_p;
-#line 189 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
+#line 192 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -207,7 +210,7 @@ void h_fixedbugs2389aboundconstantandafieldsnamebuild_main(void) { int64_t h0_p;
     t2 = h0_p; t3 = h_fixedbugs2389aboundconstantandafieldsnamebuild_h0_p(); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.hero", "fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.main", 18, 11); hero_print_int(t4); hero_print_end();
     t5 = INT64_C(1); t6 = INT64_C(40); t7 = (h_fixedbugs2389aboundconstantandafieldsnamebuild_Pair){.f_left = t5, .f_right = t6}; h1_pair = t7;
     t8 = h1_pair.f_left; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.hero", "fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.main", 20, 11}; t9 = f_left(t8); } t10 = h1_pair.f_right; if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.hero", "fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.main", 20, 11); hero_print_int(t11); hero_print_end(); return;
-#line 211 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
+#line 214 "fixedbugs2389aboundconstantandafieldsnamebuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2389aboundconstantandafieldsnamebuild_0Pair_eq(const h_fixedbugs2389aboundconstantandafieldsnamebuild_Pair *a, const h_fixedbugs2389aboundconstantandafieldsnamebuild_Pair *b) {
     if (!(a->f_left == b->f_left)) return false;

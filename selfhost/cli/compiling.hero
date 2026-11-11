@@ -53,6 +53,7 @@ use cli/response_file
 use cli/strings
 use emit/c_text
 use emit/clang_place
+use emit/header_region
 
 # Everything the program's C is compiled under but the words of one run (its
 # input, its output, its listing): the level, whether it is sanitised, the
@@ -71,9 +72,14 @@ record Compiling
 # (`flags.level_words`), then the search. `units.tu_object` builds its line
 # from this list and names it in its key, and every probe takes it but its
 # diagnostics, so no word reaches the program's compile without reaching every
-# probe of its headers.
+# probe of its headers. **And after the search, what a group's header's own
+# code is held to on the line** (`header_region.LINE_WORDS`, panel 245's
+# R1): every warning an error, a `#warning` still told, so a unit and
+# every order trial that tells a note refuse the same header, while a probe,
+# which asks what a type is, takes none of them.
 function unit_words(c: Compiling) -> [str]
-    return strings.with_all(list: flags.level_words(level: c.level, sanitize: c.sanitize), more: search_words(c))
+    listed = strings.with_all(list: flags.level_words(level: c.level, sanitize: c.sanitize), more: search_words(c))
+    return strings.with_all(list: listed, more: header_region.LINE_WORDS)
 
 # The search, in the order a unit's compile searches (`units.tu_object`): the
 # runtime first, then the `--include` directories, a package's compile words
@@ -431,7 +437,7 @@ test "a fetched package's unit searches the runtime first, then its own packages
     unit = of_package(program, root: "heroes.packages/vec")
     assert search_words(unit) == ["-I", "rt", "-DHERO_PKG", "-Ipkg", "-I", "heroes.packages/vec"]
     assert unit.level == "-O2"
-    assert unit_words(unit) == strings.with_all(list: flags.level_words(level: "-O2", sanitize: false), more: search_words(unit))
+    assert unit_words(unit) == strings.with_all(list: strings.with_all(list: flags.level_words(level: "-O2", sanitize: false), more: search_words(unit)), more: header_region.LINE_WORDS)
 
 # **The package's own header is read from its root, a file at its root
 # named like the runtime's is not, and the program's are never searched**
@@ -601,7 +607,7 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
     # it was named here.
     listed = strings.with_all(list: flags.flags(), more: flags.frame_words())
     unit = strings.with_all(list: listed, more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
-    assert unit_words(c) == strings.with_all(list: unit, more: search_words(c))
+    assert unit_words(c) == strings.with_all(list: strings.with_all(list: unit, more: search_words(c)), more: header_region.LINE_WORDS)
     framed = strings.with_all(list: probe_flags(), more: flags.frame_words())
     probed = strings.with_all(list: framed, more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
     assert probe_words(c) == strings.with_all(list: probed, more: search_words(c))

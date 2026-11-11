@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,11 +62,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 16 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(((E *)0)->x) == 1 && sizeof(((E *)0)->x) == sizeof(int32_t) && (_Generic(((E *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field E x");
-#line 63 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 66 "fixedbugs168awholerecordbesideasamenamedheader.c"
 
 #line 15 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(*(E *)0) != 13 || sizeof(((E *)0)->x) == sizeof(E), "heroes-ffi-union-narrow E x");
-#line 67 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 70 "fixedbugs168awholerecordbesideasamenamedheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -155,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 162 "fixedbugs168awholerecordbesideasamenamedheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_0E_eq(const E *a, const E *b);
@@ -189,7 +192,7 @@ void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) { E h0_p; E h1_
     t3 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-168-a-whole-record-beside-a-same-named-header.hero", "fixedbugs-168-a-whole-record-beside-a-same-named-header.main", 21, 9}; t4 = hero_168_make(t3); } h1_q = t4; hero_pad_fill(&h1_q, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = h0_p; t6 = h1_q; t7 = h_fixedbugs168awholerecordbesideasamenamedheader_0E_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
     t8 = h0_p.x; hero_print_int(t8); hero_print_end(); return;
-#line 193 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 196 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_0E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;

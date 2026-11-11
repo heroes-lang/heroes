@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -105,7 +108,7 @@ HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_3e64, "yy");
 HERO_STR_STATIC(hero_str_203132, "zzz");
 
-#line 109 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
+#line 112 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -157,7 +160,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
+#line 164 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -194,7 +197,7 @@ void h_placeleasesneverendedatnineplacesnametheeighttakenfirst_main(void) { cons
     t58 = h10_i0; t59 = INT64_C(1); if (__builtin_add_overflow(t58, t59, &t60)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 21, 9); h10_i0 = t60; goto bb1; bb4:
 #line 25
     t61 = h8_total; hero_print_uint(t61); hero_print_end();
-#line 198 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
+#line 201 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
     hero_array_release_at(&h9_xs0);
     hero_str_release_at(&h11_word);
     hero_array_release_at(&h13_own13);

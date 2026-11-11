@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-inside-a-loop-is-copied-before-its-room-goes-back.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2316_held *)0)->first) == 1 && sizeof(((struct fixedbugs_2316_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2316_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
+#line 66 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -133,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 137 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
+#line 140 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_0Held_eq(const struct fixedbugs_2316_held *a, const struct fixedbugs_2316_held *b);
@@ -182,7 +185,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordreturnedfromi
     struct fixedbugs_2316_held *const hero_big_h1_h = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 186 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
+#line 189 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_h
 #undef t2
@@ -215,7 +218,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfrominsi
     t23 = INT64_C(0); t24 = *(struct fixedbugs_2316_held *)__builtin_memset(&t24, 0, sizeof t24); __builtin_memset(&t24, 0, sizeof t24); t24.first = t23; h6_ret0 = t24; hero_pad_fill(&h6_ret0, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0); goto bb8; bb5: goto bb3; bb6:
 #line 28
     t19 = h2_out; h6_ret0 = t19; hero_pad_fill(&h6_ret0, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0); goto bb8; bb7: goto bb5; bb8:
-#line 219 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
+#line 222 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
     t25 = h6_ret0;
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h7_own7);
@@ -247,7 +250,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfrominsi
 #line 32
     HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t3 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = INT64_C(5); h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_make(&t3, t1, t2); t4 = t3.first; hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); return;
-#line 251 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
+#line 254 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
 }
 #undef t3
 
@@ -259,7 +262,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 263 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
+#line 266 "fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

@@ -1,0 +1,9 @@
+# Panel 245's R1: one verdict at every level. The `warning` call is refused
+# by `build` at `-O0` and `-O2` and by `run`, the refusal at `-O2` saying the
+# `-O0` compile is what refused it (`cli/region_level.hero`).
+
+extern "lib.h"
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 1))

@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -93,7 +96,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds.c"
+#line 100 "fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -143,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds.c"
+#line 150 "fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -164,7 +167,7 @@ void h_fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds_main(void
 #line 17 "tests/golden/run/fixedbugs-2036-a-header-s-own-printf-with-an-argument-past-its-format-builds.hero"
 void h_fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds_main(void) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2036-a-header-s-own-printf-with-an-argument-past-its-format-builds.hero", "fixedbugs-2036-a-header-s-own-printf-with-an-argument-past-its-format-builds.main", 18, 11}; t1 = fmt_extra(); } hero_print_int(t1); hero_print_end(); return;
-#line 168 "fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds.c"
+#line 171 "fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

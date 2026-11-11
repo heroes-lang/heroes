@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -98,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 102 "fixedbugsahandlecomparesasanaddress.c"
+#line 105 "fixedbugsahandlecomparesasanaddress.c"
 typedef struct h_fixedbugsahandlecomparesasanaddress_Held {
     Chunk * f_h;
     HeroStr f_name;
@@ -165,7 +168,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugsahandlecomparesasanaddress.c"
+#line 172 "fixedbugsahandlecomparesasanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_0Chunk_eq(Chunk * const *a, Chunk * const *b);
@@ -232,7 +235,7 @@ void h_fixedbugsahandlecomparesasanaddress_main(void) { Chunk * h0_a; Chunk * h1
     t49 = h0_a; t50 = (h_0opt_2e1eec0d){.tag = INT64_C(0), .as.ok = t49}; t64 = h13_own13; h13_own13 = t50; h_0opt_2e1eec0d_release(&t64); t65 = h3_oa; h_0opt_2e1eec0d_retain(&t50); h3_oa = t50; h_0opt_2e1eec0d_release(&t65);
     t51 = h1_b; t52 = (h_0opt_2e1eec0d){.tag = INT64_C(0), .as.ok = t51}; t66 = h14_own14; h14_own14 = t52; h_0opt_2e1eec0d_release(&t66); t67 = h4_ob; h_0opt_2e1eec0d_retain(&t52); h4_ob = t52; h_0opt_2e1eec0d_release(&t67);
     t53 = h3_oa; t54 = h4_ob; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-compares-as-an-address.hero", "fixedbugs-a-handle-compares-as-an-address.main", 86, 11}; hero_handle_eq_from(&hero_here); t55 = h_0opt_2e1eec0d_eq(&t53, &t54); hero_handle_eq_from(NULL); } hero_print_bool(t55); hero_print_end();
-#line 236 "fixedbugsahandlecomparesasanaddress.c"
+#line 239 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(hero_slot_escape(&h3_oa));
     h_0opt_2e1eec0d_release(hero_slot_escape(&h4_ob));
     h_fixedbugsahandlecomparesasanaddress_0Held_release(hero_slot_escape(&h5_own5));

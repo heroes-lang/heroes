@@ -283,23 +283,34 @@ function folder_variable(flag: str, value: str) -> str
     return edited_or_own()
 
 # Whether an element of the variable `name`, set, names `dir`, read
-# lexically, an empty element naming `.`. Its elements are separated by `;`
-# on Windows and `:` elsewhere (clang's `llvm::sys::EnvPathSeparator`;
-# unrun on Windows).
+# lexically, an empty element naming `.`.
 function element_names(name: str, dir: str) -> bool
+    want = package_reads.lexical(dir)
+
+    for one in elements_of(name)
+        if one == want
+            return true
+
+    return false
+
+# The elements of the variable `name`, each read lexically, an empty one
+# naming `.`, none where it is unset. They are separated by `;` on Windows
+# and `:` elsewhere (clang's `llvm::sys::EnvPathSeparator`; unrun on
+# Windows).
+function elements_of(name: str) -> [str]
+    out: [str] @= []
+
     if !environment.is_set(name)
-        return false
+        return out
     separator: u8 @= ':'
 
     if process.exe_suffix() == ".exe"
         separator @ ';'
-    want = package_reads.lexical(dir)
 
     for one in parts(text: environment.env(name).default(""), separator: separator)
-        if package_reads.lexical(one) == want
-            return true
+        out @ out.push(package_reads.lexical(one))
 
-    return false
+    return out
 
 # `text`'s parts between `separator`, an empty one kept: `lexical` reads it
 # as `.`.

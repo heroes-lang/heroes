@@ -1,0 +1,28 @@
+# fixedbugs, defect 2036, 2026-10-13, a shape beside defect 2034's repair;
+# pinned 2026-11-11 as a known cost by panel 245's R2 (provisional).
+#
+# SYMPTOM: a header of the program's own whose `printf(m)` takes its format
+# from a variable holding `"hi\n"` is refused `ffi_header_refused` at exit
+# 1, `format string is not a string literal (potentially insecure)
+# [-Werror,-Wformat-security]`. Nothing in C makes the call undefined for the
+# string `m` holds, which clang cannot see. Until panel 245 it built (it was
+# `tests/golden/run/fixedbugs-2036-...-builds`), `-Wformat-security` passed
+# over in the region.
+#
+# REASON: a door handing on the format it was given, `printf(f)`, is this
+# same call to clang, and it read the stack's bytes for `n=%ld` at exit 0 and
+# died of `%n` (defect 2465): no word tells the variable's string from the
+# caller's, so the one form clang cannot judge is refused, and the census of
+# 496 tracked programs binding a header met this case alone (panel 245's
+# ffi-pragmatist).
+#
+# RULING: panel 245's R2, its S, provisional, author ratification pending:
+# robustness first (design.md §1.12). The fix is a literal format,
+# `printf("%s", m)` (`tests/golden/run/fixedbugs-2036-a-header-s-own-printf-of-a-variable-handed-as-a-string-builds`);
+# this golden moves if the ruling does.
+
+extern "fixedbugs-2036-a-header-s-own-printf-of-a-format-held-in-a-variable-is-a-known-cost.h"  #~ ffi_header_refused
+    function fmt_plain() -> i32
+
+function main()
+    print(fmt_plain())

@@ -37,6 +37,7 @@ use cli/environment
 use cli/process
 use cli/strings
 use cli/toolchain
+use emit/header_region
 use emit/value_probe
 
 # Every word a clang job of the compiler carries but its level's words
@@ -48,6 +49,7 @@ constant WORDS: [str]
         "-c"
         "-E"
         "-fsyntax-only"
+        "-femit-all-decls"
         "-S"
         "-emit-llvm"
         "-M"
@@ -131,7 +133,10 @@ function added(t: toolchain.Toolchain, words: [str]) -> clang_added.Edits
 
 # The words a job takes from the function that writes them, as it writes
 # them: an object's (`toolchain.object_words`, the MSVC target's two among
-# them) and the value probe's checks (`emit/value_probe.hero`'s `CHECKS`).
+# them), the value probe's checks (`emit/value_probe.hero`'s `CHECKS`), and
+# what every unit's line and order trial carries for a group's header's code
+# (`header_region.LINE_WORDS`, panel 245's R1), which a line of the level and
+# the search alone would not hold.
 function written(t: toolchain.Toolchain) -> [str]
     checks = [
         "-fno-sanitize=all"
@@ -139,7 +144,8 @@ function written(t: toolchain.Toolchain) -> [str]
         "-fsanitize-trap=" + value_probe.CHECKS
         "-fno-wrapv"
     ]
-    return strings.with_all(list: toolchain.object_words(t, named: "jobs.o"), more: checks)
+    taken = strings.with_all(list: toolchain.object_words(t, named: "jobs.o"), more: checks)
+    return strings.with_all(list: taken, more: header_region.LINE_WORDS)
 
 # What clang said of the line, its jobs printed even where an edit left it a
 # word it refuses (`s/^-M$/.../` takes the `-M` a `-MG` needs, and clang

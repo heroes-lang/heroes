@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -69,7 +72,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 8 "tests/golden/run/fixedbugs2364/rs_configured.hero"
 _Static_assert(__builtin_classify_type(((Rs *)0)->a) == 1 && sizeof(((Rs *)0)->a) == sizeof(int64_t) && (_Generic(((Rs *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rs a");
 _Static_assert(__builtin_classify_type(((Rs *)0)->b) == 1 && sizeof(((Rs *)0)->b) == sizeof(int32_t) && (_Generic(((Rs *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rs b");
-#line 73 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
+#line 76 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -160,7 +163,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
+#line 167 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364rsconfigured_0Rs_eq(const Rs *a, const Rs *b);
@@ -193,14 +196,14 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit_main(void) { Rs h0_r; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t5, t6, t10, t12, t15, t16; HERO_NODEBUG int32_t t1, t4; HERO_NODEBUG Rs t2; HERO_NODEBUG int64_t t3, t7, t8, t13, t14; HERO_NODEBUG bool t9; HERO_NODEBUG HeroFailure t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = h_fixedbugs2364rsconfigured_make(t1); h0_r = t2; hero_pad_fill(&h0_r, sizeof(Rs), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = h0_r.a; t4 = h0_r.b; t5 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t4}; t15 = h2_own2; h2_own2 = t5; h_0opt_e201354_release(&t15); t16 = h1_f0; h_0opt_e201354_retain(&t5); h1_f0 = t5; h_0opt_e201354_release(&t16); t6 = h1_f0; t7 = t6.tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto bb1; else goto bb2; bb1: t12 = h1_f0; t13 = t12.as.ok; if (__builtin_add_overflow(t3, t13, &t14)) hero_panic_overflow_at("fixedbugs-2364-a-record-is-read-after-the-header-its-own-module-reads-before-it.hero", "fixedbugs-2364-a-record-is-read-after-the-header-its-own-module-reads-before-it.main", 14, 11); hero_print_int(t14); hero_print_end();
-#line 197 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
+#line 200 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
 bb2:
 #line 14 "tests/golden/run/fixedbugs-2364-a-record-is-read-after-the-header-its-own-module-reads-before-it.hero"
     t10 = h1_f0; t11 = t10.as.err;
-#line 204 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
+#line 207 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
     hero_panic_must_at(t11, "fixedbugs-2364-a-record-is-read-after-the-header-its-own-module-reads-before-it.hero", "fixedbugs-2364-a-record-is-read-after-the-header-its-own-module-reads-before-it.main", 14, 17);
     hero_unreachable();
 }
@@ -208,7 +211,7 @@ bb2:
 #line 12 "tests/golden/run/fixedbugs2364/rs_configured.hero"
 Rs h_fixedbugs2364rsconfigured_make(int32_t h0_v) { HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG Rs t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rs_configured.hero", "rs_configured.make", 13, 27}; t2 = cfg_one(); } if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs2364/rs_configured.hero", "rs_configured.make", 13, 23); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rs_configured.hero", "rs_configured.make", 13, 12}; t4 = rs_make(t3); } return t4;
-#line 212 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
+#line 215 "fixedbugs2364arecordisreadaftertheheaderitsownmodulereadsbeforeit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364rsconfigured_0Rs_eq(const Rs *a, const Rs *b) {
     if (!(a->a == b->a)) return false;

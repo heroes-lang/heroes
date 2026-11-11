@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2286_held *)0)->first) == 1 && sizeof(((struct fixedbugs_2286_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2286_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 66 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 162 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b);
@@ -199,7 +202,7 @@ int64_t h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_fi
 #line 16
     hero_thread_guard("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.first"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h.first; t2 = INT64_C(100); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.hero", "fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.first", 17, 12); return t3;
-#line 203 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 206 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 }
 #undef h0_h
 
@@ -219,7 +222,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286ccallsbackafunctiontakingandre
 #line 19
     hero_thread_guard("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.make"); HERO_NODEBUG int64_t t1, t2, t3; HERO_NODEBUG struct fixedbugs_2286_held *const hero_big_t4 = (struct fixedbugs_2286_held *)hero_frame_take(sizeof(struct fixedbugs_2286_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1000); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.hero", "fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.make", 20, 24); t4 = *(struct fixedbugs_2286_held *)__builtin_memset(&t4, 0, sizeof t4); __builtin_memset(&t4, 0, sizeof t4); t4.first = t3; if (hero_out != NULL) *hero_out = t4; hero_frame_give(hero_big_t4); return;
-#line 223 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 226 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 }
 #undef t4
 
@@ -241,7 +244,7 @@ h_0fn_a161227 h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprec
     t5 = hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make; h1_ret0 = t5; goto bb4; bb2:
 #line 24
     t4 = fixedbugs_2286_held_make; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 245 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 248 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
     t6 = h1_ret0;
     return t6;
 }
@@ -265,7 +268,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286ccallsbackafunctiontakingandre
     t17 = h0_f; t18 = INT64_C(5); t19 = t17(t18); t20 = t19.first; hero_print_int(t20); hero_print_end();
     t21 = h1_g; t22 = INT64_C(6); t23 = t21(t22); t24 = t23.first; hero_print_int(t24); hero_print_end();
     t25 = h1_g; t26 = INT64_C(7); t27 = t25(t26); t28 = h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(&t27); hero_print_int(t28); hero_print_end(); hero_frame_give(hero_big_t27); hero_frame_give(hero_big_t23); hero_frame_give(hero_big_t19); return;
-#line 269 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 272 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 }
 #undef t19
 #undef t23

@@ -74,11 +74,37 @@ function compiled(t: toolchain.Toolchain, words: [str], text: str) -> Ran
     if unit.is_err()
         return Ran(asked: false, compiles: false, refusal: "", said: "")
     return compiled_at(
+        mode: ["-fsyntax-only"],
         words: words,
         unit: unit.must(),
         dir: t.build + "/order",
         err: t.build + "/order/order-stderr.txt"
     )
+
+# The same, compiled into an object thrown away after, with every function a
+# header defines generated whether anything calls it or not
+# (`-femit-all-decls`): clang says some warnings only while it generates
+# code, a call to a function its header marks `warning` first among them,
+# which a syntax pass never reports, so a header the unit refused for one
+# compiled in every order a syntax trial tried, and its note said it
+# compiles after `stdio.h` (panel 245's R1, its critic's item 7).
+# Generated at the unit's level, so it says what the unit says: a `warning`
+# call `-O2` inlines away is said at `-O0` alone, by both.
+function generated(t: toolchain.Toolchain, words: [str], text: str) -> Ran
+    unit = written(t, text: text)
+
+    if unit.is_err()
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    object = publish.private_name(t.build + "/order/order-object.o")
+    ran = compiled_at(
+        mode: ["-c", "-femit-all-decls", "-o", object],
+        words: words,
+        unit: unit.must(),
+        dir: t.build + "/order",
+        err: t.build + "/order/order-stderr.txt"
+    )
+    publish.discard(object)
+    return ran
 
 # The same of a text asked once and large, a whole program's
 # (`cli/one_file.hero`): written under a private name and thrown away after,
@@ -96,14 +122,17 @@ function compiled_once(t: toolchain.Toolchain, words: [str], text: str) -> Ran
     if files.stage(staged: unit, text: text, like: "").is_err()
         publish.discard(unit)
         return Ran(asked: false, compiles: false, refusal: "", said: "")
-    ran = compiled_at(words: words, unit: unit, dir: dir, err: dir + "/one-file-stderr.txt")
+    ran = compiled_at(mode: ["-fsyntax-only"], words: words, unit: unit, dir: dir, err: dir + "/one-file-stderr.txt")
     publish.discard(unit)
     return ran
 
-function compiled_at(words: [str], unit: str, dir: str, err: str) -> Ran
+function compiled_at(mode: [str], words: [str], unit: str, dir: str, err: str) -> Ran
     unasked = Ran(asked: false, compiles: false, refusal: "", said: "")
     said_at = publish.private_name(err)
-    line = response_file.carried(line: strings.with_all(list: ["clang", "-fsyntax-only"], more: words), dir: dir)
+    line = response_file.carried(
+        line: strings.with_all(list: strings.with_all(list: ["clang"], more: mode), more: words),
+        dir: dir
+    )
     ran = process.run(
         program: "clang",
         words: line.push("-x").push("c").push(unit),
@@ -158,7 +187,7 @@ function written(t: toolchain.Toolchain, text: str) -> str?
 # quiet after it (panel 208).
 test "the opening is the unit's: heroes_unit.h, the seeds, the groups in their region, the checks raised, then the standard headers"
     text = opening(["b.h", "a.h"], question: "int q;")
-    assert text == "#include \"heroes_unit.h\"\n#include <heroes_unit.h>\n#include <hero_os.h>\n#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wall\"\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wformat\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#pragma clang diagnostic error \"-Wimplicit-function-declaration\"\n#pragma clang diagnostic ignored \"-Wformat-extra-args\"\n#pragma clang diagnostic ignored \"-Wformat-zero-length\"\n#pragma clang diagnostic ignored \"-Wformat-security\"\n#pragma clang diagnostic ignored \"-Wformat-truncation\"\n#pragma clang diagnostic ignored \"-Wformat-y2k\"\n#pragma clang diagnostic error \"-Wformat-nonliteral\"\n#pragma clang diagnostic error \"-Wmicrosoft-redeclare-static\"\n#pragma clang diagnostic ignored \"-Wpragma-pack\"\n#pragma float_control(push)\n#include \"heroes_guard_open.h\"\n#include <b.h>\n#include <a.h>\n#include \"heroes_guard_close.h\"\n#pragma clang diagnostic ignored \"-Wignored-pragmas\"\n#pragma pack()\n#pragma float_control(pop)\n#pragma float_control(precise, on)\n#pragma GCC visibility push(default)\n#pragma clang section bss=\"\" data=\"\" rodata=\"\" text=\"\" relro=\"\"\n#pragma clang optimize on\n#pragma clang diagnostic pop\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wformat\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#pragma clang diagnostic error \"-Wshorten-64-to-32\"\n#pragma clang diagnostic error \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types-discards-qualifiers\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types\"\n#pragma clang diagnostic error \"-Wmacro-redefined\"\n#pragma clang diagnostic error \"-Wint-conversion\"\n#pragma clang diagnostic error \"-Wimplicit-function-declaration\"\n#pragma clang diagnostic error \"-Wincompatible-function-pointer-types\"\n#pragma clang diagnostic ignored \"-Wdeprecated-declarations\"\n#pragma clang diagnostic ignored \"-Wdeprecated-pragma\"\n#pragma clang diagnostic ignored \"-Wattribute-warning\"\n#include \"heroes_standard.h\"\nint q;\n"
+    assert text == "#include \"heroes_unit.h\"\n#include <heroes_unit.h>\n#include <hero_os.h>\n#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wall\"\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wformat\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#pragma clang diagnostic error \"-Wimplicit-function-declaration\"\n#pragma clang diagnostic ignored \"-Wformat-extra-args\"\n#pragma clang diagnostic ignored \"-Wformat-zero-length\"\n#pragma clang diagnostic ignored \"-Wformat-truncation\"\n#pragma clang diagnostic ignored \"-Wformat-y2k\"\n#pragma clang diagnostic error \"-Wformat-nonliteral\"\n#pragma clang diagnostic error \"-Wmicrosoft-redeclare-static\"\n#pragma clang diagnostic ignored \"-Wdeprecated-declarations\"\n#pragma clang diagnostic ignored \"-Wdeprecated-pragma\"\n#pragma clang diagnostic error \"-Wimplicit-int\"\n#pragma clang diagnostic error \"-Wuser-defined-warnings\"\n#pragma clang diagnostic ignored \"-Wpragma-pack\"\n#pragma float_control(push)\n#include \"heroes_guard_open.h\"\n#include <b.h>\n#include <a.h>\n#include \"heroes_guard_close.h\"\n#pragma clang diagnostic ignored \"-Wignored-pragmas\"\n#pragma pack()\n#pragma float_control(pop)\n#pragma float_control(precise, on)\n#pragma GCC visibility push(default)\n#pragma clang section bss=\"\" data=\"\" rodata=\"\" text=\"\" relro=\"\"\n#pragma clang optimize on\n#pragma clang diagnostic pop\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wformat\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#pragma clang diagnostic error \"-Wshorten-64-to-32\"\n#pragma clang diagnostic error \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types-discards-qualifiers\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types\"\n#pragma clang diagnostic error \"-Wmacro-redefined\"\n#pragma clang diagnostic error \"-Wint-conversion\"\n#pragma clang diagnostic error \"-Wimplicit-function-declaration\"\n#pragma clang diagnostic error \"-Wincompatible-function-pointer-types\"\n#pragma clang diagnostic ignored \"-Wdeprecated-declarations\"\n#pragma clang diagnostic ignored \"-Wdeprecated-pragma\"\n#pragma clang diagnostic ignored \"-Wattribute-warning\"\n#include \"heroes_standard.h\"\nint q;\n"
 
 # DEFECT 2035's premise, held where it can die: a unit's opening includes the
 # runtime's files, each one `runtime.c` names, and the groups' headers, and no

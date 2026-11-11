@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 8 "tests/golden/run/fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
+#line 66 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
+#line 162 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -188,7 +191,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278aprogramrecordholdingapartialh
 #line 15
     HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG struct heroes_held *const hero_big_t5 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *const hero_big_t6 = (h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *)hero_frame_take(sizeof(h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h0_n; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.hero", "fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.make_wrap", 16, 44); t5 = *(struct heroes_held *)__builtin_memset(&t5, 0, sizeof t5); __builtin_memset(&t5, 0, sizeof t5); t5.first = t4; t6 = *(h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *)__builtin_memset(&t6, 0, sizeof t6); t6.f_tag = t1; t6.f_inner = t5; if (hero_out != NULL) *hero_out = t6; hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); return;
-#line 192 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
+#line 195 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
 }
 #undef t5
 #undef t6
@@ -203,7 +206,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278aprogramrecordholdingapartialh
     h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *const hero_big_h0_w = (h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *)hero_frame_take(sizeof(h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap)); HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *const hero_big_t2 = (h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *)hero_frame_take(sizeof(h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(6); h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_make_wrap(&t2, t1); h0_w = t2;
     t3 = h0_w.f_tag; t4 = h0_w.f_inner.first; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.hero", "fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.go", 20, 11); hero_print_int(t5); hero_print_end(); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_w); return;
-#line 207 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
+#line 210 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
 }
 #undef h0_w
 #undef t2
@@ -212,7 +215,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278aprogramrecordholdingapartialh
 void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_main(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_go(); return;
-#line 216 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
+#line 219 "fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_0Held_eq: a partial record has no structural equality");

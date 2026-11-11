@@ -1,0 +1,24 @@
+# fixedbugs, defect 2465 (panel 245's R2, provisional), 2026-11-11.
+#
+# SYMPTOM: `open` bound with its two fixed parameters and called with
+# `O_CREAT + O_WRONLY` built at exit 0 and created its file with a mode
+# nobody passed, read from the `va_list`: `-rw-------` at batch 31's base
+# (9febdd6c3), `0450` at the sitting's.
+#
+# FIX: a function its header declares variadic, bound with nothing past its
+# `...`, is refused at the binding, `ffi_call_shape` (panel 245's R2, its D;
+# `emit/ffi_bare_variadic.hero`): the route is a door of the program's own
+# header, whose call is C's and whose arguments are the ones written there.
+#
+# `sys/fcntl.h` and not `fcntl.h`: both declare `open` on this Mac and on
+# glibc, and a machine whose C has no such header, Windows', skips the case
+# for the header it lacks, where its `fcntl.h` would be read and would answer
+# otherwise.
+
+extern "sys/fcntl.h"
+    constant O_CREAT: i32
+    constant O_WRONLY: i32
+    function open(path: cstr lent, flags: i32) -> i32  #~ ffi_call_shape
+
+function main()
+    print(open(path: "made.txt".cstr(), flags: O_CREAT + O_WRONLY) >= 0)

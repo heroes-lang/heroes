@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -71,7 +74,7 @@ _Static_assert(__builtin_classify_type(((Rx *)0)->a) == 1 && sizeof(((Rx *)0)->a
 _Static_assert(__builtin_classify_type(((Rx *)0)->b) == 1 && sizeof(((Rx *)0)->b) == sizeof(int32_t) && (_Generic(((Rx *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Rx b");
 #line 6 "tests/golden/run/fixedbugs2364/then_wide.hero"
 _Static_assert(__builtin_classify_type(((Pw *)0)->w) == 1 && sizeof(((Pw *)0)->w) == sizeof(int32_t) && (_Generic(((Pw *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pw w");
-#line 75 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 78 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -166,7 +169,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 170 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 173 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2364rx_0Rx_eq(const Rx *a, const Rx *b);
@@ -227,7 +230,7 @@ __attribute__((__noinline__)) void h_fixedbugs2364apartialrecordanothermodulesma
     t6 = h1_r.a; hero_print_int(t6); hero_print_end();
     t7 = h1_r.b; hero_print_int(t7); hero_print_end();
     t8 = h1_r; t9 = h_fixedbugs2364rx_sum(&t8); hero_print_int(t9); hero_print_end(); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_h1_r); return;
-#line 231 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 234 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 #undef h1_r
 #undef t4
@@ -240,7 +243,7 @@ __attribute__((__noinline__)) void h_fixedbugs2364rx_make(Rx *hero_out, int32_t 
 #line 10
     HERO_NODEBUG int32_t t1; HERO_NODEBUG Rx *const hero_big_t2 = (Rx *)hero_frame_take(sizeof(Rx)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rx.hero", "rx.make", 11, 12}; t2 = rx_make(t1); } if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 244 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 247 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 #undef t2
 __attribute__((unused)) Rx hero_value_h_fixedbugs2364rx_make(int32_t h0_v) {
@@ -261,7 +264,7 @@ __attribute__((__noinline__)) int32_t h_fixedbugs2364rx_sum(const Rx *hero_in_h0
     Rx *const hero_lend_h1_c = (Rx *)hero_lend_local(sizeof(Rx), "fixedbugs2364rx.sum", "c"); HERO_NODEBUG Rx *const hero_big_t1 = (Rx *)hero_frame_take(sizeof(Rx)); HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_r; h1_c = t1; hero_pad_fill(&h1_c, sizeof(Rx), 1, hero_pad_g_1, hero_pad_n_1);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/rx.hero", "rx.sum", 15, 12}; hero_lend_local_name(hero_lend_h1_c, "rx_sum", "r"); hero_pad_fill(&h1_c, sizeof(Rx), 1, hero_pad_g_1, hero_pad_n_1); t2 = rx_sum(&h1_c); } hero_lend_local_give(hero_lend_h1_c); hero_frame_give(hero_big_t1); return t2;
-#line 265 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 268 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 #undef h1_c
 #undef h0_r
@@ -273,7 +276,7 @@ __attribute__((unused)) int32_t hero_value_h_fixedbugs2364rx_sum(Rx h0_r) {
 #line 9 "tests/golden/run/fixedbugs2364/then_wide.hero"
 Pw h_fixedbugs2364thenwide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pw t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2364/then_wide.hero", "then_wide.make", 10, 12}; t2 = pw_make(t1); } return t2;
-#line 277 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
+#line 280 "fixedbugs2364apartialrecordanothermodulesmacrowouldwidenreadsasitsowntheotherway.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2364rx_0Rx_eq(const Rx *a, const Rx *b) {
     hero_panic("h_fixedbugs2364rx_0Rx_eq: a partial record has no structural equality");

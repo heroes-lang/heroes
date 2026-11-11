@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -93,7 +96,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "main.c"
+#line 100 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -143,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "main.c"
+#line 150 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -165,13 +168,13 @@ double h_1pkpk_half(void);
 #line 11 "tests/golden/run/fixedbugs-2458-a-fetched-packages-float-bound-through-a-function-of-its-header-reads.case/main.hero"
 void h_main_main(void) { HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1pkpk_half(); hero_print_f64(t1); hero_print_end(); return;
-#line 169 "main.c"
+#line 172 "main.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs-2458-a-fetched-packages-float-bound-through-a-function-of-its-header-reads.case/heroes.packages/pk@1.0.0-964950a4e3c90ad4/pk.hero"
 double h_1pkpk_half(void) { HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<pk>/pk.hero", "pk.half", 9, 12}; t1 = pk_half(); } return t1;
-#line 175 "main.c"
+#line 178 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

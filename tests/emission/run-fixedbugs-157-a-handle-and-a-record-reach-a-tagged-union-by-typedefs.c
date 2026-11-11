@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -63,7 +66,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
 _Static_assert(__builtin_classify_type(((utag *)0)->i) == 1 && sizeof(((utag *)0)->i) == sizeof(int32_t) && (_Generic(((utag *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field utag i");
-#line 67 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
+#line 70 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
+#line 162 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_0UH_eq(UH_t * const *a, UH_t * const *b);
@@ -181,7 +184,7 @@ void h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_main(void);
 void h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_main(void) { HERO_NODEBUG UH_t *t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG utag t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero", "fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.main", 17, 21}; t1 = new_u(); hero_handle_lent(t1); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero", "fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.main", 17, 11}; hero_handle_alive_at(t1, "the argument `p` of `read_u`", &hero_here); t2 = read_u(t1); } hero_print_int(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero", "fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.main", 18, 11}; t3 = make_u(); } t4 = t3.i; hero_print_int(t4); hero_print_end(); return;
-#line 185 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
+#line 188 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_0UH_eq(UH_t * const *a, UH_t * const *b) {
     return hero_handle_eq(*a, *b);

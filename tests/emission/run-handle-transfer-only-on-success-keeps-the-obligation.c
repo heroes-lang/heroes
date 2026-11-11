@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -100,7 +103,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6023594d, "failed add: ");
 HERO_STR_STATIC(hero_str_727306ec, "sum: ");
 
-#line 104 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 107 "handletransferonlyonsuccesskeepstheobligation.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -155,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 162 "handletransferonlyonsuccesskeepstheobligation.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_0Node_eq(node * const *a, node * const *b);
@@ -190,7 +193,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void) { node * h0_pare
     t24 = h0_parent; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-only-on-success-keeps-the-obligation.hero", "handle-transfer-only-on-success-keeps-the-obligation.main", 24, 5}; { hero_handle_alive_at(t24, "the argument `n` of `node_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "node_put", NULL, &hero_here); (void)node_put(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_parent == t24) h0_parent = hero_handle_dead(); } } return; bb2:
 #line 20
     t14 = h1_child; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-only-on-success-keeps-the-obligation.hero", "handle-transfer-only-on-success-keeps-the-obligation.main", 20, 9}; { hero_handle_alive_at(t14, "the argument `n` of `node_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t14, "node_put", NULL, &hero_here); (void)node_put(t14); if (hero_handle_ended(t14, hero_life_0_0) && h1_child == t14) h1_child = hero_handle_dead(); } } goto bb1; bb3: goto bb1;
-#line 194 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 197 "handletransferonlyonsuccesskeepstheobligation.c"
 }
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -60,7 +63,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 64 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 67 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -146,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 153 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -189,7 +192,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 14 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void) {
-#line 193 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 196 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_B), "heroes-ffi-return E_B i32");
     _Static_assert(__builtin_constant_p(E_B), "heroes-ffi-const E_B");
 #pragma clang diagnostic push
@@ -201,7 +204,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_B;
-#line 205 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 208 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -219,7 +222,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void) {
 
 #line 15 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void) {
-#line 223 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 226 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_NEXT), "heroes-ffi-return E_NEXT i32");
     _Static_assert(__builtin_constant_p(E_NEXT), "heroes-ffi-const E_NEXT");
 #pragma clang diagnostic push
@@ -231,7 +234,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_NEXT;
-#line 235 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 238 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -249,7 +252,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void) {
 
 #line 16 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(void) {
-#line 253 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 256 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_SIZE), "heroes-ffi-return E_SIZE i32");
     _Static_assert(__builtin_constant_p(E_SIZE), "heroes-ffi-const E_SIZE");
 #pragma clang diagnostic push
@@ -261,7 +264,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_SIZE;
-#line 265 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 268 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -279,7 +282,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(void) {
 
 #line 17 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(void) {
-#line 283 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 286 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_OFF), "heroes-ffi-return E_OFF i32");
     _Static_assert(__builtin_constant_p(E_OFF), "heroes-ffi-const E_OFF");
 #pragma clang diagnostic push
@@ -291,7 +294,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 17 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_OFF;
-#line 295 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 298 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -309,7 +312,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(void) {
 
 #line 18 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(void) {
-#line 313 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 316 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_30), "heroes-ffi-return E_30 i32");
     _Static_assert(__builtin_constant_p(E_30), "heroes-ffi-const E_30");
 #pragma clang diagnostic push
@@ -321,7 +324,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 18 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_30;
-#line 325 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 328 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -339,7 +342,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(void) {
 
 #line 19 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(void) {
-#line 343 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 346 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_FDIV), "heroes-ffi-return E_FDIV i32");
     _Static_assert(__builtin_constant_p(E_FDIV), "heroes-ffi-const E_FDIV");
 #pragma clang diagnostic push
@@ -351,7 +354,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_FDIV;
-#line 355 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 358 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -369,7 +372,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(void) {
 
 #line 20 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(void) {
-#line 373 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 376 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(S_FROME), "heroes-ffi-return S_FROME i32");
     _Static_assert(__builtin_constant_p(S_FROME), "heroes-ffi-const S_FROME");
 #pragma clang diagnostic push
@@ -381,7 +384,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_FROME;
-#line 385 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 388 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -399,7 +402,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(void) {
 
 #line 21 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 uint32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(void) {
-#line 403 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 406 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_U32(S_WRAP), "heroes-ffi-return S_WRAP u32");
     _Static_assert(__builtin_constant_p(S_WRAP), "heroes-ffi-const S_WRAP");
 #pragma clang diagnostic push
@@ -411,7 +414,7 @@ uint32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_WRAP;
-#line 415 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 418 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -429,7 +432,7 @@ uint32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(void) {
 
 #line 22 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(void) {
-#line 433 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 436 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(S_NEGOK), "heroes-ffi-return S_NEGOK i32");
     _Static_assert(__builtin_constant_p(S_NEGOK), "heroes-ffi-const S_NEGOK");
 #pragma clang diagnostic push
@@ -441,7 +444,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 22 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_NEGOK;
-#line 445 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 448 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -459,12 +462,12 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(void) {
 
 #line 23 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 double h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FOK(void) {
-#line 463 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 466 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_F64(S_FOK), "heroes-ffi-return S_FOK f64");
     _Static_assert(__builtin_constant_p(S_FOK), "heroes-ffi-const S_FOK");
 #line 23 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_FOK;
-#line 468 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 471 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -481,7 +484,7 @@ double h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FOK(void) {
 
 #line 24 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(void) {
-#line 485 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 488 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(S_BCPV), "heroes-ffi-return S_BCPV i32");
     _Static_assert(__builtin_constant_p(S_BCPV), "heroes-ffi-const S_BCPV");
 #pragma clang diagnostic push
@@ -493,7 +496,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 24 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_BCPV;
-#line 497 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 500 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -511,7 +514,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(void) {
 
 #line 25 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
-#line 515 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 518 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -523,7 +526,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 25 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     static struct pt hero_constant_value = R_OK;
-#line 527 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 530 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -542,7 +545,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
 
 #line 26 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
-#line 546 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 549 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -554,7 +557,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 26 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     static struct pt hero_constant_value = M_ROBJ_OK;
-#line 558 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 561 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -589,7 +592,7 @@ void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void) { struct pt h
     t14 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(); h1_o = t14; hero_pad_fill(&h1_o, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
     t15 = h1_o.x; hero_print_int(t15); hero_print_end();
     t16 = h1_o.y; hero_print_int(t16); hero_print_end(); return;
-#line 593 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 596 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

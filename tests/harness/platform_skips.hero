@@ -126,8 +126,11 @@ constant UNDERSCORE_STDIO_IS_DARWINS: str
 constant SOCKET_READS_TYPES_ON_DARWIN: str
     "Darwin's `sys/socket.h` includes `<sys/types.h>` itself, and the runtime's opening reads no `sys/types.h` there, so a program's own `sys/types.h` is read by the SDK's header after a header of the program's opened it, and the refusal names `<sys/socket.h>` as the includer (measured on this Mac, 2026-11-10, panel 243's critic and the lane b30-shadow); which header of glibc's or the UCRT's reaches `sys/types.h`, and whether the runtime's opening reads it first there, is unrun here, so these words are judged where they were read, and the rule that every include of a file is judged is held on every platform by `cli/shadowed_tree.hero`'s tests (defect 2447)"
 
+constant TEXT_STUB_IS_APPLES: str
+    "the folder `--library` names holds library `z` as a `.tbd`, a text stub Apple's linker reads as a library, so a tree that holds no binary carries a library of its own; GNU ld and lld-link read no `.tbd` and take the platform's `libz` beside it (measured on this Mac, 2026-11-11, at panel 245's landing; the other linkers' reading is their documented file types, unrun), so the shape, a library half a folder the build names holds, is judged on Darwin, and a header half the build names is judged everywhere (defect 2448)"
+
 # The cases whose shape only Apple's clang or the SDK holds, skipped on every
-# other machine by name.
+# other machine by name, and two surface rows.
 function darwin_alone() -> [Skip]
     return [
         Skip(name: "fixedbugs-2344-an-empty-cpath", why: EMPTY_CPATH_IS_APPLES)
@@ -142,6 +145,8 @@ function darwin_alone() -> [Skip]
         Skip(name: "fixedbugs-2447-a-file-a-root-header-names-in-quotes-the-sdks-socket-header-includes-before", why: SOCKET_READS_TYPES_ON_DARWIN)
         Skip(name: "fixedbugs-2447-a-pragma-once-sibling-the-sdks-socket-header-includes-after-the-programs-header", why: SOCKET_READS_TYPES_ON_DARWIN)
         Skip(name: "fixedbugs-2447-a-sibling-named-as-the-search-names-it-the-sdks-socket-header-includes-after", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "the platform's header beside a library of a folder --library names is refused as two releases (panel 245's R3, defect 2448)", why: TEXT_STUB_IS_APPLES)
+        Skip(name: "a header and a library each of a folder the build names build, both halves named (panel 245's R3)", why: TEXT_STUB_IS_APPLES)
     ]
 
 # **And an emission that names the platform's own C is compared where it was
@@ -225,12 +230,15 @@ test "every name skipped on Windows is a case or a surface row that exists"
 
     assert elsewhere().len() == 3
 
-    # And each case judged on Darwin alone is a folder case that exists.
+    # And each case judged on Darwin alone is a folder case that exists, or
+    # a row the surface table names (panel 245's R3).
     for one in darwin_alone()
-        assert shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
+        folder = shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
+        assert folder || core_strings.contains(s: surface.must(), substr: "row(name: \"" + one.name + "\"")
 
-    # Two, and defect 2447's ten danger cases, whose words are the SDK's.
-    assert darwin_alone().len() == 12
+    # Two, defect 2447's ten danger cases, whose words are the SDK's, and
+    # panel 245's two rows of a library a text stub holds.
+    assert darwin_alone().len() == 14
 
 # On a machine that is not Windows nothing is skipped by name but the cases
 # whose words are Windows' alone, and on Windows those are judged.

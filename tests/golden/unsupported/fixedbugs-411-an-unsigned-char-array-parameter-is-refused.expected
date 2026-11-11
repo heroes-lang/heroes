@@ -3,6 +3,6 @@ error[ffi_writable_parameter]: `p` of `w_array` is declared `cstr`, and the head
      |
   18 |     function w_array(p: cstr lent) -> i32  #~ ffi_writable_parameter
      |                      ^
-  note: spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: spec § 13: `s.cstr()` lends a `str` to C, and C writes back through a lend only where the binding is a `@` name. A header's pointer without `const` does not promise that: a C write through it changes the bytes of every value that shares the string, and on a literal's stops the program
   note: declare it `ptr` and give `w_array` a buffer C owns, then read the result back
   fix (guess): declare it `ptr`

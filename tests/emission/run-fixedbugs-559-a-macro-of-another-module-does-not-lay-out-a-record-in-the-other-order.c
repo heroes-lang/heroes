@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -69,11 +72,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 13 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 _Static_assert(__builtin_classify_type(((S *)0)->a) == 1 && sizeof(((S *)0)->a) == sizeof(int32_t) && (_Generic(((S *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field S a");
 _Static_assert(__builtin_classify_type(((S *)0)->b) == 1 && sizeof(((S *)0)->b) == sizeof(int32_t) && (_Generic(((S *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field S b");
-#line 73 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 76 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 
 #line 12 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 _Static_assert(__builtin_classify_type(*(S *)0) != 13, "heroes-ffi-union S a b");
-#line 77 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 80 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -167,7 +170,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 171 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 174 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_0S_eq(const S *a, const S *b);
@@ -201,13 +204,13 @@ void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = (S){.a = t1, .b = t2}; h0_s = t3; hero_pad_fill(&h0_s, sizeof(S), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = INT64_C(3); t5 = h_fixedbugs559wide_doubled(t4); hero_print_int(t5); hero_print_end();
     t6 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero", "fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.main", 20, 11}; t7 = sget(t6); } hero_print_int(t7); hero_print_end(); return;
-#line 205 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 208 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs559/wide.hero", "wide.doubled", 8, 12}; t2 = twice(t1); } return t2;
-#line 211 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 214 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_0S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

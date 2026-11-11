@@ -1,0 +1,23 @@
+# fixedbugs, defect 2464 (panel 245's R1, provisional), 2026-11-11.
+#
+# SYMPTOM: a door calling a function its header marks with clang's `warning`
+# attribute, as libcurl's checker marks a value handed past
+# `curl_easy_setopt`'s `...`, built at exit 0 with `-Wattribute-warning`
+# printed raw at `-O0`, and printed `1` (batch 31's base, 9febdd6c3).
+# Refused as an error, it would have been told *compiles
+# after `stdio.h`*: clang says the warning only while it generates code, and
+# every order trial was a syntax pass, which compiled every order.
+#
+# FIX: the warning is an error in the region, and a trial that cannot see
+# the refusal in the order as written tells no order: the written order
+# compiles under `-fsyntax-only`, so every trial generates code
+# (`cli/order_search.hero`'s `sees`), every order is refused, and the
+# refusal keeps its own note. At `-O2`, where clang inlines the call away and
+# says nothing, the `-O0` compile refuses it too (the `surface` rows on
+# `surface-fixtures/level2464`).
+
+extern "fixedbugs-2464-a-warning-marked-call-is-refused-and-told-no-order.h"  #~ ffi_header_refused
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 1))

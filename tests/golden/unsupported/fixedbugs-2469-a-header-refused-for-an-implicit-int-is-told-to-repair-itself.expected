@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-2469-own.h`, the header this group names, does not compile: clang refuses it at line 4: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]
+  at tests/golden/unsupported/fixedbugs-2469-a-header-refused-for-an-implicit-int-is-told-to-repair-itself.hero:18:8
+     |
+  18 | extern "fixedbugs-2469-own.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2469-own.h` line 4 reads `static implicit_x = 3;`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

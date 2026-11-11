@@ -1,0 +1,19 @@
+# fixedbugs, defect 2465 (panel 245's R2, provisional), 2026-11-11.
+#
+# SYMPTOM: `pick(1)` reads an `int64_t` past its `...` because its count says
+# so, and a binding naming `pick` with its count alone handed it none: it
+# built at exit 0 and printed `6126152376` at `-O0` and `6133359632` at `-O2`
+# at batch 31's base (9febdd6c3), whatever the machine held there.
+#
+# FIX: a function its header declares variadic, bound with nothing past its
+# `...`, is refused at the binding, `ffi_call_shape` (panel 245's R2, its D;
+# `emit/ffi_bare_variadic.hero`): the route is a door of the program's own
+# header, whose call is C's and whose arguments are the ones written there.
+#
+# The header is the program's own, so the case is judged on every platform.
+
+extern "fixedbugs-2465-a-variadic-of-the-program-s-own-header-bound-bare.h"
+    function pick(n: i64) -> i64  #~ ffi_call_shape
+
+function main()
+    print(pick(n: 1))

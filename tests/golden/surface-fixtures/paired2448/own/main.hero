@@ -1,0 +1,8 @@
+# Panel 245's R3: a declaration the program's own folder holds is its own
+# word, paired with no release, so the platform's library builds beside it.
+
+extern "zver2448.h" link "z"
+    function zlibVersion() -> cstr
+
+function main()
+    print(validated(c: zlibVersion()).default("").len() > 0)

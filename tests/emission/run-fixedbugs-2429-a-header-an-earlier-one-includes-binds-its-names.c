@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -98,7 +101,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 105 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 155 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -170,7 +173,7 @@ void h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero"
 int64_t h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_WANT_EXTRA(void) {
-#line 174 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 177 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
     _Static_assert(HERO_RET_INT(WANT_EXTRA), "heroes-ffi-return WANT_EXTRA i64");
     _Static_assert(__builtin_constant_p(WANT_EXTRA), "heroes-ffi-const WANT_EXTRA");
 #pragma clang diagnostic push
@@ -182,7 +185,7 @@ int64_t h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_WANT_EXTRA(void)
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero"
     return WANT_EXTRA;
-#line 186 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 189 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -200,7 +203,7 @@ int64_t h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_WANT_EXTRA(void)
 
 #line 21 "tests/golden/run/fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero"
 int64_t h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_ALL_PARTS(void) {
-#line 204 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 207 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
     _Static_assert(HERO_RET_INT(ALL_PARTS), "heroes-ffi-return ALL_PARTS i64");
     _Static_assert(__builtin_constant_p(ALL_PARTS), "heroes-ffi-const ALL_PARTS");
 #pragma clang diagnostic push
@@ -212,7 +215,7 @@ int64_t h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_ALL_PARTS(void) 
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero"
     return ALL_PARTS;
-#line 216 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 219 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -232,7 +235,7 @@ int64_t h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_ALL_PARTS(void) 
 void h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero", "fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.main", 27, 11}; t1 = extra(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero", "fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.main", 27, 21}; t2 = plain(); } if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero", "fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.main", 27, 11); t4 = h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_WANT_EXTRA(); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero", "fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.main", 27, 11); hero_print_int(t5); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero", "fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.main", 28, 11}; t6 = part_count(); } t7 = h_fixedbugs2429aheaderanearlieroneincludesbindsitsnames_ALL_PARTS(); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.hero", "fixedbugs-2429-a-header-an-earlier-one-includes-binds-its-names.main", 28, 11); hero_print_int(t8); hero_print_end(); return;
-#line 236 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
+#line 239 "fixedbugs2429aheaderanearlieroneincludesbindsitsnames.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

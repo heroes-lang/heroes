@@ -1,0 +1,166 @@
+# Which order of a module's headers compiles, asked of clang on a refused
+# header's path (design.md §4.19, §4.17; panel 204's R3, ratified
+# 2026-10-10; defect 563): the three searches `cli/header_order.hero` and
+# `cli/name_order.hero` tell their notes from, a move of one of the module's
+# groups across the refused header (`search`), the module's own groups
+# written above it (`above`) and a header of C's own read just before it
+# (`standard`), each compiling the unit's whole opening
+# (`cli/order_trial.hero`) under the unit's own words.
+#
+# **Every search is first asked the order as written** (panel 245's R1,
+# provisional, author ratification pending; defect 2469; the sitting's
+# critic, items 7 and 8): a trial that compiles the unit's own order cannot
+# see what refused it, so no other order it compiles may be told. Clang's
+# syntax pass is asked first (`sees`); where it compiles the written order,
+# the unit was refused for what only code generation says, a call to a
+# function its header marks `warning` first among them, and every trial
+# generates code (`order_trial.generated`); where that compiles too, no
+# trial reproduces the refusal, no order is told and the refusal keeps its
+# own notes. Until then a header's `static implicit_x = 3;`, refused by the
+# unit, compiled in the syntax trials, whose words left `-Wimplicit-int`
+# off, and the two notes sent the author to each other's order; and curl's
+# checker of `curl_easy_setopt`'s argument, said only while clang generates
+# code, was told *compiles after `stdio.h`*. Split out of
+# `cli/header_order.hero` at the landing, which took it past §11's 300
+# lines: these ask clang which order compiles, and that module tells it.
+
+use ast
+use cli/compiling
+use cli/order_groups
+use cli/order_trial
+use cli/toolchain
+use source
+
+# The C11 headers (C11 7.1.2) but the four every unit reads already, the
+# likeliest a header leans on first.
+constant STANDARD: [str]
+    [
+        "stdio.h"
+        "stdlib.h"
+        "string.h"
+        "stdarg.h"
+        "time.h"
+        "limits.h"
+        "inttypes.h"
+        "errno.h"
+        "ctype.h"
+        "signal.h"
+        "setjmp.h"
+        "locale.h"
+        "wchar.h"
+        "wctype.h"
+        "float.h"
+        "assert.h"
+        "complex.h"
+        "fenv.h"
+        "iso646.h"
+        "stdalign.h"
+        "stdatomic.h"
+        "stdnoreturn.h"
+        "tgmath.h"
+        "threads.h"
+        "uchar.h"
+    ]
+
+# A move that compiles: the other group's header, whether it goes before the
+# refused one (else the refused one goes before it), and both orders.
+record Move
+    other: str
+    before: bool
+    written: [str]
+    order: [str]
+
+# The first move of a group of `module` across the refused header, in the
+# unit's order, after which the unit's opening and `question` compile.
+function search(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, written: [str], target: str, module: str, question: str, generating: bool) -> Move?
+    here = order_groups.index_of(written, one: target)
+
+    if here < 0
+        return fail(code: "none", msg: "the unit does not read the header")
+    words = compiling.unit_words(under)
+    other: i64 @= 0
+
+    while other < written.len()
+        if other != here && !order_groups.group_in(s, decls, header: written[other], module: module).is_err()
+            order: [str] @= []
+
+            if other > here
+                order @ order_groups.moved(written, from: other, to: here)
+            else
+                order @ order_groups.moved(written, from: here, to: other)
+
+            if compiles(t, words: words, text: order_trial.opening(order, question: question), generating: generating)
+                return ok(Move(other: written[other], before: other > here, written: written, order: order))
+        other @ other + 1
+
+    return fail(code: "none", msg: "no move compiles")
+
+# The headers `missing`, this module's groups' written above the refused one
+# that the unit does not read, read just before it, joined where the unit
+# then compiles.
+function above(t: toolchain.Toolchain, under: compiling.Compiling, written: [str], target: str, missing: [str], generating: bool) -> str?
+    here = order_groups.index_of(written, one: target)
+
+    if here < 0 || missing.len() == 0
+        return fail(code: "none", msg: "nothing written above is missing")
+    order: [str] @= []
+
+    for one in written.slice(from: 0, to: here)
+        order @ order.push(one)
+
+    for one in missing
+        order @ order.push(one)
+
+    for one in written.slice(from: here, to: written.len())
+        order @ order.push(one)
+
+    if !compiles(t, words: compiling.unit_words(under), text: order_trial.opening(order, question: ""), generating: generating)
+        return fail(code: "none", msg: "the module's own order does not compile here")
+    return ok(missing.join("`, `"))
+
+# The first C11 header the unit does not read after which the refused one
+# compiles where it stands, with `question` after it.
+function standard(t: toolchain.Toolchain, under: compiling.Compiling, written: [str], target: str, question: str, generating: bool) -> str?
+    here = order_groups.index_of(written, one: target)
+
+    if here < 0
+        return fail(code: "none", msg: "the unit does not read the header")
+    words = compiling.unit_words(under)
+
+    for candidate in STANDARD
+        if order_groups.index_of(written, one: candidate) < 0
+            order: [str] @= []
+
+            for one in written.slice(from: 0, to: here)
+                order @ order.push(one)
+
+            order @ order.push(candidate)
+
+            for one in written.slice(from: here, to: written.len())
+                order @ order.push(one)
+
+            if compiles(t, words: words, text: order_trial.opening(order, question: question), generating: generating)
+                return ok(candidate)
+
+    return fail(code: "none", msg: "no header of C's own is what it needs")
+
+# How a trial sees the unit's refusal: by clang's syntax pass (`false`), by
+# generating code (`true`), or not at all, where the order as written
+# compiles both ways and no other order's compiling says anything.
+function sees(t: toolchain.Toolchain, under: compiling.Compiling, written: [str]) -> bool?
+    words = compiling.unit_words(under)
+    text = order_trial.opening(written, question: "")
+
+    if !order_trial.compiled(t, words: words, text: text).compiles
+        return ok(false)
+
+    if !order_trial.generated(t, words: words, text: text).compiles
+        return ok(true)
+    return fail(code: "none", msg: "no trial reproduces the refusal")
+
+# Whether `text` compiles under `words`, generated where the refusal is code
+# generation's.
+function compiles(t: toolchain.Toolchain, words: [str], text: str, generating: bool) -> bool
+    if generating
+        return order_trial.generated(t, words: words, text: text).compiles
+    return order_trial.compiled(t, words: words, text: text).compiles

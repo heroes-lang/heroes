@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -71,11 +74,11 @@ _Static_assert(__builtin_classify_type(((hero_bound_type_t1 *)0)->a) == 1 && siz
 #line 16
 _Static_assert(_Generic(&((outer *)0)->inner, hero_bound_type_t1 *: 1, default: 0) && sizeof(((outer *)0)->inner) == sizeof(hero_bound_type_t1), "heroes-ffi-field outer inner");
 _Static_assert(__builtin_classify_type(((outer *)0)->b) == 1 && sizeof(((outer *)0)->b) == sizeof(int64_t) && (_Generic(((outer *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field outer b");
-#line 75 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
+#line 78 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
 
 #line 15 "tests/golden/run/fixedbugs-2389-a-bound-record-named-as-a-temporary-builds.hero"
 _Static_assert(__builtin_classify_type(*(outer *)0) != 13, "heroes-ffi-union outer inner b");
-#line 79 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
+#line 82 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -173,7 +176,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 177 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
+#line 180 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2389aboundrecordnamedasatemporarybuilds_0t1_eq(const hero_bound_type_t1 *a, const hero_bound_type_t1 *b);
@@ -223,7 +226,7 @@ void h_fixedbugs2389aboundrecordnamedasatemporarybuilds_main(void) {
     t13 = INT64_C(40); t14 = (hero_bound_type_t1){.a = t13}; t15 = INT64_C(2); t16 = (outer){.inner = t14, .b = t15}; h3_o = t16; hero_pad_fill(&h3_o, sizeof(outer), 1, hero_pad_g_1, hero_pad_n_1);
     t17 = h3_o; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-record-named-as-a-temporary-builds.hero", "fixedbugs-2389-a-bound-record-named-as-a-temporary-builds.main", 32, 11}; t18 = sum(t17); } hero_print_int(t18); hero_print_end();
     t19 = h3_o.inner.a; t20 = INT64_C(2); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs-2389-a-bound-record-named-as-a-temporary-builds.hero", "fixedbugs-2389-a-bound-record-named-as-a-temporary-builds.main", 33, 11); hero_print_int(t21); hero_print_end(); hero_lend_local_give(hero_lend_h2_n); return;
-#line 227 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
+#line 230 "fixedbugs2389aboundrecordnamedasatemporarybuilds.c"
 }
 #undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs2389aboundrecordnamedasatemporarybuilds_0t1_eq(const hero_bound_type_t1 *a, const hero_bound_type_t1 *b) {

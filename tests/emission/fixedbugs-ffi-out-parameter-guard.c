@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -98,7 +101,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_353a8d65, "no database");
 HERO_STR_STATIC(hero_str_5689c81, "select 1");
 
-#line 102 "ffioutparameterguard.c"
+#line 105 "ffioutparameterguard.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "ffioutparameterguard.c"
+#line 158 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +175,7 @@ void h_ffioutparameterguard_main(void);
 
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 176 "ffioutparameterguard.c"
+#line 179 "ffioutparameterguard.c"
     _Static_assert(HERO_RET_INT(SQLITE_OK), "heroes-ffi-return SQLITE_OK i64");
     _Static_assert(__builtin_constant_p(SQLITE_OK), "heroes-ffi-const SQLITE_OK");
 #pragma clang diagnostic push
@@ -184,7 +187,7 @@ int64_t h_ffioutparameterguard_SQLITE_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return SQLITE_OK;
-#line 188 "ffioutparameterguard.c"
+#line 191 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -220,7 +223,7 @@ void h_ffioutparameterguard_main(void) {
     t15 = h3_rc; t16 = h_ffioutparameterguard_SQLITE_OK(); t17 = t15 == t16; hero_print_bool(t17); hero_print_end(); goto bb4; bb2:
 #line 42
     t7 = HERO_STR_LIT(hero_str_353a8d65); hero_print_str(t7); hero_print_end(); goto bb4; bb3: goto bb1; bb4: hero_lend_local_give(hero_lend_h2_tail); hero_lend_local_give(hero_lend_h1_stmt); hero_lend_local_give(hero_lend_h0_db); return;
-#line 224 "ffioutparameterguard.c"
+#line 227 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

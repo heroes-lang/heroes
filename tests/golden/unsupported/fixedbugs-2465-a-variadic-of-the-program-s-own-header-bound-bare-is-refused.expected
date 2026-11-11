@@ -1,0 +1,7 @@
+error[ffi_call_shape]: `fixedbugs-2465-a-variadic-of-the-program-s-own-header-bound-bare.h` declares `pick` variadic, 1 parameter and then `...`, and this binding names it with nothing past the `...` — what `pick` reads there is decided by a value only the run gives, a format's conversions, `O_CREAT`'s mode, a command's argument, so nothing holds it to anything this program passed
+  at tests/golden/unsupported/fixedbugs-2465-a-variadic-of-the-program-s-own-header-bound-bare-is-refused.hero:16:14
+     |
+  16 |     function pick(n: i64) -> i64  #~ ffi_call_shape
+     |              ^^^^
+  note: C11 6.5.2.2p7: past a prototype's `...` a call converts nothing beyond the default argument promotions, and a binding with nothing there hands nothing; C11 7.16.1.1p2: a `va_arg` with no next argument to read is undefined, so what `pick` reads past it is whatever the machine left there. A function its header declares variadic is called from a header of the program's own, where the call is C's, its arguments are the ones written there, and clang reads a format there against them
+  note: write a header of your own that includes `fixedbugs-2465-a-variadic-of-the-program-s-own-header-bound-bare.h` and defines a `static inline` function of a new name with a fixed prototype, taking every value `pick` will read and calling it with each of them, a format written there as a literal; bind that function instead

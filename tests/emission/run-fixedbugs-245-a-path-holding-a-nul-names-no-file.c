@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -122,7 +125,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 126 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 129 "fixedbugs245apathholdinganulnamesnofile.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -176,7 +179,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 183 "fixedbugs245apathholdinganulnamesnofile.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -208,7 +211,7 @@ __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_
 #line 16 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 HeroStr h_fixedbugs245apathholdinganulnamesnofile_ZERO(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1eb1d5cf);
-#line 212 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 215 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -216,7 +219,7 @@ HeroStr h_fixedbugs245apathholdinganulnamesnofile_ZERO(void) { HERO_NODEBUG Hero
 #line 19 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 HeroStr h_fixedbugs245apathholdinganulnamesnofile_VICTIM(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_94a3616);
-#line 220 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 223 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -228,13 +231,13 @@ HeroStr h_fixedbugs245apathholdinganulnamesnofile_zero(void) { void * h0_handle;
     t10 = INT64_C(0); t11 = h0_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.zero", 26, 9}; (void)fputc(t10, t11); }
     t13 = h0_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.zero", 27, 9}; (void)fclose(t13); }
     t15 = h_fixedbugs245apathholdinganulnamesnofile_ZERO(); t26 = h3_own3; h3_own3 = t15; hero_str_decref(t26); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.zero", 28, 12}; t16 = h_library_read_file(t15, &hero_here); } t27 = h4_own4; h4_own4 = t16; h_0opt_f87774a_release(&t27); t28 = h1_f0; h_0opt_f87774a_retain(&t16); h1_f0 = t16; h_0opt_f87774a_release(&t28); t17 = h1_f0; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb2:
-#line 232 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 235 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_panic_assert_shown_at(t6, hero_show_pointer, &t7, &t8, 0, "fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.zero", 25, 12);
     hero_unreachable();
 bb3:
 #line 28 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t23 = h1_f0; t24 = t23.as.ok;
-#line 238 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 241 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_str_incref(t24);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
@@ -244,7 +247,7 @@ bb3:
 bb4:
 #line 28 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t21 = h1_f0; t22 = t21.as.err;
-#line 248 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 251 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_panic_must_at(t22, "fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.zero", 28, 12);
     hero_unreachable();
 }
@@ -258,7 +261,7 @@ void h_fixedbugs245apathholdinganulnamesnofile_main(void) { HERO_NODEBUG h_0opt_
     t21 = h1_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.main", 35, 11}; t22 = h_library_read_file(t21, &hero_here); } t66 = h14_own14; h14_own14 = t22; h_0opt_f87774a_release(&t66); t67 = h2_s0; h_0opt_f87774a_retain(&t22); h2_s0 = t22; h_0opt_f87774a_release(&t67); t23 = h2_s0; t24 = t23.tag; switch (t24) { case 0: goto bb4; case 1: goto bb5; default: hero_unreachable(); } bb2:
 #line 31
     t8 = h0_f0; t9 = t8.as.err;
-#line 262 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 265 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_panic_must_at(t9, "fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.main", 31, 5);
     hero_unreachable();
 bb3:
@@ -274,7 +277,7 @@ bb3:
     t41 = h5_s1; t42 = t41.as.err; t75 = h6_e; hero_failure_retain(&t42); h6_e = t42; hero_failure_release(&t75); t43 = HERO_STR_LIT(hero_str_42b9daeb); t44 = h6_e.code; t45 = HERO_STR_LIT(hero_str_1dce); t46 = h6_e.msg; hero_print_str(t43); hero_print_str(t44); hero_print_str(t45); hero_print_str(t46); hero_print_end(); goto bb6; bb9:
 #line 43
     t56 = h7_f1; t57 = t56.as.ok; hero_print_str(t47); hero_print_str(t57); hero_print_end();
-#line 278 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 281 "fixedbugs245apathholdinganulnamesnofile.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_path);
     h_0opt_f87774a_release(hero_slot_escape(&h2_s0));
@@ -297,29 +300,29 @@ bb3:
 bb10:
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t54 = h7_f1; t55 = t54.as.err;
-#line 301 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 304 "fixedbugs245apathholdinganulnamesnofile.c"
     hero_panic_must_at(t55, "fixedbugs-245-a-path-holding-a-nul-names-no-file.hero", "fixedbugs-245-a-path-holding-a-nul-names-no-file.main", 43, 33);
     hero_unreachable();
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 308 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 311 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 313 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 316 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 318 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 321 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 323 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 326 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 166 "<heroes library>"
@@ -347,7 +350,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 181
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 351 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 354 "fixedbugs245apathholdinganulnamesnofile.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -382,7 +385,7 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 190
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 386 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 389 "fixedbugs245apathholdinganulnamesnofile.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

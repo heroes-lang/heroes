@@ -53,10 +53,12 @@ use cli/libraries
 use cli/opening
 use cli/process
 use cli/publish
+use cli/region_level
 use cli/response_file
 use cli/served
 use cli/strings
 use cli/toolchain
+use cli/unit_verdict
 use source
 
 # How a refused unit's message names the C clang refused, on its last line.
@@ -146,11 +148,17 @@ function components(s: source.Source) -> [str]
 # answers, one per opening and words. Where clang gives none nothing is
 # served warm, and the compile says what a cold build says.
 function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, pkgconfig_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}, @opened: {str: str}, @told: {str: bool}) -> str?
-    words = compiling.unit_words(
-        compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, pkgconfig_flags: pkgconfig_flags, runtime: t.runtime, source_dir: source_dir)
+    under = compiling.Compiling(
+        level: level,
+        sanitize: sanitize,
+        search_include: search_include,
+        pkgconfig_flags: pkgconfig_flags,
+        runtime: t.runtime,
+        source_dir: source_dir
     )
+    words = compiling.unit_words(under)
     named = digest.digest(
-        t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words) + front_check.key_text(tu_text)
+        t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words) + front_check.key_text(tu_text) + region_level.key_text(tu_text: tu_text, under: under)
     )
     head = opening.kept_of(build: t.build, named: named, text: tu_text)
     reach = compiling.unit_reach(build: t.build, words: words, head: head, memo: @memo, opened: @opened)
@@ -226,26 +234,21 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     compiled = toolchain.asked_of_clang(line: line, what: "compiling the generated C", err_path: err_path)
     publish.discard(err_path)
 
-    # A unit holding the value region is read once more by the front end under
-    # C's own meaning of a signed shift, its verdict counting only where every
-    # error it adds to the compile's is the region's (`cli/front_check.hero`,
-    # panel 224).
-    if front_check.holds(tu_text)
-        fronted = front_check.refused(
-            line: unit_line,
-            c_file: c_file,
-            tu_text: tu_text,
-            err_path: err_path,
-            compiled: failure_text(compiled)
-        )
-        publish.discard(err_path)
+    # **Its verdict, from every compile that judges it** (`cli/unit_verdict.hero`,
+    # panels 224 and 245), asked of a cold compile alone: the object below is
+    # published only where every judge passed it, so a warm hit is the verdict.
+    verdict = unit_verdict.of(
+        t,
+        under: under,
+        line: unit_line,
+        c_file: c_file,
+        tu_text: tu_text,
+        dir: dir,
+        err_path: err_path,
+        compiled: compiled
+    )
 
-        if fronted.is_err()
-            publish.discard(staged)
-            publish.discard(depfile)
-            return fail(code: failure_code(fronted), msg: failure_note(fronted) + "\n" + GENERATED + c_file)
-
-    if compiled.is_err()
+    if verdict.is_err()
         publish.discard(staged)
         publish.discard(depfile)
 
@@ -255,7 +258,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # path on screen — printing the path here unconditionally sent
         # `build/tu-…` into diagnostics the surface rows pin as
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
-        return fail(code: said_code(compiled), msg: failure_text(compiled) + "\n" + GENERATED + c_file)
+        return fail(code: failure_code(verdict), msg: failure_note(verdict) + "\n" + GENERATED + c_file)
     said: str @= ""
 
     if strings.trimmed(compiled.must()).len() > 0
@@ -329,13 +332,6 @@ function failure_text(failed: str?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
-
-# The same code of a run that handed back what clang said
-# (`toolchain.asked_of_clang`).
-function said_code(failed: str?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.code
 
 ## Tests
 

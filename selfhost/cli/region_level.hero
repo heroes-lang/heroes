@@ -1,0 +1,172 @@
+# A group's header's own code judged at `-O0`, whatever the build's level
+# (design.md §4.19, §1.12; panel 245's R1, its ruling on the level,
+# provisional, author ratification pending).
+#
+# **Clang says some warnings only where the code it generates still makes
+# the call**: a header's `warning`-marked `static inline` function called
+# from a door is told at `-O0` and, inlined away, not at `-O2`. Since panel
+# 245's R1 every warning in a header's code is an error
+# (`header_region.LINE_WORDS`), so the same program was refused by `heroes
+# build` and built by `heroes run`, two verdicts for one program, measured by
+# the sitting (the ffi-pragmatist's `attr_warning` shape). So a unit holding
+# the groups' region and compiled at another level is compiled once more at
+# `-O0`, with the unit's own words but the level's, into an object thrown
+# away after, and its refusal is the unit's (`cli/unit_verdict.hero`): the
+# verdict at every level is `-O0`'s and the level's together. It generates
+# only what the unit generates, never every declaration, so a header's
+# `static inline` function nobody calls is judged by no build, as at `-O0`
+# itself. What it costs, measured by the sitting in instructions retired: one
+# more compile of such a unit on a cold build above `-O0`, +24 % to +95 % of
+# that unit's own compile over three units; nothing warm and nothing at `-O0`.
+#
+# **A refusal there says so** (the sitting's owed item): compiled at `-O2`,
+# the header draws no word from clang, so the refusal alone read as one the
+# build's own compile made. `judged` ends its refusal with one line of its
+# own, `JUDGED` and the build's level, after clang's words and before the
+# generated C's path, and `noted` gives every diagnostic told from it the note
+# that the `-O0` compile is what refused it.
+
+use cli/compiling
+use cli/libraries
+use cli/publish
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use diag
+use emit/macro_guard
+use token
+
+# The level every header's code is judged at.
+constant LEVEL: str
+    "-O0"
+
+# The line a refusal of the `-O0` compile ends with, the build's level after
+# it: no line of clang's begins so, each opening with a file, a space or a
+# line number.
+constant JUDGED: str
+    "heroes: a group's header's code judged at -O0, for a build at "
+
+# Whether a unit compiled at `level` owes the second compile: its text holds
+# the groups' region, and its level is not `-O0` already.
+function owed(tu_text: str, level: str) -> bool
+    return level != LEVEL && strings.holds(text: tu_text, needle: macro_guard.OPEN_LINE)
+
+# `under` at `-O0`, every other word as it is.
+function at_zero(under: compiling.Compiling) -> compiling.Compiling
+    return compiling.Compiling(
+        level: LEVEL,
+        sanitize: under.sanitize,
+        search_include: under.search_include,
+        pkgconfig_flags: under.pkgconfig_flags,
+        runtime: under.runtime,
+        source_dir: under.source_dir
+    )
+
+# What a unit's key names of the second compile, as `front_check.key_text`
+# names the front end's: its words where it is owed, nothing elsewhere, so
+# no other unit's key moves. Unnamed, a warm object a compiler without this
+# compile had kept was served at `-O2` and the refusal never asked (measured
+# 2026-11-11 on the sitting's `attr_warning` shape: built at exit 0).
+function key_text(tu_text: str, under: compiling.Compiling) -> str
+    if !owed(tu_text: tu_text, level: under.level)
+        return ""
+    return "|level-zero:" + libraries.key_text(compiling.unit_words(at_zero(under)))
+
+# The unit at `c_file` compiled at `-O0` under the words `under` gives at
+# that level, its object discarded: what clang said where it compiled, its
+# refusal as `toolchain.asked_of_clang` hands one back where it did not, and
+# nothing asked where the unit owes no such compile.
+function judged(t: toolchain.Toolchain, tu_text: str, c_file: str, dir: str, under: compiling.Compiling) -> str?
+    if !owed(tu_text: tu_text, level: under.level)
+        return ok("")
+    zero = at_zero(under)
+    object = publish.private_name(dir + "/level-zero.o")
+    err_path = publish.private_name(dir + "/level-zero-stderr.txt")
+    line: [str] @= response_file.carried(
+        line: strings.with_all(list: ["clang"], more: compiling.unit_words(zero)),
+        dir: t.build + "/words"
+    )
+    line @ strings.with_all(list: line, more: ["-c", "-fno-crash-diagnostics", c_file, "-o", object])
+    said = toolchain.asked_of_clang(line: line, what: "compiling the generated C at -O0", err_path: err_path)
+    publish.discard(err_path)
+    publish.discard(object)
+
+    return match said
+        .ok    => said
+        .err e => fail(code: e.code, msg: e.msg + "\n" + JUDGED + under.level)
+
+# `told`, each with the note that the `-O0` compile refused it where
+# `message`, the refusal they were told from, has a line `judged` ended it
+# with; as it is elsewhere.
+function noted(told: [diag.Diagnostic], message: str) -> [diag.Diagnostic]
+    level = level_of(message)
+
+    if level == ""
+        return told
+    out: [diag.Diagnostic] @= []
+
+    for d in told
+        one: diag.Diagnostic @= d
+        one.notes @ one.notes.push(
+            "this build compiles at `" + level + "`, and a group's header's own code is compiled once more at `-O0`, where clang says what an optimised build can leave unsaid, a call to a function the header marks `warning` first among them: that compile is what refused it, so the program has one verdict at every level"
+        )
+        out @ out.push(one)
+
+    return out
+
+# The build's level a line of `message` beginning with `JUDGED` names, ""
+# where none does. Cut at each `\n` byte alone, as `units.generated_at`
+# reads its line: clang's words may quote a header's bytes that are not
+# UTF-8 (defect 337).
+function level_of(message: str) -> str
+    start: i64 @= 0
+
+    while start <= message.len()
+        stop: i64 @= start
+
+        while stop < message.len() && message[stop] != '\n'
+            stop @ stop + 1
+
+        row = message.slice(from: start, to: stop)
+
+        if strings.starts_with(text: row, prefix: JUDGED)
+            return row.slice(from: JUDGED.len(), to: row.len())
+        start @ stop + 1
+
+    return ""
+
+## Tests
+
+test "a unit holding the groups' region owes the -O0 compile above -O0 alone"
+    region = "int a;\n" + macro_guard.OPEN_LINE + "\nint b;\n"
+    assert owed(tu_text: region, level: "-O2")
+    assert !owed(tu_text: region, level: "-O0")
+    assert !owed(tu_text: "int a;\n", level: "-O2")
+
+    # Its key names the -O0 words where it is owed, and nothing elsewhere.
+    two = compiling.Compiling(
+        level: "-O2",
+        sanitize: false,
+        search_include: [],
+        pkgconfig_flags: [],
+        runtime: "rt",
+        source_dir: ""
+    )
+    assert strings.holds(text: key_text(tu_text: region, under: two), needle: "-O0")
+    assert key_text(tu_text: "int a;\n", under: two) == ""
+    assert key_text(tu_text: region, under: at_zero(two)) == ""
+
+# The `-O0` compile's refusal ends with its own line, read back as the
+# build's level, and only a line that begins with it counts: clang's words
+# quoting it inside a line are no such line (panel 245's R1, its owed note).
+test "a refusal of the -O0 compile is told as that compile's, and no other is"
+    said = "own.h:2:12: error: call to 'warned' declared with 'warning' attribute [-Werror,-Wattribute-warning]\n" + JUDGED + "-O2\nthe generated C is at build/tu-x/main.c"
+    assert level_of(said) == "-O2"
+    assert level_of("own.h:2:12: error: x\n    2 | // " + JUDGED + "-O2\n") == ""
+    assert level_of("") == ""
+    d = diag.new_diagnostic(code: "ffi_header_refused", message: "m", span: token.Span(start: 0, end: 1))
+    told = noted([d], message: said)
+    assert told.len() == 1
+    assert told[0].notes.len() == 1
+    assert strings.holds(text: told[0].notes[0], needle: "this build compiles at `-O2`")
+    assert noted([d], message: "own.h:2:12: error: x")[0].notes.len() == 0

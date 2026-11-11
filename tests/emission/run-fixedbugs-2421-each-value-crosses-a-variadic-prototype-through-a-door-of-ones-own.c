@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -68,11 +71,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 17 "tests/golden/run/fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero"
 _Static_assert(__builtin_classify_type(((Pair *)0)->a) == 1 && sizeof(((Pair *)0)->a) == sizeof(int32_t) && (_Generic(((Pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((Pair *)0)->b) == 1 && sizeof(((Pair *)0)->b) == sizeof(int32_t) && (_Generic(((Pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 72 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
+#line 75 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
 
 #line 16 "tests/golden/run/fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero"
 _Static_assert(__builtin_classify_type(*(Pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 76 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
+#line 79 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -173,7 +176,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 177 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
+#line 180 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown_0Pair_eq(const Pair *a, const Pair *b);
@@ -200,7 +203,7 @@ void h_fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown_main
     t7 = INT64_C(1); t8 = INT64_C(1); t9 = INT64_C(2); t10 = (Pair){.a = t8, .b = t9}; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero", "fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.main", 28, 11}; t11 = slot_pair_of(t7, t10); } hero_print_int(t11); hero_print_end();
     t12 = INT64_C(1); t13 = HERO_STR_LIT(hero_str_2f372e9c); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero", "fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.main", 29, 39}; t14 = hero_str_lend_at(t13, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero", "fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.main", 29, 11}; t15 = slot_length_of(t12, hero_cstr_nonnull_at(t14, &hero_here)); } hero_print_int(t15); hero_print_end();
     t16 = INT64_C(1); t17 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.hero", "fixedbugs-2421-each-value-crosses-a-variadic-prototype-through-a-door-of-ones-own.main", 30, 11}; t18 = slot_pointer_of(t16, t17); } hero_print_int(t18); hero_print_end(); return;
-#line 204 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
+#line 207 "fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2421eachvaluecrossesavariadicprototypethroughadoorofonesown_0Pair_eq(const Pair *a, const Pair *b) {
     if (!(a->a == b->a)) return false;

@@ -48,7 +48,7 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has fourteen members
+is exit 1 with a diagnostic on the `.hero` line, and it has fifteen members
 (panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
 defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
 blamed moves, the line between accepted and refused does not; the seventh,
@@ -57,7 +57,8 @@ R3, the same day; the eleventh by panel 208, ratified 2026-10-10, its R2,
 which counted it the seventh on the trunk's list of that hour; the twelfth
 by defects 591 and 592, 2026-10-11, with no sitting, on defect 360's
 precedent; the thirteenth by panel 239's R1, 2026-11-09, and the fourteenth by
-its R4, the same day, both ratified 2026-11-09):
+its R4, the same day, both ratified 2026-11-09; the fifteenth by panel 245's R3,
+2026-11-11, provisional, author ratification pending):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -114,7 +115,21 @@ its R4, the same day, both ratified 2026-11-09):
   `ffi_header_refused` at exit 1 on the group's string with clang's located
   words, narrowed by the include stack as `ffi_missing_header` is; until then
   it was *internal error: compiling the generated C failed* at exit 2, the
-  author's header blamed on the compiler.
+  author's header blamed on the compiler. **Widened 2026-11-11 by panel 245's
+  R1** (provisional, author ratification pending; defects 2464 and 2469),
+  moving the line between accepted and refused on robustness's rank: in a
+  header's own code every warning clang gives is an error
+  (`header_region.LINE_WORDS`) but `-Wall`'s, sign conversions and
+  deprecations, passed over, and a `#warning` or a `#pragma message`, told and
+  never refused, so a door's `1 << 40`, a `strncat` sized wrong or a call a
+  header marks `warning` is refused where it built at exit 0 with clang's raw
+  words; an order trial tells no order the unit refuses
+  (`cli/order_search.hero`'s `sees`, a generating trial where the syntax pass
+  compiles the written order); and a unit above `-O0` holding the region is
+  compiled once more at `-O0`, its refusal this member's and its note saying
+  that compile made it (`cli/region_level.hero`, `cli/unit_verdict.hero`). And
+  by its R2, a door handing on its format alone, `printf(f)`, is this member,
+  `-Wformat-security` kept with `-Wformat` in the region.
 - **two headers that each compile alone, refused together** in one unit:
   added 2026-10-10 (panel 202; defects 538, 550, 557 and 561, repaired in
   batch 18). Told `ffi_header_refused` on the group whose header sorts first,
@@ -223,6 +238,33 @@ its R4, the same day, both ratified 2026-11-09):
   program's own `pt.h` standing in for the package `pt`'s told as two
   layouts in its place, and a program's own header that changes a package's
   record is still this member (both in `unsupported/`).
+- **a name a library the program names supplies whose header and library come
+  one from a folder the build names and one from none**: added 2026-11-11
+  (panel 245's R3, provisional, author ratification pending; defect 2448).
+  Told `ffi_unpaired_release` on the binding the name is reached from, one
+  refusal per library, the header clang read and the library file the link
+  took both named (`cli/supplied_paired.hero`, `cli/supplied_paired_words.hero`),
+  judged from the link's own answer of the thirteenth member, the names a
+  door's body reaches included; a header's named folders are panel 237's,
+  a library's `--library`, a package's `-L` and `LIBRARY_PATH` from clang's
+  link job, a folder clang's job adds itself the platform's where no other of
+  its folders holds a second release (`supplied_names.tied`). It moves the
+  line between accepted and refused on robustness's rank: curl 8.23.0's
+  header beside the SDK's 8.7.1 library printed both at exit 0 under `CPATH`
+  (batch 31's base), and readline's record read back `0` for `42` and
+  overflowed the heap under `--sanitize` (the sitting). A name only the
+  program's own folder declares is not judged; two halves each named by
+  unrelated words build, a residue the sitting measured and left open.
+
+**A variadic is bound only through a door since panel 245's R2** (provisional,
+author ratification pending; defects 2465 and 2470), beside panel 243's R1, which
+refuses every parameter past a header's `...`: a binding that names a variadic
+with nothing past its `...` is refused `ffi_call_shape` at the binding, asked in
+the check unit by clang's own `"variadic": true` (`emit/ffi_bare_variadic.hero`),
+since the callee reads past it by a value only the run gives (`open` with
+`O_CREAT`, `sqlite3_mprintf`, `ioctl`, each built at exit 0 and reading what the
+machine held until then). Every refusal past `...` cites spec § 13 only for what
+§ 13 holds, and C11 6.5.2.2p7 and 7.16.1.1p2 for what C does there.
 
 **Since panel 214 (2026-10-14, provisional, author ratification pending) whose
 a refused header is, where no reader names it, is decided by a clang run and
