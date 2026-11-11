@@ -1,0 +1,6 @@
+# A module naming `fixedbugs2444/far`, which the file using it does not (defect 2444).
+use fixedbugs2444/far
+
+# A value of `far`'s.
+function made() -> i64
+    return far.Tool()

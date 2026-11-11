@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-2444-a-used-modules-function-or-constant-where-a-type-stands-is-told-what-it-is.hero:14:17: error[not_a_type]: `Maker` is a function of module `fixedbugs2444/geom`, not a type
+tests/golden/check/fixedbugs-2444-a-used-modules-function-or-constant-where-a-type-stands-is-told-what-it-is.hero:18:18: error[not_a_type]: `Limit` is a constant of module `fixedbugs2444/geom`, not a type
+tests/golden/check/fixedbugs-2444-a-used-modules-function-or-constant-where-a-type-stands-is-told-what-it-is.hero:22:19: error[not_a_type]: `abs` is an extern function of module `fixedbugs2444/geom`, not a type
+tests/golden/check/fixedbugs-2444-a-used-modules-function-or-constant-where-a-type-stands-is-told-what-it-is.hero:26:18: error[not_a_type]: `Tool` is a function of module `fixedbugs2444/far`, not a type

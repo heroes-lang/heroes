@@ -1,3 +1,3 @@
-tests/golden/check/fixedbugs-2430-a-type-two-used-modules-declare-is-told-as-a-guess.hero:14:17: error[needs_qualifying]: `Spot` is declared in module `fixedbugs2430/geom`, and a name from another module is always written qualified — `geom.Spot`
-tests/golden/check/fixedbugs-2430-a-type-two-used-modules-declare-is-told-as-a-guess.hero:18:21: error[needs_qualifying]: `Tile` is declared in module `fixedbugs2430/far`, which this file does not name — add `use fixedbugs2430/far` at the top and write `far.Tile`
-tests/golden/check/fixedbugs-2430-a-type-two-used-modules-declare-is-told-as-a-guess.hero:22:18: error[unknown_type]: no type named `Maker`
+tests/golden/check/fixedbugs-2430-a-type-two-used-modules-declare-is-told-as-a-guess.hero:16:17: error[needs_qualifying]: `Spot` is declared in module `fixedbugs2430/geom`, and a name from another module is always written qualified — `geom.Spot`
+tests/golden/check/fixedbugs-2430-a-type-two-used-modules-declare-is-told-as-a-guess.hero:20:21: error[needs_qualifying]: `Tile` is declared in module `fixedbugs2430/far`, which this file does not name — add `use fixedbugs2430/far` at the top and write `far.Tile`
+tests/golden/check/fixedbugs-2430-a-type-two-used-modules-declare-is-told-as-a-guess.hero:24:18: error[not_a_type]: `Maker` is a function of module `fixedbugs2430/geom`, not a type

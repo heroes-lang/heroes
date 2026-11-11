@@ -1,0 +1,5 @@
+# A module only `fixedbugs2444/mid` names (defect 2444).
+
+# A function named as a type is.
+function Tool() -> i64
+    return 4

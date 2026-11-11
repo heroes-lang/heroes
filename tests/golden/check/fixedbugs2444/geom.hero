@@ -1,0 +1,22 @@
+# The module whose functions and constant `fixedbugs-2444-*` write where a
+# type stands (defect 2444).
+
+# A point, the one type here.
+record Spot
+    x: i64
+
+# A function named as a type is.
+function Maker() -> i64
+    return 1
+
+# A constant named as a type is.
+constant Limit: i64
+    3
+
+# A C function named as a type is.
+extern "stdlib.h"
+    function abs(n: i32) -> i32
+
+# The C function, for the program to call.
+function absolute(n: i32) -> i32
+    return abs(n: n)
