@@ -1,0 +1,62 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2474-a-place-through-a-link-into-a-placed-tree-is-refused.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes build <work>/app/main.hero --emit-c -o <work>/lnk/out.c
+exit 2
+stdout:
+stderr:
+error: `-o <work>/lnk/out.c` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/out.c`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes build <work>/app/main.hero --emit-c -o <work>/lnk2/out.c
+exit 2
+stdout:
+stderr:
+error: `-o <work>/lnk2/out.c` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/out.c`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes build <work>/app/main.hero --emit-c -o <work>/dang
+exit 2
+stdout:
+stderr:
+error: `-o <work>/dang` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-690a75c6ede77ed7/new.c`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes build <work>/app/main.hero --emit-c -o <work>/treelnk/../out.c
+exit 2
+stdout:
+stderr:
+error: `-o <work>/treelnk/../out.c` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/out.c`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes build <work>/app/main.hero -o <work>/treelnk/app
+exit 2
+stdout:
+stderr:
+error: `-o <work>/treelnk/app` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-690a75c6ede77ed7/app`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes new mine -C <work>/treelnk
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `-C <work>/treelnk` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-690a75c6ede77ed7/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2474-a-place-through-a-link-into-a-placed-tree-is-refused.case/idx -C <work>/lnk
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `-C <work>/lnk` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes fetch -C <work>/treelnk
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `-C <work>/treelnk` names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-690a75c6ede77ed7/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: name a place outside it; nothing was written
+$ heroes build <work>/app/main.hero --emit-c -o <work>/lnk/../out.c
+exit 0
+stdout:
+stderr:
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2474-a-place-through-a-link-into-a-placed-tree-is-refused.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-5e8071f88bf13e425708618c8a81e6caaf041ac1faf04e3b5bc94cdbf855f30b"
+heroes.packages:
+json@1.4.2-690a75c6ede77ed7

@@ -1,0 +1,11 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2474-a-place-through-a-link-into-a-placed-tree-is-refused.case/idx -C <work>/app
+build <work>/app/main.hero --emit-c -o <work>/lnk/out.c
+build <work>/app/main.hero --emit-c -o <work>/lnk2/out.c
+build <work>/app/main.hero --emit-c -o <work>/dang
+build <work>/app/main.hero --emit-c -o <work>/treelnk/../out.c
+build <work>/app/main.hero -o <work>/treelnk/app
+new mine -C <work>/treelnk
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2474-a-place-through-a-link-into-a-placed-tree-is-refused.case/idx -C <work>/lnk
+fetch -C <work>/treelnk
+build <work>/app/main.hero --emit-c -o <work>/lnk/../out.c
+check <work>/app/main.hero

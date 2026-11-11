@@ -1,0 +1,49 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2478-a-placed-tree-named-to-check-apply-in-place-is-refused.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes check <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de --apply --in-place
+exit 2
+stdout:
+stderr:
+error: cannot write under <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de: it names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; a package's fix is written where its source is; nothing was checked and nothing written
+$ heroes check <work>/treelnk --apply --in-place
+exit 2
+stdout:
+stderr:
+error: cannot write under <work>/treelnk: it names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; a package's fix is written where its source is; nothing was checked and nothing written
+$ heroes check <work>/app/heroes.packages --apply --in-place
+exit 2
+stdout:
+stderr:
+error: cannot write under <work>/app/heroes.packages: it names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a fix written there refuses the program; a package's fix is written where its source is; nothing was checked and nothing written
+$ heroes check <work>/app --apply --in-place
+exit 0
+stdout:
+stderr:
+note: <work>/app holds no root outside every hidden folder, every `build/` and every placed package's tree, which are a tool's and not the author's: <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de/main.hero declares `function main` there, left as it stands, so nothing was checked and nothing written
+$ heroes check <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de/main.hero
+exit 1
+stdout:
+stderr:
+error[wrong_label]: `twice` has nothing called `n` at this position — it is `x`
+  at <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de/main.hero:5:17
+    |
+  5 |     print(twice(n: 7))
+    |                 ^
+  fix (certain): write `x:`
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+kept json 1.4.2 <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2478-a-placed-tree-named-to-check-apply-in-place-is-refused.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-c987ff8c34b84be9e0734ec46cefd893ca875988c7d0eeadf68a62d9d90d80c7"
+heroes.packages:
+json@1.4.2-942c6b0bb96d81de

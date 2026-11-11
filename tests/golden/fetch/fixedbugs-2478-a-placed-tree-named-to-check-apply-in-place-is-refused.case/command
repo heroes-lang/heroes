@@ -1,0 +1,7 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2478-a-placed-tree-named-to-check-apply-in-place-is-refused.case/idx -C <work>/app
+check <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de --apply --in-place
+check <work>/treelnk --apply --in-place
+check <work>/app/heroes.packages --apply --in-place
+check <work>/app --apply --in-place
+check <work>/app/heroes.packages/json@1.4.2-942c6b0bb96d81de/main.hero
+fetch -C <work>/app

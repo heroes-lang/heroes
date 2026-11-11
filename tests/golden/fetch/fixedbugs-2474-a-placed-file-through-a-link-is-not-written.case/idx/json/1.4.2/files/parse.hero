@@ -1,0 +1,8 @@
+# The module of the package the case beside it adds, `<json>/parse`. Its
+# call writes a label `twice` does not have, so `check --apply` has a certain
+# fix to write, and the next `check` of the program shows it unwritten.
+function value() -> i64
+    return twice(n: 7)
+
+function twice(x: i64) -> i64
+    return x * 2

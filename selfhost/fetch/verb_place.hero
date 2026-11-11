@@ -1,6 +1,8 @@
 # What `heroes add` and `heroes fetch` share (panel 235's R11, ratified
 # 2026-11-07): the program's folder, `-C <folder>` or the current one; the
-# version an index lists that `add` picks; and the readers of a failure. The
+# version an index lists that `add` picks; and the readers of a failure. A
+# program's folder in a placed package's tree, named or the current one, is
+# refused (defects 2462 and 2479). The
 # `heroes.packages/` folder a run made and left empty is taken away by the
 # run's ledger (`fetch/staging.hero`, defect 2434), which knows whether the
 # run made it: until then any empty one went, an author's own included.
@@ -14,9 +16,18 @@ use module/sums
 
 # The program's folder as a prefix of its files' paths: "" for the current
 # folder, else `-C`'s folder with a `/` after it; refused where `-C` names no
-# folder, or one under `heroes.packages/`.
+# folder, where it names one under `heroes.packages/`, and where no `-C` is
+# given and the current folder stands there (defect 2479).
 function program_of(inv: argv.Invocation) -> str?
     folder = argv.value_of(inv, spelling: "-C")
+
+    # No `-C`: the program's folder is the one this command runs in, held to
+    # the same question (defect 2479).
+    if folder.is_err() && placed_files.folder_within(".")
+        return fail(
+            code: "bad_usage",
+            msg: placed_files.here_refused(writes: "the program's folder, the one this command runs in with no `-C`,", place: "./", instead: "run it from a folder outside them, or name one with `-C`")
+        )
 
     if folder.is_err()
         return ok("")
@@ -27,7 +38,7 @@ function program_of(inv: argv.Invocation) -> str?
     # A placed package's tree is written by no verb (defect 2462): a
     # catalogue, a program or a placed tree made there moves its sum.
     if placed_files.folder_within(folder.must())
-        return fail(code: "bad_usage", msg: placed_files.named_refused(flag: "-C", place: folder.must()))
+        return fail(code: "bad_usage", msg: placed_files.folder_refused(flag: "-C", folder: folder.must()))
 
     if folder.must()[folder.must().len() - 1] == '/'
         return ok(folder.must())

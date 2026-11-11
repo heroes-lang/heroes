@@ -26,20 +26,18 @@ use cli/agreed_writes
 use cli/argv
 use cli/certain
 use cli/check
+use cli/dir_roots
 use cli/io
 use cli/placed_files
-use cli/process
 use cli/publish
 use cli/strings
 use cli/table as cli_table
 use diag
-use lexer
 use library_source
 use module/reading
 use modules
 use source
 use source_extent
-use token
 
 # One file as one root read it: its text then, and what that root's certain
 # fixes make of it.
@@ -56,7 +54,14 @@ function run(dir: str, inv: argv.Invocation) -> cli_table.Exit
         io.eprint(text: "error: " + asked)
         return .failed_exit
     base = without_slash(dir)
-    found = roots_under(base)
+
+    # A directory in a placed package's tree, or `heroes.packages/` itself,
+    # is refused as a placed file named alone is (defect 2478): every fix
+    # written under it lands in a tree the build holds to its `sum`.
+    if placed_files.folder_within(base)
+        io.eprint(text: "error: " + placed_files.directory_refused(base))
+        return .failed_exit
+    found = dir_roots.under(base)
 
     if found.is_err()
         io.eprint(text: "error: " + failure_of(found))
@@ -64,9 +69,7 @@ function run(dir: str, inv: argv.Invocation) -> cli_table.Exit
     roots = found.must()
 
     if roots.len() == 0
-        io.eprint(
-            text: "note: " + base + " holds no root, a `.hero` file declaring `function main`, so nothing was checked and nothing written"
-        )
+        io.eprint(text: "note: " + dir_roots.no_root(dir: base, passed: dir_roots.passed_over(base)))
         return .ok_exit
     edited: [source.InputFile] @= []
     first: [source.InputFile] @= []
@@ -148,50 +151,6 @@ function failure_of(got: [str]?) -> str
     return match got
         .ok _  => ""
         .err e => e.msg
-
-# Every root under `dir`, in order of name: a `.hero` file declaring
-# `function main`, outside every hidden directory, every `build/` and every
-# placed package's tree, which are a tool's and not the author's (`.git`, the
-# lanes of `.claude/worktrees`, `heroes.packages/`, defect 2457).
-# A root that is not text is one: it reads its modules all the same, and
-# `votes_of` has it leave them as they stand.
-function roots_under(dir: str) -> [str]?
-    out: [str] @= []
-
-    for path in process.files_under(dir)?.sort()
-        if !strings.ends_with(text: path, suffix: ".hero") || hidden(path.slice(from: dir.len() + 1, to: path.len())) || placed_files.within(path)
-            continue
-        text = reading.source_text(path)?
-
-        if declares_main(text.text)
-            out @ out.push(path)
-
-    return ok(out)
-
-function hidden(rest: str) -> bool
-    for part in agreed_writes.parts_of(rest)
-        if strings.starts_with(text: part, prefix: ".") || part == "build"
-            return true
-
-    return false
-
-# Whether `text` declares `function main` at its margin, read off the tokens
-# as discovery reads its `use` lines (`module/paths.hero`).
-function declares_main(text: str) -> bool
-    tokens = lexer.lex_one(text).tokens
-    at: i64 @= 0
-
-    while at + 1 < tokens.len()
-        start = tokens[at].span.start
-
-        if tokens[at].kind == .kw_function && (start == 0 || text[start - 1] == '\n') && word(tokens[at + 1], text: text) == "main"
-            return true
-        at @ at + 1
-
-    return false
-
-function word(t: token.Token, text: str) -> str
-    return text.slice(from: t.span.start, to: t.span.end)
 
 # One round: every root read as `edited` holds the program, and each file it
 # reads with the text its certain fixes make of it. A root that is not text
@@ -357,21 +316,13 @@ test "a file is written only where every root that reads it makes one text of it
     assert disputes(split).len() == 1
     assert disputes(agree).len() == 0
 
-test "a root is a file declaring function main at its margin"
-    assert declares_main("use geom\n\nfunction main()\n    print(1)\n")
-    assert !declares_main("function two() -> i64\n    return 2\n")
-    assert !declares_main("# function main\nfunction mains()\n    return\n")
-    assert hidden(".claude/worktrees/x/a.hero")
-    assert hidden("tests/build/a.hero")
-    assert !hidden("tests/golden/a.hero")
-
 # A root that is not text is a root, and it leaves the module it reads as it
 # stands, so the fix the root beside it computes is not agreed. Read from the
 # tracked fixture, never written: a copy through a file of text could not
 # carry the byte that makes `b.hero` no text.
 test "a root that is not text votes for every module it reads as it stands"
     dir = "tests/golden/surface-fixtures/tree607/notext"
-    roots = roots_under(dir).must()
+    roots = dir_roots.under(dir).must()
     assert roots == [dir + "/a.hero", dir + "/b.hero"]
     none: [source.InputFile] = []
     votes = votes_of(roots, edited: none, inv: argv.bare(.check_cmd)).must()

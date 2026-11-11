@@ -10,7 +10,9 @@
 # pm-use's step 6 made a `check` case a folder (`cases.hero`). A case holds:
 #
 #     command        one `heroes` invocation a line, `<work>` standing for the
-#                    case's scratch folder, whose `app/` is the program's
+#                    case's scratch folder, whose `app/` is the program's;
+#                    `cd <folder> && <words>` starts that one in a folder of
+#                    the case (defect 2479)
 #     before.toml    the program's catalogue before the first command
 #     app/           the program's own files, copied into its folder: a
 #                    program reaching a package `heroes new` wrote
@@ -19,7 +21,20 @@
 #                    by the lines of `git/<name>.tags`
 #     idx/           a static index, read where it stands and never copied,
 #                    so its file that is not text needs no copy
+#     links          `<name> <target>` a line, a symbolic link made in the
+#                    case's scratch folder before its first command,
+#                    holding `<target>` as written (defect 2474)
 #     expected       the transcript, byte for byte
+#
+# **No link is ever made in the tree**: a case's links are made in its
+# scratch folder with `ln -s`, as `case_setting.hero` makes a folder case's,
+# and a case with links is skipped by name where `ln` is not the machine's,
+# Windows. **A command that starts in a folder of its own** is started by
+# `/usr/bin/env -C`, as `case_setting.hero` starts a folder case's compiler,
+# the compiler and `<work>` written whole, since a relative one would be read
+# from there; a case holding one is skipped by name on Windows, which has no
+# `/usr/bin/env`. Its line is the folder's own: the tree a command starts in
+# may be one the case's first `add` places.
 #
 # **No case reaches the network**: an index is a folder of this repository,
 # read over `file://`, and a git source a repository made on the fly; the
@@ -118,12 +133,33 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
     name = last_part(dir)
     work = scratch + "/fetch/" + name.slice(from: 0, to: name.len() - 5)
     label = "fetch/" + name
+
+    if links_of(dir).len() > 0 && shell.exe_suffix() == ".exe"
+        report.keep_skip(
+            @r,
+            label: label,
+            detail: "  the case makes a symbolic link with `ln -s` before its first command, and this platform has no `ln`"
+        )
+        return
+
+    if starts_elsewhere(dir) && shell.exe_suffix() == ".exe"
+        report.keep_skip(
+            @r,
+            label: label,
+            detail: "  the case starts a command in a folder of its own through `" + ENV + "`, and this platform has no `" + ENV + "`"
+        )
+        return
     made = made_work(scratch: scratch, dir: dir, work: work)
 
     if made.is_err()
         report.keep_failure(@r, label: label, detail: "  the case's folders could not be made: " + why(made))
         return
-    got = transcript(scratch: scratch, compiler: compiler, dir: dir, work: work)
+    linked = links_made(scratch: scratch, dir: dir, work: work)
+
+    if linked.is_err()
+        report.keep_failure(@r, label: label, detail: "  the case's links could not be made: " + why(linked))
+        return
+    got = transcript(scratch: scratch, compiler: compiler, dir: dir, work: work, root: root)
 
     if got.is_err()
         report.keep_failure(@r, label: label, detail: "  " + why_text(got))
@@ -170,6 +206,66 @@ function made_work(scratch: str, dir: str, work: str) -> ()?
             copied(from: source, to: at)?
             tags = read_file(source + ".tags").default("")
             committed(scratch: scratch, at: at, tags: lines_of(tags))?
+
+    return ok()
+
+# The one program that starts a command in a folder of its own: POSIX's
+# `env`, `-C` in GNU's and in this Mac's, as `case_setting.hero` names it.
+constant ENV: str
+    "/usr/bin/env"
+
+# The folder a command line starts in, `cd <folder> && <words>`, or "".
+function start_of(parts: [str]) -> str
+    if parts.len() > 3 && parts[0] == "cd" && parts[2] == "&&"
+        return parts[1]
+    return ""
+
+# Whether one of the case's commands starts in a folder of its own.
+function starts_elsewhere(dir: str) -> bool
+    for line in lines_of(read_file(dir + "/command").default(""))
+        if start_of(strings.split_on(text: line, byte: 32)).len() > 0
+            return true
+
+    return false
+
+# `path` written whole: as it is where it starts at the root, else from the
+# repository's root, a leading `./` dropped.
+function whole(root: str, path: str) -> str
+    if path.len() > 0 && path[0] == '/'
+        return path
+
+    if core_strings.has_prefix(s: path, prefix: "./")
+        return root + "/" + path.slice(from: 2, to: path.len())
+    return root + "/" + path
+
+# The case's `links` lines, blank ones left out.
+function links_of(dir: str) -> [str]
+    out: [str] @= []
+
+    for line in lines_of(read_file(dir + "/links").default(""))
+        if line.len() > 0
+            out @ out.push(line)
+
+    return out
+
+# Each link the case names made in its scratch folder, `ln -s <target>
+# <work>/<name>`, the target as written, so a relative one is read from the
+# link's own folder, as the kernel reads it; a line that is not two words
+# is refused with the case's file named.
+function links_made(scratch: str, dir: str, work: str) -> ()?
+    for line in links_of(dir)
+        parts = strings.split_on(text: line, byte: 32)
+
+        if parts.len() != 2
+            return fail(code: "links", msg: dir + "/links holds `" + line + "`, and a link is `<name> <target>`")
+        name = work + "/" + parts[0]
+        made = shell.run(scratch: scratch, program: "ln", words: ["ln", "-s", parts[1], name])?
+
+        if made.code != 0
+            return fail(
+                code: "links",
+                msg: "`ln -s " + parts[1] + " " + name + "` exited " + made.code.to_str() + ": " + made.err
+            )
 
     return ok()
 
@@ -227,17 +323,29 @@ function git(scratch: str, at: str, words: [str]) -> ()?
     return ok()
 
 # What the case's commands print, and what they leave.
-function transcript(scratch: str, compiler: str, dir: str, work: str) -> str?
+function transcript(scratch: str, compiler: str, dir: str, work: str, root: str) -> str?
     out: [str] @= []
 
     for line in lines_of(read_file(dir + "/command")?)
+        parts: [str] @= strings.split_on(text: line, byte: 32)
+        start = start_of(parts)
+        program: str @= compiler
         words: [str] @= [compiler]
+        put: str @= work
+        told: str @= "$ heroes " + line
 
-        for word in strings.split_on(text: line, byte: 32)
-            words @ words.push(swapped(text: word, old: "<work>", new: work))
+        if start.len() > 0
+            put @ whole(root: root, path: work)
+            program @ ENV
+            words @ [ENV, "-C", swapped(text: start, old: "<work>", new: put), whole(root: root, path: compiler)]
+            parts @ parts.slice(from: 3, to: parts.len())
+            told @ "$ cd " + start + " && heroes " + parts.join(" ")
 
-        ran = shell.attempted_given(scratch: scratch, program: compiler, words: words, given: identity())?
-        out @ out.push("$ heroes " + line + "\n")
+        for word in parts
+            words @ words.push(swapped(text: word, old: "<work>", new: put))
+
+        ran = shell.attempted_given(scratch: scratch, program: program, words: words, given: identity())?
+        out @ out.push(told + "\n")
         out @ out.push("exit " + ran.code.to_str() + "\n")
         out @ out.push("stdout:\n")
         out @ out.push(ran.out)
@@ -366,3 +474,27 @@ test "a path's last part and folder are asked of every byte, the first included 
     assert folder_of("..") == "."
     assert folder_of("file.tar.gz") == "."
     assert folder_of("tests/golden/fetch/file.tar.gz") == "tests/golden/fetch"
+
+test "a case's link is two words, and a line of another shape is refused before any link is made (defect 2474)"
+    dir = "build/selftest-fetch-links"
+    assert !shell.remove_tree(dir).is_err()
+    assert !shell.mkdir_all(dir).is_err()
+    assert links_of(dir).len() == 0
+    assert !write_file(path: dir + "/links", text: "alone\n\nlnk app/heroes.packages\n").is_err()
+    assert links_of(dir) == ["alone", "lnk app/heroes.packages"]
+
+    match links_made(scratch: dir, dir: dir, work: dir + "/work")
+        .ok _  => assert false
+        .err e => assert e.msg == dir + "/links holds `alone`, and a link is `<name> <target>`"
+
+    assert !shell.is_directory(dir + "/work")
+    assert !shell.remove_tree(dir).is_err()
+
+test "a command line may start in a folder of the case, every path then written whole (defect 2479)"
+    assert start_of(["cd", "<work>/app", "&&", "build", "x.hero"]) == "<work>/app"
+    assert start_of(["build", "x.hero"]) == ""
+    assert start_of(["cd", "<work>/app", "build", "x.hero"]) == ""
+    assert start_of(["cd", "<work>/app", "&&"]) == ""
+    assert whole(root: "/r", path: "./heroes-next") == "/r/heroes-next"
+    assert whole(root: "/r", path: "build/h-1/fetch/x") == "/r/build/h-1/fetch/x"
+    assert whole(root: "/r", path: "/abs/heroes") == "/abs/heroes"

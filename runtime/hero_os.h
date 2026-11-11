@@ -238,6 +238,12 @@ int64_t hero_fs_why(void);
  * finally names, which need not exist. "" when the chain cannot be followed. */
 HeroStr hero_fs_landing(const char *path);
 
+/* The place `path` names as the filesystem resolves it (defect 2474):
+ * absolute, every link on the way followed, the parts not there yet as
+ * written; read as the shown read reads a file, HERO_OS_FAILED and "" with
+ * `hero_fs_why` where it cannot be resolved. `parts/replace.c` says how. */
+HeroStr hero_fs_resolved_shown(const char *path, int64_t *status, int64_t *marks);
+
 /* What is at `path`, the link itself where it is one. */
 #define HERO_FS_UNKNOWN -1
 #define HERO_FS_ABSENT 0
