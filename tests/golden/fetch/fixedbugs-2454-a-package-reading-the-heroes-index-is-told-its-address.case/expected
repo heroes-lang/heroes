@@ -1,0 +1,9 @@
+$ heroes add a --index file://../../../../../tests/golden/fetch/fixedbugs-2454-a-package-reading-the-heroes-index-is-told-its-address.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[requirement_refused]: the catalogue of `a` reads `b` from the Heroes index, `https://index.heroes-lang.org`, which a catalogue holding no `index` line reads, and the program's catalogue from the index `file://../../../../../tests/golden/fetch/fixedbugs-2454-a-package-reading-the-heroes-index-is-told-its-address.case/idx`: a program reads one index, which its catalogue's `index` line names
+heroes.toml:
+(none)
+heroes.packages:
+(none)

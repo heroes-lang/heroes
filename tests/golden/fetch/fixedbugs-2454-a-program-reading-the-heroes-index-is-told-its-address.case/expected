@@ -1,0 +1,9 @@
+$ heroes add --path ../local/apath -C <work>/app
+exit 1
+stdout:
+stderr:
+error[requirement_refused]: the catalogue of `apath` reads `b` from the index `file://../idx`, and the program's catalogue from the Heroes index, `https://index.heroes-lang.org`, which a catalogue holding no `index` line reads: a program reads one index, which its catalogue's `index` line names
+heroes.toml:
+(none)
+heroes.packages:
+(none)

@@ -1,0 +1,3 @@
+# A package read from its folder whose catalogue names another index.
+function a() -> i64
+    return 1

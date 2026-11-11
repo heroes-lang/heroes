@@ -1,0 +1,1 @@
+add a --index file://../../../../../tests/golden/fetch/fixedbugs-2454-a-package-reading-the-heroes-index-is-told-its-address.case/idx -C <work>/app
