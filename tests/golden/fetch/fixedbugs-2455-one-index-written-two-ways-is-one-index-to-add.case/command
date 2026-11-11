@@ -1,0 +1,3 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2455-one-index-written-two-ways-is-one-index-to-add.case/idx -C <work>/app
+add text --index file://./../../../../../tests/golden/fetch/fixedbugs-2455-one-index-written-two-ways-is-one-index-to-add.case/idx -C <work>/app
+check <work>/app/main.hero

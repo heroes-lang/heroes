@@ -1,0 +1,29 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2455-one-index-written-two-ways-is-one-index-to-add.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.0.0
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add text --index file://./../../../../../tests/golden/fetch/fixedbugs-2455-one-index-written-two-ways-is-one-index-to-add.case/idx -C <work>/app
+exit 0
+stdout:
+added text 1.0.0
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2455-one-index-written-two-ways-is-one-index-to-add.case/idx"
+
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-8f0de25389cf095160e640da51373b45130af5e63bee0490da6418aab8be3114"
+
+[dependencies.text]
+version = "1.0.0"
+sum = "sha256-d828cabbbfd60db058550edc4f58b696b3663f0217c836cf026da4dad2be7405"
+heroes.packages:
+json@1.0.0-4fb18f6ec3c2a463
+text@1.0.0-24a2db06a6a88499

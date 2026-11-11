@@ -1,0 +1,5 @@
+use <json>/parse
+use <text>/words
+
+function main()
+    print((parse.value() + words.count()).to_str())

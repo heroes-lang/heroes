@@ -1,0 +1,9 @@
+# Defect 2455, 2026-11-11: the `index` line written `file://./../packages`,
+# its tree placed by a compiler before the repair under the key of that text
+# as written, `dbc622a107c4b890`, where the key is now taken over the index
+# in its one form. No line moved, so the build tells the same source keyed
+# again and `heroes fetch`, never a line to write back.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

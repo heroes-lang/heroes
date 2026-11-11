@@ -19,6 +19,9 @@
 # the disk, as every build holds a placed tree (R7). Three readings, the
 # first that one tree gives in this order:
 #
+#   - the tree under the key the source's own text named, an `index` line
+#     or a `git` address not in its one form, at the catalogue's `sum`: the
+#     same source, keyed so by a compiler before defect 2455 (`rekeyed`);
 #   - the same version or tag at the catalogue's `sum`: the source moved,
 #     the `index` line, or the `git` address or `commit`;
 #   - another version or tag at the catalogue's `sum`: the `version` or
@@ -77,6 +80,13 @@ function said(e: catalogue.Entry, program: catalogue.Catalogue, named: str, open
     stem = head.slice(from: 0, to: at_sign(head) + 1)
     trees = beside(opened: opened, stem: stem, taken: keys_of(program))
     where = named + PLACED + "/"
+    written = placed.written_key(e, index: index)
+
+    # The same source, keyed by the text an earlier compiler hashed (defect
+    # 2455): no line moved, so none is to be written back.
+    for one in trees
+        if one.sum == e.sum && one.name == written && written != key
+            return rekeyed(e, index: index, at: where + one.name + "/")
 
     for one in trees
         if one.sum == e.sum && strings.starts_with(text: one.name, prefix: head)
@@ -127,6 +137,16 @@ function moved_source(e: catalogue.Entry, index: str, at: str) -> str
     if e.version.len() > 0
         return "the package `" + e.name + "` " + e.version + " is in the catalogue and not placed for the source it names, " + index_said(index) + ", and a tree of it at the catalogue's `sum` is placed beside, at `" + at + "`, from another source: the catalogue's `index` line is not the one that tree was placed from; write that line back, and this tree is read"
     return "the package `" + e.name + "` at the tag `" + e.tag + "` is in the catalogue and not placed for `" + e.git + "` at the commit " + e.commit + ", and a tree of it at that tag and the catalogue's `sum` is placed beside, at `" + at + "`, from another source or commit: the catalogue's `git` or `commit` line is not the one that tree was placed from; write it back, and this tree is read"
+
+# The source stood, written as it is now, and an earlier compiler keyed its
+# tree by that text, where this one keys the source in its one form (defect
+# 2455, `placed.written_key`): `heroes fetch` places it under its key.
+function rekeyed(e: catalogue.Entry, index: str, at: str) -> str
+    source: str @= index_said(index)
+
+    if e.version.len() == 0
+        source @ "`" + e.git + "`"
+    return "the package `" + e.name + "` " + version_said(e) + " is in the catalogue and not placed under the key of its source, " + source + ", read in its one form, and a tree of it at the catalogue's `sum` is placed beside, at `" + at + "`, under the key the source's text as written named before it was read so (defect 2455): the same source, keyed again; `heroes fetch` places it under its key"
 
 # The version or the tag moved: the tree beside is the package at the
 # catalogue's `sum`, placed at `standing`, which is written back where the

@@ -1,0 +1,10 @@
+# Defect 2455, 2026-11-11, the case defect 2443 wrote on 2026-11-10, moved
+# here from `check/`: the `index` line written another way, `file://./` for
+# `file://`, keyed another tree than the one placed from the first spelling,
+# at the same version and sum, and the build was refused, told the tree
+# beside. The key is taken over the index in its one form now
+# (`placed.key`), so the line reads the tree placed from the first spelling.
+use <json>/parse
+
+function main()
+    print(parse.value())
