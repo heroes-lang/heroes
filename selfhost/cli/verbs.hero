@@ -33,9 +33,8 @@ use module/reading as file_reading
 use source
 
 function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
-    if argv.has(inv, spelling: "--dump-ir") && argv.has(inv, spelling: "--emit-c")
-        io.eprint(text: "error: `--dump-ir` and `--emit-c` are both stops — ask for one artifact at a time")
-        return .failed_exit
+    # The flags its stop cannot answer, the two stops together among them,
+    # were refused before the file was read (`cli/build_stops.hero`).
     level = compile.level_from(inv, default_level: "-O0")
 
     if level.is_err()

@@ -7,7 +7,7 @@
 # the same silence, measured on the base's compiler. `--json` with `--apply`
 # is answered now (`cli/apply_answer.hero`); each of the others is refused at
 # exit 2 with what was asked, as `build` refuses its two stops together
-# (`cli/verbs.hero`).
+# (`cli/build_stops.hero`).
 
 use cli/argv
 
