@@ -2848,7 +2848,12 @@ clang's own link job, an empty element naming the working folder. Otherwise the 
 `ffi_unpaired_release`, exit 1, one refusal per library on its first binding, both files named and
 a remedy measured to build (`cli/supplied_paired_words.hero`), never `pkgconfig` to a group that
 asks it already. A name only the program's own folder declares is the program's word and is not
-judged. **The tie**: a folder clang's link job adds on its own is the platform's whichever way the
+judged. **A `pkgconfig` group's pair is judged on the package's whole answer** (amended at the
+landing, 2026-11-11, defect 2480, recorded on decision 2475): `pkg-config` leaves out a folder it
+counts as the system's, so where the rule would refuse, the package is asked again with its system
+folders kept, and a pair whose library its answer names with `-l`, whose header's folder it names
+and a folder of whose library file it names, by path or by the file's bytes, is one release
+(`cli/supplied_halves.hero`); a `link` group is never asked. **The tie**: a folder clang's link job adds on its own is the platform's whichever way the
 line or `LIBRARY_PATH` also names it, but only where no other folder clang adds holds a file of that
 name with other bytes (`supplied_names.tied`), measured by the sitting on Linux arm64, where without
 it a paired zlib build was refused four ways, and as first worded a planted second release built and

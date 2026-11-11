@@ -255,6 +255,18 @@ its R4, the same day, both ratified 2026-11-09; the fifteenth by panel 245's R3,
   overflowed the heap under `--sanitize` (the sitting). A name only the
   program's own folder declares is not judged; two halves each named by
   unrelated words build, a residue the sitting measured and left open.
+  **Amended at the landing, 2026-11-11, by defect 2480** (batch 32, recorded
+  on decision 2475 for the author's reading): a `pkgconfig` group's pair is
+  judged on the package's whole answer, since `pkg-config` leaves out a
+  folder it counts as the system's and the pair was judged on half of it
+  (SDL3 under `/usr/local` refused on the CI's Linux legs, glib refused on
+  Debian). Where the member would refuse, the package is asked again with
+  its system folders kept (`PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1`,
+  `PKG_CONFIG_ALLOW_SYSTEM_LIBS=1`), and a pair whose library that answer
+  names with `-l`, whose header's folder it names and a folder of whose
+  library file it names, by path or by the file's bytes, is one release
+  (`cli/supplied_halves.hero`); a `link` group is never asked, and every
+  shape the member exists for is still refused (measured in Linux arm64).
 
 **A variadic is bound only through a door since panel 245's R2** (provisional,
 author ratification pending; defects 2465 and 2470), beside panel 243's R1, which
