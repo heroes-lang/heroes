@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `own.h` defines `f2467` as a macro that takes more arguments than the 2 this declaration gives it, and every call of it this program's C writes goes through the macro, which has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-2467-a-macro-taking-more-arguments-than-the-declaration-is-told-not-as-a-result.case/main.hero:8:5
+    |
+  8 |     function f2467(a: i32, b: i32) -> i32  #~ ffi_macro_name
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_f2467(<its parameters, in C>) { return f2467(<their names>); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_f2467` there like any function, and clang holds that declaration to your function (§ 13)

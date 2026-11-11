@@ -88,7 +88,7 @@ function diagnostic(s: source.Source, tree: ast.Ast, decls: [ast.Decl], bound: s
         if found.is_constant
             message @ head + ", a macro that expands only where it is called, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to"
         d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_macro_name", message: message, span: found.span)
-        d.notes @ d.notes.push(ffi_declared.macro_repair(s, tree, decls, name: bound))
+        d.notes @ d.notes.push(ffi_declared.macro_repair(s, tree, decls, name: bound, counted: true))
         return d
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_name",

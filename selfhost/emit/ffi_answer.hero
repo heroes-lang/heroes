@@ -10,7 +10,8 @@ use emit/ffi_lookup
 use emit/field_asked
 
 # clang's answer, read: a question's line is an answer, the rest was said again.
-# ORDER: none, the walk over `reached` fills a map, and nothing reads its order.
+# ORDER: none, the walks over `reached` and `results` fill maps, and nothing
+# reads their order.
 function read(stderr: str) -> ffi_asked.Asked
     said: [str] @= []
     values: {str: bool} @= {}
@@ -20,6 +21,7 @@ function read(stderr: str) -> ffi_asked.Asked
     results: {str: ffi_asked.Typed} @= {}
     fields: {str: ffi_asked.Typed} @= {}
     widths: {str: i64} @= {}
+    miscounted: {str: str} @= {}
 
     for row in ffi_lookup.lines(text: stderr)
         if !begins(text: row, prefix: ffi_asked.ASK)
@@ -28,9 +30,13 @@ function read(stderr: str) -> ffi_asked.Asked
 
         if begins(text: row, prefix: ffi_asked.RESULT)
             given = ffi_asked.typed_in(row)
+            count = macro_count(row)
 
             if !given.is_err()
                 results[asked_name(row: row, prefix: ffi_asked.RESULT)] @ given.must()
+
+            if !count.is_err()
+                miscounted[asked_name(row: row, prefix: ffi_asked.RESULT)] @ count.must()
 
         if begins(text: row, prefix: field_asked.FIELD) && !ffi_asked.typed_in(row).is_err()
             fields[asked_name(row: row, prefix: field_asked.FIELD)] @ ffi_asked.typed_in(row).must()
@@ -65,18 +71,41 @@ function read(stderr: str) -> ffi_asked.Asked
     for name in keys(reached)
         types[name] @ refused[name].default("type")
 
+    # The type clang names after a macro refused the call is the function's,
+    # read as the bare name it recovers to (`int (int, int)`), never a
+    # result's (defect 2467).
+    typed: {str: ffi_asked.Typed} @= {}
+
+    for name in keys(results)
+        if miscounted[name].is_err()
+            typed[name] @ results[name].must()
+
     return ffi_asked.Asked(
         said: said.join("\n"),
         values: values,
         macros: macros,
         types: types,
-        results: results,
+        results: typed,
         fields: fields,
         widths: widths,
         switched: {},
         reached: {},
-        nested: {}
+        nested: {},
+        miscounted: miscounted
     )
+
+# **What a result question says of a function-like macro handed another count
+# of arguments than it takes** (defect 2467): clang refuses the invocation,
+# *too few arguments provided to function-like macro invocation*, so the
+# macro takes `more` than the declaration gives it, or *too many*, `fewer`;
+# none from any other line.
+function macro_count(row: str) -> str?
+    if ffi_lookup.has(text: row, needle: "too few arguments provided to function-like macro invocation")
+        return ok("more")
+
+    if ffi_lookup.has(text: row, needle: "too many arguments provided to function-like macro invocation")
+        return ok("fewer")
+    return fail(code: "none", msg: "no macro refused the call's count")
 
 # The name a question's line asks about: what its file name holds after the
 # question's own words, up to the colon that opens the position.
@@ -146,6 +175,10 @@ function merged(first: ffi_asked.Asked, then: ffi_asked.Asked) -> ffi_asked.Aske
         if out.nested[name].is_err()
             out.nested[name] @ then.nested[name].must()
 
+    for name in keys(then.miscounted)
+        if out.miscounted[name].is_err()
+            out.miscounted[name] @ then.miscounted[name].must()
+
     return out
 
 ## Tests
@@ -204,3 +237,20 @@ test "two units' answers are one, the first's where both answer a name (panel 20
     assert !both.macros["A"].is_err()
     assert both.said == "t.hero:2:3: error: first\nu.hero:4:5: error: second"
     assert merged(first: ffi_asked.nothing(), then: one).said == one.said
+
+# **A result question a macro refused for its count answers no type** (defect
+# 2467): after *too few arguments provided to function-like macro
+# invocation* clang reads the bare name, and the type it names is the
+# function's, which was told as the result's.
+test "a result question a function-like macro refused for its count answers no type, and says which way (defect 2467)"
+    rows = [
+        "hero-ask-result curl_easy_setopt:1:111: error: too few arguments provided to function-like macro invocation"
+        "hero-ask-result curl_easy_setopt:1:81: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'CURLcode (CURL *, CURLoption, ...)' (aka 'CURLcode (void *, CURLoption, ...)')"
+        "hero-ask-result two:1:90: error: too many arguments provided to function-like macro invocation"
+        "hero-ask-result add:1:83: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'int'"
+    ]
+    got = read(rows.join("\n") + "\n")
+    assert got.results["curl_easy_setopt"].is_err() && got.miscounted["curl_easy_setopt"].must() == "more"
+    assert got.miscounted["two"].must() == "fewer"
+    assert got.results["add"].must().spelled == "int" && got.miscounted["add"].is_err()
+    assert merged(first: read(""), then: got).miscounted["two"].must() == "fewer"

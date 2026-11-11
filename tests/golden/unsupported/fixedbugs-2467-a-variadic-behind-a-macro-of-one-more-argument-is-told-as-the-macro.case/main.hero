@@ -1,0 +1,13 @@
+# fixedbugs, defect 2467, lane b31-ffi, 2026-11-11: `own.h` declares the
+# variadic `v2467` and defines it again as a macro of two arguments, as
+# `curl/curl.h` does `curl_easy_setopt`, so that a call passes exactly two.
+# The declaration gives one, its result right: every call this program's C
+# writes of it goes through the macro, which refuses it. Until this defect it
+# was told *returns `int (int, ...)`*, the function's type clang names once
+# it has refused the macro's invocation, as the result's; this line is its
+# mark.
+extern "own.h"
+    function v2467(a: i32) -> i32  #~ ffi_macro_name
+
+function main()
+    print(v2467(a: 1))
