@@ -609,6 +609,10 @@ function ffi_probes() -> [probe.Probe]
         row(name: "libcurl takes a variadic and returns an enum", argv: "run examples/curl/main.hero", code: 0).may_skip().out_starts("libcurl: libcurl/").out_has("the url was accepted").out_has("code 1 means: Unsupported protocol")
         row(name: "an enum-returning extern needs no unary plus", argv: "build examples/curl/main.hero", code: 0).may_skip()
         row(name: "sqlite opens, queries and closes with no shim", argv: "run examples/sqlite/main.hero", code: 0).may_skip().out_is("rows: 3\nlongest: 6\n")
+        row(name: "a warning-marked call in a header's code is refused at -O0, with no order told (panel 245's R1)", argv: "build tests/golden/surface-fixtures/level2464/main.hero", code: 1).err_has("error[ffi_header_refused]").err_has("[-Werror,-Wattribute-warning]").err_has("repair the header").err_lacks("compiles after").err_lacks("compiles when").err_lacks("this build compiles at").err_lacks("internal error")
+        row(name: "and at -O2, where clang says nothing of it, refused by the -O0 compile, which the refusal names (panel 245's R1)", argv: "build tests/golden/surface-fixtures/level2464/main.hero -O2", code: 1).err_has("error[ffi_header_refused]").err_has("[-Werror,-Wattribute-warning]").err_has("this build compiles at `-O2`, and a group's header's own code is compiled once more at `-O0`").err_has("that compile is what refused it").err_lacks("compiles after").err_lacks("internal error")
+        row(name: "and by run, whose level is -O2, the same way (panel 245's R1)", argv: "run tests/golden/surface-fixtures/level2464/main.hero", code: 1).err_has("[-Werror,-Wattribute-warning]").err_has("this build compiles at `-O2`").out_empty()
+        row(name: "a header's unused static inline calling a warning-marked function builds at -O2, its -O0 compile generating no call (panel 245's R1)", argv: "run tests/golden/surface-fixtures/level2464unused/main.hero", code: 0).out_is("2\n").err_lacks("warning")
     ]
 
 # End to end against libraries this machine actually has: the

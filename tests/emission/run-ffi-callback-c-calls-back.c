@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -97,7 +100,7 @@ HERO_STR_STATIC(hero_str_19e7c2, "bye");
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_7bcd5f24, "atexit refused the handler");
 
-#line 101 "fficallbackccallsback.c"
+#line 104 "fficallbackccallsback.c"
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -150,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fficallbackccallsback.c"
+#line 157 "fficallbackccallsback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -179,7 +182,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_bye(void) { hero_thread_guard("fficallbackccallsback.bye"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_19e7c2); hero_print_str(t1); hero_print_end(); return;
-#line 183 "fficallbackccallsback.c"
+#line 186 "fficallbackccallsback.c"
 }
 
 void h_0cb_fficallbackccallsback_bye(void) {
@@ -192,7 +195,7 @@ void h_fficallbackccallsback_main(void) { HERO_NODEBUG HeroStr t1, t6; HERO_NODE
 #line 32
     t2 = h_fficallbackccallsback_bye; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-callback-c-calls-back.hero", "ffi-callback-c-calls-back.main", 32, 8}; t3 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t2)); } t4 = INT64_C(0); t5 = t3 != t4; if (t5) goto bb2; else goto bb3; bb1: return; bb2:
     t6 = HERO_STR_LIT(hero_str_7bcd5f24); hero_print_str(t6); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 196 "fficallbackccallsback.c"
+#line 199 "fficallbackccallsback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

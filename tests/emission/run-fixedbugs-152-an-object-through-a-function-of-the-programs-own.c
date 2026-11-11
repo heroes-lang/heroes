@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -99,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_19d86d81, "99999999999999999999999");
 
-#line 103 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 106 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 158 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +175,7 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
-#line 176 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 179 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
     _Static_assert(HERO_RET_I32(ERANGE), "heroes-ffi-return ERANGE i32");
     _Static_assert(__builtin_constant_p(ERANGE), "heroes-ffi-const ERANGE");
 #pragma clang diagnostic push
@@ -184,7 +187,7 @@ int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return ERANGE;
-#line 188 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 191 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -207,7 +210,7 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) { int64_t
     t2 = HERO_STR_LIT(hero_str_19d86d81); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 24, 25}; t3 = hero_str_lend_at(t2, &hero_here); } t4 = ((void *)0); t5 = INT64_C(10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 24, 11}; t6 = strtoll(hero_cstr_nonnull_at(t3, &hero_here), t4, t5); } h0_big = t6;
     t7 = h0_big; hero_print_int(t7); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 26, 11}; t8 = hero_errno(); } t9 = h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(); t10 = t8 == t9; hero_print_bool(t10); hero_print_end(); return;
-#line 211 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 214 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

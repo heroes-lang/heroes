@@ -1,0 +1,15 @@
+# fixedbugs, defect 2036's known cost and its fix, panel 245's R2
+# (provisional), 2026-11-11.
+#
+# A header's own `printf(m)` of a format held in a variable is refused since
+# panel 245's S (`tests/golden/unsupported/fixedbugs-2036-a-header-s-own-printf-of-a-format-held-in-a-variable-is-a-known-cost`),
+# the form clang cannot judge. The repair clang's own note offers, *treat
+# the string as an argument*, writes `printf("%s", m)`: the format is a
+# literal, its one conversion read against `m`, and the call prints `hi` and
+# returns 3, as the refused form did before it.
+
+extern "fixedbugs-2036-a-header-s-own-printf-of-a-variable-handed-as-a-string-builds.h"
+    function fmt_plain() -> i32
+
+function main()
+    print(fmt_plain())

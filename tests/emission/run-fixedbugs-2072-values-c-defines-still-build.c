@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -92,7 +95,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 96 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 99 "fixedbugs2072valuescdefinesstillbuild.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -142,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 149 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -166,7 +169,7 @@ void h_fixedbugs2072valuescdefinesstillbuild_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 uint64_t h_fixedbugs2072valuescdefinesstillbuild_WRAPPED(void) {
-#line 170 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 173 "fixedbugs2072valuescdefinesstillbuild.c"
     _Static_assert(HERO_RET_U64(WRAPPED), "heroes-ffi-return WRAPPED u64");
     _Static_assert(__builtin_constant_p(WRAPPED), "heroes-ffi-const WRAPPED");
 #pragma clang diagnostic push
@@ -178,7 +181,7 @@ uint64_t h_fixedbugs2072valuescdefinesstillbuild_WRAPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 7 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return WRAPPED;
-#line 182 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 185 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -196,7 +199,7 @@ uint64_t h_fixedbugs2072valuescdefinesstillbuild_WRAPPED(void) {
 
 #line 8 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 uint32_t h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(void) {
-#line 200 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 203 "fixedbugs2072valuescdefinesstillbuild.c"
     _Static_assert(HERO_RET_U32(HIGH_BIT), "heroes-ffi-return HIGH_BIT u32");
     _Static_assert(__builtin_constant_p(HIGH_BIT), "heroes-ffi-const HIGH_BIT");
 #pragma clang diagnostic push
@@ -208,7 +211,7 @@ uint32_t h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 8 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return HIGH_BIT;
-#line 212 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 215 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -226,7 +229,7 @@ uint32_t h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(void) {
 
 #line 9 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 int32_t h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(void) {
-#line 230 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 233 "fixedbugs2072valuescdefinesstillbuild.c"
     _Static_assert(HERO_RET_I32(FROM_A_FLOAT), "heroes-ffi-return FROM_A_FLOAT i32");
     _Static_assert(__builtin_constant_p(FROM_A_FLOAT), "heroes-ffi-const FROM_A_FLOAT");
 #pragma clang diagnostic push
@@ -238,7 +241,7 @@ int32_t h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 9 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return FROM_A_FLOAT;
-#line 242 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 245 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -256,7 +259,7 @@ int32_t h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(void) {
 
 #line 10 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 int16_t h_fixedbugs2072valuescdefinesstillbuild_NARROWED(void) {
-#line 260 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 263 "fixedbugs2072valuescdefinesstillbuild.c"
     _Static_assert(HERO_RET_I16(NARROWED), "heroes-ffi-return NARROWED i16");
     _Static_assert(__builtin_constant_p(NARROWED), "heroes-ffi-const NARROWED");
 #pragma clang diagnostic push
@@ -268,7 +271,7 @@ int16_t h_fixedbugs2072valuescdefinesstillbuild_NARROWED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return NARROWED;
-#line 272 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 275 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -290,7 +293,7 @@ void h_fixedbugs2072valuescdefinesstillbuild_main(void) { HERO_NODEBUG uint64_t 
     t2 = h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(); hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(); hero_print_int(t3); hero_print_end();
     t4 = h_fixedbugs2072valuescdefinesstillbuild_NARROWED(); hero_print_int(t4); hero_print_end(); return;
-#line 294 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 297 "fixedbugs2072valuescdefinesstillbuild.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

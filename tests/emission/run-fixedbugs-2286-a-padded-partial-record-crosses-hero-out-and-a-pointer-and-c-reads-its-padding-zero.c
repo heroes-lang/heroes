@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -69,11 +72,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2338_padded *)0)->a) == 1 && sizeof(((struct fixedbugs_2338_padded *)0)->a) == sizeof(int8_t) && (_Generic(((struct fixedbugs_2338_padded *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Padded a");
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2338_padded *)0)->b) == 1 && sizeof(((struct fixedbugs_2338_padded *)0)->b) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2338_padded *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Padded b");
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2338_padded *)0)->c) == 1 && sizeof(((struct fixedbugs_2338_padded *)0)->c) == sizeof(int8_t) && (_Generic(((struct fixedbugs_2338_padded *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Padded c");
-#line 73 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
+#line 76 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
 
 #line 10 "tests/golden/run/fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero"
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2338_padded *)0) != 13, "heroes-ffi-union Padded a b c");
-#line 77 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
+#line 80 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -165,7 +168,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
+#line 172 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_0Padded_eq(const struct fixedbugs_2338_padded *a, const struct fixedbugs_2338_padded *b);
@@ -217,7 +220,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286apaddedpartialrecordcrossesher
     HERO_NODEBUG int8_t t1, t3; HERO_NODEBUG int64_t t2; HERO_NODEBUG struct fixedbugs_2338_padded *const hero_big_t4 = (struct fixedbugs_2338_padded *)hero_frame_take(sizeof(struct fixedbugs_2338_padded)); HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero", "fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.make", 18, 5}; (void)fixedbugs_2338_scribble(); }
     t1 = INT64_C(1); t2 = h0_n; t3 = INT64_C(2); t4 = *(struct fixedbugs_2338_padded *)__builtin_memset(&t4, 0, sizeof t4); __builtin_memset(&t4, 0, sizeof t4); t4.a = t1; t4.b = t2; t4.c = t3; if (hero_out != NULL) *hero_out = t4; hero_frame_give(hero_big_t4); return;
-#line 221 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
+#line 224 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
 }
 #undef t4
 __attribute__((unused)) struct fixedbugs_2338_padded hero_value_h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_make(int64_t h0_n) {
@@ -234,7 +237,7 @@ int64_t h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsits
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero", "fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.inspect", 22, 5}; (void)fixedbugs_2338_scribble(); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero", "fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.inspect", 23, 12}; hero_pad_fill(&(*(struct fixedbugs_2338_padded *)hero_in_h0_p), sizeof(struct fixedbugs_2338_padded), 1, hero_pad_g_0, hero_pad_n_0); t1 = fixedbugs_2338_dirty(&h0_p); } return t1;
-#line 238 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
+#line 241 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
 }
 #undef h0_p
 __attribute__((unused)) int64_t hero_value_h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_inspect(struct fixedbugs_2338_padded h0_p) {
@@ -256,7 +259,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286apaddedpartialrecordcrossesher
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero", "fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.main", 28, 11}; hero_lend_local_name(hero_lend_h0_p, "fixedbugs_2338_dirty", "p"); hero_pad_fill(&h0_p, sizeof(struct fixedbugs_2338_padded), 1, hero_pad_g_0, hero_pad_n_0); t3 = fixedbugs_2338_dirty(&h0_p); } hero_print_int(t3); hero_print_end();
     t4 = h0_p; t5 = h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_inspect(&t4); hero_print_int(t5); hero_print_end();
     t6 = h0_p.b; hero_print_int(t6); hero_print_end(); hero_lend_local_give(hero_lend_h0_p); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t2); return;
-#line 260 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
+#line 263 "fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero.c"
 }
 #undef h0_p
 #undef t2

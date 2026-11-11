@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 25 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 _Static_assert(__builtin_classify_type(((ZE *)0)->x) == 1 && sizeof(((ZE *)0)->x) == sizeof(int32_t) && (_Generic(((ZE *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZE x");
-#line 63 "fixedbugs151memberswithnobytesleftout.c"
+#line 66 "fixedbugs151memberswithnobytesleftout.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -147,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs151memberswithnobytesleftout.c"
+#line 154 "fixedbugs151memberswithnobytesleftout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_0ZE_eq(const ZE *a, const ZE *b);
@@ -170,7 +173,7 @@ void h_fixedbugs151memberswithnobytesleftout_main(void);
 #line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 void h_fixedbugs151memberswithnobytesleftout_main(void) { HERO_NODEBUG ZE t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-members-with-no-bytes-left-out.hero", "fixedbugs-151-members-with-no-bytes-left-out.main", 29, 11}; t1 = make_ze(); } t2 = t1.x; hero_print_int(t2); hero_print_end(); return;
-#line 174 "fixedbugs151memberswithnobytesleftout.c"
+#line 177 "fixedbugs151memberswithnobytesleftout.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_0ZE_eq(const ZE *a, const ZE *b) {
     if (!(a->x == b->x)) return false;

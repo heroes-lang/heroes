@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -96,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
 
-#line 100 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
+#line 103 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -149,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
+#line 156 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
 #pragma clang diagnostic pop
 
 static inline __typeof__(found) *hero_bound_found(void) { return &found; }
@@ -175,7 +178,7 @@ void h_fixedbugs2389aboundcfunctionnamedasacallsplacebuilds_main(void) { HeroMap
     t1 = INT64_C(41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.main", 18, 11}; t2 = (*hero_bound_hero_here())(t1); } hero_print_int(t2); hero_print_end();
     t3 = HERO_STR_LIT(hero_str_6bb5e50a); t4 = INT64_C(21); t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.main", 19, 12}; hero_map_put_at(t5, &t3, &t4, &hero_here); } t18 = h2_own2; h2_own2 = t5; hero_map_decref(t18); t19 = h0_ages; hero_map_incref(t5); h0_ages = t5; hero_map_decref(t19);
     t6 = h0_ages; t7 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.main", 20, 20}; HERO_NODEBUG const void *found = hero_map_find_at(t6, &t7, &hero_here); if (found == NULL) { t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t8 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t8.as.ok, found); } } t20 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t20); t21 = h1_f0; h_0opt_e201354_retain(&t8); h1_f0 = t8; h_0opt_e201354_release(&t21); t9 = h1_f0; t10 = t9.tag; t11 = INT64_C(0); t12 = t10 == t11; if (t12) goto bb1; else goto bb2; bb1: t15 = h1_f0; t16 = t15.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.main", 20, 11}; t17 = (*hero_bound_found())(t16); } hero_print_int(t17); hero_print_end();
-#line 179 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
+#line 182 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
     hero_map_release_at(&h0_ages);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_map_release_at(&h2_own2);
@@ -184,7 +187,7 @@ void h_fixedbugs2389aboundcfunctionnamedasacallsplacebuilds_main(void) { HeroMap
 bb2:
 #line 20 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.hero"
     t13 = h1_f0; t14 = t13.as.err;
-#line 188 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
+#line 191 "fixedbugs2389aboundcfunctionnamedasacallsplacebuilds.c"
     hero_panic_must_at(t14, "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.hero", "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.main", 20, 20);
     hero_unreachable();
 }

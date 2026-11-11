@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 16 "tests/golden/run/fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
+#line 66 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -154,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
+#line 161 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -208,7 +211,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2253aframelargerthaneverystacka
     hero_thread_guard("fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.worker"); struct heroes_held *const hero_big_h1_held = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_held = t2; hero_pad_fill(&h1_held, sizeof(struct heroes_held), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = h1_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.hero", "fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.worker", 21, 12}; t4 = heroes_held_first(t3); } hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_held); return t4;
-#line 212 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
+#line 215 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
 }
 #undef h1_held
 #undef t2
@@ -223,7 +226,7 @@ int64_t h_0cb_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_work
 void h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_main(void) { int64_t h0_t; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_worker; t2 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.hero", "fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.main", 24, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_t = t3;
     t4 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.hero", "fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.main", 25, 11}; t5 = hero_thread_join(t4); } hero_print_int(t5); hero_print_end(); return;
-#line 227 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
+#line 230 "fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_0Held_eq: a partial record has no structural equality");

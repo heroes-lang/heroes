@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -66,7 +69,7 @@ _Static_assert(__builtin_classify_type(((struct fixedbugs_2354_el *)0)->a) == 1 
 #line 11
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2354_array *)0)->a) == 1 && sizeof(((struct fixedbugs_2354_array *)0)->a) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2354_array *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Array a");
 _Static_assert(sizeof(struct fixedbugs_2354_array) - __builtin_offsetof(struct fixedbugs_2354_array, e) != 0, "heroes-ffi-flex Array e"); _Static_assert(_Generic(&((struct fixedbugs_2354_array *)0)->e, struct fixedbugs_2354_el (*)[4]: 1, default: 0) && sizeof(struct fixedbugs_2354_array) - __builtin_offsetof(struct fixedbugs_2354_array, e) >= sizeof(struct fixedbugs_2354_el[4]), "heroes-ffi-field Array e");
-#line 70 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
+#line 73 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
+#line 166 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept_0El_eq(const struct fixedbugs_2354_el *a, const struct fixedbugs_2354_el *b);
@@ -227,7 +230,7 @@ __attribute__((__noinline__)) void h_fixedbugs2354bitfieldsinanarrayofrecordspas
     t2 = INT64_C(7); t3 = *(struct fixedbugs_2354_array *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.a = t2; h0_held = t3; hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_m_0, hero_pad_mn_0); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.hero", "fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.main", 19, 5}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_array_dirty", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_m_0, hero_pad_mn_0); } (void)fixedbugs_2354_array_dirty(&h0_held); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.hero", "fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.main", 20, 11}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_array_check", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_m_0, hero_pad_mn_0); } t4 = fixedbugs_2354_array_check(&h0_held); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_held); hero_frame_give(hero_big_t3); return;
-#line 231 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
+#line 234 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
 }
 #undef h0_held
 #undef t3

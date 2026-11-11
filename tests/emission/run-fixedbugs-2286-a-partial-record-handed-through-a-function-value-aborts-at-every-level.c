@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 66 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -142,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 149 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -194,7 +197,7 @@ int64_t h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylev
 #line 11
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h.first; return t1;
-#line 198 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 201 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
 }
 #undef h0_h
 __attribute__((unused)) int64_t hero_value_h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_first(struct heroes_held h0_h) {
@@ -208,7 +211,7 @@ int64_t h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylev
 #line 14
     HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h.first; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level.hero", "fixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level.second", 15, 12); return t3;
-#line 212 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 215 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
 }
 #undef h0_h
 __attribute__((unused)) int64_t hero_value_h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_second(struct heroes_held h0_h) {
@@ -222,7 +225,7 @@ h_0fn_46dcdb64 h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsate
     t5 = hero_value_h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_first; h1_ret0 = t5; goto bb4; bb2:
 #line 19
     t4 = hero_value_h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_second; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 226 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 229 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
     t6 = h1_ret0;
     return t6;
 }
@@ -239,7 +242,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286apartialrecordhandedthroughafu
     struct heroes_held *const hero_big_h1_h = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t5; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG h_0fn_46dcdb64 t3; HERO_NODEBUG struct heroes_held *const hero_big_t4 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_f; t4 = h1_h; t5 = t3(t4); hero_print_int(t5); hero_print_end(); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return;
-#line 243 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 246 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
 }
 #undef h1_h
 #undef t2
@@ -249,14 +252,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286apartialrecordhandedthroughafu
 void h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t2, *t5; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0fn_46dcdb64 t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level.hero", "fixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level.main", 28, 19}; t2 = h_library_args(&hero_here); } t5 = h0_own0; h0_own0 = t2; hero_array_decref(t5); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_pick(t3); h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_go(t4);
-#line 253 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 256 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
     hero_array_release_at(&h0_own0);
     return;
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 260 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 263 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
 }
 
 #line 152 "<heroes library>"
@@ -276,7 +279,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 280 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 283 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -302,7 +305,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 306 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 309 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -327,13 +330,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 331 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 334 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 337 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
+#line 340 "fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }

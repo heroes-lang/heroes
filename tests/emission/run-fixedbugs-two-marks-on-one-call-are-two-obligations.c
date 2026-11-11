@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -97,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 101 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 104 "fixedbugstwomarksononecallaretwoobligations.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 158 "fixedbugstwomarksononecallaretwoobligations.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_0Slot_eq(Slot * const *a, Slot * const *b);
@@ -187,7 +190,7 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
     t4 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-marks-on-one-call-are-two-obligations.hero", "fixedbugs-two-marks-on-one-call-are-two-obligations.main", 29, 5}; { hero_handle_alive_at(t4, "the argument `s` of `slot_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t4, "slot_close", NULL, &hero_here); (void)slot_close(t4); if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead(); } }
     t5 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-marks-on-one-call-are-two-obligations.hero", "fixedbugs-two-marks-on-one-call-are-two-obligations.main", 30, 5}; { hero_handle_alive_at(t5, "the argument `c` of `conn_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "conn_close", NULL, &hero_here); (void)conn_close(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_b == t5) h1_b = hero_handle_dead(); } }
     t6 = HERO_STR_LIT(hero_str_455ecde8); hero_print_str(t6); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
-#line 191 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 194 "fixedbugstwomarksononecallaretwoobligations.c"
 }
 #undef h0_a
 #undef h1_b

@@ -1,0 +1,22 @@
+# fixedbugs, defect 2464 (panel 245's R1, provisional), 2026-11-10, the
+# defect's own reproducer.
+#
+# SYMPTOM: defect 584's door, `sprintf` behind `_FORTIFY_SOURCE 0`, built at
+# exit 0 with clang's own deprecation of `sprintf` printed raw, 19 lines of
+# it on this Mac at batch 31's base (9febdd6c3); since panel 243's R1 a door
+# is the only route to a variadic, so every such program took this shape.
+#
+# FIX: a deprecation is quiet in a header's code (`emit/header_region.hero`'s
+# `ADVICE`), so the door builds silent and prints `2`, the characters `42`
+# took.
+
+extern "fixedbugs-2464-a-door-calling-sprintf-with-fortify-off-builds-silent.h"
+    function malloc(n: u64) -> ptr
+    function free(p: ptr)
+    function print_number(buf: ptr, n: i64) -> i32
+
+function main()
+    p = malloc(64.to_u64().must())
+    k = print_number(p, 42)
+    print(k)
+    free(p)

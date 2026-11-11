@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero"
 _Static_assert(__builtin_classify_type(((struct heroes_held *)0)->first) == 1 && sizeof(((struct heroes_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct heroes_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 66 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -141,7 +144,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 148 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
@@ -192,7 +195,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286apartialrecordreturnedonaspawn
 #line 15
     HERO_NODEBUG int64_t t1; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 196 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 199 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 }
 #undef t2
 __attribute__((unused)) struct heroes_held hero_value_h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_make(int64_t h0_n) {
@@ -211,7 +214,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2286apartialrecordreturnedonasp
     hero_thread_guard("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.worker"); struct heroes_held *const hero_big_h1_h = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_make(&t2, t1); h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct heroes_held), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 215 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 218 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 }
 #undef h1_h
 #undef t2
@@ -226,7 +229,7 @@ void h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscaller
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     t2 = h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker; t3 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero", "fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.main", 24, 9}; t4 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } h0_t = t4;
     t5 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero", "fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.main", 25, 11}; t6 = hero_thread_join(t5); } hero_print_int(t6); hero_print_end(); return;
-#line 230 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 233 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_0Held_eq: a partial record has no structural equality");

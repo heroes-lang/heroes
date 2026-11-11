@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -68,11 +71,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 14 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
 _Static_assert(__builtin_classify_type(((Pair *)0)->a) == 1 && sizeof(((Pair *)0)->a) == sizeof(int32_t) && (_Generic(((Pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((Pair *)0)->b) == 1 && sizeof(((Pair *)0)->b) == sizeof(int32_t) && (_Generic(((Pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 72 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
+#line 75 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 
 #line 13 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
 _Static_assert(__builtin_classify_type(*(Pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 76 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
+#line 79 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -165,7 +168,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
+#line 172 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_0Pair_eq(const Pair *a, const Pair *b);
@@ -199,7 +202,7 @@ void h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_main(voi
     t4 = HERO_STR_LIT(hero_str_10a31f64); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero", "fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.main", 20, 26}; t5 = hero_str_lend_at(t4, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero", "fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.main", 20, 11}; t6 = scan_int(hero_cstr_nonnull_at(t5, &hero_here), (void *)&h0_p.a); } hero_print_int(t6); hero_print_end();
     t7 = h0_p.a; hero_print_int(t7); hero_print_end();
     t8 = h0_p.b; hero_print_int(t8); hero_print_end(); return;
-#line 203 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
+#line 206 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_0Pair_eq(const Pair *a, const Pair *b) {
     if (!(a->a == b->a)) return false;

@@ -1,0 +1,18 @@
+# fixedbugs, defect 2465 (panel 245's R2, provisional), 2026-11-11.
+#
+# SYMPTOM: `ioctl` bound with its two fixed parameters and called with
+# `FIONREAD`, whose request reads an `int *` past the `...`, built at exit 0
+# and printed `-1` at batch 31's base (9febdd6c3): the call read as that
+# pointer whatever the machine held past the `...`.
+#
+# FIX: a function its header declares variadic, bound with nothing past its
+# `...`, is refused at the binding, `ffi_call_shape` (panel 245's R2, its D;
+# `emit/ffi_bare_variadic.hero`): the route is a door of the program's own
+# header, whose call is C's and whose arguments are the ones written there.
+
+extern "sys/ioctl.h"
+    constant FIONREAD: u64
+    function ioctl(fd: i32, request: u64) -> i32  #~ ffi_call_shape
+
+function main()
+    print(ioctl(fd: 0, request: FIONREAD))

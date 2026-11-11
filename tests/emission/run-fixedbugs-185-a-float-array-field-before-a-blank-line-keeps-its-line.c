@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 10 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(sizeof(Pair) - __builtin_offsetof(Pair, weights) != 0, "heroes-ffi-flex Pair weights"); _Static_assert(_Generic(&((Pair *)0)->weights, float (*)[2]: 1, default: 0) && sizeof(Pair) - __builtin_offsetof(Pair, weights) >= sizeof(float[2]), "heroes-ffi-field Pair weights");
-#line 63 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 66 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -148,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 155 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_0Pair_eq(const Pair *a, const Pair *b);
@@ -181,7 +184,7 @@ void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) { Pai
     t1 = 0x1.8p+0; t2 = 0x1.2p+1; t4 = (Pair){.weights = {t1, t2}}; h0_p = t4; hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_1, hero_pad_n_1);
     t5 = INT64_C(0); t6 = h0_p.weights[((uint64_t)(t5) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 14, 11), (int64_t)0) : (t5))]; t7 = INT64_C(1); t8 = h0_p.weights[((uint64_t)(t7) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 14, 26), (int64_t)0) : (t7))]; t9 = t6 + t8; hero_print_f32(t9); hero_print_end();
     t10 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 15, 11}; t11 = sum_of(t10); } hero_print_f32(t11); hero_print_end(); return;
-#line 185 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 188 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_0Pair_eq(const Pair *a, const Pair *b) {
     if (!((a->weights[0] == b->weights[0] && a->weights[1] == b->weights[1]))) return false;

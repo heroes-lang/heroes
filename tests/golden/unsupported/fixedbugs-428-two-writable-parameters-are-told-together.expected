@@ -3,7 +3,7 @@ error[ffi_writable_parameter]: `a` of `w_two` is declared `cstr`, and the header
      |
   13 |     function w_two(a: cstr lent, b: cstr lent) -> i32  #~ ffi_writable_parameter ffi_writable_parameter
      |                    ^
-  note: spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: spec § 13: `s.cstr()` lends a `str` to C, and C writes back through a lend only where the binding is a `@` name. A header's pointer without `const` does not promise that: a C write through it changes the bytes of every value that shares the string, and on a literal's stops the program
   note: declare it `ptr` and give `w_two` a buffer C owns, then read the result back
   fix (guess): declare it `ptr`
 
@@ -12,6 +12,6 @@ error[ffi_writable_parameter]: `b` of `w_two` is declared `cstr`, and the header
      |
   13 |     function w_two(a: cstr lent, b: cstr lent) -> i32  #~ ffi_writable_parameter ffi_writable_parameter
      |                                  ^
-  note: spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: spec § 13: `s.cstr()` lends a `str` to C, and C writes back through a lend only where the binding is a `@` name. A header's pointer without `const` does not promise that: a C write through it changes the bytes of every value that shares the string, and on a literal's stops the program
   note: declare it `ptr` and give `w_two` a buffer C owns, then read the result back
   fix (guess): declare it `ptr`

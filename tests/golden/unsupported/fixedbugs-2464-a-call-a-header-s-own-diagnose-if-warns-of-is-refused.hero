@@ -1,0 +1,17 @@
+# fixedbugs, defect 2464 (panel 245's R1, provisional), 2026-11-11.
+#
+# SYMPTOM: a door calling a function with a negative length, which its
+# header's own `diagnose_if` warns overruns the buffer, built at exit 0 with
+# nothing said and printed `0` (batch 31's base, 9febdd6c3):
+# `-Wuser-defined-warnings` is one of `-Wall`'s, which the region ignores as
+# a library's style.
+#
+# FIX: the region raises `-Wuser-defined-warnings` again after `-Wall`'s
+# ignore (`emit/header_region.hero`'s `HELD`), and the header is refused at
+# the call's line, at exit 1.
+
+extern "fixedbugs-2464-a-call-a-header-s-own-diagnose-if-warns-of-is-refused.h"  #~ ffi_header_refused
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 1))

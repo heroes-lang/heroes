@@ -148,8 +148,12 @@ function refusal(name: str, param: str, declared: str, c_type: str, spans: ffi_p
         message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type + "` — C does not promise to leave it alone",
         span: span
     )
+
+    # Cited to § 13 for its two clauses alone (defect 2470's sixth sentence,
+    # repaired at panel 245's landing): the shared bytes and the literal are
+    # what a C write was measured to do, never words of the specification.
     d.notes @ d.notes.push(
-        "spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+        "spec § 13: `s.cstr()` lends a `str` to C, and C writes back through a lend only where the binding is a `@` name. A header's pointer without `const` does not promise that: a C write through it changes the bytes of every value that shares the string, and on a literal's stops the program"
     )
 
     # The repair is not "add const", which is the header's to choose

@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -99,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 103 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 106 "deadhandleataconsumingpositionafteritslifeended.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -152,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 159 "deadhandleataconsumingpositionafteritslifeended.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleataconsumingpositionafteritslifeended_0Json_eq(Obj * const *a, Obj * const *b);
@@ -183,7 +186,7 @@ void h_deadhandleataconsumingpositionafteritslifeended_main(void) { Obj * h0_a; 
     t12 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-at-a-consuming-position-after-its-life-ended.hero", "dead-handle-at-a-consuming-position-after-its-life-ended.main", 26, 5}; { hero_handle_alive_at(t12, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t12, "obj_delete", NULL, &hero_here); (void)obj_delete(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_a == t12) h0_a = hero_handle_dead(); } } return; bb2:
 #line 24
     t6 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-at-a-consuming-position-after-its-life-ended.hero", "dead-handle-at-a-consuming-position-after-its-life-ended.main", 24, 9}; { hero_handle_alive_at(t6, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "obj_delete", NULL, &hero_here); (void)obj_delete(t6); if (hero_handle_ended(t6, hero_life_0_0) && h1_b == t6) h1_b = hero_handle_dead(); } } goto bb1; bb3: goto bb1;
-#line 187 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 190 "deadhandleataconsumingpositionafteritslifeended.c"
 }
 HERO_TU_LOCAL bool h_deadhandleataconsumingpositionafteritslifeended_0Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

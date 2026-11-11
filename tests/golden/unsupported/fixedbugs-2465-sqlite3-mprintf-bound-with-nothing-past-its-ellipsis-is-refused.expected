@@ -1,0 +1,7 @@
+error[ffi_call_shape]: `sqlite3.h` declares `sqlite3_mprintf` variadic, 1 parameter and then `...`, and this binding names it with nothing past the `...` — what `sqlite3_mprintf` reads there is decided by a value only the run gives, a format's conversions, `O_CREAT`'s mode, a command's argument, so nothing holds it to anything this program passed
+  at tests/golden/unsupported/fixedbugs-2465-sqlite3-mprintf-bound-with-nothing-past-its-ellipsis-is-refused.hero:15:14
+     |
+  15 |     function sqlite3_mprintf(f: cstr lent) -> cstr owned sqlite3_free  #~ ffi_call_shape
+     |              ^^^^^^^^^^^^^^^
+  note: C11 6.5.2.2p7: past a prototype's `...` a call converts nothing beyond the default argument promotions, and a binding with nothing there hands nothing; C11 7.16.1.1p2: a `va_arg` with no next argument to read is undefined, so what `sqlite3_mprintf` reads past it is whatever the machine left there. A function its header declares variadic is called from a header of the program's own, where the call is C's, its arguments are the ones written there, and clang reads a format there against them
+  note: write a header of your own that includes `sqlite3.h` and defines a `static inline` function of a new name with a fixed prototype, taking every value `sqlite3_mprintf` will read and calling it with each of them, a format written there as a literal; bind that function instead

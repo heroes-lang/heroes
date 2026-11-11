@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -64,7 +67,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 12 "tests/golden/run/fixedbugs-2389-a-bound-record-named-as-a-local-builds.hero"
 _Static_assert(__builtin_classify_type(((hero_bound_type_h0_p *)0)->a) == 1 && sizeof(((hero_bound_type_h0_p *)0)->a) == sizeof(int64_t) && (_Generic(((hero_bound_type_h0_p *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field h0_p a");
-#line 68 "fixedbugs2389aboundrecordnamedasalocalbuilds.c"
+#line 71 "fixedbugs2389aboundrecordnamedasalocalbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -153,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "fixedbugs2389aboundrecordnamedasalocalbuilds.c"
+#line 160 "fixedbugs2389aboundrecordnamedasalocalbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2389aboundrecordnamedasalocalbuilds_0h0_p_eq(const hero_bound_type_h0_p *a, const hero_bound_type_h0_p *b);
@@ -185,7 +188,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_fixedbugs2389aboundrecordnamedasalocalbuilds_main(void) { hero_bound_type_h0_p h0_p; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG hero_bound_type_h0_p t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(42); t2 = (hero_bound_type_h0_p){.a = t1}; h0_p = t2; hero_pad_fill(&h0_p, sizeof(hero_bound_type_h0_p), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2389-a-bound-record-named-as-a-local-builds.hero", "fixedbugs-2389-a-bound-record-named-as-a-local-builds.main", 17, 11}; t4 = geth(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 189 "fixedbugs2389aboundrecordnamedasalocalbuilds.c"
+#line 192 "fixedbugs2389aboundrecordnamedasalocalbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2389aboundrecordnamedasalocalbuilds_0h0_p_eq(const hero_bound_type_h0_p *a, const hero_bound_type_h0_p *b) {
     if (!(a->a == b->a)) return false;

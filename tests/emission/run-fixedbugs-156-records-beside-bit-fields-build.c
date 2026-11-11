@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -73,11 +76,11 @@ _Static_assert(__builtin_classify_type(((UNNAMED *)0)->b) == 1 && sizeof(((UNNAM
 #line 16
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->a) == 1 && sizeof(((ZEROW *)0)->a) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW a");
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->b) == 1 && sizeof(((ZEROW *)0)->b) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW b");
-#line 77 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 80 "fixedbugs156recordsbesidebitfieldsbuild.c"
 
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union UNNAMED a b"); _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->a) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED a"); _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->b) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED b");
-#line 81 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 84 "fixedbugs156recordsbesidebitfieldsbuild.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -171,7 +174,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 178 "fixedbugs156recordsbesidebitfieldsbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_0BF_eq(const BF *a, const BF *b);
@@ -238,7 +241,7 @@ __attribute__((__noinline__)) void h_fixedbugs156recordsbesidebitfieldsbuild_mai
     t5 = h0_built.kind; hero_print_int(t5); hero_print_end();
     t6 = INT64_C(1); t7 = INT64_C(2); t8 = (UNNAMED){.a = t6, .b = t7}; h1_u = t8; hero_pad_fill(&h1_u, sizeof(UNNAMED), 1, hero_pad_g_1, hero_pad_n_1);
     t9 = h1_u; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 16}; t10 = make_unnamed(); } t11 = h_fixedbugs156recordsbesidebitfieldsbuild_0UNNAMED_eq(&t9, &t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h1_u.b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 43}; t14 = make_zerow(); } t15 = t14.b; if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow_at("fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 37); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t16); hero_print_end(); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_built); return;
-#line 242 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 245 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 #undef h0_built
 #undef t1

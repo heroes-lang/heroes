@@ -1,6 +1,7 @@
 # Nothing passes past a header's `...` (design.md §4.19, §1.12; panel 217's
-# R3(c), ratified 2026-10-17; panel 243's R1, provisional, author
-# ratification pending; defects 2102, 2103, 2106 and 2421).
+# R3(c), ratified 2026-10-17; panel 243's R1 and panel 245's R2, both
+# provisional, author ratification pending; defects 2102, 2103, 2106, 2421,
+# 2465 and 2470).
 #
 # A C function the header declares variadic, `long slot_read(int count,
 # ...)`, takes past its `...` what a call hands it with no type: the call
@@ -61,7 +62,11 @@
 # author's declaration, so the build stops at exit 1 before the main unit
 # compiles: one assertion that always fails, its marker carrying the
 # function, the parameter, its kind and how many parameters the header gives
-# before its `...`.
+# before its `...`. **And since panel 245's R2 a variadic is bound only
+# through a door**: a binding that names one with nothing past its `...` is
+# refused under the same marker (`emit/ffi_bare_variadic.hero`, its D). Each
+# rule cites spec § 13 only for what § 13 holds, and C11 6.5.2.2p7 for what C
+# does past a prototype's `...` (defect 2470).
 
 use ast
 use bytes
@@ -70,6 +75,7 @@ use cli/pointee_ask
 use diag
 use emit/c_text
 use emit/externs as emit_externs
+use emit/ffi_bare_variadic
 use emit/ffi_lookup
 use emit/ffi_mutable
 use emit/ffi_pointee
@@ -170,6 +176,11 @@ function lines(wanted: [pointee_ask.Pointee], open: {str: i64}) -> [str]
                 "_Static_assert(0, \"" + MARKER + one.name + " " + one.param + " " + kind + " " + fixed.must().to_str() + "\");"
             )
 
+    # And a variadic bound with nothing past its `...` (panel 245's R2, its
+    # D, `emit/ffi_bare_variadic.hero`), under this module's marker.
+    for line in ffi_bare_variadic.lines(wanted, open: open, marker: MARKER)
+        out @ out.push(line)
+
     return out
 
 ## The refusal
@@ -202,6 +213,12 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
 
     if decl.is_err()
         return fail(code: "none", msg: "no extern of that name is declared at that line")
+
+    if kind == ffi_bare_variadic.BARE
+        bare = emit_externs.unquoted(s, span: group_header(decls, decl: decl.must()).must())
+        return ok(
+            ffi_bare_variadic.told(header: bare, name: name, given: given(fixed.must()), span: decls[decl.must()].name)
+        )
     spans = ffi_mutable.spans_of(s, decls, tree, decl: decl.must(), param: param)
 
     if spans.is_err()
@@ -217,7 +234,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             code: "ffi_parameter_type",
             message: "`" + param + "` of `" + name + "` is declared `" + typed + "` and crosses by value, and " + stands + reads + ", so nothing holds it to the `" + typed + "` this program hands it",
             span: span,
-            rule: "spec § 13: a parameter is declared at the header's own width and sign, and clang holds it to them; past a header's `...` the header declares no type, so the call converts nothing beyond C's default promotions and `" + name + "` reads the bytes as the type its `va_arg` names: an `i32` read as a C `long` gives -1 as 4294967295, and a wider integer, a float, a string, a pointer or a record read as another type is the same mistake",
+            rule: "spec § 13: a parameter is declared at the header's own width and sign, and one that disagrees is refused. C11 6.5.2.2p7: past a prototype's `...` a call converts nothing beyond the default argument promotions, so `" + name + "` reads the bytes as the type its `va_arg` names: an `i32` read as a C `long` gives -1 as 4294967295, and a wider integer, a float, a string, a pointer or a record read as another type is the same mistake",
             route: door(header: header, name: name, param: param, taking: "at the C type `" + name + "` reads there", holds: "it to that type")
         )
         return ok(d)
@@ -227,7 +244,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             code: "ffi_writable_parameter",
             message: "`" + param + "` of `" + name + "` is lent read-only as a `" + typed + "`, and " + stands + reads + ", so nothing holds it to the `const` the lend promises",
             span: span,
-            rule: "spec § 13: a record lent read-only is the caller's own place, which C may read and never write; past a header's `...` the header declares no type for it, so neither clang nor this compiler can hold C to the `const`, and a write there changes a value the program declared unchanged",
+            rule: "spec § 13: a group's record declared `lent` without `@` is a pointer to const, the place C reads and never writes. C11 6.5.2.2p7: past a prototype's `...` a call converts nothing, and `" + name + "` reads the pointer as the type its `va_arg` names, so neither clang nor this compiler can hold C to the `const`, and a write there changes a value the program declared unchanged",
             route: door(header: header, name: name, param: param, taking: "as a pointer to `const` of the struct `" + name + "` reads", holds: "the `const`")
         )
         return ok(d)
@@ -237,7 +254,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             code: "ffi_writable_parameter",
             message: "`" + param + "` of `" + name + "` is declared `cstr lent`, and " + stands + reads + ", and does not promise to leave it alone",
             span: span,
-            rule: "spec § 13: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts",
+            rule: "spec § 13: `s.cstr()` lends a `str` to C, and C writes back through a lend only where the binding is a `@` name. C11 6.5.2.2p7: past a prototype's `...` a call converts nothing beyond the default argument promotions, and `" + name + "` reads the pointer as the type its `va_arg` names, so neither clang nor this compiler can hold C to the `const`: a write there changes the bytes of every value that shares the string, and on a literal's stops the program",
             route: door(header: header, name: name, param: param, taking: "as the `const char *` `" + name + "` reads there", holds: "C to the `const`")
         )
         return ok(d)
@@ -247,7 +264,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             code: "ffi_parameter_type",
             message: "`" + param + "` of `" + name + "` is an `@` parameter, and " + stands + " — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends",
             span: span,
-            rule: "spec § 13: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was",
+            rule: "spec § 13: what an `@` parameter points at is one element, held to the header's own width and sign. C11 6.5.2.2p7: past a prototype's `...` a call converts nothing, and `" + name + "` reads the pointer as the type its `va_arg` names: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was",
             route: door(header: header, name: name, param: param, taking: "as a pointer to the C type `" + name + "` writes through it", holds: "the width")
         )
         return ok(d)
@@ -257,14 +274,16 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             code: "ffi_parameter_type",
             message: "`" + param + "` of `" + name + "` is declared `counted_by`, and " + stands + " — C counts in what its pointer points at, and there the pointer has no type, so no count can be held to what is lent",
             span: span,
-            rule: "spec § 13: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count",
+            rule: "spec § 13: a counted lend hands C `N` elements of the program's own, `N` the sibling that tells C how many. C11 6.5.2.2p7: past a prototype's `...` a call converts nothing, and `" + name + "` reads the pointer as the type its `va_arg` names, so nothing says what C counts in, and none of them can be held to a count",
             route: door(header: header, name: name, param: param, taking: "as a pointer to the type `" + name + "` counts in", holds: "the unit the count is in")
         )
         return ok(d)
     return fail(code: "none", msg: "a kind this module does not write")
 
-# One refusal: its message on the parameter, the rule spec § 13 states, then
-# the door.
+# One refusal: its message on the parameter, the rule, then the door. A rule
+# cites § 13 for what § 13 holds, and C11 6.5.2.2p7 for what C does past a
+# prototype's `...`, which § 13 does not state (panel 245's R2; defect 2470:
+# five rules here cited § 13 for clauses it does not hold).
 function told(code: str, message: str, span: token.Span, rule: str, route: str) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(code: code, message: message, span: span)
     d.notes @ d.notes.push(rule)

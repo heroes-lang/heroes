@@ -53,10 +53,11 @@
 # platform: the header as the group spells it, the line, clang's message, the
 # line as clang quoted it, the includes clang followed, the notes clang
 # attached, and, where clang names `-Werror`, that the warning is one this
-# compiler's flags make an error in a header's own code too
-# (`cli/flags.hero`), which since panel 205 passes over `-Wall`'s warnings and
-# sign conversions alone in a header, wherever it was found
-# (`emit/header_region.hero`, defect 569).
+# compiler makes an error in a header's own code (`emit/region_note.hero`),
+# which since panel 205 is judged by one region wherever the header was found
+# (`emit/header_region.hero`, defect 569), and since panel 245's R1 passes
+# over `-Wall`'s warnings, sign conversions and deprecations alone there,
+# every other warning an error.
 
 use ast
 use checker
@@ -71,11 +72,12 @@ use cli/headers_together
 use cli/own_names
 use cli/process
 use cli/read_back
+use cli/region_level
 use diag
 use emit/clang_place
 use emit/ffi_build
 use emit/ffi_lookup
-use emit/header_region
+use emit/region_note
 use parse
 use resolve
 use source
@@ -129,7 +131,14 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
         return [
             headers_together.told(s, one: two.must().one, other: two.must().other, message: one.first.message, added: two.must().added)
         ]
-    return [told(s, rows: one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, notes: one.notes)]
+
+    # A unit above `-O0` whose header's code the `-O0` compile refused says
+    # so (`cli/region_level.hero`, panel 245's R1): at the build's own level
+    # clang said nothing of it.
+    return region_level.noted(
+        [told(s, rows: one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, notes: one.notes)],
+        message: stderr
+    )
 
 # The diagnostic, on the group's string: the file clang refused, as the group
 # would name it, its line and clang's message, then what clang quoted and
@@ -179,7 +188,7 @@ function told(s: source.Source, rows: [str], first: clang_first.First, steps: [c
                 diag.Fix(title: "rename `" + named + "` in `" + refused_file + "`, a name the Heroes runtime declares first in every unit", replacement: source.span_text(s, group.span), span: group.span, certainty: .guess)
             )
 
-    for note in header_region.werror_notes(message: first.message, build_words: flags.flags())
+    for note in region_note.werror_notes(message: first.message, build_words: flags.flags())
         d.notes @ d.notes.push(note)
 
     d.notes @ d.notes.push(REPAIR)
@@ -637,5 +646,5 @@ test "a note in a file another group's header includes is told through that head
 # with none fails here, and the note cannot lose a kind in silence again
 # (defect 2054).
 test "every kind a header's code is never passed over for is named in its -Werror note"
-    for word in header_region.never_words(flags.flags())
-        assert header_region.never_for(word) != ""
+    for word in region_note.never_words(flags.flags())
+        assert region_note.never_for(word) != ""

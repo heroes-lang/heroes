@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -105,7 +108,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 109 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 112 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -158,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 165 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_0Outer_eq(outer * const *a, outer * const *b);
@@ -188,7 +191,7 @@ void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) { outer *
     t8 = HERO_STR_LIT(hero_str_2731e935); t9 = h1_kept; t10 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero", "limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.main", 30, 21}; t11 = hero_handle_eq_at(t9, t10, &hero_here); } hero_print_str(t8); hero_print_bool(t11); hero_print_end();
     t12 = HERO_STR_LIT(hero_str_3043d2a7); t13 = h1_kept; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero", "limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.main", 31, 22}; hero_handle_alive_at(t13, "the argument `o` of `value`", &hero_here); t14 = value(t13); } hero_print_str(t12); hero_print_int(t14); hero_print_end();
     t15 = h2_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero", "limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.main", 32, 5}; { hero_handle_alive_at(t15, "the argument `o` of `release`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t15, "release", NULL, &hero_here); (void)release(t15); if (hero_handle_ended(t15, hero_life_0_0) && h2_b == t15) h2_b = hero_handle_dead(); } } return;
-#line 192 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 195 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_0Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

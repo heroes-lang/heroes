@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -59,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2316_held *)0)->first) == 1 && sizeof(((struct fixedbugs_2316_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2316_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 63 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 66 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -142,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 149 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Held_eq(const struct fixedbugs_2316_held *a, const struct fixedbugs_2316_held *b);
@@ -191,7 +194,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordreturnedfroma
     struct fixedbugs_2316_held *const hero_big_h1_h = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 195 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 198 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_h
 #undef t2
@@ -226,7 +229,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfromamat
 #line 34
     t15 = h1_n; t16 = INT64_C(2); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.make", 34, 29); t18 = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_helper(t17); hero_print_int(t18); hero_print_end();
     t19 = h3_other; h5_ret0 = t19; hero_pad_fill(&h5_ret0, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0); goto bb4; bb4:
-#line 230 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 233 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
     t20 = h5_ret0;
     if (hero_out != NULL) *hero_out = t20;
     hero_frame_give(hero_big_t20);
@@ -263,7 +266,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfromamat
     HERO_NODEBUG h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which t1, t5; HERO_NODEBUG int64_t t2, t4, t6, t8; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t3 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t7 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which){.tag = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Which_tag_left}; t2 = INT64_C(7); h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(&t3, t1, t2); t4 = t3.first; hero_print_int(t4); hero_print_end();
     t5 = (h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which){.tag = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Which_tag_right}; t6 = INT64_C(7); h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(&t7, t5, t6); t8 = t7.first; hero_print_int(t8); hero_print_end(); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t3); return;
-#line 267 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 270 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
 }
 #undef t3
 #undef t7

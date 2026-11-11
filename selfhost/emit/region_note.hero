@@ -1,0 +1,198 @@
+# The note a refused header carries where clang's words name `-Werror`: what
+# the region holds a header's own code to, in words (design.md §4.17, §4.19;
+# defect 2054; panel 245's R1, provisional, author ratification pending).
+#
+# **Built from the region's own lists and the build's words, never written
+# out**: until defect 2054 the note was a sentence, and a kind added to the
+# region was missing from it in silence. Each word of `emit/header_region.hero`'s
+# `KEPT`, `LITERAL`, `EXTENDED` and `HELD`, and each `-Werror=` word of the
+# build's own flags the region does not quiet, has its words here
+# (`never_for`), which the compiler's tests ask of every one of them.
+#
+# **Since panel 245's R1 the note says the rule whole**: every warning clang
+# gives in a header's code is an error but those the region passes over,
+# `-Wall`'s, sign conversions and deprecations, and a `#warning` or a
+# `#pragma message`, told and never refused; the kinds it lists are what
+# the author most often meets, never the whole of what is refused. Split out
+# of `emit/header_region.hero` at the landing, which took that module past
+# §11's 300 lines: the region's lists and its opening are the emitter's, and
+# this note is read by `cli/header_refused.hero` alone.
+
+use bytes
+use emit/header_region
+
+# What a header's code is never passed over for, as a refused header's
+# `-Werror` note names it (defect 2054): each word the region keeps an error
+# or refuses, and each the build's own flags make an error that `-Wall`'s
+# ignore does not reach (`-Wshorten-64-to-32`, the two pointer types, a macro
+# defined again: each still an error under the region's two ignores, measured
+# with Apple clang 21 on 2026-10-14, the lane's `build/wall/`). Empty for a
+# word no note names, which the compiler's tests refuse for every word of the
+# five lists, `KEPT`, `LITERAL`, `EXTENDED`, `HELD` and the build's.
+function never_for(word: str) -> str
+    if word == "-Wreturn-type"
+        return "a missing return"
+
+    if word == "-Wuninitialized" || word == "-Wconditional-uninitialized"
+        return "an uninitialised read"
+
+    if word == "-Wformat"
+        return "a format reading an argument it was not given or one of another type"
+
+    if word == "-Wimplicit-function-declaration"
+        return "a call to a function nobody declared"
+
+    if word == "-Wformat-nonliteral"
+        return "a format handed arguments that is not a literal"
+
+    if word == "-Wshorten-64-to-32"
+        return "a value narrowed to 32 bits"
+
+    if word == "-Wincompatible-pointer-types" || word == "-Wincompatible-pointer-types-discards-qualifiers"
+        return "a pointer of another type"
+
+    if word == "-Wmacro-redefined"
+        return "a macro defined again another way"
+
+    if word == "-Wmicrosoft-redeclare-static"
+        return "a `static` definition of a name declared external before it"
+
+    if word == "-Wimplicit-int"
+        return "a declaration with no type"
+
+    if word == "-Wuser-defined-warnings"
+        return "a call the header's own `diagnose_if` warns of"
+    return ""
+
+# The note a refusal whose clang words name `-Werror` carries, none for any
+# other: what the region holds a header's code to, built from the lists
+# themselves and the build's `-Werror=` words, `build_words`, so no kind can
+# be missing from it again. A word of `EXTENDED` is an error in a header's
+# code alone, the C this compiler writes holding no such declaration, and
+# the note does not say *too* of it, nor of a word of `LITERAL`.
+function werror_notes(message: str, build_words: [str]) -> [str]
+    none: [str] = []
+    at = index_of(text: message, needle: "[-Werror,")
+
+    if at < 0
+        return none
+    flag = message.slice(from: at + "[-Werror,".len(), to: message.len() - 1)
+    said: [str] @= []
+
+    for word in never_words(build_words)
+        phrase = never_for(word)
+
+        if phrase != "" && !holds(said, one: phrase)
+            said @ said.push(phrase)
+
+    last = said[said.len() - 1]
+    listed = said.slice(from: 0, to: said.len() - 1).join(", ") + ", or " + last
+    head: str @= "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found"
+
+    if holds(header_region.EXTENDED, one: flag)
+        head @ "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code alone, wherever the header was found: C11 leaves it undefined where a target's extension accepts it, and the C this compiler writes holds no such declaration"
+
+    if holds(header_region.LITERAL, one: flag)
+        head @ "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code alone, wherever the header was found: a format the header's code hands arguments to is written there as a literal, so clang reads each conversion against its argument, and the C this compiler writes binds no argument past a `...`"
+    return [
+        head + ": a header's code is passed over for `-Wall`'s warnings, sign conversions and deprecations alone, and a `#warning` or a `#pragma message` there is told and never refused; every other warning clang gives there is an error, and none is passed over for " + listed
+    ]
+
+# Every word a note names that a header's code is held to: `KEPT`, the
+# build's `-Werror=` words the region does not quiet, then `LITERAL`,
+# `EXTENDED` and `HELD`; every other warning is held too, by `LINE_WORDS`.
+function never_words(build_words: [str]) -> [str]
+    out: [str] @= header_region.KEPT
+
+    for word in build_words
+        if word.len() > 8 && bytes.bytes_at(text: word, at: 0, needle: "-Werror=")
+            plain = "-W" + word.slice(from: 8, to: word.len())
+
+            if !holds(header_region.QUIETED, one: plain) && !holds(out, one: plain)
+                out @ out.push(plain)
+
+    for word in header_region.LITERAL
+        out @ out.push(word)
+
+    for word in header_region.EXTENDED
+        out @ out.push(word)
+
+    for word in header_region.HELD
+        out @ out.push(word)
+
+    return out
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+# Where `needle` first stands in `text`, -1 where it never does, each offset
+# asked of its bytes: clang's line quotes the header's code, which may hold a
+# character of more than one byte, and a cut at every offset aborts inside it
+# (defect 2409's shape).
+function index_of(text: str, needle: str) -> i64
+    at: i64 @= 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return at
+        at @ at + 1
+
+    return -1
+
+## Tests
+
+# A note naming each kind once, from the lists and the build's words.
+test "a header's -Werror note names every kind its code is held to, and says too only of what the program's C is held to (defect 2054)"
+    words = [
+        "-std=gnu11"
+        "-Werror=return-type"
+        "-Werror=uninitialized"
+        "-Werror=shorten-64-to-32"
+        "-Werror=sign-conversion"
+        "-Werror=incompatible-pointer-types"
+    ]
+    noted = werror_notes(
+        message: "implicit conversion loses integer precision: 'long' to 'int' [-Werror,-Wshorten-64-to-32]",
+        build_words: words
+    )
+    assert noted.len() == 1
+    assert noted[0] == "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings, sign conversions and deprecations alone, and a `#warning` or a `#pragma message` there is told and never refused; every other warning clang gives there is an error, and none is passed over for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a call to a function nobody declared, a value narrowed to 32 bits, a pointer of another type, a format handed arguments that is not a literal, a `static` definition of a name declared external before it, a declaration with no type, or a call the header's own `diagnose_if` warns of"
+
+    # A word only the line's `-Werror` makes an error (panel 245's R1) is
+    # told with the same note.
+    shift = werror_notes(message: "shift count >= width of type [-Werror,-Wshift-count-overflow]", build_words: words)
+    assert shift.len() == 1
+    assert shift[0] == noted[0]
+    windows = werror_notes(
+        message: "redeclaring non-static 'hero_str_len' as static is a Microsoft extension [-Werror,-Wmicrosoft-redeclare-static]",
+        build_words: words
+    )
+    assert index_of(text: windows[0], needle: "in a header's own code alone, wherever the header was found: C11 leaves it undefined") > 0
+    assert index_of(text: windows[0], needle: "own code too") < 0
+
+    # A door that hands on its format (panel 243's R1) is told as the
+    # header's alone, the C this compiler writes binding nothing past `...`.
+    door = werror_notes(
+        message: "format string is not a string literal [-Werror,-Wformat-nonliteral]",
+        build_words: words
+    )
+    assert index_of(text: door[0], needle: "in a header's own code alone, wherever the header was found: a format the header's code hands arguments to is written there as a literal") > 0
+    assert index_of(text: door[0], needle: "own code too") < 0
+    assert werror_notes(message: "call to undeclared function 'f'", build_words: words).len() == 0
+
+    # Every word of the region's lists has its words in the note.
+    for word in header_region.KEPT
+        assert never_for(word) != ""
+
+    for word in header_region.LITERAL
+        assert never_for(word) != ""
+
+    for word in header_region.EXTENDED
+        assert never_for(word) != ""
+
+    for word in header_region.HELD
+        assert never_for(word) != ""

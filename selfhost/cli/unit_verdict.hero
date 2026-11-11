@@ -1,0 +1,68 @@
+# One unit's verdict once clang has compiled it: what every compile that
+# judges a unit says, in the order a refusal is read (design.md §4.19,
+# §1.12; panel 224; panel 245's R1, provisional, author ratification
+# pending; defect 2464).
+#
+# A unit's own compile is not its only judge. **A unit holding the value
+# region is read once more by the front end** under C's own meaning of a
+# signed shift, its verdict counting only where every error it adds to the
+# compile's is the region's (`cli/front_check.hero`, panel 224), and it is
+# read whether the compile refused the unit or not, since its words are the
+# truer ones. **Then the compile's own refusal.** **Then, where the unit
+# holds a group's header region and was compiled above `-O0`, that region's
+# code judged at `-O0`** (`cli/region_level.hero`), whose refusal is the
+# unit's, so a program has one verdict at every level: under panel 245's R1
+# every warning in a header's code is an error, and clang says a call to a
+# function its header marks `warning` at `-O0` and not where `-O2` inlines
+# it away, so `heroes build` refused what `heroes run` built (the sitting's
+# `attr_warning` shape) until this compile.
+#
+# Each refusal is handed back as its reader made it, its code and its words;
+# `cli/units.hero`'s `tu_object` appends the generated C's path and publishes
+# nothing. Split out of that module at panel 245's landing, which took it
+# past §11's 300 lines.
+
+use cli/compiling
+use cli/front_check
+use cli/publish
+use cli/region_level
+use cli/toolchain
+
+# The verdict of the unit at `c_file`, whose text is `tu_text`, compiled by
+# `line` under `under` with `compiled` what clang answered: `ok` where every
+# judge passes it, else the first refusal in the order above. `err_path` is
+# the compile's stderr file, which the front end's read writes again and
+# this discards.
+function of(t: toolchain.Toolchain, under: compiling.Compiling, line: [str], c_file: str, tu_text: str, dir: str, err_path: str, compiled: str?) -> ()?
+    if front_check.holds(tu_text)
+        fronted = front_check.refused(
+            line: line,
+            c_file: c_file,
+            tu_text: tu_text,
+            err_path: err_path,
+            compiled: text_of(compiled)
+        )
+        publish.discard(err_path)
+
+        if fronted.is_err()
+            return fronted
+
+    if compiled.is_err()
+        return fail(code: code_of(compiled), msg: text_of(compiled))
+    zero = region_level.judged(t, tu_text: tu_text, c_file: c_file, dir: dir, under: under)
+
+    if zero.is_err()
+        return fail(code: code_of(zero), msg: text_of(zero))
+    return ok()
+
+# A run's refusal, its words and its code (`toolchain.asked_of_clang`), ""
+# where it passed.
+function text_of(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+function code_of(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code

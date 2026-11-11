@@ -1,0 +1,145 @@
+# A function its header declares variadic is bound only through a door
+# (design.md §4.19, §1.12; panel 245's R2, its D, provisional, author
+# ratification pending; defect 2465).
+#
+# **A binding that names a variadic with nothing past its `...`** hands C
+# nothing there, and what the callee reads past it is decided by a value
+# only the run gives: a format's conversions, `O_CREAT` in `open`'s flags, a
+# command of `ioctl`. Measured by the sitting at its base, each program
+# built at exit 0: `open(path, flags)` with `O_CREAT + O_WRONLY` created its
+# file with a mode read from the `va_list` (`0450`), `sqlite3_mprintf(f)`
+# handed `n=%ld` printed `n=361761723`, and `sqlite3_config` and
+# `sqlite3_mprintf` died of SIGSEGV. C11 6.5.2.2p7 stops a call's conversions at the prototype's
+# `...`, and 7.16.1.1p2 leaves a `va_arg` with no next argument undefined,
+# so no check of the binding can hold it. **So such a binding is refused at
+# the binding**, `ffi_call_shape`, and its route is the door every refusal
+# of `emit/ffi_past_prototype.hero` names: a function of a header of the
+# program's own, with a fixed prototype, whose call is C's and whose
+# arguments are the ones written there. A function clang marks `format`
+# bound with its format alone was refused already (`emit/ffi_call.hero`);
+# this refuses every other. What it costs, said by the sitting: a correct
+# `open(p, O_RDONLY)` is refused with the rest, its door one line of C;
+# the alternative kept for the author, S alone with C's contract stated,
+# leaves the measured faults above at exit 0. No tracked program binds one
+# (the sitting's census of 496 roots).
+#
+# Asked in the check unit beside the five kinds a parameter past `...` asks,
+# under the same marker, with its own word and `-` for the parameter, since
+# none stands there; split out of that module at the landing, which took it
+# past §11's 300 lines.
+
+use cli/pointee_ask
+use diag
+use emit/c_text
+use token
+
+# The marker's word for a variadic bound with nothing past its `...`.
+constant BARE: str
+    "bare"
+
+# The check unit's lines: one assertion that fails, at the binding's line,
+# for each function `open` names variadic (`ffi_past_prototype.variadic_of`)
+# whose binding declares no parameter past its `...`. A function one of
+# whose parameters stands there is refused by that parameter's kind instead,
+# and an arity row (`pointee_ask.ARITY`) is no parameter. Once per function,
+# under `marker`, the module's own (`ffi_past_prototype.MARKER`).
+function lines(wanted: [pointee_ask.Pointee], open: {str: i64}, marker: str) -> [str]
+    out: [str] @= []
+    past: {str: bool} @= {}
+
+    for one in wanted
+        fixed = open[one.name]
+
+        if !fixed.is_err() && one.index >= fixed.must() && one.declared != pointee_ask.ARITY
+            past[one.name] @ true
+
+    said: {str: bool} @= {}
+
+    for one in wanted
+        fixed = open[one.name]
+
+        if fixed.is_err() || !past[one.name].is_err() || !said[one.name].is_err()
+            continue
+        said[one.name] @ true
+        out @ out.push(c_text.line_directive(at: one.line, file: one.file))
+        out @ out.push("_Static_assert(0, \"" + marker + one.name + " - " + BARE + " " + fixed.must().to_str() + "\");")
+
+    return out
+
+# The refusal, on the binding's name: `header` the group's header, `name`
+# the function, `given` how many parameters the header gives before its
+# `...`, in words. The rule cites C11 for what C does past the `...`, and
+# states this compiler's route without citing spec § 13, which does not
+# hold it (defect 2470's class).
+function told(header: str, name: str, given: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_call_shape",
+        message: "`" + header + "` declares `" + name + "` variadic, " + given + " and then `...`, and this binding names it with nothing past the `...` — what `" + name + "` reads there is decided by a value only the run gives, a format's conversions, `O_CREAT`'s mode, a command's argument, so nothing holds it to anything this program passed",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "C11 6.5.2.2p7: past a prototype's `...` a call converts nothing beyond the default argument promotions, and a binding with nothing there hands nothing; C11 7.16.1.1p2: a `va_arg` with no next argument to read is undefined, so what `" + name + "` reads past it is whatever the machine left there. A function its header declares variadic is called from a header of the program's own, where the call is C's, its arguments are the ones written there, and clang reads a format there against them"
+    )
+    d.notes @ d.notes.push(
+        "write a header of your own that includes `" + header + "` and defines a `static inline` function of a new name with a fixed prototype, taking every value `" + name + "` will read and calling it with each of them, a format written there as a literal; bind that function instead"
+    )
+    return d
+
+## Tests
+
+# A variadic bound with only its fixed parameters is told once, at its
+# line; one with a parameter past its `...` is that parameter's to tell, and
+# a function that is not variadic, or an arity row past the count, says
+# nothing here.
+test "a variadic bound with nothing past its ... is refused once, and no other binding is (panel 245's R2)"
+    bare = pointee_ask.Pointee(
+        name: "open",
+        param: "flags",
+        index: 1,
+        declared: pointee_ask.VALUE,
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    path = pointee_ask.Pointee(
+        name: "open",
+        param: "path",
+        index: 0,
+        declared: pointee_ask.LENT,
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    arity = pointee_ask.Pointee(
+        name: "open",
+        param: "",
+        index: 2,
+        declared: pointee_ask.ARITY,
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    open: {str: i64} @= {}
+    open["open"] @ 2
+    got = lines([path, bare, arity], open: open, marker: "m ")
+    assert got.len() == 2
+    assert got[1] == "_Static_assert(0, \"m open - bare 2\");"
+
+    # A parameter past the `...` is its kind's, never a bare binding's.
+    after = pointee_ask.Pointee(
+        name: "open",
+        param: "mode",
+        index: 2,
+        declared: pointee_ask.VALUE,
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    assert lines([path, bare, after], open: open, marker: "m ").len() == 0
+
+    # A function the header does not declare variadic is no business here.
+    fixed: {str: i64} = {}
+    assert lines([path, bare], open: fixed, marker: "m ").len() == 0
+    d = told(header: "fcntl.h", name: "open", given: "2 parameters", span: token.Span(start: 0, end: 1))
+    assert d.code == "ffi_call_shape"
+    assert d.notes.len() == 2

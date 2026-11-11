@@ -1,0 +1,20 @@
+# fixedbugs, defect 2469 (panel 245's R1, provisional), 2026-11-11, the
+# second of the defect's two programs: the first's note followed.
+#
+# SYMPTOM: with a group naming `stdio.h` written above, as the first
+# program's false note told, the build was refused again and told *these
+# compile when `fixedbugs-2469-own.h` is included before `stdio.h`, which the
+# group at line 13 names ... write this group above that one*: the two notes
+# sent the author back and forth, each offering an order, where the repair
+# is the header's own line 4.
+#
+# FIX: as the first program's: no order compiles, so none is told.
+
+extern "stdio.h"
+    function puts(s: cstr lent) -> i32
+
+extern "fixedbugs-2469-own.h"  #~ ffi_header_refused
+    function door(x: i64) -> i64
+
+function main()
+    print(door(x: 4))

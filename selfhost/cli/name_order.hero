@@ -10,9 +10,9 @@
 #
 # So, on the failure path alone, the header is asked with one line naming
 # the name after it (`cli/order_trial.hero`): alone, then with each other
-# group of its module moved across it (`header_order.search`), then, where
+# group of its module moved across it (`order_search.search`), then, where
 # neither declares it, after each header of C's own the unit does not read
-# (`header_order.standard`). The first that declares it is told in place of
+# (`order_search.standard`). The first that declares it is told in place of
 # the false headline and its note. A headline the switch reader told
 # (`emit/ffi_switched.hero`, defect 585) is true, and is left as it was.
 
@@ -21,6 +21,7 @@ use cli/compiling
 use cli/header_order
 use cli/header_reads
 use cli/order_groups
+use cli/order_search
 use cli/order_trial
 use cli/strings
 use cli/toolchain
@@ -42,7 +43,7 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     question = "static void hero_order_q(void) { (void)(" + name + "); }"
     written = order_trial.theirs(unit_headers)
     alone = order_trial.compiled(t, words: compiling.unit_words(under), text: order_trial.opening([header], question: question)).compiles
-    found = header_order.search(
+    found = order_search.search(
         s,
         decls,
         t,
@@ -50,7 +51,8 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
         written: written,
         target: header,
         module: module,
-        question: question
+        question: question,
+        generating: false
     )
     out: diag.Diagnostic @= d
     notes: [str] @= []
@@ -78,7 +80,14 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
             "a header this unit reads before `" + header + "` changes what it declares, and no order of this module's groups reads it alone"
         )
         return out
-    prerequisite = header_order.standard(t, under: under, written: written, target: header, question: question)
+    prerequisite = order_search.standard(
+        t,
+        under: under,
+        written: written,
+        target: header,
+        question: question,
+        generating: false
+    )
 
     if prerequisite.is_err()
         return d

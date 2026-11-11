@@ -1,0 +1,19 @@
+# fixedbugs, defect 2465 (panel 245's R2, provisional), 2026-11-11.
+#
+# SYMPTOM: a door `say(f)` calling `printf(f)` and handed `n=%ld` at run time
+# built at exit 0 and printed `n=4330308288` at batch 31's base (9febdd6c3), a
+# `long` read where no argument was passed: `-Wformat-nonliteral` speaks only
+# where arguments follow the format, and `-Wformat-security`, which reads
+# this one, was passed over in a header's code (defect 2036).
+#
+# FIX: `-Wformat-security` is kept with `-Wformat` in the region (panel 245's
+# R2, its S; `emit/header_region.hero`'s `FORMAT_DEFINED`), so the door is
+# refused at its line; its fix is a literal format there, `printf("%s", f)`.
+
+extern "fixedbugs-2465-a-door-handing-on-its-format-alone-is-refused.h"  #~ ffi_header_refused
+    function say(f: cstr lent) -> i32
+
+function main()
+    tail = "ld\n"
+    format = "n=%" + tail
+    print(say(f: format.cstr()))

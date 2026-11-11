@@ -1,0 +1,10 @@
+# Panel 245's R1: a function bound and never called generates no call, at
+# `-O0` or in the `-O0` compile of a build at `-O2`, so this builds at both
+# and prints `2`.
+
+extern "lib.h"
+    function door(x: i64) -> i64
+    function never_called(x: i64) -> i64
+
+function main()
+    print(door(x: 1))

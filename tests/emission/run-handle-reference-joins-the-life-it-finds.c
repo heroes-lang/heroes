@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -102,7 +105,7 @@ HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_45d6e555, " up_ref: ");
 HERO_STR_STATIC(hero_str_3f94e3d, "released three times, as C expects");
 
-#line 106 "handlereferencejoinsthelifeitfinds.c"
+#line 109 "handlereferencejoinsthelifeitfinds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -158,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "handlereferencejoinsthelifeitfinds.c"
+#line 165 "handlereferencejoinsthelifeitfinds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_0Ob_eq(ob * const *a, ob * const *b);
@@ -188,7 +191,7 @@ void h_handlereferencejoinsthelifeitfinds_main(void) { ob * h0_a; ob * h1_b; int
     t13 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-reference-joins-the-life-it-finds.hero", "handle-reference-joins-the-life-it-finds.main", 22, 5}; { hero_handle_alive_at(t13, "the argument `o` of `ob_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "ob_put", NULL, &hero_here); (void)ob_put(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_a == t13) h0_a = hero_handle_dead(); } }
     t14 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-reference-joins-the-life-it-finds.hero", "handle-reference-joins-the-life-it-finds.main", 23, 5}; { hero_handle_alive_at(t14, "the argument `o` of `ob_put`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t14, "ob_put", NULL, &hero_here); (void)ob_put(t14); if (hero_handle_ended(t14, hero_life_0_0) && h0_a == t14) h0_a = hero_handle_dead(); } }
     t15 = HERO_STR_LIT(hero_str_3f94e3d); hero_print_str(t15); hero_print_end(); return;
-#line 192 "handlereferencejoinsthelifeitfinds.c"
+#line 195 "handlereferencejoinsthelifeitfinds.c"
 }
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_0Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

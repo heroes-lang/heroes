@@ -12,11 +12,14 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
-#pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic error "-Wimplicit-int"
+#pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -2061,7 +2064,7 @@ _Static_assert(_Generic(&((G997 *)0)->inner, G996 *: 1, default: 0) && sizeof(((
 _Static_assert(_Generic(&((G998 *)0)->inner, G997 *: 1, default: 0) && sizeof(((G998 *)0)->inner) == sizeof(G997), "heroes-ffi-field G998 inner");
 #line 2021
 _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((G999 *)0)->inner) == sizeof(G998), "heroes-ffi-field G999 inner");
-#line 2065 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2068 "fixedbugs140externrecordsathousanddeepbuild.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -2135,7 +2138,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2139 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2142 "fixedbugs140externrecordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140externrecordsathousanddeepbuild_0G0_eq(const G0 *a, const G0 *b);
@@ -4174,7 +4177,7 @@ void h_fixedbugs140externrecordsathousanddeepbuild_main(void);
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&h_fixedbugs140externrecordsathousanddeepbuild_0G999_desc, 1); t4 = h1_own1; h1_own1 = t1; hero_array_decref(t4); t5 = h0_xs; hero_array_incref(t1); h0_xs = t1; hero_array_decref(t5);
     t2 = h0_xs; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); hero_print_int(t3); hero_print_end();
-#line 4178 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4181 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

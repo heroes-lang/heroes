@@ -90,17 +90,39 @@
 # 4294967338 as `42` at exit 0 (the sitting's critic, item 2): so
 # `-Wformat-nonliteral` is made an error in the region (`LITERAL`). It reads
 # a call that passes arguments after a format no literal fixes; `printf(m)`
-# alone is `-Wformat-security`'s, passed over above (defect 2036), and a
-# forwarder marked with the `format` attribute is clang's own reader's and
-# never told (defect 2034's case). Measured at the landing on this Mac: of
-# 2,400 headers under `/opt/homebrew/include` read in the region's shape,
-# 1,337 refused with it and without it and none moved; of the 710 tracked
-# headers outside `docs/`, `seed/`, `vendor/` and `runtime/`, 80 refused
-# both ways and none moved. It is not `-Wall`'s, so it is not raised after
-# the region either: the C this compiler writes binds no argument past a
-# `...`, and a check of that C would add nothing.
+# alone is `-Wformat-security`'s, kept with `-Wformat` since panel 245's R2
+# (below, `FORMAT_DEFINED`), and a forwarder marked with the `format`
+# attribute is clang's own reader's and never told (defect 2034's case).
+# Measured at the landing on this Mac: of 2,400 headers under
+# `/opt/homebrew/include` read in the region's shape, 1,337 refused with it
+# and without it and none moved; of the 710 tracked headers outside `docs/`,
+# `seed/`, `vendor/` and `runtime/`, 80 refused both ways and none moved. It
+# is not `-Wall`'s, so it is not raised after the region either: the C this
+# compiler writes binds no argument past a `...`, and a check of that C
+# would add nothing.
+#
+# **And since panel 245's R1 a header's own code fails closed** (provisional,
+# author ratification pending; defects 2464 and 2469): every warning clang
+# gives there is an error, `LINE_WORDS`' `-Werror` on each unit's line, but
+# those the region passes over, `-Wall`'s and sign conversions (`QUIETED`) and
+# a deprecation (`ADVICE`), and those it tells and never refuses, a
+# `#warning` (`-Wno-error=#warnings`, defect 248's relay) and a `#pragma
+# message`, which clang never makes an error. Until then the region was a
+# list of what stays an error, and every other warning clang gave in a
+# door's body printed at exit 0: a deprecated `sprintf` (defect 2464), an
+# `int` shifted by 40 printing `2` at `-O0` and `0` at `-O2`, a `strncat`
+# sized wrong dying of SIGTRAP, a `free` of no heap object of SIGABRT, and
+# libcurl's own checker of a value handed past `curl_easy_setopt`'s `...`
+# (`-Wattribute-warning`), 14 of the sitting critic's 17 shapes refused at
+# `-O0` since, none at exit 2; and any list of words left one clang adds
+# later raw (the critic's second pass, six such words). The cost the
+# sitting measured and kept: a default warning outside `-Wall` about a
+# construct C defines is refused with the rest (`-Winitializer-overrides`),
+# which met no tracked program. A trial that tells an order compiles under
+# the same words (`cli/compiling.hero`'s `unit_words`), and a unit above
+# `-O0` is judged at `-O0` too (`cli/region_level.hero`), so a program has
+# one verdict; the note a refusal carries is `emit/region_note.hero`'s.
 
-use bytes
 use emit/checks_raised
 
 # What a header's own code is not held to.
@@ -132,9 +154,6 @@ constant KEPT: [str]
 #   C11 7.21.6.1p2 evaluates it and otherwise ignores it;
 # - `-Wformat-zero-length`, an empty format handed an argument: the same
 #   paragraph, every argument an excess one;
-# - `-Wformat-security`, a format that is no literal and takes no argument:
-#   C defines the call for whatever string it holds, which clang cannot see;
-#   a literal is still judged whole;
 # - `-Wformat-truncation`, with its `-non-kprintf` part, `snprintf` handed
 #   less room than its output: 7.21.6.5p2 writes the first n-1 characters and
 #   returns how many the whole would take; told by glibc's headers, never by
@@ -142,7 +161,15 @@ constant KEPT: [str]
 # - `-Wformat-y2k`, which holds no diagnostic in clang: GCC's, a `strftime`
 #   format giving a two-digit year, is defined.
 #
-# Kept, by the same reading: `-Wformat-insufficient-args` (p2, too few
+# Kept, by the same reading: `-Wformat-security` (panel 245's R2, its S,
+# provisional, author ratification pending; defect 2465), a format that is
+# no literal and takes no argument, which C defines only for a string
+# holding no conversion: a door handing on the format it was given,
+# `printf(f)`, printed the stack's bytes for `n=%ld` at exit 0 and died of
+# `%n` (the defect's measurements), so the one form clang cannot judge is
+# refused, and `printf("%s", m)` is its fix, a correct `printf(m)` the cost
+# kept (`fixedbugs-2036-...-printf-of-a-format-held-in-a-variable-...` in
+# `tests/golden/unsupported/`); `-Wformat-insufficient-args` (p2, too few
 # arguments), `-Wformat-invalid-specifier` (p9, an invalid conversion),
 # `-Wformat-overflow` (`sprintf` written past its array), `-Wnonnull` (a null
 # where the declaration forbids one; 7.1.4p1 for the library's own), and the
@@ -160,7 +187,6 @@ constant FORMAT_DEFINED: [str]
     [
         "-Wformat-extra-args"
         "-Wformat-zero-length"
-        "-Wformat-security"
         "-Wformat-truncation"
         "-Wformat-y2k"
     ]
@@ -182,121 +208,44 @@ constant EXTENDED: [str]
         "-Wmicrosoft-redeclare-static"
     ]
 
-# What a header's code is never passed over for, as a refused header's
-# `-Werror` note names it (defect 2054): each word the region keeps an error
-# or refuses, and each the build's own flags make an error that `-Wall`'s
-# ignore does not reach (`-Wshorten-64-to-32`, the two pointer types, a macro
-# defined again: each still an error under the region's two ignores, measured
-# with Apple clang 21 on 2026-10-14, the lane's `build/wall/`). Empty for a
-# word no note names, which the compiler's tests refuse for every word of the
-# four lists, `KEPT`, `LITERAL`, `EXTENDED` and the build's.
-function never_for(word: str) -> str
-    if word == "-Wreturn-type"
-        return "a missing return"
-
-    if word == "-Wuninitialized" || word == "-Wconditional-uninitialized"
-        return "an uninitialised read"
-
-    if word == "-Wformat"
-        return "a format reading an argument it was not given or one of another type"
-
-    if word == "-Wimplicit-function-declaration"
-        return "a call to a function nobody declared"
-
-    if word == "-Wformat-nonliteral"
-        return "a format handed arguments that is not a literal"
-
-    if word == "-Wshorten-64-to-32"
-        return "a value narrowed to 32 bits"
-
-    if word == "-Wincompatible-pointer-types" || word == "-Wincompatible-pointer-types-discards-qualifiers"
-        return "a pointer of another type"
-
-    if word == "-Wmacro-redefined"
-        return "a macro defined again another way"
-
-    if word == "-Wmicrosoft-redeclare-static"
-        return "a `static` definition of a name declared external before it"
-    return ""
-
-# The note a refusal whose clang words name `-Werror` carries, none for any
-# other: what the region holds a header's code to, built from the lists
-# themselves and the build's `-Werror=` words, `build_words`, so no kind can
-# be missing from it again. A word of `EXTENDED` is an error in a header's
-# code alone, the C this compiler writes holding no such declaration, and
-# the note does not say *too* of it, nor of a word of `LITERAL`.
-function werror_notes(message: str, build_words: [str]) -> [str]
-    none: [str] = []
-    at = index_of(text: message, needle: "[-Werror,")
-
-    if at < 0
-        return none
-    flag = message.slice(from: at + "[-Werror,".len(), to: message.len() - 1)
-    said: [str] @= []
-
-    for word in never_words(build_words)
-        phrase = never_for(word)
-
-        if phrase != "" && !holds(said, one: phrase)
-            said @ said.push(phrase)
-
-    last = said[said.len() - 1]
-    listed = said.slice(from: 0, to: said.len() - 1).join(", ") + ", or " + last
-    head: str @= "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found"
-
-    if holds(EXTENDED, one: flag)
-        head @ "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code alone, wherever the header was found: C11 leaves it undefined where a target's extension accepts it, and the C this compiler writes holds no such declaration"
-
-    if holds(LITERAL, one: flag)
-        head @ "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code alone, wherever the header was found: a format the header's code hands arguments to is written there as a literal, so clang reads each conversion against its argument, and the C this compiler writes binds no argument past a `...`"
-    return [
-        head + ": a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for " + listed
+# A deprecation is clang's advice about a name, not a mistake in the code
+# that names it: quiet in a header's code as on every line after the region
+# (`emit/deprecation.hero`, panel 208's R1), so a door calling a deprecated
+# `sprintf` builds silent (defect 2464; panel 245's R1).
+constant ADVICE: [str]
+    [
+        "-Wdeprecated-declarations"
+        "-Wdeprecated-pragma"
     ]
 
-# Every word a header's code is held to: `KEPT`, the build's `-Werror=` words
-# the region does not quiet, then `LITERAL` and `EXTENDED`.
-function never_words(build_words: [str]) -> [str]
-    out: [str] @= KEPT
+# Two words `-Wall`'s ignore reaches that are no library's style (panel
+# 245's R1, its critic's items 4 and 10): a declaration with no type, which
+# C11 refuses and clang makes an error by default, and a call a header's own
+# `diagnose_if` warns of. Ignored with `-Wall`, a header's `static
+# implicit_x = 3;` compiled in every order trial while the unit refused it
+# outside the region, and each refusal's note sent the author to the other
+# order, back and forth (defect 2469).
+constant HELD: [str]
+    [
+        "-Wimplicit-int"
+        "-Wuser-defined-warnings"
+    ]
 
-    for word in build_words
-        if word.len() > 8 && bytes.bytes_at(text: word, at: 0, needle: "-Werror=")
-            plain = "-W" + word.slice(from: 8, to: word.len())
-
-            if !holds(QUIETED, one: plain) && !holds(out, one: plain)
-                out @ out.push(plain)
-
-    for word in LITERAL
-        out @ out.push(word)
-
-    for word in EXTENDED
-        out @ out.push(word)
-
-    return out
-
-function holds(list: [str], one: str) -> bool
-    for each in list
-        if each == one
-            return true
-
-    return false
-
-# Where `needle` first stands in `text`, -1 where it never does, each offset
-# asked of its bytes: clang's line quotes the header's code, which may hold a
-# character of more than one byte, and a cut at every offset aborts inside it
-# (defect 2409's shape).
-function index_of(text: str, needle: str) -> i64
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if bytes.bytes_at(text: text, at: at, needle: needle)
-            return at
-        at @ at + 1
-
-    return -1
+# What a unit's line carries for the region (`compiling.unit_words`, panel
+# 245's R1), and so every order trial whose verdict a note tells: every
+# warning an error, a `#warning` still told. A probe of a type takes none
+# (`compiling.probe_words`), since a header's warning is no answer about a
+# type (defect 163).
+constant LINE_WORDS: [str]
+    [
+        "-Werror"
+        "-Wno-error=#warnings"
+    ]
 
 # The lines before the groups' includes: the push, the ignores, the kept,
 # then the parts of a kept group passed over again, then a format no literal
-# fixes and the extensions refused.
+# fixes and the extensions refused, then a deprecation quiet and the two
+# words `-Wall`'s ignore took raised again.
 function opening() -> [str]
     out: [str] @= ["#pragma clang diagnostic push"]
 
@@ -315,6 +264,12 @@ function opening() -> [str]
     for word in EXTENDED
         out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
 
+    for word in ADVICE
+        out @ out.push("#pragma clang diagnostic ignored \"" + word + "\"")
+
+    for word in HELD
+        out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
+
     return out
 
 # The line after the guard's close, which gives back the state before the
@@ -325,49 +280,6 @@ constant CLOSING: str
 
 ## Tests
 
-# A note naming each kind once, from the lists and the build's words.
-test "a header's -Werror note names every kind its code is held to, and says too only of what the program's C is held to (defect 2054)"
-    words = [
-        "-std=gnu11"
-        "-Werror=return-type"
-        "-Werror=uninitialized"
-        "-Werror=shorten-64-to-32"
-        "-Werror=sign-conversion"
-        "-Werror=incompatible-pointer-types"
-    ]
-    noted = werror_notes(
-        message: "implicit conversion loses integer precision: 'long' to 'int' [-Werror,-Wshorten-64-to-32]",
-        build_words: words
-    )
-    assert noted.len() == 1
-    assert noted[0] == "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a call to a function nobody declared, a value narrowed to 32 bits, a pointer of another type, a format handed arguments that is not a literal, or a `static` definition of a name declared external before it"
-    windows = werror_notes(
-        message: "redeclaring non-static 'hero_str_len' as static is a Microsoft extension [-Werror,-Wmicrosoft-redeclare-static]",
-        build_words: words
-    )
-    assert index_of(text: windows[0], needle: "in a header's own code alone, wherever the header was found: C11 leaves it undefined") > 0
-    assert index_of(text: windows[0], needle: "own code too") < 0
-
-    # A door that hands on its format (panel 243's R1) is told as the
-    # header's alone, the C this compiler writes binding nothing past `...`.
-    door = werror_notes(
-        message: "format string is not a string literal [-Werror,-Wformat-nonliteral]",
-        build_words: words
-    )
-    assert index_of(text: door[0], needle: "in a header's own code alone, wherever the header was found: a format the header's code hands arguments to is written there as a literal") > 0
-    assert index_of(text: door[0], needle: "own code too") < 0
-    assert werror_notes(message: "call to undeclared function 'f'", build_words: words).len() == 0
-
-    # Every word of the region's lists has its words in the note.
-    for word in KEPT
-        assert never_for(word) != ""
-
-    for word in LITERAL
-        assert never_for(word) != ""
-
-    for word in EXTENDED
-        assert never_for(word) != ""
-
 test "a header's own code is quiet of -Wall and sign conversion alone, a missing return, an uninitialised read and a mismatched format kept"
     got = opening()
     assert got[0] == "#pragma clang diagnostic push"
@@ -376,8 +288,20 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
     assert got[3] == "#pragma clang diagnostic error \"-Wreturn-type\""
     assert got[5] == "#pragma clang diagnostic error \"-Wformat\""
     assert got[7] == "#pragma clang diagnostic error \"-Wimplicit-function-declaration\""
-    assert got.len() == 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len() + LITERAL.len() + EXTENDED.len()
-    assert got[got.len() - 1] == "#pragma clang diagnostic error \"-Wmicrosoft-redeclare-static\""
+    assert got.len() == 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len() + LITERAL.len() + EXTENDED.len() + ADVICE.len() + HELD.len()
+    tail = 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len() + LITERAL.len()
+    assert got[tail] == "#pragma clang diagnostic error \"-Wmicrosoft-redeclare-static\""
+
+    # A deprecation quiet, then the two words `-Wall`'s ignore took raised
+    # again after it (panel 245's R1).
+    assert got[tail + EXTENDED.len()] == "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
+    assert got[got.len() - 2] == "#pragma clang diagnostic error \"-Wimplicit-int\""
+    assert got[got.len() - 1] == "#pragma clang diagnostic error \"-Wuser-defined-warnings\""
+
+    # A format no literal fixes and takes no argument is kept with
+    # `-Wformat` (panel 245's R2): no pragma passes it over.
+    for line in got
+        assert line != "#pragma clang diagnostic ignored \"-Wformat-security\""
 
     # A part of `-Wformat` C defines is passed over after the group is raised,
     # since the later pragma decides the part (defect 2036); written before
@@ -400,3 +324,9 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
                 found @ true
 
         assert found
+
+# Each unit's line makes every warning an error and keeps a `#warning` told
+# (panel 245's R1): the order of the two is clang's, the second deciding the
+# one group it names.
+test "a unit's line makes every warning an error but a #warning, which stays told"
+    assert LINE_WORDS == ["-Werror", "-Wno-error=#warnings"]
