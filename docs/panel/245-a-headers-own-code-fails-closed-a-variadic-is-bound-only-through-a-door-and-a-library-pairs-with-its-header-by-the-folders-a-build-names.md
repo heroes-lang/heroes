@@ -200,6 +200,7 @@ decision issue's `## Prior art`.
 
 ## Author's verdict
 
-Pending. The sitting's decision issue, `Panel 245:`, is filed open; its link follows in the next commit. **What a yes
+Pending. The sitting's decision issue, `Panel 245:`, is filed open:
+https://github.com/heroes-lang/heroes/issues/2475. **What a yes
 settles**: R1 to R5 as adopted. **What it does not**: W0 in the specification, which waits on its
 payment; the conservative alternatives above, which stay the author's to choose.
