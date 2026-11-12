@@ -1,0 +1,13 @@
+#~ shadowed_header
+# fixedbugs, defect 2477, lane b33-env, 2026-11-12: `CPATH` names two folders,
+# the second holding a `stdbool.h` that defines `true` as 0, so the list is
+# parted where clang parts it, at `:` here and at `;` on Windows, where the
+# harness gives the case's `:` as `;` and the compiler parts the variable at
+# `;` (`cli/clang_added.hero`). Until then every case setting a variable clang
+# reads was skipped on Windows, started through `/usr/bin/env`, and none held
+# a list. Refused at the program's first byte, its note naming the variable
+# and the second folder.
+
+function main()
+    b = true
+    print(b)
