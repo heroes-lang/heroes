@@ -4624,7 +4624,39 @@ function answered_beneath(text: str) -> bool
                 if next >= '0' && next <= '9'
                     return true
 
+                # The project's ratifications name their resolutions before
+                # the day, `Ratified, R1 to R8, 2026-11-10`, panels 241 to 246
+                # among them: the line is an answer where it holds a day.
+                if holds_day(text: bare)
+                    return true
+
     return false
+
+# Whether `text` holds a day written `YYYY-MM-DD` anywhere in it.
+function holds_day(text: str) -> bool
+    at: i64 @= 0
+
+    while at + 10 <= text.len()
+        if day_at(text: text, at: at)
+            return true
+        at @ at + 1
+
+    return false
+
+# Whether the ten bytes of `text` from `at` read `YYYY-MM-DD`.
+function day_at(text: str, at: i64) -> bool
+    for k in range(from: 0, to: 9)
+        ch = text[at + k]
+
+        if k == 4 || k == 7
+            if ch != '-'
+                return false
+
+        if k != 4 && k != 7
+            if ch < '0' || ch > '9'
+                return false
+
+    return true
 
 test "a verdict answered beneath its stub is answered, and a quoted word is not"
     assert answered_beneath(
@@ -4634,6 +4666,12 @@ test "a verdict answered beneath its stub is answered, and a quoted word is not"
     assert !answered_beneath(text: "Pending. Nothing is ratified yet.\n\nThe author has not answered.\n")
     assert !answered_beneath(text: "**Ratified, 2026-10-10**, R1.\n")
     assert !answered_beneath(text: "Pending.\n\nRatified, without a date.\n")
+    assert answered_beneath(
+        text: "Pending.\n\n**Ratified, R1 to R8, 2026-11-10, with R8's order reversed**: the author's answer.\n"
+    )
+    assert !answered_beneath(text: "Pending.\n\nRatified, R1 to R5, soon.\n")
+    assert holds_day(text: "Ratified,R1toR5,2026-11-12")
+    assert !holds_day(text: "2026-1-12 and 20261112")
 
 # **`ROADMAP.md` § Where we are, held to its own ceiling.**
 #
