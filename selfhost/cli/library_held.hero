@@ -1,0 +1,328 @@
+# A library file a refused link took and said nothing of, which no linker
+# reads a definition from (design.md §4.19, §4.17; defect 2487, 2026-11-12),
+# asked of the file itself: `cli/refused_files.hero` reads the files a
+# linker's words name, and this is the half its words leave out.
+# `cli/library_file.hero` tells each file found here as it tells one of
+# those, at the group of its library.
+#
+# **What it closes, measured 2026-11-12 in the `heroes-linux-arm64` image**
+# (GNU ld 2.44, `ld.lld` 22.1.8) **and on this Mac** (ld64-27106.1): a file
+# standing for `-lz` in a folder `-L` names that is empty, a link to an
+# empty file, an archive holding no file (`!<arch>` alone, and `!<thin>` on
+# the first two), or text holding only blanks and comments (`/* */`, and `#`
+# to the line's end) is read by GNU ld and `ld.lld` as an empty linker
+# script and by ld64, for the archive, as an archive; none of them says a
+# word of it, and the link goes on to leave the program's names undefined.
+# Until then `ffi_linked.hero`'s note told such a build *either two
+# releases or two builds of it ... or `zlibVersion` lives in another*,
+# neither true, and the file the build named was what held nothing. And
+# text opening a comment it never closes is refused by GNU ld as `EOF in
+# comment`, naming no file, which was *internal error: linking failed* at
+# exit 2 (`ld.lld` names the file, ld64 calls it of no known type, and
+# `refused_files` reads both). ld64 names every other such file itself (*file
+# is empty*, *unknown file type*), and so do GNU ld and `ld.lld` for text no
+# linker script holds and for bytes of no format.
+#
+# **The file the link took is found as the linker finds it**, measured with
+# the same three: in each folder `-L` names, in the line's order, the first
+# file of the names that linker searches for (`searched`), a directory and a
+# link to nothing passed over, where GNU ld passed both over and the other
+# two passed over the link; a folder that holds none is passed for the next.
+# The folders asked are those the program's words name, `--library`'s, then
+# a `pkgconfig` answer's `-L`, which the link line carries before any of
+# clang's own; a file found only in a folder of the linker's own is not
+# asked. A target whose linker's search was not measured, MSVC's and
+# MinGW's, asks nothing, so its refusal keeps the readers after this one.
+#
+# **And a file is told only where the refusal is one it gives**: a file that
+# holds nothing where the link left a name undefined, and a comment never
+# closed where GNU ld said so; any other refusal is the readers' after it.
+
+use bytes
+use cli/files
+use cli/link_flags
+use cli/link_report
+use cli/process
+use cli/refused_files
+use cli/strings
+use emit/ffi_lookup
+
+# What a library file holds, as a linker reads it: a definition the
+# linker's own words judge (an object, an archive, a shared library, a
+# script with a command, or bytes that are not text), nothing at all, or a
+# comment that never closes.
+variant Kind
+    readable
+    nothing
+    unclosed
+
+# What `holding` found, and what is wrong with the file, said after `it `.
+record Held
+    kind: Kind
+    wrong: str
+
+# The files a refused link took for `names` from `folders`, in that order,
+# and said nothing of, each of which no definition can be read from: none
+# where the refusal is not one such a file gives. `target` is the triple
+# whose linker searched them.
+function refusals(message: str, names: [str], folders: [str], target: str) -> [refused_files.Refused]
+    out: [refused_files.Refused] @= []
+    undefined = link_report.references(message).len() > 0
+    unclosed = gnu_unclosed(message)
+
+    if !undefined && !unclosed
+        return out
+    seen: {str: bool} @= {}
+
+    for name in names
+        if !seen[name].is_err()
+            continue
+        seen[name] @ true
+        file = taken(name: name, folders: folders, target: target)
+
+        if file.is_err()
+            continue
+        held = holding(file.must())
+
+        match held.kind
+            .readable => continue
+            .nothing =>
+                if undefined
+                    out @ out.push(
+                        refused_files.Refused(file: file.must(), did: "read nothing from", wrong: "it " + held.wrong)
+                    )
+            .unclosed =>
+                if unclosed
+                    out @ out.push(
+                        refused_files.Refused(file: file.must(), did: "cannot use", wrong: "it " + held.wrong)
+                    )
+
+    return out
+
+# Whether `message` holds GNU ld's refusal of a comment that never closes,
+# `<ld>: EOF in comment`, which names no file.
+function gnu_unclosed(message: str) -> bool
+    for line in ffi_lookup.lines(text: message)
+        if strings.ends_with(text: link_report.unreturned(line), suffix: ": EOF in comment")
+            return true
+
+    return false
+
+# The file the linker took for `-l<name>`: in `folders`' order, the first of
+# the files `searched` names that is there, a directory and a link to
+# nothing passed over; an error where no folder holds one.
+function taken(name: str, folders: [str], target: str) -> str?
+    for folder in folders
+        if folder == ""
+            continue
+
+        for base in searched(name: name, target: target)
+            file = joined(folder: folder, base: base)
+
+            if process.path_exists(file) && !process.is_directory(file)
+                return ok(file)
+
+    return fail(code: "none", msg: "no folder the build names holds a file for the library")
+
+# The files a target's linker searches a folder for, for `-l<name>`, in its
+# order: ld64's four, and GNU ld's and `ld.lld`'s two (each order measured
+# by an empty file of one name beside one of the next); none for a target
+# whose linker's search was not measured.
+function searched(name: str, target: str) -> [str]
+    none: [str] = []
+
+    if link_flags.apple(target)
+        return ["lib" + name + ".tbd", "lib" + name + ".dylib", "lib" + name + ".so", "lib" + name + ".a"]
+
+    if strings.holds(text: target, needle: "-linux")
+        return ["lib" + name + ".so", "lib" + name + ".a"]
+    return none
+
+# `base` in `folder`, as the folder was written, one `/` between them.
+function joined(folder: str, base: str) -> str
+    if strings.ends_with(text: folder, suffix: "/") || strings.ends_with(text: folder, suffix: "\\")
+        return folder + base
+    return folder + "/" + base
+
+# What the file at `path` holds, read through a link, which is named. A
+# file that does not read as text is an object, an archive or a library
+# for the linker's own words to judge, and so is one that cannot be read.
+function holding(path: str) -> Held
+    text = read_file(path)
+
+    if text.is_err()
+        return Held(kind: .readable, wrong: "")
+    held = held_in(text.must())
+
+    match held.kind
+        .readable => return held
+        .nothing | .unclosed =>
+            match files.entry(path)
+                .link =>
+                    to = files.resolved(path)
+
+                    if !to.is_err()
+                        return Held(kind: held.kind, wrong: "is a link to `" + to.must() + "`, which " + held.wrong)
+                    return held
+                .absent | .file | .directory | .other | .unknown => return held
+
+# What a file of this text holds, as a linker reads it.
+function held_in(text: str) -> Held
+    if text.len() == 0
+        return Held(kind: .nothing, wrong: "is empty")
+
+    if text == "!<arch>\n" || text == "!<thin>\n"
+        return Held(kind: .nothing, wrong: "is an archive holding no file")
+
+    match script(text)
+        .readable => return Held(kind: .readable, wrong: "")
+        .nothing => return Held(
+            kind: .nothing,
+            wrong: "holds only blanks and comments, a linker script with no command"
+        )
+        .unclosed => return Held(kind: .unclosed, wrong: "opens a comment it never closes, which no linker script may")
+
+# `text` read as a linker script: `.nothing` where it holds only blanks and
+# comments, `.unclosed` where a comment opens and never closes, and
+# `.readable` where anything else stands, a command for the linker to
+# judge. A quoted name is passed whole, so a `/*` inside one opens nothing.
+function script(text: str) -> Kind
+    at: i64 @= 0
+    commands: bool @= false
+
+    while at < text.len()
+        b = text[at]
+
+        if blank(b)
+            at @ at + 1
+        else if b == '#'
+            at @ after(text: text, from: at, needle: "\n")
+        else if bytes.bytes_at(text: text, at: at, needle: "/*")
+            closed = bytes.locate(text: text, needle: "*/", from: at + 2)
+
+            if closed.is_err()
+                return .unclosed
+            at @ closed.must() + 2
+        else if b == '"'
+            commands @ true
+            at @ after(text: text, from: at + 1, needle: "\"")
+        else
+            commands @ true
+            at @ at + 1
+
+    if commands
+        return .readable
+    return .nothing
+
+# The offset past the first `needle` at or after `from`, the text's end
+# where there is none.
+function after(text: str, from: i64, needle: str) -> i64
+    found = bytes.locate(text: text, needle: needle, from: from)
+
+    if found.is_err()
+        return text.len()
+    return found.must() + needle.len()
+
+# The blanks a linker script's reader passes: a space, a tab, a line's end,
+# and a form feed and a vertical tab (12, 11), which `ld.lld` passes and GNU
+# ld refuses naming the file (measured), so no file of them reaches here
+# from GNU ld.
+function blank(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 12 || b == 11
+
+## Tests
+
+# DEFECT 2487's shapes, each a file under `build/`: what a file holds, read
+# as the linkers read it on 2026-11-12.
+test "a library file holding nothing a linker reads a definition from is found by its bytes (defect 2487)"
+    assert held_in("").kind == .nothing && held_in("").wrong == "is empty"
+    assert held_in("!<arch>\n").wrong == "is an archive holding no file"
+    assert held_in("!<thin>\n").kind == .nothing
+    blanks = held_in("  \n\t\r\n\n")
+    assert blanks.kind == .nothing
+    assert blanks.wrong == "holds only blanks and comments, a linker script with no command"
+    assert held_in("/* nothing here */\n").kind == .nothing
+    assert held_in("/* a */\n/** b **/ \n# c\n").kind == .nothing
+    assert held_in("\u{c}\u{b}\n").kind == .nothing
+    open = held_in("/* never closed\n")
+    assert open.kind == .unclosed
+    assert open.wrong == "opens a comment it never closes, which no linker script may"
+    assert held_in("/* a */ /* b\n").kind == .unclosed
+
+    # A command, a quoted `/*`, text no script holds and an archive with a
+    # member: the linker's own words judge each.
+    assert held_in("INPUT(-lz)\n").kind == .readable
+    assert held_in("INPUT(\"/*x\")\n").kind == .readable
+    assert held_in("not a library\n").kind == .readable
+    assert held_in("!<arch>\nzv.o/").kind == .readable
+
+    dir = "build/selftest-library-held-2487"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/lib").is_err()
+    assert !write_file(path: dir + "/lib/empty.bin", text: "").is_err()
+    assert holding(dir + "/lib/empty.bin").wrong == "is empty"
+    assert holding(dir + "/lib/absent.so").kind == .readable
+
+    if !files.symbolic_link(target: "empty.bin", name: dir + "/lib/libz.so").is_err()
+        through = holding(dir + "/lib/libz.so")
+        assert through.kind == .nothing
+        assert through.wrong == "is a link to `" + files.resolved(dir + "/lib/empty.bin").must() + "`, which is empty"
+    assert !process.remove_tree(dir).is_err()
+
+test "the file a link took is found as each linker searches its folders (defect 2487)"
+    dir = "build/selftest-library-taken-2487"
+    linux = "aarch64-unknown-linux-gnu"
+    darwin = "arm64-apple-darwin25.6.0"
+    assert !process.remove_tree(dir).is_err()
+
+    for folder in ["a", "b", "c"]
+        assert !process.mkdir_all(dir + "/" + folder).is_err()
+
+    # `a`: a directory named like the `.so`, an archive; `b`: every name.
+    assert !process.mkdir_all(dir + "/a/libz.so").is_err()
+    assert !write_file(path: dir + "/a/libz.a", text: "").is_err()
+
+    for base in ["libz.tbd", "libz.dylib", "libz.so", "libz.a"]
+        assert !write_file(path: dir + "/b/" + base, text: "").is_err()
+
+    assert taken(name: "z", folders: [dir + "/a", dir + "/b"], target: linux).must() == dir + "/a/libz.a"
+    assert taken(name: "z", folders: [dir + "/b/", dir + "/a"], target: linux).must() == dir + "/b/libz.so"
+    assert taken(name: "z", folders: [dir + "/b"], target: darwin).must() == dir + "/b/libz.tbd"
+    assert taken(name: "z", folders: ["", dir + "/c"], target: linux).is_err()
+    assert taken(name: "z", folders: [dir + "/b"], target: "x86_64-pc-windows-msvc").is_err()
+
+    if !files.symbolic_link(target: "nowhere", name: dir + "/c/libz.so").is_err()
+        assert !write_file(path: dir + "/c/libz.a", text: "!<arch>\n").is_err()
+        assert taken(name: "z", folders: [dir + "/c"], target: linux).must() == dir + "/c/libz.a"
+    assert !process.remove_tree(dir).is_err()
+
+test "a file is told only where the refusal is one it gives, in each linker's words (defect 2487)"
+    dir = "build/selftest-library-refusals-2487"
+    linux = "aarch64-unknown-linux-gnu"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/lib").is_err()
+    assert !write_file(path: dir + "/lib/libz.so", text: "").is_err()
+    assert !write_file(path: dir + "/lib/libzz.a", text: "/* open\n").is_err()
+    names = ["z", "zz", "z", "m"]
+    folders = [dir + "/lib"]
+    gnu = "/usr/bin/ld: /tmp/m-1.o: in function `main':\nm.c:(.text+0x18): undefined reference to `zlibVersion'\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    found = refusals(message: gnu, names: names, folders: folders, target: linux)
+    assert found.len() == 1
+    assert found[0].file == dir + "/lib/libz.so" && found[0].did == "read nothing from" && found[0].wrong == "it is empty"
+    lld = "ld.lld: error: undefined symbol: zlibVersion\n>>> referenced by m.c\n>>>               /tmp/m-2.o:(main)\n"
+    assert refusals(message: lld, names: names, folders: folders, target: linux).len() == 1
+    apple = "Undefined symbols for architecture arm64:\n  \"_zlibVersion\", referenced from:\n      _main in m-3.o\nld: symbol(s) not found for architecture arm64\n"
+    assert refusals(message: apple, names: names, folders: folders, target: "arm64-apple-darwin25.6.0").len() == 1
+    eof = refusals(
+        message: "/usr/bin/ld.bfd: EOF in comment\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n",
+        names: names,
+        folders: folders,
+        target: linux
+    )
+    assert eof.len() == 1
+    assert eof[0].file == dir + "/lib/libzz.a" && eof[0].did == "cannot use"
+
+    # A refusal no such file gives: a duplicate, a missing library.
+    assert refusals(message: "/usr/bin/ld: b.o: multiple definition of `pick'; a.o: first defined here\n", names: names, folders: folders, target: linux).len() == 0
+    assert refusals(message: "/usr/bin/ld: cannot find -lq: No such file or directory\n", names: names, folders: folders, target: linux).len() == 0
+    assert !process.remove_tree(dir).is_err()

@@ -115,7 +115,8 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
     # told before the reading of a missing `link` would tell it as one. First
     # a library file the linker found and could not use (defect 2476,
     # `cli/library_file.hero`): the link stopped at it, or left undefined the
-    # names it held.
+    # names it held, or it holds none and the linker said nothing (defect
+    # 2487).
     if code == link.REFUSED
         unusable = library_file.told(
             message: message,
@@ -123,7 +124,8 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
             art.decls,
             library: library,
             linked: under.pkgconfig_flags,
-            build: t.build
+            build: t.build,
+            target: t.target
         )
 
         if unusable.len() > 0
