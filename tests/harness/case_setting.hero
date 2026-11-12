@@ -35,23 +35,31 @@
 # compile** (`CLANG_READS`, panel 237's R2, defect 2344): their empty value is
 # no unset, Apple clang searching `.` for an empty `CPATH`, so they were never
 # set in this harness's own process, where every later case's clang would
-# read them: the case's compiler is started through `/usr/bin/env` with them,
-# and the case is skipped by name where that is not the machine's, Windows.
-# **And the two `pkg-config` reads** (`PKG_CONFIG_READS`, panel 243's R2,
-# defect 2428): the compiler starts `pkg-config` for a `pkgconfig` group, so
-# a case carries a library of its own, a `.pc` naming its folder by
+# read them. **And the two `pkg-config` reads** (`PKG_CONFIG_READS`, panel
+# 243's R2, defect 2428): the compiler starts `pkg-config` for a `pkgconfig`
+# group, so a case carries a library of its own, a `.pc` naming its folder by
 # `${pcfiledir}` (`prefix=${pcfiledir}/..`) beside the headers it describes,
 # with no absolute path, and `PKG_CONFIG_LIBDIR` naming the same folder hides
 # the machine's, so the case is hermetic. An empty `PKG_CONFIG_LIBDIR` is no
-# unset either, `pkg-config` then searching no folder at all, so the two go
-# the clang reads' way. Any other name is refused with the case's name, never
-# given.
+# unset either, `pkg-config` then searching no folder at all. Any other name
+# is refused with the case's name, never given.
+#
+# **Each of the five is given to the case's compiler alone, at its start, as
+# the two above are** (defect 2477): `shell.run_given` gives a child a
+# variable set empty as well as one with a value, on every platform
+# (`hero_run_env`, `runtime/parts/run.c`), so no case needs a program of
+# POSIX's to start its compiler with them. Until then each was handed to the
+# compiler through `/usr/bin/env`, and the case was skipped by name on
+# Windows, which has none, so 22 cases that need no folder of their own were
+# never judged there.
 #
 # **A case with a `directory` runs from a copy of its folder**, as one with
 # links does, since the compiler writes its cache under the folder it runs in:
-# started there by `/usr/bin/env -C`, with the compiler and the case's own
-# paths written whole, so an empty element of `CPATH` names a folder of the
-# case and never the repository's root.
+# started there by `/usr/bin/env -C`, the variables clang and `pkg-config`
+# read on that line, with the compiler and the case's own paths written
+# whole, so an empty element of `CPATH` names a folder of the case and never
+# the repository's root. `hero_run_go` names no folder for the child it
+# starts, so such a case is the one still skipped on Windows.
 
 use <core>/strings as core_strings
 
@@ -74,8 +82,8 @@ constant CLANG_READS: [str]
 constant PKG_CONFIG_READS: [str]
     ["PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]
 
-# The one program that starts a case's compiler with variables of its own,
-# from a folder of its own: POSIX's `env`, `-C` in GNU's and in this Mac's.
+# The one program that starts a case's compiler from a folder of its own:
+# POSIX's `env`, `-C` in GNU's and in this Mac's.
 constant ENV: str
     "/usr/bin/env"
 
@@ -135,16 +143,18 @@ function skip_here(s: Setting) -> str
         return "the case makes a symbolic link with `ln -s` before its run, as `apply_tree.hero`'s link cases do, and this platform has no `ln`"
 
     if started_by_env(s) && shell.exe_suffix() == ".exe"
-        return "the case starts its compiler through `" + ENV + "`, with a variable clang or `pkg-config` reads or from a folder of its own, and this platform has no `" + ENV + "`"
+        return "the case starts its compiler from a folder of its own through `" + ENV + " -C`, and this platform has no `" + ENV + "`"
     return ""
 
-# Whether the case's compiler is started through `/usr/bin/env`: it sets a
-# variable clang or `pkg-config` reads, or starts in a folder of its own.
+# Whether the case's compiler is started through `/usr/bin/env`: it starts
+# in a folder of its own (defect 2477: a variable alone is given at the
+# start).
 function started_by_env(s: Setting) -> bool
-    return s.directory.len() > 0 || env_pairs(s).len() > 0
+    return s.directory.len() > 0
 
 # The case's `NAME=VALUE` lines of a variable clang or `pkg-config` reads,
-# which go to its compiler's line through `/usr/bin/env`.
+# which go to its compiler alone: on its line through `/usr/bin/env` where it
+# starts in a folder of its own, else given at its start.
 function env_pairs(s: Setting) -> [str]
     out: [str] @= []
 
@@ -198,8 +208,9 @@ function repository_root(scratch: str) -> str?
 
 # The run of `words` for the case in `dir` as `s` asks it, what it printed
 # written back as the case's own: in a copy holding its links or starting in
-# its folder, its variables given to its run alone, those clang reads to its
-# compiler through `/usr/bin/env`, as those `pkg-config` reads are.
+# its folder, its variables given to its run alone, at its start, those clang
+# and `pkg-config` read on the line of `/usr/bin/env` where it starts in a
+# folder of its own.
 function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
     at: str @= dir
     line: [str] @= words
@@ -231,8 +242,8 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
         name = pair.slice(from: 0, to: cut)
 
         # A variable clang or `pkg-config` reads went to the compiler's line
-        # alone.
-        if reads(name)
+        # alone, where it starts through `/usr/bin/env`.
+        if reads(name) && started_by_env(s)
             continue
         given @ given.push(
             shell.Variable(name: name, value: swapped(text: pair.slice(from: cut + 1, to: pair.len()), old: "<root>", new: root))
@@ -344,15 +355,17 @@ test "a setting names only the variables whose empty value reads as unset, and l
     assert !started_by_env(none)
 
 # **A variable clang reads is never set in this process** (defect 2344): it
-# is given to the case's compiler alone, through `/usr/bin/env`, a `<root>` in
-# its value written whole; and a case with a `directory` starts there, its
-# compiler and its copy's paths written whole, so nothing is read from the
-# folder it starts in but what the case meant.
+# is given to the case's compiler alone, a `<root>` in its value written
+# whole, at its start (defect 2477), or through `/usr/bin/env` where a case
+# with a `directory` starts there, its compiler and its copy's paths written
+# whole, so nothing is read from the folder it starts in but what the case
+# meant.
 test "a variable clang reads is given to the case's compiler alone, and a directory is where its run starts"
     assert reads("CPATH") && reads("C_INCLUDE_PATH") && reads("CCC_OVERRIDE_OPTIONS")
     assert !settable("CPATH") && !reads("PATH")
     plain = Setting(environment: ["PATH=/x", "CPATH=<root>/inc"], links: [], directory: "")
-    assert started_by_env(plain) && env_pairs(plain) == ["CPATH=<root>/inc"]
+    assert !started_by_env(plain) && env_pairs(plain) == ["CPATH=<root>/inc"]
+    assert skip_here(plain) == ""
     words = ["./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
     assert env_line(words, s: plain, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "CPATH=/r/inc", "./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
     moved = Setting(environment: ["C_INCLUDE_PATH=:"], links: [], directory: "here")
@@ -375,7 +388,7 @@ test "a case's own pkg-config folder is given to its compiler alone, and another
     assert !write_file(path: dir + "/environment", text: "# the case's own library\nPKG_CONFIG_PATH=" + dir + "/pc\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
     got = read_setting(dir).must()
     pairs = ["PKG_CONFIG_PATH=" + dir + "/pc", "PKG_CONFIG_LIBDIR=" + dir + "/pc"]
-    assert started_by_env(got) && env_pairs(got) == pairs
+    assert !started_by_env(got) && env_pairs(got) == pairs
     words = ["./heroes-next", "build", dir + "/main.hero"]
     assert env_line(words, s: got, at: dir, root: "/r") == [ENV, pairs[0], pairs[1], "./heroes-next", "build", dir + "/main.hero"]
     assert !write_file(path: dir + "/environment", text: "PKG_CONFIG_SYSROOT_DIR=/x\n").is_err()
