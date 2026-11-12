@@ -109,8 +109,8 @@ function gnu_unclosed(message: str) -> bool
     return false
 
 # The file the linker took for `-l<name>`: in `folders`' order, the first of
-# the files `searched` names that is there, a directory and a link to
-# nothing passed over; an error where no folder holds one.
+# the files `searched` names that a linker opens (`opens`), a directory and a
+# link to nothing passed over; an error where no folder holds one.
 function taken(name: str, folders: [str], target: str) -> str?
     for folder in folders
         if folder == ""
@@ -119,10 +119,28 @@ function taken(name: str, folders: [str], target: str) -> str?
         for base in searched(name: name, target: target)
             file = joined(folder: folder, base: base)
 
-            if process.path_exists(file) && !process.is_directory(file)
+            if opens(file)
                 return ok(file)
 
     return fail(code: "none", msg: "no folder the build names holds a file for the library")
+
+# Whether a linker opens `file` as a file: the place it names, every link on
+# the way followed by the filesystem's own walk (`files.resolved`, defect
+# 2474's door), is there and is no directory, one question on every
+# platform. **Never `file` itself**: `process.path_exists` and
+# `process.is_directory` ask a link itself on Windows (`GetFileAttributesW`)
+# and what it names on POSIX (`stat`), so a link to nothing was a file there
+# and the folder's archive after it was passed over (the box's leg of
+# defect 2487, 2026-11-12, this module's test). A place the walk cannot
+# resolve, a loop of links or a link to nothing Windows gives no final path
+# for, is none a linker opens either; a link resolved is a path with no link
+# at its end, which both platforms' questions answer alike.
+function opens(file: str) -> bool
+    place = files.resolved(file)
+
+    if place.is_err()
+        return false
+    return process.path_exists(place.must()) && !process.is_directory(place.must())
 
 # The files a target's linker searches a folder for, for `-l<name>`, in its
 # order: ld64's four, and GNU ld's and `ld.lld`'s two (each order measured
@@ -291,9 +309,32 @@ test "the file a link took is found as each linker searches its folders (defect 
     assert taken(name: "z", folders: ["", dir + "/c"], target: linux).is_err()
     assert taken(name: "z", folders: [dir + "/b"], target: "x86_64-pc-windows-msvc").is_err()
 
-    if !files.symbolic_link(target: "nowhere", name: dir + "/c/libz.so").is_err()
-        assert !write_file(path: dir + "/c/libz.a", text: "!<arch>\n").is_err()
-        assert taken(name: "z", folders: [dir + "/c"], target: linux).must() == dir + "/c/libz.a"
+    # Links, followed as a linker opens a file, one question on each target
+    # (the box's leg, defect 2487 on Windows): to nothing and to a directory,
+    # passed over for the folder's archive; to a file, and through a link to
+    # one, taken. Where this machine makes no link there is nothing to hold.
+    for folder in ["d", "e", "f"]
+        assert !process.mkdir_all(dir + "/" + folder).is_err()
+
+    for at in [dir + "/c", dir + "/f"]
+        assert !write_file(path: at + "/libz.a", text: "!<arch>\n").is_err()
+
+    assert !process.mkdir_all(dir + "/f/inner").is_err()
+    links = [
+        ["nowhere", "c", "libz.a"]
+        ["inner", "f", "libz.a"]
+        ["../b/libz.so", "d", "libz.so"]
+        ["../d/libz.so", "e", "libz.so"]
+    ]
+
+    for link in links
+        folder = dir + "/" + link[1]
+
+        if !files.symbolic_link(target: link[0], name: folder + "/libz.so").is_err()
+            assert taken(name: "z", folders: [folder], target: linux).must() == folder + "/" + link[2]
+            assert taken(name: "z", folders: [folder], target: darwin).must() == folder + "/" + link[2]
+
+    assert !opens(dir + "/a/libz.so") && !opens(dir + "/absent.so") && opens(dir + "/b/libz.a")
     assert !process.remove_tree(dir).is_err()
 
 test "a file is told only where the refusal is one it gives, in each linker's words (defect 2487)"
