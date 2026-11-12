@@ -11,13 +11,14 @@
 # the class --version occupies: zero input, constant output, exit 0.
 
 use cli/clang_floor
+use cli/doctor_asks
 use cli/io
 use cli/placed_files
 use cli/process
 use cli/publish
-use cli/read_back
+use cli/runtime_key
+use cli/runtime_places
 use cli/table as cli_table
-use cli/toolchain
 use emit/runtime_abi
 
 record Check
@@ -25,75 +26,31 @@ record Check
     ok: bool
     detail: str
 
-# The first line of what a program said, or absent when it could not
-# run.
-#
-# **It took a command LINE until M-argv-execution and takes a word list
-# now**, which is what lets it answer a question it could not answer
-# before: `system()` said 127 both for a program that is not installed
-# and for one that ran and exited 127, so "no clang on this machine"
-# and "clang is angry" were the same reply. `started` separates them,
-# and the caller is the one command whose whole job is to tell an
-# author which of the two they are looking at.
-#
-# stderr is discarded rather than shown: a `--version` probe that
-# complains is a probe that failed, and its complaint is noise on a
-# report about the machine. The answer lands under a private name
-# (`cli/publish.hero`), removed once read: it was `build/doctor-out.txt`
-# for every doctor in the tree until 2026-09-30 (defect 134), so two at once
-# could read each other's `uname` as a clang version.
-function capture(program: str, words: [str], build_dir: str) -> str?
-    out_path = publish.private_name(build_dir + "/doctor-out.txt")
-    process.mkdir_all(build_dir)?
-    ran = process.run(program: program, words: words, out: out_path, err: process.discard())
-    said = read_back.words(out_path)
-    publish.discard(out_path)
-
-    if !ran.started
-        return fail(code: "none", msg: "the program is not on this machine")
-
-    if ran.code != 0
-        return fail(code: "none", msg: "the command could not run")
-
-    if said.is_err()
-        return fail(code: "none", msg: "nothing was said")
-    return ok(first_line(said.must()))
-
-function first_line(text: str) -> str
-    run: [str] @= []
-
-    for ch in text.chars()
-        if ch == "\n"
-            break
-        run @ run.push(ch)
-
-    return trim_ends(run.join(""))
-
-function trim_ends(text: str) -> str
-    cs = text.chars()
-    head: i64 @= 0
-
-    while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
-        head @ head + 1
-
-    tail: i64 @= cs.len()
-
-    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
-        tail @ tail - 1
-
-    return cs.slice(from: head, to: tail).join("")
-
 # clang, the linker's home, the architecture, the runtime, and a
 # writable cache. The linker check is named after WHAT IT IS FOR and
 # asked in the platform's own words (`linker_home` below): it used to ask
 # xcode-select everywhere, which made doctor exit 1 on Linux — found the
 # day CI first ran on two platforms, which is the whole reason that CI
 # exists.
-function checks(build_dir: str, runtime_hint: str?) -> [Check]
+#
+# **The cache is asked first, before any probe writes** (defect 2485): a
+# cache that would stand in a placed package's tree, where a build refuses
+# to write it (defect 2479), is the cache row's failure, and the probes then
+# write their answers in `aside`, the system's folder for temporary files
+# (`doctor_asks.aside`), so every other row is asked as it is elsewhere and
+# nothing is written in the tree. Until then the probes made `build/` there
+# before the row was asked, and it said *nothing was written*. The rows are
+# told in their order all the same.
+function checks(build_dir: str, runtime_hint: str?, aside: str?) -> [Check]
     out: [Check] @= []
-    clang = capture(program: "clang", words: ["clang", "--version"], build_dir: build_dir)
+    placed = placed_files.cache_refused(build_dir)
+    scratch: str? @= ok(build_dir)
+
+    if placed.len() > 0
+        scratch @ aside
+    clang = doctor_asks.capture(program: "clang", words: ["clang", "--version"], scratch: scratch)
     out @ out.push(
-        Check(name: "clang", ok: !clang.is_err(), detail: clang.default("not found — install a C toolchain"))
+        Check(name: "clang", ok: !clang.is_err(), detail: doctor_asks.told(clang, otherwise: "not found — install a C toolchain"))
     )
 
     # The floor (panel 103): the same first line, read for its major.
@@ -107,25 +64,14 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
         out @ out.push(
             Check(name: "clang floor", ok: floor_ok, detail: found + " against a floor of " + clang_floor.FLOOR.to_str() + " — the oldest clang this compiler is measured on")
         )
-    out @ out.push(linker_home(build_dir: build_dir))
-    arch = capture(program: "uname", words: ["uname", "-m"], build_dir: build_dir).default("unknown")
-    out @ out.push(Check(name: "arch", ok: true, detail: arch))
-
-    # The runtime — found by searching, so doctor is the place that
-    # says which candidate won. A hint that cannot be read is named, never
-    # passed over for the next place (defect 243).
-    match runtime_hint
-        .err e => out @ out.push(Check(name: "runtime", ok: false, detail: e.msg))
-        .ok hint =>
-            match toolchain.locate_toolchain(hint: hint, fingerprint: "doctor")
-                .ok t  => out @ out.push(Check(name: "runtime", ok: true, detail: t.runtime))
-                .err e => out @ out.push(Check(name: "runtime", ok: false, detail: unfound(code: e.code, msg: e.msg)))
+    out @ out.push(linker_home(scratch: scratch))
+    arch = doctor_asks.capture(program: "uname", words: ["uname", "-m"], scratch: scratch)
+    out @ out.push(Check(name: "arch", ok: true, detail: doctor_asks.told(arch, otherwise: "unknown")))
+    out @ out.push(runtime_row(runtime_hint))
 
     # build/ must be creatable and writable, probed by writing, and never in
     # a placed package's tree, where a build refuses to write it (defect
     # 2479): until then the row said `writable` there.
-    placed = placed_files.cache_refused(build_dir)
-
     if placed.len() > 0
         out @ out.push(Check(name: "build cache", ok: false, detail: placed))
         return out
@@ -145,6 +91,23 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
     out @ out.push(Check(name: "build cache", ok: cache_ok, detail: detail))
     return out
 
+# The runtime — found by searching, so doctor is the place that says which
+# candidate won. A hint that cannot be read is named, never passed over for
+# the next place (defect 243). Asked as a build finds it, where it is and
+# whether each of its files reads (`toolchain.locate_toolchain`'s two
+# failures), with no question to clang, which a build asks after and which
+# writes (defect 2485).
+function runtime_row(runtime_hint: str?) -> Check
+    match runtime_hint
+        .err e => return Check(name: "runtime", ok: false, detail: e.msg)
+        .ok hint =>
+            match runtime_places.located(hint)
+                .err e => return Check(name: "runtime", ok: false, detail: unfound(code: e.code, msg: e.msg))
+                .ok runtime =>
+                    match runtime_key.each_file(runtime)
+                        .ok    => return Check(name: "runtime", ok: true, detail: runtime)
+                        .err e => return Check(name: "runtime", ok: false, detail: unfound(code: e.code, msg: e.msg))
+
 # Where the linker and the C libraries live, asked as each platform's
 # toolchain answers it (defect 336). **Windows is asked first, and by the
 # runtime** (`exe_suffix()`, the question `link_flags.link_flags` asks): its shell
@@ -153,23 +116,27 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
 # `heroes build` built and ran programs (panel 191's compiler-engineer). The
 # other two keep the words they had: `uname -s` asked, a fact about the
 # machine in hand rather than a premise about which platforms exist.
-function linker_home(build_dir: str) -> Check
+function linker_home(scratch: str?) -> Check
     if process.exe_suffix() == ".exe"
-        return msvc_row(links_here(build_dir: build_dir, source: LINK_PROBE))
-    system_name = capture(program: "uname", words: ["uname", "-s"], build_dir: build_dir).default("unknown")
+        return msvc_row(doctor_asks.links_here(scratch: scratch, source: doctor_asks.LINK_PROBE))
+    system = doctor_asks.capture(program: "uname", words: ["uname", "-s"], scratch: scratch)
 
-    if system_name == "Darwin"
-        clt = capture(program: "xcode-select", words: ["xcode-select", "-p"], build_dir: build_dir)
+    # Which platform's question is unknown where nothing could be asked.
+    if doctor_asks.unasked(system)
+        return Check(name: "linker", ok: false, detail: doctor_asks.told(system, otherwise: ""))
+
+    if system.default("unknown") == "Darwin"
+        clt = doctor_asks.capture(program: "xcode-select", words: ["xcode-select", "-p"], scratch: scratch)
         return Check(
             name: "xcode CLT",
             ok: !clt.is_err(),
-            detail: clt.default("not found — run `xcode-select --install`")
+            detail: doctor_asks.told(clt, otherwise: "not found — run `xcode-select --install`")
         )
-    cc = capture(program: "cc", words: ["cc", "--version"], build_dir: build_dir)
+    cc = doctor_asks.capture(program: "cc", words: ["cc", "--version"], scratch: scratch)
     return Check(
         name: "cc",
         ok: !cc.is_err(),
-        detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)")
+        detail: doctor_asks.told(cc, otherwise: "not found — install a C toolchain (build-essential, base-devel, …)")
     )
 
 # Windows' question. There is no `cc` there to ask, and the CI's leg read it
@@ -183,66 +150,18 @@ function linker_home(build_dir: str) -> Check
 function msvc_row(linked: str?) -> Check
     match linked
         .ok said => return Check(name: "MSVC", ok: true, detail: said)
-        .err e   => return Check(name: "MSVC", ok: false, detail: e.msg + " — " + MSVC_ADVICE)
+        .err e =>
+            if e.code == "unasked"
+                return Check(name: "MSVC", ok: false, detail: e.msg)
+            return Check(name: "MSVC", ok: false, detail: e.msg + " — " + MSVC_ADVICE)
 
 constant MSVC_ADVICE: str
     "install Visual Studio's Build Tools with their C++ tools (`Microsoft.VisualStudio.Component.VC.Tools.x86.x64`), which bring the MSVC libraries and a Windows SDK that clang finds by itself"
 
-# What the probe compiles: a header from the Windows SDK's C runtime, a call
-# into it, and an answer the program itself gives.
-constant LINK_PROBE: str
-    "#include <stdio.h>\nint main(void) { return fputs(\"linked\", stdout) < 0 ? 1 : 0; }\n"
-
-# `source` compiled, linked and run by this machine's clang, in a directory
-# of its own under `build_dir` that goes whole afterwards; ok with what was
-# done, or what stopped it in clang's own words, its first line.
-function links_here(build_dir: str, source: str) -> str?
-    dir = publish.private_name(build_dir + "/doctor-link")
-    process.mkdir_all(dir)?
-    answer = linked_and_ran(dir: dir, source: source)
-    _ = process.remove_tree(dir).is_err()
-    return answer
-
-function linked_and_ran(dir: str, source: str) -> str?
-    unit = dir + "/probe.c"
-    binary = dir + "/probe" + process.exe_suffix()
-    said = dir + "/said.txt"
-
-    if write_file(path: unit, text: source).is_err()
-        return fail(code: "none", msg: "cannot write " + unit + process.because())
-    built = process.run(program: "clang", words: ["clang", unit, "-o", binary], out: process.discard(), err: said)
-
-    if !built.started
-        return fail(code: "none", msg: "clang is not on this machine, so nothing was linked")
-
-    if built.code != 0
-        return fail(code: "none", msg: "clang could not link a C program: " + first_said(path: said, code: built.code))
-    ran = process.run(program: binary, words: [binary], out: said, err: process.discard())
-    answered = read_file(said)
-
-    if !ran.started || ran.code != 0 || answered.is_err() || answered.must() != "linked"
-        return fail(code: "none", msg: "clang linked a C program, and it did not run to its end")
-    return ok("clang compiled, linked and ran a C program")
-
-# The first line clang wrote, or its exit code where it wrote none. Read as
-# `read_back.words` reads, so a linker's words in its own code page are quoted with
-# each byte that is not UTF-8 written by its value, never dropped (defect 337),
-# and a line clang on Windows ends `\r\n` carries no `\r` inside the quotes.
-function first_said(path: str, code: i64) -> str
-    said = read_back.words(path)
-
-    if said.is_err()
-        return "it exited " + code.to_str() + " and wrote nothing that could be read back"
-    line = first_line(said.must())
-
-    if line.len() == 0
-        return "it exited " + code.to_str() + " and said nothing"
-    return "`" + line + "`"
-
 function run_doctor(build_dir: str, runtime_hint: str?) -> cli_table.Exit
     all_ok: bool @= true
 
-    for c in checks(build_dir: build_dir, runtime_hint: runtime_hint)
+    for c in checks(build_dir: build_dir, runtime_hint: runtime_hint, aside: doctor_asks.aside())
         mark: str @= "FAIL"
 
         if c.ok
@@ -264,7 +183,7 @@ function run_doctor(build_dir: str, runtime_hint: str?) -> cli_table.Exit
 # build was refused.
 function unfound(code: str, msg: str) -> str
     if code == "hint"
-        return first_line(msg)
+        return doctor_asks.first_line(msg)
 
     if code == "abi"
         return on_one_row(msg)
@@ -277,12 +196,12 @@ function on_one_row(msg: str) -> str
 
     for ch in msg.chars()
         if ch == "\n"
-            rows @ rows.push(trim_ends(run.join("")))
+            rows @ rows.push(doctor_asks.trim_ends(run.join("")))
             run @ []
         else
             run @ run.push(ch)
 
-    rows @ rows.push(trim_ends(run.join("")))
+    rows @ rows.push(doctor_asks.trim_ends(run.join("")))
     return rows.join(" — ")
 
 function pad_to(text: str, width: i64) -> str
@@ -314,7 +233,7 @@ function run_this() -> cli_table.Exit
 ## Tests
 
 test "doctor finds this machine's toolchain, and the Zen is byte-exact"
-    got = checks(build_dir: "build", runtime_hint: ok(""))
+    got = checks(build_dir: "build", runtime_hint: ok(""), aside: ok("build"))
 
     # Six since panel 103: the clang floor row follows the clang row.
     assert got.len() == 6
@@ -345,9 +264,9 @@ test "doctor finds this machine's toolchain, and the Zen is byte-exact"
 # a refusal is told in clang's own words and carries Windows' advice, never
 # Linux's. Which row this machine gets is asked of the runtime, as the row is.
 test "Windows' toolchain is asked a C program linked and run, and a refusal is told in the linker's own words (defect 336)"
-    assert links_here(build_dir: "build", source: LINK_PROBE).must() == "clang compiled, linked and ran a C program"
+    assert doctor_asks.links_here(scratch: ok("build"), source: doctor_asks.LINK_PROBE).must() == "clang compiled, linked and ran a C program"
     unlinkable = "int heroes_no_such_symbol_336(void);\nint main(void) { return heroes_no_such_symbol_336(); }\n"
-    refused = links_here(build_dir: "build", source: unlinkable)
+    refused = doctor_asks.links_here(scratch: ok("build"), source: unlinkable)
 
     match refused
         .ok _ => assert false
@@ -359,7 +278,7 @@ test "Windows' toolchain is asked a C program linked and run, and a refusal is t
     assert !row.ok
     assert has_text(text: row.detail, needle: "Microsoft.VisualStudio.Component.VC.Tools.x86.x64")
     assert !has_text(text: row.detail, needle: "build-essential")
-    mine = linker_home(build_dir: "build")
+    mine = linker_home(scratch: ok("build"))
     assert mine.ok
 
     if process.exe_suffix() == ".exe"
@@ -393,13 +312,13 @@ test "a version answer holding a byte that is not UTF-8 is read, never taken for
             err: process.discard()
         )
         assert built.started && built.code == 0
-        assert capture(program: program, words: [program, "--version"], build_dir: dir).must() == answer[2]
+        assert doctor_asks.capture(program: program, words: [program, "--version"], scratch: ok(dir)).must() == answer[2]
 
     assert !process.remove_tree(dir).is_err()
 
 # Defect 276: a hint naming no runtime is a failed row saying what it names.
 test "doctor's runtime row tells a HEROES_RUNTIME that names no runtime by what it names (defect 276)"
-    got = checks(build_dir: "build", runtime_hint: ok("build/selftest-doctor-no-runtime-276"))
+    got = checks(build_dir: "build", runtime_hint: ok("build/selftest-doctor-no-runtime-276"), aside: ok("build"))
     assert got[4].name == "runtime"
     assert !got[4].ok
     assert got[4].detail == "`HEROES_RUNTIME` is set to `build/selftest-doctor-no-runtime-276`, and no Heroes runtime is there: no file at `build/selftest-doctor-no-runtime-276/heroes_runtime.h`; no file at `build/selftest-doctor-no-runtime-276/runtime.c`"
@@ -412,7 +331,7 @@ test "doctor's runtime row tells a runtime of another release, and what to do (d
     other = (runtime_abi.NEEDED + 1).to_str()
     assert !write_file(path: dir + "/heroes_runtime.h", text: "#define HERO_RUNTIME_ABI " + other + "\n").is_err()
     assert !write_file(path: dir + "/runtime.c", text: "/* its parts */\n").is_err()
-    got = checks(build_dir: "build", runtime_hint: ok(dir))
+    got = checks(build_dir: "build", runtime_hint: ok(dir), aside: ok("build"))
     assert got[4].name == "runtime"
     assert !got[4].ok
     assert got[4].detail == "`HEROES_RUNTIME` is set to `" + dir + "`, and the Heroes runtime there is not the one this compiler is built for: its heroes_runtime.h states HERO_RUNTIME_ABI " + other + ", and this compiler needs " + runtime_abi.NEEDED.to_str() + " — set HEROES_RUNTIME to the runtime this compiler came with, or unset it to look in ./runtime and beside the compiler; or build the compiler again from the sources this runtime came with"
@@ -451,7 +370,8 @@ function has_text(text: str, needle: str) -> bool
 test "the build cache's row fails where the cache would stand in a placed package's tree (defect 2479)"
     root = "build/selftest-doctor-placed"
     build = root + "/app/heroes.packages/t@1.0.0-0123456789abcdef/build"
-    got = checks(build_dir: build, runtime_hint: ok(""))
+    assert !process.mkdir_all(root + "/aside").is_err()
+    got = checks(build_dir: build, runtime_hint: ok(""), aside: ok(root + "/aside"))
     assert got[4].name == "runtime"
     assert got[4].ok
     assert got[5].name == "build cache"
@@ -459,4 +379,42 @@ test "the build cache's row fails where the cache would stand in a placed packag
     assert got[5].detail == placed_files.cache_refused(build)
     assert got[5].detail == "the build's cache, `" + build + "/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
     assert placed_files.cache_refused("build") == ""
+    assert !process.remove_tree(root).is_err()
+
+# Defect 2485: where the cache may not be written, the probes answer from
+# the folder set aside, every row but the cache's as it is elsewhere, and
+# nothing is written in the placed tree, `build/` included; with no folder
+# set aside each probe's row says it was not asked, and still nothing is
+# written there.
+test "doctor writes nothing in a placed package's tree, and its other rows are asked all the same (defect 2485)"
+    root = "build/selftest-doctor-placed-2485"
+    tree = root + "/app/heroes.packages/t@1.0.0-0123456789abcdef"
+    build = tree + "/build"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(tree).is_err()
+    assert !process.mkdir_all(root + "/aside").is_err()
+    elsewhere = checks(build_dir: "build", runtime_hint: ok(""), aside: ok("build"))
+    got = checks(build_dir: build, runtime_hint: ok(""), aside: ok(root + "/aside"))
+    assert got.len() == elsewhere.len()
+
+    for at in range(from: 0, to: got.len() - 1)
+        assert got[at].name == elsewhere[at].name && got[at].ok == elsewhere[at].ok && got[at].detail == elsewhere[at].detail
+
+    assert !got[got.len() - 1].ok
+    assert !process.path_exists(build)
+    assert process.files_under(tree).must().len() == 0
+    assert process.files_under(root + "/aside").must().len() == 0
+    none: str? = fail(code: "unasked", msg: "not asked: no folder")
+    unasked = checks(build_dir: build, runtime_hint: ok(""), aside: none)
+
+    for one in unasked
+        if one.name == "clang" || one.name == "arch" || one.name == "linker" || one.name == "MSVC"
+            assert one.detail == "not asked: no folder"
+            assert one.name == "arch" || !one.ok
+
+        if one.name == "runtime"
+            assert one.ok
+
+    assert unasked.len() == 5
+    assert !process.path_exists(build)
     assert !process.remove_tree(root).is_err()

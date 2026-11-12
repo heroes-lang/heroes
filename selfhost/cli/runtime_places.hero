@@ -157,6 +157,55 @@ function unread_text(failed: reading.Text?) -> str
         .ok    => return ""
         .err e => return e.msg
 
+# Locate the runtime, or say the places it looked. The search is why
+# the ABI stamp exists: a decoy runtime/ compiled with zero warnings
+# under -Weverything and printed 0x1e where 30 was expected; the stamp
+# turns that silence into `use of undeclared identifier`.
+#
+# Three places, in the order design.md §3.1 and panel 020 rule them:
+# `$HEROES_RUNTIME`, `runtime/` under the working directory, and `runtime/`
+# under an ancestor of the executable, nearest first, which until defect 277
+# was never looked in, so an installed compiler found none without the
+# variable while its help said *beside the compiler*.
+#
+# **A hint the author set is the one place looked in, and one naming no
+# runtime is refused, saying so** (defect 276), as defect 243 refuses one that
+# is not UTF-8: it was passed over in silence for the next place, so a
+# `runtime/` beside the program, or above the compiler, built the program
+# against a runtime the author did not name. What `HEROES_RUNTIME` is for is
+# saying which runtime; a search that goes on past it decides otherwise, the
+# decoy panel 020's ABI stamp was written against.
+#
+# **And the runtime found is asked whether it is this compiler's before any
+# unit is written** (defect 2259): one of another release was refused by the
+# stamp in every unit, told as *internal error* at exit 2, twice a build, and
+# `heroes doctor`, which asks here too, called it ok.
+#
+# It stood in `toolchain.locate_toolchain` until defect 2485: the toolchain
+# asks clang who it is once the runtime is found, writing under `build/`,
+# and `heroes doctor` asks only where the runtime is, so it writes nothing
+# where the build's cache may not be written.
+function located(hint: str) -> str?
+    if hint.len() > 0
+        missing = missing_at(hint)
+
+        if missing.len() > 0
+            return fail(code: "hint", msg: unheld(hint: hint, missing: missing))
+        of_this_release(dir: hint, named: true)?
+        return ok(hint)
+    candidates: [str] @= ["runtime"]
+    beside = beside_the_compiler()
+
+    for above in beside.above
+        candidates @ candidates.push(above + "/runtime")
+
+    for candidate in candidates
+        if missing_at(candidate).len() == 0
+            of_this_release(dir: candidate, named: false)?
+            return ok(candidate)
+
+    return fail(code: "failed", msg: not_found(beside))
+
 # The places named, as they were looked in, and the way to name another:
 # where no `HEROES_RUNTIME` is set, since one that is set is the only place.
 function not_found(beside: Beside) -> str
