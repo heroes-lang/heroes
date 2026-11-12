@@ -590,10 +590,10 @@ of lane `core-platform` (the critic's item 8): owed to batch 33's gate, no part 
 to the coordinator's summary of the six resolutions in six lines, given in the coordinator's
 conversation and relayed to this synthesis by the coordinator, recorded as a reading
 (`.claude/rules/records.md` § And the record says whose idea it was). The sitting's decision issue,
-`Panel 246:`, is filed as a decision taken: DECISION_URL. **What the yes settles**: R1 to R6 as
+`Panel 246:`, is filed as a decision taken: https://github.com/heroes-lang/heroes/issues/2497. **What the yes settles**: R1 to R6 as
 adopted; the five defects drafted above, to be filed; and R2's ruling that an edit inside a placed
 tree is the author's work and is never discarded in silence, so defect 2453 stays `blocking`. **What
 it does not**: whether the thread rung widens from one `i64` to one `str` (panel 113's R5 against
 journal 034 and `ea4a6fda7`), which R3 left to the author and which stands as its own open decision:
-RUNG_DECISION_URL; the predictions above, on their own clocks; and the conservative alternatives,
+https://github.com/heroes-lang/heroes/issues/2498; the predictions above, on their own clocks; and the conservative alternatives,
 which stay the author's to choose.
