@@ -1,2 +1,3 @@
 a close ends an accept another thread waits in: 1
 a close ends a recv another thread waits in: 1
+a close ends a send another thread waits in for room: 1
