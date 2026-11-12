@@ -31,6 +31,7 @@ use cli/compile
 use cli/link
 use cli/probing
 use cli/settled
+use cli/strings
 use cli/supplied
 use cli/supplied_judged
 use cli/supplied_paired
@@ -259,10 +260,13 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
 # refusal that verdict is, and where the binary landed. A link's refusal is
 # no one unit's, so `modules` are every one.
 function linked_round(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, objects: [str], module: str, modules: [str], bound: [supplied_judged.Bound], asking: supplied_paired.Asking) -> Round
+    # The platform layer's archive after every object, so the linker takes the members they call (`cli/layer.hero`).
+    with_layer = strings.with_all(list: objects, more: site.layer)
+
     # Which library supplies each bound name and each name the runtime calls,
     # asked of the link (`cli/supplied.hero`, panel 239; defect 2363).
     line = link.link_line(
-        objects: objects,
+        objects: with_layer,
         level: options.level,
         sanitize: options.sanitize,
         target: t.target,
@@ -272,7 +276,7 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
     )
     linked = link.link_objects(
         t,
-        objects: objects,
+        objects: with_layer,
         module: module,
         output: site.output,
         level: options.level,
@@ -280,7 +284,7 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
         search_library: options.library,
         pkgconfig_flags: site.pkgconfig_flags,
         link_names: site.link_names,
-        judging: supplied.asked(t, line: line, bound: bound, declared: supplied_paired.asked_of(t, asking, line: line, bound: bound, pkgconfigs: site.pkgconfig_words), objects: objects)
+        judging: supplied.asked(t, line: line, bound: bound, declared: supplied_paired.asked_of(t, asking, line: line, bound: bound, pkgconfigs: site.pkgconfig_words), objects: with_layer)
     )
     return Round(
         verdict: carry_failure(linked),

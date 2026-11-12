@@ -23,6 +23,10 @@ use source
 # round learns (`link.link_objects`); `output` is the author's `-o`.
 record Site
     object: str
+    # The platform layer's archive (`cli/layer.hero`; panel 234's R6), the
+    # words every link of the build carries after its objects; none where the
+    # runtime has no layer.
+    layer: [str]
     output: str?
     # Whether the round LINKS after it compiles. `--emit-c` says no (defect
     # 049, 2026-09-17): a tag's spelling is learned at the compile, where clang

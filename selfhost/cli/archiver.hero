@@ -1,0 +1,189 @@
+# Which tool archives the platform layer's members, and how it is told to
+# (design.md §3.1; panel 234's R6; feature 2295). Split out of
+# `cli/layer.hero` along a seam that names a concern: that file decides WHAT
+# is archived and when it is served, this one WHICH program writes the
+# archive, its words, and what `heroes doctor` says of it.
+#
+# **THE ARCHIVER IS ASKED OF CLANG**, never assumed: `-print-prog-name`
+# answers the path of a tool installed beside the clang that compiles, so the
+# archive is written by the toolchain that wrote its members. LLVM's own,
+# `llvm-ar`, first, where clang knows one (Debian clang 22.1.8 does,
+# `/usr/lib/llvm-22/bin/llvm-ar`, measured 2026-11-12); the platform's `ar`
+# after it (Apple clang 21 names no `llvm-ar` and answers Xcode's `ar`); on an
+# MSVC target `llvm-lib` first, which writes the COFF library `link.exe`
+# documents, then `llvm-ar` (unrun on Windows at this file's writing). Where
+# clang names none by a path, the last asked is started by its bare name,
+# which `PATH` may answer.
+#
+# **EVERY ARCHIVE OF ONE SET OF MEMBERS IS ONE SET OF BYTES**: GNU's and
+# LLVM's `ar` are told `D`, which writes no time, owner or mode. Apple's `ar`
+# refuses `D` and writes each member's time, so two archives of one object
+# were two sets of bytes on this Mac, 2026-11-12, and one set under
+# `ZERO_AR_DATE=1`, which every archiver is given (`process.run_given`, the
+# compiler's own environment untouched) and only Apple's reads.
+
+use cli/clang_asked
+use cli/link_flags
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/runtime_key
+use cli/strings
+use cli/toolchain
+
+# A tool that archives, and how it is told to.
+record Archiver
+    # The program as clang named it, or a bare name looked up on `PATH`.
+    program: str
+    # `llvm-ar` and `ar` take `rcs` and the archive first; `llvm-lib` takes
+    # `/out:`.
+    library_style: bool
+    # GNU's and LLVM's `ar` take `D`, which Apple's refuses.
+    deterministic: bool
+
+# The objects archived into `staged` by the archiver clang names.
+function archived(t: toolchain.Toolchain, staged: str, objects: [str], err_path: str) -> ()?
+    tool = archiver(t, err_path: err_path)
+    line = archive_line(tool, staged: staged, objects: objects)
+    ran = process.run_given(
+        program: tool.program,
+        words: line,
+        out: process.discard(),
+        err: err_path,
+        given: [process.Variable(name: "ZERO_AR_DATE", value: "1")]
+    )
+    said = read_back.words(err_path).default("")
+    publish.discard(err_path)
+
+    if !ran.started
+        return fail(
+            code: "no_archiver",
+            msg: "the platform layer could not be archived: `" + tool.program + "` could not be started, the operating system's reason " + ran.why.to_str() + ".\n  clang names no archiver beside it (`clang -print-prog-name=llvm-ar`, `ar` and `llvm-lib`), and none is on PATH; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
+        )
+
+    if ran.code != 0 || !process.path_exists(staged)
+        return fail(
+            code: "failed",
+            msg: "the platform layer could not be archived: `" + tool.program + "` exited " + ran.code.to_str() + said_after(said)
+        )
+    return ok()
+
+function said_after(said: str) -> str
+    if strings.trimmed(said).len() == 0
+        return " and said nothing"
+    return ":\n" + said
+
+# The archiver's words for `objects` into `staged`, its program first.
+function archive_line(tool: Archiver, staged: str, objects: [str]) -> [str]
+    if tool.library_style
+        return strings.with_all(list: [tool.program, "/out:" + staged], more: objects)
+    modifiers: str @= "rcs"
+
+    if tool.deterministic
+        modifiers @ "rcsD"
+    return strings.with_all(list: [tool.program, modifiers, staged], more: objects)
+
+# The archiver for `t`'s target: the first of `wanted` that clang names by a
+# path where a file stands, else the last of them by its bare name, which
+# `PATH` may still answer and whose failure to start says what was looked for.
+function archiver(t: toolchain.Toolchain, err_path: str) -> Archiver
+    wanted = wanted_for(t.target)
+
+    for name in wanted
+        found = named_by_clang(name: name, err_path: err_path)
+
+        if found.len() > 0
+            return archiver_named(name: name, program: found, target: t.target)
+
+    last = wanted[wanted.len() - 1]
+    return archiver_named(name: last, program: last, target: t.target)
+
+# What `heroes doctor` says of the archiver a cold build asks for: the one
+# clang names beside it, or one `PATH` starts; none needed where the runtime
+# has no layer; and where none starts, a failure, since then no program
+# builds (the brief of feature 2295: a program can fail without it).
+function archiver_said(t: toolchain.Toolchain) -> str?
+    none: [str] = []
+
+    if runtime_key.layer_members(t.runtime).default(none).len() == 0
+        return ok("none needed: the runtime at " + t.runtime + " has no platform layer")
+    process.mkdir_all(t.build)?
+    tool = archiver(t, err_path: publish.private_name(t.build + "/doctor-archiver.txt"))
+
+    if process.path_exists(tool.program)
+        return ok(tool.program)
+    ran = process.run(
+        program: tool.program,
+        words: [tool.program, "--version"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if ran.started
+        return ok("`" + tool.program + "`, found on PATH")
+    return fail(
+        code: "no_archiver",
+        msg: "none: clang names no `" + wanted_for(t.target).join("` or `") + "` beside it and `" + tool.program + "` is not on PATH, so no program links its platform layer; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
+    )
+
+# The archivers asked for, in the order asked: on an MSVC target LLVM's
+# `lib.exe`, then its `ar`; elsewhere its `ar`, then the platform's.
+function wanted_for(target: str) -> [str]
+    if link_flags.msvc(target)
+        return ["llvm-lib", "llvm-ar"]
+    return ["llvm-ar", "ar"]
+
+function archiver_named(name: str, program: str, target: str) -> Archiver
+    return Archiver(
+        program: program,
+        library_style: name == "llvm-lib",
+        deterministic: name == "llvm-ar" || !link_flags.apple(target)
+    )
+
+# The path clang answers for the tool `name` where a file stands there; "" where
+# it answers the bare name back, which is how it says it found none, or where it
+# did not answer.
+function named_by_clang(name: str, err_path: str) -> str
+    printed: str @= ""
+    out_path = publish.private_name(err_path + ".out")
+    asked = clang_asked.asked_apart(
+        program: "clang",
+        words: ["clang", "-print-prog-name=" + name],
+        what: "asking clang for an archiver",
+        err_path: err_path,
+        out_path: out_path,
+        printed: @printed
+    )
+    publish.discard(out_path)
+    publish.discard(err_path)
+    path = strings.trimmed(printed)
+
+    if asked.is_err() || path == name || path.len() == 0 || !process.path_exists(path) || process.is_directory(path)
+        return ""
+    return path
+
+# An archive's suffix: what `link.exe` reads as a library on an MSVC target,
+# which takes a file of another suffix for an object; `.a` elsewhere.
+function suffix_of(target: str) -> str
+    if link_flags.msvc(target)
+        return ".lib"
+    return ".a"
+
+## Tests
+
+# The archiver asked for each target, in order, and the words each is told.
+test "an archiver is asked of clang in the target's order, and told its own words (feature 2295)"
+    assert wanted_for("x86_64-pc-windows-msvc") == ["llvm-lib", "llvm-ar"]
+    assert wanted_for("arm64-apple-darwin27.2.0") == ["llvm-ar", "ar"]
+    assert wanted_for("aarch64-unknown-linux-gnu") == ["llvm-ar", "ar"]
+    assert suffix_of("x86_64-pc-windows-msvc") == ".lib"
+    assert suffix_of("aarch64-unknown-linux-gnu") == ".a"
+    apple = archiver_named(name: "ar", program: "/usr/bin/ar", target: "arm64-apple-darwin27.2.0")
+    assert archive_line(apple, staged: "s.a", objects: ["x.o", "y.o"]) == ["/usr/bin/ar", "rcs", "s.a", "x.o", "y.o"]
+    gnu = archiver_named(name: "ar", program: "/usr/bin/ar", target: "aarch64-unknown-linux-gnu")
+    assert archive_line(gnu, staged: "s.a", objects: ["x.o"]) == ["/usr/bin/ar", "rcsD", "s.a", "x.o"]
+    llvm = archiver_named(name: "llvm-ar", program: "llvm-ar", target: "arm64-apple-darwin27.2.0")
+    assert archive_line(llvm, staged: "s.a", objects: ["x.o"]) == ["llvm-ar", "rcsD", "s.a", "x.o"]
+    lib = archiver_named(name: "llvm-lib", program: "llvm-lib", target: "x86_64-pc-windows-msvc")
+    assert archive_line(lib, staged: "s.lib", objects: ["x.o"]) == ["llvm-lib", "/out:s.lib", "x.o"]
+    assert named_by_clang(name: "no-such-archiver-2295", err_path: "build/selftest-layer-asked.txt") == ""
