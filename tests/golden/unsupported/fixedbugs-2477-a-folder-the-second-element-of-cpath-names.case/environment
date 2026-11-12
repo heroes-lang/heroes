@@ -1,0 +1,2 @@
+# Two folders, written with POSIX's `:`, given with `;` on Windows; the second holds the stand-in.
+CPATH=tests/golden/unsupported/fixedbugs-2477-a-folder-the-second-element-of-cpath-names.case/first:tests/golden/unsupported/fixedbugs-2477-a-folder-the-second-element-of-cpath-names.case/envdir

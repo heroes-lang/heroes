@@ -389,7 +389,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4096d0e31806f2a5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("170de4ca3187c4b2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("functiontypedfieldnevercalledthrough\tfunction-typed-field-never-called-through\n");

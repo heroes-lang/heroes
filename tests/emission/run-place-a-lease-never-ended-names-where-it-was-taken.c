@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4eda93933f5438a3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2551a77a58d50ab0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placealeaseneverendednameswhereitwastaken\tplace-a-lease-never-ended-names-where-it-was-taken\n");

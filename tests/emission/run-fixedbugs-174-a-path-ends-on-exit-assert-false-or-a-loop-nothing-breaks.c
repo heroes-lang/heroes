@@ -498,7 +498,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f5602f3765aa808", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55cd16da0fdb7a16", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks\tfixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks\n");

@@ -6,9 +6,11 @@
 # file there standing in for a header the compiler's C reads is refused
 # (`tests/golden/unsupported/fixedbugs-2344-*`). What that must still let
 # through is held here, every build's variables given to its compiler alone
-# through `/usr/bin/env`, never set in this harness's process, since an empty
-# `CPATH` is no unset (`case_setting.hero` has the measurement); a machine
-# without it, Windows, steps aside.
+# at the spawn (`shell.run_given`), never set in this harness's process, since
+# an empty `CPATH` is no unset (`case_setting.hero` has the measurement). Until
+# defect 2477 they went through `/usr/bin/env`, and Windows, which has none,
+# stepped aside; it is asked as every platform is, a list of folders joined
+# by its own separator, `;`.
 #
 # - **A binding's header found through `CPATH`**, the shape of the GNU
 #   readline binding the compiler's own `machine_locked_path` note sends to
@@ -30,12 +32,10 @@
 
 use <core>/strings as core_strings
 
+use case_setting
 use report
 use shell
 use strings
-
-constant ENV: str
-    "/usr/bin/env"
 
 # The readline binding's shape: a group naming a header a folder of
 # `CPATH`'s holds, read whole from there.
@@ -69,13 +69,6 @@ constant KEPT_DEFINE: str
 function the_environment_lets_through_what_it_must(@r: report.Report, scratch: str, compiler: str)
     label = "special/the environment clang reads lets a binding, the platform's folders and a linker's edit through, and an edit at -O2 is refused"
 
-    if shell.exe_suffix() == ".exe"
-        report.keep_skip(
-            @r,
-            label: label,
-            detail: "  the builds start their compiler through `" + ENV + "`, which this platform has not"
-        )
-        return
     home = scratch + "/environment-2344"
     laid: ()? @= shell.remove_tree(home)
 
@@ -99,7 +92,7 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
     if own.len() == 0
         wrong @ wrong.push("    clang printed no folder it searches on its own")
 
-    for one in [["CPATH=" + home + "/rl", "/readline", "2051"], ["CPATH=" + own.join(":"), "/true", "true"], ["CCC_OVERRIDE_OPTIONS=#+-Wl,-S", "/true", "true"]]
+    for one in [["CPATH=" + home + "/rl", "/readline", "2051"], ["CPATH=" + own.join(case_setting.separator(shell.exe_suffix() == ".exe")), "/true", "true"], ["CCC_OVERRIDE_OPTIONS=#+-Wl,-S", "/true", "true"]]
         said = printed(scratch: scratch, compiler: compiler, variable: one[0], source: home + one[1], level: "-O0")
 
         if said != one[2]
@@ -107,10 +100,11 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
                 "    `" + one[0] + "` over `" + one[1] + ".hero`: " + said + ", where it prints " + one[2]
             )
 
-    edited = shell.run(
+    edited = shell.run_given(
         scratch: scratch,
-        program: ENV,
-        words: [ENV, "CCC_OVERRIDE_OPTIONS=#s/-O2/" + KEPT_DEFINE + "/", compiler, "build", home + "/sum.hero", "-O2", "-o", home + "/sum-edited" + shell.exe_suffix()]
+        program: compiler,
+        words: [compiler, "build", home + "/sum.hero", "-O2", "-o", home + "/sum-edited" + shell.exe_suffix()],
+        given: given("CCC_OVERRIDE_OPTIONS=#s/-O2/" + KEPT_DEFINE + "/")
     )
 
     if edited.is_err() || edited.must().code != 1 || !core_strings.contains(s: edited.must().err, substr: "error[shadowed_macro]")
@@ -135,10 +129,11 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
     # An edit that takes a probe's own word away breaks that probe, which no
     # line asked of clang can show as a word added: the failure, at exit 2,
     # names the variable, never the compiler's alone (defect 2355).
-    broken = shell.run(
+    broken = shell.run_given(
         scratch: scratch,
-        program: ENV,
-        words: [ENV, "CCC_OVERRIDE_OPTIONS=#s/-fsyntax-only/-DHERO_2355_NOTHING/", compiler, "build", home + "/group.hero", "-o", home + "/group" + shell.exe_suffix()]
+        program: compiler,
+        words: [compiler, "build", home + "/group.hero", "-o", home + "/group" + shell.exe_suffix()],
+        given: given("CCC_OVERRIDE_OPTIONS=#s/-fsyntax-only/-DHERO_2355_NOTHING/")
     )
 
     if broken.is_err() || broken.must().code != 2 || !core_strings.contains(s: broken.must().err, substr: "note: `CCC_OVERRIDE_OPTIONS` is set, and it edits every clang job this compiler starts")
@@ -158,12 +153,8 @@ function printed(scratch: str, compiler: str, variable: str, source: str, level:
     # Named by the level's digit alone, so no edit of a level's word, `-O2`,
     # matches the binary's own name and moves it.
     binary = source + "-at" + level.slice(from: 2, to: level.len()) + shell.exe_suffix()
-    words: [str] @= [ENV]
-
-    if variable.len() > 0
-        words @ words.push(variable)
-    words @ words.push(compiler).push("build").push(source + ".hero").push(level).push("-o").push(binary)
-    made = shell.run(scratch: scratch, program: ENV, words: words)
+    words = [compiler, "build", source + ".hero", level, "-o", binary]
+    made = shell.run_given(scratch: scratch, program: compiler, words: words, given: given(variable))
 
     if made.is_err() || made.must().code != 0
         return "the build ended " + shell.ending(made)
@@ -177,6 +168,16 @@ function printed(scratch: str, compiler: str, variable: str, source: str, level:
         said @ strings.trimmed(ran.must().err)
     lines = strings.split_on(text: said, byte: 10)
     return lines[0]
+
+# `variable`, `NAME=VALUE`, as the one variable a build is given, none for "".
+function given(variable: str) -> [shell.Variable]
+    cut = strings.index_of(text: variable, needle: "=")
+
+    if cut.is_err()
+        return []
+    return [
+        shell.Variable(name: variable.slice(from: 0, to: cut.must()), value: variable.slice(from: cut.must() + 1, to: variable.len()))
+    ]
 
 # The folders clang searches on its own for `<...>`, as `clang -v` prints
 # them for an empty C file, a framework folder's mark taken off.

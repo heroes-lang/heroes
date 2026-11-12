@@ -1,0 +1,11 @@
+# The package `stopwatch` of the case two folders up (feature 2295,
+# 2026-11-12): its group names the platform layer's header and nothing else,
+# no `link` and no flag, as every package reaches the layer.
+extern "hero_time.h"
+    function hero_time_monotonic_ns() -> i64
+
+# Whether two readings in a row go forward or stand still.
+function forward() -> bool
+    a = hero_time_monotonic_ns()
+    b = hero_time_monotonic_ns()
+    return a >= 0 && b >= a

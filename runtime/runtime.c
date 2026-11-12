@@ -276,3 +276,22 @@
 /* The program's `write_file`, whole or not at all (defect 438): through
  * `replace.c`'s private name and rename, which is why it comes after it. */
 #include "parts/write.c"
+
+/* THE PLATFORM LAYER'S FILES, NAMED HERE AND COMPILED ELSEWHERE (panel 234's
+ * R6; feature 2295). Sockets and a monotonic clock are C files of their own
+ * beside the runtime, each archived alone and taken by the linker only into a
+ * program that calls it (`selfhost/cli/layer.hero`), so this translation unit
+ * compiles none of them: the preprocessor never reads the block below. It
+ * stands here because THE RUNTIME'S FILE LIST COMES FROM THIS FILE (panel
+ * 098's condition 4, `selfhost/cli/runtime_key.hero`): every line opening
+ * `#include "` names a file the runtime is made of, which its key covers, read
+ * so by every compiler since that condition, the seed's among them, and by
+ * both mirrors of the key, the hooks' and the harness's. The layer's members
+ * are the names below under `platform/`, in the order written, each after its
+ * own header. */
+#if 0
+#include "hero_net.h"
+#include "platform/hero_net.c"
+#include "hero_time.h"
+#include "platform/hero_time.c"
+#endif

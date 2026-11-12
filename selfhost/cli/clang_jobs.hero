@@ -190,7 +190,9 @@ test "every word a module hands clang is on the line the edits are asked of (def
 # which `cli/package_reads.hero` reads since defect 2351 and this test met at
 # batch 25's merge), a prefix a module tests a word against, and a word one
 # takes off a line with the word after it (`-framework`, which
-# `cli/supplied_probe.hero` leaves off the platform's probe, panel 239).
+# `cli/supplied_probe.hero` leaves off the platform's probe, panel 239);
+# and `-print-prog-name=`, a question clang answers with no job, as `-###`
+# is, which `cli/archiver.hero` asks for the tool beside it (feature 2295).
 constant NOT_WORDS: [str]
     [
         "-object-file-name="
@@ -228,6 +230,7 @@ constant NOT_WORDS: [str]
         "-fdepfile-entry="
         "-fsanitize-system-ignorelist="
         "-framework"
+        "-print-prog-name="
     ]
 
 function listed(word: str) -> bool

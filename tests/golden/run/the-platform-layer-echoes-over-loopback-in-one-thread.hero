@@ -1,0 +1,147 @@
+# The platform layer's sockets in one thread (panel 234's R6; feature 2295,
+# 2026-11-12): a listener on 127.0.0.1 at a port the system picks, read back,
+# a connection to it, accepted (the kernel completes a loopback handshake
+# into the listener's backlog before `accept` asks), bytes sent, received,
+# echoed and compared, and every socket closed. The group names the layer's
+# header and nothing else, no `link` and no flag: the archive on every link
+# line gives the program the sockets member, and on Windows `ws2_32` with it.
+#
+# Every failure is a value, never a crash: a port outside 0 to 65535 and an
+# empty address are `HERO_NET_INVALID`, a connection to a port nobody holds
+# is `HERO_NET_REFUSED`, and each path closes what it opened, since a handle
+# never given back aborts at the end of `main`.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    constant HERO_NET_INVALID: i64
+    constant HERO_NET_REFUSED: i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_send(s: Socket, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_recv(s: Socket, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_last_error() -> i64
+
+function main()
+    match echoed("hello from the platform layer")
+        .ok said => print("echoed: " + said)
+        .err e   => print("the echo failed: " + e.code + ", " + e.msg)
+
+    print(refused())
+    print(invalid())
+
+# The text sent through a listener, a connection and the socket it accepted,
+# and back.
+function echoed(text: str) -> str?
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+
+    if listener == nullptr
+        return fail(code: "listen_failed", msg: kind())
+    said = through(listener, text: text)
+    _ = hero_net_close(listener)
+    return said
+
+function through(listener: Socket, text: str) -> str?
+    port = hero_net_port(listener)
+
+    if port <= 0
+        return fail(code: "no_port", msg: kind())
+    client = hero_net_connect(address: "127.0.0.1".cstr(), port: port)
+
+    if client == nullptr
+        return fail(code: "connect_failed", msg: kind())
+    said = served(listener: listener, client: client, text: text)
+    _ = hero_net_close(client)
+    return said
+
+function served(listener: Socket, client: Socket, text: str) -> str?
+    server = hero_net_accept(listener)
+
+    if server == nullptr
+        return fail(code: "accept_failed", msg: kind())
+    said = exchanged(server: server, client: client, text: text)
+    _ = hero_net_close(server)
+    return said
+
+# The client sends, the server reads it whole and sends it back, the client
+# reads it whole.
+function exchanged(server: Socket, client: Socket, text: str) -> str?
+    sent(client, bytes: bytes_of(text))?
+    heard = received(server, count: text.len())?
+    sent(server, bytes: heard)?
+    back = received(client, count: text.len())?
+    return back.validated_bytes()
+
+# Every byte sent, a short send's rest sent again.
+function sent(s: Socket, bytes: [u8]) -> ()?
+    left: [u8] @= bytes
+
+    while left.len() > 0
+        n = hero_net_send(s, @left, n: left.len().to_u64().must())
+
+        if n < 0
+            return fail(code: "send_failed", msg: kind())
+        left @ left.slice(from: n, to: left.len())
+
+    return ok()
+
+# Exactly `count` bytes, however many receives they take.
+function received(s: Socket, count: i64) -> [u8]?
+    got: [u8] @= []
+
+    while got.len() < count
+        buffer: [u8] @= []
+        n = hero_net_recv(s, @buffer, n: (count - got.len()).to_u64().must())
+
+        if n < 0
+            return fail(code: "recv_failed", msg: kind())
+
+        if n == 0
+            return fail(code: "closed_early", msg: f"the peer closed after {got.len()} of {count} bytes")
+
+        for b in buffer.slice(from: 0, to: n)
+            got @ got.push(b)
+
+    return ok(got)
+
+function bytes_of(text: str) -> [u8]
+    out: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        out @ out.push(text[at])
+
+    return out
+
+function kind() -> str
+    return f"the layer's kind {hero_net_last_error()}"
+
+# A port nobody holds: the one a listener held before it closed.
+function refused() -> str
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+
+    if listener == nullptr
+        return "no listener: " + kind()
+    port = hero_net_port(listener)
+    _ = hero_net_close(listener)
+    client = hero_net_connect(address: "127.0.0.1".cstr(), port: port)
+
+    if client == nullptr
+        return f"a port nobody holds is refused: {hero_net_last_error() == HERO_NET_REFUSED}"
+    _ = hero_net_close(client)
+    return "a port nobody holds took a connection"
+
+# Arguments the layer refuses before it asks the system anything.
+function invalid() -> str
+    wide = hero_net_listen(address: "127.0.0.1".cstr(), port: 70000)
+    wide_kind = hero_net_last_error()
+    empty = hero_net_connect(address: "".cstr(), port: 80)
+    empty_kind = hero_net_last_error()
+    said = f"port 70000 and an empty address are refused: {wide == nullptr && wide_kind == HERO_NET_INVALID && empty == nullptr && empty_kind == HERO_NET_INVALID}"
+
+    if wide != nullptr
+        _ = hero_net_close(wide)
+
+    if empty != nullptr
+        _ = hero_net_close(empty)
+    return said

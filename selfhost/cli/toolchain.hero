@@ -442,6 +442,7 @@ test "a warm ask for the runtime's object compiles nothing, wherever the runtime
 
     object = runtime_object(t, level: "-O0", sanitize: false).must()
     assert !process.mkdir_all(copy + "/parts").is_err()
+    assert !process.mkdir_all(copy + "/platform").is_err()
 
     for path in runtime_key.made_of(t.runtime).must()
         name = path.slice(from: t.runtime.len() + 1, to: path.len())
@@ -478,6 +479,7 @@ test "a header written into the runtime's search after a build is another runtim
         assert !process.remove_tree(dir).is_err()
 
     assert !process.mkdir_all(copy + "/parts").is_err()
+    assert !process.mkdir_all(copy + "/platform").is_err()
 
     for path in runtime_key.made_of(t.runtime).must()
         name = path.slice(from: t.runtime.len() + 1, to: path.len())

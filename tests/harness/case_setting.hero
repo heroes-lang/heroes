@@ -33,7 +33,7 @@
 # The case's compiler is found through this process's `PATH`, never the
 # case's, which is its run's alone. **And the three clang reads into every
 # compile** (`CLANG_READS`, panel 237's R2, defect 2344): their empty value is
-# no unset, Apple clang searching `.` for an empty `CPATH`, so they were never
+# no unset, Apple clang searching `.` for an empty `CPATH`, so they are never
 # set in this harness's own process, where every later case's clang would
 # read them. **And the two `pkg-config` reads** (`PKG_CONFIG_READS`, panel
 # 243's R2, defect 2428): the compiler starts `pkg-config` for a `pkgconfig`
@@ -44,28 +44,28 @@
 # unset either, `pkg-config` then searching no folder at all. Any other name
 # is refused with the case's name, never given.
 #
-# **Each of the five is given to the case's compiler alone, at its start, as
-# the two above are** (defect 2477): `shell.run_given` gives a child a
-# variable set empty as well as one with a value, on every platform
-# (`hero_run_env`, `runtime/parts/run.c`), so no case needs a program of
-# POSIX's to start its compiler with them. Until then each was handed to the
-# compiler through `/usr/bin/env`, and the case was skipped by name on
-# Windows, which has none, so 22 cases that need no folder of their own were
-# never judged there.
+# **Every variable reaches the case's run through `shell.run_given`, on every
+# platform** (defect 2477), an empty value set empty on Windows too
+# (`hero_run_env`); until then the five reads went through `/usr/bin/env`, and
+# 24 cases were never judged on Windows. A list of folders is written with
+# POSIX's `:` and given with `;` there (`FOLDER_LISTS`), so one `environment`
+# holds on every machine, as `<root>` makes one expectation do.
 #
 # **A case with a `directory` runs from a copy of its folder**, as one with
 # links does, since the compiler writes its cache under the folder it runs in:
-# started there by `/usr/bin/env -C`, the variables clang and `pkg-config`
-# read on that line, with the compiler and the case's own paths written
-# whole, so an empty element of `CPATH` names a folder of the case and never
-# the repository's root. `hero_run_go` names no folder for the child it
-# starts, so such a case is the one still skipped on Windows.
+# started there by `/usr/bin/env -C`, with the compiler and the case's own
+# paths written whole, so an empty element of `CPATH` names a folder of the
+# case and never the repository's root. The runtime's spawn starts every
+# child in this process's folder (`hero_run_go` in `runtime/parts/run.c`
+# passes `CreateProcessW` no folder and calls no `chdir`), so no other route
+# exists, and such a case is skipped by name on Windows.
 
 use <core>/strings as core_strings
 
 use apply_tree
 use shell
 use strings
+use variables_probe
 
 # The variables a case's `environment` may give its run.
 constant SETTABLE: [str]
@@ -82,8 +82,20 @@ constant CLANG_READS: [str]
 constant PKG_CONFIG_READS: [str]
     ["PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]
 
-# The one program that starts a case's compiler from a folder of its own:
-# POSIX's `env`, `-C` in GNU's and in this Mac's.
+# The variables whose value is a list of folders, written in a case with
+# POSIX's `:` between them and given with `;` on Windows, where a folder holds
+# a drive's `:`: LLVM 22.1.8's `llvm/Support/Program.h` gives
+# `EnvPathSeparator` as `;` on `_WIN32`, pkgconf 3.0.10's
+# `libpkgconf/stdinc.h` gives `PKG_CONFIG_PATH_SEP_S` the same (both read
+# on this Mac, 2026-11-12), and the compiler parts the four reads so
+# (`cli/clang_added.hero`, `cli/pkgconfig_answer.hero`). `CCC_OVERRIDE_OPTIONS`
+# holds edits, never folders.
+constant FOLDER_LISTS: [str]
+    ["PATH", "GIT_CEILING_DIRECTORIES", "CPATH", "C_INCLUDE_PATH", "PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]
+
+# The one program that starts a case's compiler from a folder of its own,
+# which the runtime's spawn cannot: POSIX's `env`, `-C` in GNU's and in this
+# Mac's.
 constant ENV: str
     "/usr/bin/env"
 
@@ -137,32 +149,21 @@ constant SKIP: str
     "setting_skipped"
 
 # Why the case `s` names cannot run on this machine, "" where it can: a link
-# made with `ln`, or a run started by `/usr/bin/env`, which Windows has not.
+# made with `ln`, or a run started in a folder of the case's own by
+# `/usr/bin/env -C`, neither of which Windows has. A variable is never a
+# reason: every one is given at the spawn, on every platform (defect 2477).
 function skip_here(s: Setting) -> str
     if s.links.len() > 0 && shell.exe_suffix() == ".exe"
         return "the case makes a symbolic link with `ln -s` before its run, as `apply_tree.hero`'s link cases do, and this platform has no `ln`"
 
     if started_by_env(s) && shell.exe_suffix() == ".exe"
-        return "the case starts its compiler from a folder of its own through `" + ENV + " -C`, and this platform has no `" + ENV + "`"
+        return "the case starts its compiler in its folder `" + s.directory + "`, which the runtime's spawn cannot give a child (`hero_run_go` starts every child in this process's folder), so `" + ENV + " -C` starts it, and this platform has no `" + ENV + "`"
     return ""
 
-# Whether the case's compiler is started through `/usr/bin/env`: it starts
-# in a folder of its own (defect 2477: a variable alone is given at the
-# start).
+# Whether the case's compiler is started through `/usr/bin/env`: in a folder
+# of its own.
 function started_by_env(s: Setting) -> bool
     return s.directory.len() > 0
-
-# The case's `NAME=VALUE` lines of a variable clang or `pkg-config` reads,
-# which go to its compiler alone: on its line through `/usr/bin/env` where it
-# starts in a folder of its own, else given at its start.
-function env_pairs(s: Setting) -> [str]
-    out: [str] @= []
-
-    for pair in s.environment
-        if reads(pair.slice(from: 0, to: strings.index_of(text: pair, needle: "=").must()))
-            out @ out.push(pair)
-
-    return out
 
 # Whether a run failed as a case skipped here.
 function is_skip(said: shell.Run?) -> bool
@@ -208,9 +209,9 @@ function repository_root(scratch: str) -> str?
 
 # The run of `words` for the case in `dir` as `s` asks it, what it printed
 # written back as the case's own: in a copy holding its links or starting in
-# its folder, its variables given to its run alone, at its start, those clang
-# and `pkg-config` read on the line of `/usr/bin/env` where it starts in a
-# folder of its own.
+# its folder, every variable given to its run alone at the spawn, and through
+# `/usr/bin/env -C` where it starts in a folder of its own, which hands them
+# on.
 function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
     at: str @= dir
     line: [str] @= words
@@ -233,23 +234,14 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
     started: str @= program
 
     if started_by_env(s)
-        line @ env_line(line, s: s, at: whole(root: root, path: at), root: root)
+        line @ env_line(line, directory: s.directory, at: whole(root: root, path: at), root: root)
         started @ ENV
-    given: [shell.Variable] @= []
-
-    for pair in s.environment
-        cut = strings.index_of(text: pair, needle: "=").must()
-        name = pair.slice(from: 0, to: cut)
-
-        # A variable clang or `pkg-config` reads went to the compiler's line
-        # alone, where it starts through `/usr/bin/env`.
-        if reads(name) && started_by_env(s)
-            continue
-        given @ given.push(
-            shell.Variable(name: name, value: swapped(text: pair.slice(from: cut + 1, to: pair.len()), old: "<root>", new: root))
-        )
-
-    said = shell.run_given(scratch: scratch, program: started, words: line, given: given)
+    said = shell.run_given(
+        scratch: scratch,
+        program: started,
+        words: line,
+        given: given_all(s: s, root: root, windows: shell.exe_suffix() == ".exe")
+    )
 
     if at != dir
         _ = shell.remove_tree(at).is_err()
@@ -258,29 +250,61 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
     back.err @ written_back(text: back.err, at: at, dir: dir, root: root)
     return ok(back)
 
-# **The line that starts a case's compiler through `/usr/bin/env`**: from the
-# case's `directory` in `at`, its copy, where it names one, the compiler and
-# the copy's paths then written whole, since a relative one would be read from
-# there; then each variable clang or `pkg-config` reads, `<root>` its value's
-# root; then the compiler's own line.
-function env_line(words: [str], s: Setting, at: str, root: str) -> [str]
-    out: [str] @= [ENV]
-    line: [str] @= words
+# **The line that starts a case's compiler in its `directory`** of `at`, its
+# copy, through `/usr/bin/env -C`: the compiler and the copy's paths written
+# whole, since a relative one would be read from there. The case's variables
+# are given to `env` at the spawn, and `env` hands them on.
+function env_line(words: [str], directory: str, at: str, root: str) -> [str]
+    out: [str] @= [ENV, "-C", at + "/" + directory, whole(root: root, path: words[0])]
 
-    if s.directory.len() > 0
-        out @ out.push("-C").push(at + "/" + s.directory)
-        line @ [whole(root: root, path: words[0])]
-
-        for word in words.slice(from: 1, to: words.len())
-            line @ line.push(swapped(text: word, old: unwhole(root: root, path: at), new: at))
-
-    for pair in env_pairs(s)
-        out @ out.push(swapped(text: pair, old: "<root>", new: root))
-
-    for word in line
-        out @ out.push(word)
+    for word in words.slice(from: 1, to: words.len())
+        out @ out.push(swapped(text: word, old: unwhole(root: root, path: at), new: at))
 
     return out
+
+# Every variable the case `s` sets, as its run is given it (`given_value`), in
+# the order the case wrote them, so a name written twice takes its later
+# value, as `hero_run_env` gives it.
+function given_all(s: Setting, root: str, windows: bool) -> [shell.Variable]
+    out: [shell.Variable] @= []
+
+    for pair in s.environment
+        cut = strings.index_of(text: pair, needle: "=").must()
+        name = pair.slice(from: 0, to: cut)
+        out @ out.push(
+            shell.Variable(name: name, value: given_value(name: name, value: pair.slice(from: cut + 1, to: pair.len()), root: root, windows: windows))
+        )
+
+    return out
+
+# The value a case's `NAME=VALUE` gives its run: each `<root>` the
+# repository's root, and a list of folders (`FOLDER_LISTS`) parted at the `:`
+# the case writes and joined by the platform's `separator`, each part's root
+# written after the parting, since a root on Windows holds a drive's `:`. An
+# empty part stays one, an empty value stays set and empty.
+function given_value(name: str, value: str, root: str, windows: bool) -> str
+    if !folder_list(name)
+        return swapped(text: value, old: "<root>", new: root)
+    out: [str] @= []
+
+    for part in strings.split_on(text: value, byte: 58)
+        out @ out.push(swapped(text: part, old: "<root>", new: root))
+
+    return out.join(separator(windows))
+
+# What parts a list of folders a run is given: `;` on Windows, `:` elsewhere.
+function separator(windows: bool) -> str
+    if windows
+        return ";"
+    return ":"
+
+# Whether `name`'s value is a list of folders.
+function folder_list(name: str) -> bool
+    for one in FOLDER_LISTS
+        if one == name
+            return true
+
+    return false
 
 # `path` written whole: as it is where it starts at the root, else from the
 # repository's root.
@@ -355,31 +379,32 @@ test "a setting names only the variables whose empty value reads as unset, and l
     assert !started_by_env(none)
 
 # **A variable clang reads is never set in this process** (defect 2344): it
-# is given to the case's compiler alone, a `<root>` in its value written
-# whole, at its start (defect 2477), or through `/usr/bin/env` where a case
-# with a `directory` starts there, its compiler and its copy's paths written
-# whole, so nothing is read from the folder it starts in but what the case
-# meant.
-test "a variable clang reads is given to the case's compiler alone, and a directory is where its run starts"
+# is given to the case's run alone, at the spawn since defect 2477, a
+# `<root>` in its value written whole, so no case starts its compiler through
+# `/usr/bin/env` for a variable; and a case with a `directory` starts there
+# through `/usr/bin/env -C`, its compiler and its copy's paths written whole,
+# so nothing is read from the folder it starts in but what the case meant.
+test "a variable clang reads is given to the case's run alone, and a directory is where its run starts"
     assert reads("CPATH") && reads("C_INCLUDE_PATH") && reads("CCC_OVERRIDE_OPTIONS")
     assert !settable("CPATH") && !reads("PATH")
     plain = Setting(environment: ["PATH=/x", "CPATH=<root>/inc"], links: [], directory: "")
-    assert !started_by_env(plain) && env_pairs(plain) == ["CPATH=<root>/inc"]
-    assert skip_here(plain) == ""
+    assert !started_by_env(plain)
+    given = given_all(s: plain, root: "/r", windows: false)
+    assert given.len() == 2 && given[0].name == "PATH" && given[0].value == "/x" && given[1].name == "CPATH" && given[1].value == "/r/inc"
     words = ["./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
-    assert env_line(words, s: plain, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "CPATH=/r/inc", "./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
     moved = Setting(environment: ["C_INCLUDE_PATH=:"], links: [], directory: "here")
-    assert env_line(words, s: moved, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "-C", "/r/build/h-1/set/x.case/here", "C_INCLUDE_PATH=:", "/r/heroes-next", "build", "/r/build/h-1/set/x.case/main.hero"]
+    assert started_by_env(moved)
+    assert env_line(words, directory: moved.directory, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "-C", "/r/build/h-1/set/x.case/here", "/r/heroes-next", "build", "/r/build/h-1/set/x.case/main.hero"]
     assert inside("here") && inside("a/b") && !inside("../up") && !inside("/abs") && !inside("a/../..")
     assert whole(root: "/r", path: "/abs") == "/abs" && unwhole(root: "/r", path: "/r/b/c") == "b/c"
 
-# **The two `pkg-config` reads go to the case's compiler alone** (panel 243's
-# R2, defect 2428): a case naming its own `.pc` folder sets `PKG_CONFIG_PATH`
-# and `PKG_CONFIG_LIBDIR`, which reach the compiler's line through
-# `/usr/bin/env` in the order the case wrote them, never this process's
-# environment, where every later case's `pkg-config` would read them; any
-# other variable of `pkg-config`'s is refused by name.
-test "a case's own pkg-config folder is given to its compiler alone, and another pkg-config variable is refused (defect 2428)"
+# **The two `pkg-config` reads go to the case's run alone** (panel 243's R2,
+# defect 2428): a case naming its own `.pc` folder sets `PKG_CONFIG_PATH` and
+# `PKG_CONFIG_LIBDIR`, which reach its run at the spawn in the order the case
+# wrote them, never this process's environment, where every later case's
+# `pkg-config` would read them; any other variable of `pkg-config`'s is
+# refused by name.
+test "a case's own pkg-config folder is given to its run alone, and another pkg-config variable is refused (defect 2428)"
     assert reads("PKG_CONFIG_PATH") && reads("PKG_CONFIG_LIBDIR")
     assert !settable("PKG_CONFIG_PATH") && !settable("PKG_CONFIG_LIBDIR") && !reads("PKG_CONFIG_SYSROOT_DIR")
     dir = "build/selftest-case-setting-pc"
@@ -387,10 +412,10 @@ test "a case's own pkg-config folder is given to its compiler alone, and another
     assert !shell.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/environment", text: "# the case's own library\nPKG_CONFIG_PATH=" + dir + "/pc\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
     got = read_setting(dir).must()
-    pairs = ["PKG_CONFIG_PATH=" + dir + "/pc", "PKG_CONFIG_LIBDIR=" + dir + "/pc"]
-    assert !started_by_env(got) && env_pairs(got) == pairs
-    words = ["./heroes-next", "build", dir + "/main.hero"]
-    assert env_line(words, s: got, at: dir, root: "/r") == [ENV, pairs[0], pairs[1], "./heroes-next", "build", dir + "/main.hero"]
+    assert !started_by_env(got) && skip_here(got) == ""
+    given = given_all(s: got, root: "/r", windows: true)
+    assert given.len() == 2 && given[0].name == "PKG_CONFIG_PATH" && given[1].name == "PKG_CONFIG_LIBDIR"
+    assert given[0].value == dir + "/pc" && given[1].value == dir + "/pc"
     assert !write_file(path: dir + "/environment", text: "PKG_CONFIG_SYSROOT_DIR=/x\n").is_err()
 
     said = match read_setting(dir)
@@ -399,3 +424,75 @@ test "a case's own pkg-config folder is given to its compiler alone, and another
 
     assert said == dir + "/environment sets `PKG_CONFIG_SYSROOT_DIR=/x`, and a case sets only PATH and GIT_CEILING_DIRECTORIES, the variables whose empty value reads as unset, CPATH, C_INCLUDE_PATH, CCC_OVERRIDE_OPTIONS, which clang reads, and PKG_CONFIG_PATH and PKG_CONFIG_LIBDIR, which `pkg-config` reads, as `NAME=VALUE`"
     assert !shell.remove_tree(dir).is_err()
+
+# **A list of folders a case writes with `:` is given with the platform's
+# separator** (defect 2477): `;` on Windows, where a folder holds a drive's
+# `:`, so a `<root>` is written after the parting and its own `:` is never a
+# cut; an empty part stays one, an empty value stays empty, and an edit of
+# `CCC_OVERRIDE_OPTIONS` is never parted. Every variable a case may set is a
+# list of folders but that one, so a variable admitted later is classed here.
+test "a list of folders a case writes with `:` is given with `;` on Windows, its root written after the parting (defect 2477)"
+    assert given_value(name: "PKG_CONFIG_PATH", value: "a/pa:a/pb", root: "/r", windows: false) == "a/pa:a/pb"
+    assert given_value(name: "PKG_CONFIG_LIBDIR", value: "a/pa:a/pb", root: "C:/w", windows: true) == "a/pa;a/pb"
+    assert given_value(name: "CPATH", value: "<root>/inc:x", root: "C:/w", windows: true) == "C:/w/inc;x"
+    assert given_value(name: "C_INCLUDE_PATH", value: ":", root: "C:/w", windows: true) == ";"
+    assert given_value(name: "C_INCLUDE_PATH", value: "/nonexistent-2344:", root: "/r", windows: false) == "/nonexistent-2344:"
+    assert given_value(name: "CPATH", value: "", root: "C:/w", windows: true) == ""
+    assert given_value(name: "GIT_CEILING_DIRECTORIES", value: "<root>", root: "C:/w", windows: true) == "C:/w"
+    assert given_value(name: "CCC_OVERRIDE_OPTIONS", value: "#+-D<root>=a:b", root: "C:/w", windows: true) == "#+-DC:/w=a:b"
+
+    for names in [SETTABLE, CLANG_READS, PKG_CONFIG_READS]
+        for name in names
+            assert folder_list(name) == (name != "CCC_OVERRIDE_OPTIONS")
+
+# **Every variable reaches the case's run at its spawn, on every platform**
+# (defect 2477): asked of a program clang builds, which prints what it was
+# given, in the compiler's place. A value set empty stays set, a value holding
+# a space comes whole, the case's `PATH` takes the place of this process's
+# own, a list comes with the platform's separator, and this process holds none
+# of them after. A case with a `directory` starts there through `/usr/bin/env
+# -C`, which hands its variables on, and on Windows it is skipped by its
+# folder's name.
+test "a case's variables reach its run at the spawn on every platform, and a directory is where it starts (defect 2477)"
+    scratch = "build/selftest-case-setting-run"
+    assert !shell.remove_tree(scratch).is_err()
+    assert !shell.mkdir_all(scratch + "/x.case/here").is_err()
+    assert !write_file(path: scratch + "/x.case/here/kept", text: "").is_err()
+    probe = variables_probe.built(scratch).must()
+    root = repository_root(scratch).must()
+    windows = shell.exe_suffix() == ".exe"
+    dir = scratch + "/x.case"
+    s = Setting(
+        environment: ["CPATH=", "C_INCLUDE_PATH=a b", "PKG_CONFIG_PATH=pa:<root>/pb", "PATH=<root>/build/no-tools"],
+        links: [],
+        directory: ""
+    )
+    assert skip_here(s) == ""
+    said = ran(
+        scratch: scratch,
+        program: probe,
+        words: [probe, "CPATH", "C_INCLUDE_PATH", "PKG_CONFIG_PATH", "PATH"],
+        dir: dir,
+        s: s,
+        root: root
+    ).must()
+    lines = strings.split_on(text: said.out, byte: 10)
+    assert said.code == 0 && lines.len() == 6
+    assert lines.slice(from: 1, to: 6) == ["CPATH []", "C_INCLUDE_PATH [a b]", "PKG_CONFIG_PATH [pa" + separator(windows) + "<root>/pb]", "PATH [<root>/build/no-tools]", ""]
+    assert shell.env(name: "C_INCLUDE_PATH").must() != "a b"
+    moved = Setting(environment: ["CPATH=<root>/inc", "C_INCLUDE_PATH=:"], links: [], directory: "here")
+
+    if windows
+        assert core_strings.contains(s: skip_here(moved), substr: "folder `here`")
+    else
+        assert skip_here(moved) == ""
+        there = ran(
+            scratch: scratch,
+            program: probe,
+            words: [probe, "CPATH", "C_INCLUDE_PATH"],
+            dir: dir,
+            s: moved,
+            root: root
+        ).must()
+        assert there.code == 0 && there.out == "in <root>/" + dir + "/here\nCPATH [<root>/inc]\nC_INCLUDE_PATH [:]\n"
+    assert !shell.remove_tree(scratch).is_err()

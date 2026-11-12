@@ -10,6 +10,7 @@
 # one author-ratified exception to §10's stopping rule, admitted in
 # the class --version occupies: zero input, constant output, exit 0.
 
+use cli/archiver
 use cli/clang_floor
 use cli/doctor_asks
 use cli/io
@@ -68,6 +69,10 @@ function checks(build_dir: str, runtime_hint: str?, aside: str?) -> [Check]
     arch = doctor_asks.capture(program: "uname", words: ["uname", "-m"], scratch: scratch)
     out @ out.push(Check(name: "arch", ok: true, detail: doctor_asks.told(arch, otherwise: "unknown")))
     out @ out.push(runtime_row(runtime_hint))
+    tool = archiver_row(runtime_hint: runtime_hint, scratch: scratch)
+
+    if !tool.is_err()
+        out @ out.push(tool.must())
 
     # build/ must be creatable and writable, probed by writing, and never in
     # a placed package's tree, where a build refuses to write it (defect
@@ -107,6 +112,28 @@ function runtime_row(runtime_hint: str?) -> Check
                     match runtime_key.each_file(runtime)
                         .ok    => return Check(name: "runtime", ok: true, detail: runtime)
                         .err e => return Check(name: "runtime", ok: false, detail: unfound(code: e.code, msg: e.msg))
+
+# The archiver the platform layer's archive asks for (feature 2295,
+# `cli/archiver.hero`), asked as the probes above are, in `scratch`, of the
+# target clang names and the runtime the row above found, so nothing is
+# written in a placed tree (defect 2485); no row where no runtime was found,
+# which the runtime's row tells.
+function archiver_row(runtime_hint: str?, scratch: str?) -> Check?
+    hint = runtime_hint?
+    runtime = runtime_places.located(hint)?
+    machine = doctor_asks.capture(program: "clang", words: ["clang", "-dumpmachine"], scratch: scratch)
+
+    if machine.is_err()
+        return ok(
+            Check(name: "archiver", ok: false, detail: doctor_asks.told(machine, otherwise: "not asked: clang named no target"))
+        )
+    said = archiver.archiver_said(runtime: runtime, target: machine.must(), scratch: scratch)
+
+    detail = match said
+        .ok text => text
+        .err e   => e.msg
+
+    return ok(Check(name: "archiver", ok: !said.is_err(), detail: detail))
 
 # Where the linker and the C libraries live, asked as each platform's
 # toolchain answers it (defect 336). **Windows is asked first, and by the
@@ -235,8 +262,9 @@ function run_this() -> cli_table.Exit
 test "doctor finds this machine's toolchain, and the Zen is byte-exact"
     got = checks(build_dir: "build", runtime_hint: ok(""), aside: ok("build"))
 
-    # Six since panel 103: the clang floor row follows the clang row.
-    assert got.len() == 6
+    # Six since panel 103: the clang floor row follows the clang row; seven
+    # since feature 2295, the archiver's row after the runtime's.
+    assert got.len() == 7
     assert got[1].name == "clang floor"
     assert got[0].name == "clang"
     assert got[0].ok
@@ -250,8 +278,10 @@ test "doctor finds this machine's toolchain, and the Zen is byte-exact"
     assert got[4].name == "runtime"
     assert got[4].ok
     assert got[4].detail == "runtime"
+    assert got[5].name == "archiver"
     assert got[5].ok
-    assert got[5].detail == "build/ writable"
+    assert got[6].ok
+    assert got[6].detail == "build/ writable"
 
     # The Zen: twenty laws, pinned byte for byte.
     expected = "The Zen of Heroes\n\n 1. This language begins with a tribute to David Bowie.\n 2. It is made for language models; people can read it too.\n 3. A model may have read everything; each page must still explain itself.\n 4. What the eye can see is all there is: sound and vision.\n 5. There is one way to say each thing; every program sings in the same voice.\n 6. That way may not be obvious at first; the Starman already knows it.\n 7. The semantics are familiar; the syntax is new.\n 8. Turn and face the strange: every strange choice here is deliberate.\n 9. Nothing changes behind your back; every change signs its name.\n10. Every plausible mistake must become a compile error before the program runs.\n11. Unless you mark the gap with ???: an honest hole beats a confident guess.\n12. A compile-time error is an answer; a runtime error is an ambush.\n13. An error should tell you how to fix the program. Anything less is a complaint.\n14. Repeating a word is cheap; forgetting one can cost the whole program.\n15. The specification stays small under pressure; every word must earn its place.\n16. Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.\n17. When pretty code and safe code disagree, safe code wins.\n18. There is no standard library; C is the man who sold the world.\n19. Never crashing in the same car: what C might keep, Heroes assumes it keeps.\n20. We can be heroes, just for one day.\n"
@@ -374,10 +404,11 @@ test "the build cache's row fails where the cache would stand in a placed packag
     got = checks(build_dir: build, runtime_hint: ok(""), aside: ok(root + "/aside"))
     assert got[4].name == "runtime"
     assert got[4].ok
-    assert got[5].name == "build cache"
-    assert !got[5].ok
-    assert got[5].detail == placed_files.cache_refused(build)
-    assert got[5].detail == "the build's cache, `" + build + "/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
+    assert got[5].name == "archiver"
+    assert got[6].name == "build cache"
+    assert !got[6].ok
+    assert got[6].detail == placed_files.cache_refused(build)
+    assert got[6].detail == "the build's cache, `" + build + "/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
     assert placed_files.cache_refused("build") == ""
     assert !process.remove_tree(root).is_err()
 
@@ -408,13 +439,13 @@ test "doctor writes nothing in a placed package's tree, and its other rows are a
     unasked = checks(build_dir: build, runtime_hint: ok(""), aside: none)
 
     for one in unasked
-        if one.name == "clang" || one.name == "arch" || one.name == "linker" || one.name == "MSVC"
+        if one.name == "clang" || one.name == "arch" || one.name == "linker" || one.name == "MSVC" || one.name == "archiver"
             assert one.detail == "not asked: no folder"
             assert one.name == "arch" || !one.ok
 
         if one.name == "runtime"
             assert one.ok
 
-    assert unasked.len() == 5
+    assert unasked.len() == 6
     assert !process.path_exists(build)
     assert !process.remove_tree(root).is_err()

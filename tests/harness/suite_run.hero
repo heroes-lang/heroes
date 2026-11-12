@@ -58,6 +58,7 @@ use platform_skips
 use report
 use shell
 use strings
+use variables_probe
 
 constant RUN_DIR: str
     "tests/golden/run"
@@ -157,8 +158,8 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
 
     by = started.must()
 
-    # A case started through `/usr/bin/env`, which Windows has not, is skipped
-    # by name, apart from the missing libraries' ratio (`case_setting.hero`).
+    # A case making a link with `ln`, which Windows has not, is skipped by
+    # name, apart from the missing libraries' ratio (`case_setting.hero`).
     unstartable = case_setting.skip_here(by.setting)
 
     if unstartable.len() > 0
@@ -669,25 +670,24 @@ test "fixedbugs: a program that does not build is skipped only where the machine
 # **Asked as the form asks it** (defect 2471, 2026-11-11): the form skips a
 # case `case_setting.skip_here` names before it starts the case's compiler,
 # and this test started it on every platform, so on the CI's Windows x86-64
-# leg, which has no `/usr/bin/env`, it panicked on `.must()` with *could not
-# be started* (job 130235552214). Where the skip names this case, the form's
-# answer is the skip, on Windows alone; elsewhere the run prints the case's
-# folder back.
+# leg, which had no `/usr/bin/env`, it panicked on `.must()` with *could not
+# be started* (job 130235552214). **Since defect 2477 no variable is a reason
+# to skip**, so it runs on every platform, a program clang builds in the
+# compiler's place, and its list of two folders comes with `;` on Windows.
 test "the run form starts a case folder's compiler as its setting asks, and refuses a folder to start in (defect 2428)"
     scratch = "build/selftest-run-starter"
     assert !shell.remove_tree(scratch).is_err()
     dir = scratch + "/x.case"
     assert !shell.mkdir_all(dir).is_err()
-    assert !write_file(path: dir + "/environment", text: "PKG_CONFIG_PATH=" + dir + "/pc\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
+    assert !write_file(path: dir + "/environment", text: "PKG_CONFIG_PATH=" + dir + "/pa:" + dir + "/pb\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
     item = cases.Case(source: dir + "/main.hero", expected: dir + "/main.expected", name: "x")
     by = starter_of(scratch: scratch, item: item).must()
     assert by.dir == dir && by.setting.environment.len() == 2 && by.root.len() > 0
-
-    if case_setting.skip_here(by.setting).len() > 0
-        assert shell.exe_suffix() == ".exe"
-    else
-        said = compiled(scratch: scratch, by: by, words: ["sh", "-c", "printf '%s' \"$PKG_CONFIG_LIBDIR\""]).must()
-        assert said.code == 0 && said.out == dir + "/pc"
+    assert case_setting.skip_here(by.setting) == ""
+    probe = variables_probe.built(scratch).must()
+    said = compiled(scratch: scratch, by: by, words: [probe, "PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]).must()
+    separator = case_setting.separator(shell.exe_suffix() == ".exe")
+    assert said.code == 0 && core_strings.has_suffix(s: said.out, suffix: "\nPKG_CONFIG_PATH [" + dir + "/pa" + separator + dir + "/pb]\nPKG_CONFIG_LIBDIR [" + dir + "/pc]\n")
     one = starter_of(scratch: scratch, item: cases.Case(source: scratch + "/y.hero", expected: "", name: "y")).must()
     assert !case_setting.asks(one.setting) && one.root == ""
     assert !write_file(path: dir + "/directory", text: "here\n").is_err()

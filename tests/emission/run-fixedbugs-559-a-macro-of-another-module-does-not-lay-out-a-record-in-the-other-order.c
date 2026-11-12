@@ -325,7 +325,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("387bf32c4b5b4ee4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ef3071364dc20f1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder\tfixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order\nfixedbugs559wide\twide\n");

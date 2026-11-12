@@ -388,7 +388,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2447f8a019b64cbb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7abf0c8633371ec8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("sizedintegers\tsized-integers\n");

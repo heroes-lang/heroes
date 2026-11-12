@@ -354,7 +354,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("623ad8af338f2922", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("38b1ec964d0ffb2f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2389aboundrecordnamedasatemporarybuilds\tfixedbugs-2389-a-bound-record-named-as-a-temporary-builds\n");

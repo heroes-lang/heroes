@@ -895,6 +895,13 @@ function hue_module(order: [str]) -> str
 # another build could see that build's runtime object, keyed for other
 # flags, and read it as moved; `cache` runs alone at a batch's gate for
 # that reason already (`.claude/rules/verification.md`).
+#
+# **And the platform layer's archive** (feature 2295, 2026-11-12), `.a`, or
+# `.lib` on an MSVC target, which every link carries and a warm build serves
+# by its record as it serves the runtime's object: one archived again at
+# every build would cost every build its members' compiles, and a listing of
+# `.o` alone could not see it, the members being compiled in a private folder
+# that is gone when the archive is published.
 function objects_newer_than(scratch: str, marker: str, words: [str], objects: str) -> [str]?
     touched = shell.run(scratch: scratch, program: "touch", words: ["touch", marker])
 
@@ -904,15 +911,17 @@ function objects_newer_than(scratch: str, marker: str, words: [str], objects: st
 
     if ran.is_err() || ran.must().code != 0
         return fail(code: "cannot_run", msg: "the build: " + shell.ending(ran))
-    listed = shell.found_under(dir: objects, suffix: ".o", reference: marker)
-
-    if listed.is_err()
-        return fail(code: "cannot_run", msg: "cannot list what moved under " + objects + "/")
     out: [str] @= []
 
-    for row in listed.must()
-        if row.len() > 0
-            out @ out.push(row)
+    for suffix in [".o", ".a", ".lib"]
+        listed = shell.found_under(dir: objects, suffix: suffix, reference: marker)
+
+        if listed.is_err()
+            return fail(code: "cannot_run", msg: "cannot list what moved under " + objects + "/")
+
+        for row in listed.must()
+            if row.len() > 0
+                out @ out.push(row)
 
     return ok(out.sort())
 
