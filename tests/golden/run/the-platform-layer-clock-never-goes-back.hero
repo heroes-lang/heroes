@@ -1,0 +1,22 @@
+# The platform layer's clock (feature 2295, 2026-11-12): a group naming
+# `hero_time.h` binds `hero_time_monotonic_ns` with no `link` and no flag, and
+# the linker takes the clock's member from the archive on the link line and
+# no other member. A reading is never -1 where the clock works, and a
+# thousand readings in a row never go back.
+extern "hero_time.h"
+    function hero_time_monotonic_ns() -> i64
+
+function main()
+    first = hero_time_monotonic_ns()
+    last: i64 @= first
+    back: i64 @= 0
+
+    for _ in range(from: 0, to: 1000)
+        now = hero_time_monotonic_ns()
+
+        if now < last
+            back @ back + 1
+        last @ now
+
+    print(f"the clock reads: {first >= 0}")
+    print(f"readings that went back: {back}")

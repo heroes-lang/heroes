@@ -1,0 +1,29 @@
+# The platform layer's sockets refuse a handle they do not hold as a value,
+# never a fault (feature 2295, 2026-11-12). Heroes' own marks stop a program
+# handing C a socket it gave back before C runs (spec § 13, `consumes`), so
+# the layer's half is asked from C, by the header beside this file: a socket
+# closed twice, NULL, a value the layer never issued and one whose slot a
+# later socket took are each `HERO_NET_NOT_OPEN`; a count with no bytes behind
+# it is `HERO_NET_INVALID`; and a call that succeeds leaves `HERO_NET_OK`.
+# Under the sanitisers and Guard Malloc, which the `run` form adds, a read
+# through a freed or forged pointer would be a report here.
+extern "hero_net.h"
+    constant HERO_NET_OK: i64
+    constant HERO_NET_INVALID: i64
+    constant HERO_NET_NOT_OPEN: i64
+
+extern "the-platform-layer-tells-a-socket-it-does-not-hold.h"
+    function closed_twice() -> i64
+    function null_handle() -> i64
+    function forged_handle() -> i64
+    function stale_after_reuse() -> i64
+    function bytes_not_there() -> i64
+    function cleared_after_success() -> i64
+
+function main()
+    print(f"closed twice: {closed_twice() == HERO_NET_NOT_OPEN}")
+    print(f"null: {null_handle() == HERO_NET_NOT_OPEN}")
+    print(f"never issued: {forged_handle() == HERO_NET_NOT_OPEN}")
+    print(f"a slot taken again: {stale_after_reuse() == HERO_NET_NOT_OPEN}")
+    print(f"no bytes behind a count: {bytes_not_there() == HERO_NET_INVALID}")
+    print(f"a success clears the kind: {cleared_after_success() == HERO_NET_OK}")

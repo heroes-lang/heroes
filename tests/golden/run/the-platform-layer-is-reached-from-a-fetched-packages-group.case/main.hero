@@ -1,0 +1,9 @@
+# The platform layer reached from a fetched package's group (panel 234's R6;
+# feature 2295, 2026-11-12): `stopwatch` names `hero_time.h` with no `link`
+# and no flag, its unit finds the header on the runtime's include path though
+# it searches no folder of the program's, and the archive on the link line
+# gives the program the clock's member and no other.
+use <stopwatch>/stopwatch
+
+function main()
+    print(stopwatch.forward())

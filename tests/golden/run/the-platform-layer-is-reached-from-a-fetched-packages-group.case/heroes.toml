@@ -1,0 +1,5 @@
+# The package of the platform layer's case, placed in `heroes.packages/`.
+
+[dependencies.stopwatch]
+version = "1.0.0"
+sum = "sha256-2ed7d1c7edbf3c9c814ac4d62d9dac3f0fe8c9d33debbecbabbdbe650f42c8ab"
