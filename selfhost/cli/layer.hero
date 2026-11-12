@@ -45,6 +45,7 @@
 use cli/archiver
 use cli/deps
 use cli/digest
+use cli/files
 use cli/flags
 use cli/io
 use cli/link
@@ -315,21 +316,34 @@ test "every link carries the layer, and a program takes only the members it call
         assert names_one(layer_defined(t, binary: both), prefix: "hero_time_")
     assert !process.remove_tree(dir).is_err()
 
-# **Two cold builds write one archive, and the cache serves only the one its
-# archiver wrote**: two `build/`s each compile and archive the members, one
-# name and the same bytes (determinism; Apple's `ar` under `ZERO_AR_DATE`);
-# warm, the same path; and wiped mid-way, the archive gone under its record,
-# its bytes changed after they were written (the seal, defect 443), the record
-# gone, or a private folder a killed build left beside it, each is archived
-# again, never served or read.
+# **Two cold builds in one `build/` write one archive, and the cache serves
+# only the one its archiver wrote.** The key and the listing name one archive
+# in every `build/`; within one, every archive of the members is one set of
+# bytes (no time, owner or mode; Apple's `ar` under `ZERO_AR_DATE`), which a
+# keyed file another build published must be to stand (defect 2142). **Not
+# across two folders, and this test said so until the Windows box's run of
+# 2026-11-12**: a member's debug information names the object by its own path
+# under `build/` (`toolchain.object_words`, as the runtime's object's does),
+# and a COFF object's CodeView holds that name, so two folders were two sets
+# of bytes there (an object cross-compiled on this Mac for
+# `x86_64-pc-windows-msvc` under two such names differed in 5 bytes, and
+# under one in none). Warm, the same path; and wiped mid-way, the archive gone
+# under its record, its bytes changed after they were written (the seal,
+# defect 443), the record gone, or a private folder a killed build left
+# beside it, each is archived again, the first archive's bytes.
 test "an archive is one archive byte for byte, and a cache wiped mid-way archives it again (feature 2295)"
     t = fresh_toolchain("build/selftest-layer-twice-a")
     u = fresh_toolchain("build/selftest-layer-twice-b")
     a = archive(t, level: "-O0", sanitize: false).must()[0]
     b = archive(u, level: "-O0", sanitize: false).must()[0]
     assert a.slice(from: t.build.len(), to: a.len()) == b.slice(from: u.build.len(), to: b.len())
-    assert publish.same_bytes(one: a, other: b)
+    assert !process.remove_tree(u.build).is_err()
     assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+
+    # The first archive's bytes under a second name, which every archive this
+    # folder holds later is held to.
+    first = t.build + "/the-first-archive"
+    assert !files.second_name(existing: a, name: first).is_err()
 
     # Warm, nothing compiles (defect 435's shape): asked from a copy of the
     # runtime whose sockets member would not compile, under the same key,
@@ -351,29 +365,31 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
     assert archive(gone, level: "-O0", sanitize: false).must()[0] == a
     assert !process.remove_tree(copy).is_err()
 
-    # Only the archive, its seal and its record stand: nothing private.
+    # Only the archive, its seal, its record and the second name stand:
+    # nothing private.
     for path in process.files_under(t.build).must()
         assert !strings.holds(text: path, needle: ".tmp")
 
     assert !process.remove_file(a).is_err()
     assert archive(t, level: "-O0", sanitize: false).must()[0] == a
-    assert publish.same_bytes(one: a, other: b)
+    assert publish.same_bytes(one: a, other: first)
     assert !write_file(path: a, text: "not an archive\n").is_err()
     assert archive(t, level: "-O0", sanitize: false).must()[0] == a
-    assert publish.same_bytes(one: a, other: b)
+    assert publish.same_bytes(one: a, other: first)
 
     for path in process.files_under(t.build).must()
         if strings.ends_with(text: path, suffix: ".deps.txt")
             assert !process.remove_file(path).is_err()
 
-    left = a.slice(from: 0, to: a.len() - 19) + ".4242-1.tmp"
+    # A killed build's private folder beside the archive's stem, the name
+    # `publish.private_name` gives: `<stem>.<pid>-<n>.tmp`.
+    stem = a.slice(from: 0, to: a.len() - 17 - archiver.suffix_of(t.target).len())
+    left = stem + ".4242-1.tmp"
     assert !process.mkdir_all(left).is_err()
     assert !write_file(path: left + "/hero_net.o", text: "a killed build's half\n").is_err()
     assert archive(t, level: "-O0", sanitize: false).must()[0] == a
-    assert publish.same_bytes(one: a, other: b)
-
-    for build in [t.build, u.build]
-        assert !process.remove_tree(build).is_err()
+    assert publish.same_bytes(one: a, other: first)
+    assert !process.remove_tree(t.build).is_err()
 
 # A runtime whose `runtime.c` names no member has no layer and puts nothing
 # on the line; one whose member clang refuses is clang's refusal, which a

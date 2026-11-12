@@ -10,10 +10,20 @@
 # `llvm-ar`, first, where clang knows one (Debian clang 22.1.8 does,
 # `/usr/lib/llvm-22/bin/llvm-ar`, measured 2026-11-12); the platform's `ar`
 # after it (Apple clang 21 names no `llvm-ar` and answers Xcode's `ar`); on an
-# MSVC target `llvm-lib` first, which writes the COFF library `link.exe`
-# documents, then `llvm-ar` (unrun on Windows at this file's writing). Where
-# clang names none by a path, the last asked is started by its bare name,
-# which `PATH` may answer.
+# MSVC target LLVM's `lib.exe` after it, `llvm-lib`. **`llvm-ar` first there
+# too, by the Windows box's run of 2026-11-12** (clang 23.1.1,
+# `x86_64-pc-windows-msvc`): the `.lib` it wrote held `hero_net.o` and
+# `hero_time.o`, `link.exe` linked it into every program of the layer's cases,
+# each ran and printed its expectation, and `WS2_32.dll` was imported where the
+# sockets member was taken and nowhere else; how `llvm-lib` names its members,
+# where a name holding the private folder would make two archives of one
+# folder two sets of bytes, was unread that day. Where clang names none by a
+# path, the last asked is started by its bare name, which `PATH` may answer.
+#
+# **Windows' clang names a tool without its `.exe`**
+# (`C:\Program Files\LLVM\bin\llvm-lib`, the same run), so the file is asked
+# with the suffix the platform gives a program as well (`standing`): asked
+# bare, both tools read as absent there and the bare name on `PATH` was taken.
 #
 # **EVERY ARCHIVE OF ONE SET OF MEMBERS IS ONE SET OF BYTES**: GNU's and
 # LLVM's `ar` are told `D`, which writes no time, owner or mode. Apple's `ar`
@@ -132,11 +142,11 @@ function archiver_said(runtime: str, target: str, scratch: str?) -> str?
         msg: "none: clang names no `" + wanted_for(target).join("` or `") + "` beside it and `" + tool.program + "` is not on PATH, so no program links its platform layer; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
     )
 
-# The archivers asked for, in the order asked: on an MSVC target LLVM's
-# `lib.exe`, then its `ar`; elsewhere its `ar`, then the platform's.
+# The archivers asked for, in the order asked: LLVM's `ar` first, then on an
+# MSVC target LLVM's `lib.exe`, elsewhere the platform's `ar`.
 function wanted_for(target: str) -> [str]
     if link_flags.msvc(target)
-        return ["llvm-lib", "llvm-ar"]
+        return ["llvm-ar", "llvm-lib"]
     return ["llvm-ar", "ar"]
 
 function archiver_named(name: str, program: str, target: str) -> Archiver
@@ -164,9 +174,19 @@ function named_by_clang(name: str, err_path: str) -> str
     publish.discard(err_path)
     path = strings.trimmed(printed)
 
-    if asked.is_err() || path == name || path.len() == 0 || !process.path_exists(path) || process.is_directory(path)
+    if asked.is_err() || path == name || path.len() == 0
         return ""
-    return path
+    return standing(path: path, suffix: process.exe_suffix())
+
+# The file a program clang named stands in: `path` itself, or `path` with
+# `suffix`, the one the platform gives a program, where clang wrote none;
+# "" where neither is a file.
+function standing(path: str, suffix: str) -> str
+    for one in [path, path + suffix]
+        if process.path_exists(one) && !process.is_directory(one)
+            return one
+
+    return ""
 
 # An archive's suffix: what `link.exe` reads as a library on an MSVC target,
 # which takes a file of another suffix for an object; `.a` elsewhere.
@@ -179,7 +199,7 @@ function suffix_of(target: str) -> str
 
 # The archiver asked for each target, in order, and the words each is told.
 test "an archiver is asked of clang in the target's order, and told its own words (feature 2295)"
-    assert wanted_for("x86_64-pc-windows-msvc") == ["llvm-lib", "llvm-ar"]
+    assert wanted_for("x86_64-pc-windows-msvc") == ["llvm-ar", "llvm-lib"]
     assert wanted_for("arm64-apple-darwin27.2.0") == ["llvm-ar", "ar"]
     assert wanted_for("aarch64-unknown-linux-gnu") == ["llvm-ar", "ar"]
     assert suffix_of("x86_64-pc-windows-msvc") == ".lib"
@@ -193,3 +213,20 @@ test "an archiver is asked of clang in the target's order, and told its own word
     lib = archiver_named(name: "llvm-lib", program: "llvm-lib", target: "x86_64-pc-windows-msvc")
     assert archive_line(lib, staged: "s.lib", objects: ["x.o"]) == ["llvm-lib", "/out:s.lib", "x.o"]
     assert named_by_clang(name: "no-such-archiver-2295", err_path: "build/selftest-layer-asked.txt") == ""
+
+# The Windows box's answer of 2026-11-12: clang names `llvm-lib` and `llvm-ar`
+# without the `.exe` their files hold, so a tool is found with the platform's
+# suffix beside the bare path, the bare path first, and a folder is no tool.
+test "a tool clang names without its suffix is found with it, and a folder or nothing is none (feature 2295)"
+    dir = "build/selftest-archiver-standing"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/bin/folder.exe").is_err()
+    assert !write_file(path: dir + "/bin/llvm-lib.exe", text: "a stand-in\n").is_err()
+    assert !write_file(path: dir + "/bin/llvm-ar", text: "a stand-in\n").is_err()
+    assert standing(path: dir + "/bin/llvm-lib", suffix: ".exe") == dir + "/bin/llvm-lib.exe"
+    assert standing(path: dir + "/bin/llvm-ar", suffix: ".exe") == dir + "/bin/llvm-ar"
+    assert standing(path: dir + "/bin/llvm-ar", suffix: "") == dir + "/bin/llvm-ar"
+    assert standing(path: dir + "/bin/llvm-lib", suffix: "") == ""
+    assert standing(path: dir + "/bin/folder", suffix: ".exe") == ""
+    assert standing(path: dir + "/bin/nothing", suffix: ".exe") == ""
+    assert !process.remove_tree(dir).is_err()
