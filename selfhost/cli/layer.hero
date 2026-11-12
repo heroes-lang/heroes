@@ -84,11 +84,16 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
         return ok(none)
     memo: {str: str} @= {}
     words = flags.level_words(level: level, sanitize: sanitize)
+
+    # `build/` first, where the reach's listings are written: Debian clang
+    # 22.1.8 refuses an `-MF` into a folder that is not there (exit 1, *error
+    # opening*), where Apple clang 21 makes it, measured 2026-11-12; a fresh
+    # `build/` keyed its first archive as unread there, and archived again.
+    process.mkdir_all(t.build)?
     reach = reaches(t, members: members, words: words, @memo)
     key = digest.digest(
         t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach)
     )
-    process.mkdir_all(t.build)?
     stem = t.build + "/layer-" + key
     listed = stem + ".deps.txt"
     suffix = archiver.suffix_of(t.target)
