@@ -216,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("281b046b7ab59ebe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e921851143670cc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("neverreboundthroughanatargument\tnever-rebound-through-an-at-argument\n");

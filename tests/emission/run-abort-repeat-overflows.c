@@ -217,7 +217,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("76e2c65333313f3e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d59da3a4cb2114b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortrepeatoverflows\tabort-repeat-overflows\n");

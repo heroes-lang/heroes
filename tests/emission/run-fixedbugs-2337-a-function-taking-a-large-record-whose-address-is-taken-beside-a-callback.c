@@ -501,7 +501,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5813f5e663fd447d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e8b09cd7d7e168a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback\tfixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback\n");

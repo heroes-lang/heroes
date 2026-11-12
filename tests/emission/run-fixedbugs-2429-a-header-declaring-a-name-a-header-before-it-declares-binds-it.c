@@ -318,7 +318,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("671e092a546af8ad", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d951d116debcaba", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2429aheaderdeclaringanameaheaderbeforeitdeclaresbindsit\tfixedbugs-2429-a-header-declaring-a-name-a-header-before-it-declares-binds-it\n");

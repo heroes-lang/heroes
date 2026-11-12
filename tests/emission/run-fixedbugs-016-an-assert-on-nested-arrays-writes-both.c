@@ -240,7 +240,7 @@ HERO_TU_LOCAL void h_0show_5df176b8(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("58c9dfec5dd27dcc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f40f3d377534fd9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonnestedarrayswritesboth\tfixedbugs-016-an-assert-on-nested-arrays-writes-both\n");

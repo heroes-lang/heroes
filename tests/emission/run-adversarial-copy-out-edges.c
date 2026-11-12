@@ -234,7 +234,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("426a1c7f51e0a6a7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("18e130666b6178b4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialcopyoutedges\tadversarial-copy-out-edges\n");

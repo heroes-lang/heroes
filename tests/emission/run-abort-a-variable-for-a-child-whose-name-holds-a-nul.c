@@ -412,7 +412,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d7007102205442b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("63e71af63b861638", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortavariableforachildwhosenameholdsanul\tabort-a-variable-for-a-child-whose-name-holds-a-nul\n");

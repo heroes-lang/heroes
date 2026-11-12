@@ -314,7 +314,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5491c9846068a507", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b08dd6b79e97714", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handleashimconsumesahandleoncefortwopositions\thandle-a-shim-consumes-a-handle-once-for-two-positions\n");

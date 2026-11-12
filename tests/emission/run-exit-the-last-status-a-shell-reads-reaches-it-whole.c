@@ -240,7 +240,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2fe52ff67e70e9e3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("065c43dd17f1bbf1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("exitthelaststatusashellreadsreachesitwhole\texit-the-last-status-a-shell-reads-reaches-it-whole\n");
