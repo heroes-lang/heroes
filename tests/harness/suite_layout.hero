@@ -636,8 +636,14 @@ constant BUDGETS: [str]
 # `emit/value_probe`, `emit/undefined_words`), defect 2117's
 # `cli/caret_bytes` and s4's `emit/line_join` and `emit/line_name` among
 # them, and 665 is past 527 by more than a quarter.
+#
+# **835 on 2026-11-12**, re-based when `floors.check` said so at batch 33's
+# gate: the rounds since 665 added their modules, and this one feature
+# 2295's `cli/archiver`, `cli/layer` and `cli/library_held`, defect 2485's
+# `cli/doctor_asks` and defect 2477's `variables_probe` among them, and 835
+# is past 665 by more than a quarter.
 constant LEAST: i64
-    665
+    835
 
 # THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
 # (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,

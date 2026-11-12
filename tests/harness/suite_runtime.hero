@@ -273,8 +273,13 @@ constant SHARED_BY_DECISION: [str]
 #
 # **83 on 2026-10-10**, printed by `floors.check` at batch 18's gate, the
 # round's modules taking the tree past a quarter above 62.
+#
+# **109 on 2026-11-12**, printed by `floors.check` at batch 33's gate: the
+# rounds since 83 put their objects between calls, and feature 2295's
+# platform layer the five of `runtime/platform/hero_net.c` that took the tree
+# past a quarter above 83.
 constant LEAST_SHARED_STATE: i64
-    83
+    109
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []
