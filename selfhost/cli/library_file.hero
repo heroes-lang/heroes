@@ -6,7 +6,10 @@
 # this build that named the folder. Until then it was *internal error:
 # linking failed* at exit 2: a `libz.tbd` opening with a comment line before
 # `--- !tapi-tbd`, in a folder `--library` named, was the compiler's failure.
-# `cli/refused_files.hero` reads the files out of each linker's words.
+# `cli/refused_files.hero` reads the files out of each linker's words, and
+# where they name none, `cli/library_held.hero` asks the files the link took
+# whether any holds nothing a linker reads (defect 2487): an empty `libz.so`
+# GNU ld read as an empty linker script, saying nothing of it.
 #
 # **The narrowing is the program's own words**, `ffi_build.missing_library`'s
 # and `cli/library_needs.hero`'s: a file is told only where its last part is
@@ -30,8 +33,10 @@
 
 use ast
 use cli/libraries
+use cli/library_held
 use cli/library_needs
 use cli/pkgconfig_missing
+use cli/process
 use cli/refused_files
 use cli/strings
 use diag
@@ -48,15 +53,29 @@ record Found
 # What is told of `message`, a link's refusal: each file it names that the
 # linker could not use, once, at the group of its library, in the linker's
 # order; none where it names no such file, or one that is not a library the
-# program links. `library` are the folders `--library` names, `linked` the
-# `pkgconfig` answers' words, and `build` where `pkg-config` is asked again.
-function told(message: str, s: source.Source, decls: [ast.Decl], library: [str], linked: [str], build: str) -> [diag.Diagnostic]
+# program links. Where it names no file at all, each file the link took for a
+# library of the program from a folder this build names that no definition
+# can be read from, in the libraries' order (`cli/library_held.hero`).
+# `library` are the folders `--library` names, `linked` the `pkgconfig`
+# answers' words, `build` where `pkg-config` is asked again, and `target`
+# the triple whose linker searched the folders.
+function told(message: str, s: source.Source, decls: [ast.Decl], library: [str], linked: [str], build: str, target: str) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
     names = library_needs.names_of(s, decls, linked)
     out: [diag.Diagnostic] @= []
     seen: {str: bool} @= {}
+    refused: [refused_files.Refused] @= refused_files.refusals(message)
 
-    for one in refused_files.refusals(message)
+    # The folders in the link line's order, `--library`'s before a package's.
+    if refused.len() == 0
+        refused @ library_held.refusals(
+            message: message,
+            names: names,
+            folders: strings.with_all(list: library, more: package_folders(linked)),
+            target: target
+        )
+
+    for one in refused
         found = library_of(file: one.file, names: names)
 
         if found.is_err()
@@ -236,7 +255,8 @@ test "a library file the linker could not use is told at the group that links it
         parsed.decls,
         library: ["lib/"],
         linked: none,
-        build: "build"
+        build: "build",
+        target: "arm64-apple-darwin25.6.0"
     )
     assert tbd.len() == 1
     assert tbd[0].code == "ffi_missing_library"
@@ -252,7 +272,8 @@ test "a library file the linker could not use is told at the group that links it
         parsed.decls,
         library: ["lib/"],
         linked: none,
-        build: "build"
+        build: "build",
+        target: "arm64-apple-darwin25.6.0"
     )
     assert gnu.len() == 1
     assert source.span_text(s, gnu[0].span) == "\"zz\""
@@ -263,7 +284,8 @@ test "a library file the linker could not use is told at the group that links it
         parsed.decls,
         library: ["/w/case/pc/../lib"],
         linked: none,
-        build: "build"
+        build: "build",
+        target: "arm64-apple-darwin25.6.0"
     )
     assert resolved[0].notes == ["`--library /w/case/pc/../lib` names that folder: " + remedy + ", or take `libz.a` out of it"]
 
@@ -275,7 +297,8 @@ test "a library file the linker could not use is told at the group that links it
         parsed.decls,
         library: ["lib"],
         linked: none,
-        build: "build"
+        build: "build",
+        target: "arm64-apple-darwin25.6.0"
     )
     assert x86.len() == 1
     assert x86[0].message == "the linker ignored `/usr/local/lib/libz.dylib`, the file it found for the library `z` this group links: it is built for `x86_64`, and this program is linked for `arm64`"
@@ -284,7 +307,15 @@ test "a library file the linker could not use is told at the group that links it
     # Two of the program's files, each at its group in the linker's order,
     # and a file named twice told once.
     warned = "ld: warning: ignoring file 'lib/libzz.dylib': found architecture 'x86_64', required architecture 'arm64'\nld: warning: ignoring file 'lib/libz.dylib': found architecture 'x86_64', required architecture 'arm64'\n"
-    both = told(message: warned + warned, s, parsed.decls, library: none, linked: none, build: "build")
+    both = told(
+        message: warned + warned,
+        s,
+        parsed.decls,
+        library: none,
+        linked: none,
+        build: "build",
+        target: "arm64-apple-darwin25.6.0"
+    )
     assert both.len() == 2
     assert source.span_text(s, both[0].span) == "\"zz\"" && source.span_text(s, both[1].span) == "\"z\""
 
@@ -310,7 +341,7 @@ test "a file the program's words did not put on the line is not told, so the ref
     # library whose name ends in the program's, and the program's file beside
     # the compiler's object: each leaves the refusal to the readers after.
     for message in ["ld: unknown file type in 'build/tu-1/main-3f.o'\n", "ld: file is empty in '/usr/lib/libm.tbd'\n", "ld: unknown file type in 'lib/libxz.a'\n", "ld: warning: ignoring file 'lib/libz.dylib': found architecture 'x86_64', required architecture 'arm64'\nld: warning: ignoring file 'build/tu-1/main-3f.o': found architecture 'x86_64', required architecture 'arm64'\n"]
-        assert told(message: message, s, parsed.decls, library: none, linked: none, build: "build").len() == 0
+        assert told(message: message, s, parsed.decls, library: none, linked: none, build: "build", target: "arm64-apple-darwin25.6.0").len() == 0
 
     # Which library a file is: the longest name, the file's name whole,
     # Windows' `<name>.lib`.
@@ -331,3 +362,46 @@ test "a file the program's words did not put on the line is not told, so the ref
     assert lexical("C:\\w\\lib\\") == "C:/w/lib"
     assert named(folder: "lib", among: ["other", "./lib/"]).must() == "./lib/"
     assert named(folder: "lib", among: ["lib2"]).is_err()
+
+# DEFECT 2487's own shape, as GNU ld 2.44 refused it on 2026-11-12: an empty
+# `libz.so` in the folder `--library` names, read as an empty linker script
+# and named by no word of the refusal, told at the group that links it as a
+# file the linker named is; a link to it, and a package's folder; and a
+# folder holding no such file leaves the refusal to the readers after.
+test "a library file the linker took and said nothing of, holding nothing, is told at the group that links it (defect 2487)"
+    text = "extern \"zlib.h\" link \"z\"\n    function zlibVersion() -> cstr\n\nfunction main()\n    print(zlibVersion().validated().default(\"none\"))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    none: [str] = []
+    linux = "aarch64-unknown-linux-gnu"
+    dir = "build/selftest-library-file-2487"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/lib").is_err()
+    assert !process.mkdir_all(dir + "/full").is_err()
+    assert !write_file(path: dir + "/lib/libz.so", text: "").is_err()
+    assert !write_file(path: dir + "/full/libz.so", text: "INPUT(-lother)\n").is_err()
+    gnu = "/usr/bin/ld: build/tu-1/main-3f.o: in function `main':\nmain.c:(.text+0x18): undefined reference to `zlibVersion'\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    empty = told(message: gnu, s, parsed.decls, library: [dir + "/lib/"], linked: none, build: "build", target: linux)
+    assert empty.len() == 1
+    assert empty[0].code == "ffi_missing_library"
+    assert source.span_text(s, empty[0].span) == "\"z\""
+    assert empty[0].message == "the linker read nothing from `" + dir + "/lib/libz.so`, the file it found for the library `z` this group links: it is empty"
+    assert empty[0].notes == ["`--library " + dir + "/lib/` names that folder: put a library this machine's linker can use in its place, or take `libz.so` out of it"]
+
+    # The first folder holding a file is the one the linker took.
+    assert told(message: gnu, s, parsed.decls, library: [dir + "/full", dir + "/lib"], linked: none, build: "build", target: linux).len() == 0
+    assert told(message: gnu, s, parsed.decls, library: [dir + "/nothing", dir + "/lib"], linked: none, build: "build", target: linux).len() == 1
+
+    # A package's `-L`: the note names the answer's word.
+    package = told(
+        message: gnu,
+        s,
+        parsed.decls,
+        library: none,
+        linked: ["-L" + dir + "/lib", "-lz"],
+        build: "build",
+        target: linux
+    )
+    assert package.len() == 1
+    assert package[0].notes == ["a `pkg-config` answer of this build names that folder, `-L" + dir + "/lib`: put a library this machine's linker can use in its place, or point `PKG_CONFIG_PATH` at a `.pc` naming one"]
+    assert !process.remove_tree(dir).is_err()

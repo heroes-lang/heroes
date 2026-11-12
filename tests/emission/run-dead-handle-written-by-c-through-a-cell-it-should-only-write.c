@@ -308,7 +308,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("68ce669433085e34", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f457a7b4c893041", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandlewrittenbycthroughacellitshouldonlywrite\tdead-handle-written-by-c-through-a-cell-it-should-only-write\n");

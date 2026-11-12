@@ -472,7 +472,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("39d61a4616d3d013", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("104d2e2d3054a220", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanargumentthatisnottextnamestheprogramscall\tplace-an-argument-that-is-not-text-names-the-program-s-call\n");

@@ -300,3 +300,39 @@ test "a read-only file or directory is removed with its tree as `rm -rf` removes
     assert mode_of(dir + "/kept") == 0o444
     assert !process.remove_tree(dir).is_err()
     assert !process.path_exists(dir)
+
+# Defect 2488: a link to a directory reads as one, and is read through, on
+# every platform: POSIX's link has no kind of its own, and Windows's is made
+# a directory's where its target is one (`runtime/parts/replace.c`). A
+# target beside the link, one through `..`, one written with `/` and an
+# absolute one; a link to a file and one to nothing are no directory; and a
+# tree holding a link to a directory outside it is removed with the link
+# alone. Where this machine makes no link (Windows without the privilege)
+# there is nothing to hold; the CI's Windows leg is the one that judges it.
+test "a link to a directory reads as one and is read through, whatever its target's shape (defect 2488)"
+    dir = "build/selftest-link-kind-2488"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/one/inner").is_err()
+    assert !process.mkdir_all(dir + "/tree").is_err()
+    assert !write_file(path: dir + "/one/inner/x.hero", text: "inside").is_err()
+    assert !write_file(path: dir + "/one/f.hero", text: "file").is_err()
+    targets = ["inner", "../one/inner", "one/inner", resolved(dir).must() + "/one/inner", "../one/inner"]
+    names = [dir + "/one/beside", dir + "/one/up", dir + "/slashed", dir + "/whole", dir + "/tree/out"]
+
+    for at in range(from: 0, to: names.len())
+        if !symbolic_link(target: targets[at], name: names[at]).is_err()
+            assert entry(names[at]) == .link
+            assert process.is_directory(names[at])
+            assert read_file(names[at] + "/x.hero").must() == "inside"
+
+    if !symbolic_link(target: "f.hero", name: dir + "/one/file").is_err()
+        assert !process.is_directory(dir + "/one/file")
+        assert read_file(dir + "/one/file").must() == "file"
+
+    if !symbolic_link(target: "nowhere", name: dir + "/one/dangling").is_err()
+        assert !process.is_directory(dir + "/one/dangling")
+    assert !process.remove_tree(dir + "/tree").is_err()
+    assert !process.path_exists(dir + "/tree")
+    assert read_file(dir + "/one/inner/x.hero").must() == "inside"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.path_exists(dir)

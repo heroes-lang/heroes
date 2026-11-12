@@ -35,7 +35,8 @@
 # other file for the library, `cannot find -lz` after it. A shape no line
 # names is no refusal here: GNU ld and `ld.lld` read an empty file as an
 # empty linker script, GNU ld passes a directory over, and `lld-link` names an
-# ELF archive's member alone, `unknown file type: zv.o`.
+# ELF archive's member alone, `unknown file type: zv.o`; where no line names
+# a file, `cli/library_held.hero` asks the files the link took (defect 2487).
 #
 # **Unrun, and so not read**: MSVC's `link.exe`, the CI's Windows linker,
 # whose words for such a file nobody here has measured (its `LNK1107` is a

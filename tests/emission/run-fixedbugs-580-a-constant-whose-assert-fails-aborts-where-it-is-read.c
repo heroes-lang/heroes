@@ -220,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("158cace10b553f1b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c03c0c724d61128", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs580aconstantwhoseassertfailsabortswhereitisread\tfixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read\n");

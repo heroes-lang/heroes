@@ -277,7 +277,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("422032ff39b4d087", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("189746e65335a294", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugscwritesoverastringsheader\tfixedbugs-c-writes-over-a-strings-header\n");

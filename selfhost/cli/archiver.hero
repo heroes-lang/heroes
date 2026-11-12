@@ -87,28 +87,34 @@ function archive_line(tool: Archiver, staged: str, objects: [str]) -> [str]
 # path where a file stands, else the last of them by its bare name, which
 # `PATH` may still answer and whose failure to start says what was looked for.
 function archiver(t: toolchain.Toolchain, err_path: str) -> Archiver
-    wanted = wanted_for(t.target)
+    return archiver_for(target: t.target, err_path: err_path)
+
+# The same, of a target alone, which `heroes doctor` reads from clang without
+# a toolchain, so it writes only where its probes do (defect 2485).
+function archiver_for(target: str, err_path: str) -> Archiver
+    wanted = wanted_for(target)
 
     for name in wanted
         found = named_by_clang(name: name, err_path: err_path)
 
         if found.len() > 0
-            return archiver_named(name: name, program: found, target: t.target)
+            return archiver_named(name: name, program: found, target: target)
 
     last = wanted[wanted.len() - 1]
-    return archiver_named(name: last, program: last, target: t.target)
+    return archiver_named(name: last, program: last, target: target)
 
 # What `heroes doctor` says of the archiver a cold build asks for: the one
 # clang names beside it, or one `PATH` starts; none needed where the runtime
 # has no layer; and where none starts, a failure, since then no program
 # builds (the brief of feature 2295: a program can fail without it).
-function archiver_said(t: toolchain.Toolchain) -> str?
+function archiver_said(runtime: str, target: str, scratch: str?) -> str?
     none: [str] = []
 
-    if runtime_key.layer_members(t.runtime).default(none).len() == 0
-        return ok("none needed: the runtime at " + t.runtime + " has no platform layer")
-    process.mkdir_all(t.build)?
-    tool = archiver(t, err_path: publish.private_name(t.build + "/doctor-archiver.txt"))
+    if runtime_key.layer_members(runtime).default(none).len() == 0
+        return ok("none needed: the runtime at " + runtime + " has no platform layer")
+    dir = scratch?
+    process.mkdir_all(dir)?
+    tool = archiver_for(target: target, err_path: publish.private_name(dir + "/heroes-doctor-archiver.txt"))
 
     if process.path_exists(tool.program)
         return ok(tool.program)
@@ -123,7 +129,7 @@ function archiver_said(t: toolchain.Toolchain) -> str?
         return ok("`" + tool.program + "`, found on PATH")
     return fail(
         code: "no_archiver",
-        msg: "none: clang names no `" + wanted_for(t.target).join("` or `") + "` beside it and `" + tool.program + "` is not on PATH, so no program links its platform layer; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
+        msg: "none: clang names no `" + wanted_for(target).join("` or `") + "` beside it and `" + tool.program + "` is not on PATH, so no program links its platform layer; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
     )
 
 # The archivers asked for, in the order asked: on an MSVC target LLVM's

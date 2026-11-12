@@ -204,3 +204,17 @@ Pending. The sitting's decision issue, `Panel 245:`, is filed open:
 https://github.com/heroes-lang/heroes/issues/2475. **What a yes
 settles**: R1 to R5 as adopted. **What it does not**: W0 in the specification, which waits on its
 payment; the conservative alternatives above, which stay the author's to choose.
+
+**Ratified, R1 to R5, 2026-11-12**: the author's answer at about 00:30, `1a`, to a batch of
+five put in plain text with the coordinator's recommendation (`/decide`), recorded as a reading
+(`.claude/rules/records.md` § And the record says whose idea it was). What the yes settles: every
+resolution as adopted, landed in batch 31 (defects 2448, 2464, 2465, 2469 and 2470 repaired), and
+the five widenings the landing made where it met older cases of the net, each written on decision
+2475 for this reading: R1's two more words of advice (`-Wdeprecated-non-prototype`,
+`-Winvalid-source-encoding`), the driver's word that no compile uses, clang's own refusal read
+before a warning the line promoted (`cli/promoted.hero`), and the order trials' question marked
+unused, in batch 31 (`9f9ad5641`); and R3 judging a `pkgconfig` group's pair on the package's whole
+answer, its system folders kept, in batch 32 (defect 2480, `7bc2b13d0`). design.md's three markers
+and the C boundary's two read *ratified 2026-11-12* in place of *provisional*. What it does not:
+W0 in the specification, which waits on its payment; the predictions above, on their own clocks;
+the conservative alternatives, which stay the author's to choose.

@@ -1146,14 +1146,81 @@ int64_t hero_fs_link(const char *existing, const char *name) {
 
 /* A symbolic link at `name` that reads `target`. Windows grants the call only
  * to an administrator, or to anybody in developer mode where the flag below is
- * passed; its refusal answers like any other. */
+ * passed; its refusal answers like any other.
+ *
+ * **A WINDOWS LINK HAS A KIND, AND POSIX'S HAS NONE** (defect 2488). POSIX's
+ * `symlink` makes one link whatever it names, and the kind is the target's,
+ * asked each time the link is followed. Windows fixes it when the link is
+ * made: without SYMBOLIC_LINK_FLAG_DIRECTORY the link is a file's, and a
+ * directory it names is not opened as one through it, so
+ * `GetFileAttributesA` on the link carries no FILE_ATTRIBUTE_DIRECTORY and
+ * `hero_fs_is_directory` answers 0 (the CI's Windows leg, run 43116127087:
+ * defect 2484's case, a link to `inner`, read as no directory). So the arm
+ * below asks the target's kind first, as the link will read it
+ * (`hero_fs_link_names_directory`), and gives a directory's link the flag.
+ * A target that is not there yet stays a file's link: its kind is unknown,
+ * as a dangling POSIX link's is, and it is not made again when a directory
+ * appears there. CPython's `os.symlink` asks the same question on Windows
+ * (`_check_dirW` in `Modules/posixmodule.c`: the target joined to the link's
+ * folder unless it is absolute, then FILE_ATTRIBUTE_DIRECTORY; read
+ * 2026-11-12).
+ *
+ * **And a Windows link's text is written with `\`.** Git for Windows does the
+ * same before it makes a link (`mingw_create_symlink` in `compat/mingw.c`,
+ * *convert target dir separators to backslashes*; read 2026-11-12). A
+ * relative target is stored as written, and that a `/` in it, which Win32's
+ * calls take as a separator, is none when Windows follows the link is an
+ * inference this runtime has not run, so every `/` of the target is written
+ * `\`, which no Windows name may hold otherwise; the directory question is
+ * asked of that text. NOT RUN on Windows: the box was off on 2026-11-12, and
+ * the CI's Windows leg judges both after the push. The POSIX arm is
+ * unchanged. */
 #if defined(_WIN32) && !defined(SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
 #define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE 0x2
+#endif
+#if defined(_WIN32) && !defined(SYMBOLIC_LINK_FLAG_DIRECTORY)
+#define SYMBOLIC_LINK_FLAG_DIRECTORY 0x1
+#endif
+#if defined(_WIN32)
+/* Whether `target`, as a link at `name` reads it, names a directory now. A
+ * relative target is read from the folder holding the link, never from this
+ * process's working folder, as Windows and POSIX both follow one: `name`'s
+ * part up to its last `/` or `\` goes before it, or its drive's `C:` where it
+ * names a drive and no folder; a name with neither stands in the working
+ * folder, which is then the link's. A target opening with `/` or `\`, or
+ * with a drive's `X:`, is read alone. A target and folder longer than a path
+ * may be is no directory this can ask about, and makes a file's link. */
+static int hero_fs_link_names_directory(const char *target, const char *name) {
+    int absolute = target[0] == '/' || target[0] == '\\' || (target[0] != '\0' && target[1] == ':');
+    size_t folder = 0;
+    if (!absolute) {
+        for (size_t i = 0; name[i] != '\0'; i += 1) {
+            if (name[i] == '/' || name[i] == '\\') folder = i + 1;
+        }
+        if (folder == 0 && name[0] != '\0' && name[1] == ':') folder = 2;
+    }
+    size_t length = strlen(target);
+    char probe[HERO_FS_PATH_MAX];
+    if (folder + length + 1 > sizeof probe) return 0;
+    memcpy(probe, name, folder);
+    memcpy(probe + folder, target, length + 1);
+    DWORD attrs = GetFileAttributesA(probe);
+    return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
 #endif
 int64_t hero_fs_symlink(const char *target, const char *name) {
     hero_fs_why_code = 0;
 #if defined(_WIN32)
-    if (CreateSymbolicLinkA(name, target, SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)) return HERO_OS_OK;
+    char written[HERO_FS_PATH_MAX];
+    size_t length = strlen(target);
+    if (length + 1 > sizeof written) {
+        hero_fs_why_code = -(int64_t)ERROR_FILENAME_EXCED_RANGE;
+        return HERO_OS_FAILED;
+    }
+    for (size_t i = 0; i <= length; i += 1) written[i] = target[i] == '/' ? '\\' : target[i];
+    DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+    if (hero_fs_link_names_directory(written, name)) flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
+    if (CreateSymbolicLinkA(name, written, flags)) return HERO_OS_OK;
     hero_fs_why_code = (int64_t)GetLastError();
     return HERO_OS_FAILED;
 #else

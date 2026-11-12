@@ -247,7 +247,7 @@ HERO_TU_LOCAL void h_0show_4b7fe249(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("34f33c8542af0518", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b6a506c5c2fd725", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonalongarraywritessixteenandcountstherest\tfixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest\n");

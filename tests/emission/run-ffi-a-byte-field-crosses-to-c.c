@@ -349,7 +349,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49feb5df6cad0a40", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2075c9c6062ddc4e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiabytefieldcrossestoc\tffi-a-byte-field-crosses-to-c\n");

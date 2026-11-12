@@ -240,7 +240,7 @@ its R4, the same day, both ratified 2026-11-09; the fifteenth by panel 245's R3,
   record is still this member (both in `unsupported/`).
 - **a name a library the program names supplies whose header and library come
   one from a folder the build names and one from none**: added 2026-11-11
-  (panel 245's R3, provisional, author ratification pending; defect 2448).
+  (panel 245's R3, ratified 2026-11-12; defect 2448).
   Told `ffi_unpaired_release` on the binding the name is reached from, one
   refusal per library, the header clang read and the library file the link
   took both named (`cli/supplied_paired.hero`, `cli/supplied_paired_words.hero`),
@@ -268,8 +268,8 @@ its R4, the same day, both ratified 2026-11-09; the fifteenth by panel 245's R3,
   (`cli/supplied_halves.hero`); a `link` group is never asked, and every
   shape the member exists for is still refused (measured in Linux arm64).
 
-**A variadic is bound only through a door since panel 245's R2** (provisional,
-author ratification pending; defects 2465 and 2470), beside panel 243's R1, which
+**A variadic is bound only through a door since panel 245's R2** (ratified
+2026-11-12; defects 2465 and 2470), beside panel 243's R1, which
 refuses every parameter past a header's `...`: a binding that names a variadic
 with nothing past its `...` is refused `ffi_call_shape` at the binding, asked in
 the check unit by clang's own `"variadic": true` (`emit/ffi_bare_variadic.hero`),

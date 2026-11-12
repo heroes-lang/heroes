@@ -2676,7 +2676,7 @@ documentation, never the declaration's.
 A name its header marks deprecated binds and builds silent: a deprecation is advice about a
 program, not a mistake in it, and this language has no warning level (panel 208).
 
-**And a header's own code fails closed** (panel 245's R1, provisional, author ratification pending,
+**And a header's own code fails closed** (panel 245's R1, ratified 2026-11-12,
 https://github.com/heroes-lang/heroes/issues/2475; defects 2464 and 2469). In the region a group's
 header is compiled in (`emit/header_region.hero`), every warning clang gives is an error, `-Werror`
 on each unit's line, but those the region passes over as a library's style, `-Wall`'s and sign
@@ -2831,7 +2831,7 @@ refused is what no order and no name can make mean it, as with the other refusal
 names.
 
 **A library and the header that declares its names come from folders the build names, or
-neither** (panel 245's R3, provisional, author ratification pending,
+neither** (panel 245's R3, ratified 2026-11-12,
 https://github.com/heroes-lang/heroes/issues/2475; defect 2448). A header the build finds through
 `CPATH` or `--include` describes the release of its folder, and the link takes `-lcurl` from
 wherever the line's folders and the platform's hold one: `extern "curl/curl.h" link "curl"` built
@@ -4026,7 +4026,7 @@ are *on* the closure list.
     return printf(f); }`, builds at exit 0 and reads what its format names (`%s` dies at exit 134,
     `%n` of SIGABRT), `-Wformat-security` being ignored in the region since defect 2036; the class
     is defect 2465's, before panel 245.
-    **Corrected 2026-11-11** (panel 245's R2, provisional, author ratification pending,
+    **Corrected 2026-11-11** (panel 245's R2, ratified 2026-11-12,
     https://github.com/heroes-lang/heroes/issues/2475; defects 2465 and 2470): `-Wformat-security`
     is kept an error with `-Wformat` in the region (its S), so that door is refused at its line,
     its fix a literal format, `printf("%s", f)`; the one tracked program it refuses, defect 2036's

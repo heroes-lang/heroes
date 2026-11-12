@@ -7,11 +7,15 @@
 # 000 or a link to nothing). The refusal names what the verb takes and the
 # line that works.
 #
-# **Which verbs is the table's answer**: those whose operand is one file
-# (`.file_operand`), so a verb added to the table is asked too. `check` reads
-# a directory with `--apply --in-place` (`cli/consensus.hero`), which this
-# lets through and its refusal names. A link to a directory is one
-# (`process.is_directory` follows it), and a link to a file reads.
+# **Which verbs is the table's answer, then the verb's**: those whose operand
+# is one file (`.file_operand`), so a verb added to the table is asked too;
+# and of those whose operand may be left out (`.optional_operand`), the one
+# that reads one file where it is given, `measure` (defect 2486), since that
+# kind is shared with `mutate`, which reads a directory of programs, and
+# `probe`, which reads a file or a directory. `check` reads a directory with
+# `--apply --in-place` (`cli/consensus.hero`), which this lets through and
+# its refusal names. A link to a directory is one (`process.is_directory`
+# follows it), and a link to a file reads.
 
 use cli/argv
 use cli/files
@@ -32,7 +36,7 @@ function refused(inv: argv.Invocation) -> str?
         return none
 
     for c in cli_table.commands()
-        if c.tag == inv.tag && one_file(c.operand)
+        if c.tag == inv.tag && one_file(c)
             return ok(said(c, path: inv.file.must()))
 
     return none
@@ -46,11 +50,23 @@ function told(inv: argv.Invocation) -> bool
     io.eprint(text: "error: " + got.must())
     return true
 
-# Whether the table's operand is one file.
-function one_file(operand: cli_table.Operand) -> bool
-    match operand
-        .file_operand                                                      => return true
-        .no_operand | .optional_operand | .package_operand | .name_operand => return false
+# Whether the operand `c` reads, where it is given, is one file: the table's
+# kind, and for an operand that may be left out, the verb's own answer.
+function one_file(c: cli_table.Command) -> bool
+    match c.operand
+        .file_operand                                  => return true
+        .optional_operand                              => return one_file_given(c.tag)
+        .no_operand | .package_operand | .name_operand => return false
+
+# Whether a verb whose operand may be left out reads one file where it is
+# given: `measure` does, `mutate` reads a directory and `probe` either. No
+# other verb's operand may be left out, which a test below holds.
+function one_file_given(tag: cli_table.Tag) -> bool
+    match tag
+        .measure_cmd             => return true
+        .mutate_cmd | .probe_cmd => return false
+        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd | .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd =>
+            return false
 
 # The refusal of `path` as the operand of `c`.
 function said(c: cli_table.Command, path: str) -> str
@@ -59,14 +75,15 @@ function said(c: cli_table.Command, path: str) -> str
 # What a verb does with its one file, as its refusal says it.
 function takes(tag: cli_table.Tag) -> str
     match tag
-        .lex_cmd   => return "lexes one `.hero` file"
-        .parse_cmd => return "parses one `.hero` file"
-        .check_cmd => return "checks one `.hero` file, and a directory only with `--apply --in-place`"
-        .build_cmd => return "builds the program whose root is one `.hero` file"
-        .run_cmd   => return "builds and runs the program whose root is one `.hero` file"
-        .test_cmd  => return "runs the tests of the program whose root is one `.hero` file"
-        .fmt_cmd   => return "formats one `.hero` file"
-        .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .mutate_cmd | .probe_cmd | .measure_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd =>
+        .lex_cmd     => return "lexes one `.hero` file"
+        .parse_cmd   => return "parses one `.hero` file"
+        .check_cmd   => return "checks one `.hero` file, and a directory only with `--apply --in-place`"
+        .build_cmd   => return "builds the program whose root is one `.hero` file"
+        .run_cmd     => return "builds and runs the program whose root is one `.hero` file"
+        .test_cmd    => return "runs the tests of the program whose root is one `.hero` file"
+        .fmt_cmd     => return "formats one `.hero` file"
+        .measure_cmd => return "counts the tokens of one file, `spec/heroes-spec.md` where none is named"
+        .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .mutate_cmd | .probe_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd =>
             return "takes one `.hero` file"
 
 ## Tests
@@ -102,10 +119,39 @@ test "a verb that reads one file refuses a directory, by a link too, naming what
     walked: i64 @= 0
 
     for c in cli_table.commands()
-        if one_file(c.operand)
+        if one_file(c)
             walked @ walked + 1
             assert asked([c.name, inner]).must() == said(c, path: inner)
             assert strings.holds(text: said(c, path: inner), needle: "`" + c.name + "` ")
 
-    assert walked == 7
+    assert walked == 8
+    assert !process.remove_tree(dir).is_err()
+
+# Defect 2486's case and the shapes beside it: `measure` on a directory, a
+# link to one and with `--refresh`, refused in its own words; on a file and
+# with no operand, read; `mutate` and `probe`, which share its kind of
+# operand and read directories, let through. Every verb whose operand may be
+# left out is one of the three `one_file_given` names, so a fourth is
+# decided there before it is asked.
+test "`measure` refuses a directory in its own words, and the verbs sharing its kind of operand read one (defect 2486)"
+    dir = "build/selftest-file-operand-2486"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/inner").is_err()
+    assert !write_file(path: dir + "/doc.md", text: "x\n").is_err()
+    inner = dir + "/inner"
+    measured = "`measure` counts the tokens of one file, `spec/heroes-spec.md` where none is named, and `" + inner + "` is a directory: `heroes measure [file]`"
+    assert asked(["measure", inner]).must() == measured
+    assert asked(["measure", inner, "--refresh"]).must() == measured
+    assert asked(["measure", dir + "/doc.md"]).is_err()
+    assert asked(["measure"]).is_err()
+    assert asked(["mutate", inner]).is_err()
+    assert asked(["probe", inner]).is_err()
+
+    if !files.symbolic_link(target: "inner", name: dir + "/linked").is_err()
+        assert asked(["measure", dir + "/linked"]).must() == "`measure` counts the tokens of one file, `spec/heroes-spec.md` where none is named, and `" + dir + "/linked` is a directory: `heroes measure [file]`"
+
+    for c in cli_table.commands()
+        if c.operand == .optional_operand
+            assert c.tag == .measure_cmd || c.tag == .mutate_cmd || c.tag == .probe_cmd
+
     assert !process.remove_tree(dir).is_err()

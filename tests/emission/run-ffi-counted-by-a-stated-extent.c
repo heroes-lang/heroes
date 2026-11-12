@@ -424,7 +424,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("61561bb634db3149", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("37cd2f9d4e5c0356", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficountedbyastatedextent\tffi-counted-by-a-stated-extent\n");

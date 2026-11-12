@@ -16297,7 +16297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("297a6bc60a738f56", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ff17fac23f46163", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151aflaggedrecordoverathousanddeepnestbuilds\tfixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds\n");

@@ -104,49 +104,12 @@ record Toolchain
     # The answer whole, "" where none came, which `cli/clang_added.hero` reads (defect 2344).
     asked_answer: str
 
-# Locate the runtime, or say the places it looked. The search is why
-# the ABI stamp exists: a decoy runtime/ compiled with zero warnings
-# under -Weverything and printed 0x1e where 30 was expected; the stamp
-# turns that silence into `use of undeclared identifier`.
-#
-# Three places, in the order design.md §3.1 and panel 020 rule them:
-# `$HEROES_RUNTIME`, `runtime/` under the working directory, and `runtime/`
-# under an ancestor of the executable, nearest first, which until defect 277
-# was never looked in, so an installed compiler found none without the
-# variable while its help said *beside the compiler*.
-#
-# **A hint the author set is the one place looked in, and one naming no
-# runtime is refused, saying so** (defect 276), as defect 243 refuses one that
-# is not UTF-8: it was passed over in silence for the next place, so a
-# `runtime/` beside the program, or above the compiler, built the program
-# against a runtime the author did not name. What `HEROES_RUNTIME` is for is
-# saying which runtime; a search that goes on past it decides otherwise, the
-# decoy panel 020's ABI stamp was written against.
-#
-# **And the runtime found is asked whether it is this compiler's before any
-# unit is written** (defect 2259): one of another release was refused by the
-# stamp in every unit, told as *internal error* at exit 2, twice a build, and
-# `heroes doctor`, which asks here too, called it ok.
+# Locate the runtime, or say the places it looked (`runtime_places.located`,
+# where the search and its reasons stand since defect 2485, so `heroes
+# doctor` asks it with nothing written), and the toolchain over it.
 function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
-    if hint.len() > 0
-        missing = runtime_places.missing_at(hint)
-
-        if missing.len() > 0
-            return fail(code: "hint", msg: runtime_places.unheld(hint: hint, missing: missing))
-        runtime_places.of_this_release(dir: hint, named: true)?
-        return toolchain_at(runtime: hint, fingerprint: fingerprint)
-    candidates: [str] @= ["runtime"]
-    beside = runtime_places.beside_the_compiler()
-
-    for above in beside.above
-        candidates @ candidates.push(above + "/runtime")
-
-    for candidate in candidates
-        if runtime_places.missing_at(candidate).len() == 0
-            runtime_places.of_this_release(dir: candidate, named: false)?
-            return toolchain_at(runtime: candidate, fingerprint: fingerprint)
-
-    return fail(code: "failed", msg: runtime_places.not_found(beside))
+    runtime = runtime_places.located(hint)?
+    return toolchain_at(runtime: runtime, fingerprint: fingerprint)
 
 # The toolchain over the runtime at `runtime`, whose two files read.
 function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
