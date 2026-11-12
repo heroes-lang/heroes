@@ -90,7 +90,11 @@ int64_t hero_net_recv(hero_net_socket *s, void *buffer, uint64_t count);
 
 /* Closes the socket and gives its handle back, whatever is answered: 0, or
  * -1 where the socket was not open or the system reported a failure while
- * closing it. A call in flight on it on another thread ends first. */
+ * closing it. A call another thread waits in on it ends, failing
+ * `HERO_NET_NOT_OPEN`, a `send` or `recv` as the socket shuts down and an
+ * `accept` within about 50 ms, since a listener waits in slices of that; no
+ * connection made after the close is accepted, and no later call reaches the
+ * socket. */
 int64_t hero_net_close(hero_net_socket *s);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a

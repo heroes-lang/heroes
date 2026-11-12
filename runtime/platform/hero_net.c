@@ -31,6 +31,20 @@
  * the descriptor. A descriptor is never closed while a call may still pass
  * its number to the system, which would then reach whatever socket the
  * system gave that number next.
+ *
+ * AND A CALL A CLOSE ENDED SAYS SO: `HERO_NET_NOT_OPEN`, never a peer's end
+ * of stream nor a connection. Shutting a connection down ends a `recv`
+ * waiting on it with 0 (11 to 13 ms after the close on this Mac and in
+ * Linux arm64, measured 2026-11-12), which read as the peer's close; and
+ * shutting a LISTENER down woke nothing on Darwin, where the `accept` went on
+ * waiting and took a connection made after the close (sitting 246's
+ * ffi-pragmatist, reproduced the same day), while on Linux it woke with
+ * `EINVAL`, read as `HERO_NET_OTHER`. So a listener does not block: its
+ * `accept` waits in slices of `HERO_NET_SLICE_MS`, by `poll` (`WSAPoll` on
+ * Windows), asking between them whether its slot was closed, the same on
+ * every platform whatever a shutdown does there; and every call that ends on
+ * a slot closed meanwhile answers `HERO_NET_NOT_OPEN`, a connection it took
+ * after the close closed again.
  */
 
 #include "hero_net.h"
@@ -59,6 +73,7 @@ typedef int hero_net_len;
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -84,6 +99,9 @@ _Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a socket handle c
 #define HERO_NET_SLOTS 65536u
 /* The most one call sends or receives, which Windows' `int` counts can say. */
 #define HERO_NET_CHUNK ((uint64_t)INT32_MAX)
+/* How long a waiting `accept` sleeps before it asks again whether its
+ * listener was closed: a close ends it within about this. */
+#define HERO_NET_SLICE_MS 50
 
 typedef struct {
     hero_net_fd fd;
@@ -362,13 +380,16 @@ static hero_net_slot *hero_net_take(hero_net_socket *s, hero_net_fd *fd) {
     return slot;
 }
 
-/* A call done with the slot it took; the last call out of a slot closed
- * meanwhile closes its descriptor. */
-static void hero_net_done(hero_net_slot *slot) {
+/* A call done with the slot it took, answering whether the program closed it
+ * meanwhile; the last call out of a slot closed meanwhile closes its
+ * descriptor. */
+static bool hero_net_done(hero_net_slot *slot) {
     hero_net_fd last = HERO_NET_NO_FD;
+    bool closed = false;
 
     hero_net_enter();
     slot->busy -= 1;
+    closed = slot->closing;
     if (slot->closing && slot->busy == 0) {
         last = slot->fd;
         hero_net_release(slot);
@@ -378,6 +399,65 @@ static void hero_net_done(hero_net_slot *slot) {
     if (last != HERO_NET_NO_FD) {
         (void)hero_net_close_fd(last);
     }
+    return closed;
+}
+
+/* Whether the program closed the slot a call holds busy. */
+static bool hero_net_closing(hero_net_slot *slot) {
+    hero_net_enter();
+    bool closed = slot->closing;
+    hero_net_leave();
+    return closed;
+}
+
+/* A descriptor made to wait never in the system's own calls (`blocking`
+ * false), or made to again; false, the error set, where it could not be. */
+static bool hero_net_blocking(hero_net_fd fd, bool blocking) {
+#if defined(_WIN32)
+    u_long on = blocking ? 0 : 1;
+
+    /* `FIONBIO` is an unsigned bit pattern the call takes as its `long`. */
+    if (ioctlsocket(fd, (long)FIONBIO, &on) != 0) {
+        hero_net_failed_with(hero_net_os_code());
+        return false;
+    }
+#else
+    int flags = fcntl(fd, F_GETFL);
+
+    if (flags < 0 || fcntl(fd, F_SETFL, blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK)) != 0) {
+        hero_net_failed_with(hero_net_os_code());
+        return false;
+    }
+#endif
+    return true;
+}
+
+/* One slice of a listener's wait: 1 where a connection may be waiting, 0
+ * where the slice passed with none, -1 with the platform's number in `code`. */
+static int hero_net_wait(hero_net_fd fd, int64_t *code) {
+#if defined(_WIN32)
+    WSAPOLLFD one = { fd, POLLRDNORM, 0 };
+    int ready = WSAPoll(&one, 1, HERO_NET_SLICE_MS);
+#else
+    struct pollfd one = { fd, POLLIN, 0 };
+    int ready = poll(&one, 1, HERO_NET_SLICE_MS);
+#endif
+
+    if (ready < 0) {
+        *code = hero_net_os_code();
+        return -1;
+    }
+    return ready > 0 ? 1 : 0;
+}
+
+/* Whether a listener's `accept` failed for a reason that passes: no
+ * connection after all, a signal, or one reset before it was taken. */
+static bool hero_net_passing(int64_t code) {
+#if defined(_WIN32)
+    return code == WSAEWOULDBLOCK || code == WSAEINTR || code == WSAECONNRESET;
+#else
+    return code == EAGAIN || code == EWOULDBLOCK || code == EINTR || code == ECONNABORTED;
+#endif
 }
 
 /* Windows asks a process to start its sockets once; elsewhere nothing to do. */
@@ -435,6 +515,13 @@ static hero_net_fd hero_net_try(const struct addrinfo *at, bool listening, int64
         }
         if (failed == 0) {
             failed = listen(fd, SOMAXCONN);
+        }
+        /* A listener never blocks: its `accept` waits in slices
+         * (`hero_net_accept`). */
+        if (failed == 0 && !hero_net_blocking(fd, false)) {
+            *code = hero_net_os;
+            (void)hero_net_close_fd(fd);
+            return HERO_NET_NO_FD;
         }
     } else {
         /* Not asked again after a signal: the connection then goes on
@@ -506,17 +593,41 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
     hero_net_fd got = HERO_NET_NO_FD;
     int64_t code = 0;
 
-    do {
+    /* In slices, asking between them whether the listener was closed. */
+    while (!hero_net_closing(slot)) {
+        int ready = hero_net_wait(fd, &code);
+
+        if (ready < 0 && hero_net_interrupted(code)) {
+            continue;
+        }
+        if (ready < 0) {
+            break;
+        }
+        if (ready == 0) {
+            continue;
+        }
         got = accept(fd, NULL, NULL);
         code = got == HERO_NET_NO_FD ? hero_net_os_code() : 0;
-    } while (got == HERO_NET_NO_FD && hero_net_interrupted(code));
-    hero_net_done(slot);
-
+        if (got != HERO_NET_NO_FD || !hero_net_passing(code)) {
+            break;
+        }
+    }
+    /* A connection taken after the close is no connection of a listener
+     * the program holds: closed again, the call answering as a closed one. */
+    if (hero_net_done(slot)) {
+        if (got != HERO_NET_NO_FD) {
+            (void)hero_net_close_fd(got);
+        }
+        hero_net_fail(HERO_NET_NOT_OPEN, 0);
+        return NULL;
+    }
     if (got == HERO_NET_NO_FD) {
         hero_net_failed_with(code);
         return NULL;
     }
-    if (!hero_net_ready(got)) {
+    /* A socket a non-blocking listener hands out blocks again: BSD's accept
+     * gives it the listener's flags. */
+    if (!hero_net_blocking(got, true) || !hero_net_ready(got)) {
         (void)hero_net_close_fd(got);
         return NULL;
     }
@@ -537,7 +648,7 @@ int64_t hero_net_port(hero_net_socket *s) {
     int failed = getsockname(fd, (struct sockaddr *)&where, &size);
     int64_t code = failed != 0 ? hero_net_os_code() : 0;
 
-    hero_net_done(slot);
+    (void)hero_net_done(slot);
     if (failed != 0) {
         hero_net_failed_with(code);
         return -1;
@@ -581,14 +692,19 @@ static int64_t hero_net_carry(hero_net_socket *s, void *bytes, uint64_t count, b
         return -1;
     }
     if (bytes == NULL && count > 0) {
-        hero_net_done(slot);
+        (void)hero_net_done(slot);
         hero_net_fail(HERO_NET_INVALID, 0);
         return -1;
     }
     int64_t code = 0;
     int64_t moved = count == 0 ? 0 : hero_net_move(fd, bytes, count, sending, &code);
 
-    hero_net_done(slot);
+    /* Ended by a close meanwhile, the shutdown's 0 or its failure, the call
+     * says so; bytes it moved before the close are the program's. */
+    if (hero_net_done(slot) && moved <= 0 && count > 0) {
+        hero_net_fail(HERO_NET_NOT_OPEN, 0);
+        return -1;
+    }
     if (moved < 0) {
         hero_net_failed_with(code);
         return -1;

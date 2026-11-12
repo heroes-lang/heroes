@@ -1,0 +1,16 @@
+# A close of a socket another thread waits on ends the wait, failing
+# `HERO_NET_NOT_OPEN`, and nothing reaches the socket after it (feature 2295,
+# 2026-11-12): an `accept` waiting on a listener, which on Darwin went on
+# waiting and took a connection made after the close until the layer's
+# listeners waited in slices (sitting 246's ffi-pragmatist), and a `recv`
+# waiting on a connection, which read the shutdown as the peer's end of
+# stream. The waiting threads are C's, in the header beside this file: a
+# program's Heroes threads carry one `i64`, and a socket is a handle. Each
+# line prints 1 where every step held, else the step that did not.
+extern "the-platform-layer-ends-a-call-its-socket-closes.h"
+    function close_ends_accept() -> i64
+    function close_ends_recv() -> i64
+
+function main()
+    print(f"a close ends an accept another thread waits in: {close_ends_accept()}")
+    print(f"a close ends a recv another thread waits in: {close_ends_recv()}")
