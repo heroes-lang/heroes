@@ -30,6 +30,7 @@ use cli/declared_by
 use cli/input
 use cli/io
 use cli/kept
+use cli/layer
 use cli/libraries
 use cli/pointee_ask
 use cli/process
@@ -151,6 +152,9 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             return fail(code: "failed", msg: "no runtime object")
         return fail(code: "failed", msg: failure_note(object))
 
+    # The platform layer's archive, on every link after the objects (panel 234's R6, `cli/layer.hero`).
+    layer_words = layer.for_build(t, level: options.level, sanitize: options.sanitize)?
+
     # What the header said each `@` parameter points at (defect 010): filled
     # by the pointee check inside the round, empty for the package failure
     # explained first, since no pointee has been asked about yet.
@@ -201,6 +205,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         source_dir @ "."
     site = settled.Site(
         object: object.must(),
+        layer: layer_words,
         output: options.output,
         link: !art.must().emit_c,
         source_dir: source_dir,

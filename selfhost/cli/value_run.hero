@@ -22,6 +22,7 @@
 # (panel 218's R2: it passed in silence).
 
 use cli/flags
+use cli/layer
 use cli/link_flags
 use cli/process
 use cli/publish
@@ -173,7 +174,8 @@ function compiled(dir: str, one: Unit, text: str, level: str) -> str?
         )
     return ok(object)
 
-# The driver linked with the probe's object and the runtime alone, then run
+# The driver linked with the probe's object, the runtime and the platform
+# layer's archive (`cli/layer.hero`) alone, then run
 # until it finishes, `total` calls, each run starting after the call the last
 # trapped at: `trap <index>`, `disagree <index>` where a call says its value
 # is not the one clang folded, `death <words>` where a run ends otherwise, and
@@ -184,11 +186,15 @@ function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i6
     driver_c = dir + "/driver.c"
     publish.write_whole(path: driver_c, text: value_probe.driver(total), keyed: false)?
     runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
+    layer_words = layer.archive(t, level: level, sanitize: false)?
     binary = publish.private_name(dir + "/probe") + process.exe_suffix()
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
     line @ strings.with_all(list: line, more: link_flags.target_words(t.target))
     line @ strings.with_all(list: line, more: checks())
-    line @ strings.with_all(list: line, more: ["-g0", object, driver_c, runtime])
+    line @ strings.with_all(
+        list: line,
+        more: strings.with_all(list: ["-g0", object, driver_c, runtime], more: layer_words)
+    )
     line @ strings.with_all(list: line, more: leave_out(t.target))
     errors = publish.private_name(dir + "/link-errors.txt")
     linked = process.run(program: "clang", words: line.push("-o").push(binary), out: process.discard(), err: errors)

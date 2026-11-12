@@ -75,6 +75,31 @@ function made_of(runtime: str) -> [str]?
 
     return ok(out)
 
+# **THE PLATFORM LAYER'S MEMBERS ARE NAMED BY `runtime.c` TOO** (panel 234's
+# R6; feature 2295; `cli/layer.hero`): one C file per capability under
+# `platform/`, each archived alone, so `runtime.c` names them in a block its
+# preprocessor never reads, each after its header, and they are among the
+# files `each_file` keys by the rule every compiler since panel 098's
+# condition 4 reads, the seed's among them. The members are its names under
+# `platform/` that end in `.c`, in the order written; a `runtime.c` that
+# names none has no layer.
+function layer_members(runtime: str) -> [str]?
+    root = reading.keyed(runtime + "/runtime.c")?
+    out: [str] @= []
+
+    for name in included_names(text: root.text)
+        if is_member(name)
+            out @ out.push(runtime + "/" + name)
+
+    return ok(out)
+
+# The folder of the runtime the layer's members stand in.
+constant LAYER: str
+    "platform/"
+
+function is_member(name: str) -> bool
+    return name.len() > LAYER.len() + 2 && bytes.bytes_at(text: name, at: 0, needle: LAYER) && bytes.bytes_at(text: name, at: name.len() - 2, needle: ".c")
+
 # Every `#include "…"` target in the text, in the order written. The
 # quoted form only: `<stdio.h>` is the platform's and is not ours to
 # hash.
@@ -195,3 +220,59 @@ test "every file under the runtime's parts is included by runtime.c, and every p
     for name in included
         if name.len() > 6 && name.slice(from: 0, to: 6) == "parts/"
             assert has(parts, name)
+
+# The platform layer's members are `runtime.c`'s names under `platform/`, in
+# its order, each beside its header, among the files the runtime is made of
+# (feature 2295).
+test "the platform layer's members are the names runtime.c gives under platform/, among the runtime's files (feature 2295)"
+    assert layer_members("runtime").must() == ["runtime/platform/hero_net.c", "runtime/platform/hero_time.c"]
+    made = made_of("runtime").must()
+
+    for path in ["runtime/hero_net.h", "runtime/platform/hero_net.c", "runtime/hero_time.h", "runtime/platform/hero_time.c"]
+        assert has(made, path)
+
+    for name in ["platform/hero_net.c", "platform/x.c"]
+        assert is_member(name)
+
+    for name in ["parts/os.c", "hero_net.h", "platform/.c", "platform/hero_net.h", "platformx/hero_net.c"]
+        assert !is_member(name)
+
+# The folder and `runtime.c` say the same members, defect 464's question for
+# `parts/` asked of `platform/`: a member nothing names is never archived nor
+# keyed, and one named and gone is a build that fails.
+test "every C file under the runtime's platform folder is a member runtime.c names, and every member it names is there (feature 2295)"
+    named = layer_members("runtime").must()
+    found: [str] @= []
+
+    for path in process.files_under("runtime/platform").must()
+        name = path.slice(from: "runtime/".len(), to: path.len())
+
+        if is_member(name) && name[LAYER.len()] != '.'
+            found @ found.push(path)
+
+    assert named.len() >= 2
+
+    for path in found
+        assert has(named, path)
+
+    for path in named
+        assert has(found, path)
+
+# A member edited moves the runtime's key; a C file of the folder that
+# `runtime.c` does not name does not, since nothing compiles it.
+test "an edited member moves the runtime's key, and a file of the folder runtime.c does not name does not (feature 2295)"
+    dir = "build/selftest-layer-keys"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/platform").is_err()
+    assert !write_file(path: dir + "/runtime.c", text: "#include \"a.h\"\n#if 0\n#include \"hero_x.h\"\n#include \"platform/hero_x.c\"\n#endif\n").is_err()
+    assert !write_file(path: dir + "/a.h", text: "int a;\n").is_err()
+    assert !write_file(path: dir + "/hero_x.h", text: "int x(void);\n").is_err()
+    assert !write_file(path: dir + "/platform/hero_x.c", text: "#include \"hero_x.h\"\nint x(void) { return 1; }\n").is_err()
+    first = each_file(dir).must()
+    assert first.len() == 64
+    assert layer_members(dir).must() == [dir + "/platform/hero_x.c"]
+    assert !write_file(path: dir + "/platform/hero_y.c", text: "int y;\n").is_err()
+    assert each_file(dir).must() == first
+    assert !write_file(path: dir + "/platform/hero_x.c", text: "#include \"hero_x.h\"\nint x(void) { return 2; }\n").is_err()
+    assert each_file(dir).must() != first
+    assert !process.remove_tree(dir).is_err()

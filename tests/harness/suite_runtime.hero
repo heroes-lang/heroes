@@ -39,6 +39,10 @@
 #    argument — including the five objects it found on its first run that
 #    no count in this project had ever seen, because they live inside
 #    function bodies and every count had looked at file scope.
+# 4. The platform layer's two conditions (panel 234's R6; feature 2295):
+#    each header of the layer holds no conditional but its guard, and each
+#    member under `runtime/platform/` includes its own header before
+#    anything else. Rule 4 below carries the measurement that asked for it.
 #
 # COMMENTS AND STRING LITERALS ARE NOT CODE, and this suite would be
 # noise without that. `runtime/parts/run.c:484` contains the sentence
@@ -246,6 +250,11 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/run.c hero_run_sentinel_lock | the mutex over the runner's half of its sentinel on Darwin (defect 465, panel 200's R2): every word the runner writes down the pipe, the restart by the thread that watches the sentinel's life line (defect 575) and, with no such thread, the check before a launch, from any thread that launches. Being shared is what a lock IS, and the platform owns its safety. The child's own word after its fork takes no lock, its copy of the write end being its own"
         "runtime/parts/run.c hero_run_sentinel_pid | the sentinel's pid, read and written only under that lock, the lock's own state, as `hero_handle_cap` is the handle set's"
         "runtime/parts/run.c hero_run_sentinel_watched | whether a thread watches the sentinel's life line (defect 575), set once under that lock and read under it alone, the lock's own state; deliberately not `_Atomic` beside a locked state, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_net.c hero_net_slots | the platform layer's table of open sockets (feature 2295), shared on purpose and guarded by `hero_net_lock`: a handle the program holds names a slot and the life it was issued for, and a socket opened on one thread may be closed on another, so a per-thread table would answer `not open` for a socket the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single. Fixed at 65,536, since the runtime allocates only in `parts/alloc.c` (rule 1), its static bytes touched only as sockets are made"
+        "runtime/platform/hero_net.c hero_net_fresh | how many slots have ever held a socket, read and written only under `hero_net_lock`, the lock's own state, as `hero_handle_cap` is the handle set's"
+        "runtime/platform/hero_net.c hero_net_given_back | the head of the slots given back, under `hero_net_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_net.c hero_net_lock | the lock over the socket table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS; it is never held across a call that waits on the network, so a blocked `accept` or `recv` holds a slot busy and no lock"
+        "runtime/platform/hero_net.c hero_net_up | whether `WSAStartup` has answered, Windows' alone, set once under `hero_net_lock` before the first socket and read under it; process-wide by Windows' own definition, since the sockets it starts are the process's"
         "runtime/parts/stack.c done | the once-flag over the PROCESS-wide half of the guard — the two dispositions on POSIX, the vectored handler on Windows — in each platform arm. The per-thread half moved out from under it at M-thread-stacks and is `_Thread_local`, so what is left here is genuinely the process's; `hero_args_set`'s callee, exactly like `os.c`'s pair above"
     ]
 
@@ -280,6 +289,7 @@ function run_all(scratch: str) -> report.Report?
     keep_single_point(@r, sources: sources)
     keep_boundary(@r)
     keep_shared_state(@r, sources: sources)
+    keep_layer(@r, sources: sources)
     return ok(r)
 
 # Rule 1: every allocation in the runtime happens in one file.
@@ -649,6 +659,137 @@ function is_prototype(row: str) -> bool
     trimmed = strings.trimmed(row)
     return core_strings.has_suffix(s: trimmed, suffix: ";") && !core_strings.contains(s: trimmed, substr: "{")
 
+## Rule 4 — the platform layer's headers and members (panel 234's R6)
+
+# The ffi-pragmatist's conditions (1) and (2) on panel 234's P2, adopted with
+# the route by R6 and held here, as the seat asked, by a test in the net
+# (feature 2295, 2026-11-12). **A header of the layer holds no conditional
+# but its guard**, so every platform's arm of its member is compiled against
+# one prototype; and **a member includes its own header before anything
+# else**, so an arm that defines another signature is `conflicting types` on
+# the machine that compiles it. The seat measured what breaking the second
+# costs (P2x, Linux arm64): the member built, and a narrower result read 4 s
+# against an uptime of 803 s.
+constant LAYER: str
+    "runtime/platform/"
+
+# A floor, `LEAST_FILES`' reason: a sweep that finds no member is green and
+# judged nothing. Two on 2026-11-12, `hero_net.c` and `hero_time.c`.
+constant LEAST_LAYER_MEMBERS: i64
+    2
+
+function keep_layer(@r: report.Report, sources: [str])
+    wrong: [str] @= []
+    members: i64 @= 0
+
+    for path in sources
+        name = path.slice(from: min_len(path, LAYER.len()), to: path.len())
+
+        if !core_strings.has_prefix(s: path, prefix: LAYER) || !core_strings.has_suffix(s: name, suffix: ".c") || !core_strings.has_prefix(s: name, prefix: "hero_") || core_strings.contains(s: name, substr: "/")
+            continue
+        members @ members + 1
+        stem = name.slice(from: 0, to: name.len() - 2)
+        member = read_file(path)
+        header = read_file(RUNTIME + "/" + stem + ".h")
+
+        if member.is_err() || header.is_err()
+            wrong @ wrong.push("    " + path + ": it or its header, " + RUNTIME + "/" + stem + ".h, cannot be read")
+            continue
+        first = first_code(member.must())
+
+        if first != "#include \"" + stem + ".h\""
+            wrong @ wrong.push(
+                "    " + path + ": its first line of code is `" + first + "`, where `#include \"" + stem + ".h\"` must be"
+            )
+
+        for breach in unguarded(header.must())
+            wrong @ wrong.push("    " + RUNTIME + "/" + stem + ".h: " + breach)
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: "runtime/layer",
+            detail: "  a header of the platform layer holds no conditional but its guard, and a member includes its own header before anything else (panel 234's R6, the ffi-pragmatist's conditions (1) and (2)):\n" + wrong.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+    floors.check(
+        @r,
+        label: "runtime/layer",
+        found: members,
+        floor: LEAST_LAYER_MEMBERS,
+        what: "members of the platform layer"
+    )
+
+function min_len(text: str, at: i64) -> i64
+    if at > text.len()
+        return text.len()
+    return at
+
+# The first line of `text` holding code, as written: comments and literals
+# are blanked to find it, and the line itself is read, since an include's
+# name is a literal.
+function first_code(text: str) -> str
+    code = code_lines(text)
+    raw = strings.lines(text)
+    at: i64 @= 0
+
+    while at < code.len() && at < raw.len()
+        if strings.trimmed(code[at]).len() > 0
+            return strings.trimmed(raw[at])
+        at @ at + 1
+
+    return ""
+
+# Every conditional of a header but its guard: `#ifndef G`, then `#define G`,
+# first, and one `#endif` last; anything else that opens, continues or ends
+# a conditional is named by its line.
+function unguarded(text: str) -> [str]
+    out: [str] @= []
+    directives: [str] @= []
+    lines_at: [i64] @= []
+    code = code_lines(text)
+    at: i64 @= 0
+
+    while at < code.len()
+        row = strings.trimmed(code[at])
+
+        if core_strings.has_prefix(s: row, prefix: "#")
+            directives @ directives.push(strings.trimmed(row.slice(from: 1, to: row.len())))
+            lines_at @ lines_at.push(at + 1)
+        at @ at + 1
+
+    guard: str @= ""
+
+    if directives.len() >= 2 && core_strings.has_prefix(s: directives[0], prefix: "ifndef ") && core_strings.has_prefix(s: directives[1], prefix: "define ")
+        guard @ strings.trimmed(directives[0].slice(from: 7, to: directives[0].len()))
+
+    if guard.len() == 0 || strings.trimmed(directives[1].slice(from: 7, to: directives[1].len())) != guard
+        out @ out.push("it does not open with `#ifndef` and `#define` of one guard")
+
+    if directives.len() == 0 || directives[directives.len() - 1] != "endif"
+        out @ out.push("it does not close with `#endif`")
+    index: i64 @= 0
+
+    for d in directives
+        inner = index > 0 && index < directives.len() - 1
+
+        if inner && conditional(d)
+            out @ out.push(
+                "line " + lines_at[index].to_str() + " holds `#" + d + "`, a conditional that is not its guard"
+            )
+        index @ index + 1
+
+    return out
+
+function conditional(directive: str) -> bool
+    for word in ["if", "ifdef", "ifndef", "elif", "elifdef", "elifndef", "else", "endif"]
+        if directive == word || core_strings.has_prefix(s: directive, prefix: word + " ") || core_strings.has_prefix(s: directive, prefix: word + "(")
+            return true
+
+    return false
+
 ## The reader
 
 # A line of `text` per line of source, with every comment and every
@@ -925,3 +1066,20 @@ test "an allow-list entry is read up to its reason, and every one names somethin
     # test with an expiry date, so this one names an object whose entry says it
     # is process-wide by nature rather than one that is waiting for a repair.
     assert !named_here("runtime/parts/f64.c cached")
+
+# Rule 4's two readings, each made to fire (feature 2295): a member whose
+# first line of code is another include, and a header with an arm.
+test "the layer's first line of code is read as written, and a header's only conditional is its guard"
+    assert first_code("/* a comment */\n\n#include \"hero_x.h\"\n#include <stdint.h>\n") == "#include \"hero_x.h\""
+    assert first_code("// one\n#include <stdint.h>\n#include \"hero_x.h\"\n") == "#include <stdint.h>"
+    assert unguarded("/* doc */\n#ifndef HERO_X_H\n#define HERO_X_H\n#include <stdint.h>\nint x(void);\n#endif\n").len() == 0
+    armed = unguarded(
+        "#ifndef HERO_X_H\n#define HERO_X_H\n#if defined(_WIN32)\nint x(void);\n#else\nlong x(void);\n#endif\n#endif\n"
+    )
+    assert armed.len() == 3
+    assert armed[0] == "line 3 holds `#if defined(_WIN32)`, a conditional that is not its guard"
+    assert unguarded("int x(void);\n").len() == 2
+    assert unguarded("#ifndef A\n#define B\n#endif\n") == ["it does not open with `#ifndef` and `#define` of one guard"]
+    assert conditional("ifdef X")
+    assert !conditional("include \"x.h\"")
+    assert !conditional("define IFX 1")

@@ -1,0 +1,425 @@
+# The platform layer's archive, on every program's link line (design.md §4.19,
+# §1.11, §3.1; panel 234's R6, ratified by the author's reading, decision 2304;
+# feature 2295).
+#
+# **WHAT IT IS.** The capabilities whose C differs by platform, sockets and a
+# monotonic clock first, are C files of the project's own beside the runtime,
+# one per capability under its `platform/` folder, each including its own
+# header first, and named by `runtime.c` in a block its preprocessor never
+# reads, since the runtime's file list is that file's (panel 098's condition
+# 4; `runtime_key.layer_members`). This file compiles them under the
+# runtime's own words, archives them as ONE static library, and puts the
+# archive on every link, after the program's objects; **the linker, not the
+# compiler, then takes only the members a program references**: `print(1)`
+# takes none, a program that calls the clock alone takes the clock alone (the
+# critic's G2, measured on both machines with `-rdynamic` on, which exports
+# what is linked and pulls in nothing). So no predicate decides here which
+# program needs which member, no package spells `link` or a flag for it, and
+# no package ships platform C of its own (the ffi-pragmatist's veto of panel
+# 114 R3). A group binds a layer function by naming its header,
+# `extern "hero_net.h"`, which stands on the runtime's include path and is not
+# a seed (the ffi-pragmatist's condition (5)). What stays in the runtime,
+# `hero_os.h`'s process, files, directories, spawning and threads, stays
+# there because every `main` calls `hero_args_set` (the critic's G3).
+#
+# **KEYED AS THE RUNTIME'S OBJECT IS** (`toolchain.runtime_object`): the
+# fingerprint, clang's answer for the words, the level's words and the
+# runtime's key, which holds every member's and header's bytes beside
+# `runtime.c`'s files (`runtime_key.each_file`); and what each member's
+# includes reach NOW (`opening.reached`, defect 2289's question, asked of each
+# member at every build). Served only where its record still vouches for
+# every file the members' compiles read (`deps.vouched`) and its bytes are the
+# ones the archiver wrote (`served`, defect 443).
+#
+# **PUBLISHED AS THE RUNTIME'S OBJECT IS** (`cli/publish.hero`, defect 134):
+# the members are compiled into a private folder under their own names, which
+# the archive keeps as its members' names, the archive written there, sealed,
+# renamed into place, and the record naming it written last; so a build
+# reading `build/` sees a whole archive or none, and a build killed half-way
+# leaves a private folder nobody reads.
+#
+# **THE ARCHIVER** is `cli/archiver.hero`'s: asked of clang, never assumed,
+# and not in the key, since any of them archives the same members and the
+# linker takes members.
+
+use cli/archiver
+use cli/deps
+use cli/digest
+use cli/flags
+use cli/io
+use cli/link
+use cli/link_flags
+use cli/opening
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/runtime_key
+use cli/served
+use cli/strings
+use cli/supplied
+use cli/toolchain
+
+# The archive's words for a build, its failure told as the runtime object's is
+# (`cli/produce.hero`, defect 134): a member clang refused is the compiler's,
+# *internal error* with clang's words; any other failure is the machine's,
+# said as itself by the caller.
+function for_build(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
+    made = archive(t, level: level, sanitize: sanitize)
+
+    match made
+        .ok words => return ok(words)
+        .err e =>
+            if e.code == "clang"
+                io.eprint(text: "internal error: the platform layer did not compile\n" + e.msg)
+                return fail(code: "failed", msg: "no platform layer")
+            return fail(code: "failed", msg: e.msg)
+
+# The words the link line carries for the layer at `level`: the archive, or
+# none where the runtime has no layer. Compiled once per key, then served.
+function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
+    members = runtime_key.layer_members(t.runtime)?
+    none: [str] = []
+
+    if members.len() == 0
+        return ok(none)
+    memo: {str: str} @= {}
+    words = flags.level_words(level: level, sanitize: sanitize)
+
+    # `build/` first, where the reach's listings are written: Debian clang
+    # 22.1.8 refuses an `-MF` into a folder that is not there (exit 1, *error
+    # opening*), where Apple clang 21 makes it, measured 2026-11-12; a fresh
+    # `build/` keyed its first archive as unread there, and archived again.
+    process.mkdir_all(t.build)?
+    reach = reaches(t, members: members, words: words, @memo)
+    key = digest.digest(
+        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach)
+    )
+    stem = t.build + "/layer-" + key
+    listed = stem + ".deps.txt"
+    suffix = archiver.suffix_of(t.target)
+    known = deps.vouched(listed, @memo)
+
+    if !reach.is_err() && !known.is_err() && served.serves(stem + "-" + known.must() + suffix)
+        return ok([stem + "-" + known.must() + suffix])
+    folder = publish.private_name(stem)
+    made = compiled(t, members: members, words: words, stem: stem, folder: folder, suffix: suffix, @memo)
+    _ = process.remove_tree(folder).is_err()
+    built = made?
+
+    # Recorded only where the reach holds every file the compiles read.
+    if opening.covers(reach, listed: built.rows)
+        publish.write_whole(path: listed, text: built.listing, keyed: true)?
+    return ok([built.path])
+
+# What a cold archive came to: where it was published, and the record that
+# names it with the rows it holds.
+record Archived
+    path: str
+    listing: str
+    rows: str
+
+# Every member compiled into `folder` under its own name, the archive written
+# there, sealed and published beside `stem`; the folder is the caller's to
+# remove.
+function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: str, folder: str, suffix: str, @memo: {str: str}) -> Archived?
+    process.mkdir_all(folder)?
+    objects: [str] @= []
+    rows: [str] @= []
+
+    for member in members
+        name = base_of(member)
+        object = folder + "/" + name + ".o"
+        depfile = folder + "/" + name + ".d"
+        line: [str] @= strings.with_all(list: ["clang"], more: words)
+        line @ strings.with_all(
+            list: line,
+            more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, member, "-I", t.runtime, "-o", object]
+        )
+        line @ strings.with_all(list: line, more: toolchain.object_words(t, named: stem + "-" + name + ".o"))
+        toolchain.run_clang(line: line, what: "compiling the platform layer's " + name, err_path: folder + "/" + name + ".err.txt")?
+        read = deps.rows_of(depfile: depfile, skip: t.runtime + "/", @memo)
+
+        if read.is_err()
+            return fail(code: "failed", msg: "cannot record what the platform layer's " + name + " read")
+        rows @ rows.push(read.must())
+        objects @ objects.push(object)
+
+    staged = folder + "/layer" + suffix
+    archiver.archived(t, staged: staged, objects: objects, err_path: folder + "/archiver.err.txt")?
+    listing = deps.pointer_text(rows.join("\n"))
+    path = stem + "-" + listing.slice(from: 0, to: 16) + suffix
+    served.seal(staged: staged, object: path)?
+    publish.publish(staged: staged, path: path, keyed: true)?
+    return ok(Archived(path: path, listing: listing, rows: rows.join("\n")))
+
+# What every member's includes reach under `words` now, each asked of clang
+# alone (a listing of two inputs keeps only the second's under `-MF`,
+# measured on this Mac), as one record whose first line digests every
+# member's rows, so the key moves with any of them: absent where any member's
+# did not preprocess, so nothing is served warm under it.
+function reaches(t: toolchain.Toolchain, members: [str], words: [str], @memo: {str: str}) -> str?
+    none: [str] = []
+    keyed = runtime_key.made_of(t.runtime).default(none)
+    line = strings.with_all(list: strings.with_all(list: ["clang"], more: words), more: ["-I", t.runtime])
+    rows: [str] @= []
+
+    for member in members
+        depfile = publish.private_name(t.build + "/layer-reached.d")
+        reached = opening.reached(line: line, input: member, depfile: depfile, skip: "", keyed: keyed, @memo)?
+        rows @ rows.push(rows_after_digest(reached))
+
+    return ok(deps.pointer_text(rows.join("\n")))
+
+# A record's rows, its first line, the digest, left out.
+function rows_after_digest(text: str) -> str
+    at: i64 @= 0
+
+    while at < text.len() && text[at] != '\n'
+        at @ at + 1
+
+    if at >= text.len()
+        return ""
+    return text.slice(from: at + 1, to: text.len())
+
+# A member's name without its folder or `.c`: `hero_net`.
+function base_of(member: str) -> str
+    cut: i64 @= member.len()
+
+    while cut > 0 && member[cut - 1] != '/'
+        cut @ cut - 1
+
+    return member.slice(from: cut, to: member.len() - 2)
+
+## Tests
+
+# A C unit's `main` written in `dir`, compiled under the runtime's words and
+# linked beside the runtime's object and the archive by the link every build
+# runs (`link.link_objects`), the archive after the objects; the binary. The
+# runtime's object and the archive are `t.build`'s, keyed and served warm.
+function linked_program(t: toolchain.Toolchain, dir: str, name: str, body: str) -> str
+    source = dir + "/" + name + ".c"
+    object = dir + "/" + name + ".o"
+    assert !write_file(path: source, text: body).is_err()
+    line = strings.with_all(
+        list: strings.with_all(list: ["clang"], more: flags.level_words(level: "-O0", sanitize: false)),
+        more: ["-c", source, "-I", t.runtime, "-o", object]
+    )
+    assert !toolchain.run_clang(line: line, what: "a test's unit", err_path: dir + "/" + name + ".err.txt").is_err()
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+    words = archive(t, level: "-O0", sanitize: false).must()
+    assert words.len() == 1
+    none: [str] = []
+    no_output: str? = fail(code: "none", msg: "no -o")
+    binary = link.link_objects(
+        t,
+        objects: strings.with_all(list: [runtime, object], more: words),
+        module: name,
+        output: no_output,
+        level: "-O0",
+        sanitize: false,
+        search_library: none,
+        pkgconfig_flags: none,
+        link_names: none,
+        judging: supplied.nothing()
+    ).must()
+    ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
+    assert ran.started && ran.code == 0
+    return binary
+
+# The layer's functions `binary` defines, `hero_net_*` and `hero_time_*`, read
+# with the platform's `nm`, Darwin's names without the `_` its symbols open
+# with: those of type `T`, a function the binary defines and exports, the
+# members' own `static` helpers being `t`.
+function layer_defined(t: toolchain.Toolchain, binary: str) -> [str]
+    out_path = binary + ".nm.txt"
+    ran = process.run(program: "nm", words: ["nm", binary], out: out_path, err: process.discard())
+    assert ran.started && ran.code == 0
+    found: [str] @= []
+
+    for line in deps.lines(read_back.words(out_path).must())
+        cut: i64 @= line.len()
+
+        while cut > 0 && line[cut - 1] != ' '
+            cut @ cut - 1
+
+        name: str @= line.slice(from: cut, to: line.len())
+
+        if link_flags.apple(t.target) && strings.starts_with(text: name, prefix: "_")
+            name @ name.slice(from: 1, to: name.len())
+        defined = cut >= 2 && line[cut - 2] == 'T'
+
+        if defined && (strings.starts_with(text: name, prefix: "hero_net_") || strings.starts_with(text: name, prefix: "hero_time_"))
+            found @ found.push(name)
+
+    return found
+
+function names_one(found: [str], prefix: str) -> bool
+    for name in found
+        if strings.starts_with(text: name, prefix: prefix)
+            return true
+
+    return false
+
+# A toolchain over this tree's runtime whose `build/` is `build`, emptied.
+function fresh_toolchain(build: str) -> toolchain.Toolchain
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ build
+    assert !process.remove_tree(build).is_err()
+    return t
+
+# **The linker takes only the members a program calls** (panel 234's R6, the
+# critic's G2, built): every program's link carries the archive, and `print(1)`'s
+# shape takes no member, a program calling the clock takes the clock alone, one
+# that names both headers and calls nothing of them takes none, and one calling
+# a socket function takes the sockets and not the clock. On an MSVC target a
+# binary holds no symbol table, so the links are run and their symbols unread
+# here; what they import is the Windows box's to read.
+test "every link carries the layer, and a program takes only the members it calls (feature 2295)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    dir = "build/selftest-layer-links"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    none = linked_program(t, dir: dir, name: "none", body: "int main(void) { return 0; }\n")
+    clock = linked_program(
+        t,
+        dir: dir,
+        name: "clock",
+        body: "#include \"hero_time.h\"\nint main(void) { return hero_time_monotonic_ns() >= 0 ? 0 : 1; }\n"
+    )
+    named = linked_program(
+        t,
+        dir: dir,
+        name: "named",
+        body: "#include \"hero_net.h\"\n#include \"hero_time.h\"\nint main(void) { return HERO_NET_OK; }\n"
+    )
+    net = linked_program(
+        t,
+        dir: dir,
+        name: "net",
+        body: "#include \"hero_net.h\"\nint main(void) { return hero_net_close(0) == -1 && hero_net_last_error() == HERO_NET_NOT_OPEN ? 0 : 1; }\n"
+    )
+    both = linked_program(
+        t,
+        dir: dir,
+        name: "both",
+        body: "#include \"hero_net.h\"\n#include \"hero_time.h\"\nint main(void) { return hero_time_monotonic_ns() >= 0 && hero_net_last_error() == HERO_NET_OK ? 0 : 1; }\n"
+    )
+
+    if !link_flags.msvc(t.target)
+        assert layer_defined(t, binary: none).len() == 0
+        assert layer_defined(t, binary: clock) == ["hero_time_monotonic_ns"]
+        assert layer_defined(t, binary: named).len() == 0
+        assert names_one(layer_defined(t, binary: net), prefix: "hero_net_close")
+        assert !names_one(layer_defined(t, binary: net), prefix: "hero_time_")
+        assert names_one(layer_defined(t, binary: both), prefix: "hero_net_")
+        assert names_one(layer_defined(t, binary: both), prefix: "hero_time_")
+    assert !process.remove_tree(dir).is_err()
+
+# **Two cold builds write one archive, and the cache serves only the one its
+# archiver wrote**: two `build/`s each compile and archive the members, one
+# name and the same bytes (determinism; Apple's `ar` under `ZERO_AR_DATE`);
+# warm, the same path; and wiped mid-way, the archive gone under its record,
+# its bytes changed after they were written (the seal, defect 443), the record
+# gone, or a private folder a killed build left beside it, each is archived
+# again, never served or read.
+test "an archive is one archive byte for byte, and a cache wiped mid-way archives it again (feature 2295)"
+    t = fresh_toolchain("build/selftest-layer-twice-a")
+    u = fresh_toolchain("build/selftest-layer-twice-b")
+    a = archive(t, level: "-O0", sanitize: false).must()[0]
+    b = archive(u, level: "-O0", sanitize: false).must()[0]
+    assert a.slice(from: t.build.len(), to: a.len()) == b.slice(from: u.build.len(), to: b.len())
+    assert publish.same_bytes(one: a, other: b)
+    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+
+    # Warm, nothing compiles (defect 435's shape): asked from a copy of the
+    # runtime whose sockets member would not compile, under the same key,
+    # the archive is served; a compile would have refused it.
+    copy = t.build + "/runtime-copy"
+    assert !process.mkdir_all(copy + "/parts").is_err()
+    assert !process.mkdir_all(copy + "/platform").is_err()
+
+    for path in runtime_key.made_of(t.runtime).must()
+        name = path.slice(from: t.runtime.len() + 1, to: path.len())
+        held: str @= read_file(path).must()
+
+        if name == "platform/hero_net.c"
+            held @ held + "int heroes_2295_not_compiled = ;\n"
+        assert !write_file(path: copy + "/" + name, text: held).is_err()
+
+    gone: toolchain.Toolchain @= t
+    gone.runtime @ copy
+    assert archive(gone, level: "-O0", sanitize: false).must()[0] == a
+    assert !process.remove_tree(copy).is_err()
+
+    # Only the archive, its seal and its record stand: nothing private.
+    for path in process.files_under(t.build).must()
+        assert !strings.holds(text: path, needle: ".tmp")
+
+    assert !process.remove_file(a).is_err()
+    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert publish.same_bytes(one: a, other: b)
+    assert !write_file(path: a, text: "not an archive\n").is_err()
+    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert publish.same_bytes(one: a, other: b)
+
+    for path in process.files_under(t.build).must()
+        if strings.ends_with(text: path, suffix: ".deps.txt")
+            assert !process.remove_file(path).is_err()
+
+    left = a.slice(from: 0, to: a.len() - 19) + ".4242-1.tmp"
+    assert !process.mkdir_all(left).is_err()
+    assert !write_file(path: left + "/hero_net.o", text: "a killed build's half\n").is_err()
+    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert publish.same_bytes(one: a, other: b)
+
+    for build in [t.build, u.build]
+        assert !process.remove_tree(build).is_err()
+
+# A runtime whose `runtime.c` names no member has no layer and puts nothing
+# on the line; one whose member clang refuses is clang's refusal, which a
+# build tells as the compiler's (`for_build`), never an archive with a member
+# left out.
+test "a runtime with no layer adds nothing to the link, and a member clang refuses is its refusal (feature 2295)"
+    t = fresh_toolchain("build/selftest-layer-runtimes")
+    copy = t.build + "/runtime"
+    assert !process.mkdir_all(copy + "/parts").is_err()
+    assert !process.mkdir_all(copy + "/platform").is_err()
+
+    for path in runtime_key.made_of(t.runtime).must()
+        name = path.slice(from: t.runtime.len() + 1, to: path.len())
+        assert !write_file(path: copy + "/" + name, text: read_file(path).must()).is_err()
+
+    # `runtime.c` with the lines naming the members left out: no layer.
+    named: [str] @= []
+    unnamed: [str] @= []
+
+    for line in deps.lines(read_file(t.runtime + "/runtime.c").must())
+        named @ named.push(line)
+
+        if !strings.starts_with(text: line, prefix: "#include \"platform/")
+            unnamed @ unnamed.push(line)
+
+    assert named.len() > unnamed.len()
+    assert !write_file(path: copy + "/runtime.c", text: unnamed.join("\n") + "\n").is_err()
+    bare: toolchain.Toolchain @= t
+    bare.runtime @ copy
+    assert archive(bare, level: "-O0", sanitize: false).must().len() == 0
+
+    # Named again, with a member whose arm disagrees with its header.
+    assert !write_file(path: copy + "/runtime.c", text: read_file(t.runtime + "/runtime.c").must()).is_err()
+    assert !write_file(path: copy + "/platform/hero_time.c", text: "#include \"hero_time.h\"\nint hero_time_monotonic_ns(void) { return 0; }\n").is_err()
+
+    match archive(bare, level: "-O0", sanitize: false)
+        .ok => assert false
+        .err e =>
+            assert e.code == "clang"
+            assert strings.holds(text: e.msg, needle: "conflicting types for 'hero_time_monotonic_ns'")
+
+    assert !process.remove_tree(t.build).is_err()
+
+# A member's name and a record's rows, cut where their bytes say.
+test "a member is named by its file, and a record's rows follow its digest (feature 2295)"
+    assert base_of("runtime/platform/hero_net.c") == "hero_net"
+    assert base_of("hero_time.c") == "hero_time"
+    assert rows_after_digest("0123456789abcdef\nrow one\nrow two") == "row one\nrow two"
+    assert rows_after_digest("0123456789abcdef") == ""
