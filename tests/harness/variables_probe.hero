@@ -9,8 +9,11 @@
 use shell
 use strings
 
-# The probe built under `scratch`, its path.
+# The probe built under `scratch`, its path. The folder is this function's to
+# make, as `shell.spawned` makes its own: a caller that removed it first left
+# the source nowhere to go.
 function built(scratch: str) -> str?
+    shell.mkdir_all(scratch)?
     source = scratch + "/variables-probe.c"
     binary = scratch + "/variables-probe" + shell.exe_suffix()
     write_file(path: source, text: SOURCE)?
