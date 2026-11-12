@@ -1,0 +1,47 @@
+# The program the net's own tests start where a case's compiler would start,
+# to read what its run was given (defect 2477): the folder it runs in, then
+# each variable its words name, its value between brackets or `unset`, so a
+# variable set empty is told from one unset. Built by clang, which every
+# platform the net runs on has, where a shell's `printf` stood until then and
+# Windows has no shell. Its lines end `\n` on Windows too, the stream set to
+# bytes first. Read by `case_setting.hero`'s tests and `suite_run.hero`'s.
+
+use shell
+use strings
+
+# The probe built under `scratch`, its path.
+function built(scratch: str) -> str?
+    source = scratch + "/variables-probe.c"
+    binary = scratch + "/variables-probe" + shell.exe_suffix()
+    write_file(path: source, text: SOURCE)?
+    made = shell.run(scratch: scratch, program: "clang", words: ["clang", "-D_CRT_SECURE_NO_WARNINGS", source, "-o", binary])?
+
+    if made.code != 0
+        return fail(code: "probe", msg: "clang did not build " + source + ": " + made.err)
+    return ok(binary)
+
+constant SOURCE: str
+    "#include <stdio.h>\n#include <stdlib.h>\n#ifdef _WIN32\n#include <direct.h>\n#include <fcntl.h>\n#include <io.h>\n#define getcwd _getcwd\n#else\n#include <unistd.h>\n#endif\n\nint main(int argc, char **argv) {\n#ifdef _WIN32\n    _setmode(_fileno(stdout), _O_BINARY);\n#endif\n    char here[4096];\n    printf(\"in %s\\n\", getcwd(here, sizeof here) != NULL ? here : \"?\");\n    for (int i = 1; i < argc; i += 1) {\n        const char *value = getenv(argv[i]);\n        if (value == NULL) printf(\"%s unset\\n\", argv[i]);\n        else printf(\"%s [%s]\\n\", argv[i], value);\n    }\n    return 0;\n}\n"
+
+## Tests
+
+# The probe tells a variable set empty from one unset, and a value holding a
+# space comes whole: the run given nothing else, on every platform.
+test "the probe prints its folder and each variable it is asked, set, empty or unset"
+    scratch = "build/selftest-variables-probe"
+    assert !shell.remove_tree(scratch).is_err()
+    probe = built(scratch).must()
+    given = [
+        shell.Variable(name: "HEROES_PROBE_EMPTY", value: "")
+        shell.Variable(name: "HEROES_PROBE_SPACE", value: "a b")
+    ]
+    said = shell.run_given(
+        scratch: scratch,
+        program: probe,
+        words: [probe, "HEROES_PROBE_EMPTY", "HEROES_PROBE_SPACE", "HEROES_PROBE_NONE"],
+        given: given
+    ).must()
+    lines = strings.split_on(text: said.out, byte: 10)
+    assert said.code == 0 && lines.len() == 5 && lines[0].slice(from: 0, to: 3) == "in "
+    assert lines.slice(from: 1, to: 5) == ["HEROES_PROBE_EMPTY []", "HEROES_PROBE_SPACE [a b]", "HEROES_PROBE_NONE unset", ""]
+    assert !shell.remove_tree(scratch).is_err()
