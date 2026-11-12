@@ -1,0 +1,193 @@
+# What `heroes doctor` asks the machine, and where it writes what the
+# answers say (design.md §3.5; panels 016, 080). Out of `cli/doctor.hero` on
+# 2026-11-12 (defect 2485), along a seam: that module says what each row
+# means, this one runs the programs a row asks and reads their words.
+#
+# **Every answer lands in a file and goes once read**, since a program this
+# compiler starts writes to a file or to nothing. The folder is the build's
+# cache, `build/`, made where it is not there; and where that folder may not
+# be written, a placed package's tree (`placed_files.cache_refused`, defect
+# 2479), the folder the system keeps for temporary files (`aside`), so the
+# rows are asked all the same and nothing is written in the tree. Until
+# defect 2485 the probes made `build/` there before the cache's row was
+# asked, and the row said *nothing was written* beside the empty folder.
+
+use cli/environment
+use cli/process
+use cli/publish
+use cli/read_back
+
+# Where the answers go where the build's cache may not be written: the
+# system's folder for temporary files, as its own variables name it. On
+# Windows `TMP`, `TEMP` or `USERPROFILE`, the order `GetTempPathW` checks
+# them in (Microsoft's page of that call, read 2026-11-12), and an error
+# where none is set rather than the Windows directory it falls to last;
+# elsewhere `TMPDIR`, or `/tmp` where it is unset. A value that is not UTF-8
+# is passed over as unset.
+function aside() -> str?
+    if process.exe_suffix() == ".exe"
+        for name in ["TMP", "TEMP", "USERPROFILE"]
+            value = environment.env(name).default("")
+
+            if value != ""
+                return ok(value)
+
+        return fail(
+            code: "unasked",
+            msg: "not asked: the build's cache may not be written here, and none of `TMP`, `TEMP` and `USERPROFILE` names a folder for what a probe answers"
+        )
+    value = environment.env("TMPDIR").default("")
+
+    if value != ""
+        return ok(value)
+    return ok("/tmp")
+
+# A row's words: what the program answered, the reason it was not asked
+# where it was not (`unasked`), or `otherwise` where it could not answer.
+function told(answer: str?, otherwise: str) -> str
+    match answer
+        .ok said => return said
+        .err e =>
+            if e.code == "unasked"
+                return e.msg
+            return otherwise
+
+# Whether `answer` is a probe's that was not asked, nothing given to write in.
+function unasked(answer: str?) -> bool
+    match answer
+        .ok    => return false
+        .err e => return e.code == "unasked"
+
+# The first line of what a program said, or absent when it could not
+# run.
+#
+# **It took a command LINE until M-argv-execution and takes a word list
+# now**, which is what lets it answer a question it could not answer
+# before: `system()` said 127 both for a program that is not installed
+# and for one that ran and exited 127, so "no clang on this machine"
+# and "clang is angry" were the same reply. `started` separates them,
+# and the caller is the one command whose whole job is to tell an
+# author which of the two they are looking at.
+#
+# stderr is discarded rather than shown: a `--version` probe that
+# complains is a probe that failed, and its complaint is noise on a
+# report about the machine. The answer lands under a private name
+# (`cli/publish.hero`) in `scratch`, removed once read: it was
+# `build/doctor-out.txt` for every doctor in the tree until 2026-09-30
+# (defect 134), so two at once could read each other's `uname` as a clang
+# version. A `scratch` that is an error is the reason nothing was asked.
+function capture(program: str, words: [str], scratch: str?) -> str?
+    dir = scratch?
+    out_path = publish.private_name(dir + "/heroes-doctor-out.txt")
+    process.mkdir_all(dir)?
+    ran = process.run(program: program, words: words, out: out_path, err: process.discard())
+    said = read_back.words(out_path)
+    publish.discard(out_path)
+
+    if !ran.started
+        return fail(code: "none", msg: "the program is not on this machine")
+
+    if ran.code != 0
+        return fail(code: "none", msg: "the command could not run")
+
+    if said.is_err()
+        return fail(code: "none", msg: "nothing was said")
+    return ok(first_line(said.must()))
+
+function first_line(text: str) -> str
+    run: [str] @= []
+
+    for ch in text.chars()
+        if ch == "\n"
+            break
+        run @ run.push(ch)
+
+    return trim_ends(run.join(""))
+
+function trim_ends(text: str) -> str
+    cs = text.chars()
+    head: i64 @= 0
+
+    while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
+        head @ head + 1
+
+    tail: i64 @= cs.len()
+
+    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
+        tail @ tail - 1
+
+    return cs.slice(from: head, to: tail).join("")
+
+# What the probe compiles: a header from the Windows SDK's C runtime, a call
+# into it, and an answer the program itself gives.
+constant LINK_PROBE: str
+    "#include <stdio.h>\nint main(void) { return fputs(\"linked\", stdout) < 0 ? 1 : 0; }\n"
+
+# `source` compiled, linked and run by this machine's clang, in a directory
+# of its own under `scratch` that goes whole afterwards; ok with what was
+# done, or what stopped it in clang's own words, its first line.
+function links_here(scratch: str?, source: str) -> str?
+    within = scratch?
+    dir = publish.private_name(within + "/heroes-doctor-link")
+    process.mkdir_all(dir)?
+    answer = linked_and_ran(dir: dir, source: source)
+    _ = process.remove_tree(dir).is_err()
+    return answer
+
+function linked_and_ran(dir: str, source: str) -> str?
+    unit = dir + "/probe.c"
+    binary = dir + "/probe" + process.exe_suffix()
+    said = dir + "/said.txt"
+
+    if write_file(path: unit, text: source).is_err()
+        return fail(code: "none", msg: "cannot write " + unit + process.because())
+    built = process.run(program: "clang", words: ["clang", unit, "-o", binary], out: process.discard(), err: said)
+
+    if !built.started
+        return fail(code: "none", msg: "clang is not on this machine, so nothing was linked")
+
+    if built.code != 0
+        return fail(code: "none", msg: "clang could not link a C program: " + first_said(path: said, code: built.code))
+    ran = process.run(program: binary, words: [binary], out: said, err: process.discard())
+    answered = read_file(said)
+
+    if !ran.started || ran.code != 0 || answered.is_err() || answered.must() != "linked"
+        return fail(code: "none", msg: "clang linked a C program, and it did not run to its end")
+    return ok("clang compiled, linked and ran a C program")
+
+# The first line clang wrote, or its exit code where it wrote none. Read as
+# `read_back.words` reads, so a linker's words in its own code page are quoted with
+# each byte that is not UTF-8 written by its value, never dropped (defect 337),
+# and a line clang on Windows ends `\r\n` carries no `\r` inside the quotes.
+function first_said(path: str, code: i64) -> str
+    said = read_back.words(path)
+
+    if said.is_err()
+        return "it exited " + code.to_str() + " and wrote nothing that could be read back"
+    line = first_line(said.must())
+
+    if line.len() == 0
+        return "it exited " + code.to_str() + " and said nothing"
+    return "`" + line + "`"
+
+## Tests
+
+# Defect 2485: a probe writes its answer where it is told and leaves no
+# folder it made but the one it was given; one given no place answers with
+# the reason, which its row says.
+test "a probe answers from the folder it is given, and one given none says why (defect 2485)"
+    dir = "build/selftest-doctor-asks-2485"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert capture(program: "clang", words: ["clang", "--version"], scratch: ok(dir)).must().len() > 0
+    assert process.files_under(dir).must().len() == 0
+    none: str? = fail(code: "unasked", msg: "not asked: no folder")
+    refused = capture(program: "clang", words: ["clang", "--version"], scratch: none)
+    assert unasked(refused) && !unasked(ok("x")) && !unasked(fail(code: "none", msg: "no"))
+    assert told(refused, otherwise: "not found") == "not asked: no folder"
+    assert told(fail(code: "none", msg: "the program is not on this machine"), otherwise: "not found") == "not found"
+    assert told(ok("arm64"), otherwise: "unknown") == "arm64"
+    assert links_here(scratch: none, source: LINK_PROBE).is_err()
+    assert !aside().is_err()
+    assert aside().must() != ""
+    assert !process.remove_tree(dir).is_err()
