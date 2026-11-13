@@ -1,0 +1,11 @@
+# Defect 2494's two modules, the second: it binds the door's take alone, and
+# watches nothing.
+extern "signal.h"
+    constant SIGUSR1: i32
+
+extern "hero_os.h"
+    function hero_signal_take(sig: i32) -> i64
+
+# The SIGUSR1 deliveries counted since the last take, wherever the watch was.
+function taken() -> i64
+    return hero_signal_take(sig: SIGUSR1)

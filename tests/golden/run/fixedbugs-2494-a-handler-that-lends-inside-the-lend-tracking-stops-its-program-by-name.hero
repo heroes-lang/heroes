@@ -1,0 +1,60 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R2): a Heroes
+# function a signal handler reaches that lends to C through `@`, run while
+# the thread it interrupts is inside the runtime's record of the buffers it
+# lends to C.
+# Symptom: a handler's `write(@buf)` landing between a give's depth and its
+# sum took the region at that depth, and the next lend there stopped the
+# program with a false message, *C wrote to a buffer lent to it after the
+# call it was lent to had returned* (panel 247's critic, the blind answers
+# `daaef5` and `ba6229`, on a reader thread blocked in `read(@buf)`). This
+# program ended so 20 runs of 20 on this Mac before the repair, each a false
+# message: 14 *C wrote to a local lent to it after the function that lent it
+# had returned*, 6 *a buffer lent to C was given back at an address its
+# region does not hold*, blaming C or this compiler.
+# Cause: the lend tracking had no bracket of its own, as the allocator had;
+# each entry point that reads or writes the thread's regions is now
+# bracketed by a flag of the thread's own, and a handler that finds it open
+# stops the program by name before the regions are touched twice. The
+# handler is the program's own C, which reaches the function through more
+# frames than the thunk's walk reads, the ground panel 247's R2 leaves to
+# the guards; the function lends a local and builds nothing, so the
+# allocator's guard cannot speak first. A thread of the program's own C
+# sends SIGUSR1 to `main` without pause, for at most 20 seconds, while
+# `main` lends a buffer to C.
+
+extern "fixedbugs-2494-a-thread-of-cs-own-sends-the-signal-to-a-lender.h"
+    function lender_install(called: (function(i32) -> ())) -> i32
+    function lender_touch(@cell: i32) -> i32
+    function lender_fill(@buf: [u8] counted_by n lent, n: u64) -> i32
+    function lender_start() -> i64
+    function lender_stop()
+
+# Lends a local to C, as a handler's `write(@b)` does, and builds nothing.
+function on_signal(sig: i32)
+    cell: i32 @= sig
+    _ = lender_touch(@cell)
+
+# A hundred thousand buffers lent to C and given back.
+function round() -> i64
+    buf: [u8] @= []
+    i @= 0
+
+    while i < 100_000
+        _ = lender_fill(@buf, n: 8)
+        i @ i + 1
+
+    return i
+
+function main()
+    _ = lender_install(called: on_signal)
+    print("starting a sender aimed at main")
+    started = lender_start()
+    total @= 0
+    r @= 0
+
+    while r < 50
+        total @ total + round()
+        r @ r + 1
+
+    lender_stop()
+    print("sender started ", started, ", lent ", total, " buffers, and no signal met the lend tracking")

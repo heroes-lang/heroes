@@ -452,6 +452,25 @@ int64_t hero_thread_join(int64_t handle);
  * A value rather than a form — `hero_word_bits`'s precedent. */
 int64_t hero_thread_limit(void);
 
+/* -- a signal counted, never handled in Heroes (panel 247's G) -------------
+ *
+ * No Heroes function is a signal handler, nor one a handler calls (panel 246's
+ * R4; a program that hands C one is stopped by name, `parts/sigguard.c`). To
+ * stop on Ctrl-C or SIGTERM, `hero_net_catch_stop` in `hero_net.h`; for any
+ * other signal, this door. `hero_signal_watch` installs the runtime's own C
+ * handler for the signal, which counts each delivery in one counter of the
+ * process and writes one byte down a pipe: 0, or -1 for a fault's signal,
+ * SIGKILL, SIGSTOP, SIGINT or SIGTERM, a number no signal has, or where the
+ * system refused. `hero_signal_take` gives the deliveries counted since its
+ * last call and sets the count back to 0: the kernel merges a signal sent
+ * while one is pending, so it counts deliveries, never sends. `hero_signal_fd`
+ * is readable once a watched signal has come, for a program that waits with
+ * `poll`; -1 before the first watch. Two modules read one count. On Windows
+ * the door watches nothing: -1, 0 and -1 (`parts/sigdoor.c` says why). */
+int64_t hero_signal_watch(int32_t);
+int64_t hero_signal_take(int32_t);
+int32_t hero_signal_fd(void);
+
 /* -- three the Heroes sources bind, here since defect 2256 (2026-10-29) ------
  *
  * A program binds nothing of `heroes_runtime.h`, the interface the C this

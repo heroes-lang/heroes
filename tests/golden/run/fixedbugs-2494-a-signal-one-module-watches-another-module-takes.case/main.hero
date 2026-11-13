@@ -1,0 +1,30 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's door G), its
+# two-module shape: one module watches SIGUSR1, another takes the count.
+# Symptom: a handler of C's in a header the program ships keeps its flag
+# `static`, so two modules that include the header hold two flags, and the
+# module asking read the one no handler set: SIGINT ignored 2 runs of 2 at
+# exit 0 (panel 247's spec-warden, `swp6`).
+# Cause: the runtime's door is one counter per process, in the runtime's one
+# translation unit, so the module that takes reads what the module that
+# watched made count. The program sends itself SIGUSR1 three times.
+use counter
+
+extern "unistd.h"
+    function getpid() -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+    function kill(pid: i32, sig: i32) -> i32
+
+extern "hero_os.h"
+    function hero_signal_watch(sig: i32) -> i64
+
+function main()
+    print("watching SIGUSR1 here: ", hero_signal_watch(sig: SIGUSR1))
+    sent @= 0
+
+    while sent < 3
+        _ = kill(pid: getpid(), sig: SIGUSR1)
+        sent @ sent + 1
+
+    print("sent ", sent, ", taken in the other module ", counter.taken())

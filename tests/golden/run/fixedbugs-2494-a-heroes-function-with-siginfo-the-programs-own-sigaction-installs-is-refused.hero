@@ -1,0 +1,24 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function installed with `SA_SIGINFO`, the handler's second shape, which
+# the system calls with the signal's record and the interrupted context.
+# Symptom: it ran inside the signal, as every other shape of handler did:
+# `the handler ran for signal 30` at exit 0 on this Mac.
+# Cause: the delivery's address is learned for both shapes of handler, a
+# plain one and an `SA_SIGINFO` one, and the thunk's first line compares its
+# own return address with each, so this shape stops the program by name too.
+
+extern "fixedbugs-2494-a-heroes-function-with-siginfo-the-programs-own-sigaction-installs-is-refused.h"
+    function info_install(sig: i32, handler: (function(sig: i32, info: ptr, context: ptr) -> ())) -> i32
+    function info_raise(sig: i32) -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function on_info(sig: i32, info: ptr, context: ptr)
+    _ = info
+    _ = context
+    print("the handler ran for signal ", sig)
+
+function main()
+    print("installed: ", info_install(sig: SIGUSR1, handler: on_info))
+    print("raised: ", info_raise(sig: SIGUSR1))

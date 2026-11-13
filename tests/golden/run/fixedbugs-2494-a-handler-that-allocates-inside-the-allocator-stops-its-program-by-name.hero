@@ -1,5 +1,5 @@
 # Fixed in part 2026-11-13, defect 2494, lane b34-signals: a Heroes function
-# given to C's `signal` that builds a value, run while the thread it
+# a signal handler reaches that builds a value, run while the thread it
 # interrupts is inside the C library's allocator.
 # Symptom: the program died of a heap the allocator itself had corrupted,
 # 5 runs of 5 on this Mac (3 killed by SIGKILL with nothing said, 2 by SIGTRAP,
@@ -9,10 +9,15 @@
 # Cause: the handler entered the allocator again from inside it; each call the
 # runtime makes to the allocator is now bracketed by a flag of the thread's
 # own, and a handler that finds it open stops the program by name before the
-# allocator is entered twice. The rest of the defect, Heroes code in a handler
-# at all, waits for panel 247's route. Here a thread of the program's own C
-# sends SIGUSR1 to `main` without pause, for at most 20 seconds, while `main`
-# builds and drops small arrays, so a signal lands inside the allocator early.
+# allocator is entered twice.
+# Rewritten 2026-11-13, lane b35-signals (panel 247's R2 and R8): since R1 a
+# Heroes function given to `signal` is refused at its first signal, before
+# this guard is reached, so the handler here is the program's own C, which
+# reaches the function through more frames than the thunk's walk reads, the
+# ground R2 leaves to this guard; its words carry R9's one remedy. Here a
+# thread of the program's own C sends SIGUSR1 to `main` without pause, for at
+# most 20 seconds, while `main` builds and drops small arrays, so a signal
+# lands inside the allocator early.
 # Neither side formats a number: the C library's `snprintf`, which an
 # f-string's `{n}` calls, holds a lock of its own on Darwin, and a handler
 # taking it again on the thread that holds it is killed by that library with
@@ -21,14 +26,12 @@
 # `main` prints its one line before the sender starts, for stdio's own reason.
 
 extern "fixedbugs-2494-a-thread-of-cs-own-sends-the-signal.h"
+    function storm_install(called: (function(i32) -> ())) -> i32
     function storm_start() -> i64
     function storm_stop()
 
-extern "signal.h"
-    constant SIGUSR1: i32
-    function signal(sig: i32, handler: (function(i32) -> ())) -> ptr
-
-# Builds an array and drops it, as any handler that keeps a value does.
+# Builds an array and drops it, as any function a handler calls that keeps a
+# value does.
 function on_signal(sig: i32)
     seen = [sig, sig, sig]
     _ = seen.len()
@@ -45,7 +48,7 @@ function round(r: i64) -> i64
     return rows.len()
 
 function main()
-    _ = signal(SIGUSR1, on_signal)
+    _ = storm_install(called: on_signal)
     print("starting a sender aimed at main")
     started = storm_start()
     total @= 0

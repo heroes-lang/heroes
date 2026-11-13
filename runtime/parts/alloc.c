@@ -514,66 +514,39 @@ void hero_runtime_check_leaks(void) {
  * compiler that knows `malloc` touches only memory of its own could otherwise
  * drop it as a store the next one overwrites.
  *
- * WHAT IT DOES NOT CLOSE, said, and defect 2494 stays open on it for panel
- * 247's route: a handler that interrupts C's own allocator inside a C call,
- * stdio's buffer among them; a handler's `print` while the code it interrupted
- * prints; on Darwin the C library's locale lock, which `snprintf` takes for
- * the number in an f-string, so a handler formatting a number while the code
- * it interrupted formats one is killed by that library with nothing said
- * (`Trying to recursively lock an os_unfair_lock`, 12 runs of 200 of the
- * storm's strings with this in place; Linux's `snprintf` takes no lock, 0 of
- * 50); and this runtime's handle and lease locks, which a handler using
- * handles would wait for on the thread holding them. */
-/* `sig_atomic_t`, `raise`, `signal`; and `write`, `errno` and
- * `pthread_sigmask` on POSIX, `_write` on Windows, for the stop below: named
- * here, though earlier parts of this one translation unit read them first. */
+ * WHAT IT DOES NOT CLOSE, said: a handler that interrupts C's own allocator
+ * inside a C call, stdio's buffer among them; a handler's `print` while the
+ * code it interrupted prints; on Darwin the C library's locale lock, which
+ * `snprintf` takes for the number in an f-string, so a handler formatting a
+ * number while the code it interrupted formats one is killed by that library
+ * with nothing said (`Trying to recursively lock an os_unfair_lock`, 12 runs
+ * of 200 of the storm's strings with this in place; Linux's `snprintf` takes
+ * no lock, 0 of 50); and this runtime's handle and lease locks, which a
+ * handler using handles would wait for on the thread holding them. Since
+ * panel 247's R1 a Heroes function a signal reaches is refused at its thunk's
+ * first line before any of those (`parts/sigguard.c`), and this guard is the
+ * backstop beneath it (the sitting's R2): for a handler's C whose frames keep
+ * no record, one deeper than that file's walk reads, and Windows. The buffers
+ * lent to C have a bracket of their own (`parts/lend.c`). */
+/* `sig_atomic_t`: named here, though earlier parts of this one translation
+ * unit read it first. */
 #include <signal.h>
-#if defined(_WIN32)
-#include <io.h>
-#else
-#include <errno.h>
-#include <pthread.h>
-#include <unistd.h>
-#endif
 
 static _Thread_local volatile sig_atomic_t hero_alloc_inside = 0;
 
-/* The stop, async-signal-safe from its first call to its last: one fixed line
- * by `write(2)`, never `fprintf` or anything that takes a lock; SIGABRT put
- * back to its default and let through, then raised, never `abort()`, whose
- * flush of stdio is not safe here; `_exit` if that ever returns. */
+/* The stop, through the one every refusal of a signal's re-entrance takes
+ * (`parts/sigguard.c`), async-signal-safe from its first call to its last and
+ * latched once per process; its last words are the one remedy (panel 247's
+ * R9). The first clause names both ways in, since the thunk's question does
+ * not reach every shape the second names. */
 static _Noreturn void hero_alloc_reentered(void) {
-    static const char said[] =
+    static const char *const said[] = {
         "panic: a signal handler used this runtime's allocator while the code it interrupted was "
         "inside it, which would corrupt memory: a Heroes function given to C as a signal handler, "
-        "or called from one, does so whenever it builds or drops a value. To stop on Ctrl-C or "
-        "SIGTERM, call `hero_net_catch_stop` from `hero_net.h`, and the platform layer's waiting "
-        "calls end with `HERO_NET_STOPPED`; answer any other signal with a handler written in C "
-        "in the program's own header, never with a Heroes function\n";
-    const char *at = said;
-    size_t left = sizeof said - 1;
-
-    hero_runtime_spoke = 1;
-    while (left > 0) {
-#if defined(_WIN32)
-        int put = _write(2, at, (unsigned int)left);
-#else
-        ssize_t put = write(2, at, left);
-        if (put < 0 && errno == EINTR) continue;
-#endif
-        if (put <= 0) break;
-        at += put;
-        left -= (size_t)put;
-    }
-    signal(SIGABRT, SIG_DFL);
-#if !defined(_WIN32)
-    sigset_t abort_only;
-    sigemptyset(&abort_only);
-    sigaddset(&abort_only, SIGABRT);
-    pthread_sigmask(SIG_UNBLOCK, &abort_only, NULL);
-#endif
-    raise(SIGABRT);
-    _exit(134);
+        "or called from one, does so whenever it builds or drops a value. ",
+        HERO_SIGNAL_REMEDY,
+    };
+    hero_signal_stop(said, sizeof said / sizeof said[0]);
 }
 
 /* The bracket, inlined at every level and its flag's address taken once:

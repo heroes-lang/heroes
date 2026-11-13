@@ -153,6 +153,18 @@
  * from hero_args_set, in os.c below. */
 #include "parts/stack.c"
 
+/* No Heroes code inside a signal handler (panel 247's R1, defect 2494): the
+ * question every thunk asks first, the delivery's address it is asked against,
+ * and the one stop every refusal of a signal's re-entrance ends through, which
+ * `alloc.c` and `lend.c` below call. Needs only panic.c; before thread.c, whose
+ * claim reads the thread's stack for it. */
+#include "parts/sigguard.c"
+
+/* The runtime's door for a signal other than SIGINT and SIGTERM (panel 247's
+ * G): its own C handler counts each delivery, and the program takes the count
+ * between its steps. Needs nothing; declared in `hero_os.h`. */
+#include "parts/sigdoor.c"
+
 /* Which thread this program was started on, and the refusal a callback entry
  * makes when C calls back from another one (panel 111 R9). Needs only panic.c;
  * claimed once from hero_args_set, in os.c below, for stack.c's own reason. */

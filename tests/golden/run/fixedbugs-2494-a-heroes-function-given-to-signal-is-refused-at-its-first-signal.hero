@@ -1,0 +1,31 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function given to C's `signal`, run by the system inside a signal.
+# Symptom: it ran there, `the handler ran for signal 30` and `never reached`
+# at exit 0 on this Mac, where a handler that reaches C the signal
+# interrupted half way dies with it: one calling `localeconv` while `main`
+# formatted numbers was killed by Darwin's C library with nothing said, 10
+# runs of 10 (panel 247's `clocale`), and one building a string while `main`
+# built strings died of a heap given back twice (the issue's `storm.hero`).
+# Cause: nothing asked whether a signal's delivery called the function. The
+# first line of the thunk C is handed now compares the thunk's own return
+# address with the delivery's, learned once as the program first hands C a
+# function, and stops the program by name, saying what to write instead.
+# Here the program sends itself SIGUSR1 once, so the refusal is the first
+# signal's and the handler's line is never printed.
+
+extern "unistd.h"
+    function getpid() -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+    function signal(sig: i32, handler: (function(i32) -> ())) -> ptr
+    function kill(pid: i32, sig: i32) -> i32
+
+function on_signal(sig: i32)
+    print("the handler ran for signal ", sig)
+
+function main()
+    _ = signal(SIGUSR1, on_signal)
+    print("sending SIGUSR1 to this process")
+    _ = kill(pid: getpid(), sig: SIGUSR1)
+    print("never reached")
