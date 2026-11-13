@@ -109,6 +109,134 @@ static void waiter_join(waiter_thread t) {
 }
 #endif
 
+/* TWO CALLS WAITING ON ONE SOCKET AT ONCE, each with its own answer: the
+ * shape beside the three above (lane b34-layer, 2026-11-13), where the close
+ * must end both, and the last one out closes the descriptor. `which`: 1 an
+ * accept, 0 a recv, 2 a send waiting for room. */
+typedef struct {
+    int which;
+    int64_t answer;
+    int64_t kind;
+} pair_waiter;
+
+static pair_waiter pair[2];
+static _Atomic int pair_done;
+
+static void pair_wait(pair_waiter *w) {
+    if (w->which == 1) {
+        hero_net_socket *got = hero_net_accept(waiter_on);
+
+        w->answer = got == NULL ? -1 : 1;
+        w->kind = hero_net_last_error();
+        if (got != NULL) hero_net_close(got);
+    } else if (w->which == 0) {
+        unsigned char buffer[16];
+
+        w->answer = hero_net_recv(waiter_on, buffer, sizeof buffer);
+        w->kind = hero_net_last_error();
+    } else {
+        int64_t n = 0;
+
+        while ((n = hero_net_send(waiter_on, waiter_bytes, sizeof waiter_bytes)) > 0) {
+        }
+        w->answer = n;
+        w->kind = hero_net_last_error();
+    }
+    atomic_fetch_add(&pair_done, 1);
+}
+
+#if defined(_WIN32)
+static DWORD WINAPI pair_body(LPVOID w) { pair_wait((pair_waiter *)w); return 0; }
+
+static int pair_start(waiter_thread *t, pair_waiter *w) {
+    *t = CreateThread(NULL, 0, pair_body, w, 0, NULL);
+    return *t != NULL;
+}
+#else
+static void *pair_body(void *w) { pair_wait((pair_waiter *)w); return NULL; }
+
+static int pair_start(waiter_thread *t, pair_waiter *w) {
+    return pthread_create(t, NULL, pair_body, w) == 0;
+}
+#endif
+
+/* Whether both finished within `ms`. */
+static int pair_finished(int ms) {
+    for (int waited = 0; waited < ms && atomic_load(&pair_done) < 2; waited += 10) {
+        waiter_pause(10);
+    }
+    return atomic_load(&pair_done) >= 2;
+}
+
+/* Both waiters started on `on`; 1 where each failed `HERO_NET_NOT_OPEN`
+ * after `on` was closed. Where one still waits after 3 s, `free_them` is
+ * called so both return and the program ends either way. */
+static int64_t pair_closed(hero_net_socket *on, int first, int second, int pause_ms, void (*free_them)(void)) {
+    waiter_thread t[2];
+
+    waiter_on = on;
+    pair[0] = (pair_waiter){ first, 0, 0 };
+    pair[1] = (pair_waiter){ second, 0, 0 };
+    atomic_store(&pair_done, 0);
+    if (!pair_start(&t[0], &pair[0])) return -2;
+    if (!pair_start(&t[1], &pair[1])) {
+        hero_net_close(on);
+        waiter_join(t[0]);
+        return -2;
+    }
+    waiter_pause(pause_ms);
+    int64_t step = hero_net_close(on) == 0 ? 1 : -3;
+
+    if (!pair_finished(3000)) {
+        free_them();
+        step = -4;
+    }
+    waiter_join(t[0]);
+    waiter_join(t[1]);
+    for (int i = 0; i < 2 && step == 1; i += 1) {
+        if (pair[i].answer != -1 || pair[i].kind != HERO_NET_NOT_OPEN) step = -5;
+    }
+    return step;
+}
+
+static int64_t pair_port;
+static hero_net_socket *pair_peer;
+
+/* Two connections, one for each accept still waiting. */
+static void pair_connect_twice(void) {
+    for (int i = 0; i < 2; i += 1) {
+        hero_net_socket *c = hero_net_connect("127.0.0.1", pair_port);
+
+        if (c != NULL) hero_net_close(c);
+    }
+}
+
+/* The peer closed, which ends a recv and a send still waiting. */
+static void pair_close_peer(void) {
+    hero_net_close(pair_peer);
+    pair_peer = NULL;
+}
+
+static inline int64_t close_ends_two_waits(void) {
+    hero_net_socket *listener = hero_net_listen("127.0.0.1", 0);
+
+    if (listener == NULL) return -1;
+    pair_port = hero_net_port(listener);
+    int64_t accepts = pair_closed(listener, 1, 1, 200, pair_connect_twice);
+
+    if (accepts != 1) return accepts;
+    listener = hero_net_listen("127.0.0.1", 0);
+    hero_net_socket *client = listener ? hero_net_connect("127.0.0.1", hero_net_port(listener)) : NULL;
+
+    pair_peer = client ? hero_net_accept(listener) : NULL;
+    int64_t moves = pair_peer == NULL ? -6 : pair_closed(client, 0, 2, 500, pair_close_peer);
+
+    if (moves == -6 && client != NULL) hero_net_close(client);
+    if (pair_peer != NULL) hero_net_close(pair_peer);
+    if (listener != NULL) hero_net_close(listener);
+    return moves == 1 ? 1 : moves - 10;
+}
+
 /* An `accept` waiting on a listener, then the listener closed. */
 static inline int64_t close_ends_accept(void) {
     waiter_thread t;
