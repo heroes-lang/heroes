@@ -1,0 +1,4 @@
+index = "file://../../packages"
+
+[dependencies.core]
+path = "../../packages/core/0.3.0/files"

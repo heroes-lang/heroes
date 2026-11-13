@@ -37,6 +37,14 @@ function card_text(face: package_face.Face, codes: [package_codes.Code]) -> str
         "# " + face.binding + ": `use <" + package_rules.PACKAGE + ">/" + face.path + "`\n\n" + face.said + "\n"
     ]
 
+    if face.bound.len() > 0
+        lines: [str] @= []
+
+        for one in face.bound
+            lines @ lines.push(bound_line(binding: face.binding, one: one))
+
+        out @ out.push("\n## From `" + face.header + "`\n\n" + lines.join("\n") + "\n")
+
     if face.shapes.len() + face.choices.len() > 0
         lines: [str] @= []
 
@@ -77,6 +85,31 @@ function ended(text: str) -> str
     if core_strings.has_suffix(s: text, suffix: ".")
         return text
     return text + "."
+
+# A floor's member as its card writes it: a record as the group declares it, a
+# handle where it holds no field, then the name a program writes it by; a run
+# of constants by the names a program writes and their type. Each ends with its
+# doc's first sentence.
+function bound_line(binding: str, one: package_face.Bound) -> str
+    match one
+        .bound_record r =>
+            written = "`" + binding + "." + r.name + "`"
+
+            if r.fields.len() == 0
+                return "- `" + r.written + "`, a handle, written " + written + ": " + r.said
+            named: [str] @= []
+
+            for field in r.fields
+                named @ named.push("`" + field.name + ": " + field.ty + "`")
+
+            return "- `" + r.written + "` with " + listed(named) + ", written " + written + ": " + r.said
+        .bound_constants c =>
+            named: [str] @= []
+
+            for name in c.names
+                named @ named.push("`" + binding + "." + name + "`")
+
+            return "- " + listed(named) + ", each `" + c.ty + "`: " + c.said
 
 # A record's line: `` `record Halves` with `before: str` and `after: str`: ``
 # and its doc's first sentence.
@@ -190,10 +223,21 @@ function proof_source(face: package_face.Face, card: str) -> str
     for one in face.constants
         main @ main.push("    _ = " + face.binding + "." + one.name + "\n")
 
-    if face.constants.len() == 0
+    # And each constant of a floor's group, as the card names it.
+    named_bound: i64 @= 0
+    local: [str] @= []
+
+    for one in face.bound
+        match one
+            .bound_record r => local @ local.push(r.name)
+            .bound_constants c =>
+                for name in c.names
+                    main @ main.push("    _ = " + face.binding + "." + name + "\n")
+                    named_bound @ named_bound + 1
+
+    if face.constants.len() + named_bound == 0
         main @ main.push("    _ = 0\n")
     out @ out.push(main.join(""))
-    local: [str] @= []
 
     for shape in face.shapes
         local @ local.push(shape.name)
@@ -394,3 +438,15 @@ test "a variant's line builds each case, and its proof builds each as the line d
     assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"
     assert case_written(face.choices[0].cases[1]) == ".number(value: f64)"
     assert choice_line(face.choices[0]) == "`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value."
+
+# A floor's card (`examples/packages/README.md` § 4.1): what its group gives a
+# program to name under the header's own heading, each as the program writes
+# it, its handle used by a function's signature through the binding in the
+# proof, and every constant of the group named there.
+test "a floor's card names its group's records and constants, and its proof names each"
+    text = "# The layer, bound thin.\n\nextern \"hero_net.h\"\n    # A socket the layer holds.\n    record Socket tag hero_net_socket\n    # The kinds.\n    constant A: i64\n    constant B: i64\n    # Two numbers.\n    record Pair tag pair\n        x: i64\n        y: i64\n    function hero_net_port(s: Socket) -> i64\n\n# The port, or -1.\nfunction port_of(s: Socket) -> i64\n    return hero_net_port(s)\n"
+    face = package_face.face_of(path: "net/hero_net", text: text)
+    assert face.refused.len() == 0
+    nothing: [package_codes.Code] = []
+    assert card_text(face: face, codes: nothing) == "# hero_net: `use <core>/net/hero_net`\n\nThe layer, bound thin.\n\n## From `hero_net.h`\n\n- `record Socket tag hero_net_socket`, a handle, written `hero_net.Socket`: A socket the layer holds.\n- `hero_net.A` and `hero_net.B`, each `i64`: The kinds.\n- `record Pair tag pair` with `x: i64` and `y: i64`, written `hero_net.Pair`: Two numbers.\n\n## Functions\n\n- `port_of(s: Socket) -> i64`, called `hero_net.port_of(s)`: The port, or -1.\n"
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/net/hero_net\n\nfunction main()\n    _ = hero_net.A\n    _ = hero_net.B\n\nfunction call_port_of(s: hero_net.Socket) -> i64\n    return hero_net.port_of(s)\n"

@@ -52,6 +52,18 @@ function codes_of(face: package_face.Face, modules: [str]) -> [Code]
                     values @ values.push(found.must().value)
                 via[found.must().value] @ named
 
+    # A code a private module writes as text is the face's constant that holds
+    # it: the module cannot name the face's constants, since the face `use`s it
+    # and a module cycle is refused (spec § 1), so it writes the code itself and
+    # the face declares it (`net/internal/failure.hero` beside `net.STOPPED`,
+    # 2026-11-13). The constant then names a code a `fail` writes, and the card
+    # says it beside the code.
+    for code in values
+        if via[code].must().len() == 0
+            for one in face.constants
+                if one.value == code
+                    via[code] @ one.name
+
     out: [Code] @= []
 
     for code in values.sort()
@@ -210,3 +222,20 @@ test "a code a `str` constant of the face names is listed with it, meant by its 
     assert codes[1].code == "not_a_number" && codes[1].through == "NOT_A_NUMBER"
     assert codes[1].meaning == "What `atoi` fails with where a text is no number."
     assert codes[2].code == "" && codes[2].through == "elsewhere.CODE"
+
+# A private module cannot name its face's constants, which would be a module
+# cycle, so it writes the code as text (`net/internal/failure.hero`): the face's
+# constant holding that text is the code's, and its doc is what it means.
+test "a code a private module writes as text is the face's constant that holds it"
+    face = package_face.face_of(
+        path: "net",
+        text: "# Sockets.\n\n# What a call fails with once a stop is asked.\nconstant STOPPED: str\n    \"stopped\"\n\n# Accepts.\nfunction accept() -> i64?\n    return failure.failed()\n"
+    )
+    modules = [
+        "function accept() -> i64?\n    return failure.failed()\n"
+        "function failed<A>() -> A?\n    return fail(code: \"stopped\", msg: \"m\")\n"
+    ]
+    codes = codes_of(face: face, modules: modules)
+    assert codes.len() == 1
+    assert codes[0].code == "stopped" && codes[0].through == "STOPPED"
+    assert codes[0].meaning == "What a call fails with once a stop is asked."

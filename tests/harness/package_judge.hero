@@ -8,7 +8,9 @@
 #   by construction and never written by hand (`examples/packages/README.md` § 8.2);
 # - it spends at most `MOST` tokens by `heroes measure`'s `maximum`, and the
 #   face cards together no more than the specification's own `maximum` (panel
-#   234's R5, `examples/packages/README.md` § 8.3);
+#   234's R5, `examples/packages/README.md` § 8.3), a floor's card, a module
+#   whose `extern` group binds a header (§ 4.1), counting apart, since only a
+#   program that reaches the floor reads it;
 # - every call it writes compiles as written: a program calling each function
 #   as the card does is built by the compiler under judgement.
 #
@@ -40,14 +42,16 @@ constant WRITE: str
     "heroes run tests/harness/package_cards.hero -- write"
 
 # A card as `write` writes it: its face's path under `core/`, the card's own
-# path, its text, the program that proves its calls, and what stops it being
-# written.
+# path, its text, the program that proves its calls, what stops it being
+# written, and whether it is a floor's, which counts apart from the faces'
+# total.
 record Card
     face: str
     at: str
     text: str
     proof: str
     refused: [str]
+    floor: bool
 
 # What `write` did: the cards it wrote, and what the tree as written still
 # holds wrong.
@@ -148,7 +152,7 @@ function cards_of(root: str, rels: [str]) -> [Card]?
 
         at = root + "/" + face + ".md"
         out @ out.push(
-            Card(face: face, at: at, text: package_card.card_text(face: read_face, codes: codes), proof: package_card.proof_source(face: read_face, card: at), refused: refused)
+            Card(face: face, at: at, text: package_card.card_text(face: read_face, codes: codes), proof: package_card.proof_source(face: read_face, card: at), refused: refused, floor: read_face.header.len() > 0)
         )
 
     return ok(out)
@@ -184,8 +188,10 @@ function judged(scratch: str, compiler: str, root: str) -> [str]?
                 "    " + card.at + " is not what `write` writes from " + root + "/" + card.face + ".hero: run `" + WRITE + "`, and commit the card with its face"
             )
         cost = measured(scratch: scratch, compiler: compiler, card: card)?
-        spent @ spent + cost
-        counted @ counted + 1
+
+        if !card.floor
+            spent @ spent + cost
+            counted @ counted + 1
 
         if cost > MOST
             found @ found.push(

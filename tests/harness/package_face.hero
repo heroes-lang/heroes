@@ -9,14 +9,24 @@
 # (measured 2026-11-06: a signature written over two lines comes back as one).
 # A signature that does not close on its line is refused rather than guessed.
 #
-# **What the form has no line for is refused, by name, never left out.** An
-# `extern` group and a constant that names no code are each a name a program
-# writes, so a card that left them out would be a card that lies by omission;
-# the refusal says what to teach this module first. A `variant` was refused so
-# until 2026-11-10, when `encoding/json`'s `Value` was the first a face
-# declared, and its card line was taught (`Choice`). A `str`
-# constant a `fail` writes its code through is a code the package adds (the
-# conventions' § 3.3), and the card lists it among the codes.
+# **What the form has no line for is refused, by name, never left out.** A
+# constant that names no code is a name a program writes, so a card that left
+# it out would be a card that lies by omission; the refusal says what to teach
+# this module first. A `variant` was refused so until 2026-11-10, when
+# `encoding/json`'s `Value` was the first a face declared, and its card line
+# was taught (`Choice`). A `str` constant a `fail` writes its code through is a
+# code the package adds (the conventions' § 3.3), and the card lists it among
+# the codes.
+#
+# **An `extern` group was refused so until 2026-11-13**, when `net`'s floor,
+# `net/hero_net.hero`, was the first module over C a package published
+# (`examples/packages/README.md` § 4.1, M-core-packages step 16). A floor's
+# card is taught (`Bound`): the group's header, each record of the header and
+# each run of its constants, which a program names through the module, and
+# none of its functions, which a program cannot call: an `extern` is called in
+# its own module alone (`extern_across_modules`), through the module's function
+# of Heroes that the card lists as it lists every function. A module holds one
+# group on a card; a second is refused by name.
 
 use <core>/strings as core_strings
 
@@ -71,14 +81,31 @@ record Named
     value: str
     said: str
 
+# What a floor's group gives a program to name through the module: a record of
+# the header, a handle where it has a `tag` and no field, or a run of the
+# header's constants written one under the other, each run under its doc.
+variant Bound
+    bound_record
+        name: str
+        written: str
+        fields: [Slot]
+        said: str
+    bound_constants
+        names: [str]
+        ty: str
+        said: str
+
 # What a face is to its card: its path under the package's root, what
-# `use <core>/<path>` binds, its module doc's first sentence, its records,
-# variants, functions and `str` constants, its `use` lines, and what the
-# card's form cannot say of it.
+# `use <core>/<path>` binds, its module doc's first sentence, the header its
+# `extern` group names ("" for a face with none) and what the group gives a
+# program to name, its records, variants, functions and `str` constants, its
+# `use` lines, and what the card's form cannot say of it.
 record Face
     path: str
     binding: str
     said: str
+    header: str
+    bound: [Bound]
     shapes: [Shape]
     choices: [Choice]
     callables: [Callable]
@@ -99,6 +126,8 @@ function face_of(path: str, text: str) -> Face
     callables: [Callable] @= []
     constants: [Named] @= []
     uses: [str] @= []
+    header: str @= ""
+    bound: [Bound] @= []
     at: i64 @= 0
 
     for row in rows
@@ -127,10 +156,27 @@ function face_of(path: str, text: str) -> Face
                     Named(name: module_docs.name_after(text: row, start: 9), value: value.must(), said: first_said(module_docs.doc_above(rows: rows, at: at)))
                 )
         else if core_strings.has_prefix(s: row, prefix: "extern ")
-            refused @ refused.push(
-                "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has no line for an extern yet: teach `package_face.hero` one before a face declares it"
-            )
+            if header.len() > 0
+                refused @ refused.push(
+                    "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "` is a second group, and a card names one group's header: teach `package_face.hero` another before a floor declares two"
+                )
+            else
+                header @ quoted_in(row)
+                bound @ bound_in(rows: rows, at: at)
         at @ at + 1
+
+    for one in bound
+        match one
+            .bound_record r =>
+                if r.said.len() == 0
+                    refused @ refused.push(
+                        "the group's `record " + r.name + "` has no doc, whose first sentence its card line writes"
+                    )
+            .bound_constants c =>
+                if c.said.len() == 0
+                    refused @ refused.push(
+                        "the group's `constant " + c.names[0] + "` has no doc, whose first sentence its card line writes"
+                    )
 
     for shape in shapes
         if shape.said.len() == 0
@@ -150,6 +196,8 @@ function face_of(path: str, text: str) -> Face
         path: path,
         binding: binding_of(path),
         said: said,
+        header: header,
+        bound: bound,
         shapes: shapes,
         choices: choices,
         callables: callables,
@@ -157,6 +205,82 @@ function face_of(path: str, text: str) -> Face
         uses: uses,
         refused: refused
     )
+
+# The text between the first two double quotes of `row`, the header an
+# `extern` line names: `extern "hero_net.h"` gives `hero_net.h`.
+function quoted_in(row: str) -> str
+    parts = strings.split_on(text: row, byte: '"')
+
+    if parts.len() < 3
+        return ""
+    return parts[1]
+
+# What the group whose line is row `at` gives a program to name: each record,
+# with the fields indented under it, and each run of constants written one
+# under the other with no comment between, each with the doc directly above it
+# inside the group. Its functions are left out, a program calling them through
+# the module's own functions of Heroes.
+function bound_in(rows: [str], at: i64) -> [Bound]
+    out: [Bound] @= []
+    run: [str] @= []
+    run_ty: str @= ""
+    run_said: str @= ""
+    below: i64 @= at + 1
+
+    while below < rows.len() && core_strings.has_prefix(s: rows[below], prefix: "    ")
+        row = strings.trimmed(rows[below])
+        declared = core_strings.has_prefix(s: row, prefix: "constant ")
+
+        # A run of constants ends at any row that is not one of them.
+        if !declared && run.len() > 0
+            out @ out.push(.bound_constants(names: run, ty: run_ty, said: run_said))
+            run @ []
+
+        if declared
+            name = module_docs.name_after(text: row, start: 9)
+            ty = strings.trimmed(row.slice(from: 9 + name.len() + 1, to: row.len()))
+
+            if run.len() == 0 || ty != run_ty
+                if run.len() > 0
+                    out @ out.push(.bound_constants(names: run, ty: run_ty, said: run_said))
+                run @ []
+                run_ty @ ty
+                run_said @ first_said(member_doc(rows: rows, at: below))
+            run @ run.push(name)
+        else if core_strings.has_prefix(s: row, prefix: "record ")
+            fields: [Slot] @= []
+            under: i64 @= below + 1
+
+            while under < rows.len() && core_strings.has_prefix(s: rows[under], prefix: "        ")
+                inner = strings.trimmed(rows[under])
+
+                if !core_strings.has_prefix(s: inner, prefix: "#")
+                    fields @ fields.push(slot_of(inner))
+                under @ under + 1
+
+            out @ out.push(
+                .bound_record(name: module_docs.name_after(text: row, start: 7), written: row, fields: fields, said: first_said(member_doc(rows: rows, at: below)))
+            )
+        below @ below + 1
+
+    if run.len() > 0
+        out @ out.push(.bound_constants(names: run, ty: run_ty, said: run_said))
+    return out
+
+# The doc of the group's member at row `at`: the comment rows directly above it,
+# indented as it is.
+function member_doc(rows: [str], at: i64) -> [str]
+    top: i64 @= at
+
+    while top > 0 && core_strings.has_prefix(s: rows[top - 1], prefix: "    #") && !core_strings.has_prefix(s: rows[top - 1], prefix: "    ##")
+        top @ top - 1
+
+    out: [str] @= []
+
+    for row in rows.slice(from: top, to: at)
+        out @ out.push(module_docs.uncommented(strings.trimmed(row)))
+
+    return out
 
 # What `use <core>/<path>` binds: the path's last part (spec § 1).
 function binding_of(path: str) -> str
@@ -357,19 +481,42 @@ test "a parameter's type keeps its brackets and its commas whole"
 test "what the form has no line for is refused by name, and so is what cannot be read"
     face = face_of(
         path: "x",
-        text: "# X.\n\nconstant MOST: i64\n    3\n\nextern \"x.h\"\n    function x_f()\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n\nvariant Shape\n    dot\n"
+        text: "# X.\n\nconstant MOST: i64\n    3\n\nextern \"x.h\"\n    function x_f()\n\nextern \"y.h\"\n    function y_f()\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n\nvariant Shape\n    dot\n"
     )
     assert face.refused.len() == 6
     assert core_strings.contains(
         s: face.refused[0],
         substr: "line 3: `constant MOST: i64`, and a card has a line for a `str` constant naming a code alone"
     )
-    assert core_strings.contains(s: face.refused[1], substr: "a card has no line for an extern yet")
+    assert face.refused[1] == "line 9: `extern \"y.h\"` is a second group, and a card names one group's header: teach `package_face.hero` another before a floor declares two"
+    assert face.header == "x.h" && face.bound.len() == 0
     assert core_strings.contains(s: face.refused[2], substr: "do not close on its line")
     assert core_strings.contains(s: face.refused[3], substr: "no name a call can write")
     assert face.refused[4] == "`variant Shape` has no doc, whose first sentence its card line writes"
     assert face.refused[5] == "`function h` has no doc, whose first sentence its card line writes"
     assert face_of(path: "y", text: "# Documents f.\nfunction f()\n    _ = 0\n").refused[0] == "the module has no doc, whose first sentence a card opens with"
+
+# A floor's group (`examples/packages/README.md` § 4.1): its records and its runs
+# of constants are read, each with the doc above it inside the group, and its
+# functions, which no program can call across the module, are not.
+test "a floor's group is read: its header, its records, its runs of constants, and no function of C"
+    text = "# Floor.\n\nextern \"hero_net.h\"\n    # A socket. More.\n    record Socket tag hero_net_socket\n    # The kinds.\n    constant A: i64\n    constant B: i64\n    # Narrow.\n    constant C: i32\n    function hero_net_f(s: Socket) -> i64\n    # Two numbers.\n    record Pair tag pair\n        # a comment inside\n        x: i64\n        y: i64\n    constant D: i64\n\n# Reads.\nfunction f(s: Socket) -> i64\n    return hero_net_f(s)\n"
+    face = face_of(path: "net/hero_net", text: text)
+    assert face.header == "hero_net.h"
+    assert face.callables.len() == 1 && face.callables[0].name == "f"
+    assert face.bound.len() == 5
+    assert face.bound[0] == .bound_record(name: "Socket", written: "record Socket tag hero_net_socket", fields: [], said: "A socket.")
+    assert face.bound[1] == .bound_constants(names: ["A", "B"], ty: "i64", said: "The kinds.")
+    assert face.bound[2] == .bound_constants(names: ["C"], ty: "i32", said: "Narrow.")
+
+    match face.bound[3]
+        .bound_record r    => assert r.name == "Pair" && r.fields.len() == 2 && r.fields[1].name == "y"
+        .bound_constants _ => assert false
+
+    assert face.bound[4] == .bound_constants(names: ["D"], ty: "i64", said: "")
+    assert face.refused == ["the group's `constant D` has no doc, whose first sentence its card line writes"]
+    assert quoted_in("extern \"a.h\" link \"a\"") == "a.h"
+    assert quoted_in("extern") == ""
 
 test "a variant is read with its cases, each with its fields, a comment among them skipped"
     text = "# J.\n\n# A value. More.\nvariant Value\n    nothing\n    # a comment inside\n    number\n        value: f64\n    pair\n        left: [Value]\n        right: {str: Value}\n\n# After.\nfunction f(v: Value) -> Value\n    return v\n"

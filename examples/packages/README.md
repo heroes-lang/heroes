@@ -103,7 +103,10 @@ it: the compiler, the net's `packages` suite, or a reader's review.
    adds a code only for a failure none of them names.
 3. **A code a package adds is a constant of the package**, `sql.UNIQUE`, and
    its card lists it: a misspelt constant is a compile error, where a misspelt
-   string compares false and the program runs on.
+   string compares false and the program runs on. A private module, which
+   cannot name its face's constants without a module cycle, writes the code as
+   text, and the card holds it to the face's constant of that text (`net`'s
+   `net/internal/failure.hero` beside `net.STOPPED`).
 4. **A message says what was asked and what was found**, in words a reader can
    act on: `no "x" in "abc"`, never `failed`.
 5. **A package aborts only where its caller broke a precondition the caller
@@ -190,6 +193,12 @@ it: the compiler, the net's `packages` suite, or a reader's review.
 3. **A card spends at most 1,024 tokens** as `heroes measure` counts them, and
    all the face cards together no more than the specification itself; a
    floor's card counts apart, read only by a program that reaches the floor.
+4. **A floor's card names what its group gives a program**, under the header's
+   own heading: each record of the header, a handle as written
+   (`hero_net.Socket`), and each run of its constants, with the floor's
+   functions of Heroes below; the group's own functions are not on it, since
+   no program can call them across the module (`net/hero_net.md`, the first,
+   2026-11-13).
 
 ## 9. What these packages do not promise
 
