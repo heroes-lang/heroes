@@ -1,0 +1,32 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function given to `pthread_atfork`, run by `fork` from a signal handler
+# written in C.
+# Symptom: it ran inside the signal, `prepare ran: 42` and `the parent goes
+# on`, exit 0 on this Mac (panel 247's `ffork`).
+# Cause: the thunk's first line walks the frame records above it and finds,
+# past `fork`'s own frames, the handler's return to the delivery.
+
+extern "fixedbugs-2494-a-heroes-function-a-c-handler-reaches-through-fork-is-refused.h"
+    function forking_install(sig: i32) -> i32
+    function forking_raise(sig: i32) -> i32
+
+extern "pthread.h"
+    function pthread_atfork(prepare: (function() -> ()), parent: (function() -> ()), child: (function() -> ())) -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function before_fork()
+    print(f"prepare ran: {40 + 2}")
+
+function in_parent()
+    print("the parent goes on")
+
+function in_child()
+    _ = 0
+
+function main()
+    print("registered: ", pthread_atfork(prepare: before_fork, parent: in_parent, child: in_child))
+    print("installed: ", forking_install(sig: SIGUSR1))
+    print("raised: ", forking_raise(sig: SIGUSR1))
+    print("after the signal")

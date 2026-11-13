@@ -1,0 +1,30 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function a C handler calls, on an alternate signal stack the program made
+# itself.
+# Symptom: it ran inside the signal, `the answer ran for signal 30` and
+# `seen: 60` at exit 0 on this Mac, and the walk of frame records the
+# sitting's first form relied on stopped at the alternate stack's edge, so
+# under a storm a Heroes function calling `localeconv` there was killed by
+# Darwin's C library with nothing said, 6 runs of 6 (panel 247's
+# `fownlocale`), and ran inside the signal on Linux arm64.
+# Cause: where the thunk's frame lies outside its thread's own stack, the
+# thunk's first line asks the kernel whether the thread runs on an alternate
+# signal stack (`sigaltstack`'s `SS_ONSTACK`), where only a delivery puts it,
+# and stops the program by name.
+
+extern "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-the-programs-own-alternate-stack-is-refused.h"
+    function aside_install(sig: i32, answer: (function(i64) -> i64)) -> i32
+    function aside_raise(sig: i32) -> i32
+    function aside_seen() -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(sig: i64) -> i64
+    print("the answer ran for signal ", sig)
+    return sig * 2
+
+function main()
+    print("installed: ", aside_install(sig: SIGUSR1, answer: answer))
+    print("raised: ", aside_raise(sig: SIGUSR1))
+    print("seen: ", aside_seen())

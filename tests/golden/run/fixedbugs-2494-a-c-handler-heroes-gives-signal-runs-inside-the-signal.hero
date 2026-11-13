@@ -1,0 +1,31 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1 and R8), the
+# shape the refusal must leave alone: a handler written in C, which no Heroes
+# code is, handed to C's `signal` from Heroes as an `extern` function.
+# Symptom: none; it is what panel 246's R4 allows, and a refusal by the
+# installer's name, the route the sitting refused, refused it at build.
+# Cause: an `extern` function crosses to C as itself, with no thunk, so no
+# question is asked of it, and it runs inside the signal as C does: each of
+# the three signals the program sends itself is counted before `kill`
+# returns.
+
+extern "fixedbugs-2494-a-c-handler-heroes-gives-signal-runs-inside-the-signal.h"
+    function count_one(sig: i32)
+    function counted_so_far() -> i64
+
+extern "unistd.h"
+    function getpid() -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+    function signal(sig: i32, handler: (function(i32) -> ())) -> ptr
+    function kill(pid: i32, sig: i32) -> i32
+
+function main()
+    _ = signal(SIGUSR1, count_one)
+    sent @= 0
+
+    while sent < 3
+        _ = kill(pid: getpid(), sig: SIGUSR1)
+        sent @ sent + 1
+
+    print("sent ", sent, ", counted ", counted_so_far())

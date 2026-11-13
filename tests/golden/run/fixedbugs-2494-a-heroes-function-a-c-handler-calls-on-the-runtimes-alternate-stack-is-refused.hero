@@ -1,0 +1,28 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1), the shape
+# beside the program's own alternate stack: a Heroes function a C handler
+# calls, on the alternate signal stack the runtime gave the thread.
+# Symptom: it ran inside the signal, `the answer ran for signal 30` and
+# `seen: 60` at exit 0 on this Mac; the sitting's first form found it by the
+# bounds the stack guard keeps of its own alternate stack, which
+# `--sanitize` empties (panel 247's compiler-engineer).
+# Cause: the thunk's frame lies outside the thread's own stack, so its first
+# line asks the kernel whether an alternate signal stack is running, which
+# answers for any such stack, the runtime's, the sanitizer's or the
+# program's, and stops the program by name.
+
+extern "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-the-runtimes-alternate-stack-is-refused.h"
+    function given_install(sig: i32, answer: (function(i64) -> i64)) -> i32
+    function given_raise(sig: i32) -> i32
+    function given_seen() -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(sig: i64) -> i64
+    print("the answer ran for signal ", sig)
+    return sig * 2
+
+function main()
+    print("installed: ", given_install(sig: SIGUSR1, answer: answer))
+    print("raised: ", given_raise(sig: SIGUSR1))
+    print("seen: ", given_seen())

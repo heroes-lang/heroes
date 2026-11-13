@@ -158,6 +158,59 @@ static _Thread_local HeroLendRegion *hero_lend_retired = NULL;
 static _Thread_local int64_t hero_lend_retired_next = 0;
 #endif
 
+/* THE TABLE IS BRACKETED AS THE ALLOCATOR IS (panel 247's R2, defect 2494;
+ * `parts/alloc.c`'s guard, D, is the model). A signal handler that lends while
+ * the code it interrupted is inside this file's take or give works on the same
+ * regions: a Heroes function a handler called, `write(@buf)`, landed between a
+ * give's depth and its sum, took the region at that depth and summed its own
+ * one byte, and the next lend there said *C wrote to a buffer lent to it after
+ * the call it was lent to had returned*, a false message (panel 247's critic,
+ * the blind answers `daaef5` and `ba6229`, on a reader thread blocked in
+ * `read(@buf)`); and a handler's lend that grows the table frees the one the
+ * interrupted code still holds a region of. So each entry point that reads or
+ * writes the thread's regions is bracketed by one flag per thread, and a
+ * bracket found open stops the program by name before the regions are touched
+ * twice.
+ *
+ * NOTHING BUT A SIGNAL HANDLER CAN FIND THE FLAG SET: between the bracket's
+ * two ends run this file's own code, the system's `mmap`, `mprotect`, `munmap`
+ * and `sysconf` (`VirtualAlloc`, `VirtualProtect`, `VirtualFree` and
+ * `GetSystemInfo` on Windows), `memcpy` and `memset`, and the stops of a lend
+ * this file refuses; none calls code of the program, and no entry point calls
+ * another. A give allocates its array and drops the one it replaces outside
+ * the bracket, so the allocator's own bracket, which no bracket here holds, is
+ * never inside this one. The fault handler's question (`hero_lend_fault_at`)
+ * only reads, and is asked inside a fault, so it is not bracketed. A thread's
+ * end (`hero_lend_thread_leave`) runs with its signals held off (defect 2496)
+ * and is not either, but for the audit it asks. */
+static _Thread_local volatile sig_atomic_t hero_lend_inside = 0;
+
+/* The stop, the allocator's in its words for this table (panel 247's R9). */
+static _Noreturn void hero_lend_reentered(void) {
+    static const char *const said[] = {
+        "panic: a signal handler used this runtime's record of the buffers lent to C while the code it "
+        "interrupted was inside it, which would corrupt memory: a Heroes function given to C as a signal "
+        "handler, or called from one, does so whenever it lends a buffer or a local to C through `@`. ",
+        HERO_SIGNAL_REMEDY,
+    };
+    hero_signal_stop(said, sizeof said / sizeof said[0]);
+}
+
+/* The bracket, as the allocator's: inlined, the flag's address taken once,
+ * and the two signal fences keeping the store before what it guards. */
+static inline __attribute__((always_inline)) volatile sig_atomic_t *hero_lend_enter(void) {
+    volatile sig_atomic_t *inside = &hero_lend_inside;
+    if (*inside != 0) hero_lend_reentered();
+    *inside = 1;
+    atomic_signal_fence(memory_order_seq_cst);
+    return inside;
+}
+
+static inline __attribute__((always_inline)) void hero_lend_leave(volatile sig_atomic_t *inside) {
+    atomic_signal_fence(memory_order_seq_cst);
+    *inside = 0;
+}
+
 static size_t hero_lend_page(void) {
 #if defined(_WIN32)
     SYSTEM_INFO info;
@@ -330,7 +383,9 @@ static void hero_lend_audit(HeroLendRegion *r, const char *when) {
  * end (`hero_runtime_check_leaks`, `hero_exit`) and its thread's
  * (`hero_lend_thread_leave`). */
 static void hero_lend_audit_given(const char *when) {
+    volatile sig_atomic_t *inside = hero_lend_enter();
     for (int64_t i = hero_lend_depth; i < hero_lend_cap; i++) hero_lend_audit(&hero_lend_regions[i], when);
+    hero_lend_leave(inside);
 }
 
 /* The region at the next depth, holding at least `bytes` before its guard. */
@@ -439,12 +494,14 @@ void *hero_lend_take_at(const HeroArrayHeader *from, int64_t extent, const char 
     if (__builtin_mul_overflow((size_t)extent, size, &bytes) || bytes > SIZE_MAX / 2) {
         hero_lend_refuse(callee, param, "that many bytes cannot be mapped", extent, where);
     }
+    volatile sig_atomic_t *inside = hero_lend_enter();
     HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent, where);
     char *buffer = r->base + r->room - bytes;
     int64_t kept = from->len < extent ? from->len : extent;
     size_t copied = (size_t)kept * size;
     if (copied > 0) memcpy(buffer, hero_array_data_const(from), copied);
     memset(buffer + copied, 0, bytes - copied);
+    hero_lend_leave(inside);
     return buffer;
 }
 
@@ -452,18 +509,23 @@ void *hero_lend_take(const HeroArrayHeader *from, int64_t extent, const char *ca
     return hero_lend_take_at(from, extent, callee, param, NULL);
 }
 
+/* The array the buffer becomes is allocated before the bracket and the one it
+ * replaces dropped after it, so the allocator's bracket is never inside this
+ * file's (the head of the table's bracket). */
 HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *buffer, int64_t extent, const HeroPlace *where) {
     hero_array_require(a);
+    size_t bytes = (size_t)extent * a->elem->size;
+    HeroArrayHeader *fresh = hero_array_new(a->elem, extent);
+    volatile sig_atomic_t *inside = hero_lend_enter();
     if (hero_lend_depth < 1) hero_panic("a buffer lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
-    size_t bytes = (size_t)extent * a->elem->size;
     if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer", where);
-    HeroArrayHeader *fresh = hero_array_new(a->elem, extent);
     if (bytes > 0) memcpy(hero_array_data(fresh), buffer, bytes);
-    fresh->len = extent;
-    hero_array_decref(a);
     hero_lend_depth -= 1;
     hero_lend_retire(r);
+    hero_lend_leave(inside);
+    fresh->len = extent;
+    hero_array_decref(a);
     return fresh;
 }
 
@@ -481,6 +543,7 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
  * page. Zeroed, which is the value a refcounted slot starts at and the one the
  * frame would not have given any other. */
 void *hero_lend_local(size_t size, const char *owner, const char *name) {
+    volatile sig_atomic_t *inside = hero_lend_enter();
     HeroLendRegion *r = hero_lend_push(size, owner, name, 1, NULL);
     char *local = r->base + r->room - size;
     memset(local, 0, size);
@@ -489,6 +552,7 @@ void *hero_lend_local(size_t size, const char *owner, const char *name) {
     r->name = name;
     r->callee = NULL;
     r->param = NULL;
+    hero_lend_leave(inside);
     return local;
 }
 
@@ -499,14 +563,16 @@ void *hero_lend_local(size_t size, const char *owner, const char *name) {
  * an element or an unguarded place, which no region holds and this leaves
  * alone. */
 void hero_lend_local_name(void *local, const char *callee, const char *param) {
+    volatile sig_atomic_t *inside = hero_lend_enter();
     for (int64_t i = hero_lend_depth - 1; i >= 0; i--) {
         HeroLendRegion *r = &hero_lend_regions[i];
         if (r->local && r->base + r->room - r->bytes == (char *)local) {
             r->callee = callee;
             r->param = param;
-            return;
+            break;
         }
     }
+    hero_lend_leave(inside);
 }
 
 /* A TABLE'S SPANS IN OFFSET ORDER, sorted in place as offset and length pairs
@@ -749,6 +815,7 @@ void hero_pad_clear(void *p, size_t size, size_t count, const size_t *masks, siz
 }
 
 void hero_lend_local_give(void *local) {
+    volatile sig_atomic_t *inside = hero_lend_enter();
     if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
     /* At the function's one exit, where no call of the program stands: a place
@@ -756,6 +823,7 @@ void hero_lend_local_give(void *local) {
     if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local", NULL);
     hero_lend_depth -= 1;
     hero_lend_retire(r);
+    hero_lend_leave(inside);
 }
 
 /* Whether `addr` is in `r`: on its guard page, or in its room while the room

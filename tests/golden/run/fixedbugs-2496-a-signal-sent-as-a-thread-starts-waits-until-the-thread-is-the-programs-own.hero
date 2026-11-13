@@ -13,12 +13,21 @@
 # worker waits for its round's signal, and the handler counts and allocates
 # nothing. Without the repair the first rounds already reach a worker
 # unclaimed.
+# Rewritten 2026-11-13, lane b35-signals (panel 247's R8): since R1 a Heroes
+# function given to `signal` is refused at its first signal, so the handler
+# is the program's own C, handed to `signal` from Heroes, and it keeps the
+# thread it ran on: each worker counts its round only where the handler ran
+# on itself, which the count alone did not say (with the handler deferred to
+# another thread it printed 200 all the same, panel 247's compiler-engineer).
+# What the case holds of the repair is the worker's mask: started with every
+# signal held off and let through once claimed, as its starter's was.
 
 extern "fixedbugs-2496-a-signal-sent-as-a-thread-starts.h"
     function fresh_hold() -> i64
     function fresh_free() -> i64
     function fresh_send() -> i64
-    function fresh_heard_one()
+    function fresh_on_signal(sig: i32)
+    function fresh_here() -> i64
     function fresh_heard_count() -> i64
     function fresh_wait_heard(want: i64) -> i64
 
@@ -30,18 +39,19 @@ extern "hero_os.h"
     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
 
-function on_signal(sig: i32)
-    _ = sig
-    fresh_heard_one()
-
 # The worker's whole life is waiting for its round's signal, so the signal
-# finds it alive and letting signals through: 1 once it was handled meanwhile,
-# on this worker, the one thread not holding it then; 0 if it never came.
+# finds it alive and letting signals through: 1 once it was handled meanwhile
+# on this worker, the one thread not holding it then; 0 if it never came or
+# another thread ran the handler.
 function awaits(round: i64) -> i64
-    return fresh_wait_heard(want: round + 1) - round
+    heard = fresh_wait_heard(want: round + 1) - round
+
+    if heard == 1 && fresh_here() == 1
+        return 1
+    return 0
 
 function main()
-    _ = signal(sig: SIGUSR1, handler: on_signal)
+    _ = signal(sig: SIGUSR1, handler: fresh_on_signal)
     rounds @= 0
     seen @= 0
 

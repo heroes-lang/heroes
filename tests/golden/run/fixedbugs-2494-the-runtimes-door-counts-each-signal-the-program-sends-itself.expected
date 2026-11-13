@@ -1,0 +1,8 @@
+a descriptor before any watch: -1
+watching SIGINT, the stop's: -1
+watching SIGSEGV, a fault's: -1
+watching SIGUSR1: 0
+sent 5, taken 5
+taken again: 0
+SIGUSR2, never watched, taken: 0
+a descriptor to wait on: true

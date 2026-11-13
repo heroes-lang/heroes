@@ -1,0 +1,28 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function a signal handler written in C calls, and needs the result of.
+# Symptom: it ran inside the signal, `the answer ran for signal 30` and
+# `seen: 60` at exit 0 on this Mac, where a Heroes function calling
+# `localeconv` while `main` formats numbers is killed by Darwin's C library
+# with nothing said (panel 247's `fliblocale` shape).
+# Cause: the thunk's own return address is the handler's, not the
+# delivery's, so the exact test cannot see it; the thunk's first line now
+# also walks the frame records above it, at most eight within its thread's
+# own stack, read once as the thread is claimed, and finds the handler's own
+# return to the delivery one record up.
+
+extern "fixedbugs-2494-a-heroes-function-a-c-handler-calls-is-refused.h"
+    function called_install(sig: i32, answer: (function(i64) -> i64)) -> i32
+    function called_raise(sig: i32) -> i32
+    function called_seen() -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(sig: i64) -> i64
+    print("the answer ran for signal ", sig)
+    return sig * 2
+
+function main()
+    print("installed: ", called_install(sig: SIGUSR1, answer: answer))
+    print("raised: ", called_raise(sig: SIGUSR1))
+    print("seen: ", called_seen())

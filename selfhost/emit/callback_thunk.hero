@@ -78,6 +78,7 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
         return
     real = signature.as_value(f, c, names, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
+    who = source.component_at(s, f.span.start) + "." + f.name
     forwarded: [str] @= []
 
     for slot_id in f.params
@@ -86,6 +87,7 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
     writer.blank(@w)
     writer.at_generated(@w)
     writer.line(@w, text: header(f, c, names, s, decls) + " {")
+    writer.line(@w, text: "    " + in_signal(who))
 
     for slot_id in f.params
         declared = f.slots[slot_id]
@@ -99,7 +101,6 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
     if result == "void"
         writer.line(@w, text: "    " + invocation + ";")
     else
-        who = source.component_at(s, f.span.start) + "." + f.name
         writer.line(@w, text: "    " + result + " hero_result = " + invocation + ";")
 
         # The message names the field or element the dead handle sat in, as
@@ -132,6 +133,17 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
             @w,
             text: "_Static_assert(__builtin_types_compatible_p(__typeof__(&" + thunk_name(real) + "), __typeof__(&" + real + ")), \"heroes-callback " + source.component_at(s, f.span.start) + "." + f.name + ": the thunk C is handed has its value's type\");"
         )
+
+# THE THUNK'S FIRST LINE ASKS WHETHER A SIGNAL CALLED IT (panel 247's R1,
+# defect 2494): no Heroes code runs inside a signal handler (panel 246's R4),
+# and a function C is handed is reached from C only through its thunk, so the
+# question asked here is asked of every way in and costs a Heroes call nothing.
+# The runtime compares the thunk's own return address with a delivery's, asks
+# the kernel whether an alternate signal stack is running, and walks a few
+# frame records above (`runtime/parts/sigguard.c`); it refuses by `who`, the
+# Heroes name, or returns. Both builtins are the thunk's own and need nothing.
+function in_signal(who: str) -> str
+    return "hero_callback_entered(\"" + who + "\", __builtin_return_address(0), __builtin_frame_address(0));"
 
 # The thunk's signature: C's convention for the function's result and
 # parameters, each by value but an `@` one, spelled by `signature.one_param`
@@ -198,6 +210,10 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
         writer.line(@w, text: header(f, c, names, s, decls) + ";")
 
     writer.line(@w, text: "__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {")
+
+    # The delivery's address is learned before the first thunk reaches C, by
+    # the one door every thunk crosses through: once per process, a load after.
+    writer.line(@w, text: "    hero_signal_learn();")
 
     for at in callbacks.functions
         f = p.functions[at]
@@ -294,3 +310,34 @@ test "an extern handed as a callback comes out of the table unchanged, a Heroes 
     crossed = crossings(instances.hold(low), c, names, decl: 0, arguments: ["t1"])
     assert crossed.len() == 1
     assert strings.holds(text: crossed[0], needle: "hero_callback_of((void (*)(void))t1)")
+
+# Panel 247's R1 (defect 2494): every thunk asks first whether a signal's
+# delivery called it, and the table learns the delivery before it hands C
+# any thunk, so no thunk can reach C before the question can be answered.
+test "a thunk's first line asks whether a signal called it, and the table learns the delivery first"
+    text = "extern \"signal.h\"\n    function signal(sig: i32, handler: (function(i32) -> ())) -> ptr\n\nfunction on_signal(sig: i32)\n    print(sig)\n\nfunction main()\n    _ = signal(10, on_signal)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = program_of(text)
+    names0 = ctype.new_names(s, p.decls)
+    names1 = ctype.with_options(names0, c: c, s: s, decls: p.decls)
+    names = ctype.with_functions(names1, c: c, s: s, decls: p.decls, p: low)
+    callbacks = callback_guard.callbacks_of(low, c, p.decls)
+    w: writer.Writer @= writer.new_writer("t")
+    lookup_table(@w, low, c, names, s, p.decls, callbacks: callbacks)
+
+    for f in low.functions
+        definition(@w, c, names, s, p.decls, f, guarded_decls: callbacks.decls)
+
+    got = writer.finish(w)
+    assert strings.holds(
+        text: got,
+        needle: "static void (*hero_callback_of(void (*f)(void)))(void) {\n    hero_signal_learn();\n"
+    )
+    assert strings.holds(
+        text: got,
+        needle: ") {\n    hero_callback_entered(\"t.on_signal\", __builtin_return_address(0), __builtin_frame_address(0));\n"
+    )

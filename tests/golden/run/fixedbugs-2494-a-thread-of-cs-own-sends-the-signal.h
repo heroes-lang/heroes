@@ -3,6 +3,13 @@
  * for at most 20 seconds or until told to stop, while that thread allocates;
  * the thread sending holds SIGUSR1 itself, so it never runs the handler.
  *
+ * The handler is C (panel 247's R8): it calls the Heroes function it was
+ * handed through DEEP_FRAMES frames of its own, more than the thunk's walk
+ * reads (eight, `runtime/parts/sigguard.c`), each kept by `noinline` and
+ * `disable_tail_calls`, so the call reaches the function past the thunk's
+ * question, as a handler whose frames keep no record or lie deeper does, and
+ * the allocator's guard is what stands there (panel 247's R2).
+ *
  * It sends nothing until `storm_start` has made its last C library call:
  * creating a thread allocates through the C library directly, outside the
  * runtime's brackets, and a signal landing there is the part of the defect
@@ -13,9 +20,38 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 
+#define DEEP_FRAMES 24
+
 static pthread_t storm_target;
+static void (*storm_called)(int32_t) = NULL;
+static volatile int storm_depth_seen = 0;
+
+__attribute__((noinline, disable_tail_calls)) static int storm_down(int left, int sig) {
+    if (left == 0) {
+        storm_called((int32_t)sig);
+        return 0;
+    }
+    int below = storm_down(left - 1, sig);
+    storm_depth_seen = left;
+    return below + 1;
+}
+
+static void storm_handler(int sig) { (void)storm_down(DEEP_FRAMES, sig); }
+
+/* The handler, installed for SIGUSR1 with `sigaction`: 0, or -1 where the
+ * system refused it. */
+static inline int32_t storm_install(void (*called)(int32_t)) {
+    struct sigaction sa;
+    storm_called = called;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_handler = storm_handler;
+    sigemptyset(&sa.sa_mask);
+    return sigaction(SIGUSR1, &sa, NULL) == 0 ? 0 : -1;
+}
+
 static atomic_int storm_go = 0;
 static atomic_int storm_done = 0;
 
