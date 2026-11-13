@@ -83,16 +83,33 @@ static void hero_thread_claim(void) { hero_thread_is_home = true; }
  * permission is what decides the set, and emit/callback_guard.hero computes
  * it). `what` is the Heroes name — `module.function`, already un-mangled by the
  * compiler that wrote the call — because the reader of this message is looking
- * at a .hero file and never at the C. */
+ * at a .hero file and never at the C.
+ *
+ * THE WORDS NAME THE TWO DOORS, NOT A FILE (defect 2492; design.md §4.17, a
+ * message carries what is needed to fix the mistake it names without opening
+ * another file). Until 2026-11-13 the refusal cited `design.md Part 7.13`,
+ * which a program's reader does not have, and both answers of panel 246's
+ * blind reading for a first thread task met it with no word on what to write
+ * instead, each having wrapped `pthread_create`. The two ways here are work
+ * handed to C to run beside `main`, whose door is `hero_thread_spawn`, and a
+ * function given to `signal`, which lands here on POSIX whenever a thread C
+ * made takes the signal (panel 246's `whichthread`, run) and on Windows for
+ * every Ctrl-C, whose handler the system runs on a thread of its own
+ * (Microsoft's `signal` and HandlerRoutine pages, read by panel 246's
+ * ffi-pragmatist, not run on the box); panel 246's R4 rules that no Heroes
+ * code runs in a handler, and the stop a server needs is the platform
+ * layer's. One line, so a case pins it whole. */
 void hero_thread_guard(const char *what) {
     if (hero_thread_is_home) return;
-    char msg[256];
+    char msg[1024];
     snprintf(
         msg,
         sizeof msg,
-        "%s ran on a thread this program did not start — C called it back from a "
-        "thread of its own, and this runtime's values are not safe there yet "
-        "(design.md Part 7.13)",
+        "%s ran on a thread this program did not start: C called it back from a thread of its own, "
+        "where this runtime's values are not safe. To run work on another thread, start it with "
+        "`hero_thread_spawn` from `hero_os.h`, whose function runs on a thread this program owns. "
+        "To stop on Ctrl-C or SIGTERM, give C no Heroes function as a signal handler: the platform "
+        "layer's waiting calls, in `hero_net.h`, end with a stop the program reads",
         what
     );
     hero_panic(msg);
