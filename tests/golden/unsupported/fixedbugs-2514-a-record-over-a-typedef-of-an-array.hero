@@ -1,0 +1,14 @@
+# fixedbugs, defect 2514, lane b35-ffi, 2026-11-13, a shape beside it.
+#
+# SYMPTOM: a record named after a typedef of an array, `jmp_buf`'s kind, was
+# told the header keeps the type opaque, which C does not do to an array.
+#
+# CAUSE: the same reading as a number's. A type that is no struct and neither
+# a number nor a pointer is told as no struct, named as clang spells it.
+
+extern "fixedbugs-2514-kinds.h"
+    record quad2514_t partial  #~ ffi_unknown_tag
+        val: i32
+
+function main()
+    print(1)

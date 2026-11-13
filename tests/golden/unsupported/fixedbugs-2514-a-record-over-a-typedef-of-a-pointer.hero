@@ -1,0 +1,15 @@
+# fixedbugs, defect 2514, lane b35-ffi, 2026-11-13, a shape beside it.
+#
+# SYMPTOM: a record named after a typedef of a pointer, Darwin's `pthread_t`
+# among them, was told the header keeps the type opaque and sent to `record
+# handle2514_t tag handle2514_t`, C's pointer to the pointer.
+#
+# CAUSE: the same reading as a number's. A pointer is now told as one: held
+# as `ptr`, or as a HANDLE of the struct it points at, which is its own C type.
+
+extern "fixedbugs-2514-kinds.h"
+    record handle2514_t partial  #~ ffi_unknown_tag
+        val: i32
+
+function main()
+    print(1)

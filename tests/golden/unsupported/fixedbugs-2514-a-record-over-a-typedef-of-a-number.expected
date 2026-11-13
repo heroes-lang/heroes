@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `mask2514_t` is `unsigned int` in `fixedbugs-2514-kinds.h`, a number, not a struct — a `record` holds the fields of a C struct, and `unsigned int` has none
+  at tests/golden/unsupported/fixedbugs-2514-a-record-over-a-typedef-of-a-number.hero:17:12
+     |
+  17 |     record mask2514_t partial  #~ ffi_unknown_tag
+     |            ^^^^^^^^^^
+  note: a program holds a `mask2514_t` as the number it is, `u32`, at the header's own width and sign: drop the record, and where the header takes a `mask2514_t *` the parameter is `@<name>: u32`, lent a cell the program owns, and where it takes or gives back a `mask2514_t`, `u32` (§ 13)

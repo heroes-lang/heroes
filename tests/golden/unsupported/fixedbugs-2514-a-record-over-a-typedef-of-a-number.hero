@@ -1,0 +1,21 @@
+# fixedbugs, defect 2514, lane b35-ffi, 2026-11-13.
+#
+# SYMPTOM: a record named after a typedef of a number, Darwin's `sigset_t`,
+# `unsigned int`, was refused `ffi_unknown_tag` with the note *the header
+# keeps the type opaque: a program never holds one by value, only C's pointer
+# to it, which is a HANDLE*, false of a value every C program holds by value,
+# and sent to `record sigset_t tag sigset_t`, a pointer to storage the program
+# cannot make; the form that works, the number with `@` where C takes its
+# pointer, was named by no message.
+#
+# CAUSE: clang's *member reference base type 'T' (aka 'unsigned int') is not
+# a structure or union* was read as *incomplete*, so every type with no
+# members was told it was opaque. It is now told what it is, a number at its
+# own width and sign as the refused round asks clang (`emit/ffi_typedef_kind.hero`).
+
+extern "fixedbugs-2514-kinds.h"
+    record mask2514_t partial  #~ ffi_unknown_tag
+        val: u32
+
+function main()
+    print(1)

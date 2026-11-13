@@ -1,0 +1,338 @@
+# What a group record's C type is when it is no struct at all, and the form a
+# program holds it in (design.md §4.19, §4.17; defect 2514, 2026-11-13).
+#
+# **A record holds a C struct's fields, and the note said every type without
+# them was opaque.** A record named after a typedef of a number, Darwin's
+# `sigset_t`, `unsigned int`, was told *the header keeps the type opaque: a
+# program never holds one by value, only C's pointer to it, which is a
+# HANDLE*, false of a value every C program holds by value, and sent to
+# `record sigset_t tag sigset_t`, C's `sigset_t *`, a pointer to storage the
+# program cannot make; the record with a `tag` was sent back to the first
+# form, and with no field the parser offered both again. The form that works,
+# the number itself, `@set: u32` where C takes a `sigset_t *` (spec § 13's
+# *ONE element, held to the same width and sign*), was named by none.
+#
+# **Clang says what the type is.** A member read through a type that is no
+# struct or union is *member reference base type 'sigset_t' (aka 'unsigned
+# int') is not a structure or union*, measured on this Mac for a number, a
+# `bool`, a pointer, `void *`, an array, a function's pointer and an
+# enumeration; the last, an anonymous one, with no `aka`, which no reader knew,
+# so it was `internal error` at exit 2. `void` is the one such type a record
+# names as a HANDLE, and `emit/ffi_incomplete.hero` keeps it.
+#
+# **The width and sign are clang's, never a table's**: the refused round asks
+# the record's own type the two questions it asks each field
+# (`emit/field_asked.hero`, `SELF`), so an enumeration is told at its
+# platform's width and sign, and `long` at this target's with its caveat
+# (`emit/c_spellings.hero`). Where the round did not answer, the spelling clang
+# gave is read by that table; where neither says, the type is told as no struct
+# and nothing is named that clang did not show.
+
+use cli/strings
+use diag
+use emit/c_spellings
+use emit/ffi_asked
+use emit/ffi_lookup
+use emit/ffi_tag
+use emit/field_asked
+use token
+
+# What clang says of a member read through a type with no members.
+constant NO_MEMBERS: str
+    "member reference base type '"
+
+constant NOT_A_STRUCT: str
+    "is not a structure or union"
+
+# What the header's type is, as far as clang showed it: its spelling, empty
+# where clang gave none; `number`, `pointer`, `other` (an array or a
+# function's pointer) or `""` where nothing said; the Heroes type of a number
+# or a pointer; the struct a pointer points at, where it names one; and the
+# note on a width that is the platform's.
+record Kind
+    spelled: str
+    kind: str
+    heroes: str
+    pointee: str
+    caveat: str?
+
+# Whether clang's `line` says the record named `word` reads a member through a
+# type that has none, `void` aside.
+function no_members(line: str, word: str) -> bool
+    if !ffi_lookup.has(text: line, needle: NO_MEMBERS + word + "'") || !ffi_lookup.has(text: line, needle: NOT_A_STRUCT)
+        return false
+    return behind(line: line, word: word) != "void"
+
+# The type clang names behind `word` in `line`, after its `aka`, or "".
+function behind(line: str, word: str) -> str
+    aka = ffi_lookup.after(text: line, marker: "'" + word + "' (aka '")
+
+    if aka.is_err()
+        return ""
+    return ffi_lookup.up_to_quote(aka.must())
+
+# The record named after the typedef `word`, whose type `line` says has no
+# members: what it is, and the form a program holds it in.
+function told(found: ffi_tag.TaggedRecord, word: str, line: str, asked: ffi_asked.Asked, word_bits: i64) -> diag.Diagnostic
+    k = of(asked, word: word, spelled: behind(line: line, word: word), word_bits: word_bits)
+    what: str @= "which is no struct"
+
+    if k.kind == "number"
+        what @ "a number, not a struct"
+    else if k.kind == "pointer"
+        what @ "a pointer, not a struct"
+    message: str @= "`" + word + "` is no struct or union in `" + found.header + "` — a `record` holds the fields of a C struct, and `" + word + "` has none"
+
+    if k.spelled == "" && k.kind == "number"
+        message @ "`" + word + "` is a number in `" + found.header + "`, not a struct — a `record` holds the fields of a C struct, and a number has none"
+    else if k.spelled != ""
+        message @ "`" + word + "` is `" + k.spelled + "` in `" + found.header + "`, " + what + " — a `record` holds the fields of a C struct, and `" + k.spelled + "` has none"
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_unknown_tag", message: message, span: found.span)
+    d.notes @ d.notes.push(holding(k, word: word) + " (§ 13)")
+
+    if !k.caveat.is_err()
+        d.notes @ d.notes.push(k.caveat.must())
+    return d
+
+# The note a `tag` naming the typedef `word` is told where the header's type
+# is no struct, read from the refused round's answers; absent where they show
+# a struct, or nothing.
+function tag_note(asked: ffi_asked.Asked, word: str, word_bits: i64) -> str?
+    k = of(asked, word: word, spelled: "", word_bits: word_bits)
+
+    if k.kind == ""
+        return fail(code: "none", msg: "the header's type is a struct, or unanswered")
+    of_what: str @= ", of `" + k.spelled + "`,"
+
+    if k.spelled == ""
+        of_what @ ""
+    return ok(
+        "`" + word + "` is the name of a typedef in the header" + of_what + " and no struct: " + holding(k, word: word) + " (§ 13)"
+    )
+
+# What the program writes for a `word` of kind `k`.
+function holding(k: Kind, word: str) -> str
+    if k.kind == "number"
+        return "a program holds a `" + word + "` as the number it is, `" + k.heroes + "`, at the header's own width and sign: drop the record, and where the header takes a `" + word + " *` the parameter is `@<name>: " + k.heroes + "`, lent a cell the program owns, and where it takes or gives back a `" + word + "`, `" + k.heroes + "`"
+
+    if k.kind == "pointer"
+        out: str @= "a program holds the pointer itself: drop the record, and bind a `" + word + "` as `" + k.heroes + "`, and a `" + word + " *` as `@<name>: " + k.heroes + "`"
+
+        if k.pointee != ""
+            out @ out + "; or, keeping its type, as a HANDLE of the struct it points at, `record " + word + " tag " + k.pointee + "`, which is C's `struct " + k.pointee + " *`"
+        return out
+
+    if k.spelled != ""
+        return "drop the record, and bind each parameter and result the header gives as `" + word + "` by the type it stands for, `" + k.spelled + "`"
+    return "drop the record, and bind each parameter and result the header gives as `" + word + "` by the type the header makes it"
+
+# What the type behind `word` is: clang's `spelled` where the refusal named
+# it, else the refused round's answer, which names an anonymous enumeration by
+# the typedef's own word and so says nothing more; a number by its width and
+# kind, else by the spelling's table; a pointer and the rest by the spelling,
+# and a struct or a union, which only the answer about a tag can name, as
+# nothing this module tells.
+function of(asked: ffi_asked.Asked, word: str, spelled: str, word_bits: i64) -> Kind
+    key = field_asked.SELF + word
+    shown: str @= spelled
+    typed = asked.fields[key]
+
+    if shown == "" && !typed.is_err()
+        shown @ typed.must().canonical
+
+    if shown == word
+        shown @ ""
+    none: str? = fail(code: "none", msg: "no caveat")
+    tabled = c_spellings.spelling(c_type: shown, word_bits: word_bits)
+    caveat: str? @= none
+
+    if !tabled.is_err()
+        caveat @ tabled.must().caveat
+    width = asked.widths[key]
+
+    if !width.is_err() && !number_of(width.must()).is_err()
+        return Kind(spelled: shown, kind: "number", heroes: number_of(width.must()).must(), pointee: "", caveat: caveat)
+
+    if !tabled.is_err() && tabled.must().heroes != "ptr" && tabled.must().heroes != "cstr"
+        return Kind(spelled: shown, kind: "number", heroes: tabled.must().heroes, pointee: "", caveat: caveat)
+
+    if strings.ends_with(text: shown, suffix: "*") && !ffi_lookup.has(text: shown, needle: "(")
+        heroes: str @= "ptr"
+
+        if !tabled.is_err()
+            heroes @ tabled.must().heroes
+        return Kind(spelled: shown, kind: "pointer", heroes: heroes, pointee: pointee_tag(shown), caveat: none)
+
+    aggregate = strings.starts_with(text: shown, prefix: "struct ") || strings.starts_with(text: shown, prefix: "union ")
+
+    if !aggregate && (ffi_lookup.has(text: shown, needle: "[") || ffi_lookup.has(text: shown, needle: "("))
+        return Kind(spelled: shown, kind: "other", heroes: "", pointee: "", caveat: none)
+    return Kind(spelled: shown, kind: "", heroes: "", pointee: "", caveat: none)
+
+# The Heroes number `field_asked.sizing`'s answer names: its bits times eight
+# plus its kind, 1 a signed integer, 2 an unsigned one, 3 a float, 4 C's
+# `bool`; none for a width no Heroes number has, `__int128` or a `long double`
+# wider than a `double`.
+function number_of(width: i64) -> str?
+    kind = width % 8
+    bits = width - kind
+    integer = bits == 8 || bits == 16 || bits == 32 || bits == 64
+
+    if kind == 1 && integer
+        return ok("i" + bits.to_str())
+
+    if kind == 2 && integer
+        return ok("u" + bits.to_str())
+
+    if kind == 3 && (bits == 32 || bits == 64)
+        return ok("f" + bits.to_str())
+
+    if kind == 4 && bits == 8
+        return ok("bool")
+    return fail(code: "none", msg: "no Heroes number of this width and kind")
+
+# The tag of the one struct a pointer `struct X *` points at, or "".
+function pointee_tag(shown: str) -> str
+    if !strings.starts_with(text: shown, prefix: "struct ") || !strings.ends_with(text: shown, suffix: " *")
+        return ""
+    inner = shown.slice(from: 7, to: shown.len() - 2)
+
+    if ffi_lookup.has(text: inner, needle: " ") || ffi_lookup.has(text: inner, needle: "*")
+        return ""
+    return inner
+
+## Tests
+
+# The answers of a refused round about one record's own type, which the
+# tag reader's tests in `emit/ffi_incomplete.hero` are handed too.
+function answered(word: str, canonical: str, width: i64) -> ffi_asked.Asked
+    out: ffi_asked.Asked @= ffi_asked.nothing()
+    out.fields[field_asked.SELF + word] @ ffi_asked.Typed(spelled: word, canonical: canonical)
+
+    if width > 0
+        out.widths[field_asked.SELF + word] @ width
+    return out
+
+test "a width and a kind name the Heroes number, and nothing else does"
+    assert number_of(34).must() == "u32"
+    assert number_of(33).must() == "i32"
+    assert number_of(9).must() == "i8"
+    assert number_of(67).must() == "f64"
+    assert number_of(12).must() == "bool"
+    assert number_of(129).is_err()
+    assert number_of(64).is_err()
+    assert number_of(131).is_err()
+
+test "clang's line about a member read through a type with none, `void` aside"
+    line = "t.hero:2:53: error: member reference base type 'sigset_t' (aka 'unsigned int') is not a structure or union"
+    assert no_members(line: line, word: "sigset_t")
+    assert behind(line: line, word: "sigset_t") == "unsigned int"
+    assert !no_members(line: line, word: "other_t")
+    assert no_members(
+        line: "x.c:1:1: error: member reference base type 'k_enum' is not a structure or union",
+        word: "k_enum"
+    )
+    assert !no_members(line: "x.c:1:1: error: member reference base type 'opaque_t' (aka 'void') is not a structure or union", word: "opaque_t")
+    assert !no_members(line: "x.c:1:1: error: incomplete definition of type 'struct s'", word: "s")
+
+test "a typedef of a number is told as the number, at clang's width and sign, with no HANDLE"
+    found = ffi_tag.TaggedRecord(
+        span: token.Span(start: 0, end: 0),
+        header: "signal.h",
+        name: "sigset_t",
+        partial: true,
+        handle: false
+    )
+    line = "t.hero:2:53: error: member reference base type 'sigset_t' (aka 'unsigned int') is not a structure or union"
+    d = told(
+        found,
+        word: "sigset_t",
+        line: line,
+        asked: answered(word: "sigset_t", canonical: "unsigned int", width: 34),
+        word_bits: 64
+    )
+    assert d.code == "ffi_unknown_tag"
+    assert d.message == "`sigset_t` is `unsigned int` in `signal.h`, a number, not a struct — a `record` holds the fields of a C struct, and `unsigned int` has none"
+    assert ffi_lookup.has(text: d.notes[0], needle: "`@<name>: u32`")
+    assert !ffi_lookup.has(text: d.notes[0], needle: "HANDLE")
+    assert d.notes.len() == 1
+
+    # Unanswered, the spelling's table names it; `long` with its caveat.
+    plain = told(found, word: "sigset_t", line: line, asked: ffi_asked.nothing(), word_bits: 64)
+    assert ffi_lookup.has(text: plain.notes[0], needle: "`u32`")
+    wide = told(
+        found,
+        word: "sigset_t",
+        line: "t.hero:2:53: error: member reference base type 'sigset_t' (aka 'long') is not a structure or union",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
+    )
+    assert ffi_lookup.has(text: wide.notes[0], needle: "`i64`")
+    assert ffi_lookup.has(text: wide.notes[1], needle: "C's `long` is the platform's word")
+
+    # An enumeration clang names with no `aka`: the round's answer says it.
+    e = told(
+        found,
+        word: "k_enum",
+        line: "t.hero:2:53: error: member reference base type 'k_enum' is not a structure or union",
+        asked: answered(word: "k_enum", canonical: "k_enum", width: 34),
+        word_bits: 64
+    )
+    assert e.message == "`k_enum` is a number in `signal.h`, not a struct — a `record` holds the fields of a C struct, and a number has none"
+
+test "a pointer is held as itself, a struct's pointer as its HANDLE too; the rest as what it stands for"
+    found = ffi_tag.TaggedRecord(
+        span: token.Span(start: 0, end: 0),
+        header: "k.h",
+        name: "k_ptr",
+        partial: true,
+        handle: false
+    )
+    p = told(
+        found,
+        word: "k_ptr",
+        line: "t.hero:2:53: error: member reference base type 'k_ptr' (aka 'struct k_hidden *') is not a structure or union",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
+    )
+    assert ffi_lookup.has(text: p.message, needle: "a pointer, not a struct")
+    assert ffi_lookup.has(text: p.notes[0], needle: "`@<name>: ptr`")
+    assert ffi_lookup.has(text: p.notes[0], needle: "`record k_ptr tag k_hidden`")
+    v = told(
+        found,
+        word: "k_ptr",
+        line: "t.hero:2:53: error: member reference base type 'k_ptr' (aka 'void *') is not a structure or union",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
+    )
+    assert !ffi_lookup.has(text: v.notes[0], needle: "HANDLE")
+    a = told(
+        found,
+        word: "k_ptr",
+        line: "t.hero:2:53: error: member reference base type 'k_ptr' (aka 'int[4]') is not a structure or union",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
+    )
+    assert ffi_lookup.has(text: a.message, needle: "which is no struct")
+    assert ffi_lookup.has(text: a.notes[0], needle: "`int[4]`")
+    f = told(
+        found,
+        word: "k_ptr",
+        line: "t.hero:2:53: error: member reference base type 'k_ptr' (aka 'int (*)(int)') is not a structure or union",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
+    )
+    assert !ffi_lookup.has(text: f.message, needle: "a pointer, not")
+
+test "a tag naming a typedef of a number is told so; one of a struct, or unanswered, is not"
+    assert ffi_lookup.has(
+        text: tag_note(answered(word: "sigset_t", canonical: "unsigned int", width: 34), word: "sigset_t", word_bits: 64).must(),
+        needle: "`sigset_t` is the name of a typedef in the header, of `unsigned int`, and no struct: a program holds a `sigset_t` as the number it is, `u32`"
+    )
+    assert tag_note(answered(word: "re_t", canonical: "struct re_s", width: 1024), word: "re_t", word_bits: 64).is_err()
+    assert tag_note(
+        answered(word: "re_t", canonical: "struct (unnamed struct at regex.h:1:9)", width: 1024),
+        word: "re_t",
+        word_bits: 64
+    ).is_err()
+    assert tag_note(ffi_asked.nothing(), word: "sigset_t", word_bits: 64).is_err()

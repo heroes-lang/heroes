@@ -18,6 +18,13 @@
 #
 # A field the header lacks, or a bit-field, which `sizeof` refuses, answers
 # nothing, and the field's diagnostic says what it always said.
+#
+# **And the record's own type, the same two questions** (defect 2514,
+# 2026-11-13): the word the record names its C type by, its tag, or its own
+# name where it has none, asked as `*(word *)0`, so a record named after a
+# typedef of a number, Darwin's `sigset_t`, is told it is one at its own width
+# and sign (`emit/ffi_typedef_kind.hero`). A word that is a struct's tag alone,
+# or an incomplete type, answers nothing.
 
 use ast
 use emit/c_text
@@ -32,9 +39,15 @@ constant FIELD: str
 constant WIDTH: str
     "hero-ask-width "
 
+# The key a record's own type is answered under, `SELF` and the word, in the
+# tables its fields' answers fill: a field's key is `<record> <field>`, and no
+# record's name begins with `%`, so the two never meet.
+constant SELF: str
+    "%type "
+
 # The two questions of every field of a group record of the program's own
 # files `records` holds (`emit_externs.held`), each named `<record> <field>`
-# after its prefix.
+# after its prefix, and of the record's own type, named `SELF` and its word.
 function questions(names: ctype.Names, s: source.Source, decls: [ast.Decl], records: {i64: bool}?) -> [str]
     out: [str] @= []
     at: i64 @= 0
@@ -46,16 +59,29 @@ function questions(names: ctype.Names, s: source.Source, decls: [ast.Decl], reco
                     for field in rec.fields
                         member = mangle.field_of(foreign: true, name: source.span_text(s, field.name))
                         place = "((" + ctype.of(names, decl: at) + " *)0)->" + member
-                        asked = source.span_text(s, decl.name) + " " + member
-                        out @ out.push(c_text.line_directive(at: 1, file: FIELD + asked))
-                        out @ out.push(typing(given: place, n: out.len()))
-                        out @ out.push(c_text.line_directive(at: 1, file: WIDTH + asked))
-                        out @ out.push(typing(given: "(char (*)[" + sizing(place) + "])0", n: out.len()))
+                        out @ pair(out, asked: source.span_text(s, decl.name) + " " + member, place: place)
+
+                    word: str @= source.span_text(s, decl.name)
+
+                    if !rec.tag.is_err()
+                        word @ source.span_text(s, rec.tag.must())
+
+                    if word != "void"
+                        out @ pair(out, asked: SELF + word, place: "(*(" + word + " *)0)")
             .constant_decl | .function_decl | .variant_decl | .test_decl => at @ at
 
         at @ at + 1
 
     return out
+
+# `out` with the two questions of `place` after it, each under its `#line`
+# naming `asked` after its prefix: its type, then its width and kind.
+function pair(out: [str], asked: str, place: str) -> [str]
+    grown: [str] @= out
+    grown @ grown.push(c_text.line_directive(at: 1, file: FIELD + asked))
+    grown @ grown.push(typing(given: place, n: grown.len()))
+    grown @ grown.push(c_text.line_directive(at: 1, file: WIDTH + asked))
+    return grown.push(typing(given: "(char (*)[" + sizing(place) + "])0", n: grown.len()))
 
 # A question whose answer is the type clang names for `given`.
 function typing(given: str, n: i64) -> str

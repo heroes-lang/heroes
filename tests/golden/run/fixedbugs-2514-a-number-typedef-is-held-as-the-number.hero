@@ -1,0 +1,22 @@
+# fixedbugs, defect 2514, lane b35-ffi, 2026-11-13.
+#
+# The form every refusal of a record over a typedef of a number now names: the
+# number itself, at the header's width and sign, `@m: u32` where C takes a
+# `mask2514_t *` (spec § 13, *ONE element, held to the same width and sign*),
+# `u32` where it takes or gives one back. Darwin's `sigset_t` is this shape,
+# `sigprocmask(how: i32, @set: u32, @old: u32)` built and printed `0 0`; the
+# header here is the program's own so every platform reads one type.
+
+extern "fixedbugs-2514-mask.h"
+    function mask2514_fill(@m: u32) -> i32
+    function mask2514_add(@m: u32, bit: i32) -> i32
+    function mask2514_twice(m: u32) -> u32
+
+function main()
+    m @= to_u32(0).must()
+    print(mask2514_fill(@m))
+    print(m)
+    print(mask2514_add(@m, bit: 1))
+    print(mask2514_add(@m, bit: 40))
+    print(m)
+    print(mask2514_twice(m: m))
