@@ -70,9 +70,12 @@ constant ROOT: str
 # 30's gate, 2026-11-11, the round's fifteen: defects 2432 (two), 2433 (two),
 # 2434 (five), 2446 (two), 2463 (one) and `heroes new` (three); forty-three at
 # batch 31's gate the same day, defects 2454 (two), 2455 (one) and 2462
-# (four), and panel 244's two building cases.
+# (four), and panel 244's two building cases; fifty-eight at batch 34's
+# gate, 2026-11-13, defects 2474 (two), 2478 (one) and 2479 (one) of batch
+# 32, inside the floor's slack until then, and the round's eleven, defects
+# 2453 (four), 2493 (three) and 2506 (four).
 constant LEAST: i64
-    43
+    58
 
 # The identity and the date every git source of a case is committed with.
 constant IDENTITY: [str]
