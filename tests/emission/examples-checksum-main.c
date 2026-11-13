@@ -326,15 +326,15 @@ bb3:
     return t36;
 }
 
-#line 79 "examples/checksum/main.hero"
+#line 80 "examples/checksum/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17; uint8_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t19 = h5_own5; h5_own5 = t1; hero_array_decref(t19); t20 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t20);
-#line 82
-    t2 = h0_data; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.shown", 82, 9) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); h4_one = t10;
+#line 83
+    t2 = h0_data; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.shown", 83, 9) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); h4_one = t10;
     t12 = h4_one; t13 = hero_int_to_str(t12); t22 = h6_own6; h6_own6 = t13; hero_str_decref(t22); hero_array_push_owned(&h1_out, &t13); goto bb3; bb3:
-#line 82
-    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.shown", 82, 9); h3_i0 = t17; goto bb1; bb4:
-#line 85
+#line 83
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.shown", 83, 9); h3_i0 = t17; goto bb1; bb4:
+#line 86
     t18 = h1_out;
 #line 340 "main.c"
     hero_array_incref(t18);
@@ -345,19 +345,19 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) { HeroArrayHeader * h1
     return t18;
 }
 
-#line 87 "examples/checksum/main.hero"
+#line 88 "examples/checksum/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = {0}, *h12_own12 = {0}, *t1, *t4, *t7, *t39, *t41, *t42, *t45, *t46, *t54, *t55; HERO_NODEBUG int64_t h1_i0, t2, t3, t5, t8, t16, t17, t18, t33, t34; HeroStr h2_text = {0}; h_main_Digest h3_nine; HERO_NODEBUG h_0opt_4d1c207c h4_f0 = {0}, h11_own11 = {0}, t31, t32, t36, t38, t52, t53; HeroArrayHeader * h5_back = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h13_own13 = {0}, t9, t10, t11, t12, t13, t14, t15, t19, t21, t23, t24, t26, t27, t29, t30, t40, t43, t44, t47, t48, t49, t50, t51, t56; HERO_NODEBUG bool t6, t35; HERO_NODEBUG h_main_Digest t20; HERO_NODEBUG uint32_t t22, t25; HERO_NODEBUG uint64_t t28; HERO_NODEBUG HeroFailure t37; HERO_ENTRY_STOP; goto bb0; bb0:
-#line 89
-    t1 = h_main_VECTORS(); t45 = h6_own6; h6_own6 = t1; hero_array_decref(t45); t46 = h0_xs0; hero_array_incref(t1); h0_xs0 = t1; hero_array_decref(t46); t2 = INT64_C(0); h1_i0 = t2; goto bb1; bb1: t3 = h1_i0; t4 = h0_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h0_xs0; t8 = h1_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "main.hero", "main.main", 89, 9) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); t47 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t47);
+#line 90
+    t1 = h_main_VECTORS(); t45 = h6_own6; h6_own6 = t1; hero_array_decref(t45); t46 = h0_xs0; hero_array_incref(t1); h0_xs0 = t1; hero_array_decref(t46); t2 = INT64_C(0); h1_i0 = t2; goto bb1; bb1: t3 = h1_i0; t4 = h0_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h0_xs0; t8 = h1_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "main.hero", "main.main", 90, 9) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); t47 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t47);
     t10 = HERO_STR_LIT(hero_str_792e9662); t11 = h2_text; t12 = HERO_STR_LIT(hero_str_3b9df7ae); t13 = h2_text; t14 = h_base64_encoded(t13); t48 = h7_own7; h7_own7 = t14; hero_str_decref(t48); t15 = HERO_STR_LIT(hero_str_22); hero_print_str(t10); hero_print_str(t11); hero_print_str(t12); hero_print_str(t14); hero_print_str(t15); hero_print_end(); goto bb3; bb3:
-#line 89
-    t16 = h1_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("main.hero", "main.main", 89, 9); h1_i0 = t18; goto bb1; bb4:
-#line 94
+#line 90
+    t16 = h1_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("main.hero", "main.main", 90, 9); h1_i0 = t18; goto bb1; bb4:
+#line 95
     t19 = HERO_STR_LIT(hero_str_55256655); t20 = h_main_digest_of(t19); h3_nine = t20;
     t21 = HERO_STR_LIT(hero_str_2430b6cc); t22 = h3_nine.f_checksum; t23 = h_main_hex(t22); t49 = h8_own8; h8_own8 = t23; hero_str_decref(t49); hero_print_str(t21); hero_print_str(t23); hero_print_end();
     t24 = HERO_STR_LIT(hero_str_2b208381); t25 = h3_nine.f_rolling; t26 = h_main_hex(t25); t50 = h9_own9; h9_own9 = t26; hero_str_decref(t50); hero_print_str(t24); hero_print_str(t26); hero_print_end();
     t27 = HERO_STR_LIT(hero_str_137d0d68); t28 = h3_nine.f_length; t29 = hero_uint_to_str(t28); t51 = h10_own10; h10_own10 = t29; hero_str_decref(t51); hero_print_str(t27); hero_print_str(t29); hero_print_end();
-#line 101
+#line 102
     t30 = HERO_STR_LIT(hero_str_f4dae36); t31 = h_base64_decoded(t30); t52 = h11_own11; h11_own11 = t31; h_0opt_4d1c207c_release(&t52); t53 = h4_f0; h_0opt_4d1c207c_retain(&t31); h4_f0 = t31; h_0opt_4d1c207c_release(&t53); t32 = h4_f0; t33 = t32.tag; t34 = INT64_C(0); t35 = t33 == t34; if (t35) goto bb5; else goto bb6; bb5: t38 = h4_f0; t39 = t38.as.ok; t54 = h5_back; hero_array_incref(t39); h5_back = t39; hero_array_decref(t54);
     t40 = HERO_STR_LIT(hero_str_1907f49f); t41 = h5_back; t42 = h_main_shown(t41); t55 = h12_own12; h12_own12 = t42; hero_array_decref(t55); t43 = HERO_STR_LIT(hero_str_20); t44 = hero_str_join(t42, t43); t56 = h13_own13; h13_own13 = t44; hero_str_decref(t56); hero_print_str(t40); hero_print_str(t44); hero_print_end();
 #line 364 "main.c"
@@ -375,10 +375,10 @@ void h_main_main(void) { HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = 
     hero_str_release_at(&h13_own13);
     return;
 bb6:
-#line 101 "examples/checksum/main.hero"
+#line 102 "examples/checksum/main.hero"
     t36 = h4_f0; t37 = t36.as.err;
 #line 381 "main.c"
-    hero_panic_must_at(t37, "main.hero", "main.main", 101, 12);
+    hero_panic_must_at(t37, "main.hero", "main.main", 102, 12);
     hero_unreachable();
 }
 
@@ -486,7 +486,7 @@ bool h_adler_is_prime(int64_t h0_n) { int64_t h1_d; HERO_NODEBUG bool h2_ret0, t
     return t21;
 }
 
-#line 38 "examples/checksum/base64.hero"
+#line 40 "examples/checksum/base64.hero"
 HeroStr h_base64_ALPHABET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_45fa86fe);
 #line 493 "main.c"
@@ -494,7 +494,7 @@ HeroStr h_base64_ALPHABET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto
     return t1;
 }
 
-#line 41 "examples/checksum/base64.hero"
+#line 43 "examples/checksum/base64.hero"
 HeroStr h_base64_PAD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3d);
 #line 501 "main.c"
@@ -502,7 +502,7 @@ HeroStr h_base64_PAD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
     return t1;
 }
 
-#line 44 "examples/checksum/base64.hero"
+#line 46 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_LENGTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_220131e1);
 #line 509 "main.c"
@@ -510,7 +510,7 @@ HeroStr h_base64_ERR_LENGTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; go
     return t1;
 }
 
-#line 47 "examples/checksum/base64.hero"
+#line 49 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_552a00f0);
 #line 517 "main.c"
@@ -518,7 +518,7 @@ HeroStr h_base64_ERR_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
     return t1;
 }
 
-#line 50 "examples/checksum/base64.hero"
+#line 52 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_PADDING(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1b630675);
 #line 525 "main.c"
@@ -526,15 +526,15 @@ HeroStr h_base64_ERR_PADDING(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; g
     return t1;
 }
 
-#line 56 "examples/checksum/base64.hero"
+#line 58 "examples/checksum/base64.hero"
 HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t15, *t16, *t17; HERO_NODEBUG int64_t t2, t3, t5, t9, t12, t13, t14; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6; HERO_NODEBUG uint8_t t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t16 = h3_own3; h3_own3 = t1; hero_array_decref(t16); t17 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t17);
     t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
-#line 60
+#line 62
     t3 = h2_i; t4 = h0_text; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
-    t8 = h0_text; t9 = h2_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "base64.hero", "base64.bytes_of", 61, 24) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); hero_array_push_owned(&h1_out, &t10);
-    t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("base64.hero", "base64.bytes_of", 62, 13); h2_i = t14; goto bb1; bb3:
-#line 64
+    t8 = h0_text; t9 = h2_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "base64.hero", "base64.bytes_of", 63, 24) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); hero_array_push_owned(&h1_out, &t10);
+    t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("base64.hero", "base64.bytes_of", 64, 13); h2_i = t14; goto bb1; bb3:
+#line 66
     t15 = h1_out;
 #line 540 "main.c"
     hero_array_incref(t15);
@@ -543,9 +543,9 @@ HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out 
     return t15;
 }
 
-#line 67 "examples/checksum/base64.hero"
+#line 69 "examples/checksum/base64.hero"
 HeroStr h_base64_letter(int64_t h0_value) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t6, t7, t8; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_base64_ALPHABET(); t7 = h1_own1; h1_own1 = t1; hero_str_decref(t7); t2 = h0_value; t3 = h0_value; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("base64.hero", "base64.letter", 68, 44); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.letter", 68, 12}; t6 = hero_str_slice_at(t1, t2, t5, &hero_here); } t8 = h2_own2; h2_own2 = t6; hero_str_decref(t8);
+    t1 = h_base64_ALPHABET(); t7 = h1_own1; h1_own1 = t1; hero_str_decref(t7); t2 = h0_value; t3 = h0_value; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("base64.hero", "base64.letter", 70, 44); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.letter", 70, 12}; t6 = hero_str_slice_at(t1, t2, t5, &hero_here); } t8 = h2_own2; h2_own2 = t6; hero_str_decref(t8);
 #line 550 "main.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
@@ -553,17 +553,17 @@ HeroStr h_base64_letter(int64_t h0_value) { HERO_NODEBUG HeroStr h1_own1 = {0}, 
     return t6;
 }
 
-#line 71 "examples/checksum/base64.hero"
+#line 73 "examples/checksum/base64.hero"
 h_0opt_e201354 h_base64_value_of(HeroStr h0_written) { int64_t h1_i; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, t14, t24, t25, t31, t32; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t5, t10, t11, t18, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t8, t9, t13, t15, t16, t17; HERO_NODEBUG bool t4, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_i = t1; goto bb1; bb1:
-#line 74
-    t2 = h1_i; t3 = INT64_C(64); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
-    t5 = h_base64_ALPHABET(); t26 = h3_own3; h3_own3 = t5; hero_str_decref(t26); t6 = h1_i; t7 = h1_i; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("base64.hero", "base64.value_of", 75, 40); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.value_of", 75, 12}; t10 = hero_str_slice_at(t5, t6, t9, &hero_here); } t27 = h4_own4; h4_own4 = t10; hero_str_decref(t27); t11 = h0_written; t12 = hero_str_eq(t10, t11); if (t12) goto bb5; else goto bb6; bb3:
-#line 79
-    t18 = h_base64_ERR_CHARACTER(); t28 = h5_own5; h5_own5 = t18; hero_str_decref(t28); t19 = HERO_STR_LIT(hero_str_60); t20 = h0_written; t21 = hero_str_concat(t19, t20); t29 = h6_own6; h6_own6 = t21; hero_str_decref(t29); t22 = HERO_STR_LIT(hero_str_3b7a254e); t23 = hero_str_concat(t21, t22); t30 = h7_own7; h7_own7 = t23; hero_str_decref(t30); hero_str_incref(t18); hero_str_incref(t23); t24 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t23}}; t31 = h8_own8; h8_own8 = t24; h_0opt_e201354_release(&t31); h2_ret0 = t24; goto bb7; bb4:
-#line 77
-    t15 = h1_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("base64.hero", "base64.value_of", 77, 13); h1_i = t17; goto bb1; bb5:
 #line 76
+    t2 = h1_i; t3 = INT64_C(64); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = h_base64_ALPHABET(); t26 = h3_own3; h3_own3 = t5; hero_str_decref(t26); t6 = h1_i; t7 = h1_i; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("base64.hero", "base64.value_of", 77, 40); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.value_of", 77, 12}; t10 = hero_str_slice_at(t5, t6, t9, &hero_here); } t27 = h4_own4; h4_own4 = t10; hero_str_decref(t27); t11 = h0_written; t12 = hero_str_eq(t10, t11); if (t12) goto bb5; else goto bb6; bb3:
+#line 81
+    t18 = h_base64_ERR_CHARACTER(); t28 = h5_own5; h5_own5 = t18; hero_str_decref(t28); t19 = HERO_STR_LIT(hero_str_60); t20 = h0_written; t21 = hero_str_concat(t19, t20); t29 = h6_own6; h6_own6 = t21; hero_str_decref(t29); t22 = HERO_STR_LIT(hero_str_3b7a254e); t23 = hero_str_concat(t21, t22); t30 = h7_own7; h7_own7 = t23; hero_str_decref(t30); hero_str_incref(t18); hero_str_incref(t23); t24 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t23}}; t31 = h8_own8; h8_own8 = t24; h_0opt_e201354_release(&t31); h2_ret0 = t24; goto bb7; bb4:
+#line 79
+    t15 = h1_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("base64.hero", "base64.value_of", 79, 13); h1_i = t17; goto bb1; bb5:
+#line 78
     t13 = h1_i; t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t13}; t32 = h9_own9; h9_own9 = t14; h_0opt_e201354_release(&t32); h2_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
 #line 569 "main.c"
     t25 = h2_ret0;
@@ -578,7 +578,7 @@ h_0opt_e201354 h_base64_value_of(HeroStr h0_written) { int64_t h1_i; HERO_NODEBU
     return t25;
 }
 
-#line 83 "examples/checksum/base64.hero"
+#line 85 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded(HeroStr h0_text) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_base64_bytes_of(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = h_base64_encoded_bytes(t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5);
 #line 585 "main.c"
@@ -588,15 +588,15 @@ HeroStr h_base64_encoded(HeroStr h0_text) { HERO_NODEBUG HeroArrayHeader *h1_own
     return t3;
 }
 
-#line 89 "examples/checksum/base64.hero"
+#line 91 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; int64_t h3_n; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h9_f1 = {0}, h10_f2 = {0}, h13_own13 = {0}, h15_own15 = {0}, h18_own18 = {0}, t11, t12, t16, t18, t33, t34, t38, t40, t53, t54, t58, t60, t122, t123, t125, t126, t129, t130; int64_t h5_b0; int64_t h6_b1; int64_t h7_b2; int64_t h8_held; int64_t h11_block; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *t1, *t3, *t8, *t28, *t48, *t117, *t120, *t121; HERO_NODEBUG HeroStr h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t78, t86, t97, t100, t109, t112, t118, t119, t124, t127, t128, t131, t132, t133, t134; HERO_NODEBUG int64_t t2, t4, t5, t6, t9, t13, t14, t19, t20, t21, t22, t23, t24, t25, t26, t29, t30, t31, t35, t36, t41, t42, t43, t44, t45, t46, t49, t50, t51, t55, t56, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t73, t74, t75, t76, t77, t81, t82, t83, t84, t85, t88, t89, t92, t93, t94, t95, t96, t102, t103, t106, t107, t108, t114, t115, t116; HERO_NODEBUG bool t7, t15, t27, t37, t47, t57, t90, t104; HERO_NODEBUG uint8_t t10, t32, t52; HERO_NODEBUG HeroFailure t17, t39, t59; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t120 = h12_own12; h12_own12 = t1; hero_array_decref(t120); t121 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t121);
     t2 = INT64_C(0); h2_i = t2;
     t3 = h0_data; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); h3_n = t4; goto bb1; bb1:
-#line 94
+#line 96
     t5 = h2_i; t6 = h3_n; t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
-    t8 = h0_data; t9 = h2_i; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "base64.hero", "base64.encoded_bytes", 95, 14) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10}; t122 = h13_own13; h13_own13 = t11; h_0opt_e201354_release(&t122); t123 = h4_f0; h_0opt_e201354_retain(&t11); h4_f0 = t11; h_0opt_e201354_release(&t123); t12 = h4_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb4; else goto bb5; bb3:
-#line 127
+    t8 = h0_data; t9 = h2_i; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "base64.hero", "base64.encoded_bytes", 97, 14) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10}; t122 = h13_own13; h13_own13 = t11; h_0opt_e201354_release(&t122); t123 = h4_f0; h_0opt_e201354_retain(&t11); h4_f0 = t11; h_0opt_e201354_release(&t123); t12 = h4_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb4; else goto bb5; bb3:
+#line 129
     t117 = h1_out; t118 = HERO_STR_LIT(hero_str_0); t119 = hero_str_join(t117, t118); t124 = h14_own14; h14_own14 = t119; hero_str_decref(t124);
 #line 602 "main.c"
     hero_str_incref(t119);
@@ -617,91 +617,91 @@ HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) { HeroArrayHeader * h1
     hero_str_release_at(&h22_own22);
     return t119;
 bb4:
-#line 95 "examples/checksum/base64.hero"
+#line 97 "examples/checksum/base64.hero"
     t18 = h4_f0; t19 = t18.as.ok; h5_b0 = t19;
     t20 = INT64_C(0); h6_b1 = t20;
     t21 = INT64_C(0); h7_b2 = t21;
     t22 = INT64_C(1); h8_held = t22;
-#line 100
-    t23 = h2_i; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 100, 12); t26 = h3_n; t27 = t25 < t26; if (t27) goto bb7; else goto bb8; bb5:
-#line 95
+#line 102
+    t23 = h2_i; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 102, 12); t26 = h3_n; t27 = t25 < t26; if (t27) goto bb7; else goto bb8; bb5:
+#line 97
     t16 = h4_f0; t17 = t16.as.err;
 #line 630 "main.c"
-    hero_panic_must_at(t17, "base64.hero", "base64.encoded_bytes", 95, 14);
+    hero_panic_must_at(t17, "base64.hero", "base64.encoded_bytes", 97, 14);
     hero_unreachable();
 bb6:
-#line 104 "examples/checksum/base64.hero"
-    t43 = h2_i; t44 = INT64_C(2); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 104, 12); t46 = h3_n; t47 = t45 < t46; if (t47) goto bb12; else goto bb13; bb7:
-#line 101
-    t28 = h0_data; t29 = h2_i; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 101, 23); t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? hero_panic_index_at(t28, t31, "base64.hero", "base64.encoded_bytes", 101, 18) : (void)0), (void)(t28->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t28 + 1))[t31]); t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t32}; t125 = h15_own15; h15_own15 = t33; h_0opt_e201354_release(&t125); t126 = h9_f1; h_0opt_e201354_retain(&t33); h9_f1 = t33; h_0opt_e201354_release(&t126); t34 = h9_f1; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb9; else goto bb10; bb8: goto bb6; bb9: t40 = h9_f1; t41 = t40.as.ok; h6_b1 = t41;
+#line 106 "examples/checksum/base64.hero"
+    t43 = h2_i; t44 = INT64_C(2); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 106, 12); t46 = h3_n; t47 = t45 < t46; if (t47) goto bb12; else goto bb13; bb7:
+#line 103
+    t28 = h0_data; t29 = h2_i; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 103, 23); t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? hero_panic_index_at(t28, t31, "base64.hero", "base64.encoded_bytes", 103, 18) : (void)0), (void)(t28->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t28 + 1))[t31]); t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t32}; t125 = h15_own15; h15_own15 = t33; h_0opt_e201354_release(&t125); t126 = h9_f1; h_0opt_e201354_retain(&t33); h9_f1 = t33; h_0opt_e201354_release(&t126); t34 = h9_f1; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb9; else goto bb10; bb8: goto bb6; bb9: t40 = h9_f1; t41 = t40.as.ok; h6_b1 = t41;
     t42 = INT64_C(2); h8_held = t42; goto bb6; bb10:
-#line 101
+#line 103
     t38 = h9_f1; t39 = t38.as.err;
 #line 641 "main.c"
-    hero_panic_must_at(t39, "base64.hero", "base64.encoded_bytes", 101, 18);
+    hero_panic_must_at(t39, "base64.hero", "base64.encoded_bytes", 103, 18);
     hero_unreachable();
 bb11:
-#line 112 "examples/checksum/base64.hero"
-    t63 = h5_b0; t64 = INT64_C(16); if (t64 < 0 || t64 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 112, 17); t65 = (int64_t)((uint64_t)t63 << (uint64_t)t64); t66 = h6_b1; t67 = INT64_C(8); if (t67 < 0 || t67 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 112, 28); t68 = (int64_t)((uint64_t)t66 << (uint64_t)t67); t69 = t65 | t68; t70 = h7_b2; t71 = t69 | t70; h11_block = t71;
-    t73 = h11_block; t74 = INT64_C(18); if (t74 < 0 || t74 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 113, 31); t75 = (t73 < 0) ? ~(int64_t)((~(uint64_t)t73) >> (uint64_t)t74) : (int64_t)((uint64_t)t73 >> (uint64_t)t74); t76 = INT64_C(63); t77 = t75 & t76; t78 = h_base64_letter(t77); t127 = h16_own16; h16_own16 = t78; hero_str_decref(t127); hero_array_push_owned(&h1_out, &t78);
-    t81 = h11_block; t82 = INT64_C(12); if (t82 < 0 || t82 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 114, 31); t83 = (t81 < 0) ? ~(int64_t)((~(uint64_t)t81) >> (uint64_t)t82) : (int64_t)((uint64_t)t81 >> (uint64_t)t82); t84 = INT64_C(63); t85 = t83 & t84; t86 = h_base64_letter(t85); t128 = h17_own17; h17_own17 = t86; hero_str_decref(t128); hero_array_push_owned(&h1_out, &t86);
-#line 116
+#line 114 "examples/checksum/base64.hero"
+    t63 = h5_b0; t64 = INT64_C(16); if (t64 < 0 || t64 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 114, 17); t65 = (int64_t)((uint64_t)t63 << (uint64_t)t64); t66 = h6_b1; t67 = INT64_C(8); if (t67 < 0 || t67 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 114, 28); t68 = (int64_t)((uint64_t)t66 << (uint64_t)t67); t69 = t65 | t68; t70 = h7_b2; t71 = t69 | t70; h11_block = t71;
+    t73 = h11_block; t74 = INT64_C(18); if (t74 < 0 || t74 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 115, 31); t75 = (t73 < 0) ? ~(int64_t)((~(uint64_t)t73) >> (uint64_t)t74) : (int64_t)((uint64_t)t73 >> (uint64_t)t74); t76 = INT64_C(63); t77 = t75 & t76; t78 = h_base64_letter(t77); t127 = h16_own16; h16_own16 = t78; hero_str_decref(t127); hero_array_push_owned(&h1_out, &t78);
+    t81 = h11_block; t82 = INT64_C(12); if (t82 < 0 || t82 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 116, 31); t83 = (t81 < 0) ? ~(int64_t)((~(uint64_t)t81) >> (uint64_t)t82) : (int64_t)((uint64_t)t81 >> (uint64_t)t82); t84 = INT64_C(63); t85 = t83 & t84; t86 = h_base64_letter(t85); t128 = h17_own17; h17_own17 = t86; hero_str_decref(t128); hero_array_push_owned(&h1_out, &t86);
+#line 118
     t88 = h8_held; t89 = INT64_C(2); t90 = t88 >= t89; if (t90) goto bb17; else goto bb18; bb12:
-#line 105
-    t48 = h0_data; t49 = h2_i; t50 = INT64_C(2); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 105, 23); t52 = ((void)((t48 == NULL || t51 < 0 || t51 >= t48->len) ? hero_panic_index_at(t48, t51, "base64.hero", "base64.encoded_bytes", 105, 18) : (void)0), (void)(t48->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t48 + 1))[t51]); t53 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t52}; t129 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t129); t130 = h10_f2; h_0opt_e201354_retain(&t53); h10_f2 = t53; h_0opt_e201354_release(&t130); t54 = h10_f2; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb14; else goto bb15; bb13: goto bb11; bb14: t60 = h10_f2; t61 = t60.as.ok; h7_b2 = t61;
+#line 107
+    t48 = h0_data; t49 = h2_i; t50 = INT64_C(2); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 107, 23); t52 = ((void)((t48 == NULL || t51 < 0 || t51 >= t48->len) ? hero_panic_index_at(t48, t51, "base64.hero", "base64.encoded_bytes", 107, 18) : (void)0), (void)(t48->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t48 + 1))[t51]); t53 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t52}; t129 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t129); t130 = h10_f2; h_0opt_e201354_retain(&t53); h10_f2 = t53; h_0opt_e201354_release(&t130); t54 = h10_f2; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb14; else goto bb15; bb13: goto bb11; bb14: t60 = h10_f2; t61 = t60.as.ok; h7_b2 = t61;
     t62 = INT64_C(3); h8_held = t62; goto bb11; bb15:
-#line 105
+#line 107
     t58 = h10_f2; t59 = t58.as.err;
 #line 656 "main.c"
-    hero_panic_must_at(t59, "base64.hero", "base64.encoded_bytes", 105, 18);
+    hero_panic_must_at(t59, "base64.hero", "base64.encoded_bytes", 107, 18);
     hero_unreachable();
 bb16:
-#line 121 "examples/checksum/base64.hero"
+#line 123 "examples/checksum/base64.hero"
     t102 = h8_held; t103 = INT64_C(3); t104 = t102 == t103; if (t104) goto bb20; else goto bb21; bb17:
-#line 117
-    t92 = h11_block; t93 = INT64_C(6); if (t93 < 0 || t93 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 117, 35); t94 = (t92 < 0) ? ~(int64_t)((~(uint64_t)t92) >> (uint64_t)t93) : (int64_t)((uint64_t)t92 >> (uint64_t)t93); t95 = INT64_C(63); t96 = t94 & t95; t97 = h_base64_letter(t96); t131 = h19_own19; h19_own19 = t97; hero_str_decref(t131); hero_array_push_owned(&h1_out, &t97); goto bb16; bb18:
 #line 119
+    t92 = h11_block; t93 = INT64_C(6); if (t93 < 0 || t93 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.encoded_bytes", 119, 35); t94 = (t92 < 0) ? ~(int64_t)((~(uint64_t)t92) >> (uint64_t)t93) : (int64_t)((uint64_t)t92 >> (uint64_t)t93); t95 = INT64_C(63); t96 = t94 & t95; t97 = h_base64_letter(t96); t131 = h19_own19; h19_own19 = t97; hero_str_decref(t131); hero_array_push_owned(&h1_out, &t97); goto bb16; bb18:
+#line 121
     t100 = h_base64_PAD(); t132 = h20_own20; h20_own20 = t100; hero_str_decref(t132); hero_array_push_owned(&h1_out, &t100); goto bb16; bb19:
-#line 125
-    t114 = h2_i; t115 = INT64_C(3); if (__builtin_add_overflow(t114, t115, &t116)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 125, 13); h2_i = t116; goto bb1; bb20:
-#line 122
-    t106 = h11_block; t107 = INT64_C(63); t108 = t106 & t107; t109 = h_base64_letter(t108); t133 = h21_own21; h21_own21 = t109; hero_str_decref(t133); hero_array_push_owned(&h1_out, &t109); goto bb19; bb21:
+#line 127
+    t114 = h2_i; t115 = INT64_C(3); if (__builtin_add_overflow(t114, t115, &t116)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 127, 13); h2_i = t116; goto bb1; bb20:
 #line 124
+    t106 = h11_block; t107 = INT64_C(63); t108 = t106 & t107; t109 = h_base64_letter(t108); t133 = h21_own21; h21_own21 = t109; hero_str_decref(t133); hero_array_push_owned(&h1_out, &t109); goto bb19; bb21:
+#line 126
     t112 = h_base64_PAD(); t134 = h22_own22; h22_own22 = t112; hero_str_decref(t134); hero_array_push_owned(&h1_out, &t112); goto bb19;
 #line 672 "main.c"
 }
 
-#line 131 "examples/checksum/base64.hero"
+#line 133 "examples/checksum/base64.hero"
 h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) { HeroStr h1_third = {0}; HeroStr h2_fourth = {0}; HERO_NODEBUG bool h3_b0, h4_b1, t14, t20, t21, t31, t34, t35, t45, t50; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h16_own16 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, t28, t42, t47, t52, t54, t55, t68, t74, t76, t77, t78; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h23_own23 = {0}, t1, t4, t5, t8, t9, t12, t13, t15, t18, t19, t22, t23, t24, t25, t26, t27, t29, t30, t32, t33, t36, t37, t38, t39, t40, t41, t43, t44, t48, t49, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t69, t70, t71, t72, t73, t75; HERO_NODEBUG int64_t t2, t3, t6, t7, t10, t11, t16, t17, t46, t51, t53; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_group; t2 = INT64_C(2); t3 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 132, 13}; t4 = hero_str_slice_at(t1, t2, t3, &hero_here); } t56 = h6_own6; h6_own6 = t4; hero_str_decref(t56); t57 = h1_third; hero_str_incref(t4); h1_third = t4; hero_str_decref(t57);
-    t5 = h0_group; t6 = INT64_C(3); t7 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 133, 14}; t8 = hero_str_slice_at(t5, t6, t7, &hero_here); } t58 = h7_own7; h7_own7 = t8; hero_str_decref(t58); t59 = h2_fourth; hero_str_incref(t8); h2_fourth = t8; hero_str_decref(t59);
-#line 135
-    t9 = h0_group; t10 = INT64_C(0); t11 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 135, 8}; t12 = hero_str_slice_at(t9, t10, t11, &hero_here); } t60 = h8_own8; h8_own8 = t12; hero_str_decref(t60); t13 = h_base64_PAD(); t61 = h9_own9; h9_own9 = t13; hero_str_decref(t61); t14 = hero_str_eq(t12, t13); h3_b0 = t14; if (t14) goto bb3; else goto bb2; bb1:
-#line 141
-    t29 = h1_third; t30 = h_base64_PAD(); t62 = h10_own10; h10_own10 = t30; hero_str_decref(t62); t31 = hero_str_eq(t29, t30); h4_b1 = t31; if (t31) goto bb7; else goto bb8; bb2:
-#line 135
-    t15 = h0_group; t16 = INT64_C(1); t17 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 135, 46}; t18 = hero_str_slice_at(t15, t16, t17, &hero_here); } t63 = h11_own11; h11_own11 = t18; hero_str_decref(t63); t19 = h_base64_PAD(); t64 = h12_own12; h12_own12 = t19; hero_str_decref(t64); t20 = hero_str_eq(t18, t19); h3_b0 = t20; goto bb3; bb3: t21 = h3_b0; if (t21) goto bb4; else goto bb5; bb4:
+    t1 = h0_group; t2 = INT64_C(2); t3 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 134, 13}; t4 = hero_str_slice_at(t1, t2, t3, &hero_here); } t56 = h6_own6; h6_own6 = t4; hero_str_decref(t56); t57 = h1_third; hero_str_incref(t4); h1_third = t4; hero_str_decref(t57);
+    t5 = h0_group; t6 = INT64_C(3); t7 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 135, 14}; t8 = hero_str_slice_at(t5, t6, t7, &hero_here); } t58 = h7_own7; h7_own7 = t8; hero_str_decref(t58); t59 = h2_fourth; hero_str_incref(t8); h2_fourth = t8; hero_str_decref(t59);
 #line 137
+    t9 = h0_group; t10 = INT64_C(0); t11 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 137, 8}; t12 = hero_str_slice_at(t9, t10, t11, &hero_here); } t60 = h8_own8; h8_own8 = t12; hero_str_decref(t60); t13 = h_base64_PAD(); t61 = h9_own9; h9_own9 = t13; hero_str_decref(t61); t14 = hero_str_eq(t12, t13); h3_b0 = t14; if (t14) goto bb3; else goto bb2; bb1:
+#line 143
+    t29 = h1_third; t30 = h_base64_PAD(); t62 = h10_own10; h10_own10 = t30; hero_str_decref(t62); t31 = hero_str_eq(t29, t30); h4_b1 = t31; if (t31) goto bb7; else goto bb8; bb2:
+#line 137
+    t15 = h0_group; t16 = INT64_C(1); t17 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.padding_of", 137, 46}; t18 = hero_str_slice_at(t15, t16, t17, &hero_here); } t63 = h11_own11; h11_own11 = t18; hero_str_decref(t63); t19 = h_base64_PAD(); t64 = h12_own12; h12_own12 = t19; hero_str_decref(t64); t20 = hero_str_eq(t18, t19); h3_b0 = t20; goto bb3; bb3: t21 = h3_b0; if (t21) goto bb4; else goto bb5; bb4:
+#line 139
     t22 = h_base64_ERR_PADDING(); t65 = h13_own13; h13_own13 = t22; hero_str_decref(t65);
     t23 = HERO_STR_LIT(hero_str_4245b2d); t24 = h0_group; t25 = hero_str_concat(t23, t24); t66 = h14_own14; h14_own14 = t25; hero_str_decref(t66); t26 = HERO_STR_LIT(hero_str_19bc6a6d); t27 = hero_str_concat(t25, t26); t67 = h15_own15; h15_own15 = t27; hero_str_decref(t67);
-#line 136
+#line 138
     hero_str_incref(t22); hero_str_incref(t27); t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t22, .msg = t27}}; t68 = h16_own16; h16_own16 = t28; h_0opt_e201354_release(&t68); h5_ret0 = t28; goto bb17; bb5: goto bb1; bb6:
-#line 147
+#line 149
     t43 = h1_third; t44 = h_base64_PAD(); t69 = h17_own17; h17_own17 = t44; hero_str_decref(t69); t45 = hero_str_eq(t43, t44); if (t45) goto bb12; else goto bb13; bb7:
-#line 141
-    t32 = h2_fourth; t33 = h_base64_PAD(); t70 = h18_own18; h18_own18 = t33; hero_str_decref(t70); t34 = !hero_str_eq(t32, t33); h4_b1 = t34; goto bb8; bb8: t35 = h4_b1; if (t35) goto bb9; else goto bb10; bb9:
 #line 143
+    t32 = h2_fourth; t33 = h_base64_PAD(); t70 = h18_own18; h18_own18 = t33; hero_str_decref(t70); t34 = !hero_str_eq(t32, t33); h4_b1 = t34; goto bb8; bb8: t35 = h4_b1; if (t35) goto bb9; else goto bb10; bb9:
+#line 145
     t36 = h_base64_ERR_PADDING(); t71 = h19_own19; h19_own19 = t36; hero_str_decref(t71);
     t37 = HERO_STR_LIT(hero_str_60); t38 = h0_group; t39 = hero_str_concat(t37, t38); t72 = h20_own20; h20_own20 = t39; hero_str_decref(t72); t40 = HERO_STR_LIT(hero_str_b59aa2d); t41 = hero_str_concat(t39, t40); t73 = h21_own21; h21_own21 = t41; hero_str_decref(t73);
-#line 142
+#line 144
     hero_str_incref(t36); hero_str_incref(t41); t42 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t36, .msg = t41}}; t74 = h22_own22; h22_own22 = t42; h_0opt_e201354_release(&t74); h5_ret0 = t42; goto bb17; bb10: goto bb6; bb11:
-#line 150
+#line 152
     t48 = h2_fourth; t49 = h_base64_PAD(); t75 = h23_own23; h23_own23 = t49; hero_str_decref(t75); t50 = hero_str_eq(t48, t49); if (t50) goto bb15; else goto bb16; bb12:
-#line 148
+#line 150
     t46 = INT64_C(2); t47 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t46}; t76 = h24_own24; h24_own24 = t47; h_0opt_e201354_release(&t76); h5_ret0 = t47; goto bb17; bb13: goto bb11; bb14:
-#line 153
+#line 155
     t53 = INT64_C(0); t54 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t53}; t77 = h25_own25; h25_own25 = t54; h_0opt_e201354_release(&t77); h5_ret0 = t54; goto bb17; bb15:
-#line 151
+#line 153
     t51 = INT64_C(1); t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t51}; t78 = h26_own26; h26_own26 = t52; h_0opt_e201354_release(&t78); h5_ret0 = t52; goto bb17; bb16: goto bb14; bb17:
 #line 707 "main.c"
     t55 = h5_ret0;
@@ -732,78 +732,78 @@ h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) { HeroStr h1_third = {0}; H
     return t55;
 }
 
-#line 157 "examples/checksum/base64.hero"
+#line 159 "examples/checksum/base64.hero"
 h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroStr h3_group = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_f1 = {0}, h9_f2 = {0}, h13_f3 = {0}, h14_f4 = {0}, h26_own26 = {0}, h30_own30 = {0}, h36_own36 = {0}, h40_own40 = {0}, h44_own44 = {0}, t27, t28, t32, t35, t58, t59, t63, t66, t72, t73, t77, t80, t91, t92, t96, t99, t108, t109, t113, t116, t197, t198, t202, t203, t209, t210, t214, t215, t220, t221; int64_t h5_pad; HERO_NODEBUG bool h6_b0, t6, t19, t31, t39, t45, t46, t62, t76, t86, t95, t103, t112, t141, t149, t160, t168, t177; int64_t h8_v0; int64_t h10_v1; int64_t h11_v2; int64_t h12_v3; int64_t h15_block; HERO_NODEBUG h_0opt_1ec004 h16_f5 = {0}, h17_f6 = {0}, h18_f7 = {0}, h42_own42 = {0}, h46_own46 = {0}, h47_own47 = {0}, t137, t138, t142, t144, t156, t157, t161, t163, t173, t174, t178, t180, t217, t218, t223, t224, t225, t226; HERO_NODEBUG h_0opt_4d1c207c h19_ret0 = {0}, h24_own24 = {0}, h27_own27 = {0}, h28_own28 = {0}, h34_own34 = {0}, h37_own37 = {0}, h38_own38 = {0}, h41_own41 = {0}, h45_own45 = {0}, t13, t34, t53, t65, t79, t98, t115, t187, t188, t194, t199, t200, t207, t211, t212, t216, t222; HERO_NODEBUG HeroArrayHeader *h20_own20 = {0}, *t14, *t186, *t189, *t190; HERO_NODEBUG HeroStr h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h25_own25 = {0}, h29_own29 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h35_own35 = {0}, h39_own39 = {0}, h43_own43 = {0}, t1, t7, t8, t9, t11, t12, t17, t20, t25, t26, t43, t47, t48, t49, t50, t51, t52, t54, t57, t68, t71, t87, t90, t104, t107, t191, t192, t193, t195, t196, t201, t204, t205, t206, t208, t213, t219; HERO_NODEBUG int64_t t2, t3, t4, t5, t10, t15, t16, t18, t21, t22, t23, t24, t29, t30, t36, t37, t38, t40, t41, t42, t44, t55, t56, t60, t61, t67, t69, t70, t74, t75, t81, t82, t83, t84, t85, t88, t89, t93, t94, t100, t101, t102, t105, t106, t110, t111, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t132, t133, t134, t135, t136, t139, t140, t147, t148, t151, t152, t153, t154, t155, t158, t159, t166, t167, t170, t171, t172, t175, t176, t183, t184, t185; HERO_NODEBUG HeroFailure t33, t64, t78, t97, t114, t143, t162, t179; HERO_NODEBUG uint8_t t145, t164, t181; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_text; t2 = hero_str_len(t1); t3 = INT64_C(4); if (t3 == 0) hero_panic_at("division by zero", "base64.hero", "base64.decoded", 158, 8); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "base64.hero", "base64.decoded", 158, 8); t4 = t2 % t3; t5 = INT64_C(0); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 163
+    t1 = h0_text; t2 = hero_str_len(t1); t3 = INT64_C(4); if (t3 == 0) hero_panic_at("division by zero", "base64.hero", "base64.decoded", 160, 8); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "base64.hero", "base64.decoded", 160, 8); t4 = t2 % t3; t5 = INT64_C(0); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 165
     t14 = hero_array_new(&hero_desc_u8, 1); t189 = h20_own20; h20_own20 = t14; hero_array_decref(t189); t190 = h1_out; hero_array_incref(t14); h1_out = t14; hero_array_decref(t190);
     t15 = INT64_C(0); h2_i = t15; goto bb4; bb2:
-#line 160
+#line 162
     t7 = h_base64_ERR_LENGTH(); t191 = h21_own21; h21_own21 = t7; hero_str_decref(t191);
     t8 = HERO_STR_LIT(hero_str_7eed3f00); t9 = h0_text; t10 = hero_str_len(t9); t11 = hero_int_to_str(t10); t192 = h22_own22; h22_own22 = t11; hero_str_decref(t192); t12 = hero_str_concat(t8, t11); t193 = h23_own23; h23_own23 = t12; hero_str_decref(t193);
-#line 159
+#line 161
     hero_str_incref(t7); hero_str_incref(t12); t13 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t12}}; t194 = h24_own24; h24_own24 = t13; h_0opt_4d1c207c_release(&t194); h19_ret0 = t13; goto bb40; bb3: goto bb1; bb4:
-#line 166
+#line 168
     t16 = h2_i; t17 = h0_text; t18 = hero_str_len(t17); t19 = t16 < t18; if (t19) goto bb5; else goto bb6; bb5:
-    t20 = h0_text; t21 = h2_i; t22 = h2_i; t23 = INT64_C(4); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("base64.hero", "base64.decoded", 167, 41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 167, 17}; t25 = hero_str_slice_at(t20, t21, t24, &hero_here); } t195 = h25_own25; h25_own25 = t25; hero_str_decref(t195); t196 = h3_group; hero_str_incref(t25); h3_group = t25; hero_str_decref(t196);
+    t20 = h0_text; t21 = h2_i; t22 = h2_i; t23 = INT64_C(4); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("base64.hero", "base64.decoded", 169, 41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 169, 17}; t25 = hero_str_slice_at(t20, t21, t24, &hero_here); } t195 = h25_own25; h25_own25 = t25; hero_str_decref(t195); t196 = h3_group; hero_str_incref(t25); h3_group = t25; hero_str_decref(t196);
     t26 = h3_group; t27 = h_base64_padding_of(t26); t197 = h26_own26; h26_own26 = t27; h_0opt_e201354_release(&t197); t198 = h4_f0; h_0opt_e201354_retain(&t27); h4_f0 = t27; h_0opt_e201354_release(&t198); t28 = h4_f0; t29 = t28.tag; t30 = INT64_C(0); t31 = t29 == t30; if (t31) goto bb7; else goto bb8; bb6:
-#line 192
+#line 194
     t186 = h1_out; hero_array_incref(t186); t187 = (h_0opt_4d1c207c){.tag = INT64_C(0), .as.ok = t186}; t199 = h27_own27; h27_own27 = t187; h_0opt_4d1c207c_release(&t199); h19_ret0 = t187; goto bb40; bb7:
-#line 168
+#line 170
     t35 = h4_f0; t36 = t35.as.ok; h5_pad = t36;
-#line 170
-    t37 = h5_pad; t38 = INT64_C(0); t39 = t37 > t38; h6_b0 = t39; if (t39) goto bb10; else goto bb11; bb8:
-#line 168
-    t32 = h4_f0; t33 = t32.as.err; hero_failure_retain(&t33); t34 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t33}; t200 = h28_own28; h28_own28 = t34; h_0opt_4d1c207c_release(&t200); h19_ret0 = t34; goto bb40; bb9:
 #line 172
-    t54 = h3_group; t55 = INT64_C(0); t56 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 172, 23}; t57 = hero_str_slice_at(t54, t55, t56, &hero_here); } t201 = h29_own29; h29_own29 = t57; hero_str_decref(t201); t58 = h_base64_value_of(t57); t202 = h30_own30; h30_own30 = t58; h_0opt_e201354_release(&t202); t203 = h7_f1; h_0opt_e201354_retain(&t58); h7_f1 = t58; h_0opt_e201354_release(&t203); t59 = h7_f1; t60 = t59.tag; t61 = INT64_C(0); t62 = t60 == t61; if (t62) goto bb14; else goto bb15; bb10:
+    t37 = h5_pad; t38 = INT64_C(0); t39 = t37 > t38; h6_b0 = t39; if (t39) goto bb10; else goto bb11; bb8:
 #line 170
-    t40 = h2_i; t41 = INT64_C(4); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow_at("base64.hero", "base64.decoded", 170, 23); t43 = h0_text; t44 = hero_str_len(t43); t45 = t42 < t44; h6_b0 = t45; goto bb11; bb11: t46 = h6_b0; if (t46) goto bb12; else goto bb13; bb12:
+    t32 = h4_f0; t33 = t32.as.err; hero_failure_retain(&t33); t34 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t33}; t200 = h28_own28; h28_own28 = t34; h_0opt_4d1c207c_release(&t200); h19_ret0 = t34; goto bb40; bb9:
+#line 174
+    t54 = h3_group; t55 = INT64_C(0); t56 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 174, 23}; t57 = hero_str_slice_at(t54, t55, t56, &hero_here); } t201 = h29_own29; h29_own29 = t57; hero_str_decref(t201); t58 = h_base64_value_of(t57); t202 = h30_own30; h30_own30 = t58; h_0opt_e201354_release(&t202); t203 = h7_f1; h_0opt_e201354_retain(&t58); h7_f1 = t58; h_0opt_e201354_release(&t203); t59 = h7_f1; t60 = t59.tag; t61 = INT64_C(0); t62 = t60 == t61; if (t62) goto bb14; else goto bb15; bb10:
+#line 172
+    t40 = h2_i; t41 = INT64_C(4); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow_at("base64.hero", "base64.decoded", 172, 23); t43 = h0_text; t44 = hero_str_len(t43); t45 = t42 < t44; h6_b0 = t45; goto bb11; bb11: t46 = h6_b0; if (t46) goto bb12; else goto bb13; bb12:
     t47 = h_base64_ERR_PADDING(); t204 = h31_own31; h31_own31 = t47; hero_str_decref(t204); t48 = HERO_STR_LIT(hero_str_60); t49 = h3_group; t50 = hero_str_concat(t48, t49); t205 = h32_own32; h32_own32 = t50; hero_str_decref(t205); t51 = HERO_STR_LIT(hero_str_42df8527); t52 = hero_str_concat(t50, t51); t206 = h33_own33; h33_own33 = t52; hero_str_decref(t206); hero_str_incref(t47); hero_str_incref(t52); t53 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t47, .msg = t52}}; t207 = h34_own34; h34_own34 = t53; h_0opt_4d1c207c_release(&t207); h19_ret0 = t53; goto bb40; bb13: goto bb9; bb14:
     t66 = h7_f1; t67 = t66.as.ok; h8_v0 = t67;
-    t68 = h3_group; t69 = INT64_C(1); t70 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 173, 23}; t71 = hero_str_slice_at(t68, t69, t70, &hero_here); } t208 = h35_own35; h35_own35 = t71; hero_str_decref(t208); t72 = h_base64_value_of(t71); t209 = h36_own36; h36_own36 = t72; h_0opt_e201354_release(&t209); t210 = h9_f2; h_0opt_e201354_retain(&t72); h9_f2 = t72; h_0opt_e201354_release(&t210); t73 = h9_f2; t74 = t73.tag; t75 = INT64_C(0); t76 = t74 == t75; if (t76) goto bb16; else goto bb17; bb15:
-#line 172
+    t68 = h3_group; t69 = INT64_C(1); t70 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 175, 23}; t71 = hero_str_slice_at(t68, t69, t70, &hero_here); } t208 = h35_own35; h35_own35 = t71; hero_str_decref(t208); t72 = h_base64_value_of(t71); t209 = h36_own36; h36_own36 = t72; h_0opt_e201354_release(&t209); t210 = h9_f2; h_0opt_e201354_retain(&t72); h9_f2 = t72; h_0opt_e201354_release(&t210); t73 = h9_f2; t74 = t73.tag; t75 = INT64_C(0); t76 = t74 == t75; if (t76) goto bb16; else goto bb17; bb15:
+#line 174
     t63 = h7_f1; t64 = t63.as.err; hero_failure_retain(&t64); t65 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t64}; t211 = h37_own37; h37_own37 = t65; h_0opt_4d1c207c_release(&t211); h19_ret0 = t65; goto bb40; bb16:
     t80 = h9_f2; t81 = t80.as.ok; h10_v1 = t81;
     t82 = INT64_C(0); h11_v2 = t82;
     t83 = INT64_C(0); h12_v3 = t83;
-#line 177
+#line 179
     t84 = h5_pad; t85 = INT64_C(2); t86 = t84 < t85; if (t86) goto bb19; else goto bb20; bb17:
-#line 173
+#line 175
     t77 = h9_f2; t78 = t77.as.err; hero_failure_retain(&t78); t79 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t78}; t212 = h38_own38; h38_own38 = t79; h_0opt_4d1c207c_release(&t212); h19_ret0 = t79; goto bb40; bb18:
-#line 180
-    t101 = h5_pad; t102 = INT64_C(1); t103 = t101 < t102; if (t103) goto bb24; else goto bb25; bb19:
-#line 178
-    t87 = h3_group; t88 = INT64_C(2); t89 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 178, 27}; t90 = hero_str_slice_at(t87, t88, t89, &hero_here); } t213 = h39_own39; h39_own39 = t90; hero_str_decref(t213); t91 = h_base64_value_of(t90); t214 = h40_own40; h40_own40 = t91; h_0opt_e201354_release(&t214); t215 = h13_f3; h_0opt_e201354_retain(&t91); h13_f3 = t91; h_0opt_e201354_release(&t215); t92 = h13_f3; t93 = t92.tag; t94 = INT64_C(0); t95 = t93 == t94; if (t95) goto bb21; else goto bb22; bb20: goto bb18; bb21: t99 = h13_f3; t100 = t99.as.ok; h11_v2 = t100; goto bb18; bb22: t96 = h13_f3; t97 = t96.as.err; hero_failure_retain(&t97); t98 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t97}; t216 = h41_own41; h41_own41 = t98; h_0opt_4d1c207c_release(&t216); h19_ret0 = t98; goto bb40; bb23:
 #line 182
-    t118 = h8_v0; t119 = INT64_C(18); if (t119 < 0 || t119 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 182, 17); t120 = (int64_t)((uint64_t)t118 << (uint64_t)t119); t121 = h10_v1; t122 = INT64_C(12); if (t122 < 0 || t122 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 182, 28); t123 = (int64_t)((uint64_t)t121 << (uint64_t)t122); t124 = t120 | t123; t125 = h11_v2; t126 = INT64_C(6); if (t126 < 0 || t126 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 182, 39); t127 = (int64_t)((uint64_t)t125 << (uint64_t)t126); t128 = t124 | t127; t129 = h12_v3; t130 = t128 | t129; h15_block = t130;
-    t132 = h15_block; t133 = INT64_C(16); if (t133 < 0 || t133 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 183, 25); t134 = (t132 < 0) ? ~(int64_t)((~(uint64_t)t132) >> (uint64_t)t133) : (int64_t)((uint64_t)t132 >> (uint64_t)t133); t135 = INT64_C(255); t136 = t134 & t135; if (t136 >= 0LL && t136 <= 255LL) { t137 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t136}; } else { t137 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t217 = h42_own42; h42_own42 = t137; h_0opt_1ec004_release(&t217); t218 = h16_f5; h_0opt_1ec004_retain(&t137); h16_f5 = t137; h_0opt_1ec004_release(&t218); t138 = h16_f5; t139 = t138.tag; t140 = INT64_C(0); t141 = t139 == t140; if (t141) goto bb28; else goto bb29; bb24:
-#line 181
-    t104 = h3_group; t105 = INT64_C(3); t106 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 181, 27}; t107 = hero_str_slice_at(t104, t105, t106, &hero_here); } t219 = h43_own43; h43_own43 = t107; hero_str_decref(t219); t108 = h_base64_value_of(t107); t220 = h44_own44; h44_own44 = t108; h_0opt_e201354_release(&t220); t221 = h14_f4; h_0opt_e201354_retain(&t108); h14_f4 = t108; h_0opt_e201354_release(&t221); t109 = h14_f4; t110 = t109.tag; t111 = INT64_C(0); t112 = t110 == t111; if (t112) goto bb26; else goto bb27; bb25: goto bb23; bb26: t116 = h14_f4; t117 = t116.as.ok; h12_v3 = t117; goto bb23; bb27: t113 = h14_f4; t114 = t113.as.err; hero_failure_retain(&t114); t115 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t114}; t222 = h45_own45; h45_own45 = t115; h_0opt_4d1c207c_release(&t222); h19_ret0 = t115; goto bb40; bb28:
+    t101 = h5_pad; t102 = INT64_C(1); t103 = t101 < t102; if (t103) goto bb24; else goto bb25; bb19:
+#line 180
+    t87 = h3_group; t88 = INT64_C(2); t89 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 180, 27}; t90 = hero_str_slice_at(t87, t88, t89, &hero_here); } t213 = h39_own39; h39_own39 = t90; hero_str_decref(t213); t91 = h_base64_value_of(t90); t214 = h40_own40; h40_own40 = t91; h_0opt_e201354_release(&t214); t215 = h13_f3; h_0opt_e201354_retain(&t91); h13_f3 = t91; h_0opt_e201354_release(&t215); t92 = h13_f3; t93 = t92.tag; t94 = INT64_C(0); t95 = t93 == t94; if (t95) goto bb21; else goto bb22; bb20: goto bb18; bb21: t99 = h13_f3; t100 = t99.as.ok; h11_v2 = t100; goto bb18; bb22: t96 = h13_f3; t97 = t96.as.err; hero_failure_retain(&t97); t98 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t97}; t216 = h41_own41; h41_own41 = t98; h_0opt_4d1c207c_release(&t216); h19_ret0 = t98; goto bb40; bb23:
+#line 184
+    t118 = h8_v0; t119 = INT64_C(18); if (t119 < 0 || t119 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 184, 17); t120 = (int64_t)((uint64_t)t118 << (uint64_t)t119); t121 = h10_v1; t122 = INT64_C(12); if (t122 < 0 || t122 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 184, 28); t123 = (int64_t)((uint64_t)t121 << (uint64_t)t122); t124 = t120 | t123; t125 = h11_v2; t126 = INT64_C(6); if (t126 < 0 || t126 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 184, 39); t127 = (int64_t)((uint64_t)t125 << (uint64_t)t126); t128 = t124 | t127; t129 = h12_v3; t130 = t128 | t129; h15_block = t130;
+    t132 = h15_block; t133 = INT64_C(16); if (t133 < 0 || t133 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 185, 25); t134 = (t132 < 0) ? ~(int64_t)((~(uint64_t)t132) >> (uint64_t)t133) : (int64_t)((uint64_t)t132 >> (uint64_t)t133); t135 = INT64_C(255); t136 = t134 & t135; if (t136 >= 0LL && t136 <= 255LL) { t137 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t136}; } else { t137 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t217 = h42_own42; h42_own42 = t137; h_0opt_1ec004_release(&t217); t218 = h16_f5; h_0opt_1ec004_retain(&t137); h16_f5 = t137; h_0opt_1ec004_release(&t218); t138 = h16_f5; t139 = t138.tag; t140 = INT64_C(0); t141 = t139 == t140; if (t141) goto bb28; else goto bb29; bb24:
 #line 183
-    t144 = h16_f5; t145 = t144.as.ok; hero_array_push_owned(&h1_out, &t145);
+    t104 = h3_group; t105 = INT64_C(3); t106 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.decoded", 183, 27}; t107 = hero_str_slice_at(t104, t105, t106, &hero_here); } t219 = h43_own43; h43_own43 = t107; hero_str_decref(t219); t108 = h_base64_value_of(t107); t220 = h44_own44; h44_own44 = t108; h_0opt_e201354_release(&t220); t221 = h14_f4; h_0opt_e201354_retain(&t108); h14_f4 = t108; h_0opt_e201354_release(&t221); t109 = h14_f4; t110 = t109.tag; t111 = INT64_C(0); t112 = t110 == t111; if (t112) goto bb26; else goto bb27; bb25: goto bb23; bb26: t116 = h14_f4; t117 = t116.as.ok; h12_v3 = t117; goto bb23; bb27: t113 = h14_f4; t114 = t113.as.err; hero_failure_retain(&t114); t115 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t114}; t222 = h45_own45; h45_own45 = t115; h_0opt_4d1c207c_release(&t222); h19_ret0 = t115; goto bb40; bb28:
 #line 185
+    t144 = h16_f5; t145 = t144.as.ok; hero_array_push_owned(&h1_out, &t145);
+#line 187
     t147 = h5_pad; t148 = INT64_C(2); t149 = t147 < t148; if (t149) goto bb31; else goto bb32; bb29:
-#line 183
+#line 185
     t142 = h16_f5; t143 = t142.as.err;
 #line 790 "main.c"
-    hero_panic_must_at(t143, "base64.hero", "base64.decoded", 183, 24);
+    hero_panic_must_at(t143, "base64.hero", "base64.decoded", 185, 24);
     hero_unreachable();
 bb30:
-#line 188 "examples/checksum/base64.hero"
+#line 190 "examples/checksum/base64.hero"
     t166 = h5_pad; t167 = INT64_C(1); t168 = t166 < t167; if (t168) goto bb36; else goto bb37; bb31:
-#line 186
-    t151 = h15_block; t152 = INT64_C(8); if (t152 < 0 || t152 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 186, 29); t153 = (t151 < 0) ? ~(int64_t)((~(uint64_t)t151) >> (uint64_t)t152) : (int64_t)((uint64_t)t151 >> (uint64_t)t152); t154 = INT64_C(255); t155 = t153 & t154; if (t155 >= 0LL && t155 <= 255LL) { t156 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t155}; } else { t156 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t223 = h46_own46; h46_own46 = t156; h_0opt_1ec004_release(&t223); t224 = h17_f6; h_0opt_1ec004_retain(&t156); h17_f6 = t156; h_0opt_1ec004_release(&t224); t157 = h17_f6; t158 = t157.tag; t159 = INT64_C(0); t160 = t158 == t159; if (t160) goto bb33; else goto bb34; bb32: goto bb30; bb33: t163 = h17_f6; t164 = t163.as.ok; hero_array_push_owned(&h1_out, &t164); goto bb30; bb34: t161 = h17_f6; t162 = t161.as.err;
+#line 188
+    t151 = h15_block; t152 = INT64_C(8); if (t152 < 0 || t152 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 188, 29); t153 = (t151 < 0) ? ~(int64_t)((~(uint64_t)t151) >> (uint64_t)t152) : (int64_t)((uint64_t)t151 >> (uint64_t)t152); t154 = INT64_C(255); t155 = t153 & t154; if (t155 >= 0LL && t155 <= 255LL) { t156 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t155}; } else { t156 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t223 = h46_own46; h46_own46 = t156; h_0opt_1ec004_release(&t223); t224 = h17_f6; h_0opt_1ec004_retain(&t156); h17_f6 = t156; h_0opt_1ec004_release(&t224); t157 = h17_f6; t158 = t157.tag; t159 = INT64_C(0); t160 = t158 == t159; if (t160) goto bb33; else goto bb34; bb32: goto bb30; bb33: t163 = h17_f6; t164 = t163.as.ok; hero_array_push_owned(&h1_out, &t164); goto bb30; bb34: t161 = h17_f6; t162 = t161.as.err;
 #line 798 "main.c"
-    hero_panic_must_at(t162, "base64.hero", "base64.decoded", 186, 28);
+    hero_panic_must_at(t162, "base64.hero", "base64.decoded", 188, 28);
     hero_unreachable();
 bb35:
-#line 190 "examples/checksum/base64.hero"
-    t183 = h2_i; t184 = INT64_C(4); if (__builtin_add_overflow(t183, t184, &t185)) hero_panic_overflow_at("base64.hero", "base64.decoded", 190, 13); h2_i = t185; goto bb4; bb36:
-#line 189
+#line 192 "examples/checksum/base64.hero"
+    t183 = h2_i; t184 = INT64_C(4); if (__builtin_add_overflow(t183, t184, &t185)) hero_panic_overflow_at("base64.hero", "base64.decoded", 192, 13); h2_i = t185; goto bb4; bb36:
+#line 191
     t170 = h15_block; t171 = INT64_C(255); t172 = t170 & t171; if (t172 >= 0LL && t172 <= 255LL) { t173 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t172}; } else { t173 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t225 = h47_own47; h47_own47 = t173; h_0opt_1ec004_release(&t225); t226 = h18_f7; h_0opt_1ec004_retain(&t173); h18_f7 = t173; h_0opt_1ec004_release(&t226); t174 = h18_f7; t175 = t174.tag; t176 = INT64_C(0); t177 = t175 == t176; if (t177) goto bb38; else goto bb39; bb37: goto bb35; bb38: t180 = h18_f7; t181 = t180.as.ok; hero_array_push_owned(&h1_out, &t181); goto bb35; bb39: t178 = h18_f7; t179 = t178.as.err;
 #line 806 "main.c"
-    hero_panic_must_at(t179, "base64.hero", "base64.decoded", 189, 28);
+    hero_panic_must_at(t179, "base64.hero", "base64.decoded", 191, 28);
     hero_unreachable();
 bb40:
     t188 = h19_ret0;
@@ -849,7 +849,7 @@ bb40:
     return t188;
 }
 
-#line 196 "examples/checksum/base64.hero"
+#line 198 "examples/checksum/base64.hero"
 HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) { HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_said; t9 = h1_s0; h_0opt_4d1c207c_retain(&t1); h1_s0 = t1; h_0opt_4d1c207c_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 856 "main.c"
@@ -859,13 +859,13 @@ HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) { HERO_NODEBUG h_0opt_4d1c2
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 198 "examples/checksum/base64.hero"
+#line 200 "examples/checksum/base64.hero"
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
-#line 197
-    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
 #line 199
+    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
+#line 201
     t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.code;
-#line 197
+#line 199
     t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
 #line 871 "main.c"
 }
@@ -1240,7 +1240,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a05e72f1812964c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("05843f814dfa828e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

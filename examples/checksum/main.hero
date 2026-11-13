@@ -73,9 +73,10 @@ function hex(value: u32) -> str
 
     return "0x" + join(out, "")
 
-# The bytes of a decode, as numbers — the only way to show them, because
-# Heroes cannot build a character from a byte value (`base64.hero`'s header
-# says why, and it is a language fact rather than a gap in this program).
+# The bytes of a decode, as numbers, since bytes are what a decode gives and
+# not every byte is text: `validated_bytes()` would read these five back as
+# `fooba`, and fail `not_text` on bytes that are not UTF-8 (`base64.hero`'s
+# header says why the decoder stops at bytes).
 function shown(data: [u8]) -> [str]
     out: [str] @= []
 
