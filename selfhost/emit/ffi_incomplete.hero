@@ -41,8 +41,10 @@ use ast
 use checker
 use diag
 use emit/externs as emit_externs
+use emit/ffi_asked
 use emit/ffi_lookup
 use emit/ffi_tag
+use emit/ffi_typedef_kind
 use emit/layout_screen
 use parse
 use resolve
@@ -62,8 +64,9 @@ constant INCOMPLETE_NAMES: [str]
     ]
 
 # clang's "incomplete definition of type 'struct T'", for the record with
-# fields whose tag is T.
-function unknown_tag(s: source.Source, decls: [ast.Decl], line: str, stderr: str, types: {str: str}) -> diag.Diagnostic?
+# fields whose tag is T; a typedef T of a type that is no struct is told what
+# it is (`emit/ffi_typedef_kind.hero`, defect 2514), never its own name.
+function unknown_tag(s: source.Source, decls: [ast.Decl], line: str, stderr: str, asked: ffi_asked.Asked, word_bits: i64) -> diag.Diagnostic?
     quoted = ffi_lookup.after(text: line, marker: NO_LAYOUT)
 
     if quoted.is_err()
@@ -74,17 +77,18 @@ function unknown_tag(s: source.Source, decls: [ast.Decl], line: str, stderr: str
     if found.is_err()
         return fail(code: "none", msg: "no record names this tag")
     first_seen = forward_declared_in(stderr: stderr, tag: tag)
-
-    answer = types[tag].default("")
+    answer = asked.types[tag].default("")
+    kind = ffi_typedef_kind.tag_note(asked, word: tag, word_bits: word_bits)
 
     if first_seen.is_err()
         if answer == "tag"
             return ok(opaque_tag(found.must(), tag: tag))
-        return ok(unread_tag(found.must(), tag: tag, answer: answer))
+        return ok(unread_tag(found.must(), tag: tag, answer: answer, kind: kind))
 
     if !written_here(s, file: first_seen.must())
         return ok(opaque_tag(found.must(), tag: tag))
-    return ok(invented_tag(found.must(), tag: tag, spelled: header_spelling(stderr: stderr, tag: tag), answer: answer))
+    spelled = header_spelling(stderr: stderr, tag: tag)
+    return ok(invented_tag(found.must(), tag: tag, spelled: spelled, answer: answer, kind: kind))
 
 # The header declares `struct T` and gives it no fields: the type is opaque
 # on purpose, and the handle is the one repair.
@@ -102,7 +106,7 @@ function opaque_tag(tagged: ffi_tag.TaggedRecord, tag: str) -> diag.Diagnostic
 # The header has no `struct T`, so C made an empty one up at the program's
 # line. What else clang said decides the readings left, and where it showed
 # nothing, the question unit's `answer` does.
-function invented_tag(tagged: ffi_tag.TaggedRecord, tag: str, spelled: Spelling?, answer: str) -> diag.Diagnostic
+function invented_tag(tagged: ffi_tag.TaggedRecord, tag: str, spelled: Spelling?, answer: str, kind: str?) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_tag",
         message: "`" + tagged.header + "` has no `struct " + tag + "` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line",
@@ -110,7 +114,9 @@ function invented_tag(tagged: ffi_tag.TaggedRecord, tag: str, spelled: Spelling?
     )
     by_name = "`record " + tag + partial_word(tagged) + "`"
 
-    if spelled.is_err() && answer == "neither"
+    if answer == "type" && !kind.is_err()
+        d.notes @ d.notes.push(kind.must())
+    else if spelled.is_err() && answer == "neither"
         d.notes @ d.notes.push(
             "so the tag is MISSPELLED, and correcting it is the repair: the header names no type `" + tag + "`, by a tag or by a typedef (§ 13)"
         )
@@ -135,7 +141,7 @@ function invented_tag(tagged: ffi_tag.TaggedRecord, tag: str, spelled: Spelling?
 # Clang said the type has no layout and not where it first saw the struct:
 # every reading is left, and the note gives all three, unless the question
 # unit answered (a real tag is `opaque_tag`'s, above).
-function unread_tag(tagged: ffi_tag.TaggedRecord, tag: str, answer: str) -> diag.Diagnostic
+function unread_tag(tagged: ffi_tag.TaggedRecord, tag: str, answer: str, kind: str?) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_tag",
         message: "`struct " + tag + "` has no fields in `" + tagged.header + "` — clang read the header and cannot lay the type out",
@@ -150,7 +156,7 @@ function unread_tag(tagged: ffi_tag.TaggedRecord, tag: str, answer: str) -> diag
 
     if answer == "type"
         d.notes @ d.notes.push(
-            "`" + tag + "` is the name of a typedef in the header, not a struct's tag: a record takes a typedef by its own name, with no `tag`, `record " + tag + partial_word(tagged) + "` (§ 13)"
+            kind.default("`" + tag + "` is the name of a typedef in the header, not a struct's tag: a record takes a typedef by its own name, with no `tag`, `record " + tag + partial_word(tagged) + "` (§ 13)")
         )
         return d
     d.notes @ d.notes.push(
@@ -164,8 +170,9 @@ function partial_word(tagged: ffi_tag.TaggedRecord) -> str
     return ""
 
 # A record with fields and NO tag, named after a typedef of an incomplete
-# type: clang names the typedef and, after `aka`, the type behind it.
-function incomplete_typedef(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+# type: clang names the typedef and, after `aka`, the type behind it; one with
+# no members but `void` is none (`emit/ffi_typedef_kind.hero`, defect 2514).
+function incomplete_typedef(s: source.Source, decls: [ast.Decl], line: str, asked: ffi_asked.Asked, word_bits: i64) -> diag.Diagnostic?
     word: str @= ""
 
     for marker in INCOMPLETE_NAMES
@@ -176,14 +183,17 @@ function incomplete_typedef(s: source.Source, decls: [ast.Decl], line: str) -> d
 
     if word == "" || begins(text: word, prefix: "struct ")
         return fail(code: "none", msg: "not a typedef's incompleteness")
-    behind = ffi_lookup.after(text: line, marker: "'" + word + "' (aka '")
-
-    if behind.is_err()
-        return fail(code: "none", msg: "no type behind the name")
     found = untagged_record(s, decls, name: word)
 
     if found.is_err()
         return fail(code: "none", msg: "no record of this program is that typedef")
+
+    if ffi_typedef_kind.no_members(line: line, word: word)
+        return ok(ffi_typedef_kind.told(found.must(), word: word, line: line, asked: asked, word_bits: word_bits))
+    behind = ffi_lookup.after(text: line, marker: "'" + word + "' (aka '")
+
+    if behind.is_err()
+        return fail(code: "none", msg: "no type behind the name")
     return ok(opaque_typedef(found.must(), word: word, behind: ffi_lookup.up_to_quote(behind.must())))
 
 # **The layout check's own refusal of a record named after a typedef whose
@@ -348,8 +358,7 @@ test "a tag the header declares without fields is opaque, and the handle is the 
     )
     line = "t.hero:3:62: error: incomplete definition of type 'struct opaque_s'"
     stderr = line + "\n/usr/include/own.h:6:16: note: forward declaration of 'struct opaque_s'\n"
-    unasked: {str: str} = {}
-    d = unknown_tag(p.s, p.decls, line: line, stderr: stderr, types: unasked)
+    d = unknown_tag(p.s, p.decls, line: line, stderr: stderr, asked: ffi_asked.nothing(), word_bits: 64)
     assert d.must().message == "`struct opaque_s` has no fields in `own.h` — clang read the header and cannot lay the type out"
     assert ffi_lookup.has(text: d.must().notes[0], needle: "`record O tag opaque_s`")
     assert source.span_text(p.s, d.must().span) == "opaque_s"
@@ -360,8 +369,7 @@ test "a tag C made up at the program's line is never told to become a handle"
     )
     line = "t.hero:3:61: error: incomplete definition of type 'struct regex_t'"
     invented = line + "\nt.hero:3:49: note: forward declaration of 'struct regex_t'\n"
-    unasked: {str: str} = {}
-    alone = unknown_tag(p.s, p.decls, line: line, stderr: invented, types: unasked)
+    alone = unknown_tag(p.s, p.decls, line: line, stderr: invented, asked: ffi_asked.nothing(), word_bits: 64)
     assert alone.must().message == "`regex.h` has no `struct regex_t` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line"
     assert ffi_lookup.has(text: alone.must().notes[0], needle: "MISSPELLED")
     assert ffi_lookup.has(text: alone.must().notes[0], needle: "`record regex_t partial`")
@@ -370,16 +378,16 @@ test "a tag C made up at the program's line is never told to become a handle"
     # A pointer parameter shows the header's own spelling: a typedef with
     # nothing behind it, or one of a tagged struct.
     anonymous = invented + "t.hero:4:135: error: incompatible pointer types passing 'struct regex_t *' to parameter of type 'regex_t *' [-Werror,-Wincompatible-pointer-types]\n"
-    named = unknown_tag(p.s, p.decls, line: line, stderr: anonymous, types: unasked)
+    named = unknown_tag(p.s, p.decls, line: line, stderr: anonymous, asked: ffi_asked.nothing(), word_bits: 64)
     assert !ffi_lookup.has(text: named.must().notes[0], needle: "MISSPELLED")
     assert ffi_lookup.has(text: named.must().notes[0], needle: "`record regex_t partial`")
     tagged = invented + "t.hero:4:127: error: incompatible pointer types passing 'struct regex_t *' to parameter of type 'const regex_t *' (aka 'const struct re_s *') [-Werror,-Wincompatible-pointer-types]\n"
-    behind = unknown_tag(p.s, p.decls, line: line, stderr: tagged, types: unasked)
+    behind = unknown_tag(p.s, p.decls, line: line, stderr: tagged, asked: ffi_asked.nothing(), word_bits: 64)
     assert ffi_lookup.has(text: behind.must().notes[0], needle: "`record Regex tag re_s partial`")
 
     # The result assertion shows it too.
     result = invented + "t.c:42:16: error: static assertion failed due to requirement '__builtin_types_compatible_p(regex_t, struct regex_t)': heroes-ffi-return give Regex\n"
-    assert !ffi_lookup.has(text: unknown_tag(p.s, p.decls, line: line, stderr: result, types: unasked).must().notes[0], needle: "MISSPELLED")
+    assert !ffi_lookup.has(text: unknown_tag(p.s, p.decls, line: line, stderr: result, asked: ffi_asked.nothing(), word_bits: 64).must().notes[0], needle: "MISSPELLED")
 
 # Panel 185 R2: where clang showed no spelling of the type, the question
 # unit's answer leaves one reading.
@@ -391,48 +399,71 @@ test "where clang showed no spelling, the header's answer to the typedef questio
     invented = line + "\nt.hero:3:49: note: forward declaration of 'struct only_tagg'\n"
     answers: {str: str} @= {}
     answers["only_tagg"] @ "neither"
-    misspelled = unknown_tag(p.s, p.decls, line: line, stderr: invented, types: answers).must().notes[0]
+    misspelled = unknown_tag(p.s, p.decls, line: line, stderr: invented, asked: ffi_asked.with_types(answers), word_bits: 64).must().notes[0]
     assert ffi_lookup.has(text: misspelled, needle: "MISSPELLED")
     assert !ffi_lookup.has(text: misspelled, needle: "typedef `")
     assert !ffi_lookup.has(text: misspelled, needle: "`record only_tagg`")
     answers["only_tagg"] @ "type"
-    typed = unknown_tag(p.s, p.decls, line: line, stderr: invented, types: answers).must().notes[0]
+    typed = unknown_tag(p.s, p.decls, line: line, stderr: invented, asked: ffi_asked.with_types(answers), word_bits: 64).must().notes[0]
     assert !ffi_lookup.has(text: typed, needle: "MISSPELLED")
     assert ffi_lookup.has(text: typed, needle: "`record only_tagg`")
 
     # No forward declaration said: a real tag is the opaque one, the handle.
     answers["only_tagg"] @ "tag"
     assert ffi_lookup.has(
-        text: unknown_tag(p.s, p.decls, line: line, stderr: line, types: answers).must().notes[0],
+        text: unknown_tag(p.s, p.decls, line: line, stderr: line, asked: ffi_asked.with_types(answers), word_bits: 64).must().notes[0],
         needle: "HANDLE"
     )
     answers["only_tagg"] @ "neither"
-    unread = unknown_tag(p.s, p.decls, line: line, stderr: line, types: answers).must().notes[0]
+    unread = unknown_tag(p.s, p.decls, line: line, stderr: line, asked: ffi_asked.with_types(answers), word_bits: 64).must().notes[0]
     assert ffi_lookup.has(text: unread, needle: "MISSPELLED")
     assert !ffi_lookup.has(text: unread, needle: "HANDLE")
+
+# Defect 2514: a tag naming a typedef of a number is never sent to a record by
+# the typedef's own name, which is refused too, but told the number.
+test "a tag naming a typedef of a number is told the number, not a record by its name (defect 2514)"
+    p = program(
+        "extern \"signal.h\"\n    record SigSet tag sigset_t partial\n        x: i64\n\nfunction touch(v: SigSet)\n    _ = v\n\nfunction main()\n    print(1)\n"
+    )
+    line = "t.hero:3:61: error: incomplete definition of type 'struct sigset_t'"
+    invented = line + "\nt.hero:2:23: note: forward declaration of 'struct sigset_t'\n"
+    answers: {str: str} @= {}
+    answers["sigset_t"] @ "type"
+    asked: ffi_asked.Asked @= ffi_typedef_kind.answered(word: "sigset_t", canonical: "unsigned int", width: 34)
+    asked.types @ answers
+    note = unknown_tag(p.s, p.decls, line: line, stderr: invented, asked: asked, word_bits: 64).must().notes[0]
+    assert ffi_lookup.has(text: note, needle: "of `unsigned int`, and no struct")
+    assert ffi_lookup.has(text: note, needle: "`@<name>: u32`")
+    assert !ffi_lookup.has(text: note, needle: "`record sigset_t partial`")
+    unread = unknown_tag(p.s, p.decls, line: line, stderr: line, asked: asked, word_bits: 64).must().notes
+    assert unread.len() == 1 && ffi_lookup.has(text: unread[0], needle: "`u32`")
 
 test "a record named after a typedef of an opaque type is told it is one"
     p = program(
         "extern \"own.h\"\n    record opaque_t\n        a: i32\n\nfunction touch(v: opaque_t)\n    _ = v\n\nfunction main()\n    print(1)\n"
     )
     line = "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')"
-    d = incomplete_typedef(p.s, p.decls, line: line)
+    d = incomplete_typedef(p.s, p.decls, line: line, asked: ffi_asked.nothing(), word_bits: 64)
     assert d.must().message == "`opaque_t` is `struct opaque_s` in `own.h`, and the header gives it no fields — clang read the header and cannot lay the type out"
     assert ffi_lookup.has(text: d.must().notes[0], needle: "`record opaque_t tag opaque_t`")
     void = "t.hero:3:53: error: member reference base type 'opaque_t' (aka 'void') is not a structure or union"
-    assert incomplete_typedef(p.s, p.decls, line: void).must().message == "`opaque_t` is `void` in `own.h`, and the header gives it no fields — clang read the header and cannot lay the type out"
+    assert incomplete_typedef(p.s, p.decls, line: void, asked: ffi_asked.nothing(), word_bits: 64).must().message == "`opaque_t` is `void` in `own.h`, and the header gives it no fields — clang read the header and cannot lay the type out"
 
     # A name no untagged group record carries stays the compiler's, and so
     # does a line about a struct tag, which `unknown_tag` reads.
     assert incomplete_typedef(
         p.s,
         p.decls,
-        line: "x.c:1:1: error: variable has incomplete type 'ghost_t' (aka 'struct g')"
+        line: "x.c:1:1: error: variable has incomplete type 'ghost_t' (aka 'struct g')",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
     ).is_err()
     assert incomplete_typedef(
         p.s,
         p.decls,
-        line: "x.c:1:1: error: incomplete definition of type 'struct opaque_s'"
+        line: "x.c:1:1: error: incomplete definition of type 'struct opaque_s'",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
     ).is_err()
 
 # **The layout check's refusal says what the unit's reader says** (defect
@@ -445,7 +476,9 @@ test "the layout check's refusal of a typedef with no layout is told as the unit
     read = incomplete_typedef(
         p.s,
         p.decls,
-        line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')"
+        line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')",
+        asked: ffi_asked.nothing(),
+        word_bits: 64
     ).must()
     marked = no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " opaque_t struct opaque_s").must()
     assert marked.message == read.message

@@ -198,6 +198,13 @@ function nothing() -> Asked
         miscounted: {}
     )
 
+# The answers of a run that was not made but for what each record's tag is,
+# `types`: what a reader of a refused round is handed in its tests.
+function with_types(types: {str: str}) -> Asked
+    out: Asked @= nothing()
+    out.types @ types
+    return out
+
 # The unit's C: `headers`, then what is said again and asked of each
 # `extern` function of `p` its own files declare, and of each group record
 # `records` holds (`emit_externs.held`). Since panel 202 a refused round asks
@@ -414,3 +421,11 @@ test "a record's tag is asked whether it is a type name, and `void` is not asked
     )
     assert ffi_lookup.has(text: got, needle: " *)0)->a; (void)hero_r; }\n")
     assert ffi_lookup.has(text: got, needle: "#line 1 \"hero-ask-width Q a\"\n")
+
+    # And the record's own type by its tag, after its fields, never `void`'s
+    # (defect 2514).
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 1 \"hero-ask-width %type only_tagg\"\n__attribute__((unused)) static void hero_ask_f_7(void) { struct hero_ask_result hero_r = (char (*)[sizeof((*(only_tagg *)0)) * 8 + _Generic((*(only_tagg *)0), "
+    )
+    assert !ffi_lookup.has(text: got, needle: "%type void")

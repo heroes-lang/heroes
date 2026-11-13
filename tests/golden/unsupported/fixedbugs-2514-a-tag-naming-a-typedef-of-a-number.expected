@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `fixedbugs-2514-kinds.h` has no `struct mask2514_t` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-2514-a-tag-naming-a-typedef-of-a-number.hero:14:21
+     |
+  14 |     record Mask tag mask2514_t partial  #~ ffi_unknown_tag
+     |                     ^^^^^^^^^^
+  note: `mask2514_t` is the name of a typedef in the header, of `unsigned int`, and no struct: a program holds a `mask2514_t` as the number it is, `u32`, at the header's own width and sign: drop the record, and where the header takes a `mask2514_t *` the parameter is `@<name>: u32`, lent a cell the program owns, and where it takes or gives back a `mask2514_t`, `u32` (§ 13)

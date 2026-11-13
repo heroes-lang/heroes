@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `kept2514_t` is `struct kept2514` in `fixedbugs-2514-kinds.h`, and the header gives it no fields — clang read the header and cannot lay the type out
+  at tests/golden/unsupported/fixedbugs-2514-a-record-over-a-typedef-of-an-opaque-struct-keeps-its-handle.hero:8:12
+    |
+  8 |     record kept2514_t partial  #~ ffi_unknown_tag
+    |            ^^^^^^^^^^
+  note: the header keeps the type opaque: a program never holds one by value, only C's pointer to it, which is a HANDLE. Drop the field block and give the record the typedef as its tag, `record kept2514_t tag kept2514_t` (§ 13)

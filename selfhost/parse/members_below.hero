@@ -262,13 +262,21 @@ function on_one_line(c: cursor.Cursor, text: str, head: token.Span) -> str
 # header, so fields are the only answer; inside one, a `tag` and no fields is the
 # handle form; and a `partial` record with no fields names nothing at all, which
 # is the case a reader reaches by deleting a field block and forgetting the word.
+#
+# **Inside a group the parser has not read the header, so each route is named
+# with the type it fits** (defect 2514, 2026-11-13): a struct's fields, an
+# opaque struct's HANDLE, and a number held as itself, `@` where C takes its
+# pointer. Until then a record over a typedef of a number, Darwin's
+# `sigset_t`, was offered the fields and the HANDLE alone, and both were refused
+# or held no storage (`emit/ffi_typedef_kind.hero`).
 function empty_record_message(in_group: bool, partial: bool) -> str
     if !in_group
         return "a `record` needs at least one field, indented one level below it"
+    routes = "where the header's type is a struct, give the record the fields the program reads; where the header keeps the struct to itself, a `tag` and no fields make a HANDLE, C's pointer to it: `record Db tag sqlite3` is C's `sqlite3 *`; and where the type is a number, `typedef uint32_t mask_t;`, no record holds it: bind the number, `u32`, and `@mask: u32` where C takes a pointer to it"
 
     if partial
-        return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — give it its fields, or drop `partial` and name the type for a HANDLE: `record Db tag sqlite3` is C's `sqlite3 *`"
-    return "a `record` needs at least one field, indented one level below it — or, in an `extern` group, a `tag` and no fields make it a HANDLE, a pointer to a type the header leaves opaque: `record Db tag sqlite3` is C's `sqlite3 *`"
+        return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — " + routes
+    return "a `record` needs at least one field, indented one level below it — " + routes
 
 # `empty_record` at the head it names, in its words (`empty_record_message`).
 function empty_record(head: token.Span, in_group: bool, partial: bool) -> diag.Diagnostic

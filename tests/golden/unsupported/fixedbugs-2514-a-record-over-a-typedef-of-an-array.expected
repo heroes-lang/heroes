@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `quad2514_t` is `int[4]` in `fixedbugs-2514-kinds.h`, which is no struct — a `record` holds the fields of a C struct, and `int[4]` has none
+  at tests/golden/unsupported/fixedbugs-2514-a-record-over-a-typedef-of-an-array.hero:10:12
+     |
+  10 |     record quad2514_t partial  #~ ffi_unknown_tag
+     |            ^^^^^^^^^^
+  note: drop the record, and bind each parameter and result the header gives as `quad2514_t` by the type it stands for, `int[4]` (§ 13)

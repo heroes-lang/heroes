@@ -1,0 +1,15 @@
+# Fixed defect 2514, 2026-11-13. Symptom: a group record with no field over
+# Darwin's `sigset_t`, a typedef of `unsigned int`, was told to give the
+# record its fields, or a `tag` for a HANDLE; the first is refused, the second
+# is a pointer to storage the program cannot make, and the form that works,
+# the number held as itself, `@set: u32` where C takes a `sigset_t *`, was not
+# named. Cause: inside a group the parser has not read the header, and its
+# words named two routes as if every type were a struct. Each route is now
+# named with the type it fits, a number's among them, partial or not.
+
+extern "fixedbugs-2514-kinds.h"
+    record mask2514_t partial  #~ empty_record
+    record Mask2514  #~ empty_record
+
+function main()
+    print(1)

@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `handle2514_t` is `struct hidden2514 *` in `fixedbugs-2514-kinds.h`, a pointer, not a struct — a `record` holds the fields of a C struct, and `struct hidden2514 *` has none
+  at tests/golden/unsupported/fixedbugs-2514-a-record-over-a-typedef-of-a-pointer.hero:11:12
+     |
+  11 |     record handle2514_t partial  #~ ffi_unknown_tag
+     |            ^^^^^^^^^^^^
+  note: a program holds the pointer itself: drop the record, and bind a `handle2514_t` as `ptr`, and a `handle2514_t *` as `@<name>: ptr`; or, keeping its type, as a HANDLE of the struct it points at, `record handle2514_t tag hidden2514`, which is C's `struct hidden2514 *` (§ 13)
