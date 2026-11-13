@@ -1,0 +1,7 @@
+the program starts with the request to end at its default: 1
+the stop is caught: 0
+main holds a listener of its own and never closes it: true
+a request to end is sent from another thread: 1
+the worker's accept answered stopped: true
+main returns
+!panic: 1 C handle(s) never given back

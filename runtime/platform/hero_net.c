@@ -53,9 +53,25 @@
  * answers `HERO_NET_NOT_OPEN`, a connection an `accept` took after the close
  * closed again. A wait has no other bound: a `recv` waits for bytes, an
  * `accept` for a connection and a `send` for room, as long as they take,
- * one wakeup a slice. `connect` runs before its socket has a handle, so no
- * close can name it: it is a plain blocking connect, ended by the system's
- * own timeout, and its socket turns non-blocking once the table holds it.
+ * one wakeup a slice. `connect` asks for its connection on a socket already
+ * non-blocking and waits for it the same way, writable or failed: no handle
+ * names that socket yet, so no close can end the wait, the stop below can,
+ * and a connection nobody answers ends at the system's own timeout.
+ *
+ * THE STOP IS THE SAME WAIT (panel 246's R4, the ffi-pragmatist's mechanism;
+ * `hero_net.h` says what it promises). `hero_net_catch_stop` makes a pipe
+ * and takes SIGINT and SIGTERM, or Windows' console events. The first of
+ * them counts itself in `hero_net_stop_asks` and writes one byte down the
+ * pipe, which nobody ever reads, so the pipe's read end stays readable from
+ * then on and every `poll` watching it beside a socket wakes at once, on
+ * whichever thread the system ran the handler. Each wait asks the count
+ * between slices as well, and on Windows, where `WSAPoll` watches sockets
+ * alone, that is how a wait learns of the stop, within a slice. No code of
+ * the program runs in the handler: it is this file's C, and it touches
+ * lock-free atomics, `getpid`, `write`, `sigaction` and `kill`, each safe in
+ * a signal (C11 7.14.1.1p5; POSIX's list of async-signal-safe functions); a
+ * Heroes function there that allocates kills its program (the sitting's
+ * critic, item 12).
  *
  * A SEND MAY SEND FEWER BYTES THAN IT WAS HANDED, AND SAYS HOW MANY: on a
  * non-blocking socket the system takes what its buffer has room for and the
@@ -65,6 +81,7 @@
 
 #include "hero_net.h"
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -91,6 +108,7 @@ typedef int hero_net_len;
 #include <netinet/in.h>
 #include <poll.h>
 #include <pthread.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <unistd.h>
 typedef int hero_net_fd;
@@ -111,13 +129,20 @@ typedef socklen_t hero_net_len;
 
 /* A handle carries a slot and a life in one pointer's 64 bits. */
 _Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a socket handle carries its slot and its life in 64 bits");
+/* The stop's handler reads and writes an `_Atomic int`, which C allows in a
+ * signal only where it is lock-free (C11 7.14.1.1p5). */
+_Static_assert(ATOMIC_INT_LOCK_FREE == 2, "the stop's handler touches lock-free atomics alone");
 
 #define HERO_NET_SLOTS 65536u
 /* The most one call sends or receives, which Windows' `int` counts can say. */
 #define HERO_NET_CHUNK ((uint64_t)INT32_MAX)
 /* How long a waiting call sleeps before it asks again whether its socket was
- * closed: a close ends it within about this. */
+ * closed or the stop asked: either ends it within about this. */
 #define HERO_NET_SLICE_MS 50
+/* How long Windows' console handler holds the process after the console
+ * closed, so `main` can return first: under the 5,000 ms after which the
+ * system ends the process anyway (HandlerRoutine's page). */
+#define HERO_NET_CLOSING_MS 4500
 
 typedef struct {
     hero_net_fd fd;
@@ -426,6 +451,185 @@ static bool hero_net_closing(hero_net_slot *slot) {
     return closed;
 }
 
+/* -- the stop (panel 246's R4) ------------------------------------------- */
+
+/* Whether `hero_net_catch_stop` has taken the signals, 1 once it has: written
+ * under `hero_net_lock`, so two first calls arm once. */
+static _Atomic int hero_net_stop_armed;
+/* The signals, or Windows' console events, that came since: 0 none, 1 the
+ * program stops, more ends it. The one truth of the stop: the pipe below is
+ * how a wait hears of it at once, and this is what every wait asks. */
+static _Atomic int hero_net_stop_asks;
+
+/* Whether the stop was asked. */
+static bool hero_net_stopping(void) {
+    return atomic_load(&hero_net_stop_asks) > 0;
+}
+
+#if defined(_WIN32)
+/* Windows runs this on a thread of its own it makes for the event
+ * (HandlerRoutine's page), so it touches the count alone. The first event
+ * asks the stop and answers TRUE, handled; a second answers FALSE, and the
+ * system's own handler after it ends the process as the event would have.
+ * The console closing ends the process when this returns, or 5 s after the
+ * close: it waits first, so `main` returns, and ends the process sooner. */
+static BOOL WINAPI hero_net_on_console(DWORD event) {
+    if (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT && event != CTRL_CLOSE_EVENT) {
+        return FALSE;
+    }
+    if (atomic_fetch_add(&hero_net_stop_asks, 1) > 0) {
+        return FALSE;
+    }
+    if (event == CTRL_CLOSE_EVENT) {
+        for (int waited = 0; waited < HERO_NET_CLOSING_MS; waited += HERO_NET_SLICE_MS) {
+            Sleep(HERO_NET_SLICE_MS);
+        }
+    }
+    return TRUE;
+}
+
+/* The handler taken, once; -1 with the system's number where it is refused.
+ * Under the lock. A program that inherited Ctrl-C ignored (a process group
+ * made for it) is not sent the event, which this leaves as it found. */
+static int64_t hero_net_stop_arm(void) {
+    if (!SetConsoleCtrlHandler(hero_net_on_console, TRUE)) {
+        hero_net_fail(HERO_NET_OTHER, (int64_t)GetLastError());
+        return -1;
+    }
+    atomic_store(&hero_net_stop_armed, 1);
+    return 0;
+}
+#else
+/* The pipe's two ends, -1 until the stop is armed: the handler writes down
+ * `hero_net_stop_out`, every wait watches `hero_net_stop_in`. */
+static _Atomic int hero_net_stop_in = -1;
+static _Atomic int hero_net_stop_out = -1;
+/* The process that armed the stop. A child forked before it runs a program
+ * shares the pipe and the handler until its `exec`, and a signal reaching it
+ * there must end it as the signal would, never stop its parent. */
+static _Atomic int hero_net_stop_owner = -1;
+
+/* THE HANDLER, the stop's one piece of code a signal runs. The first signal
+ * of the process that armed it counts itself and writes one byte; any other,
+ * a second one or one reaching a forked child, restores the signal's own
+ * end and sends the signal again, so the process ends as it would have. */
+static void hero_net_on_stop(int sig) {
+    int saved = errno;
+
+    if ((int)getpid() == atomic_load(&hero_net_stop_owner) && atomic_fetch_add(&hero_net_stop_asks, 1) == 0) {
+        char one = 1;
+        ssize_t wrote = write(atomic_load(&hero_net_stop_out), &one, 1);
+
+        (void)wrote;
+    } else {
+        struct sigaction plain = { 0 };
+
+        plain.sa_handler = SIG_DFL;
+        sigemptyset(&plain.sa_mask);
+        (void)sigaction(sig, &plain, NULL);
+        (void)kill(getpid(), sig);
+    }
+    errno = saved;
+}
+
+/* `sig` taken for the stop, what stood before kept in `was`; one the process
+ * inherited ignored is left ignored, the shell's word. False, with `errno`,
+ * where the system refused. Both signals are held while the handler runs,
+ * so a second one waits for the first to have counted itself. */
+static bool hero_net_stop_take(int sig, struct sigaction *was) {
+    if (sigaction(sig, NULL, was) != 0) {
+        return false;
+    }
+    if (!(was->sa_flags & SA_SIGINFO) && was->sa_handler == SIG_IGN) {
+        return true;
+    }
+    struct sigaction now = { 0 };
+
+    now.sa_handler = hero_net_on_stop;
+    sigemptyset(&now.sa_mask);
+    sigaddset(&now.sa_mask, SIGINT);
+    sigaddset(&now.sa_mask, SIGTERM);
+    /* Restarted: the pipe, never `EINTR`, is how a wait hears of the stop, so
+     * every other call of the program and its libraries keeps its meaning. */
+    now.sa_flags = SA_RESTART;
+    return sigaction(sig, &now, NULL) == 0;
+}
+
+/* The pipe's ends given back and forgotten, where arming failed. */
+static void hero_net_stop_unmade(int in, int out) {
+    atomic_store(&hero_net_stop_in, -1);
+    atomic_store(&hero_net_stop_out, -1);
+    (void)close(in);
+    (void)close(out);
+}
+
+/* The pipe made, both ends close-on-exec and non-blocking, published, then
+ * the two signals taken; -1 with the system's number where any of it is
+ * refused, nothing left taken. Under the lock. */
+static int64_t hero_net_stop_arm(void) {
+    int ends[2];
+
+    if (pipe(ends) != 0) {
+        hero_net_failed_with(hero_net_os_code());
+        return -1;
+    }
+    for (int i = 0; i < 2; i += 1) {
+        int flags = fcntl(ends[i], F_GETFL);
+
+        if (fcntl(ends[i], F_SETFD, FD_CLOEXEC) != 0 || flags < 0 || fcntl(ends[i], F_SETFL, flags | O_NONBLOCK) != 0) {
+            int64_t code = hero_net_os_code();
+
+            (void)close(ends[0]);
+            (void)close(ends[1]);
+            hero_net_failed_with(code);
+            return -1;
+        }
+    }
+    /* Published before the handler is, which reads them. */
+    atomic_store(&hero_net_stop_in, ends[0]);
+    atomic_store(&hero_net_stop_out, ends[1]);
+    atomic_store(&hero_net_stop_owner, (int)getpid());
+
+    struct sigaction was_int;
+    struct sigaction was_term;
+
+    if (!hero_net_stop_take(SIGINT, &was_int)) {
+        int64_t code = hero_net_os_code();
+
+        hero_net_stop_unmade(ends[0], ends[1]);
+        hero_net_failed_with(code);
+        return -1;
+    }
+    if (!hero_net_stop_take(SIGTERM, &was_term)) {
+        int64_t code = hero_net_os_code();
+
+        (void)sigaction(SIGINT, &was_int, NULL);
+        hero_net_stop_unmade(ends[0], ends[1]);
+        hero_net_failed_with(code);
+        return -1;
+    }
+    atomic_store(&hero_net_stop_armed, 1);
+    return 0;
+}
+#endif
+
+int64_t hero_net_catch_stop(void) {
+    hero_net_enter();
+    int64_t answer = atomic_load(&hero_net_stop_armed) != 0 ? 0 : hero_net_stop_arm();
+    hero_net_leave();
+
+    if (answer == 0) {
+        hero_net_clear();
+    }
+    return answer;
+}
+
+int64_t hero_net_stop_asked(void) {
+    return hero_net_stopping() ? 1 : 0;
+}
+
+/* -- waiting ------------------------------------------------------------ */
+
 /* A descriptor made to wait never in the system's own calls (`blocking`
  * false), or made to again; false, the error set, where it could not be. */
 static bool hero_net_blocking(hero_net_fd fd, bool blocking) {
@@ -448,23 +652,39 @@ static bool hero_net_blocking(hero_net_fd fd, bool blocking) {
     return true;
 }
 
+/* How one slice of a wait ended. */
+typedef enum {
+    /* The system failed the wait, its number in `code`. */
+    HERO_NET_WAIT_FAILED,
+    /* The slice passed with nothing ready. */
+    HERO_NET_WAIT_PASSED,
+    /* The socket is ready for what the call needs. */
+    HERO_NET_WAIT_READY,
+    /* The stop was asked, whatever else is ready. */
+    HERO_NET_WAIT_STOPPED
+} hero_net_waited;
+
 /* One slice of a wait for what a call needs, a connection or bytes to read
- * (`writing` false) or room to send: 1 where the call may go on, 0 where the
- * slice passed, -1 with the platform's number in `code`. */
-static int hero_net_wait(hero_net_fd fd, bool writing, int64_t *code) {
+ * (`writing` false) or room to send or a connection made, beside the stop's
+ * pipe where it is armed. */
+static hero_net_waited hero_net_wait(hero_net_fd fd, bool writing, int64_t *code) {
 #if defined(_WIN32)
     WSAPOLLFD one = { fd, (short)(writing ? POLLWRNORM : POLLRDNORM), 0 };
     int ready = WSAPoll(&one, 1, HERO_NET_SLICE_MS);
 #else
-    struct pollfd one = { fd, (short)(writing ? POLLOUT : POLLIN), 0 };
-    int ready = poll(&one, 1, HERO_NET_SLICE_MS);
+    /* A negative descriptor, the stop unarmed, is one `poll` passes over. */
+    struct pollfd two[2] = { { fd, (short)(writing ? POLLOUT : POLLIN), 0 }, { atomic_load(&hero_net_stop_in), POLLIN, 0 } };
+    int ready = poll(two, 2, HERO_NET_SLICE_MS);
 #endif
 
     if (ready < 0) {
         *code = hero_net_os_code();
-        return -1;
+        return HERO_NET_WAIT_FAILED;
     }
-    return ready > 0 ? 1 : 0;
+    if (hero_net_stopping()) {
+        return HERO_NET_WAIT_STOPPED;
+    }
+    return ready > 0 ? HERO_NET_WAIT_READY : HERO_NET_WAIT_PASSED;
 }
 
 /* Whether a call on a non-blocking socket failed only because it would have
@@ -477,6 +697,17 @@ static bool hero_net_would_wait(int64_t code) {
 #endif
 }
 
+/* Whether a `connect` on a non-blocking socket failed only because the
+ * connection is still being made: POSIX says a signal does not abort one
+ * either, and it goes on without the call. */
+static bool hero_net_connecting(int64_t code) {
+#if defined(_WIN32)
+    return code == WSAEWOULDBLOCK || code == WSAEINPROGRESS;
+#else
+    return code == EINPROGRESS || code == EINTR;
+#endif
+}
+
 /* Whether a listener's `accept` failed for a reason that passes: no
  * connection after all, a signal, or one reset before it was taken. */
 static bool hero_net_passing(int64_t code) {
@@ -486,6 +717,22 @@ static bool hero_net_passing(int64_t code) {
     return hero_net_would_wait(code) || code == EINTR || code == ECONNABORTED;
 #endif
 }
+
+/* The failure a connection being made has met, 0 for none yet: the
+ * system's answer once the socket is writable, and on Windows the one way to
+ * hear of a refusal `WSAPoll` did not report on the Windows of before
+ * version 2004. */
+static int64_t hero_net_pending_error(hero_net_fd fd) {
+    int said = 0;
+    hero_net_len size = (hero_net_len)sizeof said;
+
+    if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&said, &size) != 0) {
+        return hero_net_os_code();
+    }
+    return (int64_t)said;
+}
+
+/* -- making sockets ----------------------------------------------------- */
 
 /* Windows asks a process to start its sockets once; elsewhere nothing to do. */
 static bool hero_net_started(void) {
@@ -511,56 +758,46 @@ static bool hero_net_started(void) {
 #endif
 }
 
-/* One address `getaddrinfo` gave, tried: a descriptor listening on it or
- * connected to it, or NO_FD with the platform's number in `code`. */
-static hero_net_fd hero_net_try(const struct addrinfo *at, bool listening, int64_t *code) {
+/* A descriptor for one address `getaddrinfo` gave, readied and non-blocking,
+ * or NO_FD with the platform's number in `code`. */
+static hero_net_fd hero_net_made(const struct addrinfo *at, int64_t *code) {
     hero_net_fd fd = socket(at->ai_family, at->ai_socktype, at->ai_protocol);
 
     if (fd == HERO_NET_NO_FD) {
         *code = hero_net_os_code();
         return HERO_NET_NO_FD;
     }
-    if (!hero_net_ready(fd)) {
+    if (!hero_net_ready(fd) || !hero_net_blocking(fd, false)) {
         *code = hero_net_os;
         (void)hero_net_close_fd(fd);
         return HERO_NET_NO_FD;
     }
-    int failed = 0;
+    return fd;
+}
 
-    if (listening) {
-        int one = 1;
+/* A descriptor listening on the address, or NO_FD with the platform's
+ * number in `code`. A listener never blocks: its `accept` waits in slices. */
+static hero_net_fd hero_net_try_listen(const struct addrinfo *at, int64_t *code) {
+    hero_net_fd fd = hero_net_made(at, code);
+
+    if (fd == HERO_NET_NO_FD) {
+        return HERO_NET_NO_FD;
+    }
+    int one = 1;
 #if defined(_WIN32)
-        /* Windows' SO_REUSEADDR lets another socket take the port from under
-         * this one; its exclusive use is POSIX's plain bind. */
-        failed = setsockopt(fd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (const char *)&one, (hero_net_len)sizeof one);
+    /* Windows' SO_REUSEADDR lets another socket take the port from under
+     * this one; its exclusive use is POSIX's plain bind. */
+    int failed = setsockopt(fd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (const char *)&one, (hero_net_len)sizeof one);
 #else
-        /* A port a closed listener left in TIME_WAIT is taken again at once. */
-        failed = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, (hero_net_len)sizeof one);
+    /* A port a closed listener left in TIME_WAIT is taken again at once. */
+    int failed = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, (hero_net_len)sizeof one);
 #endif
-        if (failed == 0) {
-            failed = bind(fd, at->ai_addr, (hero_net_len)at->ai_addrlen);
-        }
-        if (failed == 0) {
-            failed = listen(fd, SOMAXCONN);
-        }
-        /* A listener never blocks: its `accept` waits in slices
-         * (`hero_net_accept`). */
-        if (failed == 0 && !hero_net_blocking(fd, false)) {
-            *code = hero_net_os;
-            (void)hero_net_close_fd(fd);
-            return HERO_NET_NO_FD;
-        }
-    } else {
-        /* Not asked again after a signal: the connection then goes on
-         * without the call, and a second `connect` would say so. Blocking:
-         * no handle names the socket yet, so no close can end it; it turns
-         * non-blocking once connected, as every socket the table holds. */
-        failed = connect(fd, at->ai_addr, (hero_net_len)at->ai_addrlen);
-        if (failed == 0 && !hero_net_blocking(fd, false)) {
-            *code = hero_net_os;
-            (void)hero_net_close_fd(fd);
-            return HERO_NET_NO_FD;
-        }
+
+    if (failed == 0) {
+        failed = bind(fd, at->ai_addr, (hero_net_len)at->ai_addrlen);
+    }
+    if (failed == 0) {
+        failed = listen(fd, SOMAXCONN);
     }
     if (failed != 0) {
         *code = hero_net_os_code();
@@ -568,6 +805,50 @@ static hero_net_fd hero_net_try(const struct addrinfo *at, bool listening, int64
         return HERO_NET_NO_FD;
     }
     return fd;
+}
+
+/* A descriptor connected to the address, or NO_FD with the platform's number
+ * in `code`, or with `stopped` set where the stop was asked while the
+ * connection was being made. The connection is asked for on a non-blocking
+ * socket and waited for in slices, writable or failed, the system's own
+ * answer read after each (`hero_net_pending_error`). */
+static hero_net_fd hero_net_try_connect(const struct addrinfo *at, int64_t *code, bool *stopped) {
+    hero_net_fd fd = hero_net_made(at, code);
+
+    if (fd == HERO_NET_NO_FD) {
+        return HERO_NET_NO_FD;
+    }
+    if (connect(fd, at->ai_addr, (hero_net_len)at->ai_addrlen) == 0) {
+        return fd;
+    }
+    *code = hero_net_os_code();
+    if (!hero_net_connecting(*code)) {
+        (void)hero_net_close_fd(fd);
+        return HERO_NET_NO_FD;
+    }
+    for (;;) {
+        hero_net_waited waited = hero_net_stopping() ? HERO_NET_WAIT_STOPPED : hero_net_wait(fd, true, code);
+
+        if (waited == HERO_NET_WAIT_STOPPED) {
+            *stopped = true;
+            (void)hero_net_close_fd(fd);
+            return HERO_NET_NO_FD;
+        }
+        if (waited == HERO_NET_WAIT_FAILED && !hero_net_interrupted(*code)) {
+            (void)hero_net_close_fd(fd);
+            return HERO_NET_NO_FD;
+        }
+        int64_t said = hero_net_pending_error(fd);
+
+        if (said != 0) {
+            *code = said;
+            (void)hero_net_close_fd(fd);
+            return HERO_NET_NO_FD;
+        }
+        if (waited == HERO_NET_WAIT_READY) {
+            return fd;
+        }
+    }
 }
 
 static hero_net_socket *hero_net_open(const char *address, int64_t port, bool listening) {
@@ -596,12 +877,17 @@ static hero_net_socket *hero_net_open(const char *address, int64_t port, bool li
     }
     hero_net_fd fd = HERO_NET_NO_FD;
     int64_t code = 0;
+    bool stopped = false;
 
-    for (const struct addrinfo *at = found; at != NULL && fd == HERO_NET_NO_FD; at = at->ai_next) {
-        fd = hero_net_try(at, listening, &code);
+    for (const struct addrinfo *at = found; at != NULL && fd == HERO_NET_NO_FD && !stopped; at = at->ai_next) {
+        fd = listening ? hero_net_try_listen(at, &code) : hero_net_try_connect(at, &code, &stopped);
     }
     freeaddrinfo(found);
 
+    if (stopped) {
+        hero_net_fail(HERO_NET_STOPPED, 0);
+        return NULL;
+    }
     if (fd == HERO_NET_NO_FD) {
         hero_net_failed_with(code);
         return NULL;
@@ -626,18 +912,25 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
     }
     hero_net_fd got = HERO_NET_NO_FD;
     int64_t code = 0;
+    bool stopped = false;
 
-    /* In slices, asking between them whether the listener was closed. */
+    /* In slices, asking between them whether the listener was closed or the
+     * stop asked; the stop is asked before any connection waiting is taken,
+     * so a loop of accepts under load still ends. */
     while (!hero_net_closing(slot)) {
-        int ready = hero_net_wait(fd, false, &code);
+        hero_net_waited waited = hero_net_stopping() ? HERO_NET_WAIT_STOPPED : hero_net_wait(fd, false, &code);
 
-        if (ready < 0 && hero_net_interrupted(code)) {
-            continue;
-        }
-        if (ready < 0) {
+        if (waited == HERO_NET_WAIT_STOPPED) {
+            stopped = true;
             break;
         }
-        if (ready == 0) {
+        if (waited == HERO_NET_WAIT_FAILED && hero_net_interrupted(code)) {
+            continue;
+        }
+        if (waited == HERO_NET_WAIT_FAILED) {
+            break;
+        }
+        if (waited == HERO_NET_WAIT_PASSED) {
             continue;
         }
         got = accept(fd, NULL, NULL);
@@ -653,6 +946,10 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
             (void)hero_net_close_fd(got);
         }
         hero_net_fail(HERO_NET_NOT_OPEN, 0);
+        return NULL;
+    }
+    if (stopped) {
+        hero_net_fail(HERO_NET_STOPPED, 0);
         return NULL;
     }
     if (got == HERO_NET_NO_FD) {
@@ -699,14 +996,22 @@ int64_t hero_net_port(hero_net_socket *s) {
     return -1;
 }
 
-/* One send or one receive of at most a chunk: tried, then where the system
+/* -- moving bytes ------------------------------------------------------- */
+
+/* One send or one receive of at most a chunk: tried first, so bytes already
+ * there and room already free move after a stop too, then where the system
  * would wait, waited for in slices, asking between them whether the program
- * closed the socket. The count, or -1 with the platform's number in `code`,
- * that number 0 where the close ended it. */
-static int64_t hero_net_move(hero_net_slot *slot, hero_net_fd fd, void *bytes, uint64_t count, bool sending, int64_t *code) {
+ * closed the socket or the stop was asked. The count, or -1 with the kind in
+ * `kind` and the platform's number in `code`, 0 where the layer ended it. */
+static int64_t hero_net_move(hero_net_slot *slot, hero_net_fd fd, void *bytes, uint64_t count, bool sending, int64_t *kind, int64_t *code) {
     uint64_t n = count > HERO_NET_CHUNK ? HERO_NET_CHUNK : count;
 
-    while (!hero_net_closing(slot)) {
+    for (;;) {
+        if (hero_net_closing(slot)) {
+            *kind = HERO_NET_NOT_OPEN;
+            *code = 0;
+            return -1;
+        }
 #if defined(_WIN32)
         int64_t moved = sending ? (int64_t)send(fd, (const char *)bytes, (int)n, HERO_NET_SEND_FLAGS)
                                 : (int64_t)recv(fd, (char *)bytes, (int)n, 0);
@@ -715,7 +1020,6 @@ static int64_t hero_net_move(hero_net_slot *slot, hero_net_fd fd, void *bytes, u
                                 : (int64_t)recv(fd, bytes, (size_t)n, 0);
 #endif
         if (moved >= 0) {
-            *code = 0;
             return moved;
         }
         *code = hero_net_os_code();
@@ -723,14 +1027,21 @@ static int64_t hero_net_move(hero_net_slot *slot, hero_net_fd fd, void *bytes, u
             continue;
         }
         if (!hero_net_would_wait(*code)) {
+            *kind = hero_net_kind_of(*code);
             return -1;
         }
-        if (hero_net_wait(fd, sending, code) < 0 && !hero_net_interrupted(*code)) {
+        hero_net_waited waited = hero_net_stopping() ? HERO_NET_WAIT_STOPPED : hero_net_wait(fd, sending, code);
+
+        if (waited == HERO_NET_WAIT_STOPPED) {
+            *kind = HERO_NET_STOPPED;
+            *code = 0;
+            return -1;
+        }
+        if (waited == HERO_NET_WAIT_FAILED && !hero_net_interrupted(*code)) {
+            *kind = hero_net_kind_of(*code);
             return -1;
         }
     }
-    *code = 0;
-    return -1;
 }
 
 static int64_t hero_net_carry(hero_net_socket *s, void *bytes, uint64_t count, bool sending) {
@@ -745,8 +1056,9 @@ static int64_t hero_net_carry(hero_net_socket *s, void *bytes, uint64_t count, b
         hero_net_fail(HERO_NET_INVALID, 0);
         return -1;
     }
+    int64_t kind = HERO_NET_OK;
     int64_t code = 0;
-    int64_t moved = count == 0 ? 0 : hero_net_move(slot, fd, bytes, count, sending, &code);
+    int64_t moved = count == 0 ? 0 : hero_net_move(slot, fd, bytes, count, sending, &kind, &code);
 
     /* Ended by a close meanwhile, the shutdown's 0 or its failure, the call
      * says so; bytes it moved before the close are the program's. */
@@ -755,7 +1067,7 @@ static int64_t hero_net_carry(hero_net_socket *s, void *bytes, uint64_t count, b
         return -1;
     }
     if (moved < 0) {
-        hero_net_failed_with(code);
+        hero_net_fail(kind, code);
         return -1;
     }
     hero_net_clear();

@@ -65,6 +65,9 @@ typedef struct hero_net_socket hero_net_socket;
 #define HERO_NET_LIMIT 9
 #define HERO_NET_DENIED 10
 #define HERO_NET_OTHER 11
+/* The program was asked to stop (`hero_net_catch_stop`) before or while the
+ * call would have waited. */
+#define HERO_NET_STOPPED 12
 
 /* A socket listening on `address` (`127.0.0.1`, `::1`, or "" for every
  * address of the machine) at `port`, 0 asking the system for a free one,
@@ -96,6 +99,44 @@ int64_t hero_net_recv(hero_net_socket *s, void *buffer, uint64_t count);
  * every call waits in slices of that; no connection made after the close is
  * accepted, and no later call reaches the socket. */
 int64_t hero_net_close(hero_net_socket *s);
+
+/* THE STOP (panel 246's R4): how a server ends on Ctrl-C or a request to
+ * end, `kill`'s, `timeout`'s or a service manager's, and returns from `main`,
+ * so every handle is given back and the leak check at its end runs.
+ *
+ * From this call on, SIGINT and SIGTERM (on Windows Ctrl-C, Ctrl-Break and
+ * the console closing) no longer end the program at once. The first of them
+ * asks it to stop: from then, on every thread, a call of this layer that
+ * would wait answers -1 or NULL with `HERO_NET_STOPPED` instead, one
+ * already waiting within about 50 ms. An `accept` answers so even with a
+ * connection waiting, so a loop of accepts ends under load, and so does a
+ * `connect` whose connection the system cannot make at once; a `recv` with
+ * bytes already there and a `send` the system has room for still move them,
+ * so a stopping program can finish what it holds. A second one while the
+ * program stops ends it at once, as the signal would have.
+ *
+ * What runs in the signal is the layer's own C, which writes one byte down
+ * a pipe the waiting calls watch beside their socket: no code of the
+ * program, no allocation. A signal the program inherited ignored stays
+ * ignored (a job a shell starts with `&` has SIGINT so). Any other handler
+ * of the two is replaced, among them the runtime's own that passes the
+ * signal on to a child the program waits on: once the stop is caught, such
+ * a child is not sent the signal and runs to its end. A name being looked
+ * up for `hero_net_connect` is not ended by a stop; the call answers
+ * `HERO_NET_STOPPED` once the lookup returns. A signal sent to `heroes run`
+ * is passed on to the program, which then has about two seconds before
+ * `heroes` kills it. On Windows the console closing ends the process within
+ * five seconds whatever it does (Microsoft's HandlerRoutine page; unrun).
+ *
+ * Answers 0, also where the stop was already caught, or -1 where the system
+ * gave no pipe or refused the handler. */
+int64_t hero_net_catch_stop(void);
+
+/* 1 once a stop has been asked, else 0: a loop that works between the
+ * layer's calls asks it between its steps, and a thread that joins a worker
+ * asks it after. A reader, as the two below: it changes nothing they
+ * answer. */
+int64_t hero_net_stop_asked(void);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the

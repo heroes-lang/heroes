@@ -1,0 +1,6 @@
+the program starts with the request to end at its default: 1
+the stop is caught: 0
+a request to end is sent from another thread: 1
+the worker's accept answered stopped: true
+a second request to end comes while main finishes
+!exit: 143

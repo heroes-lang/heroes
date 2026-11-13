@@ -1,0 +1,63 @@
+# A second request to end while the program stops ends it at once, as
+# SIGTERM would have (panel 246's R4, the landing's answer to the
+# compiler-engineer's finding that the stop as first drafted made a second
+# Ctrl-C do nothing; lane b34-layer, 2026-11-13). The first ends a worker's
+# `accept`; while `main` would still be finishing what it holds, the second
+# arrives, and the program ends by the signal itself, 128 + 15 = 143, with
+# what it printed before written out. The leak check never runs, as it does
+# not under any signal's own end. Judged on POSIX: on Windows a second
+# console event ends the process by the system's own handler, in its own
+# status, not 128 + a signal.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    constant HERO_NET_STOPPED: i64
+    function hero_net_catch_stop() -> i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_last_error() -> i64
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_REQUEST: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_now(what: i64) -> i64
+    function stop_send_after(what: i64, ms: i64) -> i64
+    function stop_note_port(port: i64)
+    function stop_note_done()
+    function stop_flush()
+
+# The server, on a worker: a listener of its own at `port`, 0 the system's
+# choice, and an `accept` on it. Answers the kind the `accept` failed with,
+# or -1 where it took a connection, which only the header's rescue makes.
+function serve(port: i64) -> i64
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: port)
+
+    if listener == nullptr
+        return -2
+    stop_note_port(hero_net_port(listener))
+    accepted = hero_net_accept(listener)
+    kind = hero_net_last_error()
+    stop_note_done()
+
+    if accepted != nullptr
+        _ = hero_net_close(accepted)
+        _ = hero_net_close(listener)
+        return -1
+    _ = hero_net_close(listener)
+    return kind
+
+function main()
+    print(f"the program starts with the request to end at its default: {stop_begin(interrupt_ignored: 0)}")
+    print(f"the stop is caught: {hero_net_catch_stop()}")
+    worker = hero_thread_spawn(body: serve, arg: 0)
+    print(f"a request to end is sent from another thread: {stop_send_after(what: STOP_REQUEST, ms: 300)}")
+    kind = hero_thread_join(handle: worker)
+    print(f"the worker's accept answered stopped: {kind == HERO_NET_STOPPED}")
+    print("a second request to end comes while main finishes")
+    stop_flush()
+    print(f"the second request to end was survived: {stop_send_now(what: STOP_REQUEST)}")
