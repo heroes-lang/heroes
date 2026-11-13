@@ -34,16 +34,20 @@
  * are undefined behaviour in C — joining twice, joining something that was
  * never started — into a named panic.
  *
- * WHAT MAY CROSS, AND IT IS ENFORCED BY THE CHECKER RATHER THAN BY THIS
- * COMMENT. The body is `int64_t (*)(int64_t)`. A Heroes program binds it
- * through `hero_os.h`, so `selfhost/check/ffi.hero`'s `crosses_the_boundary`
- * judges the callback's own parameters and result — which it did not do until
- * defect 014 was repaired the same day — and a `[T]` or a `{K: V}` inside that
- * signature is `error[ffi_type]` on the author's line. So no refcounted Heroes
- * value reaches a second thread, which is Part 7.13's isolation obtained from
- * the type rule rather than promised in prose. Panel 113 measured what the
- * absence of that rule cost: a container crossed inside a callback signature at
- * exit 0 with an empty stderr.
+ * WHAT CROSSES IS ONE `int64_t` EACH WAY. The body is `int64_t (*)(int64_t)`,
+ * and spec section 13 says so since panel 246's R3 (2026-11-13). A Heroes
+ * program binds it through `hero_os.h`: `selfhost/check/ffi.hero`'s
+ * `crosses_the_boundary` judges the callback's own parameters and result
+ * (since defect 014), so a `[T]` or a `{K: V}` in that signature is
+ * `error[ffi_type]` on the author's line, and any other type, a `str` or a
+ * handle, passes the checker and is refused by clang at the build against
+ * `hero_os.h`'s prototype (`ffi_callback_type`), as panel 246's seats
+ * measured. So no refcounted Heroes value reaches a second thread: Part 7.13's
+ * isolation is obtained from the prototype and the type rule together. Until
+ * 2026-11-13 this paragraph said the checker alone enforced it, which held for
+ * arrays and maps alone (lane b34-signals found it beside `hero_os.h`'s twin).
+ * Panel 113 measured what the absence of the type rule cost: a container
+ * crossed inside a callback signature at exit 0 with an empty stderr.
  *
  * AND THE THREAD IS THIS PROGRAM'S, WHICH IS WHY THE GUARD LETS IT THROUGH.
  * `parts/thread.c` refuses a Heroes function on any thread the program did not
