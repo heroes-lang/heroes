@@ -148,12 +148,14 @@ hero_net_socket *hero_net_of(int64_t number);
  * ignored (a job a shell starts with `&` has SIGINT so). Any other handler
  * of the two is replaced, among them the runtime's own that passes the
  * signal on to a child the program waits on: once the stop is caught, such
- * a child is not sent the signal and runs to its end. A name being looked
- * up for `hero_net_connect` is not ended by a stop; the call answers
- * `HERO_NET_STOPPED` once the lookup returns. A signal sent to `heroes run`
- * is passed on to the program, which then has about two seconds before
- * `heroes` kills it. On Windows the console closing ends the process within
- * five seconds whatever it does (Microsoft's HandlerRoutine page; unrun).
+ * a child is not sent the signal and runs to its end, whichever was first,
+ * the stop caught or the child's launch. A name being looked up for
+ * `hero_net_connect` is not ended by a stop: the lookup runs to its end, and
+ * the connection after it meets the stop as any later call does. A signal
+ * sent to `heroes run` is passed on to the program, which then has about
+ * two seconds before `heroes` kills it. On Windows the console closing ends
+ * the process within five seconds whatever it does (Microsoft's
+ * HandlerRoutine page; unrun).
  *
  * Answers 0, also where the stop was already caught, or -1 where the system
  * gave no pipe or refused the handler. */
