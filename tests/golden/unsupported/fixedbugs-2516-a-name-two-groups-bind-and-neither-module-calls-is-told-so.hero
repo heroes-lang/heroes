@@ -1,0 +1,20 @@
+# fixedbugs, defect 2516, lane b35-link, 2026-11-13.
+#
+# SYMPTOM: `twice`, which this module's group and another's bind two ways
+# and neither module calls: refused with *the linker joins both to one
+# symbol* and *C then reaches one `twice` through two types*, false of a
+# program whose objects refer to no `twice` (a name bound and never called
+# is in no module's table of externs, `emit/extern_refs.hero`).
+#
+# FIX: the linker is named only where both modules call the name; here the
+# note says neither module's C calls it, and the remedy for two bindings
+# stands.
+use fixedbugs2516/binds_b
+
+extern "fixedbugs-2516-declares-a.h"
+    function declares_a_value(x: i64) -> i64
+    function twice(x: i64) -> i64  #~ ffi_declared_two_ways
+
+function main()
+    print(declares_a_value(x: 3))
+    print(binds_b.b(x: 3))
