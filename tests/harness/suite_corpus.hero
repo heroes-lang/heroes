@@ -122,8 +122,15 @@ constant EXAMPLES: str
 # `main.stdin` beside `main.args` here — the gate its scheduling item set, and
 # the reason it was built rather than filed. Measured the day it landed: 45
 # directories, 44 with a `main.hero`.
+#
+# 44 -> 56 at batch 35's gate, 2026-11-13, told by this suite's own `FLOOR`
+# line on the round: 57 directories, 56 with a `main.hero`, twelve added
+# since 2cafaa240, the commit that set 44 (`git diff --name-only
+# --diff-filter=A`): `collatz`, `dotproduct`, `firsthit`, `histogram`,
+# `mandelbrot`, `matmul`, `montecarlo`, `nqueens`, `threads`, `wordbands`,
+# `packages` and `server`, the newest, the HTTP server built from core 0.3.0.
 constant LEAST: i64
-    44
+    56
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()

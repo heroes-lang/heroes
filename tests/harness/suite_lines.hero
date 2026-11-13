@@ -101,8 +101,13 @@ constant LIBRARY_FILE: str
 # **632 on 2026-10-30**, at M-compatibility-promise's batch gate: the run
 # cases of its nineteen repairs and of feature 2274 took the directory past
 # 498 by more than a quarter, and the suite asked 632.
+#
+# **811 on 2026-11-13**, at batch 35's gate: 786 `.hero` cases and 25
+# `.case` folders, 179 more than at 29715956f, the commit that set 632
+# (whose tree holds 632 by the same count), the run cases of batches 26 to
+# 35 past it by more than a quarter, and the suite asked 811.
 constant LEAST: i64
-    632
+    811
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
