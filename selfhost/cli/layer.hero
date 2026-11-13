@@ -453,16 +453,16 @@ test "a member is named by its file, and a record's rows follow its digest (feat
 
 # Defect 2489: an archive stands beside the record of what each member
 # needs, asked while its object stood, `hero_net` the C library's `socket`
-# among them where a POSIX link names it so; one whose record is gone is
-# archived again, the same bytes and the same record.
+# among them; one whose record is gone is archived again, the same bytes and
+# the same record. **`socket` on every target since defect 2510**: on the
+# CI's MSVC leg the record named no need of the member, link.exe's words
+# having gone to a stdout nobody read, and the member's own `ws2_32.lib`
+# supplied `socket` to its lone link on link.exe and lld-link alike.
 test "an archive stands with the record of what its members need, and is archived again without it (defect 2489)"
     t = fresh_toolchain("build/selftest-layer-needs-2489")
     a = archive(t, level: "-O0", sanitize: false).must()[0]
     listed_needs = read_file(supplied_kept.layer_needs_path(a)).must()
-    assert strings.holds(text: listed_needs, needle: "hero_net\t")
-
-    if !link_flags.msvc(t.target)
-        assert strings.holds(text: listed_needs, needle: "hero_net\tsocket\n")
+    assert strings.holds(text: listed_needs, needle: "hero_net\tsocket\n")
     first = t.build + "/the-first-archive"
     assert !files.second_name(existing: a, name: first).is_err()
     assert !process.remove_file(supplied_kept.layer_needs_path(a)).is_err()

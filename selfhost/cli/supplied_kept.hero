@@ -219,29 +219,41 @@ function kept_name(object: str) -> str
     return publish.base_of(folder.slice(from: 0, to: folder.len() - 1)) + "-" + publish.base_of(object)
 
 # The names `object` needs from outside it: the object linked alone with no
-# library, every name the link calls undefined read back
-# (`ffi_build.undefined_symbol`), each once, `main` left out, which is the
-# program's; none where that link links or cannot run. The runtime's object
-# and each member of the platform layer are asked so (`cli/layer.hero`).
+# library, every name the link calls undefined read back (`needs_in`); none
+# where that link links or cannot run. The runtime's object and each member
+# of the platform layer are asked so (`cli/layer.hero`).
 function alone_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
-    nothing: [str] = []
     base = publish.private_name(t.build + "/supplied-needs")
-    err_path = base + ".err.txt"
     run = supplied_probe.run_words(
         strings.with_all(list: ["clang", "-nostdlib", object, "-o", base + process.exe_suffix()], more: alone_words(t))
     )
+    said = lone_said(run: run, what: what, base: base)
+    publish.discard(base + process.exe_suffix())
+    return needs_in(said)
+
+# What the lone link `run` said where it did not link, its two streams in one
+# text (`clang_asked`'s refusal, stdout before stderr), or why it did not run;
+# "" where it linked. Its files are `base`'s, removed before it answers.
+#
+# **Both streams, since defect 2510**: MSVC's link.exe, the CI's Windows
+# linker, writes `error LNK2019: unresolved external symbol` on stdout (defect
+# 644, measured on the Windows box 2026-10-11), and this link's stdout went
+# nowhere, so on the CI's leg of 2026-11-13 every member of the platform layer
+# was recorded as needing nothing and the runtime's needs were none. The real
+# link reads it there already (`link_warning.run_link`), as the probes do.
+function lone_said(run: [str], what: str, base: str) -> str
+    err_path = base + ".err.txt"
+    out_path = base + ".out.txt"
     said: str @= ""
 
-    match clang_asked.asked(program: run[0], words: run, what: what, err_path: err_path, out_path: "")
+    match clang_asked.asked(program: run[0], words: run, what: what, err_path: err_path, out_path: out_path)
         .ok    => said @ ""
         .err e => said @ e.msg
-
-    lines: [str] @= supplied_names.byte_lines(text: said, needles: [], stops: [])
 
     # A linker that stopped at its limit of errors, `ld.lld` and `lld-link`
     # at twenty, is asked again with the flag its own words name (defect
     # 2501): the runtime's needs under `ld.lld` were their first twenty.
-    limit = link_folds.cut_flag_in(lines)
+    limit = link_folds.cut_flag_in(supplied_names.byte_lines(text: said, needles: [], stops: []))
 
     if limit != ""
         again = clang_asked.asked(
@@ -249,20 +261,21 @@ function alone_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
             words: run.push("-Wl," + limit),
             what: what,
             err_path: err_path,
-            out_path: ""
+            out_path: out_path
         )
         said @ link_folds.again_words(first: said, again: again)
-        lines @ supplied_names.byte_lines(text: said, needles: [], stops: [])
-    publish.discard(base + process.exe_suffix())
     publish.discard(err_path)
+    publish.discard(out_path)
+    return said
 
-    if said == ""
-        return nothing
-
+# Every name a lone link's words `said` call undefined
+# (`ffi_build.undefined_symbol`), each once in the order first said, `main`
+# left out, which is the program's.
+function needs_in(said: str) -> [str]
     out: [str] @= []
     seen: {str: bool} @= {}
 
-    for line in lines
+    for line in supplied_names.byte_lines(text: said, needles: [], stops: [])
         name = ffi_build.undefined_symbol(line)
 
         if name.is_err() || name.must() == "main" || !seen[name.must()].is_err()
@@ -312,12 +325,24 @@ function layer_needs(archive: str) -> [supplied_judged.LayerNeed]
 # any, and lld-link at twenty errors (measured on the Windows box, 2026-11-09:
 # 104 names by both once these are given; link.exe ignores the error limit
 # with a warning, LNK4044).
+#
+# **And no library the object names itself** (defect 2510): `-nostdlib` keeps
+# clang's own libraries off the line, and a COFF object still names one in
+# its `.drectve`, `/DEFAULTLIB:ws2_32.lib` from the sockets member's `#pragma
+# comment(lib)` and `advapi32.lib` from the runtime's, which both linkers
+# read, so the link was not alone: lld-link 22.1.8 on this Mac (2026-11-13)
+# told `socket` and `WSAGetLastError` only under `/NODEFAULTLIB`, and with no
+# `ws2_32.lib` on the machine it stopped at *could not open* and told no name
+# at all. `/NODEFAULTLIB` takes every such library off, on link.exe as on
+# lld-link. An ELF object's `.deplibs`, which `ld.lld` reads, is written by
+# the same pragma, which the runtime and the members write only under
+# `_WIN32` (read 2026-11-13).
 function alone_words(t: toolchain.Toolchain) -> [str]
     none: [str] = []
 
     if !link_flags.msvc(t.target)
         return none
-    return ["-Wl,/SUBSYSTEM:CONSOLE", "-Wl,/ENTRY:main", "-Wl,/errorlimit:0"]
+    return ["-Wl,/SUBSYSTEM:CONSOLE", "-Wl,/ENTRY:main", "-Wl,/errorlimit:0", "-Wl,/NODEFAULTLIB"]
 
 ## Tests
 
@@ -385,4 +410,27 @@ test "an object's needs are kept by its folder and its name and read back with n
     assert !publish.rewrite(path: dir + "/supplied-alone-build-runtime-1-2.o.txt", text: "printf\n").is_err()
     assert !publish.rewrite(path: dir + "/supplied-needs-runtime-1-2.o.txt", text: "stale\n").is_err()
     assert runtime_needs(t, objects: ["build/tu-1/main-0a1b2c3d4e5f6789.o", runtime]) == ["printf"]
+    assert !process.remove_tree(dir).is_err()
+
+# Defect 2510: a lone link's words are read on stdout as on stderr, since
+# MSVC's link.exe, the CI's Windows linker, writes its refusals there. Asked
+# of clang's preprocessor, which writes a file's text on stdout and its
+# `#error` on stderr and exits 1 wherever this compiler runs: link.exe's two
+# lines are read, its import `__imp_socket` as `socket` and its entry `main`
+# left out. And an MSVC target's lone link takes no library its objects name.
+test "a lone link's refusal is read on stdout as on stderr, link.exe's words among them, and takes no library an object names (defect 2510)"
+    dir = "build/selftest-lone-said-2510"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    said_c = dir + "/said.c"
+    assert !write_file(path: said_c, text: "hero_net.o : error LNK2019: unresolved external symbol __imp_socket referenced in function hero_net_open\nLINK : error LNK2001: unresolved external symbol main\n#error the link refused\n").is_err()
+    said = lone_said(run: ["clang", "-E", "-P", said_c], what: "a test's lone link", base: dir + "/lone")
+    assert strings.holds(text: said, needle: "the link refused")
+    assert needs_in(said) == ["socket"]
+    assert !process.path_exists(dir + "/lone.out.txt") && !process.path_exists(dir + "/lone.err.txt")
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "lone-said-test").must()
+    t.target @ "x86_64-pc-windows-msvc"
+    assert alone_words(t) == ["-Wl,/SUBSYSTEM:CONSOLE", "-Wl,/ENTRY:main", "-Wl,/errorlimit:0", "-Wl,/NODEFAULTLIB"]
+    t.target @ "x86_64-unknown-linux-gnu"
+    assert alone_words(t).len() == 0
     assert !process.remove_tree(dir).is_err()
