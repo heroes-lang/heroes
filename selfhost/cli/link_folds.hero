@@ -1,0 +1,159 @@
+# What a refused link's words leave out (design.md §4.17, §4.19; defect
+# 2501, 2026-11-13): the undefined names whose references a linker folded
+# past a count, and the flag that lifts a linker's limit of errors. Who the
+# words do say refers to each name is `cli/link_report.hero`'s.
+#
+# **What each linker leaves out**, measured 2026-11-13: every one folds the
+# references of a name past a count, so a file whose every reference falls
+# past it is named nowhere. `ld.lld` and `lld-link` (Debian LLD 22.1.8 in the
+# `heroes-linux-arm64` image) list three and write `>>> referenced N more
+# times`; GNU ld 2.44, the same image, lists five in a row and writes
+# `<file>: more undefined references to `<name>' follow`, then nothing of
+# that name until another name comes between; ld64-27106.1, this Mac's,
+# lists seven and writes a line of six spaces and `...`. The lld family
+# alone also stops at twenty undefined names, `too many errors emitted,
+# stopping now (use --error-limit=0 to see all errors)`, `/errorlimit:0` in
+# `lld-link`'s; GNU ld and ld64 told 300 names of 300. `cli/link_again.hero`
+# asks again what `folded` and `cut_flag` say was left out, and
+# `cli/supplied_kept.hero` a lone link its limit cut.
+
+use cli/link_report
+use cli/strings
+use cli/supplied_names
+use emit/ffi_lookup
+
+# The names a report lists some references of and folds the rest of, each
+# once in the order the report gives them: `>>> referenced N more times`
+# under the lld family's `undefined symbol:`, GNU ld's `more undefined
+# references to` line, which names it, and ld64's `...` under its
+# `referenced from:`.
+function folded(message: str) -> [str]
+    out: [str] @= []
+    open: str @= ""
+
+    # Asked of the bytes first, so words that fold nothing, as most
+    # refusals' do, make no line.
+    if !strings.holds(text: message, needle: " more times") && !strings.holds(text: message, needle: GNU_FOLD) && !strings.holds(text: message, needle: APPLE_FOLD)
+        return out
+
+    for raw in supplied_names.byte_lines(text: message, needles: [], stops: [])
+        line = link_report.unreturned(raw)
+        listing = link_report.listed_symbol(line)
+
+        if !listing.is_err()
+            open @ listing.must()
+            continue
+        name: str @= ""
+        gnu = ffi_lookup.after(text: line, marker: GNU_FOLD)
+
+        if !gnu.is_err()
+            name @ link_report.before(text: gnu.must(), marker: "' follow").default("")
+        else if open != "" && folds_open(line)
+            name @ open
+
+        if name != "" && !named(out, name: name)
+            out @ out.push(name)
+
+    return out
+
+# Whether `line` says the references of the name its report opened were
+# folded: the lld family's `>>> referenced N more times`, ld64's `...`.
+function folds_open(line: str) -> bool
+    if line == APPLE_FOLD
+        return true
+    return strings.starts_with(text: line, prefix: ">>> referenced ") && strings.ends_with(text: line, suffix: " more times")
+
+# GNU ld's words before a name whose references it stopped listing, five in
+# a row having been listed.
+constant GNU_FOLD: str
+    "more undefined references to `"
+
+# ld64's line under a name whose references it stopped listing, seven
+# having been listed: six spaces and three dots.
+constant APPLE_FOLD: str
+    "      ..."
+
+# The flag a linker that stopped at its limit of errors names for seeing
+# every one, `--error-limit=0` of `ld.lld`'s `(use --error-limit=0 to see all
+# errors)` and `/errorlimit:0` of `lld-link`'s; "" where the words were not cut.
+function cut_flag(message: str) -> str
+    return cut_flag_in(supplied_names.byte_lines(text: message, needles: [], stops: []))
+
+# `cut_flag` of words already split into lines (`supplied_names.byte_lines`),
+# each asked of its last bytes first: a lone link's words name every
+# reference of the runtime's needs, 23,209 bytes on this Mac, and a byte
+# search through them cost a build that links 8.5 million instructions
+# (measured 2026-11-13), where a line's end costs a comparison or two.
+function cut_flag_in(lines: [str]) -> str
+    for raw in lines
+        line = link_report.unreturned(raw)
+
+        if !strings.ends_with(text: line, suffix: " to see all errors)") || !strings.holds(text: line, needle: "too many errors emitted")
+            continue
+        use_it = ffi_lookup.after(text: line, marker: "(use ")
+
+        if use_it.is_err()
+            continue
+        flag = link_report.before(text: use_it.must(), marker: " to see all errors")
+
+        if !flag.is_err() && named(LIFTS, name: flag.must())
+            return flag.must()
+
+    return ""
+
+# The flags the lld family names for seeing every error, `ld.lld`'s and
+# `lld-link`'s (measured 2026-11-13). A flag read from a linker's words is
+# run only where it is one of these: the same words print every name a
+# library refers to, and a name is any bytes an object holds, so a line
+# that spells some other flag where the cut's stands is not the cut's.
+constant LIFTS: [str]
+    ["--error-limit=0", "/errorlimit:0"]
+
+# The words of a link run again with the flag its cut named: that run's
+# own refusal where it refused, and `first`, the cut run's, where it linked,
+# could not start or died, so a run again adds words and never takes the
+# first's away.
+function again_words(first: str, again: str?) -> str
+    match again
+        .ok => return first
+        .err e =>
+            if e.code == "clang"
+                return e.msg
+            return first
+
+function named(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+# Each linker's words as it wrote them on 2026-11-13: the lld family's,
+# `ld.lld` and `lld-link`, folding a name's references past the third and
+# stopping at twenty names with the flag that lifts the limit, Debian LLD
+# 22.1.8 in the `heroes-linux-arm64` image; GNU ld 2.44's past five in a row,
+# the same image; and ld64-27106.1's past seven, on this Mac. Words that list
+# every reference fold nothing, words never cut name no flag, a name that
+# spells another flag where the cut's stands is not run, and a run again
+# that did not refuse on words of its own leaves the cut words standing.
+test "what each linker folds or cuts is read from its own words (defect 2501)"
+    lld = "ld.lld: error: undefined symbol: base2501\n>>> referenced by a.c\n>>>               a.o:(a1)\n>>> referenced by a.c\n>>>               a.o:(a2)\n>>> referenced by c.c\n>>>               c.o:(c1)\n>>> referenced 2 more times\nld.lld: error: undefined symbol: other2501\n>>> referenced by c.c\n>>>               c.o:(c1)\n"
+    assert folded(lld) == ["base2501"]
+    coff = "lld-link: error: undefined symbol: base2501\r\n>>> referenced by a.obj:(a1)\r\n>>> referenced by a.obj:(a2)\r\n>>> referenced by b.obj:(b1)\r\n>>> referenced 2 more times\r\n"
+    assert folded(coff) == ["base2501"]
+    gnu = "/usr/bin/ld: a.o: in function `a1':\na.c:(.text+0x8): undefined reference to `base2501'\n"
+    assert folded(gnu).len() == 0 && cut_flag(gnu) == ""
+    assert folded(gnu + "/usr/bin/ld: b.o:b.c:(.text+0x20): more undefined references to `base2501' follow\n") == ["base2501"]
+    apple = "Undefined symbols for architecture arm64:\n  \"_base2501\", referenced from:\n      _a1 in a.o\n"
+    assert folded(apple).len() == 0
+    assert folded(apple + "      ...\n  \"_other2501\", referenced from:\n      _a1 in a.o\n") == ["base2501"]
+    assert cut_flag(lld + "ld.lld: error: too many errors emitted, stopping now (use --error-limit=0 to see all errors)\n") == "--error-limit=0"
+    assert cut_flag("lld-link: error: too many errors emitted, stopping now (use /errorlimit:0 to see all errors)\r\n") == "/errorlimit:0"
+    assert cut_flag(lld) == ""
+    assert cut_flag("ld.lld: error: undefined symbol: too many errors emitted, stopping now (use -o/tmp/x to see all errors)\n") == ""
+    assert again_words(first: "cut", again: fail(code: "clang", msg: "every one")) == "every one"
+    assert again_words(first: "cut", again: fail(code: "not_started", msg: "clang could not be started")) == "cut"
+    assert again_words(first: "cut", again: fail(code: "crashed", msg: "linking stopped")) == "cut"
+    assert again_words(first: "cut", again: ok("")) == "cut"

@@ -46,10 +46,22 @@
 # file whose name an earlier line reported with its function
 # (`t2-11.o : error LNK2001: unresolved external symbol base_two` after
 # `m2-22.o`'s `LNK2019`). The `LNK1120` line is a count and refers to nothing.
+#
+# **And what each linker leaves out**, the references of a name it folds
+# and the names past its limit of errors, is `cli/link_folds.hero`'s
+# (defect 2501): `cli/link_again.hero` asks it again, and its answers come
+# back as markers of kind `ASKED`, each read here as one reference.
 
 use cli/strings
+use cli/supplied_judged
 use emit/ffi_build
 use emit/ffi_lookup
+
+# The kind of a marker carrying a reference the link was asked again for
+# (`supplied_judged.marker`): its name, and the object that refers to it as
+# its file.
+constant ASKED: str
+    "referenced"
 
 # One reference a refused link reports: the undefined name, and who refers
 # to it as the linker named it with its decorations taken off (`placed`), ""
@@ -76,6 +88,13 @@ function references(message: str) -> [Reference]
     # its `\r`, which is no part of a file's name.
     for raw in ffi_lookup.lines(text: message)
         line = unreturned(raw)
+
+        if strings.starts_with(text: line, prefix: supplied_judged.MARK)
+            asked = supplied_judged.fields(line)
+
+            if asked.len() == 7 && asked[1] == ASKED
+                out @ out.push(Reference(symbol: asked[3], file: asked[4]))
+                continue
         within = before(text: line, marker: ": in function `")
 
         if !within.is_err()
@@ -313,3 +332,28 @@ test "a file is read whole from what a linker writes after it (defect 2365)"
     assert !is_file("top.c") && !is_file("/w/m/top.c:4")
     assert last_after(text: "_f in x in libtop.a", marker: " in ").must() == "libtop.a"
     assert last_after(text: "none", marker: " in ").is_err()
+
+# A reference the link was asked again for (defect 2501) is read as one,
+# beside the lld family's words as Debian LLD 22.1.8 wrote them on
+# 2026-11-13, and a marker of another kind as none.
+test "a reference the link was asked again for is read as one, and a marker of another kind as none (defect 2501)"
+    lld = "ld.lld: error: undefined symbol: base2501\n>>> referenced by a.c\n>>>               a.o:(a1)\n>>> referenced by a.c\n>>>               a.o:(a2)\n>>> referenced by c.c\n>>>               c.o:(c1)\n>>> referenced 2 more times\nld.lld: error: undefined symbol: other2501\n>>> referenced by c.c\n>>>               c.o:(c1)\n"
+    asked = supplied_judged.marker(kind: ASKED, decl: -1, name: "base2501", file: "b.o", library: "", order: "")
+    other = supplied_judged.marker(
+        kind: "runtime",
+        decl: -1,
+        name: "printf",
+        file: "liba.a(p.o)",
+        library: "a",
+        order: "written"
+    )
+    got = references(lld + asked + "\n" + other + "\n")
+    placed_b: bool @= false
+
+    for one in got
+        if one.symbol == "base2501" && one.file == "b.o"
+            placed_b @ true
+
+        assert one.symbol != "printf"
+
+    assert placed_b && got.len() == 5

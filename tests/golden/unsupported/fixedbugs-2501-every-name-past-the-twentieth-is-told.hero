@@ -1,0 +1,62 @@
+# fixedbugs, defect 2501, lane b34-fsl, 2026-11-13.
+#
+# SYMPTOM: `ld.lld` and `lld-link` stop at twenty undefined names, `too many
+# errors emitted, stopping now`, so of this program's twenty-two names
+# nothing defines, the two past the twentieth were told nowhere. GNU ld and
+# ld64 list every name and told the twenty-two.
+#
+# CAUSE: the reading told the names the linker listed, and no other.
+#
+# FIX: a link its linker cut is run again with the flag its own words name
+# for seeing every error (`cli/link_again.hero`), and those words are read.
+
+extern "fixedbugs-2501-many.h"
+    function top2501_01() -> i32  #~ ffi_missing_link
+    function top2501_02() -> i32  #~ ffi_missing_link
+    function top2501_03() -> i32  #~ ffi_missing_link
+    function top2501_04() -> i32  #~ ffi_missing_link
+    function top2501_05() -> i32  #~ ffi_missing_link
+    function top2501_06() -> i32  #~ ffi_missing_link
+    function top2501_07() -> i32  #~ ffi_missing_link
+    function top2501_08() -> i32  #~ ffi_missing_link
+    function top2501_09() -> i32  #~ ffi_missing_link
+    function top2501_10() -> i32  #~ ffi_missing_link
+    function top2501_11() -> i32  #~ ffi_missing_link
+    function top2501_12() -> i32  #~ ffi_missing_link
+    function top2501_13() -> i32  #~ ffi_missing_link
+    function top2501_14() -> i32  #~ ffi_missing_link
+    function top2501_15() -> i32  #~ ffi_missing_link
+    function top2501_16() -> i32  #~ ffi_missing_link
+    function top2501_17() -> i32  #~ ffi_missing_link
+    function top2501_18() -> i32  #~ ffi_missing_link
+    function top2501_19() -> i32  #~ ffi_missing_link
+    function top2501_20() -> i32  #~ ffi_missing_link
+    function top2501_21() -> i32  #~ ffi_missing_link
+    function top2501_22() -> i32  #~ ffi_missing_link
+
+function main()
+    total: i32 @= 0
+
+    total @ total + top2501_01()
+    total @ total + top2501_02()
+    total @ total + top2501_03()
+    total @ total + top2501_04()
+    total @ total + top2501_05()
+    total @ total + top2501_06()
+    total @ total + top2501_07()
+    total @ total + top2501_08()
+    total @ total + top2501_09()
+    total @ total + top2501_10()
+    total @ total + top2501_11()
+    total @ total + top2501_12()
+    total @ total + top2501_13()
+    total @ total + top2501_14()
+    total @ total + top2501_15()
+    total @ total + top2501_16()
+    total @ total + top2501_17()
+    total @ total + top2501_18()
+    total @ total + top2501_19()
+    total @ total + top2501_20()
+    total @ total + top2501_21()
+    total @ total + top2501_22()
+    print(total)

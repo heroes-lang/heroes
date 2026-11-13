@@ -8,6 +8,7 @@
 use cli/files
 use cli/flags
 use cli/libraries
+use cli/link_again
 use cli/link_flags
 use cli/link_output
 use cli/link_warning
@@ -114,8 +115,11 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     publish.discard(err_path)
 
     if linked.is_err()
+        # What the linker folded or cut, asked again while the stage stands (defect 2501).
+        note = units.failure_note(linked)
+        said = link_again.asked(t, j: judging, objects: objects, line: line, err_path: err_path, message: note)
         _ = process.remove_tree(stage).is_err()
-        return fail(code: link_code(linked), msg: units.failure_note(linked))
+        return fail(code: link_code(linked), msg: said)
     wrote = process.files_under(stage)
 
     if wrote.is_err()

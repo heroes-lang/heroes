@@ -1,0 +1,20 @@
+error[ffi_missing_link]: `top2501` is a macro for `base2501` where this group reads it from `fixedbugs-2501-alias.h`, and nothing on the link line defines `base2501`
+  at tests/golden/unsupported/fixedbugs-2501-every-module-is-told-whatever-the-linker-folds.hero:19:5
+     |
+  19 |     function top2501() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501` on its link line: where this program's C writes `top2501` it writes `base2501`, which its own object then refers to, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-alias.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501` is a macro for `base2501` where this group reads it from `fixedbugs-2501-alias.h`, and nothing on the link line defines `base2501`
+  at tests/golden/unsupported/fixedbugs2501/a_first.hero:5:5
+    |
+  5 |     function top2501() -> i32  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501` on its link line: where this program's C writes `top2501` it writes `base2501`, which its own object then refers to, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-alias.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501` is a macro for `base2501` where this group reads it from `fixedbugs-2501-alias.h`, and nothing on the link line defines `base2501`
+  at tests/golden/unsupported/fixedbugs2501/b_second.hero:5:5
+    |
+  5 |     function top2501() -> i32  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501` on its link line: where this program's C writes `top2501` it writes `base2501`, which its own object then refers to, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-alias.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
