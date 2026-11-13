@@ -1,0 +1,2 @@
+fetch -C <work>/app
+check <work>/app/main.hero

@@ -1,0 +1,13 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[sum_mismatch]: the tree of `yaml`, `file://../git/yaml` at `v0.3.1`, is placed at `<work>/app/heroes.packages/yaml@v0.3.1-0ee71d7abaa6570f`, and that tree was changed since it was placed: `load.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again
+heroes.toml:
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207"
+heroes.packages:
+yaml@v0.3.1-0ee71d7abaa6570f

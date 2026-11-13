@@ -1,10 +1,12 @@
 # One entry of a catalogue placed where the compiler reads it (panel 235's R6
 # and R7, ratified 2026-11-07): a tree under `heroes.packages/` kept where it
 # already sums to its entry's `sum`, and fetched from its source otherwise
-# (`fetch/git_source.hero`, `fetch/index_source.hero`), which also places
-# again a tree edited since it was placed; a `path` entry read where it
-# stands, never fetched and never summed, the folder of the author's own that
-# every build says is unverified. Both verbs place through here.
+# (`fetch/git_source.hero`, `fetch/index_source.hero`); a tree edited since it
+# was placed is the author's, never replaced: its source's tree is fetched to
+# name the files that changed, and the entry refused (defect 2493,
+# `fetch/staging.hero`); a `path` entry read where it stands, never fetched
+# and never summed, the folder of the author's own that every build says is
+# unverified. Both verbs place through here.
 #
 # The key a tree is placed under is `module/placed.hero`'s, the one discovery
 # reads it under, so what a verb places is what a build finds.

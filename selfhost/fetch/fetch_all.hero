@@ -1,11 +1,13 @@
 # `heroes fetch` (panel 235's R11, R7 and R8, ratified 2026-11-07; design.md
 # §3.5): every entry of the program's catalogue placed where the compiler
 # reads it and held to its sum, nothing written into the catalogue. A tree
-# already placed at its sum is kept; one missing, or edited since it was
-# placed, is fetched again from its source; a `path` entry is read where it
-# stands and said so. Every entry is tried, and the exit is the worst any
-# earned: a sum that does not match exit 1, a source the network does not
-# answer exit 2 (the compiler-engineer's § 12, R19).
+# already placed at its sum is kept; one missing is fetched from its source;
+# one edited since it was placed is the author's work and is never replaced
+# (defect 2493; panel 246's R2): the entry is refused, the files that changed
+# named (`fetch/edited.hero`); a `path` entry is read where it stands and said
+# so. Every entry is tried, and the exit is the worst any earned: a sum that
+# does not match exit 1, a source the network does not answer exit 2 (the
+# compiler-engineer's § 12, R19).
 #
 # `build`, `check` and `run` never fetch (R8): a package missing or not
 # matching its sum is told by the compiler with `heroes fetch` named, and
@@ -92,7 +94,7 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
             )
 
     # Every tree fetch places is one its catalogue names, so the run is never
-    # taken back: it ends, and what it moved aside goes.
+    # taken back: it ends, and what it placed stays.
     staging.ended(ledger)
     return out
 
@@ -183,7 +185,9 @@ function said(words: [told.Said]) -> [str]
 
     return out
 
-test "every entry is placed at its sum, kept the second time, and placed again once edited"
+# Defect 2493: an edited tree is the author's, refused at its `sum` line with
+# the file named and left as it stands, and placed again once removed.
+test "every entry is placed at its sum, kept the second time, and an edited one is never replaced (defect 2493)"
     m = program_made()
     app = SCRATCH + "/app/"
     json = catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: m.json)
@@ -203,8 +207,15 @@ test "every entry is placed at its sum, kept the second time, and placed again o
     second = said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools()))
     assert second == ["||kept json 1.4.2 " + json_at, "||kept lib v1.0.0 " + lib_at, "||path mine ../mine, read where it stands and unverified"]
     assert !write_file(path: json_at + "/parse.hero", text: "edited\n").is_err()
-    third = said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools()))
-    assert third[0] == "||placed json 1.4.2 " + json_at
+    third = outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools())
+    assert third[0].code == "sum_mismatch" && told.exit_of(third[0].code) == 1
+    assert third[0].at == SCRATCH + "/app/heroes.toml:5"
+    assert third[0].said == "`json` 1.4.2 from the index `file://../idx` is placed at `" + json_at + "`, and that tree was changed since it was placed: `parse.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+    assert said(third)[1] == "||kept lib v1.0.0 " + lib_at
+    assert read_file(json_at + "/parse.hero").must() == "edited\n"
+    assert !process.remove_tree(json_at).is_err()
+    fourth = said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools()))
+    assert fourth[0] == "||placed json 1.4.2 " + json_at
     assert read_file(json_at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
     assert !process.remove_tree(SCRATCH).is_err()
 

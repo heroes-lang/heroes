@@ -1,0 +1,4 @@
+use <strings>/cut
+
+function main()
+    print(cut.cut())
