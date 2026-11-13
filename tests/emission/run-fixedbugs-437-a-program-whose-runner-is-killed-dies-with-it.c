@@ -816,7 +816,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dab1dc0124c267b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("03e2f00d533f66d1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs437aprogramwhoserunneriskilleddieswithit\tfixedbugs-437-a-program-whose-runner-is-killed-dies-with-it\n");

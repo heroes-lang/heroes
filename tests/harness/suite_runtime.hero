@@ -123,8 +123,16 @@ constant ALLOCATORS: [str]
 # `parts/frame.c`, the room a large value takes off its frame (defect 2278,
 # panel 233). Eight parts had been added since 2026-10-07 and the floor would
 # have passed a sweep that missed them.
+#
+# **37 -> 48 at batch 35's gate, 2026-11-13**, told by this suite's own
+# `FLOOR` line on the round: eleven files added since 82a9dc630, the commit
+# that set 37 (`git diff --name-only --diff-filter=A`), the platform layer's
+# `hero_net` and `hero_time` with their headers, the reserved guard's
+# `heroes_reserved_open.h` and `_close.h`, and `parts/lock.c`,
+# `parts/sha256.c`, `parts/symbols.c`, and panel 247's `parts/sigdoor.c` and
+# `parts/sigguard.c`, the newest.
 constant LEAST_FILES: i64
-    37
+    48
 
 # **3 -> 7 on 2026-09-13.** Four allocation sites had been added to the single
 # point since the floor was written, which is the single point doing its job —
