@@ -336,3 +336,86 @@ test "a link to a directory reads as one and is read through, whatever its targe
     assert read_file(dir + "/one/inner/x.hero").must() == "inside"
     assert !process.remove_tree(dir).is_err()
     assert !process.path_exists(dir)
+
+# Defect 2491: `process.path_exists` and `process.is_directory` ask what a
+# link names, its whole chain followed, as `test -e` and `test -d` do, on
+# every platform; until then Windows asked a link itself
+# (`GetFileAttributesW`), so a link to nothing was there. A link to a file,
+# a directory or nothing, a link to a link to each, and a loop; a
+# directory's link whose directory has gone, a file's link whose file became
+# a directory and a directory's link whose directory became a file, the
+# three where a Windows link's own kind is not what it names (defect 2488);
+# `mkdir_all` through a link to a directory and at a link to nothing, which
+# Windows took for a directory there; and a walk, which lists each link by
+# what it names and enters one that names a directory. Where this machine
+# makes no link (Windows without the privilege) there is nothing to hold.
+test "a link is asked by what its chain names, on every platform (defect 2491)"
+    dir = "build/selftest-link-named-2491"
+    assert !process.remove_tree(dir).is_err()
+
+    for folder in ["d", "goes", "turns"]
+        assert !process.mkdir_all(dir + "/" + folder).is_err()
+
+    assert !write_file(path: dir + "/d/x.hero", text: "inside").is_err()
+
+    for file in ["f", "becomes"]
+        assert !write_file(path: dir + "/" + file, text: "file").is_err()
+
+    # Each link's name, its target, and what it names once the targets
+    # below have changed.
+    rows = [
+        ["to-file", "f", "file"]
+        ["to-dir", "d", "directory"]
+        ["to-nothing", "nowhere", "nothing"]
+        ["to-link-file", "to-file", "file"]
+        ["to-link-dir", "to-dir", "directory"]
+        ["to-link-nothing", "to-nothing", "nothing"]
+        ["dir-gone", "goes", "nothing"]
+        ["file-now-dir", "becomes", "directory"]
+        ["dir-now-file", "turns", "file"]
+        ["loop-a", "loop-b", "nothing"]
+        ["loop-b", "loop-a", "nothing"]
+    ]
+    linked: i64 @= 0
+
+    for row in rows
+        if !symbolic_link(target: row[1], name: dir + "/" + row[0]).is_err()
+            linked @ linked + 1
+
+    # Every link or none, none being a machine that makes no link.
+    assert linked == 0 || linked == rows.len()
+
+    if linked > 0
+        assert !process.remove_tree(dir + "/goes").is_err()
+        assert !process.remove_tree(dir + "/turns").is_err()
+        assert !write_file(path: dir + "/turns", text: "file").is_err()
+        assert !process.remove_file(dir + "/becomes").is_err()
+        assert !process.mkdir_all(dir + "/becomes").is_err()
+        assert !write_file(path: dir + "/becomes/y.hero", text: "deeper").is_err()
+
+        for row in rows
+            at = dir + "/" + row[0]
+            said: str @= "nothing"
+
+            if process.path_exists(at) && process.is_directory(at)
+                said @ "directory"
+            else if process.path_exists(at)
+                said @ "file"
+            else if process.is_directory(at)
+                said @ "a directory that is not there"
+            assert row[0] + " names " + said == row[0] + " names " + row[2]
+
+        assert !process.mkdir_all(dir + "/to-dir/sub").is_err()
+        assert process.is_directory(dir + "/d/sub")
+        assert !process.mkdir_all(dir + "/to-link-dir").is_err()
+        assert process.mkdir_all(dir + "/dir-gone").is_err()
+        walked = process.walk(dir).must()
+        expected: [str] @= []
+
+        for name in ["d/x.hero", "f", "becomes/y.hero", "turns", "to-file", "to-dir/x.hero", "to-nothing", "to-link-file", "to-link-dir/x.hero", "to-link-nothing", "dir-gone", "file-now-dir/y.hero", "dir-now-file", "loop-a", "loop-b"]
+            expected @ expected.push(dir + "/" + name)
+
+        assert sort(walked.files).join(" ") == sort(expected).join(" ")
+        assert read_file(dir + "/file-now-dir/y.hero").must() == "deeper"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.path_exists(dir)

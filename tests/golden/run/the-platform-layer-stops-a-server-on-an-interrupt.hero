@@ -1,0 +1,63 @@
+# The platform layer's stop ends a server on an interrupt, SIGINT or Windows'
+# Ctrl-C (panel 246's R4; lane b34-layer, 2026-11-13). The server is the
+# sitting's critic's shape: its `accept` waits on a worker the program
+# spawned, and `main` waits in the join, so the signal's handler runs on
+# another thread than the waiting call. Before the stop, SIGINT on this shape
+# was the critic's measurement: a handler that sets a flag never reached the
+# `accept`, alive 10 s after the signal. With `hero_net_catch_stop` the
+# `accept` answers `HERO_NET_STOPPED`, the worker closes its listener and
+# returns, `main` returns, and the leak check after it finds every handle
+# given back, which this case's silent ending holds. The interrupt is sent by
+# a thread of the program's own (the header beside it says how on each
+# platform), 300 ms after the worker started.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    constant HERO_NET_STOPPED: i64
+    function hero_net_catch_stop() -> i64
+    function hero_net_stop_asked() -> i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_last_error() -> i64
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_INTERRUPT: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_after(what: i64, ms: i64) -> i64
+    function stop_note_port(port: i64)
+    function stop_note_done()
+
+# The server, on a worker: a listener of its own at `port`, 0 the system's
+# choice, and an `accept` on it. Answers the kind the `accept` failed with,
+# or -1 where it took a connection, which only the header's rescue makes.
+function serve(port: i64) -> i64
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: port)
+
+    if listener == nullptr
+        return -2
+    stop_note_port(hero_net_port(listener))
+    accepted = hero_net_accept(listener)
+    kind = hero_net_last_error()
+    stop_note_done()
+
+    if accepted != nullptr
+        _ = hero_net_close(accepted)
+        _ = hero_net_close(listener)
+        return -1
+    _ = hero_net_close(listener)
+    return kind
+
+function main()
+    print(f"the program starts with the interrupt at its default: {stop_begin(interrupt_ignored: 0)}")
+    print(f"the stop is caught: {hero_net_catch_stop()}")
+    worker = hero_thread_spawn(body: serve, arg: 0)
+    print(f"an interrupt is sent from another thread: {stop_send_after(what: STOP_INTERRUPT, ms: 300)}")
+    kind = hero_thread_join(handle: worker)
+    print(f"the worker's accept answered stopped: {kind == HERO_NET_STOPPED}")
+    print(f"a stop was asked: {hero_net_stop_asked()}")
+    print("main returns")

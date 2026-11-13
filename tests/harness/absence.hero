@@ -2320,7 +2320,7 @@ test "a header's inline body calling a name nothing on the link line defines is 
         )
         assert core_strings.contains(
             s: said.err,
-            substr: "  note: this program needs a `link` naming the library that defines `base_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
+            substr: "  note: this program needs one definition of `base_helper` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it\n"
         )
         assert !core_strings.contains(s: said.err, substr: "internal error")
         assert said.code == 1
@@ -2661,3 +2661,34 @@ function notes_in(said: str) -> [str]
 # binds or what the machine lacks.
 function an(kind: str, name: str, owner: str) -> Absence
     return Absence(kind: kind, name: name, owner: owner, code: "", file: "", line: 0)
+
+# Defect 2489: a library the program links defining a name a member of the
+# platform layer calls is refused where the program takes that member, as one
+# defining a name the runtime calls is (defect 2378), and is not judged where
+# the program takes none of its calls: `socket` defined so built at exit 0
+# and the layer's listen read the library's `-1`. A program calling the clock
+# alone takes no sockets member, and links and runs.
+test "a library defining a name a platform layer member the program takes calls is refused, and judged for no other member (defect 2489)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/layer2489"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "fake", sources: [Written(name: "fake.c", text: "int socket(int domain, int type, int protocol) { (void)domain; (void)type; (void)protocol; return -1; }\nlong fake_answer(void) { return 7; }\n")], shared: false).is_err()
+    net = "extern \"hero_net.h\"\n    record Socket tag hero_net_socket\n    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close\n    function hero_net_close(s: Socket consumes) -> i64\n\nfunction main()\n    print(fake_lib.answer())\n    s = hero_net_listen(address: \"127.0.0.1\".cstr(), port: 0)\n\n    if s != nullptr\n        _ = hero_net_close(s)\n"
+    clock = "extern \"hero_time.h\"\n    function hero_time_monotonic_ns() -> i64\n\nfunction main()\n    print(fake_lib.answer())\n    print(hero_time_monotonic_ns() > 0)\n"
+    assert !wrote(dir: dir, files: [Written(name: "fake.h", text: "long fake_answer(void);\n"), Written(name: "fake_lib.hero", text: "extern \"fake.h\" link \"fake\"\n    function fake_answer() -> i64\n\nfunction answer() -> i64\n    return fake_answer()\n"), Written(name: "net.hero", text: "use fake_lib\n\n" + net), Written(name: "clock.hero", text: "use fake_lib\n\n" + clock)]).is_err()
+    told = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "net")
+    assert refused_at(
+        told,
+        dir: dir,
+        module: "fake_lib",
+        headline: "library `fake`, which module `fake_lib` links, defines `socket`, which the platform layer's `hero_net` calls, linked in for this program's calls of it: the layer's calls would reach library `fake`'s",
+        program: "net"
+    )
+    timed = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "clock")
+    assert timed.err == "wrote " + dir + "/clock.out\n"
+    assert timed.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/clock.out") == "7\ntrue\n"
+    assert !shell.remove_tree(scratch).is_err()

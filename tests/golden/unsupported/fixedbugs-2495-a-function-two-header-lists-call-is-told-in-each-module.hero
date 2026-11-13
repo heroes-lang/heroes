@@ -1,0 +1,19 @@
+# fixedbugs, defect 2495, lane b34-fsl, 2026-11-13.
+#
+# SYMPTOM: the shape beside the object's: two inline bodies of
+# `fixedbugs-2495-calls.h` call `base2495`, which nothing on the link line
+# defines, one reached from this module, whose header list holds
+# `stdlib.h` too, one from `fixedbugs2495/calls_b`. The link was `internal
+# error: linking failed` at exit 2, where one list for both told it.
+#
+# FIX: as the object's case, each list told at its own binding.
+use fixedbugs2495/calls_b
+
+extern "stdlib.h"
+    function abs(n: i32) -> i32
+
+extern "fixedbugs-2495-calls.h"
+    function top2495_a() -> i64  #~ ffi_missing_link
+
+function main()
+    print(top2495_a() + calls_b.b() + abs(n: -1).to_i64().must())

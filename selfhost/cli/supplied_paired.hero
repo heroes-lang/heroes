@@ -26,7 +26,7 @@
 # package's whole answer for a `pkgconfig` group (`cli/supplied_halves.hero`).
 #
 # **Which names**: every name a group binds, and every name a body its
-# header defines calls or reads, followed through the bodies it calls
+# header defines calls or uses as an object, followed through the bodies it calls
 # (`cli/header_bodies.hero`), since a door's own C is where 2448's fault
 # was. **A declaration the program's own folder found is the program's**,
 # its own word, paired with no release: such a name is judged by its first
@@ -210,8 +210,8 @@ function declaring(dumped: str) -> {str: [str]}
 
     return out
 
-# `from` and every name a body it reaches calls or reads, breadth first
-# through the bodies the list defines, each once.
+# `from` and every name a body it reaches calls or uses as an object,
+# breadth first through the bodies the list defines, each once.
 function reached(bodies: [header_bodies.Body], from: str) -> [str]
     out: [str] @= [from]
     seen: {str: bool} @= {}
@@ -235,7 +235,7 @@ function reached(bodies: [header_bodies.Body], from: str) -> [str]
 function strings_of(body: header_bodies.Body) -> [str]
     out: [str] @= body.calls
 
-    for name in body.reads
+    for name in body.objects
         out @ out.push(name)
 
     return out

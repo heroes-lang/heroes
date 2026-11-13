@@ -275,9 +275,20 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
         const char *name = held;
         if (!hero_dir_keep(name)) continue;
         int is_dir = (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-        if (!follow && (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
-            IsReparseTagNameSurrogate(found.dwReserved0))
+        /* A link's entry carries the LINK's attributes, never what it names
+         * (defect 2491): a directory's link whose directory has gone still
+         * says directory, and a file's link to a directory says file. So a
+         * link is asked as the POSIX arm below asks one: where the walk
+         * follows links, what it names decides (`hero_fs_is_directory`);
+         * where it does not, it is one entry of the files (defect 345). */
+        if ((found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+            IsReparseTagNameSurrogate(found.dwReserved0)) {
             is_dir = 0;
+            if (follow) {
+                if (snprintf(child, room, "%s/%s", root, name) < 0) { ok = 0; break; }
+                is_dir = hero_fs_is_directory(child) != 0;
+            }
+        }
 #else
     DIR *open_dir = opendir(root);
     if (open_dir == NULL) {

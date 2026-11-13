@@ -1,0 +1,26 @@
+# fixedbugs, defect 2495, lane b34-fsl, 2026-11-13.
+#
+# SYMPTOM: `fixedbugs-2495-stopflag.h` declares `stop2495_requested`, which
+# no header a module names defines, and two inline bodies use it: this
+# module reads it through a header list that holds `stdlib.h` too, and
+# `fixedbugs2495/flag_writer` writes it through the header alone. The link
+# was `internal error: linking failed` at exit 2.
+#
+# CAUSE: a name a header's text puts in the program's objects was the
+# author's only where the modules reading one header list held every
+# reference, and here two lists each hold one.
+#
+# FIX: each list answers for the references its own modules' objects hold,
+# told at its own binding (`cli/header_needs.hero`'s `holding`), the body
+# that assigns the object told as writing it.
+use fixedbugs2495/flag_writer
+
+extern "stdlib.h"
+    function abs(n: i32) -> i32
+
+extern "fixedbugs-2495-stopflag.h"
+    function stop2495_asked() -> i64  #~ ffi_missing_link
+
+function main()
+    flag_writer.stop()
+    print(stop2495_asked() + abs(n: -1).to_i64().must())

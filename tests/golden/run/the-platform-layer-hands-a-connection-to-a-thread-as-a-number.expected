@@ -1,0 +1,7 @@
+connections handed to a worker each as a number: 4, every number positive: true
+the workers sent back 20 bytes, and the clients read 20
+a number taken back already is refused: true
+a number whose socket its worker closed is refused: true
+a number the layer never gave is refused: true
+in C, the handle given up names nothing and the one taken back is new: 1
+in C, numbers never given are refused: 1
