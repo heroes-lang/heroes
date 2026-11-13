@@ -1,0 +1,2 @@
+handing C the worker
+!panic: fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.worker ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To run work on another thread, start it with `hero_thread_spawn` from `hero_os.h`, whose function runs on a thread this program owns. To stop on Ctrl-C or SIGTERM, give C no Heroes function as a signal handler: the platform layer's waiting calls, in `hero_net.h`, end with a stop the program reads

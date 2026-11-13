@@ -1,0 +1,21 @@
+# Fixed 2026-11-13, defect 2492, lane b34-signals: a Heroes function C calls
+# back on a thread C started itself.
+# Symptom: the refusal named the function and the thread, then cited
+# `design.md Part 7.13`, a file the program's reader does not have, and said
+# nothing of what to write instead; both answers of panel 246's blind reading
+# for a first thread task met it, each wrapping `pthread_create`.
+# Cause: the guard at the entry of a function C may call spoke of the danger
+# and not of the doors; it now names them in its own words, a thread started
+# with `hero_thread_spawn` for work and C rather than a Heroes function for a
+# signal. The refusal itself is panel 111's R9, unchanged: `worker` never runs.
+
+extern "fixedbugs-2492-a-thread-of-cs-own.h"
+    function foreign_call(body: (function(i64) -> i64)) -> i64
+
+function worker(n: i64) -> i64
+    print("worker ran with ", n)
+    return n
+
+function main()
+    print("handing C the worker")
+    print(foreign_call(body: worker))
