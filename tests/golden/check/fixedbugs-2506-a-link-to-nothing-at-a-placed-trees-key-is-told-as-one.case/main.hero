@@ -1,0 +1,9 @@
+# Defect 2506: a link to nothing (made in the case's copy, `links`) stands where the package `json`'s tree is
+# placed. `heroes fetch` places nothing over it (defect 2493), so the build
+# tells it as what it is, in the advice `heroes fetch` gives, where it said
+# *not placed: `heroes fetch` places it* for a link to nothing, a link to a
+# file or a file, and *the tree placed* for a link to another folder.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

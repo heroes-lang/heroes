@@ -1,0 +1,105 @@
+# What stands at a placed tree's key, `heroes.packages/<name>@<version>-<key>`,
+# asked of the name itself and never only of what a link there names
+# (defect 2506; panel 235's R7, panel 246's R2). `heroes fetch` places a
+# tree only where nothing stands, keeps one that sums to its entry's `sum`
+# and replaces nothing else (defect 2493, `fetch/staging.hero`); a build's
+# check reads the key the same way (`module/packages.hero`), so the advice
+# one gives is what the other does. Until then the build asked whether a
+# folder was there, following a link, and told a link to nothing, a link to
+# a file or a file at the key as *not placed: `heroes fetch` places it*,
+# which `heroes fetch` then refused to do.
+#
+# A link that names a folder is read through, as every reader of the tree
+# reads it: where that folder sums to the entry's `sum` it is the tree, and
+# where it does not it is told as the link it is.
+
+use cli/files
+use cli/process
+
+# What stands at a key: no name; a folder; a link naming a folder; a link
+# naming nothing; a link naming something that is not a folder; a file; or a
+# name that is neither a folder, a file nor a link, or one the system cannot
+# answer for.
+variant Standing
+    nothing
+    tree
+    linked_tree
+    dangling
+    linked_file
+    file
+    other
+
+# What stands at `path`, given without a trailing `/`, which would have a
+# link followed before its own name is asked.
+function at(path: str) -> Standing
+    match files.entry(path)
+        .absent    => return .nothing
+        .directory => return .tree
+        .file      => return .file
+        .other     => return .other
+        .unknown   => return .other
+        .link =>
+            if process.is_directory(path)
+                return .linked_tree
+
+            if process.path_exists(path)
+                return .linked_file
+            return .dangling
+
+# Whether a tree's files are read there: a folder, or a link naming one.
+function read_through(s: Standing) -> bool
+    match s
+        .tree | .linked_tree                                 => return true
+        .nothing | .dangling | .linked_file | .file | .other => return false
+
+# What stands, as a message names it.
+function said(s: Standing) -> str
+    match s
+        .nothing     => return "nothing"
+        .tree        => return "a folder"
+        .linked_tree => return "a link to a folder"
+        .dangling    => return "a link to nothing"
+        .linked_file => return "a link to a file"
+        .file        => return "a file"
+        .other       => return "a name that is neither a folder, a file nor a link"
+
+# A placed tree's path as a build holds it, `heroes.packages/<key>/`, with its
+# last `/` taken off for `at`.
+function unslashed(path: str) -> str
+    if path.len() > 1 && path[path.len() - 1] == '/'
+        return path.slice(from: 0, to: path.len() - 1)
+    return path
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-standing"
+
+# Defect 2506: each shape the coordinator named, read by the name at the key.
+# Where this machine makes no link (Windows without the privilege), the links'
+# rows have nothing to hold.
+test "what stands at a key is asked of its own name, a link's kind told apart (defect 2506)"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH + "/tree").is_err()
+    assert !process.mkdir_all(SCRATCH + "/elsewhere").is_err()
+    assert !write_file(path: SCRATCH + "/afile", text: "a file\n").is_err()
+    assert at(SCRATCH + "/none") == .nothing
+    assert at(SCRATCH + "/tree") == .tree
+    assert at(SCRATCH + "/afile") == .file
+    assert unslashed(SCRATCH + "/tree/") == SCRATCH + "/tree" && unslashed("/") == "/"
+    linked: i64 @= 0
+
+    for row in [["to-tree", "elsewhere"], ["to-nothing", "nowhere"], ["to-file", "afile"]]
+        if !files.symbolic_link(target: row[1], name: SCRATCH + "/" + row[0]).is_err()
+            linked @ linked + 1
+
+    assert linked == 0 || linked == 3
+
+    if linked > 0
+        assert at(SCRATCH + "/to-tree") == .linked_tree
+        assert at(SCRATCH + "/to-nothing") == .dangling
+        assert at(SCRATCH + "/to-file") == .linked_file
+        assert read_through(at(SCRATCH + "/to-tree")) && !read_through(at(SCRATCH + "/to-nothing"))
+        assert said(at(SCRATCH + "/to-nothing")) == "a link to nothing"
+
+    assert !process.remove_tree(SCRATCH).is_err()
