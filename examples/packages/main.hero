@@ -7,6 +7,7 @@
 # `heroes.packages/` (`README.md` beside this file).
 
 use <core>/encoding/json
+use <core>/net/http
 use <core>/strconv
 use <core>/strings
 
@@ -29,7 +30,15 @@ function main()
         .ok doc => print(json.render(doc).default("no text"))
         .err e  => print(e.msg)
 
+    # `net/http` reaches `net` and its floor `net/hero_net`, so this one
+    # call is what makes `heroes test main.hero` run the tests of all three;
+    # no socket is opened, the 404 being written for a request in hand.
+    no_header: {str: str} = {}
+    missing = http.Request(method: "GET", target: "/missing", header: no_header, body: "")
+    print(http.not_found(missing).status)
+
 test "the driver reaches every package"
     assert strings.has_prefix(s: "core/strings", prefix: "core/")
     assert strconv.atoi("7").must() == 7
     assert json.parse("[1]").must() == .array(items: [.number(value: 1.0)])
+    assert http.MALFORMED == "malformed"

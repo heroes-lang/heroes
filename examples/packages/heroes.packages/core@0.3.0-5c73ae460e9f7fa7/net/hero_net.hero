@@ -1,0 +1,173 @@
+# The platform layer's sockets, `hero_net.h`, bound thin: one function per C
+# function, each answering what C answers. They stand in C's order, and where
+# a call fails its socket is `nullptr` or its count -1, and `last_error` then
+# the kind. The floor of `net` (`examples/packages/README.md` § 4.1): a program
+# reaches it only through a `net` value's `socket`, and reads the kinds below
+# itself; `net` turns every one of them into a code.
+#
+# The layer is C of the language's own beside the runtime (panel 234's R6,
+# feature 2295), so this group names its header and no `link`: no platform
+# type reaches it, and the same lines bind it on every platform. Every mark
+# below is the header's own promise: a socket the layer hands out is begun by
+# the call and ended by `hero_net_close`, or given up for its number by
+# `hero_net_number` where it is a connection a thread may take (panel 246's R6).
+
+extern "hero_net.h"
+    # A socket the layer holds open. It is a handle the layer issues and
+    # checks: one closed already, `nullptr`, or one it never issued is
+    # `HERO_NET_NOT_OPEN`, never a read of freed memory.
+    record Socket tag hero_net_socket
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, `HERO_NET_STOPPED` once the stop is asked.
+    constant HERO_NET_OK: i64
+    constant HERO_NET_INVALID: i64
+    constant HERO_NET_NOT_OPEN: i64
+    constant HERO_NET_ADDRESS: i64
+    constant HERO_NET_IN_USE: i64
+    constant HERO_NET_REFUSED: i64
+    constant HERO_NET_RESET: i64
+    constant HERO_NET_TIMED_OUT: i64
+    constant HERO_NET_UNREACHABLE: i64
+    constant HERO_NET_LIMIT: i64
+    constant HERO_NET_DENIED: i64
+    constant HERO_NET_OTHER: i64
+    constant HERO_NET_STOPPED: i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_send(s: Socket, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_recv(s: Socket, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_catch_stop() -> i64
+    function hero_net_last_error() -> i64
+    function hero_net_last_os_error() -> i64
+
+# A socket listening on `address` at `port`, or `nullptr`. The address is
+# `127.0.0.1`, `::1`, or "" for every address of the machine, and port 0 asks
+# the system for a free one. It aborts where `address` holds a zero byte, which
+# C cannot read.
+function listen(address: str, port: i64) -> Socket
+    return hero_net_listen(address: address.cstr(), port: port)
+
+# A connection to `address` at `port`, or `nullptr`. The address is a number
+# or a name, and it aborts where it holds a zero byte.
+function connect(address: str, port: i64) -> Socket
+    return hero_net_connect(address: address.cstr(), port: port)
+
+# The next connection `listener` holds, waiting for one, or `nullptr`.
+function accept(listener: Socket) -> Socket
+    return hero_net_accept(listener)
+
+# The port `s` stands on, or -1.
+function port_of(s: Socket) -> i64
+    return hero_net_port(s)
+
+# How many of the first `n` bytes of `data` were sent, or -1. It may be fewer,
+# as many as the system had room for, and it waits only while there is no room
+# at all; `data` is left as it was handed, `n` bytes long.
+function send(s: Socket, @data: [u8], n: u64) -> i64
+    return hero_net_send(s, @data, n: n)
+
+# How many bytes were received into `buffer`, 0 where the peer closed, or -1.
+# It waits for one, and leaves `buffer` `n` bytes long, the received ones
+# first.
+function recv(s: Socket, @buffer: [u8], n: u64) -> i64
+    return hero_net_recv(s, @buffer, n: n)
+
+# 0, or -1 where the system failed; `s` is given back either way. A call
+# another thread waits in on it ends within about 50 ms.
+function close(@s: Socket) -> i64
+    return hero_net_close(s)
+
+# The number `s` is given up for, or -1. Another thread takes it back with
+# `of`, and from this call no handle names the socket.
+function number(@s: Socket) -> i64
+    return hero_net_number(s)
+
+# The socket number `n` names, taken back once, or `nullptr`. It has a handle
+# of its own; `n` names none where it was taken back already, its socket
+# closed, or the layer never gave it.
+function of(n: i64) -> Socket
+    return hero_net_of(n)
+
+# 0 once SIGINT and SIGTERM ask a stop instead of ending the program, or -1.
+# On Windows Ctrl-C, Ctrl-Break and the console closing do; from the first of
+# them every call of the layer that would wait fails `HERO_NET_STOPPED`, on
+# every thread.
+function catch_stop() -> i64
+    return hero_net_catch_stop()
+
+# The kind of the last call's failure on this thread. It is `HERO_NET_OK`
+# after a call that did not fail.
+function last_error() -> i64
+    return hero_net_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# refused.
+function last_os_error() -> i64
+    return hero_net_last_os_error()
+
+## Tests
+
+test "listen asks the system for a free port, port_of reads it, and close gives the socket back"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    assert listener != nullptr
+    assert port_of(listener) > 0
+    assert close(@listener) == 0
+
+test "a connection is made, accepted, sent over and received, each side closed"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    assert client != nullptr
+    accepted @= accept(listener)
+    assert accepted != nullptr
+    hello: [u8] @= [104, 105]
+    assert send(client, @hello, n: 2) == 2
+    assert hello == [104, 105]
+    heard: [u8] @= []
+    got = recv(accepted, @heard, n: 8)
+    assert got >= 1 && got <= 2
+    assert heard.len() == 8 && heard[0] == 104
+    assert close(@client) == 0
+    rest: [u8] @= []
+
+    # The peer's close is a 0, after the bytes not yet read.
+    if got == 1
+        assert recv(accepted, @rest, n: 8) == 1
+    assert recv(accepted, @rest, n: 8) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+test "number gives a connection up and of takes it back once, a stale number refused"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    n = number(@accepted)
+    assert n > 0
+    back @= of(n)
+    assert back != nullptr
+    again = of(n)
+    assert again == nullptr
+    assert last_error() == HERO_NET_NOT_OPEN
+    assert last_os_error() == 0
+    assert close(@back) == 0
+    assert close(@client) == 0
+    assert close(@listener) == 0
+
+# A socket that is no socket fails `HERO_NET_NOT_OPEN` everywhere, never a read
+# of freed memory, and a port outside 0 to 65535 is refused before any call.
+test "what the layer refuses: a number it never gave, and a port past 65535"
+    assert of(12345) == nullptr
+    assert last_error() == HERO_NET_NOT_OPEN
+    assert listen(address: "127.0.0.1", port: 65536) == nullptr
+    assert last_error() == HERO_NET_INVALID
+    assert last_error() != HERO_NET_OK
+
+# This changes the process that runs the tests as it would a server: SIGINT and
+# SIGTERM ask a stop from here on, and a second one still ends it at once.
+test "catch_stop answers 0, the second time too"
+    assert catch_stop() == 0
+    assert catch_stop() == 0
