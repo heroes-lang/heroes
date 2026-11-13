@@ -600,3 +600,13 @@ it does not**: whether the thread rung widens from one `i64` to one `str` (panel
 journal 034 and `ea4a6fda7`), which R3 left to the author and which stands as its own open decision:
 https://github.com/heroes-lang/heroes/issues/2498; the predictions above, on their own clocks; and the conservative alternatives,
 which stay the author's to choose.
+
+**Decision 2498 ruled, 2026-11-13**: the author's answer at about 16:20, `2a`, to the coordinator's
+`/decide` batch, recorded as a reading: **the thread rung widens to one `str`, copied for the
+thread**, the ffi-pragmatist's rung (20 of 20 right on this Mac and in Linux arm64, plain and under
+`--sanitize`), as a door added beside `hero_thread_spawn` and never a change of its type (panel
+232's promise), panel 113's R5 restored where `ea4a6fda7` narrowed it with no ruling; T1's clause in
+spec § 13 changes in the commit that lands it, its price measured there. The landing is feature
+2521 (https://github.com/heroes-lang/heroes/issues/2521), after the HTTP server's step. Not chosen:
+*b*, the `str` shared by its count (clean on this Mac alone, resting on a `str` never mutated in
+place); *c*, one `i64` kept.

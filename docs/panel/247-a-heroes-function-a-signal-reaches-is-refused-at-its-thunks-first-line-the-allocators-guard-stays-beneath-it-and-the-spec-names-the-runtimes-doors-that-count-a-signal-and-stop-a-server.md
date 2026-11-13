@@ -437,3 +437,15 @@ resolutions as adopted, panel 246's veto of a stop door in the spec as discharge
 condition (R5), and R3's residue filed `blocking`; it does not settle R4's interposition, which
 waits for a soundness sitting, the conservative alternatives, which stay the author's to choose, or
 the predictions, on their own clocks.
+
+**Ratified, R1 to R10, 2026-11-13**: the author's answer at about 16:20, `1a`, to the coordinator's
+`/decide` batch, which put the ten resolutions in one paragraph with their measurements and two
+alternatives, *b* (the stop clause of hg3 left out) and *c* (route F's deferral in place of the
+refusal); given in the coordinator's conversation, recorded as a reading (`.claude/rules/records.md`
+§ And the record says whose idea it was). **What the yes settles**: R1 to R10 as adopted, so the
+landing in batch 35's lane b35-signals proceeds on them; panel 246's veto of a stop door in the
+specification as discharged by its own return condition (R5: a thesis effect measured on a
+server-shaped task, and W4 falsified on Darwin and both Linux legs); R3's residue to be filed
+`blocking` in the hour 2494 closes. **What it does not**: R4's interposition, which waits for a
+soundness sitting and that sitting's ruling on the runtime defining the C library's names; the
+conservative alternatives, which stay the author's to choose; the predictions, on their own clocks.
