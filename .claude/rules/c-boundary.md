@@ -211,6 +211,13 @@ its R4, the same day, both ratified 2026-11-09; the fifteenth by panel 245's R3,
   and link.exe's alike, and a library defining again a name a library the
   program does not name defines is told on its group (defect 2376, the
   Windows box, 2026-11-09).
+  **Amended 2026-11-13 by defect 2489** (batch 34): the names a member of
+  the platform layer calls are judged as the runtime's where the link took
+  that member, each member's needs asked while its object is linked alone
+  and recorded beside the archive, so a library of the program defining one
+  (`socket`, which replaced the layer's own call at exit 0) is told on its
+  group with the member that calls it; a member the link did not take is
+  never judged (design.md §4.19).
 - **a group record another module's unit reads otherwise than its own
   module's unit does, where no order of the headers makes the two alike**:
   added 2026-11-09 (panel 239's R4 and R5, ratified 2026-11-09; defect 2364). Each unit's header list is read by clang's

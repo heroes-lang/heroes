@@ -2805,7 +2805,18 @@ program defines over the platform's (`puts`); and a name the runtime calls or de
 library of the program supplies (`printf`, `hero_print_end`, which the link refused as a duplicate
 and the compiler told as its own `internal error` until then), **unless a group of that library
 binds the name**: an allocator that replaces `malloc` on purpose says so by binding every name it
-replaces, with no new form. **What is never judged** is a library the program does not name, so
+replaces, with no new form. **A name a member of the platform layer calls is the runtime's**
+(amended 2026-11-13, batch 34, defect 2489): the layer's members (`runtime/platform/`) stand in one
+archive on every link line and the linker takes those a program calls, so the names a member calls
+were none of the names the link was asked about, and a library of the program defining `socket`
+replaced the layer's own call at exit 0. Each member's needs are now asked while its object is
+linked alone and recorded beside the archive, which is served only with its record
+(`cli/supplied_kept.hero`'s `alone_needs`, `cli/layer.hero`); the members the link took are those
+that supplied a traced name, and their needs are judged as the runtime's are, in each order and
+loaded whole, told on the library's group with the member that calls them
+(`cli/supplied_judged.hero`). A member the link did not take is never judged, so the clock alone
+links beside that library, and *a name the runtime calls* reads, here and below, *a name the
+runtime or a member the link took calls*. **What is never judged** is a library the program does not name, so
 `link "m"` taken from Apple's `libsystem_m.tbd` and `link "pthread"` from glibc's `libc.so.6` pass
 with no list of the platform's libraries. **What is not refused**, said: a name no group binds and
 the runtime does not call, defined by two libraries the program names and needed by a third, since

@@ -23,9 +23,18 @@ today's ANSWER and the command above it is the instrument. Re-run the command
 rather than trusting the table:
 
 ```sh
-# the suite names the net registers, which are what `-- <compiler> <name>` takes
-# (one word it prints, `harness`, is not a suite; the count is the command's)
-grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
+# the suite names the net registers, which are what `-- <compiler> <name>` takes:
+# each suite's block in the dispatcher opens `if only == "" || only == "<name>"`,
+# and each form of `suite_golden.hero` is the `name:` of a shape `main.hero`'s
+# `forms` list holds, as the CI's `net-plan` job reads them (task 2400). Until
+# 2026-11-13 this line was a grep of the file's every quoted word, said to
+# print one word that is not a suite, `harness`; it printed 57, 20 of them
+# neither a suite nor a form (lane b34-ci's reading, run again that day). The
+# count is the command's: 37 that day, 31 suites and 6 forms.
+grep -oE 'only == "[a-z_]+"' tests/harness/main.hero | grep -oE '"[a-z_]+"' | tr -d '"' | sort -u
+sed -n '/^    forms: [[]suite_golden[.]Shape[]] = [[]$/,/^    []]$/p' tests/harness/main.hero |
+  sed -nE 's/^        suite_golden[.](shape_[a-z_]+)[(][)]$/\1/p' |
+  while read -r s; do awk -v head="function ${s}() -> Shape" '$0 == head { on = 1; next } on && /^function / { exit } on && /^        name: "[a-z_]+",$/ { sub(/^ *name: "/, ""); sub(/",$/, ""); print; exit }' tests/harness/suite_golden.hero; done
 
 # every path git tracks, each file and each directory above one: the paths a
 # suite can name are read from the tree, never listed here (defect 486)
