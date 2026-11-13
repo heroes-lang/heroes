@@ -23,17 +23,19 @@
 # writes down: the vectors are an encoding table, and reading them backwards is
 # a second program.
 #
-# WHY DECODING STOPS AT BYTES, and this is the language rather than a choice.
-# `decoded` returns `[u8]` and not `str`, because **Heroes has no way to build
-# a character from a byte value**: the spec's conversions go the other way
-# (`to_u8` takes a number and gives a number), a string literal is ASCII-only
-# with six escapes and none of them numeric, and the runtime's byte-to-text
-# door is `hero_str_from_bytes`, which takes a `ptr` — while `[u8]` in an
-# `extern` position is `error[ffi_type]` today. So a decoder written in Heroes
-# alone can hand back the bytes and nothing else, and the way to check them is
-# `bytes_of` on the text they should be. This is a witness for M-core-packages'
-# opening question (iii), the byte buffer, and it was found by writing the
-# program rather than by reading the spec.
+# WHY DECODING STOPS AT BYTES: base64 carries bytes, any bytes, which need not
+# be text. `decoded` returns the `[u8]` the characters stand for, and a caller
+# that wants text asks `validated_bytes()` for it, which fails `not_text` where
+# the bytes are not UTF-8 (spec § 13): `[104, 105, 0xc3, 0xa8]` reads back as
+# `hiè`, and the decode of `/w==`, the one byte 255, as no text at all. The
+# tests below compare a decode with `bytes_of` on the text it should be, which
+# asks nothing of whether the bytes are text.
+#
+# Bytes cross to C by spec § 13's fill form, `@s: [u8] counted_by n lent`,
+# which hands C the bytes to read or write (`memset` writes `hhh` into one;
+# panel 234's R7), while the runtime's `hero_str_from_bytes` is no route, since
+# no program binds `heroes_runtime.h` (`error[ffi_runtime_header]`). Each of
+# the three was run on 2026-11-13 (task 2302).
 
 constant ALPHABET: str
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -152,8 +154,8 @@ function padding_of(group: str) -> i64?
 
     return ok(0)
 
-# `text`, decoded to the bytes it stands for — see the header for why this
-# stops at bytes.
+# `text`, decoded to the bytes it stands for: bytes, not text, as the header
+# says.
 function decoded(text: str) -> [u8]?
     if text.len() % 4 != 0
         return fail(

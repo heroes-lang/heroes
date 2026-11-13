@@ -1,0 +1,206 @@
+# A small HTTP server built from the core packages: `net` for the sockets,
+# `net/http` for the requests and their answers, and the language's own
+# threads, one to each connection. M-core-packages' acceptance (feature 893).
+#
+# Run with no words it is the loopback shape the corpus runs: server and client
+# in one process, the client on a thread of its own sending two requests on one
+# connection and printing each answer, the server taking that connection on a
+# thread of its own, so it prints the same on every run. Run as `serve <port>`
+# it listens on 127.0.0.1 at that port, 0 for one the system chooses, until
+# Ctrl-C or a request to end (SIGINT, SIGTERM), then lets every connection
+# finish what it holds, says what it served, and returns from `main`, so the
+# leak check at its end runs.
+#
+# ONE CONNECTION PER THREAD, AND WHY IT IS WRITTEN HERE. A Heroes thread runs a
+# function of one `i64` and gives back one (spec § 13), so a connection crosses
+# into its thread as the number `net.number` gives it up for, and the thread
+# takes it back with `net.of`; a handler cannot cross at all, which is why
+# `net/http` serves one connection, `serve_conn`, and the loop that starts a
+# thread for each is the program's (Go's `http.Serve` holds both). A number
+# never taken back is told when `main` returns, as a connection never closed is.
+
+use <core>/net
+use <core>/net/http
+use <core>/strconv
+use <core>/strings
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+    function hero_thread_limit() -> i64
+
+# What the server served, once it stopped accepting: its connections, the
+# requests answered on them, and the connections that failed.
+record Served
+    connections: i64
+    requests: i64
+    failed: i64
+
+function main()
+    words = args()
+
+    if words.len() == 0
+        loopback()
+    else if words.len() == 2 && words[0] == "serve"
+        serve(words[1])
+    else
+        print("usage: server [serve <port>]")
+        exit(code: 2)
+
+# The loopback shape: a listener on a port the system chooses, the client
+# started on a thread of its own, and the server taking the one connection the
+# client makes.
+function loopback()
+    match listening(0)
+        .err e => print(e.msg)
+        .ok opened =>
+            listener: net.Listener @= opened
+
+            match net.port_of(listener)
+                .err e => print(e.msg)
+                .ok port =>
+                    asking = hero_thread_spawn(body: client, arg: port)
+                    done = served(listener, most: 1, room: hero_thread_limit() - 1)
+                    failed = hero_thread_join(handle: asking) + done.failed
+                    print(
+                        f"served {done.requests} requests on {done.connections} connection, each connection on a thread of its own, {failed} failed"
+                    )
+
+            net.close_listener(@listener)
+
+# The server alone, at `written`'s port, until it is asked to stop.
+function serve(written: str)
+    port = strconv.atoi(written)
+
+    if port.is_err()
+        print("usage: server [serve <port>]: " + said(port))
+        exit(code: 2)
+
+    match listening(port.must())
+        .err e =>
+            print(e.msg)
+            exit(code: 1)
+        .ok opened =>
+            listener: net.Listener @= opened
+            print(f"listening on 127.0.0.1:{net.port_of(listener).default(0)}, until Ctrl-C or a request to end")
+            done = served(listener, most: 0, room: hero_thread_limit())
+            print(
+                f"stopped: requests answered {done.requests}, connections {done.connections}, failed {done.failed}"
+            )
+            net.close_listener(@listener)
+
+# A listener on 127.0.0.1 at `port`, after the stop is caught, so Ctrl-C and a
+# request to end make every wait of `net` fail `stopped` and the server finish.
+function listening(port: i64) -> net.Listener?
+    net.catch_stop()?
+    return net.listen(host: "127.0.0.1", port: port)
+
+# The server's half: each connection `listener` accepts served on a thread of
+# its own, until the stop ends the accept, or until `most` were taken where
+# `most` is not 0; then every thread joined.
+#
+# A THREAD'S SLOT COMES BACK ONLY WHEN IT IS JOINED, and the runtime holds
+# `hero_thread_limit()` of them, past which a spawn aborts the program. So no
+# more than `room` connections are served at once: at `room`, the oldest
+# thread is joined before the next connection is accepted. Measured on
+# 2026-11-13 with `curl`s sent one after another: a loop that joined every
+# thread at the end answered 256 of 300 and aborted at the 257th, exit 134;
+# this one answered 600 of 600, and stopped at SIGTERM with its drain line,
+# exit 0.
+function served(listener: net.Listener, most: i64, room: i64) -> Served
+    threads: [i64] @= []
+    done: Served @= Served(connections: 0, requests: 0, failed: 0)
+
+    while most == 0 || done.connections < most
+        if threads.len() >= room
+            joined(@done, thread: threads[0])
+            threads @ threads.slice(from: 1, to: threads.len())
+
+        match net.accept(listener)
+            .ok accepted =>
+                conn: net.Conn @= accepted
+
+                match net.number(@conn)
+                    .ok n =>
+                        threads @ threads.push(hero_thread_spawn(body: connection, arg: n))
+                        done.connections @ done.connections + 1
+                    .err e => print(e.msg)
+            .err e =>
+                if e.code != net.STOPPED
+                    print(e.msg)
+                break
+
+    for thread in threads
+        joined(@done, thread: thread)
+
+    return done
+
+# `thread` joined, and what it answered counted in `done`: its requests, or a
+# failure where it answered -1.
+function joined(@done: Served, thread: i64)
+    answered = hero_thread_join(handle: thread)
+
+    if answered < 0
+        done.failed @ done.failed + 1
+    else
+        done.requests @ done.requests + answered
+
+# One connection, on a thread of its own: taken back from the number it was
+# given up for, its requests answered until the client is done with it, then
+# closed. Answers how many requests were answered, or -1 where it failed.
+function connection(number: i64) -> i64
+    match net.of(number)
+        .err _ => return -1
+        .ok taken =>
+            conn: net.Conn @= taken
+            answered = http.serve_conn(conn, handler: answer)
+            net.close(@conn)
+            return answered.default(-1)
+
+# The answer to each request: a greeting at `/hello`, and `http.not_found`'s
+# everywhere else.
+function answer(request: http.Request) -> http.Response
+    if request.target == "/hello"
+        return http.Response(status: 200, header: {"Content-Type": "text/plain; charset=utf-8"}, body: "hello, world\n")
+    return http.not_found(request)
+
+# The client's half, on a thread of its own: one connection to the server at
+# `port`, two requests sent on it one after another, each answer printed as it
+# comes. Answers how many failed.
+function client(port: i64) -> i64
+    match net.dial(host: "127.0.0.1", port: port)
+        .err e =>
+            print(e.msg)
+            return 1
+        .ok dialled =>
+            conn: net.Conn @= dialled
+            failed: i64 @= 0
+
+            for target in ["/hello", "/nowhere"]
+                request = http.Request(method: "GET", target: target, header: {"Host": "127.0.0.1"}, body: "")
+
+                match http.round_trip(conn, request: request)
+                    .ok got => print(f"GET {target}: {got.status}, {strings.trim_space(got.body)}")
+                    .err e =>
+                        print(f"GET {target}: {e.msg}")
+                        failed @ failed + 1
+
+            net.close(@conn)
+            return failed
+
+# Why a step failed, as its error says it.
+function said<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "the handler greets at /hello and answers 404 everywhere else"
+    nothing: {str: str} = {}
+    hello = answer(http.Request(method: "GET", target: "/hello", header: nothing, body: ""))
+    assert hello.status == 200 && hello.body == "hello, world\n"
+    missing = answer(http.Request(method: "GET", target: "/hello/", header: nothing, body: ""))
+    assert missing.status == 404 && missing.body == "404 page not found: /hello/\n"
+
+test "said gives a failure's words, and none for a value"
+    assert said(strconv.atoi("x")) == "\"x\" is not a number"
+    assert said(strconv.atoi("1")) == ""
