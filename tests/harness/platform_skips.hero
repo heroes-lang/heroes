@@ -86,6 +86,9 @@ constant SECOND_EVENT_ON_WINDOWS: str
 constant SIGNAL_SETS_ON_WINDOWS: str
     "POSIX's signal sets, `sigset_t` and the five functions over it, are POSIX's and not C11's, whose `signal.h` holds `signal` and `raise` alone (C11 7.14, read); the Windows target's C library is C's, so the case binds names it lacks, an inference unrun on the box, and its shape is judged on every platform by `fixedbugs-2511-a-function-behind-a-macro-that-assigns-through-its-argument-is-called` (defect 2511, lane b35-ffi)"
 
+constant SIGACTION_ON_WINDOWS: str
+    "`sigaction` and its struct are POSIX's and not C11's (C11 7.14, read), and the box's clang refuses the case's header at `struct sigaction quiet;`, an incomplete type (`ffi_header_refused`, run on the box 2026-11-13), before `unistd.h` is asked; no signal of POSIX's reaches a Windows program, so a child deaf to one has nothing to be deaf to there, and the grace read on the monotonic clock is judged by the runtime's own Windows path (defect 2503, lane b35-runtime)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
@@ -110,6 +113,7 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
         Skip(name: "fixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros", why: SIGNAL_SETS_ON_WINDOWS)
+        Skip(name: "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace", why: SIGACTION_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -231,7 +235,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 21
+    assert windows().len() == 22
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -248,6 +252,10 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # Defect 2511's case over POSIX's signal sets, which the Windows target's
     # C library does not hold.
     assert shell.exists("tests/golden/run/" + windows()[20].name + ".hero")
+
+    # Defect 2503's child deaf to SIGTERM, whose header clang refuses on the
+    # Windows target at `struct sigaction`.
+    assert shell.exists("tests/golden/run/" + windows()[21].name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
