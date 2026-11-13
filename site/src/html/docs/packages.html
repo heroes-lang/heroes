@@ -179,15 +179,21 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
     The compiler checks the copy in <code>heroes.packages/</code> against the sum at every build, every check and every run. Change one byte of it, here a <code>0</code> made a <code>1</code> in <code>strings.hero</code>, and the build stops before it compiles anything:
   </p>
   <pre class="diag"><code>$ heroes build main.hero
-<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.2.1-e8db5b383e666067/` is `sha256-d0c03c5902caf551b9bed49cf764a3c92022183d06061b3cdf38247f8b0d1d37`, and the catalogue's `sum` for it is `sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c`: a file of it was changed, added or taken out since it was placed — `heroes fetch` places it again</span>
+<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.2.1-e8db5b383e666067/` is `sha256-7ed4e76f014865c819a1814a5741f3dc06eb41ee949fe807a2c0abd2579aacc4`, and the catalogue's `sum` for it is `sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again</span>
   at main.hero:9:5
     |
   9 | use &lt;core&gt;/encoding/json
     |     ^^^^^^^^^^^^^^^^^^^^</code></pre>
   <p>
-    <code>heroes fetch</code> puts the published bytes back, and holds the index to the same standard on the way: each file it copies must match its line of the list and the list must match the catalogue&rsquo;s sum, or nothing is placed.
+    <code>heroes fetch</code> never writes over the change, because an edit may be the author&rsquo;s own work: it stops, names the file that changed and says what to do, which is to move the folder out of <code>heroes.packages/</code> to keep the change, or to remove it to have the published tree placed again:
   </p>
-  <pre><code>$ heroes fetch
+  <pre class="diag"><code>$ heroes fetch
+<span class="msg">heroes.toml:5: error[sum_mismatch]: `core` 0.2.1 from the index `file://../../packages` is placed at `heroes.packages/core@0.2.1-e8db5b383e666067`, and that tree was changed since it was placed: `strings.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again</span></code></pre>
+  <p>
+    Removed, the tree comes back from the index, which is held to the same standard on the way: each file <code>heroes fetch</code> copies must match its line of the list and the list must match the catalogue&rsquo;s sum, or nothing is placed.
+  </p>
+  <pre><code>$ rm -r heroes.packages/core@0.2.1-e8db5b383e666067
+$ heroes fetch
 placed core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067</code></pre>
   <p>
     Why at every build, and not only when fetching: the copy lives in a folder anything can edit, and an edited copy compiled without a word is the silent failure this language exists to refuse. The check is the SHA-256 of the runtime, the piece of program that sits underneath every Heroes program, written in C, and never a package&rsquo;s code: in the words of <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/242-the-compiler-may-depend-on-a-package-and-takes-one-only-to-shrink-git-and-curl-stay-programs-and-a-child-gets-its-environment-at-the-spawn.md">a later sitting</a>, the verifier stays out of the verified, so no package can vouch for itself. Every file counts, <code>.hero</code> or not, because a C header a package carries, the file that tells the compiler how a C library is shaped, is code the program trusts too.

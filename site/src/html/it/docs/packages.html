@@ -179,15 +179,21 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
     Il compilatore confronta la copia in <code>heroes.packages/</code> con la <code>sum</code> a ogni build, a ogni check e a ogni run. Cambiane un byte, qui uno <code>0</code> diventato <code>1</code> in <code>strings.hero</code>, e la build si ferma prima di compilare qualsiasi cosa:
   </p>
   <pre class="diag"><code>$ heroes build main.hero
-<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.2.1-e8db5b383e666067/` is `sha256-d0c03c5902caf551b9bed49cf764a3c92022183d06061b3cdf38247f8b0d1d37`, and the catalogue's `sum` for it is `sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c`: a file of it was changed, added or taken out since it was placed — `heroes fetch` places it again</span>
+<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.2.1-e8db5b383e666067/` is `sha256-7ed4e76f014865c819a1814a5741f3dc06eb41ee949fe807a2c0abd2579aacc4`, and the catalogue's `sum` for it is `sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again</span>
   at main.hero:9:5
     |
   9 | use &lt;core&gt;/encoding/json
     |     ^^^^^^^^^^^^^^^^^^^^</code></pre>
   <p>
-    <code>heroes fetch</code> rimette al loro posto i byte pubblicati, e intanto tiene l&rsquo;indice alla stessa regola: ogni file che copia deve corrispondere alla sua riga della lista, e la lista alla <code>sum</code> del catalogo, altrimenti non mette niente.
+    <code>heroes fetch</code> non scrive mai sopra la modifica, perché potrebbe essere lavoro dell&rsquo;autore: si ferma, nomina il file cambiato e dice cosa fare, cioè spostare la cartella fuori da <code>heroes.packages/</code> per tenere la modifica, oppure rimuoverla perché l&rsquo;albero pubblicato torni al suo posto:
   </p>
-  <pre><code>$ heroes fetch
+  <pre class="diag"><code>$ heroes fetch
+<span class="msg">heroes.toml:5: error[sum_mismatch]: `core` 0.2.1 from the index `file://../../packages` is placed at `heroes.packages/core@0.2.1-e8db5b383e666067`, and that tree was changed since it was placed: `strings.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again</span></code></pre>
+  <p>
+    Rimossa la cartella, l&rsquo;albero torna dall&rsquo;indice, che intanto è tenuto alla stessa regola: ogni file che <code>heroes fetch</code> copia deve corrispondere alla sua riga della lista, e la lista alla <code>sum</code> del catalogo, altrimenti non mette niente.
+  </p>
+  <pre><code>$ rm -r heroes.packages/core@0.2.1-e8db5b383e666067
+$ heroes fetch
 placed core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067</code></pre>
   <p>
     Perché a ogni build, e non solo quando si scarica: la copia sta in una cartella che chiunque può modificare, e una copia modificata compilata senza una parola è proprio il guasto silenzioso che questo linguaggio esiste per rifiutare. Il controllo è lo SHA-256 del runtime, la parte di programma che sta sotto ogni programma Heroes, scritto in C, e mai il codice di un pacchetto: con le parole di <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/242-the-compiler-may-depend-on-a-package-and-takes-one-only-to-shrink-git-and-curl-stay-programs-and-a-child-gets-its-environment-at-the-spawn.md">una seduta successiva</a>, chi verifica resta fuori da ciò che verifica, così nessun pacchetto può fare da garante a se stesso. Conta ogni file, <code>.hero</code> o no, perché anche un header C che un pacchetto si porta dietro, il file che dice al compilatore com&rsquo;è fatta una libreria C, è codice di cui il programma si fida.
