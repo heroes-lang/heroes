@@ -103,6 +103,8 @@ constant WORDS: [str]
         "-Wl,/SUBSYSTEM:CONSOLE"
         "-Wl,/ENTRY:main"
         "-Wl,/errorlimit:0"
+        "-Wl,--error-limit=0"
+        "-Wl,/NODEFAULTLIB"
         "-Wl,-t"
         "-Wl,--whole-archive"
         "-Wl,--no-whole-archive"
@@ -195,7 +197,10 @@ test "every word a module hands clang is on the line the edits are asked of (def
 # is, which `cli/archiver.hero` asks for the tool beside it (feature 2295);
 # and `-dumpmachine`, a question clang answers with no job, which
 # `cli/doctor.hero` asks for the target its archiver row reads, in the folder
-# its probes write in (defect 2485, feature 2295).
+# its probes write in (defect 2485, feature 2295); and `-Wl,` with
+# `--error-limit=0`, the prefix and the flag a lone link and a link run again
+# join into one word (`cli/link_folds.hero`'s `LIFTS`, defect 2501), each word
+# they make listed whole in `WORDS` (defect 2510's lane, 2026-11-13).
 constant NOT_WORDS: [str]
     [
         "-object-file-name="
@@ -235,6 +240,8 @@ constant NOT_WORDS: [str]
         "-framework"
         "-print-prog-name="
         "-dumpmachine"
+        "-Wl,"
+        "--error-limit=0"
     ]
 
 function listed(word: str) -> bool
