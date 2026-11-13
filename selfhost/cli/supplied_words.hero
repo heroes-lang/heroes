@@ -30,6 +30,7 @@ use cli/supplied_read
 use diag
 use emit/externs as emit_externs
 use emit/ffi_lookup
+use parse
 use source
 
 # The diagnostics of a refused link's words: the probes' and the link's own
@@ -54,14 +55,17 @@ function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagno
         if f.len() != 7 || f[1] == "dirs" || f[1] == supplied_paired_words.KIND
             continue
 
-        if f[1] == "runtime"
-            if runtime[f[5]].is_err()
-                libraries @ libraries.push(f[5])
-            held = runtime[f[5]].default(none)
+        # Names the runtime or a platform layer member calls, by library and caller (defect 2489).
+        if f[1] == "runtime" || strings.starts_with(text: f[1], prefix: supplied_judged.LAYER)
+            key = f[5] + "\t" + f[1]
+
+            if runtime[key].is_err()
+                libraries @ libraries.push(key)
+            held = runtime[key].default(none)
 
             if !supplied_names.named_in(held, name: f[3])
-                runtime[f[5]] @ held.push(f[3])
-                runtime_files[f[5]] @ runtime_files[f[5]].default(none).push(f[4])
+                runtime[key] @ held.push(f[3])
+                runtime_files[key] @ runtime_files[key].default(none).push(f[4])
             continue
         decl = ffi_lookup.number(f[2])
 
@@ -98,9 +102,9 @@ function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagno
             bound_told(s, decls, at: at, files: files[at].default(none), orders: orders[at].default(none), other: other[at].default(""), whole: !whole[at].is_err(), dirs: dirs)
         )
 
-    for library in libraries
+    for key in libraries
         out @ out.push(
-            runtime_told(s, decls, library: library, names: runtime[library].default(none), files: runtime_files[library].default(none), dirs: dirs)
+            runtime_told(s, decls, key: key, names: runtime[key].default(none), files: runtime_files[key].default(none), dirs: dirs)
         )
 
     for d in supplied_paired_words.told(message, s, decls)
@@ -265,8 +269,11 @@ function bound_told(s: source.Source, decls: [ast.Decl], at: i64, files: [str], 
     d.notes @ d.notes.push(the_rule(name))
     return d
 
-# A library that defines names the runtime calls, told on its group.
-function runtime_told(s: source.Source, decls: [ast.Decl], library: str, names: [str], files: [str], dirs: [str]) -> diag.Diagnostic
+# A library defining names the runtime or a platform layer member calls, told on
+# its group; `key` is the library, a tab, and its markers' kind.
+function runtime_told(s: source.Source, decls: [ast.Decl], key: str, names: [str], files: [str], dirs: [str]) -> diag.Diagnostic
+    parts = supplied_names.split_on(field: key, separator: "\t")
+    library = parts[0]
     at = group_of(s, decls, library: library)
     shown: [str] @= []
 
@@ -278,9 +285,13 @@ function runtime_told(s: source.Source, decls: [ast.Decl], library: str, names: 
 
     if at >= 0
         span @ decls[at]
+    calls: str @= ", of the C library, which the program's own runtime calls: the runtime's calls"
+
+    if parts.len() == 2 && strings.starts_with(text: parts[1], prefix: supplied_judged.LAYER)
+        calls @ ", which the platform layer's `" + parts[1].slice(from: supplied_judged.LAYER.len(), to: parts[1].len()) + "` calls, linked in for this program's calls of it: the layer's calls"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_defined_elsewhere",
-        message: "library `" + library + "`, which " + module_of(s, decls, at: at) + " links, defines " + listed + ", of the C library, which the program's own runtime calls: the runtime's calls would reach library `" + library + "`'s",
+        message: "library `" + library + "`, which " + module_of(s, decls, at: at) + " links, defines " + listed + calls + " would reach library `" + library + "`'s",
         span: span.span
     )
     d.notes @ supplied_names.with_files(notes: d.notes, files: files, dirs: dirs)
@@ -355,3 +366,40 @@ test "the runtime's own object is told from a library's file and from a unit's (
     assert !runtime_object("/w/lib/libhh.a(hh.o)")
     assert library_member("libucrt.lib(fflush.obj)") && library_member("/usr/lib/libc.a(fflush.o)")
     assert !library_member("build/tu-1/main.o")
+
+# Defect 2489: a layer member's names are told with the member, beside the
+# runtime's, once for each library and caller.
+test "a library defining a name a platform layer member calls is told with the member, as a runtime's name is (defect 2489)"
+    text = "extern \"fake.h\" link \"fake\"\n    function fake_answer() -> i64\n\nfunction main()\n    print(fake_answer())\n"
+    s = source.new_source(name: "m.hero", text: text)
+    decls = parse.parse(text).decls
+    layer = supplied_judged.marker(
+        kind: supplied_judged.LAYER + "hero_net",
+        decl: -1,
+        name: "socket",
+        file: "lib/libfake.a(fake.o)",
+        library: "fake",
+        order: "written"
+    )
+    bind = supplied_judged.marker(
+        kind: supplied_judged.LAYER + "hero_net",
+        decl: -1,
+        name: "bind",
+        file: "lib/libfake.a(fake.o)",
+        library: "fake",
+        order: "written"
+    )
+    runtime = supplied_judged.marker(
+        kind: "runtime",
+        decl: -1,
+        name: "fflush",
+        file: "lib/libfake.a(fake.o)",
+        library: "fake",
+        order: "written"
+    )
+    got = told([layer, bind, layer, runtime].join("\n") + "\n", s, decls)
+    assert got.len() == 2
+    assert got[0].code == "ffi_defined_elsewhere"
+    assert got[0].message == "library `fake`, which module `m` links, defines `bind`, `socket`, which the platform layer's `hero_net` calls, linked in for this program's calls of it: the layer's calls would reach library `fake`'s"
+    assert got[1].message == "library `fake`, which module `m` links, defines `fflush`, of the C library, which the program's own runtime calls: the runtime's calls would reach library `fake`'s"
+    assert unmarked(layer + "\nld: done") == "ld: done"

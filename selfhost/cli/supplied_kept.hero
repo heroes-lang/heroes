@@ -30,6 +30,7 @@ use cli/link_flags
 use cli/process
 use cli/publish
 use cli/strings
+use cli/supplied_judged
 use cli/supplied_names
 use cli/supplied_probe
 use cli/supplied_read
@@ -169,11 +170,9 @@ function flag(b: bool) -> str
         return "1"
     return "0"
 
-# The names the runtime's object needs from outside it, asked once per object:
-# the object linked alone with no library, every name the link calls
-# undefined read back (`ffi_build.undefined_symbol`), kept beside it under
-# `build/`. Measured by the sitting on this Mac: 142 names, `nm -u`'s, and
-# `main`, which is the program's.
+# The names the runtime's object needs from outside it (`alone_needs`), asked
+# once per object and kept beside it under `build/`. Measured by the sitting
+# on this Mac: 142 names, `nm -u`'s, and `main`, which is the program's.
 function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
     nothing: [str] = []
     runtime: str @= ""
@@ -189,18 +188,25 @@ function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
 
     if !cached.is_err()
         return supplied_names.byte_lines(text: cached.must(), needles: [], stops: [])
+    out = alone_needs(t, object: runtime, what: "asking which names the runtime needs")
+
+    if out.len() > 0
+        _ = publish.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
+    return out
+
+# The names `object` needs from outside it: the object linked alone with no
+# library, every name the link calls undefined read back
+# (`ffi_build.undefined_symbol`), each once, `main` left out, which is the
+# program's; none where that link links or cannot run. The runtime's object
+# and each member of the platform layer are asked so (`cli/layer.hero`).
+function alone_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
+    nothing: [str] = []
     base = publish.private_name(t.build + "/supplied-needs")
     err_path = base + ".err.txt"
     run = supplied_probe.run_words(
-        strings.with_all(list: ["clang", "-nostdlib", runtime, "-o", base + process.exe_suffix()], more: alone_words(t))
+        strings.with_all(list: ["clang", "-nostdlib", object, "-o", base + process.exe_suffix()], more: alone_words(t))
     )
-    asked = clang_asked.asked(
-        program: run[0],
-        words: run,
-        what: "asking which names the runtime needs",
-        err_path: err_path,
-        out_path: ""
-    )
+    asked = clang_asked.asked(program: run[0], words: run, what: what, err_path: err_path, out_path: "")
     publish.discard(base + process.exe_suffix())
     publish.discard(err_path)
     said: str @= ""
@@ -220,8 +226,41 @@ function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
         seen[name.must()] @ true
         out @ out.push(name.must())
 
-    if out.len() > 0
-        _ = publish.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
+    return out
+
+# The record beside a platform layer archive of what each of its members
+# needs (defect 2489): one line per name, the member, a tab, the name,
+# written by `cli/layer.hero` as it archives the members, whose objects are
+# gone once archived.
+function layer_needs_path(archive: str) -> str
+    return archive + ".needs.txt"
+
+# The platform layer's archive among a link's `objects`, `layer-<key>.a` or
+# `.lib` (`cli/layer.hero`); "" where the link carries none.
+function layer_archive(objects: [str]) -> str
+    for object in objects
+        base = supplied_names.base_of(object)
+
+        if strings.starts_with(text: base, prefix: "layer-") && (strings.ends_with(text: base, suffix: ".a") || strings.ends_with(text: base, suffix: ".lib"))
+            return object
+
+    return ""
+
+# What the record beside `archive` says each member needs; none where
+# `archive` is "" or holds no record.
+function layer_needs(archive: str) -> [supplied_judged.LayerNeed]
+    out: [supplied_judged.LayerNeed] @= []
+
+    if archive == ""
+        return out
+    text = read_file(layer_needs_path(archive)).default("")
+
+    for line in supplied_names.byte_lines(text: text, needles: [], stops: [])
+        f = supplied_names.split_on(field: line, separator: "\t")
+
+        if f.len() == 2 && f[0].len() > 0 && f[1].len() > 0
+            out @ out.push(supplied_judged.LayerNeed(member: f[0], name: f[1]))
+
     return out
 
 # What a Windows link of the runtime's object alone needs to name every name
@@ -264,3 +303,20 @@ test "a kept answer is taken while its files keep their keys, and asked again on
     publish.discard(dir + "/liba.a")
     publish.discard(dir + "/libb.a")
     publish.discard(at)
+
+# Defect 2489: the layer's archive is the one `layer-` file of a library's
+# kind among a link's objects, and its record is read a member and a name to
+# a line, a line of another shape passed over.
+test "the platform layer's archive is found among a link's objects, and its record of needs read (defect 2489)"
+    assert layer_archive(["build/tu-1/main-0a.o", "build/runtime-1-2.o", "build/layer-3-4.a"]) == "build/layer-3-4.a"
+    assert layer_archive(["build/layer-3-4.lib"]) == "build/layer-3-4.lib"
+    assert layer_archive(["build/tu-1/layer-0a.o", "lib/liblayer-x.a"]) == ""
+    dir = "build/selftest-layer-needs-record"
+    assert !process.mkdir_all(dir).is_err()
+    archive = dir + "/layer-3-4.a"
+    assert layer_needs(archive).len() == 0
+    assert !publish.rewrite(path: layer_needs_path(archive), text: "hero_net\tsocket\nhero_time\tclock_gettime\nno tab\n\n").is_err()
+    got = layer_needs(archive)
+    assert got.len() == 2 && got[0].member == "hero_net" && got[0].name == "socket" && got[1].member == "hero_time"
+    assert layer_needs("").len() == 0
+    assert !process.remove_tree(dir).is_err()

@@ -58,6 +58,7 @@ use cli/runtime_key
 use cli/served
 use cli/strings
 use cli/supplied
+use cli/supplied_kept
 use cli/toolchain
 
 # The archive's words for a build, its failure told as the runtime object's is
@@ -100,7 +101,7 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
     suffix = archiver.suffix_of(t.target)
     known = deps.vouched(listed, @memo)
 
-    if !reach.is_err() && !known.is_err() && served.serves(stem + "-" + known.must() + suffix)
+    if !reach.is_err() && !known.is_err() && served.serves(stem + "-" + known.must() + suffix) && process.path_exists(supplied_kept.layer_needs_path(stem + "-" + known.must() + suffix))
         return ok([stem + "-" + known.must() + suffix])
     folder = publish.private_name(stem)
     made = compiled(t, members: members, words: words, stem: stem, folder: folder, suffix: suffix, @memo)
@@ -126,6 +127,7 @@ function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: st
     process.mkdir_all(folder)?
     objects: [str] @= []
     rows: [str] @= []
+    needs: [str] @= []
 
     for member in members
         name = base_of(member)
@@ -145,11 +147,20 @@ function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: st
         rows @ rows.push(read.must())
         objects @ objects.push(object)
 
+        # What the member needs from outside it, asked while its object
+        # stands, so the names it calls are judged as the runtime's are
+        # (defect 2489, `cli/supplied.hero`).
+        for name_needed in supplied_kept.alone_needs(t, object: object, what: "asking which names the platform layer's " + name + " needs")
+            needs @ needs.push(name + "\t" + name_needed)
+
     staged = folder + "/layer" + suffix
     archiver.archived(t, staged: staged, objects: objects, err_path: folder + "/archiver.err.txt")?
     listing = deps.pointer_text(rows.join("\n"))
     path = stem + "-" + listing.slice(from: 0, to: 16) + suffix
     served.seal(staged: staged, object: path)?
+
+    # The record first: an archive that stands has its members' needs.
+    publish.write_whole(path: supplied_kept.layer_needs_path(path), text: needs.join("\n") + "\n", keyed: true)?
     publish.publish(staged: staged, path: path, keyed: true)?
     return ok(Archived(path: path, listing: listing, rows: rows.join("\n")))
 
@@ -439,3 +450,23 @@ test "a member is named by its file, and a record's rows follow its digest (feat
     assert base_of("hero_time.c") == "hero_time"
     assert rows_after_digest("0123456789abcdef\nrow one\nrow two") == "row one\nrow two"
     assert rows_after_digest("0123456789abcdef") == ""
+
+# Defect 2489: an archive stands beside the record of what each member
+# needs, asked while its object stood, `hero_net` the C library's `socket`
+# among them where a POSIX link names it so; one whose record is gone is
+# archived again, the same bytes and the same record.
+test "an archive stands with the record of what its members need, and is archived again without it (defect 2489)"
+    t = fresh_toolchain("build/selftest-layer-needs-2489")
+    a = archive(t, level: "-O0", sanitize: false).must()[0]
+    listed_needs = read_file(supplied_kept.layer_needs_path(a)).must()
+    assert strings.holds(text: listed_needs, needle: "hero_net\t")
+
+    if !link_flags.msvc(t.target)
+        assert strings.holds(text: listed_needs, needle: "hero_net\tsocket\n")
+    first = t.build + "/the-first-archive"
+    assert !files.second_name(existing: a, name: first).is_err()
+    assert !process.remove_file(supplied_kept.layer_needs_path(a)).is_err()
+    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert publish.same_bytes(one: a, other: first)
+    assert read_file(supplied_kept.layer_needs_path(a)).must() == listed_needs
+    assert !process.remove_tree(t.build).is_err()
