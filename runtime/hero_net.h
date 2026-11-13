@@ -81,7 +81,8 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener);
 int64_t hero_net_port(hero_net_socket *s);
 
 /* Sends up to `count` bytes of `data` and answers how many were sent, which
- * may be fewer: the caller sends the rest. */
+ * may be fewer, as many as the system had room for: the caller sends the
+ * rest. It waits only while there is no room at all. */
 int64_t hero_net_send(hero_net_socket *s, const void *data, uint64_t count);
 
 /* Receives up to `count` bytes into `buffer`, waiting for one, and answers
@@ -90,7 +91,10 @@ int64_t hero_net_recv(hero_net_socket *s, void *buffer, uint64_t count);
 
 /* Closes the socket and gives its handle back, whatever is answered: 0, or
  * -1 where the socket was not open or the system reported a failure while
- * closing it. A call in flight on it on another thread ends first. */
+ * closing it. A call another thread waits in on it, an `accept`, a `recv`
+ * or a `send`, ends within about 50 ms, failing `HERO_NET_NOT_OPEN`, since
+ * every call waits in slices of that; no connection made after the close is
+ * accepted, and no later call reaches the socket. */
 int64_t hero_net_close(hero_net_socket *s);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a
