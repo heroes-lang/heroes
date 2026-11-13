@@ -1,0 +1,22 @@
+# fixedbugs, defect 2501, lane b34-fsl, 2026-11-13.
+#
+# SYMPTOM: every linker folds the references of a name nothing defines past
+# a count, `ld.lld` and `lld-link` past three, GNU ld past five in a row,
+# ld64 past seven, so a module whose every reference fell past it was told
+# nowhere: this program's three modules each bind `top2501`, a macro for
+# `base2501`, and both modules it uses refer to it from eight functions, so
+# one module stands past the fold whatever order the link gives them.
+#
+# CAUSE: the reading placed the references the linker listed, and no other.
+#
+# FIX: a folded name is asked of each object of the link alone
+# (`cli/link_again.hero`), kept by the object's key, and every object needing
+# it is read as a reference, so each module is told on every linker.
+use fixedbugs2501/a_first
+use fixedbugs2501/b_second
+
+extern "fixedbugs-2501-alias.h"
+    function top2501() -> i32  #~ ffi_missing_link
+
+function main()
+    print(a_first.total() + b_second.total() + top2501())

@@ -1,0 +1,153 @@
+error[ffi_missing_link]: `top2501_01` is defined inline in `fixedbugs-2501-many.h` line 25, and its body calls `base2501_01`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:14:5
+     |
+  14 |     function top2501_01() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_01` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_02` is defined inline in `fixedbugs-2501-many.h` line 26, and its body calls `base2501_02`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:15:5
+     |
+  15 |     function top2501_02() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_02` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_03` is defined inline in `fixedbugs-2501-many.h` line 27, and its body calls `base2501_03`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:16:5
+     |
+  16 |     function top2501_03() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_03` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_04` is defined inline in `fixedbugs-2501-many.h` line 28, and its body calls `base2501_04`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:17:5
+     |
+  17 |     function top2501_04() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_04` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_05` is defined inline in `fixedbugs-2501-many.h` line 29, and its body calls `base2501_05`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:18:5
+     |
+  18 |     function top2501_05() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_05` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_06` is defined inline in `fixedbugs-2501-many.h` line 30, and its body calls `base2501_06`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:19:5
+     |
+  19 |     function top2501_06() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_06` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_07` is defined inline in `fixedbugs-2501-many.h` line 31, and its body calls `base2501_07`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:20:5
+     |
+  20 |     function top2501_07() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_07` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_08` is defined inline in `fixedbugs-2501-many.h` line 32, and its body calls `base2501_08`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:21:5
+     |
+  21 |     function top2501_08() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_08` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_09` is defined inline in `fixedbugs-2501-many.h` line 33, and its body calls `base2501_09`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:22:5
+     |
+  22 |     function top2501_09() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_09` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_10` is defined inline in `fixedbugs-2501-many.h` line 34, and its body calls `base2501_10`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:23:5
+     |
+  23 |     function top2501_10() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_10` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_11` is defined inline in `fixedbugs-2501-many.h` line 35, and its body calls `base2501_11`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:24:5
+     |
+  24 |     function top2501_11() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_11` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_12` is defined inline in `fixedbugs-2501-many.h` line 36, and its body calls `base2501_12`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:25:5
+     |
+  25 |     function top2501_12() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_12` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_13` is defined inline in `fixedbugs-2501-many.h` line 37, and its body calls `base2501_13`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:26:5
+     |
+  26 |     function top2501_13() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_13` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_14` is defined inline in `fixedbugs-2501-many.h` line 38, and its body calls `base2501_14`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:27:5
+     |
+  27 |     function top2501_14() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_14` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_15` is defined inline in `fixedbugs-2501-many.h` line 39, and its body calls `base2501_15`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:28:5
+     |
+  28 |     function top2501_15() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_15` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_16` is defined inline in `fixedbugs-2501-many.h` line 40, and its body calls `base2501_16`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:29:5
+     |
+  29 |     function top2501_16() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_16` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_17` is defined inline in `fixedbugs-2501-many.h` line 41, and its body calls `base2501_17`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:30:5
+     |
+  30 |     function top2501_17() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_17` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_18` is defined inline in `fixedbugs-2501-many.h` line 42, and its body calls `base2501_18`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:31:5
+     |
+  31 |     function top2501_18() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_18` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_19` is defined inline in `fixedbugs-2501-many.h` line 43, and its body calls `base2501_19`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:32:5
+     |
+  32 |     function top2501_19() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_19` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_20` is defined inline in `fixedbugs-2501-many.h` line 44, and its body calls `base2501_20`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:33:5
+     |
+  33 |     function top2501_20() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_20` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_21` is defined inline in `fixedbugs-2501-many.h` line 45, and its body calls `base2501_21`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:34:5
+     |
+  34 |     function top2501_21() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_21` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2501_22` is defined inline in `fixedbugs-2501-many.h` line 46, and its body calls `base2501_22`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2501-every-name-past-the-twentieth-is-told.hero:35:5
+     |
+  35 |     function top2501_22() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2501_22` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2501-many.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
