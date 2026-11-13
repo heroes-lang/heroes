@@ -1,0 +1,41 @@
+# fixedbugs, defect 2519, lane b35-ffi, 2026-11-13.
+#
+# SYMPTOM: a bound C function taken as a value, where the program spells a
+# parameter as another C type than the header's, `ptr` for `unsigned *`,
+# stopped the build with `internal error`, exit 2: clang refused the value's
+# assignment into the Heroes type's `int32_t (*)(void *)`, *incompatible
+# function pointer types*.
+#
+# CAUSE AND REPAIR: the binding is correct and its call converts as any call
+# does; only the value's C type differed, and a cast would leave a call
+# through it undefined (C11 6.5.2.2p9). Each bound function a unit takes as a
+# value has an adapter of the Heroes type that calls it, and clang chooses
+# (`emit/bound_value.hero`): the function itself where the types agree, so
+# `add_one2519` is still the function C compares, and the adapter where they
+# do not, `set_two2519` here and `twice2519` on Darwin, where `size_t` and
+# `uint64_t` are two types.
+
+extern "fixedbugs-2519-values.h"
+    function set_two2519(p: ptr) -> i32
+    function read2519(p: ptr) -> u32
+    function twice2519(n: u64) -> u64
+    function add_one2519(a: i32) -> i32
+    function is_add_one2519(f: (function(i32) -> i32)) -> i32
+
+extern "stdlib.h"
+    function calloc(count: u64, size: u64) -> ptr
+    function free(p: ptr)
+
+function through(f: (function(ptr) -> i32), p: ptr) -> i32
+    return f(p)
+
+function doubled(f: (function(u64) -> u64), n: u64) -> u64
+    return f(n)
+
+function main()
+    held = calloc(count: 1, size: 4)
+    print(through(f: set_two2519, p: held))
+    print(read2519(p: held))
+    print(doubled(f: twice2519, n: 21))
+    print(is_add_one2519(f: add_one2519))
+    free(p: held)

@@ -17,6 +17,7 @@ use checker
 use diag
 use emit/body
 use emit/bound_type
+use emit/bound_value
 use emit/builtins
 use emit/c_main
 use emit/callback_guard
@@ -32,7 +33,6 @@ use emit/lend_local
 use emit/padding_tables
 use emit/perfn
 use emit/reach
-use emit/shadowed
 use emit/side_bodies
 use emit/sides
 use emit/signature
@@ -251,9 +251,9 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # that can mention one" and obeys the line above (panel 111 R4).
     extern_probe.extern_probes(@w, p, c, names, s, decls)
 
-    # A bound C function a body would hide behind a name of its own, reached
-    # through an accessor taken before any body (defect 2389).
-    shadowed.accessors(@w, p, s, decls)
+    # Bound C functions a body would hide, by accessors, and those taken as
+    # values, by adapters, before any body (defects 2389, 2519).
+    bound_value.before_bodies(@w, p, c, names, s, decls)
     perfn.prototypes(@w, c, names, decls, want: synth.everything())
 
     # An `assert`'s sides, the renderers of the types they compare (panel 230's R2).

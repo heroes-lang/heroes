@@ -26,6 +26,7 @@
 
 use ast
 use check/state
+use emit/bound_value
 use emit/ctype
 use emit/shadowed
 use emit/signature
@@ -68,6 +69,21 @@ function designator(p: instances.Held, c: state.Checked, names: ctype.Names, s: 
 function emit(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, at: i64, target: str?)
     if target.is_err()
         return
+
+    # A bound C function stands as itself where its C type is the target's,
+    # and as its adapter where it is not (defect 2519, `emit/bound_value.hero`).
+    match callee
+        .extern_fn e =>
+            chosen = bound_value.chosen(
+                target: target.must(),
+                name: source.span_text(s, decls[e.decl].name),
+                s: s,
+                decls: decls
+            )
+            writer.line(@w, text: "    " + target.must() + " = " + chosen + ";")
+            return
+        .heroes_fn | .builtin_fn | .indirect => _ = 0
+
     named = designator(p, c, names, s, decls, callee: callee, instance: instances.named_at(f, c, at: at))
 
     if named.is_err()
