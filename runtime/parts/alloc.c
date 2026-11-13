@@ -471,12 +471,133 @@ void hero_runtime_check_leaks(void) {
     }
 }
 
+/* A SIGNAL HANDLER THAT USES THE ALLOCATOR WHILE THE CODE IT INTERRUPTED IS
+ * INSIDE IT STOPS THE PROGRAM BY NAME (defect 2494, the part of it that needs
+ * no ruling). The C library's allocator is not reentrant: a Heroes function
+ * given to C's `signal` that built a string while `main` built strings killed
+ * its program 5 runs of 5 on this Mac (3 killed by SIGKILL with nothing said,
+ * 2 by SIGTRAP, memory given back twice) and 5 of 5 in Linux arm64 (glibc's
+ * heap aborts, and twice this runtime's own false report of a str's block
+ * that lost its mark). Each call
+ * this file makes to that allocator is bracketed by one flag per thread, and a
+ * bracket found open stops the program before the allocator is entered again.
+ *
+ * NOTHING BUT A SIGNAL HANDLER CAN FIND THE FLAG SET, and the claim rests on
+ * what runs between `hero_alloc_enter` and `hero_alloc_leave`: one call of the
+ * C library's `malloc`, `calloc` or `free` and nothing else, and that library
+ * calls no code of this runtime, Apple's, glibc's, ASan's interceptors and
+ * Guard Malloc's alike, ASan's death callback here only raising a flag. The
+ * out-of-memory stop is reached after its bracket closes. A drop, the drop
+ * lists, a large value's room and the lease, handle and dead-handle tables
+ * each reach the allocator through brackets of their own, one after another
+ * and never one inside another. And no signal handler of this runtime asks
+ * this file for memory: `stack.c`'s fault handler and `os.c`'s crash reports
+ * write with `write(2)`, `run.c`'s forwarding calls `kill`, `select` and
+ * `waitid`, the platform layer's stop writes one byte, Windows' vectored and
+ * last-chance handlers write with `_write` (read 2026-11-13). So the flag is
+ * found set only where a handler the program installed, or a Heroes function
+ * it calls, runs on a thread inside the C library's allocator and allocates
+ * or gives back: the thread's flag is its own, another thread's never seen.
+ * The two frees of a kept buffer stay outside: they run as a thread ends,
+ * after Darwin has given its thread-locals back, so the flag would be made
+ * anew there, and no handler runs on a thread this runtime started then
+ * (defect 2496 holds signals off its end), nor on `main`, which never runs them.
+ *
+ * `volatile` and the two signal fences keep the store before the call: a
+ * compiler that knows `malloc` touches only memory of its own could otherwise
+ * drop it as a store the next one overwrites.
+ *
+ * WHAT IT DOES NOT CLOSE, said, and defect 2494 stays open on it for panel
+ * 247's route: a handler that interrupts C's own allocator inside a C call,
+ * stdio's buffer among them; a handler's `print` while the code it interrupted
+ * prints; on Darwin the C library's locale lock, which `snprintf` takes for
+ * the number in an f-string, so a handler formatting a number while the code
+ * it interrupted formats one is killed by that library with nothing said
+ * (`Trying to recursively lock an os_unfair_lock`, 12 runs of 200 of the
+ * storm's strings with this in place; Linux's `snprintf` takes no lock, 0 of
+ * 50); and this runtime's handle and lease locks, which a handler using
+ * handles would wait for on the thread holding them. */
+/* `sig_atomic_t`, `raise`, `signal`; and `write`, `errno` and
+ * `pthread_sigmask` on POSIX, `_write` on Windows, for the stop below: named
+ * here, though earlier parts of this one translation unit read them first. */
+#include <signal.h>
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <errno.h>
+#include <pthread.h>
+#include <unistd.h>
+#endif
+
+static _Thread_local volatile sig_atomic_t hero_alloc_inside = 0;
+
+/* The stop, async-signal-safe from its first call to its last: one fixed line
+ * by `write(2)`, never `fprintf` or anything that takes a lock; SIGABRT put
+ * back to its default and let through, then raised, never `abort()`, whose
+ * flush of stdio is not safe here; `_exit` if that ever returns. */
+static _Noreturn void hero_alloc_reentered(void) {
+    static const char said[] =
+        "panic: a signal handler used this runtime's allocator while the code it interrupted was "
+        "inside it, which would corrupt memory: a Heroes function given to C as a signal handler, "
+        "or called from one, does so whenever it builds or drops a value. To stop on Ctrl-C or "
+        "SIGTERM, call `hero_net_catch_stop` from `hero_net.h`, and the platform layer's waiting "
+        "calls end with `HERO_NET_STOPPED`; answer any other signal with a handler written in C "
+        "in the program's own header, never with a Heroes function\n";
+    const char *at = said;
+    size_t left = sizeof said - 1;
+
+    hero_runtime_spoke = 1;
+    while (left > 0) {
+#if defined(_WIN32)
+        int put = _write(2, at, (unsigned int)left);
+#else
+        ssize_t put = write(2, at, left);
+        if (put < 0 && errno == EINTR) continue;
+#endif
+        if (put <= 0) break;
+        at += put;
+        left -= (size_t)put;
+    }
+    signal(SIGABRT, SIG_DFL);
+#if !defined(_WIN32)
+    sigset_t abort_only;
+    sigemptyset(&abort_only);
+    sigaddset(&abort_only, SIGABRT);
+    pthread_sigmask(SIG_UNBLOCK, &abort_only, NULL);
+#endif
+    raise(SIGABRT);
+    _exit(134);
+}
+
+/* The bracket, inlined at every level and its flag's address taken once:
+ * at `-O0`, a program's default, a call each side and the flag reached
+ * through Darwin's thread-local accessor at each of its three uses cost
+ * about 10% of a loop that only allocates, where this form costs 5.0% there
+ * (105.49 G to 110.79 G instructions; 5.4% at `-O2`) and 0.9% of the
+ * compiler's `check` of itself and 1.1% of its warm build (120.27 G to
+ * 121.36 G, 663.38 G to 670.75 G), each the mean of three runs on this Mac,
+ * 2026-11-13. */
+static inline __attribute__((always_inline)) volatile sig_atomic_t *hero_alloc_enter(void) {
+    volatile sig_atomic_t *inside = &hero_alloc_inside;
+    if (*inside != 0) hero_alloc_reentered();
+    *inside = 1;
+    atomic_signal_fence(memory_order_seq_cst);
+    return inside;
+}
+
+static inline __attribute__((always_inline)) void hero_alloc_leave(volatile sig_atomic_t *inside) {
+    atomic_signal_fence(memory_order_seq_cst);
+    *inside = 0;
+}
+
 /* The one `malloc`, weighed by neither counter. Both pairs below go through it,
  * so §4.20's single point stays literally true and a block is not also counted
  * as scratch on its way past. It aborts rather than returning NULL, so no caller
  * anywhere writes an out-of-memory branch. */
 static void *hero_malloc_raw(size_t size) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     void *p = malloc(size);
+    hero_alloc_leave(inside);
     if (p == NULL) hero_panic("out of memory");
     return p;
 }
@@ -489,7 +610,9 @@ static void *hero_malloc_raw(size_t size) {
  * it asks of them — that the call live HERE — so the room takes its chunks
  * through `hero_malloc_raw` and gives them back through this. */
 static void hero_free_raw(void *p) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(p);
+    hero_alloc_leave(inside);
 }
 
 /* The same block zeroed, by `calloc`, given back through `hero_free_raw`
@@ -498,7 +621,9 @@ static void hero_free_raw(void *p) {
  * not `malloc` and a `memset`, so a block of the record's size asks the system
  * for pages already zero, which it hands without writing them. */
 static void *hero_calloc_raw(size_t size) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     void *p = calloc(1, size);
+    hero_alloc_leave(inside);
     if (p == NULL) hero_panic("out of memory");
     return p;
 }
@@ -513,7 +638,9 @@ static void *hero_alloc(size_t size) {
 
 static void hero_release(void *p) {
     atomic_fetch_sub_explicit(&hero_live_scratch, 1, memory_order_relaxed);
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(p);
+    hero_alloc_leave(inside);
 }
 
 /* A block the language owns: a `str`'s bytes, an array's elements, a map's
@@ -526,7 +653,9 @@ static void *hero_alloc_block(size_t size) {
 
 static void hero_release_block(void *p) {
     atomic_fetch_sub_explicit(&hero_live_blocks, 1, memory_order_relaxed);
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(p);
+    hero_alloc_leave(inside);
 }
 
 /* The lease table's home slot for `p`, by the handle set's hashing, whose
@@ -549,7 +678,9 @@ static void hero_lease_grow(void) {
     for (size_t i = 0; i < cap; i++) fresh[i].p = NULL;
     for (size_t i = 0; i < hero_lease_cap; i++)
         if (hero_lease_set[i].p != NULL) fresh[hero_lease_slot(fresh, cap, hero_lease_set[i].p)] = hero_lease_set[i];
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(hero_lease_set);
+    hero_alloc_leave(inside);
     hero_lease_set = fresh;
     hero_lease_cap = cap;
 }
@@ -599,7 +730,9 @@ static void hero_release_held(void *p) {
     }
     hero_handle_lock_drop(&hero_lease_lock);
     atomic_fetch_sub_explicit(&hero_live_held, 1, memory_order_relaxed);
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(p);
+    hero_alloc_leave(inside);
 }
 
 /* The handle set. Open addressing, linear probing, power-of-two capacity, so a
@@ -669,7 +802,9 @@ static void hero_handle_grow(void) {
         if (hero_handle_set[i].h != NULL)
             fresh[hero_handle_slot(fresh, cap, hero_handle_set[i].h)] = hero_handle_set[i];
     }
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(hero_handle_set);
+    hero_alloc_leave(inside);
     hero_handle_set = fresh;
     hero_handle_cap = cap;
 }
@@ -802,7 +937,9 @@ static void hero_dead_grow_index(void) {
         while (fresh[j] != 0) j = (j + 1) & (cap - 1);
         fresh[j] = entry;
     }
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(hero_dead_index);
+    hero_alloc_leave(inside);
     hero_dead_index = fresh;
     hero_dead_index_cap = cap;
 }
@@ -813,7 +950,9 @@ static void hero_dead_grow_ring(void) {
     size_t cap = hero_dead_ring_cap == 0 ? (size_t)HERO_HANDLES_MIN : hero_dead_ring_cap * 2;
     const void **fresh = (const void **)hero_malloc_raw(cap * sizeof(const void *));
     for (size_t i = 0; i < hero_dead_ring_cap; i++) fresh[i] = hero_dead_ring[i];
+    volatile sig_atomic_t *inside = hero_alloc_enter();
     free(hero_dead_ring);
+    hero_alloc_leave(inside);
     hero_dead_ring = fresh;
     hero_dead_ring_cap = cap;
 }
@@ -1412,7 +1551,9 @@ static void *hero_grow_kept(void *old, size_t old_bytes, size_t new_bytes) {
     void *fresh = hero_malloc_raw(new_bytes);
     if (old != NULL) {
         memcpy(fresh, old, old_bytes);
+        volatile sig_atomic_t *inside = hero_alloc_enter();
         free(old);
+        hero_alloc_leave(inside);
     }
     hero_kept_note(old, fresh);
     return fresh;
