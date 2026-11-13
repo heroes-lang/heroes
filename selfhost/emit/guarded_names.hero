@@ -99,6 +99,7 @@ constant NAMES: [str]
         "hero_run_arg hero_run_discard_path hero_run_env hero_run_exe_suffix hero_run_go"
         "hero_run_limit hero_run_limit_writes hero_run_reset hero_run_serial"
         "hero_run_signal hero_run_why hero_runtime_check_leaks hero_runtime_live hero_show_array hero_show_bool hero_show_child hero_show_close hero_show_f32 hero_show_f64 hero_show_failure hero_show_fixed hero_show_i16 hero_show_i32 hero_show_i64 hero_show_i8 hero_show_map hero_show_open hero_show_pointer hero_show_str hero_show_text hero_show_u16 hero_show_u32 hero_show_u64 hero_show_u8 hero_show_unit"
+        "hero_signal_fd hero_signal_take hero_signal_watch"
         "hero_slot_escape hero_stack_spell hero_str_byte hero_str_chars hero_str_cmp"
         "hero_str_concat hero_str_cstr hero_str_decref hero_str_empty"
         "hero_str_eq hero_str_from_bytes hero_str_from_cstr hero_str_held hero_str_held_at"

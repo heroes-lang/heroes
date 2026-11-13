@@ -153,6 +153,11 @@
  * from hero_args_set, in os.c below. */
 #include "parts/stack.c"
 
+/* The runtime's door for a signal other than SIGINT and SIGTERM (panel 247's
+ * G): its own C handler counts each delivery, and the program takes the count
+ * between its steps. Needs nothing; declared in `hero_os.h`. */
+#include "parts/sigdoor.c"
+
 /* Which thread this program was started on, and the refusal a callback entry
  * makes when C calls back from another one (panel 111 R9). Needs only panic.c;
  * claimed once from hero_args_set, in os.c below, for stack.c's own reason. */

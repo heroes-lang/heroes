@@ -1,0 +1,43 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's door G): a
+# signal other than SIGINT and SIGTERM counted with no Heroes function as its
+# handler.
+# Symptom: a program wanting to know that SIGUSR1 came had one way the
+# specification gave it, a Heroes function as the handler, which ran inside
+# the signal and is now refused; a handler in C needs a flag a header holds.
+# Cause: the runtime now holds the handler itself, `hero_signal_watch` in
+# `hero_os.h`, whose C counts each delivery in one counter of the process,
+# and the program takes the count between its steps. The program sends
+# itself SIGUSR1 five times, each delivered before `kill` returns, and takes
+# five, then none; a fault's signal and the stop's are not this door's, and
+# a signal never watched counts nothing.
+
+extern "unistd.h"
+    function getpid() -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+    constant SIGUSR2: i32
+    constant SIGINT: i32
+    constant SIGSEGV: i32
+    function kill(pid: i32, sig: i32) -> i32
+
+extern "hero_os.h"
+    function hero_signal_watch(sig: i32) -> i64
+    function hero_signal_take(sig: i32) -> i64
+    function hero_signal_fd() -> i32
+
+function main()
+    print("a descriptor before any watch: ", hero_signal_fd())
+    print("watching SIGINT, the stop's: ", hero_signal_watch(sig: SIGINT))
+    print("watching SIGSEGV, a fault's: ", hero_signal_watch(sig: SIGSEGV))
+    print("watching SIGUSR1: ", hero_signal_watch(sig: SIGUSR1))
+    sent @= 0
+
+    while sent < 5
+        _ = kill(pid: getpid(), sig: SIGUSR1)
+        sent @ sent + 1
+
+    print("sent ", sent, ", taken ", hero_signal_take(sig: SIGUSR1))
+    print("taken again: ", hero_signal_take(sig: SIGUSR1))
+    print("SIGUSR2, never watched, taken: ", hero_signal_take(sig: SIGUSR2))
+    print("a descriptor to wait on: ", hero_signal_fd() >= 0)
