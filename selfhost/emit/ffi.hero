@@ -37,6 +37,7 @@ use emit/ffi_lookup
 use emit/ffi_mutable
 use emit/ffi_narrowed
 use emit/ffi_pointee
+use emit/ffi_pointee_kind
 use emit/ffi_reach
 use emit/ffi_read_only
 use emit/ffi_record
@@ -156,6 +157,12 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !void_p.is_err()
             found @ ffi_lookup.add_once(found, d: void_p.must())
+
+        # A pointee that is no number, its own marker line (defect 2518).
+        kind_p = ffi_pointee_kind.told(s, decls, tree, line: line)
+
+        if !kind_p.is_err()
+            found @ ffi_lookup.add_once(found, d: kind_p.must())
 
         # An opaque `@` whose header takes one pointer (defect 083): its own
         # marker line, read before the width reader like the void one.

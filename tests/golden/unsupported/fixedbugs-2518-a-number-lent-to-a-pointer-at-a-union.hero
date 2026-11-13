@@ -1,0 +1,18 @@
+# fixedbugs, defect 2518, lane b35-ffi, 2026-11-13.
+#
+# SYMPTOM: a number lent with `@` to a header pointer whose pointee is a
+# union, as glibc's `sigset_t` is a struct, was `internal error`, exit 2: the
+# pointee check asked the pointee's sign as `(T)-1 > 0`, which C refuses for
+# a union, a hard error no reader knew.
+#
+# CAUSE AND REPAIR: the check now asks first whether the pointee is a struct,
+# a union, an array or a complex number, each a static assertion with its own
+# marker (`emit/ffi_pointee_kind.hero`), and the parameter is told what the
+# header's pointer points at and how a program binds it.
+
+extern "fixedbugs-2518-kinds.h"
+    function un2518_fill(@p: u32) -> i32  #~ ffi_parameter_type
+
+function main()
+    x @= to_u32(0).must()
+    print(un2518_fill(@x))

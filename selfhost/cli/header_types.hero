@@ -34,6 +34,7 @@ use cli/pointee_ask
 use emit/c_text
 use emit/ffi_past_prototype
 use emit/ffi_pointee
+use emit/ffi_pointee_kind
 use emit/ffi_read_only
 use emit/ffi_unit
 use emit/guarded_names
@@ -138,6 +139,10 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
         lines @ lines.push(
             "_Static_assert(!__builtin_types_compatible_p(" + header_type + ", void), \"" + ffi_pointee.VOID_MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
         )
+
+        # A pointee that is no number fails its own guard first, as `void`'s
+        # does, since `(T)-1` is C's refusal of a struct (defect 2518).
+        lines @ lines.push(ffi_pointee_kind.assertions(asked, header_type: header_type))
         lines @ lines.push(width_line.width_assertions(asked, header_type: header_type))
 
     # A lend past a variadic header's `...` has no type to be asked of, and
