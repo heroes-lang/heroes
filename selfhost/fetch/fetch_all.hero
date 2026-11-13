@@ -18,6 +18,7 @@ use cli/process
 use cli/strings
 use cli/table as cli_table
 use fetch/catalogue_edit
+use fetch/leftover
 use fetch/made_index
 use fetch/made_repo
 use fetch/placing
@@ -52,6 +53,10 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
         return [
             told.Said(code: "no_catalogue", at: "", said: "there is no catalogue `" + folder + catalogue.FILE + "`, so there is nothing to fetch: `heroes add` writes one")
         ]
+
+    # What a killed run left is undone first, before any placed tree is
+    # asked (defect 2453, `fetch/leftover.hero`).
+    leftover.recovered(folder)
     begun = staging.begun(folder)
 
     if begun.is_err()
@@ -60,7 +65,7 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
     root = transport.root_of(tools, folder: verb_place.dot_if_empty(folder), scratch: ledger.folder)
 
     if root.is_err()
-        staging.ended(ledger)
+        staging.ended(@ledger)
         return [told.refused(failure: verb_place.unit_of(root), at: "")]
     text = read_file(c.file).default("")
     out: [told.Said] @= []
@@ -95,7 +100,7 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
 
     # Every tree fetch places is one its catalogue names, so the run is never
     # taken back: it ends, and what it placed stays.
-    staging.ended(ledger)
+    staging.ended(@ledger)
     return out
 
 # What the build refuses a fetched package's catalogue for, the rule's words

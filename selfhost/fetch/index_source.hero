@@ -123,15 +123,15 @@ function versions(tools: transport.Tools, index: address.Address, name: str, scr
 # stands in. `index` is the catalogue's `index` line, "" for the Heroes index.
 function fetched(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
     at = address.judged(written_index(index), root: root)?
-    s = staging.opened(program)?
+    s: staging.Staging @= staging.opened(program)?
     done = written(tools, index: at, name: e.name, version: e.version, sum: e.sum, s: s)
 
     if done.is_err()
-        staging.dropped(s)
+        staging.dropped(@s)
         return fail(code: code_of(done), msg: why(done))
     return staging.placed(
         @ledger,
-        s,
+        @s,
         key: placed.key(e, index: index),
         sum: e.sum,
         what: "`" + e.name + "` " + e.version + " from the index `" + at.written + "`"
@@ -357,7 +357,7 @@ test "an index lists a package's versions with their sums, and places a version 
         root: m.root,
         index: "file://../idx"
     ).must()
-    staging.ended(ledger)
+    staging.ended(@ledger)
     assert at == SCRATCH + "/app/heroes.packages/" + placed.key(entry(name: "json", version: "1.4.2", sum: m.sum), index: "file://../idx")
     assert read_file(at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
     assert fingerprint.of(at).must() == m.sum
@@ -371,7 +371,7 @@ test "an index lists a package's versions with their sums, and places a version 
 test "a listing whose sum is not the entry's fetches no file, and a file the index changed is named and places nothing"
     m = index_made()
     wrong = "sha256-" + "0".repeat(64.to_u64().must())
-    s = staging.opened(SCRATCH + "/app/").must()
+    s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
     index = address.judged("file://../idx", root: m.root).must()
 
     match written(transport.path_tools(), index: index, name: "json", version: "1.4.2", sum: wrong, s: s)
@@ -379,7 +379,7 @@ test "a listing whose sum is not the entry's fetches no file, and a file the ind
         .err e => assert e.code == "sum_mismatch"
 
     assert !process.path_exists(s.tree + "/parse.hero")
-    staging.dropped(s)
+    staging.dropped(@s)
 
     # One byte appended to a file on the index, as the ffi-pragmatist's
     # tampered site did: the listing still sums to the entry's, the file no
@@ -398,7 +398,7 @@ test "a listing whose sum is not the entry's fetches no file, and a file the ind
             )
 
     assert ledger.landed.len() == 0
-    staging.ended(ledger)
+    staging.ended(@ledger)
     assert !process.path_exists(SCRATCH + "/app/heroes.packages/" + placed.key(entry(name: "json", version: "1.4.2", sum: m.sum), index: "file://../idx"))
     assert !process.remove_tree(SCRATCH).is_err()
 
@@ -419,14 +419,14 @@ test "a listing naming a place above the package, out of order or twice is refus
     for listing in hostile
         assert !process.mkdir_all(SCRATCH + "/idx/evil/1.0.0/files").is_err()
         assert !write_file(path: SCRATCH + "/idx/evil/1.0.0/list", text: listing).is_err()
-        s = staging.opened(SCRATCH + "/app/").must()
+        s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
         match written(transport.path_tools(), index: index, name: "evil", version: "1.0.0", sum: "sha256-" + hero_text_sha256(text: listing), s: s)
             .ok _  => assert false
             .err e => assert e.code == "name_refused" || e.code == "index_refused"
 
         assert process.walk(s.tree).must().files.len() == 0
-        staging.dropped(s)
+        staging.dropped(@s)
 
     assert !process.path_exists(SCRATCH + "/app/escaped.txt")
     assert !process.path_exists(SCRATCH + "/escaped.txt")

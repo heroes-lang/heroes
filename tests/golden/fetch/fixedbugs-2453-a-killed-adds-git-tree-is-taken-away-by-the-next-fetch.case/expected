@@ -1,0 +1,7 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+stderr:
+heroes.toml:
+heroes.packages:
+(none)

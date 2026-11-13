@@ -1,0 +1,14 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed strings 1.0.0 <work>/app/heroes.packages/strings@1.0.0-75b94b5fe2af1946
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2453-a-folder-no-lock-proves-dead-is-never-removed.case/idx"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06"
+heroes.packages:
+.fetching-1-1
+strings@1.0.0-75b94b5fe2af1946

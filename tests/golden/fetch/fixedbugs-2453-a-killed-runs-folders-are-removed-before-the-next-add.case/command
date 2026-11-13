@@ -1,0 +1,1 @@
+add strings --index file://../../../../../tests/golden/fetch/fixedbugs-2453-a-killed-runs-folders-are-removed-before-the-next-add.case/idx -C <work>/app

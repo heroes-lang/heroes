@@ -1,0 +1,14 @@
+$ heroes add strings --index file://../../../../../tests/golden/fetch/fixedbugs-2453-a-killed-runs-folders-are-removed-before-the-next-add.case/idx -C <work>/app
+exit 0
+stdout:
+added strings 1.0.0
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2453-a-killed-runs-folders-are-removed-before-the-next-add.case/idx"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06"
+heroes.packages:
+strings@1.0.0-74022d36d8e53486

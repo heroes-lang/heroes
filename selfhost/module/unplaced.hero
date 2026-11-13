@@ -14,8 +14,10 @@
 # question, where the program stands in its repository, is asked after the
 # build has already failed. Git writes its answer into a staging folder
 # beside the placed trees, as it does for the verb (`fetch/staging.hero`),
-# removed at once, with `heroes.packages/` where this question made it and
-# nothing else stands in it (defect 2434: an author's own empty one stays).
+# its lock beside it (defect 2453), removed at once, with `heroes.packages/`
+# where this question made it and nothing else stands in it (defect 2434: an
+# author's own empty one stays). What a killed run left there was undone
+# before discovery asked any tree (`module/packages.hero`), never here.
 
 use cli/process
 use cli/strings
@@ -43,16 +45,13 @@ function refusal(package: reached.Package, e: catalogue.Entry, index: str, progr
 
     if !strings.starts_with(text: written, prefix: "file://")
         return ok()
-    scratch = staging.begun(program)
+    begun = staging.begun(program)
 
-    if scratch.is_err()
+    if begun.is_err()
         return ok()
-    root = transport.root_of(
-        transport.path_tools(),
-        folder: verb_place.dot_if_empty(program),
-        scratch: scratch.must().folder
-    )
-    staging.ended(scratch.must())
+    scratch: staging.Ledger @= begun.must()
+    root = transport.root_of(transport.path_tools(), folder: verb_place.dot_if_empty(program), scratch: scratch.folder)
+    staging.ended(@scratch)
 
     match root
         .err asked => return fail(code: asked.code, msg: asked.msg)

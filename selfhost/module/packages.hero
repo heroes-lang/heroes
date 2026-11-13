@@ -28,6 +28,7 @@
 # it names, a folder of the author's own, and told as unverified (R6).
 
 use cli/process
+use fetch/leftover
 use module/catalogue
 use module/fingerprint
 use module/path_entries
@@ -93,7 +94,13 @@ function reach(@b: Book, alias: str) -> i64
         if b.reached[at].alias == alias
             return at
 
+    # What a killed run left under `heroes.packages/` is undone once, before
+    # any placed tree is asked (defect 2453, `fetch/leftover.hero`), so the
+    # build reads the folder as the program's runs left it, never a killed
+    # run's half; never inside a run's own beginning, where the sitting's
+    # compiler-engineer measured a false `package_unread` (its finding A-3).
     if !b.asked
+        leftover.recovered(b.opened)
         b.program @ catalogue.read(opened: b.opened, named: b.named)
         b.asked @ true
     found = catalogue.entry(b.program, name: alias)

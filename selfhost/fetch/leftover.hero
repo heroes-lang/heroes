@@ -1,0 +1,301 @@
+# What a killed run left under the program's `heroes.packages/`, undone by
+# the next run before it asks any placed tree (defect 2453; panel 246's R1,
+# ratified 2026-11-12; design.md §1.12).
+#
+# `heroes add`, `heroes fetch` and a build asking git where the program
+# stands (`module/unplaced.hero`) work in folders of their own,
+# `heroes.packages/.fetching-<pid>-<serial>/`, each with its lock file
+# beside it (`fetch/staging.hero`, `fetch/run_lock.hero`). A run killed with
+# `kill -9` ends nothing: its folders stay, a tree it placed may stand with no
+# catalogue naming it (an `add` killed before it wrote the catalogue), and a
+# `heroes.packages/` it made may stay, empty. Its locks do not: the system
+# released them when it died. So a later run that takes a folder's lock knows
+# the run that made it is dead, whatever process its number names since, and
+# undoes what the run's ledger names, as a refused run undoes itself
+# (`staging.undone`): each tree it placed taken away, the last first, while it
+# still sums to what was placed; then the folder removed while the lock is
+# held, and the lock. A tree that no longer sums was changed since it was
+# placed, and the change is the author's (panel 246's R2): it stays.
+#
+# **Never a folder no lock proves dead**: one whose lock another run holds,
+# alive; one with no lock file beside it, which a compiler older than the
+# lock left, whose `replaced-<n>` may be the only copy of an author's edit no
+# ledger names; one on a file system that keeps no lock. Each stands as it
+# is, and a run that cannot be proved dead is never undone.
+#
+# **Once, before discovery asks a placed tree**: from `packages.reach` for a
+# build, and from `heroes add` and `heroes fetch` before their run begins;
+# never inside `staging.begun`, where the sitting's compiler-engineer measured
+# a build telling `package_unread` about a tree the recovery had just put
+# back (its finding A-3).
+
+use cli/files
+use cli/process
+use cli/strings
+use fetch/run_lock
+use fetch/staging
+use module/fingerprint
+
+# `lent`: each call reads the path while it runs and keeps nothing of it.
+extern "hero_os.h"
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+    function hero_dir_release()
+    constant HERO_OS_OK: i64
+
+# How a run's folder and its lock file open their names.
+constant PREFIX: str
+    ".fetching-"
+
+# Every folder a dead run left under the program `program`'s
+# `heroes.packages/` ("" for the current folder, or a path ending with `/`),
+# undone and removed with its lock file; then `heroes.packages/` itself where
+# a dead run made it and nothing stands in it.
+function recovered(program: str)
+    home = program + staging.PLACED
+
+    if !process.is_directory(home)
+        return
+    made: bool @= false
+
+    for name in names(home)
+        if undone(program: program, folder: home + "/" + name)
+            made @ true
+
+    if made
+        _ = process.remove_file(home).is_err()
+
+# The runs' names directly in `home`, each once, sorted: a folder's, and a
+# lock file's without its `.lock`, since a run killed before its folder was
+# made, or after it was removed, leaves its lock file alone.
+function names(home: str) -> [str]
+    out: [str] @= []
+
+    for want in [0, 1]
+        found = hero_dir_scan(root: home.cstr(), want: want, recursive: 0)
+
+        if found >= 0
+            for at in range(from: 0, to: found)
+                status: i64 @= 0
+                marks: i64 @= 0
+                name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
+
+                if status == HERO_OS_OK && strings.starts_with(text: name, prefix: PREFIX)
+                    bare: str @= name
+
+                    if strings.ends_with(text: name, suffix: run_lock.SUFFIX)
+                        bare @ name.slice(from: 0, to: name.len() - run_lock.SUFFIX.len())
+
+                    if !listed(out, name: bare)
+                        out @ out.push(bare)
+
+            hero_dir_release()
+
+    return sort(out)
+
+function listed(found: [str], name: str) -> bool
+    for one in found
+        if one == name
+            return true
+
+    return false
+
+# One run's folder undone and removed where its lock is free, its lock file
+# with it; whether its ledger says the run made `heroes.packages/`. A folder
+# that could not be removed keeps its lock file, for the next run.
+function undone(program: str, folder: str) -> bool
+    taken: run_lock.Taken @= run_lock.took(path: folder + run_lock.SUFFIX, fresh: false)
+
+    if taken.answer != .held
+        run_lock.let_go(@taken, keep: false)
+        return false
+    rows = split(read_file(folder + "/" + staging.LEDGER).default(""), byte: 10)
+    at: i64 @= rows.len() - 1
+
+    while at >= 1
+        taken_away(program: program, folder: folder, row: rows[at], index: at)
+        at @ at - 1
+
+    made = rows[0] == "found 0"
+    _ = process.remove_file(folder + "/" + staging.LEDGER).is_err()
+    _ = process.remove_tree(folder).is_err()
+    run_lock.let_go(@taken, keep: files.entry(folder) != .absent)
+    return made
+
+# One line of a dead run's ledger taken back: the tree it placed at its key,
+# where it still sums to what was placed, moved into the run's folder, which
+# goes with it, as `taken-<line>`, a name no run's own `undone-<n>` holds. A
+# line that is not a key and a sum, a key that names anything but a folder in
+# `heroes.packages/`, and a tree changed since, stay.
+function taken_away(program: str, folder: str, row: str, index: i64)
+    parts = split(row, byte: 9)
+
+    if parts.len() != 2 || !plain(parts[0])
+        return
+    at = program + staging.PLACED + "/" + parts[0]
+
+    if files.entry(at) == .directory && fingerprint.of(at).default("") == parts[1]
+        _ = process.rename_over(from: at, to: folder + "/taken-" + index.to_str()).is_err()
+
+# A key as a placed tree's folder is named, `<name>@<version>-<key>`: a name
+# in `heroes.packages/`, never a path out of it or one of the runs' own.
+function plain(key: str) -> bool
+    if key.len() == 0 || key[0] == '.'
+        return false
+
+    for at in range(from: 0, to: key.len())
+        if key[at] == '/' || key[at] == '\\'
+            return false
+
+    return true
+
+# `text` cut at every `byte`, the piece after the last one kept, so a text
+# ending with the byte ends with an empty piece and an empty text is one.
+function split(text: str, byte: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == byte
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+
+    out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-fetch-leftover/"
+
+# A run's folder as a kill leaves it: its lock file beside it, which nothing
+# holds once its run has died, and its ledger, "" for none.
+function planted(folder: str, ledger: str)
+    process.mkdir_all(folder + "/tree").must()
+    write_file(path: folder + run_lock.SUFFIX, text: "").must()
+
+    if ledger.len() > 0
+        write_file(path: folder + "/" + staging.LEDGER, text: ledger).must()
+
+# The compiler-engineer's phases (a) and (e): a `check` or a `fetch` killed
+# while git slept leaves its run's folder, a package's staging folder half
+# written, and a lock file alone where it died before its folder was made.
+# Their number is 1, a process alive on every machine, which keeps nothing:
+# only a lock says a run lives.
+test "what a run killed before it placed anything left is removed, lock files and all (defect 2453)"
+    program = SCRATCH + "a/"
+    home = program + staging.PLACED
+    assert !process.remove_tree(program).is_err()
+    planted(folder: home + "/.fetching-1-1", ledger: "found 0\n")
+    planted(folder: home + "/.fetching-1-2", ledger: "")
+    write_file(path: home + "/.fetching-1-2/tree/half.hero", text: "function h() -> i64\n").must()
+    write_file(path: home + "/.fetching-1-3" + run_lock.SUFFIX, text: "").must()
+    assert names(home) == [".fetching-1-1", ".fetching-1-2", ".fetching-1-3"]
+    recovered(program)
+
+    # The dead run made `heroes.packages/` (`found 0`): it goes, empty.
+    assert !process.path_exists(home)
+
+    # One the dead run found (`found 1`) stays, empty.
+    planted(folder: home + "/.fetching-1-1", ledger: "found 1\n")
+    recovered(program)
+    assert process.is_directory(home)
+    assert names(home).len() == 0
+    assert !process.remove_tree(program).is_err()
+
+# Phase (c): an `add` killed once a tree was placed, before it wrote the
+# catalogue, left a tree no catalogue names; the next run takes it away, the
+# last first, while it is the tree the ledger says was placed. A tree changed
+# since is the author's, and stays (panel 246's R2).
+test "a tree a killed run placed is taken away, and one changed since stays (defect 2453)"
+    program = SCRATCH + "c/"
+    home = program + staging.PLACED
+    text = "function x() -> i64\n    return 1\n"
+    assert !process.remove_tree(program).is_err()
+
+    for key in ["json@1.0.0-k", "yaml@1.0.0-k"]
+        process.mkdir_all(home + "/" + key).must()
+        write_file(path: home + "/" + key + "/x.hero", text: text).must()
+
+    sum = fingerprint.of(home + "/json@1.0.0-k").must()
+    write_file(path: home + "/yaml@1.0.0-k/x.hero", text: text + "# the author edited this\n").must()
+    planted(folder: home + "/.fetching-1-1", ledger: "found 0\njson@1.0.0-k\t" + sum + "\nyaml@1.0.0-k\t" + sum + "\n")
+    recovered(program)
+    assert !process.path_exists(home + "/json@1.0.0-k")
+    assert read_file(home + "/yaml@1.0.0-k/x.hero").must() == text + "# the author edited this\n"
+    assert names(home).len() == 0
+    assert !process.remove_tree(program).is_err()
+
+# A ledger is a file anything can write: a line that is no key and sum, or a
+# key naming a path out of `heroes.packages/` or a run's own folder, moves
+# nothing.
+test "a ledger line naming no placed tree takes nothing away (defect 2453)"
+    program = SCRATCH + "lines/"
+    home = program + staging.PLACED
+    assert !process.remove_tree(program).is_err()
+    process.mkdir_all(program + "escape").must()
+    write_file(path: program + "escape/x.hero", text: "mine\n").must()
+    sum = fingerprint.of(program + "escape").must()
+    planted(folder: home + "/.fetching-1-2", ledger: "")
+    planted(
+        folder: home + "/.fetching-1-1",
+        ledger: "found 1\n../escape\t" + sum + "\n.fetching-1-2\t" + sum + "\nno tab here\n\n"
+    )
+    recovered(program)
+    assert read_file(program + "escape/x.hero").must() == "mine\n"
+    assert names(home).len() == 0
+    assert !plain("") && !plain("..") && !plain("a/b") && !plain("a\\b") && plain("json@1.0.0-k")
+    assert !process.remove_tree(program).is_err()
+
+# Never a folder no lock proves dead: one a compiler older than the lock left,
+# with no lock file, whose `replaced-0` is the only copy of an author's edit
+# (the loss the sitting measured under a reused number); and one whose run
+# lives, phase (f), its lock held, here by this process as another run's
+# would be by its own.
+test "a folder with no lock file, or whose lock is held, stands as it is (defect 2453)"
+    program = SCRATCH + "alive/"
+    home = program + staging.PLACED
+    assert !process.remove_tree(program).is_err()
+    process.mkdir_all(home + "/.fetching-1-1/replaced-0").must()
+    write_file(path: home + "/.fetching-1-1/replaced-0/a.hero", text: "the only copy\n").must()
+    process.mkdir_all(home + "/json@1.0.0-k").must()
+    write_file(path: home + "/json@1.0.0-k/x.hero", text: "placed\n").must()
+    sum = fingerprint.of(home + "/json@1.0.0-k").must()
+    live: run_lock.Taken @= run_lock.took(path: home + "/.fetching-2-1" + run_lock.SUFFIX, fresh: true)
+    assert live.answer == .held
+    process.mkdir_all(home + "/.fetching-2-1/tree").must()
+    write_file(path: home + "/.fetching-2-1/" + staging.LEDGER, text: "found 1\njson@1.0.0-k\t" + sum + "\n").must()
+    recovered(program)
+    assert read_file(home + "/.fetching-1-1/replaced-0/a.hero").must() == "the only copy\n"
+    assert process.is_directory(home + "/.fetching-2-1")
+    assert read_file(home + "/json@1.0.0-k/x.hero").must() == "placed\n"
+
+    # The live run dies, its lock file kept as a kill keeps it: the next run
+    # undoes it, and the folder with no lock still stands.
+    run_lock.let_go(@live, keep: true)
+    recovered(program)
+    assert !process.path_exists(home + "/.fetching-2-1")
+    assert !process.path_exists(home + "/.fetching-2-1" + run_lock.SUFFIX)
+    assert !process.path_exists(home + "/json@1.0.0-k")
+    assert names(home) == [".fetching-1-1"]
+    assert !process.remove_tree(program).is_err()
+
+# A refused run whose own taking back stopped half way (`staging.undone`)
+# kept its folder and its lock file, the tree it took back waiting there as
+# `undone-1`; the next run finishes it, its own names apart from the run's.
+test "a refused run's taking back left half done is finished by the next run (defect 2453)"
+    program = SCRATCH + "half/"
+    home = program + staging.PLACED
+    text = "function x() -> i64\n    return 1\n"
+    assert !process.remove_tree(program).is_err()
+    process.mkdir_all(home + "/one@1.0.0-k").must()
+    write_file(path: home + "/one@1.0.0-k/x.hero", text: text).must()
+    sum = fingerprint.of(home + "/one@1.0.0-k").must()
+    planted(folder: home + "/.fetching-1-1", ledger: "found 1\none@1.0.0-k\t" + sum + "\ntwo@1.0.0-k\t" + sum + "\n")
+    process.mkdir_all(home + "/.fetching-1-1/undone-1").must()
+    write_file(path: home + "/.fetching-1-1/undone-1/x.hero", text: text).must()
+    recovered(program)
+    assert !process.path_exists(home + "/one@1.0.0-k")
+    assert names(home).len() == 0
+    assert process.is_directory(home)
+    assert !process.remove_tree(program).is_err()

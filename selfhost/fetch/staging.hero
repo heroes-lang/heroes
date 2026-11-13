@@ -12,6 +12,16 @@
 # (`<name>@<version>-<key>`, `module/placed.hero`) is ever its name, and a
 # fetch cut short leaves a folder no build reads.
 #
+# **Each folder has a lock beside it** (defect 2453; panel 246's R1, ratified
+# 2026-11-12): `<folder>.lock`, taken before the folder is made and given back
+# after it is removed (`fetch/run_lock.hero`), which tells a later run
+# whether the run that made the folder lives, as the number in its name
+# cannot once the system has given that number to another process. **A name
+# that stands is never removed** (`heroes new`'s rule, `cli/stub.hero`): it is
+# a killed run's, and the next serial is taken. What a killed run left is
+# undone by the next run, once, before it asks any placed tree
+# (`fetch/leftover.hero`), never here.
+#
 # **Into place**: the tree is fingerprinted where it was written, from the
 # disk (`module/fingerprint.hero`), so two names a volume merged into one, or a
 # byte a write lost, read as a sum that does not match and nothing moves; then
@@ -22,18 +32,31 @@
 # with the files named (`fetch/edited.hero`) and nothing moves. Until then the
 # standing tree was moved aside and dropped when the run ended.
 #
-# **A run keeps a ledger of what it placed** (defect 2434), below: a run that
-# is refused takes away every tree it placed. Until then a refused `heroes add`
-# left the trees it had placed, no catalogue naming them.
+# **A run keeps a ledger of what it placed** (defect 2434), below, in memory
+# and in its own folder on disk, each tree's line written before its rename:
+# a run that is refused takes away every tree it placed, and a run killed
+# before it ended is undone from the disk by the next.
 
 use cli/files
 use cli/process
 use cli/strings
 use fetch/edited
+use fetch/run_lock
 use module/fingerprint
 
 constant PLACED: str
     "heroes.packages"
+
+# The file in a run's folder that holds its ledger.
+constant LEDGER: str
+    "ledger"
+
+# How many names one opening tries: a name is passed over only where a lock
+# file or a folder of it stands, which a run of this process's number left,
+# killed, or a run alive in it holds, a handful at most; past this many the
+# placement folder is no place to stage, and the run is refused.
+constant TRIES: i64
+    1000
 
 record Staging
     # The staging folder, from where the program's folder is opened.
@@ -42,28 +65,73 @@ record Staging
     # Where the package's tree is written, inside `folder`.
     tree: str
 
+    # The lock beside `folder`, held until the folder is gone.
+    lock: run_lock.Taken
+
 # A new staging folder beside the placed trees of the program whose folder is
-# `program`: "" for the current one, or a path ending with `/`.
+# `program`: "" for the current one, or a path ending with `/`. Only a name
+# where no folder stands is tried, and a folder is made only under its lock,
+# taken first and fresh: so a lock file never stands beside a folder its run
+# did not make, and a later run that takes a dead run's lock undoes only
+# what that run made. On a file system that keeps no lock the folder is made
+# with none, and no later run undoes it.
 function opened(program: str) -> Staging?
-    folder = program + PLACED + "/.fetching-" + process.pid().to_str() + "-" + process.serial().to_str()
-    written(process.remove_tree(folder))?
-    written(process.mkdir_all(folder + "/tree"))?
-    return ok(Staging(folder: folder, tree: folder + "/tree"))
+    home = program + PLACED
+    written(process.mkdir_all(home))?
+    tried: i64 @= 0
+
+    while tried < TRIES
+        tried @ tried + 1
+        folder = home + "/.fetching-" + process.pid().to_str() + "-" + process.serial().to_str()
+
+        # A folder of this name with no lock of this run's beside it is a
+        # killed run's, or one a compiler older than the lock made: never
+        # this run's, and never removed.
+        if files.entry(folder) == .absent
+            taken: run_lock.Taken @= run_lock.took(path: folder + run_lock.SUFFIX, fresh: true)
+
+            match taken.answer
+                .held | .lockless =>
+                    made = process.mkdir_all(folder + "/tree")
+
+                    if !made.is_err()
+                        return ok(Staging(folder: folder, tree: folder + "/tree", lock: taken))
+                    _ = process.remove_tree(folder).is_err()
+                    run_lock.let_go(@taken, keep: files.entry(folder) != .absent)
+                    return fail(code: "cannot_place", msg: why(made))
+                .another => run_lock.let_go(@taken, keep: false)
+                .absent =>
+                    # The placement folder went between its making and the
+                    # lock, a run that made it removing it empty: made again.
+                    run_lock.let_go(@taken, keep: false)
+                    written(process.mkdir_all(home))?
+                .failed =>
+                    said = taken.said
+                    run_lock.let_go(@taken, keep: false)
+                    return fail(
+                        code: "cannot_place",
+                        msg: "the lock `" + folder + run_lock.SUFFIX + "` cannot be made" + said
+                    )
+
+    return fail(
+        code: "cannot_place",
+        msg: "no staging folder could be made under `" + home + "`: " + TRIES.to_str() + " names were each held by another run or stood already"
+    )
 
 # The staged tree held to `sum` and moved into place under `key` in the
 # program the run `ledger` is for, and written into the ledger; `what` names
 # the tree in a refusal ("`json` 1.4.2 from the index"). A tree standing at
 # the key is kept where it sums to `sum` and never replaced where it does not.
 # The staging folder is removed whichever way it ends.
-function placed(@ledger: Ledger, s: Staging, key: str, sum: str, what: str) -> str?
+function placed(@ledger: Ledger, @s: Staging, key: str, sum: str, what: str) -> str?
     got = fingerprint.of(s.tree)
 
     if got.is_err()
-        dropped(s)
+        dropped(@s)
         return fail(code: "cannot_place", msg: what + " was written and cannot be read back whole: " + reason(got))
 
     if got.must() != sum
-        dropped(s)
+        dropped(@s)
         return fail(
             code: "sum_mismatch",
             msg: what + " sums to `" + got.must() + "`, and the catalogue's `sum` for it is `" + sum + "`: the package is not the one its entry was written for, and nothing was placed"
@@ -72,43 +140,58 @@ function placed(@ledger: Ledger, s: Staging, key: str, sum: str, what: str) -> s
 
     if files.entry(at) != .absent
         if fingerprint.of(at).default("") == sum
-            dropped(s)
+            dropped(@s)
             return ok(at)
         told = edited.differences(placed: at, fetched: s.tree)
-        dropped(s)
+        dropped(@s)
         return fail(code: "sum_mismatch", msg: edited.refusal(at: at, what: what, changes: told))
+
+    # The ledger on disk names the tree before it moves, so a run killed
+    # after the rename is undone by the next (`fetch/leftover.hero`).
+    text = ledger.text + key + "\t" + sum + "\n"
+    kept = write_file(path: ledger.folder + "/" + LEDGER, text: text)
+
+    if kept.is_err()
+        dropped(@s)
+        return fail(code: "cannot_place", msg: "the run's ledger cannot be written: " + why(kept))
     landed = process.rename_over(from: s.tree, to: at)
 
     if landed.is_err()
+        _ = write_file(path: ledger.folder + "/" + LEDGER, text: ledger.text).is_err()
+
         # Another run placed this very tree in the instant since it was
         # asked: the same tree, kept, as above.
         if fingerprint.of(at).default("") == sum
-            dropped(s)
+            dropped(@s)
             return ok(at)
-        dropped(s)
+        dropped(@s)
         return fail(code: "cannot_place", msg: "the tree cannot be moved to `" + at + "`: " + why(landed))
-    ledger.landed @ ledger.landed.push(Landed(at: at))
-    dropped(s)
+    ledger.text @ text
+    ledger.landed @ ledger.landed.push(Landed(at: at, sum: sum))
+    dropped(@s)
     return ok(at)
 
-# The staging folder removed, whatever stands in it.
-function dropped(s: Staging)
+# The staging folder removed, whatever stands in it, while its lock is held,
+# and then the lock given back; a folder that could not be removed keeps its
+# lock file, so the next run, finding the lock free, removes it.
+function dropped(@s: Staging)
     _ = process.remove_tree(s.folder).is_err()
+    run_lock.let_go(@s.lock, keep: files.entry(s.folder) != .absent)
 
 ## What one run placed, taken back where the run is refused
 
 # What one run of a verb placed (defect 2434): every tree it moved into
-# place, in order; and whether `heroes.packages/` stood when the run began. A
-# refused `heroes add` writes no catalogue, so a tree it placed would be one
-# no catalogue names: such a run takes back what it placed (`undone`) and
-# leaves the program's folder as it found it. A run that ends keeps what it
-# placed (`ended`).
+# place, in order, each with the sum it was placed at; and whether
+# `heroes.packages/` stood when the run began. A refused `heroes add` writes
+# no catalogue, so a tree it placed would be one no catalogue names: such a
+# run takes back what it placed (`undone`) and leaves the program's folder as
+# it found it. A run that ends keeps what it placed (`ended`).
 record Ledger
     # The program's folder: "" for the current one, or a path ending with `/`.
     program: str
 
     # The run's own staging folder, where the transport may write the files
-    # it asks git or curl for.
+    # it asks git or curl for, and where the ledger is written.
     folder: str
 
     # Whether `heroes.packages/` stood when the run began, so that only a
@@ -116,21 +199,39 @@ record Ledger
     found: bool
     landed: [Landed]
 
-# One tree a run moved into place.
+    # The lock beside `folder`, held until the run ends.
+    lock: run_lock.Taken
+
+    # The ledger as its file holds it: `found 0` or `found 1`, then one line
+    # a tree placed, its key and its sum between a tab.
+    text: str
+
+# One tree a run moved into place, and the sum it was placed at.
 record Landed
     at: str
+    sum: str
 
-# A run begun for the program whose folder is `program`.
+# A run begun for the program whose folder is `program`, its ledger written.
 function begun(program: str) -> Ledger?
     found = process.is_directory(program + PLACED)
-    s = opened(program)?
+    s: Staging @= opened(program)?
+    text: str @= "found 0\n"
+
+    if found
+        text @ "found 1\n"
+    kept = write_file(path: s.folder + "/" + LEDGER, text: text)
+
+    if kept.is_err()
+        dropped(@s)
+        return fail(code: "cannot_place", msg: "the run's ledger cannot be written: " + why(kept))
     none: [Landed] = []
-    return ok(Ledger(program: program, folder: s.folder, found: found, landed: none))
+    return ok(Ledger(program: program, folder: s.folder, found: found, landed: none, lock: s.lock, text: text))
 
 # What the run `ledger` placed taken back, the last first; then the run
 # ended. "" where every step held; else what could not be taken back, said
-# for the refusal's words, and the run's folder kept.
-function undone(ledger: Ledger) -> str
+# for the refusal's words, and the run's folder and its lock file kept, its
+# ledger naming every tree, so the next run takes back what this could not.
+function undone(@ledger: Ledger) -> str
     left: [str] @= []
     at: i64 @= ledger.landed.len() - 1
 
@@ -143,22 +244,23 @@ function undone(ledger: Ledger) -> str
         at @ at - 1
 
     if left.len() > 0
+        run_lock.let_go(@ledger.lock, keep: true)
         return left.join("; ")
-    ended(ledger)
+    ended(@ledger)
     return ""
 
-# The run `ledger` ended: its folder removed with what it took back, and
-# `heroes.packages/` where this run made it and nothing stands in it, so a
-# run that placed nothing leaves the program's folder as it found it.
-function ended(ledger: Ledger)
+# The run `ledger` ended: its ledger removed first, so a run killed while its
+# folder goes leaves no line a later run would take back; then its folder,
+# with what it took back, while its lock is held; then the lock; and
+# `heroes.packages/` where this run made it and nothing stands in it, removed
+# as a folder alone, so a lock or a folder another run has made since stays.
+function ended(@ledger: Ledger)
+    _ = process.remove_file(ledger.folder + "/" + LEDGER).is_err()
     _ = process.remove_tree(ledger.folder).is_err()
+    run_lock.let_go(@ledger.lock, keep: files.entry(ledger.folder) != .absent)
 
     if !ledger.found
-        folder = ledger.program + PLACED
-        walked = process.walk(folder)
-
-        if !walked.is_err() && walked.must().files.len() == 0 && walked.must().unnamed.len() == 0
-            _ = process.remove_tree(folder).is_err()
+        _ = process.remove_file(ledger.program + PLACED).is_err()
 
 # A failure of the machine's, a folder that cannot be made or removed, told as
 # what could not be placed.
@@ -180,39 +282,47 @@ function why(failed: ()?) -> str
 ## Tests
 
 # A program's folder under `build/`: the staged tree held to its sum, moved
-# into place under its key, and nothing left of the staging folder either way.
-test "a staged tree moves into place only at its sum, and leaves no staging folder"
+# into place under its key, and nothing left of the staging folder or its
+# lock either way.
+test "a staged tree moves into place only at its sum, and leaves no staging folder and no lock"
     program = "build/selftest-fetch-staging/"
     assert !process.remove_tree(program).is_err()
     assert !process.mkdir_all(program + "pub").is_err()
     assert !write_file(path: program + "pub/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
     sum = fingerprint.of(program + "pub").must()
     ledger: Ledger @= begun(program).must()
+    assert read_file(ledger.folder + "/" + LEDGER).must() == "found 0\n"
+    assert process.path_exists(ledger.folder + run_lock.SUFFIX)
 
     # A sum that is not the tree's moves nothing, and says both.
-    s = opened(program).must()
+    s: Staging @= opened(program).must()
     assert strings.starts_with(text: s.folder, prefix: program + "heroes.packages/.fetching-")
+    assert process.path_exists(s.folder + run_lock.SUFFIX)
     assert !write_file(path: s.tree + "/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    folder = s.folder
 
-    match placed(@ledger, s, key: "json@1.0.0-k", sum: "sha256-" + "0".repeat(64.to_u64().must()), what: "`json` 1.0.0")
+    match placed(@ledger, @s, key: "json@1.0.0-k", sum: "sha256-" + "0".repeat(64.to_u64().must()), what: "`json` 1.0.0")
         .ok _ => assert false
         .err e =>
             assert e.code == "sum_mismatch"
             assert e.msg == "`json` 1.0.0 sums to `" + sum + "`, and the catalogue's `sum` for it is `sha256-" + "0".repeat(64.to_u64().must()) + "`: the package is not the one its entry was written for, and nothing was placed"
 
     assert !process.path_exists(program + "heroes.packages/json@1.0.0-k")
-    assert !process.path_exists(s.folder)
+    assert !process.path_exists(folder)
+    assert !process.path_exists(folder + run_lock.SUFFIX)
     assert ledger.landed.len() == 0
 
-    # At its sum it lands.
-    again = opened(program).must()
+    # At its sum it lands, and the ledger on disk names it.
+    again: Staging @= opened(program).must()
     assert !write_file(path: again.tree + "/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
-    assert placed(@ledger, again, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == program + "heroes.packages/json@1.0.0-k"
+    assert placed(@ledger, @again, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == program + "heroes.packages/json@1.0.0-k"
     assert read_file(program + "heroes.packages/json@1.0.0-k/parse.hero").must() == "function x() -> i64\n    return 1\n"
-    assert !process.path_exists(again.folder)
-    assert ledger.landed == [Landed(at: program + "heroes.packages/json@1.0.0-k")]
-    ended(ledger)
-    assert !process.path_exists(ledger.folder)
+    assert ledger.landed == [Landed(at: program + "heroes.packages/json@1.0.0-k", sum: sum)]
+    assert read_file(ledger.folder + "/" + LEDGER).must() == "found 0\njson@1.0.0-k\t" + sum + "\n"
+    run = ledger.folder
+    ended(@ledger)
+    assert !process.path_exists(run)
+    assert !process.path_exists(run + run_lock.SUFFIX)
     assert process.walk(program + "heroes.packages").must().files == [program + "heroes.packages/json@1.0.0-k/parse.hero"]
     assert !process.remove_tree(program).is_err()
 
@@ -228,20 +338,20 @@ test "a tree standing at its key is kept where it sums and never replaced where 
     sum = fingerprint.of(program + "pub").must()
     at = program + "heroes.packages/json@1.0.0-k"
     ledger: Ledger @= begun(program).must()
-    first = opened(program).must()
+    first: Staging @= opened(program).must()
     assert !write_file(path: first.tree + "/parse.hero", text: text).is_err()
-    assert placed(@ledger, first, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == at
-    same = opened(program).must()
+    assert placed(@ledger, @first, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == at
+    same: Staging @= opened(program).must()
     assert !write_file(path: same.tree + "/parse.hero", text: text).is_err()
-    assert placed(@ledger, same, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == at
+    assert placed(@ledger, @same, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == at
     assert ledger.landed.len() == 1
 
     assert !write_file(path: at + "/parse.hero", text: text + "# the author edited this\n").is_err()
     assert !write_file(path: at + "/notes.txt", text: "mine\n").is_err()
-    edit = opened(program).must()
+    edit: Staging @= opened(program).must()
     assert !write_file(path: edit.tree + "/parse.hero", text: text).is_err()
 
-    match placed(@ledger, edit, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0")
+    match placed(@ledger, @edit, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0")
         .ok _ => assert false
         .err e =>
             assert e.code == "sum_mismatch"
@@ -249,9 +359,8 @@ test "a tree standing at its key is kept where it sums and never replaced where 
 
     assert read_file(at + "/parse.hero").must() == text + "# the author edited this\n"
     assert read_file(at + "/notes.txt").must() == "mine\n"
-    assert !process.path_exists(edit.folder)
     assert ledger.landed.len() == 1
-    ended(ledger)
+    ended(@ledger)
     assert !process.remove_tree(program).is_err()
 
 # Defect 2434: a refused run takes away the trees it placed, the last first;
@@ -266,16 +375,16 @@ test "a run taken back leaves the program's folder as it found it (defect 2434)"
     sum = fingerprint.of(program + "pub").must()
 
     # No `heroes.packages/` before the run: two trees placed and taken back,
-    # and the folder the run made taken away with them.
+    # and the folder the run made taken away with them, its lock among them.
     first: Ledger @= begun(program).must()
 
     for key in ["one@1.0.0-k", "two@1.0.0-k"]
-        staged = opened(program).must()
+        staged: Staging @= opened(program).must()
         assert !write_file(path: staged.tree + "/a.hero", text: text).is_err()
-        assert placed(@first, staged, key: key, sum: sum, what: key).must() == program + "heroes.packages/" + key
+        assert placed(@first, @staged, key: key, sum: sum, what: key).must() == program + "heroes.packages/" + key
 
     assert first.landed.len() == 2
-    assert undone(first) == ""
+    assert undone(@first) == ""
     assert !process.path_exists(program + "heroes.packages")
 
     # A tree an earlier run placed and a tree the author edited stand; the
@@ -285,21 +394,47 @@ test "a run taken back leaves the program's folder as it found it (defect 2434)"
     assert !process.mkdir_all(program + "heroes.packages/one@1.0.0-k").is_err()
     assert !write_file(path: program + "heroes.packages/one@1.0.0-k/a.hero", text: "edited by the author\n").is_err()
     second: Ledger @= begun(program).must()
-    again = opened(program).must()
+    again: Staging @= opened(program).must()
     assert !write_file(path: again.tree + "/a.hero", text: text).is_err()
-    _ = placed(@second, again, key: "three@1.0.0-k", sum: sum, what: "three").must()
-    assert undone(second) == ""
+    _ = placed(@second, @again, key: "three@1.0.0-k", sum: sum, what: "three").must()
+    assert undone(@second) == ""
     assert read_file(program + "heroes.packages/one@1.0.0-k/a.hero").must() == "edited by the author\n"
     assert read_file(program + "heroes.packages/kept@1.0.0-k/a.hero").must() == "kept\n"
     assert process.walk(program + "heroes.packages").must().files.len() == 2
     assert !process.path_exists(program + "heroes.packages/three@1.0.0-k")
-    assert !process.path_exists(second.folder)
 
     # A `heroes.packages/` the run found, empty, is the author's: kept.
     assert !process.remove_tree(program + "heroes.packages").is_err()
     assert !process.mkdir_all(program + "heroes.packages").is_err()
-    third = begun(program).must()
-    ended(third)
+    third: Ledger @= begun(program).must()
+    run = third.folder
+    ended(@third)
     assert process.is_directory(program + "heroes.packages")
-    assert !process.path_exists(third.folder)
+    assert !process.path_exists(run)
+    assert !process.path_exists(run + run_lock.SUFFIX)
+    assert !process.remove_tree(program).is_err()
+
+# Route D (defect 2453): a name that stands, a lock file or a folder a killed
+# run of this process's number left, is never removed, and the next serial
+# is taken.
+test "a staging name that stands is passed over and never removed (defect 2453)"
+    program = "build/selftest-fetch-standing/"
+    assert !process.remove_tree(program).is_err()
+    assert !process.mkdir_all(program + "heroes.packages").is_err()
+    pid = process.pid().to_str()
+
+    # The next serials this process will ask for, each planted: a lock file
+    # alone, then a folder alone, the way two killed runs leave them.
+    serial = process.serial()
+    lock_only = program + "heroes.packages/.fetching-" + pid + "-" + (serial + 1).to_str()
+    folder_only = program + "heroes.packages/.fetching-" + pid + "-" + (serial + 2).to_str()
+    assert !write_file(path: lock_only + run_lock.SUFFIX, text: "").is_err()
+    assert !process.mkdir_all(folder_only + "/replaced-0").is_err()
+    assert !write_file(path: folder_only + "/replaced-0/a.hero", text: "the only copy\n").is_err()
+    s: Staging @= opened(program).must()
+    assert s.folder != lock_only && s.folder != folder_only
+    assert process.path_exists(lock_only + run_lock.SUFFIX)
+    assert read_file(folder_only + "/replaced-0/a.hero").must() == "the only copy\n"
+    assert !process.path_exists(folder_only + run_lock.SUFFIX)
+    dropped(@s)
     assert !process.remove_tree(program).is_err()

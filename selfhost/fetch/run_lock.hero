@@ -1,0 +1,144 @@
+# The lock a run holds beside each folder it works in under the program's
+# `heroes.packages/` (defect 2453; panel 246's R1, ratified 2026-11-12;
+# design.md §1.12): `runtime/parts/lock.c` is the C, and says what it answers
+# that the process number in a folder's name cannot, whether the run that made
+# the folder still lives. This module binds it and names what a take
+# answered, for the run that makes a folder (`fetch/staging.hero`) and for the
+# run that undoes one a killed run left (`fetch/leftover.hero`).
+#
+# **Beside, before and after** (the ffi-pragmatist's layout and order, the
+# one the sitting measured with no live folder lost and no dead one left): a
+# folder's lock is the file `<folder>.lock` beside it, taken before the
+# folder is made and given back after it is removed, the file removed while
+# the lock is still held. A folder whose lock file is kept, unlocked, is one
+# whose run is known to have ended: the next run that takes it undoes what
+# stands there.
+#
+# **Every take is given back once**: the door hands back a block whatever it
+# answered, and `let_go` gives it back. The handle's marks hold the compiler
+# to that: a block nobody gave back is told when the run ends, never a lock
+# held in silence.
+
+use cli/process
+
+# `lent`: the take reads the path while it runs, and keeps its own copy.
+extern "hero_compiler.h"
+    record Lock tag hero_lock
+    function hero_lock_take(path: cstr lent, fresh: i64, @status: i64) -> Lock acquires hero_lock_drop
+    function hero_lock_drop(lock: Lock consumes, keep: i64) -> i64
+    constant HERO_LOCK_HELD: i64
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+    constant HERO_OS_UNSUPPORTED: i64
+
+# The name a folder's lock file has beside the folder.
+constant SUFFIX: str
+    ".lock"
+
+# What a take answered: `held`, this run holds the lock; `another`, another
+# run holds it, alive, or, asked fresh, a file of that name stands already;
+# `lockless`, the file system keeps no lock, and a fresh take made no file;
+# `absent`, no file of that name stands, or its folder does not; `failed`,
+# the system refused, `Taken.said` saying why.
+variant Answer
+    held
+    another
+    lockless
+    absent
+    failed
+
+# A lock asked for and what was answered, given back once by `let_go`;
+# `said` is the system's reason where the answer is `failed`, "" otherwise.
+record Taken
+    lock: Lock
+    answer: Answer
+    said: str
+
+# The lock on the file at `path`: `fresh`, the file made, for a run about to
+# make the folder beside it; otherwise the file a run made, for a run asking
+# whether that run is dead.
+function took(path: str, fresh: bool) -> Taken
+    status: i64 @= 0
+    asked: i64 @= 0
+
+    if fresh
+        asked @ 1
+    lock = hero_lock_take(path: path.cstr(), fresh: asked, status: @status)
+
+    # The reason is read at once, before any other call of the filesystem's
+    # can set it again.
+    if status == HERO_OS_OK
+        return Taken(lock: lock, answer: .held, said: "")
+
+    if status == HERO_LOCK_HELD
+        return Taken(lock: lock, answer: .another, said: "")
+
+    if status == HERO_OS_UNSUPPORTED
+        return Taken(lock: lock, answer: .lockless, said: "")
+
+    if status == HERO_OS_NOT_FOUND
+        return Taken(lock: lock, answer: .absent, said: "")
+    return Taken(lock: lock, answer: .failed, said: process.because())
+
+# The lock `t` given back. Where it holds one, its file is removed first,
+# while still held, unless `keep` asks for the file to stay: a folder that
+# could not be removed keeps its lock file, so the next run, finding the lock
+# free, finishes what this one could not. A removal that fails leaves a lock
+# file nothing holds, which the next run takes and removes.
+function let_go(@t: Taken, keep: bool)
+    asked: i64 @= 0
+
+    if keep
+        asked @ 1
+    _ = hero_lock_drop(lock: t.lock, keep: asked)
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-run-lock"
+
+# The door's answers in one process, as a second run's would be in another:
+# `flock` is the open file's, so a second open of a held file reads it held
+# (`runtime/parts/lock.c`), the same answer another process gets.
+test "a lock is taken fresh once, read as held while it is, and its file goes when it is given back (defect 2453)"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH).is_err()
+    path = SCRATCH + "/.fetching-1-1" + SUFFIX
+    first: Taken @= took(path: path, fresh: true)
+    assert first.answer == .held
+    assert process.path_exists(path)
+
+    # A second fresh take finds the file standing; a take of it as it stands
+    # finds it held.
+    again: Taken @= took(path: path, fresh: true)
+    assert again.answer == .another
+    let_go(@again, keep: false)
+    asked: Taken @= took(path: path, fresh: false)
+    assert asked.answer == .another
+    let_go(@asked, keep: false)
+    assert process.path_exists(path)
+
+    # Given back: the file is gone, and nothing is there to ask.
+    let_go(@first, keep: false)
+    assert !process.path_exists(path)
+    none: Taken @= took(path: path, fresh: false)
+    assert none.answer == .absent
+    let_go(@none, keep: false)
+
+    # Kept: the file stays, and the next take finds its lock free.
+    kept: Taken @= took(path: path, fresh: true)
+    assert kept.answer == .held
+    let_go(@kept, keep: true)
+    assert process.path_exists(path)
+    dead: Taken @= took(path: path, fresh: false)
+    assert dead.answer == .held
+    let_go(@dead, keep: false)
+    assert !process.path_exists(path)
+
+    # A folder that is not there answers absent, fresh or not.
+    lost: Taken @= took(path: SCRATCH + "/nowhere/x" + SUFFIX, fresh: true)
+    assert lost.answer == .absent
+    let_go(@lost, keep: false)
+    assert !process.remove_tree(SCRATCH).is_err()

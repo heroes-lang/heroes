@@ -36,6 +36,7 @@ use fetch/address_form
 use fetch/build_list
 use fetch/catalogue_edit
 use fetch/git_source
+use fetch/leftover
 use fetch/made_index
 use fetch/made_repo
 use fetch/placing
@@ -84,17 +85,19 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
 # own write among them, takes back what the run placed (`fetch/staging.hero`),
 # so a refused `add` leaves the program's folder as it found it; a tree it
 # found placed is never replaced (defect 2493). Until then it left each tree
-# it had placed, which no catalogue named.
+# it had placed, which no catalogue named. What a killed run left is undone
+# first, before any placed tree is asked (defect 2453, `fetch/leftover.hero`).
 function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: catalogue.Catalogue) -> [str]?
     line = index_line(inv, c: c)?
+    leftover.recovered(program)
     ledger: staging.Ledger @= staging.begun(program)?
 
     match placed_and_written(@ledger, inv, tools: tools, program: program, c: c, line: line)
         .ok lines =>
-            staging.ended(ledger)
+            staging.ended(@ledger)
             return ok(lines)
         .err e =>
-            left = staging.undone(ledger)
+            left = staging.undone(@ledger)
 
             if left.len() == 0
                 return fail(code: e.code, msg: e.msg)
@@ -364,7 +367,7 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
         assert told.exit_of(got) == 2
 
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")
-    s = staging.opened(SCRATCH + "/app/").must()
+    s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
     match git_source.own(transport.path_tools(), words: ["--git-dir=" + s.folder + "/git", "rev-parse", "--verify", "-q", "refs/heroes/fetched^{commit}"], out: process.discard(), s: s)
         .ok _ => assert false
@@ -372,7 +375,7 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
             assert e.code == "git_failed"
             assert told.exit_of(e.code) == 2
 
-    staging.dropped(s)
+    staging.dropped(@s)
     assert !process.remove_tree(SCRATCH + "/app/heroes.packages").is_err()
 
     # No tree can be staged under a placement folder that is a file.
