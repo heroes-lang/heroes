@@ -17,17 +17,36 @@
 # from Apple's `libsystem_m.tbd` and `link "pthread"` from glibc's
 # `libc.so.6` pass with no list of the platform's libraries.
 #
+# **And a name a member of the platform layer calls** (defect 2489, the
+# shapes beside feature 2295's archive): the layer is the language's own C,
+# beside the runtime, so a name one of its members calls is judged as a name
+# the runtime calls is, but only for a member the link took, since a program
+# calling no function of `hero_net` links none of its calls of `socket`.
+#
 # Each finding is one line, a MARKER, so a refused link's words carry them to
 # `cli/supplied_words.hero` as any reader of a refusal is carried its words:
-# `heroes-supplied`, the kind (`bound`, `runtime`, `whole`, `own`), the
-# binding's declaration (-1 for none), the name, the file or files (`|`
-# between), the library the program names it for, and the order asked.
+# `heroes-supplied`, the kind (`bound`, `runtime`, `whole`, `own`, or
+# `layer <member>`), the binding's declaration (-1 for none), the name, the
+# file or files (`|` between), the library the program names it for, and
+# the order asked.
 
+use cli/strings
 use cli/supplied_names
 use cli/supplied_read
 
 constant MARK: str
     "heroes-supplied"
+
+# The kind of a layer member's need, the member written after it.
+constant LAYER: str
+    "layer "
+
+# A name a member of the platform layer needs from outside it: the member,
+# its archive's object without `.o`, `hero_net`, and the name
+# (`supplied_kept.layer_needs`, recorded as the archive is made).
+record LayerNeed
+    member: str
+    name: str
 
 # A C function a group binds: its name, its declaration, and the library names
 # its group's `link` or package hands the link.
@@ -100,12 +119,7 @@ function whole_found(bound: [Bound], needs: [str], named: [str], dups: [supplied
     out: [str] @= []
 
     for d in dups
-        libraries: [str] @= []
-
-        for file in d.files
-            for n in supplied_names.naming(file: file, named: named)
-                if !supplied_names.named_in(libraries, name: n)
-                    libraries @ libraries.push(n)
+        libraries = libraries_of(d, named: named)
 
         if libraries.len() < 2
             continue
@@ -125,6 +139,109 @@ function whole_found(bound: [Bound], needs: [str], named: [str], dups: [supplied
             out @ out.push(
                 marker(kind: "runtime", decl: -1, name: d.name, file: joined, library: libraries[0], order: "whole")
             )
+
+    return out
+
+# The libraries the program names among a duplicate's files, each once.
+function libraries_of(d: supplied_read.Duplicate, named: [str]) -> [str]
+    libraries: [str] @= []
+
+    for file in d.files
+        for n in supplied_names.naming(file: file, named: named)
+            if !supplied_names.named_in(libraries, name: n)
+                libraries @ libraries.push(n)
+
+    return libraries
+
+# The needs of the members of the layer archive `archive` the link took: of
+# each member that supplied a name the link was asked of (`supplied`), since
+# no other reaches the program. A member another member calls is among them,
+# its name being one the caller needs, and so asked.
+function layer_taken(needs: [LayerNeed], archive: str, supplied: {str: str}) -> [LayerNeed]
+    taken: {str: bool} @= {}
+
+    # ORDER: none, each answer marks its member in a map read by name.
+    for name in keys(supplied)
+        member = layer_member(file: supplied[name].must(), archive: archive)
+
+        if member != ""
+            taken[member] @ true
+
+    out: [LayerNeed] @= []
+
+    for need in needs
+        if !taken[need.member].is_err()
+            out @ out.push(need)
+
+    return out
+
+# The member of the layer archive `archive` that `file` names, `hero_net` of
+# `.../layer-<key>.a(hero_net.o)`, of Apple's `[2]` form and of a Windows
+# map's `layer-<key>.lib(hero_net.o)` (`supplied_windows.windows_file`); ""
+# where `file` is no member of it.
+function layer_member(file: str, archive: str) -> str
+    plain = supplied_names.without_index(file)
+    held = supplied_names.archive_of(plain)
+
+    if archive == "" || held.len() + 2 > plain.len() || supplied_names.base_of(held) != supplied_names.base_of(archive)
+        return ""
+    member = plain.slice(from: held.len() + 1, to: plain.len() - 1)
+
+    for suffix in [".obj", ".o"]
+        if strings.ends_with(text: member, suffix: suffix)
+            return member.slice(from: 0, to: member.len() - suffix.len())
+
+    return member
+
+# Every need of a taken member, `layer_taken`'s, that a library the program
+# names supplies, where no group of that library binds it and the runtime's
+# own calls do not ask it already (`needs_judged`), each with its member.
+function layer_judged(bound: [Bound], needs: [LayerNeed], runtime: [str], named: [str], supplied: {str: str}, order: str) -> [str]
+    out: [str] @= []
+
+    for need in needs
+        from = supplied[need.name]
+
+        if from.is_err() || supplied_names.named_in(runtime, name: need.name)
+            continue
+        theirs = supplied_names.naming(file: from.must(), named: named)
+
+        if theirs.len() == 0 || bound_there(bound, name: need.name, libraries: theirs)
+            continue
+        out @ out.push(
+            marker(kind: LAYER + need.member, decl: -1, name: need.name, file: from.must(), library: theirs[0], order: order)
+        )
+
+    return out
+
+# The needs of the members of `archive` the link took, judged: `layer_taken`,
+# then `layer_judged`.
+function layer_found(bound: [Bound], needs: [LayerNeed], archive: str, runtime: [str], named: [str], supplied: {str: str}, order: str) -> [str]
+    return layer_judged(
+        bound,
+        needs: layer_taken(needs, archive: archive, supplied: supplied),
+        runtime: runtime,
+        named: named,
+        supplied: supplied,
+        order: order
+    )
+
+# The whole probe's duplicates between two libraries the program names of a
+# need of a taken member, as `whole_found` judges the runtime's.
+function layer_whole(bound: [Bound], needs: [LayerNeed], runtime: [str], named: [str], dups: [supplied_read.Duplicate]) -> [str]
+    out: [str] @= []
+
+    for d in dups
+        libraries = libraries_of(d, named: named)
+
+        if libraries.len() < 2 || supplied_names.named_in(runtime, name: d.name) || bound_there(bound, name: d.name, libraries: libraries)
+            continue
+
+        for need in needs
+            if need.name == d.name
+                out @ out.push(
+                    marker(kind: LAYER + need.member, decl: -1, name: d.name, file: d.files.join("|"), library: libraries[0], order: "whole")
+                )
 
     return out
 
@@ -280,3 +397,61 @@ test "a lone binding the platform alone answers from the file the link took is o
     assert platform_kept(found, alone: alone, first: first, turned: turned, platform: platform) == [found[1]]
     platform["fabs"] @ "/usr/lib/x/libc.so.6"
     assert platform_kept(found, alone: alone, first: first, turned: turned, platform: platform) == found
+
+# Defect 2489: a member of the layer archive the link took is the one a
+# traced name's supplier names, in each linker's spelling, and one another
+# member calls is taken through the name it supplies; a member's needs are
+# judged as the runtime's are, never one the runtime asks already, one a
+# group of its library binds, one the platform supplies, or one of a member
+# the link did not take.
+test "the needs of a platform layer member the link took are judged as the runtime's, and no other member's (defect 2489)"
+    archive = "build/layer-0a1b-2c3d.a"
+    assert layer_member(file: "/w/build/layer-0a1b-2c3d.a(hero_net.o)", archive: archive) == "hero_net"
+    assert layer_member(file: "/w/build/layer-0a1b-2c3d.a[3](hero_time.o)", archive: archive) == "hero_time"
+    assert layer_member(file: "layer-0a1b-2c3d.lib(hero_net.o)", archive: "build/layer-0a1b-2c3d.lib") == "hero_net"
+    assert layer_member(file: "/w/lib/libfake.a(fake.o)", archive: archive) == ""
+    assert layer_member(file: "/w/build/layer-0a1b-2c3d.a", archive: archive) == ""
+    assert layer_member(file: "/w/build/layer-ffff-2c3d.a(hero_net.o)", archive: archive) == ""
+    assert layer_member(file: "/w/build/layer-0a1b-2c3d.a(hero_net.o)", archive: "") == ""
+    needs = [
+        LayerNeed(member: "hero_net", name: "socket")
+        LayerNeed(member: "hero_net", name: "fflush")
+        LayerNeed(member: "hero_net", name: "bind")
+        LayerNeed(member: "hero_net", name: "hero_time_monotonic_ns")
+        LayerNeed(member: "hero_time", name: "clock_gettime")
+    ]
+    fake = "/w/lib/libfake.a(fake.o)"
+    supplied: {str: str} @= {}
+    supplied["hero_net_listen"] @ "/w/build/layer-0a1b-2c3d.a(hero_net.o)"
+    supplied["socket"] @ fake
+    supplied["fflush"] @ fake
+    supplied["bind"] @ "/usr/lib/libc.so.6"
+    supplied["clock_gettime"] @ fake
+    taken = layer_taken(needs, archive: archive, supplied: supplied)
+    assert taken.len() == 4 && taken[0].name == "socket" && taken[3].name == "hero_time_monotonic_ns"
+    socket = marker(kind: LAYER + "hero_net", decl: -1, name: "socket", file: fake, library: "fake", order: "written")
+    assert layer_judged([], needs: taken, runtime: ["fflush"], named: ["fake"], supplied: supplied, order: "written") == [socket]
+    meant = [Bound(name: "socket", decl: 0, own: ["fake"])]
+    flush = marker(kind: LAYER + "hero_net", decl: -1, name: "fflush", file: fake, library: "fake", order: "written")
+    assert layer_judged(meant, needs: taken, runtime: [], named: ["fake"], supplied: supplied, order: "written") == [flush]
+
+    # The sockets member calling the clock's takes it, and the clock's need
+    # is judged then.
+    supplied["hero_time_monotonic_ns"] @ "/w/build/layer-0a1b-2c3d.a(hero_time.o)"
+    both = layer_taken(needs, archive: archive, supplied: supplied)
+    assert both.len() == 5
+    clock = marker(
+        kind: LAYER + "hero_time",
+        decl: -1,
+        name: "clock_gettime",
+        file: fake,
+        library: "fake",
+        order: "written"
+    )
+    assert layer_judged([], needs: both, runtime: ["fflush"], named: ["fake"], supplied: supplied, order: "written") == [socket, clock]
+
+    # Loaded whole, two of the program's libraries defining a taken need.
+    dups = [supplied_read.Duplicate(name: "socket", files: [fake, "/w/lib/libother.a(o.o)"])]
+    assert layer_whole([], needs: taken, runtime: [], named: ["fake", "other"], dups: dups) == [marker(kind: LAYER + "hero_net", decl: -1, name: "socket", file: fake + "|/w/lib/libother.a(o.o)", library: "fake", order: "whole")]
+    assert layer_whole([], needs: taken, runtime: ["socket"], named: ["fake", "other"], dups: dups).len() == 0
+    assert layer_whole([], needs: taken, runtime: [], named: ["fake"], dups: dups).len() == 0

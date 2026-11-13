@@ -1,7 +1,8 @@
 # Which library supplies each C name a group binds and each name the runtime
-# calls, asked of the link itself, and a second definition among the
-# libraries a program names refused (design.md §4.19, §1.12; defect 2363;
-# panel 239's R1, the ffi-pragmatist's v6, ratified 2026-11-09).
+# or a platform layer member the link took calls (defect 2489), asked of the
+# link itself, a second definition among the program's libraries refused
+# (design.md §4.19, §1.12; defect 2363; panel 239's R1, the ffi-pragmatist's
+# v6, ratified 2026-11-09).
 #
 # **A linked program holds one definition of a C name**, and which of two a
 # call reaches is the libraries' order, or on Apple's linker the names'
@@ -48,13 +49,16 @@ use source
 # What the real link is asked and of what: whether it is asked at all, every
 # bound function, every name the bindings reach with where its declaration
 # was found (`cli/supplied_paired.hero`, panel 245), every name the runtime
-# needs, the library names the line carries, the line's own words, and where
-# Apple's linker writes its map.
+# needs, every name each member of the platform layer needs and the layer's
+# archive (defect 2489), the library names the line carries, the line's own
+# words, and where Apple's linker writes its map.
 record Judging
     asked: bool
     bound: [supplied_judged.Bound]
     declared: [supplied_paired.Declared]
     needs: [str]
+    layer: [supplied_judged.LayerNeed]
+    archive: str
     named: [str]
     line: [str]
     map_path: str
@@ -63,11 +67,14 @@ function nothing() -> Judging
     none: [str] = []
     no_bound: [supplied_judged.Bound] = []
     no_declared: [supplied_paired.Declared] = []
+    no_layer: [supplied_judged.LayerNeed] = []
     return Judging(
         asked: false,
         bound: no_bound,
         declared: no_declared,
         needs: none,
+        layer: no_layer,
+        archive: "",
         named: none,
         line: none,
         map_path: ""
@@ -129,6 +136,11 @@ function traced(j: Judging) -> [str]
             seen[name] @ true
             out @ out.push(name)
 
+    for need in j.layer
+        if seen[need.name].is_err()
+            seen[need.name] @ true
+            out @ out.push(need.name)
+
     return out
 
 # What the link of `line` over `objects` is asked: nothing where the program
@@ -138,11 +150,14 @@ function asked(t: toolchain.Toolchain, line: [str], bound: [supplied_judged.Boun
 
     if named.len() == 0
         return nothing()
+    archive = supplied_kept.layer_archive(objects)
     return Judging(
         asked: true,
         bound: bound,
         declared: declared,
         needs: supplied_kept.runtime_needs(t, objects),
+        layer: supplied_kept.layer_needs(archive),
+        archive: archive,
         named: named,
         line: line,
         map_path: publish.private_name(t.build + "/supplied-real") + ".map"
@@ -215,6 +230,10 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
         list: found,
         more: supplied_judged.needs_judged(j.bound, needs: j.needs, named: j.named, supplied: first, order: "written")
     )
+    found @ strings.with_all(
+        list: found,
+        more: supplied_judged.layer_found(j.bound, needs: j.layer, archive: j.archive, runtime: j.needs, named: j.named, supplied: first, order: "written")
+    )
     lone = supplied_judged.lone(j.bound, found: found)
 
     if lone.len() > 0 && j.named.len() < 2
@@ -282,6 +301,10 @@ function probes_found(j: Judging, p: supplied_probe.Probes) -> [str]
             list: found,
             more: supplied_judged.needs_judged(j.bound, needs: j.needs, named: j.named, supplied: p.taken, order: "reversed")
         )
+        found @ strings.with_all(
+            list: found,
+            more: supplied_judged.layer_found(j.bound, needs: j.layer, archive: j.archive, runtime: j.needs, named: j.named, supplied: p.taken, order: "reversed")
+        )
     else if p.reversed
         found @ supplied_judged.refused_lines(j.bound, dups: p.refused, order: "reversed-refused")
 
@@ -289,6 +312,10 @@ function probes_found(j: Judging, p: supplied_probe.Probes) -> [str]
         found @ strings.with_all(
             list: found,
             more: supplied_judged.whole_found(j.bound, needs: j.needs, named: j.named, dups: p.dups)
+        )
+        found @ strings.with_all(
+            list: found,
+            more: supplied_judged.layer_whole(j.bound, needs: supplied_judged.layer_taken(j.layer, archive: j.archive, supplied: p.taken), runtime: j.needs, named: j.named, dups: p.dups)
         )
     return found
 
