@@ -20,6 +20,10 @@
 # (`emit/layout_text.hero`'s premise: nothing more of a type's text is read).
 # `emit/ffi_field.hero` tells the field so, with the spellings that build. A
 # dump that does not compile answers nothing, and the field is told as before.
+#
+# **And a field the type has at no depth, with the members it has** (defect
+# 2520, 2026-11-13): the note sent glibc's `sigset_t` reader to correct a
+# spelling without naming `__val`, the one member the header gives it.
 
 use ast
 use bytes
@@ -122,7 +126,13 @@ function inside(s: source.Source, decl: ast.Decl, read: [layout_text.Member]) ->
                     continue
                 at = deeper(read, name: name)
 
+                # A field the type has at no depth is told with the members it
+                # does have, as the header spells them (defect 2520): the
+                # holder empty, since none holds it.
                 if at.is_err()
+                    out @ out.push(
+                        Found(key: owner + " " + name, nested: ffi_asked.Nested(holder: "", kind: "", named: "", field_type: "", outside: outside, members: others(read, top: top, holder: "")))
+                    )
                     continue
                 path = read[at.must()].path
                 holder = path.slice(from: 0, to: path.len() - name.len() - 1)

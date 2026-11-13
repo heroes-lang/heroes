@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `p` of `st2518_fill` is declared `u32`, and the header's `st2518_t *` points at `st2518_t`, a struct, which no number's width and sign describe — a number lent with `@` is ONE element of the header's own number type
+  at tests/golden/unsupported/fixedbugs-2518-a-number-lent-to-a-pointer-at-a-struct.hero:14:27
+     |
+  14 |     function st2518_fill(@p: u32) -> i32  #~ ffi_parameter_type
+     |                           ^
+  note: spec § 13: a struct whose fields the program reads is a group `record` named after it, `record st2518_t partial` with those fields, and the parameter `@p: st2518_t`; one the program only hands on to C is `p: ptr`, the address of memory the program allocates as large as C's `sizeof(st2518_t)` and frees itself
+  fix (guess): declare `p` as `p: ptr`

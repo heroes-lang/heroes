@@ -1,0 +1,149 @@
+# A bound C function taken as a value whose C type is not the Heroes
+# function type's, reached through an adapter of that type (design.md §4.13,
+# §4.19; defect 2519, 2026-11-13).
+#
+# **The binding is correct and C refused the value.** `function set_two(p:
+# ptr) -> i32` against `int set_two(unsigned *p)` is a binding the probe holds
+# to the header, and a call of it converts the `void *` as any call does; but
+# the value, `t4 = set_two;` into the Heroes type's `int32_t (*)(void *)`, is
+# a function of another C type, which clang refuses, *incompatible function
+# pointer types*, `internal error` at exit 2. A cast would build and is no
+# repair: C11 6.5.2.2p9 leaves a call through a pointer of an incompatible
+# function type undefined. The same is true wherever the program's spelling
+# and the header's are two C types of one width, `u64` for `size_t` on this
+# Mac (`unsigned long long` and `unsigned long`), `cstr` for a `const unsigned
+# char *` (`emit/lend_type.hero`).
+#
+# **So each bound function a unit takes as a value has an adapter**, a
+# function of the Heroes type's own C parameters and result whose body is the
+# probe's own call (`emit/extern_probe.hero`, which the binding already
+# compiles in), the C function named in parentheses since the value is the
+# function and never a macro of its name; and the value is chosen in C, where
+# clang reads both types: the function itself where its type is the Heroes
+# type's, so a value that built keeps its address and every call through it
+# reaches the function as before, and the adapter where it is not. A function
+# with an `@` parameter has no value (defect 398), so an adapter's
+# parameters are values alone.
+
+use ast
+use check/state
+use checker
+use emit/ctype
+use emit/extern_probe
+use emit/externs as emit_externs
+use emit/shadowed
+use emit/writer
+use ir/containers
+use ir/lower
+use parse
+use resolve
+use source
+
+constant HEAD: str
+    "hero_value_"
+
+# The adapter's name: `hero_value_<name>`, widened by `hero_` for as long as a
+# group binds it too, as an accessor is (`emit/shadowed.hero`).
+function adapter(name: str, s: source.Source, decls: [ast.Decl]) -> str
+    return shadowed.unbound(head: HEAD, name: name, s: s, decls: decls)
+
+# What a body assigns to `target` for the bound function `name`: the function,
+# where its C type is the target's, else its adapter, chosen by clang.
+function chosen(target: str, name: str, s: source.Source, decls: [ast.Decl]) -> str
+    written = shadowed.written(name, s: s, decls: decls)
+    return "__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(" + target + "), __typeof__(&" + written + ")), " + written + ", " + adapter(name, s: s, decls: decls) + ")"
+
+# What a unit writes of its bound functions before its first body: the
+# accessors of those a body would hide (`emit/shadowed.hero`), then the
+# adapters, which may call through one.
+function before_bodies(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    shadowed.accessors(@w, p, s, decls)
+    adapters(@w, p, c, names, s, decls)
+
+# The adapters a unit needs, one per bound function it takes as a value,
+# written after the accessors and before the first body. ORDER: by name, so the
+# unit's text is a function of the program.
+function adapters(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    named: {str: bool} @= {}
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .func_ref fr =>
+                        match fr.callee
+                            .extern_fn e                         => named[source.span_text(s, decls[e.decl].name)] @ true
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .call | .lit | .load | .store | .push_owned | .unary | .binary | .cast      => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    if named.len() == 0
+        return
+    writer.at_generated(@w)
+
+    # ORDER: by name, as `sort` orders a `str`.
+    for name in sort(keys(named))
+        bound = declared(p, s, decls, name: name)
+
+        if !bound.is_err()
+            writer.line(@w, text: definition(bound.must(), c, names, s, decls, name: name))
+
+    writer.blank(@w)
+
+# The extern function the program binds under `name`.
+function declared(p: containers.Program, s: source.Source, decls: [ast.Decl], name: str) -> containers.Function?
+    for f in p.functions
+        if !emit_externs.extern_spans(decls, f).header.is_err() && source.span_text(s, decls[f.decl].name) == name
+            return ok(f)
+
+    return fail(code: "none", msg: "no group binds this name as a function")
+
+# One adapter, as one line of C: the Heroes type's parameters and result, and
+# the probe's call of the function.
+function definition(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], name: str) -> str
+    params: [str] @= []
+    index: i64 @= 0
+
+    for slot_id in f.params
+        spelled = ctype.c_type(names, c: c, ty: f.slots[slot_id].ty).default("void")
+        params @ params.push(spelled + " a" + index.to_str())
+        index @ index + 1
+
+    listed: str @= "void"
+
+    if params.len() > 0
+        listed @ params.join(", ")
+    call = "(" + shadowed.written(name, s: s, decls: decls) + ")(" + extern_probe.probe_arguments(f, c, names, callee: name).join(", ") + ")"
+    returned = ctype.c_result(names, c: c, ty: f.result)
+    body: str @= "return " + call + ";"
+
+    if returned == "void"
+        body @ call + ";"
+    return "__attribute__((unused)) static " + returned + " " + adapter(name, s: s, decls: decls) + "(" + listed + ") { " + body + " }"
+
+## Tests
+
+test "a bound function taken as a value has an adapter of the program's type, and C chooses"
+    text = "extern \"v.h\"\n    function set_two(p: ptr) -> i32\n    function drop(p: ptr)\n    function t1(a: i32) -> i32\n\nfunction through(f: (function(ptr) -> i32), p: ptr) -> i32\n    return f(p)\n\nfunction main()\n    print(through(f: set_two, p: nullptr))\n    g = drop\n    _ = g\n    h = t1\n    print(h(1))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @= writer.new_writer("t")
+    adapters(@w, low.program, c, names, s, parsed.decls)
+    got = writer.finish(w)
+
+    # The probe's call, the function in parentheses, at the program's types;
+    # a function with no result calls and returns nothing.
+    assert extern_probe.find_text(line: got, needle: "__attribute__((unused)) static int32_t hero_value_set_two(void * a0) { return (set_two)(a0); }").must() >= 0
+    assert extern_probe.find_text(line: got, needle: "static void hero_value_drop(void * a0) { (drop)(a0); }").must() >= 0
+
+    # A name a body declares is reached through its accessor (defect 2389).
+    assert extern_probe.find_text(line: got, needle: "static int32_t hero_value_t1(int32_t a0) { return ((*hero_bound_t1()))(a0); }").must() >= 0
+
+    # The value: the function where its type is the target's, else the adapter.
+    assert chosen(target: "t4", name: "set_two", s: s, decls: parsed.decls) == "__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t4), __typeof__(&set_two)), set_two, hero_value_set_two)"

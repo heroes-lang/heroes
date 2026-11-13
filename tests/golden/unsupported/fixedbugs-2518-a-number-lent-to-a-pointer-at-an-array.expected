@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `p` of `quad2518_fill` is declared `u32`, and the header's `quad2518_t *` points at `quad2518_t`, an array, which no number's width and sign describe — a number lent with `@` is ONE element of the header's own number type
+  at tests/golden/unsupported/fixedbugs-2518-a-number-lent-to-a-pointer-at-an-array.hero:14:29
+     |
+  14 |     function quad2518_fill(@p: u32) -> i32  #~ ffi_parameter_type
+     |                             ^
+  note: spec § 13: an array no Heroes number holds is handed to C as `p: ptr`, the address of memory the program allocates as large as C's `sizeof(quad2518_t)` and frees itself
+  fix (guess): declare `p` as `p: ptr`

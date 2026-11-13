@@ -3,4 +3,4 @@ error[ffi_unknown_field]: `fixedbugs-152-fields.h` declares no `c` in `anon_s`: 
      |
   15 |         c: i32  #~ ffi_unknown_field
      |         ^
-  note: a group's `record` IS the header's type (spec § 13), so a field is named exactly as the header names it: correct the spelling, or name the header whose `anon_s` has a member `c`
+  note: a group's `record` IS the header's type (spec § 13), so a field is named exactly as the header names it, and `fixedbugs-152-fields.h` gives `anon_s` these members: `a`, `b`; a `partial` record names those the program reads

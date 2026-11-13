@@ -1,0 +1,187 @@
+# A number lent with `@` to a header pointer whose pointee is no number: a
+# struct, a union, an array or a complex number, which no Heroes number's
+# width and sign describe (design.md §4.19, §1.12; defect 2518, 2026-11-13).
+#
+# **The width question was C11 arithmetic that C refuses here.** The pointee
+# check asks the sign of the header's own type as `(T)-1 > 0`
+# (`emit/width_line.hero`), and clang refuses a cast to a struct, *used type
+# 'sigset_t' (aka '__sigset_t') where arithmetic or pointer type is required*,
+# a hard error no reader knew: `sigprocmask(how: i32, @set: u32, @old: u32)`
+# against glibc's struct `sigset_t` was `internal error`, exit 2 (Linux arm64),
+# and so was a header of the lane's own on this Mac.
+#
+# **So four assertions stand before the width question**, each failing as a
+# static assertion carrying `MARKER` and the kind it names, as the `void`
+# guard does (defect 010): the width line still errs after it on the same
+# `#line`, and the reader takes the first diagnostic per span. Clang's
+# `__builtin_classify_type` of the pointee reads 12 for a struct, 13 for a
+# union and 9 for a complex number; an array decays and reads 5 as a pointer
+# does, so it is told by the comma's decay, `__typeof__((0, *(T *)0))`, which
+# differs from `T` for an array alone. Measured on this Mac's clang 21 under
+# `-Wall -Wextra -Werror`, silent: every integer, `bool`, enumeration, float
+# and pointer passes all four, and a struct, a union, an array and a complex
+# fail one each.
+
+use ast
+use cli/pointee_ask
+use cli/strings
+use diag
+use emit/ffi_lookup
+use emit/ffi_pointee
+use source
+use token
+
+constant MARKER: str
+    "heroes-ffi-pointee-kind "
+
+# The four assertions for one numeric `@` whose header pointee is
+# `header_type`, as one line so each stands at the author's `#line`.
+function assertions(asked: pointee_ask.Pointee, header_type: str) -> str
+    pointee = "*(" + header_type + " *)0"
+    classified = "__builtin_classify_type(" + pointee + ")"
+    named = MARKER + asked.name + " " + asked.param + " " + asked.declared + " "
+    kinds = [
+        ["struct", classified + " != 12"]
+        ["union", classified + " != 13"]
+        ["complex", classified + " != 9"]
+        ["array", "__builtin_types_compatible_p(" + header_type + ", __typeof__((0, " + pointee + ")))"]
+    ]
+    out: [str] @= []
+
+    for kind in kinds
+        out @ out.push("_Static_assert(" + kind[1] + ", \"" + named + kind[0] + " " + header_type + "\");")
+
+    return out.join(" ")
+
+# The parameter a failed assertion names, told: what the header's pointer
+# points at and how a program binds it.
+function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not a pointee-kind assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 5
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    name = parts[0]
+    param = parts[1]
+    kind = parts[3]
+    header_type = ffi_pointee.trim_quote(parts.slice(from: 4, to: parts.len()).join(" "))
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    spans = ffi_pointee.parameter_spans(s, decls, tree, name: name, param: param)
+    at: token.Span @= found.must().span
+    written: str @= "a number"
+
+    if !spans.is_err()
+        at @ spans.must().name
+        written @ "`" + source.span_text(s, spans.must().ty) + "`"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + param + "` of `" + name + "` is declared " + written + ", and the header's `" + header_type + " *` points at `" + header_type + "`, " + article(kind) + ", which no number's width and sign describe — a number lent with `@` is ONE element of the header's own number type",
+        span: at
+    )
+    d.notes @ d.notes.push(route(kind: kind, param: param, header_type: header_type))
+
+    if spans.is_err()
+        return ok(d)
+    marker = ffi_pointee.at_marker_before(s, spans.must().name)
+
+    if marker.is_err()
+        return ok(d)
+
+    # A `guess`: the program then holds the address of memory it allocates,
+    # which it must allocate and free itself, a change the fix cannot write.
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "declare `" + param + "` as `" + param + ": ptr`", replacement: param + ": ptr", span: token.Span(start: marker.must(), end: spans.must().ty.end), certainty: .guess)
+    )
+    return ok(d)
+
+function article(kind: str) -> str
+    if kind == "array"
+        return "an array"
+
+    if kind == "complex"
+        return "a complex number"
+    return "a " + kind
+
+# How a program binds a pointer to such a pointee (spec § 13).
+function route(kind: str, param: str, header_type: str) -> str
+    allocated = "`" + param + ": ptr`, the address of memory the program allocates as large as C's `sizeof(" + header_type + ")` and frees itself"
+
+    if kind == "struct" || kind == "union"
+        named = record_of(header_type)
+        return "spec § 13: a " + kind + " whose fields the program reads is a group `record` named after it, `" + named.declared + "` with those fields, and the parameter `@" + param + ": " + named.name + "`; one the program only hands on to C is " + allocated
+    return "spec § 13: " + article(kind) + " no Heroes number holds is handed to C as " + allocated
+
+# How a record names the header's type: by its typedef, or, where the header
+# spells it by its tag, `struct sigaction`, by the tag with `tag`; a
+# qualifier the parameter puts on it, glibc's `const sigset_t`, is no part of
+# the type's name.
+record Named
+    name: str
+    declared: str
+
+function record_of(header_type: str) -> Named
+    bare: str @= header_type
+
+    for qualifier in ["const ", "volatile "]
+        while strings.starts_with(text: bare, prefix: qualifier)
+            bare @ bare.slice(from: qualifier.len(), to: bare.len())
+
+    for word in ["struct ", "union "]
+        if strings.starts_with(text: bare, prefix: word)
+            tag = bare.slice(from: word.len(), to: bare.len())
+            return Named(name: tag, declared: "record " + tag + " tag " + tag + " partial")
+
+    return Named(name: bare, declared: "record " + bare + " partial")
+
+## Tests
+
+test "a pointee that is no number is asked before its width, one assertion per kind"
+    asked = pointee_ask.Pointee(
+        name: "sigprocmask",
+        param: "set",
+        index: 1,
+        declared: "uint32_t",
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    written = assertions(asked, header_type: "const sigset_t")
+    assert ffi_lookup.has(
+        text: written,
+        needle: "_Static_assert(__builtin_classify_type(*(const sigset_t *)0) != 12, \"heroes-ffi-pointee-kind sigprocmask set uint32_t struct const sigset_t\");"
+    )
+    assert ffi_lookup.has(
+        text: written,
+        needle: "_Static_assert(__builtin_types_compatible_p(const sigset_t, __typeof__((0, *(const sigset_t *)0))), \"heroes-ffi-pointee-kind sigprocmask set uint32_t array const sigset_t\");"
+    )
+    assert ffi_lookup.has(text: written, needle: " != 13, \"heroes-ffi-pointee-kind sigprocmask set uint32_t union ")
+    assert ffi_lookup.has(text: written, needle: " != 9, \"heroes-ffi-pointee-kind sigprocmask set uint32_t complex ")
+
+test "the marker is told on the parameter, with the route its kind takes and a guess of `ptr`"
+    assert article("struct") == "a struct"
+    assert article("array") == "an array"
+    assert ffi_lookup.has(
+        text: route(kind: "struct", param: "set", header_type: "sigset_t"),
+        needle: "`record sigset_t partial`"
+    )
+
+    # A qualifier is no part of the name, and a tag is named with `tag`.
+    glibc = route(kind: "struct", param: "set", header_type: "const sigset_t")
+    assert ffi_lookup.has(
+        text: glibc,
+        needle: "`record sigset_t partial` with those fields, and the parameter `@set: sigset_t`"
+    )
+    assert ffi_lookup.has(text: glibc, needle: "`sizeof(const sigset_t)`")
+    assert ffi_lookup.has(
+        text: route(kind: "struct", param: "act", header_type: "const struct sigaction"),
+        needle: "`record sigaction tag sigaction partial`"
+    )
+    assert !ffi_lookup.has(text: route(kind: "array", param: "buf", header_type: "jmp_buf"), needle: "record")

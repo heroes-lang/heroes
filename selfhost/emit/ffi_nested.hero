@@ -116,7 +116,26 @@ function inside(header: str, owner: str, member: str, c_type: str, nested: {str:
 
     if found.is_err()
         return fail(code: "none", msg: "not found inside another member")
+
+    if found.must().holder == ""
+        return absent(header: header, member: member, c_type: c_type, members: found.must().members, span: span)
     return ok(told(header: header, owner: owner, member: member, c_type: c_type, n: found.must(), span: span))
+
+# A field the header's type has at no depth (defect 2520), told with the
+# members it has, as `cli/member_ask.hero` read them; none where it read none,
+# and `ffi_field.unknown_field` tells it as it always has.
+function absent(header: str, member: str, c_type: str, members: [str], span: token.Span) -> diag.Diagnostic?
+    if members.len() == 0
+        return fail(code: "none", msg: "the round read no member of the type")
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_unknown_field",
+        message: "`" + header + "` declares no `" + member + "` in `" + c_type + "`: clang read the header, and that type has no such field",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a group's `record` IS the header's type (spec § 13), so a field is named exactly as the header names it, and `" + header + "` gives `" + c_type + "` these members: `" + members.join("`, `") + "`; a `partial` record names those the program reads"
+    )
+    return ok(d)
 
 # The field's refusal, at the field the author wrote: what the header
 # declares and where, then what builds.
@@ -346,6 +365,43 @@ test "a field inside a union member is told where it is, with what builds (defec
         member: "nofield",
         c_type: "struct tagged",
         nested: lookup,
+        span: span
+    ).is_err()
+
+test "a field the type has at no depth is told with the members the header gives it (defect 2520)"
+    span = token.Span(start: 0, end: 2)
+    nowhere: ffi_asked.Nested @= ffi_asked.Nested(
+        holder: "",
+        kind: "",
+        named: "",
+        field_type: "",
+        outside: [],
+        members: ["__val"]
+    )
+    held: {str: ffi_asked.Nested} @= {}
+    held["sigset_t val"] @ nowhere
+    d = inside(
+        header: "signal.h",
+        owner: "sigset_t",
+        member: "val",
+        c_type: "__sigset_t",
+        nested: held,
+        span: span
+    ).must()
+    assert d.code == "ffi_unknown_field"
+    assert d.message == "`signal.h` declares no `val` in `__sigset_t`: clang read the header, and that type has no such field"
+    assert d.notes.len() == 1
+    assert ffi_lookup.has(text: d.notes[0], needle: "`signal.h` gives `__sigset_t` these members: `__val`;")
+
+    # Where the round read no member, the field's own reader tells it.
+    nowhere.members @ []
+    held["sigset_t val"] @ nowhere
+    assert inside(
+        header: "signal.h",
+        owner: "sigset_t",
+        member: "val",
+        c_type: "__sigset_t",
+        nested: held,
         span: span
     ).is_err()
 
