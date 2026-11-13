@@ -464,13 +464,14 @@ test "a write that cannot happen names the path and the operating system's reaso
 
 # A directory emptied for a case, its files made writable and removed one by
 # one first: Windows will not remove a read-only file, Darwin will not remove
-# one whose ACL denies it (`process.unstage` clears that), and a case that
-# failed half-way leaves one behind for the next run.
+# one whose ACL denies it (`files.unstage` clears that), and a case that
+# failed half-way leaves one behind for the next run. Its own files alone: a
+# link, the folder included, goes with the removal as the link (defect 2507).
 function fresh(dir: str)
-    if process.is_directory(dir)
-        for file in process.files_under(dir).default([])
-            _ = files.set_mode(path: file, mode: 0o644).is_err()
-            _ = files.unstage(file).is_err()
+    for file in files.own_files_under(dir)
+        _ = files.set_mode(path: file, mode: 0o644).is_err()
+        _ = files.unstage(file).is_err()
+
     _ = process.remove_tree(dir).is_err()
     _ = process.mkdir_all(dir).is_err()
 
@@ -478,6 +479,59 @@ function is_link(path: str) -> bool
     match files.entry(path)
         .link                                            => return true
         .absent | .file | .directory | .other | .unknown => return false
+
+test "a case's folder is emptied of its own files, and what a link in it names is kept (defect 2507)"
+    # `fresh` changes and removes its folder's own files alone. A link in it
+    # to a folder outside, one deeper to the same folder, one to a file
+    # outside, one to nothing, and a case's folder that is itself a link,
+    # are each removed as the link, and the outside files keep their bytes
+    # and their read-only mode. Until then its walk followed every link and
+    # made each outside file 0644 and removed it. Where this machine makes
+    # no link there is nothing to hold.
+    outside = "build/selftest-fresh-outside-2507"
+    dir = "build/selftest-fresh-2507"
+    alone = "build/selftest-fresh-alone-2507"
+
+    for path in [outside, dir, alone]
+        assert !process.remove_tree(path).is_err()
+
+    assert !process.mkdir_all(outside + "/deeper").is_err()
+    assert !write_file(path: outside + "/keep.txt", text: "kept").is_err()
+    assert !write_file(path: outside + "/deeper/also.txt", text: "kept too").is_err()
+    assert !files.set_mode(path: outside + "/keep.txt", mode: 0o444).is_err()
+    assert !process.mkdir_all(dir + "/inner").is_err()
+    assert !write_file(path: dir + "/top.txt", text: "own").is_err()
+    assert !write_file(path: dir + "/inner/own.txt", text: "own").is_err()
+    links = [
+        ["../selftest-fresh-outside-2507", dir + "/out"]
+        ["../../selftest-fresh-outside-2507", dir + "/inner/deep"]
+        ["../selftest-fresh-outside-2507/keep.txt", dir + "/file"]
+        ["nowhere-2507", dir + "/inner/dangling"]
+        ["selftest-fresh-outside-2507", alone]
+    ]
+    linked: i64 @= 0
+
+    for link in links
+        if !files.symbolic_link(target: link[0], name: link[1]).is_err()
+            linked @ linked + 1
+
+    # Every link or none, none being a machine that makes no link.
+    assert linked == 0 || linked == links.len()
+
+    # The walk names the folder's own two files, none through a link.
+    assert sort(files.own_files_under(dir)).join(" ") == sort([dir + "/inner/own.txt", dir + "/top.txt"]).join(" ")
+    assert files.own_files_under(alone).len() == 0
+    fresh(dir)
+    fresh(alone)
+    assert read_file(outside + "/keep.txt").must() == "kept"
+    assert read_file(outside + "/deeper/also.txt").must() == "kept too"
+    assert files.mode_of(outside + "/keep.txt") == 0o444
+    assert process.files_under(dir).must().len() == 0
+    assert files.entry(alone) == .directory
+    assert process.files_under(alone).must().len() == 0
+
+    for path in [dir, alone, outside]
+        assert !process.remove_tree(path).is_err()
 
 test "a rewrite puts the whole new text in the author's file, makes an absent one, and leaves nothing beside either"
     dir = "build/selftest-rewrite"

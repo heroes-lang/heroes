@@ -33,6 +33,11 @@ extern "hero_os.h"
     function hero_fs_deny_delete(path: cstr lent) -> i64
     function hero_fs_flagged(path: cstr lent) -> i64
     function hero_fs_set_flag(path: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+    function hero_dir_release()
+    constant HERO_DIR_FILES: i64
+    constant HERO_DIR_DIRECTORIES: i64
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_TEXT: i64
     constant HERO_OS_UNSUPPORTED: i64
@@ -80,6 +85,51 @@ function entry(path: str) -> Entry
     if kind == HERO_FS_OTHER
         return .other
     return .unknown
+
+# Every file under `dir` that is no link and is reached through none: the
+# walk `hero_dir_remove_tree` makes (runtime/parts/dir.c, defect 345), for a
+# caller that changes or removes each file it is given, which through a link
+# would change a folder elsewhere (defect 2507). A link is never named and
+# never entered, `dir` included: `dir` and each name a level lists are asked
+# what they are themselves (`entry`). A folder that cannot be read, or a
+# name that is not UTF-8, gives nothing; the removal that follows takes such
+# a name by its bytes.
+function own_files_under(dir: str) -> [str]
+    out: [str] @= []
+
+    if entry(dir) != .directory
+        return out
+
+    for name in names_in(dir: dir, want: HERO_DIR_FILES)
+        if entry(dir + "/" + name) != .link
+            out @ out.push(dir + "/" + name)
+
+    for name in names_in(dir: dir, want: HERO_DIR_DIRECTORIES)
+        for file in own_files_under(dir + "/" + name)
+            out @ out.push(file)
+
+    return out
+
+# The names directly in `dir` of the kind `want` asks, released before they
+# are used, since the runtime holds one listing at a time; a link is sorted
+# by what it names, which `own_files_under` asks again of the link itself.
+function names_in(dir: str, want: i64) -> [str]
+    out: [str] @= []
+    found = hero_dir_scan(root: dir.cstr(), want: want, recursive: 0)
+
+    if found < 0
+        return out
+
+    for at in range(from: 0, to: found)
+        status: i64 @= 0
+        marks: i64 @= 0
+        name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
+
+        if status == HERO_OS_OK
+            out @ out.push(name)
+
+    hero_dir_release()
+    return out
 
 # Whether what is at `path` is a file, its links followed by the caller.
 function is_file(path: str) -> bool
