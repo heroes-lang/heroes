@@ -117,6 +117,7 @@ export const groups: Group[] = [
     it: 'Thread',
     slugs: [
       'threads',
+      'server',
       'mandelbrot',
       'matmul',
       'dotproduct',

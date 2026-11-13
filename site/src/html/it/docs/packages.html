@@ -9,17 +9,18 @@
 
   <h3>Scaricare un pacchetto</h3>
   <p>
-    I primi pacchetti sono i pacchetti core, pubblicati insieme come un unico pacchetto che si chiama <code>core</code>: <code>strings</code> cerca e divide il testo, <code>strconv</code> trasforma il testo in numeri e i numeri in testo, <code>encoding/json</code> legge e scrive JSON, un formato molto diffuso per i dati. Il programma in <code>examples/packages/</code> li usa tutti e tre:
+    I primi pacchetti sono i pacchetti core, pubblicati insieme come un unico pacchetto che si chiama <code>core</code>: <code>strings</code> cerca e divide il testo, <code>strconv</code> trasforma il testo in numeri e i numeri in testo, <code>encoding/json</code> legge e scrive JSON, un formato molto diffuso per i dati. Altri due servono per la rete: <code>net</code> apre e accetta connessioni TCP, il modo in cui due programmi si parlano attraverso una rete, e <code>net/http</code>, su quelle connessioni, manda richieste HTTP, i messaggi che si scambiano un browser e un server web, e risponde a quelle che arrivano. Il programma in <code>examples/packages/</code> ne usa quattro:
   </p>
-  <figure class="example" data-src="examples/packages/main.hero" data-lines="9-15">
+  <figure class="example" data-src="examples/packages/main.hero" data-lines="9-16">
 <pre><code>use &lt;core&gt;/encoding/json
+use &lt;core&gt;/net/http
 use &lt;core&gt;/strconv
 use &lt;core&gt;/strings
 
 function main()
     words = strings.fields("  the core packages  ")
     print(join(words, "-"))</code></pre>
-    <figcaption>examples/packages/main.hero, righe 9&ndash;15</figcaption>
+    <figcaption>examples/packages/main.hero, righe 9&ndash;16</figcaption>
   </figure>
   <p>
     Controllalo prima che abbia scaricato qualcosa, e ogni riga che nomina un pacchetto ti dice che cosa manca:
@@ -27,12 +28,13 @@ function main()
   <pre class="diag"><code>$ heroes check --brief main.hero
 <span class="msg">main.hero:9:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span>
 <span class="msg">main.hero:10:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span>
-<span class="msg">main.hero:11:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span></code></pre>
+<span class="msg">main.hero:11:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span>
+<span class="msg">main.hero:12:5: error[unknown_entry]: `&lt;core&gt;` names no entry: there is no catalogue `heroes.toml` beside `main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add core` writes one</span></code></pre>
   <p>
     Il comando che scarica è <code>heroes add</code>, e si lancia nella cartella del programma. Un pacchetto si legge da un <b>indice</b>, un posto che elenca tutte le versioni di tutti i pacchetti che contiene. Oggi l&rsquo;unico indice è la cartella <code>packages/</code> alla radice del repository di questo progetto, la cartella che contiene tutti i suoi file e la loro storia, quindi il comando la nomina:
   </p>
   <pre><code>$ heroes add core --index file://../../packages
-added core 0.2.1
+added core 0.3.0
 wrote heroes.toml</code></pre>
   <p>
     E il programma si compila e gira:
@@ -43,7 +45,8 @@ value
 one
 two
 -17
-{"core":["strings","strconv","encoding/json"],"since":0.1}</code></pre>
+{"core":["strings","strconv","encoding/json"],"since":0.1}
+404</code></pre>
   <p>
     <code>heroes add</code> ha fatto due cose. Ha scritto un file accanto a <code>main.hero</code>, il <b>catalogo</b>, e ha messo una copia dei file del pacchetto dentro la cartella del programma. Da quel momento al programma non servono più né l&rsquo;indice né la rete: <code>heroes build</code>, <code>heroes check</code> e <code>heroes run</code> non scaricano mai niente. Escono solo <code>heroes add</code> e <code>heroes fetch</code>, e un pacchetto che manca, o che non corrisponde, è un errore che nomina <code>heroes fetch</code>. <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/235-dependencies-named-by-an-alias-in-angle-brackets-that-the-programs-catalogue-resolves-gos-modules-copied-whole-a-toml-catalogue-listing-every-package-and-no-fetched-code-run-at-build.md">La seduta che ha progettato il gestore dei pacchetti</a> ne ha fatto una regola: il compilatore può usare la rete solo dove la risposta è stata scritta prima, e per un pacchetto quella risposta è la sua impronta, di cui si parla più avanti. Go, il linguaggio di cui questo sistema copia i pacchetti, è stato misurato mentre scaricava durante una build; una build di Heroes non lo fa mai.
   </p>
@@ -56,8 +59,8 @@ two
 <pre><code>index = "file://../../packages"
 
 [dependencies.core]
-version = "0.2.1"
-sum = "sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c"</code></pre>
+version = "0.3.0"
+sum = "sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811"</code></pre>
     <figcaption>examples/packages/heroes.toml</figcaption>
   </figure>
   <p>
@@ -87,9 +90,9 @@ use report/lines</code></pre>
   </p>
   <pre class="diag"><code>$ heroes check main.hero
 <span class="msg">error[use_holds_an_address]: `git.example.org/ana/core` is an address, which the catalogue `heroes.toml` beside the file you compile holds and a `use` never does: the `use` names its entry between `&lt;` `&gt;`, then a module of the package — `use &lt;core&gt;/strings`, `core` standing for the entry the catalogue gives that address</span>
-  at main.hero:11:5
+  at main.hero:12:5
      |
-  11 | use &lt;git.example.org/ana/core&gt;/strings
+  12 | use &lt;git.example.org/ana/core&gt;/strings
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
   fix (guess): write `&lt;core&gt;`</code></pre>
   <p>
@@ -101,7 +104,7 @@ use report/lines</code></pre>
 
   <h3>Dove sta la copia</h3>
   <pre><code>$ ls heroes.packages
-core@0.2.1-e8db5b383e666067</code></pre>
+core@0.3.0-5c73ae460e9f7fa7</code></pre>
   <p>
     <code>heroes add</code> ha messo il pacchetto in una cartella del programma che si chiama <code>heroes.packages/</code>, sotto un nome fatto della voce, della sua versione e di sedici cifre esadecimali (le cifre da 0 a 9 e le lettere da a a f) calcolate dai campi della voce e dalla riga <code>index</code>. Un campo sbagliato nomina quindi una cartella che non c&rsquo;è, e la build lo dice. Dentro c&rsquo;è una copia, byte per byte, dei file del pacchetto come li pubblica l&rsquo;indice. Il programma tiene quella cartella nel suo repository accanto ai propri file: ogni programma di <code>examples/</code> che usa <code>core</code> ci porta la sua copia.
   </p>
@@ -128,7 +131,7 @@ use strings/internal/scan</code></pre>
     Questo è l&rsquo;inizio di <code>strings.hero</code> di <code>core</code>. Il suo <code>use strings/internal/scan</code> non parte dalla radice del tuo programma, dove una cartella <code>strings/</code> non c&rsquo;è: dentro un pacchetto un <code>use</code> parte dalla radice del pacchetto, e un <code>use</code> con le parentesi nomina una voce del catalogo del pacchetto stesso.
   </p>
   <p>
-    La ragione è il nome della cartella qui sopra. Chi scrive il pacchetto non può conoscerlo: contiene cifre calcolate dalla voce, quindi cambia con la versione e con la riga <code>index</code>. Lo stesso <code>core</code> 0.2.1, aggiunto a un programma che legge l&rsquo;indice da un altro percorso, è finito in <code>core@0.2.1-861e1a4ddf9ad992</code>. Un <code>use</code> scritto dalla radice del programma dovrebbe nominare quella cartella; scritto dalla radice del pacchetto è lo stesso in ogni programma, e così un pacchetto passa da un programma all&rsquo;altro, da un indice all&rsquo;altro e da una versione all&rsquo;altra senza che cambi una sola delle sue righe <code>use</code>.
+    La ragione è il nome della cartella qui sopra. Chi scrive il pacchetto non può conoscerlo: contiene cifre calcolate dalla voce, quindi cambia con la versione e con la riga <code>index</code>. Lo stesso <code>core</code> 0.3.0, aggiunto a un programma che legge l&rsquo;indice da un altro percorso, è finito in <code>core@0.3.0-48c008240132f27d</code>. Un <code>use</code> scritto dalla radice del programma dovrebbe nominare quella cartella; scritto dalla radice del pacchetto è lo stesso in ogni programma, e così un pacchetto passa da un programma all&rsquo;altro, da un indice all&rsquo;altro e da una versione all&rsquo;altra senza che cambi una sola delle sue righe <code>use</code>.
   </p>
 
   <h3>I moduli privati: <code>internal/</code></h3>
@@ -136,10 +139,10 @@ use strings/internal/scan</code></pre>
     Il modulo <code>strings/internal/scan</code> fa il lavoro byte per byte di <code>strings</code>, e le sue prime righe dicono perché sta in disparte: è tenuto fuori dalla facciata del pacchetto perché nessun programma lo chiama. Un modulo dentro una cartella che si chiama <code>internal</code> appartiene al modulo che viene prima dell&rsquo;ultimo <code>internal</code> del suo percorso, qui <code>strings</code>, e solo quel modulo e i moduli sotto di lui possono nominarlo. Da un programma:
   </p>
   <pre class="diag"><code>$ heroes check main.hero
-<span class="msg">error[private_module]: `&lt;core&gt;/strings/internal/scan` is private to `&lt;core&gt;/strings`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `&lt;core&gt;/strings` offers instead</span>
-  at main.hero:11:5
+<span class="msg">error[private_module]: `&lt;core&gt;/strings/internal/scan` is private to `&lt;core&gt;/strings`: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it; name what `&lt;core&gt;/strings` offers instead</span>
+  at main.hero:12:5
      |
-  11 | use &lt;core&gt;/strings/internal/scan
+  12 | use &lt;core&gt;/strings/internal/scan
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
   <p>
     La regola è di Go, che ce l&rsquo;ha da Go 1.4, e qui vale anche per le tue cartelle: in un programma con <code>geom/shapes.hero</code> e <code>geom/internal/sq.hero</code>, <code>geom/shapes</code> può scrivere <code>use geom/internal/sq</code> e <code>main.hero</code> no.
@@ -167,7 +170,8 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
   <figure class="example" data-src="packages/core/versions">
 <pre><code>0.1.0 sha256-732461c3ff08b9f593d64f214beefdc95306d67643ded67c476a1994502c9998
 0.2.0 sha256-8a5f9d20346cc82a313d11491b4273b3affeda4b010bc5fedda3cab5174eabf4
-0.2.1 sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c</code></pre>
+0.2.1 sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c
+0.3.0 sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811</code></pre>
     <figcaption>packages/core/versions</figcaption>
   </figure>
   <p>
@@ -179,7 +183,7 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
     Il compilatore confronta la copia in <code>heroes.packages/</code> con la <code>sum</code> a ogni build, a ogni check e a ogni run. Cambiane un byte, qui uno <code>0</code> diventato <code>1</code> in <code>strings.hero</code>, e la build si ferma prima di compilare qualsiasi cosa:
   </p>
   <pre class="diag"><code>$ heroes build main.hero
-<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.2.1-e8db5b383e666067/` is `sha256-7ed4e76f014865c819a1814a5741f3dc06eb41ee949fe807a2c0abd2579aacc4`, and the catalogue's `sum` for it is `sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again</span>
+<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.3.0-5c73ae460e9f7fa7/` is `sha256-35455af23c8dbb27655298a0bb52f186220c9e1bc3b49242311eab65770158fd`, and the catalogue's `sum` for it is `sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again</span>
   at main.hero:9:5
     |
   9 | use &lt;core&gt;/encoding/json
@@ -188,13 +192,13 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
     <code>heroes fetch</code> non scrive mai sopra la modifica, perché potrebbe essere lavoro dell&rsquo;autore: si ferma, nomina il file cambiato e dice cosa fare, cioè spostare la cartella fuori da <code>heroes.packages/</code> per tenere la modifica, oppure rimuoverla perché l&rsquo;albero pubblicato torni al suo posto:
   </p>
   <pre class="diag"><code>$ heroes fetch
-<span class="msg">heroes.toml:5: error[sum_mismatch]: `core` 0.2.1 from the index `file://../../packages` is placed at `heroes.packages/core@0.2.1-e8db5b383e666067`, and that tree was changed since it was placed: `strings.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again</span></code></pre>
+<span class="msg">heroes.toml:5: error[sum_mismatch]: `core` 0.3.0 from the index `file://../../packages` is placed at `heroes.packages/core@0.3.0-5c73ae460e9f7fa7`, and that tree was changed since it was placed: `strings.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again</span></code></pre>
   <p>
     Rimossa la cartella, l&rsquo;albero torna dall&rsquo;indice, che intanto è tenuto alla stessa regola: ogni file che <code>heroes fetch</code> copia deve corrispondere alla sua riga della lista, e la lista alla <code>sum</code> del catalogo, altrimenti non mette niente.
   </p>
-  <pre><code>$ rm -r heroes.packages/core@0.2.1-e8db5b383e666067
+  <pre><code>$ rm -r heroes.packages/core@0.3.0-5c73ae460e9f7fa7
 $ heroes fetch
-placed core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067</code></pre>
+placed core 0.3.0 heroes.packages/core@0.3.0-5c73ae460e9f7fa7</code></pre>
   <p>
     Perché a ogni build, e non solo quando si scarica: la copia sta in una cartella che chiunque può modificare, e una copia modificata compilata senza una parola è proprio il guasto silenzioso che questo linguaggio esiste per rifiutare. Il controllo è lo SHA-256 del runtime, la parte di programma che sta sotto ogni programma Heroes, scritto in C, e mai il codice di un pacchetto: con le parole di <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/242-the-compiler-may-depend-on-a-package-and-takes-one-only-to-shrink-git-and-curl-stay-programs-and-a-child-gets-its-environment-at-the-spawn.md">una seduta successiva</a>, chi verifica resta fuori da ciò che verifica, così nessun pacchetto può fare da garante a se stesso. Conta ogni file, <code>.hero</code> o no, perché anche un header C che un pacchetto si porta dietro, il file che dice al compilatore com&rsquo;è fatta una libreria C, è codice di cui il programma si fida.
   </p>
@@ -209,7 +213,7 @@ placed core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067</code></pre>
   <pre><code>$ heroes add core@0.2.0 --index file://../../packages
 added core 0.2.0
 wrote heroes.toml
-$ heroes add core
+$ heroes add core@0.2.1
 changed core 0.2.0 -&gt; 0.2.1
 wrote heroes.toml</code></pre>
   <p>
@@ -272,18 +276,18 @@ sum = "sha256-09cac94c6a5803de196d94dc80c9da89329c20ce2ee673a876de3a4d5ac381d3"<
   <p>
     La terza fonte è una cartella tua, <code>heroes add --path</code>, per un pacchetto che stai ancora scrivendo. Si legge dove sta e non si copia mai, e nessuna impronta la tiene ferma, quindi ogni build lo dice:
   </p>
-  <pre><code>$ heroes add --path ../../packages/core/0.2.1/files --as core
-added core ../../packages/core/0.2.1/files
+  <pre><code>$ heroes add --path ../../packages/core/0.3.0/files --as core
+added core ../../packages/core/0.3.0/files
 wrote heroes.toml
 $ heroes check main.hero
-note: the package `core` is read from the folder `../../packages/core/0.2.1/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
+note: the package `core` is read from the folder `../../packages/core/0.3.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
   <p>
     È l&rsquo;unica eccezione alla promessa che un errore nel catalogo non cambia mai quale modulo viene compilato: un <code>path</code> che punta alla cartella sbagliata compila altro codice. L&rsquo;autore aveva messo una cartella locale tra le fonti, quindi la seduta l&rsquo;ha tenuta, e l&rsquo;ha resa rumorosa invece che silenziosa.
   </p>
 
   <h3>Che cosa c&rsquo;è oggi</h3>
   <p>
-    Un pacchetto, <code>core</code>, con tre moduli che un programma può nominare, <code>&lt;core&gt;/strings</code>, <code>&lt;core&gt;/strconv</code> e <code>&lt;core&gt;/encoding/json</code>, ognuno con la sua scheda, tutti scritti in Heroes e nessuno sopra una libreria C. Un indice, la cartella <code>packages/</code> alla radice del repository, che i programmi di <code>examples/</code> leggono con <code>file://</code>.
+    Un pacchetto, <code>core</code>, con sei moduli che un programma può nominare, <code>&lt;core&gt;/strings</code>, <code>&lt;core&gt;/strconv</code>, <code>&lt;core&gt;/encoding/json</code>, <code>&lt;core&gt;/net</code>, <code>&lt;core&gt;/net/http</code> e <code>&lt;core&gt;/net/hero_net</code>, ognuno con la sua scheda, tutti scritti in Heroes. L&rsquo;ultimo è lo strato sottile sotto <code>net</code> che arriva fino al C, e il C a cui arriva è quello del linguaggio stesso: il codice per le connessioni di rete che accompagna il runtime. Nessun modulo nomina una libreria C che la build debba collegare. Un indice, la cartella <code>packages/</code> alla radice del repository, che i programmi di <code>examples/</code> leggono con <code>file://</code>.
   </p>
   <p>
     Un catalogo senza la riga <code>index</code> legge l&rsquo;indice di Heroes, un sito che non è ancora stato costruito: costruirlo, pubblicarci un pacchetto e decidere chi può prendersi un nome sono <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-package-index.md">una milestone a sé</a>, M-package-index, nella roadmap. Finché non esiste, un pacchetto che arriva da fuori di questo repository viene da git, o da una cartella tua. Le regole che segue ogni pacchetto core, per chi scriverà il prossimo, sono <a href="https://github.com/heroes-lang/heroes/blob/main/examples/packages/README.md">la guida per chi scrive pacchetti</a>, accanto al programma usato in questo capitolo.
@@ -306,9 +310,9 @@ note: the package `core` is read from the folder `../../packages/core/0.2.1/file
     repository: <code>examples/packages/</code>, il programma dei pacchetti
     core, con il catalogo che <code>heroes add</code> ha scritto per lui;
     <code>examples/ledger/main.hero</code>; e <code>packages/core/</code>,
-    l&rsquo;indice da cui leggono. Le cinque diagnostiche sono quel primo
+    l&rsquo;indice da cui leggono. Le diagnostiche sono quel primo
     programma con una modifica ciascuna, eseguito nella sua cartella: il
-    catalogo tolto, un indirizzo scritto nel suo terzo <code>use</code>, la
+    catalogo tolto, un indirizzo scritto nel suo quarto <code>use</code>, la
     stessa riga puntata su <code>strings/internal/scan</code> e un byte
     cambiato nella copia; e un piccolo programma il cui catalogo nomina la sua
     stessa cartella <code>lib/</code> con una voce <code>path</code>, raggiunta
