@@ -1,0 +1,8 @@
+# A module of defect 2495's function case (2026-11-13): it reaches the
+# second inline body through the header alone.
+
+extern "fixedbugs-2495-calls.h"
+    function top2495_b() -> i64  #~ ffi_missing_link
+
+function b() -> i64
+    return top2495_b()

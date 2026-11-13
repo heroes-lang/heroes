@@ -3,7 +3,7 @@
 # `cli/header_needs.hero` asks it where a link found no definition of a name
 # the program's own object refers to: the body of a function a group's
 # header defines is compiled into every unit that calls it, so each name
-# that body calls or reads is the program's to link.
+# that body calls or uses as an object is the program's to link.
 #
 # **A reference is read off its `DeclRefExpr` row**, at any depth under the
 # top-level `FunctionDecl` whose body holds it: `Function 0x… 'name'` for a
@@ -16,6 +16,14 @@
 # after the preprocessor, so a macro the body expands is read as what it
 # expands to.
 #
+# **How a body uses an object is the row clang prints above the reference**
+# (defect 2495, 2026-11-13): the reference is that row's first child, so a
+# read for its value stands under `ImplicitCastExpr ... <LValueToRValue>`
+# and the target of a plain `=` under its `BinaryOperator ... '='`. Any other
+# use, `+=`, `++`, `&`, an array decaying to its first element's address, is
+# neither, and a body using an object only so is told as referring to it:
+# `stop_requested = 1` was told *its body reads `stop_requested`*, false.
+#
 # **Each location is read in the dump's order** (`label_dump.located`),
 # since clang prints one relative to the last printed, a macro's spelling
 # among them; a function's place is its name's, the last location of its
@@ -25,15 +33,19 @@ use cli/dump_tops
 use cli/label_dump
 
 # A function the dump defines with a body: its name, where clang places it,
-# whether it is written `inline`, and each function it calls and each object
-# with linkage it reads, once, in the order the body names them.
+# whether it is written `inline`, each function it calls and each object
+# with linkage it names, once each, in the order the body names them; and,
+# of those objects, the ones it reads for their value somewhere and the ones
+# it assigns with a plain `=` somewhere, which may be both, or neither.
 record Body
     name: str
     file: str
     line: i64
     inline: bool
     calls: [str]
+    objects: [str]
     reads: [str]
+    writes: [str]
 
 # Every top-level function the dump defines with a body, in its order.
 function of_dump(dumped: str) -> [Body]
@@ -44,6 +56,9 @@ function of_dump(dumped: str) -> [Body]
     current: i64 @= -1
     start: i64 @= 0
     at: i64 @= 0
+
+    # The row printed above the one being read: a reference's parent.
+    above: str @= ""
 
     while at <= dumped.len()
         if at == dumped.len() || dumped[at] == 10
@@ -59,7 +74,7 @@ function of_dump(dumped: str) -> [Body]
 
                 if top.kind == "FunctionDecl" && !top.implicit && top.name.len() > 0
                     found @ found.push(
-                        Body(name: top.name, file: place.file, line: place.line, inline: dump_tops.holds(top.flags, word: "inline"), calls: [], reads: [])
+                        Body(name: top.name, file: place.file, line: place.line, inline: dump_tops.holds(top.flags, word: "inline"), calls: [], objects: [], reads: [], writes: [])
                     )
                     bodied @ bodied.push(false)
                     current @ found.len() - 1
@@ -76,10 +91,18 @@ function of_dump(dumped: str) -> [Body]
 
                     if !called.is_err()
                         found[current].calls @ once(found[current].calls, name: called.must().name)
-                    read = referred(row: row, marker: " Var 0x")
+                    named = referred(row: row, marker: " Var 0x")
 
-                    if !read.is_err() && !linked[read.must().id].is_err()
-                        found[current].reads @ once(found[current].reads, name: read.must().name)
+                    if !named.is_err() && !linked[named.must().id].is_err()
+                        name = named.must().name
+                        found[current].objects @ once(found[current].objects, name: name)
+
+                        if read_for_value(above)
+                            found[current].reads @ once(found[current].reads, name: name)
+
+                        if assigned_by(above)
+                            found[current].writes @ once(found[current].writes, name: name)
+            above @ row
             start @ at + 1
         at @ at + 1
 
@@ -99,13 +122,13 @@ function body_of(bodies: [Body], name: str) -> Body?
 
     return fail(code: "none", msg: "no body of that name")
 
-# Whether `body` calls or reads `name`.
+# Whether `body` calls `name` or uses it as an object, in any way.
 function refers(body: Body, name: str) -> bool
     for one in body.calls
         if one == name
             return true
 
-    for one in body.reads
+    for one in body.objects
         if one == name
             return true
 
@@ -113,6 +136,17 @@ function refers(body: Body, name: str) -> bool
 
 function is_top(row: str) -> bool
     return row.len() >= 2 && (row[0] == '|' || row[0] == '`') && row[1] == '-'
+
+# Whether the reference under `above` is read for its value: the row is
+# C's conversion of an object to the value it holds.
+function read_for_value(above: str) -> bool
+    return dump_tops.found_at(text: above, needle: "-ImplicitCastExpr 0x") >= 0 && dump_tops.found_at(text: above, needle: " <LValueToRValue>") >= 0
+
+# Whether the reference under `above` is what a plain `=` assigns: the row
+# is that operator, whose first child, the one printed below it, is its
+# left side.
+function assigned_by(above: str) -> bool
+    return dump_tops.found_at(text: above, needle: "-BinaryOperator 0x") >= 0 && dump_tops.found_at(text: above, needle: " '='") >= 0
 
 # A declaration a reference names: its `0x` address and its name.
 record Referred
@@ -212,14 +246,76 @@ test "a header's bodies are read with what they call and the objects with linkag
     got = of_dump(rows.join("\n") + "\n")
     assert got.len() == 4
     assert got[0].name == "mid" && got[0].file == "./inner.h" && got[0].line == 2 && got[0].inline
-    assert got[0].calls == ["base_two"] && got[0].reads.len() == 0
+    assert got[0].calls == ["base_two"] && got[0].objects.len() == 0
     assert got[1].name == "top_fast" && got[1].file == "./shapes.h" && got[1].line == 5
     assert got[1].calls == ["base_helper", "mid"]
-    assert got[1].reads == ["base_count", "base_deep"]
-    assert got[2].name == "shadow" && !got[2].inline && got[2].reads.len() == 0
+    assert got[1].objects == ["base_count", "base_deep"]
+    assert got[2].name == "shadow" && !got[2].inline && got[2].objects.len() == 0
     assert got[3].name == "defined_out" && got[3].line == 11 && got[3].calls == ["base_helper"]
     assert refers(got[1], name: "base_deep") && !refers(got[1], name: "base_count2")
     assert body_of(got, name: "base_helper").is_err()
     assert body_of(got, name: "mid").must().line == 2
     assert referred(row: "| `-DeclRefExpr 0x8 <col:38> 'int' Function 0x2", marker: " Function 0x").is_err()
     assert id_after("|-VarDecl", from: 2) == ""
+
+# Each use of an object as this Mac's clang 21 dumped it on 2026-11-13, from
+# a header holding defect 2495's `stop_requested` (the reproducer's own
+# shapes) and the uses beside them: a plain `=` writes, a value read reads,
+# and `+=`, `++`, `&` and an array's decay only refer.
+test "an object a body assigns is written, one it takes the value of is read, and any other use only refers (defect 2495)"
+    rows: [str] = [
+        "TranslationUnitDecl 0x1 <<invalid sloc>> <invalid sloc>"
+        "|-VarDecl 0x40 <./uses.h:2:1, col:21> col:21 used flag 'volatile int' extern"
+        "|-VarDecl 0x41 <line:3:1, col:12> col:12 used count 'int' extern"
+        "|-VarDecl 0x42 <line:4:1, col:19> col:12 used table 'int[4]' extern"
+        "|-FunctionDecl 0x50 <line:5:1, col:47> col:20 set_flag 'void (void)' static inline"
+        "| `-CompoundStmt 0x51 <col:35, col:47>"
+        "|   `-BinaryOperator 0x52 <col:37, col:44> 'int' '='"
+        "|     |-DeclRefExpr 0x53 <col:37> 'volatile int' lvalue Var 0x40 'flag' 'volatile int'"
+        "|     `-IntegerLiteral 0x54 <col:44> 'int' 1"
+        "|-FunctionDecl 0x60 <line:6:1, col:53> col:23 get_flag 'int64_t (void)' static inline"
+        "| `-CompoundStmt 0x61 <col:38, col:53>"
+        "|   `-ReturnStmt 0x62 <col:40, col:47>"
+        "|     `-ImplicitCastExpr 0x63 <col:47> 'int64_t':'long long' <IntegralCast>"
+        "|       `-ImplicitCastExpr 0x64 <col:47> 'int' <LValueToRValue>"
+        "|         `-DeclRefExpr 0x65 <col:47> 'volatile int' lvalue Var 0x40 'flag' 'volatile int'"
+        "|-FunctionDecl 0x70 <line:7:1, col:54> col:20 bump 'void (void)' static inline"
+        "| `-CompoundStmt 0x71 <col:31, col:54>"
+        "|   |-CompoundAssignOperator 0x72 <col:33, col:42> 'int' '+=' ComputeLHSTy='int' ComputeResultTy='int'"
+        "|   | |-DeclRefExpr 0x73 <col:33> 'int' lvalue Var 0x41 'count' 'int'"
+        "|   | `-IntegerLiteral 0x74 <col:42> 'int' 1"
+        "|   `-UnaryOperator 0x75 <col:45, col:50> 'int' postfix '++'"
+        "|     `-DeclRefExpr 0x76 <col:45> 'int' lvalue Var 0x41 'count' 'int'"
+        "|-FunctionDecl 0x80 <line:8:1, col:49> col:20 where 'int *(void)' static inline"
+        "| `-CompoundStmt 0x81 <col:32, col:49>"
+        "|   `-ReturnStmt 0x82 <col:34, col:42>"
+        "|     `-UnaryOperator 0x83 <col:41, col:42> 'int *' prefix '&' cannot overflow"
+        "|       `-DeclRefExpr 0x84 <col:42> 'int' lvalue Var 0x41 'count' 'int'"
+        "|-FunctionDecl 0x90 <line:9:1, col:50> col:19 first 'int (void)' static inline"
+        "| `-CompoundStmt 0x91 <col:31, col:50>"
+        "|   `-ReturnStmt 0x92 <col:33, col:47>"
+        "|     `-ImplicitCastExpr 0x93 <col:40, col:47> 'int' <LValueToRValue>"
+        "|       `-ArraySubscriptExpr 0x94 <col:40, col:47> 'int' lvalue"
+        "|         |-ImplicitCastExpr 0x95 <col:40> 'int *' <ArrayToPointerDecay>"
+        "|         | `-DeclRefExpr 0x96 <col:40> 'int[4]' lvalue Var 0x42 'table' 'int[4]'"
+        "|         `-IntegerLiteral 0x97 <col:46> 'int' 0"
+        "`-FunctionDecl 0xa0 <line:10:1, col:60> col:19 both 'int (void)' static inline"
+        "  `-CompoundStmt 0xa1 <col:30, col:60>"
+        "    |-BinaryOperator 0xa2 <col:32, col:40> 'int' '='"
+        "    | |-DeclRefExpr 0xa3 <col:32> 'int' lvalue Var 0x41 'count' 'int'"
+        "    | `-ImplicitCastExpr 0xa4 <col:40> 'int' <LValueToRValue>"
+        "    |   `-DeclRefExpr 0xa5 <col:40> 'volatile int' lvalue Var 0x40 'flag' 'volatile int'"
+        "    `-ReturnStmt 0xa6 <col:46, col:53>"
+        "      `-ImplicitCastExpr 0xa7 <col:53> 'int' <LValueToRValue>"
+        "        `-DeclRefExpr 0xa8 <col:53> 'int' lvalue Var 0x41 'count' 'int'"
+    ]
+    got = of_dump(rows.join("\n") + "\n")
+    assert got.len() == 6
+    assert got[0].name == "set_flag" && got[0].objects == ["flag"] && got[0].writes == ["flag"] && got[0].reads.len() == 0
+    assert got[1].name == "get_flag" && got[1].objects == ["flag"] && got[1].reads == ["flag"] && got[1].writes.len() == 0
+    assert got[2].name == "bump" && got[2].objects == ["count"] && got[2].reads.len() == 0 && got[2].writes.len() == 0
+    assert got[3].name == "where" && got[3].objects == ["count"] && got[3].reads.len() == 0 && got[3].writes.len() == 0
+    assert got[4].name == "first" && got[4].objects == ["table"] && got[4].reads.len() == 0 && got[4].writes.len() == 0
+    assert got[5].name == "both" && got[5].objects == ["count", "flag"]
+    assert got[5].writes == ["count"] && got[5].reads == ["flag", "count"]
+    assert refers(got[2], name: "count") && refers(got[0], name: "flag") && !refers(got[0], name: "count")

@@ -1,0 +1,13 @@
+error[ffi_missing_link]: `stop2495_asked` is defined inline in `fixedbugs-2495-stopflag.h` line 6, and its body reads `stop2495_requested`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2495-an-object-two-header-lists-write-and-read-is-told-in-each-module.hero:22:5
+     |
+  22 |     function stop2495_asked() -> i64  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `stop2495_requested` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2495-stopflag.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `stop2495_request` is defined inline in `fixedbugs-2495-stopflag.h` line 5, and its body writes `stop2495_requested`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs2495/flag_writer.hero:5:5
+    |
+  5 |     function stop2495_request()  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `stop2495_requested` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2495-stopflag.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it

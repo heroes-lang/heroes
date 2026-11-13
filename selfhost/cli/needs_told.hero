@@ -53,7 +53,7 @@ function diagnostic(one: Finding, linking: bool) -> diag.Diagnostic
         said @ said + ", and its body " + verb(body, names: one.names) + " " + names + ", which nothing on the link line defines"
     d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_missing_link", message: said, span: one.span)
     d.notes @ d.notes.push(
-        "this program needs a `link` naming the library that defines " + names + ": " + compiled(one) + ", and a library is linked only where a group names it; " + remedy(one, linking: linking)
+        "this program needs one definition of " + names + " on its link line: " + compiled(one) + "; a definition comes from a library, linked only where a group names it, or from a header that defines " + library_needs.pronoun(one.names) + ", compiled into every module whose group names that header; " + remedy(one, linking: linking)
     )
     return d
 
@@ -80,19 +80,30 @@ function compiled(one: Finding) -> str
         return "where this program's C writes `" + one.binding + "` it writes `" + one.macro + "`, which its own object then refers to, at `-O0` and `-O2` alike"
     return "the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike"
 
-# The group the program writes, this group's own `link` first where it
-# names no library yet.
+# The groups the program may write: this group's own `link` first where it
+# names no library yet, a group for the library, or one module's group
+# naming a header that defines the names. Not a `link` alone: a program's
+# own header declaring an object that another header of its own defines,
+# named by one module's group, is the split that holds one flag for the
+# whole program (panel 246's ffi-pragmatist, `stopflag_def.h`), and a link
+# was the one remedy told until defect 2495.
 function remedy(one: Finding, linking: bool) -> str
     own = "give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    header = "; or have one module's group, and no other's, name a header that defines " + library_needs.pronoun(one.names)
 
     if linking
-        return own
-    return "name it in this group's own `link`, `extern \"" + one.header + "\" link \"<library>\"`, or " + own
+        return own + header
+    return "name that library in this group's own `link`, `extern \"" + one.header + "\" link \"<library>\"`, or " + own + header
 
-# How a body names `names`: it calls functions and reads objects.
+# How a body names `names`: it calls functions, and of an object it reads
+# the value or assigns it with `=` (`header_bodies.Body`); any other use, or
+# names used in different ways, it refers to. Each word is said only where
+# the dump shows it: an object a body only assigns was told as one it reads
+# (defect 2495).
 function verb(body: header_bodies.Body, names: [str]) -> str
     calls: bool @= true
     reads: bool @= true
+    writes: bool @= true
 
     for name in names
         if !holds(body.calls, name: name)
@@ -101,11 +112,20 @@ function verb(body: header_bodies.Body, names: [str]) -> str
         if !holds(body.reads, name: name)
             reads @ false
 
+        if !holds(body.writes, name: name)
+            writes @ false
+
     if calls
         return "calls"
 
+    if reads && writes
+        return "reads and writes"
+
     if reads
         return "reads"
+
+    if writes
+        return "writes"
     return "refers to"
 
 # Whether the group told at already links a library or names a package: the
@@ -143,7 +163,9 @@ test "a header's text that needs a name nothing links is told with the link it n
         line: 2,
         inline: true,
         calls: ["base_helper"],
-        reads: []
+        objects: [],
+        reads: [],
+        writes: []
     )
     d = diagnostic(
         Finding(span: at, header: "fast.h", binding: "top_fast", macro: "", body: ok(fast), file: "fast.h", names: ["base_helper"]),
@@ -151,7 +173,7 @@ test "a header's text that needs a name nothing links is told with the link it n
     )
     assert d.code == "ffi_missing_link"
     assert d.message == "`top_fast` is defined inline in `fast.h` line 2, and its body calls `base_helper`, which nothing on the link line defines"
-    assert d.notes == ["this program needs a `link` naming the library that defines `base_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"]
+    assert d.notes == ["this program needs one definition of `base_helper` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it"]
 
     # A group with no `link` is offered its own first; a macro, a body
     # reached through another, and a body no binding reaches.
@@ -160,7 +182,7 @@ test "a header's text that needs a name nothing links is told with the link it n
         linking: false
     )
     assert library_needs.pronoun(["x"]) == "it"
-    assert remedy(Finding(span: at, header: "fast.h", binding: "", macro: "", body: ok(fast), file: "fast.h", names: []), linking: false) == "name it in this group's own `link`, `extern \"fast.h\" link \"<library>\"`, or give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    assert remedy(Finding(span: at, header: "fast.h", binding: "", macro: "", body: ok(fast), file: "fast.h", names: ["base_helper"]), linking: false) == "name that library in this group's own `link`, `extern \"fast.h\" link \"<library>\"`, or give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it"
     assert bare.message == d.message
     alias = diagnostic(
         Finding(span: at, header: "fastalias.h", binding: "top_fast", macro: "base_helper", body: fail(code: "none", msg: "a macro"), file: "", names: ["base_helper"]),
@@ -173,7 +195,9 @@ test "a header's text that needs a name nothing links is told with the link it n
         line: 2,
         inline: true,
         calls: ["base_two"],
-        reads: ["base_count"]
+        objects: ["base_count"],
+        reads: ["base_count"],
+        writes: []
     )
     reached = diagnostic(
         Finding(span: at, header: "fast.h", binding: "top_fast", macro: "", body: ok(mid), file: "./inner.h", names: ["base_two", "base_count"]),
@@ -186,10 +210,61 @@ test "a header's text that needs a name nothing links is told with the link it n
         line: 4,
         inline: false,
         calls: [],
-        reads: ["base_count"]
+        objects: ["base_count"],
+        reads: ["base_count"],
+        writes: []
     )
     unreached = diagnostic(
         Finding(span: at, header: "fast.h", binding: "", macro: "", body: ok(plain), file: "./inner.h", names: ["base_count"]),
         linking: true
     )
     assert unreached.message == "`helper` is defined in `./inner.h` line 4, which this group reads through `fast.h`, and its body reads `base_count`, which nothing on the link line defines"
+
+# Defect 2495's own shapes: `stop_request` assigns `stop_requested`, so its
+# body writes it, never reads it; a body doing both says both, any other
+# use refers; and the remedy offers a defining header beside a library,
+# the split one flag for a program is made of.
+test "an object an inline body assigns is told as written, and a defining header is offered beside a library (defect 2495)"
+    at = token.Span(start: 0, end: 0)
+    request = header_bodies.Body(
+        name: "stop_request",
+        file: "./stopflag.h",
+        line: 7,
+        inline: true,
+        calls: [],
+        objects: ["stop_requested"],
+        reads: [],
+        writes: ["stop_requested"]
+    )
+    d = diagnostic(
+        Finding(span: at, header: "stopflag.h", binding: "stop_request", macro: "", body: ok(request), file: "stopflag.h", names: ["stop_requested"]),
+        linking: false
+    )
+    assert d.message == "`stop_request` is defined inline in `stopflag.h` line 7, and its body writes `stop_requested`, which nothing on the link line defines"
+    assert d.notes == ["this program needs one definition of `stop_requested` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern \"stopflag.h\" link \"<library>\"`, or give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it"]
+    both = header_bodies.Body(
+        name: "both",
+        file: "./uses.h",
+        line: 10,
+        inline: true,
+        calls: [],
+        objects: ["count", "flag"],
+        reads: ["flag", "count"],
+        writes: ["count"]
+    )
+    assert verb(both, names: ["count"]) == "reads and writes"
+    assert verb(both, names: ["flag"]) == "reads"
+    assert verb(both, names: ["count", "flag"]) == "reads"
+    bump = header_bodies.Body(
+        name: "bump",
+        file: "./uses.h",
+        line: 7,
+        inline: true,
+        calls: [],
+        objects: ["count"],
+        reads: [],
+        writes: []
+    )
+    assert verb(bump, names: ["count"]) == "refers to"
+    assert verb(request, names: ["stop_requested"]) == "writes"
+    assert library_needs.pronoun(["a", "b"]) == "them"

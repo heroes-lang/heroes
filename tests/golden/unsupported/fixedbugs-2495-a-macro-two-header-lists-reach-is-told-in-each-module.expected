@@ -1,0 +1,13 @@
+error[ffi_missing_link]: `top2495_m` is a macro for `base2495_m` where this group reads it from `fixedbugs-2495-alias.h`, and nothing on the link line defines `base2495_m`
+  at tests/golden/unsupported/fixedbugs-2495-a-macro-two-header-lists-reach-is-told-in-each-module.hero:16:5
+     |
+  16 |     function top2495_m() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2495_m` on its link line: where this program's C writes `top2495_m` it writes `base2495_m`, which its own object then refers to, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2495-alias.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2495_m` is a macro for `base2495_m` where this group reads it from `fixedbugs-2495-alias.h`, and nothing on the link line defines `base2495_m`
+  at tests/golden/unsupported/fixedbugs2495/alias_b.hero:5:5
+    |
+  5 |     function top2495_m() -> i32  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2495_m` on its link line: where this program's C writes `top2495_m` it writes `base2495_m`, which its own object then refers to, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2495-alias.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it

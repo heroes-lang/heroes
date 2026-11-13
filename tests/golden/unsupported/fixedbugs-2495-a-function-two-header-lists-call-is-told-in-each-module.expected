@@ -1,0 +1,13 @@
+error[ffi_missing_link]: `top2495_a` is defined inline in `fixedbugs-2495-calls.h` line 5, and its body calls `base2495`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2495-a-function-two-header-lists-call-is-told-in-each-module.hero:16:5
+     |
+  16 |     function top2495_a() -> i64  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2495` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2495-calls.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2495_b` is defined inline in `fixedbugs-2495-calls.h` line 6, and its body calls `base2495`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs2495/calls_b.hero:5:5
+    |
+  5 |     function top2495_b() -> i64  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2495` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2495-calls.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it

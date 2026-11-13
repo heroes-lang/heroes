@@ -1,0 +1,8 @@
+# A module of defect 2495's object case (2026-11-13): it writes the flag
+# through the header alone, a header list the root's is not.
+
+extern "fixedbugs-2495-stopflag.h"
+    function stop2495_request()  #~ ffi_missing_link
+
+function stop()
+    stop2495_request()
