@@ -73,10 +73,10 @@ static int hero_fs_is_surrogate(const char *path) {
  * `GetFileAttributesW` alone is not that question (defect 2491): it answers
  * a symbolic link's or a junction's OWN attributes, as Microsoft's *Symbolic
  * Link Effects on File Systems Functions* documents (`hero_fs_wide_writable`
- * below cites it), so a link to nothing was there, a directory's link whose
- * directory had gone was still a directory, and a file's link to a directory
- * was none, where POSIX answers no, no and yes; the box measured the first
- * through `library_held.taken` (defect 2487). The parts of a path before its
+ * below cites it), so a link to nothing was there and a directory's link
+ * whose directory had gone was still a directory, where POSIX answers no and
+ * no; the box measured the first through `library_held.taken` (defect 2487).
+ * The parts of a path before its
  * last are followed by the walk that reads the path, on both platforms, so
  * only a last part that is a link asks more: it is opened as `hero_fs_kind`
  * (parts/replace.c) opens one, for no access at all, which asks nothing of
@@ -86,7 +86,29 @@ static int hero_fs_is_surrogate(const char *path) {
  *
  * A link that open cannot follow names nothing this machine can open (one to
  * nothing, a loop of links, one of a kind no driver here reads), and answers
- * as POSIX's `stat` answers a link it cannot follow: not there. A device at
+ * as POSIX's `stat` answers a link it cannot follow: not there.
+ *
+ * **A LINK WHOSE KIND IS NOT ITS TARGET'S NAMES NOTHING HERE, AND THAT IS
+ * WINDOWS' ANSWER** (defect 2509). A Windows link is a file's or a
+ * directory's from the moment it is made (`hero_fs_symlink`, parts/replace.c,
+ * defect 2488), and the open below does not follow a file's link to what is
+ * now a directory: measured on the CI's Windows Server 2025 leg (run
+ * 43392996643, 2026-11-13), where POSIX's `stat` answers a directory. Go's
+ * issue 39183 measured the same shape through `os.Open` (*Access is denied*,
+ * 2020), a Cygwin post through `cd` (*The directory name is invalid*, 2016),
+ * and Rust's `symlink_file` and `symlink_dir` document a link of the other
+ * kind as broken in both directions (read 2026-11-13). This door answers that
+ * open rather than the target the link's text names (which
+ * FSCTL_GET_REPARSE_POINT would read), because the tools a caller hands the
+ * path to ask the same open: LLVM's `sys::fs::status`, which clang's file
+ * manager asks of a header and of an `-I` folder, opens a name for no access
+ * with FILE_FLAG_BACKUP_SEMANTICS and nothing else
+ * (`llvm/lib/Support/Windows/Path.inc`, read 2026-11-13), so a target's kind
+ * read from the text would name a file there that no tool can open, defect
+ * 2487's shape. A directory's link whose target became a file is held to the
+ * same answer, an inference from those sources and unrun here. A name
+ * reached THROUGH such a link, a part of the path before its last, is
+ * Windows' own walk's on both sides of the question. A device at
  * the end of a chain is there and is no directory, FILE_ATTRIBUTE_NORMAL
  * saying both. A reparse point that names no other file, a cloud placeholder
  * or an App Execution Alias, IS the file, as `hero_fs_wide_surrogate` holds

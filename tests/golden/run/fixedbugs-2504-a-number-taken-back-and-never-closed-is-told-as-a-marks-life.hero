@@ -1,0 +1,41 @@
+# Defect 2504, 2026-11-13: the leak report's first sentence names who began
+# the lives still standing (`runtime/parts/alloc.c`). Here a socket is given
+# up for a number and taken back by `hero_net_of`, which ends the number's
+# life, the door's, and begins the socket's again by its own mark, `acquires
+# hero_net_close | hero_net_number`; never closed, it is a life a mark began,
+# and the sentence names the mark alone, as it did before the door existed.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+
+function main()
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+
+    if listener == nullptr
+        print("no listener")
+        return
+    client = hero_net_connect(address: "127.0.0.1".cstr(), port: hero_net_port(listener))
+
+    if client == nullptr
+        _ = hero_net_close(listener)
+        print("no connection")
+        return
+    accepted = hero_net_accept(listener)
+
+    if accepted == nullptr
+        _ = hero_net_close(client)
+        _ = hero_net_close(listener)
+        print("no accept")
+        return
+    number = hero_net_number(accepted)
+    again = hero_net_of(number)
+    print(f"the number is taken back as a socket: {again != nullptr}")
+    _ = hero_net_close(client)
+    _ = hero_net_close(listener)
+    print("the socket taken back is never closed, and main returns")

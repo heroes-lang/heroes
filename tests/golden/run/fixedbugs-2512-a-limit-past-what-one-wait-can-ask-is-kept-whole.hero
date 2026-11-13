@@ -1,0 +1,65 @@
+# Defect 2512, 2026-11-13. Symptom: on Windows the watchdog of a run waited
+# `(DWORD)(seconds * 1000)` milliseconds, so a limit past about 49 days became
+# a short one: 536,870,912 s is 125 times 2^32 ms and waited 0 ms, killing the
+# child at once with 124, and 4,294,968 s waited 704 ms; and a limit past
+# 2^63 / 1000 seconds overflowed the product, undefined, on both arms (the
+# POSIX arm's repaired with defect 2503). Read by lane b35-runtime, unrun on
+# Windows, the box offline. Cause: one wait was asked for the limit cut to
+# 32 bits. Now both arms read one conversion, `hero_run_limit_ms`, which
+# saturates, and the Windows arm waits on the clock in waits of at most
+# 2^31 - 1 ms, never `INFINITE` and never a cut count
+# (`runtime/parts/run.c`, `hero_run_win_wait`).
+#
+# The program runs itself as a child that naps a second (`fixedbugs-2512-
+# nap.h`, which load can only lengthen) under four limits each past what one
+# wait can ask, the three the cut made short or undefined among them, and
+# each child must end on its own and answer 7, never 124; then once under a
+# limit of one second with a nap of thirty, which must still be killed and
+# answer 124. No verdict is a duration, and nothing waits for days: a short
+# wait is a kill before the nap ends.
+
+extern "fixedbugs-2512-nap.h"
+    function case2512_nap(ms: i64)
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+
+# This program's own path, the one it runs again.
+function itself() -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+# This program run again to nap a second, `short`, or thirty, `long`, under a
+# watchdog of `seconds`: the code it answered.
+function child(nap: str, seconds: i64) -> i64
+    program = itself()
+    hero_run_reset()
+    hero_run_arg(word: program)
+    hero_run_arg(word: nap)
+    hero_run_limit(seconds: seconds)
+    status: i64 @= 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    return code
+
+function main()
+    words = args()
+
+    if words.len() > 0
+        if words[0] == "long"
+            case2512_nap(ms: 30000)
+        else
+            case2512_nap(ms: 1000)
+        exit(7)
+
+    # 125 times 2^32 ms; 2^32 + 704 ms; the first past 2^31 - 1 ms; the
+    # largest limit there is.
+    for seconds in [536870912, 4294968, 2147484, 9223372036854775807]
+        print(f"a child napping a second under a limit of {seconds} s answered {child(nap: "short", seconds: seconds)}")
+
+    print(f"a child napping thirty seconds under a limit of 1 s answered {child(nap: "long", seconds: 1)}")

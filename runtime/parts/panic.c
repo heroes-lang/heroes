@@ -102,6 +102,17 @@ static HeroPlace hero_place_kept(const HeroPlace *where) {
     if (where == NULL) return (HeroPlace){NULL, NULL, 0, 0};
     return *where;
 }
+
+/* WHETHER A DOOR OF THE RUNTIME BEGAN A LIFE, NOT A MARK OF THE PROGRAM
+ * (defect 2504): its place names the door's header and no line of it, as
+ * `hero_net_number` begins a socket's life as a number (panel 246's R6,
+ * `platform/hero_net.c`). The premise, a claim that can die: every place the
+ * compiler writes names its line counted from 1 (`source.locate`), which
+ * `emit/stop_place.hero`'s test *the first byte of every file is line 1* holds
+ * and fails on the day it stops; an old entry point's place names no file. */
+static bool hero_place_is_a_door(const HeroPlace *where) {
+    return where->path != NULL && where->line < 1;
+}
 static void hero_places_see(HeroPlaces *t, const HeroPlace *where, uint64_t order);
 static void hero_places_count(HeroPlaces *t, const HeroPlace *where);
 static void hero_places_write(HeroPlaces *t, size_t total);

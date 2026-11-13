@@ -1166,7 +1166,9 @@ int64_t hero_net_close(hero_net_socket *s) {
 /* -- a socket as a number (panel 246's R6) ------------------------------ */
 
 /* Where a number's life began, as the leak check's report names it: the
- * layer's door, no line of the program, and what the program owes. */
+ * layer's door, no line of the program, and what the program owes. Its line
+ * 0 is how the report's first sentence tells a door's life from a mark's
+ * (defect 2504, `parts/panic.c`'s `hero_place_is_a_door`). */
 static const HeroPlace hero_net_numbered_at = { "hero_net.h", "hero_net_number, a socket given up as a number no hero_net_of took back", 0, 0 };
 
 int64_t hero_net_number(hero_net_socket *s) {
