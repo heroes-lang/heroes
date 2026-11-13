@@ -1,0 +1,135 @@
+# Defect 2503, 2026-11-13. Symptom: a `heroes` ended by a signal gave the
+# program it ran its two seconds of grace before SIGKILL counted as 200 naps
+# of 10 ms, and a nap under load lasts longer than asked: the grace measured
+# 2.96 s on this Mac under the lanes' load (lane b34-layer), and a `heroes run`
+# whose child would not end ended 2.56 to 2.73 s after its SIGTERM at a load
+# of 6 to 7 the day it was repaired. Cause: `hero_run_ended` counted the
+# grace in naps rather than reading a clock, and so did the watchdog of
+# `hero_run_go` its limit and its own grace, which is promised longer than
+# the handler's so that a runner the watchdog ends has ended its child first.
+# Now every one of those waits is read on the monotonic clock
+# (`runtime/parts/run.c`, `hero_run_clock_ms`), which POSIX lets a handler
+# read.
+#
+# The program is its own three generations, through the runtime's door every
+# `heroes` verb goes through. The first runs the second under a watchdog of
+# three seconds, the second runs the third with none, and the third catches
+# SIGTERM with a handler that only notes it (`fixedbugs-2503-deaf.h`), then
+# beats, a new empty file every 20 ms, for thirty seconds at most so a
+# runtime that never kills it leaves no endless orphan. The watchdog's SIGTERM
+# ends the second's wait, its handler passes the signal on, the third notes
+# it and beats on, and the grace runs to its end, where SIGKILL ends the
+# third and the second dies of its signal. The first reads that the third
+# heard the signal and lived, counts the beats, waits a second, and counts
+# again: the same count, the third ended with the one that ran it, inside the
+# watchdog's own grace, or it would have been left beating. No verdict here
+# is a duration: what the clock buys is the bound, the handler's grace inside
+# the watchdog's whatever the load. `unistd.h` is no header of Windows, whose
+# runner ends a child's job and sends no signal a child hears, so the case is
+# skipped there by its build's own words. `build/` for the directory,
+# `edges-file-args-exit.hero`'s reason.
+
+extern "fixedbugs-2503-deaf.h"
+    function case2503_deaf() -> i32
+    function case2503_heard() -> i32
+
+extern "unistd.h"
+    function sleep(seconds: u32) -> u32
+    function usleep(useconds: u32) -> i32
+
+extern "time.h"
+    function time(at: ptr) -> i64
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+    function hero_os_pid() -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_DIR_FILES: i64
+
+# How long the third generation beats before it ends by itself, in seconds:
+# the bound on an orphan where the runtime never kills it.
+constant LIFE: i64
+    30
+
+# This program's own path, the one it runs again.
+function itself() -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+# This program run again with `words`, under a watchdog of `seconds`, 0 for
+# none: the code it answered.
+function again(words: [str], seconds: i64) -> i64
+    program = itself()
+    hero_run_reset()
+    hero_run_arg(word: program)
+
+    for word in words
+        hero_run_arg(word: word)
+
+    hero_run_limit(seconds: seconds)
+    status: i64 @= 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    return code
+
+# How many beats `dir` holds.
+function beats(dir: str) -> i64
+    count = hero_dir_scan(root: dir.cstr(), want: HERO_DIR_FILES, recursive: 0)
+    hero_dir_release()
+    return count
+
+# The third generation: deaf to SIGTERM, a beat every 20 ms until something
+# ends it or LIFE seconds have passed, and `heard` written once the signal
+# has come and been lived through.
+function third(dir: str)
+    if case2503_deaf() != 0
+        return
+    born = time(at: nullptr)
+    told: bool @= false
+    k: i64 @= 0
+
+    while time(at: nullptr) - born < LIFE
+        if !told && case2503_heard() == 1
+            told @ !write_file(path: dir + "/heard", text: "").is_err()
+        k @ k + 1
+
+        # A beat that cannot be written is the next one's to make.
+        if write_file(path: dir + "/beats/" + k.to_str(), text: "").is_err()
+            k @ k - 1
+        _ = usleep(useconds: 20000)
+
+function first()
+    dir = "build/heroes-golden-2503-" + hero_os_pid().to_str()
+    _ = hero_fs_mkdir_all(path: (dir + "/beats").cstr())
+    print("the watchdog ended the second generation: ", again(["second", dir], seconds: 3))
+    print("the third generation heard the signal and lived: ", !read_file(dir + "/heard").is_err())
+    before = beats(dir + "/beats")
+
+    if before < 1
+        print("the third generation never beat")
+    else
+        _ = sleep(seconds: 1)
+
+        if beats(dir + "/beats") == before
+            print("the third generation ended with it")
+        else
+            print("the third generation outlived the one that ran it")
+    _ = hero_dir_remove_tree(path: dir.cstr())
+
+function main()
+    words = args()
+
+    if words.len() == 0
+        first()
+    else if words[0] == "second"
+        print("the second generation's child answered ", again(["third", words[1]], seconds: 0))
+    else
+        third(words[1])
