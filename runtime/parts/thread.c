@@ -107,19 +107,38 @@ static void hero_thread_claim(void) {
  * (Microsoft's `signal` and HandlerRoutine pages, read by panel 246's
  * ffi-pragmatist, not run on the box); panel 246's R4 rules that no Heroes
  * code runs in a handler, and the stop a server needs is the platform
- * layer's. One line, so a case pins it whole. */
+ * layer's. One line, so a case pins it whole.
+ *
+ * AND THEY ARE SAID AS EVERY REFUSAL OF A SIGNAL IS, ASYNC-SIGNAL-SAFE
+ * (defect 2494, lane b35-signals): a handler of C's on a thread C made runs
+ * this refusal inside the signal, and it formatted its words with `snprintf`
+ * and printed them with stdio, so a signal landing in that thread's own
+ * `snprintf` was killed by Darwin's locale lock with nothing said, 1 storm of
+ * 40 on this Mac, 2026-11-13 (`_os_unfair_lock_recursive_abort < localeconv_l <
+ * __snprintf_chk < hero_thread_guard < ... < _sigtramp < localeconv_l <
+ * __snprintf_chk`). So the name is copied into fixed parts and the line goes
+ * through `parts/sigguard.c`'s stop: `write(2)`, no stdio, SIGABRT raised,
+ * latched once per process. The thunk C is handed asks for this refusal itself
+ * on such a thread before any thread-local of this runtime is touched there;
+ * the guard below is reached by a Heroes function's own entry. What is given
+ * up: stdout is not flushed first, which `hero_panic` did and which may wait
+ * for ever on a lock the signal interrupted; it is line-buffered on POSIX and
+ * unbuffered on Windows (`parts/os.c`), so what a program printed whole is
+ * already out, and a line it had not ended is lost. */
+static _Noreturn void hero_thread_refuse(const char *what) {
+    const char *const said[] = {
+        "panic: ",
+        what,
+        " ran on a thread this program did not start: C called it back from a thread of its own, where this "
+        "runtime's values are not safe. To run work on another thread, start it with `hero_thread_spawn` from "
+        "`hero_os.h`, whose function runs on a thread this program owns. To stop on Ctrl-C or SIGTERM, give C "
+        "no Heroes function as a signal handler: the platform layer's waiting calls, in `hero_net.h`, end with "
+        "a stop the program reads",
+    };
+    hero_signal_stop(said, sizeof said / sizeof said[0]);
+}
+
 void hero_thread_guard(const char *what) {
     if (hero_thread_is_home) return;
-    char msg[1024];
-    snprintf(
-        msg,
-        sizeof msg,
-        "%s ran on a thread this program did not start: C called it back from a thread of its own, "
-        "where this runtime's values are not safe. To run work on another thread, start it with "
-        "`hero_thread_spawn` from `hero_os.h`, whose function runs on a thread this program owns. "
-        "To stop on Ctrl-C or SIGTERM, give C no Heroes function as a signal handler: the platform "
-        "layer's waiting calls, in `hero_net.h`, end with a stop the program reads",
-        what
-    );
-    hero_panic(msg);
+    hero_thread_refuse(what);
 }

@@ -49,10 +49,12 @@
  * WHAT IT DOES NOT SEE, said, and `parts/alloc.c`'s guard (D) stays beneath it
  * for that (panel 247's R2 and R3): a handler whose frames keep no record (a
  * library built `-fomit-frame-pointer`), one more than HERO_SIGNAL_WALK frames
- * below the Heroes function (glibc's `qsort` of 10,000 values), a thread C
- * made (`parts/thread.c`'s guard refuses every Heroes function there), and
- * Windows, where a console's Ctrl-C runs on a thread Windows makes, which that
- * guard refuses, and a fault's handler runs on the faulting thread.
+ * below the Heroes function (glibc's `qsort` of 10,000 values), and Windows,
+ * where a console's Ctrl-C runs on a thread Windows makes, which
+ * `parts/thread.c`'s guard refuses, and a fault's handler runs on the faulting
+ * thread. A thread C made, which nothing claimed, is refused here too, in that
+ * guard's words and through the stop below, since a handler of C's may be
+ * running on it (below, THE THUNK FINDS IT THROUGH A THREAD KEY).
  *
  * THE ONE STOP. Every refusal of a re-entrance by a signal, this file's, the
  * allocator's and the lend tracking's, ends through `hero_signal_stop`, which
@@ -227,19 +229,38 @@ void hero_signal_learn(void) {
 /* THE THREAD'S OWN STACK, read once as the thread is claimed (`parts/thread.c`:
  * `main`'s from `hero_args_set`, a worker's from `hero_spawn_enter` while its
  * signals are still held off), never inside a signal: glibc's
- * `pthread_getattr_np` allocates. One record, so a thunk reaches both bounds
- * through one thread-local access, a call of Darwin's accessor: four of them a
- * thunk cost a `qsort` comparator 3.7 times D's instructions (panel 247's
- * compiler-engineer). Asked of the system rather than of `parts/stack.c`'s
- * guard, which `--sanitize` empties and the walk was then blind (the same). A
- * thread C made is never claimed and keeps 0 and 0: every frame lies outside
- * it, the kernel is asked, and the thread's guard refuses the function after. */
+ * `pthread_getattr_np` allocates. Asked of the system rather than of
+ * `parts/stack.c`'s guard, which `--sanitize` empties and the walk was then
+ * blind (panel 247's compiler-engineer).
+ *
+ * THE THUNK FINDS IT THROUGH A THREAD KEY, NEVER A THREAD-LOCAL ACCESS, because
+ * on a thread C made, which nothing claimed, the first access of a
+ * thread-local is made inside the signal, and Darwin makes a thread's
+ * thread-locals at their first access with `malloc` (dyld's
+ * `instantiateVariable`): a thread interrupted inside the allocator was then
+ * killed by SIGKILL with nothing said, 9 crash reports of plain C on this Mac,
+ * 2026-11-13 (`_os_unfair_lock_recursive_abort < mfm_alloc <
+ * instantiateVariable < _tlv_get_addr < handler < _sigtramp < mfm_free`). The
+ * claim stores the record's address under the key; `pthread_getspecific`
+ * reads a slot of the thread's own and allocates nothing, so a thread whose
+ * slot is empty is one nothing claimed, told by 2492's words, and no
+ * thread-local of this runtime is touched there. One read of the slot, where
+ * the record was one thread-local access (four of those cost a `qsort`
+ * comparator 3.7 times D's instructions, the compiler-engineer). */
 typedef struct {
     uintptr_t lo;
     uintptr_t hi;
 } HeroSignalStack;
 
 static _Thread_local HeroSignalStack hero_signal_stack = {0, 0};
+
+/* The key, made once by the first claim, `main`'s, before any thunk exists;
+ * and whether it is: 0 not yet, 1 being made, 2 made. */
+static _Atomic pthread_key_t hero_signal_key;
+static _Atomic int hero_signal_keyed = 0;
+
+/* 2492's refusal (`parts/thread.c`), async-signal-safe. */
+static _Noreturn void hero_thread_refuse(const char *what);
 
 static void hero_signal_measure(void) {
 #if defined(__APPLE__)
@@ -258,6 +279,18 @@ static void hero_signal_measure(void) {
     hero_signal_stack.lo = (uintptr_t)addr;
     hero_signal_stack.hi = (uintptr_t)addr + size;
 #endif
+    int expect = 0;
+    if (atomic_compare_exchange_strong(&hero_signal_keyed, &expect, 1)) {
+        pthread_key_t key;
+        if (pthread_key_create(&key, NULL) != 0) hero_panic("the system refused this runtime a thread key");
+        atomic_store_explicit(&hero_signal_key, key, memory_order_relaxed);
+        atomic_store_explicit(&hero_signal_keyed, 2, memory_order_release);
+    } else {
+        while (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) != 2) sched_yield();
+    }
+    if (pthread_setspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed), &hero_signal_stack) != 0) {
+        hero_panic("the system refused this runtime a thread key's slot");
+    }
 }
 
 /* The refusal: `delivered` where the system called the function itself, else
@@ -282,11 +315,15 @@ static _Noreturn void hero_signal_refuse(const char *what, int delivered) {
  * stack, above the stack pointer, so it reads memory the thread has used. */
 void hero_callback_entered(const char *what, void *ret, void *frame) {
     uintptr_t plain = atomic_load_explicit(&hero_signal_returns[0], memory_order_acquire);
-    if (plain == 0) return;
     uintptr_t info = atomic_load_explicit(&hero_signal_returns[1], memory_order_relaxed);
     uintptr_t back = (uintptr_t)ret;
-    if (back == plain || back == info) hero_signal_refuse(what, 1);
-    const HeroSignalStack *own = &hero_signal_stack;
+    if (plain != 0 && (back == plain || back == info)) hero_signal_refuse(what, 1);
+    const HeroSignalStack *own = NULL;
+    if (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) == 2) {
+        own = pthread_getspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed));
+        if (own == NULL) hero_thread_refuse(what);
+    }
+    if (plain == 0 || own == NULL) return;
     uintptr_t lo = own->lo;
     uintptr_t hi = own->hi;
     uintptr_t fp = (uintptr_t)frame;
