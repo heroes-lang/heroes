@@ -1,0 +1,34 @@
+# fixedbugs, defect 2511, lane b35-ffi, 2026-11-13.
+#
+# SYMPTOM: a C function whose header defines a macro of its name beside it
+# that assigns through its argument, Darwin's `sigemptyset`, bound with a
+# `ptr` or a numeric `@`, stopped the build with `internal error`, exit 2:
+# the call and the return assertion expanded the macro, which dereferences
+# the `void *` such a parameter crosses as.
+#
+# CAUSE: the call and the assertion named the macro where the probe, which
+# writes `(name)(a0)`, had held the binding to the function. Now a round that
+# clang refuses at such a macro's expansion runs again with the name in
+# parentheses at its calls and its assertion (`emit/call_spelling.hero`), so
+# the function is called, as C11 7.1.4p1 lets a program do; a call through a
+# macro clang compiles stays one. `add2511` with 40 answers -1: the function,
+# which checks its bit, and not the macro, which does not.
+
+extern "fixedbugs-2511-sets.h"
+    function empty2511(s: ptr) -> i32
+    function add2511(@s: u32, n: i32) -> i32
+    function has2511(s: ptr, n: i32) -> i32
+
+extern "stdlib.h"
+    function calloc(count: u64, size: u64) -> ptr
+    function free(p: ptr)
+
+function main()
+    held = calloc(count: 1, size: 4)
+    print(empty2511(s: held))
+    print(has2511(s: held, n: 3))
+    mine @= to_u32(0).must()
+    print(add2511(@mine, n: 3))
+    print(add2511(@mine, n: 40))
+    print(mine)
+    free(p: held)

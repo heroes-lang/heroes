@@ -1,0 +1,37 @@
+# fixedbugs, defect 2511, lane b35-ffi, 2026-11-13.
+#
+# SYMPTOM: binding `sigemptyset` from `signal.h` built to `internal error`,
+# exit 2, on Darwin, whose header defines `#define sigemptyset(set) (*(set) =
+# 0, 0)` beside the function, and the same of `sigaddset`, `sigdelset`,
+# `sigismember` and `sigfillset`; seven of panel 247's forty blind answers
+# stopped there. On glibc they are functions alone.
+#
+# CAUSE AND REPAIR: `fixedbugs-2511-a-function-behind-a-macro-that-assigns-
+# through-its-argument-is-called`. The set lives in memory C hands back, as
+# large as glibc's 128 bytes, so one binding reads alike on both. Windows'
+# C library has no POSIX signal sets (`tests/harness/platform_skips.hero`).
+
+extern "signal.h"
+    constant SIGINT: i32
+    constant SIGTERM: i32
+    function sigemptyset(set: ptr) -> i32
+    function sigfillset(set: ptr) -> i32
+    function sigaddset(set: ptr, signo: i32) -> i32
+    function sigdelset(set: ptr, signo: i32) -> i32
+    function sigismember(set: ptr, signo: i32) -> i32
+
+extern "stdlib.h"
+    function calloc(count: u64, size: u64) -> ptr
+    function free(p: ptr)
+
+function main()
+    set = calloc(count: 1, size: 128)
+    print(sigemptyset(set: set))
+    print(sigaddset(set: set, signo: SIGINT))
+    print(sigismember(set: set, signo: SIGINT))
+    print(sigismember(set: set, signo: SIGTERM))
+    print(sigfillset(set: set))
+    print(sigdelset(set: set, signo: SIGINT))
+    print(sigismember(set: set, signo: SIGINT))
+    print(sigismember(set: set, signo: SIGTERM))
+    free(p: set)

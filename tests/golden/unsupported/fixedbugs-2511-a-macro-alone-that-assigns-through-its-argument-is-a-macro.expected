@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `fixedbugs-2511-alone.h` defines `alone2511` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-2511-a-macro-alone-that-assigns-through-its-argument-is-a-macro.hero:10:5
+     |
+  10 |     function alone2511(s: ptr) -> i32  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_alone2511(<C type> s) { return alone2511(s); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_alone2511` there like any function, and clang holds that declaration to your function (§ 13)

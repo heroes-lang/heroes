@@ -36,6 +36,7 @@ use cli/value_early
 use cli/value_run
 use cli/whose
 use diag
+use emit/call_spelling
 use emit/ffi_asked
 use emit/lend_type
 use emit/lock_screen
@@ -112,6 +113,12 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
         # A refusal already told is the author's and ends the rounds.
         if whose.failure_code(linked) == "diagnostics"
             return Rounds(verdict: linked, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
+
+        # A bound function whose header's macro clang refused at the program's
+        # own C is called by its name in parentheses on the next round
+        # (`emit/call_spelling.hero`, defect 2511), before a tag is asked.
+        if call_spelling.learn(s, art.decls, refusals: went.refusals, struct_tags: @struct_tags) > 0
+            continue
         lesson = tag_spelling.learn(
             t,
             art,

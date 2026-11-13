@@ -1,0 +1,18 @@
+# fixedbugs, defect 2511, lane b35-ffi, 2026-11-13, a shape beside it, pinned
+# as it stands.
+#
+# A macro beside its function that clang compiles is what a call reaches, as
+# in a C program that includes the header: here `twice2511(21)` is the
+# macro's `21 + 21`, where the function answers 21. The repair of defect 2511
+# calls the function only where clang refuses the macro's expansion, since a
+# C library's macro is often its own check of the call, Darwin's fortified
+# `memset` among them, and a call past it would lose the check
+# (`emit/call_spelling.hero`). Heroes hands a macro temporaries, so one
+# evaluated twice reads one value twice. Pinned at 42 as the coordinator's
+# ruling of 2026-11-13 left it; a change in either direction is read.
+
+extern "fixedbugs-2511-twice.h"
+    function twice2511(x: i32) -> i32
+
+function main()
+    print(twice2511(x: 21))

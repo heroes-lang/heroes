@@ -1,0 +1,204 @@
+# Where the C this compiler writes calls a bound function by its name in
+# parentheses, `(sigemptyset)(t3)`, so that a function-like macro its header
+# defines beside it is not expanded (design.md §4.19; defect 2511,
+# 2026-11-13, panel 247's synthesis as the coordinator ruled it: *a call of
+# the function*, never a refusal).
+#
+# **A call goes through the header's macro wherever clang compiles it**, as a
+# C program's does: Darwin's `memset` is a macro over `__builtin___memset_chk`,
+# the C library's own check of the bytes it writes, and a call that names the
+# function skips it. Measured on this Mac at `-O2`: a 64-byte `memset` into a
+# 16-byte block traps through the macro, exit 133, and through `(memset)`
+# writes the neighbouring block and exits 0. So the name is never put in
+# parentheses up front.
+#
+# **Where clang refuses the macro's expansion, the build calls the function.**
+# Darwin's `#define sigemptyset(set) (*(set) = 0, 0)` dereferences the
+# `void *` a `ptr`, or a numeric `@` cast for C, crosses as, and the return
+# assertion and the call were refused, `internal error` at exit 2, while the
+# probe, which has always written `(name)(a0)` (`emit/extern_probe.hero`),
+# held the binding to the function and passed. C11 7.1.4p1 says it: *any
+# macro definition of a function can be suppressed locally by enclosing the
+# name of the function in parentheses*, and a function stands behind every
+# such macro of the C library (its footnote 185). So a refused round reads
+# clang's own notes, *expanded from macro 'sigemptyset'* under an error at a
+# line of the program's own C, and the next round writes that name in
+# parentheses at its calls, its return assertion and the refused round's
+# questions (`cli/rounds.hero`). Only a name a group binds as a function, and
+# only one clang never found undeclared: a name that is ONLY a macro, which no
+# parentheses reach, stays panel 185 R1's `ffi_macro_name`.
+#
+# **The rounds end.** The names learned only grow, over the functions the
+# program binds; a round that learns none ends them, and its refusal is read
+# as every refusal is. A name learned wrongly costs a round and nothing more:
+# `(name)(…)` either calls the function the probe holds the binding to, or
+# clang refuses it.
+#
+# What the rounds learn rides beside a handle's tags, in the one table every
+# unit of a build is emitted with (`cli/tag_spelling.hero`), under keys of its
+# own: `KEY` and the name, which no C tag begins with.
+
+use ast
+use checker
+use cli/strings
+use emit/ffi_lookup
+use parse
+use resolve
+use source
+
+constant KEY: str
+    "%call "
+
+constant ERROR: str
+    ": error: "
+
+constant EXPANDED: str
+    ": note: expanded from macro '"
+
+constant UNDECLARED: str
+    "use of undeclared identifier '"
+
+# The names the rounds learned to call as the function, out of the table they
+# learn in.
+function learned(struct_tags: {str: bool}) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for key in keys(struct_tags)
+        if strings.starts_with(text: key, prefix: KEY)
+            out[key.slice(from: KEY.len(), to: key.len())] @ true
+
+    return out
+
+# `written`, what the C names the bound function `name` by, as a call names
+# it: in parentheses where the rounds learned the name.
+function callee(called: {str: bool}, name: str, written: str) -> str
+    if called[name].is_err()
+        return written
+    return "(" + written + ")"
+
+# Learn from a refused round's `refusals` each name `to_learn` gives that no
+# round had, into the build's table; how many it learned.
+function learn(s: source.Source, decls: [ast.Decl], refusals: [str], @struct_tags: {str: bool}) -> i64
+    learned_now: i64 @= 0
+
+    for name in to_learn(s, decls, refusals: refusals.join("\n"))
+        if struct_tags[KEY + name].is_err()
+            struct_tags[KEY + name] @ true
+            learned_now @ learned_now + 1
+
+    return learned_now
+
+# What a refused round's `refusals` teach, in order: each name a group binds
+# as a function whose function-like macro clang expanded under an error at a
+# line of the program's own C, a file a `#line` names or a unit this compiler
+# wrote, and that clang never found undeclared.
+function to_learn(s: source.Source, decls: [ast.Decl], refusals: str) -> [str]
+    bound = functions(s, decls)
+    undeclared: {str: bool} @= {}
+    found: {str: bool} @= {}
+    ours: bool @= false
+
+    for row in ffi_lookup.lines(text: refusals)
+        missing = ffi_lookup.after(text: row, marker: UNDECLARED)
+
+        if !missing.is_err()
+            undeclared[ffi_lookup.up_to_quote(missing.must())] @ true
+        at = ffi_lookup.char_index_of(text: row, needle: ERROR)
+        expanded = ffi_lookup.after(text: row, marker: EXPANDED)
+
+        if !at.is_err()
+            ours @ written_here(s, file: file_part(row.slice(from: 0, to: at.must())))
+        else if !ffi_lookup.has(text: row, needle: ": note: ")
+            ours @ ours && !ffi_lookup.has(text: row, needle: ": warning: ")
+        else if ours && !expanded.is_err() && !bound[ffi_lookup.up_to_quote(expanded.must())].is_err()
+            found[ffi_lookup.up_to_quote(expanded.must())] @ true
+
+    out: [str] @= []
+
+    for name in sort(keys(found))
+        if undeclared[name].is_err()
+            out @ out.push(name)
+
+    return out
+
+# The names the program's groups bind as functions.
+function functions(s: source.Source, decls: [ast.Decl]) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for index in range(from: 0, to: decls.len())
+        found = ffi_lookup.declared_at(s, decls, index: index)
+
+        if !found.is_err() && !found.must().is_constant
+            match decls[index].kind
+                .function_decl                                             => out[source.span_text(s, decls[index].name)] @ true
+                .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+# `path:line:col` without its two numbers, the path's own colons kept, a
+# Windows drive's among them.
+function file_part(position: str) -> str
+    end: i64 @= position.len()
+    cut: i64 @= 0
+
+    while end > 0 && cut < 2
+        end @ end - 1
+
+        if position[end] == ':'
+            cut @ cut + 1
+
+    if cut < 2
+        return position
+    return position.slice(from: 0, to: end)
+
+# Whether a location's file is the program's own C: a file a `#line` names, or
+# the unit this compiler wrote for a module, `<component>.c`, wherever its
+# build folder stands.
+function written_here(s: source.Source, file: str) -> bool
+    for entry in s.files
+        unit = entry.component + ".c"
+
+        if file == entry.name || file == unit || strings.ends_with(text: file, suffix: "/" + unit) || strings.ends_with(text: file, suffix: "\\" + unit)
+            return true
+
+    return false
+
+## Tests
+
+test "a call is spelled through the function only where the rounds learned the name"
+    tags: {str: bool} @= {}
+    tags["opaque"] @ true
+    tags[KEY + "sigemptyset"] @ true
+    called = learned(tags)
+    assert called.len() == 1
+    assert callee(called, name: "sigemptyset", written: "sigemptyset") == "(sigemptyset)"
+    assert callee(called, name: "memset", written: "memset") == "memset"
+    assert file_part("build/tu-1/main.c:82:29") == "build/tu-1/main.c"
+    assert file_part("C:\\w\\b\\main.c:82:29") == "C:\\w\\b\\main.c"
+    assert file_part("main.c") == "main.c"
+
+test "a round learns a bound function whose macro clang refused at the program's own C, and no other name"
+    text = "extern \"signal.h\"\n    function sigemptyset(set: ptr) -> i32\n    function memset(s: ptr, c: i32, n: u64) -> ptr\n    function alone(s: ptr) -> i32\n    constant SIGINT: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+
+    # Clang's lines for the call and the return assertion, each error with
+    # the macro it expanded beneath, as this Mac's clang 21 writes them.
+    said = "build/tu-1/t.c:82:29: error: incomplete type 'void' is not assignable\n   82 | _Static_assert(HERO_RET_I32(sigemptyset((void *)0)), \"x\");\nIn file included from build/tu-1/t.c:28:\n/sdk/usr/include/signal.h:128:34: note: expanded from macro 'sigemptyset'\nbuild/tu-1/t.c:71:41: note: expanded from macro 'HERO_RET_I32'\nt.hero:10:133: error: ISO C does not allow indirection on operand of type 'void *'\n/sdk/usr/include/signal.h:128:27: note: expanded from macro 'sigemptyset'\n"
+    assert to_learn(s, parsed.decls, refusals: said) == ["sigemptyset"]
+
+    # Not a macro a header's own code expands, nor one under a warning, nor a
+    # name clang found undeclared, nor a name no group binds as a function.
+    theirs = "/sdk/usr/include/other.h:4:2: error: incomplete type 'void' is not assignable\n/sdk/usr/include/signal.h:128:34: note: expanded from macro 'sigemptyset'\nt.hero:3:9: warning: something\n/sdk/string.h:1:1: note: expanded from macro 'memset'\n"
+    assert to_learn(s, parsed.decls, refusals: theirs).len() == 0
+    alone = "t.hero:4:84: error: use of undeclared identifier 'alone'\nt.hero:12:5: error: incomplete type 'void' is not assignable\nt.h:1:22: note: expanded from macro 'alone'\nt.hero:12:5: error: x\nt.h:2:1: note: expanded from macro 'SIGINT'\n"
+    assert to_learn(s, parsed.decls, refusals: alone).len() == 0
+
+    # Learned once into the build's table, and asked again learns nothing.
+    tags: {str: bool} @= {}
+    assert learn(s, parsed.decls, refusals: [said], struct_tags: @tags) == 1
+    assert learn(s, parsed.decls, refusals: [said], struct_tags: @tags) == 0
+    assert !learned(tags)["sigemptyset"].is_err()
