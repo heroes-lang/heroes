@@ -542,6 +542,9 @@ of lane `core-platform` (the critic's item 8): owed to batch 33's gate, no part 
   under S1 (alive at `ELAPSED 04:25`), Linux unrun; checkable at the server step. B3: the server step
   lands with 0 spec tokens on threads beyond B1's; checkable at M-core-packages' close in
   `docs/measurements/010-spec-budget-ledger.md`.
+  **Scored 2026-11-13, at R3's landing** (1c4c6f9ae, batch 34): **W3 held**, T1 priced +94 real
+  on `heroes measure spec/heroes-spec.md --refresh`, 11,014 to 11,108 on claude-opus-5, and +73
+  vendored, 8417 to 8490 (the ledger's row 8490).
 - **historian**: no prediction, by its seat.
 
 ## Process notes
