@@ -503,6 +503,97 @@ static char *hero_run_parent_search(void) {
 #endif
 #endif
 
+/* -- the clock every wait of this file reads (defects 2503 and 2512) -----
+ *
+ * The time this machine runs, never the time it sleeps, on both arms, so a
+ * limit or a grace means one thing everywhere: a child does not run while the
+ * machine sleeps, and neither passes then. On POSIX it is the platform layer's
+ * clock (`platform/hero_time.c`, panel 234's F.0): Darwin's `CLOCK_MONOTONIC`
+ * counts a sleep and `CLOCK_UPTIME_RAW` does not, Linux's `CLOCK_MONOTONIC`
+ * does not. On Windows it is `QueryUnbiasedInterruptTime`, in 100 ns, which
+ * *does not include time the system spends in sleep or hibernation*, and the
+ * same as the interval `WaitForSingleObject` waits since Windows 8, which
+ * *does not include time spent in low-power states* (Microsoft's pages for
+ * the two, read 2026-11-13). */
+#if defined(_WIN32)
+/* Milliseconds on that clock, or -1 where it cannot be read. */
+static int64_t hero_run_clock_ms(void) {
+    ULONGLONG ticks = 0;
+    if (!QueryUnbiasedInterruptTime(&ticks)) return -1;
+    return (int64_t)(ticks / 10000u);
+}
+#else
+#if defined(__APPLE__)
+#define HERO_RUN_CLOCK CLOCK_UPTIME_RAW
+#else
+#define HERO_RUN_CLOCK CLOCK_MONOTONIC
+#endif
+
+/* Milliseconds on that clock, or -1 where it cannot be read. A signal
+ * handler may call it: `clock_gettime` is on POSIX's list of async-signal-safe
+ * functions (XSH § 2.4.3, below at `hero_run_ended`). */
+static int64_t hero_run_clock_ms(void) {
+    struct timespec now;
+    int64_t ms = 0;
+    if (clock_gettime(HERO_RUN_CLOCK, &now) != 0) return -1;
+    if (now.tv_sec < 0 || now.tv_nsec < 0 ||
+        __builtin_mul_overflow((int64_t)now.tv_sec, (int64_t)1000, &ms) ||
+        __builtin_add_overflow(ms, (int64_t)(now.tv_nsec / 1000000), &ms)) {
+        return -1;
+    }
+    return ms;
+}
+#endif
+
+/* How long a wait has lasted: the clock's milliseconds since `began`, a
+ * reading of `hero_run_clock_ms` taken as it began; and `napped`, the
+ * milliseconds its naps asked for, only where the clock cannot answer (it
+ * could not be read, then or now, or reads earlier than it did), so a clock
+ * the system refuses still ends every wait. */
+static int64_t hero_run_waited_ms(int64_t began, int64_t napped) {
+    if (began < 0) return napped;
+    int64_t now = hero_run_clock_ms();
+    if (now < began) return napped;
+    return now - began;
+}
+
+#if defined(_WIN32)
+/* The longest one wait of the watchdog asks `WaitForSingleObject` for:
+ * 2^31 - 1 ms, about 24.8 days, below `INFINITE` (0xFFFFFFFF), which *will
+ * return only when the object is signaled*, and positive wherever the count
+ * is read as a signed 32-bit number. A limit past it is waited in several. */
+#define HERO_RUN_WAIT_MOST INT64_C(0x7FFFFFFF)
+
+/* How long the next of the watchdog's waits asks for, with `left`
+ * milliseconds of the limit still to run: all of it, or the most one wait
+ * asks; 0 once nothing is left. Never `INFINITE`, never a cut count. */
+static DWORD hero_run_win_slice(int64_t left) {
+    if (left <= 0) return 0;
+    return (DWORD)(left < HERO_RUN_WAIT_MOST ? left : HERO_RUN_WAIT_MOST);
+}
+
+/* **THE WINDOWS WATCHDOG'S WAIT** (defect 2512): `process` waited for at most
+ * `limit_ms` on the clock above, 0 waiting for ever, in waits of at most
+ * HERO_RUN_WAIT_MOST each; WAIT_TIMEOUT once the clock says the limit has
+ * passed, else what the wait that ended answered. Until then one wait was
+ * asked for the limit's milliseconds cut to 32 bits, so a limit of 49 days
+ * and more could become a short one. */
+static DWORD hero_run_win_wait(HANDLE process, int64_t limit_ms) {
+    if (limit_ms <= 0) return WaitForSingleObject(process, INFINITE);
+    int64_t began = hero_run_clock_ms();
+    int64_t napped = 0;
+    for (;;) {
+        /* What has passed is never negative, so the difference cannot
+         * overflow. */
+        DWORD slice = hero_run_win_slice(limit_ms - hero_run_waited_ms(began, napped));
+        if (slice == 0) return WAIT_TIMEOUT;
+        DWORD waited = WaitForSingleObject(process, slice);
+        if (waited != WAIT_TIMEOUT) return waited;
+        if (__builtin_add_overflow(napped, (int64_t)slice, &napped)) napped = INT64_MAX;
+    }
+}
+#endif
+
 #if !defined(_WIN32)
 /* **WHEN THIS PROCESS IS ENDED, THE CHILDREN IT WAITS ON END FIRST** (defect
  * 425, 2026-10-07).
@@ -625,44 +716,6 @@ static void hero_run_nap(int ms) {
     wait.tv_sec = ms / 1000;
     wait.tv_usec = (ms % 1000) * 1000;
     (void)select(0, NULL, NULL, NULL, &wait);
-}
-
-/* The clock every wait of this file is read on: the time this machine runs,
- * never the time it sleeps, as the platform layer's clock reads it
- * (`platform/hero_time.c`, panel 234's F.0): Darwin's `CLOCK_MONOTONIC` counts
- * a sleep and `CLOCK_UPTIME_RAW` does not, Linux's `CLOCK_MONOTONIC` does not.
- * A child does not run while the machine sleeps, so neither its grace nor
- * its limit passes then. */
-#if defined(__APPLE__)
-#define HERO_RUN_CLOCK CLOCK_UPTIME_RAW
-#else
-#define HERO_RUN_CLOCK CLOCK_MONOTONIC
-#endif
-
-/* Milliseconds on that clock, or -1 where it cannot be read. A handler may
- * call it: `clock_gettime` is on POSIX's list (above). */
-static int64_t hero_run_clock_ms(void) {
-    struct timespec now;
-    int64_t ms = 0;
-    if (clock_gettime(HERO_RUN_CLOCK, &now) != 0) return -1;
-    if (now.tv_sec < 0 || now.tv_nsec < 0 ||
-        __builtin_mul_overflow((int64_t)now.tv_sec, (int64_t)1000, &ms) ||
-        __builtin_add_overflow(ms, (int64_t)(now.tv_nsec / 1000000), &ms)) {
-        return -1;
-    }
-    return ms;
-}
-
-/* How long a wait has lasted: the clock's milliseconds since `began`, a
- * reading of `hero_run_clock_ms` taken as it began; and `napped`, the
- * milliseconds its naps asked for, only where the clock cannot answer (it
- * could not be read, then or now, or reads earlier than it did), so a clock
- * the system refuses still ends every wait. */
-static int64_t hero_run_waited_ms(int64_t began, int64_t napped) {
-    if (began < 0) return napped;
-    int64_t now = hero_run_clock_ms();
-    if (now < began) return napped;
-    return now - began;
 }
 
 static void hero_run_tty_give(pid_t group);
@@ -1456,6 +1509,20 @@ void hero_run_limit(int64_t seconds) {
     hero_run_limit_seconds = seconds > 0 ? seconds : 0;
 }
 
+/* **THE LIMIT IN MILLISECONDS, ONE CONVERSION FOR BOTH ARMS** (defect 2512,
+ * 2026-11-13): 0 for none, and a limit past what milliseconds can count is
+ * the furthest one they can, never a product that overflows. Until then the
+ * POSIX arm multiplied in place, undefined past 2^63 / 1000 seconds (repaired
+ * with defect 2503), and the Windows arm cut the product to a `DWORD`, so
+ * 536,870,912 s, 125 times 2^32 ms, waited 0 ms, and 4,294,968 s waited
+ * 704. */
+static int64_t hero_run_limit_ms(int64_t seconds) {
+    int64_t ms = 0;
+    if (seconds <= 0) return 0;
+    if (__builtin_mul_overflow(seconds, (int64_t)1000, &ms)) return INT64_MAX;
+    return ms;
+}
+
 /* **A CEILING ON WHAT THE NEXT CHILD MAY WRITE**, for the one case in the net
  * that must make a write fail half-way (defect 136). That case holds that a
  * verb rewriting the author's file and unable to finish leaves the file as it
@@ -1778,9 +1845,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
         return -1;
     }
 
-    DWORD waited = WaitForSingleObject(
-        child.hProcess,
-        hero_run_limit_seconds > 0 ? (DWORD)(hero_run_limit_seconds * 1000) : INFINITE);
+    DWORD waited = hero_run_win_wait(child.hProcess, hero_run_limit_ms(hero_run_limit_seconds));
     if (waited == WAIT_TIMEOUT) {
         /* 124 is what the caller is told, whatever the kill reports: the child
          * is gone by our hand, so its own code would be a fiction. */
@@ -1944,13 +2009,12 @@ int64_t hero_run_go(const char *program, const char *in_path,
          * deadline: a step under load sleeps longer than asked, and a limit
          * counted in steps passed later than its seconds by as much. The
          * steps' sum is the answer only where the clock cannot be read
-         * (`hero_run_waited_ms`). A limit past what milliseconds can count
-         * is the furthest one they can. */
+         * (`hero_run_waited_ms`). The limit is `hero_run_limit_ms`'s, as the
+         * Windows arm reads it. */
         int64_t began = hero_run_clock_ms();
         int64_t slept_ms = 0;
         int64_t step_ms = 1;
-        int64_t limit_ms = 0;
-        if (__builtin_mul_overflow(hero_run_limit_seconds, (int64_t)1000, &limit_ms)) limit_ms = INT64_MAX;
+        int64_t limit_ms = hero_run_limit_ms(hero_run_limit_seconds);
         for (;;) {
             pid_t seen = hero_run_reap(child, slot, &wait_status, 1, tty_holder);
             if (seen == child) break;
