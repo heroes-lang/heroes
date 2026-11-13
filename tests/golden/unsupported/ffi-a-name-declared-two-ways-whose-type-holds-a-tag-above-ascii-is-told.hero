@@ -1,0 +1,21 @@
+# Found beside defect 2508, lane b35-link, 2026-11-13; its own number is the
+# round's to give.
+#
+# SYMPTOM: `twice`, declared `struct 漢 (long long)` by this module's header
+# and `long long (long long)` by another's: the build panicked, *string slice
+# splits a character*, exit 134, where an ASCII tag is told
+# `ffi_declared_two_ways`.
+#
+# CAUSE: the type was cut at ` (*)(`'s place counted in characters, where
+# the cut counts bytes.
+#
+# FIX: the place is found by its bytes (`two_ways.shown_type`), and the two
+# declarations are told with clang's canonical types.
+use tagtwoways/b_side
+
+extern "ffi-tag-two-ways-a.h"  #~ ffi_declared_two_ways
+    function tag_a_value(x: i64) -> i64
+
+function main()
+    print(tag_a_value(x: 3))
+    print(b_side.b(x: 3))

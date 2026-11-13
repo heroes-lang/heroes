@@ -1,0 +1,8 @@
+# A module of the case found beside defect 2508 (lane b35-link, 2026-11-13):
+# its header declares `twice` with its prototype.
+
+extern "ffi-tag-prototype-b.h"
+    function proto_b_value(x: i64) -> i64
+
+function b(x: i64) -> i64
+    return proto_b_value(x: x)
