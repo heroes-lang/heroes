@@ -1,0 +1,29 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals: a Heroes function a signal
+# handler written in C calls on a thread C made with `pthread_create`, which
+# the runtime never claims.
+# Symptom: defect 2492's guard refused it, in words it formatted with
+# `snprintf` and printed with stdio inside the signal, so a signal landing in
+# that thread's own `snprintf` was killed by Darwin's locale lock with nothing
+# said, 1 storm of 40 on this Mac; and the thunk's first question read a
+# thread-local there for the first time, which Darwin makes with `malloc`
+# inside the signal (9 SIGKILLs of the same shape in plain C).
+# Cause: the refusal of such a thread was not async-signal-safe, and nothing
+# found the thread unclaimed without a thread-local. The thunk now reads the
+# claim through a thread key, which allocates nothing, and refuses a thread
+# nothing claimed in 2492's own words, through the stop every refusal of a
+# signal takes: `write(2)`, no stdio, no allocation. One SIGUSR1 is sent to
+# the thread C made; `main` holds it off.
+
+extern "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.h"
+    function made_start(answer: (function(i64) -> i64)) -> i32
+    function made_send() -> i32
+    function made_wait() -> i64
+
+function answer(sig: i64) -> i64
+    print("the answer ran for signal ", sig)
+    return sig * 2
+
+function main()
+    print("started: ", made_start(answer: answer))
+    print("sent: ", made_send())
+    print("not stopped, seen ", made_wait())
