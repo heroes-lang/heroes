@@ -437,6 +437,7 @@ void hero_runtime_check_leaks(void) {
     size_t live = hero_handle_live;
     const void *first_live = NULL;
     uint64_t first_life = 0;
+    size_t doors = 0;
     HeroPlaces taken = {.used = 0};
 
     /* THE FIRST IS THE EARLIEST LIFE STILL STANDING, the one the first place
@@ -448,6 +449,7 @@ void hero_runtime_check_leaks(void) {
             first_live = hero_handle_set[i].h;
             first_life = hero_handle_set[i].life;
         }
+        if (hero_place_is_a_door(&hero_handle_set[i].where)) doors++;
         hero_places_see(&taken, &hero_handle_set[i].where, hero_handle_set[i].life);
     }
     for (size_t i = 0; i < hero_handle_cap; i++)
@@ -461,11 +463,16 @@ void hero_runtime_check_leaks(void) {
      * message is the same one, written once above. */
     if (strays > 0) hero_handle_report_stray(strays, first_stray, NULL);
     if (live > 0) {
+        /* The sentence names who began the lives that stand, and no one else
+         * (defect 2504): until then it said *a mark* of a socket given up as
+         * a number, whose life the layer's door began. */
+        const char *began = doors == 0      ? "a mark began, `acquires` or `retains`,"
+                            : doors >= live ? "a door of the runtime began"
+                                            : "a mark began, `acquires` or `retains`, or a door of the runtime began,";
         fflush(stdout);
-        fprintf(stderr, "panic: %llu C handle(s) never given back — every life a "
-                        "mark began, `acquires` or `retains`, owes one release, "
-                        "and this program is missing that many. The first is at %p\n",
-                (unsigned long long)live, first_live);
+        fprintf(stderr, "panic: %llu C handle(s) never given back — every life %s owes one "
+                        "release, and this program is missing that many. The first is at %p\n",
+                (unsigned long long)live, began, first_live);
         hero_places_write(&taken, live);
         hero_abort();
     }
