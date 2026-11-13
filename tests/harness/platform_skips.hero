@@ -178,6 +178,14 @@ function darwin_alone() -> [Skip]
 constant MEMBERS_ARE_DARWINS: str
     "its emission names every member of a C struct as the machine's header declares it, a padding table and its macro guards (panel 215's R1): Darwin's `pthread_mutex_t` holds `__sig` and `__opaque` where glibc's holds `__align` and `__count`, Darwin's `regex_t` `re_magic`, `re_g` and `re_endp` where glibc's holds `__allocated`, and `struct addrinfo` puts `ai_canonname` before `ai_addr` on Darwin and after it on glibc (Linux arm64, Debian clang 22.1.8, 2026-10-17), and SDL3's `SDL_Event` holds `device_type` on this Mac where the CI's Linux x86-64 SDL3 holds `direction` there (defect 2113), and `struct passwd`'s `pw_change`, `pw_class` and `pw_expire`, Darwin's alone, in the table a record stored whole writes (defect 2112, found by lane `lane-s4` in Debian clang 22.1.8's emission), and `struct tm`'s `tm_gmtoff` and `tm_zone`, Darwin's and glibc's, which the UCRT's `struct tm` lacks (defect 2127, the CI's Windows leg, clang 20.1.8); blessed on Darwin and compared there, its program built, run and emitted twice on every platform (defect 2111)"
 
+# **And an emission that calls a bound function past the platform's own
+# macro** (defect 2511, 2026-11-13): a round that clang refuses learns to call
+# the function as `(name)` only where the platform's header defines a
+# function-like macro of that name, so where the header defines none the C
+# calls it plainly, and both are right.
+constant CALLED_PAST_DARWINS_MACROS: str
+    "its emission calls `sigemptyset`, `sigfillset` and `sigaddset` in parentheses, `(sigemptyset)(...)`, because Darwin's `signal.h` defines each as a function-like macro clang refuses for the program's C, and the rounds call the function past it only where the macro is there (defect 2511); glibc's `signal.h` defines none, and Linux arm64 (Debian clang 22.1.8, 2026-11-13, batch 35's round at cca79685d) emits `sigemptyset(...)`, three lines of 365 apart; blessed on Darwin and compared there, its program built, run and emitted twice on every platform"
+
 # **A padding table names no bit-field's byte since defect 2383**: C finds the
 # bytes each named bit-field reaches before `main`, so a case whose table
 # covers bit-fields is one text on every target and compared everywhere.
@@ -197,6 +205,7 @@ function darwin_emissions() -> [Skip]
         Skip(name: "run/ffi-a-construction-polls-an-sdl3-event", why: MEMBERS_ARE_DARWINS)
         Skip(name: "fixedbugs/a-header-field-that-is-not-const", why: MEMBERS_ARE_DARWINS)
         Skip(name: "examples/ctime/main", why: MEMBERS_ARE_DARWINS)
+        Skip(name: "run/fixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros", why: CALLED_PAST_DARWINS_MACROS)
     ]
 
 # Why the emission labelled `label` is not compared on this machine: one of
@@ -306,7 +315,7 @@ test "every emission compared on Darwin alone names a blessed file and a case th
         else
             assert shell.exists("tests/golden/" + one.name + ".hero")
 
-    assert darwin_emissions().len() == 8
+    assert darwin_emissions().len() == 9
 
     # No case is compared on Darwin alone for where a bit-field lies (defect
     # 2383): the emission of panel 223's case names no byte of one.
