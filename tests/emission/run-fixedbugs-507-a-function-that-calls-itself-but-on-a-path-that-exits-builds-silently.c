@@ -395,7 +395,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d93220619dec925", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1cadc90d03758a3e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently\tfixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently\n");

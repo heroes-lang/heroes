@@ -219,7 +219,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("58c8e0357351d09a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("37e3873c5ce891b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2271twof32sbesideonemidpointeachprinttheirownspelling\tfixedbugs-2271-two-f32s-beside-one-midpoint-each-print-their-own-spelling\n");

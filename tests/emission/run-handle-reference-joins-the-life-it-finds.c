@@ -303,7 +303,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1620887855f75be4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("753b2f7e3f8e1cfd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlereferencejoinsthelifeitfinds\thandle-reference-joins-the-life-it-finds\n");

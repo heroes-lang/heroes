@@ -608,7 +608,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1833887b6182c16d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("774e2f814b198286", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs409manyfunctiontypesandalongcfile\tfixedbugs-409-many-function-types-and-a-long-c-file\n");

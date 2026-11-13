@@ -330,7 +330,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6695d1e0485027d2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("45b078e731e6e8eb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs584sprintfwithfortificationoffbuildssilent\tfixedbugs-584-sprintf-with-fortification-off-builds-silent\n");

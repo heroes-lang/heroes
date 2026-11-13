@@ -707,7 +707,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1553f2cb6410fb70", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("746e99d14da7bc89", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2109avaluecdefinesinaninitialiserbuilds\tfixedbugs-2109-a-value-c-defines-in-an-initialiser-builds\n");

@@ -309,7 +309,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("571c0e6d29f3e033", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3636b574138aa14c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("recordsownstrings\trecords-own-strings\n");

@@ -412,7 +412,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4058a20741d6931a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f73490e2b6d5433", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandlefieldofacellendedthroughahelper\tdead-handle-field-of-a-cell-ended-through-a-helper\n");

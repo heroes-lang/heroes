@@ -282,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4baacf7f1485c9c6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ac576867e1c8ade", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2389aboundcfunctionnamedasatemporaryisavalue\tfixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value\n");

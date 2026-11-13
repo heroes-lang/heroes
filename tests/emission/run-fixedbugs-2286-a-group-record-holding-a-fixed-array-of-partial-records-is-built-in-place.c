@@ -342,7 +342,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f894daf43a00f8c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ea3f4b62d36d0a5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace\tfixedbugs-2286-a-group-record-holding-a-fixed-array-of-partial-records-is-built-in-place\n");

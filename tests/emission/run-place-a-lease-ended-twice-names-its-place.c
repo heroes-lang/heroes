@@ -213,7 +213,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("694f108612d8aa16", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4869b78d7c6f6b2e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placealeaseendedtwicenamesitsplace\tplace-a-lease-ended-twice-names-its-place\n");

@@ -299,7 +299,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("382d2b3a26f0b045", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1747d2411087715e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handletworeferencesattwoconsumingpositions\thandle-two-references-at-two-consuming-positions\n");

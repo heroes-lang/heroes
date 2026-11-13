@@ -235,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f4c11110be78f0c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e66b817757e5024", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382anindexpastastaticconstantaborts\tfixedbugs-382-an-index-past-a-static-constant-aborts\n");

@@ -355,7 +355,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("410e2efb20b5b83f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2028d6020a4c7958", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2511thesignalsetfunctionsarecalledpastdarwinsmacros\tfixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros\n");

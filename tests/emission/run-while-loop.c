@@ -219,7 +219,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bbb73862d6d3b5b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ad61a8c1703fc74", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("whileloop\twhile-loop\n");

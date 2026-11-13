@@ -319,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12e136ba272ab730", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("71fbddc010c17849", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed\tfixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named\n");

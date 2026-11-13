@@ -223,7 +223,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("229113900a6c5dfa", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("01abba9774031f12", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2371agenericinstancethatrecursesforeverisnamed\tfixedbugs-2371-a-generic-instance-that-recurses-for-ever-is-named\n");

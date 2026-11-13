@@ -467,7 +467,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21045f3b174983b4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("001f064200e044cd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs139valuearmsthatjumporgiveavalue\tfixedbugs-139-value-arms-that-jump-or-give-a-value\n");

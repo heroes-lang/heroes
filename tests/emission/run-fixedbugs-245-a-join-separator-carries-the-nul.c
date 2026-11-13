@@ -477,7 +477,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("28f2d06a5f1ffebc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("080d777148b6bfd5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs245ajoinseparatorcarriesthenul\tfixedbugs-245-a-join-separator-carries-the-nul\n");

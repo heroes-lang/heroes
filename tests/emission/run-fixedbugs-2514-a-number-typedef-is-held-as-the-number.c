@@ -339,7 +339,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("78a5836b2d407f33", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57c02a7216d7404c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2514anumbertypedefisheldasthenumber\tfixedbugs-2514-a-number-typedef-is-held-as-the-number\n");

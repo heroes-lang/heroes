@@ -330,7 +330,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("567d8e8007bb8605", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("359835877152471d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2504amarkslifeandadoorsaretoldtogether\tfixedbugs-2504-a-marks-life-and-a-doors-are-told-together\n");

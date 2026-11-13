@@ -311,7 +311,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38bc77164d548299", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("17d71e1d36eb43b2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatagthatneedsstruct\tfixedbugs-a-tag-that-needs-struct\n");

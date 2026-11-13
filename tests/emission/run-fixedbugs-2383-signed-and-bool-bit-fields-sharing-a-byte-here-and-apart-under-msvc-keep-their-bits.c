@@ -350,7 +350,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2209377b68e8dbea", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0123de82527f9d03", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2383signedandboolbitfieldssharingabytehereandapartundermsvckeeptheirbits\tfixedbugs-2383-signed-and-bool-bit-fields-sharing-a-byte-here-and-apart-under-msvc-keep-their-bits\n");

@@ -291,7 +291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b4a29a132e0a92f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a64d0a71c776a48", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantofarrayslaysouteachinnerblock\tfixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block\n");

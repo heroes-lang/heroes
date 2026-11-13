@@ -333,7 +333,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("37a6606967a06280", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("16c1077051372399", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal\tfixedbugs-2494-a-heroes-function-given-to-signal-is-refused-at-its-first-signal\n");

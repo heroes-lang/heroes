@@ -302,7 +302,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f3b5e680d2fd66b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e56056e76c69783", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused\tfixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused\n");

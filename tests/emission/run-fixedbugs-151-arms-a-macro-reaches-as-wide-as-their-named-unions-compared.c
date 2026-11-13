@@ -343,7 +343,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("42077f8c45f467b0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("212226932f8b28c9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151armsamacroreachesaswideastheirnamedunionscompared\tfixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared\n");

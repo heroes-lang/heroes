@@ -371,7 +371,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("229b975745befd1f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("01b63e5e2f55be38", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs577aconstantwhoseeverystepfitsruns\tfixedbugs-577-a-constant-whose-every-step-fits-runs\n");

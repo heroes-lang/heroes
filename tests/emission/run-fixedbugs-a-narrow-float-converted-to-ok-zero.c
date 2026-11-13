@@ -246,7 +246,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ac26d451701737a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("29dd144c00983493", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsanarrowfloatconvertedtookzero\tfixedbugs-a-narrow-float-converted-to-ok-zero\n");

@@ -1633,7 +1633,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3dfc4de112626d34", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d16f4e87bf92e4c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1corestrings\tstrings\n1corestringsinternalscan\tscan\n");

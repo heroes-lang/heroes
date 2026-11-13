@@ -297,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("32d57fe1716020a0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11f026e85af6e1b9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo\tfixedbugs-2492-a-heroes-function-c-calls-on-a-thread-of-its-own-is-refused-naming-what-to-do\n");

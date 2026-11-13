@@ -276,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("50f0743e5c8da3c4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("300b1b45462464dd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugscgivesapointerbacktwiceandtheruntimesaysso\tfixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so\n");

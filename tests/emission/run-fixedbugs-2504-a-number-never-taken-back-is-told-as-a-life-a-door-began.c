@@ -331,7 +331,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("763b68de2aa00456", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55560fe51436c56f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2504anumbernevertakenbackistoldasalifeadoorbegan\tfixedbugs-2504-a-number-never-taken-back-is-told-as-a-life-a-door-began\n");

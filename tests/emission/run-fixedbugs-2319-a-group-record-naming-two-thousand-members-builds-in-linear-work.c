@@ -8487,7 +8487,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7be544540dbda2d0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5affeb5b775463e8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2319agrouprecordnamingtwothousandmembersbuildsinlinearwork\tfixedbugs-2319-a-group-record-naming-two-thousand-members-builds-in-linear-work\n");

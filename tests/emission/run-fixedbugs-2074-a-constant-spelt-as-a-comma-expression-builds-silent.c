@@ -330,7 +330,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7fcbc83059e026cc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ee66f374376e7e5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2074aconstantspeltasacommaexpressionbuildssilent\tfixedbugs-2074-a-constant-spelt-as-a-comma-expression-builds-silent\n");

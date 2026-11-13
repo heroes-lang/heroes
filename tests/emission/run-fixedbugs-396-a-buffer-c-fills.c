@@ -527,7 +527,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d47945d745395a9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c623b645dea56c2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396abuffercfills\tfixedbugs-396-a-buffer-c-fills\n");

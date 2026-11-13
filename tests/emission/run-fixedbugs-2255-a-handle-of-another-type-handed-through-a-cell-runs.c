@@ -313,7 +313,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("345d8df03cc3753a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("137834f7265a3653", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2255ahandleofanothertypehandedthroughacellruns\tfixedbugs-2255-a-handle-of-another-type-handed-through-a-cell-runs\n");

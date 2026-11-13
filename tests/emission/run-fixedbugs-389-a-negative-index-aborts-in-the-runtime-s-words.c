@@ -213,7 +213,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("096f4fa050ef8061", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6889f6a63a86417a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs389anegativeindexabortsintheruntimeswords\tfixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words\n");

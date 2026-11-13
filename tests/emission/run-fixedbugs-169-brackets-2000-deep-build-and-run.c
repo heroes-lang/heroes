@@ -237,7 +237,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("57e4c6fa193b0802", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36ff6e0102d1c91b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs169brackets2000deepbuildandrun\tfixedbugs-169-brackets-2000-deep-build-and-run\n");

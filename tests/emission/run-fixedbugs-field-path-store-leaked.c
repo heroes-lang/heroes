@@ -298,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e5923517992fa4b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d73ca586329bb64", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsfieldpathstoreleaked\tfixedbugs-field-path-store-leaked\n");

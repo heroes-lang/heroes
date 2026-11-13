@@ -304,7 +304,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ea13ec345ef110e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7dbbe5c92f85d227", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser\tfixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser\n");

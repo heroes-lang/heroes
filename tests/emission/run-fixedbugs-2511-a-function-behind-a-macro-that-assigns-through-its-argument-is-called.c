@@ -346,7 +346,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b7048f97e55c9cc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a8af00067ec8ae5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2511afunctionbehindamacrothatassignsthroughitsargumentiscalled\tfixedbugs-2511-a-function-behind-a-macro-that-assigns-through-its-argument-is-called\n");
