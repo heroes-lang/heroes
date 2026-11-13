@@ -1,0 +1,25 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function the program's own C installs as a signal handler with
+# `sigaction`, the installer no Heroes line names.
+# Symptom: it ran inside the signal, `the handler ran for signal 30` at
+# exit 0 on this Mac, and a refusal by the installer's name,
+# the route the sitting refused, saw nothing: under it the same handler
+# calling `localeconv` died 5 runs of 5 with nothing said (panel 247's
+# `wraplocale`).
+# Cause: the thunk's first line asks the value in hand, its own return
+# address against the delivery's, and no list of installers, so it stops the
+# program whoever installed the handler.
+
+extern "fixedbugs-2494-a-heroes-function-the-programs-own-sigaction-installs-is-refused.h"
+    function own_install(sig: i32, handler: (function(i32) -> ())) -> i32
+    function own_raise(sig: i32) -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function on_signal(sig: i32)
+    print("the handler ran for signal ", sig)
+
+function main()
+    print("installed: ", own_install(sig: SIGUSR1, handler: on_signal))
+    print("raised: ", own_raise(sig: SIGUSR1))

@@ -1,6 +1,6 @@
 # Fixed 2026-10-29, defect 2257, lane c-boundary (panel 232's R6, *nothing
-# catches that stop*): a Heroes function handed to libc's `signal` for
-# `SIGABRT`, with no C of the program's own.
+# catches that stop*): a handler for `SIGABRT` handed to libc's `signal`
+# from Heroes.
 # Symptom: a read past an array's end printed the abort's report and its
 # place, then the handler's line, and the program exited 0: a supervisor
 # reading the status saw success after a stop.
@@ -8,17 +8,21 @@
 # had installed, so the runtime's own stop ran the program's handler. The
 # runtime sets `SIGABRT` back to its default before it aborts, so the stop is
 # final: no handler line, and not 0.
+# Rewritten 2026-11-13, defect 2494, lane b35-signals (panel 247's R8): the
+# handler was a Heroes function, which since panel 247's R1 is refused at
+# the first signal that calls it; it is now a C function of the program's own
+# header, handed to `signal` from Heroes, which keeps the shape: no C of the
+# program's own installs it. Its words name the stop it would have undone.
+
+extern "fixedbugs-2257-a-c-function-heroes-hands-signal-for-sigabrt-never-runs-after-a-stop.h"
+    function leave_on_abort(sig: i32)
 
 extern "signal.h"
     constant SIGABRT: i32
     function signal(sig: i32, handler: (function(sig: i32) -> ())) -> ptr
 
-function on_abort(sig: i32)
-    print("Heroes code ran inside the stop, signal ", sig)
-    exit(code: 0)
-
 function main()
-    _ = signal(sig: SIGABRT, handler: on_abort)
+    _ = signal(sig: SIGABRT, handler: leave_on_abort)
     xs = [1, 2]
     print("about to read past the end")
     print(xs[len(args()) + 4])

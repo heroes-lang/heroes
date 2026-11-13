@@ -1,0 +1,28 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1): a Heroes
+# function given to `atexit`, the specification's own example of a callback,
+# run by `exit` from a signal handler written in C.
+# Symptom: it ran inside the signal, `the atexit function ran: 42`, exit 0
+# on this Mac;
+# no Heroes line hands a handler to C, so a refusal by the installer's name
+# saw nothing (panel 247's `fexit`).
+# Cause: the thunk's first line walks the frame records above it and finds,
+# past `exit`'s own frames, the handler's return to the delivery.
+
+extern "fixedbugs-2494-a-heroes-atexit-function-a-c-handler-reaches-through-exit-is-refused.h"
+    function leaving_install(sig: i32) -> i32
+    function leaving_raise(sig: i32) -> i32
+
+extern "stdlib.h"
+    function atexit(f: (function() -> ())) -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function at_end()
+    print(f"the atexit function ran: {41 + 1}")
+
+function main()
+    print("registered: ", atexit(f: at_end))
+    print("installed: ", leaving_install(sig: SIGUSR1))
+    print("raised: ", leaving_raise(sig: SIGUSR1))
+    print("never reached")

@@ -1,0 +1,18 @@
+# Fixed 2026-11-13, defect 2494, lane b35-signals (panel 247's R1 and R8), the
+# shape beside a refusal that would take the C library's installers for its
+# own: the program's own C holding a signal with `sigset(SIG_HOLD)`.
+# Symptom: none here; the route that defined `sigset` in the runtime made it
+# `signal(sig, h)`, and this program ended at exit 134 with a false message,
+# `a null pointer was read through, at offset 0x5` (panel 247's critic).
+# Cause: the refusal defines no installer of the C library's; it asks only
+# at a thunk's first line, so `sigset` keeps its whole meaning and the held
+# signal stays pending.
+
+extern "fixedbugs-2494-a-signal-the-programs-own-c-holds-with-sigset-stays-pending.h"
+    function held_then_raised(sig: i32) -> i32
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function main()
+    print("pending after the hold: ", held_then_raised(sig: SIGUSR1))
