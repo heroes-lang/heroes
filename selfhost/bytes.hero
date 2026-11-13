@@ -98,14 +98,18 @@ function rfind(text: str, needle: str) -> i64?
 # 110, 2026-09-27): this asked the first byte and then sliced, and a type
 # named above ASCII, `typedef int 漢;`, put the end of a candidate inside a
 # character, so `build` aborted on a binding `check` accepts. Every byte is
-# asked now, and nothing is cut until a match says where.
+# asked now, and nothing is cut until a match says where. The needle's first
+# byte is asked here and the rest only where it stands (defect 2508: a call
+# at every offset was most of what a lone link's words cost to read, by a
+# sample of a cold build on this Mac).
 function locate(text: str, needle: str, from: i64) -> i64?
     if needle.len() == 0 || from < 0
         return fail(code: "none", msg: "nothing to find")
+    first = needle[0]
     index: i64 @= from
 
     while index + needle.len() <= text.len()
-        if bytes_at(text: text, at: index, needle: needle)
+        if text[index] == first && bytes_at(text: text, at: index, needle: needle)
             return ok(index)
         index @ index + 1
 
@@ -149,3 +153,17 @@ test "the last occurrence is found by its bytes, past characters above ASCII"
     assert rfind(text: "😀", needle: ".x(").is_err()
     assert rfind(text: "abc", needle: "").is_err()
     assert rfind(text: "é€", needle: "€").must() == 2
+
+# Defect 2508: `locate` asks the needle's first byte, then the rest, and
+# answers what asking every offset answered: a first byte standing without
+# the rest, text above ASCII, the needle at either end, a start past a match.
+test "a needle is located by its first byte, then the rest, as every offset answered (defect 2508)"
+    text = "aab é€😀 abc"
+    assert locate(text: text, needle: "ab", from: 0).must() == 1
+    assert locate(text: text, needle: "abc", from: 0).must() == text.len() - 3
+    assert locate(text: text, needle: "€😀", from: 0).must() == 6
+    assert locate(text: text, needle: "ab", from: 2).must() == text.len() - 3
+    assert locate(text: text, needle: "aab", from: 0).must() == 0
+    assert locate(text: text, needle: "abd", from: 0).is_err()
+    assert locate(text: text, needle: "", from: 0).is_err()
+    assert locate(text: "", needle: "a", from: 0).is_err()

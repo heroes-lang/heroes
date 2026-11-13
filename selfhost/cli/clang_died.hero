@@ -20,9 +20,12 @@ function ending(signal: i64) -> str
 # signal on its *unable to execute command:* line. Both are the driver's own
 # words, measured on Apple clang 21 on arm64 macOS on 2026-10-03; on Windows,
 # which has no signals, unrun. Where the naming line is missing it is `a
-# signal`, never a guess at which.
+# signal`, never a guess at which. Every refused run's whole words pass here,
+# a lone link's 41,087 bytes on this Mac, so the first question is asked of
+# their bytes, never walked as characters (defect 2508); the rest runs only
+# where it died.
 function died_by(noise: str) -> str
-    if !has_text(text: noise, needle: "failed due to signal")
+    if !strings.holds(text: noise, needle: "failed due to signal")
         return ""
     current: [str] @= []
 
@@ -66,34 +69,6 @@ function rest_after(line: [str], marker: str) -> str
 
     return ""
 
-# Whether `needle` stands anywhere in `text`, character by character.
-function has_text(text: str, needle: str) -> bool
-    cs = text.chars()
-    needle_cs = needle.chars()
-
-    if needle_cs.len() == 0
-        return true
-
-    if needle_cs.len() > cs.len()
-        return false
-    start: i64 @= 0
-
-    while start <= cs.len() - needle_cs.len()
-        matched: bool @= true
-        offset: i64 @= 0
-
-        while offset < needle_cs.len()
-            if cs[start + offset] != needle_cs[offset]
-                matched @ false
-                break
-            offset @ offset + 1
-
-        if matched
-            return true
-        start @ start + 1
-
-    return false
-
 ## Tests
 
 # The first text is the two lines Apple clang 21 printed on arm64 macOS when
@@ -113,3 +88,11 @@ test "a clang that died by a signal is told as one, and a refusal is not (defect
     assert died_by("") == ""
     assert ending(signal: 11) == "killed by signal 11"
     assert ending(signal: 3221225725) == "ended by exception 3221225725"
+
+# Defect 2508: whether the driver died is asked of the words' bytes, text
+# above ASCII before its line answering as the walk over characters did.
+test "whether clang died is asked of the bytes, text above ASCII before it included (defect 2508)"
+    said = "café.c:1:1: error: é€😀\nclang: error: unable to execute command: Segmentation fault: 11\nclang: error: clang frontend command failed due to signal (use -v to see invocation)\n"
+    assert died_by(said) == "Segmentation fault: 11"
+    assert died_by("café.c:1:1: error: failed due to signa\n") == ""
+    assert died_by("é failed due to signal") == "a signal"

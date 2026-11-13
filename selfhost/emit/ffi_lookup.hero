@@ -208,10 +208,12 @@ function add_once(found: [diag.Diagnostic], d: diag.Diagnostic) -> [diag.Diagnos
 
 ## Reading clang's line — one splitter, every reader
 
-# Whether needle occurs in text, walked over chars so the scan never
-# splits a character.
+# Whether needle occurs in text, asked of its bytes and cutting nothing
+# (`bytes.locate`): a well-formed needle matches where its characters do. Its
+# walk over `text.chars()`, a string per character, was most of what reading
+# a lone link's words cost a cold build (defect 2508). An empty needle occurs.
 function has(text: str, needle: str) -> bool
-    return !char_index_of(text: text, needle: needle).is_err()
+    return needle.len() == 0 || !bytes.locate(text: text, needle: needle, from: 0).is_err()
 
 # The char index of needle's first occurrence.
 function char_index_of(text: str, needle: str) -> i64?
@@ -245,21 +247,16 @@ function char_index_of(text: str, needle: str) -> i64?
 # split(marker).nth(1) — between the first and second occurrence — but
 # every caller then takes the first one or two whitespace words, and a
 # marker cannot recur inside a C identifier, so the two forms read the
-# same tokens.
+# same tokens. Found as `has` finds it, cut where its bytes end (defect
+# 2508); an empty marker leaves the whole text.
 function after(text: str, marker: str) -> str?
-    at = char_index_of(text: text, needle: marker)
+    if marker.len() == 0
+        return ok(text)
+    at = bytes.locate(text: text, needle: marker, from: 0)
 
     if at.is_err()
         return fail(code: "none", msg: "marker not present")
-    cs = text.chars()
-    tail: [str] @= []
-    index: i64 @= at.must() + marker.chars().len()
-
-    while index < cs.len()
-        tail @ tail.push(cs[index])
-        index @ index + 1
-
-    return ok(tail.join(""))
+    return ok(text.slice(from: at.must() + marker.len(), to: text.len()))
 
 # The lines of a tool's stderr. A trailing newline yields no empty
 # last line, matching what Rust's lines() gives the bootstrap.
@@ -298,16 +295,15 @@ function words(text: str) -> [str]
 
 # The token up to the first single quote — the whole token when no
 # quote follows, which is what Rust's split('\'').next() gives. Every
-# reader that recovers a name from clang's quoting reads it this way.
+# reader that recovers a name from clang's quoting reads it this way, cut
+# once at the quote's byte, never inside a character (defect 2508).
 function up_to_quote(text: str) -> str
-    kept: [str] @= []
+    end: i64 @= 0
 
-    for ch in text.chars()
-        if ch == "'"
-            return kept.join("")
-        kept @ kept.push(ch)
+    while end < text.len() && text[end] != '\''
+        end @ end + 1
 
-    return kept.join("")
+    return text.slice(from: 0, to: end)
 
 # A small decimal read whole — clang's row and column numbers. Spaces
 # at either end are skipped, as Rust's trim().parse() skips them.
@@ -405,3 +401,21 @@ test "add_once keeps one diagnostic per span, and the splitter reads clang's sha
     assert parts[0] == "sqrt"
     assert parts[1] == "f64"
     assert words(text: "  a\t b ").len() == 2
+
+# Defect 2508: the splitter asks bytes and answers what its walk over
+# characters answered, text above ASCII on either side of a marker included,
+# an empty needle occurring and an empty marker leaving the whole text.
+test "the splitter asks bytes and answers as the walk over characters did (defect 2508)"
+    line = "/tmp/é€😀/x.o: in function `f': undefined reference to `naïve'"
+    assert has(text: line, needle: "😀/x")
+    assert !has(text: line, needle: "€é")
+    assert has(text: line, needle: "") && has(text: "", needle: "")
+    assert !has(text: "", needle: "a") && !has(text: "ab", needle: "abc")
+    assert after(text: line, marker: "undefined reference to `").must() == "naïve'"
+    assert up_to_quote(after(text: line, marker: "reference to `").must()) == "naïve"
+    assert after(text: line, marker: "€").must() == "😀/x.o: in function `f': undefined reference to `naïve'"
+    assert after(text: "abc", marker: "").must() == "abc"
+    assert after(text: "abc", marker: "c").must() == ""
+    assert after(text: "abcabc", marker: "bc").must() == "abc"
+    assert after(text: "ab", marker: "abc").is_err()
+    assert up_to_quote("ün") == "ün" && up_to_quote("'x") == "" && up_to_quote("") == ""
