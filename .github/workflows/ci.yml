@@ -212,6 +212,11 @@ jobs:
     # hosted runner, six hours (docs.github.com, Actions limits, read that day),
     # and splitting Windows' net into jobs of its own is a task, since the net
     # keeps growing (the author's answer of 2026-11-09).
+    # **Done 2026-11-13, task 2400**: on batch 33's push (run 43181785764) the
+    # Windows leg was cancelled at these six hours, its net alone 340.6 minutes,
+    # so its net runs in the parts of the `windows-net` job below and this
+    # job's Windows leg ends after the net's own tests. The ceiling stays for
+    # every leg: Darwin read 237.2 minutes on the same run.
     timeout-minutes: 360
     # No platform's failure hides another's. That is the point of having three,
     # and `fail-fast` would undo it on the first divergence.
@@ -283,6 +288,14 @@ jobs:
       #     `matrix.exe`/`.exe` on the built binary, because clang honours `-o`
       #     exactly and Windows will not execute a file without the extension.
       #     A red leg naming something else is the finding, not a regression.
+      #
+      #     **Its net runs in parts since 2026-11-13** (task 2400): this leg
+      #     builds the compiler, runs its probes, the compiler's own tests and
+      #     the net's own tests, and the `windows-net` job after this one runs
+      #     every suite of the net, in parts that each build their own compiler.
+      #     This entry stays the one Windows entry of the matrix, so the legs a
+      #     push runs are still read from the literal below as four
+      #     (`site/src/lib/claims.ts`, `ci()`).
       #
       # Nothing is read at the tag any more, which is what the widening bought:
       # a Windows or macOS divergence is found on the commit that causes it
@@ -823,8 +836,14 @@ jobs:
       # the other compiler every job already has, and it differs from stage 2
       # wherever the emitter moved since the seed was refreshed. Until
       # 2026-10-28 this step ran `./heroes${{ matrix.exe }} run` on both sides.
+      #
+      # **Not on Windows since 2026-11-13** (task 2400): there the net is the
+      # `windows-net` job's, every suite in one of its parts, since run
+      # 43181785764 read this step at 340.6 minutes on that leg and the job was
+      # cancelled at six hours in the net's own tests below. The other three
+      # legs run it here, whole, as before.
       - name: The net, in Heroes
-        if: inputs.net != 'own'
+        if: inputs.net != 'own' && runner.os != 'Windows'
         shell: bash
         # The token `records` reads the issues with: the job's own, read-only
         # by `permissions` above (`issues: read`), held by `gh` and never read
@@ -1021,6 +1040,251 @@ jobs:
           ./heroes-from-gcc build selfhost/main.hero --emit-c -o /tmp/stage-1-gcc.c
           cmp /tmp/stage-1-clang.c /tmp/stage-1-gcc.c
 
+  # THE WINDOWS NET, IN PARTS (task 2400, 2026-11-13). On batch 33's push, run
+  # 43181785764, the matrix's Windows leg ran 08:22:59 to 14:23:12 UTC and was
+  # cancelled at the six hours GitHub gives a hosted job, in the net's own
+  # tests, after its net had read 340.6 minutes; the same step read 109.4 on
+  # 2026-11-06. Read from that run's log, each suite's minutes being its count
+  # line's time less the line's before it: run 113.0, determinism 52.5,
+  # warnings 52.0, emission 23.3, generated 19.3, lines 18.0, corpus 15.3,
+  # probe 15.0, unsupported 14.9, and the other 28 suites 17.4 together. So
+  # the matrix's Windows leg keeps the compiler, its probes, its own tests and
+  # the net's own tests, and the net runs in the parts below, every suite of it
+  # in exactly one part.
+  #
+  # **The parts are this job's answer, read from a table and from the net's own
+  # list.** Four parts are placed by hand from those minutes; a last part takes
+  # every suite the table does not name, a suite added later among them, so
+  # none can fall between the parts; and the `windows-net` matrix is this job's
+  # output, so no part can be left out of it either. A name the table holds and
+  # the net does not is told and dropped, with nothing of the net left unrun.
+  #
+  # **`run` is a part of its own, whole**, and so the leg's longest: 113.0
+  # minutes on that run, 40.7 to 108.0 on the nine pushes read before it
+  # (2026-11-06 to 11), plus its part's own build. A shard of it (`run <i>/<n>`,
+  # defect 537) asks neither the suite's floor nor its skip ratio, which this
+  # leg asks today, and leaves them to whoever split it; until something asks
+  # them of the shards' sums, the part is the whole suite.
+  windows-net-plan:
+    name: The Windows net's parts, from the net's own list
+    if: (github.event_name != 'workflow_dispatch' || inputs.only == 'all' || inputs.only == 'windows') && inputs.net != 'own'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      parts: ${{ steps.plan.outputs.parts }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Every suite of the net in exactly one part
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          main=tests/harness/main.hero
+          golden=tests/harness/suite_golden.hero
+
+          # THE PARTS PLACED BY HAND, with what their suites read on run
+          # 43181785764, the slowest of the ten Windows nets read: 1,
+          # 113.0 minutes; 2, 70.5; 3, 67.3; 4, 57.5; and the last part, every
+          # suite not named here, 32.3 over 29 suites. Each part adds its own
+          # build, 5.7 minutes on that runner (checkout, vcpkg, stage 1 and stage
+          # 2), and a harness build per suite: measured on the author's Mac, a
+          # warm `heroes run` of the harness retires 136 billion instructions
+          # against stage 2's 886, so about half a minute there, an inference
+          # from that gauge.
+          placed=(
+            "run"
+            "determinism lines"
+            "corpus warnings"
+            "emission generated probe"
+          )
+
+          # THE NET'S OWN LIST, read from `main`'s dispatcher in the order it
+          # runs them: the golden forms of its `forms` list, each
+          # `suite_golden.shape_<x>()` selected by the `name:` of the Shape it
+          # makes, then every block `if only == "" || only == "<name>"`. That is
+          # a premise about a text, so the text is asked twice and the step
+          # stops rather than guess: `main` counts a suite run, `ran @ ran + 1`,
+          # once in the forms' loop and once in each block, and a suite written
+          # in any other shape makes the two readings disagree.
+          net=()
+          while read -r shape; do
+            name=$(awk -v head="function ${shape}() -> Shape" '
+              $0 == head { on = 1; next }
+              on && /^function / { exit }
+              on && /^        name: "[a-z_]+",$/ { sub(/^ *name: "/, ""); sub(/",$/, ""); print; exit }' "$golden")
+            if [ -z "$name" ]; then
+              echo "::error::$golden: no \`name:\` read in \`${shape}()\`, so the form it makes has no word this step can select"
+              exit 1
+            fi
+            net+=("$name")
+          done < <(sed -n '/^    forms: [[]suite_golden[.]Shape[]] = [[]$/,/^    []]$/p' "$main" | sed -nE 's/^        suite_golden[.](shape_[a-z_]+)[(][)]$/\1/p')
+          forms=${#net[@]}
+          while read -r name; do
+            net+=("$name")
+          done < <(sed -nE 's/^    if only == "" [|][|] only == "([a-z_]+)"$/\1/p' "$main")
+          blocks=$(( ${#net[@]} - forms ))
+          counted=$(grep -cE '^ +ran @ ran [+] 1$' "$main" || true)
+          looped=$(grep -cE '^        if only == "" [|][|] only == form[.]name$' "$main" || true)
+          if [ "$forms" -eq 0 ] || [ "$looped" -ne 1 ] || [ "$counted" -ne $(( blocks + 1 )) ]; then
+            echo "::error::$main reads as $forms forms, $looped loop over them, $blocks blocks and $counted counts of a suite run, which is not the dispatcher this step knows (one count per block and one for the loop): read it, and teach this step its shape"
+            exit 1
+          fi
+          twice=$(printf '%s\n' "${net[@]}" | sort | uniq -d)
+          if [ -n "$twice" ]; then
+            echo "::error::$main selects these suites twice: $twice"
+            exit 1
+          fi
+
+          # The hand-placed part that names a suite, 0 where none does; and
+          # whether the net holds a name.
+          placed_in() {
+            local i=0 p
+            for p in "${placed[@]}"; do
+              i=$(( i + 1 ))
+              case " $p " in *" $1 "*) echo "$i"; return ;; esac
+            done
+            echo 0
+          }
+          holds() {
+            case " ${net[*]} " in *" $1 "*) return 0 ;; esac
+            return 1
+          }
+          twice=$(printf '%s\n' ${placed[@]} | sort | uniq -d)
+          if [ -n "$twice" ]; then
+            echo "::error::the table places these suites in two parts: $twice"
+            exit 1
+          fi
+          for s in ${placed[@]}; do
+            holds "$s" || echo "::warning::the table places \`$s\`, which the net does not select: dropped, every suite of the net still run, and the table's line is the one to correct"
+          done
+
+          # Every suite of the net, in its order, into its part; parts left
+          # empty are dropped and the rest numbered as they run.
+          last=$(( ${#placed[@]} + 1 ))
+          lists=()
+          rest=()
+          for k in $(seq 1 "$last"); do
+            words=""
+            for s in "${net[@]}"; do
+              at=$(placed_in "$s")
+              if [ "$at" -eq "$k" ] || { [ "$at" -eq 0 ] && [ "$k" -eq "$last" ]; }; then
+                words="$words${words:+ }$s"
+              fi
+            done
+            if [ -n "$words" ]; then
+              lists+=("$words")
+              if [ "$k" -eq "$last" ]; then rest+=(yes); else rest+=(no); fi
+            fi
+          done
+          n=${#lists[@]}
+          given=$(printf '%s\n' ${lists[@]} | wc -l | tr -d ' ')
+          if [ "$given" -ne "${#net[@]}" ]; then
+            echo "::error::the parts hold $given suites and the net selects ${#net[@]}"
+            exit 1
+          fi
+          json=""
+          for j in $(seq 1 "$n"); do
+            words=${lists[$(( j - 1 ))]}
+            count=$(printf '%s\n' $words | wc -l | tr -d ' ')
+            if [ "${rest[$(( j - 1 ))]}" = yes ] && [ "$count" -gt 1 ]; then
+              label="the other $count suites"
+            else
+              label=${words// /, }
+            fi
+            echo "part $j of $n, $label: $words"
+            json="$json${json:+,}{\"part\":\"$j of $n\",\"label\":\"$label\",\"suites\":\"$words\"}"
+          done
+          echo "${#net[@]} suites of the net in $n parts"
+          echo "parts=[$json]" >> "$GITHUB_OUTPUT"
+
+  # The parts, as `windows-net-plan` gives them. Each is the matrix leg's own
+  # ground for the net, step for step, the comments of those steps above saying
+  # why each is there: SDL3 and a pkg-config from vcpkg, stage 1 built from the
+  # seed with the stack flag `seed/README.md` prints for Windows, stage 2 built
+  # by it from this commit's source, and clang's sanitizer runtime on PATH. **A
+  # part builds its own compilers rather than download them**: a build job's
+  # would reach a part only once that job ended, stage 2 alone reading 1.7 to
+  # 4.1 minutes on the Windows runners of the ten pushes read, and a part pays
+  # the same minutes at its own start, in parallel with the others, with no
+  # artifact to carry between jobs and no action to pin for it.
+  windows-net:
+    name: Windows x86-64, the net ${{ matrix.part }} (${{ matrix.label }})
+    needs: windows-net-plan
+    runs-on: windows-latest
+    # GitHub's own ceiling for a hosted runner, as the matrix's legs have it.
+    timeout-minutes: 360
+    strategy:
+      # No part's failure hides another's.
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.windows-net-plan.outputs.parts) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      # The matrix leg's step of this name, its script line for line; what it
+      # was measured on is that step's comment, and the two change together.
+      - name: Install SDL3 and pkg-config with vcpkg
+        shell: bash
+        run: |
+          set -e
+          root="$VCPKG_INSTALLATION_ROOT/installed/x64-windows-release"
+          "$VCPKG_INSTALLATION_ROOT/vcpkg.exe" install sdl3:x64-windows-release pkgconf:x64-windows-release --disable-metrics
+          bin="$RUNNER_TEMP/pkgconfig-bin"
+          mkdir -p "$bin"
+          cp "$root/tools/pkgconf/pkgconf.exe" "$bin/pkg-config.exe"
+          cp "$root/tools/pkgconf/"*.dll "$bin/"
+          cygpath -w "$bin" >> "$GITHUB_PATH"
+          cygpath -w "$root/bin" >> "$GITHUB_PATH"
+          echo "PKG_CONFIG_PATH=$(cygpath -m "$root/lib/pkgconfig")" >> "$GITHUB_ENV"
+          PATH="$bin:$root/bin:$PATH" PKG_CONFIG_PATH="$(cygpath -m "$root/lib/pkgconfig")" pkg-config --exists sdl3 \
+            || { echo '::error::pkg-config does not answer sdl3 after the vcpkg install, so the SDL3 case would skip'; exit 1; }
+          echo "::notice::SDL3 $(PATH="$bin:$root/bin:$PATH" PKG_CONFIG_PATH="$(cygpath -m "$root/lib/pkgconfig")" pkg-config --modversion sdl3) from vcpkg, pkgconf $(PATH="$bin:$PATH" pkg-config --version)"
+
+      # `seed/README.md`'s line for Windows, with its stack flag. The clang
+      # each part has is printed, since two parts may land on two images.
+      - name: Build the compiler from the seed
+        shell: bash
+        run: |
+          clang --version
+          clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes-from-seed.exe
+          ./heroes-from-seed.exe --version
+
+      - name: Stage 2, the compiler this commit's source builds
+        shell: bash
+        run: |
+          ./heroes-from-seed.exe build selfhost/main.hero -o heroes.exe
+          ./heroes.exe --version
+
+      - name: Put clang's sanitizer runtime on PATH
+        shell: bash
+        run: |
+          D="$(clang -print-resource-dir)/lib/windows"
+          ls "$D"/clang_rt.asan_dynamic-x86_64.dll
+          echo "$D" >> "$GITHUB_PATH"
+
+      # One harness process per suite, the harness's second word selecting it,
+      # built by stage 1 and judging stage 2 as the matrix's step does with the
+      # whole net (panel 231's R2). Every suite runs whatever the one before it
+      # read, so no red hides another, and the step ends with the worst exit,
+      # the harness's own: 2 where a suite could not run, 1 where one failed.
+      - name: The net, in Heroes, this part's suites
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUITES: ${{ matrix.suites }}
+        run: |
+          worst=0
+          red=""
+          for suite in $SUITES; do
+            code=0
+            ./heroes-from-seed.exe run tests/harness/main.hero -- ./heroes.exe "$suite" || code=$?
+            if [ "$code" -ne 0 ]; then red="$red $suite (exit $code)"; fi
+            if [ "$code" -gt "$worst" ]; then worst=$code; fi
+          done
+          if [ -n "$red" ]; then echo "::error::the suites of this part that did not end green:$red"; fi
+          exit "$worst"
+
   # A REFRESH OF THE SEED IS REBUILT BY THE SEED BEFORE IT (the author's
   # instruction of 2026-10-18; its home is `seed/README.md` § When this file
   # must be regenerated). Measurement 048 walked the 39 seeds since
@@ -1203,9 +1467,13 @@ jobs:
   #
   # `contents: write` is the one permission `gh release create` needs, and it
   # is granted to this job alone; the matrix above keeps the default.
+  #
+  # **Every leg agreeing includes the Windows net's parts since 2026-11-13**
+  # (task 2400): the matrix's Windows leg no longer runs the net, so a release
+  # waits for `windows-net` as well as for the matrix.
   release:
     name: GitHub Release
-    needs: test
+    needs: [test, windows-net]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 30
