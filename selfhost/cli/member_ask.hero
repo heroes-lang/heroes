@@ -22,6 +22,7 @@
 # dump that does not compile answers nothing, and the field is told as before.
 
 use ast
+use bytes
 use cli/bound_macro
 use cli/digest
 use cli/probing
@@ -187,11 +188,7 @@ function plain(type_text: str) -> str
 # The members the header gives the type itself, the holder's own top-level
 # member left out, in the dump's order.
 function others(read: [layout_text.Member], top: {str: bool}, holder: str) -> [str]
-    first: str @= holder
-    dot = ffi_lookup.char_index_of(text: holder, needle: ".")
-
-    if !dot.is_err()
-        first @ holder.slice(from: 0, to: dot.must())
+    first = first_member(holder)
     out: [str] @= []
 
     for seen in layout_visible.visible(read)
@@ -201,6 +198,18 @@ function others(read: [layout_text.Member], top: {str: bool}, holder: str) -> [s
             out @ out.push(name)
 
     return out
+
+# A holder's own top-level member: its C path up to the first `.`, found by
+# its bytes and cut there. A member named above ASCII, `内.結`, was cut at the
+# index of a character, the dot's place counted in characters, and the build
+# panicked, *string slice splits a character* (defect 2515, found beside
+# defect 2508).
+function first_member(holder: str) -> str
+    dot = bytes.locate(text: holder, needle: ".", from: 0)
+
+    if dot.is_err()
+        return holder
+    return holder.slice(from: 0, to: dot.must())
 
 # clang's record-layout dump of `text` under `words`, or none where it did
 # not compile.
@@ -252,3 +261,13 @@ test "a holder's kind and name are its type's first word and its name alone"
     assert named_of("union (unnamed union at ./u.h:3:5)") == ""
     assert named_of("union named_u") == "union named_u"
     assert plain("void (*)(int)") == "" && plain("int[4]") == "" && plain("int") == "int"
+
+# Defect 2515, found beside defect 2508: a holder's top-level member is its
+# path up to the first `.`, cut where the bytes say, members named above
+# ASCII included.
+test "a holder's own member is cut from its path where the bytes say (defect 2515)"
+    assert first_member("内.結") == "内"
+    assert first_member("inner.u") == "inner"
+    assert first_member("é") == "é"
+    assert first_member("a.é.b") == "a"
+    assert first_member("😀x.y") == "😀x"

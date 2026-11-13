@@ -1,0 +1,7 @@
+error[ffi_declared_two_ways]: `twice` is declared `long long (long long)` in `fixedbugs-2516-declares-a.h` line 3 and `double (double)` in `fixedbugs-2516-declares-b.h` line 3: two groups bind one C function two ways, which C takes as one function (C11 6.2.2)
+  at tests/golden/unsupported/fixedbugs-2516-a-name-two-groups-bind-and-neither-module-calls-is-told-so.hero:16:14
+     |
+  16 |     function twice(x: i64) -> i64  #~ ffi_declared_two_ways
+     |              ^^^^^
+  note: the other module's group is at tests/golden/unsupported/fixedbugs2516/binds_b.hero:6
+  note: each module's unit reads its own headers, so both compile, and neither module's C calls `twice` through a group, so each reaches it only where its headers' own code names it, a body it calls or a macro it uses; C leaves one function declared with two types undefined, called or not (C11 6.2.7): bind `twice` in both modules from the header that declares it as it is defined, or from one module, whose unit reads both headers, where clang refuses the two declarations together

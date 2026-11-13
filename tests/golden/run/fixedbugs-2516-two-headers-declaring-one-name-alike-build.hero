@@ -1,0 +1,12 @@
+# fixedbugs, defect 2516, lane b35-link, 2026-11-13.
+#
+# The shape beside the defect where nothing is wrong: two modules' headers
+# declare `twice` alike, and the program builds and runs, nothing told.
+use fixedbugs2516/alike_b
+
+extern "fixedbugs-2516-alike-a.h"
+    function alike_a_value(x: i64) -> i64
+
+function main()
+    print(alike_a_value(x: 3))
+    print(alike_b.b(x: 3))

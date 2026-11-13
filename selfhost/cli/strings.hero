@@ -127,12 +127,17 @@ function starts_with(text: str, prefix: str) -> bool
 # begins or ends inside a character of more than one byte aborts (spec
 # § 10), so a text holding `é`, `€` or an emoji stopped the search when
 # the needle was absent or came after it, with *string slice splits a
-# character* where the answer was no.
+# character* where the answer was no. The needle's first byte is asked
+# here and the rest only where it stands, as `bytes.locate` asks (defect
+# 2508); an empty needle stands everywhere.
 function holds(text: str, needle: str) -> bool
+    if needle.len() == 0
+        return true
+    first = needle[0]
     at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        if bytes.bytes_at(text: text, at: at, needle: needle)
+        if text[at] == first && bytes.bytes_at(text: text, at: at, needle: needle)
             return true
         at @ at + 1
 
@@ -216,3 +221,13 @@ test "a prefix, a needle and a suffix are asked of the bytes where the cut would
     assert !ends_with(text: "éa", suffix: "ba")
     assert ends_with(text: "x€", suffix: "€")
     assert !ends_with(text: "a€€", suffix: ".hero")
+
+# Defect 2508: `holds` asks the needle's first byte, then the rest, and
+# answers what asking every offset answered.
+test "whether a needle stands is asked by its first byte, then the rest (defect 2508)"
+    assert holds(text: "aab é€😀 abc", needle: "€😀")
+    assert holds(text: "aab é€😀 abc", needle: "abc")
+    assert !holds(text: "aab é€😀 abc", needle: "abd")
+    assert holds(text: "aaab", needle: "aab")
+    assert holds(text: "x", needle: "") && holds(text: "", needle: "")
+    assert !holds(text: "", needle: "a") && !holds(text: "a", needle: "ab")
