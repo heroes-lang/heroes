@@ -1,0 +1,5 @@
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207"

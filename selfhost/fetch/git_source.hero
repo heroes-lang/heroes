@@ -45,15 +45,15 @@ record Blob
 # stands in its repository (`transport.root_of`), `index` its catalogue's
 # `index` line.
 function fetched(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
-    s = staging.opened(program)?
+    s: staging.Staging @= staging.opened(program)?
     done = written(tools, e: e, root: root, s: s)
 
     if done.is_err()
-        staging.dropped(s)
+        staging.dropped(@s)
         return fail(code: code_of(done), msg: why(done))
     return staging.placed(
         @ledger,
-        s,
+        @s,
         key: placed.key(e, index: index),
         sum: e.sum,
         what: "the tree of `" + e.name + "`, `" + e.git + "` at `" + e.tag + "`,"
@@ -264,7 +264,7 @@ test "a git entry is fetched from its blobs, held to its sum and placed under it
     e = entry(tag: "v1", commit: m.commit, sum: m.sum)
     ledger: staging.Ledger @= staging.begun(SCRATCH + "/app/").must()
     at = fetched(@ledger, transport.path_tools(), e: e, program: SCRATCH + "/app/", root: m.root, index: "").must()
-    staging.ended(ledger)
+    staging.ended(@ledger)
     assert at == SCRATCH + "/app/heroes.packages/" + placed.key(e, index: "")
     assert read_file(at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
     assert read_file(at + "/sub/note.txt").must() == "deep\n"
@@ -316,7 +316,7 @@ test "a sum that is not the tree's places nothing, and a moved tag and a missing
         .err e => assert e.code == "commit_refused"
 
     assert ledger.landed.len() == 0
-    staging.ended(ledger)
+    staging.ended(@ledger)
     assert !process.path_exists(SCRATCH + "/app/heroes.packages") || process.walk(SCRATCH + "/app/heroes.packages").must().files.len() == 0
     assert !process.remove_tree(SCRATCH).is_err()
 
@@ -347,7 +347,7 @@ test "a tree holding a link, a submodule, a name one where case is ignored or a 
         tag = "bad" + at.to_str()
         made_repo.git(SCRATCH + "/src", words: ["read-tree", "--empty"]).must()
         commit = made_repo.tree_commit(dir: SCRATCH + "/src", listed: shape, tag: tag).must()
-        s = staging.opened(SCRATCH + "/app/").must()
+        s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
         match written(transport.path_tools(), e: entry(tag: tag, commit: commit, sum: m.sum), root: m.root, s: s)
             .ok _  => assert false
@@ -356,7 +356,7 @@ test "a tree holding a link, a submodule, a name one where case is ignored or a 
         assert !process.path_exists(s.tree + "/a.txt")
         left = process.walk(s.tree)
         assert !process.path_exists(s.tree) || left.must().files.len() == 0 && left.must().unnamed.len() == 0
-        staging.dropped(s)
+        staging.dropped(@s)
         at @ at + 1
 
     assert !process.remove_tree(SCRATCH).is_err()
@@ -374,7 +374,7 @@ test "a name that is not UTF-8 is refused, named by its bytes"
     ).must()
     commit = made_repo.answered(SCRATCH + "/src", words: ["commit-tree", "-m", "raw", tree]).must()
     made_repo.git(SCRATCH + "/src", words: ["tag", "-f", "--", "raw", commit]).must()
-    s = staging.opened(SCRATCH + "/app/").must()
+    s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
     match written(transport.path_tools(), e: entry(tag: "raw", commit: commit, sum: m.sum), root: m.root, s: s)
         .ok _ => assert false
@@ -382,7 +382,7 @@ test "a name that is not UTF-8 is refused, named by its bytes"
             assert e.code == "name_refused"
             assert e.msg == "`caf<0xE9>.txt` is a name that is not UTF-8, which no file of a package's may be"
 
-    staging.dropped(s)
+    staging.dropped(@s)
     assert !process.remove_tree(SCRATCH).is_err()
 
 test "a path's folder is asked of every byte, the first included (defect 2406)"

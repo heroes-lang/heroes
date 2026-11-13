@@ -1,0 +1,9 @@
+$ heroes add strings -C <work>/app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: `strings` 1.0.0 from the index `file://../../../../../tests/golden/fetch/fixedbugs-2493-an-add-over-an-edited-placed-tree-is-refused-and-keeps-it.case/idx` is placed at `<work>/app/heroes.packages/strings@1.0.0-4a2743cae060b4b2`, and that tree was changed since it was placed: `cut.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2493-an-add-over-an-edited-placed-tree-is-refused-and-keeps-it.case/idx"
+heroes.packages:
+strings@1.0.0-4a2743cae060b4b2

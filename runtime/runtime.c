@@ -277,6 +277,12 @@
  * `replace.c`'s private name and rename, which is why it comes after it. */
 #include "parts/write.c"
 
+/* The lock a run of the compiler holds beside a folder it works in (defect
+ * 2453; panel 246's R1), declared in `hero_compiler.h`: after `fs.c`, whose
+ * platform headers it reads, `os.c`, whose `hero_fs_why_code` it sets, and
+ * `codepage.c`, whose wide names it takes on Windows; nothing needs it. */
+#include "parts/lock.c"
+
 /* THE PLATFORM LAYER'S FILES, NAMED HERE AND COMPILED ELSEWHERE (panel 234's
  * R6; feature 2295). Sockets and a monotonic clock are C files of their own
  * beside the runtime, each archived alone and taken by the linker only into a

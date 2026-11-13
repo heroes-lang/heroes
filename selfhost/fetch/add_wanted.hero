@@ -84,7 +84,7 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
             code: "bad_usage",
             msg: "the entry of `" + address_text + "` has no name a `use` writes: " + entry_name.refused(name) + "; give one with `--as`"
         )
-    s = staging.opened(program)?
+    s: staging.Staging @= staging.opened(program)?
     commit = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
     first = catalogue.Entry(
         name: name,
@@ -101,12 +101,12 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
         done @ git_source.written(tools, e: first, root: root, s: s)
 
     if done.is_err()
-        staging.dropped(s)
+        staging.dropped(@s)
         return fail(code: verb_place.code_of(done), msg: verb_place.why(done))
     sum = fingerprint.of(s.tree)
 
     if sum.is_err()
-        staging.dropped(s)
+        staging.dropped(@s)
         return fail(code: "cannot_place", msg: verb_place.reason(sum))
     e = catalogue.Entry(
         name: name,
@@ -117,7 +117,7 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
         path: "",
         sum: sum.must()
     )
-    _ = staging.placed(@ledger, s, key: placed.key(e, index: c.index), sum: e.sum, what: "the tree of `" + name + "`")?
+    _ = staging.placed(@ledger, @s, key: placed.key(e, index: c.index), sum: e.sum, what: "the tree of `" + name + "`")?
     return ok(e)
 
 # A name from the index, at the version written or the highest it lists, its

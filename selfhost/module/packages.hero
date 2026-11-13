@@ -28,6 +28,7 @@
 # it names, a folder of the author's own, and told as unverified (R6).
 
 use cli/process
+use fetch/leftover
 use module/catalogue
 use module/fingerprint
 use module/path_entries
@@ -93,7 +94,13 @@ function reach(@b: Book, alias: str) -> i64
         if b.reached[at].alias == alias
             return at
 
+    # What a killed run left under `heroes.packages/` is undone once, before
+    # any placed tree is asked (defect 2453, `fetch/leftover.hero`), so the
+    # build reads the folder as the program's runs left it, never a killed
+    # run's half; never inside a run's own beginning, where the sitting's
+    # compiler-engineer measured a false `package_unread` (its finding A-3).
     if !b.asked
+        leftover.recovered(b.opened)
         b.program @ catalogue.read(opened: b.opened, named: b.named)
         b.asked @ true
     found = catalogue.entry(b.program, name: alias)
@@ -169,7 +176,7 @@ function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue
         tree = fingerprint.of(package.opened)
 
         if tree.is_err()
-            return "the tree placed at `" + package.root + "` cannot be read whole: " + failure_of(tree) + " — `heroes fetch` places it again"
+            return "the tree placed at `" + package.root + "` cannot be read whole: " + failure_of(tree) + " — remove it, and `heroes fetch` places it again"
 
         if tree.must() != e.sum
             return changed_said(package, e: e, now: tree.must())
@@ -191,22 +198,25 @@ function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue
 # What a placed tree that no longer sums to its entry's `sum`, now `now`, is
 # told: the files added since it was placed, where the sum proves them
 # (`fingerprint.added`, defect 2459), with taking them out, which gives the
-# tree back its sum, as the repair beside `heroes fetch`; otherwise both sums
-# and the three things that move one, since the sum alone cannot say which.
+# tree back its sum, as the repair beside removing the tree; otherwise both
+# sums and the three things that move one, since the sum alone cannot say
+# which. A change there is the author's, and `heroes fetch` places nothing
+# over it (defect 2493), so the tree is removed, or moved out to keep the
+# change, before it places the tree again.
 function changed_said(package: reached.Package, e: catalogue.Entry, now: str) -> str
     gained = fingerprint.added(root: package.opened, sum: e.sum)
 
     if gained.len() == 0
-        return "the tree placed at `" + package.root + "` is `" + now + "`, and the catalogue's `sum` for it is `" + e.sum + "`: a file of it was changed, added or taken out since it was placed — `heroes fetch` places it again"
+        return "the tree placed at `" + package.root + "` is `" + now + "`, and the catalogue's `sum` for it is `" + e.sum + "`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again"
 
     if gained.len() == 1
-        return "the tree placed at `" + package.root + "` holds `" + gained[0] + "`, a file added since it was placed: without it the tree sums to the catalogue's `sum` — remove `" + package.root + gained[0] + "`, or `heroes fetch` places the tree again"
+        return "the tree placed at `" + package.root + "` holds `" + gained[0] + "`, a file added since it was placed: without it the tree sums to the catalogue's `sum` — remove `" + package.root + gained[0] + "`, or remove the tree, and `heroes fetch` places it again"
     named: [str] @= []
 
     for name in gained
         named @ named.push("`" + name + "`")
 
-    return "the tree placed at `" + package.root + "` holds " + gained.len().to_str() + " files added since it was placed, " + named.slice(from: 0, to: named.len() - 1).join(", ") + " and " + named[named.len() - 1] + ": without them the tree sums to the catalogue's `sum` — remove them from it, or `heroes fetch` places the tree again"
+    return "the tree placed at `" + package.root + "` holds " + gained.len().to_str() + " files added since it was placed, " + named.slice(from: 0, to: named.len() - 1).join(", ") + " and " + named[named.len() - 1] + ": without them the tree sums to the catalogue's `sum` — remove them from it, or remove the tree, and `heroes fetch` places it again"
 
 # Each entry of the package's own catalogue mapped to the program's entry for
 # the same package (R3), the aliases kept for `identity`; what is wrong where

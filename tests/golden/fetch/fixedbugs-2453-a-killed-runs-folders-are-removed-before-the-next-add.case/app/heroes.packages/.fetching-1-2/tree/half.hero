@@ -1,0 +1,2 @@
+function half() -> i64
+    return 1

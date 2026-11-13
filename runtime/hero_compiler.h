@@ -77,4 +77,33 @@ int64_t hero_frame_probes_asked(void);
  * neighbour. */
 float hero_f32_of_decimal(const char *text);
 
+/* A lock one run of the compiler holds on a file beside a folder it works in
+ * (defect 2453, `parts/lock.c`, bound by `selfhost/fetch/run_lock.hero`;
+ * panel 246's R1): a group declares it as a handle, `record Lock tag
+ * hero_lock`, which `hero_lock_take` acquires and `hero_lock_drop` consumes. */
+typedef struct hero_lock hero_lock;
+
+/* The lock is another run's: held by a live run, in this process or another,
+ * or, asked `fresh`, a file of that name stands already. Beside the
+ * HERO_OS_* answers, none of which it takes. */
+#define HERO_LOCK_HELD 6
+
+/* An exclusive lock on the file at `path`, taken without waiting, held until
+ * `hero_lock_drop` or the end of this process however it ends, and never held
+ * by a program this process starts once it runs. `fresh` nonzero makes the
+ * file and answers HERO_LOCK_HELD where one stands; zero opens one that
+ * stands, HERO_OS_NOT_FOUND where none does. `*status` is HERO_OS_OK with the
+ * lock held, else HERO_LOCK_HELD, HERO_OS_UNSUPPORTED where the file system
+ * keeps no lock (a file a fresh take made removed again), HERO_OS_NOT_FOUND
+ * or HERO_OS_FAILED, `hero_fs_why` saying why. A block comes back whatever the
+ * status, and is given back through `hero_lock_drop` once. */
+hero_lock *hero_lock_take(const char *path, int64_t fresh, int64_t *status);
+
+/* The block given back, and its lock where it holds one: with `keep` zero the
+ * file is removed first, while still held, and with `keep` nonzero it stays,
+ * so the folder beside it reads as a dead run's to the next run. HERO_OS_OK,
+ * or HERO_OS_FAILED where the removal or the close failed, the lock given back
+ * either way. */
+int64_t hero_lock_drop(hero_lock *lock, int64_t keep);
+
 #endif

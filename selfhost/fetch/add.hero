@@ -36,6 +36,7 @@ use fetch/address_form
 use fetch/build_list
 use fetch/catalogue_edit
 use fetch/git_source
+use fetch/leftover
 use fetch/made_index
 use fetch/made_repo
 use fetch/placing
@@ -81,20 +82,22 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
 #
 # **All or nothing** (defect 2434): every tree the run places is written into
 # its ledger, and a refusal at any step after one is placed, the catalogue's
-# own write among them, takes back what the run placed and puts back what it
-# moved aside (`fetch/staging.hero`), so a refused `add` leaves the program's
-# folder as it found it. Until then it left each tree it had placed, which no
-# catalogue named.
+# own write among them, takes back what the run placed (`fetch/staging.hero`),
+# so a refused `add` leaves the program's folder as it found it; a tree it
+# found placed is never replaced (defect 2493). Until then it left each tree
+# it had placed, which no catalogue named. What a killed run left is undone
+# first, before any placed tree is asked (defect 2453, `fetch/leftover.hero`).
 function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: catalogue.Catalogue) -> [str]?
     line = index_line(inv, c: c)?
+    leftover.recovered(program)
     ledger: staging.Ledger @= staging.begun(program)?
 
     match placed_and_written(@ledger, inv, tools: tools, program: program, c: c, line: line)
         .ok lines =>
-            staging.ended(ledger)
+            staging.ended(@ledger)
             return ok(lines)
         .err e =>
-            left = staging.undone(ledger)
+            left = staging.undone(@ledger)
 
             if left.len() == 0
                 return fail(code: e.code, msg: e.msg)
@@ -364,7 +367,7 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
         assert told.exit_of(got) == 2
 
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")
-    s = staging.opened(SCRATCH + "/app/").must()
+    s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
     match git_source.own(transport.path_tools(), words: ["--git-dir=" + s.folder + "/git", "rev-parse", "--verify", "-q", "refs/heroes/fetched^{commit}"], out: process.discard(), s: s)
         .ok _ => assert false
@@ -372,7 +375,7 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
             assert e.code == "git_failed"
             assert told.exit_of(e.code) == 2
 
-    staging.dropped(s)
+    staging.dropped(@s)
     assert !process.remove_tree(SCRATCH + "/app/heroes.packages").is_err()
 
     # No tree can be staged under a placement folder that is a file.
@@ -388,8 +391,8 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")
     assert !process.remove_tree(SCRATCH).is_err()
 
-# Defect 2434: a refused `add` takes back every tree it placed and puts back
-# every tree it replaced, whichever step refused it: a package's catalogue
+# Defect 2434: a refused `add` takes back every tree it placed, whichever
+# step refused it, and replaces none it found: a package's catalogue
 # naming a folder, a second package refused once the first was placed, the
 # catalogue's own write; and a `heroes.packages/` it found stays.
 test "a refused add leaves the program's folder as it found it (defect 2434)"
@@ -431,10 +434,10 @@ test "a refused add leaves the program's folder as it found it (defect 2434)"
     assert process.is_directory(app + "heroes.packages")
     assert process.walk(app + "heroes.packages").must().files.len() == 0
 
-    # The author's edit of a placed tree: the run replaces it, walking the
-    # program's `json`, is refused by the `strings` the program names with
-    # another sum than `json` needs, and puts the edit back; `yaml`, which it
-    # placed, goes, and the catalogue is as it was.
+    # The author's edit of a placed tree: walking the program's `json`, the
+    # run is refused at that tree, which it never replaces (defect 2493), and
+    # the edit stays; `yaml`, which it placed, goes, and the catalogue is as
+    # it was.
     catalogue_text = "index = \"file://../idx\"\n\n[dependencies.strings]\nversion = \"1.0.0\"\nsum = \"" + wrong + "\"\n\n[dependencies.json]\nversion = \"1.0.0\"\nsum = \"" + m.json_1 + "\"\n"
     assert !write_file(path: app + "heroes.toml", text: catalogue_text).is_err()
     json = catalogue.Entry(name: "json", version: "1.0.0", git: "", tag: "", commit: "", path: "", sum: m.json_1)
