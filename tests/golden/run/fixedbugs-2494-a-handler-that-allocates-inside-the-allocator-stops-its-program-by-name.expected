@@ -1,0 +1,2 @@
+starting a sender aimed at main
+!panic: a signal handler used this runtime's allocator while the code it interrupted was inside it, which would corrupt memory: a Heroes function given to C as a signal handler, or called from one, does so whenever it builds or drops a value. To stop on Ctrl-C or SIGTERM, call `hero_net_catch_stop` from `hero_net.h`, and the platform layer's waiting calls end with `HERO_NET_STOPPED`; answer any other signal with a handler written in C in the program's own header, never with a Heroes function

@@ -1,0 +1,59 @@
+# Fixed in part 2026-11-13, defect 2494, lane b34-signals: a Heroes function
+# given to C's `signal` that builds a value, run while the thread it
+# interrupts is inside the C library's allocator.
+# Symptom: the program died of a heap the allocator itself had corrupted,
+# 5 runs of 5 on this Mac (3 killed by SIGKILL with nothing said, 2 by SIGTRAP,
+# memory given back twice) and 5 of 5 in Linux arm64 (glibc's heap aborts,
+# twice the runtime's own false report of a str's block that lost its mark),
+# the critic's storm of panel 246, whose handler builds a string.
+# Cause: the handler entered the allocator again from inside it; each call the
+# runtime makes to the allocator is now bracketed by a flag of the thread's
+# own, and a handler that finds it open stops the program by name before the
+# allocator is entered twice. The rest of the defect, Heroes code in a handler
+# at all, waits for panel 247's route. Here a thread of the program's own C
+# sends SIGUSR1 to `main` without pause, for at most 20 seconds, while `main`
+# builds and drops small arrays, so a signal lands inside the allocator early.
+# Neither side formats a number: the C library's `snprintf`, which an
+# f-string's `{n}` calls, holds a lock of its own on Darwin, and a handler
+# taking it again on the thread that holds it is killed by that library with
+# nothing said, the part the repair does not reach (12 runs of 200 on this
+# Mac with the storm's strings; 0 of 50 in Linux arm64, where it takes none).
+# `main` prints its one line before the sender starts, for stdio's own reason.
+
+extern "fixedbugs-2494-a-thread-of-cs-own-sends-the-signal.h"
+    function storm_start() -> i64
+    function storm_stop()
+
+extern "signal.h"
+    constant SIGUSR1: i32
+    function signal(sig: i32, handler: (function(i32) -> ())) -> ptr
+
+# Builds an array and drops it, as any handler that keeps a value does.
+function on_signal(sig: i32)
+    seen = [sig, sig, sig]
+    _ = seen.len()
+
+# A hundred thousand small arrays built into an array and dropped with it.
+function round(r: i64) -> i64
+    rows: [[i64]] @= []
+    i @= 0
+
+    while i < 100_000
+        rows @ rows.push([r, i])
+        i @ i + 1
+
+    return rows.len()
+
+function main()
+    _ = signal(SIGUSR1, on_signal)
+    print("starting a sender aimed at main")
+    started = storm_start()
+    total @= 0
+    r @= 0
+
+    while r < 50
+        total @ total + round(r)
+        r @ r + 1
+
+    storm_stop()
+    print("sender started ", started, ", built ", total, " rows, and no signal met the allocator")
