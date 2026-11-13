@@ -204,7 +204,10 @@ HeroStr hero_dir_at_shown(int64_t index, int64_t *status, int64_t *marks) {
  * `link -> ../A` took `A/keep.txt` with it). */
 int64_t hero_dir_remove_tree(const char *path) {
     if (hero_dir_is_link(path)) return hero_fs_remove(path);
-    if (!hero_fs_exists(path)) return HERO_OS_OK;
+    /* Gone only where the name is (`hero_fs_name_gone`, parts/fs.c; defect
+     * 2500): a folder on the way that cannot be searched is no answer, and
+     * the removal below tells its refusal. */
+    if (hero_fs_name_gone(path)) return HERO_OS_OK;
     if (!hero_fs_is_directory(path)) return hero_fs_remove(path);
 
     /* The listing is taken WHOLE before anything is deleted. Walking a

@@ -348,6 +348,28 @@ static int64_t hero_fs_remove_wide(const wchar_t *wide) {
 }
 #endif
 
+/* Whether nothing stands at `path` itself, as a removal asks it: the NAME, a
+ * link included and never what it names, is not there, or a folder on its
+ * way is a file, so the path names nothing (defect 2500). Until then the
+ * POSIX arm asked `stat`, which answers for what a link names and fails for
+ * a folder it may not search, and both read as gone: a link to nothing in a
+ * folder the program may not write, and a file in a folder it may not
+ * search, were answered done while they stood. A path the system cannot
+ * answer for is not gone. Windows asks the name's own attributes, as
+ * `hero_fs_remove_wide` above does. */
+static int hero_fs_name_gone(const char *path) {
+#if defined(_WIN32)
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return 0;
+    int gone = !hero_fs_wide_exists(wide);
+    hero_release(wide);
+    return gone;
+#else
+    struct stat info;
+    return lstat(path, &info) != 0 && (errno == ENOENT || errno == ENOTDIR);
+#endif
+}
+
 int64_t hero_fs_remove(const char *path) {
     hero_fs_why_code = 0;
 #if defined(_WIN32)
@@ -363,11 +385,11 @@ int64_t hero_fs_remove(const char *path) {
     return removed;
 #else
     if (remove(path) == 0) return HERO_OS_OK;
-    hero_fs_why_code = (int64_t)errno;
-    if (!hero_fs_exists(path)) {
-        hero_fs_why_code = 0;
-        return HERO_OS_OK;
-    }
+    /* Kept before the question below, which calls `lstat` and may move it:
+     * the reason told is the removal's. */
+    int failure = errno;
+    if (hero_fs_name_gone(path)) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)failure;
     return HERO_OS_FAILED;
 #endif
 }
