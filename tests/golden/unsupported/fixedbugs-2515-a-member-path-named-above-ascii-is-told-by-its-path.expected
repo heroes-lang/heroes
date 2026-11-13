@@ -1,0 +1,9 @@
+error[ffi_unknown_field]: `fixedbugs-2515-member-path.h` declares no `fd` in `struct deep_above`: clang read the header, and that type has no such field
+  at tests/golden/unsupported/fixedbugs-2515-a-member-path-named-above-ascii-is-told-by-its-path.hero:16:9
+     |
+  16 |         fd: i32  #~ ffi_unknown_field
+     |         ^^
+  note: `fd` is a member of the union `内.結` inside `struct deep_above`, which C reaches as `内.結.fd`: a group's `record` names the members the header gives its type itself (spec § 13)
+  note: what builds today: bind `Deep` `partial`, naming only `kind`, and end a construction of it with `rest: zero`, which leaves `内` to C
+  note: or reach `内.結.fd` through a function of the program's own in a header that includes `fixedbugs-2515-member-path.h`, `static inline int deep_above_fd(const struct deep_above *t) { return t->内.結.fd; }`, which this group then names in `fixedbugs-2515-member-path.h`'s place
+  note: or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `fixedbugs-2515-member-path.h` and defines `#define fd 内.結.fd`, which this group then names in `fixedbugs-2515-member-path.h`'s place, so `fd` stays a field; the macro renames every `fd` read after it

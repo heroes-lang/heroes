@@ -1,4 +1,4 @@
-/* Found beside defect 2508, 2026-11-13: `twice` with no prototype, returning
+/* Defect 2515, 2026-11-13: `twice` with no prototype, returning
  * a struct whose tag is above ASCII. */
 struct 漢 { long long v; };
 struct 漢 twice();

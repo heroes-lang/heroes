@@ -202,8 +202,8 @@ function others(read: [layout_text.Member], top: {str: bool}, holder: str) -> [s
 # A holder's own top-level member: its C path up to the first `.`, found by
 # its bytes and cut there. A member named above ASCII, `内.結`, was cut at the
 # index of a character, the dot's place counted in characters, and the build
-# panicked, *string slice splits a character* (found beside defect 2508,
-# 2026-11-13).
+# panicked, *string slice splits a character* (defect 2515, found beside
+# defect 2508).
 function first_member(holder: str) -> str
     dot = bytes.locate(text: holder, needle: ".", from: 0)
 
@@ -262,9 +262,10 @@ test "a holder's kind and name are its type's first word and its name alone"
     assert named_of("union named_u") == "union named_u"
     assert plain("void (*)(int)") == "" && plain("int[4]") == "" && plain("int") == "int"
 
-# Found beside defect 2508: a holder's top-level member is its path up to the
-# first `.`, cut where the bytes say, members named above ASCII included.
-test "a holder's own member is cut from its path where the bytes say (found beside defect 2508)"
+# Defect 2515, found beside defect 2508: a holder's top-level member is its
+# path up to the first `.`, cut where the bytes say, members named above
+# ASCII included.
+test "a holder's own member is cut from its path where the bytes say (defect 2515)"
     assert first_member("内.結") == "内"
     assert first_member("inner.u") == "inner"
     assert first_member("é") == "é"

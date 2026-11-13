@@ -1,4 +1,4 @@
-/* Found beside defect 2508, 2026-11-13: `twice` with its prototype, the same
+/* Defect 2515, 2026-11-13: `twice` with its prototype, the same
  * result. */
 struct 漢 { long long v; };
 struct 漢 twice(long long x);

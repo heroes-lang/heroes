@@ -1,5 +1,5 @@
-# Found beside defect 2508, lane b35-link, 2026-11-13; its own number is the
-# round's to give.
+# fixedbugs, defect 2515, lane b35-link, 2026-11-13 (found beside defect
+# 2508).
 #
 # SYMPTOM: `twice`, declared `struct 漢 twice();` by this module's header and
 # with its prototype by another's, which agree: the build panicked, *string
@@ -11,9 +11,9 @@
 #
 # FIX: the place is found by its bytes (`two_ways.result_of`), the two
 # results agree, and the program builds and runs.
-use tagprototype/b_side
+use fixedbugs2515/b_side
 
-extern "ffi-tag-prototype-a.h"
+extern "fixedbugs-2515-prototype-a.h"
     function proto_a_value(x: i64) -> i64
 
 function main()

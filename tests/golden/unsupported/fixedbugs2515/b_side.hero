@@ -1,7 +1,7 @@
-# A module of the case found beside defect 2508 (lane b35-link, 2026-11-13):
+# A module of defect 2515's case (lane b35-link, 2026-11-13):
 # its header declares `twice` of `long long`.
 
-extern "ffi-tag-two-ways-b.h"
+extern "fixedbugs-2515-two-ways-b.h"
     function tag_b_value(x: i64) -> i64
 
 function b(x: i64) -> i64
