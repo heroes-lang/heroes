@@ -1,0 +1,56 @@
+# Fixed 2026-11-13, defect 2496, lane b34-signals: a signal sent to the
+# process while a thread `hero_thread_spawn` started is beginning.
+# Symptom: a Heroes function given to C's `signal` stopped the program at 134,
+# `ran on a thread this program did not start`, when the signal reached a
+# worker before the worker had claimed itself: 8 runs of 50 on this Mac and 3
+# of 50 in Linux arm64 with one worker (the issue's `whichthread2`).
+# Cause: a worker could take a signal from its first instruction and claimed
+# itself only once its start ran; it now begins with every signal but a
+# fault's held off, lets them through once its claim and its stack guard
+# stand, and `hero_thread_spawn` returns only then, so the handler runs on a
+# thread this program owns. Each of 200 rounds starts a worker, holds SIGUSR1
+# off `main` so that only the worker can take it, and sends it at once; the
+# worker waits for its round's signal, and the handler counts and allocates
+# nothing. Without the repair the first rounds already reach a worker
+# unclaimed.
+
+extern "fixedbugs-2496-a-signal-sent-as-a-thread-starts.h"
+    function fresh_hold() -> i64
+    function fresh_free() -> i64
+    function fresh_send() -> i64
+    function fresh_heard_one()
+    function fresh_heard_count() -> i64
+    function fresh_wait_heard(want: i64) -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+    function signal(sig: i32, handler: (function(sig: i32) -> ())) -> ptr
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function on_signal(sig: i32)
+    _ = sig
+    fresh_heard_one()
+
+# The worker's whole life is waiting for its round's signal, so the signal
+# finds it alive and letting signals through: 1 once it was handled meanwhile,
+# on this worker, the one thread not holding it then; 0 if it never came.
+function awaits(round: i64) -> i64
+    return fresh_wait_heard(want: round + 1) - round
+
+function main()
+    _ = signal(sig: SIGUSR1, handler: on_signal)
+    rounds @= 0
+    seen @= 0
+
+    while rounds < 200
+        worker = hero_thread_spawn(body: awaits, arg: rounds)
+        _ = fresh_hold()
+        _ = fresh_send()
+        seen @ seen + hero_thread_join(handle: worker)
+        _ = fresh_free()
+        rounds @ rounds + 1
+
+    print(rounds, " rounds, ", seen, " signals handled on the worker they were sent to")

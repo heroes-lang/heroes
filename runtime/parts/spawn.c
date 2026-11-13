@@ -48,9 +48,21 @@
  * AND THE THREAD IS THIS PROGRAM'S, WHICH IS WHY THE GUARD LETS IT THROUGH.
  * `parts/thread.c` refuses a Heroes function on any thread the program did not
  * start (panel 111 R9). A thread started here IS one the program started, so
- * `hero_thread_enter` claims it before the body runs. A thread a C library made
+ * `hero_spawn_enter` claims it before the body runs. A thread a C library made
  * for its own purposes still stops by name, and that refusal is not weakened by
  * one line of this file.
+ *
+ * FROM ITS FIRST INSTRUCTION TO ITS LAST, NOT ONLY FROM ITS CLAIM (defect
+ * 2496). A signal sent to the process runs its handler on any thread that does
+ * not block it, and a thread exists for the kernel before it has run a line of
+ * `hero_spawn_enter`: a Heroes function given to C's `signal` ran on a worker
+ * not yet claimed and was refused as a thread the program did not start, exit
+ * 134, in 8 runs of 50 on this Mac and 3 of 50 in Linux arm64 (the issue's
+ * `whichthread2`, SIGINT blocked on `main`, 2026-11-13). So no such signal
+ * reaches a thread of this file while its runtime state is being built or
+ * given back: the starter holds them off itself across the start, the new
+ * thread inherits that, and it takes its starter's own mask back only once its
+ * claim and its stack guard stand (`hero_spawn_hold`, below).
  */
 
 #if defined(_WIN32)
@@ -71,6 +83,9 @@
  * reason above: `os.c` and `run.c` include them, after this file. */
 #include <errno.h>
 #include <sys/resource.h>
+/* `pthread_sigmask` and `sigset_t`, for the start's held signals (defect
+ * 2496); named here for the reason above, though `panic.c` reads it first. */
+#include <signal.h>
 #endif
 
 /* THE BOUND IS ON THREADS ALIVE AT ONCE, NOT ON THREADS EVER STARTED, and that
@@ -189,6 +204,21 @@ typedef struct {
     /* 0 free · 1 running · 2 finished and not yet joined. A joined slot goes
      * back to 0, which is what makes the bound a concurrency bound. */
     int state;
+#if !defined(_WIN32)
+    /* The signal mask of the thread that started this one, as it was before
+     * the start held the signals off (defect 2496): what POSIX says a new
+     * thread inherits, which the new thread takes once it is the program's
+     * own. Written before the thread exists, read by it once, and the slot is
+     * not reused before the thread is joined. */
+    sigset_t mask;
+    /* 1 once the new thread has its claim, its stack guard and that mask, and
+     * the start returns only then (defect 2496, `hero_spawn_await`), under the
+     * slot's own lock and condition, made at each start and given back at its
+     * join. */
+    int ready;
+    pthread_mutex_t ready_lock;
+    pthread_cond_t ready_cond;
+#endif
 } HeroSpawnSlot;
 
 static HeroSpawnSlot hero_spawn_slots[HERO_SPAWN_SLOTS];
@@ -212,6 +242,107 @@ static pthread_mutex_t hero_spawn_lock = PTHREAD_MUTEX_INITIALIZER;
 #define HERO_SPAWN_DROP() pthread_mutex_unlock(&hero_spawn_lock)
 #endif
 
+#if !defined(_WIN32)
+/* EVERY SIGNAL BUT A FAULT'S, HELD OFF THE CALLING THREAD (defect 2496); its
+ * mask before, in `before` where the caller wants it back. `SIG_BLOCK`, never
+ * `SIG_SETMASK`: a signal the thread already held stays held.
+ *
+ * The six a fault raises stay open because a fault's signal goes to the thread
+ * that faulted and never arrives early from elsewhere, and because holding one
+ * turns a fault into a hang on Darwin: a null read with SIGSEGV held hung until
+ * SIGKILL on this Mac and died at 139 in Linux arm64 without its handler
+ * (`blocked_fault.c`, 2026-11-13). libmalloc ends a heap it finds corrupt with
+ * a trap, SIGTRAP, so a free in the thread's end that met a corruption would
+ * have hung there rather than say so. `run.c`'s sentinel thread, which runs no
+ * Heroes code and holds every signal for its whole life, is the precedent.
+ *
+ * `pthread_sigmask` fails only for a `how` it does not know, and the mask it
+ * would leave unset is the one restored later, so a failure stops here. */
+static void hero_spawn_hold(sigset_t *before) {
+    sigset_t held;
+    sigfillset(&held);
+    sigdelset(&held, SIGSEGV);
+    sigdelset(&held, SIGBUS);
+    sigdelset(&held, SIGILL);
+    sigdelset(&held, SIGTRAP);
+    sigdelset(&held, SIGFPE);
+    sigdelset(&held, SIGSYS);
+    if (pthread_sigmask(SIG_BLOCK, &held, before) != 0) {
+        hero_panic("internal error: the signals a thread's start holds off could not be held");
+    }
+}
+
+/* AND THE START RETURNS ONLY ONCE THE NEW THREAD CAN TAKE A SIGNAL (defect
+ * 2496), because Darwin does not keep a signal for the process: one sent while
+ * every thread holds it off is parked on one thread, `main`, and handed to no
+ * other thread that lets it through later, where Linux hands it to the first
+ * that does (`routing.c`, 5 runs of 5 each way, 2026-11-13). With the start's
+ * hold alone, the issue's program, whose `main` holds SIGINT for good and
+ * sends it right after the start, was refused 0 times in 60 and ran its
+ * handler in only 21 of them on this Mac: the other 39 signals waited on
+ * `main` and were never handled. So the program's next line runs on a thread
+ * that can take one, and only a signal sent from outside during the start
+ * itself can find every thread holding it.
+ *
+ * Slept on, under a lock and a condition of the slot's own: the new thread
+ * takes that lock with signals let through, and a handler run on it then that
+ * started a thread would take another slot's, never this one. What it costs,
+ * over 10,000 starts and joins on this Mac (`instructions retired`): about
+ * 24,000 instructions a start, 14%, for the whole of defect 2496's repair,
+ * where a wait polled with `sched_yield` had cost about 80,000 on its own. */
+static void hero_spawn_await(HeroSpawnSlot *slot) {
+    pthread_mutex_lock(&slot->ready_lock);
+    while (!slot->ready) pthread_cond_wait(&slot->ready_cond, &slot->ready_lock);
+    pthread_mutex_unlock(&slot->ready_lock);
+}
+
+/* The slot's lock and condition, made just before its thread is created: 0,
+ * or the number a refusal hands back as a start the system refused. */
+static int hero_spawn_ready_made(HeroSpawnSlot *slot) {
+    slot->ready = 0;
+    int made = pthread_mutex_init(&slot->ready_lock, NULL);
+
+    if (made != 0) return made;
+    made = pthread_cond_init(&slot->ready_cond, NULL);
+    if (made != 0) pthread_mutex_destroy(&slot->ready_lock);
+    return made;
+}
+
+/* And given back once no thread can touch them: a refused create, or a join. */
+static void hero_spawn_ready_given_back(HeroSpawnSlot *slot) {
+    pthread_cond_destroy(&slot->ready_cond);
+    pthread_mutex_destroy(&slot->ready_lock);
+}
+
+/* AND A SIGNAL ALREADY ON A THREAD THAT ENDS IS HANDLED, NEVER DROPPED WITH IT
+ * (defect 2496). Darwin moves a signal sent to the process onto one thread
+ * that lets it through, so one moved onto this thread just before its end held
+ * them would die with the thread, where Linux keeps it for the process. With
+ * a worker that ends as `main` sends, 300 runs of 200 signals on this Mac lost
+ * 17 of 60,000 with the end's hold alone, and 1 and then 0 of 60,000 in two
+ * readings with what follows. So once the
+ * end holds them, every signal pending here that this thread's own mask lets
+ * through is let through once more, while its claim, its room and its stack
+ * guard all still stand, and the hold is taken again, until none is pending.
+ * A program's own held signals stay held, being outside that mask; the rounds
+ * are bounded, since a storm that outlasts them only coalesces into signals
+ * the kernel already counts as one. */
+static void hero_spawn_drain(const HeroSpawnSlot *slot) {
+    for (int round = 0; round < 64; round += 1) {
+        sigset_t pending;
+        int any = 0;
+
+        if (sigpending(&pending) != 0) return;
+        for (int sig = 1; sig < NSIG && !any; sig += 1) {
+            any = sigismember(&pending, sig) == 1 && sigismember(&slot->mask, sig) == 0;
+        }
+        if (!any) return;
+        pthread_sigmask(SIG_SETMASK, &slot->mask, NULL);
+        hero_spawn_hold(NULL);
+    }
+}
+#endif
+
 /* The body runs here, and `hero_thread_claim` is the first thing that happens
  * on it: this thread is one the program started, so `parts/thread.c`'s guard
  * must let a Heroes function run on it. Claiming before the body and not inside
@@ -232,6 +363,19 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
      * Panel 107 could not place this call: on 2026-09-04 no Heroes function ran
      * on any thread but `main`, so there was no point at which to make it. */
     hero_stack_guard_enter();
+#if !defined(_WIN32)
+    /* ONLY NOW MAY A SIGNAL REACH THIS THREAD (defect 2496): it was started
+     * with every signal but a fault's held off (`hero_spawn_start`), and its
+     * claim and its alternate stack both stand, so a handler run here runs on
+     * a thread the program owns, on a stack whose guard can name an overflow.
+     * The mask it takes is its starter's from before the start, the one POSIX
+     * would have given it, so a program's own masking is kept as it was. */
+    pthread_sigmask(SIG_SETMASK, &slot->mask, NULL);
+    pthread_mutex_lock(&slot->ready_lock);
+    slot->ready = 1;
+    pthread_cond_signal(&slot->ready_cond);
+    pthread_mutex_unlock(&slot->ready_lock);
+#endif
 
     /* WHAT THE OS GAVE, NEVER WHAT IT ANSWERED (panel 115, the ffi seat, and it
      * is the trap this whole repair could have walked into). Measured on both
@@ -269,6 +413,21 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
     }
 #endif
     slot->result = slot->body(slot->arg);
+#if !defined(_WIN32)
+    /* AND THE SIGNALS ARE HELD OFF AGAIN BEFORE ANY OF IT IS GIVEN BACK, the
+     * other end of the start's window and the same cause (defect 2496): a
+     * handler run between the three calls below would find its thread's large
+     * values' room half freed, its lend regions unmapped or its alternate
+     * stack gone, and one run after this function returns, while the C
+     * library ends the thread, reads the claim as a thread-local Darwin has
+     * already given back and made anew at zero. Measured with a worker that
+     * ends as `main` sends its signal: with no hold here 2 runs of 50 were
+     * refused as a thread the program did not start on this Mac, and 0 of 50
+     * with it. The thread ends holding them, and a signal sent to the process
+     * meanwhile goes to one that does not. */
+    hero_spawn_hold(NULL);
+    hero_spawn_drain(slot);
+#endif
     /* The alternate stack goes back to the OS with the thread that took it: a
      * slot is reused (a bound on threads ALIVE, above), so a mapping kept per
      * spawn would grow without bound in a program that spawns in a loop. And
@@ -299,6 +458,15 @@ static void *hero_spawn_trampoline(void *p) {
  * the sized one hands the refusal back. */
 static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, int64_t *why) {
     if (body == NULL) hero_panic("a thread was started with no function to run");
+#if !defined(_WIN32)
+    /* Held before the table's lock and given back after it (defect 2496): the
+     * new thread inherits this thread's mask as `pthread_create` finds it, so
+     * it starts with them held, and no handler can run on this thread while it
+     * holds the table either, where one that started a thread would wait for
+     * the lock it interrupted. */
+    sigset_t before;
+    hero_spawn_hold(&before);
+#endif
     HERO_SPAWN_TAKE();
     int64_t at = -1;
 
@@ -326,7 +494,14 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
      * 115's historian found in libuv. Unsized, the executable's own reserve
      * (`/STACK:67108864`, `selfhost/cli/flags.hero`) is every thread's, as
      * the head of this file says. Unrun on Windows on the day it was written
-     * (2026-10-03): the box was offline. */
+     * (2026-10-03): the box was offline.
+     *
+     * NOTHING IS HELD OFF HERE, and defect 2496 has no window on this arm: a
+     * signal never lands on a thread Windows did not choose for it. The C
+     * library runs a `raise` handler on the thread that raised it, and Ctrl-C
+     * and Ctrl-Break on a thread the system creates for them (Microsoft's
+     * `signal` and HandlerRoutine pages, read by panel 246's ffi-pragmatist),
+     * so no handler can run on a thread started here before its claim. */
     SIZE_T reserve = (SIZE_T)hero_spawn_slots[at].want;
     hero_spawn_slots[at].handle =
         CreateThread(NULL, reserve, hero_spawn_trampoline, &hero_spawn_slots[at],
@@ -346,6 +521,7 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     pthread_attr_t *ask = NULL;
     int asked = 0;
     size_t want = hero_spawn_slots[at].want;
+    hero_spawn_slots[at].mask = before;
 
     if (want > 0 && pthread_attr_init(&attr) == 0) {
         size_t theirs = 0;
@@ -365,9 +541,11 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
         }
     }
 
+    if (refused == 0) refused = hero_spawn_ready_made(&hero_spawn_slots[at]);
     if (refused == 0) {
         refused = pthread_create(&hero_spawn_slots[at].handle, ask, hero_spawn_trampoline,
                                  &hero_spawn_slots[at]);
+        if (refused != 0) hero_spawn_ready_given_back(&hero_spawn_slots[at]);
     }
     if (asked) pthread_attr_destroy(&attr);
 #endif
@@ -375,10 +553,17 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     if (refused != 0) {
         hero_spawn_slots[at].state = 0;
         HERO_SPAWN_DROP();
+#if !defined(_WIN32)
+        pthread_sigmask(SIG_SETMASK, &before, NULL);
+#endif
         if (why != NULL) *why = refused;
         return -1;
     }
     HERO_SPAWN_DROP();
+#if !defined(_WIN32)
+    pthread_sigmask(SIG_SETMASK, &before, NULL);
+    hero_spawn_await(&hero_spawn_slots[at]);
+#endif
     return at;
 }
 
@@ -427,6 +612,7 @@ int64_t hero_thread_join(int64_t handle) {
     CloseHandle(hero_spawn_slots[handle].handle);
 #else
     pthread_join(hero_spawn_slots[handle].handle, NULL);
+    hero_spawn_ready_given_back(&hero_spawn_slots[handle]);
 #endif
     HERO_SPAWN_TAKE();
     int64_t out = hero_spawn_slots[handle].result;
