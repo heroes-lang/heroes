@@ -1,0 +1,6 @@
+the program starts with the interrupt at its default: 1
+the stop is caught: 0
+an interrupt is sent from another thread: 1
+the worker's accept answered stopped: true
+a stop was asked: 1
+main returns

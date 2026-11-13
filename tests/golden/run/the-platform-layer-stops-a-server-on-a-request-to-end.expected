@@ -1,0 +1,8 @@
+the program starts with the interrupt ignored: 1
+the stop is caught: 0
+an interrupt is sent: 1
+the ignored interrupt asked a stop: 0
+a request to end is sent from another thread: 1
+the worker's accept answered stopped: true
+a stop was asked: 1
+main returns

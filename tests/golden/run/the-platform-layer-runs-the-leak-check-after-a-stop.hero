@@ -1,0 +1,59 @@
+# After the platform layer's stop, `main` returns and the leak check at its
+# end runs (panel 246's R4; task 1072's check; lane b34-layer, 2026-11-13):
+# the reason the stop lives in the layer and not in a flag a loop asks. A
+# request to end, SIGTERM or Windows' Ctrl-Break, ends a worker's `accept`,
+# `main` returns, and the one socket it opened and never closed is told by
+# the check, the line where it was taken named. Before the stop, a server
+# blocked in `accept` was ended by its supervisor's SIGKILL (the sitting's
+# ffi-pragmatist: alive past `timeout 30`, its leak never told).
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    constant HERO_NET_STOPPED: i64
+    function hero_net_catch_stop() -> i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_last_error() -> i64
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_REQUEST: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_after(what: i64, ms: i64) -> i64
+    function stop_note_port(port: i64)
+    function stop_note_done()
+
+# The server, on a worker: a listener of its own at `port`, 0 the system's
+# choice, and an `accept` on it. Answers the kind the `accept` failed with,
+# or -1 where it took a connection, which only the header's rescue makes.
+function serve(port: i64) -> i64
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: port)
+
+    if listener == nullptr
+        return -2
+    stop_note_port(hero_net_port(listener))
+    accepted = hero_net_accept(listener)
+    kind = hero_net_last_error()
+    stop_note_done()
+
+    if accepted != nullptr
+        _ = hero_net_close(accepted)
+        _ = hero_net_close(listener)
+        return -1
+    _ = hero_net_close(listener)
+    return kind
+
+function main()
+    print(f"the program starts with the request to end at its default: {stop_begin(interrupt_ignored: 0)}")
+    print(f"the stop is caught: {hero_net_catch_stop()}")
+    kept = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+    print(f"main holds a listener of its own and never closes it: {hero_net_port(kept) > 0}")
+    worker = hero_thread_spawn(body: serve, arg: 0)
+    print(f"a request to end is sent from another thread: {stop_send_after(what: STOP_REQUEST, ms: 300)}")
+    kind = hero_thread_join(handle: worker)
+    print(f"the worker's accept answered stopped: {kind == HERO_NET_STOPPED}")
+    print("main returns")

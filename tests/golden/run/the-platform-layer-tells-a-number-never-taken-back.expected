@@ -1,0 +1,3 @@
+the accepted socket is given up for a number, and nothing takes it back: true
+main returns
+!panic: 1 taken at hero_net.h:0:0, in hero_net_number, a socket given up as a number no hero_net_of took back

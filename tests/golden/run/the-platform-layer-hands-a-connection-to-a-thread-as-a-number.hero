@@ -1,0 +1,128 @@
+# One connection per thread (panel 246's R6; lane b34-layer, 2026-11-13): a
+# thread is handed one `i64` and nothing else, so each connection the
+# listener accepts crosses into its worker as a number. `hero_net_number`
+# gives the socket up for the number, which `consumes` the handle; the
+# worker's `hero_net_of` takes it back with a handle of its own, reads five
+# bytes, sends them back and closes it. Four connections, four workers, each
+# echoing its own client's bytes. A number taken back already, one whose
+# socket the worker closed and one the layer never gave are each refused
+# `HERO_NET_NOT_OPEN`, never another socket; and in C, beside it, the handle
+# given up names nothing and the one taken back is new. The silent ending
+# holds that the leak check after `main` found every handle and every
+# number given back.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    constant HERO_NET_NOT_OPEN: i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_send(s: Socket, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_recv(s: Socket, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_last_error() -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h"
+    function given_up_names_nothing() -> i64
+    function never_given_is_refused() -> i64
+
+# A worker: the connection its number names, taken back, five bytes read
+# whole and sent back, then closed. Answers how many it sent back, or a
+# negative step.
+function serve(number: i64) -> i64
+    s = hero_net_of(number)
+
+    if s == nullptr
+        return -1
+    heard = received(s, count: 5)
+
+    if heard.len() < 5
+        _ = hero_net_close(s)
+        return -2
+    back: [u8] @= heard
+    sent = hero_net_send(s, @back, n: 5)
+    _ = hero_net_close(s)
+    return sent
+
+# Up to `count` bytes, however many receives they take; fewer where the
+# peer closes or a receive fails.
+function received(s: Socket, count: i64) -> [u8]
+    got: [u8] @= []
+
+    while got.len() < count
+        buffer: [u8] @= []
+        n = hero_net_recv(s, @buffer, n: (count - got.len()).to_u64().must())
+
+        if n <= 0
+            return got
+
+        for b in buffer.slice(from: 0, to: n)
+            got @ got.push(b)
+
+    return got
+
+# Whether `number` is refused, where any socket it named answers: a socket
+# it did name is closed before the answer.
+function refused(number: i64) -> bool
+    s = hero_net_of(number)
+
+    if s != nullptr
+        _ = hero_net_close(s)
+        return false
+    return hero_net_last_error() == HERO_NET_NOT_OPEN
+
+function main()
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+
+    if listener == nullptr
+        print("no listener")
+        return
+    port = hero_net_port(listener)
+    clients: [Socket] @= []
+    workers: [i64] @= []
+    numbers: [i64] @= []
+
+    for _ in range(from: 0, to: 4)
+        client = hero_net_connect(address: "127.0.0.1".cstr(), port: port)
+
+        if client != nullptr
+            accepted = hero_net_accept(listener)
+
+            if accepted != nullptr
+                number = hero_net_number(accepted)
+                numbers @ numbers.push(number)
+                workers @ workers.push(hero_thread_spawn(body: serve, arg: number))
+            clients @ clients.push(client)
+
+    print(
+        f"connections handed to a worker each as a number: {workers.len()}, every number positive: {numbers.len() == 4 && numbers[0] > 0 && numbers[1] > 0 && numbers[2] > 0 && numbers[3] > 0}"
+    )
+    echoed: i64 @= 0
+
+    for client in clients
+        hello: [u8] @= [104, 101, 108, 108, 111]
+        _ = hero_net_send(client, @hello, n: 5)
+        echoed @ echoed + received(client, count: 5).len()
+
+    sent_back: i64 @= 0
+
+    for worker in workers
+        sent_back @ sent_back + hero_thread_join(handle: worker)
+
+    print(f"the workers sent back {sent_back} bytes, and the clients read {echoed}")
+    print(f"a number taken back already is refused: {refused(numbers[0])}")
+    print(f"a number whose socket its worker closed is refused: {refused(numbers[3])}")
+    print(f"a number the layer never gave is refused: {refused(12345)}")
+    print(f"in C, the handle given up names nothing and the one taken back is new: {given_up_names_nothing()}")
+    print(f"in C, numbers never given are refused: {never_given_is_refused()}")
+
+    for client in clients
+        _ = hero_net_close(client)
+
+    _ = hero_net_close(listener)

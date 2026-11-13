@@ -80,6 +80,9 @@ constant INSTANCE_NAMED_ON_WINDOWS: str
 constant LIBRARY_FILE_ON_WINDOWS: str
     "the Windows target links `-lh2476` as `h2476.lib` (`ffi_build.names_library`, measured on the box by panel 188 and beside defect 2398), a file of another name than the `libh2476.a` the case's folder holds for this Mac's ld64 and Linux's GNU ld, which read it under one name and refuse it in words read alike; so the file the expectation names cannot be the one the Windows link opens, and `link.exe`'s words for a file it cannot read are unrun (defect 2476)"
 
+constant SECOND_EVENT_ON_WINDOWS: str
+    "a second console event while the program stops is answered by Windows' own handler after the layer's, which ends the process with `STATUS_CONTROL_C_EXIT` (HandlerRoutine's page, read; the status unrun on the box), where POSIX's second SIGTERM ends it by the signal, 128 + 15 = 143, the status this case pins; no signal of POSIX's reaches a Windows program, so the shape is the stop's and the status the platform's, and the stop's other cases judge Windows' first event (panel 246's R4; lane b34-layer)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
@@ -102,6 +105,7 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2371-a-generic-instance-whose-room-is-full-is-named", why: INSTANCE_NAMED_ON_WINDOWS)
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
+        Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -223,7 +227,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 19
+    assert windows().len() == 20
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -232,6 +236,10 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # opens under another name.
     for one in windows().slice(from: 17, to: 19)
         assert shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
+
+    # The stop's second request to end, whose end Windows' own handler
+    # answers in a status of its own (panel 246's R4).
+    assert shell.exists("tests/golden/run/" + windows()[19].name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
