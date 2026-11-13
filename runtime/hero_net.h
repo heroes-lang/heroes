@@ -100,6 +100,33 @@ int64_t hero_net_recv(hero_net_socket *s, void *buffer, uint64_t count);
  * accepted, and no later call reaches the socket. */
 int64_t hero_net_close(hero_net_socket *s);
 
+/* ONE CONNECTION PER THREAD (panel 246's R6): a thread of the program is
+ * handed one `int64_t` and nothing else (`hero_os.h`'s `hero_thread_spawn`),
+ * so a socket crosses into one as a number. `hero_net_number` gives the
+ * socket up for its number: from that call no handle names it, the one
+ * given up answering `HERO_NET_NOT_OPEN` (a call already waiting on it goes
+ * on), and the number names it until `hero_net_of` takes it back, once, with
+ * a handle of its own and never the one given up. A group binds the two with
+ * the marks that keep the socket counted while it crosses:
+ *
+ *     function hero_net_number(s: Socket consumes) -> i64
+ *     function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+ *
+ * and names `hero_net_number` beside `hero_net_close` in the `acquires` of
+ * every call whose socket it may give up. A number is counted as a handle
+ * is: one never taken back is told by the program's leak check when `main`
+ * returns, as a handle never given back is, since its socket stays open.
+ *
+ * The number is positive, or -1 with `HERO_NET_NOT_OPEN` where `s` names no
+ * open socket. */
+int64_t hero_net_number(hero_net_socket *s);
+
+/* The socket a number names, taken back with a new handle, which
+ * `hero_net_close` gives back, or `hero_net_number` again; NULL with
+ * `HERO_NET_NOT_OPEN` where the number names none: taken back already, its
+ * socket closed, or a number this layer never gave. */
+hero_net_socket *hero_net_of(int64_t number);
+
 /* THE STOP (panel 246's R4): how a server ends on Ctrl-C or a request to
  * end, `kill`'s, `timeout`'s or a service manager's, and returns from `main`,
  * so every handle is given back and the leak check at its end runs.

@@ -77,9 +77,26 @@
  * non-blocking socket the system takes what its buffer has room for and the
  * call answers that count at once, waiting in slices only while the buffer
  * has no room at all; the caller sends the rest (`hero_net.h`).
+ *
+ * A SOCKET CROSSES INTO A THREAD AS A NUMBER, AND THE NUMBER IS COUNTED
+ * (panel 246's R6, the compiler-engineer's two doors with the condition the
+ * sitting put on them). `hero_net_number` marks the slot given up, so no
+ * handle finds it, and answers the handle's value with a bit no handle
+ * carries; `hero_net_of` finds the slot by the number, clears the mark and
+ * gives the slot a new life, so the handle given up, and any copy of it,
+ * names nothing after. The number begins a life of its own in the
+ * program's handle set (`hero_handle_acquired_at`, the runtime's), owed to
+ * `hero_net_of`, which ends it: with doors that did not, the sitting's
+ * critic measured a number dropped and its socket left open passing the
+ * leak check at exit 0, plain and under `--sanitize`. Both doors do it
+ * under the table's lock, so a number is in the set before any `hero_net_of`
+ * can find its slot marked.
  */
 
 #include "hero_net.h"
+
+/* The handle set the program's leak check reads, which a number joins. */
+#include "heroes_runtime.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -127,13 +144,27 @@ typedef socklen_t hero_net_len;
 #endif
 #endif
 
-/* A handle carries a slot and a life in one pointer's 64 bits. */
+/* A handle carries a slot and a life in one pointer's 64 bits:
+ * `(life << HERO_NET_INDEX_BITS) | (index + 1)`, 17 bits for an index plus
+ * one up to 65,536 and the life above them, so no handle is NULL. */
 _Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a socket handle carries its slot and its life in 64 bits");
+#define HERO_NET_INDEX_BITS 17
+#define HERO_NET_INDEX_MASK ((UINT64_C(1) << HERO_NET_INDEX_BITS) - 1)
+/* The last life a slot is given, 2^45 - 1: a handle stays below 2^62, and a
+ * slot that takes a new life for every socket and every number taken back
+ * reaches it after eleven years at a hundred thousand a second; a slot at
+ * it is never issued again. Until 2026-11-13 a life was 32 bits, which a
+ * socket taken back as a number every time could spend in a day. */
+#define HERO_NET_LIFE_MOST ((UINT64_C(1) << 45) - 1)
+/* The bit a number carries and no handle does, so a number is positive and
+ * never a handle's value. */
+#define HERO_NET_NUMBERED (UINT64_C(1) << 62)
 /* The stop's handler reads and writes an `_Atomic int`, which C allows in a
  * signal only where it is lock-free (C11 7.14.1.1p5). */
 _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "the stop's handler touches lock-free atomics alone");
 
 #define HERO_NET_SLOTS 65536u
+_Static_assert(HERO_NET_SLOTS <= HERO_NET_INDEX_MASK, "an index plus one fits below a handle's life");
 /* The most one call sends or receives, which Windows' `int` counts can say. */
 #define HERO_NET_CHUNK ((uint64_t)INT32_MAX)
 /* How long a waiting call sleeps before it asks again whether its socket was
@@ -147,8 +178,8 @@ _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "the stop's handler touches lock-free 
 typedef struct {
     hero_net_fd fd;
     /* The life the slot holds or last held, which its handle names; a slot
-     * whose life reached the largest is never issued again. */
-    uint32_t life;
+     * whose life reached `HERO_NET_LIFE_MOST` is never issued again. */
+    uint64_t life;
     /* Calls in flight on its descriptor. */
     uint32_t busy;
     /* The index plus one of the next slot given back, 0 for none. */
@@ -158,6 +189,9 @@ typedef struct {
     /* The program closed it while a call was in flight: the last one closes
      * the descriptor. */
     bool closing;
+    /* Its socket was given up for a number no `hero_net_of` has taken back:
+     * no handle finds it. */
+    bool numbered;
 } hero_net_slot;
 
 static hero_net_slot hero_net_slots[HERO_NET_SLOTS];
@@ -331,34 +365,43 @@ static bool hero_net_ready(hero_net_fd fd) {
     return true;
 }
 
-static hero_net_socket *hero_net_handle(uint32_t index, uint32_t life) {
-    return (hero_net_socket *)(uintptr_t)(((uint64_t)life << 32) | ((uint64_t)index + 1));
+static hero_net_socket *hero_net_handle(uint32_t index, uint64_t life) {
+    return (hero_net_socket *)(uintptr_t)((life << HERO_NET_INDEX_BITS) | ((uint64_t)index + 1));
 }
 
-/* The slot `s` names while it holds the life `s` was issued for; NULL for
- * any other value. Under the lock. */
-static hero_net_slot *hero_net_find(hero_net_socket *s) {
-    uint64_t value = (uint64_t)(uintptr_t)s;
-    uint64_t low = value & UINT64_C(0xffffffff);
+/* The slot a handle's value names while it holds the life the value was
+ * issued for, and is neither closed nor given up for a number; NULL for any
+ * other value. Under the lock. */
+static hero_net_slot *hero_net_slot_of(uint64_t value) {
+    uint64_t low = value & HERO_NET_INDEX_MASK;
 
     if (low == 0 || low > hero_net_fresh) {
         return NULL;
     }
     hero_net_slot *slot = &hero_net_slots[low - 1];
 
-    if (!slot->held || slot->closing || slot->life != (uint32_t)(value >> 32)) {
+    if (!slot->held || slot->closing || slot->life != value >> HERO_NET_INDEX_BITS) {
         return NULL;
     }
     return slot;
+}
+
+/* The slot `s` names, as `hero_net_slot_of` finds it, and not given up for a
+ * number. Under the lock. */
+static hero_net_slot *hero_net_find(hero_net_socket *s) {
+    hero_net_slot *slot = hero_net_slot_of((uint64_t)(uintptr_t)s);
+
+    return slot != NULL && !slot->numbered ? slot : NULL;
 }
 
 /* The slot given back, its descriptor forgotten. Under the lock. */
 static void hero_net_release(hero_net_slot *slot) {
     slot->held = false;
     slot->closing = false;
+    slot->numbered = false;
     slot->fd = HERO_NET_NO_FD;
 
-    if (slot->life < UINT32_MAX) {
+    if (slot->life < HERO_NET_LIFE_MOST) {
         slot->next = hero_net_given_back;
         hero_net_given_back = (uint32_t)(slot - hero_net_slots) + 1;
     }
@@ -390,6 +433,7 @@ static hero_net_socket *hero_net_keep(hero_net_fd fd) {
         slot->next = 0;
         slot->held = true;
         slot->closing = false;
+        slot->numbered = false;
         handle = hero_net_handle(index, slot->life);
     }
     hero_net_leave();
@@ -1117,6 +1161,67 @@ int64_t hero_net_close(hero_net_socket *s) {
     }
     hero_net_clear();
     return 0;
+}
+
+/* -- a socket as a number (panel 246's R6) ------------------------------ */
+
+/* Where a number's life began, as the leak check's report names it: the
+ * layer's door, no line of the program, and what the program owes. */
+static const HeroPlace hero_net_numbered_at = { "hero_net.h", "hero_net_number, a socket given up as a number no hero_net_of took back", 0, 0 };
+
+int64_t hero_net_number(hero_net_socket *s) {
+    int64_t number = -1;
+
+    hero_net_enter();
+    hero_net_slot *slot = hero_net_find(s);
+
+    if (slot != NULL) {
+        slot->numbered = true;
+        number = (int64_t)((uint64_t)(uintptr_t)s | HERO_NET_NUMBERED);
+        /* In the handle set before the lock lets any `hero_net_of` find the
+         * slot marked, owed to `hero_net_of` alone. */
+        hero_handle_acquired_at((const void *)(uintptr_t)(uint64_t)number, "hero_net_of", &hero_net_numbered_at);
+    }
+    hero_net_leave();
+
+    if (number < 0) {
+        hero_net_fail(HERO_NET_NOT_OPEN, 0);
+        return -1;
+    }
+    hero_net_clear();
+    return number;
+}
+
+hero_net_socket *hero_net_of(int64_t number) {
+    uint64_t value = (uint64_t)number;
+    hero_net_socket *handle = NULL;
+
+    hero_net_enter();
+    hero_net_slot *slot = number > 0 && (value & HERO_NET_NUMBERED) != 0 ? hero_net_slot_of(value & ~HERO_NET_NUMBERED) : NULL;
+
+    if (slot != NULL && slot->numbered) {
+        slot->numbered = false;
+        /* A life of its own, so the handle given up, and any copy of it,
+         * names nothing from now on; a slot at its last life keeps it. */
+        if (slot->life < HERO_NET_LIFE_MOST) {
+            slot->life += 1;
+        }
+        handle = hero_net_handle((uint32_t)(slot - hero_net_slots), slot->life);
+        /* The number's own life ends here, announced and then made, as a
+         * call marked `consumes` ends a handle's. */
+        const void *owed = (const void *)(uintptr_t)value;
+        uint64_t ending = hero_handle_ending_at(owed, "hero_net_of", NULL, NULL);
+
+        (void)hero_handle_ended(owed, ending);
+    }
+    hero_net_leave();
+
+    if (handle == NULL) {
+        hero_net_fail(HERO_NET_NOT_OPEN, 0);
+        return NULL;
+    }
+    hero_net_clear();
+    return handle;
 }
 
 int64_t hero_net_last_error(void) {

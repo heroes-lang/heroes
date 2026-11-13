@@ -1,0 +1,43 @@
+# A socket given up for its number and never taken back is told by the leak
+# check when `main` returns (panel 246's R6, the condition the sitting put
+# on its two doors; lane b34-layer, 2026-11-13). Once a handle becomes an
+# `i64` the handle marks stop counting it, and the sitting's critic measured
+# this shape, a number dropped with its socket still open, passing at exit 0,
+# plain and under `--sanitize`, with nothing on stderr (`dropped.hero`, doors
+# a program's own header made). The layer's door now begins a life of the
+# number's own in the program's handle set, owed to `hero_net_of`, so the
+# check names it, and names the door that began it.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+
+function main()
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+
+    if listener == nullptr
+        print("no listener")
+        return
+    client = hero_net_connect(address: "127.0.0.1".cstr(), port: hero_net_port(listener))
+
+    if client == nullptr
+        _ = hero_net_close(listener)
+        print("no connection")
+        return
+    accepted = hero_net_accept(listener)
+
+    if accepted == nullptr
+        _ = hero_net_close(client)
+        _ = hero_net_close(listener)
+        print("no accept")
+        return
+    number = hero_net_number(accepted)
+    print(f"the accepted socket is given up for a number, and nothing takes it back: {number > 0}")
+    _ = hero_net_close(client)
+    _ = hero_net_close(listener)
+    print("main returns")
