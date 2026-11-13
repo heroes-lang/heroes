@@ -1,0 +1,19 @@
+# fixedbugs, defect 2520, lane b35-ffi, 2026-11-13.
+#
+# SYMPTOM: a record over glibc's `sigset_t` naming a field `val` was told the
+# header declares no `val` in `__sigset_t` and to correct the spelling, or
+# name another header, with no word of `__val`, the one member the header
+# gives the struct.
+#
+# CAUSE AND REPAIR: the refused round reads the type's members from clang's
+# layout (`cli/member_ask.hero`) only to find a field inside another member.
+# A field the type has at no depth is now told with every member it has, as
+# the header spells them (`emit/ffi_nested.hero`).
+
+extern "fixedbugs-2520-set.h"
+    record set2520_t partial
+        val: u32  #~ ffi_unknown_field
+
+function main()
+    s = set2520_t(val: to_u32(0).must())
+    print(s.val)
