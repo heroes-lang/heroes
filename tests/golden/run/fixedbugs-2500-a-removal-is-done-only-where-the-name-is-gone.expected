@@ -1,0 +1,3 @@
+a link to nothing in a read-only folder: the answer agrees true
+a link to nothing in a writable folder: the answer agrees true
+a tree holding links to a folder outside it: removed true, the outside file stands true

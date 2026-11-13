@@ -1,0 +1,67 @@
+# Defect 2500, 2026-11-13, lane b34-fsl. `hero_fs_remove`'s POSIX arm asked
+# `stat` whether anything stood at a path its removal had failed on, and
+# `stat` answers for what a link names: a link to nothing in a folder the
+# program may not write read as gone, and the call answered done while the
+# link stood. It now asks the name itself (`lstat`), and so does the tree
+# removal's first question.
+#
+# Asserted as the invariant, the answer agreeing with the world, so the case
+# holds under any user and on every platform: root writes into a folder of
+# mode 0555, and Windows' read-only attribute keeps nothing in a folder, so
+# the removal is done there and the link is gone, where elsewhere it is
+# refused and the link stands. A link to nothing in a read-only folder and in
+# a writable one; and a tree holding links to a folder outside it, removed
+# while the outside file stands. Where this machine makes no link (Windows
+# without the privilege) each line holds all the same. `build/` for the
+# directory, `edges-file-args-exit.hero`'s reason.
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
+    function hero_fs_set_mode(path: cstr lent, mode: i64) -> i64
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_remove(path: cstr lent) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_OS_OK: i64
+    constant HERO_FS_LINK: i64
+
+# Whether removing `link` answers done exactly where no link stands there
+# after it.
+function agrees(link: str) -> bool
+    done = hero_fs_remove(path: link.cstr()) == HERO_OS_OK
+    gone = hero_fs_kind(path: link.cstr()) != HERO_FS_LINK
+    return done == gone
+
+function main()
+    root = "build/heroes-golden-2500-" + hero_os_pid().to_str()
+    shut = root + "/shut"
+    open = root + "/open"
+    tree = root + "/tree"
+    outside = root + "/outside"
+    dead_shut = shut + "/dead"
+    dead_open = open + "/dead"
+    out = tree + "/out"
+    deep = tree + "/inner/deep"
+    kept = outside + "/keep.txt"
+
+    for dir in [shut, open, tree + "/inner", outside]
+        _ = hero_fs_mkdir_all(path: dir.cstr())
+
+    _ = write_file(path: kept, text: "kept").is_err()
+    _ = hero_fs_symlink(target: "nowhere".cstr(), name: dead_shut.cstr())
+    _ = hero_fs_symlink(target: "nowhere".cstr(), name: dead_open.cstr())
+    _ = hero_fs_symlink(target: "../outside".cstr(), name: out.cstr())
+    _ = hero_fs_symlink(target: "../../outside".cstr(), name: deep.cstr())
+    _ = hero_fs_set_mode(path: shut.cstr(), mode: 0o555)
+    print("a link to nothing in a read-only folder: the answer agrees ", agrees(dead_shut))
+    print("a link to nothing in a writable folder: the answer agrees ", agrees(dead_open))
+    removed = hero_dir_remove_tree(path: tree.cstr()) == HERO_OS_OK
+    print(
+        "a tree holding links to a folder outside it: removed ",
+        removed,
+        ", the outside file stands ",
+        read_file(kept).default("") == "kept"
+    )
+    _ = hero_fs_set_mode(path: shut.cstr(), mode: 0o755)
+    _ = hero_dir_remove_tree(path: root.cstr())
