@@ -437,3 +437,10 @@ resolutions as adopted, panel 246's veto of a stop door in the spec as discharge
 condition (R5), and R3's residue filed `blocking`; it does not settle R4's interposition, which
 waits for a soundness sitting, the conservative alternatives, which stay the author's to choose, or
 the predictions, on their own clocks.
+
+## Added 2026-11-13 at about 16:15, after the sitting's commit
+
+The Linux arm64 leg of run 43392996643, still running when R5 was written, ended green: job
+131777144556, `run: 780 passed, 0 failed`, no `run/the-platform-layer` case among its skips (its log,
+read through GitHub's API). W4's shape is falsified on Darwin and on both Linux legs; the run's one
+red leg, Windows x86-64, is defects 2509 and 2510, repaired in batch 35's round.
