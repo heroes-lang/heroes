@@ -392,7 +392,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("63a57cd147d403ff", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c994e776dba4618", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayertellsasocketitdoesnothold\tthe-platform-layer-tells-a-socket-it-does-not-hold\n");

@@ -274,7 +274,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("63ffd4005395c2b4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1cf3a5a6797c04cd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs361aboundnametheguardholdskeepsitsheadersmacro\tfixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro\n");

@@ -220,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c632bcd73b531d2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5556fd72199b73ec", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("assertanancomparedwithitselfistoldwhy\tassert-a-nan-compared-with-itself-is-told-why\n");

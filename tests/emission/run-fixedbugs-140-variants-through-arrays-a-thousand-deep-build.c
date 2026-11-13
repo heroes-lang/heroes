@@ -78208,7 +78208,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6fb94ba87812c073", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28ad1d4e1df9028d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs140variantsthrougharraysathousanddeepbuild\tfixedbugs-140-variants-through-arrays-a-thousand-deep-build\n");

@@ -335,7 +335,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a96b27f4ed7dc1c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("138a842574be1e35", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread\tfixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread\n");

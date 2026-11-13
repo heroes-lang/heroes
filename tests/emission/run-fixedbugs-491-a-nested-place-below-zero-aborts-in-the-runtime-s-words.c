@@ -265,7 +265,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4763dc7149b39179", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0057ae176f99d392", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs491anestedplacebelowzeroabortsintheruntimeswords\tfixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words\n");

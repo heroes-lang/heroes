@@ -327,7 +327,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("51ad41d85439349e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0aa1137e7a1f76b7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeacountpastthelentfieldnamesthelend\tplace-a-count-past-the-lent-field-names-the-lend\n");

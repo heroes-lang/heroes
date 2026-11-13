@@ -271,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bb1263a77202949", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("24a4f7e01d066b63", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs563twodefaultsmeanwhattheirwrittenordersays\tfixedbugs-563-two-defaults-mean-what-their-written-order-says\n");

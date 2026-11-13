@@ -516,7 +516,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5600a9104e28b8a8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ef47ab6740efac1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2346thepaddingofachainofnamedhalvesiszerowherecreadsit\tfixedbugs-2346-the-padding-of-a-chain-of-named-halves-is-zero-where-c-reads-it\n");

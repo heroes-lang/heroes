@@ -297,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ccbb10467a06e1a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("75bf82a90d86b034", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlesetanyreleasernamedendsthelife\thandle-set-any-releaser-named-ends-the-life\n");

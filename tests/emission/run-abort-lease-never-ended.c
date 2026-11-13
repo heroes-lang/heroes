@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("71cd89c50808f53d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ac15b6b2def3756", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortleaseneverended\tabort-lease-never-ended\n");

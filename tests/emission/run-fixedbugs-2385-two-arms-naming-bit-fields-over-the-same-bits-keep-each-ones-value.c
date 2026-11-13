@@ -355,7 +355,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("082f57312654e202", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("412328d64c3b241b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue\tfixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value\n");

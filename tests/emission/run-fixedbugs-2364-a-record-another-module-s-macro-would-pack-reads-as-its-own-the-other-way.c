@@ -345,7 +345,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4914fd2341f67edf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0208cec967dcc0f8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2364arecordanothermodulesmacrowouldpackreadsasitsowntheotherway\tfixedbugs-2364-a-record-another-module-s-macro-would-pack-reads-as-its-own-the-other-way\nfixedbugs2364rp\trp\nfixedbugs2364thenpacked\tthen_packed\n");

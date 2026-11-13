@@ -286,7 +286,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3791aee50cf52886", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7085808a32db6a9f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffif32againstafloatheaderiscorrect\tffi-f32-against-a-float-header-is-correct\n");

@@ -334,7 +334,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c7adaf341bb9d86", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("056eac9967a1df9f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiaconstructionnamestheintegerarmandcompares\tffi-a-construction-names-the-integer-arm-and-compares\n");

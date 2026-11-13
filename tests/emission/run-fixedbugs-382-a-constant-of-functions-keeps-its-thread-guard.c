@@ -288,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a0744f00396dd75", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("22fb1696297d1f8e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantoffunctionskeepsitsthreadguard\tfixedbugs-382-a-constant-of-functions-keeps-its-thread-guard\n");

@@ -3409,7 +3409,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c25d3766bea6311", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5519a51b11d0a52b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs218afunctionof800ifsbuildsandruns\tfixedbugs-218-a-function-of-800-ifs-builds-and-runs\n");

@@ -357,7 +357,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4144cf5a22e04c6b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a38a0ff48c68e84", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugscasepayloadleaked\tfixedbugs-case-payload-leaked\n");

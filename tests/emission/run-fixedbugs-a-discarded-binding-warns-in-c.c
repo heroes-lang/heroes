@@ -226,7 +226,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("695908d579d4e361", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("224cda7b1fbb257b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadiscardedbindingwarnsinc\tfixedbugs-a-discarded-binding-warns-in-c\n");

@@ -241,7 +241,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5941d3b82c086cd0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1235a55e51eeaee9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2427au64past2tothe63roundsoncetothenearestfloat\tfixedbugs-2427-a-u64-past-2-to-the-63-rounds-once-to-the-nearest-float\n");

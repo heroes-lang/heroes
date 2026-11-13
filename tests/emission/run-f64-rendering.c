@@ -215,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5bb4a0f91c17cfb9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14a8729f41fe11d2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("f64rendering\tf64-rendering\n");

@@ -555,7 +555,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4bcd500d1266dc27", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("04c121b3384d1e40", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278acountedrecordpastthelinekeepsitsstringsateverylevel\tfixedbugs-2278-a-counted-record-past-the-line-keeps-its-strings-at-every-level\nfixedbugs2278countedheld\theld\n");

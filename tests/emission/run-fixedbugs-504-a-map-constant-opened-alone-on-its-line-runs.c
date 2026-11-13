@@ -474,7 +474,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("262c9d4363cc7c60", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f206ee809b2be7a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs504amapconstantopenedaloneonitslineruns\tfixedbugs-504-a-map-constant-opened-alone-on-its-line-runs\n");

@@ -215,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("75acc9be79d5b7ee", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ea09b641fbbfa08", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortsortnan\tabort-sort-nan\n");

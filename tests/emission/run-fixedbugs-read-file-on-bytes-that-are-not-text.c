@@ -480,7 +480,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("105ed2536a85350c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4952a3f8106b7726", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsreadfileonbytesthatarenottext\tfixedbugs-read-file-on-bytes-that-are-not-text\n");

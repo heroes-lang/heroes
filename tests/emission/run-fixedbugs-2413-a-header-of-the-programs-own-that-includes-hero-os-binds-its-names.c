@@ -307,7 +307,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("06261554046da3e3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f19e6f92a53e5fc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2413aheaderoftheprogramsownthatincludesheroosbindsitsnames\tfixedbugs-2413-a-header-of-the-programs-own-that-includes-hero-os-binds-its-names\n");

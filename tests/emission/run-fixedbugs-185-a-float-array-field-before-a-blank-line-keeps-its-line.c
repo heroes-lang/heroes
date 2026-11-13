@@ -298,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("684b9b9c26ffcec4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("213f6d424ce610dd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline\tfixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line\n");

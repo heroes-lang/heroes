@@ -293,7 +293,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("687aa6fe27ac6fbd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("216e78a44d92b1d6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeahandlenevertakengivenbacknamesthecall\tplace-a-handle-never-taken-given-back-names-the-call\n");

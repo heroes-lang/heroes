@@ -268,7 +268,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("405c8ea12ed25bee", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7950604654b89e07", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2036aheadersownprintfwithanargumentpastitsformatbuilds\tfixedbugs-2036-a-header-s-own-printf-with-an-argument-past-its-format-builds\n");

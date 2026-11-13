@@ -466,7 +466,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b1e703d43016fc1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("641241e268e7b1da", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiacarraymember\tffi-a-c-array-member\n");

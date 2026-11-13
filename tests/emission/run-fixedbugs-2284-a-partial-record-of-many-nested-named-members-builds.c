@@ -345,7 +345,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d9b28b74dba293b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("768efa5c73a06b54", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2284apartialrecordofmanynestednamedmembersbuilds\tfixedbugs-2284-a-partial-record-of-many-nested-named-members-builds\n");

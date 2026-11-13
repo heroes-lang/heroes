@@ -279,7 +279,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f950673245d6c06", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6888d8184a43ae1f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs563twoheadersarereadintheordertheirgroupsarewritten\tfixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written\n");

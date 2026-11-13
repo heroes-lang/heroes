@@ -441,7 +441,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e3f219e35004de7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0732f3445ae69000", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413libuvkeepseveryhandlesaddress\tfixedbugs-413-libuv-keeps-every-handles-address\n");

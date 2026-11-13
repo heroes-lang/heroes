@@ -217,7 +217,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49cf353e6e8c18ee", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("02c306e414725b08", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortavariableforachildwithanemptyname\tabort-a-variable-for-a-child-with-an-empty-name\n");

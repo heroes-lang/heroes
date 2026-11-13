@@ -252,7 +252,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("34499d3f40cdd750", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d3d6ee466b41969", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2427everyunsignedwidthconvertstobothfloats\tfixedbugs-2427-every-unsigned-width-converts-to-both-floats\n");
