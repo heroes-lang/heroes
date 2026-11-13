@@ -36,6 +36,7 @@
 # type question clang did not answer is not compared.
 
 use ast
+use bytes
 use cli/probing
 use cli/strings
 use cli/toolchain
@@ -43,7 +44,6 @@ use cli/two_ways_ask
 use diag
 use emit/clang_place
 use emit/externs as emit_externs
-use emit/ffi_lookup
 use source
 use token
 
@@ -241,9 +241,17 @@ function same_type(one: str, other: str) -> bool
 
     return false
 
-# The result a pointer-to-function type's text names: all before ` (*)(`.
+# What clang writes between a function pointer's result and its parameters.
+constant POINTER: str
+    " (*)("
+
+# The result a pointer-to-function type's text names: all before ` (*)(`,
+# found by its bytes and cut there. A struct's tag above ASCII stands in a
+# canonical type, `struct 漢 (*)()`, and cut at the index of a character, the
+# needle's place counted in characters, the build panicked, *string slice
+# splits a character* (defect 2515, found beside defect 2508).
 function result_of(type_text: str) -> str
-    at = ffi_lookup.char_index_of(text: type_text, needle: " (*)(")
+    at = bytes.locate(text: type_text, needle: POINTER, from: 0)
 
     if at.is_err()
         return type_text
@@ -281,13 +289,13 @@ function where(one: Side) -> str
     return "in `" + one.file + "` line " + one.answer.row.to_str()
 
 # A pointer-to-function type's text as the function's own: `long (*)(long)`
-# is `long (long)`.
+# is `long (long)`, cut by bytes where `result_of` cuts.
 function shown_type(pointer: str) -> str
-    at = ffi_lookup.char_index_of(text: pointer, needle: " (*)(")
+    at = bytes.locate(text: pointer, needle: POINTER, from: 0)
 
     if at.is_err()
         return pointer
-    return pointer.slice(from: 0, to: at.must()) + " (" + pointer.slice(from: at.must() + 5, to: pointer.len())
+    return pointer.slice(from: 0, to: at.must()) + " (" + pointer.slice(from: at.must() + POINTER.len(), to: pointer.len())
 
 ## Tests
 
@@ -298,3 +306,17 @@ test "a canonical type of no parameters takes any, and is compared by its result
     assert !same_type(one: "int (*)()", other: "long (*)(int)")
     assert shown_type("long (*)(long)") == "long (long)"
     assert shown_type("int (*)(const char *restrict, ...)") == "int (const char *restrict, ...)"
+
+# Defect 2515, found beside defect 2508: a canonical type holding a struct's
+# tag above ASCII is cut where its bytes say, so a type of no parameters is
+# still compared by its result, and a type is still shown as the function's
+# own.
+test "a type holding a name above ASCII is cut where its bytes say (defect 2515)"
+    assert result_of("漢 (*)(int)") == "漢"
+    assert result_of("struct 漢 (*)()") == "struct 漢"
+    assert result_of("struct 漢") == "struct 漢"
+    assert same_type(one: "struct 漢 (*)()", other: "struct 漢 (*)(long long)")
+    assert !same_type(one: "struct 漢 (*)()", other: "long long (*)(long long)")
+    assert shown_type("struct 漢 (*)(long long)") == "struct 漢 (long long)"
+    assert shown_type("struct 漢 *(*)(const char *)") == "struct 漢 *(*)(const char *)"
+    assert shown_type("long (*)(struct 漢)") == "long (struct 漢)"

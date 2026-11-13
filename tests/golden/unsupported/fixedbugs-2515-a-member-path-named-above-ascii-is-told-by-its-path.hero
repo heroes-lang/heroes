@@ -1,0 +1,20 @@
+# fixedbugs, defect 2515, lane b35-link, 2026-11-13 (found beside defect
+# 2508).
+#
+# SYMPTOM: `fd`, in the union `結` inside the struct `内`, as a field: the
+# build panicked, *string slice splits a character*, exit 134.
+#
+# CAUSE: the holder's first member was cut from its path `内.結` at the dot's
+# place counted in characters, where the cut counts bytes.
+#
+# FIX: the dot is found by its bytes (`member_ask.first_member`), and the
+# field is told by its whole path, as `inner.u.fd` is.
+
+extern "fixedbugs-2515-member-path.h"
+    record Deep tag deep_above
+        kind: i32
+        fd: i32  #~ ffi_unknown_field
+
+function main()
+    d = Deep(kind: 2, rest: zero)
+    print(d.kind)
