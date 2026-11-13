@@ -119,6 +119,15 @@ _Noreturn void hero_unreachable(void);
  * compile error rather than a program that quietly runs unguarded. */
 void hero_thread_guard(const char *what);
 
+/* The first line of every function's thunk, the address C is handed, which
+ * stops the program by name where a signal's delivery called it, directly or
+ * through a handler of C's (panel 247's R1, defect 2494): `what` as above, then
+ * the thunk's own `__builtin_return_address(0)` and `__builtin_frame_address(0)`.
+ * And the probe that learns the delivery's address, once per process, which the
+ * table that hands C a thunk runs first (`parts/sigguard.c` holds both). */
+void hero_callback_entered(const char *what, void *, void *);
+void hero_signal_learn(void);
+
 /* `heroes test`'s argument, parsed here so a generated unit still includes this
  * header and nothing else (CLAUDE.md §7). */
 int64_t hero_test_index(int argc, char **argv);

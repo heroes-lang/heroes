@@ -76,8 +76,17 @@ static _Thread_local bool hero_thread_is_home = false;
 /* `static`, like panel 104's `hero_stack_guard_install`: nothing outside this
  * runtime claims a thread, and the one caller is `hero_args_set` below in the
  * same translation unit. Only the guard itself is in the header, because only
- * the guard is called from generated C. */
-static void hero_thread_claim(void) { hero_thread_is_home = true; }
+ * the guard is called from generated C.
+ *
+ * And the thread's own stack is read here, once, for the question every thunk
+ * asks first (`parts/sigguard.c`, panel 247's R1): a claim is made before any
+ * Heroes code runs on the thread and, on a worker, while its signals are still
+ * held off (`parts/spawn.c`, defect 2496), so the reading is never made inside
+ * a signal, where glibc's `pthread_getattr_np` would allocate. */
+static void hero_thread_claim(void) {
+    hero_thread_is_home = true;
+    hero_signal_measure();
+}
 
 /* The entry of every function this program may hand to C (panel 111 R4's
  * permission is what decides the set, and emit/callback_guard.hero computes
