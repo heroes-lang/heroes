@@ -1,8 +1,10 @@
 /* Defect 2503's third generation: SIGTERM caught by a handler that only notes
    it, so the signal its runner passes on ends nothing and the runner's grace
    runs to its end, where SIGKILL ends it. `sigaction` is POSIX's; a Windows
-   runner sends no signal a child hears, and the case is skipped there by its
-   build's own words (`unistd.h`, which the case also binds). */
+   runner sends no signal a child hears, and the case is skipped there by the
+   harness's list (`tests/harness/platform_skips.hero`, `windows()`), since
+   the box's clang refuses `struct sigaction` below as an incomplete type
+   before `unistd.h`, which the case also binds, is asked (run 2026-11-13). */
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>

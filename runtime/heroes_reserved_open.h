@@ -61,6 +61,7 @@
 #pragma push_macro("__atomic_always_lock_free")
 #pragma push_macro("__attribute__")
 #pragma push_macro("__builtin_add_overflow")
+#pragma push_macro("__builtin_choose_expr")
 #pragma push_macro("__builtin_classify_type")
 #pragma push_macro("__builtin_constant_p")
 #pragma push_macro("__builtin_frame_address")

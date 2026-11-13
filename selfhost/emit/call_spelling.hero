@@ -63,6 +63,8 @@ constant UNDECLARED: str
 function learned(struct_tags: {str: bool}) -> {str: bool}
     out: {str: bool} @= {}
 
+    # ORDER: none, as a fact: the walk fills a map, whose keys have no order
+    # either, so no order of this walk reaches anything.
     for key in keys(struct_tags)
         if strings.starts_with(text: key, prefix: KEY)
             out[key.slice(from: KEY.len(), to: key.len())] @ true
@@ -115,6 +117,8 @@ function to_learn(s: source.Source, decls: [ast.Decl], refusals: str) -> [str]
 
     out: [str] @= []
 
+    # ORDER: by name, as `sort` orders a `str`, so what a round learns is a
+    # function of its refusals.
     for name in sort(keys(found))
         if undeclared[name].is_err()
             out @ out.push(name)
