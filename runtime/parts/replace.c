@@ -1154,7 +1154,8 @@ int64_t hero_fs_link(const char *existing, const char *name) {
  * made: without SYMBOLIC_LINK_FLAG_DIRECTORY the link is a file's, and a
  * directory it names is not opened as one through it, so
  * `GetFileAttributesA` on the link carries no FILE_ATTRIBUTE_DIRECTORY and
- * `hero_fs_is_directory` answers 0 (the CI's Windows leg, run 43116127087:
+ * `hero_fs_is_directory`, which asked the link itself until defect 2491,
+ * answered 0 (the CI's Windows leg, run 43116127087:
  * defect 2484's case, a link to `inner`, read as no directory). So the arm
  * below asks the target's kind first, as the link will read it
  * (`hero_fs_link_names_directory`), and gives a directory's link the flag.
@@ -1189,7 +1190,10 @@ int64_t hero_fs_link(const char *existing, const char *name) {
  * names a drive and no folder; a name with neither stands in the working
  * folder, which is then the link's. A target opening with `/` or `\`, or
  * with a drive's `X:`, is read alone. A target and folder longer than a path
- * may be is no directory this can ask about, and makes a file's link. */
+ * may be is no directory this can ask about, and makes a file's link. A
+ * target that is itself a link is asked by what its chain ends at, as the
+ * new link will be read (`hero_fs_is_directory`, parts/fs.c; defect 2491),
+ * never by that link's own kind. */
 static int hero_fs_link_names_directory(const char *target, const char *name) {
     int absolute = target[0] == '/' || target[0] == '\\' || (target[0] != '\0' && target[1] == ':');
     size_t folder = 0;
@@ -1204,8 +1208,7 @@ static int hero_fs_link_names_directory(const char *target, const char *name) {
     if (folder + length + 1 > sizeof probe) return 0;
     memcpy(probe, name, folder);
     memcpy(probe + folder, target, length + 1);
-    DWORD attrs = GetFileAttributesA(probe);
-    return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    return hero_fs_is_directory(probe) != 0;
 }
 #endif
 int64_t hero_fs_symlink(const char *target, const char *name) {

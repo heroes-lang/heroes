@@ -124,23 +124,16 @@ function taken(name: str, folders: [str], target: str) -> str?
 
     return fail(code: "none", msg: "no folder the build names holds a file for the library")
 
-# Whether a linker opens `file` as a file: the place it names, every link on
-# the way followed by the filesystem's own walk (`files.resolved`, defect
-# 2474's door), is there and is no directory, one question on every
-# platform. **Never `file` itself**: `process.path_exists` and
-# `process.is_directory` ask a link itself on Windows (`GetFileAttributesW`)
-# and what it names on POSIX (`stat`), so a link to nothing was a file there
-# and the folder's archive after it was passed over (the box's leg of
-# defect 2487, 2026-11-12, this module's test). A place the walk cannot
-# resolve, a loop of links or a link to nothing Windows gives no final path
-# for, is none a linker opens either; a link resolved is a path with no link
-# at its end, which both platforms' questions answer alike.
+# Whether a linker opens `file` as a file: what it names, every link on the
+# way and at its end followed as a linker's open follows them, is there and
+# is no directory. `process.path_exists` and `process.is_directory` ask
+# exactly that on every platform since defect 2491, a link to nothing and a
+# loop of links reading as nothing there; until then Windows asked a link
+# itself, so a link to nothing was a file there and the folder's archive
+# after it was passed over (the box's leg of defect 2487, 2026-11-12, this
+# module's test), and this asked the place `files.resolved` walks to.
 function opens(file: str) -> bool
-    place = files.resolved(file)
-
-    if place.is_err()
-        return false
-    return process.path_exists(place.must()) && !process.is_directory(place.must())
+    return process.path_exists(file) && !process.is_directory(file)
 
 # The files a target's linker searches a folder for, for `-l<name>`, in its
 # order: ld64's four, and GNU ld's and `ld.lld`'s two (each order measured
