@@ -1,0 +1,38 @@
+# Defect 2504, 2026-11-13: the leak report's first sentence names who began
+# the lives still standing (`runtime/parts/alloc.c`). Here two stand at exit,
+# a listener a mark began, `acquires hero_net_close`, never closed, and a
+# socket given up for a number the platform layer's door began a life for,
+# never taken back; so the sentence names both, the mark and the door.
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+
+function main()
+    listener = hero_net_listen(address: "127.0.0.1".cstr(), port: 0)
+
+    if listener == nullptr
+        print("no listener")
+        return
+    client = hero_net_connect(address: "127.0.0.1".cstr(), port: hero_net_port(listener))
+
+    if client == nullptr
+        _ = hero_net_close(listener)
+        print("no connection")
+        return
+    accepted = hero_net_accept(listener)
+
+    if accepted == nullptr
+        _ = hero_net_close(client)
+        _ = hero_net_close(listener)
+        print("no accept")
+        return
+    number = hero_net_number(accepted)
+    print(f"the accepted socket is given up for a number: {number > 0}")
+    _ = hero_net_close(client)
+    print("the listener is never closed, and main returns")

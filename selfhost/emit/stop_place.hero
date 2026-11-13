@@ -197,6 +197,18 @@ test "the four arguments are the file, the function, the line and the column, ea
     # `print` stands at the second line's fifth column.
     assert of(s, f, offset: s.files[0].start + 20) == "\"main.hero\", \"main.main\", 2, 5"
 
+# The runtime's leak report reads a place with no line as a door of the
+# runtime's own, never a mark of the program (defect 2504,
+# `runtime/parts/panic.c`'s `hero_place_is_a_door`): so no place this file
+# writes may name line 0, and the smallest offset of each file is where one
+# would.
+test "the first byte of every file is line 1"
+    s = program("/home/u/proj/main.hero")
+    f = named(name: "main", kind: .function_kind, start: s.files[0].start)
+    assert literals(s, f, offset: s.files[0].start) == "\"main.hero\", \"main.main\", 1, 1"
+    assert literals(s, f, offset: s.files[1].start) == "\"check/state.hero\", \"main.main\", 1, 1"
+    assert literals(s, f, offset: s.files[2].start) == "\"<heroes library>\", \"main.main\", 1, 1"
+
 test "a check the runtime makes is handed its site's record, declared in a block of its own"
     s = program("/home/u/proj/main.hero")
     f = named(name: "main", kind: .function_kind, start: s.files[0].start)
