@@ -400,8 +400,8 @@ group's records, or bytes where the header says `void *`, `N` the sibling that
 tells C how many, a constant of the group or a number. C reaching past them
 aborts, or fails the call where the kernel writes, and so past a local lent with
 `@`, which C receives itself; past a field or an element it is the binding's word.
-A callback is a **parameter**, never a result; its parameters follow the same rule
-and `()` is `void`: `atexit(f: (function() -> ()))`.
+A callback is a **parameter**, never a result or a signal handler, nor called by one; its parameters follow the same rule
+and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C and SIGTERM only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
 
 A group's `record` is the header's struct: all its fields, and the same name
 unless the header writes it after the word struct, which `tag` gives:
