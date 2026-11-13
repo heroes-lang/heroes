@@ -1,0 +1,45 @@
+# Every `T?` of a program, as name plus payload type, in ascending-id order:
+# what the per-option generated functions walk (design.md §3.1; panel 093 R2
+# and R6). Moved out of `emit/ctype.hero` on 2026-11-13 (defect 2511), whose
+# ratified ceiling the round's call spellings would have passed; it reads the
+# table that module builds and nothing else of it, and `emit/perfn.hero` is
+# its one reader.
+
+use check/state
+use check/table
+use emit/ctype
+
+# Every T?, as name plus payload type, in ascending-id order — the
+# per-option generated functions walk this, and the key walk IS the
+# sort.
+record Entry
+    name: str
+    payload: i64
+    # The option's OWN type id — what a per-TU filter asks about
+    # (synth.Wanted, panel 093 R2 as tightened by measurement).
+    at: i64
+
+function of(names: ctype.Names, c: state.Checked) -> [Entry]
+    out: [Entry] @= []
+
+    # ORDER: ascending TyId — the per-option generated functions are
+    # emitted in this order, so the order is IN the emitted C.
+    #
+    # sort(keys(…)), NOT keys(…): `keys` gives the keys in NO ORDER and
+    # measurably does not — a map with 50, 3, 97, 12 put in answers
+    # `97 50 3 12`. Unpaid, this sort put the port's four functions per
+    # option in the runtime's bucket order: 20.8 MB of C whose LINES
+    # matched the bootstrap's exactly and whose SEQUENCE did not, on
+    # 3,330 of 724,197 lines. Measured 2026-08-17, and it was the last
+    # thing between the port and the fixpoint — which is why a mark is
+    # now checked by an instrument rather than remembered (§4.9).
+    for id in sort(keys(names.options))
+        match table.get(c.types, id)
+            .fallible o                                               => out @ out.push(
+                Entry(name: names.options[id].must(), payload: o.payload, at: id)
+            )
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .array | .fixed | .map | .function_ty | .named            => continue
+            .case_ty | .failure | .generic | .error                   => continue
+
+    return out

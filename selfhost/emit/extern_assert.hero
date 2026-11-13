@@ -26,6 +26,7 @@ use check/state
 use check/table
 use checker
 use emit/assert_spelling
+use emit/call_spelling
 use emit/ctype
 use emit/externs as emit_externs
 use emit/record_constant
@@ -247,7 +248,8 @@ function zero_call(f: containers.Function, names: ctype.Names, c: state.Checked,
 
         zeros @ zeros.push(assert_spelling.zero_of(names, c, ty: declared.ty, mutable: mutable))
 
-    return source.span_text(s, decls[f.decl].name) + "(" + zeros.join(", ") + ")"
+    name = source.span_text(s, decls[f.decl].name)
+    return call_spelling.callee(names.called, name: name, written: name) + "(" + zeros.join(", ") + ")"
 
 ## Tests
 

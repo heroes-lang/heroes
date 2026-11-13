@@ -22,6 +22,7 @@ use cli/strings
 use emit/counted as emit_counted
 use emit/ctype
 use emit/descriptors
+use emit/option_entries
 use emit/structural
 use emit/synth
 use emit/types
@@ -89,7 +90,7 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
         writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + one.at.prefix + "_hash(const void *elem);")
         wrote @ true
 
-    for entry in ctype.option_entries(names, c)
+    for entry in option_entries.of(names, c)
         if !synth.wants_type(w: want, ty: entry.at)
             continue
         writer.at_generated(@w)
@@ -149,7 +150,7 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
 # ALWAYS counted (two strs), which is why every T? is counted whatever
 # T is — i64? included.
 function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, want: synth.Wanted)
-    for entry in ctype.option_entries(names, c)
+    for entry in option_entries.of(names, c)
         if !synth.wants_type(w: want, ty: entry.at)
             continue
         counted = layout.is_refcounted(c, entry.payload)

@@ -1,0 +1,19 @@
+# fixedbugs, defect 2511, lane b35-ffi, 2026-11-13, a shape beside it.
+#
+# A name the header defines only as a macro, of the shape Darwin gives
+# `sigemptyset` beside its function: no parentheses reach a function here,
+# so the round that calls a function past its macro learns nothing (clang
+# finds `alone2511` undeclared at the probe), and the program is told the
+# name is a macro, panel 185 R1's refusal, never an exit 2.
+
+extern "fixedbugs-2511-alone.h"
+    function alone2511(s: ptr) -> i32  #~ ffi_macro_name
+
+extern "stdlib.h"
+    function calloc(count: u64, size: u64) -> ptr
+    function free(p: ptr)
+
+function main()
+    held = calloc(count: 1, size: 4)
+    print(alone2511(s: held))
+    free(p: held)

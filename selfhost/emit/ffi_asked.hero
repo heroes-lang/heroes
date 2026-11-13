@@ -83,6 +83,7 @@ use ast
 use check/state
 use checker
 use emit/c_text
+use emit/call_spelling
 use emit/ctype
 use emit/extern_assert
 use emit/externs as emit_externs
@@ -261,7 +262,7 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
         said: str @= name
 
         if f.params.len() == 0
-            said @ name + "()"
+            said @ call_spelling.callee(names.called, name: name, written: name) + "()"
         out @ out.push(directive(file: at.file, line: at.line))
         out @ out.push(
             "__attribute__((unused)) static void hero_ask_" + index.to_str() + "(void) { (void)" + said + "; }"
@@ -388,6 +389,25 @@ test "the unit says each extern's call again at its line, and asks whether it is
     assert ffi_lookup.has(text: got, needle: "#line 1 \"hero-ask-macro EDOM\"\n#ifdef EDOM\n")
     assert !ffi_lookup.has(text: got, needle: "(void)EDOM")
     assert !ffi_lookup.has(text: got, needle: "hero-ask-value EDOM")
+
+    # A name a round learned to call past its header's macro is called in
+    # parentheses here too, and so is the return assertion's call the result
+    # question shares (defect 2511, `emit/call_spelling.hero`).
+    learned: {str: bool} @= {}
+    learned[call_spelling.KEY + "errno"] @ true
+    learned[call_spelling.KEY + "strerror"] @ true
+    past = unit(
+        low.program,
+        s,
+        parsed.decls,
+        c,
+        struct_tags: learned,
+        headers: emit_externs.headers(low.program, s, parsed.decls),
+        records: every
+    )
+    assert ffi_lookup.has(text: past, needle: "(void)(errno)(); }")
+    assert ffi_lookup.has(text: past, needle: "hero_r = (strerror)((int32_t)0);")
+    assert !ffi_lookup.has(text: got, needle: "(strerror)((int32_t)0)")
 
 test "a record's tag is asked whether it is a type name, and `void` is not asked"
     text = "extern \"own.h\"\n    record Q tag only_tagg\n        a: i32\n    record H tag void\n\nfunction touch(q: Q, h: H)\n    _ = q\n    _ = h\n\nfunction main()\n    print(1)\n"

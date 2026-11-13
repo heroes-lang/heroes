@@ -14,6 +14,7 @@ use check/table
 use checker
 use emit/builtins
 use emit/bytes_text
+use emit/call_spelling
 use emit/callback_thunk
 use emit/convert
 use emit/ctype
@@ -258,8 +259,11 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, site
             keeps = !when.is_err() || handle_result.reads_result(decls, decl: e.decl)
 
             # A name a body also declares, `t1` or `h0_p`, is reached through its
-            # accessor (defect 2389, `emit/shadowed.hero`); any other as written.
-            invocation = shadowed.written(extern_name, s: s, decls: decls) + "(" + crossed.join(", ") + ")"
+            # accessor (defect 2389, `emit/shadowed.hero`); any other as written,
+            # in parentheses where a round learned to pass its header's macro
+            # (defect 2511, `emit/call_spelling.hero`).
+            written = shadowed.written(extern_name, s: s, decls: decls)
+            invocation = call_spelling.callee(names.called, name: extern_name, written: written) + "(" + crossed.join(", ") + ")"
             result_name: str? @= target
 
             if keeps && assign.len() == 0
