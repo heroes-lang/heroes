@@ -282,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("413175c105e9f582", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("584ea1075d4674bf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396acountreadfromanelementkeepsitssign\tfixedbugs-396-a-count-read-from-an-element-keeps-its-sign\n");

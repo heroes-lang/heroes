@@ -229,6 +229,7 @@ void h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallbac
 int64_t h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n);
 int64_t h_0cb_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one) return (void (*)(void))h_0cb_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one;
     return f;
 }
@@ -238,30 +239,31 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E1 h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_e1(int64_t h0_n) { h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E0 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E0 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E1 t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = (h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E0){.f_x = t1}; h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E1){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 242 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
+#line 243 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 57 "tests/golden/run/fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero"
 h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E2 h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_e2(int64_t h0_n) { h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E1 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E1 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E2 t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_e1(t1); h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E2){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 249 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
+#line 250 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 61 "tests/golden/run/fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero"
 h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E3 h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_e3(int64_t h0_n) { h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E2 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E2 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E3 t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_e2(t1); h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_E3){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 256 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
+#line 257 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 65 "tests/golden/run/fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero"
 int64_t h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) { hero_thread_guard("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.one"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.one", 66, 12); return t3;
-#line 262 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
+#line 263 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 int64_t h_0cb_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) {
+    hero_callback_entered("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.one", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(h0_n);
     return hero_result;
 }
@@ -273,7 +275,7 @@ int64_t h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacall
 #line 68
     hero_thread_guard("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.weigh"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_e.f_a.f_a.f_a.f_a.f_x; t2 = h0_e.f_b.f_h.f_h.f_h.f_x; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.weigh", 69, 12); return t3;
-#line 277 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
+#line 279 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 #undef h0_e
 
@@ -294,7 +296,7 @@ __attribute__((__noinline__)) void h_fixedbugs2337afunctiontakingalargerecordwho
     t7 = h1_e; t8 = h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_weigh(&t7); hero_print_int(t8); hero_print_end();
     t9 = h0_f; t10 = h1_e; t11 = t9(&t10); hero_print_int(t11); hero_print_end();
     t12 = h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one; t13 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.main", 76, 11}; t14 = fixedbugs_2337_apply((h_0fn_48ac9712)hero_callback_of((void (*)(void))t12), t13); } hero_print_int(t14); hero_print_end(); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_h1_e); return;
-#line 298 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
+#line 300 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 #undef h1_e
 #undef t6
@@ -501,7 +503,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("677edb72236458a4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e9c06b87ac0d7e1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback\tfixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback\n");

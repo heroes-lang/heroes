@@ -3669,7 +3669,7 @@ HERO_TU_LOCAL uint64_t h_0opt_48a26f25_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("51ccc32836737545", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("68e9ee6e0dcff483", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("datarow\trow\ndatatable\ttable\nfmtreport\treport\nqueryplan\tplan\nrunengine\tengine\n1corestrconv\tstrconv\n1corestrings\tstrings\n1corestrconvinternalshown\tshown\n1corestringsinternalscan\tscan\n");

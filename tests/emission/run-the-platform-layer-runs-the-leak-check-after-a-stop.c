@@ -208,6 +208,7 @@ void h_theplatformlayerrunstheleakcheckafterastop_main(void);
 int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port);
 int64_t h_0cb_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_theplatformlayerrunstheleakcheckafterastop_serve) return (void (*)(void))h_0cb_theplatformlayerrunstheleakcheckafterastop_serve;
     return f;
 }
@@ -215,7 +216,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 11 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
 int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void) {
-#line 219 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 220 "theplatformlayerrunstheleakcheckafterastop.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
     _Static_assert(__builtin_constant_p(HERO_NET_STOPPED), "heroes-ffi-const HERO_NET_STOPPED");
 #pragma clang diagnostic push
@@ -227,7 +228,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
     return HERO_NET_STOPPED;
-#line 231 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 232 "theplatformlayerrunstheleakcheckafterastop.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -245,7 +246,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void) {
 
 #line 24 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
 int64_t h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(void) {
-#line 249 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 250 "theplatformlayerrunstheleakcheckafterastop.c"
     _Static_assert(HERO_RET_INT(STOP_REQUEST), "heroes-ffi-return STOP_REQUEST i64");
     _Static_assert(__builtin_constant_p(STOP_REQUEST), "heroes-ffi-const STOP_REQUEST");
 #pragma clang diagnostic push
@@ -257,7 +258,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 24 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
     return STOP_REQUEST;
-#line 261 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 262 "theplatformlayerrunstheleakcheckafterastop.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -294,12 +295,13 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) { he
     t17 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 44, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
     t19 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 45, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
     t21 = INT64_C(-1); h4_ret0 = t21; goto bb7; bb6: goto bb4; bb7:
-#line 298 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 299 "theplatformlayerrunstheleakcheckafterastop.c"
     t25 = h4_ret0;
     return t25;
 }
 
 int64_t h_0cb_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) {
+    hero_callback_entered("theplatformlayerrunstheleakcheckafterastop.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerrunstheleakcheckafterastop_serve(h0_port);
     return hero_result;
 }
@@ -315,7 +317,7 @@ void h_theplatformlayerrunstheleakcheckafterastop_main(void) { hero_net_socket *
     t30 = h1_worker; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 57, 12}; t31 = hero_thread_join(t30); } h2_kind = t31;
     t32 = h2_kind; t33 = h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(); t34 = t32 == t33; t35 = HERO_STR_LIT(hero_str_37366225); t36 = hero_bool_to_str(t34); t47 = h11_own11; h11_own11 = t36; hero_str_decref(t47); t37 = hero_str_concat(t35, t36); t48 = h12_own12; h12_own12 = t37; hero_str_decref(t48); hero_print_str(t37); hero_print_end();
     t38 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t38); hero_print_end();
-#line 319 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 321 "theplatformlayerrunstheleakcheckafterastop.c"
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -436,7 +438,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("27e464b52f82eb2a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f018ffb06df6a68", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerrunstheleakcheckafterastop\tthe-platform-layer-runs-the-leak-check-after-a-stop\n");

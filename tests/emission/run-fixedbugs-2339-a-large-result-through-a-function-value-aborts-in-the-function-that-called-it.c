@@ -160,6 +160,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 161 "fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit.c"
 #pragma clang diagnostic pop
 
+__attribute__((unused)) static struct heroes_held hero_value_heroes_held_make(int64_t a0) { return (heroes_held_make)(a0); }
+
 HERO_TU_LOCAL bool h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -202,7 +204,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2339alargeresultthroughafunctio
     struct heroes_held *const hero_big_h1_h = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG h_0fn_3e321384 t1; HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = INT64_C(7); t3 = t1(t2); h1_h = t3; hero_pad_fill(&h1_h, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h1_h.first; hero_frame_give(hero_big_t3); hero_frame_give(hero_big_h1_h); return t4;
-#line 206 "fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit.c"
+#line 208 "fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit.c"
 }
 #undef h1_h
 #undef t3
@@ -210,8 +212,8 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2339alargeresultthroughafunctio
 #line 17 "tests/golden/run/fixedbugs-2339-a-large-result-through-a-function-value-aborts-in-the-function-that-called-it.hero"
 void h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_3e321384 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
-    t2 = heroes_held_make; t3 = h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_go(t2); hero_print_int(t3); hero_print_end(); return;
-#line 215 "fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit.c"
+    t2 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t2), __typeof__(&heroes_held_make)), heroes_held_make, hero_value_heroes_held_make); t3 = h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_go(t2); hero_print_int(t3); hero_print_end(); return;
+#line 217 "fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit_0Held_eq: a partial record has no structural equality");
@@ -318,7 +320,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a571dfc56dd10f0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("417449422e39902e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2339alargeresultthroughafunctionvalueabortsinthefunctionthatcalledit\tfixedbugs-2339-a-large-result-through-a-function-value-aborts-in-the-function-that-called-it\n");

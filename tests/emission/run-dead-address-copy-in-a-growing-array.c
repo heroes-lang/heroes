@@ -432,7 +432,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bc0fd9e54a8ef80", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("32de28e42c056ebe", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadaddresscopyinagrowingarray\tdead-address-copy-in-a-growing-array\n");

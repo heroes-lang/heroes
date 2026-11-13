@@ -332,7 +332,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21c1e0fd3930d429", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("38df0c43108d5367", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2429aheaderwhoseincludeanearlierheaderreadfirstbindsitsnames\tfixedbugs-2429-a-header-whose-include-an-earlier-header-read-first-binds-its-names\n");

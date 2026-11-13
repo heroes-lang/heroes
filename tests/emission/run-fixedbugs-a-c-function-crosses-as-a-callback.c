@@ -159,6 +159,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 160 "fixedbugsacfunctioncrossesasacallback.c"
 #pragma clang diagnostic pop
 
+__attribute__((unused)) static void hero_value_counting_free(void * a0) { (counting_free)(a0); }
+
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -174,6 +176,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsacfunctioncrossesasacallback_main(void);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     return f;
 }
 
@@ -182,12 +185,12 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 void h_fixedbugsacfunctioncrossesasacallback_main(void) { void * h0_b; HERO_NODEBUG void *t1, *t2; HERO_NODEBUG int64_t t3, t5, t6; HERO_NODEBUG h_0fn_406f9b0 t4; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 37, 14}; t1 = (void *)blob_make(); } h0_b = t1;
 #line 41
-    t2 = h0_b; t3 = INT64_C(4); t4 = counting_free; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 41, 5}; (void)blob_take(t2, t3, (h_0fn_406f9b0)hero_callback_of((void (*)(void))t4)); }
+    t2 = h0_b; t3 = INT64_C(4); t4 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t4), __typeof__(&counting_free)), counting_free, hero_value_counting_free); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 41, 5}; (void)blob_take(t2, t3, (h_0fn_406f9b0)hero_callback_of((void (*)(void))t4)); }
 #line 44
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 44, 11}; t5 = blob_first(); } hero_print_int(t5); hero_print_end();
 #line 47
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-function-crosses-as-a-callback.hero", "fixedbugs-a-c-function-crosses-as-a-callback.main", 47, 11}; t6 = blob_frees(); } hero_print_int(t6); hero_print_end(); return;
-#line 191 "fixedbugsacfunctioncrossesasacallback.c"
+#line 194 "fixedbugsacfunctioncrossesasacallback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -286,7 +289,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7448d52075a5b6dc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b6600674d02361a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsacfunctioncrossesasacallback\tfixedbugs-a-c-function-crosses-as-a-callback\n");

@@ -180,6 +180,7 @@ void h_deadhandlereturnedbyacallbackischecked_main(void);
 node * h_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k);
 node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_deadhandlereturnedbyacallbackischecked_give) return (void (*)(void))h_0cb_deadhandlereturnedbyacallbackischecked_give;
     return f;
 }
@@ -194,10 +195,11 @@ node * h_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) { hero_thread
     t6 = h1_m; return t6; bb2:
 #line 22
     t5 = h1_m; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-returned-by-a-callback-is-checked.hero", "dead-handle-returned-by-a-callback-is-checked.give", 22, 9}; { hero_handle_alive_at(t5, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "node_free", NULL, &hero_here); (void)node_free(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_m == t5) h1_m = hero_handle_dead(); } } goto bb1; bb3: goto bb1;
-#line 198 "deadhandlereturnedbyacallbackischecked.c"
+#line 199 "deadhandlereturnedbyacallbackischecked.c"
 }
 
 node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
+    hero_callback_entered("deadhandlereturnedbyacallbackischecked.give", __builtin_return_address(0), __builtin_frame_address(0));
     node * hero_result = h_deadhandlereturnedbyacallbackischecked_give(h0_k);
     hero_handle_alive(hero_result, "the result of the callback `deadhandlereturnedbyacallbackischecked.give`");
     return hero_result;
@@ -206,7 +208,7 @@ node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
 #line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 void h_deadhandlereturnedbyacallbackischecked_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_4dd6fcee t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_21c9984d); t2 = h_deadhandlereturnedbyacallbackischecked_give; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-returned-by-a-callback-is-checked.hero", "dead-handle-returned-by-a-callback-is-checked.main", 26, 23}; t3 = ask((h_0fn_4dd6fcee)hero_callback_of((void (*)(void))t2)); } hero_print_str(t1); hero_print_int(t3); hero_print_end(); return;
-#line 210 "deadhandlereturnedbyacallbackischecked.c"
+#line 212 "deadhandlereturnedbyacallbackischecked.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereturnedbyacallbackischecked_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
@@ -316,7 +318,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a440b2f04676cdf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("316136755bc3ec1c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandlereturnedbyacallbackischecked\tdead-handle-returned-by-a-callback-is-checked\n");

@@ -229,6 +229,7 @@ void h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacall
 int64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n);
 int64_t h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one) return (void (*)(void))h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one;
     return f;
 }
@@ -238,30 +239,31 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e1(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0){.f_x = t1}; h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 242 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 243 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 53 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e2(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e1(t1); h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 249 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 250 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 57 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e2(t1); h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 256 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 257 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 61 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
 int64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) { hero_thread_guard("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.one"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.one", 62, 12); return t3;
-#line 262 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 263 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 int64_t h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) {
+    hero_callback_entered("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.one", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(h0_n);
     return hero_result;
 }
@@ -273,7 +275,7 @@ __attribute__((__noinline__)) void h_fixedbugs2337afunctionreturningalargerecord
 #line 64
     hero_thread_guard("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.build_one"); HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t2, t6; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t7 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.build_one", 65, 37); t6 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(t5); t7 = *(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_a = t2; t7.f_b = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); return;
-#line 277 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 279 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 #undef t7
 
@@ -289,7 +291,7 @@ __attribute__((__noinline__)) void h_fixedbugs2337afunctionreturningalargerecord
     t2 = INT64_C(4); h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_build_one(&t3, t2); t4 = t3.f_b; t5 = t4.f_h; t6 = t5.f_h; t7 = t6.f_h; t8 = t7.f_x; hero_print_int(t8); hero_print_end();
     t9 = h0_f; t10 = INT64_C(6); t9(&t11, t10); t12 = t11.f_a; t13 = t12.f_a; t14 = t13.f_a; t15 = t14.f_a; t16 = t15.f_x; hero_print_int(t16); hero_print_end();
     t17 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one; t18 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.main", 71, 11}; t19 = fixedbugs_2337_apply((h_0fn_48ac9712)hero_callback_of((void (*)(void))t17), t18); } hero_print_int(t19); hero_print_end(); hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t3); return;
-#line 293 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 295 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 #undef t3
 #undef t11
@@ -494,7 +496,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("54fd41487053461f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c1a6c8e47afc55d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback\tfixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback\n");

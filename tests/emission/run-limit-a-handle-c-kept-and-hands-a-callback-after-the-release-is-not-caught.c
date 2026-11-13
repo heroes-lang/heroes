@@ -185,6 +185,7 @@ void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void);
 int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n);
 int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen) return (void (*)(void))h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen;
     return f;
 }
@@ -193,10 +194,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) { hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero", "limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.seen", 25, 12}; hero_handle_alive_at(t1, "the argument `n` of `node_value`", &hero_here); t2 = node_value(t1); } return t2;
-#line 197 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 198 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 
 int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
+    hero_callback_entered("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_n);
     int64_t hero_result = h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(h0_n);
     return hero_result;
@@ -209,7 +211,7 @@ void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
     t3 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero", "limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.main", 30, 5}; hero_handle_alive_at(t3, "the argument `n` of `store_node`", &hero_here); (void)store_node(t3); }
     t4 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero", "limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.main", 31, 5}; { hero_handle_alive_at(t4, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t4, "node_free", NULL, &hero_here); (void)node_free(t4); if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead(); } }
     t5 = HERO_STR_LIT(hero_str_12576dd3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero", "limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.main", 32, 52}; t6 = call_stored(); } hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
-#line 213 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 215 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
@@ -319,7 +321,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4527aad84d322475", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c44d61e248ea3b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught\tlimit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught\n");

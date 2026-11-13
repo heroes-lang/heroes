@@ -161,6 +161,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 162 "main.c"
 #pragma clang diagnostic pop
 
+__attribute__((unused)) static struct fixedbugs_2286_held hero_value_fixedbugs_2286_held_make(int64_t a0) { return (fixedbugs_2286_held_make)(a0); }
+
 HERO_TU_LOCAL bool h_holder_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b);
 HERO_TU_LOCAL uint64_t h_holder_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -180,6 +182,7 @@ void h_main_main(void);
 int64_t h_caller_hand(h_0fn_1d97ba71 h0_cb, int64_t h1_n);
 h_0fn_1d97ba71 h_holder_maker(void);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     return f;
 }
 
@@ -193,20 +196,20 @@ __attribute__((__noinline__)) void h_main_main(void) {
     t1 = h_holder_maker(); h0_f = t1;
     t2 = h0_f; t3 = INT64_C(5); t4 = h_caller_hand(t2, t3); hero_print_int(t4); hero_print_end();
     t5 = h0_f; t6 = INT64_C(6); t7 = t5(t6); t8 = t7.first; hero_print_int(t8); hero_print_end(); hero_frame_give(hero_big_t7); return;
-#line 197 "main.c"
+#line 200 "main.c"
 }
 #undef t7
 
 #line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/caller.hero"
 int64_t h_caller_hand(h_0fn_1d97ba71 h0_cb, int64_t h1_n) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_cb; t2 = h1_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"caller.hero", "caller.hand", 9, 12}; t3 = fixedbugs_2286_call_ret((h_0fn_1d97ba71)hero_callback_of((void (*)(void))t1), t2); } return t3;
-#line 204 "main.c"
+#line 207 "main.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
 h_0fn_1d97ba71 h_holder_maker(void) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = fixedbugs_2286_held_make; return t1;
-#line 210 "main.c"
+    t1 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t1), __typeof__(&fixedbugs_2286_held_make)), fixedbugs_2286_held_make, hero_value_fixedbugs_2286_held_make); return t1;
+#line 213 "main.c"
 }
 HERO_TU_LOCAL bool h_holder_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b) {
     hero_panic("h_holder_0Held_eq: a partial record has no structural equality");
@@ -313,7 +316,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("288324a71a6d2d3b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3fa04fed71c9ac78", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

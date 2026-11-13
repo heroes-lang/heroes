@@ -123,6 +123,7 @@ void h_main_main(void);
 int64_t h_main_inside_for(int64_t h0_seed);
 int64_t h_0cb_main_inside_for(int64_t h0_seed);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_main_inside_for) return (void (*)(void))h_0cb_main_inside_for;
     return f;
 }
@@ -131,25 +132,25 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 26 "examples/montecarlo/main.hero"
 int64_t h_main_THREADS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(8); return t1;
-#line 135 "main.c"
+#line 136 "main.c"
 }
 
 #line 29 "examples/montecarlo/main.hero"
 int64_t h_main_DARTS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(20000); return t1;
-#line 141 "main.c"
+#line 142 "main.c"
 }
 
 #line 33 "examples/montecarlo/main.hero"
 int64_t h_main_SIDE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(46340); return t1;
-#line 147 "main.c"
+#line 148 "main.c"
 }
 
 #line 36 "examples/montecarlo/main.hero"
 int64_t h_main_next_of(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(16807); t2 = h0_x; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.next_of", 37, 12); t4 = INT64_C(2147483647); if (t4 == 0) hero_panic_at("division by zero", "main.hero", "main.next_of", 37, 12); if (t3 == INT64_MIN && t4 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.next_of", 37, 12); t5 = t3 % t4; return t5;
-#line 153 "main.c"
+#line 154 "main.c"
 }
 
 #line 41 "examples/montecarlo/main.hero"
@@ -171,10 +172,11 @@ int64_t h_main_inside_for(int64_t h0_seed) { hero_thread_guard("main.inside_for"
     t35 = h3_n; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("main.hero", "main.inside_for", 54, 13); h3_n = t37; goto bb1; bb5:
 #line 53
     t32 = h1_hits; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("main.hero", "main.inside_for", 53, 20); h1_hits = t34; goto bb4; bb6: goto bb4;
-#line 175 "main.c"
+#line 176 "main.c"
 }
 
 int64_t h_0cb_main_inside_for(int64_t h0_seed) {
+    hero_callback_entered("main.inside_for", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_inside_for(h0_seed);
     return hero_result;
 }
@@ -196,7 +198,7 @@ double h_main_estimate(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i;
     t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.estimate", 68, 9); h4_i0 = t30; goto bb4; bb7:
 #line 71
     t31 = h2_hits; t32 = INT64_C(4); if (__builtin_mul_overflow(t31, t32, &t33)) hero_panic_overflow_at("main.hero", "main.estimate", 71, 19); t34 = hero_int_to_f64(t33); t35 = h_main_THREADS(); t36 = h_main_DARTS(); if (__builtin_mul_overflow(t35, t36, &t37)) hero_panic_overflow_at("main.hero", "main.estimate", 71, 38); t38 = hero_int_to_f64(t37); t39 = t34 / t38;
-#line 200 "main.c"
+#line 202 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -206,7 +208,7 @@ double h_main_estimate(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i;
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t5, t7; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5a3c82c4); t2 = h_main_THREADS(); t3 = h_main_DARTS(); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow_at("main.hero", "main.main", 74, 23); t5 = HERO_STR_LIT(hero_str_37603379); t6 = h_main_THREADS(); t7 = HERO_STR_LIT(hero_str_4348212d); t8 = h_main_estimate(); hero_print_str(t1); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_f64(t8); hero_print_end(); return;
-#line 210 "main.c"
+#line 212 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -305,7 +307,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("356e00797e0287ed", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c8b2bbf555f072b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

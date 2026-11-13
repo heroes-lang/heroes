@@ -200,6 +200,7 @@ void h_deadaddresscopyreachingacallbackcalledbyname_main(void);
 int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n);
 int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_deadaddresscopyreachingacallbackcalledbyname_seen) return (void (*)(void))h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen;
     return f;
 }
@@ -208,10 +209,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) { hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-reaching-a-callback-called-by-name.hero", "dead-address-copy-reaching-a-callback-called-by-name.seen", 19, 12}; hero_handle_alive_at(t1, "the argument `n` of `node_value`", &hero_here); t2 = node_value(t1); } return t2;
-#line 212 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 213 "deadaddresscopyreachingacallbackcalledbyname.c"
 }
 
 int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
+    hero_callback_entered("deadaddresscopyreachingacallbackcalledbyname.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_n);
     int64_t hero_result = h_deadaddresscopyreachingacallbackcalledbyname_seen(h0_n);
     return hero_result;
@@ -224,7 +226,7 @@ void h_deadaddresscopyreachingacallbackcalledbyname_main(void) { node * h0_mine;
     t4 = h0_mine; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-reaching-a-callback-called-by-name.hero", "dead-address-copy-reaching-a-callback-called-by-name.main", 24, 5}; { hero_handle_alive_at(t4, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t4, "node_free", NULL, &hero_here); (void)node_free(t4); if (hero_handle_ended(t4, hero_life_0_0) && h0_mine == t4) h0_mine = hero_handle_dead(); } }
     t5 = HERO_STR_LIT(hero_str_5bfed3fb); t6 = h1_keep; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "dead-address-copy-reaching-a-callback-called-by-name.hero", "dead-address-copy-reaching-a-callback-called-by-name.main", 25, 55) : (void)0), (void)(t6->elem->size != sizeof(node *) ? hero_unreachable() : (void)0), ((node * const *)(const void *)(t6 + 1))[t7]); t9 = h_deadaddresscopyreachingacallbackcalledbyname_seen(t8); hero_print_str(t5); hero_print_int(t9); hero_print_end();
     t10 = HERO_STR_LIT(hero_str_678ad40c); t11 = h_deadaddresscopyreachingacallbackcalledbyname_seen; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-reaching-a-callback-called-by-name.hero", "dead-address-copy-reaching-a-callback-called-by-name.main", 26, 23}; t12 = visit((h_0fn_b062dd1)hero_callback_of((void (*)(void))t11)); } hero_print_str(t10); hero_print_int(t12); hero_print_end();
-#line 228 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 230 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_release_at(&h1_keep);
     hero_array_release_at(&h2_own2);
     return;
@@ -337,7 +339,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("79c6734813326bad", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("10e39e8f6a8eeaea", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadaddresscopyreachingacallbackcalledbyname\tdead-address-copy-reaching-a-callback-called-by-name\n");

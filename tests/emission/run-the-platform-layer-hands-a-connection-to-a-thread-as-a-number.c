@@ -248,6 +248,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 int64_t h_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_number);
 int64_t h_0cb_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_number);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_theplatformlayerhandsaconnectiontoathreadasanumber_serve) return (void (*)(void))h_0cb_theplatformlayerhandsaconnectiontoathreadasanumber_serve;
     return f;
 }
@@ -255,7 +256,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 15 "tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero"
 int64_t h_theplatformlayerhandsaconnectiontoathreadasanumber_HERO_NET_NOT_OPEN(void) {
-#line 259 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 260 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     _Static_assert(HERO_RET_INT(HERO_NET_NOT_OPEN), "heroes-ffi-return HERO_NET_NOT_OPEN i64");
     _Static_assert(__builtin_constant_p(HERO_NET_NOT_OPEN), "heroes-ffi-const HERO_NET_NOT_OPEN");
 #pragma clang diagnostic push
@@ -267,7 +268,7 @@ int64_t h_theplatformlayerhandsaconnectiontoathreadasanumber_HERO_NET_NOT_OPEN(v
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero"
     return HERO_NET_NOT_OPEN;
-#line 271 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 272 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -302,7 +303,7 @@ int64_t h_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_nu
 #line 46
     t14 = h1_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero", "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.serve", 46, 13}; { hero_handle_alive_at(t14, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t14, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t14); if (hero_handle_ended(t14, hero_life_0_0) && h1_s == t14) h1_s = hero_handle_dead(); } }
     t16 = INT64_C(-2); h5_ret0 = t16; goto bb7; bb6: goto bb4; bb7:
-#line 306 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 307 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     t24 = h5_ret0;
     hero_array_release_at(&h2_heard);
     hero_array_release_at(&h3_back);
@@ -311,6 +312,7 @@ int64_t h_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_nu
 }
 
 int64_t h_0cb_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_number) {
+    hero_callback_entered("theplatformlayerhandsaconnectiontoathreadasanumber.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerhandsaconnectiontoathreadasanumber_serve(h0_number);
     return hero_result;
 }
@@ -330,7 +332,7 @@ HeroArrayHeader * h_theplatformlayerhandsaconnectiontoathreadasanumber_received(
     t22 = h5_n; t23 = INT64_C(0); t24 = t22 <= t23; if (t24) goto bb7; else goto bb8; bb5:
 #line 60
     t17 = h4_f0; t18 = t17.as.err;
-#line 334 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 336 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     hero_panic_must_at(t18, "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero", "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.received", 60, 42);
     hero_unreachable();
 bb6:
@@ -343,7 +345,7 @@ bb6:
     t39 = h8_b; hero_array_push_owned(&h2_got, &t39); goto bb11; bb11:
 #line 65
     t41 = h7_i0; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero", "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.received", 65, 13); h7_i0 = t43; goto bb9; bb12: goto bb1; bb13:
-#line 347 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 349 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     t45 = h9_ret0;
     hero_array_incref(t45);
     hero_array_release_at(&h2_got);
@@ -367,7 +369,7 @@ bool h_theplatformlayerhandsaconnectiontoathreadasanumber_refused(int64_t h0_num
 #line 76
     t6 = h1_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero", "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.refused", 76, 13}; { hero_handle_alive_at(t6, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t6); if (hero_handle_ended(t6, hero_life_0_0) && h1_s == t6) h1_s = hero_handle_dead(); } }
     t8 = false; h2_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
-#line 371 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 373 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     t12 = h2_ret0;
     return t12;
 }
@@ -439,7 +441,7 @@ void h_theplatformlayerhandsaconnectiontoathreadasanumber_main(void) { hero_net_
     t179 = h24_i3; t180 = INT64_C(1); if (__builtin_add_overflow(t179, t180, &t181)) hero_panic_overflow_at("the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero", "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.main", 125, 9); h24_i3 = t181; goto bb30; bb33:
 #line 128
     t182 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero", "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.main", 128, 9}; { hero_handle_alive_at(t182, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t182, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t182); if (hero_handle_ended(t182, hero_life_0_0) && h0_listener == t182) h0_listener = hero_handle_dead(); } } goto bb34; bb34:
-#line 443 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 445 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     hero_array_release_at(&h2_clients);
     hero_array_release_at(&h3_workers);
     hero_array_release_at(&h4_numbers);
@@ -485,7 +487,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 489 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
+#line 491 "theplatformlayerhandsaconnectiontoathreadasanumber.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -635,7 +637,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7249fccd612fd4c7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09672814388c5405", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerhandsaconnectiontoathreadasanumber\tthe-platform-layer-hands-a-connection-to-a-thread-as-a-number\n");

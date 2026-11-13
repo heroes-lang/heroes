@@ -26,7 +26,6 @@
 #pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-2494-a-thread-of-cs-own-sends-the-signal.h>
-#include <signal.h>
 #include "heroes_guard_close.h"
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
@@ -80,9 +79,9 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
+_Static_assert(HERO_RET_I32(storm_install((void *)0)), "heroes-ffi-return storm_install i32");
 _Static_assert(HERO_RET_INT(storm_start()), "heroes-ffi-return storm_start i64");
 _Static_assert(HERO_RET_UNIT(storm_stop()), "heroes-ffi-return storm_stop ()");
-_Static_assert(HERO_RET_PTR(signal((int32_t)0, (void *)0)), "heroes-ffi-return signal ptr");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -106,7 +105,7 @@ HERO_STR_STATIC(hero_str_3de6e454, "sender started ");
 HERO_STR_STATIC(hero_str_79383390, ", built ");
 HERO_STR_STATIC(hero_str_1e2675d9, " rows, and no signal met the allocator");
 
-#line 110 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
+#line 109 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
 typedef void (*h_0fn_634dc79f)(int32_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -149,7 +148,7 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 29 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_signal(int32_t a0, h_0fn_634dc79f a1) { (void)(signal)(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_storm_install(h_0fn_634dc79f a0) { (void)(storm_install)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
@@ -159,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
+#line 162 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,94 +174,65 @@ HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-int32_t h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_SIGUSR1(void);
 void h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal(int32_t h0_sig);
 int64_t h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_round(int64_t h0_r);
 void h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_main(void);
 void h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal(int32_t h0_sig);
 void h_0cb_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal(int32_t h0_sig);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal) return (void (*)(void))h_0cb_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal;
     return f;
 }
 
 
-#line 28 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
-int32_t h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_SIGUSR1(void) {
-#line 193 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
-    _Static_assert(HERO_RET_I32(SIGUSR1), "heroes-ffi-return SIGUSR1 i32");
-    _Static_assert(__builtin_constant_p(SIGUSR1), "heroes-ffi-const SIGUSR1");
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wshift-count-overflow"
-#pragma clang diagnostic error "-Wshift-count-negative"
-#pragma clang diagnostic error "-Wshift-negative-value"
-#pragma clang diagnostic error "-Wshift-sign-overflow"
-#pragma clang diagnostic error "-Winteger-overflow"
-#pragma clang diagnostic error "-Wdivision-by-zero"
-#line 28 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
-    return SIGUSR1;
-#line 205 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
-#pragma clang diagnostic pop
-}
-#pragma clang diagnostic error "-Wreturn-type"
-#pragma clang diagnostic error "-Wuninitialized"
-#pragma clang diagnostic error "-Wformat"
-#pragma clang diagnostic error "-Wconditional-uninitialized"
-#pragma clang diagnostic error "-Wshorten-64-to-32"
-#pragma clang diagnostic error "-Wsign-conversion"
-#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
-#pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
-#pragma clang diagnostic error "-Wint-conversion"
-#pragma clang diagnostic error "-Wimplicit-function-declaration"
-#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
-
-#line 32 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
+#line 35 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
 void h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal(int32_t h0_sig) { hero_thread_guard("fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.on_signal"); HeroArrayHeader * h1_seen = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t4, *t5, *t7, *t8; HERO_NODEBUG int32_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_sig; t2 = h0_sig; t3 = h0_sig; t4 = hero_array_new(&hero_desc_i32, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t7 = h2_own2; h2_own2 = t4; hero_array_decref(t7); t8 = h1_seen; hero_array_incref(t4); h1_seen = t4; hero_array_decref(t8);
     t5 = h1_seen; hero_array_len(t5);
-#line 225 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
+#line 194 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
     hero_array_release_at(&h1_seen);
     hero_array_release_at(&h2_own2);
     return;
 }
 
 void h_0cb_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal(int32_t h0_sig) {
+    hero_callback_entered("fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.on_signal", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal(h0_sig);
 }
 
-#line 37 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
+#line 40 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
 int64_t h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_round(int64_t h0_r) { HeroArrayHeader * h1_rows = {0}; int64_t h2_i; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *t1, *t9, *t14, *t16, *t17, *t18; HERO_NODEBUG int64_t t2, t3, t4, t7, t8, t11, t12, t13, t15; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_array, 1); t16 = h3_own3; h3_own3 = t1; hero_array_decref(t16); t17 = h1_rows; hero_array_incref(t1); h1_rows = t1; hero_array_decref(t17);
     t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
-#line 41
+#line 44
     t3 = h2_i; t4 = INT64_C(100000); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h0_r; t8 = h2_i; t9 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t9, &t7); hero_array_push_owned(&t9, &t8); t18 = h4_own4; h4_own4 = t9; hero_array_decref(t18); hero_array_push_owned(&h1_rows, &t9);
-    t11 = h2_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.round", 43, 13); h2_i = t13; goto bb1; bb3:
-#line 45
+    t11 = h2_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.round", 46, 13); h2_i = t13; goto bb1; bb3:
+#line 48
     t14 = h1_rows; t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len);
-#line 245 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
+#line 215 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
     return t15;
 }
 
-#line 47 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
-void h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_main(void) { int64_t h0_started; int64_t h1_total; int64_t h2_r; HERO_NODEBUG int32_t t1; HERO_NODEBUG h_0fn_634dc79f t2; HERO_NODEBUG HeroStr t4, t18, t20, t22; HERO_NODEBUG int64_t t5, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16, t17, t19, t21; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_SIGUSR1(); t2 = h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 48, 9}; (void)signal(t1, (h_0fn_634dc79f)hero_callback_of((void (*)(void))t2)); }
-    t4 = HERO_STR_LIT(hero_str_4da60bc7); hero_print_str(t4); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 50, 15}; t5 = storm_start(); } h0_started = t5;
-    t6 = INT64_C(0); h1_total = t6;
-    t7 = INT64_C(0); h2_r = t7; goto bb1; bb1:
-#line 54
-    t8 = h2_r; t9 = INT64_C(50); t10 = t8 < t9; if (t10) goto bb2; else goto bb3; bb2:
-    t11 = h1_total; t12 = h2_r; t13 = h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_round(t12); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow_at("fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 55, 17); h1_total = t14;
-    t15 = h2_r; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 56, 13); h2_r = t17; goto bb1; bb3:
-#line 58
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 58, 5}; (void)storm_stop(); }
-    t18 = HERO_STR_LIT(hero_str_3de6e454); t19 = h0_started; t20 = HERO_STR_LIT(hero_str_79383390); t21 = h1_total; t22 = HERO_STR_LIT(hero_str_1e2675d9); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_end(); return;
-#line 266 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
+#line 50 "tests/golden/run/fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero"
+void h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_main(void) { int64_t h0_started; int64_t h1_total; int64_t h2_r; HERO_NODEBUG h_0fn_634dc79f t1; HERO_NODEBUG HeroStr t3, t17, t19, t21; HERO_NODEBUG int64_t t4, t5, t6, t7, t8, t10, t11, t12, t13, t14, t15, t16, t18, t20; HERO_NODEBUG bool t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_on_signal; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 51, 9}; (void)storm_install((h_0fn_634dc79f)hero_callback_of((void (*)(void))t1)); }
+    t3 = HERO_STR_LIT(hero_str_4da60bc7); hero_print_str(t3); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 53, 15}; t4 = storm_start(); } h0_started = t4;
+    t5 = INT64_C(0); h1_total = t5;
+    t6 = INT64_C(0); h2_r = t6; goto bb1; bb1:
+#line 57
+    t7 = h2_r; t8 = INT64_C(50); t9 = t7 < t8; if (t9) goto bb2; else goto bb3; bb2:
+    t10 = h1_total; t11 = h2_r; t12 = h_fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname_round(t11); if (__builtin_add_overflow(t10, t12, &t13)) hero_panic_overflow_at("fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 58, 17); h1_total = t13;
+    t14 = h2_r; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 59, 13); h2_r = t16; goto bb1; bb3:
+#line 61
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.hero", "fixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name.main", 61, 5}; (void)storm_stop(); }
+    t17 = HERO_STR_LIT(hero_str_3de6e454); t18 = h0_started; t19 = HERO_STR_LIT(hero_str_79383390); t20 = h1_total; t21 = HERO_STR_LIT(hero_str_1e2675d9); hero_print_str(t17); hero_print_int(t18); hero_print_str(t19); hero_print_int(t20); hero_print_str(t21); hero_print_end(); return;
+#line 236 "fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -361,7 +331,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d41344135fb1a4c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c9b47b46caa3e1e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname\tfixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name\n");

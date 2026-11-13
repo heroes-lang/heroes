@@ -347,7 +347,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d4a0feb23e11b57", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("74673b317b3d9a94", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2364twoothermodulesrecordsarereadastheirownmodulesreadthemtheotherway\tfixedbugs-2364-two-other-modules-records-are-read-as-their-own-modules-read-them-the-other-way\nfixedbugs2364rs\trs\nfixedbugs2364thenwide\tthen_wide\n");

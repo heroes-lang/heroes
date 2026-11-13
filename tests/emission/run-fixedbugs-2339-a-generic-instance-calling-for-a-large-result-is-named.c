@@ -160,6 +160,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 161 "fixedbugs2339agenericinstancecallingforalargeresultisnamed.c"
 #pragma clang diagnostic pop
 
+__attribute__((unused)) static struct heroes_held hero_value_heroes_held_make(int64_t a0) { return (heroes_held_make)(a0); }
+
 HERO_TU_LOCAL bool h_fixedbugs2339agenericinstancecallingforalargeresultisnamed_0Held_eq(const struct heroes_held *a, const struct heroes_held *b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2339agenericinstancecallingforalargeresultisnamed_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -202,9 +204,9 @@ __attribute__((__noinline__)) void h_fixedbugs2339agenericinstancecallingforalar
 #line 16
     struct heroes_held *const hero_big_h0_h = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_391e30ab t2; HERO_NODEBUG int64_t t3, t5; HERO_NODEBUG struct heroes_held *const hero_big_t4 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
-    t2 = heroes_held_make; t3 = INT64_C(7); h_fixedbugs2339agenericinstancecallingforalargeresultisnamed_0make_one_4468cd24(&t4, t2, t3); h0_h = t4; hero_pad_fill(&h0_h, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t2), __typeof__(&heroes_held_make)), heroes_held_make, hero_value_heroes_held_make); t3 = INT64_C(7); h_fixedbugs2339agenericinstancecallingforalargeresultisnamed_0make_one_4468cd24(&t4, t2, t3); h0_h = t4; hero_pad_fill(&h0_h, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = h0_h.first; hero_print_int(t5); hero_print_end(); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_h0_h); return;
-#line 208 "fixedbugs2339agenericinstancecallingforalargeresultisnamed.c"
+#line 210 "fixedbugs2339agenericinstancecallingforalargeresultisnamed.c"
 }
 #undef h0_h
 #undef t4
@@ -216,7 +218,7 @@ __attribute__((__noinline__)) void h_fixedbugs2339agenericinstancecallingforalar
 #line 13
     HERO_NODEBUG h_0fn_391e30ab t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h1_n; t3 = t1(t2); if (hero_out != NULL) *hero_out = t3; hero_frame_give(hero_big_t3); return;
-#line 220 "fixedbugs2339agenericinstancecallingforalargeresultisnamed.c"
+#line 222 "fixedbugs2339agenericinstancecallingforalargeresultisnamed.c"
 }
 #undef t3
 HERO_TU_LOCAL __attribute__((unused)) struct heroes_held hero_value_h_fixedbugs2339agenericinstancecallingforalargeresultisnamed_0make_one_4468cd24(h_0fn_391e30ab h0_f, int64_t h1_n) {
@@ -329,7 +331,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c4f034a16b42bba", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("636c2e906e10aaf7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2339agenericinstancecallingforalargeresultisnamed\tfixedbugs-2339-a-generic-instance-calling-for-a-large-result-is-named\n");

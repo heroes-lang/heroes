@@ -126,6 +126,7 @@ void h_main_main(void);
 int64_t h_main_band(int64_t h0_index);
 int64_t h_0cb_main_band(int64_t h0_index);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_main_band) return (void (*)(void))h_0cb_main_band;
     return f;
 }
@@ -134,25 +135,25 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 20 "examples/mandelbrot/main.hero"
 int64_t h_main_SCALE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1000); return t1;
-#line 138 "main.c"
+#line 139 "main.c"
 }
 
 #line 23 "examples/mandelbrot/main.hero"
 int64_t h_main_ROWS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(64); return t1;
-#line 144 "main.c"
+#line 145 "main.c"
 }
 
 #line 26 "examples/mandelbrot/main.hero"
 int64_t h_main_COLS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(64); return t1;
-#line 150 "main.c"
+#line 151 "main.c"
 }
 
 #line 29 "examples/mandelbrot/main.hero"
 int64_t h_main_LIMIT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(100); return t1;
-#line 156 "main.c"
+#line 157 "main.c"
 }
 
 #line 34 "examples/mandelbrot/main.hero"
@@ -175,7 +176,7 @@ int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) { int64_t h2_zx; int64_t
     t40 = h4_n; t41 = INT64_C(1); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow_at("main.hero", "main.escapes_at", 48, 13); h4_n = t42; goto bb1; bb5:
 #line 44
     t24 = h4_n; h8_ret0 = t24; goto bb7; bb6: goto bb4; bb7:
-#line 179 "main.c"
+#line 180 "main.c"
     t44 = h8_ret0;
     return t44;
 }
@@ -192,7 +193,7 @@ int64_t h_main_row_total(int64_t h0_row) { int64_t h1_total; int64_t h2_cy; int6
     t31 = h3_col; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("main.hero", "main.row_total", 61, 15); h3_col = t33; goto bb1; bb3:
 #line 63
     t34 = h1_total; return t34;
-#line 196 "main.c"
+#line 197 "main.c"
 }
 
 #line 66 "examples/mandelbrot/main.hero"
@@ -205,10 +206,11 @@ int64_t h_main_band(int64_t h0_index) { hero_thread_guard("main.band"); int64_t 
     t16 = h2_row; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("main.hero", "main.band", 72, 15); h2_row = t18; goto bb1; bb3:
 #line 74
     t19 = h1_total; return t19;
-#line 209 "main.c"
+#line 210 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
+    hero_callback_entered("main.band", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_band(h0_index);
     return hero_result;
 }
@@ -230,7 +232,7 @@ int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i
     t30 = h4_i0; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("main.hero", "main.together", 86, 9); h4_i0 = t32; goto bb4; bb7:
 #line 89
     t33 = h2_total;
-#line 234 "main.c"
+#line 236 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -247,13 +249,13 @@ int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_row; HERO_NODEBUG int6
     t10 = h1_row; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.alone", 97, 15); h1_row = t12; goto bb1; bb3:
 #line 99
     t13 = h0_total; return t13;
-#line 251 "main.c"
+#line 253 "main.c"
 }
 
 #line 101 "examples/mandelbrot/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG int64_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_45927d37); t2 = h_main_COLS(); t3 = HERO_STR_LIT(hero_str_4639add); t4 = h_main_ROWS(); t5 = HERO_STR_LIT(hero_str_54040d35); t6 = h_main_together(); hero_print_str(t1); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
-#line 257 "main.c"
+#line 259 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -352,7 +354,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a441b8570aecd39", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("116146cc480b4c77", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

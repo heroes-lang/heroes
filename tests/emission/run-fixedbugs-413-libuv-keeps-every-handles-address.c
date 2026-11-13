@@ -203,6 +203,7 @@ void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void);
 void h_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg);
 void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugs413libuvkeepseveryhandlesaddress_seen) return (void (*)(void))h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen;
     return f;
 }
@@ -276,10 +277,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 28 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 void h_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) { hero_thread_guard("fixedbugs413libuvkeepseveryhandlesaddress.seen"); HERO_NODEBUG struct uv_handle_s *t1; HERO_NODEBUG void *t2, *t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-libuv-keeps-every-handles-address.hero", "fixedbugs-413-libuv-keeps-every-handles-address.seen", 29, 11}; hero_handle_alive_at(t1, "the argument `h` of `uv_handle_get_data`", &hero_here); t2 = (void *)uv_handle_get_data(t1); } t3 = h1_arg; t4 = t2 == t3; hero_print_bool(t4); hero_print_end(); return;
-#line 280 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 281 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
+    hero_callback_entered("fixedbugs413libuvkeepseveryhandlesaddress.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_h);
     h_fixedbugs413libuvkeepseveryhandlesaddress_seen(h0_h, h1_arg);
 }
@@ -287,7 +289,7 @@ void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h
 #line 31 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 int32_t h_fixedbugs413libuvkeepseveryhandlesaddress_start(void * h0_loop, struct uv_timer_s *ph1_t) { HERO_NODEBUG void *t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_loop; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-libuv-keeps-every-handles-address.hero", "fixedbugs-413-libuv-keeps-every-handles-address.start", 32, 12}; hero_lend_local_name(ph1_t, "uv_timer_init", "h"); hero_pad_fill(&(*ph1_t), sizeof(struct uv_timer_s), 1, hero_pad_g_0, hero_pad_n_0); t2 = uv_timer_init(t1, &(*ph1_t)); } return t2;
-#line 291 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 293 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -312,7 +314,7 @@ __attribute__((__noinline__)) void h_fixedbugs413libuvkeepseveryhandlesaddress_m
     t15 = INT64_C(0); t16 = h0_loop; hero_array_unshare(&(h2_ts)); (*((void)((h2_ts == NULL || t15 < 0 || t15 >= h2_ts->len) ? hero_panic_index_at(h2_ts, t15, "fixedbugs-413-libuv-keeps-every-handles-address.hero", "fixedbugs-413-libuv-keeps-every-handles-address.main", 42, 5) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t15)).data = t16;
     t17 = INT64_C(1); t18 = h0_loop; hero_array_unshare(&(h2_ts)); (*((void)((h2_ts == NULL || t17 < 0 || t17 >= h2_ts->len) ? hero_panic_index_at(h2_ts, t17, "fixedbugs-413-libuv-keeps-every-handles-address.hero", "fixedbugs-413-libuv-keeps-every-handles-address.main", 43, 5) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t17)).data = t18;
     t19 = h0_loop; t20 = h_fixedbugs413libuvkeepseveryhandlesaddress_seen; t21 = h0_loop; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-libuv-keeps-every-handles-address.hero", "fixedbugs-413-libuv-keeps-every-handles-address.main", 44, 5}; (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21); }
-#line 316 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 318 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_release_at(&h2_ts);
     hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);
@@ -441,7 +443,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0732f3445ae69000", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1e501e8a32430f3e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413libuvkeepseveryhandlesaddress\tfixedbugs-413-libuv-keeps-every-handles-address\n");

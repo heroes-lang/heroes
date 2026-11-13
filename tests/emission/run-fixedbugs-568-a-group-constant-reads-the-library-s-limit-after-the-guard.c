@@ -354,7 +354,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("16e7ccba1606a05a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e04f8006d631f97", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard\tfixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard\n");

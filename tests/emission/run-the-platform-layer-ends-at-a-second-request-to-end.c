@@ -211,6 +211,7 @@ void h_theplatformlayerendsatasecondrequesttoend_main(void);
 int64_t h_theplatformlayerendsatasecondrequesttoend_serve(int64_t h0_port);
 int64_t h_0cb_theplatformlayerendsatasecondrequesttoend_serve(int64_t h0_port);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_theplatformlayerendsatasecondrequesttoend_serve) return (void (*)(void))h_0cb_theplatformlayerendsatasecondrequesttoend_serve;
     return f;
 }
@@ -218,7 +219,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 13 "tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero"
 int64_t h_theplatformlayerendsatasecondrequesttoend_HERO_NET_STOPPED(void) {
-#line 222 "theplatformlayerendsatasecondrequesttoend.c"
+#line 223 "theplatformlayerendsatasecondrequesttoend.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
     _Static_assert(__builtin_constant_p(HERO_NET_STOPPED), "heroes-ffi-const HERO_NET_STOPPED");
 #pragma clang diagnostic push
@@ -230,7 +231,7 @@ int64_t h_theplatformlayerendsatasecondrequesttoend_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero"
     return HERO_NET_STOPPED;
-#line 234 "theplatformlayerendsatasecondrequesttoend.c"
+#line 235 "theplatformlayerendsatasecondrequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -248,7 +249,7 @@ int64_t h_theplatformlayerendsatasecondrequesttoend_HERO_NET_STOPPED(void) {
 
 #line 26 "tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero"
 int64_t h_theplatformlayerendsatasecondrequesttoend_STOP_REQUEST(void) {
-#line 252 "theplatformlayerendsatasecondrequesttoend.c"
+#line 253 "theplatformlayerendsatasecondrequesttoend.c"
     _Static_assert(HERO_RET_INT(STOP_REQUEST), "heroes-ffi-return STOP_REQUEST i64");
     _Static_assert(__builtin_constant_p(STOP_REQUEST), "heroes-ffi-const STOP_REQUEST");
 #pragma clang diagnostic push
@@ -260,7 +261,7 @@ int64_t h_theplatformlayerendsatasecondrequesttoend_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 26 "tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero"
     return STOP_REQUEST;
-#line 264 "theplatformlayerendsatasecondrequesttoend.c"
+#line 265 "theplatformlayerendsatasecondrequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -297,12 +298,13 @@ int64_t h_theplatformlayerendsatasecondrequesttoend_serve(int64_t h0_port) { her
     t17 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-ends-at-a-second-request-to-end.hero", "the-platform-layer-ends-at-a-second-request-to-end.serve", 48, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
     t19 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-ends-at-a-second-request-to-end.hero", "the-platform-layer-ends-at-a-second-request-to-end.serve", 49, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
     t21 = INT64_C(-1); h4_ret0 = t21; goto bb7; bb6: goto bb4; bb7:
-#line 301 "theplatformlayerendsatasecondrequesttoend.c"
+#line 302 "theplatformlayerendsatasecondrequesttoend.c"
     t25 = h4_ret0;
     return t25;
 }
 
 int64_t h_0cb_theplatformlayerendsatasecondrequesttoend_serve(int64_t h0_port) {
+    hero_callback_entered("theplatformlayerendsatasecondrequesttoend.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerendsatasecondrequesttoend_serve(h0_port);
     return hero_result;
 }
@@ -318,7 +320,7 @@ void h_theplatformlayerendsatasecondrequesttoend_main(void) { int64_t h0_worker;
     t27 = HERO_STR_LIT(hero_str_d2175ef); hero_print_str(t27); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-ends-at-a-second-request-to-end.hero", "the-platform-layer-ends-at-a-second-request-to-end.main", 62, 5}; (void)stop_flush(); }
     t28 = h_theplatformlayerendsatasecondrequesttoend_STOP_REQUEST(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-ends-at-a-second-request-to-end.hero", "the-platform-layer-ends-at-a-second-request-to-end.main", 63, 54}; t29 = stop_send_now(t28); } t30 = HERO_STR_LIT(hero_str_fd9d5ba); t31 = hero_int_to_str(t29); t41 = h10_own10; h10_own10 = t31; hero_str_decref(t41); t32 = hero_str_concat(t30, t31); t42 = h11_own11; h11_own11 = t32; hero_str_decref(t42); hero_print_str(t32); hero_print_end();
-#line 322 "theplatformlayerendsatasecondrequesttoend.c"
+#line 324 "theplatformlayerendsatasecondrequesttoend.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -439,7 +441,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3242cff001ef79dd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("495ffb36594bf91a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerendsatasecondrequesttoend\tthe-platform-layer-ends-at-a-second-request-to-end\n");

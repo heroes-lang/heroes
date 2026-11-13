@@ -276,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7609d0da2f866c59", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d26fc2106e2eb97", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2421aformatfunctioniscalledthroughadoorholdingitsliteralformat\tfixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format\n");

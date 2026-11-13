@@ -474,7 +474,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a4065ed726196a9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("315d913349be15e7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs245asliceacrosscarriesthenul\tfixedbugs-245-a-slice-across-carries-the-nul\n");

@@ -163,6 +163,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 164 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 #pragma clang diagnostic pop
 
+__attribute__((unused)) static struct fixedbugs_2286_held hero_value_fixedbugs_2286_held_make(int64_t a0) { return (fixedbugs_2286_held_make)(a0); }
+
 HERO_TU_LOCAL bool h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -191,6 +193,7 @@ void h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(
 __attribute__((unused)) struct fixedbugs_2286_held hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(int64_t h0_n);
 struct fixedbugs_2286_held h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(int64_t h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first) return (void (*)(void))h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first;
     if (f == (void (*)(void))hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make) return (void (*)(void))h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make;
     return f;
@@ -204,11 +207,12 @@ int64_t h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_fi
 #line 16
     hero_thread_guard("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.first"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h.first; t2 = INT64_C(100); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.hero", "fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.first", 17, 12); return t3;
-#line 208 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 211 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 }
 #undef h0_h
 
 int64_t h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(struct fixedbugs_2286_held h0_h) {
+    hero_callback_entered("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.first", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(h0_h);
     return hero_result;
 }
@@ -224,11 +228,12 @@ __attribute__((__noinline__)) void h_fixedbugs2286ccallsbackafunctiontakingandre
 #line 19
     hero_thread_guard("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.make"); HERO_NODEBUG int64_t t1, t2, t3; HERO_NODEBUG struct fixedbugs_2286_held *const hero_big_t4 = (struct fixedbugs_2286_held *)hero_frame_take(sizeof(struct fixedbugs_2286_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1000); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.hero", "fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record.make", 20, 24); t4 = *(struct fixedbugs_2286_held *)__builtin_memset(&t4, 0, sizeof t4); __builtin_memset(&t4, 0, sizeof t4); t4.first = t3; if (hero_out != NULL) *hero_out = t4; hero_frame_give(hero_big_t4); return;
-#line 228 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 232 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 }
 #undef t4
 
 struct fixedbugs_2286_held h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(int64_t h0_n) {
+    hero_callback_entered("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.make", __builtin_return_address(0), __builtin_frame_address(0));
     struct fixedbugs_2286_held hero_result = hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(h0_n);
     return hero_result;
 }
@@ -245,8 +250,8 @@ h_0fn_a161227 h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprec
 #line 25
     t5 = hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make; h1_ret0 = t5; goto bb4; bb2:
 #line 24
-    t4 = fixedbugs_2286_held_make; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 250 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+    t4 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t4), __typeof__(&fixedbugs_2286_held_make)), fixedbugs_2286_held_make, hero_value_fixedbugs_2286_held_make); h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+#line 255 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
     t6 = h1_ret0;
     return t6;
 }
@@ -270,7 +275,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286ccallsbackafunctiontakingandre
     t17 = h0_f; t18 = INT64_C(5); t19 = t17(t18); t20 = t19.first; hero_print_int(t20); hero_print_end();
     t21 = h1_g; t22 = INT64_C(6); t23 = t21(t22); t24 = t23.first; hero_print_int(t24); hero_print_end();
     t25 = h1_g; t26 = INT64_C(7); t27 = t25(t26); t28 = h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(&t27); hero_print_int(t28); hero_print_end(); hero_frame_give(hero_big_t27); hero_frame_give(hero_big_t23); hero_frame_give(hero_big_t19); return;
-#line 274 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
+#line 279 "fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.c"
 }
 #undef t19
 #undef t23
@@ -380,7 +385,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("10da9b1109dcd08f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("27f7c65761394fcc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord\tfixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record\n");

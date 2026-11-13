@@ -221,7 +221,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("72116051754d032a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("092e8b984ca98268", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2212anf32halfwaybetweentwospellingsprintstheevenone\tfixedbugs-2212-an-f32-halfway-between-two-spellings-prints-the-even-one\n");

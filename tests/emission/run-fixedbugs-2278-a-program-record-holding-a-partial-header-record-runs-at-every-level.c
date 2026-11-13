@@ -338,7 +338,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("656c96e87d6c0aa6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c89c22e54c889e4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel\tfixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level\n");

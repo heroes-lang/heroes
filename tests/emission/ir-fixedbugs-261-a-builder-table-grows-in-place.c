@@ -408,7 +408,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("04eaf1694fc0c178", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c081caf271d40b6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs261abuildertablegrowsinplace\tfixedbugs-261-a-builder-table-grows-in-place\n");

@@ -184,6 +184,7 @@ h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep)
 int64_t h_main_longest_word_count(int64_t h0_index);
 int64_t h_0cb_main_longest_word_count(int64_t h0_index);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_main_longest_word_count) return (void (*)(void))h_0cb_main_longest_word_count;
     return f;
 }
@@ -192,13 +193,13 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 29 "examples/wordbands/main.hero"
 int64_t h_main_BANDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(8); return t1;
-#line 196 "main.c"
+#line 197 "main.c"
 }
 
 #line 32 "examples/wordbands/main.hero"
 int64_t h_main_LINES(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(300); return t1;
-#line 202 "main.c"
+#line 203 "main.c"
 }
 
 #line 37 "examples/wordbands/main.hero"
@@ -215,7 +216,7 @@ HeroStr h_main_text_of(int64_t h0_index) { HeroArrayHeader * h1_pieces = {0}; in
     t16 = t14 == t15; if (t16) goto bb5; else goto bb6; bb3:
 #line 54
     t38 = h1_pieces; t39 = HERO_STR_LIT(hero_str_20); t40 = hero_str_join(t38, t39); t43 = h8_own8; h8_own8 = t40; hero_str_decref(t43);
-#line 219 "main.c"
+#line 220 "main.c"
     hero_str_incref(t40);
     hero_array_release_at(&h1_pieces);
     hero_str_release_at(&h5_r0);
@@ -261,7 +262,7 @@ bb4:
     t30 = HERO_STR_LIT(hero_str_45336354);
 #line 44
     t49 = h5_r0; hero_str_incref(t30); h5_r0 = t30; hero_str_decref(t49); goto bb4;
-#line 265 "main.c"
+#line 266 "main.c"
 }
 
 #line 58 "examples/wordbands/main.hero"
@@ -286,7 +287,7 @@ int64_t h_main_longest_word_count(int64_t h0_index) { hero_thread_guard("main.lo
     t60 = h10_i1; t61 = INT64_C(1); if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow_at("main.hero", "main.longest_word_count", 67, 9); h10_i1 = t62; goto bb8; bb11:
 #line 72
     t63 = h8_seen;
-#line 290 "main.c"
+#line 291 "main.c"
     hero_map_release_at(&h1_counts);
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_word);
@@ -309,10 +310,11 @@ bb13:
 #line 69 "examples/wordbands/main.hero"
     t48 = h11_key; t77 = h7_best; hero_str_incref(t48); h7_best = t48; hero_str_decref(t77);
     t49 = h1_counts; t50 = h11_key; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.longest_word_count", 70, 20}; HERO_NODEBUG const void *found = hero_map_find_at(t49, &t50, &hero_here); if (found == NULL) { t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t51 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t51.as.ok, found); } } t78 = h20_own20; h20_own20 = t51; h_0opt_e201354_release(&t78); t79 = h12_f1; h_0opt_e201354_retain(&t51); h12_f1 = t51; h_0opt_e201354_release(&t79); t52 = h12_f1; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb15; else goto bb16; bb14: goto bb12; bb15: t56 = h12_f1; t57 = t56.as.ok; h13_r1 = t57; goto bb17; bb16: t58 = INT64_C(0); h13_r1 = t58; goto bb17; bb17: t59 = h13_r1; h8_seen = t59; goto bb12;
-#line 313 "main.c"
+#line 314 "main.c"
 }
 
 int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
+    hero_callback_entered("main.longest_word_count", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_longest_word_count(h0_index);
     return hero_result;
 }
@@ -334,7 +336,7 @@ int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i
     t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.together", 86, 9); h4_i0 = t30; goto bb4; bb7:
 #line 89
     t31 = h2_total;
-#line 338 "main.c"
+#line 340 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -351,13 +353,13 @@ int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_i; HERO_NODEBUG int64_
     t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.alone", 97, 13); h1_i = t12; goto bb1; bb3:
 #line 99
     t13 = h0_total; return t13;
-#line 355 "main.c"
+#line 357 "main.c"
 }
 
 #line 101 "examples/wordbands/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_64ba1395); t2 = h_main_BANDS(); t3 = HERO_STR_LIT(hero_str_7f3b381d); t4 = h_main_together(); hero_print_str(t1); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); return;
-#line 361 "main.c"
+#line 363 "main.c"
 }
 
 #line 17 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
@@ -376,7 +378,7 @@ bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at;
     t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_prefix", 25, 14); h2_at = t22; goto bb4; bb8:
 #line 24
     t19 = false; h3_ret0 = t19; goto bb10; bb9: goto bb7; bb10:
-#line 380 "main.c"
+#line 382 "main.c"
     t24 = h3_ret0;
     return t24;
 }
@@ -398,7 +400,7 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
     t27 = h3_at; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_suffix", 39, 14); h3_at = t29; goto bb4; bb8:
 #line 38
     t26 = false; h4_ret0 = t26; goto bb10; bb9: goto bb7; bb10:
-#line 402 "main.c"
+#line 404 "main.c"
     t31 = h4_ret0;
     return t31;
 }
@@ -406,7 +408,7 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
 #line 44 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_substr; t3 = h_1corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
-#line 410 "main.c"
+#line 412 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t8;
@@ -431,14 +433,14 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_wi
     t23 = h4_width; t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb9:
 #line 69
     t29 = h0_s; t30 = h1_from; t31 = h3_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.trim_space", 69, 12}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t33 = h5_own5; h5_own5 = t32; hero_str_decref(t33);
-#line 435 "main.c"
+#line 437 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
 bb10:
 #line 67 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
     t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
-#line 442 "main.c"
+#line 444 "main.c"
 }
 
 #line 74 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
@@ -470,7 +472,7 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     t29 = true; h3_inside = t29; goto bb10; bb12: goto bb10; bb13:
 #line 96
     t41 = h1_out;
-#line 474 "main.c"
+#line 476 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -480,7 +482,7 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
 bb14:
 #line 95 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
     t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
-#line 484 "main.c"
+#line 486 "main.c"
 }
 
 #line 101 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
@@ -507,7 +509,7 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     t25 = h4_end; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strings.hero", "strings.split_lines", 111, 23); h4_end = t27; goto bb7; bb11: goto bb7; bb12:
 #line 118
     t51 = h1_out;
-#line 511 "main.c"
+#line 513 "main.c"
     hero_array_incref(t51);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -517,7 +519,7 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
 bb13:
 #line 117 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
     t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
-#line 521 "main.c"
+#line 523 "main.c"
 }
 
 #line 124 "examples/wordbands/heroes.packages/core@0.2.1-e8db5b383e666067/strings.hero"
@@ -528,7 +530,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     t25 = h4_before; t26 = h5_after; hero_str_incref(t25); hero_str_incref(t26); t27 = (h_1corestrings_Halves){.f_before = t25, .f_after = t26}; t36 = h10_own10; h10_own10 = t27; h_1corestrings_0Halves_release(&t36); h_1corestrings_0Halves_retain(&t27); t28 = (h_0opt_48a26f25){.tag = INT64_C(0), .as.ok = t27}; t37 = h11_own11; h11_own11 = t28; h_0opt_48a26f25_release(&t37); h6_ret0 = t28; goto bb3; bb2:
 #line 125
     t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_48a26f25){.tag = INT64_C(1), .as.err = t9}; t38 = h12_own12; h12_own12 = t10; h_0opt_48a26f25_release(&t38); h6_ret0 = t10; goto bb3; bb3:
-#line 532 "main.c"
+#line 534 "main.c"
     t29 = h6_ret0;
     h_0opt_48a26f25_retain(&t29);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -589,7 +591,7 @@ int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) {
 #line 42
     t111 = h7_second; t112 = UINT64_C(128); t113 = t111 == t112; h19_b14 = t113; goto bb50; bb50: t114 = h19_b14; h18_b13 = t114; if (t114) goto bb51; else goto bb52; bb51: t115 = h8_third; t116 = UINT64_C(128); t117 = t115 == t116; h18_b13 = t117; goto bb52; bb52: t118 = h18_b13; if (t118) goto bb53; else goto bb54; bb53:
     t119 = INT64_C(3); h20_ret0 = t119; goto bb55; bb54: goto bb48; bb55:
-#line 593 "main.c"
+#line 595 "main.c"
     t121 = h20_ret0;
     return t121;
 }
@@ -605,7 +607,7 @@ int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_e
 #line 50
     t18 = h0_s; t19 = h1_end; t20 = h4_width; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 50); t22 = h_1corestringsinternalscan_space_width_at(t18, t21); t23 = h4_width; t24 = t22 == t23; h5_b0 = t24; goto bb7; bb7: t25 = h5_b0; if (t25) goto bb8; else goto bb9; bb8:
     t26 = h4_width; h6_ret0 = t26; goto bb10; bb9: goto bb5; bb10:
-#line 609 "main.c"
+#line 611 "main.c"
     t31 = h6_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h7_own7);
@@ -636,7 +638,7 @@ h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep)
     t54 = HERO_STR_LIT(hero_str_59e06249); t55 = h1_sep; t56 = h0_s; t57 = HERO_STR_LIT(hero_str_eda7a03); t58 = HERO_STR_LIT(hero_str_277784c0); t59 = HERO_STR_LIT(hero_str_22); t60 = hero_str_concat(t57, t55); t67 = h8_own8; h8_own8 = t60; hero_str_decref(t67); t61 = hero_str_concat(t60, t58); t68 = h9_own9; h9_own9 = t61; hero_str_decref(t68); t62 = hero_str_concat(t61, t56); t69 = h10_own10; h10_own10 = t62; hero_str_decref(t69); t63 = hero_str_concat(t62, t59); t70 = h11_own11; h11_own11 = t63; hero_str_decref(t70); hero_str_incref(t54); hero_str_incref(t63); t64 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t63}}; t71 = h12_own12; h12_own12 = t64; h_0opt_e201354_release(&t71); h6_ret0 = t64; goto bb15; bb13:
 #line 72
     t41 = HERO_STR_LIT(hero_str_59e06249); t42 = h1_sep; t43 = h0_s; t44 = hero_str_len(t43); t45 = HERO_STR_LIT(hero_str_eda7a03); t46 = HERO_STR_LIT(hero_str_2cee3aa3); t47 = hero_int_to_str(t44); t72 = h13_own13; h13_own13 = t47; hero_str_decref(t72); t48 = HERO_STR_LIT(hero_str_391e7e27); t49 = hero_str_concat(t45, t42); t73 = h14_own14; h14_own14 = t49; hero_str_decref(t73); t50 = hero_str_concat(t49, t46); t74 = h15_own15; h15_own15 = t50; hero_str_decref(t74); t51 = hero_str_concat(t50, t47); t75 = h16_own16; h16_own16 = t51; hero_str_decref(t75); t52 = hero_str_concat(t51, t48); t76 = h17_own17; h17_own17 = t52; hero_str_decref(t76); hero_str_incref(t41); hero_str_incref(t52); t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t41, .msg = t52}}; t77 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t77); h6_ret0 = t53; goto bb15; bb14: goto bb12; bb15:
-#line 640 "main.c"
+#line 642 "main.c"
     t65 = h6_ret0;
     h_0opt_e201354_retain(&t65);
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -806,7 +808,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f5b3588114ecc9b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("467860ce68ab4bd8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1corestrings\tstrings\n1corestringsinternalscan\tscan\n");

@@ -304,7 +304,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("11669c53606f1fa6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2883c79937cb9ee4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs275afailuremessagekeepsitslastletter\tfixedbugs-275-a-failure-message-keeps-its-last-letter\n");

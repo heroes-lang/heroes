@@ -156,6 +156,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 
 static inline __typeof__(t1) *hero_bound_t1(void) { return &t1; }
 
+__attribute__((unused)) static int64_t hero_value_t1(int64_t a0) { return ((*hero_bound_t1()))(a0); }
+
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -175,13 +177,13 @@ void h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_main(void);
 #line 13 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value.hero"
 int64_t h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_apply(h_0fn_48ac9712 h0_g, int64_t h1_x) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g; t2 = h1_x; t3 = t1(t2); return t3;
-#line 179 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
+#line 181 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value.hero"
 void h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_main(void) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*hero_bound_t1()); t2 = INT64_C(41); t3 = h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_apply(t1, t2); hero_print_int(t3); hero_print_end(); return;
-#line 185 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
+    t1 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t1), __typeof__(&(*hero_bound_t1()))), (*hero_bound_t1()), hero_value_t1); t2 = INT64_C(41); t3 = h_fixedbugs2389aboundcfunctionnamedasatemporaryisavalue_apply(t1, t2); hero_print_int(t3); hero_print_end(); return;
+#line 187 "fixedbugs2389aboundcfunctionnamedasatemporaryisavalue.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -280,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("348da4393d294a88", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4baacf7f1485c9c6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2389aboundcfunctionnamedasatemporaryisavalue\tfixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value\n");

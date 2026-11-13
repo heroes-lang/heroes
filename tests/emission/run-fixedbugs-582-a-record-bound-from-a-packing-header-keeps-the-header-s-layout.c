@@ -459,7 +459,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("503bf08b2411f709", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("67591bd17b6e7646", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout\tfixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout\nfixedbugs582pair\tpair\n");

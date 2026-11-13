@@ -171,6 +171,7 @@ void h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscaller
 int64_t h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n);
 int64_t h_0cb_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker) return (void (*)(void))h_0cb_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker;
     return f;
 }
@@ -197,7 +198,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286apartialrecordreturnedonaspawn
 #line 15
     HERO_NODEBUG int64_t t1; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 201 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 202 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 }
 #undef t2
 __attribute__((unused)) struct heroes_held hero_value_h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_make(int64_t h0_n) {
@@ -216,12 +217,13 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2286apartialrecordreturnedonasp
     hero_thread_guard("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.worker"); struct heroes_held *const hero_big_h1_h = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_make(&t2, t1); h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct heroes_held), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 220 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 221 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 }
 #undef h1_h
 #undef t2
 
 int64_t h_0cb_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n) {
+    hero_callback_entered("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(h0_n);
     return hero_result;
 }
@@ -231,7 +233,7 @@ void h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscaller
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     t2 = h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker; t3 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero", "fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.main", 24, 9}; t4 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } h0_t = t4;
     t5 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero", "fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.main", 25, 11}; t6 = hero_thread_join(t5); } hero_print_int(t6); hero_print_end(); return;
-#line 235 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
+#line 237 "fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_0Held_eq: a partial record has no structural equality");
@@ -338,7 +340,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3eb9ef925788e0b3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55d71ad82ee55ff1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom\tfixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room\n");

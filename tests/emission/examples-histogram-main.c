@@ -120,6 +120,7 @@ void h_main_main(void);
 int64_t h_main_count_of(int64_t h0_digit);
 int64_t h_0cb_main_count_of(int64_t h0_digit);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_main_count_of) return (void (*)(void))h_0cb_main_count_of;
     return f;
 }
@@ -128,13 +129,13 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 22 "examples/histogram/main.hero"
 int64_t h_main_NUMBERS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(20000); return t1;
-#line 132 "main.c"
+#line 133 "main.c"
 }
 
 #line 26 "examples/histogram/main.hero"
 int64_t h_main_value_at(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h0_n; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.value_at", 27, 12); t4 = INT64_C(99991); if (t4 == 0) hero_panic_at("division by zero", "main.hero", "main.value_at", 27, 12); if (t3 == INT64_MIN && t4 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.value_at", 27, 12); t5 = t3 % t4; return t5;
-#line 138 "main.c"
+#line 139 "main.c"
 }
 
 #line 30 "examples/histogram/main.hero"
@@ -160,10 +161,11 @@ int64_t h_main_count_of(int64_t h0_digit) { hero_thread_guard("main.count_of"); 
     t29 = h3_v; t30 = INT64_C(10); if (t30 == 0) hero_panic_at("division by zero", "main.hero", "main.count_of", 43, 17); if (t29 == INT64_MIN && t30 == INT64_C(-1)) hero_panic_overflow_at("main.hero", "main.count_of", 43, 17); t31 = t29 / t30; h3_v = t31; goto bb9; bb13:
 #line 42
     t26 = h1_seen; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("main.hero", "main.count_of", 42, 24); h1_seen = t28; goto bb12; bb14: goto bb12;
-#line 164 "main.c"
+#line 165 "main.c"
 }
 
 int64_t h_0cb_main_count_of(int64_t h0_digit) {
+    hero_callback_entered("main.count_of", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_count_of(h0_digit);
     return hero_result;
 }
@@ -185,7 +187,7 @@ HeroArrayHeader * h_main_counts(void) { HeroArrayHeader * h0_handles = {0}; int6
     t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.counts", 59, 9); h4_i0 = t30; goto bb4; bb7:
 #line 62
     t31 = h2_out;
-#line 189 "main.c"
+#line 191 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h2_out);
@@ -203,7 +205,7 @@ void h_main_main(void) { HeroArrayHeader * h0_found = {0}; int64_t h1_d; HERO_NO
     t3 = h1_d; t4 = INT64_C(10); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t6 = HERO_STR_LIT(hero_str_b63ac2); t7 = h1_d; t8 = HERO_STR_LIT(hero_str_1dce); t9 = h0_found; t10 = h1_d; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.main", 69, 34) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); hero_print_str(t6); hero_print_int(t7); hero_print_str(t8); hero_print_int(t11); hero_print_end();
     t12 = h1_d; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("main.hero", "main.main", 70, 13); h1_d = t14; goto bb1; bb3:
-#line 207 "main.c"
+#line 209 "main.c"
     hero_array_release_at(&h0_found);
     hero_array_release_at(&h2_own2);
     return;
@@ -305,7 +307,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("247543d669041e03", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b926f1c40609d41", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

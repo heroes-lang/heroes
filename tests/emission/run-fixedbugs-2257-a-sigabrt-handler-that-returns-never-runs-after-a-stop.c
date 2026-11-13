@@ -25,6 +25,7 @@
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
+#include <fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.h>
 #include <signal.h>
 #include "heroes_guard_close.h"
 #pragma clang diagnostic ignored "-Wignored-pragmas"
@@ -79,6 +80,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
+_Static_assert(HERO_RET_UNIT(return_on_abort((int32_t)0)), "heroes-ffi-return return_on_abort ()");
 _Static_assert(HERO_RET_PTR(signal((int32_t)0, (void *)0)), "heroes-ffi-return signal ptr");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
@@ -98,8 +100,6 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-HERO_STR_STATIC(hero_str_29b2b840, "Heroes code ran inside the stop, signal ");
-HERO_STR_STATIC(hero_str_7850a23, "the handler returns");
 HERO_STR_STATIC(hero_str_2a70b79f, "about to read past the end");
 HERO_STR_STATIC(hero_str_19cafbb3, "never reached");
 HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
@@ -152,7 +152,9 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 12 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
+#line 15 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_return_on_abort(int32_t a0) { (void)(return_on_abort)(a0); }
+#line 19
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_signal(int32_t a0, h_0fn_71885b7d a1) { (void)(signal)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
@@ -163,8 +165,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 169 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
 #pragma clang diagnostic pop
+
+__attribute__((unused)) static void hero_value_return_on_abort(int32_t a0) { (return_on_abort)(a0); }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
@@ -180,24 +184,21 @@ HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e2013
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int32_t h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_SIGABRT(void);
-void h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort(int32_t h0_sig);
 void h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_main(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
-void h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort(int32_t h0_sig);
-void h_0cb_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort(int32_t h0_sig);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
-    if (f == (void (*)(void))h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort) return (void (*)(void))h_0cb_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort;
+    hero_signal_learn();
     return f;
 }
 
 
-#line 11 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
+#line 18 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
 int32_t h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_SIGABRT(void) {
-#line 201 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 202 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
     _Static_assert(HERO_RET_I32(SIGABRT), "heroes-ffi-return SIGABRT i32");
     _Static_assert(__builtin_constant_p(SIGABRT), "heroes-ffi-const SIGABRT");
 #pragma clang diagnostic push
@@ -207,9 +208,9 @@ int32_t h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_SIGABRT(voi
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 11 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
+#line 18 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
     return SIGABRT;
-#line 213 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 214 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -225,25 +226,14 @@ int32_t h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_SIGABRT(voi
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 14 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
-void h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort(int32_t h0_sig) { hero_thread_guard("fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.on_abort"); HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_29b2b840); t2 = h0_sig; hero_print_str(t1); hero_print_int(t2); hero_print_end();
-    t3 = HERO_STR_LIT(hero_str_7850a23); hero_print_str(t3); hero_print_end(); return;
-#line 233 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
-}
-
-void h_0cb_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort(int32_t h0_sig) {
-    h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort(h0_sig);
-}
-
-#line 18 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
+#line 21 "tests/golden/run/fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero"
 void h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t6, *t8, *t9, *t15, *t16, *t17; HERO_NODEBUG int32_t t1; HERO_NODEBUG h_0fn_634dc79f t2; HERO_NODEBUG int64_t t4, t5, t10, t11, t12, t13; HERO_NODEBUG HeroStr t7, t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_SIGABRT(); t2 = h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_on_abort; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 19, 9}; (void)signal(t1, (h_0fn_71885b7d)hero_callback_of((void (*)(void))t2)); }
+    t1 = h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_SIGABRT(); t2 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t2), __typeof__(&return_on_abort)), return_on_abort, hero_value_return_on_abort); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 22, 9}; (void)signal(t1, (h_0fn_71885b7d)hero_callback_of((void (*)(void))t2)); }
     t4 = INT64_C(1); t5 = INT64_C(2); t6 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t6, &t4); hero_array_push_owned(&t6, &t5); t15 = h1_own1; h1_own1 = t6; hero_array_decref(t15); t16 = h0_xs; hero_array_incref(t6); h0_xs = t6; hero_array_decref(t16);
     t7 = HERO_STR_LIT(hero_str_2a70b79f); hero_print_str(t7); hero_print_end();
-    t8 = h0_xs; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 22, 18}; t9 = h_library_args(&hero_here); } t17 = h2_own2; h2_own2 = t9; hero_array_decref(t17); t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(4); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 22, 14); t13 = ((void)((t8 == NULL || t12 < 0 || t12 >= t8->len) ? hero_panic_index_at(t8, t12, "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 22, 11) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t12]); hero_print_int(t13); hero_print_end();
+    t8 = h0_xs; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 25, 18}; t9 = h_library_args(&hero_here); } t17 = h2_own2; h2_own2 = t9; hero_array_decref(t17); t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(4); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 25, 14); t13 = ((void)((t8 == NULL || t12 < 0 || t12 >= t8->len) ? hero_panic_index_at(t8, t12, "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero", "fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.main", 25, 11) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t12]); hero_print_int(t13); hero_print_end();
     t14 = HERO_STR_LIT(hero_str_19cafbb3); hero_print_str(t14); hero_print_end();
-#line 247 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 237 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -252,7 +242,7 @@ void h_fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop_main(void) { H
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 256 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 246 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
 }
 
 #line 152 "<heroes library>"
@@ -272,7 +262,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 276 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 266 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -298,7 +288,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 302 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 292 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -323,13 +313,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 327 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 317 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 333 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
+#line 323 "fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -434,7 +424,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2669942f21cbed7d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c6306ae60c373b7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop\tfixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop\n");

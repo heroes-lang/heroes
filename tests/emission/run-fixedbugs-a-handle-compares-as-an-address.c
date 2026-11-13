@@ -414,7 +414,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("71af370774b60e34", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08cc624e4c128d72", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsahandlecomparesasanaddress\tfixedbugs-a-handle-compares-as-an-address\n");

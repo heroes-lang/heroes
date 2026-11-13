@@ -500,7 +500,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6734653f4ef2725e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e519085264ef19c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs245astrmadewithoutitsnulislent\tfixedbugs-245-a-str-made-without-its-nul-is-lent\n");

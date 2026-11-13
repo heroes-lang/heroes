@@ -563,7 +563,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a134c453a239602", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3130778b11801540", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatypeparameteronlyintheresult\tfixedbugs-a-type-parameter-only-in-the-result\n");

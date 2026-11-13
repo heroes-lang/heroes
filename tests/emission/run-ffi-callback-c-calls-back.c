@@ -176,6 +176,7 @@ void h_fficallbackccallsback_main(void);
 void h_fficallbackccallsback_bye(void);
 void h_0cb_fficallbackccallsback_bye(void);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fficallbackccallsback_bye) return (void (*)(void))h_0cb_fficallbackccallsback_bye;
     return f;
 }
@@ -184,10 +185,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_bye(void) { hero_thread_guard("fficallbackccallsback.bye"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_19e7c2); hero_print_str(t1); hero_print_end(); return;
-#line 188 "fficallbackccallsback.c"
+#line 189 "fficallbackccallsback.c"
 }
 
 void h_0cb_fficallbackccallsback_bye(void) {
+    hero_callback_entered("fficallbackccallsback.bye", __builtin_return_address(0), __builtin_frame_address(0));
     h_fficallbackccallsback_bye();
 }
 
@@ -197,7 +199,7 @@ void h_fficallbackccallsback_main(void) { HERO_NODEBUG HeroStr t1, t6; HERO_NODE
 #line 32
     t2 = h_fficallbackccallsback_bye; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-callback-c-calls-back.hero", "ffi-callback-c-calls-back.main", 32, 8}; t3 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t2)); } t4 = INT64_C(0); t5 = t3 != t4; if (t5) goto bb2; else goto bb3; bb1: return; bb2:
     t6 = HERO_STR_LIT(hero_str_7bcd5f24); hero_print_str(t6); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 201 "fficallbackccallsback.c"
+#line 203 "fficallbackccallsback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -296,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("54793da46ccf81b1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b9668ea442c00ef", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficallbackccallsback\tffi-callback-c-calls-back\n");

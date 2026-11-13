@@ -318,7 +318,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("10f885703d796640", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2815b0b614d5e57e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396alocallentthroughawrapperaborts\tfixedbugs-396-a-local-lent-through-a-wrapper-aborts\n");

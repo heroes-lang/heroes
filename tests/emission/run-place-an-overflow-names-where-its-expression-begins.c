@@ -217,7 +217,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("25a7b234149e78f2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3cc4dd7a6bfaf82f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanoverflownameswhereitsexpressionbegins\tplace-an-overflow-names-where-its-expression-begins\n");

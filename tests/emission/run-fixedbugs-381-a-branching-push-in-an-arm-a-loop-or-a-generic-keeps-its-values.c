@@ -604,7 +604,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("676a55d7006ba80b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e87811d57c82748", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues\tfixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values\n");

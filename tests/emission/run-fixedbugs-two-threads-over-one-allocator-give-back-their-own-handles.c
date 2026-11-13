@@ -186,6 +186,7 @@ void h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_main(void);
 int64_t h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot);
 int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker) return (void (*)(void))h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker;
     return f;
 }
@@ -203,10 +204,11 @@ int64_t h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int6
     t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.worker", 36, 13); h2_i = t14; goto bb1; bb3:
 #line 38
     t15 = h1_total; t16 = h0_slot; if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.worker", 38, 12); return t17;
-#line 207 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 208 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
 
 int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot) {
+    hero_callback_entered("fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(h0_slot);
     return hero_result;
 }
@@ -217,7 +219,7 @@ void h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_main(void) { i
     t4 = h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker; t5 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.main", 42, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
     t7 = HERO_STR_LIT(hero_str_31c3); t8 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.main", 43, 17}; t9 = hero_thread_join(t8); } hero_print_str(t7); hero_print_int(t9); hero_print_end();
     t10 = HERO_STR_LIT(hero_str_3246); t11 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero", "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.main", 44, 17}; t12 = hero_thread_join(t11); } hero_print_str(t10); hero_print_int(t12); hero_print_end(); return;
-#line 221 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 223 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_0S_eq(sn * const *a, sn * const *b) {
     return hero_handle_eq(*a, *b);
@@ -327,7 +329,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("605a61824afe71af", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77778cc8225af0ed", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles\tfixedbugs-two-threads-over-one-allocator-give-back-their-own-handles\n");

@@ -331,7 +331,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("32c0f93d77f96e76", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("49de24834f55edb4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2291arefusedclosenobodyrepeatsisowedatexit\tfixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit\n");

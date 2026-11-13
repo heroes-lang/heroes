@@ -381,7 +381,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f8865bd5eff14ce", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36a59103365b940c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2364athirdmoduleshandlekeepsitsheaderafterthereorderedones\tfixedbugs-2364-a-third-module-s-handle-keeps-its-header-after-the-reordered-ones\nfixedbugs2364defineswide\tdefines_wide\nfixedbugs2364hd\thd\nfixedbugs2364rs\trs\n");

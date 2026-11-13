@@ -179,6 +179,7 @@ void h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(s
 __attribute__((unused)) struct fixedbugs_2286_small hero_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(int64_t h0_n);
 struct fixedbugs_2286_small h_0cb_ro_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(int64_t h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))hero_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make) return (void (*)(void))h_0cb_ro_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make;
     return f;
 }
@@ -191,11 +192,12 @@ __attribute__((__noinline__)) void h_fixedbugs2286thethunkofaconvertedfunctionis
 #line 15
     hero_thread_guard("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.make"); HERO_NODEBUG int64_t t1; HERO_NODEBUG struct fixedbugs_2286_small *const hero_big_t2 = (struct fixedbugs_2286_small *)hero_frame_take(sizeof(struct fixedbugs_2286_small)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2286_small *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 195 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
+#line 196 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
 }
 #undef t2
 
 struct fixedbugs_2286_small h_0cb_ro_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(int64_t h0_n) {
+    hero_callback_entered("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.make", __builtin_return_address(0), __builtin_frame_address(0));
     struct fixedbugs_2286_small hero_result = hero_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(h0_n);
     return hero_result;
 }
@@ -209,7 +211,7 @@ __attribute__((unused)) struct fixedbugs_2286_small hero_value_h_fixedbugs2286th
 #line 18 "tests/golden/emit/fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.hero"
 void h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_main(void) { HERO_NODEBUG h_0fn_42b7cb7f t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make; t2 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.hero", "fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.main", 19, 11}; t3 = fixedbugs_2286_apply((h_0fn_42b7cb7f)hero_callback_of((void (*)(void))t1), t2); } hero_print_int(t3); hero_print_end(); return;
-#line 213 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
+#line 215 "fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_0Small_eq(const struct fixedbugs_2286_small *a, const struct fixedbugs_2286_small *b) {
     hero_panic("h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_0Small_eq: a partial record has no structural equality");
@@ -316,7 +318,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("10182245737dfd4e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("27354d8b4ada7c8c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue\tfixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value\n");

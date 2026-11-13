@@ -412,7 +412,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66d6f5c8664eb4e7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7df4210e3dab3425", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582apackpushinaheaderthegroupsheaderincludes\tfixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes\nfixedbugs582pair\tpair\n");

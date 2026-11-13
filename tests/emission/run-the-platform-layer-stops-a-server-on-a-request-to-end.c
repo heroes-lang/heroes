@@ -214,6 +214,7 @@ void h_theplatformlayerstopsaserveronarequesttoend_main(void);
 int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port);
 int64_t h_0cb_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_theplatformlayerstopsaserveronarequesttoend_serve) return (void (*)(void))h_0cb_theplatformlayerstopsaserveronarequesttoend_serve;
     return f;
 }
@@ -221,7 +222,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 13 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
 int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void) {
-#line 225 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 226 "theplatformlayerstopsaserveronarequesttoend.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
     _Static_assert(__builtin_constant_p(HERO_NET_STOPPED), "heroes-ffi-const HERO_NET_STOPPED");
 #pragma clang diagnostic push
@@ -233,7 +234,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
     return HERO_NET_STOPPED;
-#line 237 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 238 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -251,7 +252,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void) {
 
 #line 27 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
 int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void) {
-#line 255 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 256 "theplatformlayerstopsaserveronarequesttoend.c"
     _Static_assert(HERO_RET_INT(STOP_INTERRUPT), "heroes-ffi-return STOP_INTERRUPT i64");
     _Static_assert(__builtin_constant_p(STOP_INTERRUPT), "heroes-ffi-const STOP_INTERRUPT");
 #pragma clang diagnostic push
@@ -263,7 +264,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 27 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
     return STOP_INTERRUPT;
-#line 267 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 268 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -281,7 +282,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void) {
 
 #line 28 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
 int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(void) {
-#line 285 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 286 "theplatformlayerstopsaserveronarequesttoend.c"
     _Static_assert(HERO_RET_INT(STOP_REQUEST), "heroes-ffi-return STOP_REQUEST i64");
     _Static_assert(__builtin_constant_p(STOP_REQUEST), "heroes-ffi-const STOP_REQUEST");
 #pragma clang diagnostic push
@@ -293,7 +294,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 28 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
     return STOP_REQUEST;
-#line 297 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 298 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -330,12 +331,13 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port) { h
     t17 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 49, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
     t19 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 50, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
     t21 = INT64_C(-1); h4_ret0 = t21; goto bb7; bb6: goto bb4; bb7:
-#line 334 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 335 "theplatformlayerstopsaserveronarequesttoend.c"
     t25 = h4_ret0;
     return t25;
 }
 
 int64_t h_0cb_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port) {
+    hero_callback_entered("theplatformlayerstopsaserveronarequesttoend.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerstopsaserveronarequesttoend_serve(h0_port);
     return hero_result;
 }
@@ -352,7 +354,7 @@ void h_theplatformlayerstopsaserveronarequesttoend_main(void) { int64_t h0_worke
     t30 = h1_kind; t31 = h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(); t32 = t30 == t31; t33 = HERO_STR_LIT(hero_str_37366225); t34 = hero_bool_to_str(t32); t51 = h12_own12; h12_own12 = t34; hero_str_decref(t51); t35 = hero_str_concat(t33, t34); t52 = h13_own13; h13_own13 = t35; hero_str_decref(t52); hero_print_str(t35); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 64, 32}; t36 = hero_net_stop_asked(); } t37 = HERO_STR_LIT(hero_str_24f6e4c); t38 = hero_int_to_str(t36); t53 = h14_own14; h14_own14 = t38; hero_str_decref(t53); t39 = hero_str_concat(t37, t38); t54 = h15_own15; h15_own15 = t39; hero_str_decref(t54); hero_print_str(t39); hero_print_end();
     t40 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t40); hero_print_end();
-#line 356 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 358 "theplatformlayerstopsaserveronarequesttoend.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -477,7 +479,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7025783a28bc0ba6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0742a38100188ae4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerstopsaserveronarequesttoend\tthe-platform-layer-stops-a-server-on-a-request-to-end\n");

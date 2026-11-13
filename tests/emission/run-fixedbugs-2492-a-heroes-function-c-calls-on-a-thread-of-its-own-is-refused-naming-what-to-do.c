@@ -175,6 +175,7 @@ void h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattod
 int64_t h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(int64_t h0_n);
 int64_t h_0cb_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(int64_t h0_n);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker) return (void (*)(void))h_0cb_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker;
     return f;
 }
@@ -184,10 +185,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 int64_t h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(int64_t h0_n) { hero_thread_guard("fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.worker"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5de6536f); t2 = h0_n; hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = h0_n; return t3;
-#line 188 "fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.c"
+#line 189 "fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.c"
 }
 
 int64_t h_0cb_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(int64_t h0_n) {
+    hero_callback_entered("fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(h0_n);
     return hero_result;
 }
@@ -196,7 +198,7 @@ int64_t h_0cb_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednaming
 void h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7dfe032b); hero_print_str(t1); hero_print_end();
     t2 = h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2492-a-heroes-function-c-calls-on-a-thread-of-its-own-is-refused-naming-what-to-do.hero", "fixedbugs-2492-a-heroes-function-c-calls-on-a-thread-of-its-own-is-refused-naming-what-to-do.main", 21, 11}; t3 = foreign_call((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2)); } hero_print_int(t3); hero_print_end(); return;
-#line 200 "fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.c"
+#line 202 "fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -295,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bb8549b1a03a163", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("32d57fe1716020a0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo\tfixedbugs-2492-a-heroes-function-c-calls-on-a-thread-of-its-own-is-refused-naming-what-to-do\n");

@@ -209,6 +209,7 @@ void h_theplatformlayerstopsaserveronaninterrupt_main(void);
 int64_t h_theplatformlayerstopsaserveronaninterrupt_serve(int64_t h0_port);
 int64_t h_0cb_theplatformlayerstopsaserveronaninterrupt_serve(int64_t h0_port);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     if (f == (void (*)(void))h_theplatformlayerstopsaserveronaninterrupt_serve) return (void (*)(void))h_0cb_theplatformlayerstopsaserveronaninterrupt_serve;
     return f;
 }
@@ -216,7 +217,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 15 "tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero"
 int64_t h_theplatformlayerstopsaserveronaninterrupt_HERO_NET_STOPPED(void) {
-#line 220 "theplatformlayerstopsaserveronaninterrupt.c"
+#line 221 "theplatformlayerstopsaserveronaninterrupt.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
     _Static_assert(__builtin_constant_p(HERO_NET_STOPPED), "heroes-ffi-const HERO_NET_STOPPED");
 #pragma clang diagnostic push
@@ -228,7 +229,7 @@ int64_t h_theplatformlayerstopsaserveronaninterrupt_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero"
     return HERO_NET_STOPPED;
-#line 232 "theplatformlayerstopsaserveronaninterrupt.c"
+#line 233 "theplatformlayerstopsaserveronaninterrupt.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -246,7 +247,7 @@ int64_t h_theplatformlayerstopsaserveronaninterrupt_HERO_NET_STOPPED(void) {
 
 #line 29 "tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero"
 int64_t h_theplatformlayerstopsaserveronaninterrupt_STOP_INTERRUPT(void) {
-#line 250 "theplatformlayerstopsaserveronaninterrupt.c"
+#line 251 "theplatformlayerstopsaserveronaninterrupt.c"
     _Static_assert(HERO_RET_INT(STOP_INTERRUPT), "heroes-ffi-return STOP_INTERRUPT i64");
     _Static_assert(__builtin_constant_p(STOP_INTERRUPT), "heroes-ffi-const STOP_INTERRUPT");
 #pragma clang diagnostic push
@@ -258,7 +259,7 @@ int64_t h_theplatformlayerstopsaserveronaninterrupt_STOP_INTERRUPT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 29 "tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero"
     return STOP_INTERRUPT;
-#line 262 "theplatformlayerstopsaserveronaninterrupt.c"
+#line 263 "theplatformlayerstopsaserveronaninterrupt.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -295,12 +296,13 @@ int64_t h_theplatformlayerstopsaserveronaninterrupt_serve(int64_t h0_port) { her
     t17 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-an-interrupt.hero", "the-platform-layer-stops-a-server-on-an-interrupt.serve", 49, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
     t19 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-an-interrupt.hero", "the-platform-layer-stops-a-server-on-an-interrupt.serve", 50, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
     t21 = INT64_C(-1); h4_ret0 = t21; goto bb7; bb6: goto bb4; bb7:
-#line 299 "theplatformlayerstopsaserveronaninterrupt.c"
+#line 300 "theplatformlayerstopsaserveronaninterrupt.c"
     t25 = h4_ret0;
     return t25;
 }
 
 int64_t h_0cb_theplatformlayerstopsaserveronaninterrupt_serve(int64_t h0_port) {
+    hero_callback_entered("theplatformlayerstopsaserveronaninterrupt.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerstopsaserveronaninterrupt_serve(h0_port);
     return hero_result;
 }
@@ -315,7 +317,7 @@ void h_theplatformlayerstopsaserveronaninterrupt_main(void) { int64_t h0_worker;
     t21 = h1_kind; t22 = h_theplatformlayerstopsaserveronaninterrupt_HERO_NET_STOPPED(); t23 = t21 == t22; t24 = HERO_STR_LIT(hero_str_37366225); t25 = hero_bool_to_str(t23); t38 = h8_own8; h8_own8 = t25; hero_str_decref(t38); t26 = hero_str_concat(t24, t25); t39 = h9_own9; h9_own9 = t26; hero_str_decref(t39); hero_print_str(t26); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-an-interrupt.hero", "the-platform-layer-stops-a-server-on-an-interrupt.main", 62, 32}; t27 = hero_net_stop_asked(); } t28 = HERO_STR_LIT(hero_str_24f6e4c); t29 = hero_int_to_str(t27); t40 = h10_own10; h10_own10 = t29; hero_str_decref(t40); t30 = hero_str_concat(t28, t29); t41 = h11_own11; h11_own11 = t30; hero_str_decref(t41); hero_print_str(t30); hero_print_end();
     t31 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t31); hero_print_end();
-#line 319 "theplatformlayerstopsaserveronaninterrupt.c"
+#line 321 "theplatformlayerstopsaserveronaninterrupt.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -436,7 +438,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("31183c2a4d482516", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4835677024a4a454", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerstopsaserveronaninterrupt\tthe-platform-layer-stops-a-server-on-an-interrupt\n");

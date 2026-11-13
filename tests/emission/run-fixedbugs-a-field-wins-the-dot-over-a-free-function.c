@@ -302,7 +302,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bd9065a6ca5ede2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("02f631a144026d20", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafieldwinsthedotoverafreefunction\tfixedbugs-a-field-wins-the-dot-over-a-free-function\n");

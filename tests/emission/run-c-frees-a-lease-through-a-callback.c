@@ -158,6 +158,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 159 "cfreesaleasethroughacallback.c"
 #pragma clang diagnostic pop
 
+__attribute__((unused)) static void hero_value_eat(const char * a0) { (eat)(a0); }
+
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -173,6 +175,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_cfreesaleasethroughacallback_main(void);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    hero_signal_learn();
     return f;
 }
 
@@ -182,9 +185,9 @@ void h_cfreesaleasethroughacallback_main(void) { HeroStr h0_x = {0}; const char 
     t1 = HERO_STR_LIT(hero_str_35d9fe9b); t7 = h0_x; hero_str_incref(t1); h0_x = t1; hero_str_decref(t7);
     t2 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-through-a-callback.hero", "c-frees-a-lease-through-a-callback.main", 14, 16}; t3 = hero_str_held_at(t2, &hero_here); } h1_c = t3;
     t4 = INT64_C(2); hero_print_int(t4); hero_print_end();
-    t5 = h1_c; t6 = eat; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-through-a-callback.hero", "c-frees-a-lease-through-a-callback.main", 16, 5}; (void)take_cb(hero_cstr_nonnull_at(t5, &hero_here), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6)); }
+    t5 = h1_c; t6 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t6), __typeof__(&eat)), eat, hero_value_eat); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-through-a-callback.hero", "c-frees-a-lease-through-a-callback.main", 16, 5}; (void)take_cb(hero_cstr_nonnull_at(t5, &hero_here), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6)); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-through-a-callback.hero", "c-frees-a-lease-through-a-callback.main", 17, 5}; hero_held_release_at(&h1_c, &hero_here); }
-#line 188 "cfreesaleasethroughacallback.c"
+#line 191 "cfreesaleasethroughacallback.c"
     hero_str_release_at(&h0_x);
     return;
 }
@@ -285,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("154b8b787cb90d1a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c68b6be54158c58", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("cfreesaleasethroughacallback\tc-frees-a-lease-through-a-callback\n");

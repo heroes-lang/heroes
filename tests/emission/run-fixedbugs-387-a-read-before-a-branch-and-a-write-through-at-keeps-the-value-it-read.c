@@ -371,7 +371,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2773359f4d421b01", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e9060e5249e9a3f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread\tfixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read\n");

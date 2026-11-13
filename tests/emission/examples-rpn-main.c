@@ -1115,7 +1115,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("281a91b515eeaa54", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f37bcfb6d4b2991", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1corestrconv\tstrconv\n1corestrings\tstrings\n1corestrconvinternalshown\tshown\n1corestringsinternalscan\tscan\n");
