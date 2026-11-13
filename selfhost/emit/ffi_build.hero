@@ -184,20 +184,23 @@ function undefined_symbol(line: str) -> str?
 
         if opened.is_err()
             return fail(code: "none", msg: "no quoted symbol")
-        letters: [str] @= []
+        quoted = up_to(text: opened.must(), one: '"', other: '"')
 
-        for ch in opened.must().chars()
-            if ch == "\""
-                break
-            letters @ letters.push(ch)
-
-        quoted = letters.join("")
-        cs = quoted.chars()
-
-        if cs.len() > 0 && cs[0] == "_"
+        if quoted.len() > 0 && quoted[0] == '_'
             return ok(quoted.slice(from: 1, to: quoted.len()))
         return ok(quoted)
     return fail(code: "none", msg: "not an undefined-symbol line")
+
+# `text` up to its first byte that is `one` or `other`, or whole; both are
+# below 128, so the one cut falls between characters (defect 2508: these
+# loops built a string per character of every line a linker said).
+function up_to(text: str, one: u8, other: u8) -> str
+    end: i64 @= 0
+
+    while end < text.len() && text[end] != one && text[end] != other
+        end @ end + 1
+
+    return text.slice(from: 0, to: end)
 
 # What lld-link writes before the name of a function a header imports.
 constant IMPORTED: str
@@ -229,21 +232,13 @@ function windows_symbol(line: str) -> str?
         if msvc.is_err()
             return fail(code: "none", msg: "not a Windows linker's undefined symbol")
         rest @ msvc.must()
-    letters: [str] @= []
-
-    for ch in rest.chars()
-        if ch == " " || ch == "\r"
-            break
-        letters @ letters.push(ch)
-
-    symbol = letters.join("")
-    imported = ffi_lookup.after(text: symbol, marker: "__imp_")
+    symbol = up_to(text: rest, one: ' ', other: '\r')
 
     if symbol.len() == 0
         return fail(code: "none", msg: "no symbol after the linker's words")
 
-    if !imported.is_err() && symbol.len() > 6 && bytes.bytes_at(text: symbol, at: 0, needle: "__imp_")
-        return imported
+    if symbol.len() > 6 && bytes.bytes_at(text: symbol, at: 0, needle: "__imp_")
+        return ok(symbol.slice(from: 6, to: symbol.len()))
     return ok(symbol)
 
 # A header the preprocessor could not find, named by an extern group
@@ -378,6 +373,17 @@ test "the linker's two spellings, the library, the header, the package"
 
     # lld-link 23's import, written as C declares it (beside defect 2398).
     assert undefined_symbol("lld-link: error: undefined symbol: __declspec(dllimport) imp2398_value\r").must() == "imp2398_value"
+
+    # Defect 2508: each spelling cut at its bytes answers as its letters did,
+    # above ASCII, at an import with no name after it and at an empty quote.
+    assert undefined_symbol("lld-link: error: undefined symbol: café\r").must() == "café"
+    assert undefined_symbol("x.o : error LNK2019: unresolved external symbol __imp_naïve referenced in function f").must() == "naïve"
+    assert undefined_symbol("x.o : error LNK2001: unresolved external symbol __imp_").must() == "__imp_"
+    assert undefined_symbol("lld-link: error: undefined symbol: ").is_err()
+    assert undefined_symbol("  \"_naïve\", referenced from:").must() == "naïve"
+    assert undefined_symbol("  \"\", referenced from:").must() == ""
+    assert undefined_symbol("  \"_x, referenced from:").must() == "x, referenced from:"
+    assert undefined_symbol("p.c:(.text+0x5): undefined reference to `é'").must() == "é"
     assert missing_link(s, parsed.decls, line: "lld-link: error: undefined symbol: __declspec(dllimport) sqrt").must().message == d.must().message
 
     # The library, in both linker spellings, lands on the quoted name.
