@@ -1,0 +1,115 @@
+# An edit inside a placed tree, named file by file (defect 2493; panel 246's
+# R2, ratified 2026-11-12): a tree under `heroes.packages/` is a folder of
+# the program anything can edit, and an edit there is the author's work,
+# never discarded in silence. Where a verb would place a package's tree over
+# one that no longer sums to its entry's `sum`, the run is refused and
+# nothing is placed (`fetch/staging.hero`); this says which files changed, by
+# comparing the tree as it stands with the tree the verb fetched and held to
+# that sum, line by line of their listings (`module/fingerprint.hero`): the
+# one comparison that names them, where a sum alone cannot say which file
+# moved it.
+#
+# Until then a `heroes fetch` that ended replaced such a tree with the
+# catalogue's and dropped the edit at exit 0, and a refused one put it back,
+# so only the run that succeeded discarded the author's work.
+
+use cli/process
+use module/fingerprint
+
+# How many files a refusal names before it counts the rest: a tree whose
+# every line end a checkout rewrote changes in each file, and a line naming
+# three thousand of them is read by nobody.
+constant NAMED: i64
+    10
+
+# What happened to each file of the tree at `placed`, against the tree at
+# `fetched` the entry's `sum` names, in the order of their names:
+# "`a.hero` changed", "`b.hero` added", "`c.hero` taken out"; or why the tree
+# at `placed` cannot be read whole, which is a change too.
+function differences(placed: str, fetched: str) -> [str]
+    now = fingerprint.listed_lines(placed)
+
+    if now.is_err()
+        return [said(now)]
+    was = fingerprint.listed_lines(fetched)
+
+    if was.is_err()
+        return [said(was)]
+    sums: {str: str} @= {}
+
+    for line in was.must()
+        sums[fingerprint.name_of(line)] @ line.slice(from: 0, to: fingerprint.NAME_AT)
+
+    standing: {str: bool} @= {}
+    out: [str] @= []
+
+    for line in now.must()
+        name = fingerprint.name_of(line)
+        standing[name] @ true
+
+        match sums[name]
+            .err _ => out @ out.push("`" + name + "` added")
+            .ok sum =>
+                if sum != line.slice(from: 0, to: fingerprint.NAME_AT)
+                    out @ out.push("`" + name + "` changed")
+
+    for line in was.must()
+        name = fingerprint.name_of(line)
+
+        if standing[name].is_err()
+            out @ out.push("`" + name + "` taken out")
+
+    return sort(out)
+
+# The refusal of a run that would place `what` (`"`json` 1.4.2 from the index
+# ..."`) at `at`, where a tree stands that `changes`, `differences`' answer,
+# tell apart from it.
+function refusal(at: str, what: str, changes: [str]) -> str
+    return what + " is placed at `" + at + "`, and that tree was changed since it was placed: " + listed(changes) + "; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+
+# The changes in one phrase, the first `NAMED` of them and how many more.
+function listed(changes: [str]) -> str
+    if changes.len() == 0
+        return "its files sum to another tree"
+
+    if changes.len() <= NAMED
+        if changes.len() == 1
+            return changes[0]
+        return changes.slice(from: 0, to: changes.len() - 1).join(", ") + " and " + changes[changes.len() - 1]
+    return changes.slice(from: 0, to: NAMED).join(", ") + " and " + (changes.len() - NAMED).to_str() + " more"
+
+function said(failed: [str]?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-fetch-edited"
+
+test "a placed tree is told against the fetched one file by file: changed, added and taken out (defect 2493)"
+    assert !process.remove_tree(SCRATCH).is_err()
+
+    for side in ["placed", "fetched"]
+        assert !process.mkdir_all(SCRATCH + "/" + side + "/sub").is_err()
+        assert !write_file(path: SCRATCH + "/" + side + "/same.hero", text: "same\n").is_err()
+
+    assert !write_file(path: SCRATCH + "/fetched/a.hero", text: "one\n").is_err()
+    assert !write_file(path: SCRATCH + "/placed/a.hero", text: "one\n# the author edited this\n").is_err()
+    assert !write_file(path: SCRATCH + "/placed/sub/new.hero", text: "mine\n").is_err()
+    assert !write_file(path: SCRATCH + "/fetched/gone.hero", text: "gone\n").is_err()
+    got = differences(placed: SCRATCH + "/placed", fetched: SCRATCH + "/fetched")
+    assert got == ["`a.hero` changed", "`gone.hero` taken out", "`sub/new.hero` added"]
+    assert listed(got) == "`a.hero` changed, `gone.hero` taken out and `sub/new.hero` added"
+    assert refusal(at: "heroes.packages/j@1-k", what: "`j` 1", changes: ["`a.hero` changed"]) == "`j` 1 is placed at `heroes.packages/j@1-k`, and that tree was changed since it was placed: `a.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+
+    # The same trees name nothing; past ten, the rest are counted.
+    assert differences(placed: SCRATCH + "/fetched", fetched: SCRATCH + "/fetched").len() == 0
+    many: [str] @= []
+
+    for n in range(from: 0, to: 12)
+        many @ many.push("`m" + n.to_str() + "` added")
+
+    assert listed(many) == "`m0` added, `m1` added, `m2` added, `m3` added, `m4` added, `m5` added, `m6` added, `m7` added, `m8` added, `m9` added and 2 more"
+    assert !process.remove_tree(SCRATCH).is_err()

@@ -1,0 +1,3 @@
+function load() -> i64
+    return 3
+# the author edited this

@@ -1,0 +1,8 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2453-a-killed-adds-tree-is-taken-away-by-the-next-fetch.case/idx"
+heroes.packages:
+(none)

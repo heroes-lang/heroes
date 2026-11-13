@@ -1,0 +1,22 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[sum_mismatch]: `strings` 1.0.0 from the index `file://../../../../../tests/golden/fetch/fixedbugs-2493-a-fetch-over-an-edited-placed-tree-is-refused-and-keeps-it.case/idx` is placed at `<work>/app/heroes.packages/strings@1.0.0-c61d0e6235fdcbe2`, and that tree was changed since it was placed: `cut.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[package_unread]: `<strings>` cannot be read: the tree placed at `<work>/app/heroes.packages/strings@1.0.0-c61d0e6235fdcbe2/` is `sha256-52a8cf1dcff8e833bb7bf8498bc89c3189dd140894b075bc2e1b84efe146775e`, and the catalogue's `sum` for it is `sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again
+  at <work>/app/main.hero:1:5
+    |
+  1 | use <strings>/cut
+    |     ^^^^^^^^^^^^^
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2493-a-fetch-over-an-edited-placed-tree-is-refused-and-keeps-it.case/idx"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06"
+heroes.packages:
+strings@1.0.0-c61d0e6235fdcbe2
