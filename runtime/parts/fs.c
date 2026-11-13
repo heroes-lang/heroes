@@ -42,46 +42,91 @@
  * sets it where it fails; `parts/os.c` defines it and says why it exists. */
 
 #if defined(_WIN32)
-/* A path's attributes, asked WIDE (parts/codepage.c), and so are the removal
- * below and the two questions it asks: `hero_dir_remove_tree` hands them the
- * names its listing carried back, and a name holding a surrogate standing
- * alone is not UTF-8 there, so a narrow door read it as another and answered
- * *not there* for a file that was (panel 191's R2). Every UTF-8 name is the
- * narrow door's own answer under the code page this runtime carries.
- * INVALID_FILE_ATTRIBUTES where nothing is there or the bytes name nothing. */
-static DWORD hero_fs_attributes(const char *path) {
-    wchar_t *wide = hero_win_wide(path, NULL);
-    if (wide == NULL) return INVALID_FILE_ATTRIBUTES;
-    DWORD attrs = GetFileAttributesW(wide);
-    hero_release(wide);
-    return attrs;
-}
-#endif
-
-#if defined(_WIN32)
-/* Is `path` a symbolic link or a junction (a reparse point that NAMES another
+/* Is `wide` a symbolic link or a junction (a reparse point that NAMES another
  * file) rather than a file some filter keeps a reparse point on, as a cloud
  * placeholder is? `FindFirstFileW` reports the tag in `dwReserved0`. */
-static int hero_fs_is_surrogate(const char *path) {
-    /* Wide, as the directory walk is (parts/codepage.c): a name whose UTF-8
-     * passes 260 bytes failed the narrow call and read as no link at all. */
-    wchar_t *wide = hero_win_wide(path, NULL);
-    if (wide == NULL) return 0;
+static int hero_fs_wide_surrogate(const wchar_t *wide) {
     WIN32_FIND_DATAW found;
     HANDLE h = FindFirstFileW(wide, &found);
-    hero_release(wide);
     if (h == INVALID_HANDLE_VALUE) return 0;
     FindClose(h);
     return (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
            IsReparseTagNameSurrogate(found.dwReserved0);
 }
+
+/* The same question of a UTF-8 path. Wide, as the directory walk is
+ * (parts/codepage.c): a name whose UTF-8 passes 260 bytes failed the narrow
+ * call and read as no link at all. */
+static int hero_fs_is_surrogate(const char *path) {
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return 0;
+    int surrogate = hero_fs_wide_surrogate(wide);
+    hero_release(wide);
+    return surrogate;
+}
+
+/* The attributes of what `path` NAMES, every link on the way and at its end
+ * followed, as POSIX's `stat` reads them: the question `test -e` and `test
+ * -d` ask below. INVALID_FILE_ATTRIBUTES where nothing is there, where the
+ * bytes name nothing, and where a link names nothing.
+ *
+ * `GetFileAttributesW` alone is not that question (defect 2491): it answers
+ * a symbolic link's or a junction's OWN attributes, as Microsoft's *Symbolic
+ * Link Effects on File Systems Functions* documents (`hero_fs_wide_writable`
+ * below cites it), so a link to nothing was there, a directory's link whose
+ * directory had gone was still a directory, and a file's link to a directory
+ * was none, where POSIX answers no, no and yes; the box measured the first
+ * through `library_held.taken` (defect 2487). The parts of a path before its
+ * last are followed by the walk that reads the path, on both platforms, so
+ * only a last part that is a link asks more: it is opened as `hero_fs_kind`
+ * (parts/replace.c) opens one, for no access at all, which asks nothing of
+ * the file's own permissions, and with FILE_FLAG_BACKUP_SEMANTICS, which
+ * follows every link and junction to the end of its chain and opens a
+ * directory as well as a file; the handle's attributes are that end's.
+ *
+ * A link that open cannot follow names nothing this machine can open (one to
+ * nothing, a loop of links, one of a kind no driver here reads), and answers
+ * as POSIX's `stat` answers a link it cannot follow: not there. A device at
+ * the end of a chain is there and is no directory, FILE_ATTRIBUTE_NORMAL
+ * saying both. A reparse point that names no other file, a cloud placeholder
+ * or an App Execution Alias, IS the file, as `hero_fs_wide_surrogate` holds
+ * for a removal (defect 345), and answers with its own attributes, never
+ * through an open its filter could refuse.
+ *
+ * Wide (parts/codepage.c): `hero_dir_remove_tree` hands these questions the
+ * names its listing carried back, and a name holding a surrogate standing
+ * alone is not UTF-8 there, so a narrow door read it as another and answered
+ * *not there* for a file that was (panel 191's R2). Every UTF-8 name is the
+ * narrow door's own answer under the code page this runtime carries. */
+static DWORD hero_fs_named_attributes(const char *path) {
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return INVALID_FILE_ATTRIBUTES;
+    DWORD attrs = GetFileAttributesW(wide);
+    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+        hero_fs_wide_surrogate(wide)) {
+        HANDLE h = CreateFileW(wide, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        attrs = INVALID_FILE_ATTRIBUTES;
+        if (h != INVALID_HANDLE_VALUE) {
+            BY_HANDLE_FILE_INFORMATION info;
+            if (GetFileType(h) != FILE_TYPE_DISK) {
+                attrs = FILE_ATTRIBUTE_NORMAL;
+            } else if (GetFileInformationByHandle(h, &info)) {
+                attrs = info.dwFileAttributes;
+            }
+            CloseHandle(h);
+        }
+    }
+    hero_release(wide);
+    return attrs;
+}
 #endif
 
-/* Is there a directory at this path? The question `test -d` asked, and the one
- * `mkdir`'s errno cannot answer. */
+/* Is there a directory at this path, a link followed to what it names? The
+ * question `test -d` asked, and the one `mkdir`'s errno cannot answer. */
 int64_t hero_fs_is_directory(const char *path) {
 #if defined(_WIN32)
-    DWORD attrs = hero_fs_attributes(path);
+    DWORD attrs = hero_fs_named_attributes(path);
     if (attrs == INVALID_FILE_ATTRIBUTES) return 0;
     return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0 ? 1 : 0;
 #else
@@ -91,10 +136,11 @@ int64_t hero_fs_is_directory(const char *path) {
 #endif
 }
 
-/* Is there anything at all at this path? `test -e`. */
+/* Is there anything at all at this path, a link followed to what it names?
+ * `test -e`: a link to nothing is not there. */
 int64_t hero_fs_exists(const char *path) {
 #if defined(_WIN32)
-    return hero_fs_attributes(path) != INVALID_FILE_ATTRIBUTES ? 1 : 0;
+    return hero_fs_named_attributes(path) != INVALID_FILE_ATTRIBUTES ? 1 : 0;
 #else
     struct stat info;
     return stat(path, &info) == 0 ? 1 : 0;
@@ -198,7 +244,9 @@ int64_t hero_fs_newer_than(const char *path, const char *reference) {
  * `hero_fs_wide_writable` below says how, and why it matters. */
 #if defined(_WIN32)
 /* Is there a directory at this wide path, and anything at all: `hero_fs_remove`'s
- * two questions, asked of the name it was handed once widened. */
+ * two questions, asked of the name it was handed once widened. They ask the
+ * NAME, a link itself and never what it names, as a removal removes the link
+ * (defect 345): the opposite of `hero_fs_named_attributes` above, on purpose. */
 static int hero_fs_wide_is_directory(const wchar_t *wide) {
     DWORD attrs = GetFileAttributesW(wide);
     return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -303,8 +351,8 @@ static int64_t hero_fs_remove_wide(const wchar_t *wide) {
 int64_t hero_fs_remove(const char *path) {
     hero_fs_why_code = 0;
 #if defined(_WIN32)
-    /* Wide, as `hero_fs_attributes` above says why. Bytes that name nothing
-     * are a refusal, never the *not there* that is success here. */
+    /* Wide, as `hero_fs_named_attributes` above says why. Bytes that name
+     * nothing are a refusal, never the *not there* that is success here. */
     wchar_t *wide = hero_win_wide(path, NULL);
     if (wide == NULL) {
         hero_fs_why_code = -(int64_t)ERROR_NO_UNICODE_TRANSLATION;

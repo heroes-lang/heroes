@@ -1,0 +1,8 @@
+# A module of defect 2495's macro case (2026-11-13): it binds the macro's
+# name through the header alone.
+
+extern "fixedbugs-2495-alias.h"
+    function top2495_m() -> i32  #~ ffi_missing_link
+
+function b() -> i32
+    return top2495_m()

@@ -1,0 +1,19 @@
+# fixedbugs, defect 2495, lane b34-fsl, 2026-11-13.
+#
+# SYMPTOM: the macro's shape beside the object's: `fixedbugs-2495-alias.h`
+# makes the bound `top2495_m` a macro for `base2495_m`, which nothing on
+# the link line defines, bound here in a header list that holds `stdlib.h`
+# too and in `fixedbugs2495/alias_b` alone. The link was `internal error:
+# linking failed` at exit 2.
+#
+# FIX: as the object's case, each list told at its own binding.
+use fixedbugs2495/alias_b
+
+extern "stdlib.h"
+    function abs(n: i32) -> i32
+
+extern "fixedbugs-2495-alias.h"
+    function top2495_m() -> i32  #~ ffi_missing_link
+
+function main()
+    print(top2495_m() + alias_b.b() + abs(n: -1))
