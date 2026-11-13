@@ -231,7 +231,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 20
+    assert windows().len() == 21
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -244,6 +244,10 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # The stop's second request to end, whose end Windows' own handler
     # answers in a status of its own (panel 246's R4).
     assert shell.exists("tests/golden/run/" + windows()[19].name + ".hero")
+
+    # Defect 2511's case over POSIX's signal sets, which the Windows target's
+    # C library does not hold.
+    assert shell.exists("tests/golden/run/" + windows()[20].name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
