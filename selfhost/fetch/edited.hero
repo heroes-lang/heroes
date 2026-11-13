@@ -15,6 +15,7 @@
 
 use cli/process
 use module/fingerprint
+use module/standing
 
 # How many files a refusal names before it counts the rest: a tree whose
 # every line end a checkout rewrote changes in each file, and a line naming
@@ -40,12 +41,12 @@ function differences(placed: str, fetched: str) -> [str]
     for line in was.must()
         sums[fingerprint.name_of(line)] @ line.slice(from: 0, to: fingerprint.NAME_AT)
 
-    standing: {str: bool} @= {}
+    present: {str: bool} @= {}
     out: [str] @= []
 
     for line in now.must()
         name = fingerprint.name_of(line)
-        standing[name] @ true
+        present[name] @ true
 
         match sums[name]
             .err _ => out @ out.push("`" + name + "` added")
@@ -56,16 +57,24 @@ function differences(placed: str, fetched: str) -> [str]
     for line in was.must()
         name = fingerprint.name_of(line)
 
-        if standing[name].is_err()
+        if present[name].is_err()
             out @ out.push("`" + name + "` taken out")
 
     return sort(out)
 
 # The refusal of a run that would place `what` (`"`json` 1.4.2 from the index
-# ..."`) at `at`, where a tree stands that `changes`, `differences`' answer,
-# tell apart from it.
-function refusal(at: str, what: str, changes: [str]) -> str
-    return what + " is placed at `" + at + "`, and that tree was changed since it was placed: " + listed(changes) + "; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+# ..."`) at `at`, where `stands`: a folder that `changes`, `differences`'
+# answer, tell apart from it, in the words of an edit; else a link or a file
+# told as what it is (defect 2506, `module/standing.hero`), the folder a link
+# names, where it names one, told apart by `changes` too. Both end in the one
+# advice a build gives for them (`module/packages.hero`).
+function refusal(at: str, what: str, stands: standing.Standing, changes: [str]) -> str
+    if stands == .tree
+        return what + " is placed at `" + at + "`, and that tree was changed since it was placed: " + listed(changes) + "; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+
+    if stands == .linked_tree
+        return what + " would be placed at `" + at + "`, where a link to a folder stands, and that folder is not the tree: " + listed(changes) + "; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
+    return what + " would be placed at `" + at + "`, where " + standing.said(stands) + " stands; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
 
 # The changes in one phrase, the first `NAMED` of them and how many more.
 function listed(changes: [str]) -> str
@@ -102,7 +111,11 @@ test "a placed tree is told against the fetched one file by file: changed, added
     got = differences(placed: SCRATCH + "/placed", fetched: SCRATCH + "/fetched")
     assert got == ["`a.hero` changed", "`gone.hero` taken out", "`sub/new.hero` added"]
     assert listed(got) == "`a.hero` changed, `gone.hero` taken out and `sub/new.hero` added"
-    assert refusal(at: "heroes.packages/j@1-k", what: "`j` 1", changes: ["`a.hero` changed"]) == "`j` 1 is placed at `heroes.packages/j@1-k`, and that tree was changed since it was placed: `a.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+    assert refusal(at: "heroes.packages/j@1-k", what: "`j` 1", stands: .tree, changes: ["`a.hero` changed"]) == "`j` 1 is placed at `heroes.packages/j@1-k`, and that tree was changed since it was placed: `a.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again"
+
+    # Defect 2506: a link or a file at the key is told as what it is.
+    assert refusal(at: "heroes.packages/j@1-k", what: "`j` 1", stands: .dangling, changes: []) == "`j` 1 would be placed at `heroes.packages/j@1-k`, where a link to nothing stands; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
+    assert refusal(at: "heroes.packages/j@1-k", what: "`j` 1", stands: .linked_tree, changes: ["`a.hero` changed"]) == "`j` 1 would be placed at `heroes.packages/j@1-k`, where a link to a folder stands, and that folder is not the tree: `a.hero` changed; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
 
     # The same trees name nothing; past ten, the rest are counted.
     assert differences(placed: SCRATCH + "/fetched", fetched: SCRATCH + "/fetched").len() == 0

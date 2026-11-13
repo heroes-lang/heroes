@@ -43,6 +43,7 @@ use cli/strings
 use fetch/edited
 use fetch/run_lock
 use module/fingerprint
+use module/standing
 
 constant PLACED: str
     "heroes.packages"
@@ -138,13 +139,20 @@ function placed(@ledger: Ledger, @s: Staging, key: str, sum: str, what: str) -> 
         )
     at = ledger.program + PLACED + "/" + key
 
-    if files.entry(at) != .absent
-        if fingerprint.of(at).default("") == sum
+    # What stands at the key is asked of its own name (defect 2506,
+    # `module/standing.hero`), as a build asks it, so the two say one thing.
+    stands = standing.at(at)
+
+    if stands != .nothing
+        if standing.read_through(stands) && fingerprint.of(at).default("") == sum
             dropped(@s)
             return ok(at)
-        told = edited.differences(placed: at, fetched: s.tree)
+        told: [str] @= []
+
+        if standing.read_through(stands)
+            told @ edited.differences(placed: at, fetched: s.tree)
         dropped(@s)
-        return fail(code: "sum_mismatch", msg: edited.refusal(at: at, what: what, changes: told))
+        return fail(code: "sum_mismatch", msg: edited.refusal(at: at, what: what, stands: stands, changes: told))
 
     # The ledger on disk names the tree before it moves, so a run killed
     # after the rename is undone by the next (`fetch/leftover.hero`).

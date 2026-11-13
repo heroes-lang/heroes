@@ -1,0 +1,12 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[sum_mismatch]: `strings` 1.0.0 from the index `file://../../../../../tests/golden/fetch/fixedbugs-2506-a-fetch-over-a-link-to-nothing-at-the-key-is-refused-and-keeps-it.case/idx` would be placed at `<work>/app/heroes.packages/strings@1.0.0-58d7d5b7b894eb33`, where a link to nothing stands; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2506-a-fetch-over-a-link-to-nothing-at-the-key-is-refused-and-keeps-it.case/idx"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06"
+heroes.packages:

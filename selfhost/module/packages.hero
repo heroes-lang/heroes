@@ -27,7 +27,9 @@
 # there, and nothing compiles in its place (W4). A `path` entry is read where
 # it names, a folder of the author's own, and told as unverified (R6).
 
+use cli/files
 use cli/process
+use cli/strings
 use fetch/leftover
 use module/catalogue
 use module/fingerprint
@@ -35,6 +37,7 @@ use module/path_entries
 use module/placed
 use module/placed_beside
 use module/reached
+use module/standing
 use module/unplaced
 
 constant PLACED: str
@@ -164,22 +167,14 @@ function rooted(b: Book, e: catalogue.Entry) -> reached.Package
 # placed, not matching its fingerprint (R7), its own catalogue not reading,
 # or naming a package the program's catalogue does not hold (R3).
 function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue.Entry) -> str
-    if !process.is_directory(path: package.opened)
-        if package.unverified
+    if package.unverified
+        if !process.is_directory(path: package.opened)
             return "the folder `" + package.root + "` its `path` names is not there"
-        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`" + placed_beside.fetch_from(e, index: b.program.index)
+    else
+        placed_wrong = placed_said(package, e: e, index: b.program.index)
 
-    # The tree is a folder of the program anything can edit, so it is held to
-    # its fingerprint at every build that reads it (R7): a tree changed since
-    # it was placed compiles nothing.
-    if !package.unverified
-        tree = fingerprint.of(package.opened)
-
-        if tree.is_err()
-            return "the tree placed at `" + package.root + "` cannot be read whole: " + failure_of(tree) + " — remove it, and `heroes fetch` places it again"
-
-        if tree.must() != e.sum
-            return changed_said(package, e: e, now: tree.must())
+        if placed_wrong.len() > 0
+            return placed_wrong
     own = catalogue.read(opened: package.opened, named: package.root)
 
     if own.problem.len() > 0
@@ -194,6 +189,40 @@ function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue
         code @ path_entries.CODE
         return local
     return mapped(@b, alias: e.name, own: own, root: package.opened)
+
+# What stands at a placed tree's key that is not the entry's tree, "" where
+# the tree stands at its sum: asked of the name at the key itself, as `heroes
+# fetch` asks it (defect 2506, `module/standing.hero`), so the advice names a
+# command that does what it says. A link to nothing, a link to a file, a file
+# or a name of no such kind is told as what it is: `heroes fetch` places
+# nothing over it. The tree is a folder of the program anything can edit, so
+# it is held to its fingerprint at every build that reads it (R7): a tree
+# changed since it was placed compiles nothing.
+function placed_said(package: reached.Package, e: catalogue.Entry, index: str) -> str
+    stands = standing.at(standing.unslashed(package.opened))
+    place = standing.unslashed(package.root)
+
+    if stands == .nothing
+        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`" + placed_beside.fetch_from(e, index: index)
+
+    if !standing.read_through(stands)
+        return standing.said(stands) + " stands at `" + place + "`, where the package's tree is placed, and `heroes fetch` places nothing over it — " + STANDING_ADVICE
+    tree = fingerprint.of(package.opened)
+
+    if tree.is_err()
+        return "the tree placed at `" + package.root + "` cannot be read whole: " + failure_of(tree) + " — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again"
+
+    if tree.must() == e.sum
+        return ""
+
+    if stands == .linked_tree
+        return "a link to a folder stands at `" + place + "`, where the package's tree is placed, and that folder is `" + tree.must() + "`, where the catalogue's `sum` for the tree is `" + e.sum + "`, and `heroes fetch` places nothing over it — " + STANDING_ADVICE
+    return changed_said(package, e: e, now: tree.must())
+
+# What to do with a name that stands where a package's tree is placed and is
+# not that tree, in `heroes fetch`'s own words (`fetch/edited.hero`).
+constant STANDING_ADVICE: str
+    "move it out of `heroes.packages/` to keep it, or remove it, and `heroes fetch` places the tree"
 
 # What a placed tree that no longer sums to its entry's `sum`, now `now`, is
 # told: the files added since it was placed, where the sum proves them
@@ -309,3 +338,39 @@ test "a package's module is read through its entry, from its placed tree or its 
     assert !file_of(@f, "<mine>/text").is_err()
     assert f.aliases.len() == 1 && f.aliases[0].written == "json" && f.aliases[0].meant == "json"
     assert !write_file(path: dir + "local/heroes.toml", text: "").is_err()
+
+# Defect 2506: what stands at a placed tree's key is told as what it is, in
+# `heroes fetch`'s advice, never as a tree not placed that `heroes fetch`
+# places; a link is told where this machine makes one.
+test "a file or a link at a placed tree's key is told as what it is, in fetch's advice (defect 2506)"
+    dir = "build/selftest-packages-2506/"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "heroes.packages").is_err()
+    e = catalogue.Entry(
+        name: "json",
+        version: "1.4.2",
+        git: "",
+        tag: "",
+        commit: "",
+        path: "",
+        sum: "sha256-" + "0".repeat(64.to_u64().must())
+    )
+    package = reached.Package(
+        alias: "json",
+        root: "heroes.packages/json@1.4.2-k/",
+        opened: dir + "heroes.packages/json@1.4.2-k/",
+        problem: "",
+        code: "",
+        unverified: false
+    )
+    assert strings.starts_with(
+        text: placed_said(package, e: e, index: ""),
+        prefix: "the package `json` is in the catalogue and not placed: `heroes fetch` places it at `heroes.packages/json@1.4.2-k/`"
+    )
+    assert !write_file(path: dir + "heroes.packages/json@1.4.2-k", text: "a file\n").is_err()
+    assert placed_said(package, e: e, index: "") == "a file stands at `heroes.packages/json@1.4.2-k`, where the package's tree is placed, and `heroes fetch` places nothing over it — move it out of `heroes.packages/` to keep it, or remove it, and `heroes fetch` places the tree"
+    assert !process.remove_file(dir + "heroes.packages/json@1.4.2-k").is_err()
+
+    if !files.symbolic_link(target: "nowhere", name: dir + "heroes.packages/json@1.4.2-k").is_err()
+        assert placed_said(package, e: e, index: "") == "a link to nothing stands at `heroes.packages/json@1.4.2-k`, where the package's tree is placed, and `heroes fetch` places nothing over it — move it out of `heroes.packages/` to keep it, or remove it, and `heroes fetch` places the tree"
+    assert !process.remove_tree(dir).is_err()
