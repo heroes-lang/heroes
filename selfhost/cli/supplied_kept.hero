@@ -27,6 +27,7 @@
 use cli/clang_asked
 use cli/digest
 use cli/link_flags
+use cli/link_folds
 use cli/process
 use cli/publish
 use cli/strings
@@ -170,9 +171,9 @@ function flag(b: bool) -> str
         return "1"
     return "0"
 
-# The names the runtime's object needs from outside it (`alone_needs`), asked
-# once per object and kept beside it under `build/`. Measured by the sitting
-# on this Mac: 142 names, `nm -u`'s, and `main`, which is the program's.
+# The names the runtime's object needs from outside it (`object_needs`).
+# Measured by the sitting on this Mac: 142 names, `nm -u`'s, and `main`,
+# which is the program's.
 function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
     nothing: [str] = []
     runtime: str @= ""
@@ -183,16 +184,39 @@ function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
 
     if runtime == ""
         return nothing
-    needs_at = t.build + "/supplied-needs-" + supplied_names.base_of(runtime) + ".txt"
+    return object_needs(t, object: runtime, what: "asking which names the runtime needs")
+
+# The names `object` needs from outside it (`alone_needs`), asked once per
+# object and kept beside it under `build/` by `kept_name`, so a warm build
+# asks nothing again. Kept under a name of its own since defect 2501, when a
+# lone link under `ld.lld` was found told twenty names and no more, so a
+# list an older compiler kept is never read as whole.
+function object_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
+    needs_at = t.build + "/supplied-alone-" + kept_name(object) + ".txt"
     cached = read_file(needs_at)
 
     if !cached.is_err()
         return supplied_names.byte_lines(text: cached.must(), needles: [], stops: [])
-    out = alone_needs(t, object: runtime, what: "asking which names the runtime needs")
+    out = alone_needs(t, object: object, what: what)
 
     if out.len() > 0
         _ = publish.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
     return out
+
+# The name `object`'s needs are kept by: its folder's name and its own. A
+# unit's object is `tu-<key>/<module>-<sum>.o` (`cli/units.hero`), the key
+# naming its C and the sum the headers its compile read, so an edit that
+# reads the same headers keeps the file's name in a new folder (measured
+# 2026-11-13), and a list kept by that name alone answered for the edit: a
+# module that no longer needed a folded name was said to, and the reading
+# could not place it, `internal error` at exit 2. The runtime's object
+# carries its key in its own name (`toolchain.runtime_object`).
+function kept_name(object: str) -> str
+    folder = publish.beside(path: object, name: "")
+
+    if folder.len() == 0
+        return publish.base_of(object)
+    return publish.base_of(folder.slice(from: 0, to: folder.len() - 1)) + "-" + publish.base_of(object)
 
 # The names `object` needs from outside it: the object linked alone with no
 # library, every name the link calls undefined read back
@@ -206,19 +230,39 @@ function alone_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
     run = supplied_probe.run_words(
         strings.with_all(list: ["clang", "-nostdlib", object, "-o", base + process.exe_suffix()], more: alone_words(t))
     )
-    asked = clang_asked.asked(program: run[0], words: run, what: what, err_path: err_path, out_path: "")
-    publish.discard(base + process.exe_suffix())
-    publish.discard(err_path)
     said: str @= ""
 
-    match asked
-        .ok    => return nothing
+    match clang_asked.asked(program: run[0], words: run, what: what, err_path: err_path, out_path: "")
+        .ok    => said @ ""
         .err e => said @ e.msg
+
+    lines: [str] @= supplied_names.byte_lines(text: said, needles: [], stops: [])
+
+    # A linker that stopped at its limit of errors, `ld.lld` and `lld-link`
+    # at twenty, is asked again with the flag its own words name (defect
+    # 2501): the runtime's needs under `ld.lld` were their first twenty.
+    limit = link_folds.cut_flag_in(lines)
+
+    if limit != ""
+        again = clang_asked.asked(
+            program: run[0],
+            words: run.push("-Wl," + limit),
+            what: what,
+            err_path: err_path,
+            out_path: ""
+        )
+        said @ link_folds.again_words(first: said, again: again)
+        lines @ supplied_names.byte_lines(text: said, needles: [], stops: [])
+    publish.discard(base + process.exe_suffix())
+    publish.discard(err_path)
+
+    if said == ""
+        return nothing
 
     out: [str] @= []
     seen: {str: bool} @= {}
 
-    for line in supplied_names.byte_lines(text: said, needles: [], stops: [])
+    for line in lines
         name = ffi_build.undefined_symbol(line)
 
         if name.is_err() || name.must() == "main" || !seen[name.must()].is_err()
@@ -319,4 +363,26 @@ test "the platform layer's archive is found among a link's objects, and its reco
     got = layer_needs(archive)
     assert got.len() == 2 && got[0].member == "hero_net" && got[0].name == "socket" && got[1].member == "hero_time"
     assert layer_needs("").len() == 0
+    assert !process.remove_tree(dir).is_err()
+
+# Defect 2501: an object's needs are read from where `object_needs` keeps
+# them, by its folder's name and its own, so a warm build links nothing
+# alone; one module's object under two unit keys is kept apart, and a
+# record under the runtime's old name is not read.
+test "an object's needs are kept by its folder and its name and read back with no link (defect 2501)"
+    dir = "build/selftest-object-needs-2501"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "object-needs-test").must()
+    t.build @ dir
+    object = "build/tu-1/main-0a1b2c3d4e5f6789.o"
+    assert kept_name(object) == "tu-1-main-0a1b2c3d4e5f6789.o"
+    assert kept_name(object) != kept_name("build/tu-2/main-0a1b2c3d4e5f6789.o")
+    assert kept_name("main.o") == "main.o"
+    assert !publish.rewrite(path: dir + "/supplied-alone-tu-1-main-0a1b2c3d4e5f6789.o.txt", text: "base2501\nputs\n").is_err()
+    assert object_needs(t, object: object, what: "a test") == ["base2501", "puts"]
+    runtime = "build/runtime-1-2.o"
+    assert !publish.rewrite(path: dir + "/supplied-alone-build-runtime-1-2.o.txt", text: "printf\n").is_err()
+    assert !publish.rewrite(path: dir + "/supplied-needs-runtime-1-2.o.txt", text: "stale\n").is_err()
+    assert runtime_needs(t, objects: ["build/tu-1/main-0a1b2c3d4e5f6789.o", runtime]) == ["printf"]
     assert !process.remove_tree(dir).is_err()

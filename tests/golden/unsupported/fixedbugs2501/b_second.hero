@@ -1,0 +1,32 @@
+# A module of defect 2501's folded case (2026-11-13): eight references too,
+# so a module stands past every linker's fold whatever the link's order.
+
+extern "fixedbugs-2501-alias.h"
+    function top2501() -> i32  #~ ffi_missing_link
+
+function total() -> i32
+    return nine() + ten() + eleven() + twelve() + thirteen() + fourteen() + fifteen() + sixteen()
+
+function nine() -> i32
+    return top2501() + 8
+
+function ten() -> i32
+    return top2501() + 9
+
+function eleven() -> i32
+    return top2501() + 10
+
+function twelve() -> i32
+    return top2501() + 11
+
+function thirteen() -> i32
+    return top2501() + 12
+
+function fourteen() -> i32
+    return top2501() + 13
+
+function fifteen() -> i32
+    return top2501() + 14
+
+function sixteen() -> i32
+    return top2501() + 15

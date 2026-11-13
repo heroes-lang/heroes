@@ -1,0 +1,32 @@
+# A module of defect 2501's folded case (2026-11-13): eight references, past
+# the three `ld.lld` lists, GNU ld's five in a row and ld64's seven.
+
+extern "fixedbugs-2501-alias.h"
+    function top2501() -> i32  #~ ffi_missing_link
+
+function total() -> i32
+    return one() + two() + three() + four() + five() + six() + seven() + eight()
+
+function one() -> i32
+    return top2501()
+
+function two() -> i32
+    return top2501() + 1
+
+function three() -> i32
+    return top2501() + 2
+
+function four() -> i32
+    return top2501() + 3
+
+function five() -> i32
+    return top2501() + 4
+
+function six() -> i32
+    return top2501() + 5
+
+function seven() -> i32
+    return top2501() + 6
+
+function eight() -> i32
+    return top2501() + 7

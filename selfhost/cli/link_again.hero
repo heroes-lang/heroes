@@ -1,0 +1,148 @@
+# What a refused link's words fold or cut, asked again, so every name nothing
+# defines and every module whose object refers to it is told (design.md
+# §4.17, §4.19; defect 2501, 2026-11-13).
+#
+# **What the linker leaves out**, measured 2026-11-13 (`cli/link_folds.hero`
+# has each linker's words): every one folds the references of an undefined
+# name past a count, three in the lld family, five in a row in GNU ld 2.44,
+# seven in ld64-27106.1, so a file whose every reference falls past it is
+# named nowhere and its module was not told (defect 2495's macro case under
+# `ld.lld`); and the lld family stops at twenty undefined names, `too many
+# errors emitted, stopping now`, so a name past the twentieth was told
+# nowhere.
+#
+# **What it cut is asked again of the same link**, with the flag its own
+# words name for seeing every error (`link_folds.cut_flag`), and the words
+# of that run read in place of the cut ones, the markers the first carried
+# kept. **What it folded is asked of each object of the line alone**, the
+# question `supplied_kept.object_needs` asks the runtime's object, kept by
+# the object's folder and name, which carry its key: a warm refused build
+# asks nothing again. Each object needing a folded name is carried in the
+# words as one marker of kind `link_report.ASKED`, which
+# `link_report.references` reads as a reference and the words shown to the
+# author leave out (`supplied_words.unmarked`). The runtime's object is
+# asked as every object is, so a folded name the runtime refers to leaves
+# the link the compiler's, as a name it refers to in the report does.
+
+use cli/link_folds
+use cli/link_report
+use cli/link_warning
+use cli/process
+use cli/publish
+use cli/strings
+use cli/supplied
+use cli/supplied_judged
+use cli/supplied_kept
+use cli/supplied_names
+use cli/toolchain
+use emit/ffi_lookup
+
+# `message`, a refused link's words over `objects` run as `line`, with what
+# its linker cut asked again of `line` and, for each name it folded, a marker
+# for every object of `objects` that needs it; `message` itself where the
+# words neither fold nor cut. `j` is the link's judging (`cli/supplied.hero`),
+# whose map `line` asks for where it asks the link who supplied each name.
+function asked(t: toolchain.Toolchain, j: supplied.Judging, objects: [str], line: [str], err_path: str, message: str) -> str
+    words: str @= message
+    flag = link_folds.cut_flag(message)
+
+    if flag != ""
+        words @ uncut(line: line, flag: flag, j: j, err_path: err_path, message: message)
+    names = link_folds.folded(words)
+
+    if names.len() == 0
+        return words
+    out: [str] @= [words]
+
+    for object in objects
+        if !strings.ends_with(text: object, suffix: ".o") && !strings.ends_with(text: object, suffix: ".obj")
+            continue
+        needs = supplied_kept.object_needs(
+            t,
+            object: object,
+            what: "asking which names " + supplied_names.base_of(object) + " needs"
+        )
+
+        for name in names
+            if supplied_names.named_in(needs, name: name)
+                out @ out.push(
+                    supplied_judged.marker(kind: link_report.ASKED, decl: -1, name: name, file: object, library: "", order: "")
+                )
+
+    return out.join("\n")
+
+# The words of the same link run again with `flag`, every error told, then
+# every marker `message` carried; `message` where that run refused on no
+# words of its own (`link_folds.again_words`'s rule: it linked, could not
+# start or died). It runs as the link ran (`link_warning.run_link`), so its
+# words are read as the first's were, `LC_ALL=C` and link.exe's stdout alike,
+# and what it wrote beside its output is discarded: `ld.lld` writes the map
+# it is asked for where it refuses (measured 2026-11-13), the first run's map
+# having been discarded already (`supplied.carried`).
+function uncut(line: [str], flag: str, j: supplied.Judging, err_path: str, message: str) -> str
+    again = link_warning.run_link(line: line.push("-Wl," + flag), what: "linking", err_path: err_path)
+    publish.discard(err_path)
+
+    if j.asked
+        publish.discard(j.map_path)
+
+    match again
+        .ok => return message
+        .err e =>
+            if e.code != "clang"
+                return message
+            return markers_after(words: e.msg, message: message)
+
+# `words` with every marker of `message` after it, in its order.
+function markers_after(words: str, message: str) -> str
+    out: [str] @= [words]
+
+    for line in ffi_lookup.lines(text: message)
+        if supplied_judged.fields(line).len() == 7
+            out @ out.push(line)
+
+    return out.join("\n")
+
+## Tests
+
+# The lld family's words over defect 2495's macro case, as the
+# `heroes-linux-arm64` image's `ld.lld` wrote them on 2026-11-13, the root's
+# object named nowhere; each object's needs kept as `object_needs` keeps
+# them, so no lone link runs: the root's object and `alias_b`'s are asked,
+# the archive and a module needing other names are not marked, and words
+# that fold nothing are handed back as they are.
+test "a name the linker folded is asked of each object alone, and every object needing it is carried (defect 2501)"
+    dir = "build/selftest-link-again-2501"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "link-again-test").must()
+    t.build @ dir
+    root = "build/tu-1/fixedbugs2495amacro-12237a911b8bb77a.o"
+    alias = "build/tu-2/fixedbugs2495aliasb-365badf203264dbc.o"
+    other = "build/tu-3/other-0a1b2c3d4e5f6789.o"
+
+    for kept in [[root, "base2495_m\nhero_print_end\n"], [alias, "base2495_m\n"], [other, "puts\n"]]
+        _ = publish.rewrite(
+            path: dir + "/supplied-alone-" + supplied_kept.kept_name(kept[0]) + ".txt",
+            text: kept[1]
+        ).is_err()
+
+    lld = "linking failed:\nld.lld: error: undefined symbol: base2495_m\n>>> referenced by fixedbugs2495aliasb.c:99\n>>>               " + alias + ":(hero_extern_refs)\n>>> referenced by alias_b.hero:8\n>>>               " + alias + ":(h_fixedbugs2495aliasb_b)\n>>> referenced by fixedbugs2495aliasb.c:99\n>>>               " + alias + ":(hero_extern_refs)\n>>> referenced 3 more times\n"
+    said = asked(
+        t,
+        j: supplied.nothing(),
+        objects: [root, alias, other, "build/layer-1-2.a"],
+        line: [],
+        err_path: dir + "/err",
+        message: lld
+    )
+    found: [str] @= []
+
+    for one in link_report.references(said)
+        if one.symbol == "base2495_m" && !supplied_names.named_in(found, name: one.file)
+            found @ found.push(one.file)
+
+    assert found == [alias, root]
+    assert asked(t, j: supplied.nothing(), objects: [root], line: [], err_path: dir + "/err", message: "linking failed:\nUndefined symbols for architecture arm64:\n") == "linking failed:\nUndefined symbols for architecture arm64:\n"
+    assert markers_after(words: "w", message: "a\n" + supplied_judged.marker(kind: "x", decl: -1, name: "n", file: "f", library: "", order: "") + "\nb") == "w\n" + supplied_judged.marker(kind: "x", decl: -1, name: "n", file: "f", library: "", order: "")
+    assert !process.remove_tree(dir).is_err()
