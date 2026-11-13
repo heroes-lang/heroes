@@ -1,0 +1,17 @@
+# fixedbugs, defect 2516, lane b35-link, 2026-11-13.
+#
+# SYMPTOM: `twice`, which this module binds and calls and another module's
+# header only declares, of another type: refused with *no group binds
+# `twice`*, false, this group binding it.
+#
+# FIX: the note says this module's C calls `twice` and the other module's
+# reaches it only where its headers' own code names it.
+use fixedbugs2516/declares_b
+
+extern "fixedbugs-2516-declares-a.h"
+    function declares_a_value(x: i64) -> i64
+    function twice(x: i64) -> i64  #~ ffi_declared_two_ways
+
+function main()
+    print(declares_a_value(x: 3) + twice(x: 1))
+    print(declares_b.b(x: 3))

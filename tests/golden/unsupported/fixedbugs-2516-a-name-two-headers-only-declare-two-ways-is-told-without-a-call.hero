@@ -1,0 +1,21 @@
+# fixedbugs, defect 2516, lane b35-link, 2026-11-13.
+#
+# SYMPTOM: `twice`, which this module's header and another's declare two
+# ways and neither header's code nor any group calls: refused with *the
+# linker joins both to one symbol* and *C then reaches one `twice` through
+# two types*, and *no group binds `twice`, which the two headers' own code
+# calls*, each false of this program, whose objects refer to no `twice`.
+#
+# FIX: the words say only what is known before any unit compiles: C takes
+# the two declarations as one function (C11 6.2.2), neither module's C calls
+# it, and a header's own code is the one place C could reach it. The refusal
+# itself stands (panel 202's R2, C1's widening); whether a name no module's
+# C reaches builds is the ruling the repair left open.
+use fixedbugs2516/declares_b
+
+extern "fixedbugs-2516-declares-a.h"  #~ ffi_declared_two_ways
+    function declares_a_value(x: i64) -> i64
+
+function main()
+    print(declares_a_value(x: 3))
+    print(declares_b.b(x: 3))

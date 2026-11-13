@@ -36,21 +36,7 @@ constant UNUSED_HEAD: str
     "static void hero_extern_refs(void) {"
 
 function references(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl])
-    called: {str: bool} @= {}
-
-    for f in p.functions
-        for blk in f.blocks
-            for inst in blk.insts
-                match inst.op
-                    .call cl =>
-                        match cl.callee
-                            .extern_fn e =>
-                                if bound(decls, decl: e.decl, s: s)
-                                    called[source.span_text(s, decls[e.decl].name)] @ true
-                            .heroes_fn | .builtin_fn | .indirect => continue
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .func_ref  => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
-                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+    called = called_names(p, s: s, decls: decls)
 
     if called.len() == 0
         return
@@ -70,6 +56,30 @@ function references(@w: writer.Writer, p: containers.Program, s: source.Source, 
     writer.line(@w, text: "    (void)hero_ref;")
     writer.line(@w, text: "}")
     writer.blank(@w)
+
+# Every C function `p`'s code calls through a group from a header of the
+# program's: the names this table holds, so every one is a name the unit's
+# object refers to at every level. `cli/two_ways.hero` asks it too (defect
+# 2516), since a name a module binds and never calls is referred to by no
+# object of it (measured 2026-11-13: `labs` bound and uncalled, no `_labs`).
+function called_names(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> {str: bool}
+    called: {str: bool} @= {}
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .call cl =>
+                        match cl.callee
+                            .extern_fn e =>
+                                if bound(decls, decl: e.decl, s: s)
+                                    called[source.span_text(s, decls[e.decl].name)] @ true
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .func_ref  => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    return called
 
 # Whether a declaration is a group's function from a header of the program's,
 # not the compiler's own.

@@ -1,0 +1,8 @@
+# A module of defect 2516's case (lane b35-link, 2026-11-13): its header
+# declares `twice` as the other module's does.
+
+extern "fixedbugs-2516-alike-b.h"
+    function alike_b_value(x: i64) -> i64
+
+function b(x: i64) -> i64
+    return alike_b_value(x: x)

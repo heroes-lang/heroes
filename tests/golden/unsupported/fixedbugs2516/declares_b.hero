@@ -1,0 +1,8 @@
+# A module of defect 2516's cases (lane b35-link, 2026-11-13): its header
+# declares `twice` of `double`, and no group of it binds `twice`.
+
+extern "fixedbugs-2516-declares-b.h"
+    function declares_b_value(x: i64) -> i64
+
+function b(x: i64) -> i64
+    return declares_b_value(x: x)

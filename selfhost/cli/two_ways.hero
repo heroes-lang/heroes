@@ -43,17 +43,20 @@ use cli/toolchain
 use cli/two_ways_ask
 use diag
 use emit/clang_place
+use emit/extern_refs
 use emit/externs as emit_externs
 use source
 use token
 
 # One list's declaration of a name: where it is told, the binding's name or
 # the group's header string, the file declaring it as that group names it,
-# whether a group of the list binds it, and the answer.
+# whether a group of the list binds it, whether the list's own C calls it
+# through a group (`extern_refs.called_names`, defect 2516), and the answer.
 record Side
     span: token.Span
     file: str
     bound: bool
+    calls: bool
     answer: two_ways_ask.Answer
 
 # What is told, and of which names, which `cli/defined_twice.hero` does not
@@ -161,6 +164,7 @@ function side_of(one: probing.Probing, name: str, answer: two_ways_ask.Answer, s
     group: token.Span? @= fail(code: "none", msg: "no group of the list")
     header: str @= ""
     spellings = clang_place.spellings(answer.path)
+    calls = !extern_refs.called_names(one.program, s: s, decls: decls)[name].is_err()
 
     for f in one.program.functions
         spans = emit_externs.extern_spans(decls, f)
@@ -174,6 +178,7 @@ function side_of(one: probing.Probing, name: str, answer: two_ways_ask.Answer, s
                 span: decls[f.decl].name,
                 file: file_named(answer, header: spelled),
                 bound: true,
+                calls: calls,
                 answer: answer
             )
 
@@ -185,6 +190,7 @@ function side_of(one: probing.Probing, name: str, answer: two_ways_ask.Answer, s
         span: group.default(token.Span(start: 0, end: 0)),
         file: file_named(answer, header: header),
         bound: false,
+        calls: calls,
         answer: answer
     )
 
@@ -257,7 +263,18 @@ function result_of(type_text: str) -> str
         return type_text
     return type_text.slice(from: 0, to: at.must())
 
-# The diagnostic, on the side whose file sorts first.
+# The diagnostic, on the side whose file sorts first. **It says only what
+# is known before any unit compiles** (defect 2516): a name a module's C
+# calls through a group is one its object refers to at every level
+# (`emit/extern_refs.hero`'s table), so where both modules call it C reaches
+# one function through two types and the linker joins the two; a side whose
+# C calls it nowhere, bound or not, is reached only where its headers' own
+# code names the name, a body the module calls or a macro it uses, which
+# nothing has asked. Two units whose headers only declare `twice`, compiled
+# and linked by hand on this Mac (2026-11-13), referred to no `twice` at
+# `-O0` or `-O2` and linked with none defined. So the headline names the
+# linker only where both modules call the name, and otherwise says what C
+# says of every declaration of one external name (C11 6.2.2).
 function diagnostic(s: source.Source, name: str, pair: [Side]) -> diag.Diagnostic
     first = pair[0]
     second = pair[1]
@@ -265,22 +282,42 @@ function diagnostic(s: source.Source, name: str, pair: [Side]) -> diag.Diagnosti
 
     if first.bound && second.bound
         what @ "two groups bind one C function two ways"
+    joined: str @= ", which C takes as one function (C11 6.2.2)"
+
+    if first.calls && second.calls
+        joined @ ", and the linker joins both to one symbol"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_declared_two_ways",
-        message: "`" + name + "` is declared `" + shown_type(first.answer.type) + "` " + where(first) + " and `" + shown_type(second.answer.type) + "` " + where(second) + ": " + what + ", and the linker joins both to one symbol",
+        message: "`" + name + "` is declared `" + shown_type(first.answer.type) + "` " + where(first) + " and `" + shown_type(second.answer.type) + "` " + where(second) + ": " + what + joined,
         span: first.span
     )
     d.notes @ d.notes.push(
         "the other module's group is at " + source.elsewhere(s, here: first.span.start, there: second.span.start)
     )
-    remedy: str @= "no group binds `" + name + "`, which the two headers' own code calls, and only one of them can declare it as it is defined: a program binds the two groups together only where their headers agree"
+    remedy: str @= "only one of them can declare it as it is defined: a program binds the two groups together only where their headers agree"
 
     if first.bound && second.bound
         remedy @ "bind `" + name + "` in both modules from the header that declares it as it is defined, or from one module, whose unit reads both headers, where clang refuses the two declarations together"
     d.notes @ d.notes.push(
-        "each module's unit reads its own headers, so both compile, and C then reaches one `" + name + "` through two types, reading what it is given and what it returns as the other's (C11 6.2.7): " + remedy
+        "each module's unit reads its own headers, so both compile, and " + reached(name: name, first: first, second: second) + ": " + remedy
     )
     return d
+
+# Where C reaches `name` through each side's type, as far as the modules'
+# own calls say: a module whose C calls it reaches it, one that does not
+# only where its headers' own code names it (defect 2516).
+function reached(name: str, first: Side, second: Side) -> str
+    elsewhere = " only where its headers' own code names it, a body it calls or a macro it uses; C leaves one function declared with two types undefined, called or not (C11 6.2.7)"
+
+    if first.calls && second.calls
+        return "C then reaches one `" + name + "` through two types, reading what it is given and what it returns as the other's (C11 6.2.7)"
+
+    if first.calls
+        return "this module's C calls `" + name + "`, and the other module's reaches it" + elsewhere
+
+    if second.calls
+        return "the other module's C calls `" + name + "`, and this module's reaches it" + elsewhere
+    return "neither module's C calls `" + name + "` through a group, so each reaches it" + elsewhere
 
 # Where a side's header declares the name: the file and its line.
 function where(one: Side) -> str
@@ -320,3 +357,35 @@ test "a type holding a name above ASCII is cut where its bytes say (defect 2515)
     assert shown_type("struct 漢 (*)(long long)") == "struct 漢 (long long)"
     assert shown_type("struct 漢 *(*)(const char *)") == "struct 漢 *(*)(const char *)"
     assert shown_type("long (*)(struct 漢)") == "long (struct 漢)"
+
+# Defect 2516: the words follow what each module's C calls, never what a
+# header might: C reaches one function through two types only where both
+# modules call it, and a side whose C does not is reached only through its
+# headers' own code.
+test "a name declared two ways is told by what each module's C calls (defect 2516)"
+    at = token.Span(start: 0, end: 0)
+    long_long = two_ways_ask.Answer(type: "long long (*)(long long)", external: true, path: "a.h", row: 3)
+    real = two_ways_ask.Answer(type: "double (*)(double)", external: true, path: "b.h", row: 3)
+    calls = Side(span: at, file: "a.h", bound: true, calls: true, answer: long_long)
+    bound_only = Side(span: at, file: "a.h", bound: true, calls: false, answer: long_long)
+    quiet = Side(span: at, file: "b.h", bound: false, calls: false, answer: real)
+    assert strings.starts_with(
+        text: reached(name: "twice", first: calls, second: calls),
+        prefix: "C then reaches one `twice` through two types"
+    )
+    assert strings.starts_with(
+        text: reached(name: "twice", first: calls, second: quiet),
+        prefix: "this module's C calls `twice`, and the other module's reaches it only where"
+    )
+    assert strings.starts_with(
+        text: reached(name: "twice", first: quiet, second: calls),
+        prefix: "the other module's C calls `twice`, and this module's reaches it only where"
+    )
+    assert strings.starts_with(
+        text: reached(name: "twice", first: quiet, second: quiet),
+        prefix: "neither module's C calls `twice` through a group"
+    )
+    assert strings.starts_with(
+        text: reached(name: "twice", first: bound_only, second: bound_only),
+        prefix: "neither module's C calls `twice` through a group"
+    )
