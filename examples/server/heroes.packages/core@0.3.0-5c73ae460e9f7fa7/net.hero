@@ -1,0 +1,288 @@
+# TCP connections, Go's `net`: listen, accept, dial, read, write, and the
+# platform layer's stop. Every failure is a code the caller answers, and the
+# face is over `net/hero_net`, the floor that binds `hero_net.h` thin
+# (`examples/packages/README.md` § 4.1), so no status of the floor reaches a
+# program but through it.
+#
+# A connection is a handle: begun by `accept`, `dial` or `of`, and ended by
+# `close`, or given up for a number with `number` so that a thread, handed one
+# `i64` and nothing else (spec § 13), takes it back with `of`. One the program
+# never ends is told when `main` returns, as every handle is.
+
+use net/hero_net
+use net/internal/failure
+
+# An argument refused before any call: a host holding a zero byte, a port
+# outside 0 to 65535, a read of no byte.
+constant INVALID: str
+    "invalid"
+
+# The socket is closed, or the number names none.
+constant NOT_OPEN: str
+    "not_open"
+
+# The address names nothing this machine reaches or listens on.
+constant ADDRESS: str
+    "address"
+
+# Another socket holds the port.
+constant IN_USE: str
+    "in_use"
+
+# Nothing listens at the port.
+constant REFUSED: str
+    "refused"
+
+# The peer reset or closed the connection while it was used.
+constant RESET: str
+    "reset"
+
+# The peer did not answer in time.
+constant TIMED_OUT: str
+    "timed_out"
+
+# No route reaches the address.
+constant UNREACHABLE: str
+    "unreachable"
+
+# No socket, descriptor or memory is left.
+constant LIMIT: str
+    "limit"
+
+# The system denied the call.
+constant DENIED: str
+    "denied"
+
+# Another failure of the system, its own number in the message.
+constant OTHER: str
+    "other"
+
+# The program was asked to stop (`catch_stop`): every call that would wait
+# fails so, on every thread.
+constant STOPPED: str
+    "stopped"
+
+# The peer closed its side, and every byte it sent was read: the end of what
+# it sends, which is no failure of the connection.
+constant CLOSED: str
+    "closed"
+
+# A listening socket, which `close_listener` ends.
+record Listener
+    socket: hero_net.Socket
+
+# A connection, which `close` ends or `number` gives up.
+record Conn
+    socket: hero_net.Socket
+
+# A socket listening on `host` at `port`: Go's `net.Listen`. The host is
+# `127.0.0.1`, `::1`, or "" for every address of the machine, and port 0 asks
+# the system for a free one. It fails `in_use` where another socket holds the
+# port.
+function listen(host: str, port: i64) -> Listener?
+    asked = "listening on " + failure.place(host: host, port: port)
+
+    if failure.holds_zero(host)
+        return fail(code: INVALID, msg: asked + ": the host holds a zero byte")
+    s = hero_net.listen(address: host, port: port)
+
+    if s == nullptr
+        return failure.failed(asked: asked)
+    return ok(Listener(socket: s))
+
+# The port `listener` stands on. Where it was asked for port 0, it is the one
+# the system chose.
+function port_of(listener: Listener) -> i64?
+    port = hero_net.port_of(listener.socket)
+
+    if port < 0
+        return failure.failed(asked: "reading the port a listener stands on")
+    return ok(port)
+
+# The next connection `listener` holds, waiting for one: Go's
+# `Listener.Accept`. It fails `stopped` once the program is asked to stop,
+# a connection waiting or not, so a loop of accepts ends.
+function accept(listener: Listener) -> Conn?
+    s = hero_net.accept(listener.socket)
+
+    if s == nullptr
+        return failure.failed(asked: "accepting a connection")
+    return ok(Conn(socket: s))
+
+# A connection to `host` at `port`: Go's `net.Dial`. The host is a number or
+# a name, and it fails `refused` where nothing listens there.
+function dial(host: str, port: i64) -> Conn?
+    asked = "dialing " + failure.place(host: host, port: port)
+
+    if failure.holds_zero(host)
+        return fail(code: INVALID, msg: asked + ": the host holds a zero byte")
+    s = hero_net.connect(address: host, port: port)
+
+    if s == nullptr
+        return failure.failed(asked: asked)
+    return ok(Conn(socket: s))
+
+# Up to `most` bytes `c` received, waiting for one: Go's `Conn.Read`. It
+# answers at least one and no more than 65,536 at once, and fails `closed`
+# where the peer has closed its side and every byte it sent was read, and
+# `stopped` once the program is asked to stop while it waits.
+function read(c: Conn, most: i64) -> [u8]?
+    if most < 1
+        return fail(code: INVALID, msg: f"reading at most {most} bytes: a read asks for one byte at least")
+    wanted: i64 @= most
+
+    if wanted > 65536
+        wanted @ 65536
+    buffer: [u8] @= []
+    got = hero_net.recv(c.socket, @buffer, n: wanted.to_u64().must())
+
+    if got == 0
+        return fail(code: CLOSED, msg: "reading: the peer closed its side of the connection")
+
+    if got < 0
+        return failure.failed(asked: "reading")
+    return ok(buffer.slice(from: 0, to: got))
+
+# Every byte of `data` sent on `c`: Go's `Conn.Write`, which writes all or
+# fails. It sends as many times as the system needs; where a send takes part
+# of the bytes, the part it did not take is copied for the next, and nothing
+# else is. It fails `reset` where the peer closed the connection.
+function write(c: Conn, data: [u8]) -> ()?
+    rest: [u8] @= data
+
+    while rest.len() > 0
+        sent = hero_net.send(c.socket, @rest, n: rest.len().to_u64().must())
+
+        if sent <= 0
+            return failure.failed(asked: "writing")
+
+        if sent == rest.len()
+            return ok()
+        rest @ rest.slice(from: sent, to: rest.len())
+
+    return ok()
+
+# Closes `c` and gives it back: Go's `Conn.Close`. Its error is none, as a
+# program has nothing to do with one on a connection it is done with; a read
+# another thread waits in on it ends within about 50 ms.
+function close(@c: Conn)
+    _ = hero_net.close(@c.socket)
+
+# Closes `listener` and gives it back: Go's `Listener.Close`. No connection
+# made after it is accepted.
+function close_listener(@listener: Listener)
+    _ = hero_net.close(@listener.socket)
+
+# The number `c` is given up for, which a thread takes back with `of`. A
+# thread is handed one `i64` and nothing else (spec § 13); from this call `c`
+# names nothing, and a number never taken back is told when `main` returns, as
+# a connection never closed is.
+function number(@c: Conn) -> i64?
+    n = hero_net.number(@c.socket)
+
+    if n < 0
+        return failure.failed(asked: "giving a connection up for its number")
+    return ok(n)
+
+# The connection `n` names, taken back once. It has a handle of its own, and
+# fails `not_open` where `n` names none: taken back already, its connection
+# closed, or a number never given.
+function of(n: i64) -> Conn?
+    s = hero_net.of(n)
+
+    if s == nullptr
+        return failure.failed(asked: f"taking back the connection numbered {n}")
+    return ok(Conn(socket: s))
+
+# Makes Ctrl-C and SIGTERM ask the program to stop instead of ending it. From
+# the first (on Windows Ctrl-C, Ctrl-Break and the console closing), every
+# call here that would wait fails `stopped`, on every thread, so a server
+# finishes what it holds and returns from `main`; a second one ends the
+# program at once. No function of the program runs in the signal: the layer's
+# own C does (panel 246's R4).
+function catch_stop() -> ()?
+    if hero_net.catch_stop() != 0
+        return failure.failed(asked: "catching the stop")
+    return ok()
+
+## Tests
+
+test "a listener on a free port, a connection dialled and accepted, bytes both ways, each closed"
+    listener @= listen(host: "127.0.0.1", port: 0).must()
+    port = port_of(listener).must()
+    assert port > 0
+    client @= dial(host: "127.0.0.1", port: port).must()
+    server @= accept(listener).must()
+    write(client, data: [104, 101, 108, 108, 111]).must()
+    heard: [u8] @= []
+
+    while heard.len() < 5
+        for b in read(server, most: 5 - heard.len()).must()
+            heard @ heard.push(b)
+
+    assert heard == [104, 101, 108, 108, 111]
+    write(server, data: [111, 107]).must()
+    close(@server)
+    answer: [u8] @= []
+
+    while answer.len() < 2
+        for b in read(client, most: 64).must()
+            answer @ answer.push(b)
+
+    assert answer == [111, 107]
+
+    match read(client, most: 64)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@client)
+    close_listener(@listener)
+
+test "a connection crosses as a number: given up, taken back once, its number refused after"
+    listener @= listen(host: "127.0.0.1", port: 0).must()
+    client @= dial(host: "127.0.0.1", port: port_of(listener).must()).must()
+    accepted @= accept(listener).must()
+    n = number(@accepted).must()
+    back @= of(n).must()
+
+    match of(n)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_OPEN
+
+    write(back, data: [33]).must()
+    assert read(client, most: 1).must() == [33]
+    close(@back)
+    close(@client)
+    close_listener(@listener)
+
+test "what is refused before any call: a zero byte in a host, a read of no byte"
+    nul: [u8] = [49, 0]
+    host = nul.validated_bytes().must()
+
+    match listen(host: host, port: 0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "listening on " + host + ":0: the host holds a zero byte"
+
+    match dial(host: host, port: 80)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match listen(host: "127.0.0.1", port: 65536)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "listening on 127.0.0.1:65536: the layer refuses the address or the port"
+
+    listener @= listen(host: "127.0.0.1", port: 0).must()
+    client @= dial(host: "127.0.0.1", port: port_of(listener).must()).must()
+
+    match read(client, most: 0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    close(@client)
+    close_listener(@listener)
+
+# This changes the process that runs the tests as it would a server: SIGINT and
+# SIGTERM ask a stop from here on, and a second one still ends it at once.
+test "catch_stop catches the stop, and a second call is no failure"
+    catch_stop().must()
+    catch_stop().must()

@@ -1,0 +1,150 @@
+# HTTP/1.1 over a `net` connection, Go's `net/http` in Heroes' idiom: the
+# requests a client sends on a connection, each answered by a function of the
+# program, and a request sent and its response read, one after another on one
+# connection. Bodies are text, sent with their length.
+#
+# Go's `http.Serve` accepts each connection and serves it on a goroutine of its
+# own. A Heroes thread is handed one `i64` and nothing else (spec § 13), so a
+# program accepts with `net.accept`, gives the connection up with
+# `net.number`, and serves it on a thread of its own with `serve_conn` once
+# `net.of` has taken it back: `examples/server/main.hero` is that loop.
+
+use net
+use net/http/internal/client
+use net/http/internal/server
+
+# What a failure is where a message is no HTTP/1.1 message this package reads,
+# or a request no server could read back.
+constant MALFORMED: str
+    "malformed"
+
+# A request as a client sends it and a handler reads it: `target` is what its
+# first line names, `/hello?x=1`, its path and its query, and each name of a
+# `header` the package read is written as Go writes it, `Content-Length`.
+record Request
+    method: str
+    target: str
+    header: {str: str}
+    body: str
+
+# A response as a handler answers it and a client reads it.
+record Response
+    status: i64
+    header: {str: str}
+    body: str
+
+# How many requests `handler` answered on `c`, read one after another until the
+# client closes the connection or asks it closed, or the program is asked to
+# stop: the work Go's `http.Serve` does on each connection. A request that is
+# no HTTP/1.x request is answered 400, one whose body comes in chunks 501 and
+# one whose body is past 8 MiB 413, each ending the connection, and a status
+# outside 200 to 999 is answered 500. It fails `malformed` where the client
+# closes inside a body, and with `net`'s code where the connection fails.
+function serve_conn(c: net.Conn, handler: (function(Request) -> Response)) -> i64?
+    held: [u8] @= []
+    answered: i64 @= 0
+
+    while true
+        match server.next(c, @held)?
+            .ended => return ok(answered)
+            .refused r =>
+                server.refuse(c, status: r.status, why: r.why)
+                return ok(answered)
+            .request r =>
+                got = r.incoming
+                answer = handler(Request(method: got.method, target: got.target, header: got.header, body: got.body))
+                closing = server.answer(c, status: answer.status, header: answer.header, body: answer.body, head_only: got.method == "HEAD", closing: got.closing)?
+                answered @ answered + 1
+
+                if closing
+                    return ok(answered)
+
+# The response to `request`, sent on `c` and read whole: Go's
+# `RoundTripper.RoundTrip`, on the connection the program dialled, so requests
+# one after another share it. It fails `malformed` where no server could read
+# the request back, a target holding a space or no `Host`, or where the
+# response gives its body no `Content-Length`; `not_text` where its body is not
+# UTF-8; and with `net`'s code where the connection fails, `closed` where the
+# server closed it before answering.
+function round_trip(c: net.Conn, request: Request) -> Response?
+    client.send(c, method: request.method, target: request.target, header: request.header, body: request.body)?
+    got = client.receive(c, method: request.method)?
+    return ok(Response(status: got.status, header: got.header, body: got.body))
+
+# The answer to `request` where its target names nothing: 404, with Go's
+# words, `404 page not found`, and the target after them, the two header lines
+# Go's `http.NotFound` writes beside them.
+function not_found(request: Request) -> Response
+    return Response(
+        status: 404,
+        header: {"Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff"},
+        body: "404 page not found: " + request.target + "\n"
+    )
+
+## Tests
+
+test "serve_conn answers each request on a connection, until one asks it closed"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    near @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    far @= net.accept(listener).must()
+    client.send(near, method: "GET", target: "/a", header: {"Host": "x"}, body: "").must()
+    client.send(near, method: "HEAD", target: "/b", header: {"Host": "x", "Connection": "close"}, body: "").must()
+    assert serve_conn(far, handler: not_found).must() == 2
+    net.close(@far)
+    heard: [u8] @= []
+
+    while true
+        match net.read(near, most: 4096)
+            .ok more =>
+                for b in more
+                    heard @ heard.push(b)
+            .err _ => break
+
+    head = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\nContent-Length: 23\r\n"
+    assert heard.validated_bytes().must() == head + "\r\n404 page not found: /a\n" + head + "Connection: close\r\n\r\n"
+    net.close(@near)
+    net.close_listener(@listener)
+
+test "serve_conn ends where the client closes, and refuses what is no request"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    near @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    far @= net.accept(listener).must()
+    net.close(@near)
+    assert serve_conn(far, handler: not_found).must() == 0
+    net.close(@far)
+    again @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    other @= net.accept(listener).must()
+    net.write(again, data: [10, 10, 10, 120, 10, 10]).must()
+    assert serve_conn(other, handler: not_found).must() == 0
+    assert client.receive(again, method: "GET").must().status == 400
+    net.close(@other)
+    net.close(@again)
+    net.close_listener(@listener)
+
+test "round_trip sends the request and reads the response written for it"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    near @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    far @= net.accept(listener).must()
+    _ = server.answer(far, status: 200, header: {"X-A": "1"}, body: "hi", head_only: false, closing: false).must()
+    got = round_trip(near, request: Request(method: "POST", target: "/p", header: {"Host": "x"}, body: "yo")).must()
+    assert got.status == 200 && got.body == "hi" && got.header["X-A"].must() == "1"
+    held: [u8] @= []
+
+    match server.next(far, @held).must()
+        .request r          => assert r.incoming.target == "/p" && r.incoming.body == "yo"
+        .ended | .refused _ => assert false
+
+    net.close(@far)
+
+    match round_trip(near, request: Request(method: "GET", target: "/", header: {"Host": "x"}, body: ""))
+        .ok _  => assert false
+        .err e => assert e.code == net.CLOSED || e.code == net.RESET
+
+    net.close(@near)
+    net.close_listener(@listener)
+
+test "not_found answers 404 with Go's words and the target"
+    nothing: {str: str} = {}
+    got = not_found(Request(method: "GET", target: "/x", header: nothing, body: ""))
+    assert got.status == 404 && got.body == "404 page not found: /x\n"
+    assert got.header["X-Content-Type-Options"].must() == "nosniff"

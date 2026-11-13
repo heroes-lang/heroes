@@ -1,0 +1,152 @@
+# The client's half of HTTP/1.1 on one connection: a request written, and the
+# response to it read whole. `net/http.hero`'s `round_trip` is the two in turn,
+# so requests one after another share one connection.
+
+use net
+use net/http/internal/lines
+use net/http/internal/wire
+
+# A response read whole.
+record Reply
+    status: i64
+    header: {str: str}
+    body: str
+
+# A request written on `c`: `method target HTTP/1.1`, its header, and its body
+# with the `Content-Length` this writes itself, as Go's `Request.Write` does.
+# It fails `malformed` where no server could read the request back: a method
+# that is no token, a target holding a space or a control character, or no
+# `Host`, which an HTTP/1.1 request names.
+function send(c: net.Conn, method: str, target: str, header: {str: str}, body: str) -> ()?
+    if !wire.token(method)
+        return fail(code: "malformed", msg: "the method " + wire.shown(method) + " is no token")
+
+    if !wire.target_ok(target)
+        return fail(
+            code: "malformed",
+            msg: "the target " + wire.shown(target) + " holds a space or a control character"
+        )
+    out: {str: str} @= {}
+    host: bool @= false
+
+    for name in keys(header)
+        word = wire.canonical(name)
+        host @ host || word == "Host"
+
+        if word != "Content-Length" && word != "Transfer-Encoding"
+            out[name] @ header[name].must()
+
+    if !host
+        return fail(code: "malformed", msg: "the request names no Host, which an HTTP/1.1 request names")
+
+    if body.len() > 0 || method == "POST" || method == "PUT"
+        out["Content-Length"] @ body.len().to_str()
+    net.write(c, data: wire.bytes_of(wire.message(first: method + " " + target + " HTTP/1.1", header: out, body: body)))?
+    return ok()
+
+# The response on `c` to a request of `method`, read whole, its body by its
+# `Content-Length`, none for a HEAD request and for 204 and 304. It fails
+# `malformed` where it is no HTTP/1.x response, is an interim one, gives a body
+# no `Content-Length` or sends it in chunks, or where the server sent bytes
+# past it; `not_text` where its body is not UTF-8; and with `net`'s code where
+# the connection fails, `closed` where the server closed it first.
+function receive(c: net.Conn, method: str) -> Reply?
+    held: [u8] @= []
+    head = lines.head(c, @held)?
+    status = wire.status_of(head.first)?
+    header = wire.header_of(head.lines)?
+
+    if status < 200
+        return fail(code: "malformed", msg: f"the interim response {status} is not read here")
+    raw: [u8] @= []
+
+    if method != "HEAD" && status != 204 && status != 304
+        if !header["Transfer-Encoding"].is_err()
+            return fail(code: "malformed", msg: "the response sends its body in chunks, which is not read here")
+
+        if header["Content-Length"].is_err()
+            return fail(
+                code: "malformed",
+                msg: "the response gives its body no Content-Length, and one read to the connection's end is not read here"
+            )
+        count = wire.length(header)?
+
+        if count > wire.BODY_MOST
+            return fail(code: "malformed", msg: f"the response's body of {count} bytes is past the 8 MiB one may be")
+        raw @ lines.body(c, @held, count: count)?
+
+    if held.len() > 0
+        return fail(code: "malformed", msg: f"the server sent {held.len()} bytes past its response")
+    return ok(Reply(status: status, header: header, body: raw.validated_bytes()?))
+
+## Tests
+
+# What `receive` makes of `sent`, the server's bytes, on a loopback
+# connection whose server half writes them and closes.
+function received(sent: str, method: str) -> Reply?
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    server @= net.accept(listener).must()
+    net.write(server, data: wire.bytes_of(sent)).must()
+    net.close(@server)
+    got = receive(client, method: method)
+    net.close(@client)
+    net.close_listener(@listener)
+    return got
+
+test "send writes the request line, the header and the body with its length"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    server @= net.accept(listener).must()
+    send(client, method: "POST", target: "/a", header: {"host": "x", "Content-Length": "99"}, body: "hi").must()
+    nothing: {str: str} = {}
+
+    match send(client, method: "GET", target: "/a b", header: {"Host": "x"}, body: "")
+        .ok _  => assert false
+        .err e => assert e.code == "malformed"
+
+    match send(client, method: "GET", target: "/", header: nothing, body: "")
+        .ok _  => assert false
+        .err e => assert e.msg == "the request names no Host, which an HTTP/1.1 request names"
+
+    match send(client, method: "G T", target: "/", header: {"Host": "x"}, body: "")
+        .ok _  => assert false
+        .err e => assert e.msg == "the method \"G T\" is no token"
+
+    # The server's answer, read by `receive` on the same connection.
+    net.write(server, data: wire.bytes_of("HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n")).must()
+    created = receive(client, method: "POST").must()
+    assert created.status == 201 && created.body == ""
+    net.close(@client)
+    heard: [u8] @= []
+
+    while true
+        match net.read(server, most: 4096)
+            .ok more =>
+                for b in more
+                    heard @ heard.push(b)
+            .err _ => break
+
+    assert heard.validated_bytes().must() == "POST /a HTTP/1.1\r\nhost: x\r\nContent-Length: 2\r\n\r\nhi"
+    net.close(@server)
+    net.close_listener(@listener)
+
+test "receive reads a response by its length, and none for HEAD or 204"
+    got = received(sent: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nX-A: b\r\n\r\nhi", method: "GET").must()
+    assert got.status == 200 && got.body == "hi" && got.header["X-A"].must() == "b"
+    assert received(sent: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n", method: "HEAD").must().body == ""
+    assert received(sent: "HTTP/1.1 204 No Content\r\n\r\n", method: "GET").must().status == 204
+
+test "receive refuses what it does not read, and what the server sent past the response"
+    assert received(sent: "HTTP/1.1 200 OK\r\n\r\nhi", method: "GET").is_err()
+    assert received(sent: "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n", method: "GET").is_err()
+    assert received(sent: "HTTP/1.1 100 Continue\r\n\r\n", method: "GET").is_err()
+    assert received(sent: "SMTP ready\r\n\r\n", method: "GET").is_err()
+
+    match received(sent: "HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nab", method: "GET")
+        .ok _  => assert false
+        .err e => assert e.code == "malformed" && e.msg == "the server sent 1 bytes past its response"
+
+    match received(sent: "", method: "GET")
+        .ok _  => assert false
+        .err e => assert e.code == net.CLOSED

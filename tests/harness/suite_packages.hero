@@ -110,16 +110,23 @@ constant INDEX_LINE: str
 # floor until then, 38, counted thirteen programs' copies beside the canonical
 # tree, which are placed trees now and counted by `LEAST_PLACED`. **10 on
 # 2026-11-10**, raised as the suite asked when core 0.2.0 added `encoding/json`
-# and its five private modules (M-core-packages step 9).
+# and its five private modules (M-core-packages step 9). **20 on 2026-11-13**,
+# raised as the suite asked when core 0.3.0 added `net`, its floor
+# `net/hero_net`, `net/http` and their five private modules (M-core-packages
+# step 16, feature 893); 0.2.1's two more private modules of `encoding/json`
+# had stood under the slack.
 constant LEAST: i64
-    10
+    20
 
 # The floor of the placed trees: every program under `examples/` that uses the
 # core packages holds one. **14 on 2026-11-08**, the day R15 placed them: the
 # thirteen programs that carried a copy and the driver. **15 on 2026-11-10**,
-# the net's own (feature 2425).
+# the net's own (feature 2425). **17 on 2026-11-13**, when `examples/server`
+# placed core 0.3.0 in place of its `path` entry (M-core-packages step 16):
+# sixteen programs under `examples/`, `examples/json` since step 9 among
+# them, and the net's.
 constant LEAST_PLACED: i64
-    15
+    17
 
 # A file of the package's source: where it stands, its path under the source's
 # root, and its text.
@@ -622,10 +629,12 @@ test "the floors are under the counts the walk found on the day the source becam
     # 4 `.hero` files in core 0.1.0's `files/`, and 14 placed trees, on
     # 2026-11-08; 10 in core 0.2.0's on 2026-11-10, and 15 placed trees the
     # same day, the net's own catalogue joining `examples/`' fourteen (feature
-    # 2425); a walk reaching no source or no program finds 0.
-    assert LEAST <= 10
+    # 2425); 20 in core 0.3.0's and 17 placed trees on 2026-11-13, sixteen
+    # programs under `examples/` and the net's (M-core-packages step 16); a
+    # walk reaching no source or no program finds 0.
+    assert LEAST <= 20
     assert LEAST > 0
-    assert LEAST_PLACED <= 15
+    assert LEAST_PLACED <= 17
     assert LEAST_PLACED > 0
 
 test "a label passes on nothing found, and fails once naming everything found"
