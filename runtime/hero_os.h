@@ -427,11 +427,17 @@ int64_t hero_run_serial(void);
  * spellings and no portable one. Joining twice, or joining a handle nobody was
  * given, are named panics here rather than undefined behaviour in C.
  *
- * WHAT MAY CROSS IS DECIDED BY THE CHECKER, not by this comment: a Heroes
- * program binds `hero_thread_spawn` through this file, so
- * `selfhost/check/ffi.hero` judges the callback's own parameters and result,
- * and a `[T]` or a `{K: V}` in that signature is `error[ffi_type]` on the
- * author's line. That is Part 7.13's isolation obtained from the type rule. */
+ * WHAT CROSSES IS ONE `int64_t` EACH WAY, the body's type below, and spec
+ * section 13 says so since panel 246's R3 (2026-11-13). A Heroes program binds
+ * `hero_thread_spawn` through this file: `selfhost/check/ffi.hero` refuses a
+ * `[T]` or a `{K: V}` in the callback's signature (`error[ffi_type]` on the
+ * author's line), and any other type, a `str` or a handle, passes the checker
+ * and is refused by clang at the build against this prototype
+ * (`ffi_callback_type`), as panel 246's seats measured. Until that day this
+ * comment said the checker decided what crosses, which held for arrays and
+ * maps alone. Part 7.13's isolation is obtained from this prototype and the
+ * type rule together; widening the rung to one `str` is decision 2498's. A
+ * socket crosses as a number through `hero_net.h`'s own doors (R6). */
 int64_t hero_thread_spawn(int64_t (*body)(int64_t), int64_t arg);
 
 /* The same, on a stack of at least `bytes` that the caller chooses (panel 184
