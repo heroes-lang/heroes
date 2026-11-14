@@ -69,6 +69,8 @@ typedef struct hero_net_socket hero_net_socket;
 #define HERO_NET_REFUSED 5
 /* The peer closed or reset the connection, or it was never made. */
 #define HERO_NET_RESET 6
+/* The system gave the connection up, or a wait passed the socket's deadline
+ * (`hero_net_set_deadline`). */
 #define HERO_NET_TIMED_OUT 7
 #define HERO_NET_UNREACHABLE 8
 /* The process or the machine has no socket, descriptor or memory left. */
@@ -194,6 +196,20 @@ int64_t hero_net_stop_asked(void);
  * stop it asked. On Windows it is the one way a program asks its own stop:
  * no signal it can raise reaches the console's handler. */
 void hero_net_ask_stop(void);
+
+/* THE DEADLINE (panel 248's R5, Go's `SetDeadline` set from now): from this
+ * call, every call on `s` that waits, an `accept`, a `recv` or a `send`,
+ * waits until `ms` milliseconds from now at the latest, then answers -1 or
+ * NULL with `HERO_NET_TIMED_OUT`. It is a time, not a span: it applies to
+ * calls already waiting, which take it at once, and to every later one, so
+ * a peer that sends one byte before each limit still meets it. A call that
+ * need not wait is not ended by it: bytes already there are received and
+ * room already free is used, a deadline passed or not. 0 takes the deadline
+ * away; a negative `ms` is `HERO_NET_INVALID`. It is kept with the socket,
+ * so it stays when the socket crosses to another thread as its number. The
+ * time is read on the clock `hero_time.h` names, which never goes back.
+ * Answers 0, or -1 with `HERO_NET_NOT_OPEN` where `s` names no open socket. */
+int64_t hero_net_set_deadline(hero_net_socket *s, int64_t ms);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the

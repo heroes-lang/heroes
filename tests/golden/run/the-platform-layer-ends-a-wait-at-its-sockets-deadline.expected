@@ -1,0 +1,6 @@
+a quiet recv and a quiet accept meet their deadline: 1
+a byte sent before the deadline is received: 1
+a deadline set while a call waits ends it: 1
+a deadline of 0 takes it away: 1
+a call that need not wait is spared, and the deadline crosses as a number: 1
+a negative time and a closed socket are refused: 1

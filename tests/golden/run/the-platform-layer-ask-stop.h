@@ -2,6 +2,9 @@
  * `hero_net_ask_stop`): calls of the layer waiting on threads of C's own, the
  * waiting machinery of `fixedbugs-2502-waiters.h`, and the stop asked by
  * another thread of C's own, no signal sent. */
+#ifndef THE_PLATFORM_LAYER_ASK_STOP_H
+#define THE_PLATFORM_LAYER_ASK_STOP_H
+
 #include "fixedbugs-2502-waiters.h"
 
 static _Atomic int64_t ask_at_us;
@@ -79,3 +82,5 @@ static inline int64_t ask_stops_every_wait(void) {
     if (step == 1 && hero_net_stop_asked() != 1) step = -8;
     return step;
 }
+
+#endif

@@ -7,6 +7,9 @@
  * the negative number of the step that did not; a call still waiting after
  * 5 s is freed (a connection, a byte, a close) so the program ends either
  * way, and that is the case's failure, never a hang. */
+#ifndef FIXEDBUGS_2502_WAITERS_H
+#define FIXEDBUGS_2502_WAITERS_H
+
 #include "hero_net.h"
 
 #include <stdatomic.h>
@@ -247,3 +250,5 @@ static inline int64_t both_ways_on_one_socket(void) {
     hero_net_close(listener);
     return step;
 }
+
+#endif

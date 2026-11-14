@@ -256,6 +256,11 @@ typedef struct {
      * that arms it, cleared when the one-shot fires or the last call waiting
      * for it leaves. */
     uint8_t armed;
+    /* The deadline (panel 248's R5): the time on `hero_net_now`'s clock at
+     * which a wait on the socket ends `HERO_NET_TIMED_OUT`, 0 for none. Kept
+     * here, so it crosses with the socket's number to a connection's thread
+     * and needs no second value. */
+    int64_t deadline;
     /* It holds a socket the program has not closed. */
     bool held;
     /* The program closed it while a call was in flight: the last one closes
@@ -476,6 +481,7 @@ static void hero_net_release(hero_net_slot *slot) {
     slot->closing = false;
     slot->numbered = false;
     slot->armed = 0;
+    slot->deadline = 0;
     slot->fd = HERO_NET_NO_FD;
 
     if (slot->life < HERO_NET_LIFE_MOST) {
@@ -511,6 +517,7 @@ static hero_net_socket *hero_net_keep(hero_net_fd fd) {
         slot->waiting[0] = NULL;
         slot->waiting[1] = NULL;
         slot->armed = 0;
+        slot->deadline = 0;
         slot->held = true;
         slot->closing = false;
         slot->numbered = false;
@@ -620,16 +627,77 @@ static bool hero_net_stopping(void) {
  * again (below, with the waits). */
 static bool hero_net_blocking(hero_net_fd fd, bool blocking);
 
+/* -- the clock a deadline is read on (panel 248's R5) -------------------- */
+
+/* Nanoseconds on a clock that never goes back, as `hero_time.h`'s, which
+ * this member reads itself so a program of sockets alone takes no clock
+ * member: Darwin's `CLOCK_UPTIME_RAW`, the clock its timed waits count on,
+ * Linux's `CLOCK_MONOTONIC`, neither advancing while the machine sleeps, and
+ * Windows' performance counter, whose resolution is under a microsecond
+ * where `GetTickCount64` steps by 10 to 16 ms (Microsoft's two pages, read
+ * by the sitting's ffi-pragmatist, who measured that step as a deadline's
+ * worst lateness). -1 where it cannot be read or does not fit 64 bits. */
+static int64_t hero_net_now(void) {
+    int64_t whole = 0;
+    int64_t part = 0;
+    int64_t per = 0;
+#if defined(_WIN32)
+    LARGE_INTEGER count;
+    LARGE_INTEGER frequency;
+
+    if (!QueryPerformanceFrequency(&frequency) || !QueryPerformanceCounter(&count) || frequency.QuadPart <= 0 || count.QuadPart < 0) {
+        return -1;
+    }
+    whole = count.QuadPart / frequency.QuadPart;
+    part = count.QuadPart % frequency.QuadPart;
+    per = frequency.QuadPart;
+#else
+    struct timespec t;
+#if defined(__APPLE__)
+    int read = clock_gettime(CLOCK_UPTIME_RAW, &t);
+#else
+    int read = clock_gettime(CLOCK_MONOTONIC, &t);
+#endif
+
+    if (read != 0 || t.tv_sec < 0 || t.tv_nsec < 0) {
+        return -1;
+    }
+    whole = (int64_t)t.tv_sec;
+    part = (int64_t)t.tv_nsec;
+    per = INT64_C(1000000000);
+#endif
+    int64_t seconds = 0;
+    int64_t scaled = 0;
+    int64_t total = 0;
+
+    if (__builtin_mul_overflow(whole, INT64_C(1000000000), &seconds) || __builtin_mul_overflow(part, INT64_C(1000000000), &scaled) ||
+        __builtin_add_overflow(seconds, scaled / per, &total)) {
+        return -1;
+    }
+    return total;
+}
+
 /* -- waking a waiting call (panel 248's R2) ------------------------------ */
 
 /* A condition variable made for one wait; false where the system refused,
- * and the call then waits in slices. */
+ * and the call then waits in slices. Linux's counts a timed wait on the
+ * deadline's own clock. */
 static bool hero_net_cond_made(hero_net_cond *c) {
 #if defined(_WIN32)
     InitializeConditionVariable(c);
     return true;
-#else
+#elif defined(__APPLE__)
     return pthread_cond_init(c, NULL) == 0;
+#else
+    pthread_condattr_t clocked;
+
+    if (pthread_condattr_init(&clocked) != 0) {
+        return false;
+    }
+    bool made = pthread_condattr_setclock(&clocked, CLOCK_MONOTONIC) == 0 && pthread_cond_init(c, &clocked) == 0;
+
+    (void)pthread_condattr_destroy(&clocked);
+    return made;
 #endif
 }
 
@@ -649,6 +717,27 @@ static void hero_net_cond_sleep(hero_net_cond *c) {
     (void)SleepConditionVariableSRW(c, &hero_net_lock, INFINITE, 0);
 #else
     (void)pthread_cond_wait(c, &hero_net_lock);
+#endif
+}
+
+/* As `hero_net_cond_sleep`, and at the latest until `deadline` on
+ * `hero_net_now`'s clock, `left` nanoseconds from now, both positive. */
+static void hero_net_cond_sleep_until(hero_net_cond *c, int64_t deadline, int64_t left) {
+#if defined(_WIN32)
+    (void)deadline;
+    int64_t ms = left / 1000000 + 1;
+
+    (void)SleepConditionVariableSRW(c, &hero_net_lock, ms >= (int64_t)INFINITE ? INFINITE - 1 : (DWORD)ms, 0);
+#elif defined(__APPLE__)
+    (void)deadline;
+    struct timespec span = { (time_t)(left / 1000000000), (long)(left % 1000000000) };
+
+    (void)pthread_cond_timedwait_relative_np(c, &hero_net_lock, &span);
+#else
+    (void)left;
+    struct timespec at = { (time_t)(deadline / 1000000000), (long)(deadline % 1000000000) };
+
+    (void)pthread_cond_timedwait(c, &hero_net_lock, &at);
 #endif
 }
 
@@ -1349,20 +1438,51 @@ typedef enum {
      * it: the call looks. */
     HERO_NET_WAIT_READY,
     /* The stop was asked, whatever else is ready. */
-    HERO_NET_WAIT_STOPPED
+    HERO_NET_WAIT_STOPPED,
+    /* The socket's deadline passed (panel 248's R5). */
+    HERO_NET_WAIT_TIMED_OUT
 } hero_net_waited;
+
+/* Nanoseconds left to `deadline`, 0 where it has passed or the clock cannot
+ * be read, which ends a wait rather than let it outlive its deadline. */
+static int64_t hero_net_left(int64_t deadline) {
+    int64_t now = hero_net_now();
+
+    return now < 0 || now >= deadline ? 0 : deadline - now;
+}
+
+/* The deadline of a slot, read under the lock. */
+static int64_t hero_net_deadline_of(hero_net_slot *slot) {
+    hero_net_enter();
+    int64_t deadline = slot->deadline;
+    hero_net_leave();
+    return deadline;
+}
 
 /* One slice of a wait for what a call needs, a connection or bytes to read
  * (`writing` false) or room to send or a connection made, beside the stop's
- * pipe where it is armed: the wait where the poller cannot be made. */
-static hero_net_waited hero_net_wait_slice(hero_net_fd fd, bool writing, int64_t *code) {
+ * pipe where it is armed: the wait where the poller cannot be made. A slice
+ * is cut short at the socket's deadline, `deadline` (0 for none). */
+static hero_net_waited hero_net_wait_slice(hero_net_fd fd, bool writing, int64_t deadline, int64_t *code) {
+    int timeout = HERO_NET_SLICE_MS;
+
+    if (deadline != 0) {
+        int64_t left = hero_net_left(deadline);
+
+        if (left == 0) {
+            return HERO_NET_WAIT_TIMED_OUT;
+        }
+        if (left / 1000000 + 1 < HERO_NET_SLICE_MS) {
+            timeout = (int)(left / 1000000 + 1);
+        }
+    }
 #if defined(_WIN32)
     WSAPOLLFD one = { fd, (short)(writing ? POLLWRNORM : POLLRDNORM), 0 };
-    int ready = WSAPoll(&one, 1, HERO_NET_SLICE_MS);
+    int ready = WSAPoll(&one, 1, timeout);
 #else
     /* A negative descriptor, the stop unarmed, is one `poll` passes over. */
     struct pollfd two[2] = { { fd, (short)(writing ? POLLOUT : POLLIN), 0 }, { atomic_load(&hero_net_stop_in), POLLIN, 0 } };
-    int ready = poll(two, 2, HERO_NET_SLICE_MS);
+    int ready = poll(two, 2, timeout);
 #endif
 
     if (ready < 0) {
@@ -1371,6 +1491,9 @@ static hero_net_waited hero_net_wait_slice(hero_net_fd fd, bool writing, int64_t
     }
     if (hero_net_stopping()) {
         return HERO_NET_WAIT_STOPPED;
+    }
+    if (ready == 0 && deadline != 0 && hero_net_left(deadline) == 0) {
+        return HERO_NET_WAIT_TIMED_OUT;
     }
     return ready > 0 ? HERO_NET_WAIT_READY : HERO_NET_WAIT_PASSED;
 }
@@ -1381,7 +1504,8 @@ static hero_net_waited hero_net_wait_slice(hero_net_fd fd, bool writing, int64_t
  * THE CALL ARMS THE POLLER FOR ITS SOCKET AND SLEEPS ON ITS OWN CONDITION
  * VARIABLE, IN ITS SLOT'S LIST, UNDER THE LOCK. Whatever can end the wait is
  * a state set under the same lock before its wake is sent: the poller's
- * `ready`, a close's `closing`, the stop's count. The call joins the list
+ * `ready`, a close's `closing`, the stop's count, the slot's deadline, which
+ * bounds the sleep itself and is read again whenever the call wakes. The call joins the list
  * and asks each before it sleeps, and again whenever it wakes, so a wake sent
  * before it slept is never lost, and one with nothing behind it costs a
  * look. It leaves the list, disarming the socket where it was the last call
@@ -1395,13 +1519,15 @@ static hero_net_waited hero_net_wait(hero_net_slot *slot, hero_net_fd fd, bool w
 
     memset(&me, 0, sizeof me);
     if (!hero_net_poller_up() || !hero_net_cond_made(&me.wake)) {
-        return hero_net_wait_slice(fd, writing, code);
+        return hero_net_wait_slice(fd, writing, hero_net_deadline_of(slot), code);
     }
     hero_net_enter();
     if (!hero_net_arm(slot, way)) {
+        int64_t deadline = slot->deadline;
+
         hero_net_leave();
         hero_net_cond_ended(&me.wake);
-        return hero_net_wait_slice(fd, writing, code);
+        return hero_net_wait_slice(fd, writing, deadline, code);
     }
     me.next = slot->waiting[list];
     if (me.next != NULL) {
@@ -1416,7 +1542,21 @@ static hero_net_waited hero_net_wait(hero_net_slot *slot, hero_net_fd fd, bool w
             result = HERO_NET_WAIT_STOPPED;
             break;
         }
-        hero_net_cond_sleep(&me.wake);
+        /* Read again at each wake: a deadline set while the call waits is
+         * the one it keeps (Go's meaning, panel 248's R5). */
+        int64_t deadline = slot->deadline;
+
+        if (deadline == 0) {
+            hero_net_cond_sleep(&me.wake);
+            continue;
+        }
+        int64_t left = hero_net_left(deadline);
+
+        if (left == 0) {
+            result = HERO_NET_WAIT_TIMED_OUT;
+            break;
+        }
+        hero_net_cond_sleep_until(&me.wake, deadline, left);
     }
     if (me.prev != NULL) {
         me.prev->next = me.next;
@@ -1609,13 +1749,18 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
     *kind = HERO_NET_OK;
     for (;;) {
 #if defined(_WIN32)
-        hero_net_waited waited = hero_net_stopping() ? HERO_NET_WAIT_STOPPED : hero_net_wait_slice(fd, true, code);
+        hero_net_waited waited = hero_net_stopping() ? HERO_NET_WAIT_STOPPED : hero_net_wait_slice(fd, true, 0, code);
 #else
         hero_net_waited waited = hero_net_stopping() ? HERO_NET_WAIT_STOPPED : hero_net_wait(slot, fd, true, code);
 #endif
 
         if (waited == HERO_NET_WAIT_STOPPED) {
             *kind = HERO_NET_STOPPED;
+            *code = 0;
+            break;
+        }
+        if (waited == HERO_NET_WAIT_TIMED_OUT) {
+            *kind = HERO_NET_TIMED_OUT;
             *code = 0;
             break;
         }
@@ -1713,6 +1858,7 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
     hero_net_fd got = HERO_NET_NO_FD;
     int64_t code = 0;
     bool stopped = false;
+    bool late = false;
 
     /* Tried first, then waited for where none is there; the stop is asked
      * before any connection waiting is taken, so a loop of accepts under load
@@ -1736,6 +1882,10 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
             stopped = true;
             break;
         }
+        if (waited == HERO_NET_WAIT_TIMED_OUT) {
+            late = true;
+            break;
+        }
         if (waited == HERO_NET_WAIT_FAILED && !hero_net_interrupted(code)) {
             break;
         }
@@ -1751,6 +1901,10 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
     }
     if (stopped) {
         hero_net_fail(HERO_NET_STOPPED, 0);
+        return NULL;
+    }
+    if (late) {
+        hero_net_fail(HERO_NET_TIMED_OUT, 0);
         return NULL;
     }
     if (got == HERO_NET_NO_FD) {
@@ -1836,6 +1990,11 @@ static int64_t hero_net_move(hero_net_slot *slot, hero_net_fd fd, void *bytes, u
 
         if (waited == HERO_NET_WAIT_STOPPED) {
             *kind = HERO_NET_STOPPED;
+            *code = 0;
+            return -1;
+        }
+        if (waited == HERO_NET_WAIT_TIMED_OUT) {
+            *kind = HERO_NET_TIMED_OUT;
             *code = 0;
             return -1;
         }
@@ -1989,6 +2148,49 @@ hero_net_socket *hero_net_of(int64_t number) {
     }
     hero_net_clear();
     return handle;
+}
+
+/* -- the deadline (panel 248's R5) ------------------------------------- */
+
+/* THE DEADLINE, Go's meaning: an absolute time kept in the socket's slot,
+ * set from now by milliseconds, applying to every wait on the socket from
+ * now, those already waiting included, which are woken to read it again; 0
+ * takes it away. A call that need not wait is not ended by it, as by the
+ * stop. A time past what the clock can count is no deadline it reaches. */
+int64_t hero_net_set_deadline(hero_net_socket *s, int64_t ms) {
+    int64_t at = 0;
+
+    if (ms < 0) {
+        hero_net_fail(HERO_NET_INVALID, 0);
+        return -1;
+    }
+    if (ms > 0) {
+        int64_t now = hero_net_now();
+        int64_t span = 0;
+
+        if (now < 0) {
+            hero_net_fail(HERO_NET_OTHER, 0);
+            return -1;
+        }
+        if (__builtin_mul_overflow(ms, INT64_C(1000000), &span) || __builtin_add_overflow(now, span, &at)) {
+            at = INT64_MAX;
+        }
+    }
+    hero_net_enter();
+    hero_net_slot *slot = hero_net_find(s);
+
+    if (slot != NULL) {
+        slot->deadline = at;
+        hero_net_nudge(slot);
+    }
+    hero_net_leave();
+
+    if (slot == NULL) {
+        hero_net_fail(HERO_NET_NOT_OPEN, 0);
+        return -1;
+    }
+    hero_net_clear();
+    return 0;
 }
 
 int64_t hero_net_last_error(void) {
