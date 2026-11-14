@@ -61,6 +61,7 @@ use <core>/strings as core_strings
 use absence
 use cases
 use floors
+use freed_bytes
 use placed_trees
 use platform_skips
 use report
@@ -194,11 +195,16 @@ constant LEAST: i64
 constant LEAST_REFUSED: i64
     42
 
-# One program and the bytes it was blessed to emit.
+# One program and the bytes it was blessed to emit, and why its emission is
+# compared on another platform alone, "" where this machine compares it:
+# `platform_skips.emission_reason`, asked once of its label as it is collected
+# (defect 2530), so the sweep reads the program in hand rather than the
+# machine, and a test hands it a program of either kind on any platform.
 record Program
     source: str
     stored: str
     label: str
+    elsewhere: str
 
 # `only` narrows the suite to the programs whose label holds it, `run/loop` or a
 # part of one (defect 2341): the gate of one repair, and the blessing of one new
@@ -252,7 +258,10 @@ function not_compiled_here(one: Program) -> str?
 
     if !unbuilt.is_err()
         return unbuilt
-    return platform_skips.emission_reason(one.label)
+
+    if one.elsewhere.len() > 0
+        return ok(one.elsewhere)
+    return fail(code: "judged", msg: "compiled on this machine")
 
 # How many of `programs` have a blessed emission: the ones this suite compares,
 # or skips by name where the machine lacks a library they bind. A program with
@@ -303,8 +312,9 @@ function collected(scratch: str, root: str) -> [Program]?
 
     for group in GROUPS
         for item in cases.programs(scratch: scratch, dir: root + "tests/golden/" + group)?
+            label = group + "/" + item.name
             found @ found.push(
-                Program(source: item.source, stored: root + STORE + "/" + group + "-" + item.name + ".c", label: group + "/" + item.name)
+                Program(source: item.source, stored: root + STORE + "/" + group + "-" + item.name + ".c", label: label, elsewhere: compared_elsewhere(label))
             )
 
     for dir in shell.list_directories(scratch: scratch, dir: root + EXAMPLES)?
@@ -314,11 +324,20 @@ function collected(scratch: str, root: str) -> [Program]?
             source = dir + "/" + entry + ".hero"
 
             if !read_file(source).is_err()
+                label = "examples/" + base + "/" + entry
                 found @ found.push(
-                    Program(source: source, stored: root + STORE + "/examples-" + base + "-" + entry + ".c", label: "examples/" + base + "/" + entry)
+                    Program(source: source, stored: root + STORE + "/examples-" + base + "-" + entry + ".c", label: label, elsewhere: compared_elsewhere(label))
                 )
 
     return ok(found)
+
+# Why the emission labelled `label` is compared on another platform alone,
+# `platform_skips.emission_reason`'s answer on this machine; "" where this
+# machine compares it.
+function compared_elsewhere(label: str) -> str
+    return match platform_skips.emission_reason(label)
+        .ok why => why
+        .err _  => ""
 
 # The programs whose label holds `only`, every one where it is empty: the
 # third word, as `cases.matching` reads it of a case's name.
@@ -380,12 +399,16 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
 
         # An emission that names this platform's own C is compared where it
         # was blessed and skipped here by name, its file seen, so no orphan
-        # (`platform_skips.emission_reason`, defect 2111).
-        elsewhere = platform_skips.emission_reason(one.label)
-
-        if !elsewhere.is_err()
-            skipped @ skipped + 1
-            report.keep_skip(@r, label: "emission/" + one.label, detail: "  " + elsewhere.must())
+        # (`platform_skips.emission_reason`, defect 2111). **It is no program
+        # skipped for a missing library** (defect 2530): until then it was
+        # counted in `skipped`, the share that fails the suite at a third of
+        # the programs walked and says they were skipped for a library this
+        # machine lacks, so on every platform but Darwin a skip by name was
+        # read as the machine's want and the message would have named it so.
+        # `skipped` gains one where `absence` says the machine lacks what the
+        # program binds, below, and nowhere else.
+        if one.elsewhere.len() > 0
+            report.keep_skip(@r, label: "emission/" + one.label, detail: "  " + one.elsewhere)
             continue
         said = shell.run_guarded(
             scratch: scratch,
@@ -470,7 +493,11 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         orphans(@r, scratch: scratch, store: store, seen: seen)
 
     # A skip is not a pass, asked of the programs walked, as `run` asks it of
-    # a filter's cases.
+    # a filter's cases. `skipped` counts the programs skipped for a library
+    # this machine lacks and no other (defect 2530): a program skipped by name,
+    # one this platform cannot build or one whose emission another platform
+    # compares, stands among the programs walked, as `run` keeps its cases
+    # skipped by name among its cases, and never among the missing libraries.
     if skipped > 0 && skipped * 3 >= walked.len()
         report.keep_failure(
             @r,
@@ -750,7 +777,7 @@ function one_program_tree(scratch: str, name: str) -> Program?
     shell.remove_tree(tree)?
     shell.mkdir_all(tree)?
     write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n")?
-    return ok(Program(source: tree + "/x.hero", stored: tree + "/x.c", label: "one/x"))
+    return ok(Program(source: tree + "/x.hero", stored: tree + "/x.c", label: "one/x", elsewhere: ""))
 
 # A tree of the repository's shape under `root`, which ends in `/`, for
 # `collected`: the four groups, `examples/` and the store, made empty, then
@@ -938,7 +965,7 @@ test "a blessed file no program claims is reported, and so is a collision and a 
     # than compared, and the floor must fire on a list below its count.
     twice: [Program] = [
         one.must()
-        Program(source: one.must().source, stored: one.must().stored, label: "one/twin")
+        Program(source: one.must().source, stored: one.must().stored, label: "one/twin", elsewhere: "")
     ]
     clash = sweep(
         scratch: scratch,
@@ -971,7 +998,7 @@ test "fixedbugs: the floor counts the emissions blessed, and a refusal is read a
     assert !write_file(path: one.must().stored, text: emitted_fixture()).is_err()
     tree = scratch + "/emission-341"
     assert !write_file(path: tree + "/refused.hero", text: "function main()\n    print(1)\n").is_err()
-    refused = Program(source: tree + "/refused.hero", stored: tree + "/refused.c", label: "one/refused")
+    refused = Program(source: tree + "/refused.hero", stored: tree + "/refused.c", label: "one/refused", elsewhere: "")
     path = scratch + "/stub-emit-341.sh"
     script = "#!/bin/sh\ncase \"$2\" in\n    *refused.hero) printf 'error[ffi_return_type]: refused\\n' 1>&2; exit 1 ;;\nesac\nprintf '%s' " + inside_a_script(emitted_fixture()) + "\nexit 0\n"
     assert !write_file(path: path, text: script).is_err()
@@ -1096,7 +1123,7 @@ test "fixedbugs: a program that cannot emit is skipped only where the machine la
         scratch: scratch,
         compiler: compiler.must(),
         store: tree + "/store-has",
-        programs: [Program(source: has.must(), stored: blessed, label: "has")],
+        programs: [Program(source: has.must(), stored: blessed, label: "has", elsewhere: "")],
         update: false,
         least: 1,
         only: ""
@@ -1115,7 +1142,7 @@ test "fixedbugs: a program that cannot emit is skipped only where the machine la
         scratch: scratch,
         compiler: compiler.must(),
         store: tree + "/store-lacks",
-        programs: [Program(source: lacks.must(), stored: tree + "/store-lacks/lacks.c", label: "lacks")],
+        programs: [Program(source: lacks.must(), stored: tree + "/store-lacks/lacks.c", label: "lacks", elsewhere: "")],
         update: false,
         least: 1,
         only: ""
@@ -1140,7 +1167,12 @@ test "fixedbugs: a program Windows cannot build is skipped there before its buil
     assert !shell.mkdir_all(store).is_err()
     stored = store + "/run-unbuilt.c"
     assert !write_file(path: stored, text: "int main(void) { return 0; }\n").is_err()
-    one = Program(source: platform_skips.unbuildable_on_windows()[0].name, stored: stored, label: "run/unbuilt")
+    one = Program(
+        source: platform_skips.unbuildable_on_windows()[0].name,
+        stored: stored,
+        label: "run/unbuilt",
+        elsewhere: ""
+    )
     swept = sweep(
         scratch: scratch,
         compiler: scratch + "/no-compiler-here",
@@ -1389,4 +1421,59 @@ test "fixedbugs: the compile of a blessed one file searches each tree a fetch pl
     assert !write_file(path: root + "app/heroes.toml", text: "[dependencies.loc]\npath = \"local\"\n").is_err()
     assert placed_roots(scratch: scratch, source: root + "app/main.hero") == [root + "app/heroes.packages/a@1.0.0-k", root + "app/heroes.packages/b@2.0.0-k", root + "app/local"]
     assert placed_roots(scratch: scratch, source: root + "lone/main.hero").len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2530, held as a test (2026-11-14): a program whose emission is
+# compared on another platform alone is skipped here by name, its blessed file
+# claimed, and counted apart from the programs skipped for a missing library,
+# whose share fails the suite at a third of the programs walked. Three such
+# programs and nothing else walked read no failure, where until then they read
+# `3 of 3 programs were skipped for a missing library`. The reason is the
+# program's own, so this runs on every platform, Darwin among them, where no
+# emission is compared elsewhere; the compiler named is a file nobody wrote, so
+# a build asked would be a failure naming it.
+test "fixedbugs: an emission compared on another platform alone is skipped apart from the missing libraries' share (defect 2530)"
+    scratch = shell.own_scratch()
+    store = scratch + "/emission-elsewhere"
+    assert !shell.remove_tree(store).is_err()
+    assert !shell.mkdir_all(store).is_err()
+    why = platform_skips.darwin_emissions()[0].why
+    programs: [Program] @= []
+
+    for name in ["a", "b", "c"]
+        stored = store + "/run-" + name + ".c"
+        assert !write_file(path: stored, text: "int main(void) { return 0; }\n").is_err()
+        programs @ programs.push(
+            Program(source: store + "/" + name + ".hero", stored: stored, label: "run/" + name, elsewhere: why)
+        )
+
+    swept = sweep(
+        scratch: scratch,
+        compiler: scratch + "/no-compiler-here",
+        store: store,
+        programs: programs,
+        update: false,
+        least: 3,
+        only: ""
+    ).must()
+    assert swept.failed == 0
+    assert swept.skips.len() == 3
+    assert swept.skips[0] == "SKIP emission/run/a\n  " + why
+
+    # The one pass is the orphans' question: every blessed file is claimed.
+    assert swept.passed == 1
+    assert not_compiled_here(programs[0]).must() == why
+
+    # And the program is told so by its label as it is collected: Darwin
+    # compares the emission, every other platform skips it by name.
+    on_darwin = shell.exists(freed_bytes.DARWIN)
+    seen: i64 @= 0
+
+    for one in collect(scratch).must()
+        if one.label == platform_skips.darwin_emissions()[0].name
+            seen @ seen + 1
+            assert one.elsewhere == "" == on_darwin
+
+    assert seen == 1
+    assert compared_elsewhere("run/another-case") == ""
     assert !shell.remove_tree(scratch).is_err()
