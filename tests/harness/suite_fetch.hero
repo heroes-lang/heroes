@@ -162,7 +162,7 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
     if got.is_err()
         report.keep_failure(@r, label: label, detail: "  " + why_text(got))
         return
-    actual = replaced(text: got.must(), work: work, root: root)
+    actual = replaced(text: got.must(), work: work, root: root, windows: shell.exe_suffix() == ".exe")
     expected = read_file(dir + "/expected")
 
     if expected.is_err()
@@ -355,10 +355,42 @@ function transcript(scratch: str, compiler: str, dir: str, work: str, root: str)
 
 # `text` with the case's scratch folder written `<work>` and the repository's
 # root `<root>`, the absolute form of the folder first.
-function replaced(text: str, work: str, root: str) -> str
-    once = swapped(text: text, old: root + "/" + work, new: "<work>")
+function replaced(text: str, work: str, root: str, windows: bool) -> str
+    slashed: str @= text
+
+    if windows
+        slashed @ slashed_work(text: text, work_path: root + "/" + work)
+    once = swapped(text: slashed, old: root + "/" + work, new: "<work>")
     twice = swapped(text: once, old: work, new: "<work>")
     return swapped(text: twice, old: root, new: "<root>")
+
+# **A path under the case's work folder, as Windows spells it, written with
+# `/`**: the compiler names a folder it resolved in the system's own spelling,
+# `C:\w\...\app\heroes.packages\...\build/` where a transcript writes `/`
+# (defect 2490, the box's run of fixedbugs-2479 once the door let it run
+# there). Each place `work_path` stands with `\` for `/`, and the rest of that
+# path up to where a path ends, is written with `/`, and nothing else: a `\`
+# a message quotes is the message's own (`new-refused`).
+function slashed_work(text: str, work_path: str) -> str
+    back = swapped(text: work_path, old: "/", new: "\\")
+    pieces = strings.split_text(text: text, separator: back)
+    out: [str] @= [pieces[0]]
+
+    for piece in pieces.slice(from: 1, to: pieces.len())
+        end: i64 @= 0
+
+        while end < piece.len() && !ends_a_path(piece[end])
+            end @ end + 1
+
+        rest = swapped(text: piece.slice(from: 0, to: end), old: "\\", new: "/")
+        out @ out.push(work_path + rest + piece.slice(from: end, to: piece.len()))
+
+    return out.join("")
+
+# Whether `byte` ends a path a message names: a quoting backtick or quote, a
+# space or a line's end.
+function ends_a_path(byte: u8) -> bool
+    return byte == '`' || byte == '"' || byte == '\'' || byte == ' ' || byte == '\n' || byte == '\t'
 
 # `text` with every `old` written `new`.
 function swapped(text: str, old: str, new: str) -> str
@@ -441,11 +473,22 @@ function why_text(failed: str?) -> str
 ## Tests
 
 test "a transcript holds no machine's paths, and two texts are told apart at their first differing line"
-    assert replaced(text: "at /r/build/h-1/fetch/x/app and build/h-1/fetch/x/app and /r/tests", work: "build/h-1/fetch/x", root: "/r") == "at <work>/app and <work>/app and <root>/tests"
+    assert replaced(text: "at /r/build/h-1/fetch/x/app and build/h-1/fetch/x/app and /r/tests", work: "build/h-1/fetch/x", root: "/r", windows: false) == "at <work>/app and <work>/app and <root>/tests"
     assert apart(one: "a\nb\nc\n", two: "a\nb\nd\n") == 3
     assert apart(one: "a\n", two: "a\nb\n") == 2
     assert lines_of("one\ntwo") == ["one", "two"]
     assert last_part("tests/golden/fetch/add.case") == "add.case"
+
+# **Windows' spelling of a path under the work folder is the transcript's**
+# (defect 2490): the box's own words for fixedbugs-2479, a path the compiler
+# resolved written with `\`, read as the case writes it; a `\` a message
+# quotes outside such a path stays, as `new-refused` expects it, and so does
+# every byte on another system.
+test "a path under the work folder spelled with backslashes is the transcript's, and no other backslash moves (defect 2490)"
+    said = "`C:\\w\\r\\build\\h-1\\fetch\\x\\app\\heroes.packages\\json@1\\build/`, a name holding `/` or `\\`\n"
+    assert replaced(text: said, work: "build/h-1/fetch/x", root: "C:/w/r", windows: true) == "`<work>/app/heroes.packages/json@1/build/`, a name holding `/` or `\\`\n"
+    assert replaced(text: said, work: "build/h-1/fetch/x", root: "C:/w/r", windows: false) == said
+    assert slashed_work(text: "C:\\w\\r\\x\\a b\\c", work_path: "C:/w/r/x") == "C:/w/r/x/a b\\c"
 
 test "a path's last part and folder are asked of every byte, the first included (defect 2406)"
     assert last_part("") == ""
