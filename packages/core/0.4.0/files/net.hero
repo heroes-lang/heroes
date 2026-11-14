@@ -177,10 +177,12 @@ function close(@c: Conn)
 function close_listener(@listener: Listener)
     _ = hero_net.close(@listener.socket)
 
-# The number `c` is given up for, which a thread takes back with `of`. A
-# thread is handed one `i64` and nothing else (spec § 13); from this call `c`
-# names nothing, and a number never taken back is told when `main` returns, as
-# a connection never closed is.
+# The number `c` is given up for, at least 2^62: carry it whole to `of`, never
+# computing with it. Packed beside another value in one `i64`, it overflows. A
+# thread is handed one `i64` and nothing else (spec § 13), and takes the
+# connection back with `of`; from this call `c` names nothing, and a number
+# never taken back is told when `main` returns, as a connection never closed
+# is.
 function number(@c: Conn) -> i64?
     n = hero_net.number(@c.socket)
 
@@ -274,6 +276,9 @@ test "a connection crosses as a number: given up, taken back once, its number re
     client @= dial(host: "127.0.0.1", port: port_of(listener).must()).must()
     accepted @= accept(listener).must()
     n = number(@accepted).must()
+
+    # Large, as the comment on `number` says: at least 2^62 (defect 2526).
+    assert n >= 4611686018427387904
     back @= of(n).must()
 
     match of(n)

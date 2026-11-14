@@ -18,7 +18,7 @@ TCP connections, Go's `net`: listen, accept, dial, read, write, and the platform
 - `write(c: Conn, data: [u8]) -> ()?`, called `net.write(c, data)`: Every byte of `data` sent on `c`, or a failure: Go's `Conn.Write`.
 - `close(@c: Conn)`, called `net.close(@c)`: Closes `c` and gives it back: Go's `Conn.Close`.
 - `close_listener(@listener: Listener)`, called `net.close_listener(@listener)`: Closes `listener` and gives it back: Go's `Listener.Close`.
-- `number(@c: Conn) -> i64?`, called `net.number(@c)`: The number `c` is given up for, which a thread takes back with `of`.
+- `number(@c: Conn) -> i64?`, called `net.number(@c)`: The number `c` is given up for, at least 2^62: carry it whole to `of`, never computing with it.
 - `of(n: i64) -> Conn?`, called `net.of(n)`: The connection `n` names, taken back once.
 - `catch_stop() -> ()?`, called `net.catch_stop()`: Makes Ctrl-C and SIGTERM ask the program to stop instead of ending it.
 - `set_deadline(c: Conn, ms: i64) -> ()?`, called `net.set_deadline(c, ms)`: Every wait on `c` fails `timed_out` past `ms` milliseconds from now: Go's `Conn.SetDeadline`.
