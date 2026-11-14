@@ -34,6 +34,7 @@ use <core>/strings as core_strings
 use absence
 use cases
 use one_file_units
+use platform_skips
 use report
 use shell
 
@@ -98,7 +99,17 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # A case whose one file `--emit-c` refuses (`ffi_one_file`, defect 453) is
 # judged on the units `build` writes for it, a unit per module, emitted twice
 # and alike (`one_file_units`): never passed over.
+#
+# A case this platform cannot build is skipped by name before its first
+# emission, apart from the missing libraries' floor, as `run` skips it
+# (`platform_skips.build_reason`, defect 2523): until then it was emitted and
+# told as a failure on the CI's Windows leg.
 function c_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, written: str, item: cases.Case)
+    unbuilt = platform_skips.build_reason(item.source)
+
+    if !unbuilt.is_err()
+        report.keep_skip(@r, label: "determinism/c/" + item.name, detail: "  " + unbuilt.must())
+        return
     first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
 
     if first.is_err() && one_file_units.refused_one_file(last_error(first))
@@ -329,6 +340,35 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP determinism/c/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2523, held as a test (2026-11-14): a case the Windows target cannot
+# build is skipped there by name before its first emission, apart from the
+# missing libraries' floor, and emitted everywhere else. The compiler named is
+# a file nobody wrote, so an emission asked is a failure naming it.
+test "fixedbugs: a case Windows cannot build is skipped there before its emission, and emitted elsewhere (defect 2523)"
+    scratch = shell.own_scratch()
+    r: report.Report @= report.empty()
+    none_skipped: i64 @= 0
+    c_case(
+        @r,
+        @none_skipped,
+        scratch: scratch,
+        compiler: scratch + "/no-compiler-here",
+        written: scratch,
+        item: cases.Case(source: platform_skips.unbuildable_on_windows()[1].name, expected: "", name: "unbuilt")
+    )
+    assert none_skipped == 0
+    assert r.passed == 0
+
+    if shell.exe_suffix() == ".exe"
+        assert r.failed == 0
+        assert r.skips.len() == 1
+        assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP determinism/c/unbuilt\n  POSIX's signal sets")
+    else
+        assert r.failed == 1
+        assert r.skips.len() == 0
+        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 453's widening in this suite, held as a test (2026-10-10): a program

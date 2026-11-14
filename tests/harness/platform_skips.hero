@@ -20,6 +20,19 @@
 # 2026-10-30): the runtime's `main` declared before any group's header, a
 # header's `static` one follows it, and the Windows target tells it in the
 # same extension's words, which the CI's Windows leg read first.
+#
+# **And a program the Windows target cannot BUILD is skipped by every suite
+# that builds it** (defect 2523, 2026-11-14). `windows()` names a case whose
+# program builds there, or is refused there in other words, and only the forms
+# that judge what a case does read it: `run`, the golden forms and `surface`.
+# `emission`, `determinism`, `lines` and `warnings` build every `run` case for
+# a question of their own and read no such list, so two cases whose headers
+# bind POSIX names went red in all four on the CI's Windows leg (run
+# 43571761187): the header is there and refused, which no machine's absence
+# explains (`absence.hero`). So such a program is named once, by the path every
+# suite builds it from, in `unbuildable_on_windows()`, and each of the five asks
+# `build_reason` before its first build; `emission` claims its blessed file all
+# the same, so no orphan, and compares it on the platforms that build it.
 
 use <core>/strings as core_strings
 
@@ -84,12 +97,18 @@ constant SECOND_EVENT_ON_WINDOWS: str
     "a second console event while the program stops is answered by Windows' own handler after the layer's, which ends the process with `STATUS_CONTROL_C_EXIT` (HandlerRoutine's page, read; the status unrun on the box), where POSIX's second SIGTERM ends it by the signal, 128 + 15 = 143, the status this case pins; no signal of POSIX's reaches a Windows program, so the shape is the stop's and the status the platform's, and the stop's other cases judge Windows' first event (panel 246's R4; lane b34-layer)"
 
 constant SIGNAL_SETS_ON_WINDOWS: str
-    "POSIX's signal sets, `sigset_t` and the five functions over it, are POSIX's and not C11's, whose `signal.h` holds `signal` and `raise` alone (C11 7.14, read); the Windows target's C library is C's, so the case binds names it lacks, an inference unrun on the box, and its shape is judged on every platform by `fixedbugs-2511-a-function-behind-a-macro-that-assigns-through-its-argument-is-called` (defect 2511, lane b35-ffi)"
+    "POSIX's signal sets, `sigset_t` and the five functions over it, are POSIX's and not C11's, whose `signal.h` holds `signal` and `raise` alone (C11 7.14, read); the Windows target's C library is C's, and its build refuses the case at each of the five, `signal.h` declares no `sigemptyset` (`ffi_unknown_name`, the CI's Windows x86-64 leg, run 43571761187, 2026-11-14), so it is built nowhere there, and its shape is judged on every platform by `fixedbugs-2511-a-function-behind-a-macro-that-assigns-through-its-argument-is-called` (defect 2511, lane b35-ffi; defect 2523)"
 
 constant SIGACTION_ON_WINDOWS: str
-    "`sigaction` and its struct are POSIX's and not C11's (C11 7.14, read), and the box's clang refuses the case's header at `struct sigaction quiet;`, an incomplete type (`ffi_header_refused`, run on the box 2026-11-13), before `unistd.h` is asked; no signal of POSIX's reaches a Windows program, so a child deaf to one has nothing to be deaf to there, and the grace read on the monotonic clock is judged by the runtime's own Windows path (defect 2503, lane b35-runtime)"
+    "`sigaction` and its struct are POSIX's and not C11's (C11 7.14, read), and the Windows target's clang refuses the case's header at `struct sigaction quiet;`, an incomplete type (`ffi_header_refused`, run on the box 2026-11-13, and read through `--emit-c` by the CI's Windows x86-64 leg, run 43571761187, 2026-11-14), before `unistd.h` is asked, so it is built nowhere there; no signal of POSIX's reaches a Windows program, so a child deaf to one has nothing to be deaf to there, and the grace read on the monotonic clock is judged by the runtime's own Windows path (defect 2503, lane b35-runtime; defect 2523)"
 
-# The cases and rows Windows cannot hold, by the name the report gives them.
+# The cases and rows whose shape Windows cannot hold, by the name the report
+# gives them: each builds there, or is refused there in other words, so only
+# the forms that judge what it does skip it (every `run` case here was built,
+# emitted and compiled by `emission`, `determinism`, `lines` and `warnings` on
+# the CI's Windows leg, run 43571761187, 2026-11-14). A program Windows cannot
+# build at all is `unbuildable_on_windows`'s, which every suite building it
+# reads.
 function windows() -> [Skip]
     return [
         Skip(name: "fixedbugs-562-a-header-only-inline-is-told-what-c-wants", why: INLINE_ON_WINDOWS)
@@ -112,9 +131,30 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-packages-library-is-told-at-its-package", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
-        Skip(name: "fixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros", why: SIGNAL_SETS_ON_WINDOWS)
-        Skip(name: "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace", why: SIGACTION_ON_WINDOWS)
     ]
+
+# The programs every other platform builds and the Windows target's C refuses,
+# by the path each suite hands the compiler: their headers bind names of
+# POSIX's that the Windows target's headers lack or cannot complete. Read by
+# every suite that builds a `run` case (`run`, `emission`, `determinism`,
+# `lines`, `warnings`), so no name here is also one of `windows()`.
+function unbuildable_on_windows() -> [Skip]
+    return [
+        Skip(name: "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", why: SIGACTION_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros.hero", why: SIGNAL_SETS_ON_WINDOWS)
+    ]
+
+# Why the program at `source` is not built on this machine: one of
+# `unbuildable_on_windows` on Windows, and every program is built anywhere
+# else. Asked before a suite's first build of the program, so a skip here is
+# never a build that failed.
+function build_reason(source: str) -> str?
+    if shell.exe_suffix() == ".exe"
+        for one in unbuildable_on_windows()
+            if one.name == source
+                return ok(one.why)
+
+    return fail(code: "built", msg: "built on this machine")
 
 # The cases whose words the Windows target's C alone says, by the name the
 # report gives them, skipped on every other machine.
@@ -244,7 +284,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 22
+    assert windows().len() == 20
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -257,14 +297,6 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # The stop's second request to end, whose end Windows' own handler
     # answers in a status of its own (panel 246's R4).
     assert shell.exists("tests/golden/run/" + windows()[19].name + ".hero")
-
-    # Defect 2511's case over POSIX's signal sets, which the Windows target's
-    # C library does not hold.
-    assert shell.exists("tests/golden/run/" + windows()[20].name + ".hero")
-
-    # Defect 2503's child deaf to SIGTERM, whose header clang refuses on the
-    # Windows target at `struct sigaction`.
-    assert shell.exists("tests/golden/run/" + windows()[21].name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
@@ -297,6 +329,35 @@ test "a name is judged where its platform's C holds its shape"
     assert reason(elsewhere()[2].name).is_err() == on_windows
     assert reason(darwin_alone()[0].name).is_err() == shell.exists(freed_bytes.DARWIN)
     assert reason("fixedbugs-562-another-case").is_err()
+
+# Each program Windows cannot build is a file that exists, named by the path
+# every suite that builds it hands the compiler, so a renamed case is built
+# and told rather than skipped in silence; it is skipped on Windows alone, and
+# it is named in one list: a case `windows()` names is one Windows builds
+# (defect 2523).
+test "every program Windows cannot build is a file that exists, skipped there alone"
+    on_windows = shell.exe_suffix() == ".exe"
+
+    # Defect 2503's child deaf to SIGTERM, whose header the Windows target's
+    # clang refuses at `struct sigaction`, and defect 2511's case over POSIX's
+    # signal sets, which its `signal.h` does not declare.
+    assert unbuildable_on_windows().len() == 2
+
+    for one in unbuildable_on_windows()
+        assert core_strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
+        assert shell.exists(one.name)
+        assert build_reason(one.name).is_err() == !on_windows
+
+        for other in windows()
+            assert one.name != "tests/golden/run/" + other.name + ".hero"
+
+    # A path is matched whole: a case beside them, the same case's name
+    # alone, and a case `windows()` names are built everywhere.
+    assert build_reason(
+        "tests/golden/run/fixedbugs-2511-a-macro-beside-its-function-that-compiles-is-still-the-call.hero"
+    ).is_err()
+    assert build_reason("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace").is_err()
+    assert build_reason("tests/golden/run/" + windows()[19].name + ".hero").is_err()
 
 # Each emission compared on Darwin alone is a blessed file and a case that
 # exist, `<group>/<stem>` as `suite_emission` labels it, so a renamed one is

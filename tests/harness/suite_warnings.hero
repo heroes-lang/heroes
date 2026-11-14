@@ -42,6 +42,7 @@ use <core>/strings as core_strings
 use absence
 use cases
 use gallery
+use platform_skips
 use report
 use shell
 use strings
@@ -139,7 +140,18 @@ constant LEVELS: [str]
 # with the PROGRAM's exit code, so a build that failed and a program that
 # exited 1 could not be told apart, and a program's own stderr was scanned
 # for warnings as well. `build -O2` asks the build alone.
+#
+# **A program this platform cannot build is skipped by name before either
+# level**, apart from the missing libraries' floor, as `run` skips it
+# (`platform_skips.build_reason`, defect 2523): until then it was built and
+# told as a failure at -O0 on the CI's Windows leg.
 function judge(@r: report.Report, @skipped: i64, scratch: str, compiler: str, label: str, main: str)
+    unbuilt = platform_skips.build_reason(main)
+
+    if !unbuilt.is_err()
+        report.keep_skip(@r, label: label, detail: "  " + unbuilt.must())
+        return
+
     for level in LEVELS
         said = shell.run_guarded(scratch: scratch, words: [compiler, "build", main, level])
 
@@ -301,6 +313,36 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert excused.passed == 0
     assert excused.skips.len() == 1
     assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP warnings/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2523, held as a test (2026-11-14): a program the Windows target
+# cannot build is skipped there by name before either level, apart from the
+# missing libraries' floor, and built everywhere else. The compiler named is a
+# file nobody wrote, so a build asked is a failure naming it.
+test "fixedbugs: a program Windows cannot build is skipped there before its build, and built elsewhere (defect 2523)"
+    scratch = shell.own_scratch()
+    r: report.Report @= report.empty()
+    none_skipped: i64 @= 0
+    judge(
+        @r,
+        @none_skipped,
+        scratch: scratch,
+        compiler: scratch + "/no-compiler-here",
+        label: "warnings/unbuilt",
+        main: platform_skips.unbuildable_on_windows()[1].name
+    )
+    assert none_skipped == 0
+    assert r.passed == 0
+
+    if shell.exe_suffix() == ".exe"
+        assert r.failed == 0
+        assert r.skips.len() == 1
+        assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP warnings/unbuilt\n  POSIX's signal sets")
+    else
+        assert r.failed == 1
+        assert r.skips.len() == 0
+        assert core_strings.has_prefix(s: r.failures[0], prefix: "FAIL warnings/unbuilt at -O0\n")
+        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 299, held as a test (2026-10-04). A build that fails for a reason
