@@ -23,12 +23,16 @@
 # holds it (`emission` to the programs whose label holds it, `run/loop`,
 # `warnings` to the programs whose name holds it, an example's and a gallery
 # program's as a case's, and `records` to one path, the one check that can judge a file
-# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `lines`, `lldb` or a
+# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `control`, `lines`, `lldb` or a
 # golden form, its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
-# `cases.selected`). A shard asks none of the whole suite's questions, its
-# floor and its skip ratio, and its line says so; whoever split the suite
-# asks them of the shards' sums.
+# `cases.selected`). A shard asks the floor of the whole directory, which it
+# collects whole before it deals its own cases, and its line says so; a suite
+# holding a skip ratio asks it of the shard's own cases, its failure naming
+# the shard (task 2505): where a third of a suite's cases are skipped some
+# shard holds a third of its own, so a suite run in shards, as the CI runs
+# `run`, drops neither question. From defect 537 to task 2505 a shard asked
+# neither, and nothing asked them of the shards' sums.
 #
 # With no compiler named, the machine is asked rather than a path assumed
 # (`shell.some_compiler`): $HEROES_COMPILER, else the first of `./heroes`,
@@ -732,15 +736,19 @@ function reason(got: str?) -> str
         .err e => e.msg
 
 # The suite's line says when it was narrowed, so a filtered count is never
-# read as the whole suite's; a shard's says which, and that the whole suite's
-# questions were left to the whole (defect 537).
+# read as the whole suite's; a shard's says which, and that its floor was
+# asked of the whole directory (defect 537; until task 2505 it said the floor
+# and the skip ratio were left to the whole suite, which nothing asked). A
+# suite that holds a skip ratio asks it of the shard's own cases, and its
+# failure names the shard (`cases.walked`); `control` and `lldb` hold none,
+# so the line names the floor alone, which every suite that shards holds.
 function shown(name: str, pick: str) -> str
     if pick == ""
         return name
     shard = cases.shard_of(pick)
 
     if !shard.is_err()
-        return name + " (shard " + shard.must().index.to_str() + " of " + shard.must().count.to_str() + ", its floor and skip ratio left to the whole suite)"
+        return name + " (shard " + shard.must().index.to_str() + " of " + shard.must().count.to_str() + ", its floor asked of the whole directory)"
 
     return name + " (only " + pick + ")"
 
@@ -1270,7 +1278,7 @@ test "every suite whose code walks a golden directory's cases takes the third wo
 test "a narrowed suite says so on its line"
     assert shown(name: "check", pick: "") == "check"
     assert shown(name: "check", pick: "fixedbugs-133") == "check (only fixedbugs-133)"
-    assert shown(name: "run", pick: "2/6") == "run (shard 2 of 6, its floor and skip ratio left to the whole suite)"
+    assert shown(name: "run", pick: "2/6") == "run (shard 2 of 6, its floor asked of the whole directory)"
 
 test "a shard binds the suites whose cases are one list, and says why a word names none"
     for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb", "lines"]

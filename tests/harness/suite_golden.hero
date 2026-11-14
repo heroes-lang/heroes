@@ -301,19 +301,22 @@ function shape_permissive() -> Shape
     )
 
 # `only` narrows the form to the cases whose name holds it, or to a shard of
-# them, `<i>/<n>` (cases.selected, defect 537); a narrowed run is not the whole
-# form, so neither its floor nor its skip ratio is asked of it.
+# them, `<i>/<n>` (cases.selected, defect 537). A filter's cases are not the
+# tree, so its floor is not asked; a shard collects the whole directory before
+# it deals its own cases, so it asks the floor of the whole and the skip ratio
+# of its own (task 2505), as `run`'s shards do.
 function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report.Report?
-    found = cases.selected(found: cases.collect(scratch: scratch, dir: shape.dir)?, only: only)
+    whole = cases.collect(scratch: scratch, dir: shape.dir)?
+    found = cases.selected(found: whole, only: only)
     r: report.Report @= report.empty()
 
-    if only == "" && shape.watched
-        floors.check(@r, label: shape.name, found: found.len(), floor: shape.least, what: "cases in " + shape.dir)
-    else if only == "" && found.len() < shape.least
+    if cases.asks_floor(only) && shape.watched
+        floors.check(@r, label: shape.name, found: whole.len(), floor: shape.least, what: "cases in " + shape.dir)
+    else if cases.asks_floor(only) && whole.len() < shape.least
         report.keep_failure(
             @r,
             label: shape.name,
-            detail: "  " + shape.dir + " has " + found.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden"
+            detail: "  " + shape.dir + " has " + whole.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden"
         )
     skipped: i64 @= 0
     root: str @= ""
@@ -367,14 +370,16 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
             else
                 verdict(@r, shape: shape, item: item, expected: expectation.must(), said: said.must(), refused: "")
 
-    # The skip ratio is the whole form's question, asked of a filter's cases as
-    # it always was and of no shard (defect 537): a shard's skips are summed
-    # with the others' by whoever split the form.
-    if skipped > 0 && skipped * 3 >= found.len() && !cases.is_shard(only)
+    # The skip ratio is asked of the cases walked: the whole form's, a
+    # filter's as it always was, and a shard's own since task 2505, where a
+    # third of the form's cases skipped leaves some shard a third of its own
+    # (`suite_run.run_dir` says the rest). From defect 537 to task 2505 a
+    # shard asked none, its skips left to a sum nobody made.
+    if skipped > 0 && skipped * 3 >= found.len()
         report.keep_failure(
             @r,
             label: shape.name,
-            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not testing the refusals"
+            detail: "  " + skipped.to_str() + " of " + cases.walked(count: found.len(), only: only) + " were skipped for a missing library — this machine is not testing the refusals"
         )
     return ok(r)
 
@@ -758,6 +763,47 @@ test "a machine missing the library skips, but a machine missing every library f
     assert got.must().failed == 1
     assert got.must().skips.len() == 1
     assert core_strings.contains(s: got.must().failures[0], substr: "not testing the refusals")
+    assert !shell.remove_tree(scratch).is_err()
+
+# TASK 2505, held as a test (2026-11-14): a shard of a form asks the floor of
+# the whole directory, never of its own cases, and the skip ratio of its own
+# cases; a filter asks the ratio of its cases and no floor. Two cases, each
+# binding a header no machine has, so each is skipped.
+test "a shard of a form asks the floor of the whole directory and the skip ratio of its own cases (task 2505)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = fresh_tree(scratch: scratch, name: "shards-2505").must()
+    compiler = absence.said_stub(scratch).must()
+
+    for name in ["lacks-a", "lacks-b"]
+        assert !absence.planted_case(dir: tree, name: name, bound: absence.NOWHERE, missing: absence.NOWHERE).is_err()
+        assert !write_file(path: tree + "/" + name + ".expected", text: REFUSED).is_err()
+
+    form: Shape @= refusing(tree)
+    form.least @ 3
+    floor = "FAIL unsupported\n  " + tree + " has 2 cases and had 3 — a golden that stopped running is not a golden"
+    tail = " were skipped for a missing library — this machine is not testing the refusals"
+    shard = run_all(scratch: scratch, compiler: compiler, shape: form, only: "1/2").must()
+    assert shard.skips.len() == 1
+    assert shard.failures == [floor, "FAIL unsupported\n  1 of 1 cases of shard 1 of 2" + tail]
+
+    # The floor counts the directory, two, and never the shard's one case.
+    form.least @ 2
+    met = run_all(scratch: scratch, compiler: compiler, shape: form, only: "2/2").must()
+    assert met.failures == ["FAIL unsupported\n  1 of 1 cases of shard 2 of 2" + tail]
+    form.least @ 3
+    filtered = run_all(scratch: scratch, compiler: compiler, shape: form, only: "lacks-a").must()
+    assert filtered.failures == ["FAIL unsupported\n  1 of 1 cases" + tail]
+
+    # A watched floor is `floors.check`'s, asked of the whole directory alike.
+    form.watched @ true
+    watched = run_all(scratch: scratch, compiler: compiler, shape: form, only: "1/2").must()
+    assert watched.failures.len() == 2
+    assert core_strings.has_prefix(
+        s: watched.failures[0],
+        prefix: "FAIL unsupported\n  the walk found 2 cases in " + tree + " and had 3"
+    )
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's reproducer, held as a test (2026-10-04). A case whose expectation

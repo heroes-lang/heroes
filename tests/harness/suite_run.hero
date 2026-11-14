@@ -69,17 +69,26 @@ constant LEAST: i64
     87
 
 # `only` narrows the suite to the cases whose name holds it, or to a shard of
-# them, `<i>/<n>` (cases.selected, defect 537); a narrowed run is not the whole
-# suite, so its floor is not asked, and a shard's skip ratio is not either.
+# them, `<i>/<n>` (cases.selected, defect 537). A filter's cases are not the
+# tree, so its floor is not asked; a shard collects the whole directory before
+# it deals its own cases, so it asks the floor of the whole and the skip ratio
+# of its own (task 2505), and the suite run in shards on the CI drops neither.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
-    found = cases.selected(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
+    return run_dir(scratch: scratch, compiler: compiler, dir: RUN_DIR, least: LEAST, only: only)
+
+# The form over the golden directory `dir`, floored at `least`: what `run_all`
+# asks of `run/`, with the two as parameters so a test asks a shard's
+# questions of a tree of its own (task 2505).
+function run_dir(scratch: str, compiler: str, dir: str, least: i64, only: str) -> report.Report?
+    whole = cases.collect(scratch: scratch, dir: dir)?
+    found = cases.selected(found: whole, only: only)
     r: report.Report @= report.empty()
 
-    if only == "" && found.len() < LEAST
+    if cases.asks_floor(only) && whole.len() < least
         report.keep_failure(
             @r,
             label: "run",
-            detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str() + " — a golden that stopped running is not a golden"
+            detail: "  " + dir + " has " + whole.len().to_str() + " cases and had " + least.to_str() + " — a golden that stopped running is not a golden"
         )
     binaries = scratch + "/binaries"
     shell.mkdir_all(binaries)?
@@ -122,15 +131,19 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                     skipped @ skipped + 1
 
     # A skip is not a pass — the same floor the unsupported leg carries. It is
-    # the whole suite's question, asked of a filter's cases as it always was and
-    # of no shard (defect 537): a shard of one in six holding the suite's one
-    # skipped case is not a machine that runs no corpus, and the shards' skips
-    # are summed by whoever split the suite (the gate's script).
-    if skipped > 0 && skipped * 3 >= found.len() && !cases.is_shard(only)
+    # asked of the cases walked: the whole suite's, a filter's as it always
+    # was, and a shard's own since task 2505. Where a third of the suite's
+    # cases are skipped, some shard holds a third of its own, so the shards
+    # together catch every machine the whole suite's ratio catches; the price
+    # is a red where the skips crowd into one shard, which the cases dealt
+    # round by their sorted index make rare. From defect 537 to task 2505 a
+    # shard asked none, its skips left to a sum nobody made, and the CI ran the
+    # suite whole for that reason.
+    if skipped > 0 && skipped * 3 >= found.len()
         report.keep_failure(
             @r,
             label: "run",
-            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus"
+            detail: "  " + skipped.to_str() + " of " + cases.walked(count: found.len(), only: only) + " were skipped for a missing library — this machine is not running the corpus"
         )
     return ok(r)
 
@@ -738,3 +751,50 @@ test "the run form starts a case folder's compiler as its setting asks, and refu
 
     assert refused == dir + "/directory names a folder to start in, and the `run` form starts every case's compiler from the repository's root, where it writes the case's binary"
     assert !shell.remove_tree(scratch).is_err()
+
+# TASK 2505, held as a test (2026-11-14): a shard asks the floor of the whole
+# directory, never of its own cases, and the skip ratio of its own cases, so a
+# suite run in shards drops neither question; a filter asks the ratio of its
+# cases and no floor. Two cases, each binding a header no machine has, so each
+# is skipped (`absence.said_stub` answers for the compiler). The failures
+# counted are the suite's own, labelled `run`, so a Darwin without Guard
+# Malloc, told apart, changes nothing here.
+test "a shard asks the floor of the whole directory and the skip ratio of its own cases (task 2505)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-2505"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch).must()
+
+    for name in ["lacks-a", "lacks-b"]
+        assert !absence.planted_case(dir: tree, name: name, bound: absence.NOWHERE, missing: absence.NOWHERE).is_err()
+        assert !write_file(path: tree + "/" + name + ".expected", text: "7\n").is_err()
+
+    floor = "FAIL run\n  " + tree + " has 2 cases and had 3 — a golden that stopped running is not a golden"
+    tail = " were skipped for a missing library — this machine is not running the corpus"
+    shard = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
+    assert shard.skips.len() == 1
+    assert own_failures(shard) == [floor, "FAIL run\n  1 of 1 cases of shard 1 of 2" + tail]
+
+    # The floor counts the directory, two, and never the shard's one case.
+    met = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "2/2").must()
+    assert own_failures(met) == ["FAIL run\n  1 of 1 cases of shard 2 of 2" + tail]
+    filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "lacks-a").must()
+    assert own_failures(filtered) == ["FAIL run\n  1 of 1 cases" + tail]
+    whole = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "").must()
+    assert own_failures(whole) == [floor, "FAIL run\n  2 of 2 cases" + tail]
+    assert !shell.remove_tree(scratch).is_err()
+
+# The failures labelled `run` alone, the suite's own questions, its floor and
+# its skip ratio: a case's are labelled `run/<case>`, Guard Malloc's `run
+# under Guard Malloc`.
+function own_failures(r: report.Report) -> [str]
+    out: [str] @= []
+
+    for one in r.failures
+        if core_strings.has_prefix(s: one, prefix: "FAIL run\n")
+            out @ out.push(one)
+
+    return out

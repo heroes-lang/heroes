@@ -253,10 +253,28 @@ function selected(found: [Case], only: str) -> [Case]
         return none
     return matching(found: found, only: only)
 
-# Whether the word asks for a shard, so that a suite asks none of the whole
-# suite's questions of it (its floor, its skip ratio).
+# Whether the word asks for a shard, which asks the floor of the whole
+# directory and the skip ratio of its own cases (`asks_floor`, `walked`).
 function is_shard(only: str) -> bool
     return shard_shaped(only)
+
+# **Whether a run asks its suite's floor** (task 2505): the whole suite, and a
+# shard, which collects the whole directory before it deals its own cases, so
+# the count it holds to the floor is the tree's; never a filter, whose cases
+# are not the tree. Until task 2505 a shard asked no floor, so a suite split
+# into shards asked none, and the CI ran `run` whole for that reason.
+function asks_floor(only: str) -> bool
+    return only == "" || is_shard(only)
+
+# How a suite's message names the `count` cases it walked: `<count> cases`, and
+# for a shard `<count> cases of shard <i> of <n>`, so the skip ratio a shard
+# asks of its own cases is never read as the whole suite's (task 2505).
+function walked(count: i64, only: str) -> str
+    shard = shard_of(only)
+
+    if shard.is_err()
+        return count.to_str() + " cases"
+    return count.to_str() + " cases of shard " + shard.must().index.to_str() + " of " + shard.must().count.to_str()
 
 # The code of a shard's answer, `ok` where it is one, for the refusal `main`
 # makes and the tests that read it.
@@ -335,6 +353,16 @@ test "the shards of any n are disjoint, their union is the suite, and none holds
                 assert !seen[item.name].is_err()
 
             n @ n + 1
+
+# TASK 2505, held as a test (2026-11-14): the whole suite and a shard ask the
+# suite's floor, a filter does not, and a shard's own cases are named as its.
+test "a shard asks the floor of the whole directory and names its own cases, and a filter asks no floor (task 2505)"
+    assert asks_floor("")
+    assert asks_floor("2/6")
+    assert !asks_floor("fixedbugs-133")
+    assert walked(count: 5, only: "") == "5 cases"
+    assert walked(count: 5, only: "fixedbugs-133") == "5 cases"
+    assert walked(count: 5, only: "2/6") == "5 cases of shard 2 of 6"
 
 test "the filter keeps the cases whose name holds the word, and an empty word keeps all"
     a = Case(source: "x/a.hero", expected: "x/a.expected", name: "a")

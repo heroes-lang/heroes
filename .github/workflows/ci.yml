@@ -855,7 +855,9 @@ jobs:
       # **And not on Darwin, since the same day**: there the net is the
       # `darwin-net` job's, that leg having read 117.8 minutes on 2026-11-06
       # and 237.2 on run 43181785764, 213.9 of them this step's. So the two
-      # Linux legs alone run it here, whole, as before.
+      # Linux legs alone run it here, whole, as before. In the Windows and the
+      # Darwin parts `run` is two shards since task 2505 (2026-11-14), each in
+      # a part, each asking the suite's floor and its own cases' skip ratio.
       - name: The net, in Heroes
         if: inputs.net != 'own' && runner.os == 'Linux'
         shell: bash
@@ -1073,12 +1075,20 @@ jobs:
   # output, so no part can be left out of it either. A name the table holds and
   # the net does not is told and dropped, with nothing of the net left unrun.
   #
-  # **`run` is a part of its own, whole**, and so the leg's longest: 113.0
-  # minutes on that run, 40.7 to 108.0 on the nine pushes read before it
-  # (2026-11-06 to 11), plus its part's own build. A shard of it (`run <i>/<n>`,
-  # defect 537) asks neither the suite's floor nor its skip ratio, which this
-  # leg asks today, and leaves them to whoever split it; until something asks
-  # them of the shards' sums, the part is the whole suite.
+  # **`run` was a part of its own, whole, until task 2505**, and so the leg's
+  # longest: 113.0 minutes on that run, 40.7 to 108.0 on the nine pushes read
+  # before it (2026-11-06 to 11), plus its part's own build, since a shard of
+  # it (`run <i>/<n>`, defect 537) asked neither the suite's floor nor its skip
+  # ratio and nothing asked them of the shards' sums. **Since task 2505
+  # (2026-11-14) every shard asks the floor of the whole directory, which it
+  # collects whole before it deals its own cases, and the skip ratio of its own
+  # cases**: where a third of the suite's cases are skipped, some shard holds a
+  # third of its own, so the shards together catch every machine the whole
+  # suite's ratio catches, at the price of a red where the skips crowd into one
+  # shard, which the cases dealt round by their sorted index make rare. So each
+  # table may place a suite whole, `run`, or in shards, `run:1/2` and
+  # `run:2/2`, each shard a word of a part, and `run` is two shards on each
+  # leg, each sharing a part with a shorter suite.
   #
   # **AND THE DARWIN NET, THE SAME DAY.** The matrix's Darwin leg read 117.8
   # minutes on 2026-11-06 and 237.2 on that run, 213.9 of them its net's: run
@@ -1144,15 +1154,31 @@ jobs:
             exit 1
           fi
 
-          # The part of the table in `placed` that names a suite, 0 where none
-          # does; and whether the net holds a name.
-          placed_in() {
-            local i=0 p
-            for p in "${placed[@]}"; do
-              i=$(( i + 1 ))
-              case " $p " in *" $1 "*) echo "$i"; return ;; esac
+          # A word of a table is a suite, run whole, or a shard of one,
+          # `<suite>:<i>/<n>`, which the part hands the harness as its second
+          # and third words (task 2505): the cases of the suite dealt round by
+          # their sorted index, so that `1/n` to `n/n` run each case once
+          # (`cases.selected`, defect 537). Whether a suite takes a shard is the
+          # harness's to say: one that takes none is refused there, exit 2,
+          # its part red with the harness's reason.
+          suite_of() { echo "${1%%:*}"; }
+
+          # The words of part `$1` of the table in `placed` that name the
+          # suite `$2`, whole or in shards, in the table's order; and whether
+          # any part names the suite; and whether the net holds a name.
+          words_of() {
+            local w out=""
+            for w in ${placed[$(( $1 - 1 ))]}; do
+              if [ "$(suite_of "$w")" = "$2" ]; then out="$out${out:+ }$w"; fi
             done
-            echo 0
+            echo "$out"
+          }
+          named() {
+            local w
+            for w in ${placed[@]}; do
+              if [ "$(suite_of "$w")" = "$1" ]; then return 0; fi
+            done
+            return 1
           }
           holds() {
             case " ${net[*]} " in *" $1 "*) return 0 ;; esac
@@ -1171,11 +1197,44 @@ jobs:
             placed=("$@")
             twice=$(printf '%s\n' ${placed[@]} | sort | uniq -d)
             if [ -n "$twice" ]; then
-              echo "::error::the $leg table places these suites in two parts: $twice"
+              echo "::error::the $leg table places these words in two parts, or twice in one: $twice"
               exit 1
             fi
-            for s in ${placed[@]}; do
+
+            # A suite the table names is placed whole once, or as every shard
+            # of one count `n` once, `1/n` to `n/n`, `n` at least 2 (task
+            # 2505): a shard left out would leave its cases unrun on this leg
+            # with every part green, and a suite placed whole and in shards
+            # would run its cases twice. Each is refused before any part runs.
+            for s in $(printf '%s\n' ${placed[@]} | sed 's/:.*//' | sort -u); do
               holds "$s" || echo "::warning::the $leg table places \`$s\`, which the net does not select: dropped, every suite of the net still run, and the table's line is the one to correct"
+              wholes=0
+              shards=()
+              for w in ${placed[@]}; do
+                if [ "$w" = "$s" ]; then wholes=$(( wholes + 1 )); fi
+                case "$w" in "$s":*) shards+=("${w#*:}") ;; esac
+              done
+              if [ "${#shards[@]}" -eq 0 ]; then continue; fi
+              if [ "$wholes" -ne 0 ]; then
+                echo "::error::the $leg table places \`$s\` whole and in shards, so its cases would run twice"
+                exit 1
+              fi
+              count=""
+              for sh in "${shards[@]}"; do
+                if ! printf '%s\n' "$sh" | grep -Eqx '[1-9][0-9]{0,5}/[1-9][0-9]{0,5}'; then
+                  echo "::error::the $leg table's word \`$s:$sh\` is no shard: a shard is \`<suite>:<i>/<n>\`, the i-th of n"
+                  exit 1
+                fi
+                if [ -z "$count" ]; then count=${sh#*/}; fi
+                if [ "${sh#*/}" -ne "$count" ] || [ "${sh%/*}" -gt "$count" ]; then
+                  echo "::error::the $leg table places \`$s\` in shards of more than one count, or a shard past its count: ${shards[*]}"
+                  exit 1
+                fi
+              done
+              if [ "$count" -lt 2 ] || [ "${#shards[@]}" -ne "$count" ]; then
+                echo "::error::the $leg table places \`$s\` in the shards ${shards[*]}, and a suite in shards is every shard \`1/n\` to \`n/n\` of one count n from 2"
+                exit 1
+              fi
             done
             last=$(( ${#placed[@]} + 1 ))
             lists=()
@@ -1183,10 +1242,14 @@ jobs:
             for k in $(seq 1 "$last"); do
               words=""
               for s in "${net[@]}"; do
-                at=$(placed_in "$s")
-                if [ "$at" -eq "$k" ] || { [ "$at" -eq 0 ] && [ "$k" -eq "$last" ]; }; then
-                  words="$words${words:+ }$s"
+                if [ "$k" -lt "$last" ]; then
+                  got=$(words_of "$k" "$s")
+                elif named "$s"; then
+                  got=""
+                else
+                  got=$s
                 fi
+                if [ -n "$got" ]; then words="$words${words:+ }$got"; fi
               done
               if [ -n "$words" ]; then
                 lists+=("$words")
@@ -1194,9 +1257,13 @@ jobs:
               fi
             done
             n=${#lists[@]}
-            given=$(printf '%s\n' ${lists[@]} | wc -l | tr -d ' ')
-            if [ "$given" -ne "${#net[@]}" ]; then
-              echo "::error::the $leg parts hold $given suites and the net selects ${#net[@]}"
+
+            # Every suite the net selects is in the parts, whole or in shards,
+            # and nothing else is: the parts' suites against the net's list.
+            given=$(printf '%s\n' ${lists[@]} | sed 's/:.*//' | sort -u)
+            wanted=$(printf '%s\n' "${net[@]}" | sort -u)
+            if [ "$given" != "$wanted" ]; then
+              echo "::error::the $leg parts hold $(printf '%s\n' $given | wc -l | tr -d ' ') suites and the net selects ${#net[@]}"
               exit 1
             fi
             json=""
@@ -1207,6 +1274,7 @@ jobs:
                 label="the other $count suites"
               else
                 label=${words// /, }
+                label=${label//:/ }
               fi
               echo "$leg, part $j of $n, $label: $words"
               json="$json${json:+,}{\"part\":\"$j of $n\",\"label\":\"$label\",\"suites\":\"$words\"}"
@@ -1216,33 +1284,45 @@ jobs:
           }
 
           # THE WINDOWS TABLE, with what its parts' suites read on run
-          # 43181785764, the slowest of the ten Windows nets read: 1, 113.0
-          # minutes; 2, 70.5; 3, 67.3; 4, 57.5; and the last part, every suite
-          # not named here, 32.3 over 29 suites. Each part adds its own build,
-          # 5.7 minutes on that runner (checkout, vcpkg, stage 1 and stage 2),
-          # and a harness build per suite: measured on the author's Mac, a warm
-          # `heroes run` of the harness retires 136 billion instructions against
-          # stage 2's 886, so about half a minute there, an inference from that
-          # gauge.
+          # 43181785764, the slowest of the ten Windows nets read: run 113.0
+          # minutes, determinism 52.5, warnings 52.0, emission 23.3, generated
+          # 19.3, lines 18.0, corpus 15.3, probe 15.0, unsupported 14.9 and the
+          # other 28 suites 17.4. Until task 2505 `run` was a part of its own,
+          # 113.0, and the four others read 70.5, 67.3, 57.5 and 32.3. In two
+          # shards of about 56.5 each, an inference from the whole's minutes
+          # and the cases dealt round, the parts read by that sum: 1, 71.5; 2,
+          # 71.8; 3, 70.5; 4, 71.3; and the last part, every suite not named
+          # here, emission, unsupported and 28 others, 55.6. Each part adds its
+          # own build, 5.7 minutes on that runner (checkout, vcpkg, stage 1 and
+          # stage 2), and a harness build per word: measured on the author's
+          # Mac, a warm `heroes run` of the harness retires 136 billion
+          # instructions against stage 2's 886, so about half a minute there,
+          # an inference from that gauge.
           plan windows \
-            "run" \
+            "run:1/2 probe" \
+            "run:2/2 corpus" \
             "determinism lines" \
-            "corpus warnings" \
-            "emission generated probe"
+            "warnings generated"
 
           # THE DARWIN TABLE, a part fewer: the matrix's Darwin leg is a macOS
           # job as well, and GitHub's Free plan, this organisation's, runs five
           # macOS jobs at once (docs.github.com, Actions limits, read
           # 2026-11-13), so the leg and four parts start together. What the
           # parts' suites read on the same run, the slowest of the ten Darwin
-          # nets read: 1, 86.3 minutes; 2, 46.1; 3, 53.2; the last part, 28.4
-          # over 29 suites. Each part adds its own build, 4.6 minutes there
-          # (checkout, Homebrew, stage 1 and stage 2), and a harness build per
-          # suite, about half a minute by the same gauge.
+          # nets read: run 86.3 minutes, determinism 25.6, warnings 16.5,
+          # emission 13.3, unsupported 12.6, probe 12.6, generated 10.9, lines
+          # 10.4, corpus 10.0 and the other 28 suites 15.7. Until task 2505
+          # `run` was a part of its own, 86.3, and the three others read 46.1,
+          # 53.2 and 28.4. In two shards of about 43.2 each, an inference as on
+          # Windows, the parts read by that sum: 1, 53.6; 2, 53.2; 3, 53.0; the
+          # last part, emission, unsupported, probe and 28 others, 54.2. Each
+          # part adds its own build, 4.6 minutes there (checkout, Homebrew,
+          # stage 1 and stage 2), and a harness build per word, about half a
+          # minute by the same gauge.
           plan darwin \
-            "run" \
-            "determinism lines corpus" \
-            "emission generated warnings probe"
+            "run:1/2 lines" \
+            "run:2/2 corpus" \
+            "determinism warnings generated"
 
   # The parts, as `net-plan` gives them. Each is the matrix leg's own
   # ground for the net, step for step, the comments of those steps above saying
@@ -1312,11 +1392,13 @@ jobs:
           ls "$D"/clang_rt.asan_dynamic-x86_64.dll
           echo "$D" >> "$GITHUB_PATH"
 
-      # One harness process per suite, the harness's second word selecting it,
-      # built by stage 1 and judging stage 2 as the matrix's step does with the
-      # whole net (panel 231's R2). Every suite runs whatever the one before it
-      # read, so no red hides another, and the step ends with the worst exit,
-      # the harness's own: 2 where a suite could not run, 1 where one failed.
+      # One harness process per word of the part, the harness's second word
+      # selecting the suite and, for a shard, `run:1/2`, its third word the
+      # shard (task 2505), built by stage 1 and judging stage 2 as the
+      # matrix's step does with the whole net (panel 231's R2). Every word runs
+      # whatever the one before it read, so no red hides another, and the step
+      # ends with the worst exit, the harness's own: 2 where a suite could not
+      # run, 1 where one failed.
       - name: The net, in Heroes, this part's suites
         shell: bash
         env:
@@ -1325,10 +1407,12 @@ jobs:
         run: |
           worst=0
           red=""
-          for suite in $SUITES; do
+          for word in $SUITES; do
+            asked=("${word%%:*}")
+            if [ "$word" != "${asked[0]}" ]; then asked+=("${word#*:}"); fi
             code=0
-            ./heroes-from-seed.exe run tests/harness/main.hero -- ./heroes.exe "$suite" || code=$?
-            if [ "$code" -ne 0 ]; then red="$red $suite (exit $code)"; fi
+            ./heroes-from-seed.exe run tests/harness/main.hero -- ./heroes.exe "${asked[@]}" || code=$?
+            if [ "$code" -ne 0 ]; then red="$red ${asked[*]} (exit $code)"; fi
             if [ "$code" -gt "$worst" ]; then worst=$code; fi
           done
           if [ -n "$red" ]; then echo "::error::the suites of this part that did not end green:$red"; fi
@@ -1341,8 +1425,8 @@ jobs:
   # line, stage 2 built by it from this commit's source, and the part's suites,
   # each its own harness process, the step ending with the worst exit. The
   # checks only Darwin makes live in suites and so in their parts: Guard Malloc
-  # in `run`, the leak oracle's `leaks --atExit` in `generated`, and the `lldb`
-  # suite's seventeen cases in the last part.
+  # in `run`'s two shards, the leak oracle's `leaks --atExit` in `generated`,
+  # and the `lldb` suite's seventeen cases in the last part.
   darwin-net:
     name: Darwin arm64, the net ${{ matrix.part }} (${{ matrix.label }})
     needs: net-plan
@@ -1399,10 +1483,12 @@ jobs:
         run: |
           worst=0
           red=""
-          for suite in $SUITES; do
+          for word in $SUITES; do
+            asked=("${word%%:*}")
+            if [ "$word" != "${asked[0]}" ]; then asked+=("${word#*:}"); fi
             code=0
-            ./heroes-from-seed run tests/harness/main.hero -- ./heroes "$suite" || code=$?
-            if [ "$code" -ne 0 ]; then red="$red $suite (exit $code)"; fi
+            ./heroes-from-seed run tests/harness/main.hero -- ./heroes "${asked[@]}" || code=$?
+            if [ "$code" -ne 0 ]; then red="$red ${asked[*]} (exit $code)"; fi
             if [ "$code" -gt "$worst" ]; then worst=$code; fi
           done
           if [ -n "$red" ]; then echo "::error::the suites of this part that did not end green:$red"; fi
