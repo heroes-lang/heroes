@@ -275,9 +275,10 @@ older ones away:
    so the index publishes the newest version alone. Then the suite judges the
    index, every placed tree, the driver's reach and tests, and the cards.
 
-Steps 3 and 4, run in `packages/core/<version>/`; on 2026-11-10 they rebuilt
-every `list` and the whole `versions` of `core` 0.1.0, 0.2.0 and 0.2.1 byte for
-byte (`diff -r` against `packages/` printed nothing):
+Steps 3 and 4, run in `packages/core/<version>/`; on 2026-11-14 they rebuilt
+0.3.0's `list` and the whole `versions`, its one line once step 6 had removed
+the rest, byte for byte (`diff -r` against `packages/` printed nothing), as
+they had rebuilt 0.1.0's, 0.2.0's and 0.2.1's on 2026-11-10:
 
 ```sh
 ( cd files && find . -type f | sed 's|^\./||' | LC_ALL=C sort |

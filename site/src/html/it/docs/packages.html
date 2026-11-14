@@ -148,7 +148,7 @@ use strings/internal/scan</code></pre>
     La regola è di Go, che ce l&rsquo;ha da Go 1.4, e qui vale anche per le tue cartelle: in un programma con <code>geom/shapes.hero</code> e <code>geom/internal/sq.hero</code>, <code>geom/shapes</code> può scrivere <code>use geom/internal/sq</code> e <code>main.hero</code> no.
   </p>
   <p>
-    Quello che si guadagna è un pacchetto la cui <b>facciata</b>, il modulo che un programma nomina, è tutto ciò da cui un programma può dipendere. La scheda di ogni pacchetto, il breve riferimento accanto alla sua facciata (<code>strings.md</code> accanto a <code>strings.hero</code>), è scritta a partire dalla sola facciata. I moduli sotto <code>internal/</code> sono liberi di cambiare da una versione all&rsquo;altra, perché nessun programma può averli nominati, ed è proprio quello che ha fatto <code>core</code> 0.2.1: ogni file che ha cambiato o aggiunto sta sotto <code>encoding/json/internal/</code>, e la facciata, <code>encoding/json.hero</code>, è lo stesso file della 0.2.0.
+    Quello che si guadagna è un pacchetto la cui <b>facciata</b>, il modulo che un programma nomina, è tutto ciò da cui un programma può dipendere. La scheda di ogni pacchetto, il breve riferimento accanto alla sua facciata (<code>strings.md</code> accanto a <code>strings.hero</code>), è scritta a partire dalla sola facciata. I moduli sotto <code>internal/</code> sono liberi di cambiare da una versione all&rsquo;altra, perché nessun programma può averli nominati, ed è proprio quello che ha fatto <code>core</code> passando dalla 0.2.0 alla 0.2.1: ogni file cambiato o aggiunto stava sotto <code>encoding/json/internal/</code>, e la facciata, <code>encoding/json.hero</code>, è rimasta lo stesso file.
   </p>
 
   <h3>L&rsquo;impronta</h3>
@@ -168,17 +168,14 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
     Lo SHA-256 della lista è l&rsquo;impronta della versione. L&rsquo;indice tiene una riga per versione in un file che si chiama <code>versions</code>, e la <code>sum</code> del catalogo ripete la riga della versione che contiene:
   </p>
   <figure class="example" data-src="packages/core/versions">
-<pre><code>0.1.0 sha256-732461c3ff08b9f593d64f214beefdc95306d67643ded67c476a1994502c9998
-0.2.0 sha256-8a5f9d20346cc82a313d11491b4273b3affeda4b010bc5fedda3cab5174eabf4
-0.2.1 sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c
-0.3.0 sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811</code></pre>
+<pre><code>0.3.0 sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811</code></pre>
     <figcaption>packages/core/versions</figcaption>
   </figure>
   <p>
     Chiunque può verificare quelle cifre senza niente di Heroes, dalla radice del repository:
   </p>
-  <pre><code>$ shasum -a 256 packages/core/0.2.1/list
-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c  packages/core/0.2.1/list</code></pre>
+  <pre><code>$ shasum -a 256 packages/core/0.3.0/list
+54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811  packages/core/0.3.0/list</code></pre>
   <p>
     Il compilatore confronta la copia in <code>heroes.packages/</code> con la <code>sum</code> a ogni build, a ogni check e a ogni run. Cambiane un byte, qui uno <code>0</code> diventato <code>1</code> in <code>strings.hero</code>, e la build si ferma prima di compilare qualsiasi cosa:
   </p>
@@ -205,16 +202,18 @@ placed core 0.3.0 heroes.packages/core@0.3.0-5c73ae460e9f7fa7</code></pre>
 
   <h3>Una versione pubblicata non cambia mai</h3>
   <p>
-    Una versione, una volta pubblicata, non si modifica più: un cambiamento a un pacchetto è una versione nuova. crates.io, l&rsquo;indice di Rust, lo scrive di ogni pacchetto che ospita: una versione non si può sovrascrivere, e il codice non si può cancellare. Nell&rsquo;indice di questo repository il file <code>versions</code> qui sopra non ha mai fatto altro che aggiungere righe.
+    Una versione, una volta pubblicata, non si modifica più: un cambiamento a un pacchetto è una versione nuova. crates.io, l&rsquo;indice di Rust, lo scrive di ogni pacchetto che ospita, e va un passo più in là: una versione non si può sovrascrivere, e il codice non si può cancellare. Qui la prima metà vale per ogni versione: nessun suo file si tocca finché il file <code>versions</code> qui sopra la elenca.
   </p>
   <p>
-    Il passaggio di <code>core</code> da 0.2.0 a 0.2.1 è il caso che c&rsquo;è stato finora. Nella 0.2.0 <code>json.parse</code> leggeva lentamente un numero lontano da uno, per una strada il cui costo cresceva con la distanza; la 0.2.1 legge la maggior parte dei numeri con una sola moltiplicazione per una potenza di dieci a 128 bit, il metodo che usa lo <code>strconv</code> di Go. Quel cambiamento è uscito come 0.2.1, e la 0.2.0 è rimasta byte per byte com&rsquo;era stata pubblicata. Un programma che tiene la 0.2.0 si compila esattamente come prima, e uno che vuole la versione nuova la chiede:
+    Il passaggio di <code>core</code> da 0.2.0 a 0.2.1 è stato il primo cambiamento di questo tipo. Nella 0.2.0 <code>json.parse</code> leggeva lentamente un numero lontano da uno, per una strada il cui costo cresceva con la distanza; dalla 0.2.1 in poi legge la maggior parte dei numeri con una sola moltiplicazione per una potenza di dieci a 128 bit, il metodo che usa lo <code>strconv</code> di Go. Quel cambiamento è uscito come 0.2.1, e la 0.2.0 è rimasta byte per byte com&rsquo;era stata pubblicata; poi la 0.3.0 ha aggiunto <code>net</code> senza cambiare nessun file della 0.2.1.
   </p>
-  <pre><code>$ heroes add core@0.2.0 --index file://../../packages
-added core 0.2.0
-wrote heroes.toml
-$ heroes add core@0.2.1
-changed core 0.2.0 -&gt; 0.2.1
+  <p>
+    La seconda metà, il codice che non si cancella mai, è quella che questo indice per ora non tiene. Finché <code>core</code> non arriva alla 1.0.0, ogni programma del repository passa alla versione più nuova, e poi le versioni vecchie escono dall&rsquo;indice: per questo <code>versions</code> qui sopra elenca solo la più nuova. Un programma altrove che tiene ancora una versione vecchia non si rompe: la sua copia sta nella sua cartella, controllata con la sua <code>sum</code>, e si compila e gira come prima. Quello che non può più fare è scaricare di nuovo quella copia, su un&rsquo;altra macchina o dopo che la sua cartella è stata cancellata: <code>heroes fetch</code> risponde che l&rsquo;indice non serve quella versione. Il comando che lo porta alla più nuova è lo stesso che ha spostato ogni programma qui:
+  </p>
+  <pre><code>$ heroes fetch
+kept core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067
+$ heroes add core
+changed core 0.2.1 -&gt; 0.3.0
 wrote heroes.toml</code></pre>
   <p>
     Un programma tiene la versione che ha scaricato, quindi un cambiamento a un pacchetto non rompe mai la build di un programma: lo raggiunge solo quando il programma lo chiede.
@@ -318,7 +317,8 @@ note: the package `core` is read from the folder `../../packages/core/0.3.0/file
     stessa cartella <code>lib/</code> con una voce <code>path</code>, raggiunta
     sia come <code>&lt;lib&gt;/counter</code> sia come
     <code>lib/counter</code>. Le altre trascrizioni sono state eseguite su
-    copie: il passaggio dalla 0.2.0, un repository git locale il cui tag è
+    copie: un programma che tiene ancora la 0.2.1 accanto all&rsquo;indice
+    così com&rsquo;è, un repository git locale il cui tag è
     stato poi spostato su un secondo commit, un piccolo indice in cui
     <code>a</code> vuole <code>strs</code> 1.0.0 e <code>b</code> la 1.1.0, e il
     programma con <code>core</code> preso dalla cartella stessa

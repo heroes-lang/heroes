@@ -220,12 +220,18 @@ function trees() -> [Tree]
     # core 0.3.0 (its `net` face and floor and `net/http`, the HTTP server's
     # packages) beside 0.2.1's twelve, counted with `find packages/core/<v>
     # -name '*.hero'` for each version.
+    # **The packages row lowered 2026-11-14**, the world changed on purpose
+    # and not the floor to fit it: the author's decision of that day removed
+    # core 0.1.0, 0.2.0 and 0.2.1 from the index once every program held 0.3.0
+    # (`examples/packages/README.md` § 10, steps 5 and 6), their 26 `.hero`
+    # files with them, so the row reads 0.3.0's twenty alone: 20 seeds and 180
+    # variants, measured by `heroes probe packages --family multi` that day.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 269, floor: Floor(family: "multi", generated: 2421, parsing: 2421), known: none)
-        Tree(name: "packages, multi", root: "packages", seeds: 46, floor: Floor(family: "multi", generated: 414, parsing: 414), known: none)
+        Tree(name: "packages, multi", root: "packages", seeds: 20, floor: Floor(family: "multi", generated: 180, parsing: 180), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
