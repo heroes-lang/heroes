@@ -1,0 +1,7 @@
+# Task 2312 (panel 235's R2, R19): a `version` of two numbers, where a
+# version is exact, three. The catalogue does not read, so it names no
+# package, and the `use` that reaches through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

@@ -1,0 +1,2 @@
+cd <work>/app && add json --index file://../../../../../tests/golden/fetch/add-and-fetch-in-the-programs-own-folder.case/idx
+cd <work>/app && fetch

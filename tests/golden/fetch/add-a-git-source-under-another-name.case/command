@@ -1,0 +1,3 @@
+add file://../git/yaml --tag v0.3.1 --as yml -C <work>/app
+fetch -C <work>/app
+run <work>/app/main.hero

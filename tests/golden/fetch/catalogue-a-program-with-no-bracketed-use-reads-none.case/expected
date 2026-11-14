@@ -1,0 +1,17 @@
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+7
+stderr:
+heroes.toml:
+# Task 2312 (`.claude/rules/cli-surface.md`, the fourth input class): a
+# catalogue that does not read, beside a program none of whose `use` lines
+# is bracketed. Such a program has no catalogue and reads none, so it builds
+# and runs as if this file were not here.
+this line is no catalogue's
+heroes.packages:
+(none)

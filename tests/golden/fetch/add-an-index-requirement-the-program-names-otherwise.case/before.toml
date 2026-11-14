@@ -1,0 +1,6 @@
+# Task 2312: `json`'s own catalogue needs the index's `strings`, and the
+# program's catalogue names another package `strings`, a folder of its own.
+index = "file://../../../../../tests/golden/fetch/add-an-index-requirement-the-program-names-otherwise.case/idx"
+
+[dependencies.strings]
+path = "../local/strings"

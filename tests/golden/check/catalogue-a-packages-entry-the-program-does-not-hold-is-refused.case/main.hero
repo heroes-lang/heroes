@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R3, R19): the program's catalogue is the build list,
+# holding every package of the build. The catalogue of `alpha` names
+# `gamma`, and the program's names no entry for that package, so `alpha`
+# cannot be read and the `use` that reaches it is refused at its line.
+use <alpha>/a  #~ package_unread
+
+function main()
+    print(a.one().to_str())

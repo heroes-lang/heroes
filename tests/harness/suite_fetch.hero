@@ -24,6 +24,11 @@
 #     links          `<name> <target>` a line, a symbolic link made in the
 #                    case's scratch folder before its first command,
 #                    holding `<target>` as written (defect 2474)
+#     environment    `NAME=VALUE` a line, given to each of the case's
+#                    commands at the spawn and never to this process,
+#                    `<work>` and `<root>` in a value written whole (task
+#                    2312): a machine with no `git` or `curl`, or a git
+#                    told of another repository, each the verbs' refusal
 #     expected       the transcript, byte for byte
 #
 # **No link is ever made in the tree**: a case's links are made in its
@@ -37,6 +42,19 @@
 # started it, and such a case was skipped by name on Windows, which has no
 # `/usr/bin/env`. Its line is the folder's own: the tree a command starts in
 # may be one the case's first `add` places.
+#
+# **A case's variables are given at the spawn** (`shell.attempted_in`, the
+# runtime's `hero_run_env`; panel 242's R6), beside the identity, so the
+# verbs' refusals of the machine they run on, `no_curl`, `no_git` and
+# `git_environment`, are held by a transcript like every other refusal and
+# never by the compiler's own tests alone, which the second version rewrites.
+# Only the names `SETTABLE` gives are admitted, each for a fact about it. **A
+# case that sets `PATH` is skipped by name on Windows**: a program started
+# with no variable of its own is found there by `CreateProcessW`'s documented
+# search, the system's folders before `PATH` (`runtime/parts/run.c`, its
+# comment on the NULL application name), so a folder named in `PATH` hides
+# from `heroes` no program Windows keeps in its own folders, where Windows 10
+# and later keep a `curl`; an inference, unrun on the box.
 #
 # **No case reaches the network**: an index is a folder of this repository,
 # read over `file://`, and a git source a repository made on the fly; the
@@ -55,6 +73,7 @@
 
 use <core>/strings as core_strings
 
+use case_setting
 use floors
 use report
 use shell
@@ -75,9 +94,21 @@ constant ROOT: str
 # (four), and panel 244's two building cases; fifty-eight at batch 34's
 # gate, 2026-11-13, defects 2474 (two), 2478 (one) and 2479 (one) of batch
 # 32, inside the floor's slack until then, and the round's eleven, defects
-# 2453 (four), 2493 (three) and 2506 (four).
+# 2453 (four), 2493 (three) and 2506 (four); seventy-seven in batch 37's lane
+# b37-pm, 2026-11-14, sixty-four found standing and task 2312's thirteen for
+# the verbs' observables no case held.
 constant LEAST: i64
-    58
+    77
+
+# The variables a case's `environment` may give its commands, a fact about
+# each: `PATH`, through which the verbs find `git` and `curl` (panel 235's
+# R10), so a case names a folder holding neither and reads what a machine
+# without them is told; `GIT_DIR` and `GIT_WORK_TREE`, which name a repository
+# git would answer for in the program's place, so a case reads the verbs'
+# refusal of them (`git_environment`). Any other name is refused with the
+# case's file named, never given.
+constant SETTABLE: [str]
+    ["PATH", "GIT_DIR", "GIT_WORK_TREE"]
 
 # The identity and the date every git source of a case is committed with.
 constant IDENTITY: [str]
@@ -102,6 +133,67 @@ function identity() -> [shell.Variable]
         )
 
     return out
+
+# The case's `environment` lines, blank ones left out.
+function environment_of(dir: str) -> [str]
+    out: [str] @= []
+
+    for line in lines_of(read_file(dir + "/environment").default(""))
+        if line.len() > 0
+            out @ out.push(line)
+
+    return out
+
+# Whether a case may give its commands the variable `name`.
+function settable(name: str) -> bool
+    for one in SETTABLE
+        if one == name
+            return true
+
+    return false
+
+# Whether the case in `dir` gives its commands a `PATH` of its own.
+function sets_path(dir: str) -> bool
+    for pair in environment_of(dir)
+        if core_strings.has_prefix(s: pair, prefix: "PATH=")
+            return true
+
+    return false
+
+# What each command of the case in `dir` is given: the identity, then each
+# variable the case sets in the order it wrote them, `<work>` in a value the
+# case's scratch folder `work` and `<root>` the repository's `root`, a list
+# of folders parted as the platform parts it (`case_setting.given_value`,
+# which writes the root after the parting, a root on Windows holding a
+# drive's `:`). A line naming no variable this form admits is refused with
+# the case's file named.
+function given_of(dir: str, work: str, root: str) -> [shell.Variable]?
+    out: [shell.Variable] @= identity()
+    spelled = rooted(work)
+
+    for pair in environment_of(dir)
+        cut = strings.index_of(text: pair, needle: "=")
+
+        if cut.is_err() || !settable(pair.slice(from: 0, to: cut.must()))
+            return fail(
+                code: "environment",
+                msg: dir + "/environment sets `" + pair + "`, and a case sets only " + SETTABLE.join(", ") + ", as `NAME=VALUE`"
+            )
+        name = pair.slice(from: 0, to: cut.must())
+        value = swapped(text: pair.slice(from: cut.must() + 1, to: pair.len()), old: "<work>", new: spelled)
+        out @ out.push(
+            shell.Variable(name: name, value: case_setting.given_value(name: name, value: value, root: root, windows: shell.exe_suffix() == ".exe"))
+        )
+
+    return ok(out)
+
+# `work` as a case's value writes it before the root is known: from `<root>`
+# where it is relative to the repository's root, as the harness's scratch is,
+# and as it stands where it opens at the machine's root.
+function rooted(work: str) -> str
+    if work.len() > 0 && work[0] == '/'
+        return work
+    return "<root>/" + work
 
 # `only` narrows the suite to the cases whose name holds it, its floor then
 # left to the whole suite.
@@ -147,6 +239,18 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
         )
         return
 
+    if sets_path(dir) && shell.exe_suffix() == ".exe"
+        report.keep_skip(
+            @r,
+            label: label,
+            detail: "  the case hides `git` and `curl` from `heroes` through `PATH`, and Windows finds a program started with no variable of its own in its system's folders before `PATH`"
+        )
+        return
+    given = given_of(dir: dir, work: work, root: root)
+
+    if given.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + why_given(given))
+        return
     made = made_work(scratch: scratch, dir: dir, work: work)
 
     if made.is_err()
@@ -157,7 +261,7 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
     if linked.is_err()
         report.keep_failure(@r, label: label, detail: "  the case's links could not be made: " + why(linked))
         return
-    got = transcript(scratch: scratch, compiler: compiler, dir: dir, work: work, root: root)
+    got = transcript(scratch: scratch, compiler: compiler, dir: dir, work: work, root: root, given: given.must())
 
     if got.is_err()
         report.keep_failure(@r, label: label, detail: "  " + why_text(got))
@@ -307,8 +411,9 @@ function git(scratch: str, at: str, words: [str]) -> ()?
         )
     return ok()
 
-# What the case's commands print, and what they leave.
-function transcript(scratch: str, compiler: str, dir: str, work: str, root: str) -> str?
+# What the case's commands print, and what they leave, each command given
+# `given` at its spawn.
+function transcript(scratch: str, compiler: str, dir: str, work: str, root: str, given: [shell.Variable]) -> str?
     out: [str] @= []
 
     for line in lines_of(read_file(dir + "/command")?)
@@ -334,7 +439,7 @@ function transcript(scratch: str, compiler: str, dir: str, work: str, root: str)
         for word in parts
             words @ words.push(swapped(text: word, old: "<work>", new: put))
 
-        ran = shell.attempted_in(scratch: scratch, program: program, words: words, given: identity(), folder: folder)?
+        ran = shell.attempted_in(scratch: scratch, program: program, words: words, given: given, folder: folder)?
         out @ out.push(told + "\n")
         out @ out.push("exit " + ran.code.to_str() + "\n")
         out @ out.push("stdout:\n")
@@ -470,6 +575,11 @@ function why_text(failed: str?) -> str
         .ok _  => return ""
         .err e => return e.msg
 
+function why_given(failed: [shell.Variable]?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
 ## Tests
 
 test "a transcript holds no machine's paths, and two texts are told apart at their first differing line"
@@ -521,6 +631,33 @@ test "a case's link is two words, and a line of another shape is refused before 
         .err e => assert e.msg == dir + "/links holds `alone`, and a link is `<name> <target>`"
 
     assert !shell.is_directory(dir + "/work")
+    assert !shell.remove_tree(dir).is_err()
+
+# Task 2312: a case's variables follow the identity in the order the case
+# wrote them, `<work>` its scratch folder written from the repository's root,
+# and a name this form does not admit, or a line that names no variable, is
+# refused before any command runs.
+test "a case gives its commands the variables it admits, and refuses any other (task 2312)"
+    dir = "build/selftest-fetch-environment"
+    assert !shell.remove_tree(dir).is_err()
+    assert !shell.mkdir_all(dir).is_err()
+    assert !sets_path(dir)
+    assert given_of(dir: dir, work: "build/h-1/fetch/x", root: "/r").must().len() == IDENTITY.len()
+    assert !write_file(path: dir + "/environment", text: "PATH=<work>/no-tools\n\nGIT_DIR=<root>/elsewhere\n").is_err()
+    assert sets_path(dir)
+    given = given_of(dir: dir, work: "build/h-1/fetch/x", root: "/r").must()
+    assert given.len() == IDENTITY.len() + 2
+    assert given[IDENTITY.len()] == shell.Variable(name: "PATH", value: "/r/build/h-1/fetch/x/no-tools")
+    assert given[IDENTITY.len() + 1] == shell.Variable(name: "GIT_DIR", value: "/r/elsewhere")
+    assert rooted("/w/fetch/x") == "/w/fetch/x"
+
+    for line in ["HOME=/x\n", "PATH\n"]
+        assert !write_file(path: dir + "/environment", text: line).is_err()
+
+        match given_of(dir: dir, work: "build/h-1/fetch/x", root: "/r")
+            .ok _  => assert false
+            .err e => assert e.msg == dir + "/environment sets `" + line.slice(from: 0, to: line.len() - 1) + "`, and a case sets only PATH, GIT_DIR, GIT_WORK_TREE, as `NAME=VALUE`"
+
     assert !shell.remove_tree(dir).is_err()
 
 test "a command line may start in a folder of the case, every path then written whole (defect 2479)"

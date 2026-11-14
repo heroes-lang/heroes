@@ -1,0 +1,7 @@
+# Task 2312: a program whose one `use` is its own module, bare, beside a
+# catalogue that does not read: no `use <name>/...` reaches a package, so the
+# catalogue is never read and the program runs.
+use util
+
+function main()
+    print(util.seven().to_str())

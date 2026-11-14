@@ -1,0 +1,6 @@
+# Task 2312: what `heroes add` refuses in its own words and flags, each
+# refused before anything is placed or written, the catalogue left as it was.
+index = "file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx"
+
+[dependencies.yaml]
+path = "../local/yaml"

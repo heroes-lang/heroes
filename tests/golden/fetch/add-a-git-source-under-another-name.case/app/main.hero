@@ -1,0 +1,6 @@
+# Task 2312: a git source added under a name of the author's own, `--as yml`,
+# is reached by that name and by no other.
+use <yml>/load
+
+function main()
+    print(load.load().to_str())

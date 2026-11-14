@@ -1,0 +1,39 @@
+$ heroes add file://../git/yaml --tag vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: a tag of 256 bytes is longer than the 255 a tag here may be
+$ heroes add file://../git/yaml --tag a//b -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: `a//b` has an empty part, a `/` at its start or two together
+$ heroes add file://../git/yaml --tag v1/ -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: `v1/` ends with `/`, `.` or `.lock`, which no tag's name does
+$ heroes add file://../git/yaml --tag v1.lock -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: `v1.lock` ends with `/`, `.` or `.lock`, which no tag's name does
+$ heroes add file://../git/yaml --tag v~1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: `v~1` holds a byte that is not a letter, a digit, `.`, `_`, `-`, `+` or `/`, which is all a tag here holds
+$ heroes add file://../git/yaml --tag .v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[tag_refused]: `.v1` has a part opening with `.` or `-`, which git reads as no tag or as an option
+$ heroes add file://../git/notags --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[absent]: `file://../git/notags` has no tag `v1`, and it has no tag at all
+heroes.toml:
+(none)
+heroes.packages:
+(none)

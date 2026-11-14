@@ -1,0 +1,5 @@
+[dependencies.json]
+git = "https://git.example.invalid/ana/json"
+tag = "v1"
+commit = "abc"
+sum = "sha256-c5e937500d7206bbee6d9fae216773d604f937abe1bc776b704a6fa48fceb463"

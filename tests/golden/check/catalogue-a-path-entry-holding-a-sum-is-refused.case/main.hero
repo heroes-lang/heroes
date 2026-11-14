@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R6, R19): a `path` entry holding a `sum`, which a
+# folder of the author's own, read as it stands, never has. The catalogue
+# does not read, so it names no package, and the `use` that reaches through
+# it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

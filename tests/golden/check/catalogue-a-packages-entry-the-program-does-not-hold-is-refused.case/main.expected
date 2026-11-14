@@ -1,0 +1,1 @@
+tests/golden/check/catalogue-a-packages-entry-the-program-does-not-hold-is-refused.case/main.hero:5:5: error[package_unread]: `<alpha>` cannot be read: its catalogue names `gamma`, the folder `../gamma`, and the program's catalogue lists no entry for that package: the program's catalogue holds every package of the build — `heroes add` writes it whole

@@ -1,0 +1,10 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+stderr:
+heroes.toml:
+# Task 2312: a catalogue holding its `index` line and no entry reads, and
+# `heroes fetch` has nothing to place: it says nothing and exits 0.
+index = "file://../idx"
+heroes.packages:
+(none)

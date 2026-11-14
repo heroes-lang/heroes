@@ -1,0 +1,114 @@
+$ heroes add HTTPS://git.example.invalid/ana/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `HTTPS://git.example.invalid/ana/yaml` writes its scheme in capitals: write `https://git.example.invalid/ana/yaml`
+$ heroes add fd::17 --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `fd::17` names one of git's remote helpers, which runs a program to fetch: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add git@git.example.invalid:ana/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `git@git.example.invalid:ana/yaml` is an ssh address, which this command does not read: the same repository over https is often `https://git.example.invalid/ana/yaml`
+$ heroes add ../yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `../yaml` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../yaml` here, and a package's folder while it is developed is its entry's `path`
+$ heroes add https://ana:secret@git.example.invalid/ana/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://ana:secret@git.example.invalid/ana/yaml` names an account: a catalogue is shared, so it holds no account and no password, and git's credential helper is where they live
+$ heroes add https://[::1/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://[::1/yaml` opens an IPv6 host with `[` and never closes it: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add https://[::g]/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://[::g]/yaml` holds a byte no IPv6 host holds: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add https://git_example.invalid/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git_example.invalid/yaml` names a host holding a byte no host name holds: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add https://git.example.invalid:0/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git.example.invalid:0/yaml` names a port that is not a number from 1 to 65535: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add https://git.example.invalid/yaml?ref=v1 --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git.example.invalid/yaml?ref=v1` holds a query or a fragment, which names no source here: write the path alone
+$ heroes add https://git.example.invalid/yaml#v1 --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git.example.invalid/yaml#v1` holds a query or a fragment, which names no source here: write the path alone
+$ heroes add https://git.example.invalid/a%zz --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git.example.invalid/a%zz` holds a `%` that two hex digits do not follow, which is how an address writes a byte it holds no other way
+$ heroes add https://git.example.invalid/caffè --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git.example.invalid/caffè` holds a character above ASCII at byte 33, and an address is ASCII with no space or control character, anything else percent-encoded (`%20` for a space)
+$ heroes add https:// --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://` names no host: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add git://git.example.invalid/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `git://git.example.invalid/yaml` is fetched over `git://`, which this command does not read: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add file://host/yaml --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://host/yaml` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./host/yaml`, and an absolute one `file:///` and the path
+$ heroes add file://./a%0ab --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://./a%0ab` writes a control character, `%0a`, which no folder's name holds
+$ heroes add json --index ftp://index.example.invalid -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `ftp://index.example.invalid` is fetched over `ftp://`, which this command does not read: a package is fetched over `https://`, or over `file://` from inside the program's own repository
+$ heroes add json --index http://index.example.invalid -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `http://index.example.invalid` is read in clear, so anything between could change what is fetched: write `https://index.example.invalid`
+$ heroes add file://../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../x --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../x` climbs above the root of the machine's folders with `..`
+$ heroes add file://./a%ffb --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://./a%ffb` writes bytes that are not UTF-8, which this compiler holds no path in
+$ heroes add https://git.example.invalid/a{b --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https://git.example.invalid/a{b` holds `{`, which an address writes percent-encoded
+heroes.toml:
+(none)
+heroes.packages:
+(none)

@@ -1,0 +1,15 @@
+add noend --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add shape --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add order --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add slash --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add control --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add drive --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add backslash --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add empty --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add dot --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add dotgit --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add folded --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add both --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add nottext --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add mismatch --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+add folder --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app

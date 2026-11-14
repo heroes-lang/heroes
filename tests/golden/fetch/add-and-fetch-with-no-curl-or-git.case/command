@@ -1,0 +1,4 @@
+add json --index https://index.example.invalid -C <work>/app
+add json --index file://../idx -C <work>/app
+add file://../git/yaml --tag v0.3.1 --as other -C <work>/app
+fetch -C <work>/app

@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R9 C4, R19): an `index` line read over `http://`, in
+# clear, where a network source is `https://`. The catalogue does not read,
+# so it names no package, and the `use` that reaches through it is refused at
+# its line.
+use <json>/parse  #~ source_refused
+
+function main()
+    print(parse.x().to_str())

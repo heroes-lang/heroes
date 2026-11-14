@@ -1,0 +1,79 @@
+$ heroes add noend --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[index_refused]: the listing does not end with a line end, which its canonical form does
+$ heroes add shape --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[index_refused]: a line of the listing is not `<sha256>  <name>`: `abc  a.hero`
+$ heroes add order --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[index_refused]: the listing names `a.hero` after `b.hero`, where its canonical form orders the names by their bytes, each once
+$ heroes add slash --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `/a.hero` opens with `/`, which names a place outside the package
+$ heroes add control --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: a name holds a control character, a line end among them, which no file of a package's may
+$ heroes add drive --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `c:a.hero` holds `:`, which one system reads as a separator or a drive
+$ heroes add backslash --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `a\b.hero` holds `\`, which one system reads as a separator or a drive
+$ heroes add empty --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `a//b.hero` has an empty part, a `/` at its end or two together
+$ heroes add dot --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `a/./b.hero` has a part `.`
+$ heroes add dotgit --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `x/.Git/config` has a part `.git`, which would make the package's folder a repository inside the program's
+$ heroes add folded --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `A.hero` and `a.hero` are one name where case is ignored, as it is on macOS and Windows by default
+$ heroes add both --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `x` is a file and a folder at once
+$ heroes add nottext --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: the listing of nottext 1.0.0 is not text, so a name in it is not UTF-8, which no file of a package's may be
+$ heroes add mismatch --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: `parse.hero` of mismatch 1.0.0 does not match its line of the listing, 9adaec0145d1bd2f6d78116a4199a93545840cdfeafba792d2f0e68406d22521, and nothing was placed
+$ heroes add folder --index file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[absent]: the index `file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx` lists no package `folder`: `file://../../../../../tests/golden/fetch/add-a-listing-refused.case/idx/folder/versions` is a folder, where a file was asked for
+heroes.toml:
+(none)
+heroes.packages:
+(none)

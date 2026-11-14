@@ -1,0 +1,2 @@
+function seven() -> i64
+    return 7

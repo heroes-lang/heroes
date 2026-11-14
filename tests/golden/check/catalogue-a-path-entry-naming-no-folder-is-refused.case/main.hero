@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R6, R19): a `path` entry naming a folder that is not
+# there. The catalogue reads, and the package it names cannot be: the `use`
+# that reaches it is refused at its line, and nothing else is compiled in
+# its place.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.x().to_str())
