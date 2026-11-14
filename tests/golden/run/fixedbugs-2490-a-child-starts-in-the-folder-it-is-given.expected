@@ -1,0 +1,20 @@
+two more names of the program made: true
+the parent sees the marker by its bare name: false
+in the folder: started, exit 0
+its words, read where the parent names them:   the child sees the marker by its bare name: true
+
+nothing written under the folder instead: true
+  the child sees the marker by its bare name: true
+a relative program path, in the folder: started, exit 0
+  the child sees the marker by its bare name: true
+a bare name through a relative PATH entry, in the folder: started, exit 0
+the middle: started, exit 0
+a folder that does not exist: no folder, exit -1, a reason given true
+a folder that is a file: no folder, exit -1, a reason given true
+the output file it named, as it was: true
+a program that does not exist, in the folder: not found, exit -1, a reason given true
+  the child sees the marker by its bare name: true
+a folder staged twice, the later in the folder: started, exit 0
+  the child sees the marker by its bare name: false
+nothing staged after the reset: started, exit 0
+the parent's folder holds no tree of the child's: true

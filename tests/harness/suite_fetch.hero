@@ -29,10 +29,12 @@
 # **No link is ever made in the tree**: a case's links are made in its
 # scratch folder with `ln -s`, as `case_setting.hero` makes a folder case's,
 # and a case with links is skipped by name where `ln` is not the machine's,
-# Windows. **A command that starts in a folder of its own** is started by
-# `/usr/bin/env -C`, as `case_setting.hero` starts a folder case's compiler,
-# the compiler and `<work>` written whole, since a relative one would be read
-# from there; a case holding one is skipped by name on Windows, which has no
+# Windows. **A command that starts in a folder of its own** is given that
+# folder at the spawn (`shell.attempted_in`, the runtime's `hero_run_dir`;
+# panel 248's R3, defect 2490), as `case_setting.hero` starts a folder case's
+# compiler, the compiler and `<work>` written whole, since a word the compiler
+# reads is read in the folder it starts in; until then `/usr/bin/env -C`
+# started it, and such a case was skipped by name on Windows, which has no
 # `/usr/bin/env`. Its line is the folder's own: the tree a command starts in
 # may be one the case's first `add` places.
 #
@@ -145,13 +147,6 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
         )
         return
 
-    if starts_elsewhere(dir) && shell.exe_suffix() == ".exe"
-        report.keep_skip(
-            @r,
-            label: label,
-            detail: "  the case starts a command in a folder of its own through `" + ENV + "`, and this platform has no `" + ENV + "`"
-        )
-        return
     made = made_work(scratch: scratch, dir: dir, work: work)
 
     if made.is_err()
@@ -212,24 +207,11 @@ function made_work(scratch: str, dir: str, work: str) -> ()?
 
     return ok()
 
-# The one program that starts a command in a folder of its own: POSIX's
-# `env`, `-C` in GNU's and in this Mac's, as `case_setting.hero` names it.
-constant ENV: str
-    "/usr/bin/env"
-
 # The folder a command line starts in, `cd <folder> && <words>`, or "".
 function start_of(parts: [str]) -> str
     if parts.len() > 3 && parts[0] == "cd" && parts[2] == "&&"
         return parts[1]
     return ""
-
-# Whether one of the case's commands starts in a folder of its own.
-function starts_elsewhere(dir: str) -> bool
-    for line in lines_of(read_file(dir + "/command").default(""))
-        if start_of(strings.split_on(text: line, byte: 32)).len() > 0
-            return true
-
-    return false
 
 # `path` written whole: as it is where it starts at the root, else from the
 # repository's root, a leading `./` dropped.
@@ -336,18 +318,23 @@ function transcript(scratch: str, compiler: str, dir: str, work: str, root: str)
         words: [str] @= [compiler]
         put: str @= work
         told: str @= "$ heroes " + line
+        folder: str @= ""
 
+        # A command that starts in a folder of its own is given that folder
+        # at the spawn, the compiler and `<work>` written whole, since a word
+        # the compiler reads is read in the folder it starts in.
         if start.len() > 0
             put @ whole(root: root, path: work)
-            program @ ENV
-            words @ [ENV, "-C", swapped(text: start, old: "<work>", new: put), whole(root: root, path: compiler)]
+            program @ whole(root: root, path: compiler)
+            words @ [program]
+            folder @ swapped(text: start, old: "<work>", new: put)
             parts @ parts.slice(from: 3, to: parts.len())
             told @ "$ cd " + start + " && heroes " + parts.join(" ")
 
         for word in parts
             words @ words.push(swapped(text: word, old: "<work>", new: put))
 
-        ran = shell.attempted_given(scratch: scratch, program: program, words: words, given: identity())?
+        ran = shell.attempted_in(scratch: scratch, program: program, words: words, given: identity(), folder: folder)?
         out @ out.push(told + "\n")
         out @ out.push("exit " + ran.code.to_str() + "\n")
         out @ out.push("stdout:\n")

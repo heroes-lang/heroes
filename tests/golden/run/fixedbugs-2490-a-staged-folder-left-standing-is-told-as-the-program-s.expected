@@ -1,0 +1,2 @@
+staged
+!panic: a launch still holds 1 working folder(s) for its child at exit — `hero_run_dir` keeps one until `hero_run_reset()` gives it back, and this program did not call it after its last `hero_run_dir`

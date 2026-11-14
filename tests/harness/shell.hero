@@ -45,6 +45,10 @@ extern "hero_os.h"
     # One variable for the next child alone (panel 242's R6): this process's
     # environment is never written, so no later case's child sees it.
     function hero_run_env(name: str, value: str)
+    # The next child's working folder alone (panel 248's R3): this process's
+    # own is never changed, and every relative path of the launch, the
+    # program's and the streams' included, is still read in it.
+    function hero_run_dir(folder: str)
     function hero_run_limit(seconds: i64)
     function hero_run_limit_writes(bytes: i64) -> i64
     function hero_run_exe_suffix() -> str
@@ -58,6 +62,7 @@ extern "hero_os.h"
     function hero_run_serial() -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr lent) -> i64
+    function hero_fs_resolved_shown(path: cstr lent, @status: i64, @marks: i64) -> str
     function hero_fs_is_directory(path: cstr lent) -> i64
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_fs_remove(path: cstr lent) -> i64
@@ -85,6 +90,7 @@ extern "hero_os.h"
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_FOUND: i64
     constant HERO_OS_NOT_TEXT: i64
+    constant HERO_OS_NO_FOLDER: i64
 
 # `own_scratch` gives its directory back as the process ends (defect 2305).
 extern "stdlib.h"
@@ -154,7 +160,7 @@ record Run
 # Windows arm, where the inherited handle already had a probe around it.
 function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS, given: [])?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS, given: [], folder: "")?,
         program: program
     )
 
@@ -176,7 +182,7 @@ record Variable
 # process's `PATH`**, never a `PATH` among `given`, which is the child's alone.
 function run_given(scratch: str, program: str, words: [str], given: [Variable]) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS, given: given)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS, given: given, folder: "")?,
         program: program
     )
 
@@ -188,7 +194,7 @@ function run_given(scratch: str, program: str, words: [str], given: [Variable]) 
 # says so first and the caller runs nothing.
 function run_limited(scratch: str, program: str, words: [str], bytes: i64) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS, given: [])?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS, given: [], folder: "")?,
         program: program
     )
 
@@ -230,7 +236,7 @@ function run_bounded(scratch: str, program: str, words: [str], seconds: i64, byt
         )
 
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [])?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [], folder: "")?,
         program: program
     )
 
@@ -259,7 +265,7 @@ function run_self_bounded(scratch: str, program: str, words: [str], seconds: i64
         )
 
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [])?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [], folder: "")?,
         program: program
     )
 
@@ -283,6 +289,14 @@ function attempted(scratch: str, program: str, words: [str]) -> Run?
 
 # `attempted`, the child given `given` as well, as `run_given` gives them.
 function attempted_given(scratch: str, program: str, words: [str], given: [Variable]) -> Run?
+    return attempted_in(scratch: scratch, program: program, words: words, given: given, folder: "")
+
+# `attempted_given`, the child started in `folder` (panel 248's R3,
+# `hero_run_dir`), "" for this process's own. `folder`, the two streams and a
+# `program` holding a folder are read in this process's folder; a path among
+# `words` or `given` is the child's to read, in `folder`, so a caller writes
+# those whole (`whole_path`).
+function attempted_in(scratch: str, program: str, words: [str], given: [Variable], folder: str) -> Run?
     return spawned(
         scratch: scratch,
         program: program,
@@ -290,8 +304,29 @@ function attempted_given(scratch: str, program: str, words: [str], given: [Varia
         in_path: "",
         write_limit: 0,
         seconds: WATCHDOG_SECONDS,
-        given: given
+        given: given,
+        folder: folder
     )
+
+# `run_given`, the child started in `folder` as `attempted_in` starts it.
+function run_in(scratch: str, program: str, words: [str], given: [Variable], folder: str) -> Run?
+    return insisted(
+        ran: attempted_in(scratch: scratch, program: program, words: words, given: given, folder: folder)?,
+        program: program
+    )
+
+# `path` written whole, as the filesystem resolves it from this process's
+# folder, the parts not there yet as written; `path` itself where it cannot
+# be resolved. A path handed to a child in a word or a variable is read in the
+# child's folder, which `hero_run_dir` may make another (panel 248's R3).
+function whole_path(path: str) -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    resolved = hero_fs_resolved_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status != HERO_OS_OK || resolved.len() == 0
+        return path
+    return resolved
 
 # Why a `run` came back with no program verdict, for a caller about to print
 # one. "" where it came back with one.
@@ -346,7 +381,7 @@ function insisted(ran: Run, program: str) -> Run?
         msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
     )
 
-function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64, given: [Variable]) -> Run?
+function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64, given: [Variable], folder: str) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
     # The two streams are files opened under it, so a missing directory makes
     # the child fail to start — and `started: false` then means "the program is
@@ -406,6 +441,9 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     for one in given
         hero_run_env(name: one.name, value: one.value)
 
+    if folder.len() > 0
+        hero_run_dir(folder: folder)
+
     status: i64 @= 0
     code = hero_run_go(
         program: program.cstr(),
@@ -430,6 +468,14 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
         # and grew by two a run once they carried the process's id.
         _ = hero_fs_remove(path: out_path.cstr())
         _ = hero_fs_remove(path: err_path.cstr())
+
+        # A folder the child could not be started in is the caller's, never
+        # the program's: told apart, as the runtime tells it (panel 248's R3).
+        if status == HERO_OS_NO_FOLDER
+            return fail(
+                code: "no_folder",
+                msg: program + " could not be started in the folder " + folder + ", which the operating system could not enter; its own reason is " + why.to_str()
+            )
         return ok(Run(code: -1, out: "", err: "", started: false, why: why))
     out = captured(path: out_path, stream: "stdout")
     err = captured(path: err_path, stream: "stderr")

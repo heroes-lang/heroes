@@ -81,9 +81,13 @@ function guard_malloc() -> str?
         )
     return ok(GUARD_MALLOC)
 
-# `binary` run under Guard Malloc, its messages written to `log`.
+# `binary` run under Guard Malloc, its messages written to `log`, named whole:
+# every process of the program reads the variable, and a child the program
+# starts in a folder of its own (`hero_run_dir`, panel 248's R3) read a
+# relative one there and wrote Guard Malloc's banner over the program's
+# stderr (the compiler-engineer's measurement, that sitting).
 function guarded(binary: str, library: str, log: str) -> [str]
-    return ["env", "DYLD_INSERT_LIBRARIES=" + library, "MALLOC_LOG_FILE=" + log, binary]
+    return ["env", "DYLD_INSERT_LIBRARIES=" + library, "MALLOC_LOG_FILE=" + shell.whole_path(log), binary]
 
 ## Tests
 

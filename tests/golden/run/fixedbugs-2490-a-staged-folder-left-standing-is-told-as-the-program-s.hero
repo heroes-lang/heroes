@@ -1,0 +1,13 @@
+# Defect 2490 (panel 248's R3): a working folder `hero_run_dir` stages is
+# held until `hero_run_reset()` gives it back, as a variable `hero_run_env`
+# stages is (feature 2424's case beside this one), so a program that stages
+# one and never gives it back is told so at exit, the call that gives it back
+# named, apart from the variables and never as a runtime call that kept what
+# it borrowed. Staged twice, it is still one folder.
+extern "hero_os.h"
+    function hero_run_dir(folder: str)
+
+function main()
+    hero_run_dir(folder: "build")
+    hero_run_dir(folder: "build/again")
+    print("staged")

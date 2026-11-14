@@ -1,0 +1,12 @@
+# Defect 2490 (panel 248's R3): a working folder staged for a child that is
+# empty is refused, since an empty path names no folder on any system and
+# the runtime would otherwise have to give it a meaning of its own (this
+# process's folder, or the system's ENOENT). As `hero_run_env`'s empty name
+# is, it is a panic in its own words, before any launch.
+extern "hero_os.h"
+    function hero_run_dir(folder: str)
+
+function main()
+    print("before")
+    hero_run_dir(folder: "")
+    print("unreachable")
