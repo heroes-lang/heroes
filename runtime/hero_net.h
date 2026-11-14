@@ -34,6 +34,16 @@
  * address it reads through, so one closed already, NULL, or one this layer
  * never issued is `HERO_NET_NOT_OPEN`, never a read of freed memory and
  * never another socket that took its number.
+ *
+ * A CALL THAT WAITS COSTS NOTHING WHILE IT WAITS (panel 248's R2; defect
+ * 2502). At the first call that waits the layer makes one thread of its own
+ * for the process, which tells every waiting call when its socket is ready,
+ * and spends one descriptor on it (two sockets on Windows, a loopback pair),
+ * never one per waiting call: the descriptors of the process are the ones
+ * its C libraries spend too. Where the layer cannot make it (no descriptor
+ * or thread left, or on Windows no loopback), its calls wait in slices of
+ * about 50 ms instead, every answer below the same and each "at once" then
+ * "within about 50 ms".
  */
 
 #ifndef HERO_NET_H
@@ -59,6 +69,8 @@ typedef struct hero_net_socket hero_net_socket;
 #define HERO_NET_REFUSED 5
 /* The peer closed or reset the connection, or it was never made. */
 #define HERO_NET_RESET 6
+/* The system gave the connection up, or a wait passed the socket's deadline
+ * (`hero_net_set_deadline`). */
 #define HERO_NET_TIMED_OUT 7
 #define HERO_NET_UNREACHABLE 8
 /* The process or the machine has no socket, descriptor or memory left. */
@@ -95,8 +107,8 @@ int64_t hero_net_recv(hero_net_socket *s, void *buffer, uint64_t count);
 /* Closes the socket and gives its handle back, whatever is answered: 0, or
  * -1 where the socket was not open or the system reported a failure while
  * closing it. A call another thread waits in on it, an `accept`, a `recv`
- * or a `send`, ends within about 50 ms, failing `HERO_NET_NOT_OPEN`, since
- * every call waits in slices of that; no connection made after the close is
+ * or a `send`, ends at once, failing `HERO_NET_NOT_OPEN`: the close wakes
+ * it itself, on every platform; no connection made after the close is
  * accepted, and no later call reaches the socket. */
 int64_t hero_net_close(hero_net_socket *s);
 
@@ -135,7 +147,7 @@ hero_net_socket *hero_net_of(int64_t number);
  * the console closing) no longer end the program at once. The first of them
  * asks it to stop: from then, on every thread, a call of this layer that
  * would wait answers -1 or NULL with `HERO_NET_STOPPED` instead, one
- * already waiting within about 50 ms. An `accept` answers so even with a
+ * already waiting at once. An `accept` answers so even with a
  * connection waiting, so a loop of accepts ends under load, and so does a
  * `connect` whose connection the system cannot make at once; a `recv` with
  * bytes already there and a `send` the system has room for still move them,
@@ -143,8 +155,8 @@ hero_net_socket *hero_net_of(int64_t number);
  * program stops ends it at once, as the signal would have.
  *
  * What runs in the signal is the layer's own C, which writes one byte down
- * a pipe the waiting calls watch beside their socket: no code of the
- * program, no allocation. A signal the program inherited ignored stays
+ * a pipe the layer's own thread watches, and that thread wakes every
+ * waiting call: no code of the program, no allocation. A signal the program inherited ignored stays
  * ignored (a job a shell starts with `&` has SIGINT so). Any other handler
  * of the two is replaced, among them the runtime's own that passes the
  * signal on to a child the program waits on: once the stop is caught, such
@@ -161,11 +173,43 @@ hero_net_socket *hero_net_of(int64_t number);
  * gave no pipe or refused the handler. */
 int64_t hero_net_catch_stop(void);
 
-/* 1 once a stop has been asked, else 0: a loop that works between the
- * layer's calls asks it between its steps, and a thread that joins a worker
- * asks it after. A reader, as the two below: it changes nothing they
+/* 1 once a stop has been asked, by a signal after `hero_net_catch_stop` or
+ * by the program's own `hero_net_ask_stop`, else 0: a loop that works between
+ * the layer's calls asks it between its steps, and a thread that joins a
+ * worker asks it after. A reader, as the two below: it changes nothing they
  * answer. */
 int64_t hero_net_stop_asked(void);
+
+/* THE STOP THE PROGRAM ASKS ITSELF (panel 248's R4): from this call, on every
+ * thread, a call of this layer that would wait answers -1 or NULL with
+ * `HERO_NET_STOPPED`, one already waiting at once, and `hero_net_stop_asked`
+ * answers 1, as after the first signal `hero_net_catch_stop` catches; a call
+ * that need not wait still moves what it can, as there. It cannot fail, and
+ * a second call changes nothing. It is asked from any thread, a connection's
+ * among them, but never from a signal handler: it takes a lock.
+ *
+ * KEPT APART FROM THE SIGNALS: it takes no signal and counts as none. Before
+ * `hero_net_catch_stop`, or with none, Ctrl-C and SIGTERM end the program at
+ * once, as ever; after it, the first of them after an asked stop asks the
+ * stop again, which is asked already, and the program goes on, and the
+ * second ends it at once, so one Ctrl-C never ends a program finishing the
+ * stop it asked. On Windows it is the one way a program asks its own stop:
+ * no signal it can raise reaches the console's handler. */
+void hero_net_ask_stop(void);
+
+/* THE DEADLINE (panel 248's R5, Go's `SetDeadline` set from now): from this
+ * call, every call on `s` that waits, an `accept`, a `recv` or a `send`,
+ * waits until `ms` milliseconds from now at the latest, then answers -1 or
+ * NULL with `HERO_NET_TIMED_OUT`. It is a time, not a span: it applies to
+ * calls already waiting, which take it at once, and to every later one, so
+ * a peer that sends one byte before each limit still meets it. A call that
+ * need not wait is not ended by it: bytes already there are received and
+ * room already free is used, a deadline passed or not. 0 takes the deadline
+ * away; a negative `ms` is `HERO_NET_INVALID`. It is kept with the socket,
+ * so it stays when the socket crosses to another thread as its number. The
+ * time is read on the clock `hero_time.h` names, which never goes back.
+ * Answers 0, or -1 with `HERO_NET_NOT_OPEN` where `s` names no open socket. */
+int64_t hero_net_set_deadline(hero_net_socket *s, int64_t ms);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the

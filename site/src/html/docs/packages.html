@@ -34,7 +34,7 @@ function main()
     The command that fetches is <code>heroes add</code>, run in the program&rsquo;s folder. A package is read from an <b>index</b>, a place that lists every version of every package it holds. Today the one index is the folder <code>packages/</code> at the root of this project&rsquo;s repository, the folder that holds all its files and their history, so the command names it:
   </p>
   <pre><code>$ heroes add core --index file://../../packages
-added core 0.3.0
+added core 0.4.0
 wrote heroes.toml</code></pre>
   <p>
     And the program builds and runs:
@@ -59,8 +59,8 @@ two
 <pre><code>index = "file://../../packages"
 
 [dependencies.core]
-version = "0.3.0"
-sum = "sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811"</code></pre>
+version = "0.4.0"
+sum = "sha256-1b39ba5f301cc858ecec923dd4c7efd45e4a72ff39e43eb28034109abfe05089"</code></pre>
     <figcaption>examples/packages/heroes.toml</figcaption>
   </figure>
   <p>
@@ -70,7 +70,7 @@ sum = "sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811"<
     Nobody types the catalogue: <code>heroes add</code> writes it. The sum is sixty-four digits and letters after its <code>sha256-</code>, which nobody can write from memory, so an entry written by hand, by a person or by a model, has no sum to put in it, and the sitting had the specification name the command for that reason.
   </p>
   <p>
-    The format is TOML, a small format for files of settings that Rust&rsquo;s Cargo and Python&rsquo;s <code>pyproject.toml</code> use too, read here as a strict subset. Every value is a string between double quotes, so <code>version = 0.3.0</code> written bare is refused at its line and never read as a number. The file is read whole or not at all: a mistake on any line names no package, the lines above it included. And reading it runs no code. The sitting is plain about what it did not show: in its test with language models every format did equally well, because the models copied the example they were given. TOML was chosen for its comments, its named keys, its strictness and its being familiar from Cargo, and not because models write it better.
+    The format is TOML, a small format for files of settings that Rust&rsquo;s Cargo and Python&rsquo;s <code>pyproject.toml</code> use too, read here as a strict subset. Every value is a string between double quotes, so <code>version = 0.4.0</code> written bare is refused at its line and never read as a number. The file is read whole or not at all: a mistake on any line names no package, the lines above it included. And reading it runs no code. The sitting is plain about what it did not show: in its test with language models every format did equally well, because the models copied the example they were given. TOML was chosen for its comments, its named keys, its strictness and its being familiar from Cargo, and not because models write it better.
   </p>
 
   <h3>Mine and fetched: the angle brackets</h3>
@@ -104,7 +104,7 @@ use report/lines</code></pre>
 
   <h3>Where the copy lives</h3>
   <pre><code>$ ls heroes.packages
-core@0.3.0-5c73ae460e9f7fa7</code></pre>
+core@0.4.0-c65a01aeebf10d3c</code></pre>
   <p>
     <code>heroes add</code> placed the package in a folder of the program called <code>heroes.packages/</code>, under a name made of the entry, its version and sixteen hexadecimal digits (the digits 0 to 9 and the letters a to f) computed from the entry&rsquo;s fields and the <code>index</code> line. A mistyped field therefore names a folder that is not there, and the build says so. Inside is a byte-for-byte copy of the package&rsquo;s files as the index publishes them. The program keeps that folder in its repository beside its own files: every program in <code>examples/</code> that uses <code>core</code> carries its copy there.
   </p>
@@ -116,7 +116,7 @@ core@0.3.0-5c73ae460e9f7fa7</code></pre>
   </p>
 
   <h3>Inside a package, a <code>use</code> starts at its own root</h3>
-  <figure class="example" data-src="packages/core/0.3.0/files/strings.hero" data-lines="1-8">
+  <figure class="example" data-src="packages/core/0.4.0/files/strings.hero" data-lines="1-8">
 <pre><code># Text searched, trimmed and split, never cutting a character in two: every
 # position a function here cuts at is a character's first byte, so none aborts
 # on a text a program reads from outside. A function keeps Go's name where its
@@ -125,13 +125,13 @@ core@0.3.0-5c73ae460e9f7fa7</code></pre>
 # of this file).
 
 use strings/internal/scan</code></pre>
-    <figcaption>packages/core/0.3.0/files/strings.hero, lines 1&ndash;8</figcaption>
+    <figcaption>packages/core/0.4.0/files/strings.hero, lines 1&ndash;8</figcaption>
   </figure>
   <p>
     This is the top of <code>core</code>&rsquo;s <code>strings.hero</code>. Its <code>use strings/internal/scan</code> does not start at your program&rsquo;s root, where there is no <code>strings/</code> folder: inside a package, a <code>use</code> starts at the package&rsquo;s own root, and a <code>use</code> with brackets names an entry of the package&rsquo;s own catalogue.
   </p>
   <p>
-    The reason is the folder&rsquo;s name above. The package&rsquo;s author cannot know it: it holds digits computed from the entry, so it changes with the version and with the <code>index</code> line. The same <code>core</code> 0.3.0, added to a program that reads the index by another path, landed in <code>core@0.3.0-48c008240132f27d</code>. A <code>use</code> written from the program&rsquo;s root would have to name that folder; written from the package&rsquo;s own root it is the same in every program, so a package moves from one program, index or version to the next without one of its <code>use</code> lines changing.
+    The reason is the folder&rsquo;s name above. The package&rsquo;s author cannot know it: it holds digits computed from the entry, so it changes with the version and with the <code>index</code> line. The same <code>core</code> 0.4.0, added to a program that reads the index by another path, landed in <code>core@0.4.0-b4359b5fee6f6cc3</code>. A <code>use</code> written from the program&rsquo;s root would have to name that folder; written from the package&rsquo;s own root it is the same in every program, so a package moves from one program, index or version to the next without one of its <code>use</code> lines changing.
   </p>
 
   <h3>Private modules: <code>internal/</code></h3>
@@ -153,34 +153,34 @@ use strings/internal/scan</code></pre>
 
   <h3>The fingerprint</h3>
   <p>
-    Each version an index publishes has a list: one line per file, the file&rsquo;s SHA-256 and its name, sorted by name. SHA-256 is a standard recipe that turns any bytes into sixty-four hexadecimal digits, and into entirely different ones if a single byte changes. Six lines of <code>core</code> 0.3.0&rsquo;s list:
+    Each version an index publishes has a list: one line per file, the file&rsquo;s SHA-256 and its name, sorted by name. SHA-256 is a standard recipe that turns any bytes into sixty-four hexadecimal digits, and into entirely different ones if a single byte changes. Six lines of <code>core</code> 0.4.0&rsquo;s list:
   </p>
-  <figure class="example" data-src="packages/core/0.3.0/list" data-lines="21-26">
+  <figure class="example" data-src="packages/core/0.4.0/list" data-lines="21-26">
 <pre><code>891da4a53219bde785b10da4051b0e14e09a7dbe99e1288f669bed2df5f5e74f  strconv.hero
 a3455e343539decafda988898b8b94658bb6dc647597cf110180d4e158088b05  strconv.md
 d8bca85c8e97f6747fd7106c639af0975a78529929eb9ec0f217b0fec7821395  strconv/internal/shown.hero
 cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
 39762eaa9819cffda30ae2f310bf7b04fd05b54610ecdedd0c2817be1f15765a  strings.md
 3a1b953c9bcee1da8b1881fcfb735443e58c1c2c7f365d2fdcb5f03998b82fbd  strings/internal/scan.hero</code></pre>
-    <figcaption>packages/core/0.3.0/list, lines 21&ndash;26</figcaption>
+    <figcaption>packages/core/0.4.0/list, lines 21&ndash;26</figcaption>
   </figure>
   <p>
     The SHA-256 of the list is the version&rsquo;s fingerprint. The index keeps one line per version in a file called <code>versions</code>, and the catalogue&rsquo;s <code>sum</code> repeats the line of the version it holds:
   </p>
   <figure class="example" data-src="packages/core/versions">
-<pre><code>0.3.0 sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811</code></pre>
+<pre><code>0.4.0 sha256-1b39ba5f301cc858ecec923dd4c7efd45e4a72ff39e43eb28034109abfe05089</code></pre>
     <figcaption>packages/core/versions</figcaption>
   </figure>
   <p>
     Anybody can check those digits with nothing of Heroes, from the root of the repository:
   </p>
-  <pre><code>$ shasum -a 256 packages/core/0.3.0/list
-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811  packages/core/0.3.0/list</code></pre>
+  <pre><code>$ shasum -a 256 packages/core/0.4.0/list
+1b39ba5f301cc858ecec923dd4c7efd45e4a72ff39e43eb28034109abfe05089  packages/core/0.4.0/list</code></pre>
   <p>
     The compiler checks the copy in <code>heroes.packages/</code> against the sum at every build, every check and every run. Change one byte of it, here a <code>0</code> made a <code>1</code> in <code>strings.hero</code>, and the build stops before it compiles anything:
   </p>
   <pre class="diag"><code>$ heroes build main.hero
-<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.3.0-5c73ae460e9f7fa7/` is `sha256-35455af23c8dbb27655298a0bb52f186220c9e1bc3b49242311eab65770158fd`, and the catalogue's `sum` for it is `sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again</span>
+<span class="msg">error[package_unread]: `&lt;core&gt;` cannot be read: the tree placed at `heroes.packages/core@0.4.0-c65a01aeebf10d3c/` is `sha256-226f10185c0f40d4e20c81d278acf2a2837d43e39fa54e4cd7f159bbb0b751af`, and the catalogue's `sum` for it is `sha256-1b39ba5f301cc858ecec923dd4c7efd45e4a72ff39e43eb28034109abfe05089`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again</span>
   at main.hero:9:5
     |
   9 | use &lt;core&gt;/encoding/json
@@ -189,13 +189,13 @@ cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
     <code>heroes fetch</code> never writes over the change, because an edit may be the author&rsquo;s own work: it stops, names the file that changed and says what to do, which is to move the folder out of <code>heroes.packages/</code> to keep the change, or to remove it to have the published tree placed again:
   </p>
   <pre class="diag"><code>$ heroes fetch
-<span class="msg">heroes.toml:5: error[sum_mismatch]: `core` 0.3.0 from the index `file://../../packages` is placed at `heroes.packages/core@0.3.0-5c73ae460e9f7fa7`, and that tree was changed since it was placed: `strings.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again</span></code></pre>
+<span class="msg">heroes.toml:5: error[sum_mismatch]: `core` 0.4.0 from the index `file://../../packages` is placed at `heroes.packages/core@0.4.0-c65a01aeebf10d3c`, and that tree was changed since it was placed: `strings.hero` changed; the change is yours, so nothing was placed over it: move the folder out of `heroes.packages/` to keep the change, or remove it to have the tree placed again</span></code></pre>
   <p>
     Removed, the tree comes back from the index, which is held to the same standard on the way: each file <code>heroes fetch</code> copies must match its line of the list and the list must match the catalogue&rsquo;s sum, or nothing is placed.
   </p>
-  <pre><code>$ rm -r heroes.packages/core@0.3.0-5c73ae460e9f7fa7
+  <pre><code>$ rm -r heroes.packages/core@0.4.0-c65a01aeebf10d3c
 $ heroes fetch
-placed core 0.3.0 heroes.packages/core@0.3.0-5c73ae460e9f7fa7</code></pre>
+placed core 0.4.0 heroes.packages/core@0.4.0-c65a01aeebf10d3c</code></pre>
   <p>
     Why at every build, and not only when fetching: the copy lives in a folder anything can edit, and an edited copy compiled without a word is the silent failure this language exists to refuse. The check is the SHA-256 of the runtime, the piece of program that sits underneath every Heroes program, written in C, and never a package&rsquo;s code: in the words of <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/242-the-compiler-may-depend-on-a-package-and-takes-one-only-to-shrink-git-and-curl-stay-programs-and-a-child-gets-its-environment-at-the-spawn.md">a later sitting</a>, the verifier stays out of the verified, so no package can vouch for itself. Every file counts, <code>.hero</code> or not, because a C header a package carries, the file that tells the compiler how a C library is shaped, is code the program trusts too.
   </p>
@@ -205,15 +205,15 @@ placed core 0.3.0 heroes.packages/core@0.3.0-5c73ae460e9f7fa7</code></pre>
     A version, once published, is never edited: a change to a package is a new version. crates.io, Rust&rsquo;s index, says it of every crate it holds, and goes one step further: &ldquo;The version can never be overwritten, and the code cannot be deleted.&rdquo; Here the first half holds for every version: no file of one is touched while the <code>versions</code> file above lists it.
   </p>
   <p>
-    <code>core</code> 0.2.0 to 0.2.1 was the first such change. In 0.2.0, <code>json.parse</code> read a number far from one slowly, by a route whose cost grew with the distance; from 0.2.1 on, it reads most numbers with a single multiplication by a 128-bit power of ten, the method Go&rsquo;s own <code>strconv</code> uses. That change went out as 0.2.1, and 0.2.0 stayed byte for byte as it was published; 0.3.0 then added <code>net</code> and changed no file of 0.2.1.
+    <code>core</code> 0.2.0 to 0.2.1 was the first such change. In 0.2.0, <code>json.parse</code> read a number far from one slowly, by a route whose cost grew with the distance; from 0.2.1 on, it reads most numbers with a single multiplication by a 128-bit power of ten, the method Go&rsquo;s own <code>strconv</code> uses. That change went out as 0.2.1, and 0.2.0 stayed byte for byte as it was published; 0.3.0 then added <code>net</code> and changed no file of 0.2.1, and 0.4.0 gave <code>net</code> a stop a program asks itself and a deadline on a connection, changing files under <code>net</code> alone.
   </p>
   <p>
     The second half, code that is never deleted, is the one this index does not keep yet. Until <code>core</code> reaches 1.0.0, every program in the repository moves to the newest version, and the older versions then leave the index, which is why <code>versions</code> above lists the newest alone. That breaks no program elsewhere that still holds an older one: its copy stands in its own folder, held to its own sum, and it builds and runs as before. What it can no longer do is fetch that copy again, on another machine or after its folder is deleted: <code>heroes fetch</code> answers that the index serves no such version. The command that moves it to the newest is the one that moved every program here:
   </p>
   <pre><code>$ heroes fetch
-kept core 0.2.1 heroes.packages/core@0.2.1-e8db5b383e666067
+kept core 0.3.0 heroes.packages/core@0.3.0-5c73ae460e9f7fa7
 $ heroes add core
-changed core 0.2.1 -&gt; 0.3.0
+changed core 0.3.0 -&gt; 0.4.0
 wrote heroes.toml</code></pre>
   <p>
     A program keeps the version it fetched, so a change to a package never breaks a program&rsquo;s build: it reaches a program only when the program asks for it.
@@ -275,11 +275,11 @@ sum = "sha256-09cac94c6a5803de196d94dc80c9da89329c20ce2ee673a876de3a4d5ac381d3"<
   <p>
     The third source is a folder of your own, <code>heroes add --path</code>, for a package you are still writing. It is read where it stands and never copied, and nothing holds it to a fingerprint, so every build says so:
   </p>
-  <pre><code>$ heroes add --path ../../packages/core/0.3.0/files --as core
-added core ../../packages/core/0.3.0/files
+  <pre><code>$ heroes add --path ../../packages/core/0.4.0/files --as core
+added core ../../packages/core/0.4.0/files
 wrote heroes.toml
 $ heroes check main.hero
-note: the package `core` is read from the folder `../../packages/core/0.3.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
+note: the package `core` is read from the folder `../../packages/core/0.4.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
   <p>
     It is the one exception to the promise that a catalogue&rsquo;s mistake never changes which module compiles: a <code>path</code> pointing at the wrong folder compiles other code. The author listed a local folder among the sources, so the sitting kept it, and made it loud rather than silent.
   </p>
@@ -316,7 +316,7 @@ note: the package `core` is read from the folder `../../packages/core/0.3.0/file
     and a small program whose catalogue names its own folder
     <code>lib/</code> with a <code>path</code> entry, reached both as
     <code>&lt;lib&gt;/counter</code> and as <code>lib/counter</code>. The other
-    transcripts ran on copies: a program still holding 0.2.1 beside the
+    transcripts ran on copies: a program still holding 0.3.0 beside the
     index as it stands, a local git repository
     whose tag was then moved to a second commit, a small index where
     <code>a</code> needs <code>strs</code> 1.0.0 and <code>b</code> needs 1.1.0,

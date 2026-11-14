@@ -228,6 +228,9 @@ function trees() -> [Tree]
     # (`examples/packages/README.md` § 10, steps 5 and 6), their 26 `.hero`
     # files with them, so the row reads 0.3.0's twenty alone: 20 seeds and 180
     # variants, measured by `heroes probe packages --family multi` that day.
+    # And 0.4.0 took 0.3.0's place the same day by the same decision, with
+    # the same twenty `.hero` files (panel 248's R4 and R5 in `net`), so the
+    # row stands: 20 seeds and 180 variants, the same command, exit 0.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)

@@ -1,0 +1,32 @@
+# A socket's deadline ends a call that waits past it, `HERO_NET_TIMED_OUT`
+# (panel 248's R5, provisional, 2026-11-14): Go's meaning, an absolute time
+# kept with the socket, set from now by milliseconds, reaching a call already
+# waiting and every later one, 0 taking it away. Until then a connection that
+# sent nothing held its thread and its socket for ever: the sitting's
+# compiler-engineer measured one quiet connection accepted first stopping the
+# example server's accepts until its peer closed. `SO_RCVTIMEO` reaches
+# neither the layer's non-blocking calls nor its waits (measured on three
+# systems), so the deadline is the layer's own. A quiet recv and a quiet
+# accept meet it; a byte sent before it is received; a call already waiting
+# takes one set from another thread; 0 takes it away; a call that need not
+# wait is spared, and the socket keeps it across its number; and the door
+# refuses a negative time and a closed socket. The C is in the headers beside
+# this file. Each line prints 1 where every step held, else the step that did
+# not.
+extern "the-platform-layer-deadline.h"
+    function deadline_ends_a_quiet_wait() -> i64
+    function deadline_lets_an_early_byte_through() -> i64
+    function deadline_reaches_a_call_already_waiting() -> i64
+    function deadline_zero_takes_it_away() -> i64
+    function deadline_spares_what_is_there_and_crosses_as_a_number() -> i64
+    function deadline_refusals() -> i64
+
+function main()
+    print(f"a quiet recv and a quiet accept meet their deadline: {deadline_ends_a_quiet_wait()}")
+    print(f"a byte sent before the deadline is received: {deadline_lets_an_early_byte_through()}")
+    print(f"a deadline set while a call waits ends it: {deadline_reaches_a_call_already_waiting()}")
+    print(f"a deadline of 0 takes it away: {deadline_zero_takes_it_away()}")
+    print(
+        f"a call that need not wait is spared, and the deadline crosses as a number: {deadline_spares_what_is_there_and_crosses_as_a_number()}"
+    )
+    print(f"a negative time and a closed socket are refused: {deadline_refusals()}")

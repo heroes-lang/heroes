@@ -1,0 +1,2 @@
+two hundred waiting recvs each get their own byte: 1
+a send and a recv waiting on one socket each end when their way is ready: 1

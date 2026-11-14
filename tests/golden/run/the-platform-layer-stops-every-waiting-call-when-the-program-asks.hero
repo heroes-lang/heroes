@@ -1,0 +1,31 @@
+# A program asks its own stop, from any thread and with no signal, and every
+# call of the layer that waits answers stopped at once (panel 248's R4,
+# provisional, 2026-11-14): `hero_net_ask_stop`, kept apart from the signals'
+# count, so the first interrupt after it asks the stop again and the program
+# goes on. Until then a program had no way to ask it on Windows (the
+# sitting's critic: `raise(SIGTERM)` ended the process, exit 3). Twelve calls
+# wait on threads of C's own, four accepts, four recvs and four sends for
+# room, and a fifth thread asks the stop; each call answers stopped, the
+# median of the times from the ask to their return under 10 ms. Then a first
+# interrupt comes, from the program itself, and the program goes on to its
+# last line and its leak check. The C is in the headers beside this file.
+extern "hero_net.h"
+    function hero_net_catch_stop() -> i64
+    function hero_net_stop_asked() -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_INTERRUPT: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_now(what: i64) -> i64
+
+extern "the-platform-layer-ask-stop.h"
+    function ask_stops_every_wait() -> i64
+
+function main()
+    print(f"the program starts with the interrupt at its default: {stop_begin(interrupt_ignored: 0)}")
+    print(f"the stop is caught: {hero_net_catch_stop()}")
+    print(f"no stop is asked yet: {hero_net_stop_asked() == 0}")
+    print(f"the program asks its stop, and every waiting call answers stopped at once: {ask_stops_every_wait()}")
+    print(f"the stop is asked: {hero_net_stop_asked() == 1}")
+    print(f"a first interrupt comes after the asked stop: {stop_send_now(what: STOP_INTERRUPT)}")
+    print("and the program goes on to its end")

@@ -1,0 +1,20 @@
+# One poller for the process tells every waiting call when its socket is
+# ready, many at once and both ways on one socket (defect 2502, panel 248's
+# R2, 2026-11-14). The layer's calls waited in slices of 50 ms, each waking
+# twenty times a second to ask the system again; now each sleeps until the
+# layer's one thread, waiting in the system on every waiting socket (Darwin's
+# `kqueue`, Linux's `epoll`, Windows' `WSAPoll`), says its socket is ready.
+# Two hundred recvs wait, one on each connection, and one byte goes to each
+# in the reverse of the order they began, each received by its own call and
+# by no other; and a send waiting for room beside a recv waiting for a byte on
+# one socket, which Linux's poller holds as one entry armed both ways, each
+# ends when its own way is ready, the send then ended by the close. The
+# waiting threads are C's, in the header beside this file. Each line prints 1
+# where every step held, else the step that did not.
+extern "fixedbugs-2502-waiters.h"
+    function many_waiters_each_get_their_byte(n: i64) -> i64
+    function both_ways_on_one_socket() -> i64
+
+function main()
+    print(f"two hundred waiting recvs each get their own byte: {many_waiters_each_get_their_byte(n: 200)}")
+    print(f"a send and a recv waiting on one socket each end when their way is ready: {both_ways_on_one_socket()}")

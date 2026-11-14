@@ -1,0 +1,6 @@
+the program starts with the interrupt at its default: 1
+the stop is caught: 0
+the program asked its stop: true
+a first interrupt comes after the asked stop: 1
+the program went on; a second interrupt comes
+!exit: 130

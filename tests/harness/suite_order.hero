@@ -287,7 +287,7 @@ test "the cases at the bottom of a module are outside the sweep"
 test "a placed tree's module is no module of the compiler's walk (feature 2425)"
     walked = [
         "selfhost/main.hero"
-        "selfhost/heroes.packages/core@0.3.0-5c73ae460e9f7fa7/strings.hero"
+        "selfhost/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
         "selfhost/cli/process.hero"
         "selfhost/cli/notes.md"
     ]
