@@ -34,6 +34,16 @@
  * address it reads through, so one closed already, NULL, or one this layer
  * never issued is `HERO_NET_NOT_OPEN`, never a read of freed memory and
  * never another socket that took its number.
+ *
+ * A CALL THAT WAITS COSTS NOTHING WHILE IT WAITS (panel 248's R2; defect
+ * 2502). At the first call that waits the layer makes one thread of its own
+ * for the process, which tells every waiting call when its socket is ready,
+ * and spends one descriptor on it (two sockets on Windows, a loopback pair),
+ * never one per waiting call: the descriptors of the process are the ones
+ * its C libraries spend too. Where the layer cannot make it (no descriptor
+ * or thread left, or on Windows no loopback), its calls wait in slices of
+ * about 50 ms instead, every answer below the same and each "at once" then
+ * "within about 50 ms".
  */
 
 #ifndef HERO_NET_H
@@ -95,8 +105,8 @@ int64_t hero_net_recv(hero_net_socket *s, void *buffer, uint64_t count);
 /* Closes the socket and gives its handle back, whatever is answered: 0, or
  * -1 where the socket was not open or the system reported a failure while
  * closing it. A call another thread waits in on it, an `accept`, a `recv`
- * or a `send`, ends within about 50 ms, failing `HERO_NET_NOT_OPEN`, since
- * every call waits in slices of that; no connection made after the close is
+ * or a `send`, ends at once, failing `HERO_NET_NOT_OPEN`: the close wakes
+ * it itself, on every platform; no connection made after the close is
  * accepted, and no later call reaches the socket. */
 int64_t hero_net_close(hero_net_socket *s);
 
@@ -135,7 +145,7 @@ hero_net_socket *hero_net_of(int64_t number);
  * the console closing) no longer end the program at once. The first of them
  * asks it to stop: from then, on every thread, a call of this layer that
  * would wait answers -1 or NULL with `HERO_NET_STOPPED` instead, one
- * already waiting within about 50 ms. An `accept` answers so even with a
+ * already waiting at once. An `accept` answers so even with a
  * connection waiting, so a loop of accepts ends under load, and so does a
  * `connect` whose connection the system cannot make at once; a `recv` with
  * bytes already there and a `send` the system has room for still move them,
@@ -143,8 +153,8 @@ hero_net_socket *hero_net_of(int64_t number);
  * program stops ends it at once, as the signal would have.
  *
  * What runs in the signal is the layer's own C, which writes one byte down
- * a pipe the waiting calls watch beside their socket: no code of the
- * program, no allocation. A signal the program inherited ignored stays
+ * a pipe the layer's own thread watches, and that thread wakes every
+ * waiting call: no code of the program, no allocation. A signal the program inherited ignored stays
  * ignored (a job a shell starts with `&` has SIGINT so). Any other handler
  * of the two is replaced, among them the runtime's own that passes the
  * signal on to a child the program waits on: once the stop is caught, such

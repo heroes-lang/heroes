@@ -1,0 +1,16 @@
+# A close of a socket another thread waits on ends the wait at once, never
+# after a slice (defect 2502, panel 248's R2, 2026-11-14). The layer's calls
+# waited in slices of 50 ms, asking between them whether the socket was
+# closed, so a close ended a waiting `accept` about 25 ms later on the median,
+# 38 ms measured on Darwin, where a listener's shutdown wakes nothing; now the
+# close wakes the waiting call itself, on every platform. Twenty accepts wait,
+# each on a listener of its own, each listener is closed in turn, and the
+# median of the times from a close to its accept's return is held under
+# 10 ms, which slices of 50 ms pass with a chance near 1 in 400. The waiting
+# threads are C's, in the header beside this file. It prints 1 where every
+# step held, else the step that did not.
+extern "fixedbugs-2502-waiters.h"
+    function close_wakes_at_once(n: i64) -> i64
+
+function main()
+    print(f"twenty closes each end the accept waiting on them at once: {close_wakes_at_once(n: 20)}")
