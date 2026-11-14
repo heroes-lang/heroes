@@ -106,10 +106,32 @@ function resolved_of(path: str) -> str
 
     if found.is_err()
         return ""
+    windows = process.exe_suffix() == ".exe"
+    end = path.slice(from: path.len() - 1, to: path.len())
 
-    if path.len() > 0 && (path[path.len() - 1] == '/' || path[path.len() - 1] == '\\')
-        return found.must() + "/"
+    if end == "/" || windows && end == "\\"
+        return folder_place(found: found.must(), written: end, windows: windows)
     return found.must()
+
+# `found`, a resolved place, named as a folder: ended by the separator it
+# already uses, its last one (defect 2532). Until then a `/` was appended
+# whatever it used, and a refusal on Windows named `C:\w\app\build/`, both
+# separators in one place; Windows' resolution writes `\`, and on POSIX the
+# one separator is `/`, a `\` being a letter of a name there. A place that
+# already ends in one, a root, `/` or `C:\`, takes none more; one holding
+# none, a device Windows answers as it is written, takes `written`, the
+# separator the path the author wrote ends in.
+function folder_place(found: str, written: str, windows: bool) -> str
+    at: i64 @= found.len() - 1
+
+    while at >= 0
+        if found[at] == '/' || windows && found[at] == '\\'
+            if at == found.len() - 1
+                return found
+            return found + found.slice(from: at, to: at + 1)
+        at @ at - 1
+
+    return found + written
 
 # How a refusal shows the place: nothing more where `path`'s own letters
 # stand in a tree, which the author reads in it; else the place the
@@ -225,6 +247,45 @@ test "a placed package's file is one whose folder is named heroes.packages, and 
     assert !folder_within(".")
     assert here_refused(writes: "the build's cache, `build/` of the folder this command runs in,", place: "app/heroes.packages/t/build/", instead: "run it from a folder outside them") == "the build's cache, `build/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
     assert refused("p/heroes.packages/t/a.hero") == "cannot write p/heroes.packages/t/a.hero: it stands in a placed package's tree, under `heroes.packages/`, which the build holds to the catalogue's `sum`, so a byte written there refuses the program; a package's fix is written where its source is; nothing was written"
+
+# Defect 2532, 2026-11-14: a resolved folder is ended by the separator its
+# place already uses, never the other one beside it, whichever separator the
+# author wrote last; Windows' places are judged here on every platform, and
+# the place this machine resolves on its own (the CI's Windows leg reads it
+# there, `\` throughout).
+test "a resolved folder ends in the separator its place already uses, never both (defect 2532)"
+    assert folder_place(found: "C:\\w\\app\\build", written: "/", windows: true) == "C:\\w\\app\\build\\"
+    assert folder_place(found: "C:\\w\\app\\build", written: "\\", windows: true) == "C:\\w\\app\\build\\"
+    assert folder_place(found: "C:\\w/app", written: "\\", windows: true) == "C:\\w/app/"
+    assert folder_place(found: "/w/app/build", written: "/", windows: false) == "/w/app/build/"
+    assert folder_place(found: "/w/a\\b", written: "/", windows: false) == "/w/a\\b/"
+
+    # A root takes no second separator, and a device answered as written
+    # takes the author's.
+    assert folder_place(found: "C:\\", written: "/", windows: true) == "C:\\"
+    assert folder_place(found: "/", written: "/", windows: false) == "/"
+    assert folder_place(found: "NUL", written: "\\", windows: true) == "NUL\\"
+
+    # The place this machine resolves holds one separator throughout; and on
+    # POSIX a last `\` is a letter of a name, so it names no folder.
+    dir = "build/selftest-placed-folder"
+    assert !process.mkdir_all(dir).is_err()
+    whole = resolved_of(dir + "/")
+    windows = process.exe_suffix() == ".exe"
+    seen: [str] @= []
+
+    for at in range(from: 0, to: whole.len())
+        if whole[at] == '/' || whole[at] == '\\'
+            seen @ seen.push(whole.slice(from: at, to: at + 1))
+
+    assert seen.len() > 1
+
+    if windows
+        assert seen.join("") == "\\".repeat(seen.len().to_u64().must())
+    else
+        assert seen.join("") == "/".repeat(seen.len().to_u64().must())
+        assert resolved_of(dir + "\\") == files.resolved(dir + "\\").must()
+    assert !process.remove_tree(dir).is_err()
 
 # Defect 2474: every link shape the lane measured, made by the runtime's own
 # setter where this machine makes a link; Windows is left out, its arm of
