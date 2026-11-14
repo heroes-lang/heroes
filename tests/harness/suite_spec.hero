@@ -225,7 +225,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "0ecc0ee44a3ffefe"
+    "3fd826cd1c2aa6a4"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live
