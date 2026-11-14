@@ -967,3 +967,17 @@ is taken in none of the three**. Recorded as a reading (CLAUDE.md § 4). The aut
 it. It does not settle defects 2324 to 2327, filed beside the sitting, nor the measurement left
 owed, the tasks that ask how a catalogue is read, edited and merged; it opens M-package-manager's
 first version, over C.
+
+**R20 amended for `core`, 2026-11-14, by the author's decision 2b** of that morning, given in
+conversation on the coordinator's question about the versions core had published, meant as: *until
+the core packages reach `1.0.0`, every program always moves to the newest version and the older
+versions of core are removed*. So R20's *a withdrawn version kept and marked, never deleted* does
+not hold for `core` below `1.0.0`: a version of `core` leaves the index whole, its folder and its
+line of `packages/core/versions` together, once every program here has moved to the newer one, and
+by nothing else (`examples/packages/README.md` § 10's steps 5 and 6, written by batch 36's lane
+b36-core at `ee52512f5`). A program elsewhere that holds a removed version still builds and runs on
+its placed tree; `heroes fetch` cannot place that tree anew and says what the index lists, and
+`heroes add core` moves it (defect 2525). Applied the same day: 0.1.0, 0.2.0 and 0.2.1 removed at
+`42f4e2718`, and 0.3.0 at `ad32e8a34`, when 0.4.0 was published. R20 stands as written for every
+other package, and for `core` from `1.0.0`. Recorded as the author's decision, not a sitting's;
+its issue is filed once these commits are on `origin/main`.
