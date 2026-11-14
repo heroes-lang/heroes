@@ -26,11 +26,12 @@
 use cli/process
 use cli/strings
 use fetch/address
+use fetch/listing_read
 use fetch/made_index
 use fetch/made_repo
 use fetch/staging
 use fetch/transport
-use fetch/tree_names
+use fetch/versions as version_order
 use module/catalogue
 use module/fingerprint
 use module/placed
@@ -72,6 +73,10 @@ function written_index(line: str) -> str
 
 # The versions the index at `index` lists for `name`, each with its sum.
 function versions(tools: transport.Tools, index: address.Address, name: str, scratch: str) -> [Listed]?
+    nowhere = folder_said(index)
+
+    if nowhere.len() > 0
+        return fail(code: "absent", msg: nowhere)
     into = scratch + "/versions.txt"
     asked = transport.got(
         tools,
@@ -118,6 +123,54 @@ function versions(tools: transport.Tools, index: address.Address, name: str, scr
 
     return ok(out)
 
+# Why a local index serves nothing, "" where its folder stands or the index
+# is on the network (defect 2525): with no folder there, every file of it is
+# absent, and the refusal blamed the package or its version where the address
+# was what was wrong.
+function folder_said(index: address.Address) -> str
+    if index.local.len() == 0 || process.is_directory(index.local)
+        return ""
+    return "the index `" + index.written + "` names no folder on this machine, so it serves no package: an index is a folder holding one per package, each with its `versions`"
+
+# What the index serves of `name` where it serves no listing at `version`,
+# asked of its own `versions` once the listing was found absent (defect 2525;
+# until then the refusal named this machine's path and no repair). Where it
+# publishes the catalogue's `sum` as another version, that version holds the
+# same files, so writing it in the entry places what the catalogue was written
+# for, and is said as the repair; else the versions it lists, and the verb that
+# writes the entry at the newest. `was` is the listing's own absence, told
+# where `versions` could not be read for another reason than its own absence.
+function unserved(tools: transport.Tools, index: address.Address, name: str, version: str, sum: str, scratch: str, was: str) -> str
+    head = "the index `" + index.written + "` serves no " + name + " " + version
+    listed = versions(tools, index: index, name: name, scratch: scratch)
+
+    if listed.is_err()
+        return unlisted(listed, otherwise: head + ": " + was)
+    names: [str] @= []
+    newest: str @= ""
+
+    for one in listed.must()
+        if one.sum == sum
+            return head + ", and it publishes the catalogue's `sum`, the same files, as " + one.version + ": write `version = \"" + one.version + "\"` in the entry, and `heroes fetch` places them"
+        names @ names.push(one.version)
+
+        if newest.len() == 0 || version_order.newer(a: one.version, than: newest).default(false)
+            newest @ one.version
+
+    if names.len() == 0
+        return head + ", and its `" + name + "/versions` lists none"
+    return head + ": it lists " + names.join(", ") + ", and `heroes add " + name + "` writes the entry at the newest, " + newest + ", and places it"
+
+# `listed`'s refusal where it is an absence, which then says what is wrong
+# better than the listing's (no folder, or no package): else `otherwise`.
+function unlisted(listed: [Listed]?, otherwise: str) -> str
+    match listed
+        .ok _ => return otherwise
+        .err e =>
+            if e.code == "absent"
+                return e.msg
+            return otherwise
+
 # The index entry `e` of the program whose folder is `program` fetched and
 # placed under its key, and written into the run's `ledger`: the folder it now
 # stands in. `index` is the catalogue's `index` line, "" for the Heroes index.
@@ -155,7 +208,7 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
         if code_of(asked) == "absent"
             return fail(
                 code: "absent",
-                msg: "the index `" + index.written + "` serves no " + name + " " + version + ": " + why(asked)
+                msg: unserved(tools, index: index, name: name, version: version, sum: sum, scratch: s.folder, was: why(asked))
             )
         return fail(code: code_of(asked), msg: why(asked))
     text = read_file(listed)
@@ -173,7 +226,7 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
             code: "sum_mismatch",
             msg: "the listing of " + name + " " + version + " at the index `" + index.written + "` sums to `" + got + "`, and the catalogue's `sum` for it is `" + sum + "`: the package is not the one its entry was written for, and nothing was fetched"
         )
-    files = lines_of_listing(listing)?
+    files = listing_read.lines_of_listing(listing)?
 
     for one in files
         path = s.tree + "/" + one.path
@@ -189,69 +242,6 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
             )
 
     return ok()
-
-# One line of a listing: a file's SHA-256 and its name.
-record Line
-    sum: str
-    path: str
-
-# A listing read as the lines its sum was taken over: `<64 hex>  <name>` and a
-# line end each, the names in the order of their bytes, none twice, every name
-# one a package may hold, and no two one where case is ignored. A listing in
-# any other shape is refused, since it is not the canonical one a tree's sum
-# reads (`module/fingerprint.hero`).
-function lines_of_listing(listing: str) -> [Line]?
-    out: [Line] @= []
-    paths: [str] @= []
-    from: i64 @= 0
-
-    if listing.len() > 0 && listing[listing.len() - 1] != '\n'
-        return fail(
-            code: "index_refused",
-            msg: "the listing does not end with a line end, which its canonical form does"
-        )
-
-    for at in range(from: 0, to: listing.len())
-        if listing[at] == '\n'
-            line = listing.slice(from: from, to: at)
-
-            if line.len() < 67 || !sums.sum_shape("sha256-" + line.slice(from: 0, to: 64)) || line[64] != ' ' || line[65] != ' '
-                return fail(
-                    code: "index_refused",
-                    msg: "a line of the listing is not `<sha256>  <name>`: `" + line + "`"
-                )
-            path = line.slice(from: 66, to: line.len())
-            said = tree_names.name_said(path)
-
-            if said.len() > 0
-                return fail(code: "name_refused", msg: said)
-
-            if paths.len() > 0 && !before(first: paths[paths.len() - 1], then: path)
-                return fail(
-                    code: "index_refused",
-                    msg: "the listing names `" + path + "` after `" + paths[paths.len() - 1] + "`, where its canonical form orders the names by their bytes, each once"
-                )
-            out @ out.push(Line(sum: line.slice(from: 0, to: 64), path: path))
-            paths @ paths.push(path)
-            from @ at + 1
-
-    twice = tree_names.collision(paths)
-
-    if twice.len() > 0
-        return fail(code: "name_refused", msg: twice)
-    return ok(out)
-
-# Whether `first` comes before `then` in the order of their bytes, a name
-# before every longer name it opens.
-function before(first: str, then: str) -> bool
-    at: i64 @= 0
-
-    while at < first.len() && at < then.len()
-        if first[at] != then[at]
-            return first[at] < then[at]
-        at @ at + 1
-
-    return first.len() < then.len()
 
 # A text's lines, each without its line end; a last line with none is a line.
 function lines_of(text: str) -> [str]
@@ -365,6 +355,35 @@ test "an index lists a package's versions with their sums, and places a version 
     match versions(transport.path_tools(), index: index, name: "yaml", scratch: SCRATCH)
         .ok _  => assert false
         .err e => assert e.code == "absent"
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a version the index does not serve is told what it lists and the verb, or the version its sum names, never this machine's path (defect 2525)"
+    m = index_made()
+    index = address.judged("file://../idx", root: m.root).must()
+    other = "sha256-" + "0".repeat(64.to_u64().must())
+    s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
+
+    match written(transport.path_tools(), index: index, name: "json", version: "1.0.0", sum: other, s: s)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "absent"
+            assert e.msg == "the index `file://../idx` serves no json 1.0.0: it lists 1.4.2, and `heroes add json` writes the entry at the newest, 1.4.2, and places it"
+
+    match written(transport.path_tools(), index: index, name: "json", version: "1.4.3", sum: m.sum, s: s)
+        .ok _  => assert false
+        .err e => assert e.msg == "the index `file://../idx` serves no json 1.4.3, and it publishes the catalogue's `sum`, the same files, as 1.4.2: write `version = \"1.4.2\"` in the entry, and `heroes fetch` places them"
+
+    match written(transport.path_tools(), index: index, name: "yaml", version: "1.0.0", sum: other, s: s)
+        .ok _  => assert false
+        .err e => assert e.msg == "the index `file://../idx` lists no package `yaml`: there is no file `file://../idx/yaml/versions`"
+
+    staging.dropped(@s)
+    nowhere = address.judged("file://../nowhere", root: m.root).must()
+
+    match versions(transport.path_tools(), index: nowhere, name: "json", scratch: SCRATCH)
+        .ok _  => assert false
+        .err e => assert e.msg == "the index `file://../nowhere` names no folder on this machine, so it serves no package: an index is a folder holding one per package, each with its `versions`"
 
     assert !process.remove_tree(SCRATCH).is_err()
 

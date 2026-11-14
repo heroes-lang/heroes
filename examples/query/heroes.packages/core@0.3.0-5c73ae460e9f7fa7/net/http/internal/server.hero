@@ -1,0 +1,217 @@
+# The server's half of HTTP/1.1 on one connection: the next request read and
+# judged, the refusal of one that cannot be answered, and a handler's answer
+# written. `net/http.hero`'s `serve_conn` is the loop that ties the three, and
+# hands each request to the program's handler between them.
+
+use net
+use net/http/internal/lines
+use net/http/internal/wire
+
+# A request read whole: what the face hands its handler, and whether the
+# connection ends after its answer.
+record Incoming
+    method: str
+    target: str
+    header: {str: str}
+    body: str
+    closing: bool
+
+# What comes next on a connection.
+variant Next
+    # A request to answer.
+    request
+        incoming: Incoming
+    # The client closed the connection, or the program was asked to stop,
+    # before any byte of a next request: the connection's end, no failure.
+    ended
+    # A request that cannot be answered, refused with `status` and `why`,
+    # after which the connection ends.
+    refused
+        status: i64
+        why: str
+
+# What comes next on `c`, the bytes `held` read first and the bytes past the
+# request kept there. A request that is no HTTP/1.x request is refused 400,
+# one with a body sent in chunks 501 and one with a body past `BODY_MOST` 413;
+# it fails `malformed` where the client closes inside a body, and with `net`'s
+# code where the connection fails.
+function next(c: net.Conn, @held: [u8]) -> Next?
+    read = lines.head(c, @held)
+    code = lines.code_of(read)
+
+    if code == net.CLOSED || code == net.STOPPED
+        return ok(.ended)
+
+    if code == "malformed"
+        return ok(.refused(status: 400, why: lines.message_of(read)))
+    head = read?
+    line = wire.request_line(head.first)
+
+    if line.is_err()
+        return ok(.refused(status: 400, why: lines.message_of(line)))
+    header = wire.header_of(head.lines)
+
+    if header.is_err()
+        return ok(.refused(status: 400, why: lines.message_of(header)))
+    asked = line.must()
+    fields = header.must()
+
+    if asked.version == "HTTP/1.1" && fields["Host"].is_err()
+        return ok(.refused(status: 400, why: "an HTTP/1.1 request names its Host (RFC 9112 § 3.2)"))
+
+    if !fields["Transfer-Encoding"].is_err()
+        return ok(.refused(status: 501, why: "a body sent in chunks is not read here: send its Content-Length"))
+    count = wire.length(fields)
+
+    if count.is_err()
+        return ok(.refused(status: 400, why: lines.message_of(count)))
+
+    if count.must() > wire.BODY_MOST
+        return ok(.refused(status: 413, why: f"a body of {count.must()} bytes is past the 8 MiB one may be"))
+    text = lines.body(c, @held, count: count.must())?.validated_bytes()
+
+    if text.is_err()
+        return ok(.refused(status: 400, why: "the body is not UTF-8 text"))
+    closing = wire.closes(version: asked.version, header: fields)
+    return ok(
+        .request(incoming: Incoming(method: asked.method, target: asked.target, header: fields, body: text.must(), closing: closing))
+    )
+
+# `status` written on `c` with `why` as its body, the connection ending after
+# it. A client that left first is owed nothing more, so a write that fails is
+# no failure here.
+function refuse(c: net.Conn, status: i64, why: str)
+    text = wire.message(
+        first: wire.status_line(status),
+        header: {"Content-Type": "text/plain; charset=utf-8", "Content-Length": (why.len() + 1).to_str(), "Connection": "close"},
+        body: why + "\n"
+    )
+
+    match net.write(c, data: wire.bytes_of(text))
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# A handler's answer written on `c`: its `header` but `Content-Length`,
+# `Connection` and `Transfer-Encoding`, which the server writes itself, and its
+# `body`, left out for a HEAD request (`head_only`) and for 204 and 304, which
+# have none. A status outside 200 to 999 is no final answer, and is written as
+# 500. Answers whether the connection ends after it.
+function answer(c: net.Conn, status: i64, header: {str: str}, body: str, head_only: bool, closing: bool) -> bool?
+    if status < 200 || status > 999
+        refuse(c, status: 500, why: f"the handler answered the status {status}, which is no final answer")
+        return ok(true)
+    out: {str: str} @= {}
+
+    for name in keys(header)
+        word = wire.canonical(name)
+
+        if word != "Content-Length" && word != "Connection" && word != "Transfer-Encoding"
+            out[name] @ header[name].must()
+
+    bodiless = status == 204 || status == 304
+    sent: str @= ""
+
+    if !bodiless
+        out["Content-Length"] @ body.len().to_str()
+
+        if !head_only
+            sent @ body
+
+    if closing
+        out["Connection"] @ "close"
+    net.write(c, data: wire.bytes_of(wire.message(first: wire.status_line(status), header: out, body: sent)))?
+    return ok(closing)
+
+## Tests
+
+# A client's bytes written on one end of a loopback connection, and what the
+# server's half makes of them on the other.
+function exchanged(sent: str) -> [Next?]
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    server @= net.accept(listener).must()
+    net.write(client, data: wire.bytes_of(sent)).must()
+    net.close(@client)
+    held: [u8] @= []
+    out: [Next?] @= []
+
+    while true
+        got = next(server, @held)
+        out @ out.push(got)
+
+        match got
+            .ok n =>
+                match n
+                    .request _          => _ = 0
+                    .ended | .refused _ => break
+            .err _ => break
+
+    net.close(@server)
+    net.close_listener(@listener)
+    return out
+
+test "next reads a request whole, and the connection's end after it"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    server @= net.accept(listener).must()
+    net.write(client, data: wire.bytes_of("DELETE /x?y=1 HTTP/1.1\r\nHost: x\r\n\r\n")).must()
+    net.close(@client)
+    held: [u8] @= []
+
+    match next(server, @held).must()
+        .request r          => assert r.incoming.method == "DELETE" && r.incoming.target == "/x?y=1" && r.incoming.body == ""
+        .ended | .refused _ => assert false
+
+    assert next(server, @held).must() == .ended
+    net.close(@server)
+    net.close_listener(@listener)
+
+test "next: two requests on one connection, a body by its length, then its end"
+    got = exchanged(
+        "GET /a HTTP/1.1\r\nHost: x\r\n\r\nPOST /b HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\nConnection: close\r\n\r\nhi"
+    )
+    assert got.len() == 3
+
+    match got[0].must()
+        .request r          => assert r.incoming.method == "GET" && r.incoming.target == "/a" && !r.incoming.closing
+        .ended | .refused _ => assert false
+
+    match got[1].must()
+        .request r          => assert r.incoming.body == "hi" && r.incoming.closing && r.incoming.header["Host"].must() == "x"
+        .ended | .refused _ => assert false
+
+    assert got[2].must() == .ended
+
+test "next: what is refused, each with its status"
+    assert exchanged("GET /a HTTP/1.1\r\n\r\n")[0].must() == .refused(status: 400, why: "an HTTP/1.1 request names its Host (RFC 9112 § 3.2)")
+    assert exchanged("NOT HTTP\r\n\r\n")[0].must() == .refused(status: 400, why: "the request line \"NOT HTTP\" is not `METHOD target HTTP/1.1`")
+    assert exchanged("GET / HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n")[0].must() == .refused(status: 501, why: "a body sent in chunks is not read here: send its Content-Length")
+    assert exchanged("GET / HTTP/1.1\r\nHost: x\r\nContent-Length: 8388609\r\n\r\n")[0].must() == .refused(status: 413, why: "a body of 8388609 bytes is past the 8 MiB one may be")
+    assert exchanged("GET / HTTP/1.0\r\nbad\r\n\r\n")[0].must() == .refused(status: 400, why: "the header line \"bad\" is not `Name: value`")
+
+    match exchanged("GET / HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n\r\nab")[0]
+        .ok _  => assert false
+        .err e => assert e.code == "malformed"
+
+test "refuse and answer: what the client reads on the wire"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    server @= net.accept(listener).must()
+    assert !answer(server, status: 200, header: {"X-A": "1", "content-length": "9"}, body: "hey", head_only: false, closing: false).must()
+    assert answer(server, status: 200, header: {"X-A": "1"}, body: "hey", head_only: true, closing: true).must()
+    assert answer(server, status: 7, header: {"X-A": "1"}, body: "", head_only: false, closing: false).must()
+    refuse(server, status: 400, why: "no")
+    net.close(@server)
+    heard: [u8] @= []
+
+    while true
+        match net.read(client, most: 4096)
+            .ok more =>
+                for b in more
+                    heard @ heard.push(b)
+            .err _ => break
+
+    wanted = "HTTP/1.1 200 OK\r\nX-A: 1\r\nContent-Length: 3\r\n\r\nhey" + "HTTP/1.1 200 OK\r\nX-A: 1\r\nContent-Length: 3\r\nConnection: close\r\n\r\n" + "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 60\r\nConnection: close\r\n\r\nthe handler answered the status 7, which is no final answer\n" + "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 3\r\nConnection: close\r\n\r\nno\n"
+    assert heard.validated_bytes().must() == wanted
+    net.close(@client)
+    net.close_listener(@listener)

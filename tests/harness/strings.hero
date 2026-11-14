@@ -8,7 +8,9 @@
 #
 # **Three of them are `core`'s since feature 2425** (panel 242's R7,
 # ratified 2026-11-10): the net's own catalogue, `tests/harness/heroes.toml`,
-# takes `core` 0.2.0, and `starts_with`, `ends_with` and `contains`, which
+# takes `core`, 0.2.0 when it arrived and the newest version since the
+# author's decision of 2026-11-14 (`examples/packages/README.md` § 10, step
+# 5), and `starts_with`, `ends_with` and `contains`, which
 # were hand copies of its contract, left this file for `use <core>/strings`
 # (`has_prefix`, `has_suffix`, `contains`), 1,476 calls in 112 modules, the
 # author's instruction that no copy by hand survives a package's arrival.

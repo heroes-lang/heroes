@@ -779,7 +779,7 @@ constant CARDS_PROGRAM: str
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each named by its path under `dir` without `.hero`, in the order they
 # are found: `issues`, and a placed package's module by its tree,
-# `heroes.packages/core@0.2.0-8c07af1fca61d171/strings`, since `heroes test`
+# `heroes.packages/core@0.3.0-5c73ae460e9f7fa7/strings`, since `heroes test`
 # runs the `test` blocks of every module it reaches, a placed package's among
 # them (`examples/packages/README.md` § 1.6), and the net's catalogue takes
 # `core` since feature 2425. A `use` is read in the shapes spec § 1 writes,

@@ -1,0 +1,6 @@
+# A program whose catalogue names `json` 1.0.0, a version its index no
+# longer serves, and nothing placed (defect 2525).
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.x())

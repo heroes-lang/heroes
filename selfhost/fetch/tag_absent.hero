@@ -1,0 +1,113 @@
+# What a git source that has no tag an entry or a command names is told
+# (defect 2525): the tags it has, asked with `git ls-remote --tags` only once
+# `transport.tag_commit` found the one named absent, and, for an entry of the
+# catalogue, the verb that writes the entry anew. Until then the refusal said
+# `` `file://../greet` has no tag `v1` `` and named no way out, while a tag
+# is a name a source may move or delete (panel 235's R9 holds the commit
+# beside it for that reason, `fetch/git_source.hero`).
+#
+# The second question is asked only on the refusal's path, so a fetch that
+# finds its tag runs git as it did. Where the source itself cannot be listed,
+# the first refusal stands as it was: then the source is what is wrong, and
+# `transport.tag_commit` already said so.
+
+use cli/read_back
+use cli/strings
+use fetch/address
+use fetch/transport
+
+# The most tags a refusal names: a source may hold hundreds, and a line that
+# names them all hides the repair after them.
+constant SHOWN: i64
+    10
+
+# `commit`, `transport.tag_commit`'s answer for `source`, with an absence told
+# with the tags the source has. `entry` is the catalogue's address for a tag an
+# entry holds, whose repair is `heroes add` again; "" for a tag the command
+# line named, where the tags it has are the whole answer.
+function checked(tools: transport.Tools, source: address.Address, commit: str?, scratch: str, entry: str) -> str?
+    match commit
+        .ok one => return ok(one)
+        .err e =>
+            if e.code != "absent"
+                return fail(code: e.code, msg: e.msg)
+            return fail(code: e.code, msg: told(tools, source: source, was: e.msg, scratch: scratch, entry: entry))
+
+# `was`, the absence, followed by the tags `source` has and the repair; `was`
+# alone where git cannot list them.
+function told(tools: transport.Tools, source: address.Address, was: str, scratch: str, entry: str) -> str
+    out = scratch + "/git-all-tags.txt"
+    away: str @= "unreachable"
+
+    if source.local.len() > 0
+        away @ "absent"
+    listed = transport.git_ran(
+        tools,
+        words: ["ls-remote", "--tags", "--", source.url],
+        out: out,
+        scratch: scratch,
+        failed_as: away
+    )
+
+    if listed.is_err()
+        return was
+    return said(was: was, tags: tags_in(read_back.words(out).default("")), entry: entry)
+
+# The refusal's words: `was`, the tags, at most `SHOWN` of them, and for an
+# entry the verb that writes it at one of them.
+function said(was: str, tags: [str], entry: str) -> str
+    if tags.len() == 0
+        return was + ", and it has no tag at all"
+    named: [str] @= []
+
+    for tag in tags
+        if named.len() < SHOWN
+            named @ named.push("`" + tag + "`")
+
+    more: str @= ""
+
+    if tags.len() > SHOWN
+        more @ " and " + (tags.len() - SHOWN).to_str() + " more"
+    out = was + ": its tags are " + named.join(", ") + more
+
+    if entry.len() == 0
+        return out
+    return out + "; `heroes add " + entry + " --tag <one of them>` writes the entry at that tag and places its tree"
+
+# The tags `git ls-remote --tags` lists, each once: a line is `<oid>\t<ref>`,
+# an annotated tag listed twice, its peeled line ending `^{}`.
+function tags_in(text: str) -> [str]
+    out: [str] @= []
+
+    for line in transport.parts(text)
+        tab = transport.tab_at(line)
+
+        if tab > 0
+            ref = line.slice(from: tab + 1, to: line.len())
+            prefix = "refs/tags/"
+
+            if ref.len() > prefix.len() && strings.starts_with(text: ref, prefix: prefix) && !strings.ends_with(text: ref, suffix: "^{}")
+                out @ out.push(ref.slice(from: prefix.len(), to: ref.len()))
+
+    return out
+
+## Tests
+
+test "the tags git lists are read once each, an annotated tag's peeled line left out"
+    oid = "a".repeat(40.to_u64().must())
+    text = oid + "\trefs/tags/v1\n" + oid + "\trefs/tags/v2\n" + oid + "\trefs/tags/v2^{}\n" + oid + "\trefs/heads/main\n"
+    assert tags_in(text) == ["v1", "v2"]
+    assert tags_in("").len() == 0
+
+test "a tag that is gone is told with the tags the source has, and an entry's with the verb that writes it anew (defect 2525)"
+    was = "`file://../greet` has no tag `v1`"
+    assert said(was: was, tags: ["v2"], entry: "") == was + ": its tags are `v2`"
+    assert said(was: was, tags: ["v2", "v3"], entry: "file://../greet") == was + ": its tags are `v2`, `v3`; `heroes add file://../greet --tag <one of them>` writes the entry at that tag and places its tree"
+    none: [str] = []
+    assert said(was: was, tags: none, entry: "file://../greet") == was + ", and it has no tag at all"
+    many: [str] @= []
+
+    for n in range(from: 0, to: 12)
+        many @ many.push("t" + n.to_str())
+
+    assert strings.ends_with(text: said(was: was, tags: many, entry: ""), suffix: " and 2 more")

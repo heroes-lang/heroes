@@ -1,0 +1,4 @@
+check <work>/app/main.hero
+fetch -C <work>/app
+add file://../git/greet --tag v2 -C <work>/app
+check <work>/app/main.hero

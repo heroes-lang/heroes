@@ -190,6 +190,20 @@ function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue
         return local
     return mapped(@b, alias: e.name, own: own, root: package.opened)
 
+# What `heroes fetch` places a tree from, said as the condition it is
+# (defect 2525): a build reads no index and no git source (R8), so it cannot
+# know that the version or the tag is still served, and `heroes fetch`
+# refuses one that is not; until then the message promised the fetch, which
+# then failed. The verb that writes the entry anew is named for that case.
+function while_served(e: catalogue.Entry, index: str) -> str
+    if e.git.len() > 0
+        return ", while `" + e.git + "` has the tag `" + e.tag + "` at the commit the entry holds; where it has not, `heroes fetch` says so, and `heroes add " + e.git + " --tag <a tag it has>` writes the entry anew"
+    source: str @= "the Heroes index"
+
+    if index.len() > 0
+        source @ "the index `" + index + "`"
+    return ", while " + source + " serves " + e.name + " " + e.version + " at the catalogue's `sum`; where it does not, `heroes fetch` says so, and `heroes add " + e.name + "` writes the entry at a version it serves"
+
 # What stands at a placed tree's key that is not the entry's tree, "" where
 # the tree stands at its sum: asked of the name at the key itself, as `heroes
 # fetch` asks it (defect 2506, `module/standing.hero`), so the advice names a
@@ -203,7 +217,7 @@ function placed_said(package: reached.Package, e: catalogue.Entry, index: str) -
     place = standing.unslashed(package.root)
 
     if stands == .nothing
-        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`" + placed_beside.fetch_from(e, index: index)
+        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`" + placed_beside.fetch_from(e, index: index) + while_served(e, index: index)
 
     if !standing.read_through(stands)
         return standing.said(stands) + " stands at `" + place + "`, where the package's tree is placed, and `heroes fetch` places nothing over it — " + STANDING_ADVICE
@@ -283,6 +297,32 @@ function failure_of(got: str?) -> str
         .err e => return e.msg
 
 ## Tests
+
+test "an entry not placed is told what `heroes fetch` does while its source serves it, and the verb once it does not (defect 2525)"
+    indexed = catalogue.Entry(
+        name: "core",
+        version: "0.2.1",
+        git: "",
+        tag: "",
+        commit: "",
+        path: "",
+        sum: "sha256-" + "1".repeat(64.to_u64().must())
+    )
+    assert while_served(indexed, index: "file://../../packages") == ", while the index `file://../../packages` serves core 0.2.1 at the catalogue's `sum`; where it does not, `heroes fetch` says so, and `heroes add core` writes the entry at a version it serves"
+    assert strings.starts_with(
+        text: while_served(indexed, index: ""),
+        prefix: ", while the Heroes index serves core 0.2.1"
+    )
+    tagged = catalogue.Entry(
+        name: "greet",
+        version: "",
+        git: "file://../greet",
+        tag: "v1",
+        commit: "0".repeat(40.to_u64().must()),
+        path: "",
+        sum: "sha256-" + "1".repeat(64.to_u64().must())
+    )
+    assert while_served(tagged, index: "") == ", while `file://../greet` has the tag `v1` at the commit the entry holds; where it has not, `heroes fetch` says so, and `heroes add file://../greet --tag <a tag it has>` writes the entry anew"
 
 test "a package's module is read through its entry, from its placed tree or its folder, and nowhere else"
     dir = "build/selftest-packages/"

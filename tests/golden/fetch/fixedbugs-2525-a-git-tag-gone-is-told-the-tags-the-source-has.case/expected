@@ -1,0 +1,24 @@
+$ heroes add file://../git/greet --tag v9 --as greet2 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[absent]: `file://../git/greet` has no tag `v9`: its tags are `v2`
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:1: error[absent]: `file://../git/greet` has no tag `v1`: its tags are `v2`; `heroes add file://../git/greet --tag <one of them>` writes the entry at that tag and places its tree
+$ heroes add file://../git/greet --tag v2 -C <work>/app
+exit 0
+stdout:
+changed greet v1 -> v2
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+[dependencies.greet]  #~ absent
+git = "file://../git/greet"
+tag = "v2"
+commit = "050b31a40b00bb592000d2c27f893ec0ece92f3c"
+sum = "sha256-6f741039c0af0f55e8ae0dab2507288b20c78d21445a34283fc7814447344840"
+heroes.packages:
+greet@v2-d549525ed96e2e51

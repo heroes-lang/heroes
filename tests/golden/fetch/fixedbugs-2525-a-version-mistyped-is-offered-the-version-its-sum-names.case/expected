@@ -1,0 +1,13 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[absent]: the index `file://../../../../../tests/golden/fetch/fixedbugs-2525-a-version-mistyped-is-offered-the-version-its-sum-names.case/idx` serves no json 1.4.3, and it publishes the catalogue's `sum`, the same files, as 1.4.2: write `version = "1.4.2"` in the entry, and `heroes fetch` places them
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2525-a-version-mistyped-is-offered-the-version-its-sum-names.case/idx"
+
+[dependencies.json]  #~ absent
+version = "1.4.3"
+sum = "sha256-88ed723d8c92c5d15dcbbbc763a54a2efcfcc333452c3f4e1d065235780499b8"
+heroes.packages:
+(none)

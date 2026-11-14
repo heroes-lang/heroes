@@ -1,0 +1,111 @@
+# The layer's last failure on this thread, told as `net` tells every failure:
+# a code a program compares with `net`'s constants, and words that say what
+# was asked and what the system answered. One function, so the kinds of
+# `hero_net.h` and the codes of `net` meet in one place, and the two the
+# face's own refusals need: where a call was aimed, and whether a text holds
+# the zero byte C cannot read.
+#
+# The codes are written here as text and declared in the face as constants
+# (`net.STOPPED` is `"stopped"`): a private module cannot name its face's
+# constants, which would be a cycle (spec § 1), and the card holds each code
+# to the constant beside it.
+
+use net/hero_net
+
+# The failure the layer's last call on this thread met, `asked` saying what
+# the call was for: `listening on 127.0.0.1:8080`. Its code is the kind's,
+# snake case, and its words end with the system's own number where the
+# system gave one.
+function failed<A>(asked: str) -> A?
+    kind = hero_net.last_error()
+    os = hero_net.last_os_error()
+    said = asked + ": "
+    number: str @= ""
+
+    if os != 0
+        number @ " (the system's error " + os.to_str() + ")"
+
+    if kind == hero_net.HERO_NET_STOPPED
+        return fail(code: "stopped", msg: said + "the program was asked to stop")
+
+    if kind == hero_net.HERO_NET_INVALID
+        return fail(code: "invalid", msg: said + "the layer refuses the address or the port" + number)
+
+    if kind == hero_net.HERO_NET_NOT_OPEN
+        return fail(code: "not_open", msg: said + "the socket is closed, or none the layer holds" + number)
+
+    if kind == hero_net.HERO_NET_ADDRESS
+        return fail(
+            code: "address",
+            msg: said + "the address names nothing this machine can reach or listen on" + number
+        )
+
+    if kind == hero_net.HERO_NET_IN_USE
+        return fail(code: "in_use", msg: said + "another socket holds the port" + number)
+
+    if kind == hero_net.HERO_NET_REFUSED
+        return fail(code: "refused", msg: said + "nothing listens there" + number)
+
+    if kind == hero_net.HERO_NET_RESET
+        return fail(code: "reset", msg: said + "the peer closed or reset the connection" + number)
+
+    if kind == hero_net.HERO_NET_TIMED_OUT
+        return fail(code: "timed_out", msg: said + "the peer did not answer in time" + number)
+
+    if kind == hero_net.HERO_NET_UNREACHABLE
+        return fail(code: "unreachable", msg: said + "no route reaches the address" + number)
+
+    if kind == hero_net.HERO_NET_LIMIT
+        return fail(code: "limit", msg: said + "no socket, descriptor or memory is left" + number)
+
+    if kind == hero_net.HERO_NET_DENIED
+        return fail(code: "denied", msg: said + "the system denied it" + number)
+    return fail(code: "other", msg: said + "the system failed it" + number)
+
+# Where a call is aimed, as a message names it: `127.0.0.1:8080`, and an
+# address holding a `:`, IPv6's, in brackets, `[::1]:8080`.
+function place(host: str, port: i64) -> str
+    for at in range(from: 0, to: host.len())
+        if host[at] == ':'
+            return "[" + host + "]:" + port.to_str()
+
+    return host + ":" + port.to_str()
+
+# Whether `text` holds a zero byte, which a `str` may and C's text may not.
+function holds_zero(text: str) -> bool
+    for at in range(from: 0, to: text.len())
+        if text[at] == 0
+            return true
+
+    return false
+
+## Tests
+
+test "failed tells the layer's last failure: a number it never gave is not open"
+    s = hero_net.of(12345)
+    assert s == nullptr
+    got: i64? = failed(asked: "taking back 12345")
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.code == "not_open" && e.msg == "taking back 12345: the socket is closed, or none the layer holds"
+
+test "failed tells a port past 65535 as refused by the layer"
+    s = hero_net.listen(address: "127.0.0.1", port: 70000)
+    assert s == nullptr
+    got: i64? = failed(asked: "listening on 127.0.0.1:70000")
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "place names a host and its port, an IPv6 address in brackets"
+    assert place(host: "127.0.0.1", port: 8080) == "127.0.0.1:8080"
+    assert place(host: "::1", port: 0) == "[::1]:0"
+    assert place(host: "", port: 80) == ":80"
+
+test "holds_zero finds a zero byte anywhere, and none in the empty text"
+    assert !holds_zero("")
+    assert !holds_zero("127.0.0.1")
+    nul: [u8] = [97, 0, 98]
+    assert holds_zero(nul.validated_bytes().must())
