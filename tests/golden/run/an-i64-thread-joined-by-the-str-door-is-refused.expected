@@ -1,0 +1,2 @@
+started
+!panic: a thread `hero_thread_spawn` started was joined by `hero_thread_join_str`, which would read its `i64` answer as a `str`: join it with `hero_thread_join`

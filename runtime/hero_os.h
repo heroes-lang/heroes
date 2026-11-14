@@ -460,8 +460,10 @@ int64_t hero_run_serial(void);
  * (`ffi_callback_type`), as panel 246's seats measured. Until that day this
  * comment said the checker decided what crosses, which held for arrays and
  * maps alone. Part 7.13's isolation is obtained from this prototype and the
- * type rule together; widening the rung to one `str` is decision 2498's. A
- * socket crosses as a number through `hero_net.h`'s own doors (R6). */
+ * type rule together. Beside it, one `str` each way, copied, through
+ * `hero_thread_spawn_str` below (decision 2498; feature 2521), whose type
+ * the same rule holds. A socket crosses as a number through `hero_net.h`'s
+ * own doors (R6). */
 int64_t hero_thread_spawn(int64_t (*body)(int64_t), int64_t arg);
 
 /* The same, on a stack of at least `bytes` that the caller chooses (panel 184
@@ -471,6 +473,22 @@ int64_t hero_thread_spawn(int64_t (*body)(int64_t), int64_t arg);
 int64_t hero_thread_spawn_sized(int64_t (*body)(int64_t), int64_t arg, int64_t bytes,
                                 int64_t *why);
 int64_t hero_thread_join(int64_t handle);
+
+/* ONE `str` IN AND ONE `str` BACK, EACH COPIED (decision 2498, the author's
+ * `2a`; feature 2521; panel 113's R5). `body` runs on a thread of its own on
+ * a copy of `arg`'s bytes made here, and the `str` it gives back is copied
+ * on its thread and made a `str` again by `hero_thread_join_str`, so no
+ * `str`'s block is ever held by two threads (`parts/spawn_str.c`). A door
+ * beside `hero_thread_spawn`, whose type does not move (panel 232's promise).
+ * A thread is joined by the door of its kind: `hero_thread_join` on a thread
+ * started here, or `hero_thread_join_str` on one `hero_thread_spawn` started,
+ * is a named panic before any wait, since each would read the other's answer
+ * as what it is not. A thread never joined drops its answer with the
+ * process, as an `i64` thread's is dropped. Bound from Heroes as
+ * `hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64` and
+ * `hero_thread_join_str(handle: i64) -> str`. */
+int64_t hero_thread_spawn_str(HeroStr (*body)(HeroStr), HeroStr arg);
+HeroStr hero_thread_join_str(int64_t handle);
 
 /* How many may run at once, so a program can ask instead of meeting the panic.
  * A value rather than a form — `hero_word_bits`'s precedent. */

@@ -42,6 +42,7 @@
 # `a_callback_crosses_only_as_an_argument` below is what fires the day it is.
 
 use ast
+use bytes
 use check/reaches
 use check/state
 use check/table
@@ -341,3 +342,34 @@ test "a thunk's first line asks whether a signal called it, and the table learns
         text: got,
         needle: ") {\n    hero_callback_entered(\"t.on_signal\", __builtin_return_address(0), __builtin_frame_address(0));\n"
     )
+
+# Defect 2533: the last words of every refusal `in_signal`'s line can give
+# are spec § 13's own sentence (panel 247's R5), and the runtime holds a copy
+# of it, `HERO_SIGNAL_REMEDY` in `runtime/parts/sigguard.c`, which batch 36
+# left behind when it moved the spec's (cd693eec1): every refusal told a
+# program that Ctrl-C and SIGTERM alone make the stop answer, where
+# `hero_net_ask_stop` makes it too. The two copies are read here, the spec's
+# from where the sentence opens to its line's end, the runtime's from the
+# string literals its `#define` continues over, so one cannot move alone.
+test "every signal refusal ends with spec section 13's own sentence, byte for byte (defect 2533)"
+    spec = read_file("spec/heroes-spec.md").must()
+    opens = bytes.locate(text: spec, needle: "No function of the program is a signal handler", from: 0).must()
+    sentence = spec.slice(from: opens, to: bytes.locate(text: spec, needle: "\n", from: opens).must())
+    c = read_file("runtime/parts/sigguard.c").must()
+    at: i64 @= bytes.locate(text: c, needle: "#define HERO_SIGNAL_REMEDY", from: 0).must()
+    pieces: [str] @= []
+    continued: bool @= true
+
+    while continued
+        ends = bytes.locate(text: c, needle: "\n", from: at).must()
+        line = c.slice(from: at, to: ends)
+        quote = bytes.locate(text: line, needle: "\"", from: 0)
+
+        if !quote.is_err()
+            pieces @ pieces.push(line.slice(from: quote.must() + 1, to: bytes.rfind(text: line, needle: "\"").must()))
+        continued @ strings.ends_with(text: line, suffix: "\\")
+        at @ ends + 1
+
+    remedy = pieces.join("")
+    assert !strings.holds(text: remedy, needle: "\\")
+    assert remedy == sentence

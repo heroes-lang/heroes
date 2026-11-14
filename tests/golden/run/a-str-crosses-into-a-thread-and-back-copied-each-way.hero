@@ -1,0 +1,88 @@
+# Feature 2521, 2026-11-14 (decision 2498, the author's `2a`; panel 113's
+# R5, *"the scalars and `str`"*): a thread runs a function of one `str` and
+# gives one back, through `hero_thread_spawn_str` and `hero_thread_join_str`,
+# beside the `i64` doors, whose type does not move (panel 232's promise). The
+# argument's bytes are copied for the thread on the thread that starts it,
+# and the answer's back for the thread that joins it, so no `str`'s block is
+# held by two threads (`runtime/parts/spawn_str.c`). Sixteen threads each
+# take a word of their own and grow it while the starting thread changes the
+# text it handed them: each answer is its own word grown, and the starting
+# thread's text is its own. Beside them: the empty `str` handed back as it
+# came; a literal the thread answers with; a word above ASCII; a megabyte; a
+# thread that starts a `str` thread of its own; and the `i64` door,
+# unchanged.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+    function hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64
+    function hero_thread_join_str(handle: i64) -> str
+
+# A thousand dots after the word, a bar, and the word again.
+function grown(word: str) -> str
+    out: str @= word
+    n: i64 @= 0
+
+    while n < 1000
+        out @ out + "."
+        n @ n + 1
+
+    return out + "|" + word
+
+function same(word: str) -> str
+    return word
+
+function literal(word: str) -> str
+    if word.len() > 0
+        return "an answer written in the program"
+    return "an answer to nothing"
+
+# A thread that starts one of its own and joins it.
+function nested(word: str) -> str
+    inner = hero_thread_spawn_str(body: grown, arg: word + "-inner")
+    return hero_thread_join_str(handle: inner) + "-outer"
+
+function twice(n: i64) -> i64
+    return n * 2
+
+# `body` on its own thread, given `word`, and its answer.
+function across(body: (function(str) -> str), word: str) -> str
+    return hero_thread_join_str(handle: hero_thread_spawn_str(body: body, arg: word))
+
+function main()
+    text: str @= ""
+    handles: [i64] @= []
+    k: i64 @= 0
+
+    while k < 16
+        text @ "word-" + k.to_str()
+        handles @ handles.push(hero_thread_spawn_str(body: grown, arg: text))
+        text @ text + ", changed by the thread that started it"
+        k @ k + 1
+
+    right: i64 @= 0
+    total: i64 @= 0
+    k @ 0
+
+    for handle in handles
+        answer = hero_thread_join_str(handle: handle)
+        total @ total + answer.len()
+
+        if answer == grown("word-" + k.to_str())
+            right @ right + 1
+        k @ k + 1
+
+    print("sixteen threads, each answer its own word grown: ", right, " of 16, ", total, " bytes")
+    print("the starting thread's text is its own: ", text)
+    print("the empty str, handed back: [", across(body: same, word: ""), "]")
+    print("a literal, handed back: ", across(body: literal, word: "x"))
+    print("a word above ASCII, handed back: ", across(body: same, word: "héllo, 世界 😀"))
+    big = "x".repeat(1048576)
+    print("a megabyte, handed back whole: ", across(body: same, word: big) == big)
+    deep = across(body: nested, word: "w")
+    print(
+        "a thread that starts its own: ",
+        deep.len(),
+        " bytes, ending ",
+        deep.slice(from: deep.len() - 14, to: deep.len())
+    )
+    print("the i64 door beside it: ", hero_thread_join(handle: hero_thread_spawn(body: twice, arg: 21)))

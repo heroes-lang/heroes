@@ -81,14 +81,21 @@
 #endif
 
 /* What to write instead, the last words of every refusal below: spec § 13's
- * own sentence (panel 247's R5), each door named with its header and its
- * Heroes signature, as panel 247's R9 asks, and no C header, the trap a
- * `static` flag in one sets for a second module. */
+ * own sentence, byte for byte (panel 247's R5), each door named with its
+ * header and its Heroes signature, as panel 247's R9 asks, and no C header,
+ * the trap a `static` flag in one sets for a second module. Each refusal's
+ * own first words say which way the function was reached, run as a handler
+ * or called from one, so the sentence needs no clause of its own for that.
+ * **A copy, held to the spec's line by the compiler's test** (defect 2533,
+ * `selfhost/emit/callback_thunk.hero`): batch 36 moved the spec's sentence
+ * (cd693eec1) and this one stayed behind, telling every program refused
+ * that Ctrl-C and SIGTERM alone make the stop answer, where
+ * `hero_net_ask_stop` makes it too. */
 #define HERO_SIGNAL_REMEDY                                                                                   \
-    "No function of the program is a signal handler, nor called by one: after `hero_net_catch_stop() -> "  \
-    "i64` (`hero_net.h`), Ctrl-C and SIGTERM only make `hero_net_stop_asked() -> i64` answer 1 and a "      \
-    "waiting call of that layer answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts " \
-    "any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call"
+    "No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), " \
+    "Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 "    \
+    "and a waiting call of that layer answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) "  \
+    "counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call"
 
 /* 0 until the first refusal takes the stop. */
 static _Atomic int hero_signal_stopping = 0;
