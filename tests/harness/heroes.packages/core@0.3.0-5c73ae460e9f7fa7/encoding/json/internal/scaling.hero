@@ -1,0 +1,299 @@
+# A decimal of at most 19 digits rounded to the nearest `f64`, ties to even,
+# by one multiplication by a power of ten kept to 128 bits: the route
+# `numeral.hero` takes ahead of `decimal.hero`'s exact digits, whose cost grows
+# with the distance from one (defect 2405). It is Russ Cox's unrounded scaling
+# ("Floating-Point Printing and Parsing Can Be Simple And Fast",
+# https://research.swtch.com/fp, read 2026-11-10), as Go's `strconv` takes it
+# today (`parseFloat64` and `uscale` in `src/internal/strconv/uscale.go`, read
+# the same day): the digits, an integer `d`, are shifted so their top bit is a
+# word's top bit, multiplied by the 128-bit power of ten of `powers.hero`, and
+# the product's high bits kept as an UNROUNDED number, the integer part with
+# two bits more, a half and a sticky bit saying that something was dropped;
+# rounding it once gives the significand. Its companion, "Fast Unrounded
+# Scaling: Proof by Ivy" (https://research.swtch.com/fp-proof, read
+# 2026-11-10), proves with a program it runs that, for parsing, the result is
+# the correctly rounded one for every input of up to 64 bits and every power
+# of ten from -400 to 400 (its Lemma 10, and the two before it for the powers
+# from -27 to 27), so no number of at most 19 digits needs the exact route.
+#
+# **Words without bitwise operators**: a `u64` has `+ - * / %` and an
+# operator that would leave 0 to 2^64 - 1 aborts (spec § 7), and the bitwise
+# operators are `i64`'s alone. So a shift right by `s` is a division by 2 to
+# the `s`, the low bits are a remainder, a word's two halves are a division and
+# a remainder by 2 to the 32, and a 64-by-64-bit product is four products of
+# halves, each below 2 to the 64. Go's wrapping subtraction is written as the
+# two cases it has.
+#
+# Its one code is written as a literal, `does_not_fit`, the built-ins' own
+# (spec § 11), with `decimal.hero`'s message.
+
+use encoding/json/internal/powers
+
+# The 128 bits of a product of two words, `high * 2^64 + low`.
+record Wide
+    high: u64
+    low: u64
+
+# The `f64` nearest `d × 10^p`, ties to even, `d` from 1 to `powers.NINES`. It
+# fails `does_not_fit` where the number lies past the largest `f64`.
+function nearest(d: u64, p: i64) -> f64?
+    if p > powers.MOST
+        return fail(code: "does_not_fit", msg: "the number lies past the largest f64, about 1.8 times ten to the 308")
+
+    if p < powers.LEAST
+        return ok(0.0)
+    width = bits_of(d)
+    lp = log2_of_ten_to(p)
+
+    # `d × 2^e × 10^p` from 2^52 to 2^54, the significand's 53 bits and at
+    # most one more, since `width` counts `d`'s bits and `lp` rounds down;
+    # unless that `e` passes 1074, where the number's last bit would fall below
+    # the smallest `f64`'s: `e` stops there, and the number, a subnormal,
+    # keeps fewer bits.
+    e: i64 @= min_of(a: 0 - powers.SUBNORMAL_EXPONENT, b: powers.SIGNIFICAND_BITS - width - lp)
+
+    # `d` moved to the word's top is `d × 2^(64 - width)`, and the table's power
+    # is `10^p × 2^(127 - lp)`, so their product is `d × 10^p` times 2 to the
+    # `191 - width - lp`; its high word drops 128 of those bits, and a shift by
+    # `s` drops the rest down to `d × 2^e × 10^p` times 4, the unrounded
+    # number's two bits more (Go's `prescale`). It is 8 unless the number is
+    # a subnormal; from 64 nothing is left of the high word, the number is
+    # below a quarter of the smallest `f64`, and it rounds to zero.
+    s = 61 - width - e - lp
+
+    if s >= 64
+        return ok(0.0)
+    u: u64 @= unrounded(x: d * powers.TWO_TO[64 - width], at: p - powers.LEAST, s: s)
+
+    # One bit too many: the unrounded number rounds to 2 to the 53 or more, so
+    # it is halved, its dropped bit kept in the sticky bit.
+    if u >= powers.TWO_TO[powers.SIGNIFICAND_BITS + 2] - 2
+        u @ marked(q: u / 2, inexact: u % 2 == 1)
+        e @ e - 1
+    return packed(m: rounded(u), k: 0 - e)
+
+# The unrounded `x × pm / 2^(128 + s)`, `pm` the table's power at `at`: the
+# integer part times 4, plus 2 where the rest is at least a half, plus 1 where
+# anything is dropped. `x` has its top bit set. The table keeps `pm` as
+# `high * 2^64 - low`, so the first product, rounded up, decides alone where
+# the bits it shifts out hold a one: a carry the second could subtract stops
+# there (Go's `uscale`).
+function unrounded(x: u64, at: i64, s: i64) -> u64
+    unit = powers.TWO_TO[s]
+    first = product(x: x, y: powers.HIGH[at])
+
+    if first.high % unit != 0
+        return marked(q: first.high / unit, inexact: true)
+    below = product(x: x, y: powers.LOW[at]).high
+    high: u64 @= first.high
+    middle: u64 @= 0
+
+    # `first.low - below` as a word wraps it, borrowing from the high word.
+    if first.low < below
+        high @ high - 1
+        middle @ powers.ALL_ONES - below + first.low + 1
+    else
+        middle @ first.low - below
+    return marked(q: high / unit, inexact: middle > 1)
+
+# `q` with its last bit set where `inexact`: Go's `q | 1`.
+function marked(q: u64, inexact: bool) -> u64
+    if inexact && q % 2 == 0
+        return q + 1
+    return q
+
+# The integer nearest the unrounded `u`, ties to even: past a half up, at
+# exactly a half to the even one.
+function rounded(u: u64) -> u64
+    return (u + 1 + u / 4 % 2) / 4
+
+# The `f64` `m × 2^k`, `m` the significand, below 2 to the 53 as the halving
+# in `nearest` keeps it, which the assert holds loudly: exact, since `m` has
+# at most 53 bits and the result is an `f64` unless it lies past the largest,
+# which it does where `m` has its 53 bits and `k` reaches
+# `powers.PAST_EXPONENT`. `m` reaches `to_f64` through an `i64`, which holds
+# it whole: the C written for `to_f64` of a `u64` is refused by clang today, a
+# defect found beside this route on 2026-11-10.
+function packed(m: u64, k: i64) -> f64?
+    assert m < powers.TWO_TO[powers.SIGNIFICAND_BITS]
+
+    if m >= powers.TWO_TO[powers.SIGNIFICAND_BITS - 1] && k >= powers.PAST_EXPONENT
+        return fail(code: "does_not_fit", msg: "the number lies past the largest f64, about 1.8 times ten to the 308")
+    return ok(to_f64(to_i64(m).must()) * two_to(k))
+
+# 2 to the `k` as an `f64`, `k` from -1074 to 971, by squaring: every factor
+# and every partial product is a power of two from 2 to the -1074 to 2 to the
+# 971, so each is an `f64` and each multiplication exact. The square after the
+# last factor may reach an infinity or zero, and is not used.
+function two_to(k: i64) -> f64
+    base: f64 @= 2.0
+    n: i64 @= k
+
+    if k < 0
+        base @ 0.5
+        n @ 0 - k
+    out: f64 @= 1.0
+
+    while n > 0
+        if n % 2 == 1
+            out @ out * base
+        base @ base * base
+        n @ n / 2
+
+    return out
+
+# The 128-bit product of two words, from the four products of their halves,
+# each below 2 to the 64: the middle column gathers the low product's carry
+# and the cross products' low halves, below 3 times 2 to the 32, and its own
+# carry joins the high word, which is below 2 to the 64 as the product is
+# below 2 to the 128.
+function product(x: u64, y: u64) -> Wide
+    x_high = x / powers.HALF
+    x_low = x % powers.HALF
+    y_high = y / powers.HALF
+    y_low = y % powers.HALF
+    low_low = x_low * y_low
+    low_high = x_low * y_high
+    high_low = x_high * y_low
+    middle = low_low / powers.HALF + low_high % powers.HALF + high_low % powers.HALF
+    return Wide(
+        high: x_high * y_high + low_high / powers.HALF + high_low / powers.HALF + middle / powers.HALF,
+        low: middle % powers.HALF * powers.HALF + low_low % powers.HALF
+    )
+
+# How many bits `d` is written in, `d` at least 1: the `n` with `d` below 2
+# to the `n` and not below 2 to the `n - 1`, found by halving the range from 1
+# to 64.
+function bits_of(d: u64) -> i64
+    low: i64 @= 1
+    high: i64 @= 64
+
+    while low < high
+        mid = (low + high) / 2
+
+        if d < powers.TWO_TO[mid]
+            high @ mid
+        else
+            low @ mid + 1
+
+    return low
+
+# The floor of the base-2 logarithm of 10 to the `p`, `p` from `powers.LEAST`
+# to `powers.MOST`, where the table's approximation is exact; `>>` copies the
+# sign, so a negative product rounds down too (spec § 7).
+function log2_of_ten_to(p: i64) -> i64
+    return p * powers.LOG_TIMES >> powers.LOG_SHIFT
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+## Tests
+
+# `w` times 2, `w` below 2 to the 127: the doubling the check of the table
+# below moves a power of five up with.
+function doubled(w: Wide) -> Wide
+    top = powers.TWO_TO[63]
+    return Wide(high: w.high % top * 2 + w.low / top, low: w.low % top * 2)
+
+test "scaling: the nearest f64, against what Python's float and JavaScript read"
+    assert nearest(d: 1, p: 23).must().to_str() == "1e+23"
+    assert nearest(d: 1, p: 0).must() == 1.0
+    assert nearest(d: 3, p: -1).must() == 0.3
+    assert nearest(d: 7, p: 1).must() == 70.0
+    assert nearest(d: powers.NINES, p: 0).must().to_str() == "1e+19"
+
+    # Halfway between two f64, to the even one: 2 to the 53, plus 1 and plus 3,
+    # and 2 to the 52, plus a half and plus a half and one.
+    assert nearest(d: 9007199254740993, p: 0).must() == 9007199254740992.0
+    assert nearest(d: 9007199254740995, p: 0).must() == 9007199254740996.0
+    assert nearest(d: 45035996273704965, p: -1).must() == 4503599627370496.0
+    assert nearest(d: 45035996273704975, p: -1).must() == 4503599627370498.0
+
+    # The largest f64 and the number past it, and the edges of the table.
+    assert nearest(d: 17976931348623157, p: 292).must().to_str() == "1.7976931348623157e+308"
+    assert nearest(d: 17976931348623158, p: 292).must().to_str() == "1.7976931348623157e+308"
+    assert nearest(d: 17976931348623159, p: 292).is_err()
+    assert nearest(d: 1, p: powers.MOST).must().to_str() == "1e+308"
+    assert nearest(d: 1, p: powers.MOST + 1).is_err()
+    assert nearest(d: powers.NINES, p: powers.LEAST).must().to_str() == "1e-323"
+    assert nearest(d: powers.NINES, p: powers.LEAST - 1).must() == 0.0
+    assert nearest(d: 1, p: powers.LEAST).must() == 0.0
+
+    # The subnormals: the smallest, the halfway point below it either side, and
+    # the edge where they meet the normals.
+    assert nearest(d: 5, p: -324).must().to_str() == "5e-324"
+    assert nearest(d: 24703282292062327, p: -340).must() == 0.0
+    assert nearest(d: 24703282292062328, p: -340).must().to_str() == "5e-324"
+    assert nearest(d: 22250738585072011, p: -324).must().to_str() == "2.225073858507201e-308"
+    assert nearest(d: 22250738585072014, p: -324).must().to_str() == "2.2250738585072014e-308"
+
+    match nearest(d: 1, p: 400)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+test "scaling: the unrounded product keeps two bits more and a sticky one"
+    # 10 to the 0 is 2 to the 127 in the table, exact: 2 to the 63 scaled by 2
+    # to the -8 leaves 2 to the 54 and nothing dropped.
+    assert unrounded(x: powers.TWO_TO[63], at: 0 - powers.LEAST, s: 8) == 18014398509481984
+
+    # 10 to the -1 is no binary fraction: 2 to the 63 scaled by it is
+    # 28823037615171174.4 in the unrounded number's units, so its integer part
+    # gets the sticky bit.
+    assert unrounded(x: powers.TWO_TO[63], at: -1 - powers.LEAST, s: 8) == 28823037615171175
+    assert marked(q: 4, inexact: true) == 5 && marked(q: 5, inexact: true) == 5
+    assert marked(q: 4, inexact: false) == 4
+
+    # 4k + 2 is k and a half exactly, to the even one; one more is past it.
+    assert rounded(10) == 2 && rounded(14) == 4 && rounded(11) == 3 && rounded(9) == 2
+
+test "scaling: a significand and a power of two make the f64"
+    assert packed(m: 1, k: -1074).must().to_str() == "5e-324"
+    assert packed(m: 0, k: -1074).must() == 0.0
+    assert packed(m: powers.TWO_TO[52], k: -1074).must().to_str() == "2.2250738585072014e-308"
+    assert packed(m: powers.TWO_TO[53] - 1, k: 971).must().to_str() == "1.7976931348623157e+308"
+    assert packed(m: powers.TWO_TO[52], k: powers.PAST_EXPONENT).is_err()
+    assert two_to(0) == 1.0 && two_to(-1) == 0.5 && two_to(10) == 1024.0
+    assert two_to(-1074).to_str() == "5e-324"
+    assert two_to(-1022).to_str() == "2.2250738585072014e-308"
+    assert two_to(971).to_str() == "1.99584030953472e+292"
+
+test "scaling: the words, their product, their bits and the logarithm"
+    every = product(x: powers.ALL_ONES, y: powers.ALL_ONES)
+    assert every.high == powers.ALL_ONES - 1 && every.low == 1
+    halves = product(x: powers.HALF, y: powers.HALF)
+    assert halves.high == 1 && halves.low == 0
+    small = product(x: 3, y: 5)
+    assert small.high == 0 && small.low == 15
+    assert bits_of(1) == 1 && bits_of(2) == 2 && bits_of(3) == 2
+    assert bits_of(powers.TWO_TO[63] - 1) == 63 && bits_of(powers.TWO_TO[63]) == 64
+    assert bits_of(powers.ALL_ONES) == 64 && bits_of(powers.NINES) == 64
+    assert log2_of_ten_to(0) == 0 && log2_of_ten_to(1) == 3 && log2_of_ten_to(-1) == -4
+    assert log2_of_ten_to(308) == 1023 && log2_of_ten_to(-342) == -1137
+    assert min_of(a: 1, b: 2) == 1 && min_of(a: 2, b: 1) == 1
+    assert doubled(Wide(high: 1, low: powers.TWO_TO[63])).high == 3
+
+# The table checked where it is exact: 10 to the `p`, `p` from 0 to 55, is 5 to
+# the `p` times a power of two, and 5 to the 55 is below 2 to the 128, so each
+# entry is 5 to the `p` moved up until its top bit is the 128th, written as
+# `HIGH * 2^64 - LOW`. Computed here with this module's own product, apart
+# from the program that wrote the table.
+test "scaling: the table's exact powers of ten are the powers of five"
+    five: Wide @= Wide(high: 0, low: 1)
+
+    for p in range(from: 0, to: 56)
+        if p > 0
+            low = product(x: five.low, y: 5)
+            five @ Wide(high: five.high * 5 + low.high, low: low.low)
+        top: Wide @= five
+
+        while top.high < powers.TWO_TO[63]
+            top @ doubled(top)
+
+        if top.low == 0
+            assert powers.HIGH[p - powers.LEAST] == top.high && powers.LOW[p - powers.LEAST] == 0
+        else
+            assert powers.HIGH[p - powers.LEAST] == top.high + 1
+            assert powers.LOW[p - powers.LEAST] == powers.ALL_ONES - top.low + 1

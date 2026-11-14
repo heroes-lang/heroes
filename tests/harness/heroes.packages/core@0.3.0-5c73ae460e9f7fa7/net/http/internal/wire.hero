@@ -1,0 +1,358 @@
+# HTTP/1.1's text as it stands on the wire (RFC 9112): a request's first line
+# and a response's read, the header lines read into a map and written back
+# out, and a message's text put together. Every reader here is given text from
+# outside the program, so each answers a failure, `malformed`, and never
+# aborts; the face (`net/http.hero`) answers a malformed request with a 400.
+#
+# The code is written as text here and declared in the face as `MALFORMED`: a
+# private module cannot name its face's constants, which would be a cycle.
+
+use strconv
+use strings
+
+# The marks a token may hold beside letters and digits (RFC 9110 § 5.6.2).
+constant MARKS: str
+    "!#$%&'*+-.^_`|~"
+
+# A request's first line, `GET /hello HTTP/1.1`, taken apart.
+record RequestLine
+    method: str
+    target: str
+    version: str
+
+# The most a body may be, read or written by length: 8 MiB, past which a
+# request is answered 413 rather than read into memory.
+constant BODY_MOST: i64
+    8388608
+
+# The request line `line`, three parts each one space apart (RFC 9112 § 3): a
+# method of token characters, a target holding no space, and `HTTP/1.0` or
+# `HTTP/1.1`.
+function request_line(line: str) -> RequestLine?
+    parts = split_spaces(line)
+
+    if parts.len() != 3 || !token(parts[0]) || parts[1].len() == 0
+        return fail(code: "malformed", msg: "the request line " + shown(line) + " is not `METHOD target HTTP/1.1`")
+
+    if parts[2] != "HTTP/1.1" && parts[2] != "HTTP/1.0"
+        return fail(code: "malformed", msg: "the request line " + shown(line) + " names no HTTP/1.0 or HTTP/1.1")
+    return ok(RequestLine(method: parts[0], target: parts[1], version: parts[2]))
+
+# The status a response's first line `line` gives, `HTTP/1.1 200 OK`: its
+# second part, three digits, the reason after it free.
+function status_of(line: str) -> i64?
+    if !strings.has_prefix(s: line, prefix: "HTTP/1.") || line.len() < 12 || line[8] != ' '
+        return fail(code: "malformed", msg: "the status line " + shown(line) + " is not `HTTP/1.1 200 OK`")
+    digits = line.slice(from: 9, to: 12)
+
+    for at in range(from: 0, to: 3)
+        if digits[at] < '0' || digits[at] > '9'
+            return fail(code: "malformed", msg: "the status line " + shown(line) + " gives no three-digit status")
+
+    if line.len() > 12 && line[12] != ' '
+        return fail(code: "malformed", msg: "the status line " + shown(line) + " gives no three-digit status")
+    return ok(strconv.atoi(digits).must())
+
+# The header lines `lines` read into a map, each name written as Go writes it
+# (`Content-Length`) and each value trimmed of the white space around it; a
+# name given twice holds both values, `, ` between them (RFC 9110 § 5.3). A
+# line with no `:`, or a name that is no token, is malformed.
+function header_of(lines: [str]) -> {str: str}?
+    out: {str: str} @= {}
+
+    for line in lines
+        halves = strings.split_once(s: line, sep: ":")
+
+        if halves.is_err() || !token(halves.must().before)
+            return fail(code: "malformed", msg: "the header line " + shown(line) + " is not `Name: value`")
+        name = canonical(halves.must().before)
+        value = strings.trim_space(halves.must().after)
+
+        match out[name]
+            .ok was => out[name] @ was + ", " + value
+            .err _  => out[name] @ value
+
+    return ok(out)
+
+# `name` as Go's `CanonicalHeaderKey` writes it: the first letter and each one
+# after a `-` in upper case, the rest in lower case.
+function canonical(name: str) -> str
+    out: [u8] @= []
+    upper: bool @= true
+
+    for at in range(from: 0, to: name.len())
+        c = name[at]
+
+        if upper && c >= 'a' && c <= 'z'
+            out @ out.push(c - 32)
+        else if !upper && c >= 'A' && c <= 'Z'
+            out @ out.push(c + 32)
+        else
+            out @ out.push(c)
+        upper @ c == '-'
+
+    return out.validated_bytes().must()
+
+# The length `header`'s `Content-Length` gives, 0 where it gives none, as a
+# request without one has no body (RFC 9112 § 6.3); `malformed` where it is no
+# number of digits or lies past an `i64`. A caller holds it to `BODY_MOST`.
+function length(header: {str: str}) -> i64?
+    written = header["Content-Length"].default("0")
+
+    if written.len() == 0
+        return fail(code: "malformed", msg: "the Content-Length is empty")
+
+    for at in range(from: 0, to: written.len())
+        if written[at] < '0' || written[at] > '9'
+            return fail(code: "malformed", msg: "the Content-Length " + shown(written) + " is no number")
+
+    n = strconv.atoi(written)
+
+    if n.is_err()
+        return fail(code: "malformed", msg: "the Content-Length " + shown(written) + " lies past an i64")
+    return n
+
+# Whether the connection ends after a message of `version` with `header`:
+# where its `Connection` names `close`, and for HTTP/1.0 unless it names
+# `keep-alive` (RFC 9112 § 9.3), each word read whatever its case.
+function closes(version: str, header: {str: str}) -> bool
+    said = header["Connection"].default("")
+    close: bool @= false
+    keep: bool @= false
+    start: i64 @= 0
+
+    for at in range(from: 0, to: said.len() + 1)
+        if at == said.len() || said[at] == ','
+            word = canonical(strings.trim_space(said.slice(from: start, to: at)))
+            close @ close || word == "Close"
+            keep @ keep || word == "Keep-Alive"
+            start @ at + 1
+
+    return close || version == "HTTP/1.0" && !keep
+
+# A message's text: its first line, each header line, the blank line, and the
+# body. A name that is no token is left out, and a line end in a value becomes
+# a space, as Go writes them, so no value a program hands on from outside can
+# write a header line of its own.
+function message(first: str, header: {str: str}, body: str) -> str
+    out: [str] @= [first + "\r\n"]
+
+    for name in keys(header)
+        if token(name)
+            out @ out.push(name + ": " + one_line(header[name].must()) + "\r\n")
+
+    out @ out.push("\r\n")
+    out @ out.push(body)
+    return out.join("")
+
+# A response's first line for `status`, three digits from 200 to 999:
+# `HTTP/1.1 404 Not Found`.
+function status_line(status: i64) -> str
+    return "HTTP/1.1 " + status.to_str() + " " + reason(status)
+
+# Whether `target` can stand in a request line: at least one byte, and none a
+# space or a control character, which would end the line or the target.
+function target_ok(target: str) -> bool
+    if target.len() == 0
+        return false
+
+    for at in range(from: 0, to: target.len())
+        if target[at] <= ' ' || target[at] == 0x7f
+            return false
+
+    return true
+
+# The reason a status's line gives beside it, RFC 9110's, or "" where it
+# names none, which a status line may hold (RFC 9112 § 4).
+function reason(status: i64) -> str
+    return match status
+        200 => "OK"
+        201 => "Created"
+        204 => "No Content"
+        301 => "Moved Permanently"
+        304 => "Not Modified"
+        400 => "Bad Request"
+        404 => "Not Found"
+        405 => "Method Not Allowed"
+        413 => "Content Too Large"
+        500 => "Internal Server Error"
+        501 => "Not Implemented"
+        _   => ""
+
+# The bytes of `text`, which is what a `str` holds, so a connection can send
+# them.
+function bytes_of(text: str) -> [u8]
+    out: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        out @ out.push(text[at])
+
+    return out
+
+# Whether `text` is a token of RFC 9110 § 5.6.2, what a method and a header's
+# name are: at least one character, each a letter, a digit or one of
+# ``!#$%&'*+-.^_`|~``.
+function token(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for at in range(from: 0, to: text.len())
+        c = text[at]
+        letter = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+        mark: bool @= false
+
+        # Byte against byte: a text from outside may hold a character of more
+        # than one byte, which a slice of one would cut in two.
+        for i in range(from: 0, to: MARKS.len())
+            mark @ mark || MARKS[i] == c
+
+        if !letter && !mark
+            return false
+
+    return true
+
+# `line` cut at each single space; an empty part where two stand together.
+function split_spaces(line: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: line.len())
+        if line[at] == ' '
+            out @ out.push(line.slice(from: start, to: at))
+            start @ at + 1
+
+    return out.push(line.slice(from: start, to: line.len()))
+
+# `value` with each carriage return and line feed a space.
+function one_line(value: str) -> str
+    out: [u8] @= []
+
+    for at in range(from: 0, to: value.len())
+        if value[at] == '\r' || value[at] == '\n'
+            out @ out.push(' ')
+        else
+            out @ out.push(value[at])
+
+    return out.validated_bytes().must()
+
+# `text` in quotes as a message shows it, cut at 80 bytes on a character's
+# first byte, so a line a peer sends cannot fill a message.
+function shown(text: str) -> str
+    if text.len() <= 80
+        return "\"" + text + "\""
+    cut: i64 @= 80
+
+    while cut > 0 && text[cut] >= 0x80 && text[cut] < 0xc0
+        cut @ cut - 1
+
+    return "\"" + text.slice(from: 0, to: cut) + "...\""
+
+## Tests
+
+test "request_line: a request's three parts, and what is not one"
+    got = request_line("GET /hello HTTP/1.1").must()
+    assert got.method == "GET" && got.target == "/hello" && got.version == "HTTP/1.1"
+    assert request_line("POST / HTTP/1.0").must().version == "HTTP/1.0"
+    assert request_line("").is_err()
+    assert request_line("GET /hello").is_err()
+    assert request_line("GET  /hello HTTP/1.1").is_err()
+    assert request_line("GET /hello HTTP/2").is_err()
+    assert request_line("G\"T /hello HTTP/1.1").is_err()
+
+    match request_line("GET /a b HTTP/1.1")
+        .ok _  => assert false
+        .err e => assert e.code == "malformed" && e.msg == "the request line \"GET /a b HTTP/1.1\" is not `METHOD target HTTP/1.1`"
+
+test "status_of: three digits after the version, a reason or none"
+    assert status_of("HTTP/1.1 200 OK").must() == 200
+    assert status_of("HTTP/1.0 404 Not Found").must() == 404
+    assert status_of("HTTP/1.1 299").must() == 299
+    assert status_of("HTTP/1.1 20 OK").is_err()
+    assert status_of("HTTP/1.1 2000").is_err()
+    assert status_of("HTTP/2 200 OK").is_err()
+    assert status_of("").is_err()
+
+test "header_of: names as Go writes them, values trimmed, a name twice holding both"
+    got = header_of(["content-length: 5", "X-SEEN:a", "x-seen: b ", "Host:"]).must()
+    assert got["Content-Length"].must() == "5"
+    assert got["X-Seen"].must() == "a, b"
+    assert got["Host"].must() == ""
+    nothing: [str] = []
+    assert header_of(nothing).must().len() == 0
+    assert header_of(["no colon"]).is_err()
+    assert header_of(["two words: x"]).is_err()
+    assert header_of([": x"]).is_err()
+
+test "canonical: each word's first letter upper, the rest lower"
+    assert canonical("content-type") == "Content-Type"
+    assert canonical("X-FORWARDED-FOR") == "X-Forwarded-For"
+    assert canonical("") == ""
+    assert canonical("a") == "A"
+
+test "length: none is 0, a number, and what is no number or past an i64"
+    empty: {str: str} = {}
+    assert length(empty).must() == 0
+    assert length({"Content-Length": "0"}).must() == 0
+    assert length({"Content-Length": "8388609"}).must() == 8388609
+    assert length({"Content-Length": "-1"}).is_err()
+    assert length({"Content-Length": "+1"}).is_err()
+    assert length({"Content-Length": "1 2"}).is_err()
+
+    match length({"Content-Length": ""})
+        .ok _  => assert false
+        .err e => assert e.code == "malformed" && e.msg == "the Content-Length is empty"
+
+    match length({"Content-Length": "99999999999999999999"})
+        .ok _  => assert false
+        .err e => assert e.msg == "the Content-Length \"99999999999999999999\" lies past an i64"
+
+test "closes: Connection's close, HTTP/1.0 unless keep-alive, any case, among other words"
+    nothing: {str: str} = {}
+    assert !closes(version: "HTTP/1.1", header: nothing)
+    assert closes(version: "HTTP/1.0", header: nothing)
+    assert closes(version: "HTTP/1.1", header: {"Connection": "close"})
+    assert closes(version: "HTTP/1.1", header: {"Connection": "Upgrade, CLOSE"})
+    assert !closes(version: "HTTP/1.0", header: {"Connection": "keep-alive"})
+    assert !closes(version: "HTTP/1.1", header: {"Connection": "closed"})
+
+test "message: the first line, the header, the blank line and the body; nothing can add a line"
+    assert message(first: "HTTP/1.1 200 OK", header: {"A": "1", "B": "2"}, body: "x") == "HTTP/1.1 200 OK\r\nA: 1\r\nB: 2\r\n\r\nx"
+    nothing: {str: str} = {}
+    assert message(first: "GET / HTTP/1.1", header: nothing, body: "") == "GET / HTTP/1.1\r\n\r\n"
+    assert message(first: "F", header: {"A": "1\r\nB: 2", "C D": "3"}, body: "") == "F\r\nA: 1  B: 2\r\n\r\n"
+
+test "status_line: the version, the status and its reason"
+    assert status_line(200) == "HTTP/1.1 200 OK"
+    assert status_line(299) == "HTTP/1.1 299 "
+
+test "target_ok: a path and a query, never a space, a line end or nothing"
+    assert target_ok("/") && target_ok("/a?b=c") && target_ok("*")
+    assert !target_ok("") && !target_ok("/a b") && !target_ok("/a\r\n") && !target_ok("/\t")
+
+test "reason: the phrase of a known status, and none of another"
+    assert reason(200) == "OK"
+    assert reason(404) == "Not Found"
+    assert reason(299) == ""
+
+test "bytes_of: every byte of the text, none of the empty one"
+    nothing: [u8] = []
+    assert bytes_of("") == nothing
+    assert bytes_of("hé") == [104, 0xc3, 0xa9]
+
+test "token: letters, digits and RFC 9110's marks, never a space or nothing"
+    assert token("GET") && token("X-Seen") && token("a.b~c")
+    assert !token("") && !token("a b") && !token("a:b") && !token("é")
+
+test "split_spaces: each single space a cut"
+    assert split_spaces("a b c") == ["a", "b", "c"]
+    assert split_spaces("a  b") == ["a", "", "b"]
+    assert split_spaces("") == [""]
+
+test "one_line: line ends become spaces, the rest stays"
+    assert one_line("a\r\nb") == "a  b"
+    assert one_line("é") == "é"
+
+test "shown: quoted whole up to 80 bytes, cut on a character's first byte past it"
+    assert shown("x") == "\"x\""
+    long = repeat("é", 50)
+    assert shown(long) == "\"" + repeat("é", 40) + "...\""
