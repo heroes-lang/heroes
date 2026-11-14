@@ -1,0 +1,32 @@
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[package_unread]: `<json>` cannot be read: the package `json` is in the catalogue and not placed: `heroes fetch` places it at `<work>/app/heroes.packages/json@1.0.0-10e7dfa86928c76f/`, while the index `file://../../../../../tests/golden/fetch/fixedbugs-2525-the-build-says-what-fetch-does-for-a-version-no-longer-served.case/idx` serves json 1.0.0 at the catalogue's `sum`; where it does not, `heroes fetch` says so, and `heroes add json` writes the entry at a version it serves
+  at <work>/app/main.hero:3:5
+    |
+  3 | use <json>/parse  #~ package_unread
+    |     ^^^^^^^^^^^^
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[absent]: the index `file://../../../../../tests/golden/fetch/fixedbugs-2525-the-build-says-what-fetch-does-for-a-version-no-longer-served.case/idx` serves no json 1.0.0: it lists 2.0.0, and `heroes add json` writes the entry at the newest, 2.0.0, and places it
+$ heroes add json -C <work>/app
+exit 0
+stdout:
+changed json 1.0.0 -> 2.0.0
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2525-the-build-says-what-fetch-does-for-a-version-no-longer-served.case/idx"
+
+[dependencies.json]  #~ absent
+version = "2.0.0"
+sum = "sha256-645a128b7a4cd6fcb2720ab487ed4fa86c8d090067a9f57fab890fab5dbd3e5b"
+heroes.packages:
+json@2.0.0-221c6fc19c57a68c

@@ -1,0 +1,5 @@
+# Greets.
+
+# The greeting for `who`.
+function hello(who: str) -> str
+    return "hello " + who

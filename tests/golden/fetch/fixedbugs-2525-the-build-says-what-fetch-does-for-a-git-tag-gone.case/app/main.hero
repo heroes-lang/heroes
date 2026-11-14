@@ -1,0 +1,6 @@
+# A program whose catalogue holds `greet` at the tag `v1`, which its source
+# no longer has, and nothing placed (defect 2525).
+use <greet>/greet  #~ package_unread
+
+function main()
+    print(greet.hello("b"))
