@@ -87,7 +87,9 @@
  * slice, is the one way to hear of it there.
  *
  * THE STOP (panel 246's R4, the ffi-pragmatist's mechanism; `hero_net.h`
- * says what it promises). `hero_net_catch_stop` makes a pipe and takes
+ * says what it promises), AND THE STOP THE PROGRAM ASKS ITSELF (panel 248's
+ * R4): `hero_net_ask_stop` sets a flag of its own, every wait asks it beside
+ * the signals' count, and the count never sees it. `hero_net_catch_stop` makes a pipe and takes
  * SIGINT and SIGTERM, or Windows' console events. The first of them counts
  * itself in `hero_net_stop_asks` and writes one byte down the pipe, which
  * nobody ever reads, so its read end stays readable from then on: the poller
@@ -586,9 +588,16 @@ static bool hero_net_closing(hero_net_slot *slot) {
  * under `hero_net_lock`, so two first calls arm once. */
 static _Atomic int hero_net_stop_armed;
 /* The signals, or Windows' console events, that came since: 0 none, 1 the
- * program stops, more ends it. The one truth of the stop: the pipe below is
- * how a wait hears of it at once, and this is what every wait asks. */
+ * program stops, more ends it. The pipe below is how a wait hears of it at
+ * once; this and the program's own ask, below, are what every wait asks. */
 static _Atomic int hero_net_stop_asks;
+/* 1 once the program asked its own stop (`hero_net_ask_stop`, panel 248's
+ * R4). KEPT APART FROM THE SIGNALS' COUNT: the handler counts signals alone,
+ * so the first Ctrl-C after an asked stop is still the first and the process
+ * goes on, and only a second ends it; with the ask counted as the first
+ * request, a user's one Ctrl-C would end a server draining its own stop
+ * (measured on three systems by the sitting's ffi-pragmatist). */
+static _Atomic int hero_net_stop_own;
 
 #if !defined(_WIN32)
 /* The pipe's two ends, -1 until the stop is armed: the handler writes down
@@ -602,9 +611,9 @@ static _Atomic int hero_net_stop_out = -1;
 static _Atomic int hero_net_stop_owner = -1;
 #endif
 
-/* Whether the stop was asked. */
+/* Whether the stop was asked, by a signal or by the program. */
 static bool hero_net_stopping(void) {
-    return atomic_load(&hero_net_stop_asks) > 0;
+    return atomic_load(&hero_net_stop_asks) > 0 || atomic_load(&hero_net_stop_own) != 0;
 }
 
 /* A descriptor made to wait never in the system's own calls, or made to
@@ -1277,6 +1286,33 @@ int64_t hero_net_catch_stop(void) {
 
 int64_t hero_net_stop_asked(void) {
     return hero_net_stopping() ? 1 : 0;
+}
+
+/* THE STOP THE PROGRAM ASKS ITSELF (panel 248's R4): what the first signal
+ * does after `hero_net_catch_stop`, asked from any thread with no signal and
+ * no catch. The first ask wakes every waiting call under the lock, which
+ * then answers `HERO_NET_STOPPED`, and writes one byte down the stop's pipe
+ * where it stands, so a call waiting in slices beside it wakes at once too;
+ * a later ask finds the flag set and does nothing. It takes the table's lock,
+ * so it is no function for a signal handler: the handler's own stop is the
+ * signal's. */
+void hero_net_ask_stop(void) {
+    if (atomic_exchange(&hero_net_stop_own, 1) == 0) {
+        hero_net_enter();
+        hero_net_nudge_all();
+        hero_net_leave();
+#if !defined(_WIN32)
+        int out = atomic_load(&hero_net_stop_out);
+
+        if (out >= 0) {
+            char one = 1;
+            ssize_t wrote = write(out, &one, 1);
+
+            (void)wrote;
+        }
+#endif
+    }
+    hero_net_clear();
 }
 
 /* -- waiting ------------------------------------------------------------ */

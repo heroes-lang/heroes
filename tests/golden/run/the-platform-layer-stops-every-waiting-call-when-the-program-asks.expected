@@ -1,0 +1,7 @@
+the program starts with the interrupt at its default: 1
+the stop is caught: 0
+no stop is asked yet: true
+the program asks its stop, and every waiting call answers stopped at once: 1
+the stop is asked: true
+a first interrupt comes after the asked stop: 1
+and the program goes on to its end

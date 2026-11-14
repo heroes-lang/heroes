@@ -1,0 +1,31 @@
+# The stop a program asks itself is kept apart from the signals' count, so a
+# user's first Ctrl-C after it does not end the program and the second does,
+# as the signal would have (panel 248's R4, provisional, 2026-11-14). The
+# sitting's compiler-engineer built the door counting the ask as the first
+# request, and his own probe showed a first SIGINT after it ending the
+# process, exit 130; the ffi-pragmatist measured both designs on three
+# systems, and the sitting took the one kept apart. The program catches the
+# stop, asks it, survives a first interrupt, and is ended by the second, 128 +
+# 2 = 130, what it printed before written out; the leak check never runs, as
+# under any signal's own end. Judged on POSIX: on Windows a second console
+# event ends the process by the system's own handler, in its own status.
+extern "hero_net.h"
+    function hero_net_catch_stop() -> i64
+    function hero_net_ask_stop()
+    function hero_net_stop_asked() -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_INTERRUPT: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_now(what: i64) -> i64
+    function stop_flush()
+
+function main()
+    print(f"the program starts with the interrupt at its default: {stop_begin(interrupt_ignored: 0)}")
+    print(f"the stop is caught: {hero_net_catch_stop()}")
+    hero_net_ask_stop()
+    print(f"the program asked its stop: {hero_net_stop_asked() == 1}")
+    print(f"a first interrupt comes after the asked stop: {stop_send_now(what: STOP_INTERRUPT)}")
+    print("the program went on; a second interrupt comes")
+    stop_flush()
+    print(f"the second interrupt was survived: {stop_send_now(what: STOP_INTERRUPT)}")

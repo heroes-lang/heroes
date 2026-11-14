@@ -171,11 +171,29 @@ hero_net_socket *hero_net_of(int64_t number);
  * gave no pipe or refused the handler. */
 int64_t hero_net_catch_stop(void);
 
-/* 1 once a stop has been asked, else 0: a loop that works between the
- * layer's calls asks it between its steps, and a thread that joins a worker
- * asks it after. A reader, as the two below: it changes nothing they
+/* 1 once a stop has been asked, by a signal after `hero_net_catch_stop` or
+ * by the program's own `hero_net_ask_stop`, else 0: a loop that works between
+ * the layer's calls asks it between its steps, and a thread that joins a
+ * worker asks it after. A reader, as the two below: it changes nothing they
  * answer. */
 int64_t hero_net_stop_asked(void);
+
+/* THE STOP THE PROGRAM ASKS ITSELF (panel 248's R4): from this call, on every
+ * thread, a call of this layer that would wait answers -1 or NULL with
+ * `HERO_NET_STOPPED`, one already waiting at once, and `hero_net_stop_asked`
+ * answers 1, as after the first signal `hero_net_catch_stop` catches; a call
+ * that need not wait still moves what it can, as there. It cannot fail, and
+ * a second call changes nothing. It is asked from any thread, a connection's
+ * among them, but never from a signal handler: it takes a lock.
+ *
+ * KEPT APART FROM THE SIGNALS: it takes no signal and counts as none. Before
+ * `hero_net_catch_stop`, or with none, Ctrl-C and SIGTERM end the program at
+ * once, as ever; after it, the first of them after an asked stop asks the
+ * stop again, which is asked already, and the program goes on, and the
+ * second ends it at once, so one Ctrl-C never ends a program finishing the
+ * stop it asked. On Windows it is the one way a program asks its own stop:
+ * no signal it can raise reaches the console's handler. */
+void hero_net_ask_stop(void);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the
