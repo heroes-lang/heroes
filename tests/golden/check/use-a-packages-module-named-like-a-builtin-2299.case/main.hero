@@ -1,0 +1,9 @@
+# Feature 2299, 2026-11-14: a package's module named like a built-in, which is
+# why panel 234's R13 names the sorting package `core/slices` and not
+# `core/sort`. `use <slices>/sort` binds `sort` as a module of the program's own
+# does, and is told the same way; the alias its `guess` writes is built from the
+# entry and the path, the angle brackets left out (defect 2368).
+use <slices>/sort  #~ builtin_name_taken
+
+function main()
+    print(sort.twice(2))

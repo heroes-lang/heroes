@@ -31,7 +31,7 @@ use ir/lower
 use ir/mono
 use ir/own
 use ir/place_store
-use ir/print
+use ir/print as ir_print
 use ir/verify
 use modules
 use parse
@@ -224,7 +224,7 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
         return broken(problems_o, what: "the ownership pass produced an ill-formed program")
 
     if options.dump_ir
-        io.print_artifact(text: print.dump(p, c, s, parsed.decls))
+        io.print_artifact(text: ir_print.dump(p, c, s, parsed.decls))
 
         if c.holes.len() > 0
             io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))

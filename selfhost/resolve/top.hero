@@ -134,33 +134,17 @@ function read_uses(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses
     passes: [i64] @= []
 
     for used in ordered
-        passes @ passes.push(repair_pass(s, used: used))
+        passes @ passes.push(binding_taken.repair_pass(s, used: used, library: r.library))
 
     for pass in range(from: 0, to: 3)
         for at in range(from: 0, to: ordered.len())
             if passes[at] == pass
                 read_use(@r, s, decls, used: ordered[at])
 
-# Which pass reads a `use` line: 0 where a clash told on it could offer no
-# repair, a path of one part and no `as` (`module_binding_taken`'s own rule:
-# a fix only where it changes something); 1 where the fix would write an
-# `as`; 2 where the line has one.
-#
-# **Asked of the path the line writes, as the fix is** (defect 2368): the
-# module's identity in a package's own file is `<core>/zeta` for `use zeta`,
-# whose closed-up form differed from `zeta`, so that line was read second
-# beside `use text/zeta` and told with a fix renaming it `<core>_zeta`.
-function repair_pass(s: source.Source, used: ast.Use) -> i64
-    if used.binding.end != used.name.end
-        return 2
-
-    if binding_taken.alias_for(written: source.span_text(s, used.name), binding: source.span_text(s, used.binding)) != ""
-        return 1
-    return 0
-
 # One `use` line read: refused where it uses its own module, uses a module a
 # second time, takes a name a line read before it took, or shadows a
-# declaration of its file; else bound.
+# declaration of its file; else bound, and told where it binds a built-in's
+# name.
 function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used: ast.Use)
     from = source.module_at(s, used.span.start)
     named = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
@@ -199,7 +183,7 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
     if !taken.is_err()
         state.push_diagnostic(
             @r,
-            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: written, has_alias: used.binding.end != used.name.end, span: used.binding)
+            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: written, has_alias: used.binding.end != used.name.end, library: r.library, span: used.binding)
         )
         return
     already = resolved.top_in(r.out, module: from, name: binding)
@@ -211,6 +195,18 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
             diagnostics.use_shadows_a_declaration(line: source.span_text(s, token.Span(start: used.name.start, end: used.binding.end)), binding: binding, declared_at: at, span: used.binding)
         )
         return
+
+    # **A built-in's name is taken everywhere, a module's binding too**
+    # (feature 2299; `enter` above refuses the declarations). The line is still
+    # bound, as `enter` keeps the library's entry, so every `join.<x>` and
+    # `join(xs, sep)` of the file reads as it did and the one mistake has one
+    # message. A line nothing reads is told that as well: deleting it is then
+    # the repair, which an alias alone would leave to a second build to say.
+    if builtin_names.taken(r.library, binding)
+        state.push_diagnostic(
+            @r,
+            binding_taken.builtin_binding(binding: binding, written: written, has_alias: used.binding.end != used.name.end, library: r.library, span: used.binding)
+        )
     resolved.declare_use(@r.out, from: from, binding: binding, module: named)
 
 # What no expression and no written type ever named. Runs after every
@@ -546,6 +542,33 @@ test "an unread use is reported, and a hole in the file suspends it"
     assert unread.out.diagnostics[0].notes.len() == 1
     quiet = resolved_file("use geom\nfunction f() -> i64\n    return ???\n")
     assert quiet.out.diagnostics.len() == 0
+
+# Feature 2299, 2026-11-14: a `use` line binding a built-in's name is told
+# with the code a function of that name is, once, and still bound, so the
+# module's reads of the file resolve as they did (the `check/` cases
+# `use-*-2299` hold that through the driver, and the unread line's own
+# message beside it).
+test "a use binding a built-in's name is told once, and still bound"
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use lib/sort\nuse lib/len as len\n\nfunction main()\n    print(sort.two() + len.two())\n", is_library: false)
+        source.InputFile(name: "lib/sort.hero", module: "lib/sort", text: "function two() -> i64\n    return 2\n", is_library: false)
+        source.InputFile(name: "lib/len.hero", module: "lib/len", text: "function two() -> i64\n    return 2\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    r: state.Resolver @= state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    collect(@r, s, p.decls, p.uses)
+    assert resolved.used_module_named(r.out, from: "main", binding: "sort").must() == "lib/sort"
+    assert resolved.used_module_named(r.out, from: "main", binding: "len").must() == "lib/len"
+    said: [str] @= []
+
+    for d in r.out.diagnostics
+        said @ said.push(d.code + " " + source.span_text(s, d.span) + ": " + d.fixes[0].replacement)
+
+    assert said == ["builtin_name_taken sort: sort as lib_sort", "builtin_name_taken len: lib_len"]
 
 test "a variant's payload fields reach the field set, keyed by module"
     r = resolved_file("variant Token\n    num\n        v: i64\n    plus\n")

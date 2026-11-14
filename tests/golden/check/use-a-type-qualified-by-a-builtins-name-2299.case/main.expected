@@ -1,0 +1,1 @@
+tests/golden/check/use-a-type-qualified-by-a-builtins-name-2299.case/main.hero:12:22: error[unknown_name]: `sort` is a built-in of the language, not a module, and the module `lib/sort` answers it: no `use` line binds a built-in's name, so a file names such a module by an alias of its own — `use lib/sort as lib_sort` and `lib_sort.` where it writes `sort.`

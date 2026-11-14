@@ -18,12 +18,20 @@
 # was looked at, so `lib/strs.hero`, which no `use` names, left `strs.holds`
 # told as before the repair. Every module that answers is named, each with
 # its own `guess`, in the walk's order.
+#
+# **A built-in's name is no `use` line's binding** (feature 2299), so where the
+# qualifier is one, `p: sort.Item` beside `lib/sort.hero`, the line that
+# answers carries an `as` and the qualifier changes with it. No fix of one span
+# writes both, and the line alone would be told again on the qualifier it
+# leaves, so none is offered and the message names the two (`aliased`).
 
 use ast
 use diag
 use inventory
 use module/answering
+use module/binding_taken
 use module/names as module_names
+use resolve/builtin_names
 use resolve/state
 use resolved
 use source
@@ -51,6 +59,9 @@ function named(r: state.Resolver, s: source.Source, name: str, span: token.Span)
 
     if found.len() == 0
         return fail(code: "absent", msg: "no module answers the name")
+
+    if builtin_names.taken(r.library, name)
+        return ok(aliased(r, name: name, found: found, span: span))
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_name",
         message: "nothing named `" + name + "` is in scope, and " + answered(found) + ", which this file names in no `use` line: every module a file names needs its own `use` — " + use_lines(found),
@@ -67,6 +78,26 @@ function named(r: state.Resolver, s: source.Source, name: str, span: token.Span)
         )
 
     return ok(d)
+
+# The message where `name`, the qualifier, is a built-in's and `found` the
+# modules that answer it: each named by the line with the alias
+# `binding_taken` offers, `<another name>` where it offers none, and the
+# qualifier written with that alias.
+function aliased(r: state.Resolver, name: str, found: [str], span: token.Span) -> diag.Diagnostic
+    said: [str] @= []
+
+    for module in found
+        alias: str @= binding_taken.alias_for(written: module, binding: name, library: r.library)
+
+        if alias == ""
+            alias @ "<another name>"
+        said @ said.push("use " + module + " as " + alias + "` and `" + alias + ".")
+
+    return diag.new_diagnostic(
+        code: "unknown_name",
+        message: "`" + name + "` is a built-in of the language, not a module, and " + answered(found) + ": no `use` line binds a built-in's name, so a file names such a module by an alias of its own — " + listed(said, mark: "`", last: " or ") + " where it writes `" + name + ".`",
+        span: span
+    )
 
 # `the module `strs` answers it`, or every module that does.
 function answered(found: [str]) -> str
