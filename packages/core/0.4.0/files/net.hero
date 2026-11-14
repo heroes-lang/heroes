@@ -338,11 +338,23 @@ test "a deadline ends a quiet read with timed_out, and a negative one is refused
     close(@server)
     close_listener(@listener)
 
-# Asking the stop would stop every later test of the process that waits, so it
-# is judged by the corpus's server (`examples/server`) and the net's cases;
-# here, that nothing has asked it.
-test "no stop is asked while the tests run"
+# Each `test` runs as a process of its own, so the stop this one asks ends no
+# other test's waits.
+test "ask_stop makes a wait fail stopped, a connection waiting or not, and stop_asked says so"
+    listener @= listen(host: "127.0.0.1", port: 0).must()
+    client @= dial(host: "127.0.0.1", port: port_of(listener).must()).must()
     assert !stop_asked()
+    ask_stop()
+    assert stop_asked()
+
+    match accept(listener)
+        .ok _  => assert false
+        .err e => assert e.code == STOPPED
+
+    ask_stop()
+    assert stop_asked()
+    close(@client)
+    close_listener(@listener)
 
 # This changes the process that runs the tests as it would a server: SIGINT and
 # SIGTERM ask a stop from here on, and a second one still ends it at once.

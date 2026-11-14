@@ -211,3 +211,14 @@ test "what the layer refuses: a number it never gave, and a port past 65535"
 test "catch_stop answers 0, the second time too"
     assert catch_stop() == 0
     assert catch_stop() == 0
+
+# Each `test` runs as a process of its own, so the stop this one asks ends no
+# other test's waits.
+test "ask_stop makes an accept fail stopped, and stop_asked reads it"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    assert stop_asked() == 0
+    ask_stop()
+    assert stop_asked() == 1
+    assert accept(listener) == nullptr
+    assert last_error() == HERO_NET_STOPPED
+    assert close(@listener) == 0
