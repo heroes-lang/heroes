@@ -60,6 +60,7 @@
 # (`.github/workflows/ci.yml`), which reads as `0.x` today and must fetch the
 # tags with their history before the version is `1.0.0`.
 
+use <core>/slices
 use <core>/strings as core_strings
 
 use absence
@@ -265,32 +266,10 @@ function before(a: Version, b: Version) -> bool
         return a.minor < b.minor
     return a.patch < b.patch
 
+# The releases from the earliest to the newest, by `core/slices`' stable sort
+# (feature 2330), which took the place of the insertion sort written here.
 function sorted_versions(given: [Version]) -> [Version]
-    out: [Version] @= []
-
-    for release in given
-        at: i64 @= 0
-
-        while at < out.len() && !before(a: release, b: out[at])
-            at @ at + 1
-
-        out @ inserted(out, at: at, release: release)
-
-    return out
-
-function inserted(xs: [Version], at: i64, release: Version) -> [Version]
-    out: [Version] @= []
-    index: i64 @= 0
-
-    for x in xs
-        if index == at
-            out @ out.push(release)
-        out @ out.push(x)
-        index @ index + 1
-
-    if at >= xs.len()
-        out @ out.push(release)
-    return out
+    return slices.sort_by(given, before)
 
 function number_of(v: Version) -> str
     return to_str(v.major) + "." + to_str(v.minor) + "." + to_str(v.patch)

@@ -13,16 +13,20 @@
 # corpus program, which is where a copy that was not made and a copy made
 # twice both show up.
 #
-# THE SORT IS A MERGE SORT AND THAT IS NOT A FLOURISH. `sort` in this
-# language takes an array of numbers, of `str` or of `bool` (spec
-# § Built-ins) — it cannot order records, because it has no way to be told
-# which field to look at. Ordering five thousand records by insertion
-# would be twenty-five million comparisons; the merge sort below is
-# thirteen passes. **It is also the shape that makes the copies visible**:
-# every level slices its input in two and joins two halves back, so a run
-# over the whole table allocates and releases sixty-odd thousand rows'
-# worth of array — which is exactly the traffic the leak gate and the
-# sanitiser are watching.
+# THE SORT IS `core/slices`' `sort_by`, STABLE, ONE ORDER PER FUNCTION.
+# `sort` in this language takes an array of numbers, of `str` or of `bool`
+# (spec § Built-ins) — it cannot order records, because it has no way to be
+# told which field to look at. Until core 0.5.0 this module carried a merge
+# sort of its own, slicing the rows in two at every level and joining the
+# halves back; `sort_by` is that sort made a package (feature 2330), a merge
+# over the rows' indices that copies each row once, at the end, measured on
+# 2026-11-14 at 853 million instructions for 100,000 rows at `-O0` against
+# the hand-written merge's 2,436 million. The language has no closures, so
+# an order cannot carry the `plan.Order` it was asked for into the function
+# `sort_by` calls: each order is a function of its own, and `ordered` picks
+# one.
+
+use <core>/slices
 
 use data/row
 use query/plan
@@ -63,28 +67,31 @@ function joined_with(rows: [row.Row], teams: [row.Team]) -> [plan.Joined]
 
     return out
 
-# Whether `a` comes before `b` under an order. Total and deterministic: the
-# id breaks every tie, so two runs over the same table give the same array
-# and `main.expected` means something.
-function before(o: plan.Order, a: row.Row, b: row.Row) -> bool
-    return match o
-        .unordered => a.id < b.id
-        .by_id     => a.id < b.id
-        .by_score_high_first =>
-            if a.score != b.score
-                a.score > b.score
-            else
-                a.id < b.id
-        .by_name =>
-            if a.name != b.name
-                text_before(a: a.name, b: b.name)
-            else
-                a.id < b.id
-        .by_active =>
-            if a.active != b.active
-                a.active
-            else
-                a.id < b.id
+# The orders a query may ask for, one function each, as `slices.sort_by`
+# takes them. Each is total: the id breaks every tie, so the same rows in any
+# order come out as one array and `main.expected` means something.
+
+# Whether `a`'s id is below `b`'s, the order every other one falls back on.
+function id_first(a: row.Row, b: row.Row) -> bool
+    return a.id < b.id
+
+# Whether `a` scores higher than `b`, or the same with a lower id.
+function score_first(a: row.Row, b: row.Row) -> bool
+    if a.score != b.score
+        return a.score > b.score
+    return a.id < b.id
+
+# Whether `a`'s name sorts before `b`'s, or is the same with a lower id.
+function name_first(a: row.Row, b: row.Row) -> bool
+    if a.name != b.name
+        return text_before(a: a.name, b: b.name)
+    return a.id < b.id
+
+# Whether `a` is active and `b` is not, or both are alike with `a`'s id lower.
+function active_first(a: row.Row, b: row.Row) -> bool
+    if a.active != b.active
+        return a.active
+    return a.id < b.id
 
 # Whether `a` sorts before `b`, byte by byte — **and the language taught
 # this program that it was needed**. `sort` orders an array of `str`
@@ -109,43 +116,13 @@ function text_before(a: str, b: str) -> bool
 
     return a.len() < b.len()
 
-# The two halves merged, stable: when neither comes first the left one
-# wins, which is what keeps the previous order inside a tie.
-function merged(left: [row.Row], right: [row.Row], o: plan.Order) -> [row.Row]
-    out: [row.Row] @= []
-    at_left: i64 @= 0
-    at_right: i64 @= 0
-
-    while at_left < left.len() && at_right < right.len()
-        if before(o, a: right[at_right], b: left[at_left])
-            out @ out.push(right[at_right])
-            at_right @ at_right + 1
-        else
-            out @ out.push(left[at_left])
-            at_left @ at_left + 1
-
-    while at_left < left.len()
-        out @ out.push(left[at_left])
-        at_left @ at_left + 1
-
-    while at_right < right.len()
-        out @ out.push(right[at_right])
-        at_right @ at_right + 1
-
-    return out
-
-# The rows in order. Recursion depth is the logarithm of the table's size —
-# thirteen levels for five thousand rows — which is why this is the sort a
-# language with a recursion ceiling can afford.
+# The rows in the order `o` asks for.
 function ordered(rows: [row.Row], o: plan.Order) -> [row.Row]
-    if rows.len() <= 1
-        return rows
-    middle = rows.len() / 2
-    return merged(
-        left: ordered(rows.slice(from: 0, to: middle), o),
-        right: ordered(rows.slice(from: middle, to: rows.len()), o),
-        o: o
-    )
+    return match o
+        .unordered | .by_id  => slices.sort_by(rows, id_first)
+        .by_score_high_first => slices.sort_by(rows, score_first)
+        .by_name             => slices.sort_by(rows, name_first)
+        .by_active           => slices.sort_by(rows, active_first)
 
 # The first `n`, or all of them. A limit of zero or less means no limit,
 # so a query that does not care carries no special case.

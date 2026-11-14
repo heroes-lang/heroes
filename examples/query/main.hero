@@ -10,7 +10,7 @@
 #   1. **Data at volume.** The largest input any corpus program reads is 28
 #      lines. This one generates 5,000 rows and hands them to copy-on-write
 #      (design.md §4.10) whole, several times per query — filtered, sliced,
-#      merged, grouped — under `-O0`, `-O2` and `--sanitize` alike.
+#      ordered, grouped — under `-O0`, `-O2` and `--sanitize` alike.
 #   2. **A file this program made.** `examples/todo/` is the only other
 #      program in the corpus that writes one, and it writes four lines. This
 #      one writes its whole table and reads it back through a strict reader,
