@@ -1,0 +1,20 @@
+# Feature 2299, 2026-11-14 (panel 234's R3 item 6, ratified by decision 2304):
+# a built-in's name is taken everywhere, and until then a `use` line was the
+# one thing that could take it. `use sort` compiled beside the built-in `sort`,
+# `sort(words)` and `sort.twice(4)` one line apart reading as one name, while a
+# function named `sort` was `builtin_name_taken`. Each line below is told now,
+# with the same code: a path, whose `guess` writes an alias from it; an alias
+# that is a built-in's, renamed; a name only the library declares, which the
+# inventory does not hold; and a module of one part, whose closed-up path is
+# its binding again, so the message names the repair and no fix is offered.
+# Every line is still bound, so the file's reads resolve as they did and each
+# mistake has one message.
+use lib/join  #~ builtin_name_taken
+use lib/sort as print  #~ builtin_name_taken
+use lib/validated  #~ builtin_name_taken
+use sort  #~ builtin_name_taken
+
+function main()
+    words = ["b", "a"]
+    print(join.twice(1) + print.twice(2) + validated.twice(3) + sort.twice(4))
+    print(sort(words).join(","))

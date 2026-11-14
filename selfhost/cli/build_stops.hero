@@ -34,7 +34,7 @@ use cli/compile
 use cli/io
 use cli/strings
 use cli/table as cli_table
-use ir/print
+use ir/print as ir_print
 use source
 
 # The flags of `build` its IR dump reads: itself, and `--permissive`.
@@ -173,7 +173,7 @@ function ir_under(s: source.Source, level: str, sanitize: bool, searched: [str],
         permissive: false
     )
     art = compile.to_unit(s, options, version: "0.0.0-test", sources: "0123456789abcdef").must()
-    return print.dump(art.program, art.checked, s, art.decls)
+    return ir_print.dump(art.program, art.checked, s, art.decls)
 
 # The premise this module's refusal rests on, as a test that fires when it
 # dies: if a stage before the dump reads a level, the sanitizer, a search path

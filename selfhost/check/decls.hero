@@ -22,7 +22,7 @@ use check/discard
 use check/ffi
 use check/freer as freer
 use check/generics
-use check/join
+use check/join as joins
 use check/lower
 use check/path_end
 use check/render
@@ -259,7 +259,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 # line after one is that refusal's shadow (design.md §4.17). A block inside
 # the body is `walk.block`'s, and refuses as everywhere.
 function constant_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], name: str, body: ast.Block, ty: i64)
-    leaves: join.Leaves @= .falls
+    leaves: joins.Leaves @= .falls
     left: token.Span @= body.span
     value: i64? @= fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1

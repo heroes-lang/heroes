@@ -32,7 +32,7 @@
 # what lets it stand outside the walk's knot.
 
 use ast
-use check/join
+use check/join as joins
 use check/state
 use check/table
 use flow_errors
@@ -143,21 +143,21 @@ function ended(@c: state.Checker, at: i64)
 # line or an arm's one statement, every branch of which leaves, leaves with
 # them, and its block or its arm leaves (built as the sitting's (3x)). The
 # value check of such a construct says `no_value` at the construct's own span
-# last of all (`join.refuse_leaving`), and here that one message is
+# last of all (`joins.refuse_leaving`), and here that one message is
 # withdrawn, the construct recorded as the statement it is, and how it left
 # handed back. Anything said after the refusal, or any other message, and
 # nothing is withdrawn: the refusal stands, which is the safe direction.
 # Asked of the diagnostics rather than of a field `refuse_leaving` writes,
 # because a field of `Checker` widens every frame that holds one (panel 185
 # measured one to three levels of the nesting `check` survives).
-function withdrawn(@c: state.Checker, a: ast.Ast, before: i64, at: i64, span: token.Span) -> join.Leaves
+function withdrawn(@c: state.Checker, a: ast.Ast, before: i64, at: i64, span: token.Span) -> joins.Leaves
     count = c.out.diagnostics.len()
 
     if count == before
         return .falls
     said = c.out.diagnostics[count - 1]
     what = construct(a, at: at)
-    left: join.Leaves @= .falls
+    left: joins.Leaves @= .falls
 
     if said.span.start != span.start || said.span.end != span.end
         return .falls

@@ -1,0 +1,2 @@
+[dependencies.slices]
+path = "vendor/slices"

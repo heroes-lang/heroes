@@ -1,0 +1,13 @@
+# Feature 2299, 2026-11-14: the lines beside a `use` binding a built-in's
+# name. Of two lines binding `sort`, the first is told the built-in's and is
+# still bound, so the second is told the clash every second line is, each with
+# its own `guess`; neither message is said twice. A line nothing reads is told
+# both of what is wrong with it, the built-in's name and that nothing reads
+# it, since deleting it is then the repair and an alias alone would leave that
+# to a second build to say.
+use a/sort  #~ builtin_name_taken
+use b/sort  #~ module_binding_taken
+use lib/len  #~ unused_binding builtin_name_taken
+
+function main()
+    print(sort.twice(1))

@@ -1,0 +1,2 @@
+note: the package `slices` is read from the folder `tests/golden/check/use-a-packages-module-named-like-a-builtin-2299.case/vendor/slices/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/use-a-packages-module-named-like-a-builtin-2299.case/main.hero:6:14: error[builtin_name_taken]: `sort` is a built-in of the language, so the name is taken everywhere, a `use` line's binding too — name the module otherwise in this file, `use <slices>/sort as slices_sort`, and write `slices_sort.` where the file writes `sort.`

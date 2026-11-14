@@ -57,7 +57,7 @@ use check/given_width
 use check/group_fields
 use check/handle_built
 use check/interp
-use check/join
+use check/join as joins
 use check/kept_cells
 use check/label_order
 use check/labels
@@ -110,10 +110,10 @@ variant Want
     unknown
 
 # How does control leave this statement, and what value did it produce?
-# Rust's (Flow, Option<TyId>) pair, as one record; `join.Leaves` says why
+# Rust's (Flow, Option<TyId>) pair, as one record; `joins.Leaves` says why
 # leaving has three answers and not two.
 record Outcome
-    leaves: join.Leaves
+    leaves: joins.Leaves
     value: i64?
 
 function falls_with_nothing() -> Outcome
@@ -272,12 +272,12 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 ty: access.try_type(@c, s, decls, inner: inner_ty, span: span, operand: a.exprs[t.value].span)
             )
         .if_expr branches =>
-            collected: [join.Branch] @= []
+            collected: [joins.Branch] @= []
 
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .unknown)
-                collected @ collected.push(join.Branch(value: got.value, leaves: got.leaves, span: branch.block.span))
+                collected @ collected.push(joins.Branch(value: got.value, leaves: got.leaves, span: branch.block.span))
 
             if branches.otherwise.is_err()
                 # Without an else the value is missing whenever the
@@ -286,12 +286,12 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .unknown)
             collected @ collected.push(
-                join.Branch(value: got.value, leaves: got.leaves, span: branches.otherwise.must().span)
+                joins.Branch(value: got.value, leaves: got.leaves, span: branches.otherwise.must().span)
             )
             return state.record_expr(
                 @c,
                 at: id,
-                ty: join.join_for_value(@c, s, decls, collected, what: "if", span: span)
+                ty: joins.join_for_value(@c, s, decls, collected, what: "if", span: span)
             )
         .match_expr m =>
             subject = synth(@c, a, r, s, decls, m.scrutinee)
@@ -299,7 +299,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             return state.record_expr(
                 @c,
                 at: id,
-                ty: join.join_for_value(@c, s, decls, collected, what: "match", span: span)
+                ty: joins.join_for_value(@c, s, decls, collected, what: "match", span: span)
             )
 
     return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
@@ -499,24 +499,24 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # a .case, an ok(…) or a [] can be written in an arm at all.
 
         .if_expr branches =>
-            leaving: join.Leaves @= .jumps
+            leaving: joins.Leaves @= .jumps
 
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .value(ty: expected))
-                leaving @ join.both(first: leaving, second: got.leaves)
+                leaving @ joins.both(first: leaving, second: got.leaves)
 
             if branches.otherwise.is_err()
                 state.push_diagnostic(@c, flow_errors.if_without_else(span))
                 leaving @ .falls
             else
                 got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .value(ty: expected))
-                leaving @ join.both(first: leaving, second: got.leaves)
+                leaving @ joins.both(first: leaving, second: got.leaves)
 
             # The synthesised `if` asks this in `join_for_value`; the checked
             # one never did, so `x: i64 = if` with a `return` in every branch
             # checked where `x = if` was refused (defect 139).
-            join.refuse_leaving(@c, leaves: leaving, what: "if", span: span)
+            joins.refuse_leaving(@c, leaves: leaving, what: "if", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         .match_expr m =>
@@ -535,7 +535,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
             # Every arm jumped, which is not *no arm produced a value*: an
             # arm that ended on a statement was told at the arm (defect 139).
-            join.refuse_leaving(@c, leaves: join.every_branch(branches), what: "match", span: span)
+            joins.refuse_leaving(@c, leaves: joins.every_branch(branches), what: "match", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         # A UFCS call takes the same expectation as a call (panel 105, the
@@ -721,7 +721,7 @@ function checked_map_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved
 # block may produce one; every other line is a statement, and §4.14
 # wants it to be ().
 function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, want: Want) -> Outcome
-    leaves: join.Leaves @= .falls
+    leaves: joins.Leaves @= .falls
     value: i64? @= fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
     index: i64 @= 0
@@ -958,18 +958,18 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     match a.exprs[value].kind
         .if_expr branches =>
             if want == .nothing
-                leaving: join.Leaves @= .jumps
+                leaving: joins.Leaves @= .jumps
 
                 for branch in branches.branches
                     condition(@c, a, r, s, decls, branch.cond)
                     got = block(@c, a, r, s, decls, body: branch.block, want: .nothing)
-                    leaving @ join.both(first: leaving, second: got.leaves)
+                    leaving @ joins.both(first: leaving, second: got.leaves)
 
                 if branches.otherwise.is_err()
                     leaving @ .falls
                 else
                     got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .nothing)
-                    leaving @ join.both(first: leaving, second: got.leaves)
+                    leaving @ joins.both(first: leaving, second: got.leaves)
 
                 # As a statement it has the type a statement must have.
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
@@ -985,7 +985,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 # value* until 2026-10-01, which every `match` statement
                 # satisfies, and a function with no `return` checked clean
                 # and stopped in clang (defect 139).
-                leaving = join.every_branch(branches)
+                leaving = joins.every_branch(branches)
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_tail(@c, a, r, s, decls, value: value, want: want, span: span)
@@ -1082,11 +1082,11 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
 
 # Every arm of a match: what its patterns bind, whether the set is
 # exhaustive, what value it produces, and whether control leaves through
-# it. The last two are separate answers (`join.Branch`): an arm with no
+# it. The last two are separate answers (`joins.Branch`): an arm with no
 # value either jumped or ended on a statement, and only the first may
 # stand in a `match` used as a value.
-function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [join.Branch]
-    branches: [join.Branch] @= []
+function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [joins.Branch]
+    branches: [joins.Branch] @= []
     covered: {i64: bool} @= {}
     wildcard_seen: bool @= false
     seen: reach.Seen @= reach.none()
@@ -1116,7 +1116,7 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 .error     => continue
 
         value: i64? @= fail(code: "none", msg: "nothing produced yet")
-        leaves: join.Leaves @= .falls
+        leaves: joins.Leaves @= .falls
 
         match arm.body
             .one_stmt one =>
@@ -1130,7 +1130,7 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 leaves @ got.leaves
                 value @ got.value
 
-        branches @ branches.push(join.Branch(value: value, leaves: leaves, span: arm.span))
+        branches @ branches.push(joins.Branch(value: value, leaves: leaves, span: arm.span))
 
     reach.exhaustive(@c, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
     return branches

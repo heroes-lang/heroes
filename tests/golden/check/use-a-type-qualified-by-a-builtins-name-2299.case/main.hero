@@ -1,0 +1,13 @@
+# Feature 2299, 2026-11-14: a type qualified by a built-in's name, `sort.Item`,
+# with no `use` of the module `lib/sort` that declares it. Defect 2292's
+# message offered `use lib/sort`, a `guess` writing a line feature 2299 now
+# refuses; and the line with an alias alone would be told again on the
+# qualifier it leaves. So the message names the line with its alias and the
+# qualifier written with it, and offers no fix. Its first words were *nothing
+# named `sort` is in scope*, which a built-in in scope makes false.
+function main()
+    print(1)
+
+# The value p holds.
+function value_of(p: sort.Item) -> i64  #~ unknown_name
+    return p.v

@@ -1,0 +1,5 @@
+# A module of the case beside it, named like a built-in.
+
+# Twice n.
+function twice(n: i64) -> i64
+    return n * 2

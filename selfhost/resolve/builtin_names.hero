@@ -44,6 +44,13 @@ function of_library(s: source.Source, decls: [ast.Decl]) -> {str: bool}
 
     return names
 
+# Every name the library declares, read from its own text, for a tool that
+# asks where no compilation is in hand: `heroes new`, whose advice names the
+# line a program writes to reach a package (feature 2299).
+function of_library_text() -> {str: bool}
+    s = source.with_library(name: "main.hero", user: "", library: library_source.text())
+    return of_library(s, parse.parse_source(s).decls)
+
 # Whether a declaration gives the library a name a program can read: any
 # but an extern's, and but a test's, whose name is its title.
 function names_one(d: ast.Decl) -> bool
@@ -80,3 +87,9 @@ test "what the library declares is taken, `validated` with it, but its externs"
     assert !taken(names, "hero_exit")
     assert !taken(names, "HERO_OS_OK")
     assert !taken(names, "main")
+
+    # Read with no program beside it, the library names the same.
+    alone = of_library_text()
+    assert alone.keys().len() == names.keys().len()
+    assert taken(alone, "args_checked")
+    assert taken(alone, "validated")
