@@ -26,11 +26,11 @@
 use cli/process
 use cli/strings
 use fetch/address
+use fetch/listing_read
 use fetch/made_index
 use fetch/made_repo
 use fetch/staging
 use fetch/transport
-use fetch/tree_names
 use module/catalogue
 use module/fingerprint
 use module/placed
@@ -173,7 +173,7 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
             code: "sum_mismatch",
             msg: "the listing of " + name + " " + version + " at the index `" + index.written + "` sums to `" + got + "`, and the catalogue's `sum` for it is `" + sum + "`: the package is not the one its entry was written for, and nothing was fetched"
         )
-    files = lines_of_listing(listing)?
+    files = listing_read.lines_of_listing(listing)?
 
     for one in files
         path = s.tree + "/" + one.path
@@ -189,69 +189,6 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
             )
 
     return ok()
-
-# One line of a listing: a file's SHA-256 and its name.
-record Line
-    sum: str
-    path: str
-
-# A listing read as the lines its sum was taken over: `<64 hex>  <name>` and a
-# line end each, the names in the order of their bytes, none twice, every name
-# one a package may hold, and no two one where case is ignored. A listing in
-# any other shape is refused, since it is not the canonical one a tree's sum
-# reads (`module/fingerprint.hero`).
-function lines_of_listing(listing: str) -> [Line]?
-    out: [Line] @= []
-    paths: [str] @= []
-    from: i64 @= 0
-
-    if listing.len() > 0 && listing[listing.len() - 1] != '\n'
-        return fail(
-            code: "index_refused",
-            msg: "the listing does not end with a line end, which its canonical form does"
-        )
-
-    for at in range(from: 0, to: listing.len())
-        if listing[at] == '\n'
-            line = listing.slice(from: from, to: at)
-
-            if line.len() < 67 || !sums.sum_shape("sha256-" + line.slice(from: 0, to: 64)) || line[64] != ' ' || line[65] != ' '
-                return fail(
-                    code: "index_refused",
-                    msg: "a line of the listing is not `<sha256>  <name>`: `" + line + "`"
-                )
-            path = line.slice(from: 66, to: line.len())
-            said = tree_names.name_said(path)
-
-            if said.len() > 0
-                return fail(code: "name_refused", msg: said)
-
-            if paths.len() > 0 && !before(first: paths[paths.len() - 1], then: path)
-                return fail(
-                    code: "index_refused",
-                    msg: "the listing names `" + path + "` after `" + paths[paths.len() - 1] + "`, where its canonical form orders the names by their bytes, each once"
-                )
-            out @ out.push(Line(sum: line.slice(from: 0, to: 64), path: path))
-            paths @ paths.push(path)
-            from @ at + 1
-
-    twice = tree_names.collision(paths)
-
-    if twice.len() > 0
-        return fail(code: "name_refused", msg: twice)
-    return ok(out)
-
-# Whether `first` comes before `then` in the order of their bytes, a name
-# before every longer name it opens.
-function before(first: str, then: str) -> bool
-    at: i64 @= 0
-
-    while at < first.len() && at < then.len()
-        if first[at] != then[at]
-            return first[at] < then[at]
-        at @ at + 1
-
-    return first.len() < then.len()
 
 # A text's lines, each without its line end; a last line with none is a line.
 function lines_of(text: str) -> [str]
