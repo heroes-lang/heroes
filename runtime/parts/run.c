@@ -24,7 +24,7 @@
  * reads as success. That collision is why `heroes build` on a machine with no
  * clang used to say *"internal error: the runtime did not compile"* — the
  * compiler blaming itself for the machine. Here the child reports a failed
- * `execvp` through a close-on-exec pipe, so the parent knows the difference
+ * `exec` through a close-on-exec pipe, so the parent knows the difference
  * without guessing, and a signal comes back as 128 + the signal.
  */
 
@@ -33,8 +33,11 @@
 #include <wchar.h>
 #else
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <paths.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <sys/select.h>
@@ -44,7 +47,6 @@
 #include <sys/prctl.h>
 #endif
 #if defined(__APPLE__)
-#include <paths.h>
 #include <pthread.h>
 #include <spawn.h>
 #endif
@@ -147,7 +149,7 @@ void hero_run_reset(void) {
  * be gone before `hero_run_go` is called.
  *
  * A NUL inside the word is a panic rather than a truncation: a `str`'s `len` is
- * authoritative (spec § 3 Types) and `execvp` reads to the first NUL, so the two
+ * authoritative (spec § 3 Types) and `execve` reads to the first NUL, so the two
  * disagree exactly when an argument would silently become a shorter one. */
 void hero_run_arg(HeroStr word) {
     if (hero_run_count >= HERO_RUN_MAX_ARGS) {
@@ -546,7 +548,7 @@ static bool hero_run_same_name(const char *a, const char *b) {
 /* The child's environment: this process's `environ`, each variable staged
  * taking the place of every entry of its name, then the staged ones, a name
  * staged twice taking its later value. NULL where nothing is staged, so the
- * child is started by `execvp` and inherits exactly as it always did. Built in
+ * child is handed `environ` and inherits exactly as it always did. Built in
  * the parent, before the fork, because the child may not allocate: another
  * thread may hold the allocator's lock at the fork, and the child would wait
  * on it for ever. The array is the caller's to release; its strings are
@@ -574,27 +576,25 @@ static char **hero_run_child_environment(void) {
     return out;
 }
 
-#if defined(__APPLE__)
 /* **THE PROGRAM IS FOUND THROUGH THIS PROCESS'S `PATH`, never the child's**
  * (panel 242's R6, its first choice; the critic's measurement that route (e)
- * as first built searched the child's). Darwin has no `execvpe`; its
- * `execvp` searches `getenv("PATH")`, or `_PATH_DEFPATH` where that is unset,
- * through `execvP`, which reads the new image's environment from `environ`.
- * So the parent reads its own search path here, copied before the fork, and
- * the child sets `environ` to its block and calls `execvP` with that path:
- * the search `execvp` makes, over the parent's path, into the child's
- * environment. The copy is the caller's to release. */
-static char *hero_run_parent_search(void) {
+ * as first built searched the child's), and the search is made HERE, before
+ * the fork (defect 2531): this process's `PATH`, or where it is unset the
+ * default the C library's own `execvp` reads, so a program is found where it
+ * was found before the search moved out of the child: glibc's `CS_PATH`,
+ * `/bin:/usr/bin` (`posix/execvpe.c`), and Darwin's and musl's
+ * `_PATH_DEFPATH`. Read once, while the launch is built. */
+static const char *hero_run_search_path(void) {
     const char *path = getenv("PATH");
-    if (path == NULL) path = _PATH_DEFPATH;
-    size_t n = strlen(path);
-    char *copy = hero_alloc(n + 1);
-    memcpy(copy, path, n + 1);
-    return copy;
-}
+    if (path != NULL) return path;
+#if defined(__GLIBC__)
+    return "/bin:/usr/bin";
+#else
+    return _PATH_DEFPATH;
 #endif
+}
 
-/* -- a child started in a folder of its own (panel 248's R3; defect 2490) --
+/* -- the launch, built before the fork (panel 248's R3; defects 2490, 2531) -
  *
  * **EVERY RELATIVE PATH OF A LAUNCH IS READ IN THIS PROCESS'S FOLDER**, which
  * is what `CreateProcessW` does: it resolves a relative `lpCurrentDirectory`,
@@ -607,10 +607,30 @@ static char *hero_run_parent_search(void) {
  * the child opens its three streams before it enters the folder, which is its
  * last act before `exec`; a program path holding a `/` is written whole here;
  * and where a bare name is searched, every relative entry of this process's
- * `PATH` is written whole, an empty one (which `execvp` reads as the current
- * folder) as this folder itself. **A path handed to the child in a word or a
+ * `PATH` is written whole, an empty one (the current folder, as every search
+ * reads it) as this folder itself. **A path handed to the child in a word or a
  * variable is the child's to read, in its own folder**, on every system: the
  * runtime does not know which words are paths, so a caller gives those whole.
+ *
+ * **AND THE CHILD CALLS ONLY WHAT POSIX PROMISES IT AFTER A FORK** (defect
+ * 2531). *"If a multi-threaded process calls fork(), ... the application
+ * shall ensure that the child process only executes async-signal-safe
+ * operations until such time as one of the exec functions is successful"*
+ * (IEEE Std 1003.1-2024, `fork`; the list is XSH 2.4.3). Another thread may
+ * hold the allocator's lock, or the environment's, at the fork, and the child
+ * would wait on it for ever. `execve`, `stat`, `fchdir`, `open`, `dup2`,
+ * `sigaction` stand on the list; `execvp`, `getrlimit` and `setrlimit` do
+ * not. So the search `execvp` made in the child is made here: the paths the
+ * child's `execve` tries, in the order `execvp` tried them, and the shell's
+ * words for a file that is no program, which `execvp` runs as a script; and
+ * the write ceiling is read here against this process's limit. The child
+ * keeps one call off the list, `setrlimit`, because no call sets another
+ * process's limit everywhere: Linux's `prlimit` on the child's pid races the
+ * child's `exec` and its first write, and Darwin has no such call. It is a
+ * bare system call on both C libraries, no lock and no allocation, read
+ * 2026-11-14: Darwin's `setrlimit` is a branch to `__setrlimit`, system call
+ * 195 by `svc #0x80` (`lldb` on this Mac), and glibc 2.41's is system call
+ * 261, `prlimit64`, by `svc #0x0` (`objdump` in the Linux arm64 image).
  *
  * Everything here is built before the fork, because the child may not
  * allocate (`hero_run_child_environment`'s comment says why). */
@@ -618,17 +638,24 @@ typedef struct HeroRunLaunch {
     /* The child's block (`hero_run_child_environment`), NULL for this
      * process's own. */
     char **environment;
-    /* The search path the child's `exec` reads, NULL for the system's own
-     * search over this process's `PATH`. */
-    char *search;
-    /* glibc's and musl's `execvpe` read their search from `getenv("PATH")`,
-     * so where `search` is given the child points `environ` at this block,
-     * `{ "PATH=<search>", NULL }`, and hands `execvpe` its real one. */
-    char **search_block;
+    /* The argument list, this thread's, read here so the child names no
+     * thread-local variable. */
+    char **words;
+    /* Every path the child's `execve` tries, in order, NULL-ended
+     * (`hero_run_candidates`). */
+    char **candidates;
+    /* The words a file that is no program is handed to the shell with,
+     * `sh <its path> <every word after the first>` (`hero_run_shell_words`);
+     * slot 1 is the path, written by the child. */
+    char **shell;
     /* The program path written whole, NULL where it is read as given. */
     char *program;
     /* The folder opened for the child, -1 for this process's own. */
     int folder;
+    /* Whether the child holds itself to `most`: the ceiling
+     * `hero_run_limit_writes` asked, under this process's hard limit. */
+    bool ceiling;
+    struct rlimit most;
 } HeroRunLaunch;
 
 /* How a folder is opened for a child: for search alone where the system has
@@ -651,11 +678,8 @@ typedef struct HeroRunLaunch {
  * copies or no child was started. */
 static void hero_run_give_back(HeroRunLaunch *launch) {
     if (launch->environment != NULL) hero_release(launch->environment);
-    if (launch->search != NULL) hero_release(launch->search);
-    if (launch->search_block != NULL) {
-        hero_release(launch->search_block[0]);
-        hero_release(launch->search_block);
-    }
+    if (launch->candidates != NULL) hero_release(launch->candidates);
+    if (launch->shell != NULL) hero_release(launch->shell);
     if (launch->program != NULL) hero_release(launch->program);
     if (launch->folder >= 0) close(launch->folder);
 }
@@ -723,54 +747,116 @@ static char *hero_run_whole_search(const char *path, const char *here) {
     return out;
 }
 
-/* The staged folder opened, and the launch's relative paths made to read in
- * this process's folder (the section's opening says why). HERO_OS_OK, or
- * HERO_OS_NO_FOLDER where the folder cannot be opened, or HERO_OS_FAILED
- * where this process's own folder cannot be read to write a path whole; `*why`
- * is the system's reason. Nothing is done where no folder is staged. */
-static int64_t hero_run_prepare_folder(HeroRunLaunch *launch, const char *program, int64_t *why) {
-    if (hero_run_folder == NULL) return HERO_OS_OK;
-    launch->folder = open(hero_run_folder, HERO_RUN_FOLDER_OPEN);
-    if (launch->folder < 0) {
-        *why = (int64_t)errno;
-        return HERO_OS_NO_FOLDER;
-    }
-    bool bare = strchr(program, '/') == NULL;
-    const char *path = NULL;
-    if (bare && program[0] != '\0') {
-        /* The path the child would search: Darwin's copy where a block is
-         * staged, else this process's `PATH`, whose absence leaves each C
-         * library its own default, every entry of which is whole. */
-        path = launch->search != NULL ? launch->search : getenv("PATH");
-        if (path != NULL && hero_run_search_whole(path)) path = NULL;
-    }
-    if (program[0] == '/' || (bare && path == NULL)) return HERO_OS_OK;
-    char *here = hero_run_here();
-    if (here == NULL) {
-        *why = (int64_t)errno;
-        return HERO_OS_FAILED;
-    }
-    if (!bare) {
-        size_t n = strlen(program);
-        launch->program = hero_alloc(strlen(here) + n + 2);
-        size_t at = 0;
-        hero_run_put_whole(launch->program, &at, here, program, n);
-        launch->program[at] = '\0';
+/* THE PATHS THE CHILD'S `execve` TRIES, in order, NULL-ended, in one
+ * allocation (+1): the pointers, then the bytes they point at, so the child
+ * reads them and gives nothing back. A name holding a `/` is its one path,
+ * searched nowhere; an empty name has none, and the child is told ENOENT, as
+ * `execvp` tells it; a bare name is tried in each entry of `path` in turn, a
+ * `/` put between the two only where the entry does not end in one, and an
+ * empty entry read as the current folder, `./` (XBD 8, `PATH`: *"A
+ * zero-length prefix is a legacy feature that indicates the current working
+ * directory"*), so the shell given a script found there reads a path and
+ * never searches one. `path` is NULL where no search is made. */
+static char **hero_run_candidates(const char *program, const char *path) {
+    size_t length = strlen(program);
+    size_t entries = 0;
+    size_t bytes = 1;
+    if (path == NULL) {
+        entries = length > 0 ? 1 : 0;
+        bytes = length + 1;
     } else {
-        char *whole = hero_run_whole_search(path, here);
-        if (launch->search != NULL) hero_release(launch->search);
-        launch->search = whole;
-#if !defined(__APPLE__)
-        size_t n = strlen(whole);
-        char *pair = hero_alloc(n + 6);
-        memcpy(pair, "PATH=", 5);
-        memcpy(pair + 5, whole, n + 1);
-        launch->search_block = hero_alloc(2 * sizeof *launch->search_block);
-        launch->search_block[0] = pair;
-        launch->search_block[1] = NULL;
-#endif
+        entries = 1;
+        for (const char *c = path; *c != '\0'; c += 1) entries += *c == ':';
+        /* An entry's own bytes, at most two more (`./`, or its `/`), the name
+         * and its NUL; the separators the entries no longer hold pay for the
+         * rest. */
+        bytes = strlen(path) + entries * (length + 3);
     }
-    hero_release(here);
+    char **out = hero_alloc((entries + 1) * sizeof *out + bytes);
+    char *put = (char *)(out + entries + 1);
+    size_t k = 0;
+    if (path == NULL && length > 0) {
+        out[k++] = put;
+        memcpy(put, program, length + 1);
+    }
+    for (const char *entry = path; entry != NULL;) {
+        const char *end = strchr(entry, ':');
+        size_t n = end != NULL ? (size_t)(end - entry) : strlen(entry);
+        out[k++] = put;
+        if (n == 0) {
+            *put++ = '.';
+        } else {
+            memcpy(put, entry, n);
+            put += n;
+        }
+        if (n == 0 || entry[n - 1] != '/') *put++ = '/';
+        memcpy(put, program, length + 1);
+        put += length + 1;
+        entry = end != NULL ? end + 1 : NULL;
+    }
+    out[k] = NULL;
+    return out;
+}
+
+/* THE WORDS A FILE THAT IS NO PROGRAM IS HANDED TO THE SHELL WITH (+1), as
+ * `execvp` hands it on ENOEXEC: *"execl(<shell path>, <name>, file, <args>,
+ * (char *)0)"*, which POSIX.1-2024 requires of `execvp` (its `exec` page).
+ * `<name>` is `sh`: the standard leaves it unspecified and warns that
+ * *"blindly passing the original arg0 on to the fallback execution can fail
+ * to invoke a compliant shell environment"*, Darwin's `execvp` passes `sh`,
+ * and the script reads its own path as `$0` whatever this word is. Slot 1 is
+ * the file, written by the child once it has found it; then every word after
+ * the first. */
+static char **hero_run_shell_words(char **words, int64_t count) {
+    size_t n = (size_t)count;
+    char **out = hero_alloc((n + 2) * sizeof *out);
+    out[0] = (char *)"sh";
+    out[1] = NULL;
+    for (size_t i = 1; i < n; i += 1) out[i + 1] = words[i];
+    out[n + 1] = NULL;
+    return out;
+}
+
+/* Everything the child reads, built here (the section's opening says why):
+ * the staged folder opened, the program path or the search written whole
+ * where a folder is staged, the paths the child tries and the shell's words.
+ * HERO_OS_OK, or HERO_OS_NO_FOLDER where the folder cannot be opened, or
+ * HERO_OS_FAILED where this process's own folder cannot be read to write a
+ * path whole; `*why` is the system's reason. */
+static int64_t hero_run_prepare(HeroRunLaunch *launch, const char *program, int64_t *why) {
+    launch->shell = hero_run_shell_words(launch->words, hero_run_count);
+    bool bare = strchr(program, '/') == NULL;
+    const char *path = bare && program[0] != '\0' ? hero_run_search_path() : NULL;
+    char *whole_search = NULL;
+    if (hero_run_folder != NULL) {
+        launch->folder = open(hero_run_folder, HERO_RUN_FOLDER_OPEN);
+        if (launch->folder < 0) {
+            *why = (int64_t)errno;
+            return HERO_OS_NO_FOLDER;
+        }
+        bool relative_program = !bare && program[0] != '/';
+        bool relative_search = path != NULL && !hero_run_search_whole(path);
+        if (relative_program || relative_search) {
+            char *here = hero_run_here();
+            if (here == NULL) {
+                *why = (int64_t)errno;
+                return HERO_OS_FAILED;
+            }
+            if (relative_program) {
+                size_t n = strlen(program);
+                launch->program = hero_alloc(strlen(here) + n + 2);
+                size_t at = 0;
+                hero_run_put_whole(launch->program, &at, here, program, n);
+                launch->program[at] = '\0';
+            } else {
+                whole_search = hero_run_whole_search(path, here);
+                path = whole_search;
+            }
+            hero_release(here);
+        }
+    }
+    launch->candidates = hero_run_candidates(launch->program != NULL ? launch->program : program, path);
+    if (whole_search != NULL) hero_release(whole_search);
     return HERO_OS_OK;
 }
 
@@ -1617,9 +1703,53 @@ static pid_t hero_run_reap(pid_t child, int slot, int *wait_status, int nohang,
     return waitpid(child, wait_status, 0);
 }
 
-static void hero_run_child(const char *program, int report, int tty,
-                           const char *in_path, const char *out_path,
-                           const char *err_path, int64_t write_limit,
+/* THE SEARCH'S LAST HALF, in the child (defect 2531): each path the parent
+ * found (`hero_run_candidates`) tried by `execve`, which returns only where it
+ * failed. The rule is `execvp`'s, in one form on every system. A path that
+ * names nothing, or holds a folder that is not one, goes on to the next:
+ * ENOENT, ENOTDIR, ELOOP, ENAMETOOLONG, and glibc's ESTALE, ENODEV and
+ * ETIMEDOUT for a file system that did not answer. A file this user may not
+ * run goes on too (XBD 8: the search runs *"until an executable file with
+ * appropriate execution permissions is found"*), remembered where `stat`
+ * finds a file there, so a program found nowhere is told ENOENT and one found
+ * and refused EACCES, as Darwin's `execvP` tells them. A file that is no
+ * program goes to the shell (ENOEXEC, `hero_run_shell_words`), whose own
+ * answer is then the launch's; any other answer ends the search with itself.
+ * Returns the reason the child tells its parent. `execve` and `stat` are on
+ * POSIX's list; nothing here allocates or takes a lock. */
+static int hero_run_exec(const HeroRunLaunch *launch) {
+    char **block = launch->environment != NULL ? launch->environment : environ;
+    bool refused = false;
+    for (char **at = launch->candidates; *at != NULL; at += 1) {
+        execve(*at, launch->words, block);
+        int failure = errno;
+        switch (failure) {
+        case ENOEXEC:
+            launch->shell[1] = *at;
+            execve(_PATH_BSHELL, launch->shell, block);
+            return errno;
+        case EACCES: {
+            struct stat seen;
+            if (stat(*at, &seen) == 0) refused = true;
+            break;
+        }
+        case ENOENT:
+        case ENOTDIR:
+        case ELOOP:
+        case ENAMETOOLONG:
+        case ESTALE:
+        case ENODEV:
+        case ETIMEDOUT:
+            break;
+        default:
+            return failure;
+        }
+    }
+    return refused ? EACCES : ENOENT;
+}
+
+static void hero_run_child(int report, int tty, const char *in_path,
+                           const char *out_path, const char *err_path,
                            const sigset_t *before, pid_t parent,
                            const HeroRunLaunch *launch) {
 #if defined(__linux__)
@@ -1662,23 +1792,17 @@ static void hero_run_child(const char *program, int report, int tty,
      * launch held, before anything here can block (defect 425). */
     hero_run_child_signals(before);
 
-    /* The ceiling `hero_run_limit_writes` asked for, on this child alone: the
-     * soft limit only, so the hard one the parent had is left as it was, and
-     * SIGXFSZ ignored, which exec keeps, so a write past it answers EFBIG
-     * rather than killing the child. */
-    if (write_limit > 0) {
-        struct rlimit most;
+    /* The ceiling `hero_run_limit_writes` asked for, on this child alone, read
+     * by the parent (`hero_run_go`): the soft limit only, so the hard one the
+     * parent had is left as it was, and SIGXFSZ ignored, which exec keeps, so
+     * a write past it answers EFBIG rather than killing the child. The one
+     * call here POSIX does not list, the section's opening says why. */
+    if (launch->ceiling) {
         struct sigaction ignore;
         memset(&ignore, 0, sizeof ignore);
         ignore.sa_handler = SIG_IGN;
         sigemptyset(&ignore.sa_mask);
-        int held = getrlimit(RLIMIT_FSIZE, &most) == 0;
-        if (held) {
-            rlim_t asked = (rlim_t)write_limit;
-            most.rlim_cur = most.rlim_max != RLIM_INFINITY && most.rlim_max < asked ? most.rlim_max : asked;
-            held = sigaction(SIGXFSZ, &ignore, NULL) == 0 && setrlimit(RLIMIT_FSIZE, &most) == 0;
-        }
-        if (!held) {
+        if (sigaction(SIGXFSZ, &ignore, NULL) != 0 || setrlimit(RLIMIT_FSIZE, &launch->most) != 0) {
             hero_run_say_failed(report, HERO_RUN_FAILED_START);
             _exit(126);
         }
@@ -1737,36 +1861,10 @@ static void hero_run_child(const char *program, int report, int tty,
         _exit(126);
     }
 
-    /* Nothing staged: `execvp`, the child's environment and search this
-     * process's own, as before the doors. A block staged: the same search,
-     * over THIS process's `PATH` (panel 242's R6), into that block. A search
-     * written whole (a folder staged, a relative entry in `PATH`): the same
-     * search over the whole entries. glibc's and musl's `execvpe` search
-     * `getenv("PATH")`, which in the child still reads the parent's
-     * `environ`, so a search written whole is handed to them through
-     * `environ` pointed at a block of that one variable, the child's real
-     * block given to `execvpe`; Darwin's `execvP` is given the search
-     * (`hero_run_parent_search`, or the whole one) and takes the block from
-     * `environ`, which is set to it here, in the child alone. Neither
-     * allocates: both build each candidate on the stack. */
-#if defined(__APPLE__)
-    if (launch->environment != NULL) environ = launch->environment;
-    if (launch->search != NULL) {
-        execvP(program, launch->search, hero_run_words);
-    } else {
-        execvp(program, hero_run_words);
-    }
-#else
-    if (launch->search_block != NULL) {
-        char **block = launch->environment != NULL ? launch->environment : environ;
-        environ = launch->search_block;
-        execvpe(program, hero_run_words, block);
-    } else if (launch->environment != NULL) {
-        execvpe(program, hero_run_words, launch->environment);
-    } else {
-        execvp(program, hero_run_words);
-    }
-#endif
+    /* The program, found through THIS process's `PATH` (panel 242's R6) by
+     * the paths the parent built, into the child's block or this process's
+     * own (`hero_run_exec`). */
+    errno = hero_run_exec(launch);
 
     /* Only reachable when the exec failed. The pipe is close-on-exec, so the
      * parent seeing bytes here means "never started" and seeing none means the
@@ -2216,26 +2314,43 @@ int64_t hero_run_go(const char *program, const char *in_path,
         return -1;
     }
 
-    /* The child's environment, on Darwin the parent's search path, and the
-     * staged folder with the paths it makes whole, all built here, before the
-     * launch's window below and before the fork, and all given back on every
-     * path out of this call (`hero_run_child`'s comment says why the child
+    /* The child's environment, the paths its `execve` tries, the shell's
+     * words, the write ceiling and the staged folder, all built here, before
+     * the launch's window below and before the fork, and all given back on
+     * every path out of this call (the launch's section says why the child
      * cannot build them). */
     HeroRunLaunch launch;
     launch.environment = hero_run_child_environment();
-    launch.search = NULL;
-    launch.search_block = NULL;
+    launch.words = hero_run_words;
+    launch.candidates = NULL;
+    launch.shell = NULL;
     launch.program = NULL;
     launch.folder = -1;
-#if defined(__APPLE__)
-    if (launch.environment != NULL) launch.search = hero_run_parent_search();
-#endif
+    launch.ceiling = false;
+    memset(&launch.most, 0, sizeof launch.most);
+
+    /* The ceiling under this process's own hard limit, read here, where a
+     * refusal is this runtime's and no child's (HERO_OS_FAILED). */
+    if (write_limit > 0) {
+        if (getrlimit(RLIMIT_FSIZE, &launch.most) != 0) {
+            hero_run_why_code = (int64_t)errno;
+            close(report[0]);
+            close(report[1]);
+            hero_run_give_back(&launch);
+            *status = HERO_OS_FAILED;
+            return -1;
+        }
+        rlim_t asked = (rlim_t)write_limit;
+        bool lower = launch.most.rlim_max != RLIM_INFINITY && launch.most.rlim_max < asked;
+        launch.most.rlim_cur = lower ? launch.most.rlim_max : asked;
+        launch.ceiling = true;
+    }
 
     /* A folder this process cannot open is the launch's refusal before any
      * child exists, as `CreateProcessW` refuses it, and its own answer:
      * HERO_OS_NO_FOLDER, never a missing program's HERO_OS_NOT_FOUND. */
     int64_t why = 0;
-    int64_t prepared = hero_run_prepare_folder(&launch, program, &why);
+    int64_t prepared = hero_run_prepare(&launch, program, &why);
     if (prepared != HERO_OS_OK) {
         hero_run_why_code = why;
         close(report[0]);
@@ -2244,7 +2359,6 @@ int64_t hero_run_go(const char *program, const char *in_path,
         *status = prepared;
         return -1;
     }
-    const char *started = launch.program != NULL ? launch.program : program;
 
     pid_t tty_holder __attribute__((cleanup(hero_run_tty_restore))) =
         hero_run_tty_holder();
@@ -2289,8 +2403,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(started, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit, &before, parent,
-                       &launch);
+        hero_run_child(report[1], tty_holder != -1, in_path, out_path, err_path, &before, parent, &launch);
     }
 
     /* The child holds its own copy of every piece from the fork on. */

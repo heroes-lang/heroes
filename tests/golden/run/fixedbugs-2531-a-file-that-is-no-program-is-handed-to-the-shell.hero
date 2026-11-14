@@ -1,0 +1,178 @@
+# Defect 2531, 2026-11-14, the half POSIX alone has. The search a child's
+# program is found by is made in the parent now, before the fork, and what
+# `execvp` did beyond the search came with it. A file that is no program
+# (no `#!`, so `execve` answers ENOEXEC) is handed to `/bin/sh` as
+# `sh <its path> <the words after the first>`, which POSIX.1-2024 requires
+# of `execvp`, in the child's own environment; the path the shell is handed
+# is the one the search found, so a script found through a relative `PATH`
+# entry while a folder is staged is handed whole, where a relative one, read
+# by the shell in the child's folder, would name nothing. And a launch that
+# finds nothing is told by the system's own reason, as `execvp` told it: 2
+# (ENOENT) where no file of that name was there, an empty name among them,
+# and 13 (EACCES) where one was and this user may not run it, a folder of
+# that name among them.
+#
+# The program is its own middle run. The script it writes says how the shell
+# was handed it (a whole path or a relative one), its words, and a variable
+# staged for it or inherited. `unistd.h` is no header of Windows, where no
+# shell runs a file and `CreateProcessW` gives numbers of its own, so the
+# case is judged where the header is (`.claude/rules/platforms.md`); its
+# `access` says what this user may run.
+extern "unistd.h"
+    constant X_OK: i32
+    function access(path: cstr lent, mode: i32) -> i32
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_env(name: str, value: str)
+    function hero_run_dir(folder: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_run_why() -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_link(existing: cstr lent, name: cstr lent) -> i64
+    function hero_fs_set_mode(path: cstr lent, mode: i64) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    function hero_os_pid() -> i64
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+
+constant SCRIPT: str
+    "door-2531-script"
+
+constant TOOL: str
+    "door-2531-tool"
+
+# The folder a child is started in, which holds no script.
+constant CHILDS: str
+    "the-childs-folder"
+
+# No `#!`: `execve` refuses it with ENOEXEC, and only the shell runs it.
+constant TEXT: str
+    "case \"$0\" in /*) how=whole ;; *) how=relative ;; esac\necho \"  the shell was handed a $how path, the words $1 $2, and DOOR_2531=$DOOR_2531\"\n"
+
+function itself() -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+# What a status is called.
+function said(status: i64) -> str
+    if status == HERO_OS_OK
+        return "started"
+
+    if status == HERO_OS_NOT_FOUND
+        return "not found"
+    return "status " + status.to_str()
+
+# `name` started with the words `one` and `two`, in `folder` ("-" for this
+# process's own), and told: its answer, its exit, and the system's reason
+# where it did not start.
+function start(what: str, name: str, folder: str)
+    hero_run_arg(word: name)
+    hero_run_arg(word: "one")
+    hero_run_arg(word: "two")
+    hero_run_limit(seconds: 60)
+
+    if folder != "-"
+        hero_run_dir(folder: folder)
+    status: i64 @= 0
+    code = hero_run_go(program: name.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+
+    if status == HERO_OS_OK
+        print(what + ": " + said(status) + ", exit ", code)
+    else
+        print(what + ": " + said(status) + ", exit ", code, ", reason ", hero_run_why())
+
+# A middle run started by `program` in `root`, `path` its `PATH`, a variable
+# staged for it that its own child inherits.
+function through(program: str, root: str, what: str, path: str, folder: str, name: str)
+    hero_run_arg(word: program)
+    hero_run_arg(word: "middle")
+    hero_run_arg(word: what)
+    hero_run_arg(word: folder)
+    hero_run_arg(word: name)
+    hero_run_limit(seconds: 60)
+    hero_run_env(name: "PATH", value: path)
+    hero_run_env(name: "DOOR_2531", value: "inherited")
+    hero_run_dir(folder: root)
+    status: i64 @= 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+
+    if status != HERO_OS_OK || code != 0
+        print("the middle of `" + what + "`: " + said(status) + ", exit ", code)
+
+function main()
+    if args().len() > 3 && args()[0] == "middle"
+        start(what: args()[1], name: args()[3], folder: args()[2])
+        return
+    root = "build/heroes-golden-2531-sh-" + hero_os_pid().to_str()
+    script = root + "/" + SCRIPT
+    locked = root + "/locked/" + TOOL
+    made: bool @= true
+
+    for folder in [root + "/" + CHILDS, root + "/scripts", root + "/locked", root + "/dirs/" + TOOL]
+        made @ made && hero_fs_mkdir_all(path: folder.cstr()) == HERO_OS_OK
+
+    made @ made && !write_file(path: script, text: TEXT).is_err()
+    made @ made && hero_fs_set_mode(path: script.cstr(), mode: 493) == HERO_OS_OK
+    made @ made && hero_fs_link(existing: script.cstr(), name: (root + "/scripts/" + SCRIPT).cstr()) == HERO_OS_OK
+    made @ made && !write_file(path: locked, text: "no program\n").is_err()
+    print("a script with no first line of its own, and a file that is no program, made: ", made)
+    print("the script may be run by this user: ", access(path: script.cstr(), mode: X_OK) == 0)
+    print("the file in `locked/` may be run by this user: ", access(path: locked.cstr(), mode: X_OK) == 0)
+
+    # Started by its path, a variable staged for it.
+    hero_run_env(name: "DOOR_2531", value: "staged")
+    start(what: "a script started by its path", name: script, folder: "-")
+    program = itself()
+    path_status: i64 @= 0
+    marks: i64 @= 0
+    own = hero_env_shown(name: "PATH".cstr(), status: @path_status, marks: @marks)
+    through(
+        program: program,
+        root: root,
+        what: "a script found through a relative entry, in the folder",
+        path: "scripts:" + own,
+        folder: CHILDS,
+        name: SCRIPT
+    )
+    through(
+        program: program,
+        root: root,
+        what: "a script found through an empty entry, no folder staged",
+        path: ":" + own,
+        folder: "-",
+        name: SCRIPT
+    )
+    through(
+        program: program,
+        root: root,
+        what: "a name found only as a file this user may not run",
+        path: "locked:" + own,
+        folder: CHILDS,
+        name: TOOL
+    )
+    through(
+        program: program,
+        root: root,
+        what: "a name found only as a folder",
+        path: "dirs:" + own,
+        folder: CHILDS,
+        name: TOOL
+    )
+    through(
+        program: program,
+        root: root,
+        what: "a name nobody has",
+        path: "scripts:" + own,
+        folder: CHILDS,
+        name: "heroes-no-such-program-2531"
+    )
+    start(what: "an empty name", name: "", folder: "-")
+    _ = hero_dir_remove_tree(path: root.cstr())

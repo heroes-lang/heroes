@@ -1,0 +1,14 @@
+four more names of the program made, two in the child's folder: true
+  started from the child's folder: false
+a bare name through a relative entry, in the folder: started, exit 0
+  started from the child's folder: false
+a bare name through an empty entry, in the folder: started, exit 0
+  started from the child's folder: false
+a bare name through `.`, in the folder: started, exit 0
+  started from the child's folder: false
+a bare name through an empty entry last, in the folder: started, exit 0
+  started from the child's folder: false
+a bare name past a file that is no program and a folder, in the folder: started, exit 0
+  started from the child's folder: false
+a bare name through an empty entry, no folder staged: started, exit 0
+a name nobody has, in the folder: not found, exit -1, a reason given true

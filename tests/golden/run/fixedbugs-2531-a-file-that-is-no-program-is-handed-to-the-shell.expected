@@ -1,0 +1,13 @@
+a script with no first line of its own, and a file that is no program, made: true
+the script may be run by this user: true
+the file in `locked/` may be run by this user: false
+  the shell was handed a relative path, the words one two, and DOOR_2531=staged
+a script started by its path: started, exit 0
+  the shell was handed a whole path, the words one two, and DOOR_2531=inherited
+a script found through a relative entry, in the folder: started, exit 0
+  the shell was handed a relative path, the words one two, and DOOR_2531=inherited
+a script found through an empty entry, no folder staged: started, exit 0
+a name found only as a file this user may not run: not found, exit -1, reason 13
+a name found only as a folder: not found, exit -1, reason 13
+a name nobody has: not found, exit -1, reason 2
+an empty name: not found, exit -1, reason 2
