@@ -4,12 +4,23 @@
 #
 # Run with no words it is the loopback shape the corpus runs: server and client
 # in one process, the client on a thread of its own sending two requests on one
-# connection and printing each answer, the server taking that connection on a
-# thread of its own, so it prints the same on every run. Run as `serve <port>`
-# it listens on 127.0.0.1 at that port, 0 for one the system chooses, until
-# Ctrl-C or a request to end (SIGINT, SIGTERM), then lets every connection
-# finish what it holds, says what it served, and returns from `main`, so the
-# leak check at its end runs.
+# connection and printing each answer, then asking the program's stop
+# (`net.ask_stop`), the server taking that connection on a thread of its own
+# until the stop ends its accepts, so it prints the same on every run. Run as
+# `serve <port>` it listens on 127.0.0.1 at that port, 0 for one the system
+# chooses, until Ctrl-C or a request to end (SIGINT, SIGTERM), then lets every
+# connection finish what it holds, says what it served, and returns from
+# `main`, so the leak check at its end runs.
+#
+# A CONNECTION THAT SENDS NOTHING IS ENDED, AND A PROGRAM STOPS ITSELF, SINCE
+# CORE 0.4.0 (panel 248's R4 and R5). `http.serve_conn` gives each request's
+# head 60 seconds to arrive (`net.set_deadline`), so a quiet connection holds
+# its thread and its slot no longer than that; until then one quiet
+# connection accepted first held every later accept (the sitting's
+# compiler-engineer, with a room of 8: a new client unanswered for 10 s).
+# And a thread asks the whole program's stop with `net.ask_stop`, as the
+# loopback client does, with no signal; a Ctrl-C after it does not end the
+# server, a second does.
 #
 # ONE CONNECTION PER THREAD, AND WHY IT IS WRITTEN HERE. A Heroes thread runs a
 # function of one `i64` and gives back one (spec § 13), so a connection crosses
@@ -60,7 +71,7 @@ function loopback()
                 .err e => print(e.msg)
                 .ok port =>
                     asking = hero_thread_spawn(body: client, arg: port)
-                    done = served(listener, most: 1, room: hero_thread_limit() - 1)
+                    done = served(listener, room: hero_thread_limit() - 1)
                     failed = hero_thread_join(handle: asking) + done.failed
                     print(
                         f"served {done.requests} requests on {done.connections} connection, each connection on a thread of its own, {failed} failed"
@@ -83,7 +94,7 @@ function serve(written: str)
         .ok opened =>
             listener: net.Listener @= opened
             print(f"listening on 127.0.0.1:{net.port_of(listener).default(0)}, until Ctrl-C or a request to end")
-            done = served(listener, most: 0, room: hero_thread_limit())
+            done = served(listener, room: hero_thread_limit())
             print(
                 f"stopped: requests answered {done.requests}, connections {done.connections}, failed {done.failed}"
             )
@@ -96,22 +107,23 @@ function listening(port: i64) -> net.Listener?
     return net.listen(host: "127.0.0.1", port: port)
 
 # The server's half: each connection `listener` accepts served on a thread of
-# its own, until the stop ends the accept, or until `most` were taken where
-# `most` is not 0; then every thread joined.
+# its own, until the stop ends the accept, a Ctrl-C's or the program's own;
+# then every thread joined.
 #
 # A THREAD'S SLOT COMES BACK ONLY WHEN IT IS JOINED, and the runtime holds
 # `hero_thread_limit()` of them, past which a spawn aborts the program. So no
 # more than `room` connections are served at once: at `room`, the oldest
-# thread is joined before the next connection is accepted. Measured on
+# thread is joined before the next connection is accepted, which waits at
+# most 60 seconds past that connection's last request. Measured on
 # 2026-11-13 with `curl`s sent one after another: a loop that joined every
 # thread at the end answered 256 of 300 and aborted at the 257th, exit 134;
 # this one answered 600 of 600, and stopped at SIGTERM with its drain line,
 # exit 0.
-function served(listener: net.Listener, most: i64, room: i64) -> Served
+function served(listener: net.Listener, room: i64) -> Served
     threads: [i64] @= []
     done: Served @= Served(connections: 0, requests: 0, failed: 0)
 
-    while most == 0 || done.connections < most
+    while true
         if threads.len() >= room
             joined(@done, thread: threads[0])
             threads @ threads.slice(from: 1, to: threads.len())
@@ -166,11 +178,13 @@ function answer(request: http.Request) -> http.Response
 
 # The client's half, on a thread of its own: one connection to the server at
 # `port`, two requests sent on it one after another, each answer printed as it
-# comes. Answers how many failed.
+# comes, then the connection closed and the program's stop asked, which ends
+# the server's accepts, a dial that failed included. Answers how many failed.
 function client(port: i64) -> i64
     match net.dial(host: "127.0.0.1", port: port)
         .err e =>
             print(e.msg)
+            net.ask_stop()
             return 1
         .ok dialled =>
             conn: net.Conn @= dialled
@@ -186,6 +200,7 @@ function client(port: i64) -> i64
                         failed @ failed + 1
 
             net.close(@conn)
+            net.ask_stop()
             return failed
 
 # Why a step failed, as its error says it.
