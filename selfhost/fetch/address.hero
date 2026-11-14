@@ -41,6 +41,12 @@ record Address
     # network.
     local: str
 
+    # How a message names it: as written, and a file under an index's address
+    # as that address followed by the file's path inside it, so what a refusal
+    # names is what the catalogue or the command line wrote, the same on every
+    # machine, and never this machine's absolute path (defect 2525).
+    shown: str
+
 # The program's place in its repository, both paths absolute as git answers
 # them: the repository's root and the program's own folder. Both are "" for a
 # program outside every repository, which has no `file://` source, and `why`
@@ -71,7 +77,7 @@ function judged(written: str, root: Root) -> Address?
         return refused(unit_reason(shape))
 
     if strings.starts_with(text: written, prefix: "https://")
-        return ok(Address(written: written, url: written, local: ""))
+        return ok(Address(written: written, url: written, local: "", shown: written))
     return on_machine(written, root: root)
 
 # What `judged` refuses of `written` by its text alone, before any repository
@@ -217,20 +223,30 @@ function on_machine(written: str, root: Root) -> Address?
         return refused(
             "`" + written + "` reaches its folder through the link `" + link + "`, and a `file://` source is read through no link, which could name a place outside the program's repository"
         )
-    return ok(Address(written: written, url: local_path.url_of(made.must()), local: made.must()))
+    return ok(Address(written: written, url: local_path.url_of(made.must()), local: made.must(), shown: written))
 
 # The address of the file `inside` names under `base`, an index's folder or
-# address: its path percent-encoded after the base's own.
+# address: its path percent-encoded after the base's own, and shown after the
+# base as written, unencoded, since a message is read by a person.
 function under(base: Address, inside: str) -> Address
     slash: str @= "/"
 
     if strings.ends_with(text: base.url, suffix: "/")
         slash @ ""
+    shown_slash: str @= "/"
+
+    if strings.ends_with(text: base.shown, suffix: "/")
+        shown_slash @ ""
     path: str @= ""
 
     if base.local.len() > 0
         path @ base.local + "/" + inside
-    return Address(written: base.written, url: base.url + slash + url_bytes.encoded(inside), local: path)
+    return Address(
+        written: base.written,
+        url: base.url + slash + url_bytes.encoded(inside),
+        local: path,
+        shown: base.shown + shown_slash + inside
+    )
 
 function reason(failed: str?) -> str
     match failed
@@ -342,11 +358,19 @@ test "an address of no scheme this command reads is refused, told what it looks 
         .err e => assert e.msg == "an empty address names no source: " + scheme_told.SHAPES
 
 test "a file under an index's address is joined part by part, percent-encoded"
-    base = Address(written: "https://h/idx", url: "https://h/idx", local: "")
+    base = Address(written: "https://h/idx", url: "https://h/idx", local: "", shown: "https://h/idx")
     assert under(base, inside: "json/1.0.0/files/a b.hero").url == "https://h/idx/json/1.0.0/files/a%20b.hero"
-    slashed = Address(written: "https://h/idx/", url: "https://h/idx/", local: "")
+    slashed = Address(written: "https://h/idx/", url: "https://h/idx/", local: "", shown: "https://h/idx/")
     assert under(slashed, inside: "json/versions").url == "https://h/idx/json/versions"
-    folder = Address(written: "file://./idx", url: "file:///r/idx", local: "/r/idx")
+    folder = Address(written: "file://./idx", url: "file:///r/idx", local: "/r/idx", shown: "file://./idx")
     joined = under(folder, inside: "json/versions")
     assert joined.url == "file:///r/idx/json/versions"
     assert joined.local == "/r/idx/json/versions"
+
+test "a file under an index's address is shown as the index was written, never as this machine's path (defect 2525)"
+    folder = Address(written: "file://../idx", url: "file:///r/idx", local: "/r/idx", shown: "file://../idx")
+    file = under(under(folder, inside: "json"), inside: "1.0.0/files/a b.hero")
+    assert file.shown == "file://../idx/json/1.0.0/files/a b.hero"
+    assert file.written == "file://../idx"
+    slashed = Address(written: "https://h/idx/", url: "https://h/idx/", local: "", shown: "https://h/idx/")
+    assert under(slashed, inside: "json/versions").shown == "https://h/idx/json/versions"

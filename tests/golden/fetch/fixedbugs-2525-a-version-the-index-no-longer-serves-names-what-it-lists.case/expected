@@ -1,0 +1,19 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[absent]: the index `file://../../../../../tests/golden/fetch/fixedbugs-2525-a-version-the-index-no-longer-serves-names-what-it-lists.case/idx` serves no json 1.0.0: it lists 2.0.0, and `heroes add json` writes the entry at the newest, 2.0.0, and places it
+$ heroes add json -C <work>/app
+exit 0
+stdout:
+changed json 1.0.0 -> 2.0.0
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2525-a-version-the-index-no-longer-serves-names-what-it-lists.case/idx"
+
+[dependencies.json]  #~ absent
+version = "2.0.0"
+sum = "sha256-645a128b7a4cd6fcb2720ab487ed4fa86c8d090067a9f57fab890fab5dbd3e5b"
+heroes.packages:
+json@2.0.0-a9bdaa86aca5204c

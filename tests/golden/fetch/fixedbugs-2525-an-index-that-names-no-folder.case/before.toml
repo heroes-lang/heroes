@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2525-an-index-that-names-no-folder.case/nowhere"
+
+[dependencies.json]  #~ absent
+version = "1.0.0"
+sum = "sha256-1111111111111111111111111111111111111111111111111111111111111111"

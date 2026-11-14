@@ -14,6 +14,7 @@ use fetch/address
 use fetch/git_source
 use fetch/index_source
 use fetch/staging
+use fetch/tag_absent
 use fetch/transport
 use fetch/verb_place
 use module/catalogue
@@ -85,7 +86,8 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
             msg: "the entry of `" + address_text + "` has no name a `use` writes: " + entry_name.refused(name) + "; give one with `--as`"
         )
     s: staging.Staging @= staging.opened(program)?
-    commit = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
+    asked = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
+    commit = tag_absent.checked(tools, source: at, commit: asked, scratch: s.folder, entry: "")
     first = catalogue.Entry(
         name: name,
         version: "",

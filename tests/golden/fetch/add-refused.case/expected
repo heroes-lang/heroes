@@ -17,7 +17,7 @@ $ heroes add yaml --index file://../../../../../tests/golden/fetch/add-refused.c
 exit 1
 stdout:
 stderr:
-error[absent]: the index `file://../../../../../tests/golden/fetch/add-refused.case/idx` lists no package `yaml`: there is no file `<root>/tests/golden/fetch/add-refused.case/idx/yaml/versions`
+error[absent]: the index `file://../../../../../tests/golden/fetch/add-refused.case/idx` lists no package `yaml`: there is no file `file://../../../../../tests/golden/fetch/add-refused.case/idx/yaml/versions`
 $ heroes add json@9.9.9 --index file://../../../../../tests/golden/fetch/add-refused.case/idx -C <work>/app
 exit 1
 stdout:

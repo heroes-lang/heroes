@@ -24,6 +24,7 @@ use fetch/address
 use fetch/git_words
 use fetch/made_repo
 use fetch/staging
+use fetch/tag_absent
 use fetch/transport
 use fetch/tree_names
 use module/catalogue
@@ -67,7 +68,8 @@ function written(tools: transport.Tools, e: catalogue.Entry, root: address.Root,
 
     if wrong.len() > 0
         return fail(code: "commit_refused", msg: wrong)
-    now = transport.tag_commit(tools, source: at, tag: e.tag, scratch: s.folder)?
+    asked = transport.tag_commit(tools, source: at, tag: e.tag, scratch: s.folder)
+    now = tag_absent.checked(tools, source: at, commit: asked, scratch: s.folder, entry: e.git)?
 
     if now != e.commit
         return fail(code: "tag_moved", msg: moved(e, now: now))

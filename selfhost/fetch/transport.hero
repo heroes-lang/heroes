@@ -57,7 +57,7 @@ function path_tools() -> Tools
 # past `cap` bytes is refused. The streams curl answers on land in `scratch`.
 function got(tools: Tools, at: address.Address, into: str, cap: i64, scratch: str) -> ()?
     if at.local.len() > 0
-        here = local_said(at.local)
+        here = local_said(path: at.local, shown: at.shown)
 
         if here.len() > 0
             return fail(code: "absent", msg: here)
@@ -118,15 +118,16 @@ function got(tools: Tools, at: address.Address, into: str, cap: i64, scratch: st
 
 # What stops a local index's file from being read, or "" where nothing does:
 # curl answers a folder at exit 0 with nothing read (measured 2026-11-08,
-# curl 8.7.1), and a link inside an index could name a file outside it.
-function local_said(path: str) -> str
+# curl 8.7.1), and a link inside an index could name a file outside it. Asked
+# at `path`, told as `shown`, never this machine's path (defect 2525).
+function local_said(path: str, shown: str) -> str
     match files.entry(path)
         .file      => return ""
-        .absent    => return "there is no file `" + path + "`"
-        .directory => return "`" + path + "` is a folder, where a file was asked for"
-        .link      => return "`" + path + "` is a link, and an index's file is read through no link"
-        .other     => return "`" + path + "` is neither a file nor a folder"
-        .unknown   => return "`" + path + "` could not be asked what it is" + process.because()
+        .absent    => return "there is no file `" + shown + "`"
+        .directory => return "`" + shown + "` is a folder, where a file was asked for"
+        .link      => return "`" + shown + "` is a link, and an index's file is read through no link"
+        .other     => return "`" + shown + "` is neither a file nor a folder"
+        .unknown   => return "`" + shown + "` could not be asked what it is" + process.because()
 
 # git's settings for every command it runs here, before the command's own
 # words.

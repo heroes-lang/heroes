@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2525-a-version-the-index-no-longer-serves-names-what-it-lists.case/idx"
+
+[dependencies.json]  #~ absent
+version = "1.0.0"
+sum = "sha256-1111111111111111111111111111111111111111111111111111111111111111"

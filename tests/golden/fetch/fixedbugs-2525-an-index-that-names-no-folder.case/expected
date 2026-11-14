@@ -1,0 +1,18 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[absent]: the index `file://../../../../../tests/golden/fetch/fixedbugs-2525-an-index-that-names-no-folder.case/nowhere` names no folder on this machine, so it serves no package: an index is a folder holding one per package, each with its `versions`
+$ heroes add json -C <work>/app
+exit 1
+stdout:
+stderr:
+error[absent]: the index `file://../../../../../tests/golden/fetch/fixedbugs-2525-an-index-that-names-no-folder.case/nowhere` names no folder on this machine, so it serves no package: an index is a folder holding one per package, each with its `versions`
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2525-an-index-that-names-no-folder.case/nowhere"
+
+[dependencies.json]  #~ absent
+version = "1.0.0"
+sum = "sha256-1111111111111111111111111111111111111111111111111111111111111111"
+heroes.packages:
+(none)
