@@ -85,13 +85,16 @@ constant TRACEBACK: str
     "Traceback (most recent call last)"
 
 # `only` narrows the suite to the cases whose name holds it, its floor then
-# left to the whole suite.
+# left to the whole suite, or to a shard of them, `<i>/<n>`, which collects
+# the whole directory before it deals its own cases and so asks the floor of
+# the whole (task 2505, `cases.asks_floor`), as `run`'s shards do.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
-    found = cases.selected(found: cases.collect(scratch: scratch, dir: LLDB_DIR)?, only: only)
+    whole = cases.collect(scratch: scratch, dir: LLDB_DIR)?
+    found = cases.selected(found: whole, only: only)
     r: report.Report @= report.empty()
 
-    if only == ""
-        floors.check(@r, label: "lldb", found: found.len(), floor: LEAST, what: "cases in " + LLDB_DIR)
+    if cases.asks_floor(only)
+        floors.check(@r, label: "lldb", found: whole.len(), floor: LEAST, what: "cases in " + LLDB_DIR)
 
     # One notation with an `assert`'s sides (panel 230's R2): read from the
     # corpus case's session as text, so it needs no debugger and runs here

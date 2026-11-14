@@ -56,20 +56,27 @@ constant GOLDEN_DIRS: [str]
 constant EXAMPLES: str
     "examples"
 
-function run_all(scratch: str, compiler: str) -> report.Report?
+# `only` narrows the walk to the programs whose name holds it, the name each
+# one's label gives after `warnings/` (defect 2529): a golden case's, an
+# example's folder's and a gallery program's alike. Until then the suite took
+# no word, and `main` told the person narrowing a repair to its cases that it
+# walked none, while it built every case of `run/` and `emit/`, every example
+# and every gallery program at two levels. The skip ratio is asked of the
+# programs walked, as `run` asks it of a filter's cases.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @= report.empty()
     judged: i64 @= 0
     skipped: i64 @= 0
 
     for dir in GOLDEN_DIRS
-        for item in cases.collect(scratch: scratch, dir: dir)?
+        for item in cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
             judge(@r, @skipped, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
             judged @ judged + 1
 
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         main = dir + "/main.hero"
 
-        if read_file(main).is_err()
+        if read_file(main).is_err() || !kept_by_word(name: strings.base_name(path: dir), only: only)
             continue
         judge(
             @r,
@@ -88,6 +95,8 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # (`gallery.unfinished`); a check that cannot run leaves the build to say
     # why, as a failure.
     for path in gallery.programs(scratch)?
+        if !kept_by_word(name: gallery.name_of(path), only: only)
+            continue
         said = gallery.checked(scratch: scratch, compiler: compiler, path: path)
 
         if !said.is_err() && gallery.unfinished(said.must())
@@ -113,6 +122,12 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             detail: "  " + skipped.to_str() + " of " + judged.to_str() + " programs were skipped for a missing library: this machine is not testing the warnings"
         )
     return ok(r)
+
+# Whether the third word keeps the program whose label names it `name`: every
+# program where the word is empty, else the ones whose name holds it, as
+# `cases.matching` reads a case's.
+function kept_by_word(name: str, only: str) -> bool
+    return only == "" || core_strings.contains(s: name, substr: only)
 
 # A machine that skipped a third of the programs for libraries it lacks: the
 # floor `run`, `lines` and the golden forms hold.
@@ -404,3 +419,39 @@ function stub_compiler(scratch: str, name: str, body: str) -> str?
     if made.code != 0
         return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
     return ok(path)
+
+# DEFECT 2529, held as a test (2026-11-14): the third word narrows the walk to
+# the programs whose name holds it, where `main` refused it as the word of a
+# suite that walks no cases. The word is the first `run/` case's whole name,
+# which no example's folder and no gallery program's name holds (asserted, so
+# the day one does the test says so), and every program the run judged is one
+# of the golden cases it names.
+test "fixedbugs: the third word narrows the walk to the programs whose name holds it (defect 2529)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    word = cases.collect(scratch: scratch, dir: GOLDEN_DIRS[0]).must()[0].name
+    named: i64 @= 0
+
+    for dir in GOLDEN_DIRS
+        named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: dir).must(), only: word).len()
+
+    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES).must()
+        assert !kept_by_word(name: strings.base_name(path: dir), only: word)
+
+    for path in gallery.programs(scratch).must()
+        assert !kept_by_word(name: gallery.name_of(path), only: word)
+
+    got = run_all(scratch: scratch, compiler: compiler.must(), only: word).must()
+    assert named >= 1
+    assert got.passed + got.failed + got.skips.len() == named
+
+    # The word reads a program's name as its label gives it after `warnings/`:
+    # every program for no word, a gallery program by `gallery/`, and a name
+    # that does not hold the word is left.
+    assert kept_by_word(name: "anything", only: "")
+    assert kept_by_word(name: "gallery/hello", only: "gallery/")
+    assert !kept_by_word(name: "curl", only: "gallery/")
+    assert !shell.remove_tree(scratch).is_err()

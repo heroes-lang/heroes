@@ -110,11 +110,27 @@ constant LIBRARY_FILE: str
 constant LEAST: i64
     811
 
-function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @= report.empty()
-    found = cases.collect(scratch: scratch, dir: RUN_DIR)?
+# `only` narrows the walk to the cases whose name holds it, or to a shard of
+# them, `<i>/<n>` (`cases.selected`, defect 2529): until then the suite took no
+# word, and `main` told the person narrowing a repair to its cases that it
+# walked none, while it emitted every case of `run/`. A filter's cases are not
+# the tree, so its floor is not asked; a shard collects the whole directory
+# before it deals its own cases, so it asks the floor of the whole (task 2505,
+# `cases.asks_floor`). The skip ratio is asked of the cases walked, a shard's
+# own among them, as `run` asks it.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    return walk(scratch: scratch, compiler: compiler, dir: RUN_DIR, least: LEAST, only: only)
 
-    floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
+# The walk over the golden directory `dir`, floored at `least`: what `run_all`
+# asks of `run/`, with the two as parameters so a test asks a shard's
+# questions of a tree of its own (task 2505).
+function walk(scratch: str, compiler: str, dir: str, least: i64, only: str) -> report.Report?
+    r: report.Report @= report.empty()
+    whole = cases.collect(scratch: scratch, dir: dir)?
+    found = cases.selected(found: whole, only: only)
+
+    if cases.asks_floor(only)
+        floors.check(@r, label: "lines", found: whole.len(), floor: least, what: "cases in " + dir)
     skipped: i64 @= 0
 
     for item in found
@@ -124,7 +140,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         report.keep_failure(
             @r,
             label: "lines",
-            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus"
+            detail: "  " + skipped.to_str() + " of " + cases.walked(count: found.len(), only: only) + " were skipped for a missing library — this machine is not running the corpus"
         )
     return ok(r)
 
@@ -361,6 +377,64 @@ test "fixedbugs: a case whose one file --emit-c refuses is walked over its units
     assert judged.failed == 0
     assert none_skipped == 0
     assert judged.skips.len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2529, held as a test (2026-11-14): the third word narrows the walk to
+# the cases whose name holds it, where `main` refused it as the word of a suite
+# that walks no cases, and a narrowed walk asks no floor of the tree: the word
+# is the first `run/` case's whole name, the cases it names far fewer than
+# `LEAST`, so a floor asked of them would fail labelled `lines` alone.
+test "fixedbugs: the third word narrows the walk to the cases whose name holds it, and asks no floor of them (defect 2529)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    word = cases.collect(scratch: scratch, dir: RUN_DIR).must()[0].name
+    named = cases.matching(found: cases.collect(scratch: scratch, dir: RUN_DIR).must(), only: word).len()
+    got = run_all(scratch: scratch, compiler: compiler.must(), only: word).must()
+    assert named >= 1 && named < LEAST
+    assert got.passed + got.failed + got.skips.len() == named
+
+    for one in got.failures
+        assert !core_strings.has_prefix(s: one, prefix: "FAIL lines\n")
+
+    assert got.outgrown.len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# TASK 2505, held as a test (2026-11-14): a shard asks the floor of the whole
+# directory, never of its own cases, and the skip ratio of its own cases; a
+# filter asks the ratio of its cases and no floor. Two cases, each binding a
+# header no machine has, so each is skipped.
+test "a shard asks the floor of the whole directory and the skip ratio of its own cases (task 2505)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/lines-2505"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch).must()
+
+    for name in ["lacks-a", "lacks-b"]
+        assert !absence.planted_case(dir: tree, name: name, bound: absence.NOWHERE, missing: absence.NOWHERE).is_err()
+        assert !write_file(path: tree + "/" + name + ".expected", text: "7\n").is_err()
+
+    floor = "FAIL lines\n  the walk found 2 cases in " + tree + " and had 3"
+    tail = " were skipped for a missing library — this machine is not running the corpus"
+    shard = walk(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
+    assert shard.skips.len() == 1
+    assert shard.failed == 2
+    assert core_strings.has_prefix(s: shard.failures[0], prefix: floor)
+    assert shard.failures[1] == "FAIL lines\n  1 of 1 cases of shard 1 of 2" + tail
+
+    # The floor counts the directory, two, and never the shard's one case:
+    # met, it is a pass of its own.
+    met = walk(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "2/2").must()
+    assert met.passed == 1
+    assert met.failures == ["FAIL lines\n  1 of 1 cases of shard 2 of 2" + tail]
+    filtered = walk(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "lacks-a").must()
+    assert filtered.passed == 0
+    assert filtered.failures == ["FAIL lines\n  1 of 1 cases" + tail]
     assert !shell.remove_tree(scratch).is_err()
 
 test "a few skips for a missing library pass, a third of the tree does not"

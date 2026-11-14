@@ -48,14 +48,20 @@ constant C_DIRS: [str]
         "tests/golden/run"
     ]
 
-function run_all(scratch: str, compiler: str) -> report.Report?
+# `only` narrows the suite to the cases whose name holds it, in each directory
+# it walks (`cases.matching`, defect 2529): until then the suite took no word,
+# and `main` told the person narrowing a repair to its cases that it walked
+# none, while it emitted every case of `ir/`, `emit/` and `run/`. The skip
+# ratio is asked of the cases walked, as `run` asks it of a filter's; a word
+# that selects nothing is `main`'s to refuse, as it is for every suite.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @= report.empty()
     written = scratch + "/determinism"
     shell.mkdir_all(written)?
     skipped: i64 @= 0
     total: i64 @= 0
 
-    for item in cases.collect(scratch: scratch, dir: IR_DIR)?
+    for item in cases.matching(found: cases.collect(scratch: scratch, dir: IR_DIR)?, only: only)
         total @ total + 1
         first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
         second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
@@ -76,7 +82,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             report.keep_pass(@r)
 
     for dir in C_DIRS
-        for item in cases.collect(scratch: scratch, dir: dir)?
+        for item in cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
             total @ total + 1
             c_case(@r, @skipped, scratch: scratch, compiler: compiler, written: written, item: item)
 
@@ -396,4 +402,27 @@ test "fixedbugs: a case whose one file --emit-c refuses is judged on its units, 
     assert judged.failed == 0
     assert none_skipped == 0
     assert judged.skips.len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2529, held as a test (2026-11-14): the third word narrows the walk to
+# the cases whose name holds it, in every directory the suite walks, where
+# `main` refused it as the word of a suite that walks no cases. The word is the
+# first `ir/` case's whole name, so the cases it names are few and cheap to
+# dump; every case the run judged, passed, failed or skipped, is one of them,
+# and every one of them is judged.
+test "fixedbugs: the third word narrows the walk to the cases whose name holds it, in every directory it walks (defect 2529)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    word = cases.collect(scratch: scratch, dir: IR_DIR).must()[0].name
+    named: i64 @= cases.matching(found: cases.collect(scratch: scratch, dir: IR_DIR).must(), only: word).len()
+
+    for dir in C_DIRS
+        named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: dir).must(), only: word).len()
+
+    got = run_all(scratch: scratch, compiler: compiler.must(), only: word).must()
+    assert named >= 1
+    assert got.passed + got.failed + got.skips.len() == named
     assert !shell.remove_tree(scratch).is_err()
