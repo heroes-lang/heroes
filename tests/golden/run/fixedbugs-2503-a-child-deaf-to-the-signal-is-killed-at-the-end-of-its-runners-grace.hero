@@ -28,6 +28,14 @@
 # runner ends a child's job and sends no signal a child hears, so the case is
 # skipped there by its build's own words. `build/` for the directory,
 # `edges-file-args-exit.hero`'s reason.
+#
+# Corrected 2026-11-14 (defect 2523): the case is skipped on Windows by name,
+# never by its build's words, which are `ffi_header_refused` at `struct
+# sigaction` in `fixedbugs-2503-deaf.h`, reached before `unistd.h` is asked,
+# so no missing header explains them. `run` skipped it by
+# `platform_skips.windows()` until that day; since then every suite that
+# builds it skips it by `platform_skips.unbuildable_on_windows()`, `run`
+# among them.
 
 extern "fixedbugs-2503-deaf.h"
     function case2503_deaf() -> i32
