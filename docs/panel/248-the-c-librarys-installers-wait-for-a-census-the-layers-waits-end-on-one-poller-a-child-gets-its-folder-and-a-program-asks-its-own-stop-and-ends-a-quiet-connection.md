@@ -490,6 +490,19 @@ the predictions, on their own clocks.
 Filed 2026-11-14 at about 20:35, the records suite's verdict check asking it at the batch's gate: the author's reading
 is asked by decision 2527 (https://github.com/heroes-lang/heroes/issues/2527).
 
+**Ratified, R1 to R6, 2026-11-14**: the author's answer at about 21:47, `1a 2a 3a`, to the
+coordinator's `/decide` batch, which put the six resolutions with their measurements and the
+conservative alternative of R2 (route (g), a pipe per listener, Windows unchanged) as *1b*, and the
+two choices lane b36-net made in R5's landing as questions 2 and 3; given in the coordinator's
+conversation, recorded as a reading (`.claude/rules/records.md` § And the record says whose idea
+it was). **What the yes settles**: R1 to R6 as adopted, so the landing pushed at 215df7fde stands
+(the poller, the folder door, the asked stop kept apart with spec line 404's q4m, Go's deadline);
+the conservative alternative not taken; a deadline passed sparing a call that need not wait, the
+deadline bounding the layer's wait (*2a*, where Go fails even such a call); `serve_conn`'s header
+deadline an internal 60 s (*3a*, not a parameter of the face); and defect 2522 open and `blocking`,
+its follow-up sitting convened now, as R1 says. **What it does not**: the follow-up's route; the
+predictions, on their own clocks; the Windows rows the box left unread, owed to the CI's leg.
+
 ## Added 2026-11-14 at about 12:40, by the coordinator: the routes R2, R4 and R5 are built before this synthesis is final
 
 The drafting found, and the coordinator accepts, that no seat built R2 (the poller), R4 (the stop kept apart from the signals' count) or R5 (Go's deadline, applying to pending waits) as the layer's code: each stands on the seats' probes and the historian's precedents, and `00-shared.md:182-184` says a route that does not build is reported as not built, never adopted (the /panel skill's step 3c). So this synthesis is not committed or filed until lane b36-net of batch 36, opened at 12:30 on these three routes, has built them in `runtime/platform/hero_net.c` and run the cases this sitting names (idle CPU and close latency against the base, the descriptor count under `ulimit -n 256`, the stop kept apart under a second signal, a deadline over a pending wait, on this Mac, in Linux arm64 and on the Windows box); its results are written under this heading, and a route that does not build as resolved is reported here as not built and its question reopened. R3 is built (the compiler-engineer's door, `run.c` +91), and lane b36-dir lands it.
