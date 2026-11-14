@@ -13,6 +13,15 @@
 # nothing claimed in 2492's own words, through the stop every refusal of a
 # signal takes: `write(2)`, no stdio, no allocation. One SIGUSR1 is sent to
 # the thread C made; `main` holds it off.
+#
+# Repaired 2026-11-14, defect 2524 (the CI's Linux arm64 leg, run
+# 43571761187): `main` printed what `made_send` answered after the send, and
+# the thread C made answers that send by ending the program, so whether the
+# line reached stdout first was a race between two threads, which the run at
+# `--sanitize` lost. Every line is printed before the send now, each leaving
+# at its newline (`runtime/parts/os.c`, stdout line-buffered), and nothing is
+# pinned after a send that went: a line written there would say the refusal
+# did not end the program. A send refused is said, and no refusal follows it.
 
 extern "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.h"
     function made_start(answer: (function(i64) -> i64)) -> i32
@@ -25,5 +34,9 @@ function answer(sig: i64) -> i64
 
 function main()
     print("started: ", made_start(answer: answer))
-    print("sent: ", made_send())
+    print("sending SIGUSR1 to the thread C made")
+    sent = made_send()
+
+    if sent != 0
+        print("not sent: ", sent)
     print("not stopped, seen ", made_wait())
