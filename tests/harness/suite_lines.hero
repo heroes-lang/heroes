@@ -45,6 +45,7 @@ use absence
 use cases
 use floors
 use one_file_units
+use platform_skips
 use report
 use shell
 use strings
@@ -137,7 +138,17 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # defect 246 the compiler's words alone made the skip, and a compiler saying
 # `stdio.h` was missing on a Mac that has it read green here (measured
 # 2026-10-04: 268 passed, 0 failed over one such case, 269 and 0 without it).
+#
+# A case this platform cannot build is skipped by name before its emission,
+# apart from the missing libraries' floor, as `run` skips it
+# (`platform_skips.build_reason`, defect 2523): until then it was emitted and
+# told as a failure on the CI's Windows leg.
 function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, item: cases.Case)
+    unbuilt = platform_skips.build_reason(item.source)
+
+    if !unbuilt.is_err()
+        report.keep_skip(@r, label: "lines/" + item.name, detail: "  " + unbuilt.must())
+        return
     said = shell.run(
         scratch: scratch,
         program: compiler,
@@ -293,6 +304,37 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP lines/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2523, held as a test (2026-11-14): a case the Windows target cannot
+# build is skipped there by name before its emission, apart from the missing
+# libraries' floor, and emitted everywhere else. The compiler named is a file
+# nobody wrote, so an emission asked is a failure naming it.
+test "fixedbugs: a case Windows cannot build is skipped there before its emission, and walked elsewhere (defect 2523)"
+    scratch = shell.own_scratch()
+    r: report.Report @= report.empty()
+    none_skipped: i64 @= 0
+    one_case(
+        @r,
+        @none_skipped,
+        scratch: scratch,
+        compiler: scratch + "/no-compiler-here",
+        item: cases.Case(source: platform_skips.unbuildable_on_windows()[0].name, expected: "", name: "unbuilt")
+    )
+    assert none_skipped == 0
+    assert r.passed == 0
+
+    if shell.exe_suffix() == ".exe"
+        assert r.failed == 0
+        assert r.skips.len() == 1
+        assert core_strings.has_prefix(
+            s: r.skips[0],
+            prefix: "SKIP lines/unbuilt\n  `sigaction` and its struct are POSIX's"
+        )
+    else
+        assert r.failed == 1
+        assert r.skips.len() == 0
+        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 453's widening in this suite, held as a test (2026-10-10): a program

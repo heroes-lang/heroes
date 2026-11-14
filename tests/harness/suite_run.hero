@@ -139,6 +139,15 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
 # the spot and stops this case, because the second configuration's
 # verdict on a program that did not build says nothing.
 function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, want: expectation.Expectation, @r: report.Report) -> bool
+    unbuilt = platform_skips.build_reason(item.source)
+
+    # A program this platform cannot build is run nowhere here: skipped by
+    # name before its build, as every suite that builds it skips it, and apart
+    # from the missing libraries' ratio (`platform_skips.hero`, defect 2523).
+    if !unbuilt.is_err()
+        report.keep_skip(@r, label: "run/" + item.name, detail: "  " + unbuilt.must())
+        return false
+
     elsewhere = platform_skips.reason(item.name)
 
     # A case whose words this platform's runtime does not say is skipped by
@@ -612,6 +621,37 @@ test "a program that does not build is a failure naming clang's words"
     )
     assert r.failed == 1
     assert core_strings.contains(s: r.failures[0], substr: "did not build")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2523, held as a test (2026-11-14): a program the Windows target
+# cannot build is skipped there by name before its build, apart from the
+# missing libraries' ratio, and built everywhere else. The compiler named is a
+# file nobody wrote, so a build asked is a failure naming it.
+test "fixedbugs: a program Windows cannot build is skipped there before its build, and built elsewhere (defect 2523)"
+    scratch = shell.own_scratch()
+    r: report.Report @= report.empty()
+    took = one_case(
+        scratch: scratch,
+        compiler: scratch + "/no-compiler-here",
+        binaries: scratch + "/binaries",
+        item: cases.Case(source: platform_skips.unbuildable_on_windows()[0].name, expected: "", name: "unbuilt"),
+        want: expectation.split("").must(),
+        r: @r
+    )
+    assert !took
+    assert r.passed == 0
+
+    if shell.exe_suffix() == ".exe"
+        assert r.failed == 0
+        assert r.skips.len() == 1
+        assert core_strings.has_prefix(
+            s: r.skips[0],
+            prefix: "SKIP run/unbuilt\n  `sigaction` and its struct are POSIX's"
+        )
+    else
+        assert r.failed == 1
+        assert r.skips.len() == 0
+        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took

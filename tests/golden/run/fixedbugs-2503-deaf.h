@@ -29,3 +29,9 @@ static inline int32_t case2503_deaf(void) {
 static inline int32_t case2503_heard(void) {
     return (int32_t)case2503_heard_flag;
 }
+
+/* Corrected 2026-11-14 (defect 2523): the case is skipped on Windows by the
+   list's `unbuildable_on_windows()`, which every suite that builds it reads,
+   `run` among them, and no longer by `windows()`, which names the cases that
+   build there; until that day `emission`, `determinism`, `lines` and
+   `warnings` built it on the CI's Windows leg and told its refusal as theirs. */

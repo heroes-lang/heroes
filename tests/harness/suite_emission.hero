@@ -235,7 +235,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     # Windows (`tm`'s `tm_gmtoff`), every one a name of `darwin_emissions`.
     for one in narrowed(programs: programs, only: only)
         if shell.exists(one.stored) && !blessing()
-            elsewhere = platform_skips.emission_reason(one.label)
+            elsewhere = not_compiled_here(one)
 
             if elsewhere.is_err()
                 compiles(@r, scratch: scratch, one: one)
@@ -243,6 +243,16 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                 report.keep_skip(@r, label: "emission/" + one.label + "/compiles", detail: "  " + elsewhere.must())
 
     return ok(report.tally(one: r, two: swept))
+
+# Why `one`'s blessed emission is not compiled on this machine: its program is
+# one this platform cannot build, whose headers its bytes include as the build
+# does (defect 2523), or its bytes name Darwin's own C (defect 2111).
+function not_compiled_here(one: Program) -> str?
+    unbuilt = platform_skips.build_reason(one.source)
+
+    if !unbuilt.is_err()
+        return unbuilt
+    return platform_skips.emission_reason(one.label)
 
 # How many of `programs` have a blessed emission: the ones this suite compares,
 # or skips by name where the machine lacks a library they bind. A program with
@@ -355,6 +365,18 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
             )
             continue
         seen[one.stored] @ one.label
+
+        # A program this platform cannot build is skipped here by name before
+        # its build, its file seen all the same, so no orphan, and apart from
+        # the missing libraries' ratio: its emission is compared where it
+        # builds (`platform_skips.build_reason`, defect 2523). Until then it
+        # was emitted and told to retire its blessed file on the CI's Windows
+        # leg, which the platforms that build it compare.
+        unbuilt = platform_skips.build_reason(one.source)
+
+        if !unbuilt.is_err()
+            report.keep_skip(@r, label: "emission/" + one.label, detail: "  " + unbuilt.must())
+            continue
 
         # An emission that names this platform's own C is compared where it
         # was blessed and skipped here by name, its file seen, so no orphan
@@ -1103,6 +1125,49 @@ test "fixedbugs: a program that cannot emit is skipped only where the machine la
     assert core_strings.has_prefix(s: excused.must().skips[0], prefix: "SKIP emission/lacks\n")
     assert excused.must().failed == 1
     assert core_strings.contains(s: excused.must().failures[0], substr: "1 of 1 programs were skipped")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2523, held as a test (2026-11-14): a program the Windows target
+# cannot build is skipped there by name before its build, apart from the
+# missing libraries' ratio, its blessed file claimed all the same, so no
+# orphan, and neither emitted nor compiled; everywhere else it is emitted. The
+# compiler named is a file nobody wrote, so an emission asked is a failure
+# naming it.
+test "fixedbugs: a program Windows cannot build is skipped there before its build, its blessed file claimed (defect 2523)"
+    scratch = shell.own_scratch()
+    store = scratch + "/emission-unbuilt"
+    assert !shell.remove_tree(store).is_err()
+    assert !shell.mkdir_all(store).is_err()
+    stored = store + "/run-unbuilt.c"
+    assert !write_file(path: stored, text: "int main(void) { return 0; }\n").is_err()
+    one = Program(source: platform_skips.unbuildable_on_windows()[0].name, stored: stored, label: "run/unbuilt")
+    swept = sweep(
+        scratch: scratch,
+        compiler: scratch + "/no-compiler-here",
+        store: store,
+        programs: [one],
+        update: false,
+        least: 1,
+        only: ""
+    )
+    assert !swept.is_err()
+
+    # The one pass is the orphans' question: the blessed file is claimed.
+    assert swept.must().passed == 1
+    on_windows = shell.exe_suffix() == ".exe"
+    assert not_compiled_here(one).is_err() == !on_windows
+
+    if on_windows
+        assert swept.must().failed == 0
+        assert swept.must().skips.len() == 1
+        assert core_strings.has_prefix(
+            s: swept.must().skips[0],
+            prefix: "SKIP emission/run/unbuilt\n  `sigaction` and its struct are POSIX's"
+        )
+    else
+        assert swept.must().failed == 1
+        assert swept.must().skips.len() == 0
+        assert core_strings.contains(s: swept.must().failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2341, held as a test (2026-11-08): `collect` took each group's `.hero`
