@@ -1,0 +1,8 @@
+sixteen threads, each answer its own word grown: 16 of 16, 16220 bytes
+the starting thread's text is its own: word-15, changed by the thread that started it
+the empty str, handed back: []
+a literal, handed back: an answer written in the program
+a word above ASCII, handed back: héllo, 世界 😀
+a megabyte, handed back whole: true
+a thread that starts its own: 1021 bytes, ending |w-inner-outer
+the i64 door beside it: 42

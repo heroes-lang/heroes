@@ -184,6 +184,12 @@
  * containers below increment. */
 #include "parts/str.c"
 
+/* A thread of one `str` in and one back, each copied (feature 2521): after
+ * `spawn.c`, whose start and join it goes through, `alloc.c`, whose single
+ * allocation point holds the copies, and `str.c`, which makes the `str` on
+ * each side. */
+#include "parts/spawn_str.c"
+
 /* Canonical `f64` rendering and the three `to_str` conversions — `str`'s
  * allocator is what they build on. */
 #include "parts/f64.c"

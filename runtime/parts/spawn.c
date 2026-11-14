@@ -47,7 +47,11 @@
  * 2026-11-13 this paragraph said the checker alone enforced it, which held for
  * arrays and maps alone (lane b34-signals found it beside `hero_os.h`'s twin).
  * Panel 113 measured what the absence of the type rule cost: a container
- * crossed inside a callback signature at exit 0 with an empty stderr.
+ * crossed inside a callback signature at exit 0 with an empty stderr. Beside
+ * it, one `str` each way, its bytes copied at each crossing, through the
+ * doors of `parts/spawn_str.c` (decision 2498; feature 2521), which start
+ * and join through this file and are held to their own prototype the same
+ * way.
  *
  * AND THE THREAD IS THIS PROGRAM'S, WHICH IS WHY THE GUARD LETS IT THROUGH.
  * `parts/thread.c` refuses a Heroes function on any thread the program did not
@@ -192,6 +196,14 @@ static void hero_spawn_measure_home(void) {
 
 typedef int64_t (*HeroThreadBody)(int64_t);
 
+/* WHICH JOIN A THREAD TAKES (feature 2521). A thread of `hero_thread_spawn`
+ * answers an `i64`; one of `hero_thread_spawn_str` answers the address of a
+ * block holding a `str`'s bytes (`parts/spawn_str.c`), and each is joined by
+ * its own door, so that address never reaches a program as a number, nor a
+ * number a program chose is read as an address. */
+#define HERO_SPAWN_I64 0
+#define HERO_SPAWN_STR 1
+
 typedef struct {
 #if defined(_WIN32)
     HANDLE handle;
@@ -201,6 +213,8 @@ typedef struct {
     HeroThreadBody body;
     int64_t arg;
     int64_t result;
+    /* HERO_SPAWN_I64 or HERO_SPAWN_STR, the door that started it. */
+    int kind;
     /* The stack this thread was asked for, the floor below or more where its
      * starter named a size (`hero_thread_spawn_sized`, panel 184 R5); 0 asks
      * for nothing and is what Windows records for an unsized thread. */
@@ -455,12 +469,13 @@ static void *hero_spawn_trampoline(void *p) {
 }
 #endif
 
-/* Both doors below start here. `bytes` 0 asks for the floor alone, today's
+/* Every door below starts here, `parts/spawn_str.c`'s too, `kind` naming
+ * which join the thread takes. `bytes` 0 asks for the floor alone, today's
  * thread; more asks for at least that much (panel 184 R5). A thread the
  * operating system will not start is -1 with its own number in `*why`, and
  * the caller decides what to say: the unsized door panics as it always has,
  * the sized one hands the refusal back. */
-static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, int64_t *why) {
+static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, int kind, int64_t *why) {
     if (body == NULL) hero_panic("a thread was started with no function to run");
 #if !defined(_WIN32)
     /* Held before the table's lock and given back after it (defect 2496): the
@@ -489,6 +504,7 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     hero_spawn_slots[at].body = body;
     hero_spawn_slots[at].arg = arg;
     hero_spawn_slots[at].result = 0;
+    hero_spawn_slots[at].kind = kind;
     hero_spawn_slots[at].state = 1;
     hero_spawn_slots[at].want = bytes > hero_spawn_floor ? bytes : hero_spawn_floor;
     int refused = 0;
@@ -573,7 +589,7 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
 
 int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
     int64_t why = 0;
-    int64_t at = hero_spawn_start(body, arg, 0, &why);
+    int64_t at = hero_spawn_start(body, arg, 0, HERO_SPAWN_I64, &why);
 
     if (at < 0) hero_panic("the operating system refused to start a thread");
     return at;
@@ -593,23 +609,34 @@ int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
  * -1, `*why` the operating system's own number. */
 int64_t hero_thread_spawn_sized(HeroThreadBody body, int64_t arg, int64_t bytes, int64_t *why) {
     if (bytes < 0) hero_panic("a thread was asked for a negative number of bytes of stack");
-    return hero_spawn_start(body, arg, (size_t)bytes, why);
+    return hero_spawn_start(body, arg, (size_t)bytes, HERO_SPAWN_I64, why);
 }
 
-/* Waiting is where the two undefined behaviours of C become named panics. The
- * checks read the slot under the lock and then wait OUTSIDE it, because joining
- * while holding the table would stop every other thread from starting one. */
-int64_t hero_thread_join(int64_t handle) {
+/* Waiting is where the two undefined behaviours of C become named panics, and
+ * a third that this runtime would otherwise commit itself: a thread joined by
+ * the door of the other kind (`kind`, the door asking). The checks read the
+ * slot under the lock and then wait OUTSIDE it, because joining while holding
+ * the table would stop every other thread from starting one. */
+static int64_t hero_spawn_join(int64_t handle, int kind) {
     if (handle < 0 || handle >= HERO_SPAWN_SLOTS) {
         hero_panic("a thread handle that this program never received was joined");
     }
     HERO_SPAWN_TAKE();
     int state = hero_spawn_slots[handle].state;
+    int started = hero_spawn_slots[handle].kind;
     HERO_SPAWN_DROP();
 
     if (state == 0) {
         hero_panic("a thread was joined twice, or joined before it was started — "
                    "a handle is spent once the thread it names has been waited for");
+    }
+    if (started != kind) {
+        hero_panic(started == HERO_SPAWN_STR
+                       ? "a thread `hero_thread_spawn_str` started was joined by `hero_thread_join`, which would "
+                         "hand its answer over as a number: join it with `hero_thread_join_str`, which gives its "
+                         "`str` back"
+                       : "a thread `hero_thread_spawn` started was joined by `hero_thread_join_str`, which would "
+                         "read its `i64` answer as a `str`: join it with `hero_thread_join`");
     }
 #if defined(_WIN32)
     WaitForSingleObject(hero_spawn_slots[handle].handle, INFINITE);
@@ -622,9 +649,12 @@ int64_t hero_thread_join(int64_t handle) {
     int64_t out = hero_spawn_slots[handle].result;
     hero_spawn_slots[handle].state = 0;
     hero_spawn_slots[handle].body = NULL;
+    hero_spawn_slots[handle].kind = HERO_SPAWN_I64;
     HERO_SPAWN_DROP();
     return out;
 }
+
+int64_t hero_thread_join(int64_t handle) { return hero_spawn_join(handle, HERO_SPAWN_I64); }
 
 /* How many a program may have running at once, so a Heroes program can ask
  * rather than learn it from a panic. A value, not a form — `hero_word_bits`'s

@@ -1,0 +1,17 @@
+# Feature 2521, 2026-11-14: a thread is joined by the door of its kind. A
+# thread `hero_thread_spawn_str` started gives back a `str`, whose bytes wait
+# in a block of the runtime's; joined by `hero_thread_join`, which answers an
+# `i64`, it would hand the program that block's address as a number. It is a
+# panic instead, naming the door to join it with, before any wait
+# (`runtime/parts/spawn.c`).
+extern "hero_os.h"
+    function hero_thread_join(handle: i64) -> i64
+    function hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64
+
+function same(word: str) -> str
+    return word
+
+function main()
+    handle = hero_thread_spawn_str(body: same, arg: "a word")
+    print("started")
+    print(hero_thread_join(handle: handle))
