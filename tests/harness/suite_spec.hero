@@ -4212,7 +4212,7 @@ test "each registry row is held to the compiler's arm, and a word, a grouping or
 test "a placed tree's citations, and this file's own, are no citations the anchors judge (feature 2425)"
     walked = [
         "selfhost/main.hero"
-        "tests/harness/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings/internal/scan.hero"
+        "tests/harness/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
         "tests/harness/suite_spec.hero"
         "tests/golden/check/package-a.case/heroes.packages/k@1.0.0-0123456789abcdef/k.hero"
         "tests/harness/shell.hero"

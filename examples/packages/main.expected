@@ -3,5 +3,6 @@ value
 one
 two
 -17
+net slices strconv strings net/http encoding/json
 {"core":["strings","strconv","encoding/json"],"since":0.1}
 404
