@@ -15,9 +15,11 @@
 # CLAUDE.md §12). Heroes aborts on integer overflow at every width, so
 # accumulating `value * 10 + digit` over a long run of digits does not wrap —
 # it stops the whole interpreter with a panic. A script is INPUT, and input must
-# not be able to kill the program reading it, so the multiplication is guarded
-# before it happens rather than after. The test at the bottom feeds it
-# nineteen and twenty digits and asserts a refusal, not a crash.
+# not be able to kill the program reading it, so the run of digits is read by
+# core's `strconv.atoi`, which asks before each step whether the next one
+# still fits and fails `does_not_fit` where it does not; this module wrote
+# that guard by hand until core 0.5.0 (issue 1067). The test at the bottom
+# feeds it nineteen and twenty digits and asserts a refusal, not a crash.
 #
 # **AND IT WORKS ON BYTES, WHICH IT DID NOT AT FIRST.** Every single-character
 # decision below compares an `i64` taken from `source[at]`, never a
@@ -36,6 +38,8 @@
 # comment-only lines collapse into the one `.newline` that follows them, which
 # is what lets the parser say *a statement ends at the end of its line* without
 # ever seeing an empty statement.
+
+use <core>/strconv
 
 use lex/token
 
@@ -143,28 +147,18 @@ function is_word_start(b: i64) -> bool
 function is_word_rest(b: i64) -> bool
     return is_word_start(b) || is_digit(b)
 
-# The digits at `from`, accumulated — refusing rather than aborting when they
-# do not fit. See the module header: this is the guard that keeps a script from
-# panicking the interpreter.
+# The digits at `from`, read as one number — refusing rather than aborting
+# when they do not fit. See the module header: this is the guard that keeps a
+# script from panicking the interpreter.
 function number_at(source: str, from: i64) -> Read?
-    value: i64 @= 0
     at: i64 @= from
 
     while is_digit(byte_at(source: source, at: at))
-        digit = byte_at(source: source, at: at) - '0'
-
-        # `value * 10 + digit > MAX` is the test somebody writes first, and it
-        # is the wrong one: computing it is the overflow. The division is what
-        # makes the question answerable without asking it.
-        if value > (MAX - digit) / 10
-            return fail(
-                code: ERR_NUMBER,
-                msg: "`" + source.slice(from: from, to: at + 1) + "` does not fit in a 64-bit integer"
-            )
-        value @ value * 10 + digit
         at @ at + 1
 
-    return ok(Read(what: .number(value: value), next: at))
+    match strconv.atoi(source.slice(from: from, to: at))
+        .ok value => return ok(Read(what: .number(value: value), next: at))
+        .err e    => return fail(code: ERR_NUMBER, msg: e.msg)
 
 # The string literal at `from`, with its four escapes decoded.
 #
@@ -402,7 +396,7 @@ test "the four refusals, each asserted by its code"
 
 test "a number too large is refused and does not abort the interpreter"
     # THE ROBUSTNESS CASE (design.md §1.12). Heroes aborts on overflow, so
-    # without the guard in `number_at` these three lines would be a panic
+    # without `strconv.atoi`'s guard these three lines would be a panic
     # rather than a diagnostic — and the input is a SCRIPT, which is the one
     # thing this program does not control.
     assert refusal_of(scanned("print 9223372036854775807")) == "nothing was refused"
@@ -410,6 +404,16 @@ test "a number too large is refused and does not abort the interpreter"
     assert refusal_of(scanned("print 9223372036854775808")) == ERR_NUMBER
     assert refusal_of(scanned("print 99999999999999999999")) == ERR_NUMBER
     assert refusal_of(scanned("print 123456789012345678901234567890")) == ERR_NUMBER
+
+    # What the script's author reads: the digits while they are short, their
+    # length once they are not, so a message never carries a whole file.
+    match scanned("print 99999999999999999999")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"99999999999999999999\" does not fit an i64"
+
+    match scanned("print " + repeat("9", 50))
+        .ok _  => assert false
+        .err e => assert e.msg == "a text of 50 bytes does not fit an i64"
 
 test "the source always ends in exactly one finish, whatever it held"
     sources = ["", " ", "\n", "# nothing\n", "print 1", "print 1\n", "print 1\n\n"]

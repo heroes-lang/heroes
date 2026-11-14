@@ -1,0 +1,371 @@
+# A decimal number rounded to the nearest `f64`, ties to even, by exact
+# arithmetic on its digits: the route `numeral.hero` takes where one
+# operation on two exact doubles cannot round the number for it. The
+# algorithm is Go's `strconv` slow path, Simple Decimal Conversion (its
+# `decimal.go`, and `atof.go`'s `floatBits`): the digits are
+# multiplied and divided by powers of two until the number lies between a half
+# and one, then by 2 to the 53 and rounded to an integer, the `f64`'s
+# significand. Every step is exact or remembers what it dropped, so the
+# rounding at the end is the correct one.
+#
+# Its cost grows with how far the number lies from one, since each step's
+# digits are exact: measured on 2026-11-10 on this Mac, built at `-O2`, the
+# best of three runs over 20,000 numbers of 17 digits, those near 10 to the
+# 300 took 2.26 s of user time, about 113 µs each, those near 10 to the -300
+# 1.69 s, about 85 µs each, and those near one 0.04 s, about 2 µs. Go's own
+# `strconv` takes this route last, only where a faster one cannot decide
+# (`atof64` in `src/internal/strconv/atof.go`, read on 2026-11-10), and so
+# does `numeral.hero` since core 0.2.1 (defect 2405): `scaling.hero` reads
+# every number of at most 19 digits, and a longer one whose first 19 digits
+# and the same plus one round alike, which leaves this route the numbers of
+# more than 19 digits within a hair of halfway between two `f64`s.
+#
+# Its one code is written as a literal, `does_not_fit`, the built-ins' own
+# (spec § 11).
+
+# The most digits a decimal keeps, Go's own number (`d [800]byte`); a digit
+# dropped past them that is not zero is remembered in `truncated`, which the
+# rounding at exactly half reads.
+constant CAPACITY: i64
+    800
+
+# The largest shift by a power of two one step makes, so that a digit times 2
+# to it, plus the carry, stays inside an `i64`: 10 times 2 to 59 is below 2 to
+# 63.
+constant WIDEST: i64
+    59
+
+# How far one step shifts a decimal whose point stands `n` places from the
+# first digit, by 2 to the entry at `n`: Go's `powtab`, each entry from 1 on
+# the largest `k` with 2 to the `k` below 10 to the `n`, so a doubling never
+# carries the number past one, and 1 at 0. Past it a step shifts
+# by 27, Go's number, and from 18 places by `WIDEST`, since 2 to the 59 is
+# below 10 to the 18: a number that far from one is halved or doubled in half
+# as many steps. Measured on 2026-11-10 at `-O2` over 20,000 numbers of 17
+# digits, one build after the other: those near 10 to the 300 read in 2.32 s
+# of user time against 4.01 s with 27, and those near 10 to the -300 in 2.71 s
+# against 2.98 s.
+constant STEPS: [i64]
+    [1, 3, 6, 9, 13, 16, 19, 23, 26]
+
+# The number `0.d1 d2 d3 ... × 10^point`, `digits` its digits as numbers from 0
+# to 9, none of them zero at the end; `truncated` where a digit past
+# `CAPACITY` that was not zero was dropped, so the number is a little more
+# than its digits say.
+record Decimal
+    digits: [u8]
+    point: i64
+    truncated: bool
+
+# The `f64` nearest `0.<digits> × 10^point`, ties to even: `digits` is text of
+# decimal digits, the first not a zero. It fails `does_not_fit` where the
+# number lies past the largest `f64`, which rounds to no finite one.
+function nearest(digits: str, point: i64) -> f64?
+    return rounded_to_float(decimal_of(digits: digits, point: point))
+
+# The decimal of `0.<digits> × 10^point`, keeping `CAPACITY` digits.
+function decimal_of(digits: str, point: i64) -> Decimal
+    kept: [u8] @= []
+    truncated: bool @= false
+    i: i64 @= 0
+
+    while i < digits.len()
+        digit = digits[i] - '0'
+
+        if kept.len() < CAPACITY
+            kept @ kept.push(digit)
+        else if digit != 0
+            truncated @ true
+        i @ i + 1
+
+    return trimmed(Decimal(digits: kept, point: point, truncated: truncated))
+
+# `d` without the zeros at the end of its digits, and with its point at zero
+# where it has no digits left.
+function trimmed(d: Decimal) -> Decimal
+    end: i64 @= d.digits.len()
+
+    while end > 0 && d.digits[end - 1] == 0
+        end @ end - 1
+
+    if end == d.digits.len()
+        return d
+
+    if end == 0
+        nothing: [u8] = []
+        return Decimal(digits: nothing, point: 0, truncated: d.truncated)
+    return Decimal(digits: d.digits.slice(from: 0, to: end), point: d.point, truncated: d.truncated)
+
+# `d` times 2 to the `k`, `k` from -`WIDEST` to `WIDEST`: doubled where `k` is
+# above zero, halved where it is below.
+function shifted(d: Decimal, k: i64) -> Decimal
+    if k > 0
+        return doubled(d: d, k: k)
+
+    if k < 0
+        return halved(d: d, k: 0 - k)
+    return d
+
+# `d` times 2 to the `k`, from 1 to `WIDEST`: each digit from the last, times
+# 2 to the `k`, plus the carry, so the new digits come out last first.
+function doubled(d: Decimal, k: i64) -> Decimal
+    backwards: [u8] @= []
+    n: i64 @= 0
+    read: i64 @= d.digits.len() - 1
+
+    while read >= 0
+        n @ n + (to_i64(d.digits[read]).must() << k)
+        backwards @ backwards.push(to_u8(n % 10).must())
+        n @ n / 10
+        read @ read - 1
+
+    while n > 0
+        backwards @ backwards.push(to_u8(n % 10).must())
+        n @ n / 10
+
+    digits: [u8] @= []
+    truncated: bool @= d.truncated
+    at: i64 @= backwards.len() - 1
+
+    while at >= 0
+        if digits.len() < CAPACITY
+            digits @ digits.push(backwards[at])
+        else if backwards[at] != 0
+            truncated @ true
+        at @ at - 1
+
+    return trimmed(
+        Decimal(digits: digits, point: d.point + backwards.len() - d.digits.len(), truncated: truncated)
+    )
+
+# `d` divided by 2 to the `k`, from 1 to `WIDEST`: the leading digits taken
+# until they reach 2 to the `k`, then a digit put down for each picked up, and
+# the remainder's digits after the last.
+function halved(d: Decimal, k: i64) -> Decimal
+    read: i64 @= 0
+    n: i64 @= 0
+
+    while n >> k == 0
+        if read >= d.digits.len()
+            if n == 0
+                nothing: [u8] = []
+                return Decimal(digits: nothing, point: 0, truncated: d.truncated)
+
+            while n >> k == 0
+                n @ n * 10
+                read @ read + 1
+
+            break
+        n @ n * 10 + to_i64(d.digits[read]).must()
+        read @ read + 1
+
+    # The digits taken so far make the first one put down, so the point moves
+    # by one less than their count.
+    point = d.point - read + 1
+    mask = (1 << k) - 1
+    digits: [u8] @= []
+
+    while read < d.digits.len()
+        digits @ digits.push(to_u8(n >> k).must())
+        n @ (n & mask) * 10 + to_i64(d.digits[read]).must()
+        read @ read + 1
+
+    truncated: bool @= d.truncated
+
+    while n > 0
+        digit = to_u8(n >> k).must()
+        n @ (n & mask) * 10
+
+        if digits.len() < CAPACITY
+            digits @ digits.push(digit)
+        else if digit != 0
+            truncated @ true
+
+    return trimmed(Decimal(digits: digits, point: point, truncated: truncated))
+
+# Whether `d`, cut after its first `at` digits, rounds up: past half, or at
+# exactly half where the digit kept is odd or a digit was dropped.
+function rounds_up(d: Decimal, at: i64) -> bool
+    if at < 0 || at >= d.digits.len()
+        return false
+
+    if d.digits[at] == 5 && at + 1 == d.digits.len()
+        if d.truncated
+            return true
+        return at > 0 && d.digits[at - 1] % 2 == 1
+    return d.digits[at] >= 5
+
+# The integer nearest `d`, ties to even; `d` lies below 2 to the 54, as the
+# significand it is asked for does.
+function rounded(d: Decimal) -> i64
+    n: i64 @= 0
+    i: i64 @= 0
+
+    while i < d.point && i < d.digits.len()
+        n @ n * 10 + to_i64(d.digits[i]).must()
+        i @ i + 1
+
+    while i < d.point
+        n @ n * 10
+        i @ i + 1
+
+    if rounds_up(d: d, at: d.point)
+        return n + 1
+    return n
+
+# The shift one step makes for a point `n` places from the first digit.
+function step_for(n: i64) -> i64
+    if n < STEPS.len()
+        return STEPS[n]
+
+    if n < 18
+        return 27
+    return WIDEST
+
+# The `f64` nearest `d`, ties to even, or `does_not_fit` past the largest:
+# `d` scaled by powers of two into the range from a half to one, its binary
+# exponent counted, then 53 bits of it rounded to the significand.
+function rounded_to_float(d: Decimal) -> f64?
+    if d.digits.len() == 0
+        return ok(0.0)
+
+    if d.point > 310
+        return fail(code: "does_not_fit", msg: "the number lies past the largest f64, about 1.8 times ten to the 308")
+
+    if d.point < -330
+        return ok(0.0)
+    x: Decimal @= d
+    exponent: i64 @= 0
+
+    while x.point > 0
+        n = step_for(x.point)
+        x @ shifted(d: x, k: 0 - n)
+        exponent @ exponent + n
+
+    while x.point < 0 || x.point == 0 && x.digits[0] < 5
+        n = step_for(0 - x.point)
+        x @ shifted(d: x, k: n)
+        exponent @ exponent - n
+
+    # `x` lies from a half to one, and an f64's significand from one to two.
+    exponent @ exponent - 1
+
+    # Below 2 to the -1022 the number is subnormal: its exponent stays there,
+    # and its significand loses the bits it cannot hold.
+    if exponent < -1022
+        n = -1022 - exponent
+        x @ shifted(d: x, k: 0 - n)
+        exponent @ exponent + n
+
+    if exponent > 1023
+        return fail(code: "does_not_fit", msg: "the number lies past the largest f64, about 1.8 times ten to the 308")
+    significand: i64 @= rounded(shifted(d: x, k: 53))
+
+    # Rounding may carry into a 54th bit.
+    if significand == 1 << 53
+        significand @ significand / 2
+        exponent @ exponent + 1
+
+        if exponent > 1023
+            return fail(
+                code: "does_not_fit",
+                msg: "the number lies past the largest f64, about 1.8 times ten to the 308"
+            )
+    return ok(scaled(x: to_f64(significand), k: exponent - 52))
+
+# `x` times 2 to the `k`, one doubling or halving at a time. Each step is
+# exact where the result is an `f64`: every value on the way has more room
+# for its bits than the last.
+function scaled(x: f64, k: i64) -> f64
+    out: f64 @= x
+    i: i64 @= 0
+
+    while i < k
+        out @ out * 2.0
+        i @ i + 1
+
+    while i > k
+        out @ out / 2.0
+        i @ i - 1
+
+    return out
+
+## Tests
+
+# The digits of `d` as text, and its point, for a test to compare.
+function shown(d: Decimal) -> str
+    out: [str] @= []
+
+    for digit in d.digits
+        out @ out.push(digit.to_str())
+
+    return out.join("") + " e" + d.point.to_str()
+
+test "decimal: digits are kept to the capacity, a dropped one remembered"
+    assert shown(decimal_of(digits: "1250", point: 1)) == "125 e1"
+    long = repeat("1", 801)
+    kept = decimal_of(digits: long, point: 0)
+    assert kept.digits.len() == CAPACITY && kept.truncated
+    exact = decimal_of(digits: repeat("1", 800) + "0", point: 0)
+    assert !exact.truncated
+    assert shown(trimmed(Decimal(digits: [0, 0], point: 4, truncated: false))) == " e0"
+
+test "decimal: doubled and halved by a power of two, exactly"
+    one = decimal_of(digits: "1", point: 1)
+    assert shown(shifted(d: one, k: 10)) == "1024 e4"
+    assert shown(doubled(d: one, k: 59)) == "576460752303423488 e18"
+    assert shown(shifted(d: one, k: -3)) == "125 e0"
+    assert shown(halved(d: decimal_of(digits: "3", point: 1), k: 1)) == "15 e1"
+
+    # The point moves by the digits taken before the first is put down, and no
+    # others: 2 to the 53, plus one, over 2 to the 27.
+    big = decimal_of(digits: "9007199254740993", point: 16)
+    assert shown(halved(d: big, k: 27)) == "67108864000000007450580596923828125 e8"
+    assert shown(shifted(d: one, k: 0)) == "1 e1"
+    nothing: [u8] = []
+    assert shown(halved(d: Decimal(digits: nothing, point: 0, truncated: false), k: 3)) == " e0"
+
+test "decimal: rounding to an integer is half to even, and past half up"
+    assert rounded(decimal_of(digits: "25", point: 1)) == 2
+    assert rounded(decimal_of(digits: "35", point: 1)) == 4
+    assert rounded(decimal_of(digits: "251", point: 1)) == 3
+    assert rounded(decimal_of(digits: "7", point: 0)) == 1
+    assert rounded(decimal_of(digits: "4", point: 0)) == 0
+    assert rounded(decimal_of(digits: "12", point: 4)) == 1200
+    half = Decimal(digits: [2, 5], point: 1, truncated: true)
+    assert rounds_up(d: half, at: 1)
+    assert !rounds_up(d: half, at: 2)
+    assert step_for(0) == 1 && step_for(8) == 26 && step_for(9) == 27
+    assert step_for(17) == 27 && step_for(18) == WIDEST && step_for(400) == WIDEST
+
+test "decimal: the nearest f64, against the values Go and JavaScript read"
+    assert nearest(digits: "3", point: 0).must() == 0.3
+    assert nearest(digits: "1", point: 1).must() == 1.0
+    assert nearest(digits: "9007199254740993", point: 16).must() == 9007199254740992.0
+    assert nearest(digits: "9007199254740995", point: 16).must() == 9007199254740996.0
+    assert nearest(digits: "1", point: -400).must() == 0.0
+    assert nearest(digits: "1", point: 310).is_err()
+    assert nearest(digits: "17976931348623157", point: 309).must().to_str() == "1.7976931348623157e+308"
+    assert nearest(digits: "17976931348623158", point: 309).must().to_str() == "1.7976931348623157e+308"
+    assert nearest(digits: "17976931348623159", point: 309).is_err()
+
+    # The smallest subnormal, and the halfway point below it, either side.
+    assert nearest(digits: "5", point: -323).must().to_str() == "5e-324"
+    assert nearest(digits: "24703282292062327", point: -323).must() == 0.0
+    assert nearest(digits: "24703282292062328", point: -323).must().to_str() == "5e-324"
+
+    # Just below the smallest normal `f64`, where rounding crosses from the
+    # subnormals to the normals.
+    assert nearest(digits: "22250738585072011", point: -307).must().to_str() == "2.225073858507201e-308"
+
+test "decimal: rounded_to_float takes a decimal whole, its empty one zero"
+    assert rounded_to_float(decimal_of(digits: "15", point: 1)).must() == 1.5
+    nothing: [u8] = []
+    assert rounded_to_float(Decimal(digits: nothing, point: 0, truncated: false)).must() == 0.0
+    assert rounded_to_float(decimal_of(digits: "1", point: 311)).is_err()
+    assert rounded_to_float(decimal_of(digits: "1", point: -331)).must() == 0.0
+
+test "decimal: scaled by powers of two, exactly"
+    assert scaled(x: 3.0, k: 2) == 12.0
+    assert scaled(x: 3.0, k: -1) == 1.5
+    assert scaled(x: 1.0, k: -1074).to_str() == "5e-324"

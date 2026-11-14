@@ -218,9 +218,9 @@ tree anew, on another machine or after the folder is deleted: `heroes fetch`
 answers *the index `file://../../packages` serves no core 0.2.1*, exit 1, and
 `heroes add core` moves it to the newest version (measured 2026-11-14 on a
 copy of `examples/ini` at 0.2.1 beside an index holding 0.3.0 alone, and
-again the same day at 0.3.0 beside an index holding 0.4.0 alone: `kept core
-0.3.0`, *serves no core 0.3.0* once its tree was moved aside, and `changed
-core 0.3.0 -> 0.4.0`).
+again the same day at 0.3.0 beside an index holding 0.4.0 alone, and at 0.4.0
+beside an index holding 0.5.0 alone: `kept core 0.4.0`, *serves no core
+0.4.0* once its tree was moved aside, and `changed core 0.4.0 -> 0.5.0`).
 
 ## 10. Publishing a version, and working on one
 
@@ -269,7 +269,8 @@ older ones away:
    newest version, and the older versions of `core` are removed*). The verb
    writes the entry and places the new tree, and leaves the old one where it
    stood (`changed core 0.2.1 -> 0.3.0`, measured 2026-11-14 on fourteen
-   programs, and `changed core 0.3.0 -> 0.4.0` on seventeen the same day);
+   programs, `changed core 0.3.0 -> 0.4.0` on seventeen the same day, and
+   `changed core 0.4.0 -> 0.5.0` on seventeen again);
    once `diff -r` finds it the published files of its version byte
    for byte, it is removed with `git rm -r`, since no verb removes it and the
    `packages` suite refuses a tree no entry names.
@@ -284,7 +285,8 @@ Steps 3 and 4, run in `packages/core/<version>/`; on 2026-11-14 they rebuilt
 the rest, byte for byte (`diff -r` against `packages/` printed nothing), as
 they had rebuilt 0.1.0's, 0.2.0's and 0.2.1's on 2026-11-10; and the same day
 they made 0.4.0's, and rebuilt its `list` and the whole `versions` byte for
-byte once step 6 had removed 0.3.0 (`cmp` printed nothing):
+byte once step 6 had removed 0.3.0 (`cmp` printed nothing), and then 0.5.0's,
+rebuilt the same way once step 6 had removed 0.4.0:
 
 ```sh
 ( cd files && find . -type f | sed 's|^\./||' | LC_ALL=C sort |
