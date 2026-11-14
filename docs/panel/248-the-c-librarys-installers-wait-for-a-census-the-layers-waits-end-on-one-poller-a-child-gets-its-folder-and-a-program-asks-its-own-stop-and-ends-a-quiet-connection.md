@@ -487,6 +487,9 @@ sitting owed, the poller, the folder door, the stop door kept apart with q4m, an
 not settle the follow-up's route, the conservative alternative, which stays the author's to choose, or
 the predictions, on their own clocks.
 
+Filed 2026-11-14 at about 20:35, the records suite's verdict check asking it at the batch's gate: the author's reading
+is asked by decision 2527 (https://github.com/heroes-lang/heroes/issues/2527).
+
 ## Added 2026-11-14 at about 12:40, by the coordinator: the routes R2, R4 and R5 are built before this synthesis is final
 
 The drafting found, and the coordinator accepts, that no seat built R2 (the poller), R4 (the stop kept apart from the signals' count) or R5 (Go's deadline, applying to pending waits) as the layer's code: each stands on the seats' probes and the historian's precedents, and `00-shared.md:182-184` says a route that does not build is reported as not built, never adopted (the /panel skill's step 3c). So this synthesis is not committed or filed until lane b36-net of batch 36, opened at 12:30 on these three routes, has built them in `runtime/platform/hero_net.c` and run the cases this sitting names (idle CPU and close latency against the base, the descriptor count under `ulimit -n 256`, the stop kept apart under a second signal, a deadline over a pending wait, on this Mac, in Linux arm64 and on the Windows box); its results are written under this heading, and a route that does not build as resolved is reported here as not built and its question reopened. R3 is built (the compiler-engineer's door, `run.c` +91), and lane b36-dir lands it.
