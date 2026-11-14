@@ -316,7 +316,8 @@ int64_t hero_fs_set_flag(const char *path);
  * READ `*status` BEFORE THE RETURN VALUE. HERO_OS_OK means the program ran and
  * the return value is its exit code (or 128 + the signal that killed it);
  * HERO_OS_NOT_FOUND means it never started, which `system()` could not
- * distinguish from a program that legitimately exits 127. */
+ * distinguish from a program that legitimately exits 127; HERO_OS_NO_FOLDER
+ * that the folder `hero_run_dir` staged for it could not be entered. */
 HeroStr hero_run_discard_path(void);
 
 /* `.exe` on Windows, "" elsewhere. A binary built without it is created fine
@@ -375,6 +376,29 @@ void hero_run_arg(HeroStr word);
  * and a NUL in either are panics. `parts/run.c` carries why each is so, and
  * which platform measured which promise. */
 void hero_run_env(HeroStr name, HeroStr value);
+
+/* THE NEXT CHILD'S WORKING FOLDER ALONE (panel 248's R3, provisional, author
+ * ratification pending; defect 2490), staged as a variable is and given back
+ * by `hero_run_reset`: this process's own folder is never changed, so no other
+ * thread's child, and no later child, starts there. Staged twice, the later
+ * folder is the child's. **Every relative path of the launch is read in THIS
+ * process's folder, on every system**: the folder itself, the three streams'
+ * paths, a program path holding a folder, and a relative entry of the `PATH` a
+ * bare program name is found through (an empty entry is this folder), as
+ * `CreateProcessW` reads them; POSIX is made to match. **A path the child is
+ * handed in a word or a variable is the child's to read, in ITS folder**:
+ * give it whole where it must name what this process names. A folder the
+ * launch cannot enter (missing, a file, or not this user's to enter) is
+ * refused before any program runs, `hero_run_go` answering
+ * HERO_OS_NO_FOLDER, never a missing program's HERO_OS_NOT_FOUND, and
+ * `hero_run_why` the system's own reason. An empty folder and a NUL in it are
+ * panics. `parts/run.c` carries why each is so, and which platform measured
+ * which promise. */
+void hero_run_dir(HeroStr folder);
+
+/* The answer of a launch whose staged folder could not be entered; 6 is
+ * `hero_compiler.h`'s HERO_LOCK_HELD, beside these answers. */
+#define HERO_OS_NO_FOLDER 7
 
 /* Seconds after which the next `hero_run_go` kills its child and answers 124 —
  * coreutils' `timeout` code, on purpose, so a caller that used to read that

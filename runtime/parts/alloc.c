@@ -294,11 +294,12 @@ static void hero_handle_report_twice_in_one_call(const void *h, size_t held, con
 static void hero_lend_audit_given(const char *when);
 
 /* `parts/run.c` and `parts/dir.c`, later in this unit: the scratch a launch's
- * argument list, its child's variables (feature 2424) and a directory listing
- * hold between calls, which the program gives back by `hero_run_reset()` and
- * `hero_dir_release()` (defect 573). */
+ * argument list, its child's variables (feature 2424), its child's folder
+ * (defect 2490) and a directory listing hold between calls, which the program
+ * gives back by `hero_run_reset()` and `hero_dir_release()` (defect 573). */
 static int64_t hero_run_words_held_at_exit(void);
 static int64_t hero_run_variables_held_at_exit(void);
+static int64_t hero_run_folders_held_at_exit(void);
 static int64_t hero_dir_names_held_at_exit(void);
 static int64_t hero_dir_blocks_held_at_exit(void);
 
@@ -322,9 +323,10 @@ void hero_runtime_check_leaks(void) {
     if (scratch != 0) {
         int64_t words = hero_run_words_held_at_exit();
         int64_t variables = hero_run_variables_held_at_exit();
+        int64_t folders = hero_run_folders_held_at_exit();
         int64_t names = hero_dir_names_held_at_exit();
         int64_t listing = names + hero_dir_blocks_held_at_exit();
-        int64_t rest = scratch - words - variables - listing;
+        int64_t rest = scratch - words - variables - folders - listing;
         fflush(stdout);
         if (words > 0) {
             fprintf(stderr, "panic: a launch's argument list still holds %lld word(s) at exit — "
@@ -337,6 +339,12 @@ void hero_runtime_check_leaks(void) {
                             "`hero_run_env` keeps each until `hero_run_reset()` gives them "
                             "back, and this program did not call it after its last `hero_run_env`\n",
                     (long long)variables);
+        }
+        if (folders > 0) {
+            fprintf(stderr, "panic: a launch still holds %lld working folder(s) for its child at exit — "
+                            "`hero_run_dir` keeps one until `hero_run_reset()` gives it back, and "
+                            "this program did not call it after its last `hero_run_dir`\n",
+                    (long long)folders);
         }
         if (listing > 0) {
             fprintf(stderr, "panic: a directory listing of %lld name(s) is still held at exit — "

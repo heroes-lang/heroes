@@ -1,0 +1,2 @@
+before
+!panic: a working folder given to a child contains a NUL byte

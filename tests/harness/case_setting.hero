@@ -53,12 +53,13 @@
 #
 # **A case with a `directory` runs from a copy of its folder**, as one with
 # links does, since the compiler writes its cache under the folder it runs in:
-# started there by `/usr/bin/env -C`, with the compiler and the case's own
-# paths written whole, so an empty element of `CPATH` names a folder of the
-# case and never the repository's root. The runtime's spawn starts every
-# child in this process's folder (`hero_run_go` in `runtime/parts/run.c`
-# passes `CreateProcessW` no folder and calls no `chdir`), so no other route
-# exists, and such a case is skipped by name on Windows.
+# started there, the folder given at the spawn (`shell.run_in`, the runtime's
+# `hero_run_dir`; panel 248's R3, defect 2490), with the compiler and the
+# case's own paths written whole, since a word the compiler reads is read in
+# the folder it starts in, so an empty element of `CPATH` names a folder of
+# the case and never the repository's root. Until then the spawn could start
+# a child in no folder but this process's, so `/usr/bin/env -C` started such
+# a case, and it was skipped by name on Windows, which has no `env`.
 
 use <core>/strings as core_strings
 
@@ -92,12 +93,6 @@ constant PKG_CONFIG_READS: [str]
 # holds edits, never folders.
 constant FOLDER_LISTS: [str]
     ["PATH", "GIT_CEILING_DIRECTORIES", "CPATH", "C_INCLUDE_PATH", "PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]
-
-# The one program that starts a case's compiler from a folder of its own,
-# which the runtime's spawn cannot: POSIX's `env`, `-C` in GNU's and in this
-# Mac's.
-constant ENV: str
-    "/usr/bin/env"
 
 # What a case asks of its run: each variable `NAME=VALUE`, each link `name
 # target`, as written, and the folder it starts in, "" for none.
@@ -149,20 +144,16 @@ constant SKIP: str
     "setting_skipped"
 
 # Why the case `s` names cannot run on this machine, "" where it can: a link
-# made with `ln`, or a run started in a folder of the case's own by
-# `/usr/bin/env -C`, neither of which Windows has. A variable is never a
-# reason: every one is given at the spawn, on every platform (defect 2477).
+# made with `ln`, which Windows has not. Neither a variable nor a folder is a
+# reason: each is given at the spawn, on every platform (defect 2477; defect
+# 2490, `hero_run_dir`).
 function skip_here(s: Setting) -> str
     if s.links.len() > 0 && shell.exe_suffix() == ".exe"
         return "the case makes a symbolic link with `ln -s` before its run, as `apply_tree.hero`'s link cases do, and this platform has no `ln`"
-
-    if started_by_env(s) && shell.exe_suffix() == ".exe"
-        return "the case starts its compiler in its folder `" + s.directory + "`, which the runtime's spawn cannot give a child (`hero_run_go` starts every child in this process's folder), so `" + ENV + " -C` starts it, and this platform has no `" + ENV + "`"
     return ""
 
-# Whether the case's compiler is started through `/usr/bin/env`: in a folder
-# of its own.
-function started_by_env(s: Setting) -> bool
+# Whether the case's compiler is started in a folder of its own.
+function started_in_folder(s: Setting) -> bool
     return s.directory.len() > 0
 
 # Whether a run failed as a case skipped here.
@@ -209,9 +200,8 @@ function repository_root(scratch: str) -> str?
 
 # The run of `words` for the case in `dir` as `s` asks it, what it printed
 # written back as the case's own: in a copy holding its links or starting in
-# its folder, every variable given to its run alone at the spawn, and through
-# `/usr/bin/env -C` where it starts in a folder of its own, which hands them
-# on.
+# its folder, every variable given to its run alone at the spawn, and its
+# folder given there too where it starts in one of its own.
 function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
     at: str @= dir
     line: [str] @= words
@@ -232,15 +222,18 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
 
         line @ swapped_all(words: words, old: dir, new: at)
     started: str @= program
+    folder: str @= ""
 
-    if started_by_env(s)
-        line @ env_line(line, directory: s.directory, at: whole(root: root, path: at), root: root)
-        started @ ENV
-    said = shell.run_given(
+    if started_in_folder(s)
+        line @ folder_line(line, at: whole(root: root, path: at), root: root)
+        started @ line[0]
+        folder @ whole(root: root, path: at) + "/" + s.directory
+    said = shell.run_in(
         scratch: scratch,
         program: started,
         words: line,
-        given: given_all(s: s, root: root, windows: shell.exe_suffix() == ".exe")
+        given: given_all(s: s, root: root, windows: shell.exe_suffix() == ".exe"),
+        folder: folder
     )
 
     if at != dir
@@ -250,12 +243,12 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
     back.err @ written_back(text: back.err, at: at, dir: dir, root: root)
     return ok(back)
 
-# **The line that starts a case's compiler in its `directory`** of `at`, its
-# copy, through `/usr/bin/env -C`: the compiler and the copy's paths written
-# whole, since a relative one would be read from there. The case's variables
-# are given to `env` at the spawn, and `env` hands them on.
-function env_line(words: [str], directory: str, at: str, root: str) -> [str]
-    out: [str] @= [ENV, "-C", at + "/" + directory, whole(root: root, path: words[0])]
+# **The words that start a case's compiler in a folder of its copy `at`**:
+# the compiler and the copy's paths written whole, since a word the compiler
+# reads is read in the folder it starts in, where the runtime reads the
+# program path itself in this process's folder (`hero_run_dir`).
+function folder_line(words: [str], at: str, root: str) -> [str]
+    out: [str] @= [whole(root: root, path: words[0])]
 
     for word in words.slice(from: 1, to: words.len())
         out @ out.push(swapped(text: word, old: unwhole(root: root, path: at), new: at))
@@ -376,25 +369,26 @@ test "a setting names only the variables whose empty value reads as unset, and l
     assert lines_of("# why\nPATH=<root>/build/no-tools\n\n") == ["PATH=<root>/build/no-tools"]
     none = Setting(environment: [], links: [], directory: "")
     assert !asks(none)
-    assert !started_by_env(none)
+    assert !started_in_folder(none)
 
 # **A variable clang reads is never set in this process** (defect 2344): it
 # is given to the case's run alone, at the spawn since defect 2477, a
 # `<root>` in its value written whole, so no case starts its compiler through
-# `/usr/bin/env` for a variable; and a case with a `directory` starts there
-# through `/usr/bin/env -C`, its compiler and its copy's paths written whole,
-# so nothing is read from the folder it starts in but what the case meant.
+# `/usr/bin/env` for a variable; and a case with a `directory` starts there,
+# the folder given at the spawn (`hero_run_dir`, defect 2490), its compiler
+# and its copy's paths written whole, so nothing is read from the folder it
+# starts in but what the case meant, and it is skipped nowhere for it.
 test "a variable clang reads is given to the case's run alone, and a directory is where its run starts"
     assert reads("CPATH") && reads("C_INCLUDE_PATH") && reads("CCC_OVERRIDE_OPTIONS")
     assert !settable("CPATH") && !reads("PATH")
     plain = Setting(environment: ["PATH=/x", "CPATH=<root>/inc"], links: [], directory: "")
-    assert !started_by_env(plain)
+    assert !started_in_folder(plain)
     given = given_all(s: plain, root: "/r", windows: false)
     assert given.len() == 2 && given[0].name == "PATH" && given[0].value == "/x" && given[1].name == "CPATH" && given[1].value == "/r/inc"
     words = ["./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
     moved = Setting(environment: ["C_INCLUDE_PATH=:"], links: [], directory: "here")
-    assert started_by_env(moved)
-    assert env_line(words, directory: moved.directory, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "-C", "/r/build/h-1/set/x.case/here", "/r/heroes-next", "build", "/r/build/h-1/set/x.case/main.hero"]
+    assert started_in_folder(moved) && skip_here(moved) == ""
+    assert folder_line(words, at: "/r/build/h-1/set/x.case", root: "/r") == ["/r/heroes-next", "build", "/r/build/h-1/set/x.case/main.hero"]
     assert inside("here") && inside("a/b") && !inside("../up") && !inside("/abs") && !inside("a/../..")
     assert whole(root: "/r", path: "/abs") == "/abs" && unwhole(root: "/r", path: "/r/b/c") == "b/c"
 
@@ -412,7 +406,7 @@ test "a case's own pkg-config folder is given to its run alone, and another pkg-
     assert !shell.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/environment", text: "# the case's own library\nPKG_CONFIG_PATH=" + dir + "/pc\nPKG_CONFIG_LIBDIR=" + dir + "/pc\n").is_err()
     got = read_setting(dir).must()
-    assert !started_by_env(got) && skip_here(got) == ""
+    assert !started_in_folder(got) && skip_here(got) == ""
     given = given_all(s: got, root: "/r", windows: true)
     assert given.len() == 2 && given[0].name == "PKG_CONFIG_PATH" && given[1].name == "PKG_CONFIG_LIBDIR"
     assert given[0].value == dir + "/pc" && given[1].value == dir + "/pc"
@@ -450,9 +444,12 @@ test "a list of folders a case writes with `:` is given with `;` on Windows, its
 # given, in the compiler's place. A value set empty stays set, a value holding
 # a space comes whole, the case's `PATH` takes the place of this process's
 # own, a list comes with the platform's separator, and this process holds none
-# of them after. A case with a `directory` starts there through `/usr/bin/env
-# -C`, which hands its variables on, and on Windows it is skipped by its
-# folder's name.
+# of them after. A case with a `directory` starts there on every platform,
+# the folder given at the spawn beside its variables (`hero_run_dir`, defect
+# 2490); Windows spells the folder the probe reads with backslashes, which
+# are written `/` before it is compared, and outside `<root>`, since the copy
+# it runs in is spelled so. A `directory` the copy does not hold is told as
+# the folder's refusal, never as the compiler's.
 test "a case's variables reach its run at the spawn on every platform, and a directory is where it starts (defect 2477)"
     scratch = "build/selftest-case-setting-run"
     assert !shell.remove_tree(scratch).is_err()
@@ -481,18 +478,27 @@ test "a case's variables reach its run at the spawn on every platform, and a dir
     assert lines.slice(from: 1, to: 6) == ["CPATH []", "C_INCLUDE_PATH [a b]", "PKG_CONFIG_PATH [pa" + separator(windows) + "<root>/pb]", "PATH [<root>/build/no-tools]", ""]
     assert shell.env(name: "C_INCLUDE_PATH").must() != "a b"
     moved = Setting(environment: ["CPATH=<root>/inc", "C_INCLUDE_PATH=:"], links: [], directory: "here")
+    assert skip_here(moved) == ""
+    there = ran(
+        scratch: scratch,
+        program: probe,
+        words: [probe, "CPATH", "C_INCLUDE_PATH"],
+        dir: dir,
+        s: moved,
+        root: root
+    ).must()
+    seen = strings.split_on(text: swapped(text: there.out, old: "\\", new: "/"), byte: 10)
+    folder: str @= "<root>/" + dir + "/here"
 
     if windows
-        assert core_strings.contains(s: skip_here(moved), substr: "folder `here`")
-    else
-        assert skip_here(moved) == ""
-        there = ran(
-            scratch: scratch,
-            program: probe,
-            words: [probe, "CPATH", "C_INCLUDE_PATH"],
-            dir: dir,
-            s: moved,
-            root: root
-        ).must()
-        assert there.code == 0 && there.out == "in <root>/" + dir + "/here\nCPATH [<root>/inc]\nC_INCLUDE_PATH [:]\n"
+        folder @ root + "/" + scratch + "/set/x.case/here"
+    assert there.code == 0 && seen.len() == 4 && seen[0] == "in " + folder
+    assert seen.slice(from: 1, to: 4) == ["CPATH [<root>/inc]", "C_INCLUDE_PATH [" + separator(windows) + "]", ""]
+    gone = Setting(environment: [], links: [], directory: "gone")
+
+    refused = match ran(scratch: scratch, program: probe, words: [probe], dir: dir, s: gone, root: root)
+        .ok _  => "started"
+        .err e => e.code
+
+    assert refused == "no_folder"
     assert !shell.remove_tree(scratch).is_err()
