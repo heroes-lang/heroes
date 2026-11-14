@@ -493,3 +493,20 @@ condition from a step into a sequence:
   name past ASCII (defects 2409, 2410, 2411), repaired onto `cli/strings` in the
   round that carries this paragraph; and the hooks' own tests, red on the trunk
   since `ce9c288c3` (defect 2412).
+
+## The author's answers of 2026-11-14, evening: the ruler moved away, so a sitting
+
+Put in plain text at about 22:08 with the coordinator's recommendations, answered `1a 2a 3a 4a`
+at about 22:20. **The acceptance condition of the package manager's second version (feature 2315)
+could not be met as the rules stand**: panel 242's R2 (ratified 2026-11-10) lets the compiler take a
+package only where its own tree, placed files counted, shrinks or a measured defect closes, and a
+package is placed whole. Measured that evening with `find packages/core/<v>/files -type f -exec cat
+{} + | wc -l`: core 0.2.0 placed 2,389 lines, core 0.4.0 places 6,140 in 26 files, and core 0.5.0 is
+being published, so every version moves the ruler further; the sixteen programs under `examples/`
+carry 320 placed files between them. **1a**: a sitting is convened on placing only the modules a
+program uses (*b* was moving 2315 to a later milestone, *c* waiting), 2315 staying an acceptance
+condition of this milestone until it rules. **2a**: batch 38 opens a lane that writes the hooks in
+Heroes beside the Python ones (feature 2082, as the answer of 2026-11-12 ruled), admitting
+`path/filepath` and `os` as the hooks need them, the switch kept for when the author is present.
+**3a**: the instrument of the paired run (task 2300) is written in batch 38, ready for the author's
+sealed suite of package tasks by 2026-11-24. **4a**: three worktrees of earlier sessions removed.
