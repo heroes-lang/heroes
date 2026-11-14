@@ -1,0 +1,3 @@
+# Task 2312: a catalogue holding its `index` line and no entry reads, and
+# `heroes fetch` has nothing to place: it says nothing and exits 0.
+index = "file://../idx"

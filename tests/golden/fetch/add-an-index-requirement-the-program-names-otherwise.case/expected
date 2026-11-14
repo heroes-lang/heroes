@@ -1,0 +1,14 @@
+$ heroes add json -C <work>/app
+exit 1
+stdout:
+stderr:
+error[requirement_refused]: the catalogue of `json` needs the index's `strings`, and the program's catalogue names another package `strings`: an index package keeps the index's name, so the program's own entry is the one to rename
+heroes.toml:
+# Task 2312: `json`'s own catalogue needs the index's `strings`, and the
+# program's catalogue names another package `strings`, a folder of its own.
+index = "file://../../../../../tests/golden/fetch/add-an-index-requirement-the-program-names-otherwise.case/idx"
+
+[dependencies.strings]
+path = "../local/strings"
+heroes.packages:
+(none)

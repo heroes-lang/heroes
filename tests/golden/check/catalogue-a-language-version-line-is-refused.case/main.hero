@@ -1,0 +1,9 @@
+# Task 2312 (panel 235's R14, R19): a language version line, Cargo's
+# `edition`, which a catalogue holds no more than a toolchain or a mode:
+# refused by the reader, never ignored (`.claude/rules/cli-surface.md`). The
+# catalogue does not read, so it names no package, and the `use` that reaches
+# through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

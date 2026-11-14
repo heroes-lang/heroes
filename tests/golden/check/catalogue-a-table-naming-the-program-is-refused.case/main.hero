@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R2, R19): a `[package]` table naming the program,
+# which a catalogue never holds: refused by the reader, never ignored. The
+# catalogue does not read, so it names no package, and the `use` that reaches
+# through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

@@ -1,0 +1,31 @@
+$ heroes add json --index https://index.example.invalid -C <work>/app
+exit 2
+stdout:
+stderr:
+error[no_curl]: `curl` could not be started on this machine, and `heroes` runs it to read a package's index: install curl, or put it on the PATH
+$ heroes add json --index file://../idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[no_git]: `file://../idx` cannot be read: git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH
+$ heroes add file://../git/yaml --tag v0.3.1 --as other -C <work>/app
+exit 2
+stdout:
+stderr:
+error[no_git]: `file://../git/yaml` cannot be read: git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH
+$ heroes fetch -C <work>/app
+exit 2
+stdout:
+stderr:
+<work>/app/heroes.toml:4: error[no_git]: `file://../git/yaml` cannot be read: git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH
+heroes.toml:
+# Task 2312: a machine whose `PATH` holds neither `git` nor `curl` (the
+# case's `environment`): each verb names the program it could not start, exit
+# 2, and nothing is written.
+[dependencies.yaml]  #~ no_git
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207"
+heroes.packages:
+(none)

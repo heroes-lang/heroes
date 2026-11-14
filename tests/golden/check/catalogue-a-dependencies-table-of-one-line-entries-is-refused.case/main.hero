@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R5, R19): Cargo's `[dependencies]` table with one
+# line an entry, where each entry is a table `[dependencies.<name>]`. The
+# catalogue does not read, so it names no package, and the `use` that reaches
+# through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

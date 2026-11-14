@@ -1,0 +1,7 @@
+# Task 2312 (panel 235's R5, R19): an entry's table with a word after it that
+# is no comment. The catalogue does not read, so it names no package, and the
+# `use` that reaches through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

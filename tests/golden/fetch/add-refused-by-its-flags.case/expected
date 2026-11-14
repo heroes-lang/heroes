@@ -1,0 +1,94 @@
+$ heroes add --path ../local/other yaml -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `--path` names the package's folder, so `add` takes no package, `--tag` or `--index` beside it
+$ heroes add --path ../local/other --tag v1 -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `--path` names the package's folder, so `add` takes no package, `--tag` or `--index` beside it
+$ heroes add --path ../local/other --index file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `--path` names the package's folder, so `add` takes no package, `--tag` or `--index` beside it
+$ heroes add --path ../local/nothere -C <work>/app
+exit 1
+stdout:
+stderr:
+error[absent]: there is no folder `<work>/app/../local/nothere`
+$ heroes add --path ../local/other --as yaml -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: the catalogue's entry `yaml` is the folder `../local/yaml`, another package than the folder `../local/other`: name the new one with `--as`
+$ heroes add file://../git/yaml -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: a git source is added at a tag: `heroes add file://../git/yaml --tag v1.0.0`
+$ heroes add file://../git/yaml --tag v1 --index file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `--index` names where a package is read by its name, and a git address names its own source
+$ heroes add json --tag v1 -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: a package from the index keeps the index's name and has no tag: `heroes add json` or `heroes add json@1.4.2`
+$ heroes add json --as j -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: a package from the index keeps the index's name and has no tag: `heroes add json` or `heroes add json@1.4.2`
+$ heroes add json --index file://../idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: the catalogue reads the index `file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx`, and `--index` names `file://../idx`: a program reads one index, which its catalogue's `index` line names
+$ heroes add json@1.4 -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `1.4` is no version: a version is exact, three numbers with no leading zero, `1.4.2`
+$ heroes add json@01.4.2 -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `01.4.2` is no version: a version is exact, three numbers with no leading zero, `1.4.2`
+$ heroes add json yaml -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `add` adds one package at a time, and was given two, `json` and `yaml`: run `heroes add` once for each
+$ heroes add json --bogus -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `add` does not accept `--bogus` — it accepts --tag, --path, --as, --index, -C
+$ heroes fetch --tag v1 -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `fetch` does not accept `--tag` — it accepts -C
+$ heroes fetch -C <work>/nothere
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `-C <work>/nothere` names no folder on this machine
+$ heroes add json -C <work>/app/heroes.toml
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `-C <work>/app/heroes.toml` names no folder on this machine
+heroes.toml:
+# Task 2312: what `heroes add` refuses in its own words and flags, each
+# refused before anything is placed or written, the catalogue left as it was.
+index = "file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx"
+
+[dependencies.yaml]
+path = "../local/yaml"
+heroes.packages:
+(none)

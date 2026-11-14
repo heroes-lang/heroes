@@ -1,0 +1,7 @@
+add file://../git/yaml --tag vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv -C <work>/app
+add file://../git/yaml --tag a//b -C <work>/app
+add file://../git/yaml --tag v1/ -C <work>/app
+add file://../git/yaml --tag v1.lock -C <work>/app
+add file://../git/yaml --tag v~1 -C <work>/app
+add file://../git/yaml --tag .v1 -C <work>/app
+add file://../git/notags --tag v1 -C <work>/app

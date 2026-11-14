@@ -1,0 +1,15 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:7: error[sum_mismatch]: the tree of `yaml`, `file://../git/yaml` at `v0.3.1`, sums to `sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207`, and the catalogue's `sum` for it is `sha256-0000000000000000000000000000000000000000000000000000000000000000`: the package is not the one its entry was written for, and nothing was placed
+heroes.toml:
+# Task 2312: the entry's commit is the one its tag names, and its `sum` is not
+# the tree's, so the tree is fetched, refused, and nothing is placed.
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-0000000000000000000000000000000000000000000000000000000000000000"  #~ sum_mismatch
+heroes.packages:
+(none)

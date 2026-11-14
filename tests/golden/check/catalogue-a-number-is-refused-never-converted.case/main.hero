@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R5, R19): a `version` written as a bare number,
+# refused and never converted, as `version = 2.1.0` is. The catalogue does
+# not read, so it names no package, and the `use` that reaches through it is
+# refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

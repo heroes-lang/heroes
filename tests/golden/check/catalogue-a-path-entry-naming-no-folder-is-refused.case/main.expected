@@ -1,0 +1,1 @@
+tests/golden/check/catalogue-a-path-entry-naming-no-folder-is-refused.case/main.hero:5:5: error[package_unread]: `<json>` cannot be read: the folder `tests/golden/check/catalogue-a-path-entry-naming-no-folder-is-refused.case/vendor/json/` its `path` names is not there

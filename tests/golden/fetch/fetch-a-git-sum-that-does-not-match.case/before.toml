@@ -1,0 +1,7 @@
+# Task 2312: the entry's commit is the one its tag names, and its `sum` is not
+# the tree's, so the tree is fetched, refused, and nothing is placed.
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-0000000000000000000000000000000000000000000000000000000000000000"  #~ sum_mismatch

@@ -1,0 +1,4 @@
+use <gamma>/g
+
+function one() -> i64
+    return g.two()

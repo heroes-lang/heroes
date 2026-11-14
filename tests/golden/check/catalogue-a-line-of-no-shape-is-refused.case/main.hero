@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R5, R19): a line of the catalogue that is neither a
+# table, a key with its quoted value, a comment nor blank, here a bare word.
+# The catalogue does not read, so it names no package, and the `use` that
+# reaches through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

@@ -1,0 +1,17 @@
+add --path ../local/other yaml -C <work>/app
+add --path ../local/other --tag v1 -C <work>/app
+add --path ../local/other --index file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx -C <work>/app
+add --path ../local/nothere -C <work>/app
+add --path ../local/other --as yaml -C <work>/app
+add file://../git/yaml -C <work>/app
+add file://../git/yaml --tag v1 --index file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx -C <work>/app
+add json --tag v1 -C <work>/app
+add json --as j -C <work>/app
+add json --index file://../idx -C <work>/app
+add json@1.4 -C <work>/app
+add json@01.4.2 -C <work>/app
+add json yaml -C <work>/app
+add json --bogus -C <work>/app
+fetch --tag v1 -C <work>/app
+fetch -C <work>/nothere
+add json -C <work>/app/heroes.toml

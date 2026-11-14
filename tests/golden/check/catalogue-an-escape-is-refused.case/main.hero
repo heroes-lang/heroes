@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R5, R19): an escape inside a value, `\u0032`, which
+# the catalogue's strings never hold. The catalogue does not read, so it
+# names no package, and the `use` that reaches through it is refused at its
+# line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

@@ -1,0 +1,16 @@
+$ heroes add yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: the catalogue of `yaml` names the index's `strings` at 1.0.0 with another sum than the build holds for it, `sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06`: one version is one tree, and two sums for it mean one of them is not the tree it names
+heroes.toml:
+# Task 2312: the program holds `strings` 1.0.0 at the index's sum, and the
+# catalogue of `yaml`, which `heroes add` is asked for, names `strings`
+# 1.0.0 with another sum: one version is one tree, so the add is refused.
+index = "file://../../../../../tests/golden/fetch/add-a-requirement-of-one-version-with-another-sum.case/idx"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06"
+heroes.packages:
+(none)

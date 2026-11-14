@@ -1,0 +1,8 @@
+# Task 2312 (panel 235's R3, R19): two entries naming one folder, one package
+# under two names, where a program holds one version of each package under
+# one name. The catalogue does not read, so it names no package, and the
+# `use` that reaches through it is refused at its line.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())

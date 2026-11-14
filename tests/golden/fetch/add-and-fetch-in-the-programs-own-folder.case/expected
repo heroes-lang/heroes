@@ -1,0 +1,19 @@
+$ cd <work>/app && heroes add json --index file://../../../../../tests/golden/fetch/add-and-fetch-in-the-programs-own-folder.case/idx
+exit 0
+stdout:
+added json 1.4.2
+wrote heroes.toml
+stderr:
+$ cd <work>/app && heroes fetch
+exit 0
+stdout:
+kept json 1.4.2 heroes.packages/json@1.4.2-2569dc470205ec99
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/add-and-fetch-in-the-programs-own-folder.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-88ed723d8c92c5d15dcbbbc763a54a2efcfcc333452c3f4e1d065235780499b8"
+heroes.packages:
+json@1.4.2-2569dc470205ec99
