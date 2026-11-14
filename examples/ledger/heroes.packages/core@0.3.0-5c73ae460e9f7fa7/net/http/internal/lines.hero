@@ -1,0 +1,173 @@
+# The line reader `net/http` reads a message with: its head read up to the
+# blank line that ends it, and its body read to a count, from a connection and
+# the bytes `held` that an earlier read took past what it was asked for. A
+# read takes up to 4 KiB, so a head arrives in few reads and a request the
+# client sent behind another is kept, never dropped.
+#
+# It stands here until a second program earns an `io` package, Go's `bufio`,
+# which would be its home.
+
+use net
+use strings
+
+# The most a head may be, its first line and its header: 64 KiB, past which a
+# message is malformed rather than read into memory.
+constant HEAD_MOST: i64
+    65536
+
+# A message's head as read: its first line and each header line after it,
+# every one without its end.
+record Head
+    first: str
+    lines: [str]
+
+# Where a blank line ends a head: the head's bytes run to `ends`, and the next
+# message's begin at `past`; both 0 where no blank line stands there yet.
+record Blank
+    ends: i64
+    past: i64
+
+# The next head on `c`, the bytes `held` taken first, the bytes past it kept in
+# `held`. Line ends before the first line are passed over (RFC 9112 § 2.2).
+# Where the peer closes, or the program is asked to stop, before any byte of a
+# head, the failure is `net`'s own, `closed` or `stopped`; where it closes
+# inside one, or the head is no text or past `HEAD_MOST`, it is `malformed`.
+function head(c: net.Conn, @held: [u8]) -> Head?
+    scanned: i64 @= 0
+
+    while true
+        while held.len() > 0 && (held[0] == '\r' || held[0] == '\n')
+            held @ held.slice(from: 1, to: held.len())
+
+        at = blank_at(bytes: held, from: scanned)
+
+        if at.past > 0
+            text = held.slice(from: 0, to: at.ends).validated_bytes()
+            held @ held.slice(from: at.past, to: held.len())
+
+            if text.is_err()
+                return fail(code: "malformed", msg: "the head is not UTF-8 text")
+            rows = strings.split_lines(text.must())
+            return ok(Head(first: rows[0], lines: rows.slice(from: 1, to: rows.len())))
+
+        if held.len() > HEAD_MOST
+            return fail(code: "malformed", msg: "the head runs past the 64 KiB it may be")
+
+        if held.len() > 3
+            scanned @ held.len() - 3
+        more = net.read(c, most: 4096)
+
+        if held.len() > 0 && code_of(more) == net.CLOSED
+            return fail(code: "malformed", msg: f"the connection closed {held.len()} bytes into a head")
+
+        for b in more?
+            held @ held.push(b)
+
+# The next `count` bytes of a body on `c`, the bytes `held` taken first, the
+# rest left in `held`; it never reads past them. Where the peer closes first it
+# is `malformed`.
+function body(c: net.Conn, @held: [u8], count: i64) -> [u8]?
+    while held.len() < count
+        more = net.read(c, most: count - held.len())
+
+        if code_of(more) == net.CLOSED
+            return fail(code: "malformed", msg: f"the connection closed {held.len()} bytes into a body of {count}")
+
+        for b in more?
+            held @ held.push(b)
+
+    out = held.slice(from: 0, to: count)
+    held @ held.slice(from: count, to: held.len())
+    return ok(out)
+
+# Where the first blank line of `bytes` at or after `from` ends a head: a line
+# feed followed by another, or by a carriage return and a line feed. A head is
+# never empty, the line ends before one being passed over first, so a blank
+# line found ends a head past its first byte, and `past` 0 says none stands
+# there yet; a search for one is no failure.
+function blank_at(bytes: [u8], from: i64) -> Blank
+    at: i64 @= from
+
+    while at + 1 < bytes.len()
+        if bytes[at] == '\n'
+            if bytes[at + 1] == '\n'
+                return Blank(ends: at + 1, past: at + 2)
+
+            if at + 2 < bytes.len() && bytes[at + 1] == '\r' && bytes[at + 2] == '\n'
+                return Blank(ends: at + 1, past: at + 3)
+        at @ at + 1
+
+    return Blank(ends: 0, past: 0)
+
+# The code of a failure, or "" where `got` holds a value.
+function code_of<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.code
+
+# The words of a failure, or "" where `got` holds a value.
+function message_of<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+## Tests
+
+test "blank_at: a head ended by CRLF CRLF or by LF LF, and none yet"
+    crlf = "GET / HTTP/1.1\r\nHost: x\r\n\r\nbody"
+    bytes: [u8] @= []
+
+    for at in range(from: 0, to: crlf.len())
+        bytes @ bytes.push(crlf[at])
+
+    found = blank_at(bytes: bytes, from: 0)
+    assert found.ends == 25 && found.past == 27
+    assert blank_at(bytes: bytes, from: 26).past == 0
+    assert blank_at(bytes: [97, 10, 10, 98], from: 0).past == 3
+    assert blank_at(bytes: [97, 13, 10, 98], from: 0).past == 0
+    nothing: [u8] = []
+    assert blank_at(bytes: nothing, from: 0).past == 0
+
+test "code_of and message_of: a failure's code and words, and none for a value"
+    read: [u8]? = ok([1])
+    assert code_of(read) == "" && message_of(read) == ""
+    refused: [u8]? = fail(code: "closed", msg: "m")
+    assert code_of(refused) == "closed" && message_of(refused) == "m"
+
+test "head and body over a connection: two messages one after another, the second's bytes kept"
+    listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    server @= net.accept(listener).must()
+    sent = "\r\nPOST /a HTTP/1.1\r\nContent-Length: 3\r\n\r\nxyzGET /b HTTP/1.1\n\n"
+    bytes: [u8] @= []
+
+    for at in range(from: 0, to: sent.len())
+        bytes @ bytes.push(sent[at])
+
+    net.write(client, data: bytes).must()
+    held: [u8] @= []
+    first = head(server, @held).must()
+    assert first.first == "POST /a HTTP/1.1" && first.lines == ["Content-Length: 3"]
+    assert body(server, @held, count: 3).must() == [120, 121, 122]
+    second = head(server, @held).must()
+    assert second.first == "GET /b HTTP/1.1" && second.lines.len() == 0
+    assert held.len() == 0
+    net.write(client, data: [71, 69]).must()
+    net.close(@client)
+
+    match head(server, @held)
+        .ok _  => assert false
+        .err e => assert e.code == "malformed" && e.msg == "the connection closed 2 bytes into a head"
+
+    nothing: [u8] @= []
+
+    match head(server, @nothing)
+        .ok _  => assert false
+        .err e => assert e.code == net.CLOSED
+
+    match body(server, @nothing, count: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "malformed"
+
+    net.close(@server)
+    net.close_listener(@listener)
