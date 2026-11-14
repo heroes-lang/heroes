@@ -208,6 +208,17 @@ published version is never edited, so a package's change never breaks a
 program's build: it reaches a program only when the program fetches the new
 version.
 
+Nor do the older versions of `core` stay in the index while `core` is below
+`1.0.0`: every program here is moved to the newest version and the older
+versions are removed (§ 10's steps 5 and 6, the author's decision of
+2026-11-14). A program elsewhere that holds a removed version still builds
+and runs, since its tree is placed in its own folder and held to its own
+`sum`, and `heroes fetch` says `kept`; what it can no longer do is place that
+tree anew, on another machine or after the folder is deleted: `heroes fetch`
+answers *the index `file://../../packages` serves no core 0.2.1*, exit 1, and
+`heroes add core` moves it to the newest version (measured 2026-11-14 on a
+copy of `examples/ini` at 0.2.1 beside an index holding 0.3.0 alone).
+
 ## 10. Publishing a version, and working on one
 
 **The index's layout** is the one `selfhost/fetch/index_source.hero` reads,
@@ -218,15 +229,18 @@ check):
     packages/<name>/<version>/list           the listing the sum is taken over
     packages/<name>/<version>/files/<path>   each file of the package
 
-**A version is published in five steps**, the way `packages/core/` holds its
-three:
+**A version is published in five steps**, the way every version of
+`packages/core/` was, and while `core` is below `1.0.0` a sixth takes the
+older ones away:
 
 1. **A new folder.** Copy the newest version's `files/` to
    `packages/core/<version>/files/` and make the change there. A version is
    three numbers with no leading zero, `0.2.1`, never `v0.2.1` or `0.3`
    (`selfhost/module/sums.hero`, `version_shape`). No file of a version
-   `versions` already lists is ever touched: `git log -p --follow --
-   packages/core/versions` shows the file only gaining lines.
+   `versions` lists is ever touched: a version leaves the index whole, its
+   folder and its line together, by step 6 and by nothing else, so `git log -p
+   --follow -- packages/core/versions` shows the file gaining one line per
+   version published and losing lines only in step 6's commits.
 2. **The cards.** `heroes run tests/harness/package_cards.hero -- write`, from
    the repository's root, writes each face's card, `<path>.md` beside its
    `<path>.hero`, into the newest version folder of `core`, and judges them
@@ -243,10 +257,23 @@ three:
    catalogue as `sum`, and what `heroes fetch` holds the listing to before it
    asks for any file; each file it copies is then held to its own line of the
    listing, and a file that differs places nothing.
-5. **The programs move** by `heroes add core`, `main.hero`'s folder first,
-   since the `packages` suite's `reach` check asks that the driver hold the
-   newest version; then the suite judges the index, every placed tree, the
-   driver's reach and tests, and the cards.
+5. **Every program moves**, by `heroes add core` in its folder: `main.hero`'s
+   first, since the `packages` suite's `reach` check asks that the driver hold
+   the newest version, then every other program of `examples/` whose
+   catalogue names `core`, and the net's own, `tests/harness/`. None stays
+   behind while `core` is below `1.0.0` (the author's decision of 2026-11-14,
+   meant as: *until `core` reaches 1.0.0, every program is always moved to the
+   newest version, and the older versions of `core` are removed*). The verb
+   writes the entry and places the new tree, and leaves the old one where it
+   stood (`changed core 0.2.1 -> 0.3.0`, measured 2026-11-14 on fourteen
+   programs); once `diff -r` finds it the published files of its version byte
+   for byte, it is removed with `git rm -r`, since no verb removes it and the
+   `packages` suite refuses a tree no entry names.
+6. **The older versions removed**, while `core` is below `1.0.0`, by the same
+   decision and only once step 5 has left no program holding one: each older
+   version's folder by `git rm -r` and its line of `versions`, in one commit,
+   so the index publishes the newest version alone. Then the suite judges the
+   index, every placed tree, the driver's reach and tests, and the cards.
 
 Steps 3 and 4, run in `packages/core/<version>/`; on 2026-11-10 they rebuilt
 every `list` and the whole `versions` of `core` 0.1.0, 0.2.0 and 0.2.1 byte for
@@ -297,7 +324,8 @@ the published version, take the entry out of the catalogue and `heroes add` the
 package again: over a catalogue whose `core` is a folder, `heroes add core` is
 refused, *another package than the index's `core`*, exit 2. A `path` entry is
 the one source no fingerprint holds, and the `packages` suite's `placed` check
-asks every catalogue under `examples/` to name versions the index publishes.
+asks every catalogue under `examples/`, and the net's own in
+`tests/harness/`, to name versions the index publishes.
 
 **A git tag, once a version names it, never moves.** `heroes add <address>
 --tag v1.0.0` records beside the tag the commit it names, and `heroes fetch`
@@ -324,6 +352,9 @@ the packages live and how a program names and reaches them, § 1's rules 1,
 3, 4 and 6, are panel 235's (R1, R4, R7, R15 and R16), ratified 2026-11-07 (decision
 [2329](https://github.com/heroes-lang/heroes/issues/2329)), which amended panel
 234's R2: until then each program carried a copy under its own `core/`, held
-byte for byte to a canonical tree here, and named it `use core/strings`. A
+byte for byte to a canonical tree here, and named it `use core/strings`. § 9's
+second paragraph and § 10's steps 5 and 6, every program moved to the newest
+version of `core` and the older versions removed until `core` reaches `1.0.0`,
+are the author's decision of 2026-11-14. A
 package that breaks a rule here has a defect; a rule that turns out wrong is
 changed here first, with its date.
