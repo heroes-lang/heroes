@@ -70,7 +70,7 @@ sum = "sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811"<
     Nobody types the catalogue: <code>heroes add</code> writes it. The sum is sixty-four digits and letters after its <code>sha256-</code>, which nobody can write from memory, so an entry written by hand, by a person or by a model, has no sum to put in it, and the sitting had the specification name the command for that reason.
   </p>
   <p>
-    The format is TOML, a small format for files of settings that Rust&rsquo;s Cargo and Python&rsquo;s <code>pyproject.toml</code> use too, read here as a strict subset. Every value is a string between double quotes, so <code>version = 0.2.1</code> written bare is refused at its line and never read as a number. The file is read whole or not at all: a mistake on any line names no package, the lines above it included. And reading it runs no code. The sitting is plain about what it did not show: in its test with language models every format did equally well, because the models copied the example they were given. TOML was chosen for its comments, its named keys, its strictness and its being familiar from Cargo, and not because models write it better.
+    The format is TOML, a small format for files of settings that Rust&rsquo;s Cargo and Python&rsquo;s <code>pyproject.toml</code> use too, read here as a strict subset. Every value is a string between double quotes, so <code>version = 0.3.0</code> written bare is refused at its line and never read as a number. The file is read whole or not at all: a mistake on any line names no package, the lines above it included. And reading it runs no code. The sitting is plain about what it did not show: in its test with language models every format did equally well, because the models copied the example they were given. TOML was chosen for its comments, its named keys, its strictness and its being familiar from Cargo, and not because models write it better.
   </p>
 
   <h3>Mine and fetched: the angle brackets</h3>
@@ -116,7 +116,7 @@ core@0.3.0-5c73ae460e9f7fa7</code></pre>
   </p>
 
   <h3>Inside a package, a <code>use</code> starts at its own root</h3>
-  <figure class="example" data-src="packages/core/0.2.1/files/strings.hero" data-lines="1-8">
+  <figure class="example" data-src="packages/core/0.3.0/files/strings.hero" data-lines="1-8">
 <pre><code># Text searched, trimmed and split, never cutting a character in two: every
 # position a function here cuts at is a character's first byte, so none aborts
 # on a text a program reads from outside. A function keeps Go's name where its
@@ -125,7 +125,7 @@ core@0.3.0-5c73ae460e9f7fa7</code></pre>
 # of this file).
 
 use strings/internal/scan</code></pre>
-    <figcaption>packages/core/0.2.1/files/strings.hero, lines 1&ndash;8</figcaption>
+    <figcaption>packages/core/0.3.0/files/strings.hero, lines 1&ndash;8</figcaption>
   </figure>
   <p>
     This is the top of <code>core</code>&rsquo;s <code>strings.hero</code>. Its <code>use strings/internal/scan</code> does not start at your program&rsquo;s root, where there is no <code>strings/</code> folder: inside a package, a <code>use</code> starts at the package&rsquo;s own root, and a <code>use</code> with brackets names an entry of the package&rsquo;s own catalogue.
@@ -153,16 +153,16 @@ use strings/internal/scan</code></pre>
 
   <h3>The fingerprint</h3>
   <p>
-    Each version an index publishes has a list: one line per file, the file&rsquo;s SHA-256 and its name, sorted by name. SHA-256 is a standard recipe that turns any bytes into sixty-four hexadecimal digits, and into entirely different ones if a single byte changes. Six lines of <code>core</code> 0.2.1&rsquo;s list:
+    Each version an index publishes has a list: one line per file, the file&rsquo;s SHA-256 and its name, sorted by name. SHA-256 is a standard recipe that turns any bytes into sixty-four hexadecimal digits, and into entirely different ones if a single byte changes. Six lines of <code>core</code> 0.3.0&rsquo;s list:
   </p>
-  <figure class="example" data-src="packages/core/0.2.1/list" data-lines="10-15">
+  <figure class="example" data-src="packages/core/0.3.0/list" data-lines="21-26">
 <pre><code>891da4a53219bde785b10da4051b0e14e09a7dbe99e1288f669bed2df5f5e74f  strconv.hero
 a3455e343539decafda988898b8b94658bb6dc647597cf110180d4e158088b05  strconv.md
 d8bca85c8e97f6747fd7106c639af0975a78529929eb9ec0f217b0fec7821395  strconv/internal/shown.hero
 cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
 39762eaa9819cffda30ae2f310bf7b04fd05b54610ecdedd0c2817be1f15765a  strings.md
 3a1b953c9bcee1da8b1881fcfb735443e58c1c2c7f365d2fdcb5f03998b82fbd  strings/internal/scan.hero</code></pre>
-    <figcaption>packages/core/0.2.1/list, lines 10&ndash;15</figcaption>
+    <figcaption>packages/core/0.3.0/list, lines 21&ndash;26</figcaption>
   </figure>
   <p>
     The SHA-256 of the list is the version&rsquo;s fingerprint. The index keeps one line per version in a file called <code>versions</code>, and the catalogue&rsquo;s <code>sum</code> repeats the line of the version it holds:

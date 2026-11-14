@@ -70,7 +70,7 @@ sum = "sha256-54d89aebb5a66bd61bd57ba0e3e3cc6b826e0ed9f0bddcebfd4671e1730d3811"<
     Il catalogo non lo scrive nessuno a mano: lo scrive <code>heroes add</code>. La <code>sum</code> è fatta di sessantaquattro cifre e lettere dopo il suo <code>sha256-</code>, che nessuno può ricordare, quindi una voce scritta a mano, da una persona o da un modello, non ha una <code>sum</code> da metterci; per questo la seduta ha voluto che la specifica nominasse il comando.
   </p>
   <p>
-    Il formato è TOML, un piccolo formato per file di impostazioni che usano anche Cargo di Rust e il <code>pyproject.toml</code> di Python, letto qui come un sottoinsieme rigido. Ogni valore è una stringa tra virgolette doppie, quindi <code>version = 0.2.1</code> scritto senza virgolette viene rifiutato alla sua riga e mai letto come un numero. Il file si legge tutto o niente: un errore su una riga qualsiasi non nomina nessun pacchetto, nemmeno quelli delle righe sopra. E leggerlo non esegue codice. La seduta dice chiaro che cosa non ha dimostrato: nella sua prova con i modelli linguistici tutti i formati sono andati allo stesso modo, perché i modelli copiavano l&rsquo;esempio che avevano davanti. TOML è stato scelto per i commenti, per le chiavi che danno un nome a ogni valore, per la rigidità e perché chi usa Cargo lo conosce già, non perché i modelli lo scrivano meglio.
+    Il formato è TOML, un piccolo formato per file di impostazioni che usano anche Cargo di Rust e il <code>pyproject.toml</code> di Python, letto qui come un sottoinsieme rigido. Ogni valore è una stringa tra virgolette doppie, quindi <code>version = 0.3.0</code> scritto senza virgolette viene rifiutato alla sua riga e mai letto come un numero. Il file si legge tutto o niente: un errore su una riga qualsiasi non nomina nessun pacchetto, nemmeno quelli delle righe sopra. E leggerlo non esegue codice. La seduta dice chiaro che cosa non ha dimostrato: nella sua prova con i modelli linguistici tutti i formati sono andati allo stesso modo, perché i modelli copiavano l&rsquo;esempio che avevano davanti. TOML è stato scelto per i commenti, per le chiavi che danno un nome a ogni valore, per la rigidità e perché chi usa Cargo lo conosce già, non perché i modelli lo scrivano meglio.
   </p>
 
   <h3>Il mio e lo scaricato: le parentesi angolari</h3>
@@ -116,7 +116,7 @@ core@0.3.0-5c73ae460e9f7fa7</code></pre>
   </p>
 
   <h3>Dentro un pacchetto, un <code>use</code> parte dalla sua radice</h3>
-  <figure class="example" data-src="packages/core/0.2.1/files/strings.hero" data-lines="1-8">
+  <figure class="example" data-src="packages/core/0.3.0/files/strings.hero" data-lines="1-8">
 <pre><code># Text searched, trimmed and split, never cutting a character in two: every
 # position a function here cuts at is a character's first byte, so none aborts
 # on a text a program reads from outside. A function keeps Go's name where its
@@ -125,7 +125,7 @@ core@0.3.0-5c73ae460e9f7fa7</code></pre>
 # of this file).
 
 use strings/internal/scan</code></pre>
-    <figcaption>packages/core/0.2.1/files/strings.hero, righe 1&ndash;8</figcaption>
+    <figcaption>packages/core/0.3.0/files/strings.hero, righe 1&ndash;8</figcaption>
   </figure>
   <p>
     Questo è l&rsquo;inizio di <code>strings.hero</code> di <code>core</code>. Il suo <code>use strings/internal/scan</code> non parte dalla radice del tuo programma, dove una cartella <code>strings/</code> non c&rsquo;è: dentro un pacchetto un <code>use</code> parte dalla radice del pacchetto, e un <code>use</code> con le parentesi nomina una voce del catalogo del pacchetto stesso.
@@ -153,16 +153,16 @@ use strings/internal/scan</code></pre>
 
   <h3>L&rsquo;impronta</h3>
   <p>
-    Ogni versione che un indice pubblica ha una lista: una riga per file, con lo SHA-256 del file e il suo nome, in ordine di nome. SHA-256 è una ricetta standard che trasforma qualsiasi sequenza di byte in sessantaquattro cifre esadecimali, e in cifre del tutto diverse se cambia anche un solo byte. Sei righe della lista di <code>core</code> 0.2.1:
+    Ogni versione che un indice pubblica ha una lista: una riga per file, con lo SHA-256 del file e il suo nome, in ordine di nome. SHA-256 è una ricetta standard che trasforma qualsiasi sequenza di byte in sessantaquattro cifre esadecimali, e in cifre del tutto diverse se cambia anche un solo byte. Sei righe della lista di <code>core</code> 0.3.0:
   </p>
-  <figure class="example" data-src="packages/core/0.2.1/list" data-lines="10-15">
+  <figure class="example" data-src="packages/core/0.3.0/list" data-lines="21-26">
 <pre><code>891da4a53219bde785b10da4051b0e14e09a7dbe99e1288f669bed2df5f5e74f  strconv.hero
 a3455e343539decafda988898b8b94658bb6dc647597cf110180d4e158088b05  strconv.md
 d8bca85c8e97f6747fd7106c639af0975a78529929eb9ec0f217b0fec7821395  strconv/internal/shown.hero
 cac66ea67a60021e26f957665a2834a8a47952eb504523854946446bf16c297a  strings.hero
 39762eaa9819cffda30ae2f310bf7b04fd05b54610ecdedd0c2817be1f15765a  strings.md
 3a1b953c9bcee1da8b1881fcfb735443e58c1c2c7f365d2fdcb5f03998b82fbd  strings/internal/scan.hero</code></pre>
-    <figcaption>packages/core/0.2.1/list, righe 10&ndash;15</figcaption>
+    <figcaption>packages/core/0.3.0/list, righe 21&ndash;26</figcaption>
   </figure>
   <p>
     Lo SHA-256 della lista è l&rsquo;impronta della versione. L&rsquo;indice tiene una riga per versione in un file che si chiama <code>versions</code>, e la <code>sum</code> del catalogo ripete la riga della versione che contiene:
