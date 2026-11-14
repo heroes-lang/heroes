@@ -242,7 +242,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("23c6bef033bc676d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("56b4eb73210234fb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("sugarnamedargs\tsugar-named-args\n");

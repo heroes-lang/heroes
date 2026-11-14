@@ -328,7 +328,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("75ec63b154025434", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28da9035414821c2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("inoutthroughpathsofacell\tinout-through-paths-of-a-cell\n");

@@ -318,7 +318,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d7c6b6812b03b47", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("606a97eb7ff608d4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue\tfixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value\n");

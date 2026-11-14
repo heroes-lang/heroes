@@ -360,7 +360,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("279475950b563b0c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a82a218789c0899", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffireadbackacstr\tffi-read-back-a-cstr\n");

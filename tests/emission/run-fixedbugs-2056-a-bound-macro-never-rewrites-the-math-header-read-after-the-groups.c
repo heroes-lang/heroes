@@ -274,7 +274,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ee27aab7d2fcfdc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("31d0a72f6a759d6a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups\tfixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups\n");

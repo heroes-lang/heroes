@@ -282,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ac551b031f37f16", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0db37e341f394ca4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2395anamelibmdefinesboundwithnolinkbesidelinkmbuildssanitised\tfixedbugs-2395-a-name-libm-defines-bound-with-no-link-beside-link-m-builds-sanitised\n");

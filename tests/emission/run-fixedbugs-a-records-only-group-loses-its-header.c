@@ -305,7 +305,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d8a37140f49fb64", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("207863987c8fc8f1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsarecordsonlygrouplosesitsheader\tfixedbugs-a-records-only-group-loses-its-header\n");

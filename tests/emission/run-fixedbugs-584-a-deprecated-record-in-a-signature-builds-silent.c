@@ -283,7 +283,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("490c2d66700f4f9e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7bfa59e95d551d2c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs584adeprecatedrecordinasignaturebuildssilent\tfixedbugs-584-a-deprecated-record-in-a-signature-builds-silent\n");

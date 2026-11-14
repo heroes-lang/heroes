@@ -506,7 +506,7 @@ typedef struct h_0opt_187c932 {
 #line 39 "examples/server/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_spawn(h_0fn_65e16c85 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
-#line 35 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 35 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_1corenetheronet_hero_net_listen(const char * a0, int64_t a1) { (void)(hero_net_listen)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_1corenetheronet_hero_net_connect(const char * a0, int64_t a1) { (void)(hero_net_connect)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_1corenetheronet_hero_net_accept(hero_net_socket * a0) { (void)(hero_net_accept)(a0); }
@@ -1257,7 +1257,7 @@ int64_t h_0cb_main_client(int64_t h0_port) {
     return hero_result;
 }
 
-#line 21 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 21 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_INVALID(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_548c1373);
 #line 1264 "main.c"
@@ -1265,7 +1265,7 @@ HeroStr h_1corenet_INVALID(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
     return t1;
 }
 
-#line 25 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 25 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_NOT_OPEN(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_33b99a32);
 #line 1272 "main.c"
@@ -1273,7 +1273,7 @@ HeroStr h_1corenet_NOT_OPEN(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; go
     return t1;
 }
 
-#line 29 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 29 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_ADDRESS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_221a7d73);
 #line 1280 "main.c"
@@ -1281,7 +1281,7 @@ HeroStr h_1corenet_ADDRESS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
     return t1;
 }
 
-#line 33 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 33 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_IN_USE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4100fb46);
 #line 1288 "main.c"
@@ -1289,7 +1289,7 @@ HeroStr h_1corenet_IN_USE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto
     return t1;
 }
 
-#line 37 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 37 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_REFUSED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4101b761);
 #line 1296 "main.c"
@@ -1297,7 +1297,7 @@ HeroStr h_1corenet_REFUSED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
     return t1;
 }
 
-#line 41 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 41 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_RESET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5ec21f76);
 #line 1304 "main.c"
@@ -1305,7 +1305,7 @@ HeroStr h_1corenet_RESET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto 
     return t1;
 }
 
-#line 46 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 46 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_TIMED_OUT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1303ef7);
 #line 1312 "main.c"
@@ -1313,7 +1313,7 @@ HeroStr h_1corenet_TIMED_OUT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; g
     return t1;
 }
 
-#line 50 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 50 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_UNREACHABLE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_187ae0ee);
 #line 1320 "main.c"
@@ -1321,7 +1321,7 @@ HeroStr h_1corenet_UNREACHABLE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
     return t1;
 }
 
-#line 54 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 54 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_LIMIT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_75f77fd1);
 #line 1328 "main.c"
@@ -1329,7 +1329,7 @@ HeroStr h_1corenet_LIMIT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto 
     return t1;
 }
 
-#line 58 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 58 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_DENIED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3b6f7951);
 #line 1336 "main.c"
@@ -1337,7 +1337,7 @@ HeroStr h_1corenet_DENIED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto
     return t1;
 }
 
-#line 62 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 62 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_OTHER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_2c18a733);
 #line 1344 "main.c"
@@ -1345,7 +1345,7 @@ HeroStr h_1corenet_OTHER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto 
     return t1;
 }
 
-#line 67 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 67 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_STOPPED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4fc3e4ee);
 #line 1352 "main.c"
@@ -1353,7 +1353,7 @@ HeroStr h_1corenet_STOPPED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
     return t1;
 }
 
-#line 72 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 72 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 HeroStr h_1corenet_CLOSED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3af015f9);
 #line 1360 "main.c"
@@ -1361,7 +1361,7 @@ HeroStr h_1corenet_CLOSED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto
     return t1;
 }
 
-#line 87 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 87 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_157a2e20 h_1corenet_listen(HeroStr h0_host, int64_t h1_port) { HeroStr h2_asked = {0}; hero_net_socket * h3_s; HERO_NODEBUG h_0opt_157a2e20 h4_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t12, t20, t23, t24, t30, t31, t32; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t4, t5, t6, t8, t9, t10, t11, t13, t19, t25, t26, t27, t28, t29; HERO_NODEBUG int64_t t3, t14; HERO_NODEBUG bool t7, t18; HERO_NODEBUG hero_net_socket *t15, *t16, *t17, *t21; HERO_NODEBUG h_1corenet_Listener t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_55b680dc); t2 = h0_host; t3 = h1_port; t4 = h_1corenetinternalfailure_place(t2, t3); t25 = h5_own5; h5_own5 = t4; hero_str_decref(t25); t5 = hero_str_concat(t1, t4); t26 = h6_own6; h6_own6 = t5; hero_str_decref(t26); t27 = h2_asked; hero_str_incref(t5); h2_asked = t5; hero_str_decref(t27);
 #line 90
@@ -1390,7 +1390,7 @@ h_0opt_157a2e20 h_1corenet_listen(HeroStr h0_host, int64_t h1_port) { HeroStr h2
     return t24;
 }
 
-#line 100 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 100 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_e201354 h_1corenet_port_of(h_1corenet_Listener h0_listener) { int64_t h1_port; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t7, t9, t10, t11, t12; HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG int64_t t2, t3, t4, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_listener.f_socket; t2 = h_1corenetheronet_port_of(t1); h1_port = t2;
 #line 103
@@ -1407,7 +1407,7 @@ h_0opt_e201354 h_1corenet_port_of(h_1corenet_Listener h0_listener) { int64_t h1_
     return t10;
 }
 
-#line 110 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 110 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_6d20ca90 h_1corenet_accept(h_1corenet_Listener h0_listener) { hero_net_socket * h1_s; HERO_NODEBUG h_0opt_6d20ca90 h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t7, t10, t11, t12, t13; HERO_NODEBUG hero_net_socket *t1, *t2, *t3, *t4, *t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_1corenet_Conn t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_listener.f_socket; t2 = h_1corenetheronet_accept(t1); h1_s = t2;
 #line 113
@@ -1424,7 +1424,7 @@ h_0opt_6d20ca90 h_1corenet_accept(h_1corenet_Listener h0_listener) { hero_net_so
     return t11;
 }
 
-#line 119 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 119 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_6d20ca90 h_1corenet_dial(HeroStr h0_host, int64_t h1_port) { HeroStr h2_asked = {0}; hero_net_socket * h3_s; HERO_NODEBUG h_0opt_6d20ca90 h4_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t12, t20, t23, t24, t30, t31, t32; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t4, t5, t6, t8, t9, t10, t11, t13, t19, t25, t26, t27, t28, t29; HERO_NODEBUG int64_t t3, t14; HERO_NODEBUG bool t7, t18; HERO_NODEBUG hero_net_socket *t15, *t16, *t17, *t21; HERO_NODEBUG h_1corenet_Conn t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5f380f1); t2 = h0_host; t3 = h1_port; t4 = h_1corenetinternalfailure_place(t2, t3); t25 = h5_own5; h5_own5 = t4; hero_str_decref(t25); t5 = hero_str_concat(t1, t4); t26 = h6_own6; h6_own6 = t5; hero_str_decref(t26); t27 = h2_asked; hero_str_incref(t5); h2_asked = t5; hero_str_decref(t27);
 #line 122
@@ -1453,7 +1453,7 @@ h_0opt_6d20ca90 h_1corenet_dial(HeroStr h0_host, int64_t h1_port) { HeroStr h2_a
     return t24;
 }
 
-#line 134 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 134 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_4d1c207c h_1corenet_read(h_1corenet_Conn h0_c, int64_t h1_most) { int64_t h2_wanted; HeroArrayHeader * h3_buffer = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}, h13_own13 = {0}, t20, t21, t25, t27, t54, t55; int64_t h5_got; HERO_NODEBUG h_0opt_4d1c207c h6_ret0 = {0}, h11_own11 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, t11, t35, t40, t45, t46, t51, t57, t59, t60; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h14_own14 = {0}, t4, t6, t7, t8, t9, t10, t33, t34, t39, t47, t48, t49, t50, t56; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *h16_own16 = {0}, *t17, *t41, *t44, *t52, *t53, *t58; HERO_NODEBUG int64_t t1, t2, t5, t12, t13, t14, t16, t19, t22, t23, t29, t30, t31, t36, t37, t42, t43; HERO_NODEBUG bool t3, t15, t24, t32, t38; HERO_NODEBUG hero_net_socket *t18; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG uint64_t t28; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_most; t2 = INT64_C(1); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 137
@@ -1477,7 +1477,7 @@ h_0opt_4d1c207c h_1corenet_read(h_1corenet_Conn h0_c, int64_t h1_most) { int64_t
     hero_panic_must_at(t26, "<core>/net.hero", "net.read", 142, 47);
     hero_unreachable();
 bb9:
-#line 147 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 147 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
     t36 = h5_got; t37 = INT64_C(0); t38 = t36 < t37; if (t38) goto bb13; else goto bb14; bb10:
 #line 145
     t33 = h_1corenet_CLOSED(); t56 = h14_own14; h14_own14 = t33; hero_str_decref(t56); t34 = HERO_STR_LIT(hero_str_21bdf90f); hero_str_incref(t33); hero_str_incref(t34); t35 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t34}}; t57 = h15_own15; h15_own15 = t35; h_0opt_4d1c207c_release(&t57); h6_ret0 = t35; goto bb15; bb11: goto bb9; bb12:
@@ -1505,7 +1505,7 @@ bb9:
     return t46;
 }
 
-#line 154 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 154 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_a8ea2 h_1corenet_write(h_1corenet_Conn h0_c, HeroArrayHeader * h1_data) { HeroArrayHeader * h2_rest = {0}; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h6_own6 = {0}, t9, t10, t14, t16, t37, t38; int64_t h4_sent; HERO_NODEBUG h_0opt_a8ea2 h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, t23, t28, t34, t35, t39, t40, t43; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *t1, *t2, *t7, *t25, *t29, *t31, *t33, *t36, *t41, *t42; HERO_NODEBUG int64_t t3, t4, t8, t11, t12, t18, t19, t20, t24, t26, t30, t32; HERO_NODEBUG bool t5, t13, t21, t27; HERO_NODEBUG hero_net_socket *t6; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG uint64_t t17; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_data; t36 = h2_rest; hero_array_incref(t1); h2_rest = t1; hero_array_decref(t36); goto bb1; bb1:
 #line 157
@@ -1523,7 +1523,7 @@ h_0opt_a8ea2 h_1corenet_write(h_1corenet_Conn h0_c, HeroArrayHeader * h1_data) {
     hero_panic_must_at(t15, "<core>/net.hero", "net.write", 158, 50);
     hero_unreachable();
 bb6:
-#line 163 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 163 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
     t24 = h4_sent; t25 = h2_rest; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); t27 = t24 == t26; if (t27) goto bb10; else goto bb11; bb7:
 #line 161
     t22 = HERO_STR_LIT(hero_str_42bb01f2); t23 = h_1corenetinternalfailure_0failed_14a1(t22); t40 = h8_own8; h8_own8 = t23; h_0opt_a8ea2_release(&t40); h5_ret0 = t23; goto bb12; bb8: goto bb6; bb9:
@@ -1544,19 +1544,19 @@ bb6:
     return t35;
 }
 
-#line 172 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 172 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 void h_1corenet_close(h_1corenet_Conn *ph0_c) { HERO_ENTRY_STOP; goto bb0; bb0:
     h_1corenetheronet_close(&(*ph0_c).f_socket); return;
 #line 1551 "main.c"
 }
 
-#line 177 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 177 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 void h_1corenet_close_listener(h_1corenet_Listener *ph0_listener) { HERO_ENTRY_STOP; goto bb0; bb0:
     h_1corenetheronet_close(&(*ph0_listener).f_socket); return;
 #line 1557 "main.c"
 }
 
-#line 186 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 186 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_e201354 h_1corenet_number(h_1corenet_Conn *ph0_c) { int64_t h1_n; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t6, t8, t9, t10, t11; HERO_NODEBUG int64_t t1, t2, t3, t7; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_number(&(*ph0_c).f_socket); h1_n = t1;
 #line 189
@@ -1573,7 +1573,7 @@ h_0opt_e201354 h_1corenet_number(h_1corenet_Conn *ph0_c) { int64_t h1_n; HERO_NO
     return t9;
 }
 
-#line 196 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 196 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_6d20ca90 h_1corenet_of(int64_t h0_n) { hero_net_socket * h1_s; HERO_NODEBUG h_0opt_6d20ca90 h2_ret0 = {0}, h3_own3 = {0}, h6_own6 = {0}, t10, t13, t14, t15, t18; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t7, t8, t9, t16, t17; HERO_NODEBUG int64_t t1, t6; HERO_NODEBUG hero_net_socket *t2, *t3, *t4, *t11; HERO_NODEBUG bool t5; HERO_NODEBUG h_1corenet_Conn t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_1corenetheronet_of(t1); h1_s = t2;
 #line 199
@@ -1592,7 +1592,7 @@ h_0opt_6d20ca90 h_1corenet_of(int64_t h0_n) { hero_net_socket * h1_s; HERO_NODEB
     return t14;
 }
 
-#line 209 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 209 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_a8ea2 h_1corenet_catch_stop(void) { HERO_NODEBUG h_0opt_a8ea2 h0_ret0 = {0}, h1_own1 = {0}, h2_own2 = {0}, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_catch_stop(); t2 = INT64_C(0); t3 = t1 != t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 212
@@ -1607,7 +1607,7 @@ h_0opt_a8ea2 h_1corenet_catch_stop(void) { HERO_NODEBUG h_0opt_a8ea2 h0_ret0 = {
     return t7;
 }
 
-#line 220 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 220 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 h_0opt_a8ea2 h_1corenet_set_deadline(h_1corenet_Conn h0_c, int64_t h1_ms) { HERO_NODEBUG h_0opt_a8ea2 h2_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t11, t18, t19, t20, t25, t26, t27; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t4, t6, t7, t8, t9, t10, t17, t21, t22, t23, t24; HERO_NODEBUG int64_t t1, t2, t5, t13, t14, t15; HERO_NODEBUG bool t3, t16; HERO_NODEBUG hero_net_socket *t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_ms; t2 = INT64_C(0); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 224
@@ -1631,19 +1631,19 @@ h_0opt_a8ea2 h_1corenet_set_deadline(h_1corenet_Conn h0_c, int64_t h1_ms) { HERO
     return t20;
 }
 
-#line 232 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 232 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 void h_1corenet_ask_stop(void) { HERO_ENTRY_STOP; goto bb0; bb0:
     h_1corenetheronet_ask_stop(); return;
 #line 1638 "main.c"
 }
 
-#line 238 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net.hero"
+#line 238 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net.hero"
 bool h_1corenet_stop_asked(void) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_stop_asked(); t2 = INT64_C(1); t3 = t1 == t2; return t3;
 #line 1644 "main.c"
 }
 
-#line 18 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http.hero"
+#line 18 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http.hero"
 HeroStr h_1corenethttp_MALFORMED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_ffd9bd7);
 #line 1650 "main.c"
@@ -1651,7 +1651,7 @@ HeroStr h_1corenethttp_MALFORMED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STO
     return t1;
 }
 
-#line 48 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http.hero"
+#line 48 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http.hero"
 h_0opt_e201354 h_1corenethttp_serve_conn(h_1corenet_Conn h0_c, h_0fn_3b340077 h1_handler) { HeroArrayHeader * h2_held = {0}; int64_t h3_answered; HERO_NODEBUG h_0opt_51d6ba7e h4_f0 = {0}, h14_own14 = {0}, t6, t7, t11, t14, t64, t65; HERO_NODEBUG h_1corenethttpinternalserver_Next h5_s0 = {0}, t15, t16, t20, t27, t66; h_1corenethttpinternalserver_0Next_c_refused h6_r = {0}; h_1corenethttpinternalserver_0Next_c_request h7_r = {0}; h_1corenethttpinternalserver_Incoming h8_got = {0}; h_1corenethttp_Response h9_answer = {0}; HERO_NODEBUG h_0opt_473cb9ae h10_f1 = {0}, h20_own20 = {0}, t45, t46, t50, t53, t76, t77; bool h11_closing; HERO_NODEBUG h_0opt_e201354 h12_ret0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h21_own21 = {0}, h22_own22 = {0}, t13, t19, t26, t52, t60, t61, t67, t68, t70, t78, t79; HERO_NODEBUG HeroArrayHeader *h13_own13 = {0}, *t1, *t62, *t63; HERO_NODEBUG h_1corenethttp_Request h18_own18 = {0}, t35, t73; HERO_NODEBUG h_1corenethttp_Response h19_own19 = {0}, t36, t74, t75; HERO_NODEBUG int64_t t2, t5, t8, t9, t17, t18, t23, t25, t38, t47, t48, t55, t56, t57, t59; HERO_NODEBUG bool t3, t10, t43, t44, t49, t54, t58; HERO_NODEBUG h_1corenet_Conn t4, t22, t37; HERO_NODEBUG HeroFailure t12, t51; HERO_NODEBUG h_1corenethttpinternalserver_0Next_c_refused t21, t69; HERO_NODEBUG HeroStr t24, t31, t32, t34, t40, t41, t42; HERO_NODEBUG h_1corenethttpinternalserver_0Next_c_request t28, t71; HERO_NODEBUG h_1corenethttpinternalserver_Incoming t29, t72; HERO_NODEBUG h_0fn_3b340077 t30; HERO_NODEBUG HeroMapHeader *t33, *t39; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t62 = h13_own13; h13_own13 = t1; hero_array_decref(t62); t63 = h2_held; hero_array_incref(t1); h2_held = t1; hero_array_decref(t63);
     t2 = INT64_C(0); h3_answered = t2; goto bb1; bb1:
@@ -1697,7 +1697,7 @@ h_0opt_e201354 h_1corenethttp_serve_conn(h_1corenet_Conn h0_c, h_0fn_3b340077 h1
     return t61;
 }
 
-#line 74 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http.hero"
+#line 74 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http.hero"
 h_0opt_15e0dd68 h_1corenethttp_round_trip(h_1corenet_Conn h0_c, h_1corenethttp_Request h1_request) { HERO_NODEBUG h_0opt_a8ea2 h2_f0 = {0}, h6_own6 = {0}, t6, t7, t11, t34, t35; HERO_NODEBUG h_0opt_6a78eee6 h3_f1 = {0}, h7_own7 = {0}, t18, t19, t23, t26, t36, t37; h_1corenethttpinternalclient_Reply h4_got = {0}; HERO_NODEBUG h_0opt_15e0dd68 h5_ret0 = {0}, h8_own8 = {0}, h10_own10 = {0}, h11_own11 = {0}, t13, t25, t32, t33, t38, t41, t42; HERO_NODEBUG h_1corenethttp_Response h9_own9 = {0}, t31, t40; HERO_NODEBUG h_1corenet_Conn t1, t16; HERO_NODEBUG HeroStr t2, t3, t5, t17, t30; HERO_NODEBUG HeroMapHeader *t4, *t29; HERO_NODEBUG int64_t t8, t9, t20, t21, t28; HERO_NODEBUG bool t10, t22; HERO_NODEBUG HeroFailure t12, t24; HERO_NODEBUG h_1corenethttpinternalclient_Reply t27, t39; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = h1_request.f_method; t3 = h1_request.f_target; t4 = h1_request.f_header; t5 = h1_request.f_body; t6 = h_1corenethttpinternalclient_send(t1, t2, t3, t4, t5); t34 = h6_own6; h6_own6 = t6; h_0opt_a8ea2_release(&t34); t35 = h2_f0; h_0opt_a8ea2_retain(&t6); h2_f0 = t6; h_0opt_a8ea2_release(&t35); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1:
     t16 = h0_c; t17 = h1_request.f_method; t18 = h_1corenethttpinternalclient_receive(t16, t17); t36 = h7_own7; h7_own7 = t18; h_0opt_6a78eee6_release(&t36); t37 = h3_f1; h_0opt_6a78eee6_retain(&t18); h3_f1 = t18; h_0opt_6a78eee6_release(&t37); t19 = h3_f1; t20 = t19.tag; t21 = INT64_C(0); t22 = t20 == t21; if (t22) goto bb3; else goto bb4; bb2:
@@ -1722,7 +1722,7 @@ h_0opt_15e0dd68 h_1corenethttp_round_trip(h_1corenet_Conn h0_c, h_1corenethttp_R
     return t33;
 }
 
-#line 82 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http.hero"
+#line 82 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http.hero"
 h_1corenethttp_Response h_1corenethttp_not_found(h_1corenethttp_Request h0_request) { hero_thread_guard("1corenethttp.not_found"); HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t6, *t13; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t5, t7, t8, t9, t10, t11, t14, t15; HERO_NODEBUG h_1corenethttp_Response h4_own4 = {0}, t12, t16; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 84
     t1 = INT64_C(404);
@@ -1745,7 +1745,7 @@ h_1corenethttp_Response h_0cb_1corenethttp_not_found(h_1corenethttp_Request h0_r
     return hero_result;
 }
 
-#line 10 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strconv.hero"
+#line 10 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv.hero"
 HeroStr h_1corestrconv_NOT_A_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_71877a9b);
 #line 1752 "main.c"
@@ -1753,7 +1753,7 @@ HeroStr h_1corestrconv_NOT_A_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_
     return t1;
 }
 
-#line 17 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strconv.hero"
+#line 17 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv.hero"
 h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s) { int64_t h1_at; bool h2_negative; HERO_NODEBUG bool h3_b0, h4_b1, h8_b2, t2, t6, t11, t16, t17, t18, t23, t28, t42, t48, t51, t52, t66, t77, t92, t97; int64_t h5_lowest; int64_t h6_total; uint8_t h7_c; HERO_NODEBUG h_0opt_e201354 h9_f0 = {0}, h11_ret0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h28_own28 = {0}, t34, t58, t62, t63, t67, t69, t83, t94, t103, t106, t107, t111, t112, t113, t117, t120, t121, t122, t125; int64_t h10_digit; HERO_NODEBUG HeroStr h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, t3, t7, t12, t19, t26, t29, t30, t31, t32, t33, t40, t43, t53, t54, t55, t56, t57, t78, t79, t80, t81, t82, t98, t99, t100, t101, t102, t108, t109, t110, t114, t115, t116, t118, t119, t123, t124; HERO_NODEBUG int64_t t1, t4, t5, t8, t13, t20, t24, t25, t27, t35, t36, t37, t38, t39, t41, t44, t64, t65, t70, t71, t72, t73, t74, t75, t76, t84, t85, t86, t87, t88, t89, t90, t91, t93, t95, t96, t104, t105; HERO_NODEBUG uint8_t t9, t10, t14, t15, t21, t22, t45, t46, t47, t49, t50, t59, t60, t61; HERO_NODEBUG HeroFailure t68; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_at = t1;
     t2 = false; h2_negative = t2;
@@ -1791,7 +1791,7 @@ h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s) { int64_t h1_at; bool h2_negati
     hero_panic_must_at(t68, "<core>/strconv.hero", "strconv.atoi", 39, 17);
     hero_unreachable();
 bb21:
-#line 43 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strconv.hero"
+#line 43 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv.hero"
     t84 = h6_total; t85 = INT64_C(10); if (__builtin_mul_overflow(t84, t85, &t86)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 43, 17); t87 = h10_digit; if (__builtin_sub_overflow(t86, t87, &t88)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 43, 17); h6_total = t88;
     t89 = h1_at; t90 = INT64_C(1); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 44, 14); h1_at = t91; goto bb11; bb22:
 #line 42
@@ -1828,7 +1828,7 @@ bb21:
     return t107;
 }
 
-#line 17 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 17 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at; HERO_NODEBUG bool h3_ret0, t5, t6, t11, t18, t19, t23, t24; HERO_NODEBUG HeroStr t1, t3, t9, t12, t15; HERO_NODEBUG int64_t t2, t4, t7, t8, t10, t13, t16, t20, t21, t22; HERO_NODEBUG uint8_t t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_prefix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 20
@@ -1849,7 +1849,7 @@ bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at;
     return t24;
 }
 
-#line 30 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 30 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_offset; int64_t h3_at; HERO_NODEBUG bool h4_ret0, t5, t6, t16, t25, t26, t30, t31; HERO_NODEBUG HeroStr t1, t3, t7, t9, t14, t17, t22; HERO_NODEBUG int64_t t2, t4, t8, t10, t11, t12, t13, t15, t18, t19, t20, t23, t27, t28, t29; HERO_NODEBUG uint8_t t21, t24; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_suffix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 33
@@ -1871,7 +1871,7 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
     return t31;
 }
 
-#line 44 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 44 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_substr; t3 = h_1corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
 #line 1878 "main.c"
@@ -1880,7 +1880,7 @@ bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0
     return t8;
 }
 
-#line 50 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 50 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_width; int64_t h3_to; int64_t h4_width; HERO_NODEBUG HeroStr h5_own5 = {0}, t3, t6, t15, t20, t29, t32, t33; HERO_NODEBUG int64_t t1, t2, t4, t7, t8, t9, t10, t12, t13, t14, t16, t17, t18, t21, t22, t23, t24, t26, t27, t28, t30, t31; HERO_NODEBUG bool t5, t11, t19, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_from = t1; goto bb1; bb1:
 #line 53
@@ -1904,12 +1904,12 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_wi
     hero_str_release_at(&h5_own5);
     return t32;
 bb10:
-#line 67 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 67 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
     t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
 #line 1910 "main.c"
 }
 
-#line 74 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 74 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; bool h3_inside; int64_t h4_at; int64_t h5_width; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t41, *t42, *t43; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t6, t9, t17, t20, t35, t37, t39, t44, t45; HERO_NODEBUG int64_t t2, t4, t5, t7, t10, t11, t12, t13, t18, t19, t23, t24, t25, t28, t30, t31, t32, t36, t38; HERO_NODEBUG bool t3, t8, t14, t15, t22, t26, t27, t29, t33; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t42 = h6_own6; h6_own6 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
     t2 = INT64_C(0); h2_start = t2;
@@ -1946,12 +1946,12 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     hero_str_release_at(&h8_own8);
     return t41;
 bb14:
-#line 95 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 95 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
     t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
 #line 1952 "main.c"
 }
 
-#line 101 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 101 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; int64_t h4_end; HERO_NODEBUG bool h5_b0, t7, t12, t16, t23, t24, t43; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t51, *t52, *t53; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t5, t8, t17, t29, t32, t41, t45, t47, t49, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t9, t13, t14, t15, t18, t19, t20, t25, t26, t27, t30, t31, t34, t35, t36, t37, t38, t39, t40, t42, t46, t48; HERO_NODEBUG uint8_t t10, t11, t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t52 = h6_own6; h6_own6 = t1; hero_array_decref(t52); t53 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t53);
     t2 = INT64_C(0); h2_start = t2;
@@ -1983,12 +1983,12 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     hero_str_release_at(&h8_own8);
     return t51;
 bb13:
-#line 117 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 117 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
     t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
 #line 1989 "main.c"
 }
 
-#line 124 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings.hero"
+#line 124 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
 h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t11, t30, t31; int64_t h3_at; HeroStr h4_before = {0}; HeroStr h5_after = {0}; HERO_NODEBUG h_0opt_48a26f25 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t10, t28, t29, t37, t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t2, t13, t16, t17, t19, t22, t24, t25, t26, t32, t33, t34, t35; HERO_NODEBUG h_1corestrings_Halves h10_own10 = {0}, t27, t36; HERO_NODEBUG int64_t t5, t6, t12, t14, t15, t18, t20, t21, t23; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_sep; t3 = h_1corestringsinternalscan_first_at(t1, t2); t30 = h7_own7; h7_own7 = t3; h_0opt_e201354_release(&t30); t31 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t31); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_at = t12;
     t13 = h0_s; t14 = INT64_C(0); t15 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_once", 126, 14}; t16 = hero_str_slice_at(t13, t14, t15, &hero_here); } t32 = h8_own8; h8_own8 = t16; hero_str_decref(t32); t33 = h4_before; hero_str_incref(t16); h4_before = t16; hero_str_decref(t33);
@@ -2011,7 +2011,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     return t29;
 }
 
-#line 22 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 22 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_OK(void) {
 #line 2017 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_OK), "heroes-ffi-return HERO_NET_OK i64");
@@ -2023,7 +2023,7 @@ int64_t h_1corenetheronet_HERO_NET_OK(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 22 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 22 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_OK;
 #line 2029 "main.c"
 #pragma clang diagnostic pop
@@ -2041,7 +2041,7 @@ int64_t h_1corenetheronet_HERO_NET_OK(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 23 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 23 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_INVALID(void) {
 #line 2047 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_INVALID), "heroes-ffi-return HERO_NET_INVALID i64");
@@ -2053,7 +2053,7 @@ int64_t h_1corenetheronet_HERO_NET_INVALID(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 23 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 23 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_INVALID;
 #line 2059 "main.c"
 #pragma clang diagnostic pop
@@ -2071,7 +2071,7 @@ int64_t h_1corenetheronet_HERO_NET_INVALID(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 24 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 24 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_NOT_OPEN(void) {
 #line 2077 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_NOT_OPEN), "heroes-ffi-return HERO_NET_NOT_OPEN i64");
@@ -2083,7 +2083,7 @@ int64_t h_1corenetheronet_HERO_NET_NOT_OPEN(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 24 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 24 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_NOT_OPEN;
 #line 2089 "main.c"
 #pragma clang diagnostic pop
@@ -2101,7 +2101,7 @@ int64_t h_1corenetheronet_HERO_NET_NOT_OPEN(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 25 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 25 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_ADDRESS(void) {
 #line 2107 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_ADDRESS), "heroes-ffi-return HERO_NET_ADDRESS i64");
@@ -2113,7 +2113,7 @@ int64_t h_1corenetheronet_HERO_NET_ADDRESS(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 25 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 25 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_ADDRESS;
 #line 2119 "main.c"
 #pragma clang diagnostic pop
@@ -2131,7 +2131,7 @@ int64_t h_1corenetheronet_HERO_NET_ADDRESS(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 26 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 26 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_IN_USE(void) {
 #line 2137 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_IN_USE), "heroes-ffi-return HERO_NET_IN_USE i64");
@@ -2143,7 +2143,7 @@ int64_t h_1corenetheronet_HERO_NET_IN_USE(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 26 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 26 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_IN_USE;
 #line 2149 "main.c"
 #pragma clang diagnostic pop
@@ -2161,7 +2161,7 @@ int64_t h_1corenetheronet_HERO_NET_IN_USE(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 27 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 27 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_REFUSED(void) {
 #line 2167 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_REFUSED), "heroes-ffi-return HERO_NET_REFUSED i64");
@@ -2173,7 +2173,7 @@ int64_t h_1corenetheronet_HERO_NET_REFUSED(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 27 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 27 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_REFUSED;
 #line 2179 "main.c"
 #pragma clang diagnostic pop
@@ -2191,7 +2191,7 @@ int64_t h_1corenetheronet_HERO_NET_REFUSED(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 28 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 28 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_RESET(void) {
 #line 2197 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_RESET), "heroes-ffi-return HERO_NET_RESET i64");
@@ -2203,7 +2203,7 @@ int64_t h_1corenetheronet_HERO_NET_RESET(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 28 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 28 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_RESET;
 #line 2209 "main.c"
 #pragma clang diagnostic pop
@@ -2221,7 +2221,7 @@ int64_t h_1corenetheronet_HERO_NET_RESET(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 29 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 29 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_TIMED_OUT(void) {
 #line 2227 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_TIMED_OUT), "heroes-ffi-return HERO_NET_TIMED_OUT i64");
@@ -2233,7 +2233,7 @@ int64_t h_1corenetheronet_HERO_NET_TIMED_OUT(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 29 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 29 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_TIMED_OUT;
 #line 2239 "main.c"
 #pragma clang diagnostic pop
@@ -2251,7 +2251,7 @@ int64_t h_1corenetheronet_HERO_NET_TIMED_OUT(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 30 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 30 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_UNREACHABLE(void) {
 #line 2257 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_UNREACHABLE), "heroes-ffi-return HERO_NET_UNREACHABLE i64");
@@ -2263,7 +2263,7 @@ int64_t h_1corenetheronet_HERO_NET_UNREACHABLE(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 30 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 30 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_UNREACHABLE;
 #line 2269 "main.c"
 #pragma clang diagnostic pop
@@ -2281,7 +2281,7 @@ int64_t h_1corenetheronet_HERO_NET_UNREACHABLE(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 31 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 31 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_LIMIT(void) {
 #line 2287 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_LIMIT), "heroes-ffi-return HERO_NET_LIMIT i64");
@@ -2293,7 +2293,7 @@ int64_t h_1corenetheronet_HERO_NET_LIMIT(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 31 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 31 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_LIMIT;
 #line 2299 "main.c"
 #pragma clang diagnostic pop
@@ -2311,7 +2311,7 @@ int64_t h_1corenetheronet_HERO_NET_LIMIT(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 32 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 32 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_DENIED(void) {
 #line 2317 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_DENIED), "heroes-ffi-return HERO_NET_DENIED i64");
@@ -2323,7 +2323,7 @@ int64_t h_1corenetheronet_HERO_NET_DENIED(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 32 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 32 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_DENIED;
 #line 2329 "main.c"
 #pragma clang diagnostic pop
@@ -2341,7 +2341,7 @@ int64_t h_1corenetheronet_HERO_NET_DENIED(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 33 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 33 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_OTHER(void) {
 #line 2347 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_OTHER), "heroes-ffi-return HERO_NET_OTHER i64");
@@ -2353,7 +2353,7 @@ int64_t h_1corenetheronet_HERO_NET_OTHER(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 33 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 33 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_OTHER;
 #line 2359 "main.c"
 #pragma clang diagnostic pop
@@ -2371,7 +2371,7 @@ int64_t h_1corenetheronet_HERO_NET_OTHER(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 34 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 34 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_HERO_NET_STOPPED(void) {
 #line 2377 "main.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
@@ -2383,7 +2383,7 @@ int64_t h_1corenetheronet_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 34 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 34 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
     return HERO_NET_STOPPED;
 #line 2389 "main.c"
 #pragma clang diagnostic pop
@@ -2401,97 +2401,97 @@ int64_t h_1corenetheronet_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#line 55 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 55 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 hero_net_socket * h_1corenetheronet_listen(HeroStr h0_address, int64_t h1_port) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG hero_net_socket *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_address; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.listen", 56, 37}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h1_port; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.listen", 56, 12}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } return t4;
 #line 2408 "main.c"
 }
 
-#line 60 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 60 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 hero_net_socket * h_1corenetheronet_connect(HeroStr h0_address, int64_t h1_port) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG hero_net_socket *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_address; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.connect", 61, 38}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h1_port; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.connect", 61, 12}; t4 = hero_net_connect(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close|hero_net_number", &hero_here); } return t4;
 #line 2414 "main.c"
 }
 
-#line 64 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 64 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 hero_net_socket * h_1corenetheronet_accept(hero_net_socket * h0_listener) { HERO_NODEBUG hero_net_socket *t1, *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.accept", 65, 12}; hero_handle_alive_at(t1, "the argument `listener` of `hero_net_accept`", &hero_here); t2 = hero_net_accept(t1); hero_handle_acquired_at(t2, "hero_net_close|hero_net_number", &hero_here); } return t2;
 #line 2420 "main.c"
 }
 
-#line 68 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 68 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_port_of(hero_net_socket * h0_s) { HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.port_of", 69, 12}; hero_handle_alive_at(t1, "the argument `s` of `hero_net_port`", &hero_here); t2 = hero_net_port(t1); } return t2;
 #line 2426 "main.c"
 }
 
-#line 74 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 74 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_send(hero_net_socket * h0_s, HeroArrayHeader * *ph1_data, uint64_t h2_n) { HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h2_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.send", 75, 12}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(const void *)0), void), "heroes-ffi-buffer hero_net_send data 46112 46116 u8 const void *"); HERO_NODEBUG int64_t hero_lend_e0_1 = hero_lend_count_u64_at((uint64_t)(t2), "hero_net_send", "data", &hero_here); HERO_NODEBUG void *hero_lend_b0_1 = hero_lend_take_at((*ph1_data), hero_lend_e0_1, "hero_net_send", "data", &hero_here); hero_handle_alive_at(t1, "the argument `s` of `hero_net_send`", &hero_here); t3 = hero_net_send(t1, (void *)hero_lend_b0_1, t2); (*ph1_data) = hero_lend_give_at((*ph1_data), hero_lend_b0_1, hero_lend_e0_1, &hero_here); } } return t3;
 #line 2432 "main.c"
 }
 
-#line 80 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 80 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_recv(hero_net_socket * h0_s, HeroArrayHeader * *ph1_buffer, uint64_t h2_n) { HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h2_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.recv", 81, 12}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer hero_net_recv buffer 46196 46202 u8 void *"); HERO_NODEBUG int64_t hero_lend_e0_1 = hero_lend_count_u64_at((uint64_t)(t2), "hero_net_recv", "buffer", &hero_here); HERO_NODEBUG void *hero_lend_b0_1 = hero_lend_take_at((*ph1_buffer), hero_lend_e0_1, "hero_net_recv", "buffer", &hero_here); hero_handle_alive_at(t1, "the argument `s` of `hero_net_recv`", &hero_here); t3 = hero_net_recv(t1, (void *)hero_lend_b0_1, t2); (*ph1_buffer) = hero_lend_give_at((*ph1_buffer), hero_lend_b0_1, hero_lend_e0_1, &hero_here); } } return t3;
 #line 2438 "main.c"
 }
 
-#line 85 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 85 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_close(hero_net_socket * *ph0_s) { HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_s); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.close", 86, 12}; { hero_handle_alive_at(t1, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "hero_net_close", NULL, &hero_here); t2 = hero_net_close(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_s) == t1) (*ph0_s) = hero_handle_dead(); } } return t2;
 #line 2444 "main.c"
 }
 
-#line 91 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 91 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_number(hero_net_socket * *ph0_s) { HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_s); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.number", 92, 12}; { hero_handle_alive_at(t1, "the argument `s` of `hero_net_number`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "hero_net_number", NULL, &hero_here); t2 = hero_net_number(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_s) == t1) (*ph0_s) = hero_handle_dead(); } } return t2;
 #line 2450 "main.c"
 }
 
-#line 97 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 97 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 hero_net_socket * h_1corenetheronet_of(int64_t h0_n) { HERO_NODEBUG int64_t t1; HERO_NODEBUG hero_net_socket *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.of", 98, 12}; t2 = hero_net_of(t1); hero_handle_acquired_at(t2, "hero_net_close|hero_net_number", &hero_here); } return t2;
 #line 2456 "main.c"
 }
 
-#line 104 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 104 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_catch_stop(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.catch_stop", 105, 12}; t1 = hero_net_catch_stop(); } return t1;
 #line 2462 "main.c"
 }
 
-#line 109 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 109 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_stop_asked(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.stop_asked", 110, 12}; t1 = hero_net_stop_asked(); } return t1;
 #line 2468 "main.c"
 }
 
-#line 116 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 116 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 void h_1corenetheronet_ask_stop(void) { HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.ask_stop", 117, 5}; (void)hero_net_ask_stop(); } return;
 #line 2474 "main.c"
 }
 
-#line 122 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 122 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_set_deadline(hero_net_socket * h0_s, int64_t h1_ms) { HERO_NODEBUG hero_net_socket *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_ms; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.set_deadline", 123, 12}; hero_handle_alive_at(t1, "the argument `s` of `hero_net_set_deadline`", &hero_here); t3 = hero_net_set_deadline(t1, t2); } return t3;
 #line 2480 "main.c"
 }
 
-#line 127 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 127 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_last_error(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.last_error", 128, 12}; t1 = hero_net_last_error(); } return t1;
 #line 2486 "main.c"
 }
 
-#line 132 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/hero_net.hero"
+#line 132 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/hero_net.hero"
 int64_t h_1corenetheronet_last_os_error(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/hero_net.hero", "hero_net.last_os_error", 133, 12}; t1 = hero_net_last_os_error(); } return t1;
 #line 2492 "main.c"
 }
 
-#line 67 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 67 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 HeroStr h_1corenetinternalfailure_place(HeroStr h0_host, int64_t h1_port) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t4, *t7, *t10, *t36, *t37; HERO_NODEBUG int64_t h3_i0, t1, t3, t5, t6, t8, t11, t12, t14, t23, t26, t27, t28, t32; int64_t h4_at; HERO_NODEBUG HeroStr h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t2, t13, t18, t19, t20, t21, t22, t24, t25, t29, t30, t31, t33, t34, t35, t38, t39, t40, t41, t42, t43, t44; HERO_NODEBUG bool t9, t17; HERO_NODEBUG uint8_t t15, t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = h0_host; t3 = hero_str_len(t2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/internal/failure.hero", "failure.place", 68, 15}; t4 = h_library_range(t1, t3, &hero_here); } t36 = h6_own6; h6_own6 = t4; hero_array_decref(t36); t37 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t37); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/net/internal/failure.hero", "failure.place", 68, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
     t13 = h0_host; t14 = h4_at; t15 = ((void)((t13.ptr == NULL || t14 < 0 || t14 >= t13.len) ? hero_panic_byte_at(t13, t14, "<core>/net/internal/failure.hero", "failure.place", 69, 12) : (void)0), (int64_t)(unsigned char)t13.ptr[t14]); t16 = UINT64_C(58); t17 = t15 == t16; if (t17) goto bb6; else goto bb7; bb3:
@@ -2516,7 +2516,7 @@ HeroStr h_1corenetinternalfailure_place(HeroStr h0_host, int64_t h1_port) { HERO
     return t35;
 }
 
-#line 75 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 75 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 bool h_1corenetinternalfailure_holds_zero(HeroStr h0_text) { HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h5_own5 = {0}, *t4, *t7, *t10, *t24, *t25; HERO_NODEBUG int64_t h2_i0, t1, t3, t5, t6, t8, t11, t12, t14, t19, t20, t21; int64_t h3_at; HERO_NODEBUG bool h4_ret0, t9, t17, t18, t22, t23; HERO_NODEBUG HeroStr t2, t13; HERO_NODEBUG uint8_t t15, t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = h0_text; t3 = hero_str_len(t2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/internal/failure.hero", "failure.holds_zero", 76, 15}; t4 = h_library_range(t1, t3, &hero_here); } t24 = h5_own5; h5_own5 = t4; hero_array_decref(t24); t25 = h1_xs0; hero_array_incref(t4); h1_xs0 = t4; hero_array_decref(t25); t5 = INT64_C(0); h2_i0 = t5; goto bb1; bb1: t6 = h2_i0; t7 = h1_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h1_xs0; t11 = h2_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/net/internal/failure.hero", "failure.holds_zero", 76, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h3_at = t12;
     t13 = h0_text; t14 = h3_at; t15 = ((void)((t13.ptr == NULL || t14 < 0 || t14 >= t13.len) ? hero_panic_byte_at(t13, t14, "<core>/net/internal/failure.hero", "failure.holds_zero", 77, 12) : (void)0), (int64_t)(unsigned char)t13.ptr[t14]); t16 = UINT64_C(0); t17 = t15 == t16; if (t17) goto bb6; else goto bb7; bb3:
@@ -2533,7 +2533,7 @@ bool h_1corenetinternalfailure_holds_zero(HeroStr h0_text) { HERO_NODEBUG HeroAr
     return t23;
 }
 
-#line 20 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 20 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
 h_0opt_a8ea2 h_1corenethttpinternalclient_send(h_1corenet_Conn h0_c, HeroStr h1_method, HeroStr h2_target, HeroMapHeader * h3_header, HeroStr h4_body) { HeroMapHeader * h5_out = {0}; bool h6_host; HERO_NODEBUG HeroArrayHeader *h7_xs0 = {0}, *h23_own23 = {0}, *h35_own35 = {0}, *t26, *t29, *t32, *t96, *t115, *t116, *t131; HERO_NODEBUG int64_t h8_i0, t27, t28, t30, t33, t54, t55, t61, t62, t63, t70, t71, t83, t99, t100; HeroStr h9_name = {0}; HeroStr h10_word = {0}; HERO_NODEBUG bool h11_b0, h12_b1, h14_b2, h15_b3, t2, t3, t13, t14, t24, t31, t37, t40, t41, t44, t47, t48, t56, t64, t65, t72, t75, t76, t79, t80, t101; HERO_NODEBUG h_0opt_f87774a h13_f0 = {0}, h29_own29 = {0}, t52, t53, t57, t59, t124, t125; HERO_NODEBUG h_0opt_a8ea2 h16_f1 = {0}, h17_ret0 = {0}, h21_own21 = {0}, h27_own27 = {0}, h30_own30 = {0}, h36_own36 = {0}, h38_own38 = {0}, h39_own39 = {0}, t11, t22, t68, t97, t98, t102, t104, t107, t108, t112, t120, t126, t132, t133, t135, t136; HERO_NODEBUG HeroStr h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h28_own28 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h37_own37 = {0}, t1, t4, t5, t6, t7, t8, t9, t10, t12, t15, t16, t17, t18, t19, t20, t21, t34, t35, t36, t38, t39, t42, t43, t45, t46, t49, t51, t60, t66, t67, t69, t73, t74, t77, t78, t81, t82, t84, t86, t87, t88, t89, t90, t91, t92, t94, t95, t109, t110, t111, t117, t118, t119, t121, t122, t123, t127, t128, t129, t130, t134; HERO_NODEBUG HeroMapHeader *h22_own22 = {0}, *t23, *t25, *t50, *t93, *t113, *t114; HERO_NODEBUG HeroFailure t58, t103; HERO_NODEBUG h_1corenet_Conn t85; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_method; t2 = h_1corenethttpinternalwire_token(t1); t3 = !t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 24
@@ -2567,7 +2567,7 @@ h_0opt_a8ea2 h_1corenethttpinternalclient_send(h_1corenet_Conn h0_c, HeroStr h1_
     hero_panic_must_at(t58, "<core>/net/http/internal/client.hero", "client.send", 37, 25);
     hero_unreachable();
 bb20:
-#line 42 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 42 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
     t69 = h4_body; t70 = hero_str_len(t69); t71 = INT64_C(0); t72 = t70 > t71; h15_b3 = t72; if (t72) goto bb25; else goto bb24; bb21:
 #line 40
     t66 = HERO_STR_LIT(hero_str_ffd9bd7); t67 = HERO_STR_LIT(hero_str_304f6fd5); hero_str_incref(t66); hero_str_incref(t67); t68 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t66, .msg = t67}}; t126 = h30_own30; h30_own30 = t68; h_0opt_a8ea2_release(&t126); h17_ret0 = t68; goto bb32; bb22: goto bb20; bb23:
@@ -2614,7 +2614,7 @@ bb20:
     return t108;
 }
 
-#line 53 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 53 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
 h_0opt_6a78eee6 h_1corenethttpinternalclient_receive(h_1corenet_Conn h0_c, HeroStr h1_method) { HeroArrayHeader * h2_held = {0}; HERO_NODEBUG h_0opt_533eac03 h3_f0 = {0}, h20_own20 = {0}, t3, t4, t8, t11, t144, t145; h_1corenethttpinternallines_Head h4_head = {0}; HERO_NODEBUG h_0opt_e201354 h5_f1 = {0}, h14_f5 = {0}, h21_own21 = {0}, h34_own34 = {0}, t14, t15, t19, t22, t80, t81, t85, t88, t147, t148, t166, t167; int64_t h6_status; HERO_NODEBUG h_0opt_36226bb0 h7_f2 = {0}, h23_own23 = {0}, t25, t26, t30, t33, t150, t151; HeroMapHeader * h8_header = {0}; HeroArrayHeader * h9_raw = {0}; HERO_NODEBUG bool h10_b0, h11_b1, t7, t18, t29, t37, t49, t52, t53, t56, t57, t64, t65, t75, t84, t92, t107, t116, t133; HERO_NODEBUG h_0opt_f87774a h12_f3 = {0}, h13_f4 = {0}, h17_f7 = {0}, h31_own31 = {0}, h32_own32 = {0}, h43_own43 = {0}, t60, t61, t71, t72, t129, t130, t134, t137, t161, t162, t163, t164, t178, t179; int64_t h15_count; HERO_NODEBUG h_0opt_4d1c207c h16_f6 = {0}, h37_own37 = {0}, t103, t104, t108, t111, t170, t171; HERO_NODEBUG h_0opt_6a78eee6 h18_ret0 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h30_own30 = {0}, h33_own33 = {0}, h35_own35 = {0}, h36_own36 = {0}, h41_own41 = {0}, h42_own42 = {0}, h47_own47 = {0}, h49_own49 = {0}, h50_own50 = {0}, t10, t21, t32, t45, t68, t78, t87, t100, t110, t125, t136, t140, t141, t149, t152, t154, t160, t165, t168, t169, t175, t177, t183, t185, t186; HERO_NODEBUG HeroArrayHeader *h19_own19 = {0}, *h26_own26 = {0}, *t1, *t24, *t46, *t112, *t113, *t118, *t128, *t142, *t143, *t155, *t156, *t176; HERO_NODEBUG HeroStr h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h44_own44 = {0}, h45_own45 = {0}, h46_own46 = {0}, t13, t38, t40, t41, t42, t43, t44, t47, t48, t59, t66, t67, t70, t76, t77, t93, t95, t96, t97, t98, t99, t117, t120, t121, t122, t123, t124, t138, t157, t158, t159, t172, t173, t174, t180, t181, t182; HERO_NODEBUG h_1corenethttpinternalclient_Reply h48_own48 = {0}, t139, t184; HERO_NODEBUG h_1corenet_Conn t2, t101; HERO_NODEBUG int64_t t5, t6, t16, t17, t23, t27, t28, t35, t36, t39, t50, t51, t54, t55, t62, t63, t73, t74, t82, t83, t89, t90, t91, t94, t102, t105, t106, t114, t115, t119, t126, t131, t132; HERO_NODEBUG HeroFailure t9, t20, t31, t86, t109, t135; HERO_NODEBUG h_1corenethttpinternallines_Head t12, t146; HERO_NODEBUG HeroMapHeader *t34, *t58, *t69, *t79, *t127, *t153; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t142 = h19_own19; h19_own19 = t1; hero_array_decref(t142); t143 = h2_held; hero_array_incref(t1); h2_held = t1; hero_array_decref(t143);
     t2 = h0_c; t3 = h_1corenethttpinternallines_head(t2, &h2_held); t144 = h20_own20; h20_own20 = t3; h_0opt_533eac03_release(&t144); t145 = h3_f0; h_0opt_533eac03_retain(&t3); h3_f0 = t3; h_0opt_533eac03_release(&t145); t4 = h3_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h3_f0; t12 = t11.as.ok; t146 = h4_head; h_1corenethttpinternallines_0Head_retain(&t12); h4_head = t12; h_1corenethttpinternallines_0Head_release(&t146);
@@ -2718,7 +2718,7 @@ h_0opt_6a78eee6 h_1corenethttpinternalclient_receive(h_1corenet_Conn h0_c, HeroS
     return t141;
 }
 
-#line 86 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 86 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
 h_0opt_6a78eee6 h_1corenethttpinternalclient_received(HeroStr h0_sent, HeroStr h1_method) { HERO_NODEBUG h_0opt_157a2e20 h2_f0 = {0}, h11_own11 = {0}, t3, t4, t8, t10, t58, t59; h_1corenet_Listener h3_listener; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}, h12_own12 = {0}, t14, t15, t19, t21, t60, t61; HERO_NODEBUG h_0opt_6d20ca90 h5_f2 = {0}, h7_f3 = {0}, h13_own13 = {0}, h14_own14 = {0}, t23, t24, t28, t30, t33, t34, t38, t40, t62, t63, t64, t65; h_1corenet_Conn h6_client; h_1corenet_Conn h8_server; HERO_NODEBUG h_0opt_a8ea2 h9_f4 = {0}, h16_own16 = {0}, t45, t46, t50, t67, t68; h_0opt_6a78eee6 h10_got = {0}; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *t44, *t66; HERO_NODEBUG h_0opt_6a78eee6 h17_own17 = {0}, t56, t57, t69, t70; HERO_NODEBUG HeroStr t1, t12, t43, t55; HERO_NODEBUG int64_t t2, t5, t6, t16, t17, t22, t25, t26, t35, t36, t47, t48; HERO_NODEBUG bool t7, t18, t27, t37, t49; HERO_NODEBUG HeroFailure t9, t20, t29, t39, t51; HERO_NODEBUG h_1corenet_Listener t11, t13, t32; HERO_NODEBUG h_1corenet_Conn t31, t41, t42, t54; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_69fd5e8e); t2 = INT64_C(0); t3 = h_1corenet_listen(t1, t2); t58 = h11_own11; h11_own11 = t3; h_0opt_157a2e20_release(&t58); t59 = h2_f0; h_0opt_157a2e20_retain(&t3); h2_f0 = t3; h_0opt_157a2e20_release(&t59); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h2_f0; t11 = t10.as.ok; h3_listener = t11;
     t12 = HERO_STR_LIT(hero_str_69fd5e8e); t13 = h3_listener; t14 = h_1corenet_port_of(t13); t60 = h12_own12; h12_own12 = t14; h_0opt_e201354_release(&t60); t61 = h4_f1; h_0opt_e201354_retain(&t14); h4_f1 = t14; h_0opt_e201354_release(&t61); t15 = h4_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
@@ -2728,13 +2728,13 @@ h_0opt_6a78eee6 h_1corenethttpinternalclient_received(HeroStr h0_sent, HeroStr h
     hero_panic_must_at(t9, "<core>/net/http/internal/client.hero", "client.received", 87, 17);
     hero_unreachable();
 bb3:
-#line 88 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 88 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
     t21 = h4_f1; t22 = t21.as.ok; t23 = h_1corenet_dial(t12, t22); t62 = h13_own13; h13_own13 = t23; h_0opt_6d20ca90_release(&t62); t63 = h5_f2; h_0opt_6d20ca90_retain(&t23); h5_f2 = t23; h_0opt_6d20ca90_release(&t63); t24 = h5_f2; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb5; else goto bb6; bb4: t19 = h4_f1; t20 = t19.as.err;
 #line 2734 "main.c"
     hero_panic_must_at(t20, "<core>/net/http/internal/client.hero", "client.received", 88, 49);
     hero_unreachable();
 bb5:
-#line 88 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 88 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
     t30 = h5_f2; t31 = t30.as.ok; h6_client = t31;
     t32 = h3_listener; t33 = h_1corenet_accept(t32); t64 = h14_own14; h14_own14 = t33; h_0opt_6d20ca90_release(&t64); t65 = h7_f3; h_0opt_6d20ca90_retain(&t33); h7_f3 = t33; h_0opt_6d20ca90_release(&t65); t34 = h7_f3; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb7; else goto bb8; bb6:
 #line 88
@@ -2743,7 +2743,7 @@ bb5:
     hero_panic_must_at(t29, "<core>/net/http/internal/client.hero", "client.received", 88, 15);
     hero_unreachable();
 bb7:
-#line 89 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 89 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
     t40 = h7_f3; t41 = t40.as.ok; h8_server = t41;
     t42 = h8_server; t43 = h0_sent; t44 = h_1corenethttpinternalwire_bytes_of(t43); t66 = h15_own15; h15_own15 = t44; hero_array_decref(t66); t45 = h_1corenet_write(t42, t44); t67 = h16_own16; h16_own16 = t45; h_0opt_a8ea2_release(&t67); t68 = h9_f4; h_0opt_a8ea2_retain(&t45); h9_f4 = t45; h_0opt_a8ea2_release(&t68); t46 = h9_f4; t47 = t46.tag; t48 = INT64_C(0); t49 = t47 == t48; if (t49) goto bb9; else goto bb10; bb8:
 #line 89
@@ -2752,7 +2752,7 @@ bb7:
     hero_panic_must_at(t39, "<core>/net/http/internal/client.hero", "client.received", 89, 15);
     hero_unreachable();
 bb9:
-#line 91 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 91 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
     h_1corenet_close(&h8_server);
     t54 = h6_client; t55 = h1_method; t56 = h_1corenethttpinternalclient_receive(t54, t55); t69 = h17_own17; h17_own17 = t56; h_0opt_6a78eee6_release(&t69); t70 = h10_got; h_0opt_6a78eee6_retain(&t56); h10_got = t56; h_0opt_6a78eee6_release(&t70);
     h_1corenet_close(&h6_client);
@@ -2775,20 +2775,20 @@ bb9:
     h_0opt_6a78eee6_release(hero_slot_escape(&h17_own17));
     return t57;
 bb10:
-#line 90 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/client.hero"
+#line 90 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/client.hero"
     t50 = h9_f4; t51 = t50.as.err;
 #line 2781 "main.c"
     hero_panic_must_at(t51, "<core>/net/http/internal/client.hero", "client.received", 90, 5);
     hero_unreachable();
 }
 
-#line 24 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 24 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
 int64_t h_1corenethttpinternalserver_HEADER_MS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(60000); return t1;
 #line 2789 "main.c"
 }
 
-#line 50 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 50 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
 h_0opt_51d6ba7e h_1corenethttpinternalserver_next(h_1corenet_Conn h0_c, HeroArrayHeader * *ph1_held, int64_t h2_header_ms) { HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h9_f2 = {0}, h32_own32 = {0}, h51_own51 = {0}, t3, t4, t8, t64, t65, t69, t233, t234, t257, t258; h_0opt_533eac03 h4_read = {0}; HeroStr h5_code = {0}; HERO_NODEBUG bool h6_b0, h18_b1, t7, t19, t22, t23, t28, t32, t46, t56, t68, t80, t92, t102, t111, t118, t125, t126, t137, t138, t149, t159, t165, t171, t188, t197, t208, t215, t223, t228; HERO_NODEBUG h_0opt_533eac03 h7_f1 = {0}, h33_own33 = {0}, t14, t15, t48, t52, t53, t57, t60, t235, t236, t252; h_1corenethttpinternallines_Head h8_head = {0}; h_0opt_187c932 h10_line = {0}; HERO_NODEBUG h_0opt_187c932 h11_f3 = {0}, h14_f5 = {0}, h53_own53 = {0}, t75, t76, t77, t82, t98, t99, t103, t105, t260, t261, t262, t270; h_0opt_36226bb0 h12_header = {0}; HERO_NODEBUG h_0opt_36226bb0 h13_f4 = {0}, h16_f6 = {0}, h55_own55 = {0}, t87, t88, t89, t94, t107, t108, t112, t114, t264, t265, t266, t275; h_1corenethttpinternalwire_RequestLine h15_asked = {0}; HeroMapHeader * h17_fields = {0}; HERO_NODEBUG h_0opt_f87774a h19_f7 = {0}, h20_f8 = {0}, h28_f14 = {0}, h30_f15 = {0}, h62_own62 = {0}, h63_own63 = {0}, h78_own78 = {0}, t121, t122, t133, t134, t203, t204, t205, t219, t220, t224, t226, t277, t278, t279, t280, t301, t302, t303, t305; h_0opt_e201354 h21_count = {0}; HERO_NODEBUG h_0opt_e201354 h22_f9 = {0}, h23_f10 = {0}, h24_f11 = {0}, h25_f12 = {0}, h66_own66 = {0}, t144, t145, t146, t151, t155, t156, t160, t162, t167, t168, t172, t174, t184, t185, t189, t191, t283, t284, t285, t288, t292, t293; HERO_NODEBUG h_0opt_4d1c207c h26_f13 = {0}, h77_own77 = {0}, t193, t194, t198, t201, t299, t300; h_0opt_f87774a h27_text = {0}; bool h29_closing; HERO_NODEBUG h_0opt_51d6ba7e h31_ret0 = {0}, h36_own36 = {0}, h40_own40 = {0}, h45_own45 = {0}, h47_own47 = {0}, h50_own50 = {0}, h52_own52 = {0}, h54_own54 = {0}, h58_own58 = {0}, h61_own61 = {0}, h65_own65 = {0}, h68_own68 = {0}, h71_own71 = {0}, h76_own76 = {0}, h79_own79 = {0}, h81_own81 = {0}, h84_own84 = {0}, t10, t25, t34, t43, t51, t59, t71, t85, t97, t130, t142, t154, t182, t200, t212, t231, t232, t240, t244, t249, t251, t255, t259, t263, t269, t273, t282, t287, t291, t298, t304, t307, t310; HERO_NODEBUG HeroStr h34_own34 = {0}, h35_own35 = {0}, h37_own37 = {0}, h38_own38 = {0}, h41_own41 = {0}, h42_own42 = {0}, h43_own43 = {0}, h48_own48 = {0}, h56_own56 = {0}, h59_own59 = {0}, h69_own69 = {0}, h72_own72 = {0}, h73_own73 = {0}, h74_own74 = {0}, t16, t17, t18, t20, t21, t26, t27, t37, t38, t39, t40, t41, t44, t45, t49, t74, t83, t95, t116, t117, t120, t128, t132, t140, t152, t176, t177, t178, t179, t180, t210, t213, t216, t217, t227, t237, t238, t239, t241, t242, t245, t246, t247, t253, t267, t271, t289, t294, t295, t296; HERO_NODEBUG h_1corenethttpinternalserver_Next h39_own39 = {0}, h44_own44 = {0}, h46_own46 = {0}, h49_own49 = {0}, h57_own57 = {0}, h60_own60 = {0}, h64_own64 = {0}, h67_own67 = {0}, h70_own70 = {0}, h75_own75 = {0}, h80_own80 = {0}, h83_own83 = {0}, t24, t33, t42, t50, t84, t96, t129, t141, t153, t181, t211, t230, t243, t248, t250, t254, t268, t272, t281, t286, t290, t297, t306, t309; HERO_NODEBUG h_1corenethttpinternalserver_Incoming h82_own82 = {0}, t229, t308; HERO_NODEBUG h_1corenet_Conn t1, t13, t62, t183; HERO_NODEBUG int64_t t2, t5, t6, t30, t31, t35, t36, t47, t54, t55, t63, t66, t67, t78, t79, t81, t90, t91, t93, t100, t101, t109, t110, t123, t124, t127, t135, t136, t139, t147, t148, t150, t157, t158, t163, t164, t166, t169, t170, t175, t186, t187, t192, t195, t196, t206, t207, t209, t221, t222; HERO_NODEBUG HeroFailure t9, t58, t70, t104, t113, t161, t173, t190, t199, t225; HERO_NODEBUG HeroArrayHeader *t29, *t86, *t202; HERO_NODEBUG h_1corenethttpinternallines_Head t61, t256; HERO_NODEBUG h_1corenethttpinternalwire_RequestLine t106, t274; HERO_NODEBUG HeroMapHeader *t115, *t119, *t131, *t143, *t214, *t218, *t276; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = h2_header_ms; t3 = h_1corenet_set_deadline(t1, t2); t233 = h32_own32; h32_own32 = t3; h_0opt_a8ea2_release(&t233); t234 = h3_f0; h_0opt_a8ea2_retain(&t3); h3_f0 = t3; h_0opt_a8ea2_release(&t234); t4 = h3_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
     t13 = h0_c; t14 = h_1corenethttpinternallines_head(t13, &(*ph1_held)); t235 = h33_own33; h33_own33 = t14; h_0opt_533eac03_release(&t235); t236 = h4_read; h_0opt_533eac03_retain(&t14); h4_read = t14; h_0opt_533eac03_release(&t236);
@@ -2842,7 +2842,7 @@ h_0opt_51d6ba7e h_1corenethttpinternalserver_next(h_1corenet_Conn h0_c, HeroArra
     hero_panic_must_at(t104, "<core>/net/http/internal/server.hero", "server.next", 77, 13);
     hero_unreachable();
 bb29:
-#line 78 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 78 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t114 = h16_f6; t115 = t114.as.ok; t276 = h17_fields; hero_map_incref(t115); h17_fields = t115; hero_map_decref(t276);
 #line 80
     t116 = h15_asked.f_version; t117 = HERO_STR_LIT(hero_str_6a99cbea); t118 = hero_str_eq(t116, t117); h18_b1 = t118; if (t118) goto bb32; else goto bb33; bb30:
@@ -2852,7 +2852,7 @@ bb29:
     hero_panic_must_at(t113, "<core>/net/http/internal/server.hero", "server.next", 78, 14);
     hero_unreachable();
 bb31:
-#line 83 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 83 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t131 = h17_fields; t132 = HERO_STR_LIT(hero_str_1edcd3ff); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/server.hero", "server.next", 83, 9}; HERO_NODEBUG const void *found = hero_map_find_at(t131, &t132, &hero_here); if (found == NULL) { t133 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t133 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t133.as.ok, found); } } t277 = h62_own62; h62_own62 = t133; h_0opt_f87774a_release(&t277); t278 = h20_f8; h_0opt_f87774a_retain(&t133); h20_f8 = t133; h_0opt_f87774a_release(&t278); t134 = h20_f8; t135 = t134.tag; t136 = INT64_C(1); t137 = t135 == t136; t138 = !t137; if (t138) goto bb37; else goto bb38; bb32:
 #line 80
     t119 = h17_fields; t120 = HERO_STR_LIT(hero_str_9c31fcc); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/server.hero", "server.next", 80, 39}; HERO_NODEBUG const void *found = hero_map_find_at(t119, &t120, &hero_here); if (found == NULL) { t121 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t121 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t121.as.ok, found); } } t279 = h63_own63; h63_own63 = t121; h_0opt_f87774a_release(&t279); t280 = h19_f7; h_0opt_f87774a_retain(&t121); h19_f7 = t121; h_0opt_f87774a_release(&t280); t122 = h19_f7; t123 = t122.tag; t124 = INT64_C(1); t125 = t123 == t124; h18_b1 = t125; goto bb33; bb33: t126 = h18_b1; if (t126) goto bb34; else goto bb35; bb34:
@@ -2875,19 +2875,19 @@ bb31:
     hero_panic_must_at(t161, "<core>/net/http/internal/server.hero", "server.next", 90, 8);
     hero_unreachable();
 bb45:
-#line 91 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 91 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t166 = INT64_C(413); t167 = h21_count; t293 = h24_f11; h_0opt_e201354_retain(&t167); h24_f11 = t167; h_0opt_e201354_release(&t293); t168 = h24_f11; t169 = t168.tag; t170 = INT64_C(0); t171 = t169 == t170; if (t171) goto bb47; else goto bb48; bb46: goto bb42; bb47: t174 = h24_f11; t175 = t174.as.ok; t176 = HERO_STR_LIT(hero_str_50ac154f); t177 = hero_int_to_str(t175); t294 = h72_own72; h72_own72 = t177; hero_str_decref(t294); t178 = HERO_STR_LIT(hero_str_6826324b); t179 = hero_str_concat(t176, t177); t295 = h73_own73; h73_own73 = t179; hero_str_decref(t295); t180 = hero_str_concat(t179, t178); t296 = h74_own74; h74_own74 = t180; hero_str_decref(t296); hero_str_incref(t180); t181 = (h_1corenethttpinternalserver_Next){.tag = h_1corenethttpinternalserver_0Next_tag_refused, .as.c_refused = {.f_status = t166, .f_why = t180}}; t297 = h75_own75; h75_own75 = t181; h_1corenethttpinternalserver_0Next_release(&t297); h_1corenethttpinternalserver_0Next_retain(&t181); t182 = (h_0opt_51d6ba7e){.tag = INT64_C(0), .as.ok = t181}; t298 = h76_own76; h76_own76 = t182; h_0opt_51d6ba7e_release(&t298); h31_ret0 = t182; goto bb58; bb48: t172 = h24_f11; t173 = t172.as.err;
 #line 2881 "main.c"
     hero_panic_must_at(t173, "<core>/net/http/internal/server.hero", "server.next", 91, 59);
     hero_unreachable();
 bb49:
-#line 92 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 92 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t191 = h25_f12; t192 = t191.as.ok; t193 = h_1corenethttpinternallines_body(t183, &(*ph1_held), t192); t299 = h77_own77; h77_own77 = t193; h_0opt_4d1c207c_release(&t299); t300 = h26_f13; h_0opt_4d1c207c_retain(&t193); h26_f13 = t193; h_0opt_4d1c207c_release(&t300); t194 = h26_f13; t195 = t194.tag; t196 = INT64_C(0); t197 = t195 == t196; if (t197) goto bb51; else goto bb52; bb50: t189 = h25_f12; t190 = t189.as.err;
 #line 2887 "main.c"
     hero_panic_must_at(t190, "<core>/net/http/internal/server.hero", "server.next", 92, 40);
     hero_unreachable();
 bb51:
-#line 92 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 92 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t201 = h26_f13; t202 = t201.as.ok; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t202, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t203 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t203 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t301 = h78_own78; h78_own78 = t203; h_0opt_f87774a_release(&t301); t302 = h27_text; h_0opt_f87774a_retain(&t203); h27_text = t203; h_0opt_f87774a_release(&t302);
 #line 94
     t204 = h27_text; t303 = h28_f14; h_0opt_f87774a_retain(&t204); h28_f14 = t204; h_0opt_f87774a_release(&t303); t205 = h28_f14; t206 = t205.tag; t207 = INT64_C(1); t208 = t206 == t207; if (t208) goto bb54; else goto bb55; bb52:
@@ -2991,7 +2991,7 @@ bb58:
     return t232;
 }
 
-#line 104 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 104 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
 void h_1corenethttpinternalserver_refuse(h_1corenet_Conn h0_c, int64_t h1_status, HeroStr h2_why) { HeroStr h3_text = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_s0 = {0}, h11_own11 = {0}, t21, t22, t33, t34; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, t2, t3, t4, t5, t6, t10, t11, t12, t14, t15, t16, t17, t19, t26, t27, t29, t30, t31; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t13, *t28; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t20, *t32; HERO_NODEBUG int64_t t1, t7, t8, t9, t23; HERO_NODEBUG h_1corenet_Conn t18; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 106
     t1 = h1_status; t2 = h_1corenethttpinternalwire_status_line(t1); t26 = h5_own5; h5_own5 = t2; hero_str_decref(t26);
@@ -3013,13 +3013,13 @@ void h_1corenethttpinternalserver_refuse(h_1corenet_Conn h0_c, int64_t h1_status
     h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
     return;
 bb2:
-#line 112 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 112 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     goto bb1; bb3:
     goto bb1;
 #line 3020 "main.c"
 }
 
-#line 120 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 120 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
 h_0opt_473cb9ae h_1corenethttpinternalserver_answer(h_1corenet_Conn h0_c, int64_t h1_status, HeroMapHeader * h2_header, HeroStr h3_body, bool h4_head_only, bool h5_closing) { HERO_NODEBUG bool h6_b0, h12_b1, h13_b2, h15_b3, t3, t6, t7, t16, t25, t33, t36, t37, t40, t41, t49, t59, t62, t63, t65, t66, t71, t72, t74, t88, t94; HeroMapHeader * h7_out = {0}; HERO_NODEBUG HeroArrayHeader *h8_xs0 = {0}, *h21_own21 = {0}, *h31_own31 = {0}, *t20, *t23, *t26, *t83, *t99, *t100, *t115; HERO_NODEBUG int64_t h9_i0, t1, t2, t4, t5, t9, t10, t21, t22, t24, t27, t47, t48, t54, t55, t56, t57, t58, t60, t61, t69, t78, t86, t87; HeroStr h10_name = {0}; HeroStr h11_word = {0}; HERO_NODEBUG h_0opt_f87774a h14_f0 = {0}, h27_own27 = {0}, t45, t46, t50, t52, t108, t109; bool h16_bodiless; HeroStr h17_sent = {0}; HERO_NODEBUG h_0opt_a8ea2 h18_f1 = {0}, h32_own32 = {0}, t84, t85, t89, t116, t117; HERO_NODEBUG h_0opt_473cb9ae h19_ret0 = {0}, h25_own25 = {0}, h33_own33 = {0}, h34_own34 = {0}, t17, t91, t95, t96, t104, t118, t119; HERO_NODEBUG HeroMapHeader *h20_own20 = {0}, *t18, *t19, *t43, *t80, *t97, *t98; HERO_NODEBUG HeroStr h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h26_own26 = {0}, h28_own28 = {0}, h29_own29 = {0}, h30_own30 = {0}, t11, t12, t13, t14, t15, t28, t29, t30, t31, t32, t34, t35, t38, t39, t42, t44, t53, t64, t67, t68, t70, t73, t75, t76, t79, t81, t82, t101, t102, t103, t105, t106, t107, t110, t111, t112, t113, t114; HERO_NODEBUG h_1corenet_Conn t8, t77; HERO_NODEBUG HeroFailure t51, t90; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_status; t2 = INT64_C(200); t3 = t1 < t2; h6_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
 #line 124
@@ -3046,7 +3046,7 @@ h_0opt_473cb9ae h_1corenethttpinternalserver_answer(h_1corenet_Conn h0_c, int64_
     hero_panic_must_at(t51, "<core>/net/http/internal/server.hero", "server.answer", 130, 25);
     hero_unreachable();
 bb19:
-#line 132 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 132 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t60 = h1_status; t61 = INT64_C(304); t62 = t60 == t61; h15_b3 = t62; goto bb20; bb20: t63 = h15_b3; h16_bodiless = t63;
     t64 = HERO_STR_LIT(hero_str_0); t110 = h17_sent; hero_str_incref(t64); h17_sent = t64; hero_str_decref(t110);
 #line 135
@@ -3094,7 +3094,7 @@ bb19:
     return t96;
 }
 
-#line 150 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 150 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
 HeroArrayHeader * h_1corenethttpinternalserver_exchanged(HeroStr h0_sent) { HERO_NODEBUG h_0opt_157a2e20 h1_f0 = {0}, h15_own15 = {0}, t3, t4, t8, t10, t73, t74; h_1corenet_Listener h2_listener; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}, h16_own16 = {0}, t14, t15, t19, t21, t75, t76; HERO_NODEBUG h_0opt_6d20ca90 h4_f2 = {0}, h6_f3 = {0}, h17_own17 = {0}, h18_own18 = {0}, t23, t24, t28, t30, t33, t34, t38, t40, t77, t78, t79, t80; h_1corenet_Conn h5_client; h_1corenet_Conn h7_server; HERO_NODEBUG h_0opt_a8ea2 h8_f4 = {0}, h20_own20 = {0}, t45, t46, t50, t82, t83; HeroArrayHeader * h9_held = {0}; HeroArrayHeader * h10_out = {0}; h_0opt_51d6ba7e h11_got = {0}; HERO_NODEBUG h_0opt_51d6ba7e h12_s0 = {0}, h23_own23 = {0}, t59, t61, t63, t64, t66, t88, t89, t90; h_1corenethttpinternalserver_Next h13_n = {0}; HERO_NODEBUG h_1corenethttpinternalserver_Next h14_s1 = {0}, t67, t68, t69, t91, t92; HERO_NODEBUG HeroArrayHeader *h19_own19 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *t44, *t54, *t55, *t72, *t81, *t84, *t85, *t86, *t87; HERO_NODEBUG HeroStr t1, t12, t43; HERO_NODEBUG int64_t t2, t5, t6, t16, t17, t22, t25, t26, t35, t36, t47, t48, t58, t65, t70; HERO_NODEBUG bool t7, t18, t27, t37, t49, t56; HERO_NODEBUG HeroFailure t9, t20, t29, t39, t51; HERO_NODEBUG h_1corenet_Listener t11, t13, t32; HERO_NODEBUG h_1corenet_Conn t31, t41, t42, t57; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_69fd5e8e); t2 = INT64_C(0); t3 = h_1corenet_listen(t1, t2); t73 = h15_own15; h15_own15 = t3; h_0opt_157a2e20_release(&t73); t74 = h1_f0; h_0opt_157a2e20_retain(&t3); h1_f0 = t3; h_0opt_157a2e20_release(&t74); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h1_f0; t11 = t10.as.ok; h2_listener = t11;
     t12 = HERO_STR_LIT(hero_str_69fd5e8e); t13 = h2_listener; t14 = h_1corenet_port_of(t13); t75 = h16_own16; h16_own16 = t14; h_0opt_e201354_release(&t75); t76 = h3_f1; h_0opt_e201354_retain(&t14); h3_f1 = t14; h_0opt_e201354_release(&t76); t15 = h3_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
@@ -3104,13 +3104,13 @@ HeroArrayHeader * h_1corenethttpinternalserver_exchanged(HeroStr h0_sent) { HERO
     hero_panic_must_at(t9, "<core>/net/http/internal/server.hero", "server.exchanged", 151, 17);
     hero_unreachable();
 bb3:
-#line 152 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 152 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t21 = h3_f1; t22 = t21.as.ok; t23 = h_1corenet_dial(t12, t22); t77 = h17_own17; h17_own17 = t23; h_0opt_6d20ca90_release(&t77); t78 = h4_f2; h_0opt_6d20ca90_retain(&t23); h4_f2 = t23; h_0opt_6d20ca90_release(&t78); t24 = h4_f2; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb5; else goto bb6; bb4: t19 = h3_f1; t20 = t19.as.err;
 #line 3110 "main.c"
     hero_panic_must_at(t20, "<core>/net/http/internal/server.hero", "server.exchanged", 152, 49);
     hero_unreachable();
 bb5:
-#line 152 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 152 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t30 = h4_f2; t31 = t30.as.ok; h5_client = t31;
     t32 = h2_listener; t33 = h_1corenet_accept(t32); t79 = h18_own18; h18_own18 = t33; h_0opt_6d20ca90_release(&t79); t80 = h6_f3; h_0opt_6d20ca90_retain(&t33); h6_f3 = t33; h_0opt_6d20ca90_release(&t80); t34 = h6_f3; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb7; else goto bb8; bb6:
 #line 152
@@ -3119,7 +3119,7 @@ bb5:
     hero_panic_must_at(t29, "<core>/net/http/internal/server.hero", "server.exchanged", 152, 15);
     hero_unreachable();
 bb7:
-#line 153 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 153 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t40 = h6_f3; t41 = t40.as.ok; h7_server = t41;
     t42 = h5_client; t43 = h0_sent; t44 = h_1corenethttpinternalwire_bytes_of(t43); t81 = h19_own19; h19_own19 = t44; hero_array_decref(t81); t45 = h_1corenet_write(t42, t44); t82 = h20_own20; h20_own20 = t45; h_0opt_a8ea2_release(&t82); t83 = h8_f4; h_0opt_a8ea2_retain(&t45); h8_f4 = t45; h_0opt_a8ea2_release(&t83); t46 = h8_f4; t47 = t46.tag; t48 = INT64_C(0); t49 = t47 == t48; if (t49) goto bb9; else goto bb10; bb8:
 #line 153
@@ -3128,7 +3128,7 @@ bb7:
     hero_panic_must_at(t39, "<core>/net/http/internal/server.hero", "server.exchanged", 153, 15);
     hero_unreachable();
 bb9:
-#line 155 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 155 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     h_1corenet_close(&h5_client);
     t54 = hero_array_new(&hero_desc_u8, 1); t84 = h21_own21; h21_own21 = t54; hero_array_decref(t84); t85 = h9_held; hero_array_incref(t54); h9_held = t54; hero_array_decref(t85);
     t55 = hero_array_new(&h_0opt_51d6ba7e_desc, 1); t86 = h22_own22; h22_own22 = t55; hero_array_decref(t86); t87 = h10_out; hero_array_incref(t55); h10_out = t55; hero_array_decref(t87); goto bb11; bb10:
@@ -3138,7 +3138,7 @@ bb9:
     hero_panic_must_at(t51, "<core>/net/http/internal/server.hero", "server.exchanged", 154, 5);
     hero_unreachable();
 bb11:
-#line 159 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 159 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t56 = true; if (t56) goto bb12; else goto bb13; bb12:
     t57 = h7_server; t58 = INT64_C(10000); t59 = h_1corenethttpinternalserver_next(t57, &h9_held, t58); t88 = h23_own23; h23_own23 = t59; h_0opt_51d6ba7e_release(&t88); t89 = h11_got; h_0opt_51d6ba7e_retain(&t59); h11_got = t59; h_0opt_51d6ba7e_release(&t89);
     t61 = h11_got; hero_array_push_owned(&h10_out, &t61);
@@ -3174,20 +3174,20 @@ bb11:
 bb14:
     goto bb11;
 bb15:
-#line 164 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/server.hero"
+#line 164 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/server.hero"
     t66 = h12_s0; t67 = t66.as.ok; t91 = h13_n; h_1corenethttpinternalserver_0Next_retain(&t67); h13_n = t67; h_1corenethttpinternalserver_0Next_release(&t91);
     t68 = h13_n; t92 = h14_s1; h_1corenethttpinternalserver_0Next_retain(&t68); h14_s1 = t68; h_1corenethttpinternalserver_0Next_release(&t92); t69 = h14_s1; t70 = t69.tag; switch (t70) { case 0: goto bb18; case 1: goto bb19; case 2: goto bb19; default: hero_unreachable(); } bb16: goto bb13; bb17: goto bb14; bb18:
     goto bb17; bb19: goto bb13;
 #line 3182 "main.c"
 }
 
-#line 15 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 15 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 int64_t h_1corenethttpinternallines_HEAD_MOST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(65536); return t1;
 #line 3188 "main.c"
 }
 
-#line 35 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 35 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 h_0opt_533eac03 h_1corenethttpinternallines_head(h_1corenet_Conn h0_c, HeroArrayHeader * *ph1_held) { int64_t h2_scanned; HERO_NODEBUG bool h3_b0, h4_b1, h11_b2, t2, t6, t11, t16, t17, t18, t29, t44, t52, t71, t78, t89, t93, t94, t108, t118; h_1corenethttpinternallines_Blank h5_at; h_0opt_f87774a h6_text = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}, h8_f1 = {0}, h19_own19 = {0}, t34, t40, t41, t48, t49, t53, t55, t132, t133, t136, t137; HeroArrayHeader * h9_rows = {0}; h_0opt_4d1c207c h10_more = {0}; HERO_NODEBUG h_0opt_4d1c207c h12_f2 = {0}, h27_own27 = {0}, t85, t90, t104, t105, t109, t112, t145, t146, t147; HERO_NODEBUG HeroArrayHeader *h13_xs0 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t3, *t7, *t12, *t19, *t21, *t23, *t24, *t30, *t33, *t35, *t37, *t39, *t57, *t58, *t61, *t63, *t65, *t68, *t75, *t79, *t86, *t96, *t113, *t116, *t119, *t129, *t130, *t131, *t134, *t135, *t139, *t140, *t141, *t154; HERO_NODEBUG int64_t h14_i0, t1, t4, t5, t8, t13, t20, t22, t25, t27, t28, t31, t32, t36, t38, t42, t43, t50, t51, t59, t62, t64, t69, t70, t76, t77, t80, t81, t82, t84, t87, t88, t97, t106, t107, t114, t115, t117, t120, t125, t126, t127; uint8_t h15_b; HERO_NODEBUG h_0opt_533eac03 h16_ret0 = {0}, h21_own21 = {0}, h25_own25 = {0}, h26_own26 = {0}, h33_own33 = {0}, h34_own34 = {0}, t47, t67, t74, t103, t111, t128, t138, t143, t144, t153, t155; HERO_NODEBUG h_1corenethttpinternallines_Head h24_own24 = {0}, t66, t142; HERO_NODEBUG HeroStr h28_own28 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, t45, t46, t56, t60, t72, t73, t91, t92, t95, t98, t99, t100, t101, t102, t148, t149, t150, t151, t152; HERO_NODEBUG uint8_t t9, t10, t14, t15, t121, t123; HERO_NODEBUG h_1corenethttpinternallines_Blank t26; HERO_NODEBUG HeroFailure t54, t110; HERO_NODEBUG h_1corenet_Conn t83; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h2_scanned = t1; goto bb1; bb1:
 #line 38
@@ -3219,7 +3219,7 @@ h_0opt_533eac03 h_1corenethttpinternallines_head(h_1corenet_Conn h0_c, HeroArray
     hero_panic_must_at(t54, "<core>/net/http/internal/lines.hero", "lines.head", 50, 40);
     hero_unreachable();
 bb19:
-#line 56 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 56 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t75 = (*ph1_held); t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len); t77 = INT64_C(3); t78 = t76 > t77; if (t78) goto bb23; else goto bb24; bb20:
 #line 54
     t72 = HERO_STR_LIT(hero_str_ffd9bd7); t73 = HERO_STR_LIT(hero_str_44cac118); hero_str_incref(t72); hero_str_incref(t73); t74 = (h_0opt_533eac03){.tag = INT64_C(1), .as.err = {.code = t72, .msg = t73}}; t144 = h26_own26; h26_own26 = t74; h_0opt_533eac03_release(&t144); h16_ret0 = t74; goto bb36; bb21: goto bb19; bb22:
@@ -3270,7 +3270,7 @@ bb19:
     return t128;
 }
 
-#line 69 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 69 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 h_0opt_4d1c207c h_1corenethttpinternallines_body(h_1corenet_Conn h0_c, HeroArrayHeader * *ph1_held, int64_t h2_count) { h_0opt_4d1c207c h3_more = {0}; HERO_NODEBUG h_0opt_4d1c207c h4_f0 = {0}, h9_ret0 = {0}, h10_own10 = {0}, h15_own15 = {0}, h21_own21 = {0}, h22_own22 = {0}, t10, t11, t26, t27, t28, t32, t34, t35, t61, t62, t63, t64, t71, t72, t78, t80; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *t1, *t7, *t16, *t36, *t39, *t42, *t51, *t54, *t55, *t57, *t59, *t60, *t67, *t68, *t69, *t70, *t79; HERO_NODEBUG int64_t h6_i0, t2, t3, t6, t8, t9, t17, t18, t29, t30, t37, t38, t40, t43, t48, t49, t50, t52, t53, t56, t58; uint8_t h7_b; HeroArrayHeader * h8_out = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, t12, t13, t15, t19, t20, t21, t22, t23, t24, t25, t65, t66, t73, t74, t75, t76, t77; HERO_NODEBUG bool t4, t14, t31, t41; HERO_NODEBUG h_1corenet_Conn t5; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG uint8_t t44, t46; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
     t1 = (*ph1_held); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = h2_count; t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
     t5 = h0_c; t6 = h2_count; t7 = (*ph1_held); t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); if (__builtin_sub_overflow(t6, t8, &t9)) hero_panic_overflow_at("<core>/net/http/internal/lines.hero", "lines.body", 71, 34); t10 = h_1corenet_read(t5, t9); t63 = h10_own10; h10_own10 = t10; h_0opt_4d1c207c_release(&t63); t64 = h3_more; h_0opt_4d1c207c_retain(&t10); h3_more = t10; h_0opt_4d1c207c_release(&t64);
@@ -3312,7 +3312,7 @@ h_0opt_4d1c207c h_1corenethttpinternallines_body(h_1corenet_Conn h0_c, HeroArray
     return t62;
 }
 
-#line 88 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 88 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 h_1corenethttpinternallines_Blank h_1corenethttpinternallines_blank_at(HeroArrayHeader * h0_bytes, int64_t h1_from) { int64_t h2_at; HERO_NODEBUG bool h3_b0, h4_b1, t7, t12, t19, t32, t39, t40, t47, t48; HERO_NODEBUG h_1corenethttpinternallines_Blank h5_ret0, t26, t55, t61, t62; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t9, t14, t15, t16, t20, t21, t22, t23, t24, t25, t27, t28, t29, t31, t34, t35, t36, t42, t43, t44, t49, t50, t51, t52, t53, t54, t56, t57, t58, t59, t60; HERO_NODEBUG HeroArrayHeader *t5, *t8, *t13, *t30, *t33, *t41; HERO_NODEBUG uint8_t t10, t11, t17, t18, t37, t38, t45, t46; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_from; h2_at = t1; goto bb1; bb1:
 #line 91
@@ -3336,7 +3336,7 @@ h_1corenethttpinternallines_Blank h_1corenethttpinternallines_blank_at(HeroArray
     return t62;
 }
 
-#line 14 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 14 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_MARKS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_34619098);
 #line 3343 "main.c"
@@ -3344,13 +3344,13 @@ HeroStr h_1corenethttpinternalwire_MARKS(void) { HERO_NODEBUG HeroStr t1; HERO_E
     return t1;
 }
 
-#line 25 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 25 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 int64_t h_1corenethttpinternalwire_BODY_MOST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(8388608); return t1;
 #line 3351 "main.c"
 }
 
-#line 31 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 31 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 h_0opt_187c932 h_1corenethttpinternalwire_request_line(HeroStr h0_line) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, t6, t10, t11, t12, t18, t19, t32, t37, t38; HERO_NODEBUG h_0opt_187c932 h5_ret0 = {0}, h10_own10 = {0}, h12_own12 = {0}, h16_own16 = {0}, t27, t46, t57, t58, t64, t66, t70; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t2, *t3, *t7, *t13, *t28, *t33, *t47, *t50, *t53, *t59, *t60; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t1, t9, t15, t20, t21, t22, t23, t24, t25, t26, t30, t31, t35, t36, t39, t40, t41, t42, t43, t44, t45, t49, t52, t55, t61, t62, t63, t67, t68, t69; HERO_NODEBUG h_1corenethttpinternalwire_RequestLine h11_own11 = {0}, t56, t65; HERO_NODEBUG int64_t t4, t5, t8, t14, t16, t17, t29, t34, t48, t51, t54; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_line; t2 = h_1corenethttpinternalwire_split_spaces(t1); t59 = h6_own6; h6_own6 = t2; hero_array_decref(t59); t60 = h1_parts; hero_array_incref(t2); h1_parts = t2; hero_array_decref(t60);
 #line 34
@@ -3383,7 +3383,7 @@ h_0opt_187c932 h_1corenethttpinternalwire_request_line(HeroStr h0_line) { HeroAr
     return t58;
 }
 
-#line 43 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 43 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 h_0opt_e201354 h_1corenethttpinternalwire_status_of(HeroStr h0_line) { HERO_NODEBUG bool h1_b0, h2_b1, h7_b2, h8_b3, t3, t4, t8, t9, t14, t15, t35, t43, t48, t49, t64, t69, t70, t84; HeroStr h3_digits = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h12_own12 = {0}, *t30, *t33, *t36, *t93, *t94; HERO_NODEBUG int64_t h5_i0, t6, t7, t11, t25, t26, t28, t29, t31, t32, t34, t37, t38, t40, t45, t58, t59, t60, t62, t63, t66, t82, t83, t88; int64_t h6_at; HERO_NODEBUG h_0opt_e201354 h9_f0 = {0}, h10_ret0 = {0}, h16_own16 = {0}, h20_own20 = {0}, h21_own21 = {0}, h25_own25 = {0}, h26_own26 = {0}, t23, t57, t78, t80, t81, t85, t87, t89, t90, t98, t102, t103, t104, t108, t109; HERO_NODEBUG HeroStr h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, t1, t2, t5, t10, t16, t17, t18, t19, t20, t21, t22, t24, t27, t39, t44, t50, t51, t52, t53, t54, t55, t56, t61, t65, t71, t72, t73, t74, t75, t76, t77, t79, t91, t92, t95, t96, t97, t99, t100, t101, t105, t106, t107; HERO_NODEBUG uint8_t t12, t13, t41, t42, t46, t47, t67, t68; HERO_NODEBUG HeroFailure t86; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_line; t2 = HERO_STR_LIT(hero_str_26ebad86); t3 = h_1corestrings_has_prefix(t1, t2); t4 = !t3; h2_b1 = t4; if (t4) goto bb3; else goto bb2; bb1:
 #line 46
@@ -3437,7 +3437,7 @@ bb24:
     return t90;
 }
 
-#line 60 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 60 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 h_0opt_36226bb0 h_1corenethttpinternalwire_header_of(HeroArrayHeader * h0_lines) { HeroMapHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t85; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t16, t17, t21, t22, t42, t43, t53, t54, t66, t77, t78, t79; HeroStr h4_line = {0}; h_0opt_48a26f25 h5_halves = {0}; HERO_NODEBUG bool h6_b0, t7, t18, t23, t29, t30, t31, t44, t55; HERO_NODEBUG h_0opt_48a26f25 h7_f0 = {0}, h8_f1 = {0}, h9_f2 = {0}, h11_f3 = {0}, h17_own17 = {0}, t13, t14, t15, t19, t20, t24, t26, t40, t41, t45, t47, t51, t52, t56, t58, t87, t88, t89, t91, t92, t99; HeroStr h10_name = {0}; HeroStr h12_value = {0}; HERO_NODEBUG h_0opt_f87774a h13_s0 = {0}, h25_own25 = {0}, t64, t65, t67, t102, t103; HeroStr h14_was = {0}; HERO_NODEBUG h_0opt_36226bb0 h15_ret0 = {0}, h18_own18 = {0}, h22_own22 = {0}, t39, t81, t82, t90, t96; HERO_NODEBUG HeroMapHeader *h16_own16 = {0}, *t1, *t62, *t80, *t83, *t84; HERO_NODEBUG HeroStr h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h23_own23 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, t10, t11, t12, t28, t32, t33, t34, t35, t36, t37, t38, t49, t50, t60, t61, t63, t68, t69, t70, t71, t72, t73, t74, t75, t76, t86, t93, t94, t95, t97, t98, t100, t101, t104, t105, t106; HERO_NODEBUG HeroFailure t25, t46, t57; HERO_NODEBUG h_1corestrings_Halves t27, t48, t59; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0); t83 = h16_own16; h16_own16 = t1; hero_map_decref(t83); t84 = h1_out; hero_map_incref(t1); h1_out = t1; hero_map_decref(t84);
 #line 63
@@ -3457,7 +3457,7 @@ h_0opt_36226bb0 h_1corenethttpinternalwire_header_of(HeroArrayHeader * h0_lines)
     hero_panic_must_at(t25, "<core>/net/http/internal/wire.hero", "wire.header_of", 66, 38);
     hero_unreachable();
 bb10:
-#line 67 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 67 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t32 = HERO_STR_LIT(hero_str_ffd9bd7); t33 = HERO_STR_LIT(hero_str_410e14dc); t34 = h4_line; t35 = h_1corenethttpinternalwire_shown(t34); t93 = h19_own19; h19_own19 = t35; hero_str_decref(t93); t36 = hero_str_concat(t33, t35); t94 = h20_own20; h20_own20 = t36; hero_str_decref(t94); t37 = HERO_STR_LIT(hero_str_141ab273); t38 = hero_str_concat(t36, t37); t95 = h21_own21; h21_own21 = t38; hero_str_decref(t95); hero_str_incref(t32); hero_str_incref(t38); t39 = (h_0opt_36226bb0){.tag = INT64_C(1), .as.err = {.code = t32, .msg = t38}}; t96 = h22_own22; h22_own22 = t39; h_0opt_36226bb0_release(&t96); h15_ret0 = t39; goto bb19; bb11: goto bb5; bb12:
     t47 = h9_f2; t48 = t47.as.ok; t49 = t48.f_before; t50 = h_1corenethttpinternalwire_canonical(t49); t97 = h23_own23; h23_own23 = t50; hero_str_decref(t97); t98 = h10_name; hero_str_incref(t50); h10_name = t50; hero_str_decref(t98);
     t51 = h5_halves; t99 = h11_f3; h_0opt_48a26f25_retain(&t51); h11_f3 = t51; h_0opt_48a26f25_release(&t99); t52 = h11_f3; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb14; else goto bb15; bb13:
@@ -3467,7 +3467,7 @@ bb10:
     hero_panic_must_at(t46, "<core>/net/http/internal/wire.hero", "wire.header_of", 68, 26);
     hero_unreachable();
 bb14:
-#line 69 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 69 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t58 = h11_f3; t59 = t58.as.ok; t60 = t59.f_after; t61 = h_1corestrings_trim_space(t60); t100 = h24_own24; h24_own24 = t61; hero_str_decref(t100); t101 = h12_value; hero_str_incref(t61); h12_value = t61; hero_str_decref(t101);
 #line 71
     t62 = h1_out; t63 = h10_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.header_of", 71, 15}; HERO_NODEBUG const void *found = hero_map_find_at(t62, &t63, &hero_here); if (found == NULL) { t64 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t64 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t64.as.ok, found); } } t102 = h25_own25; h25_own25 = t64; h_0opt_f87774a_release(&t102); t103 = h13_s0; h_0opt_f87774a_retain(&t64); h13_s0 = t64; h_0opt_f87774a_release(&t103); t65 = h13_s0; t66 = t65.tag; switch (t66) { case 0: goto bb17; case 1: goto bb18; default: hero_unreachable(); } bb15:
@@ -3479,7 +3479,7 @@ bb14:
 bb16:
     goto bb3;
 bb17:
-#line 72 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 72 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t67 = h13_s0; t68 = t67.as.ok; t104 = h14_was; hero_str_incref(t68); h14_was = t68; hero_str_decref(t104); t69 = h10_name; t70 = h14_was; t71 = HERO_STR_LIT(hero_str_16a4); t72 = hero_str_concat(t70, t71); t105 = h26_own26; h26_own26 = t72; hero_str_decref(t105); t73 = h12_value; t74 = hero_str_concat(t72, t73); t106 = h27_own27; h27_own27 = t74; hero_str_decref(t106); hero_str_incref(t74); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.header_of", 72, 24}; hero_map_set_at(&(h1_out), &t69, &t74, &hero_here); } goto bb16; bb18:
     t75 = h10_name; t76 = h12_value; hero_str_incref(t76); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.header_of", 73, 24}; hero_map_set_at(&(h1_out), &t75, &t76, &hero_here); } goto bb16; bb19:
 #line 3486 "main.c"
@@ -3512,7 +3512,7 @@ bb17:
     return t82;
 }
 
-#line 79 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 79 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_canonical(HeroStr h0_name) { HeroArrayHeader * h1_out = {0}; bool h2_upper; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *t1, *t6, *t9, *t12, *t56, *t66, *t67, *t68, *t69; HERO_NODEBUG int64_t h4_i0, t3, t5, t7, t8, t10, t13, t14, t16, t53, t54, t55, t59, t60; int64_t h5_at; uint8_t h6_c; HERO_NODEBUG bool h7_b0, h8_b1, h9_b2, h10_b3, t2, t11, t18, t21, t22, t25, t26, t32, t33, t36, t37, t40, t41, t52, t61; HERO_NODEBUG h_0opt_f87774a h11_f0 = {0}, h14_own14 = {0}, t57, t58, t62, t64, t70, t71; HERO_NODEBUG HeroStr t4, t15, t65; HERO_NODEBUG uint8_t t17, t19, t20, t23, t24, t28, t29, t30, t34, t35, t38, t39, t43, t44, t45, t48, t50, t51; HERO_NODEBUG HeroFailure t63; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t66 = h12_own12; h12_own12 = t1; hero_array_decref(t66); t67 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t67);
     t2 = true; h2_upper = t2;
@@ -3546,14 +3546,14 @@ HeroStr h_1corenethttpinternalwire_canonical(HeroStr h0_name) { HeroArrayHeader 
     h_0opt_f87774a_release(hero_slot_escape(&h14_own14));
     return t65;
 bb19:
-#line 94 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 94 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t62 = h11_f0; t63 = t62.as.err;
 #line 3552 "main.c"
     hero_panic_must_at(t63, "<core>/net/http/internal/wire.hero", "wire.canonical", 94, 12);
     hero_unreachable();
 }
 
-#line 99 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 99 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 h_0opt_e201354 h_1corenethttpinternalwire_length(HeroMapHeader * h0_header) { HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h11_own11 = {0}, t3, t4, t8, t70, t71; HERO_NODEBUG HeroStr h2_r0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t2, t9, t10, t11, t12, t16, t17, t20, t31, t36, t42, t43, t44, t45, t46, t47, t48, t53, t60, t61, t62, t63, t64, t65, t66, t72, t73, t74, t81, t82, t83, t85, t86, t87; HeroStr h3_written = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h12_own12 = {0}, *t22, *t25, *t28, *t75, *t76; HERO_NODEBUG int64_t h5_i0, t5, t6, t13, t14, t19, t21, t23, t24, t26, t29, t30, t32, t37, t50, t51, t52, t57, t58; int64_t h6_at; HERO_NODEBUG bool h7_b0, t7, t15, t27, t35, t40, t41, t59; h_0opt_e201354 h8_n = {0}; HERO_NODEBUG h_0opt_e201354 h9_f1 = {0}, h10_ret0 = {0}, h13_own13 = {0}, h14_own14 = {0}, h18_own18 = {0}, h22_own22 = {0}, t18, t49, t54, t55, t56, t67, t68, t69, t77, t78, t79, t80, t84, t88; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG uint8_t t33, t34, t38, t39; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_header; t2 = HERO_STR_LIT(hero_str_80787ec); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.length", 100, 15}; HERO_NODEBUG const void *found = hero_map_find_at(t1, &t2, &hero_here); if (found == NULL) { t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t3 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t3.as.ok, found); } } t70 = h11_own11; h11_own11 = t3; h_0opt_f87774a_release(&t70); t71 = h1_f0; h_0opt_f87774a_retain(&t3); h1_f0 = t3; h_0opt_f87774a_release(&t71); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h1_f0; t9 = t8.as.ok; t72 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t72); goto bb3; bb2: t10 = HERO_STR_LIT(hero_str_30); t73 = h2_r0; hero_str_incref(t10); h2_r0 = t10; hero_str_decref(t73); goto bb3; bb3: t11 = h2_r0; t74 = h3_written; hero_str_incref(t11); h3_written = t11; hero_str_decref(t74);
 #line 102
@@ -3602,7 +3602,7 @@ h_0opt_e201354 h_1corenethttpinternalwire_length(HeroMapHeader * h0_header) { HE
     return t69;
 }
 
-#line 118 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 118 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 bool h_1corenethttpinternalwire_closes(HeroStr h0_version, HeroMapHeader * h1_header) { HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}, h17_own17 = {0}, t3, t4, t8, t69, t70; HERO_NODEBUG HeroStr h3_r0 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t2, t9, t10, t11, t16, t30, t33, t39, t42, t43, t44, t46, t47, t51, t52, t62, t63, t71, t72, t73, t76, t77, t78, t79; HeroStr h4_said = {0}; bool h5_close; bool h6_keep; int64_t h7_start; HERO_NODEBUG HeroArrayHeader *h8_xs0 = {0}, *h18_own18 = {0}, *t20, *t23, *t26, *t74, *t75; HERO_NODEBUG int64_t h9_i0, t5, t6, t14, t15, t17, t18, t19, t21, t22, t24, t27, t28, t29, t31, t34, t40, t41, t55, t56, t57, t58, t59, t60; int64_t h10_at; HERO_NODEBUG bool h11_b0, h13_b1, h14_b2, h15_b3, h16_b4, t7, t12, t13, t25, t32, t37, t38, t45, t48, t49, t50, t53, t54, t61, t64, t65, t66, t67, t68; HeroStr h12_word = {0}; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG uint8_t t35, t36; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_header; t2 = HERO_STR_LIT(hero_str_6c6c61a3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.closes", 119, 12}; HERO_NODEBUG const void *found = hero_map_find_at(t1, &t2, &hero_here); if (found == NULL) { t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t3 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t3.as.ok, found); } } t69 = h17_own17; h17_own17 = t3; h_0opt_f87774a_release(&t69); t70 = h2_f0; h_0opt_f87774a_retain(&t3); h2_f0 = t3; h_0opt_f87774a_release(&t70); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h2_f0; t9 = t8.as.ok; t71 = h3_r0; hero_str_incref(t9); h3_r0 = t9; hero_str_decref(t71); goto bb3; bb2: t10 = HERO_STR_LIT(hero_str_0); t72 = h3_r0; hero_str_incref(t10); h3_r0 = t10; hero_str_decref(t72); goto bb3; bb3: t11 = h3_r0; t73 = h4_said; hero_str_incref(t11); h4_said = t11; hero_str_decref(t73);
     t12 = false; h5_close = t12;
@@ -3636,12 +3636,12 @@ bool h_1corenethttpinternalwire_closes(HeroStr h0_version, HeroMapHeader * h1_he
     hero_str_release_at(&h21_own21);
     return t68;
 bb19:
-#line 131 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 131 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t65 = h6_keep; t66 = !t65; h16_b4 = t66; goto bb20; bb20: t67 = h16_b4; h15_b3 = t67; goto bb18;
 #line 3642 "main.c"
 }
 
-#line 137 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 137 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_message(HeroStr h0_first, HeroMapHeader * h1_header, HeroStr h2_body) { HeroArrayHeader * h3_out = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t4, *t6, *t9, *t12, *t46, *t50, *t51, *t52, *t53; HERO_NODEBUG int64_t h5_i0, t7, t8, t10, t13, t25, t26, t37, t38, t39; HeroStr h6_name = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}, h13_own13 = {0}, t23, t24, t28, t30, t57, t58; HERO_NODEBUG HeroStr h8_own8 = {0}, h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t1, t2, t3, t14, t15, t18, t19, t20, t22, t31, t32, t33, t34, t35, t41, t44, t47, t48, t49, t54, t55, t56, t59, t60, t61; HERO_NODEBUG HeroMapHeader *t5, *t21; HERO_NODEBUG bool t11, t16, t27; HERO_NODEBUG HeroFailure t29; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_first; t2 = HERO_STR_LIT(hero_str_6b1); t3 = hero_str_concat(t1, t2); t49 = h8_own8; h8_own8 = t3; hero_str_decref(t49); t4 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t4, &t3); t50 = h9_own9; h9_own9 = t4; hero_array_decref(t50); t51 = h3_out; hero_array_incref(t4); h3_out = t4; hero_array_decref(t51);
 #line 140
@@ -3672,14 +3672,14 @@ HeroStr h_1corenethttpinternalwire_message(HeroStr h0_first, HeroMapHeader * h1_
 bb5:
     goto bb3;
 bb6:
-#line 142 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 142 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t18 = h6_name; t19 = HERO_STR_LIT(hero_str_1dce); t20 = hero_str_concat(t18, t19); t56 = h12_own12; h12_own12 = t20; hero_str_decref(t56); t21 = h1_header; t22 = h6_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.message", 142, 51}; HERO_NODEBUG const void *found = hero_map_find_at(t21, &t22, &hero_here); if (found == NULL) { t23 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t23 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t23.as.ok, found); } } t57 = h13_own13; h13_own13 = t23; h_0opt_f87774a_release(&t57); t58 = h7_f0; h_0opt_f87774a_retain(&t23); h7_f0 = t23; h_0opt_f87774a_release(&t58); t24 = h7_f0; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb8; else goto bb9; bb7: goto bb5; bb8: t30 = h7_f0; t31 = t30.as.ok; t32 = h_1corenethttpinternalwire_one_line(t31); t59 = h14_own14; h14_own14 = t32; hero_str_decref(t59); t33 = hero_str_concat(t20, t32); t60 = h15_own15; h15_own15 = t33; hero_str_decref(t60); t34 = HERO_STR_LIT(hero_str_6b1); t35 = hero_str_concat(t33, t34); t61 = h16_own16; h16_own16 = t35; hero_str_decref(t61); hero_array_push_owned(&h3_out, &t35); goto bb5; bb9: t28 = h7_f0; t29 = t28.as.err;
 #line 3678 "main.c"
     hero_panic_must_at(t29, "<core>/net/http/internal/wire.hero", "wire.message", 142, 51);
     hero_unreachable();
 }
 
-#line 150 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 150 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_status_line(int64_t h0_status) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t3, t4, t5, t6, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG int64_t t2, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_cb3594b); t2 = h0_status; t3 = hero_int_to_str(t2); t10 = h1_own1; h1_own1 = t3; hero_str_decref(t10); t4 = hero_str_concat(t1, t3); t11 = h2_own2; h2_own2 = t4; hero_str_decref(t11); t5 = HERO_STR_LIT(hero_str_20); t6 = hero_str_concat(t4, t5); t12 = h3_own3; h3_own3 = t6; hero_str_decref(t12); t7 = h0_status; t8 = h_1corenethttpinternalwire_reason(t7); t13 = h4_own4; h4_own4 = t8; hero_str_decref(t13); t9 = hero_str_concat(t6, t8); t14 = h5_own5; h5_own5 = t9; hero_str_decref(t14);
 #line 3686 "main.c"
@@ -3692,7 +3692,7 @@ HeroStr h_1corenethttpinternalwire_status_line(int64_t h0_status) { HERO_NODEBUG
     return t9;
 }
 
-#line 155 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 155 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 bool h_1corenethttpinternalwire_target_ok(HeroStr h0_target) { HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h6_own6 = {0}, *t9, *t12, *t15, *t35, *t36; HERO_NODEBUG int64_t h2_i0, t2, t3, t6, t8, t10, t11, t13, t16, t17, t19, t24, t30, t31, t32; int64_t h3_at; HERO_NODEBUG bool h4_b0, h5_ret0, t4, t5, t14, t22, t27, t28, t29, t33, t34; HERO_NODEBUG HeroStr t1, t7, t18, t23; HERO_NODEBUG uint8_t t20, t21, t25, t26; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_target; t2 = hero_str_len(t1); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 159
@@ -3716,7 +3716,7 @@ bool h_1corenethttpinternalwire_target_ok(HeroStr h0_target) { HERO_NODEBUG Hero
     return t34;
 }
 
-#line 167 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 167 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_reason(int64_t h0_status) { HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5, t6, t8, t9, t11, t12, t14, t15, t17, t18, t20, t21, t23, t24, t26, t27, t29, t30, t32, t33; HERO_NODEBUG HeroStr h2_r0 = {0}, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59; HERO_NODEBUG bool t4, t7, t10, t13, t16, t19, t22, t25, t28, t31, t34; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_status; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(200);
@@ -3727,7 +3727,7 @@ HeroStr h_1corenethttpinternalwire_reason(int64_t h0_status) { HERO_NODEBUG int6
     hero_str_release_at(&h2_r0);
     return t47;
 bb2:
-#line 169 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 169 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t35 = HERO_STR_LIT(hero_str_28b8);
 #line 168
     t48 = h2_r0; hero_str_incref(t35); h2_r0 = t35; hero_str_decref(t48); goto bb1; bb3: t5 = h1_s0;
@@ -3818,7 +3818,7 @@ bb2:
 #line 3819 "main.c"
 }
 
-#line 184 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 184 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroArrayHeader * h_1corenethttpinternalwire_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t5, *t8, *t11, *t22, *t23, *t24, *t25, *t26; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t16, t19, t20, t21; int64_t h4_at; HERO_NODEBUG HeroStr t3, t15; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t23 = h5_own5; h5_own5 = t1; hero_array_decref(t23); t24 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t24);
 #line 187
@@ -3837,7 +3837,7 @@ HeroArrayHeader * h_1corenethttpinternalwire_bytes_of(HeroStr h0_text) { HeroArr
     return t22;
 }
 
-#line 195 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 195 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 bool h_1corenethttpinternalwire_token(HeroStr h0_text) { HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h12_xs1 = {0}, *h18_own18 = {0}, *h20_own20 = {0}, *t9, *t12, *t15, *t48, *t51, *t54, *t78, *t79, *t81, *t82; HERO_NODEBUG int64_t h2_i0, h13_i1, t2, t3, t6, t8, t10, t11, t13, t16, t17, t19, t45, t47, t49, t50, t52, t55, t56, t59, t64, t65, t66, t73, t74, t75; int64_t h3_at; uint8_t h4_c; HERO_NODEBUG bool h5_b0, h6_b1, h7_b2, h8_b3, h9_b4, h15_b5, h16_b6, h17_ret0, t4, t5, t14, t23, t26, t27, t30, t33, t34, t35, t38, t41, t42, t43, t44, t53, t57, t62, t63, t67, t68, t69, t70, t71, t72, t76, t77; bool h10_letter; bool h11_mark; int64_t h14_i; HERO_NODEBUG HeroStr h19_own19 = {0}, h21_own21 = {0}, t1, t7, t18, t46, t58, t80, t83; HERO_NODEBUG uint8_t t20, t21, t22, t24, t25, t28, t29, t31, t32, t36, t37, t39, t40, t60, t61; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = hero_str_len(t1); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 199
@@ -3882,7 +3882,7 @@ bool h_1corenethttpinternalwire_token(HeroStr h0_text) { HERO_NODEBUG HeroArrayH
     return t77;
 }
 
-#line 215 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 215 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroArrayHeader * h_1corenethttpinternalwire_split_spaces(HeroStr h0_line) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *t1, *t6, *t9, *t12, *t32, *t38, *t39, *t40, *t41, *t42, *t44; HERO_NODEBUG int64_t h4_i0, t2, t3, t5, t7, t8, t10, t13, t14, t16, t22, t23, t26, t27, t28, t29, t30, t31, t34, t36; int64_t h5_at; HERO_NODEBUG HeroStr h8_own8 = {0}, h10_own10 = {0}, t4, t15, t21, t24, t33, t35, t37, t43, t45; HERO_NODEBUG bool t11, t19; HERO_NODEBUG uint8_t t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t39 = h6_own6; h6_own6 = t1; hero_array_decref(t39); t40 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t40);
     t2 = INT64_C(0); h2_start = t2;
@@ -3906,13 +3906,13 @@ HeroArrayHeader * h_1corenethttpinternalwire_split_spaces(HeroStr h0_line) { Her
 bb5:
     goto bb3;
 bb6:
-#line 221 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 221 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t21 = h0_line; t22 = h2_start; t23 = h5_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/net/http/internal/wire.hero", "wire.split_spaces", 221, 28}; t24 = hero_str_slice_at(t21, t22, t23, &hero_here); } t45 = h10_own10; h10_own10 = t24; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t24);
     t26 = h5_at; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/net/http/internal/wire.hero", "wire.split_spaces", 222, 21); h2_start = t28; goto bb5; bb7: goto bb5;
 #line 3913 "main.c"
 }
 
-#line 227 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 227 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_one_line(HeroStr h0_value) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t5, *t8, *t11, *t36, *t46, *t47, *t48, *t49; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t15, t20, t30, t33, t34, t35, t39, t40; int64_t h4_at; HERO_NODEBUG bool h5_b0, t10, t18, t23, t24, t41; HERO_NODEBUG h_0opt_f87774a h6_f0 = {0}, h9_own9 = {0}, t37, t38, t42, t44, t50, t51; HERO_NODEBUG HeroStr t3, t14, t19, t29, t45; HERO_NODEBUG uint8_t t16, t17, t21, t22, t26, t31; HERO_NODEBUG HeroFailure t43; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t46 = h7_own7; h7_own7 = t1; hero_array_decref(t46); t47 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t47);
 #line 230
@@ -3939,14 +3939,14 @@ HeroStr h_1corenethttpinternalwire_one_line(HeroStr h0_value) { HeroArrayHeader 
     h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
     return t45;
 bb11:
-#line 236 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 236 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
     t42 = h6_f0; t43 = t42.as.err;
 #line 3945 "main.c"
     hero_panic_must_at(t43, "<core>/net/http/internal/wire.hero", "wire.one_line", 236, 12);
     hero_unreachable();
 }
 
-#line 240 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/wire.hero"
+#line 240 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/wire.hero"
 HeroStr h_1corenethttpinternalwire_shown(HeroStr h0_text) { int64_t h1_cut; HERO_NODEBUG bool h2_b0, h3_b1, t4, t13, t18, t19, t24, t25; HERO_NODEBUG HeroStr h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t1, t5, t6, t7, t8, t9, t14, t20, t29, t30, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42; HERO_NODEBUG int64_t t2, t3, t10, t11, t12, t15, t21, t26, t27, t28, t31, t32; HERO_NODEBUG uint8_t t16, t17, t22, t23; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = hero_str_len(t1); t3 = INT64_C(80); t4 = t2 <= t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 243
@@ -3971,7 +3971,7 @@ HeroStr h_1corenethttpinternalwire_shown(HeroStr h0_text) { int64_t h1_cut; HERO
     return t37;
 }
 
-#line 6 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strconv/internal/shown.hero"
+#line 6 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv/internal/shown.hero"
 HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t5, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG int64_t t2, t3, t6; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = INT64_C(40); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 9
@@ -3989,7 +3989,7 @@ HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr 
     return t17;
 }
 
-#line 17 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings/internal/scan.hero"
+#line 17 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) { uint8_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, h10_b5, h11_b6, h12_b7, h13_b8, h14_b9, h15_b10, h16_b11, h17_b12, h18_b13, h19_b14, t6, t9, t12, t13, t14, t18, t24, t31, t38, t39, t40, t48, t62, t65, t66, t69, t70, t74, t77, t78, t81, t84, t85, t88, t89, t92, t93, t94, t98, t101, t102, t105, t106, t110, t113, t114, t117, t118; uint8_t h7_second; uint8_t h8_third; HERO_NODEBUG int64_t h20_ret0, t2, t15, t19, t20, t21, t23, t26, t27, t28, t33, t34, t35, t41, t42, t43, t44, t45, t47, t49, t51, t52, t53, t56, t57, t58, t71, t95, t107, t119, t120, t121; HERO_NODEBUG HeroStr t1, t22, t25, t32, t46, t50, t55; HERO_NODEBUG uint8_t t3, t4, t5, t7, t8, t10, t11, t16, t17, t29, t30, t36, t37, t54, t59, t60, t61, t63, t64, t67, t68, t72, t73, t75, t76, t79, t80, t82, t83, t86, t87, t90, t91, t96, t97, t99, t100, t103, t104, t108, t109, t111, t112, t115, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "<core>/strings/internal/scan.hero", "scan.space_width_at", 18, 13) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); h2_first = t3;
 #line 20
@@ -4040,7 +4040,7 @@ int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) {
     return t121;
 }
 
-#line 48 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings/internal/scan.hero"
+#line 48 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t4, *t7, *t10, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_ret0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t14, t15, t16, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30, t31; int64_t h4_width; HERO_NODEBUG bool h5_b0, t9, t17, t24, t25; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t32 = h7_own7; h7_own7 = t4; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t33); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/strings/internal/scan.hero", "scan.space_width_before", 49, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_width = t12;
     t13 = h1_end; t14 = h4_width; if (__builtin_sub_overflow(t13, t14, &t15)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 12); t16 = INT64_C(0); t17 = t15 >= t16; h5_b0 = t17; if (t17) goto bb6; else goto bb7; bb3:
@@ -4058,7 +4058,7 @@ int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_e
     return t31;
 }
 
-#line 57 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/strings/internal/scan.hero"
+#line 57 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
 h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep) { int64_t h2_last; int64_t h3_at; int64_t h4_matched; HERO_NODEBUG bool h5_b0, t9, t14, t23, t24, t31, t40; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h18_own18 = {0}, t33, t53, t64, t65, t66, t71, t77; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t1, t3, t12, t15, t20, t29, t37, t41, t42, t43, t45, t46, t47, t48, t49, t50, t51, t52, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t67, t68, t69, t70, t72, t73, t74, t75, t76; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t11, t13, t16, t17, t18, t21, t25, t26, t27, t28, t30, t32, t34, t35, t36, t38, t39, t44; HERO_NODEBUG uint8_t t19, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = h1_sep; t4 = hero_str_len(t3); if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.first_at", 58, 12); h2_last = t5;
     t6 = INT64_C(0); h3_at = t6; goto bb1; bb1:
@@ -4254,7 +4254,7 @@ bb2:
 #line 4255 "main.c"
 }
 
-#line 19 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 19 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 /* failed<Listener> */ HERO_TU_LOCAL h_0opt_157a2e20 h_1corenetinternalfailure_0failed_113a1613(HeroStr h0_asked) { int64_t h1_kind; int64_t h2_os; HeroStr h3_said = {0}; HeroStr h4_number = {0}; HERO_NODEBUG h_0opt_157a2e20 h5_ret0 = {0}, h11_own11 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h26_own26 = {0}, h29_own29 = {0}, h32_own32 = {0}, h35_own35 = {0}, h38_own38 = {0}, h41_own41 = {0}, h44_own44 = {0}, t23, t33, t43, t53, t63, t73, t83, t93, t103, t113, t123, t130, t131, t140, t143, t146, t149, t152, t155, t158, t161, t164, t167, t170, t173; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h31_own31 = {0}, h33_own33 = {0}, h34_own34 = {0}, h36_own36 = {0}, h37_own37 = {0}, h39_own39 = {0}, h40_own40 = {0}, h42_own42 = {0}, h43_own43 = {0}, t3, t4, t5, t6, t10, t12, t13, t14, t15, t19, t20, t21, t22, t27, t28, t29, t30, t31, t32, t37, t38, t39, t40, t41, t42, t47, t48, t49, t50, t51, t52, t57, t58, t59, t60, t61, t62, t67, t68, t69, t70, t71, t72, t77, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91, t92, t97, t98, t99, t100, t101, t102, t107, t108, t109, t110, t111, t112, t117, t118, t119, t120, t121, t122, t124, t125, t126, t127, t128, t129, t132, t133, t134, t135, t136, t137, t138, t139, t141, t142, t144, t145, t147, t148, t150, t151, t153, t154, t156, t157, t159, t160, t162, t163, t165, t166, t168, t169, t171, t172; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t16, t17, t24, t25, t34, t35, t44, t45, t54, t55, t64, t65, t74, t75, t84, t85, t94, t95, t104, t105, t114, t115; HERO_NODEBUG bool t9, t18, t26, t36, t46, t56, t66, t76, t86, t96, t106, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_last_error(); h1_kind = t1;
     t2 = h_1corenetheronet_last_os_error(); h2_os = t2;
@@ -4360,7 +4360,7 @@ bb2:
     return t131;
 }
 
-#line 19 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 19 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 /* failed<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_1corenetinternalfailure_0failed_1b9a87(HeroStr h0_asked) { int64_t h1_kind; int64_t h2_os; HeroStr h3_said = {0}; HeroStr h4_number = {0}; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h11_own11 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h26_own26 = {0}, h29_own29 = {0}, h32_own32 = {0}, h35_own35 = {0}, h38_own38 = {0}, h41_own41 = {0}, h44_own44 = {0}, t23, t33, t43, t53, t63, t73, t83, t93, t103, t113, t123, t130, t131, t140, t143, t146, t149, t152, t155, t158, t161, t164, t167, t170, t173; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h31_own31 = {0}, h33_own33 = {0}, h34_own34 = {0}, h36_own36 = {0}, h37_own37 = {0}, h39_own39 = {0}, h40_own40 = {0}, h42_own42 = {0}, h43_own43 = {0}, t3, t4, t5, t6, t10, t12, t13, t14, t15, t19, t20, t21, t22, t27, t28, t29, t30, t31, t32, t37, t38, t39, t40, t41, t42, t47, t48, t49, t50, t51, t52, t57, t58, t59, t60, t61, t62, t67, t68, t69, t70, t71, t72, t77, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91, t92, t97, t98, t99, t100, t101, t102, t107, t108, t109, t110, t111, t112, t117, t118, t119, t120, t121, t122, t124, t125, t126, t127, t128, t129, t132, t133, t134, t135, t136, t137, t138, t139, t141, t142, t144, t145, t147, t148, t150, t151, t153, t154, t156, t157, t159, t160, t162, t163, t165, t166, t168, t169, t171, t172; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t16, t17, t24, t25, t34, t35, t44, t45, t54, t55, t64, t65, t74, t75, t84, t85, t94, t95, t104, t105, t114, t115; HERO_NODEBUG bool t9, t18, t26, t36, t46, t56, t66, t76, t86, t96, t106, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_last_error(); h1_kind = t1;
     t2 = h_1corenetheronet_last_os_error(); h2_os = t2;
@@ -4466,7 +4466,7 @@ bb2:
     return t131;
 }
 
-#line 19 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 19 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 /* failed<Conn> */ HERO_TU_LOCAL h_0opt_6d20ca90 h_1corenetinternalfailure_0failed_20fdb29b(HeroStr h0_asked) { int64_t h1_kind; int64_t h2_os; HeroStr h3_said = {0}; HeroStr h4_number = {0}; HERO_NODEBUG h_0opt_6d20ca90 h5_ret0 = {0}, h11_own11 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h26_own26 = {0}, h29_own29 = {0}, h32_own32 = {0}, h35_own35 = {0}, h38_own38 = {0}, h41_own41 = {0}, h44_own44 = {0}, t23, t33, t43, t53, t63, t73, t83, t93, t103, t113, t123, t130, t131, t140, t143, t146, t149, t152, t155, t158, t161, t164, t167, t170, t173; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h31_own31 = {0}, h33_own33 = {0}, h34_own34 = {0}, h36_own36 = {0}, h37_own37 = {0}, h39_own39 = {0}, h40_own40 = {0}, h42_own42 = {0}, h43_own43 = {0}, t3, t4, t5, t6, t10, t12, t13, t14, t15, t19, t20, t21, t22, t27, t28, t29, t30, t31, t32, t37, t38, t39, t40, t41, t42, t47, t48, t49, t50, t51, t52, t57, t58, t59, t60, t61, t62, t67, t68, t69, t70, t71, t72, t77, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91, t92, t97, t98, t99, t100, t101, t102, t107, t108, t109, t110, t111, t112, t117, t118, t119, t120, t121, t122, t124, t125, t126, t127, t128, t129, t132, t133, t134, t135, t136, t137, t138, t139, t141, t142, t144, t145, t147, t148, t150, t151, t153, t154, t156, t157, t159, t160, t162, t163, t165, t166, t168, t169, t171, t172; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t16, t17, t24, t25, t34, t35, t44, t45, t54, t55, t64, t65, t74, t75, t84, t85, t94, t95, t104, t105, t114, t115; HERO_NODEBUG bool t9, t18, t26, t36, t46, t56, t66, t76, t86, t96, t106, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_last_error(); h1_kind = t1;
     t2 = h_1corenetheronet_last_os_error(); h2_os = t2;
@@ -4572,7 +4572,7 @@ bb2:
     return t131;
 }
 
-#line 19 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 19 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 /* failed<[u8]> */ HERO_TU_LOCAL h_0opt_4d1c207c h_1corenetinternalfailure_0failed_c50563b(HeroStr h0_asked) { int64_t h1_kind; int64_t h2_os; HeroStr h3_said = {0}; HeroStr h4_number = {0}; HERO_NODEBUG h_0opt_4d1c207c h5_ret0 = {0}, h11_own11 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h26_own26 = {0}, h29_own29 = {0}, h32_own32 = {0}, h35_own35 = {0}, h38_own38 = {0}, h41_own41 = {0}, h44_own44 = {0}, t23, t33, t43, t53, t63, t73, t83, t93, t103, t113, t123, t130, t131, t140, t143, t146, t149, t152, t155, t158, t161, t164, t167, t170, t173; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h31_own31 = {0}, h33_own33 = {0}, h34_own34 = {0}, h36_own36 = {0}, h37_own37 = {0}, h39_own39 = {0}, h40_own40 = {0}, h42_own42 = {0}, h43_own43 = {0}, t3, t4, t5, t6, t10, t12, t13, t14, t15, t19, t20, t21, t22, t27, t28, t29, t30, t31, t32, t37, t38, t39, t40, t41, t42, t47, t48, t49, t50, t51, t52, t57, t58, t59, t60, t61, t62, t67, t68, t69, t70, t71, t72, t77, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91, t92, t97, t98, t99, t100, t101, t102, t107, t108, t109, t110, t111, t112, t117, t118, t119, t120, t121, t122, t124, t125, t126, t127, t128, t129, t132, t133, t134, t135, t136, t137, t138, t139, t141, t142, t144, t145, t147, t148, t150, t151, t153, t154, t156, t157, t159, t160, t162, t163, t165, t166, t168, t169, t171, t172; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t16, t17, t24, t25, t34, t35, t44, t45, t54, t55, t64, t65, t74, t75, t84, t85, t94, t95, t104, t105, t114, t115; HERO_NODEBUG bool t9, t18, t26, t36, t46, t56, t66, t76, t86, t96, t106, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_last_error(); h1_kind = t1;
     t2 = h_1corenetheronet_last_os_error(); h2_os = t2;
@@ -4678,7 +4678,7 @@ bb2:
     return t131;
 }
 
-#line 19 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/internal/failure.hero"
+#line 19 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/internal/failure.hero"
 /* failed<()> */ HERO_TU_LOCAL h_0opt_a8ea2 h_1corenetinternalfailure_0failed_14a1(HeroStr h0_asked) { int64_t h1_kind; int64_t h2_os; HeroStr h3_said = {0}; HeroStr h4_number = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_ret0 = {0}, h11_own11 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h26_own26 = {0}, h29_own29 = {0}, h32_own32 = {0}, h35_own35 = {0}, h38_own38 = {0}, h41_own41 = {0}, h44_own44 = {0}, t23, t33, t43, t53, t63, t73, t83, t93, t103, t113, t123, t130, t131, t140, t143, t146, t149, t152, t155, t158, t161, t164, t167, t170, t173; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h31_own31 = {0}, h33_own33 = {0}, h34_own34 = {0}, h36_own36 = {0}, h37_own37 = {0}, h39_own39 = {0}, h40_own40 = {0}, h42_own42 = {0}, h43_own43 = {0}, t3, t4, t5, t6, t10, t12, t13, t14, t15, t19, t20, t21, t22, t27, t28, t29, t30, t31, t32, t37, t38, t39, t40, t41, t42, t47, t48, t49, t50, t51, t52, t57, t58, t59, t60, t61, t62, t67, t68, t69, t70, t71, t72, t77, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91, t92, t97, t98, t99, t100, t101, t102, t107, t108, t109, t110, t111, t112, t117, t118, t119, t120, t121, t122, t124, t125, t126, t127, t128, t129, t132, t133, t134, t135, t136, t137, t138, t139, t141, t142, t144, t145, t147, t148, t150, t151, t153, t154, t156, t157, t159, t160, t162, t163, t165, t166, t168, t169, t171, t172; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t16, t17, t24, t25, t34, t35, t44, t45, t54, t55, t64, t65, t74, t75, t84, t85, t94, t95, t104, t105, t114, t115; HERO_NODEBUG bool t9, t18, t26, t36, t46, t56, t66, t76, t86, t96, t106, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corenetheronet_last_error(); h1_kind = t1;
     t2 = h_1corenetheronet_last_os_error(); h2_os = t2;
@@ -4784,7 +4784,7 @@ bb2:
     return t131;
 }
 
-#line 103 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 103 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* code_of<Head> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0code_of_23bff3dc(h_0opt_533eac03 h0_got) { HERO_NODEBUG h_0opt_533eac03 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_533eac03_retain(&t1); h1_s0 = t1; h_0opt_533eac03_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4791 "main.c"
@@ -4794,7 +4794,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 105 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 105 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 104
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -4805,7 +4805,7 @@ bb2:
 #line 4806 "main.c"
 }
 
-#line 109 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 109 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* message_of<Head> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0message_of_23bff3dc(h_0opt_533eac03 h0_got) { HERO_NODEBUG h_0opt_533eac03 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_533eac03_retain(&t1); h1_s0 = t1; h_0opt_533eac03_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4812 "main.c"
@@ -4815,7 +4815,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 111 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 111 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 110
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -4826,7 +4826,7 @@ bb2:
 #line 4827 "main.c"
 }
 
-#line 109 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 109 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* message_of<RequestLine> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0message_of_4d918fca(h_0opt_187c932 h0_got) { HERO_NODEBUG h_0opt_187c932 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_187c932_retain(&t1); h1_s0 = t1; h_0opt_187c932_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4833 "main.c"
@@ -4836,7 +4836,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 111 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 111 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 110
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -4847,7 +4847,7 @@ bb2:
 #line 4848 "main.c"
 }
 
-#line 109 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 109 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* message_of<{str: str}> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0message_of_74b023fe(h_0opt_36226bb0 h0_got) { HERO_NODEBUG h_0opt_36226bb0 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_36226bb0_retain(&t1); h1_s0 = t1; h_0opt_36226bb0_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4854 "main.c"
@@ -4857,7 +4857,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 111 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 111 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 110
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -4868,7 +4868,7 @@ bb2:
 #line 4869 "main.c"
 }
 
-#line 109 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 109 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* message_of<i64> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0message_of_1b9a87(h_0opt_e201354 h0_got) { HERO_NODEBUG h_0opt_e201354 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_e201354_retain(&t1); h1_s0 = t1; h_0opt_e201354_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4875 "main.c"
@@ -4878,7 +4878,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 111 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 111 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 110
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -4889,7 +4889,7 @@ bb2:
 #line 4890 "main.c"
 }
 
-#line 103 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 103 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* code_of<[u8]> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0code_of_c50563b(h_0opt_4d1c207c h0_got) { HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_4d1c207c_retain(&t1); h1_s0 = t1; h_0opt_4d1c207c_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4896 "main.c"
@@ -4899,7 +4899,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 105 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 105 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 104
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -4910,7 +4910,7 @@ bb2:
 #line 4911 "main.c"
 }
 
-#line 109 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 109 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
 /* message_of<[u8]> */ HERO_TU_LOCAL HeroStr h_1corenethttpinternallines_0message_of_c50563b(h_0opt_4d1c207c h0_got) { HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_4d1c207c_retain(&t1); h1_s0 = t1; h_0opt_4d1c207c_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 4917 "main.c"
@@ -4920,7 +4920,7 @@ bb2:
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 111 "examples/server/heroes.packages/core@0.4.0-c65a01aeebf10d3c/net/http/internal/lines.hero"
+#line 111 "examples/server/heroes.packages/core@0.5.0-f58b55a0517ed0eb/net/http/internal/lines.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 110
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -5750,7 +5750,7 @@ HERO_TU_LOCAL uint64_t h_0opt_187c932_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("78fd9dbc28f404ad", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bebca401639d23b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1corenet\tnet\n1corenethttp\thttp\n1corestrconv\tstrconv\n1corestrings\tstrings\n1corenetheronet\thero_net\n1corenetinternalfailure\tfailure\n1corenethttpinternalclient\tclient\n1corenethttpinternalserver\tserver\n1corenethttpinternallines\tlines\n1corenethttpinternalwire\twire\n1corestrconvinternalshown\tshown\n1corestringsinternalscan\tscan\n");

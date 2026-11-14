@@ -545,7 +545,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("07b1c77758ddaaeb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a9ff3fa46237879", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2427theotherconversionsofau64holdattheiredges\tfixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges\n");

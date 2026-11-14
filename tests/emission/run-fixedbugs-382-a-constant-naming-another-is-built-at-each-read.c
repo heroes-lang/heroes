@@ -429,7 +429,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("521df2f87b4f3620", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("050c1f7c689503ae", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantnaminganotherisbuiltateachread\tfixedbugs-382-a-constant-naming-another-is-built-at-each-read\n");

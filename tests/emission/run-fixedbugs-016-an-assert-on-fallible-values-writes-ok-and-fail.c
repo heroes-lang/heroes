@@ -242,7 +242,7 @@ HERO_TU_LOCAL void h_0show_e201354(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6df4f5127e435eb8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("20e321966b892c46", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonfalliblevalueswritesokandfail\tfixedbugs-016-an-assert-on-fallible-values-writes-ok-and-fail\n");

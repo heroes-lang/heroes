@@ -216,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("612fa6b050381f03", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("141dd3343d7dec91", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs577aconstantreadinafunctionsstepabortswhereitruns\tfixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs\n");

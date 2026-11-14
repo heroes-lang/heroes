@@ -438,7 +438,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e7c854d6c7a630e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("016ab1d159c0309c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerstopsaserveronaninterrupt\tthe-platform-layer-stops-a-server-on-an-interrupt\n");

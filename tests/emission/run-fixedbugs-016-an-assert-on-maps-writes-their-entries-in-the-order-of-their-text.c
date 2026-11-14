@@ -233,7 +233,7 @@ HERO_TU_LOCAL void h_0show_7348c008(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("43731a1b4314705d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7661469e305a3deb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext\tfixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text\n");

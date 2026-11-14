@@ -469,7 +469,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41f154eb4d2be081", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("74df816e3a71ae0f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs461arewritekeepstheownertheaclandthestreams\tfixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams\n");

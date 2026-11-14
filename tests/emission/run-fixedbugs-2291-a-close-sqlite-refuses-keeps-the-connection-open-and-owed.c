@@ -432,7 +432,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("05712c297a811f7c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("385f58ac67c6ed0a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2291aclosesqliterefuseskeepstheconnectionopenandowed\tfixedbugs-2291-a-close-sqlite-refuses-keeps-the-connection-open-and-owed\n");

@@ -301,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b92835e1142f7b1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1e80afe27e88c53e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2339afunctionwhoseroomisfullisnamedateverylevel\tfixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level\n");

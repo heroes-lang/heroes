@@ -230,7 +230,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("68c3c6d610fb3a66", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bb1f35a7e4107f3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeagenericinstanceisnamedaswritten\tplace-a-generic-instance-is-named-as-written\n");

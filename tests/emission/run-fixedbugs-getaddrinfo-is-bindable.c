@@ -295,7 +295,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b08e63676d46517", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5df712b9641a32a5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsgetaddrinfoisbindable\tfixedbugs-getaddrinfo-is-bindable\n");

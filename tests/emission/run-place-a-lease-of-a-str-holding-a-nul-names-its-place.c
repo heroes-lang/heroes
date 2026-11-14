@@ -291,7 +291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("68b332b73323b69c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ba15f3b2069842a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placealeaseofastrholdinganulnamesitsplace\tplace-a-lease-of-a-str-holding-a-nul-names-its-place\n");

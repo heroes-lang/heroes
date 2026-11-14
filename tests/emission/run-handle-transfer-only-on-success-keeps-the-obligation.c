@@ -305,7 +305,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("765657135081d3ec", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("294483973dc7a17a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handletransferonlyonsuccesskeepstheobligation\thandle-transfer-only-on-success-keeps-the-obligation\n");

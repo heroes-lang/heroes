@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("456fd98e64028d8f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("785e061151485b1d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffianullfunctionpointersaysso\tffi-a-null-function-pointer-says-so\n");

@@ -846,7 +846,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("19b3d5bb2afefccc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ca2023e1844ca5a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2490achildstartsinthefolderitisgiven\tfixedbugs-2490-a-child-starts-in-the-folder-it-is-given\n");

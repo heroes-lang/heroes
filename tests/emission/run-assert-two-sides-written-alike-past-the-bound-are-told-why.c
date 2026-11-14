@@ -252,7 +252,7 @@ HERO_TU_LOCAL void h_0show_4b7fe249(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c0fca090adf4512", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5efdf68c7825129f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("asserttwosideswrittenalikepasttheboundaretoldwhy\tassert-two-sides-written-alike-past-the-bound-are-told-why\n");

@@ -466,7 +466,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("76b8137b7979ff43", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("29a63fff66bfccd1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2500aremovalisdoneonlywherethenameisgone\tfixedbugs-2500-a-removal-is-done-only-where-the-name-is-gone\n");

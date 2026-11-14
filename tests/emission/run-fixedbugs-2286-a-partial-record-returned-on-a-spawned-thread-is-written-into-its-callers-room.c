@@ -340,7 +340,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c1e38b576bb1eab", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f0c65396400ec39", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom\tfixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room\n");

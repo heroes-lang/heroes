@@ -320,7 +320,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bc67a6544699e28", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3eb4a6e831af6bb6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396afieldlentasonecellisthebindingsword\tfixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word\n");

@@ -352,7 +352,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4dd0c4f808e29cd7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("00bef17c76286a64", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantmapisbuiltateachread\tfixedbugs-382-a-constant-map-is-built-at-each-read\n");

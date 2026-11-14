@@ -510,7 +510,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d9b0d98034f108a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("70893a1b7094de17", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsdescriptorforwhattheemitternames\tfixedbugs-descriptor-for-what-the-emitter-names\n");

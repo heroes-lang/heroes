@@ -399,7 +399,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ff0ccba65a329c0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("22def93e52e8f74e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs173aregularexpressiongetsthebytesitsauthorwrote\tfixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote\n");
