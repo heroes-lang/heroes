@@ -231,11 +231,17 @@ function trees() -> [Tree]
     # And 0.4.0 took 0.3.0's place the same day by the same decision, with
     # the same twenty `.hero` files (panel 248's R4 and R5 in `net`), so the
     # row stands: 20 seeds and 180 variants, the same command, exit 0.
+    # The examples row raised 2026-11-14 at batch 36's gate, to what the suite
+    # asked: 440 seeds and 3960 variants, past 269 and 2421 by more than a
+    # quarter, the sixteen programs' placed trees moved to core 0.4.0, twenty
+    # files each where 0.2.1's held twelve: 440 `.hero` files under
+    # `examples/`, 320 of them in placed trees, against 328 and 208 at
+    # df7612ad3, counted with `git ls-files examples` that day.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
-        Tree(name: "examples, multi", root: "examples", seeds: 269, floor: Floor(family: "multi", generated: 2421, parsing: 2421), known: none)
+        Tree(name: "examples, multi", root: "examples", seeds: 440, floor: Floor(family: "multi", generated: 3960, parsing: 3960), known: none)
         Tree(name: "packages, multi", root: "packages", seeds: 20, floor: Floor(family: "multi", generated: 180, parsing: 180), known: none)
     ]
 
