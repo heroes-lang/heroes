@@ -556,6 +556,15 @@ filed and repaired in a later batch. So, from batch 16:
    18:39 against 19:56 whole, the load at 10 on this Mac's 8 cores and each
    process's four seconds eating the gain; so `run` stays whole until it can
    be split inside one process (defect 537).
+   **Corrected 2026-11-15** (the coordinator of batch 37): defect 537 was
+   repaired on 2026-10-09 (`2705815e`), the harness's third word taking
+   `<i>/<n>`, shard `i` of `n` of `run` or a golden form, one harness
+   process each, and batch 17's closing gate read `run` in four shards;
+   task 2505 (batch 37, `83c353b9c`) makes each shard ask the floor of the
+   whole directory and the skip ratio of its own cases, and the CI's
+   Windows and Darwin legs run `run` in two shards. This Mac's gate B ran
+   `run` whole and first in its pool through batch 36; whether shards
+   shorten it on today's tree is unmeasured.
 2. **The push**, at once.
 3. **After the push, beside the CI**: the census, the round's side only (the
    trunk's reused from the last census for each file unchanged since, the
