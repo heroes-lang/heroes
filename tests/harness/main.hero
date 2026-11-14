@@ -20,9 +20,10 @@
 # suite runs only that one.
 #
 # The third word narrows a suite that walks cases: to the cases whose name
-# holds it (`emission` to the programs whose label holds it, `run/loop`, and
-# `records` to one path, the one check that can judge a file
-# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `lldb` or a
+# holds it (`emission` to the programs whose label holds it, `run/loop`,
+# `warnings` to the programs whose name holds it, an example's and a gallery
+# program's as a case's, and `records` to one path, the one check that can judge a file
+# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `lines`, `lldb` or a
 # golden form, its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
 # `cases.selected`). A shard asks none of the whole suite's questions, its
@@ -195,8 +196,10 @@ function main()
     # A shard, `<i>/<n>`, binds the suites whose cases are one sorted list, and
     # only a shard that exists (defect 537). Any other suite that takes a filter
     # walks more than that list (`annotations` its run roots' groups, `fixes`
-    # its fixtures, `layout` its budgets), so a shard of its list would not be
-    # a part of the whole, and `n` of them would not add up to it.
+    # its fixtures, `layout` its budgets, `determinism` three golden
+    # directories, `warnings` two and the examples and the gallery), so a shard
+    # of its list would not be a part of the whole, and `n` of them would not
+    # add up to it.
     if cases.is_shard(pick)
         if !takes_shards(only)
             print(
@@ -309,12 +312,12 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "determinism"
-        got = suite_determinism.run_all(scratch: scratch, compiler: compiler)
+        got = suite_determinism.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the determinism suite could not run" + why(got))
             exit(2)
-        print("  determinism: " + report.counted(got.must()))
+        print("  " + shown(name: "determinism", pick: pick) + ": " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -419,12 +422,12 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "lines"
-        got = suite_lines.run_all(scratch: scratch, compiler: compiler)
+        got = suite_lines.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the lines sweep could not run" + why(got))
             exit(2)
-        print("  lines: " + report.counted(got.must()))
+        print("  " + shown(name: "lines", pick: pick) + ": " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -465,12 +468,12 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "warnings"
-        got = suite_warnings.run_all(scratch: scratch, compiler: compiler)
+        got = suite_warnings.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the warnings gate could not run" + why(got))
             exit(2)
-        print("  warnings: " + report.counted(got.must()))
+        print("  " + shown(name: "warnings", pick: pick) + ": " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -680,18 +683,28 @@ function main()
 # (defect 2341), `layout`, which walks modules and is asked about one file by
 # the write-time hook, and `records`, asked by the same hook about one issue
 # file or one file the code cites a defect in (`credit.hero`).
+#
+# **And the three that build every `run` case for a question of their own,
+# since defect 2529**: `determinism`, `lines` and `warnings` were refused here
+# as suites that walk no cases, a false message told to the person narrowing a
+# repair to its cases, while each walked `run/` whole (858, 817 and 898 checks
+# at batch 36's gate). Every suite whose walk is a golden directory's cases,
+# `cases.collect` or `cases.programs`, is named here, which the test below
+# holds against the suites' own code.
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch", "emission"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch", "emission", "determinism", "lines", "warnings"]
         if name == suite
             return true
 
     return false
 
 # The suites a shard binds: the ones whose cases are one sorted list, the six
-# golden forms, `run` (defect 537) and `lldb`. `annotations`, `fixes` and `layout`
-# take a filter and no shard, `main` says why.
+# golden forms, `run` (defect 537), `lldb`, and `lines` since it took the third
+# word (defect 2529), whose walk is `run/`'s list alone. `annotations`, `fixes`,
+# `layout`, `determinism` and `warnings` take a filter and no shard, `main`
+# says why.
 function takes_shards(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb", "lines"]
         if name == suite
             return true
 
@@ -1178,8 +1191,81 @@ test "the third word binds the suites that walk cases, records narrowed to a pat
     # holds it: refused until then as a suite that walks no cases, its walk
     # having been its own and not the cases'.
     assert takes_cases("emission")
+
+    # And the three that build every `run` case since defect 2529, refused
+    # until then in the words *walks no cases*.
+    assert takes_cases("determinism")
+    assert takes_cases("lines")
+    assert takes_cases("warnings")
     assert !takes_cases("spec")
     assert !takes_cases("")
+
+# The code of a module, its `test` blocks and its comment lines left out, as
+# `.claude/rules/verification.md`'s map reads a suite (defect 288): a literal a
+# test writes, or a comment names, is no walk.
+function code_lines(text: str) -> [str]
+    out: [str] @= []
+    in_test: bool @= false
+
+    for line in strings.lines(text)
+        if core_strings.has_prefix(s: line, prefix: "test \"")
+            in_test @ true
+            continue
+
+        if in_test && line.len() > 0 && line[0] != ' ' && line[0] != '\t' && line[0] != '#'
+            in_test @ false
+
+        if in_test || core_strings.has_prefix(s: strings.trimmed(line), prefix: "#")
+            continue
+        out @ out.push(line)
+
+    return out
+
+# **The message `main` gives a suite outside `takes_cases`, *walks no cases*,
+# is held to the suites' own code** (defect 2529): a suite whose code walks a
+# golden directory's cases, `cases.collect` or `cases.programs`, takes the
+# third word, by the word that selects it, `suite_<name>.hero`'s `<name>` and
+# the six forms for `suite_golden.hero`. Ten such suites on the day this was
+# written, the floor below, so a reading that finds none is a red and not a
+# vacuous green.
+test "every suite whose code walks a golden directory's cases takes the third word (defect 2529)"
+    scratch = shell.own_scratch()
+    walkers: i64 @= 0
+    refused: [str] @= []
+
+    for path in shell.list_entries(scratch: scratch, dir: "tests/harness").must()
+        base = strings.base_name(path: path)
+
+        if !core_strings.has_prefix(s: base, prefix: "suite_") || !core_strings.has_suffix(s: base, suffix: ".hero")
+            continue
+        code = code_lines(read_file(path).must()).join("\n")
+
+        if !core_strings.contains(s: code, substr: "cases.collect(") && !core_strings.contains(s: code, substr: "cases.programs(")
+            continue
+        walkers @ walkers + 1
+        name = strings.without_suffix(text: strings.without_prefix(text: base, prefix: "suite_"), suffix: ".hero")
+        words: [str] @= [name]
+
+        if name == "golden"
+            words @ [
+                suite_golden.shape_check().name
+                suite_golden.shape_ir().name
+                suite_golden.shape_emit().name
+                suite_golden.shape_unsupported().name
+                suite_golden.shape_permissive().name
+                suite_golden.shape_full().name
+            ]
+
+        for word in words
+            if !takes_cases(word)
+                refused @ refused.push(word)
+
+    assert refused.join(" ") == ""
+    assert walkers >= 10
+
+    # A comment and a test's literal are no walk; a call in the code is one.
+    assert code_lines("# cases.collect(x)\nfunction f()\n    g()\n\ntest \"t\"\n    cases.collect(y)\n\nfunction h()\n    cases.programs(z)\n") == ["function f()", "    g()", "", "function h()", "    cases.programs(z)"]
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a narrowed suite says so on its line"
     assert shown(name: "check", pick: "") == "check"
@@ -1187,13 +1273,14 @@ test "a narrowed suite says so on its line"
     assert shown(name: "run", pick: "2/6") == "run (shard 2 of 6, its floor and skip ratio left to the whole suite)"
 
 test "a shard binds the suites whose cases are one list, and says why a word names none"
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb", "lines"]
         assert takes_shards(name)
         assert takes_cases(name)
 
     # A suite that takes a filter and walks more than one list takes no shard:
-    # `emission` walks four groups and the examples.
-    for name in ["annotations", "fixes", "layout", "records", "emission", ""]
+    # `emission` walks four groups and the examples, `determinism` three golden
+    # directories, `warnings` two and the examples and the gallery.
+    for name in ["annotations", "fixes", "layout", "records", "emission", "determinism", "warnings", ""]
         assert !takes_shards(name)
 
     assert unsharded(cases.shard_of("5/4")) == "`5/4` names no shard: a shard is `<i>/<n>`, the i-th of n, with 1 <= i <= n"

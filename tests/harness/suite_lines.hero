@@ -110,17 +110,24 @@ constant LIBRARY_FILE: str
 constant LEAST: i64
     811
 
-function run_all(scratch: str, compiler: str) -> report.Report?
+# `only` narrows the walk to the cases whose name holds it, or to a shard of
+# them, `<i>/<n>` (`cases.selected`, defect 2529): until then the suite took no
+# word, and `main` told the person narrowing a repair to its cases that it
+# walked none, while it emitted every case of `run/`. A narrowed walk is not
+# the tree, so the floor is asked of the whole run alone; the skip ratio is
+# asked of a filter's cases and of no shard, as `run` asks it.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @= report.empty()
-    found = cases.collect(scratch: scratch, dir: RUN_DIR)?
+    found = cases.selected(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
 
-    floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
+    if only == ""
+        floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
     skipped: i64 @= 0
 
     for item in found
         one_case(@r, @skipped, scratch: scratch, compiler: compiler, item: item)
 
-    if starved(skipped: skipped, found: found.len())
+    if starved(skipped: skipped, found: found.len()) && !cases.is_shard(only)
         report.keep_failure(
             @r,
             label: "lines",
@@ -361,6 +368,29 @@ test "fixedbugs: a case whose one file --emit-c refuses is walked over its units
     assert judged.failed == 0
     assert none_skipped == 0
     assert judged.skips.len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2529, held as a test (2026-11-14): the third word narrows the walk to
+# the cases whose name holds it, where `main` refused it as the word of a suite
+# that walks no cases, and a narrowed walk asks no floor of the tree: the word
+# is the first `run/` case's whole name, the cases it names far fewer than
+# `LEAST`, so a floor asked of them would fail labelled `lines` alone.
+test "fixedbugs: the third word narrows the walk to the cases whose name holds it, and asks no floor of them (defect 2529)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    word = cases.collect(scratch: scratch, dir: RUN_DIR).must()[0].name
+    named = cases.matching(found: cases.collect(scratch: scratch, dir: RUN_DIR).must(), only: word).len()
+    got = run_all(scratch: scratch, compiler: compiler.must(), only: word).must()
+    assert named >= 1 && named < LEAST
+    assert got.passed + got.failed + got.skips.len() == named
+
+    for one in got.failures
+        assert !core_strings.has_prefix(s: one, prefix: "FAIL lines\n")
+
+    assert got.outgrown.len() == 0
     assert !shell.remove_tree(scratch).is_err()
 
 test "a few skips for a missing library pass, a third of the tree does not"
