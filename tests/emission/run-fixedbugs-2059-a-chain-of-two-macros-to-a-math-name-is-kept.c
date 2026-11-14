@@ -274,7 +274,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a5cb38b54a03419", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11892a6232df31bb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2059achainoftwomacrostoamathnameiskept\tfixedbugs-2059-a-chain-of-two-macros-to-a-math-name-is-kept\n");

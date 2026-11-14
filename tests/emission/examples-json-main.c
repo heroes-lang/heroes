@@ -819,7 +819,7 @@ bb5:
     hero_unreachable();
 }
 
-#line 24 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 24 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
 HeroStr h_1coreencodingjson_NOT_JSON(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_330ee464);
 #line 826 "main.c"
@@ -827,7 +827,7 @@ HeroStr h_1coreencodingjson_NOT_JSON(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY
     return t1;
 }
 
-#line 29 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 29 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
 HeroStr h_1coreencodingjson_TOO_DEEP(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1526a387);
 #line 834 "main.c"
@@ -835,7 +835,7 @@ HeroStr h_1coreencodingjson_TOO_DEEP(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY
     return t1;
 }
 
-#line 33 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 33 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
 HeroStr h_1coreencodingjson_NOT_AN_OBJECT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5bfaae18);
 #line 842 "main.c"
@@ -843,7 +843,7 @@ HeroStr h_1coreencodingjson_NOT_AN_OBJECT(void) { HERO_NODEBUG HeroStr t1; HERO_
     return t1;
 }
 
-#line 59 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 59 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
 h_0opt_64c818a4 h_1coreencodingjson_parse(HeroStr h0_s) { h_1coreencodingjsoninternaltokens_Reader h1_r = {0}; HeroArrayHeader * h2_outer_items = {0}; HeroArrayHeader * h3_outer_fields = {0}; HeroArrayHeader * h4_outer_names = {0}; HeroArrayHeader * h5_outer_objects = {0}; HeroArrayHeader * h6_items = {0}; HeroMapHeader * h7_fields = {0}; HeroStr h8_name = {0}; bool h9_in_object; h_1coreencodingjson_Value h10_whole = {0}; HERO_NODEBUG h_0opt_f42698c h11_f0 = {0}, h30_own30 = {0}, t13, t14, t18, t21, t131, t132; h_1coreencodingjsoninternaltokens_Token h12_token = {0}; h_1coreencodingjson_Value h13_made = {0}; bool h14_closing; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h15_s0 = {0}, h35_own35 = {0}, t22, t25, t26, t42, t43, t45, t57, t61, t65, t133, t136, t142; h_1coreencodingjsoninternaltokens_0Token_c_name h16_n = {0}; h_1coreencodingjsoninternaltokens_0Token_c_boolean h17_b; h_1coreencodingjsoninternaltokens_0Token_c_number h18_n; h_1coreencodingjsoninternaltokens_0Token_c_string h19_t = {0}; int64_t h20_last; HERO_NODEBUG h_0opt_64c818a4 h21_ret0 = {0}, h32_own32 = {0}, h36_own36 = {0}, t20, t49, t113, t137, t145; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Reader h22_own22 = {0}, t2, t114, t115; HERO_NODEBUG HeroArrayHeader *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h33_own33 = {0}, *h43_own43 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h46_own46 = {0}, *t3, *t4, *t5, *t6, *t7, *t29, *t40, *t50, *t70, *t74, *t76, *t77, *t80, *t83, *t86, *t89, *t90, *t93, *t94, *t97, *t98, *t101, *t102, *t116, *t117, *t118, *t119, *t120, *t121, *t122, *t123, *t124, *t125, *t138, *t139, *t159, *t162, *t163, *t164, *t165, *t166, *t167, *t168, *t169; HERO_NODEBUG HeroMapHeader *h28_own28 = {0}, *h34_own34 = {0}, *t8, *t32, *t41, *t53, *t79, *t126, *t127, *t140, *t141, *t160; HERO_NODEBUG h_1coreencodingjson_Value h29_own29 = {0}, h31_own31 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h42_own42 = {0}, t11, t23, t48, t51, t54, t56, t60, t64, t68, t106, t109, t111, t129, t130, t134, t135, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t157, t158, t170; HERO_NODEBUG HeroStr t1, t9, t35, t47, t67, t82, t108, t128, t144, t161; HERO_NODEBUG bool t10, t12, t17, t24, t38, t44, t52, t55, t59, t69, t85, t105, t107; HERO_NODEBUG int64_t t15, t16, t27, t71, t72, t73, t75, t78, t81, t84, t87, t88, t91, t92, t95, t96, t99, t100, t103, t104; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_name t46, t143; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_boolean t58; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_number t62; HERO_NODEBUG double t63; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_string t66, t156; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h_1coreencodingjsoninternaltokens_start(t1); t114 = h22_own22; h22_own22 = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t114); t115 = h1_r; h_1coreencodingjsoninternaltokens_0Reader_retain(&t2); h1_r = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t115);
 #line 67
@@ -954,7 +954,7 @@ h_0opt_64c818a4 h_1coreencodingjson_parse(HeroStr h0_s) { h_1coreencodingjsonint
     return t113;
 }
 
-#line 135 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 135 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
 h_0opt_f87774a h_1coreencodingjson_render(h_1coreencodingjson_Value h0_v) { HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_open_values = {0}; HeroArrayHeader * h3_open_names = {0}; HeroArrayHeader * h4_open_objects = {0}; HeroArrayHeader * h5_open_done = {0}; h_1coreencodingjson_Value h6_next = {0}; bool h7_pending; HERO_NODEBUG h_1coreencodingjson_Value h8_s0 = {0}, t6, t11, t12, t17, t23, t40, t46, t76, t117, t179, t221, t222, t257; h_1coreencodingjson_0Value_c_boolean h9_b; h_1coreencodingjson_0Value_c_number h10_n; h_1coreencodingjson_0Value_c_string h11_s = {0}; h_1coreencodingjson_0Value_c_array h12_a = {0}; HeroArrayHeader * h13_unnamed = {0}; h_1coreencodingjson_0Value_c_object h14_o = {0}; HeroArrayHeader * h15_names = {0}; HeroArrayHeader * h16_values = {0}; HERO_NODEBUG HeroArrayHeader *h17_xs0 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h37_own37 = {0}, *h43_own43 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h55_own55 = {0}, *h56_own56 = {0}, *h57_own57 = {0}, *h58_own58 = {0}, *t1, *t2, *t3, *t4, *t5, *t48, *t63, *t65, *t68, *t78, *t94, *t95, *t96, *t97, *t100, *t103, *t123, *t126, *t134, *t138, *t142, *t146, *t150, *t152, *t161, *t165, *t167, *t175, *t177, *t185, *t194, *t197, *t198, *t201, *t202, *t205, *t206, *t209, *t211, *t212, *t213, *t214, *t215, *t216, *t217, *t218, *t219, *t220, *t234, *t235, *t241, *t242, *t243, *t244, *t245, *t246, *t259, *t260, *t261, *t262, *t263, *t264, *t265, *t266; HERO_NODEBUG int64_t h18_i0, t13, t49, t50, t53, t74, t79, t80, t83, t98, t99, t101, t104, t111, t112, t119, t120, t121, t132, t135, t136, t143, t144, t145, t147, t148, t149, t151, t153, t155, t156, t162, t166, t168, t176, t178, t181, t182, t183, t184, t186, t195, t196, t199, t200, t203, t204, t207, t208; HeroStr h19_one = {0}; HERO_NODEBUG h_0opt_64c818a4 h20_f0 = {0}, h51_own51 = {0}, t109, t110, t114, t116, t253, t254; int64_t h21_last; int64_t h22_done; HERO_NODEBUG h_0opt_f87774a h23_ret0 = {0}, h36_own36 = {0}, h42_own42 = {0}, h50_own50 = {0}, h53_own53 = {0}, t35, t59, t89, t141, t210, t233, t240, t251, t256; HERO_NODEBUG HeroStr h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h46_own46 = {0}, h47_own47 = {0}, h48_own48 = {0}, h49_own49 = {0}, h52_own52 = {0}, h54_own54 = {0}, t15, t21, t28, t30, t31, t32, t33, t34, t38, t43, t44, t52, t54, t55, t56, t57, t58, t61, t82, t84, t85, t86, t87, t88, t91, t105, t108, t139, t140, t159, t169, t170, t173, t189, t192, t223, t225, t228, t229, t230, t231, t232, t236, t237, t238, t239, t247, t248, t249, t250, t252, t255, t258; HERO_NODEBUG bool t7, t8, t9, t10, t20, t26, t27, t51, t71, t81, t102, t113, t129, t137, t154, t157, t163, t180, t187; HERO_NODEBUG h_1coreencodingjson_0Value_c_boolean t18; HERO_NODEBUG h_1coreencodingjson_0Value_c_number t24; HERO_NODEBUG double t25, t29, t37; HERO_NODEBUG h_1coreencodingjson_0Value_c_string t41, t224; HERO_NODEBUG h_1coreencodingjson_0Value_c_array t47, t226; HERO_NODEBUG h_1coreencodingjson_0Value_c_object t77, t227; HERO_NODEBUG HeroMapHeader *t93, *t107; HERO_NODEBUG HeroFailure t115; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t211 = h24_own24; h24_own24 = t1; hero_array_decref(t211); t212 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t212);
 #line 142
@@ -1031,7 +1031,7 @@ h_0opt_f87774a h_1coreencodingjson_render(h_1coreencodingjson_Value h0_v) { Hero
     hero_panic_must_at(t115, "<core>/encoding/json.hero", "json.render", 191, 46);
     hero_unreachable();
 bb29:
-#line 202 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 202 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
     t142 = h2_open_values; t143 = ((void)(t142 == NULL ? ((void)hero_array_len(t142), hero_unreachable()) : (void)0), t142->len); t144 = INT64_C(1); if (__builtin_sub_overflow(t143, t144, &t145)) hero_panic_overflow_at("<core>/encoding/json.hero", "json.render", 202, 16); h21_last = t145;
     t146 = h5_open_done; t147 = h21_last; t148 = ((void)((t146 == NULL || t147 < 0 || t147 >= t146->len) ? hero_panic_index_at(t146, t147, "<core>/encoding/json.hero", "json.render", 203, 16) : (void)0), (void)(t146->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t146 + 1))[t147]); h22_done = t148;
 #line 205
@@ -1119,7 +1119,7 @@ bb29:
     return t210;
 }
 
-#line 229 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json.hero"
+#line 229 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json.hero"
 h_0opt_64c818a4 h_1coreencodingjson_field(h_1coreencodingjson_Value h0_v, HeroStr h1_key) { HERO_NODEBUG h_1coreencodingjson_Value h2_s0 = {0}, h6_s1 = {0}, t1, t2, t4, t21, t22, t44, t49; h_1coreencodingjson_0Value_c_object h3_o = {0}; h_0opt_64c818a4 h4_got = {0}; HERO_NODEBUG h_0opt_64c818a4 h5_f0 = {0}, h9_ret0 = {0}, h10_own10 = {0}, h13_own13 = {0}, h20_own20 = {0}, t8, t9, t10, t19, t20, t42, t43, t46, t47, t48, t52, t60; HERO_NODEBUG HeroStr h7_r0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t7, t14, t15, t16, t17, t18, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t50, t51, t53, t54, t55, t56, t57, t58, t59, t61, t62, t63, t64, t65, t66; HeroStr h8_found = {0}; HERO_NODEBUG int64_t t3, t11, t12, t23; HERO_NODEBUG h_1coreencodingjson_0Value_c_object t5, t45; HERO_NODEBUG HeroMapHeader *t6; HERO_NODEBUG bool t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t44 = h2_s0; h_1coreencodingjson_0Value_retain(&t1); h2_s0 = t1; h_1coreencodingjson_0Value_release(&t44); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb3; case 2: goto bb3; case 3: goto bb3; case 4: goto bb3; case 5: goto bb2; default: hero_unreachable(); } bb2:
     t4 = h2_s0; t5 = t4.as.c_object; t45 = h3_o; h_1coreencodingjson_0Value_c_object_retain(&t5); h3_o = t5; h_1coreencodingjson_0Value_c_object_release(&t45);
@@ -1188,13 +1188,13 @@ h_0opt_64c818a4 h_1coreencodingjson_field(h_1coreencodingjson_Value h0_v, HeroSt
 }
 
 #if HERO_STATIC_CONSTANTS
-#line 25 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 25 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternalnumeral_EXACT_24, double, &hero_desc_f64, 23, 0x1p+0, 0x1.4p+3, 0x1.9p+6, 0x1.f4p+9, 0x1.388p+13, 0x1.86ap+16, 0x1.e848p+19, 0x1.312dp+23, 0x1.7d784p+26, 0x1.dcd65p+29, 0x1.2a05f2p+33, 0x1.74876e8p+36, 0x1.d1a94a2p+39, 0x1.2309ce54p+43, 0x1.6bcc41e9p+46, 0x1.c6bf52634p+49, 0x1.1c37937e08p+53, 0x1.6345785d8ap+56, 0x1.bc16d674ec8p+59, 0x1.158e460913dp+63, 0x1.5af1d78b58c4p+66, 0x1.b1ae4d6e2ef5p+69, 0x1.0f0cf064dd592p+73); HeroArrayHeader * h_1coreencodingjsoninternalnumeral_EXACT(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternalnumeral_EXACT_24);
 #line 1194 "main.c"
 }
 #else
 
-#line 25 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 25 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 HeroArrayHeader * h_1coreencodingjsoninternalnumeral_EXACT(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t24, *t25; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 27
     t1 = 0x1p+0;
@@ -1229,13 +1229,13 @@ HeroArrayHeader * h_1coreencodingjsoninternalnumeral_EXACT(void) { HERO_NODEBUG 
 }
 #endif
 
-#line 54 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 54 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 int64_t h_1coreencodingjsoninternalnumeral_EXACT_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(15); return t1;
 #line 1236 "main.c"
 }
 
-#line 63 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 63 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { bool h1_negative; int64_t h2_whole_start; HERO_NODEBUG bool h3_b0, h4_b1, h8_b2, h10_b3, h12_b4, t2, t4, t6, t7, t8, t14, t15, t16, t18, t19, t30, t32, t34, t35, t36, t47, t49, t50, t52, t53, t54, t57, t59, t60, t61, t67, t78, t84; HeroStr h5_whole = {0}; HeroStr h6_fraction = {0}; int64_t h7_fraction_start; int64_t h9_exponent; bool h11_below; HERO_NODEBUG h_0opt_db92a83 h13_f0 = {0}, h15_ret0 = {0}, h17_own17 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, t12, t23, t40, t65, t74, t75, t79, t81, t82, t87, t89, t90, t92, t97, t101, t102, t103, t105, t106, t107, t108; double h14_magnitude; HERO_NODEBUG HeroStr h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h25_own25 = {0}, t1, t9, t10, t11, t13, t20, t21, t22, t24, t27, t28, t29, t37, t38, t39, t41, t44, t46, t48, t51, t55, t62, t63, t64, t71, t72, t91, t93, t94, t95, t96, t98, t99, t100, t104; HERO_NODEBUG int64_t t3, t25, t26, t31, t42, t43, t45, t66, t68, t69, t70, t73, t76, t77; HERO_NODEBUG uint8_t t5, t17, t33, t58; HERO_NODEBUG HeroFailure t80; HERO_NODEBUG double t83, t85, t86, t88; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_2d); t2 = h_1coreencodingjsoninternalcursor_accept(&(*ph0_c), t1); h1_negative = t2;
     t3 = (*ph0_c).f_at; h2_whole_start = t3;
@@ -1328,13 +1328,13 @@ h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read(h_1coreencodingjsonintern
     return t90;
 }
 
-#line 109 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 109 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 bool h_1coreencodingjsoninternalnumeral_digit(uint8_t h0_b) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_b; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
 #line 1335 "main.c"
 }
 
-#line 113 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 113 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 void h_1coreencodingjsoninternalnumeral_digits_past(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG bool h1_b0, t1, t2, t4, t5; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
     t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); t2 = !t1; h1_b0 = t2; if (t2) goto bb4; else goto bb5; bb2:
     h_1coreencodingjsoninternalcursor_advance(&(*ph0_c)); goto bb1; bb3: return; bb4:
@@ -1343,7 +1343,7 @@ void h_1coreencodingjsoninternalnumeral_digits_past(h_1coreencodingjsoninternalc
 #line 1344 "main.c"
 }
 
-#line 121 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 121 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 int64_t h_1coreencodingjsoninternalnumeral_exponent_past(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_n; HERO_NODEBUG bool h2_b0, t2, t3, t5, t6, t9, t20; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h4_own4 = {0}, t16, t17, t21, t23, t27, t28; HERO_NODEBUG int64_t t1, t7, t8, t10, t11, t12, t18, t19, t24, t25, t26; HERO_NODEBUG uint8_t t4, t13, t14, t15; HERO_NODEBUG HeroFailure t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_n = t1; goto bb1; bb1:
 #line 124
@@ -1356,7 +1356,7 @@ int64_t h_1coreencodingjsoninternalnumeral_exponent_past(h_1coreencodingjsoninte
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return t26;
 bb4:
-#line 124 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 124 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t4 = h_1coreencodingjsoninternalcursor_byte_at(&(*ph0_c)); t5 = h_1coreencodingjsoninternalnumeral_digit(t4); h2_b0 = t5; goto bb5; bb5: t6 = h2_b0; if (t6) goto bb2; else goto bb3; bb6:
 #line 127
     h_1coreencodingjsoninternalcursor_advance(&(*ph0_c)); goto bb1; bb7:
@@ -1367,7 +1367,7 @@ bb4:
     hero_unreachable();
 }
 
-#line 133 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 133 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_value_of(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent) { HeroStr h3_digits = {0}; int64_t h4_lead; HERO_NODEBUG bool h5_b0, h7_b1, t8, t13, t14, t22, t29, t30, t36; int64_t h6_end; HERO_NODEBUG h_0opt_db92a83 h8_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t38, t49, t50, t54, t55; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, t1, t2, t3, t6, t9, t18, t23, t39, t42, t43, t51, t52, t53; HERO_NODEBUG int64_t t4, t5, t7, t10, t15, t16, t17, t19, t20, t21, t24, t25, t26, t31, t32, t33, t34, t35, t40, t41, t44, t45, t46, t47, t48; HERO_NODEBUG uint8_t t11, t12, t27, t28; HERO_NODEBUG double t37; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_whole; t2 = h1_fraction; t3 = hero_str_concat(t1, t2); t51 = h9_own9; h9_own9 = t3; hero_str_decref(t51); t52 = h3_digits; hero_str_incref(t3); h3_digits = t3; hero_str_decref(t52);
     t4 = INT64_C(0); h4_lead = t4; goto bb1; bb1:
@@ -1400,7 +1400,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_value_of(HeroStr h0_whole, Her
     return t50;
 }
 
-#line 156 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 156 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_nearest(HeroStr h0_digits, int64_t h1_point) { uint64_t h2_whole; int64_t h3_power; HERO_NODEBUG bool h4_b0, h5_b1, t4, t17, t20, t21, t24, t25, t34, t42; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}, h10_own10 = {0}, t30, t31, t35, t37, t59, t60; double h7_exact; HERO_NODEBUG h_0opt_db92a83 h8_ret0 = {0}, h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t7, t28, t48, t56, t57, t58, t61, t63, t65; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *h14_own14 = {0}, *t44, *t50, *t62, *t64; HERO_NODEBUG HeroStr t1, t5, t8, t11, t14; HERO_NODEBUG int64_t t2, t3, t6, t10, t12, t13, t15, t16, t18, t19, t22, t23, t27, t32, t33, t38, t40, t41, t45, t51, t52, t53; HERO_NODEBUG uint64_t t9, t26, t29; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG double t39, t43, t46, t47, t49, t54, t55; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_digits; t2 = hero_str_len(t1); t3 = h_1coreencodingjsoninternalpowers_DIGITS(); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 159
@@ -1425,7 +1425,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_nearest(HeroStr h0_digits, int
     hero_panic_must_at(t36, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 167, 20);
     hero_unreachable();
 bb13:
-#line 171 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 171 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t49 = h7_exact; t50 = h_1coreencodingjsoninternalnumeral_EXACT(); t62 = h12_own12; h12_own12 = t50; hero_array_decref(t62); t51 = INT64_C(0); t52 = h3_power; if (__builtin_sub_overflow(t51, t52, &t53)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 171, 29); t54 = ((void)((t50 == NULL || t53 < 0 || t53 >= t50->len) ? hero_panic_index_at(t50, t53, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 171, 23) : (void)0), (void)(t50->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t50 + 1))[t53]); t55 = t49 / t54; t56 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t55}; t63 = h13_own13; h13_own13 = t56; h_0opt_db92a83_release(&t63); h8_ret0 = t56; goto bb16; bb14:
 #line 170
     t43 = h7_exact; t44 = h_1coreencodingjsoninternalnumeral_EXACT(); t64 = h14_own14; h14_own14 = t44; hero_array_decref(t64); t45 = h3_power; t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? hero_panic_index_at(t44, t45, "<core>/encoding/json/internal/numeral.hero", "numeral.nearest", 170, 27) : (void)0), (void)(t44->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t44 + 1))[t45]); t47 = t43 * t46; t48 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t47}; t65 = h15_own15; h15_own15 = t48; h_0opt_db92a83_release(&t65); h8_ret0 = t48; goto bb16; bb15: goto bb13; bb16:
@@ -1443,7 +1443,7 @@ bb13:
     return t57;
 }
 
-#line 180 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 180 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_truncated(HeroStr h0_digits, int64_t h1_point) { uint64_t h2_head; int64_t h3_p; h_0opt_db92a83 h4_below = {0}; HERO_NODEBUG h_0opt_db92a83 h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t11, t12, t15, t17, t20, t21, t23, t24, t25, t26; HERO_NODEBUG HeroStr h6_own6 = {0}, t1, t4, t18, t22; HERO_NODEBUG int64_t t2, t3, t6, t7, t8, t10, t14, t19; HERO_NODEBUG uint64_t t5, t9, t13; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_digits; t2 = INT64_C(0); t3 = h_1coreencodingjsoninternalpowers_DIGITS(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.truncated", 181, 20}; t4 = hero_str_slice_at(t1, t2, t3, &hero_here); } t22 = h6_own6; h6_own6 = t4; hero_str_decref(t22); t5 = h_1coreencodingjsoninternalnumeral_word_of(t4); h2_head = t5;
     t6 = h1_point; t7 = h_1coreencodingjsoninternalpowers_DIGITS(); if (__builtin_sub_overflow(t6, t7, &t8)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.truncated", 182, 9); h3_p = t8;
@@ -1465,7 +1465,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_truncated(HeroStr h0_digits, i
     return t21;
 }
 
-#line 192 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 192 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_one_more(uint64_t h0_head, int64_t h1_p) { HERO_NODEBUG h_0opt_db92a83 h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t8, t13, t14, t15, t16; HERO_NODEBUG uint64_t t1, t2, t4, t9, t10, t11; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t5, t6, t7, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_head; t2 = h_1coreencodingjsoninternalpowers_NINES(); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 195
@@ -1480,7 +1480,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_one_more(uint64_t h0_head, int
     return t14;
 }
 
-#line 198 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 198 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 bool h_1coreencodingjsoninternalnumeral_agree(h_0opt_db92a83 h0_below, h_0opt_db92a83 h1_above) { HERO_NODEBUG h_0opt_db92a83 h2_s0 = {0}, h6_f0 = {0}, h7_f1 = {0}, h8_f2 = {0}, t1, t2, t4, t6, t7, t12, t13, t17, t19, t24, t25, t30, t31, t32, t33; HERO_NODEBUG bool h3_r0, h5_b0, t10, t11, t16, t22, t23, t28, t29; double h4_x; HERO_NODEBUG int64_t t3, t8, t9, t14, t15, t26, t27; HERO_NODEBUG double t5, t20, t21; HERO_NODEBUG HeroFailure t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_below; t30 = h2_s0; h_0opt_db92a83_retain(&t1); h2_s0 = t1; h_0opt_db92a83_release(&t30); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t29 = h3_r0;
 #line 1487 "main.c"
@@ -1490,7 +1490,7 @@ bool h_1coreencodingjsoninternalnumeral_agree(h_0opt_db92a83 h0_below, h_0opt_db
     h_0opt_db92a83_release(hero_slot_escape(&h8_f2));
     return t29;
 bb2:
-#line 200 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 200 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t4 = h2_s0; t5 = t4.as.ok; h4_x = t5; t6 = h1_above; t31 = h6_f0; h_0opt_db92a83_retain(&t6); h6_f0 = t6; h_0opt_db92a83_release(&t31); t7 = h6_f0; t8 = t7.tag; t9 = INT64_C(1); t10 = t8 == t9; t11 = !t10; h5_b0 = t11; if (t11) goto bb4; else goto bb5; bb3:
     t24 = h1_above; t32 = h8_f2; h_0opt_db92a83_retain(&t24); h8_f2 = t24; h_0opt_db92a83_release(&t32); t25 = h8_f2; t26 = t25.tag; t27 = INT64_C(1); t28 = t26 == t27;
 #line 199
@@ -1504,7 +1504,7 @@ bb2:
     hero_unreachable();
 }
 
-#line 205 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 205 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 uint64_t h_1coreencodingjsoninternalnumeral_word_of(HeroStr h0_digits) { uint64_t h1_n; int64_t h2_i; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h4_own4 = {0}, t15, t16, t20, t22, t29, t30; HERO_NODEBUG uint64_t t1, t7, t8, t9, t23, t24, t28; HERO_NODEBUG int64_t t2, t3, t5, t11, t17, t18, t25, t26, t27; HERO_NODEBUG HeroStr t4, t10; HERO_NODEBUG bool t6, t19; HERO_NODEBUG uint8_t t12, t13, t14; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); h1_n = t1;
     t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
@@ -1518,7 +1518,7 @@ uint64_t h_1coreencodingjsoninternalnumeral_word_of(HeroStr h0_digits) { uint64_
     h_0opt_fbbb698_release(hero_slot_escape(&h4_own4));
     return t28;
 bb4:
-#line 210 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 210 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t22 = h3_f0; t23 = t22.as.ok; if (__builtin_add_overflow(t9, t23, &t24)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.word_of", 210, 13); h1_n = t24;
     t25 = h2_i; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.word_of", 211, 13); h2_i = t27; goto bb1; bb5:
 #line 210
@@ -1528,13 +1528,13 @@ bb4:
     hero_unreachable();
 }
 
-#line 217 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 217 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 bool h_1coreencodingjsoninternalnumeral_finite(double h0_x) { HERO_NODEBUG double t1, t2, t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = h0_x; t3 = t1 - t2; t4 = 0x0p+0; t5 = t3 == t4; return t5;
 #line 1535 "main.c"
 }
 
-#line 226 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 226 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 HeroStr h_1coreencodingjsoninternalnumeral_written(double h0_x) { HeroStr h1_text = {0}; HeroStr h2_sign = {0}; int64_t h3_at; int64_t h4_whole_start; HERO_NODEBUG bool h5_b0, h6_b1, h9_b2, h11_b3, t3, t12, t19, t24, t25, t30, t31, t43, t48, t49, t57, t62, t63, t75; HeroStr h7_whole = {0}; HeroStr h8_fraction = {0}; int64_t h10_fraction_start; int64_t h12_exponent; HERO_NODEBUG HeroStr h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, t1, t5, t6, t8, t13, t17, t20, t26, t35, t38, t39, t41, t44, t55, t58, t67, t70, t73, t76, t80, t82, t84, t85, t86, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101; HERO_NODEBUG double t2, t4; HERO_NODEBUG int64_t t7, t9, t14, t15, t16, t18, t21, t27, t32, t33, t34, t36, t37, t40, t42, t45, t50, t51, t52, t53, t54, t56, t59, t64, t65, t66, t68, t69, t71, t72, t74, t77, t78, t79, t81, t83, t87; HERO_NODEBUG uint8_t t10, t11, t22, t23, t28, t29, t46, t47, t60, t61; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3ce5513b); t2 = h0_x; t3 = h_1coreencodingjsoninternalnumeral_finite(t2); if (t3) goto bb1; else goto bb2; bb1:
     t4 = h0_x; t5 = hero_f64_to_str(t4); t90 = h13_own13; h13_own13 = t5; hero_str_decref(t90); t91 = h1_text; hero_str_incref(t5); h1_text = t5; hero_str_decref(t91);
@@ -1546,7 +1546,7 @@ HeroStr h_1coreencodingjsoninternalnumeral_written(double h0_x) { HeroStr h1_tex
     hero_panic_assert_at(t1, "<core>/encoding/json/internal/numeral.hero", "numeral.written", 227, 12);
     hero_unreachable();
 bb3:
-#line 235 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 235 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t15 = h3_at; h4_whole_start = t15; goto bb6; bb4:
 #line 233
     t13 = HERO_STR_LIT(hero_str_2d); t93 = h2_sign; hero_str_incref(t13); h2_sign = t13; hero_str_decref(t93);
@@ -1592,12 +1592,12 @@ bb3:
     hero_str_release_at(&h18_own18);
     return t89;
 bb24:
-#line 254 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 254 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t76 = h1_text; t77 = h3_at; t78 = INT64_C(1); if (__builtin_add_overflow(t77, t78, &t79)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.written", 254, 49); t80 = h1_text; t81 = hero_str_len(t80); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.written", 254, 32}; t82 = hero_str_slice_at(t76, t79, t81, &hero_here); } t101 = h18_own18; h18_own18 = t82; hero_str_decref(t101); t83 = h_1coreencodingjsoninternalnumeral_exponent_of(t82); h12_exponent = t83; goto bb23; bb25: goto bb23;
 #line 1598 "main.c"
 }
 
-#line 258 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 258 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 int64_t h_1coreencodingjsoninternalnumeral_exponent_of(HeroStr h0_text) { int64_t h1_n; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *t5, *t8, *t11, *t50, *t51; HERO_NODEBUG int64_t h3_i0, h7_ret0, t1, t2, t4, t6, t7, t9, t12, t13, t14, t15, t16, t18, t24, t25, t30, t31, t32, t33, t34, t36, t37, t40, t45, t46, t47, t48, t49; int64_t h4_i; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t22, t23, t27, t29, t52, t53; HERO_NODEBUG bool h6_b0, t10, t26, t38, t43, t44; HERO_NODEBUG HeroStr t3, t17, t35, t39; HERO_NODEBUG uint8_t t19, t20, t21, t41, t42; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_n = t1;
 #line 261
@@ -1613,7 +1613,7 @@ int64_t h_1coreencodingjsoninternalnumeral_exponent_of(HeroStr h0_text) { int64_
     hero_panic_must_at(t28, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 262, 22);
     hero_unreachable();
 bb7:
-#line 266 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 266 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t48 = h1_n; h7_ret0 = t48; goto bb12; bb8:
 #line 264
     t39 = h0_text; t40 = INT64_C(0); t41 = ((void)((t39.ptr == NULL || t40 < 0 || t40 >= t39.len) ? hero_panic_byte_at(t39, t40, "<core>/encoding/json/internal/numeral.hero", "numeral.exponent_of", 264, 26) : (void)0), (int64_t)(unsigned char)t39.ptr[t40]); t42 = UINT64_C(45); t43 = t41 == t42; h6_b0 = t43; goto bb9; bb9: t44 = h6_b0; if (t44) goto bb10; else goto bb11; bb10:
@@ -1627,7 +1627,7 @@ bb7:
     return t49;
 }
 
-#line 274 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 274 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 HeroStr h_1coreencodingjsoninternalnumeral_laid_out(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent) { HeroStr h3_digits = {0}; int64_t h4_lead; HERO_NODEBUG bool h5_b0, h7_b1, h11_b2, h13_b3, h14_b4, t8, t13, t14, t22, t29, t30, t36, t52, t55, t56, t66, t75, t78, t79, t93, t96, t97, t107, t122, t135; int64_t h6_end; HeroStr h8_s = {0}; int64_t h9_k; int64_t h10_n; HERO_NODEBUG h_0opt_fbbb698 h12_f0 = {0}, h15_f1 = {0}, h20_own20 = {0}, h28_own28 = {0}, t62, t63, t67, t69, t103, t104, t108, t110, t157, t158, t167, t168; HeroStr h16_mantissa = {0}; HERO_NODEBUG HeroStr h17_ret0 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, t1, t2, t3, t6, t9, t18, t23, t37, t38, t41, t42, t44, t57, t58, t71, t72, t80, t83, t84, t85, t86, t89, t90, t98, t99, t112, t113, t114, t115, t116, t119, t123, t124, t125, t126, t129, t130, t136, t137, t138, t142, t143, t144, t145, t146, t150, t151, t152, t153, t154, t155, t156, t159, t160, t161, t162, t163, t164, t165, t166, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181; HERO_NODEBUG int64_t t4, t5, t7, t10, t15, t16, t17, t19, t20, t21, t24, t25, t26, t31, t32, t33, t34, t35, t39, t40, t43, t45, t46, t47, t48, t49, t50, t51, t53, t54, t59, t60, t61, t64, t65, t73, t74, t76, t77, t81, t82, t87, t88, t91, t92, t94, t95, t100, t101, t102, t105, t106, t117, t118, t120, t121, t127, t128, t131, t132, t133, t134, t139, t140, t141, t147, t148, t149; HERO_NODEBUG uint8_t t11, t12, t27, t28; HERO_NODEBUG HeroFailure t68, t109; HERO_NODEBUG uint64_t t70, t111; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_whole; t2 = h1_fraction; t3 = hero_str_concat(t1, t2); t153 = h18_own18; h18_own18 = t3; hero_str_decref(t153); t154 = h3_digits; hero_str_incref(t3); h3_digits = t3; hero_str_decref(t154);
     t4 = INT64_C(0); h4_lead = t4; goto bb1; bb1:
@@ -1662,7 +1662,7 @@ HeroStr h_1coreencodingjsoninternalnumeral_laid_out(HeroStr h0_whole, HeroStr h1
     hero_panic_must_at(t68, "<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 293, 32);
     hero_unreachable();
 bb21:
-#line 298 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 298 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t91 = INT64_C(-6); t92 = h10_n; t93 = t91 < t92; h14_b4 = t93; if (t93) goto bb27; else goto bb28; bb22:
 #line 295
     t76 = h10_n; t77 = INT64_C(21); t78 = t76 <= t77; h13_b3 = t78; goto bb23; bb23: t79 = h13_b3; if (t79) goto bb24; else goto bb25; bb24:
@@ -1678,7 +1678,7 @@ bb21:
     hero_panic_must_at(t109, "<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 299, 35);
     hero_unreachable();
 bb33:
-#line 305 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 305 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t131 = h10_n; t132 = INT64_C(1); if (__builtin_sub_overflow(t131, t132, &t133)) hero_panic_overflow_at("<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 305, 8); t134 = INT64_C(0); t135 = t133 < t134; if (t135) goto bb37; else goto bb38; bb34:
 #line 303
     t123 = h16_mantissa; t124 = HERO_STR_LIT(hero_str_2e); t125 = hero_str_concat(t123, t124); t172 = h32_own32; h32_own32 = t125; hero_str_decref(t172); t126 = h8_s; t127 = INT64_C(1); t128 = h9_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/numeral.hero", "numeral.laid_out", 303, 37}; t129 = hero_str_slice_at(t126, t127, t128, &hero_here); } t173 = h33_own33; h33_own33 = t129; hero_str_decref(t173); t130 = hero_str_concat(t125, t129); t174 = h34_own34; h34_own34 = t130; hero_str_decref(t174); t175 = h16_mantissa; hero_str_incref(t130); h16_mantissa = t130; hero_str_decref(t175); goto bb33; bb35: goto bb33; bb36:
@@ -1720,7 +1720,7 @@ bb33:
     return t152;
 }
 
-#line 313 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 313 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read_all(HeroStr h0_text) { h_1coreencodingjsoninternalcursor_Cursor h1_c = {0}; HERO_NODEBUG h_0opt_db92a83 h2_f0 = {0}, h4_ret0 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, t3, t4, t8, t10, t11, t19, t21, t22, t25, t26, t27, t28, t30; double h3_x; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h5_own5 = {0}, t2, t23, t24; HERO_NODEBUG HeroStr h9_own9 = {0}, t1, t15, t16, t17, t18, t29; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t13, t14; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG double t12, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_1coreencodingjsoninternalcursor_start(t1); t23 = h5_own5; h5_own5 = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t23); t24 = h1_c; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t2); h1_c = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t24);
     t3 = h_1coreencodingjsoninternalnumeral_read(&h1_c); t25 = h6_own6; h6_own6 = t3; h_0opt_db92a83_release(&t25); t26 = h2_f0; h_0opt_db92a83_retain(&t3); h2_f0 = t3; h_0opt_db92a83_release(&t26); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_x = t12;
@@ -1746,7 +1746,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalnumeral_read_all(HeroStr h0_text) { h_
     return t22;
 }
 
-#line 324 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 324 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
 HeroStr h_1coreencodingjsoninternalnumeral_shown(HeroStr h0_text) { HERO_NODEBUG h_0opt_db92a83 h1_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t9, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h6_own6 = {0}, t1, t8, t11, t12, t15, t16, t18; double h3_x; HeroFailure h4_e = {0}; HERO_NODEBUG int64_t t4; HERO_NODEBUG double t6, t7; HERO_NODEBUG HeroFailure t10, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_1coreencodingjsoninternalnumeral_read_all(t1); t13 = h5_own5; h5_own5 = t2; h_0opt_db92a83_release(&t13); t14 = h1_s0; h_0opt_db92a83_retain(&t2); h1_s0 = t2; h_0opt_db92a83_release(&t14); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t12 = h2_r0;
 #line 1753 "main.c"
@@ -1758,7 +1758,7 @@ HeroStr h_1coreencodingjsoninternalnumeral_shown(HeroStr h0_text) { HERO_NODEBUG
     hero_str_release_at(&h6_own6);
     return t12;
 bb2:
-#line 326 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/numeral.hero"
+#line 326 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/numeral.hero"
     t5 = h1_s0; t6 = t5.as.ok; h3_x = t6; t7 = h3_x; t8 = h_1coreencodingjsoninternalnumeral_written(t7); t15 = h6_own6; h6_own6 = t8; hero_str_decref(t15);
 #line 325
     t16 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t16); goto bb1; bb3:
@@ -1769,7 +1769,7 @@ bb2:
 #line 1770 "main.c"
 }
 
-#line 16 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 16 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 HeroStr h_1coreencodingjsoninternalquoted_HEX(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
 #line 1776 "main.c"
@@ -1777,7 +1777,7 @@ HeroStr h_1coreencodingjsoninternalquoted_HEX(void) { HERO_NODEBUG HeroStr t1; H
     return t1;
 }
 
-#line 23 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 23 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 h_0opt_f87774a h_1coreencodingjsoninternalquoted_read(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_opened; HeroArrayHeader * h2_pieces = {0}; int64_t h3_run; h_1coreencodingjsoninternalcursor_Cursor h4_start = {0}; uint8_t h5_b; HeroStr h6_last = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}, h8_ret0 = {0}, h13_own13 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, h21_own21 = {0}, h28_own28 = {0}, t13, t27, t33, t44, t45, t49, t51, t52, t69, t70, t77, t82, t83, t85, t86, t87, t94; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h15_own15 = {0}, *t2, *t22, *t28, *t30, *t71, *t72, *t80; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h10_own10 = {0}, t8, t73, t74; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h16_own16 = {0}, h19_own19 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, t6, t9, t10, t11, t12, t18, t21, t26, t29, t31, t32, t38, t41, t53, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t75, t76, t78, t79, t81, t84, t88, t89, t90, t91, t92, t93; HERO_NODEBUG int64_t t1, t3, t7, t19, t20, t23, t24, t39, t40, t46, t47, t55; HERO_NODEBUG bool t4, t5, t17, t25, t36, t48, t58; HERO_NODEBUG uint8_t t14, t15, t16, t34, t35, t56, t57; HERO_NODEBUG HeroFailure t50; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).f_at; h1_opened = t1;
     h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
@@ -1851,7 +1851,7 @@ h_0opt_f87774a h_1coreencodingjsoninternalquoted_read(h_1coreencodingjsoninterna
     return t70;
 }
 
-#line 59 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 59 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 h_0opt_f87774a h_1coreencodingjsoninternalquoted_escaped(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_backslash; uint8_t h2_b; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t6, t12, t17, t22, t27, t32, t37, t42, t47, t52, t59, t60, t62, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73; HERO_NODEBUG HeroStr h4_own4 = {0}, h6_own6 = {0}, t3, t4, t5, t11, t16, t21, t26, t31, t36, t41, t46, t56, t57, t58, t61, t63; HERO_NODEBUG int64_t t1, t51, t53, t54, t55; HERO_NODEBUG bool t2, t10, t15, t20, t25, t30, t35, t40, t45, t50; HERO_NODEBUG uint8_t t7, t8, t9, t13, t14, t18, t19, t23, t24, t28, t29, t33, t34, t38, t39, t43, t44, t48, t49; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).f_at; h1_backslash = t1;
     h_1coreencodingjsoninternalcursor_advance(&(*ph0_c));
@@ -1908,7 +1908,7 @@ h_0opt_f87774a h_1coreencodingjsoninternalquoted_escaped(h_1coreencodingjsoninte
     return t60;
 }
 
-#line 96 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 96 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 h_0opt_f87774a h_1coreencodingjsoninternalquoted_unicode(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, int64_t h1_backslash) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_f1 = {0}, h11_own11 = {0}, h19_own19 = {0}, t1, t2, t6, t9, t47, t48, t52, t55, t84, t85, t94, t95; int64_t h3_first; h_1coreencodingjsoninternalcursor_Cursor h4_at = {0}; HERO_NODEBUG bool h5_b0, h6_b1, h9_b2, t5, t16, t19, t20, t30, t33, t34, t38, t39, t51, t59, t62, t63; int64_t h8_second; HERO_NODEBUG h_0opt_f87774a h10_ret0 = {0}, h13_own13 = {0}, h17_own17 = {0}, h18_own18 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h29_own29 = {0}, t8, t27, t36, t46, t54, t70, t82, t83, t88, t92, t93, t99, t100, t101, t105; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h12_own12 = {0}, t13, t86, t87; HERO_NODEBUG HeroStr h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t11, t21, t22, t23, t24, t25, t26, t37, t40, t41, t42, t43, t44, t45, t64, t65, t66, t67, t68, t69, t89, t90, t91, t96, t97, t98, t102, t103, t104; HERO_NODEBUG int64_t t3, t4, t10, t12, t14, t15, t17, t18, t28, t29, t31, t32, t35, t49, t50, t56, t57, t58, t60, t61, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81; HERO_NODEBUG HeroFailure t7, t53; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1coreencodingjsoninternalquoted_code_unit(&(*ph0_c)); t84 = h11_own11; h11_own11 = t1; h_0opt_e201354_release(&t84); t85 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t85); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_first = t10;
     t11 = (*ph0_c).f_text; t12 = h1_backslash; hero_str_incref(t11); t13 = (h_1coreencodingjsoninternalcursor_Cursor){.f_text = t11, .f_at = t12}; t86 = h12_own12; h12_own12 = t13; h_1coreencodingjsoninternalcursor_0Cursor_release(&t86); t87 = h4_at; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t13); h4_at = t13; h_1coreencodingjsoninternalcursor_0Cursor_release(&t87);
@@ -1980,7 +1980,7 @@ h_0opt_f87774a h_1coreencodingjsoninternalquoted_unicode(h_1coreencodingjsoninte
     return t83;
 }
 
-#line 126 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 126 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 h_0opt_e201354 h_1coreencodingjsoninternalquoted_code_unit(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_n; int64_t h2_count; uint8_t h3_b; int64_t h4_digit; HERO_NODEBUG bool h5_b0, h7_b1, h9_b2, t5, t6, t15, t18, t19, t27, t34, t37, t38, t46, t55, t58, t59, t67; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}, h8_f1 = {0}, h10_f2 = {0}, h11_ret0 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, t10, t23, t24, t28, t30, t42, t43, t47, t49, t63, t64, t68, t70, t77, t87, t88, t89, t91, t92, t93, t94, t95, t96, t97, t99; HERO_NODEBUG HeroStr h13_own13 = {0}, h18_own18 = {0}, t7, t8, t9, t74, t75, t76, t90, t98; HERO_NODEBUG int64_t t1, t2, t3, t4, t12, t25, t26, t31, t44, t45, t50, t51, t52, t65, t66, t71, t72, t73, t78, t79, t80, t81, t82, t83, t84, t85, t86; HERO_NODEBUG uint8_t t11, t13, t14, t16, t17, t20, t21, t22, t32, t33, t35, t36, t39, t40, t41, t53, t54, t56, t57, t60, t61, t62; HERO_NODEBUG HeroFailure t29, t48, t69; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_n = t1;
     t2 = INT64_C(0); h2_count = t2; goto bb1; bb1:
@@ -2010,7 +2010,7 @@ h_0opt_e201354 h_1coreencodingjsoninternalquoted_code_unit(h_1coreencodingjsonin
     hero_panic_must_at(t29, "<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 137, 21);
     hero_unreachable();
 bb14:
-#line 138 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 138 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t35 = h3_b; t36 = UINT64_C(102); t37 = t35 <= t36; h7_b1 = t37; goto bb15; bb15: t38 = h7_b1; if (t38) goto bb16; else goto bb17; bb16:
     t39 = h3_b; t40 = UINT64_C(97); if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 139, 28); t42 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t41}; t94 = h16_own16; h16_own16 = t42; h_0opt_e201354_release(&t94); t95 = h8_f1; h_0opt_e201354_retain(&t42); h8_f1 = t42; h_0opt_e201354_release(&t95); t43 = h8_f1; t44 = t43.tag; t45 = INT64_C(0); t46 = t44 == t45; if (t46) goto bb18; else goto bb19; bb17:
     t53 = h3_b; t54 = UINT64_C(65); t55 = t53 >= t54; h9_b2 = t55; if (t55) goto bb20; else goto bb21; bb18:
@@ -2020,7 +2020,7 @@ bb14:
     hero_panic_must_at(t48, "<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 139, 21);
     hero_unreachable();
 bb20:
-#line 140 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 140 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t56 = h3_b; t57 = UINT64_C(70); t58 = t56 <= t57; h9_b2 = t58; goto bb21; bb21: t59 = h9_b2; if (t59) goto bb22; else goto bb23; bb22:
     t60 = h3_b; t61 = UINT64_C(65); if (__builtin_sub_overflow(t60, t61, &t62)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.code_unit", 141, 28); t63 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t62}; t96 = h17_own17; h17_own17 = t63; h_0opt_e201354_release(&t96); t97 = h10_f2; h_0opt_e201354_retain(&t63); h10_f2 = t63; h_0opt_e201354_release(&t97); t64 = h10_f2; t65 = t64.tag; t66 = INT64_C(0); t67 = t65 == t66; if (t67) goto bb24; else goto bb25; bb23:
 #line 143
@@ -2047,7 +2047,7 @@ bb26:
     return t88;
 }
 
-#line 152 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 152 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 h_0opt_f87774a h_1coreencodingjsoninternalquoted_character(int64_t h0_n) { HeroArrayHeader * h1_bytes = {0}; HERO_NODEBUG bool h2_b0, t4, t7, t8, t17, t23, t31, t41, t55, t63, t73, t89, t103, t118, t134, t150, t164; HERO_NODEBUG h_0opt_1ec004 h3_f0 = {0}, h4_f1 = {0}, h5_f2 = {0}, h6_f3 = {0}, h7_f4 = {0}, h8_f5 = {0}, h9_f6 = {0}, h10_f7 = {0}, h11_f8 = {0}, h12_f9 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, t19, t20, t24, t26, t37, t38, t42, t44, t51, t52, t56, t58, t69, t70, t74, t76, t85, t86, t90, t92, t99, t100, t104, t106, t114, t115, t119, t121, t130, t131, t135, t137, t146, t147, t151, t153, t160, t161, t165, t167, t179, t180, t183, t184, t185, t186, t189, t190, t191, t192, t193, t194, t195, t196, t199, t200, t201, t202, t203, t204; HERO_NODEBUG h_0opt_f87774a h13_ret0 = {0}, h17_own17 = {0}, h18_own18 = {0}, t14, t171, t172, t177, t178; HERO_NODEBUG HeroArrayHeader *h14_own14 = {0}, *h20_own20 = {0}, *h23_own23 = {0}, *h28_own28 = {0}, *h32_own32 = {0}, *t1, *t28, *t60, *t108, *t169, *t170, *t173, *t174, *t181, *t182, *t187, *t188, *t197, *t198, *t205, *t206; HERO_NODEBUG HeroStr h15_own15 = {0}, h16_own16 = {0}, t9, t11, t12, t13, t175, t176; HERO_NODEBUG int64_t t2, t3, t5, t6, t10, t15, t16, t18, t21, t22, t29, t30, t32, t33, t34, t35, t36, t39, t40, t46, t47, t48, t49, t50, t53, t54, t61, t62, t64, t65, t66, t67, t68, t71, t72, t78, t79, t80, t81, t82, t83, t84, t87, t88, t94, t95, t96, t97, t98, t101, t102, t109, t110, t111, t112, t113, t116, t117, t123, t124, t125, t126, t127, t128, t129, t132, t133, t139, t140, t141, t142, t143, t144, t145, t148, t149, t155, t156, t157, t158, t159, t162, t163; HERO_NODEBUG HeroFailure t25, t43, t57, t75, t91, t105, t120, t136, t152, t166; HERO_NODEBUG uint8_t t27, t45, t59, t77, t93, t107, t122, t138, t154, t168; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t173 = h14_own14; h14_own14 = t1; hero_array_decref(t173); t174 = h1_bytes; hero_array_incref(t1); h1_bytes = t1; hero_array_decref(t174);
 #line 155
@@ -2068,7 +2068,7 @@ h_0opt_f87774a h_1coreencodingjsoninternalquoted_character(int64_t h0_n) { HeroA
     hero_panic_must_at(t25, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 159, 18);
     hero_unreachable();
 bb11:
-#line 161 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 161 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t32 = INT64_C(192); t33 = h0_n; t34 = INT64_C(6); if (t34 < 0 || t34 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 161, 31); t35 = (t33 < 0) ? ~(int64_t)((~(uint64_t)t33) >> (uint64_t)t34) : (int64_t)((uint64_t)t33 >> (uint64_t)t34); t36 = t32 | t35; if (t36 >= 0LL && t36 <= 255LL) { t37 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t36}; } else { t37 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t183 = h21_own21; h21_own21 = t37; h_0opt_1ec004_release(&t183); t184 = h4_f1; h_0opt_1ec004_retain(&t37); h4_f1 = t37; h_0opt_1ec004_release(&t184); t38 = h4_f1; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb13; else goto bb14; bb12:
     t61 = h0_n; t62 = INT64_C(65536); t63 = t61 < t62; if (t63) goto bb17; else goto bb18; bb13:
 #line 161
@@ -2077,13 +2077,13 @@ bb11:
     hero_panic_must_at(t43, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 161, 18);
     hero_unreachable();
 bb15:
-#line 161 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 161 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t58 = h5_f2; t59 = t58.as.ok; t60 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t60, &t45); hero_array_push_owned(&t60, &t59); t187 = h23_own23; h23_own23 = t60; hero_array_decref(t187); t188 = h1_bytes; hero_array_incref(t60); h1_bytes = t60; hero_array_decref(t188); goto bb6; bb16: t56 = h5_f2; t57 = t56.as.err;
 #line 2083 "main.c"
     hero_panic_must_at(t57, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 161, 47);
     hero_unreachable();
 bb17:
-#line 163 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 163 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t64 = INT64_C(224); t65 = h0_n; t66 = INT64_C(12); if (t66 < 0 || t66 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 31); t67 = (t65 < 0) ? ~(int64_t)((~(uint64_t)t65) >> (uint64_t)t66) : (int64_t)((uint64_t)t65 >> (uint64_t)t66); t68 = t64 | t67; if (t68 >= 0LL && t68 <= 255LL) { t69 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t68}; } else { t69 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t189 = h24_own24; h24_own24 = t69; h_0opt_1ec004_release(&t189); t190 = h6_f3; h_0opt_1ec004_retain(&t69); h6_f3 = t69; h_0opt_1ec004_release(&t190); t70 = h6_f3; t71 = t70.tag; t72 = INT64_C(0); t73 = t71 == t72; if (t73) goto bb19; else goto bb20; bb18:
 #line 166
     t109 = INT64_C(240); t110 = h0_n; t111 = INT64_C(18); if (t111 < 0 || t111 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 166, 26); t112 = (t110 < 0) ? ~(int64_t)((~(uint64_t)t110) >> (uint64_t)t111) : (int64_t)((uint64_t)t110 >> (uint64_t)t111); t113 = t109 | t112; if (t113 >= 0LL && t113 <= 255LL) { t114 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t113}; } else { t114 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t191 = h25_own25; h25_own25 = t114; h_0opt_1ec004_release(&t191); t192 = h9_f6; h_0opt_1ec004_retain(&t114); h9_f6 = t114; h_0opt_1ec004_release(&t192); t115 = h9_f6; t116 = t115.tag; t117 = INT64_C(0); t118 = t116 == t117; if (t118) goto bb25; else goto bb26; bb19:
@@ -2093,19 +2093,19 @@ bb17:
     hero_panic_must_at(t75, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 18);
     hero_unreachable();
 bb21:
-#line 163 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 163 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t92 = h7_f4; t93 = t92.as.ok; t94 = INT64_C(128); t95 = h0_n; t96 = INT64_C(63); t97 = t95 & t96; t98 = t94 | t97; if (t98 >= 0LL && t98 <= 255LL) { t99 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t98}; } else { t99 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t195 = h27_own27; h27_own27 = t99; h_0opt_1ec004_release(&t195); t196 = h8_f5; h_0opt_1ec004_retain(&t99); h8_f5 = t99; h_0opt_1ec004_release(&t196); t100 = h8_f5; t101 = t100.tag; t102 = INT64_C(0); t103 = t101 == t102; if (t103) goto bb23; else goto bb24; bb22: t90 = h7_f4; t91 = t90.as.err;
 #line 2099 "main.c"
     hero_panic_must_at(t91, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 48);
     hero_unreachable();
 bb23:
-#line 163 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 163 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t106 = h8_f5; t107 = t106.as.ok; t108 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t108, &t77); hero_array_push_owned(&t108, &t93); hero_array_push_owned(&t108, &t107); t197 = h28_own28; h28_own28 = t108; hero_array_decref(t197); t198 = h1_bytes; hero_array_incref(t108); h1_bytes = t108; hero_array_decref(t198); goto bb6; bb24: t104 = h8_f5; t105 = t104.as.err;
 #line 2105 "main.c"
     hero_panic_must_at(t105, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 163, 84);
     hero_unreachable();
 bb25:
-#line 166 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 166 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t121 = h9_f6; t122 = t121.as.ok;
     t123 = INT64_C(128); t124 = h0_n; t125 = INT64_C(12); if (t125 < 0 || t125 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 167, 26); t126 = (t124 < 0) ? ~(int64_t)((~(uint64_t)t124) >> (uint64_t)t125) : (int64_t)((uint64_t)t124 >> (uint64_t)t125); t127 = INT64_C(63); t128 = t126 & t127; t129 = t123 | t128; if (t129 >= 0LL && t129 <= 255LL) { t130 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t129}; } else { t130 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t199 = h29_own29; h29_own29 = t130; h_0opt_1ec004_release(&t199); t200 = h10_f7; h_0opt_1ec004_retain(&t130); h10_f7 = t130; h_0opt_1ec004_release(&t200); t131 = h10_f7; t132 = t131.tag; t133 = INT64_C(0); t134 = t132 == t133; if (t134) goto bb27; else goto bb28; bb26:
 #line 166
@@ -2114,7 +2114,7 @@ bb25:
     hero_panic_must_at(t120, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 166, 13);
     hero_unreachable();
 bb27:
-#line 167 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 167 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t137 = h10_f7; t138 = t137.as.ok;
     t139 = INT64_C(128); t140 = h0_n; t141 = INT64_C(6); if (t141 < 0 || t141 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/quoted.hero", "quoted.character", 168, 26); t142 = (t140 < 0) ? ~(int64_t)((~(uint64_t)t140) >> (uint64_t)t141) : (int64_t)((uint64_t)t140 >> (uint64_t)t141); t143 = INT64_C(63); t144 = t142 & t143; t145 = t139 | t144; if (t145 >= 0LL && t145 <= 255LL) { t146 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t145}; } else { t146 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t201 = h30_own30; h30_own30 = t146; h_0opt_1ec004_release(&t201); t202 = h11_f8; h_0opt_1ec004_retain(&t146); h11_f8 = t146; h_0opt_1ec004_release(&t202); t147 = h11_f8; t148 = t147.tag; t149 = INT64_C(0); t150 = t148 == t149; if (t150) goto bb29; else goto bb30; bb28:
 #line 167
@@ -2123,7 +2123,7 @@ bb27:
     hero_panic_must_at(t136, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 167, 13);
     hero_unreachable();
 bb29:
-#line 168 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 168 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t153 = h11_f8; t154 = t153.as.ok;
     t155 = INT64_C(128); t156 = h0_n; t157 = INT64_C(63); t158 = t156 & t157; t159 = t155 | t158; if (t159 >= 0LL && t159 <= 255LL) { t160 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t159}; } else { t160 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t203 = h31_own31; h31_own31 = t160; h_0opt_1ec004_release(&t203); t204 = h12_f9; h_0opt_1ec004_retain(&t160); h12_f9 = t160; h_0opt_1ec004_release(&t204); t161 = h12_f9; t162 = t161.tag; t163 = INT64_C(0); t164 = t162 == t163; if (t164) goto bb31; else goto bb32; bb30:
 #line 168
@@ -2132,7 +2132,7 @@ bb29:
     hero_panic_must_at(t152, "<core>/encoding/json/internal/quoted.hero", "quoted.character", 168, 13);
     hero_unreachable();
 bb31:
-#line 169 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 169 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t167 = h12_f9; t168 = t167.as.ok;
 #line 165
     t169 = hero_array_new(&hero_desc_u8, 4); hero_array_push_owned(&t169, &t122); hero_array_push_owned(&t169, &t138); hero_array_push_owned(&t169, &t154); hero_array_push_owned(&t169, &t168); t205 = h32_own32; h32_own32 = t169; hero_array_decref(t205); t206 = h1_bytes; hero_array_incref(t169); h1_bytes = t169; hero_array_decref(t206); goto bb6; bb32:
@@ -2177,7 +2177,7 @@ bb33:
     return t172;
 }
 
-#line 177 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 177 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 HeroStr h_1coreencodingjsoninternalquoted_written(HeroStr h0_s) { HeroArrayHeader * h1_pieces = {0}; int64_t h2_run; int64_t h3_i; uint8_t h4_b; HERO_NODEBUG bool h5_b0, h6_b1, t8, t14, t17, t18, t21, t22; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t2, *t49, *t52, *t53; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t1, t6, t9, t24, t27, t31, t40, t42, t44, t47, t50, t51, t54, t55, t56, t57; HERO_NODEBUG int64_t t3, t4, t5, t7, t10, t25, t26, t33, t34, t35, t36, t37, t38, t41, t43; HERO_NODEBUG uint8_t t11, t12, t13, t15, t16, t19, t20, t30; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_22); t2 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t2, &t1); t52 = h7_own7; h7_own7 = t2; hero_array_decref(t52); t53 = h1_pieces; hero_array_incref(t2); h1_pieces = t2; hero_array_decref(t53);
     t3 = INT64_C(0); h2_run = t3;
@@ -2201,7 +2201,7 @@ HeroStr h_1coreencodingjsoninternalquoted_written(HeroStr h0_s) { HeroArrayHeade
     hero_str_release_at(&h11_own11);
     return t51;
 bb4:
-#line 189 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 189 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t36 = h3_i; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("<core>/encoding/json/internal/quoted.hero", "quoted.written", 189, 13); h3_i = t38; goto bb1; bb5:
 #line 185
     t15 = h4_b; t16 = UINT64_C(92); t17 = t15 == t16; h6_b1 = t17; goto bb6; bb6: t18 = h6_b1; h5_b0 = t18; if (t18) goto bb8; else goto bb7; bb7: t19 = h4_b; t20 = UINT64_C(32); t21 = t19 < t20; h5_b0 = t21; goto bb8; bb8: t22 = h5_b0; if (t22) goto bb9; else goto bb10; bb9:
@@ -2211,7 +2211,7 @@ bb4:
 #line 2212 "main.c"
 }
 
-#line 197 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 197 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 HeroStr h_1coreencodingjsoninternalquoted_escape_of(uint8_t h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h4_own4 = {0}, t30, t31, t35, t37, t63, t64; int64_t h2_n; HERO_NODEBUG HeroStr h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t8, t12, t16, t20, t24, t28, t39, t40, t49, t50, t51, t60, t61, t62, t65, t66, t67, t68, t69, t70; HERO_NODEBUG uint8_t t1, t2, t5, t6, t9, t10, t13, t14, t17, t18, t21, t22, t25, t26, t29; HERO_NODEBUG bool t3, t7, t11, t15, t19, t23, t27, t34; HERO_NODEBUG int64_t t32, t33, t38, t41, t42, t43, t44, t45, t46, t47, t48, t52, t53, t54, t55, t56, t57, t58, t59; HERO_NODEBUG HeroFailure t36; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b; t2 = UINT64_C(34); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 212
@@ -2251,7 +2251,7 @@ bb18:
     return t62;
 }
 
-#line 218 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 218 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 h_0opt_f87774a h_1coreencodingjsoninternalquoted_read_all(HeroStr h0_text) { h_1coreencodingjsoninternalcursor_Cursor h1_c = {0}; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h2_own2 = {0}, t2, t4, t5; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}, t3, t6; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_1coreencodingjsoninternalcursor_start(t1); t4 = h2_own2; h2_own2 = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t4); t5 = h1_c; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t2); h1_c = t2; h_1coreencodingjsoninternalcursor_0Cursor_release(&t5);
     t3 = h_1coreencodingjsoninternalquoted_read(&h1_c); t6 = h3_own3; h3_own3 = t3; h_0opt_f87774a_release(&t6);
@@ -2263,7 +2263,7 @@ h_0opt_f87774a h_1coreencodingjsoninternalquoted_read_all(HeroStr h0_text) { h_1
     return t3;
 }
 
-#line 223 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 223 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
 HeroStr h_1coreencodingjsoninternalquoted_code_of(h_0opt_f87774a h0_got) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t9 = h1_s0; h_0opt_f87774a_retain(&t1); h1_s0 = t1; h_0opt_f87774a_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
 #line 2270 "main.c"
@@ -2273,7 +2273,7 @@ HeroStr h_1coreencodingjsoninternalquoted_code_of(h_0opt_f87774a h0_got) { HERO_
     hero_failure_release(&h3_e);
     return t8;
 bb2:
-#line 225 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/quoted.hero"
+#line 225 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/quoted.hero"
     t4 = HERO_STR_LIT(hero_str_6bac0650);
 #line 224
     t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
@@ -2284,13 +2284,13 @@ bb2:
 #line 2285 "main.c"
 }
 
-#line 26 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 26 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 int64_t h_1coreencodingjsoninternaltokens_DEEPEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(512); return t1;
 #line 2291 "main.c"
 }
 
-#line 70 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 70 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 h_1coreencodingjsoninternaltokens_Reader h_1coreencodingjsoninternaltokens_start(HeroStr h0_text) { HeroArrayHeader * h1_nothing = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t4, *t7, *t8; HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h3_own3 = {0}, t3, t9; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Reader h4_own4 = {0}, t6, t10; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_bool, 1); t7 = h2_own2; h2_own2 = t1; hero_array_decref(t7); t8 = h1_nothing; hero_array_incref(t1); h1_nothing = t1; hero_array_decref(t8);
     t2 = h0_text; t3 = h_1coreencodingjsoninternalcursor_start(t2); t9 = h3_own3; h3_own3 = t3; h_1coreencodingjsoninternalcursor_0Cursor_release(&t9); t4 = h1_nothing; t5 = (h_1coreencodingjsoninternaltokens_Want){.tag = h_1coreencodingjsoninternaltokens_0Want_tag_value}; h_1coreencodingjsoninternalcursor_0Cursor_retain(&t3); hero_array_incref(t4); t6 = (h_1coreencodingjsoninternaltokens_Reader){.f_at = t3, .f_open = t4, .f_want = t5}; t10 = h4_own4; h4_own4 = t6; h_1coreencodingjsoninternaltokens_0Reader_release(&t10);
@@ -2303,7 +2303,7 @@ h_1coreencodingjsoninternaltokens_Reader h_1coreencodingjsoninternaltokens_start
     return t6;
 }
 
-#line 78 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 78 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 h_0opt_f42698c h_1coreencodingjsoninternaltokens_next(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want h1_s0, t1, t2; HERO_NODEBUG h_0opt_f42698c h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h11_own11 = {0}, t4, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t23, t24, t26; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h7_own7 = {0}, h10_own10 = {0}, t7, t12, t22, t25; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t5, t10; HERO_NODEBUG bool t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     h_1coreencodingjsoninternalcursor_skip_space(&(*ph0_r).f_at);
 #line 81
@@ -2341,7 +2341,7 @@ h_0opt_f42698c h_1coreencodingjsoninternaltokens_next(h_1coreencodingjsoninterna
     return t17;
 }
 
-#line 99 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 99 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 h_0opt_f42698c h_1coreencodingjsoninternaltokens_value_token(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h4_b1, t1, t9, t12, t13, t17, t33, t37, t47, t52, t62, t64, t65, t70, t79, t80, t84, t85, t89; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h21_own21 = {0}, t48, t49, t53, t56, t112, t113; HERO_NODEBUG h_0opt_db92a83 h5_f1 = {0}, h25_own25 = {0}, t66, t67, t71, t74, t117, t118; HERO_NODEBUG h_0opt_f42698c h6_ret0 = {0}, h8_own8 = {0}, h16_own16 = {0}, h18_own18 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h27_own27 = {0}, h28_own28 = {0}, h30_own30 = {0}, h32_own32 = {0}, h34_own34 = {0}, h36_own36 = {0}, t5, t29, t40, t43, t55, t59, t73, t77, t82, t87, t91, t95, t96, t98, t107, t109, t111, t115, t116, t120, t121, t123, t125, t127, t129; HERO_NODEBUG HeroStr h7_own7 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h33_own33 = {0}, t2, t3, t4, t18, t20, t21, t22, t23, t24, t25, t26, t27, t28, t57, t78, t83, t88, t92, t93, t94, t97, t101, t102, t103, t104, t105, t106, t126; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *t14, *t30, *t34, *t99, *t100; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h17_own17 = {0}, h19_own19 = {0}, h22_own22 = {0}, h26_own26 = {0}, h29_own29 = {0}, h31_own31 = {0}, h35_own35 = {0}, t39, t42, t58, t76, t81, t86, t90, t108, t110, t114, t119, t122, t124, t128; HERO_NODEBUG uint8_t t6, t7, t8, t10, t11, t31, t32, t35, t36, t45, t46, t60, t61, t63; HERO_NODEBUG int64_t t15, t16, t19, t50, t51, t68, t69; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t38, t41, t44; HERO_NODEBUG HeroFailure t54, t72; HERO_NODEBUG double t75; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_r).f_at); if (t1) goto bb2; else goto bb3; bb1:
 #line 102
@@ -2432,7 +2432,7 @@ h_0opt_f42698c h_1coreencodingjsoninternaltokens_value_token(h_1coreencodingjson
     return t96;
 }
 
-#line 137 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 137 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 h_0opt_f42698c h_1coreencodingjsoninternaltokens_name_token(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { HERO_NODEBUG bool h1_b0, t1, t4, t5, t14, t21, t22; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}, h5_own5 = {0}, t10, t11, t15, t18, t32, t33; HeroStr h3_text = {0}; HERO_NODEBUG h_0opt_f42698c h4_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, t9, t17, t26, t30, t31, t35, t37, t39, t41; HERO_NODEBUG HeroStr h6_own6 = {0}, h11_own11 = {0}, t6, t7, t8, t19, t20, t23, t24, t25, t28, t34, t36, t40; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h9_own9 = {0}, t29, t38; HERO_NODEBUG uint8_t t2, t3; HERO_NODEBUG int64_t t12, t13; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t27; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_r).f_at); h1_b0 = t1; if (t1) goto bb3; else goto bb2; bb1:
 #line 140
@@ -2467,7 +2467,7 @@ h_0opt_f42698c h_1coreencodingjsoninternaltokens_name_token(h_1coreencodingjsoni
     return t31;
 }
 
-#line 150 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 150 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 h_0opt_f42698c h_1coreencodingjsoninternaltokens_after_value(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { bool h1_object; HERO_NODEBUG h_0opt_f42698c h2_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t7, t11, t23, t28, t32, t36, t40, t41, t43, t45, t46, t48, t50, t52, t54; HERO_NODEBUG HeroStr h3_own3 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t18, t25, t29, t30, t31, t33, t37, t38, t39, t42, t47, t51; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h5_own5 = {0}, h10_own10 = {0}, h14_own14 = {0}, t6, t27, t35, t44, t49, t53; HERO_NODEBUG HeroArrayHeader *t1, *t12, *t13; HERO_NODEBUG int64_t t2, t3, t14, t15, t16; HERO_NODEBUG bool t4, t5, t17, t19, t20, t24, t26, t34; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_r).f_open; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 155
@@ -2521,7 +2521,7 @@ h_0opt_f42698c h_1coreencodingjsoninternaltokens_after_value(h_1coreencodingjson
     return t41;
 }
 
-#line 175 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 175 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 h_1coreencodingjsoninternaltokens_Token h_1coreencodingjsoninternaltokens_closed(h_1coreencodingjsoninternaltokens_Reader *ph0_r) { bool h1_object; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h2_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t16, t17, t18, t21, t22; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t7, *t9, *t13, *t19, *t20; HERO_NODEBUG int64_t t3, t4, t5, t8, t10, t11, t12; HERO_NODEBUG bool t6, t15; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Want t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_r).f_open; t2 = (*ph0_r).f_open; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(1); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("<core>/encoding/json/internal/tokens.hero", "tokens.closed", 176, 21); t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? hero_panic_index_at(t1, t5, "<core>/encoding/json/internal/tokens.hero", "tokens.closed", 176, 14) : (void)0), (void)(t1->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t1 + 1))[t5]); h1_object = t6;
     t7 = (*ph0_r).f_open; t8 = INT64_C(0); t9 = (*ph0_r).f_open; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(1); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow_at("<core>/encoding/json/internal/tokens.hero", "tokens.closed", 177, 40); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/encoding/json/internal/tokens.hero", "tokens.closed", 177, 14}; t13 = hero_array_slice_at(t7, t8, t12, &hero_here); } t19 = h3_own3; h3_own3 = t13; hero_array_decref(t19); t20 = (*ph0_r).f_open; hero_array_incref(t13); (*ph0_r).f_open = t13; hero_array_decref(t20);
@@ -2541,7 +2541,7 @@ h_1coreencodingjsoninternaltokens_Token h_1coreencodingjsoninternaltokens_closed
     return t18;
 }
 
-#line 187 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/tokens.hero"
+#line 187 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/tokens.hero"
 HeroArrayHeader * h_1coreencodingjsoninternaltokens_named(HeroStr h0_text) { h_1coreencodingjsoninternaltokens_Reader h1_r = {0}; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG h_0opt_f42698c h3_s0 = {0}, h14_own14 = {0}, t5, t6, t8, t13, t69, t70; HeroFailure h4_e = {0}; h_1coreencodingjsoninternaltokens_Token h5_t = {0}; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Token h6_s1 = {0}, t14, t15, t16, t30, t40, t46, t52, t73, t74; h_1coreencodingjsoninternaltokens_0Token_c_name h7_n = {0}; h_1coreencodingjsoninternaltokens_0Token_c_boolean h8_b; h_1coreencodingjsoninternaltokens_0Token_c_number h9_n; h_1coreencodingjsoninternaltokens_0Token_c_string h10_s = {0}; HERO_NODEBUG HeroArrayHeader *h11_ret0 = {0}, *h13_own13 = {0}, *h15_own15 = {0}, *h21_own21 = {0}, *t3, *t10, *t12, *t61, *t63, *t64, *t67, *t68, *t72, *t82; HERO_NODEBUG h_1coreencodingjsoninternaltokens_Reader h12_own12 = {0}, t2, t65, t66; HERO_NODEBUG HeroStr h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, t1, t11, t19, t22, t25, t28, t33, t34, t35, t38, t44, t50, t55, t56, t57, t58, t59, t62, t76, t77, t78, t80, t81; HERO_NODEBUG bool t4, t43; HERO_NODEBUG int64_t t7, t17; HERO_NODEBUG HeroFailure t9, t71; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_name t31, t75; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_boolean t41; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_number t47; HERO_NODEBUG double t49; HERO_NODEBUG h_1coreencodingjsoninternaltokens_0Token_c_string t53, t79; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_1coreencodingjsoninternaltokens_start(t1); t65 = h12_own12; h12_own12 = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t65); t66 = h1_r; h_1coreencodingjsoninternaltokens_0Reader_retain(&t2); h1_r = t2; h_1coreencodingjsoninternaltokens_0Reader_release(&t66);
     t3 = hero_array_new(&hero_desc_str, 1); t67 = h13_own13; h13_own13 = t3; hero_array_decref(t67); t68 = h2_out; hero_array_incref(t3); h2_out = t3; hero_array_decref(t68); goto bb1; bb1:
@@ -2585,7 +2585,7 @@ HeroArrayHeader * h_1coreencodingjsoninternaltokens_named(HeroStr h0_text) { h_1
     return t64;
 }
 
-#line 9 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 9 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 HeroStr h_1coreencodingjsoninternalcursor_HEX(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_f2097ef);
 #line 2592 "main.c"
@@ -2593,7 +2593,7 @@ HeroStr h_1coreencodingjsoninternalcursor_HEX(void) { HERO_NODEBUG HeroStr t1; H
     return t1;
 }
 
-#line 20 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 20 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 h_1coreencodingjsoninternalcursor_Cursor h_1coreencodingjsoninternalcursor_start(HeroStr h0_text) { HERO_NODEBUG h_1coreencodingjsoninternalcursor_Cursor h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = INT64_C(0); hero_str_incref(t1); t3 = (h_1coreencodingjsoninternalcursor_Cursor){.f_text = t1, .f_at = t2}; t4 = h1_own1; h1_own1 = t3; h_1coreencodingjsoninternalcursor_0Cursor_release(&t4);
 #line 2600 "main.c"
@@ -2602,25 +2602,25 @@ h_1coreencodingjsoninternalcursor_Cursor h_1coreencodingjsoninternalcursor_start
     return t3;
 }
 
-#line 24 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 24 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 bool h_1coreencodingjsoninternalcursor_at_end(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).f_at; t2 = (*ph0_c).f_text; t3 = hero_str_len(t2); t4 = t1 >= t3; return t4;
 #line 2609 "main.c"
 }
 
-#line 29 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 29 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 uint8_t h_1coreencodingjsoninternalcursor_byte_at(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).f_text; t2 = (*ph0_c).f_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "<core>/encoding/json/internal/cursor.hero", "cursor.byte_at", 30, 12) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); return t3;
 #line 2615 "main.c"
 }
 
-#line 33 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 33 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 void h_1coreencodingjsoninternalcursor_advance(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).f_at; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.advance", 34, 12); (*ph0_c).f_at = t3; return;
 #line 2621 "main.c"
 }
 
-#line 38 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 38 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 void h_1coreencodingjsoninternalcursor_skip_space(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, t4, t10, t13, t14, t17, t18, t21, t22; HERO_NODEBUG int64_t t1, t3, t6, t23, t24, t25; HERO_NODEBUG HeroStr t2, t5; HERO_NODEBUG uint8_t t7, t8, t9, t11, t12, t15, t16, t19, t20; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
     t1 = (*ph0_c).f_at; t2 = (*ph0_c).f_text; t3 = hero_str_len(t2); t4 = t1 < t3; if (t4) goto bb2; else goto bb3; bb2:
     t5 = (*ph0_c).f_text; t6 = (*ph0_c).f_at; t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "<core>/encoding/json/internal/cursor.hero", "cursor.skip_space", 40, 13) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); h1_b = t7;
@@ -2633,7 +2633,7 @@ void h_1coreencodingjsoninternalcursor_skip_space(h_1coreencodingjsoninternalcur
 #line 2634 "main.c"
 }
 
-#line 48 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 48 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 bool h_1coreencodingjsoninternalcursor_accept(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, HeroStr h1_word) { int64_t h2_i; HERO_NODEBUG bool h3_ret0, t7, t8, t13, t22, t23, t31, t32; HERO_NODEBUG int64_t t1, t3, t4, t6, t9, t10, t12, t15, t16, t17, t20, t24, t25, t26, t27, t29, t30; HERO_NODEBUG HeroStr t2, t5, t11, t14, t19, t28; HERO_NODEBUG uint8_t t18, t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).f_at; t2 = h1_word; t3 = hero_str_len(t2); if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.accept", 49, 8); t5 = (*ph0_c).f_text; t6 = hero_str_len(t5); t7 = t4 > t6; if (t7) goto bb2; else goto bb3; bb1:
 #line 51
@@ -2655,7 +2655,7 @@ bool h_1coreencodingjsoninternalcursor_accept(h_1coreencodingjsoninternalcursor_
     return t32;
 }
 
-#line 63 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 63 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 HeroStr h_1coreencodingjsoninternalcursor_place(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { int64_t h1_line; int64_t h2_column; int64_t h3_i; HERO_NODEBUG bool h4_b0, h6_b1, t6, t10, t11, t17, t24, t27, t28; uint8_t h5_b; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t8, t12, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t7, t9, t13, t18, t19, t20, t21, t29, t30, t31, t32, t33, t34, t35, t36; HERO_NODEBUG uint8_t t14, t15, t16, t22, t23, t25, t26; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); h1_line = t1;
     t2 = INT64_C(1); h2_column = t2;
@@ -2676,7 +2676,7 @@ HeroStr h_1coreencodingjsoninternalcursor_place(h_1coreencodingjsoninternalcurso
     hero_str_release_at(&h11_own11);
     return t43;
 bb4:
-#line 68 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 68 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
     t7 = h3_i; t8 = (*ph0_c).f_text; t9 = hero_str_len(t8); t10 = t7 < t9; h4_b0 = t10; goto bb5; bb5: t11 = h4_b0; if (t11) goto bb2; else goto bb3; bb6:
 #line 76
     t32 = h3_i; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/encoding/json/internal/cursor.hero", "cursor.place", 76, 13); h3_i = t34; goto bb1; bb7:
@@ -2688,7 +2688,7 @@ bb4:
 #line 2689 "main.c"
 }
 
-#line 83 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 83 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 HeroStr h_1coreencodingjsoninternalcursor_found(h_1coreencodingjsoninternalcursor_Cursor *ph0_c) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h5_b1, t1, t8, t11, t12, t18, t48, t51, t52, t57, t61, t65, t73; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h9_own9 = {0}, t14, t15, t19, t21, t85, t86; int64_t h4_n; int64_t h6_width; int64_t h7_end; HERO_NODEBUG HeroStr h8_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, t2, t3, t23, t24, t33, t34, t35, t44, t45, t53, t71, t74, t76, t77, t80, t81, t82, t83, t84, t87, t88, t89, t90, t91, t92, t93, t94, t95; HERO_NODEBUG int64_t t4, t16, t17, t22, t25, t26, t27, t28, t29, t30, t31, t32, t36, t37, t38, t39, t40, t41, t42, t43, t54, t58, t62, t66, t67, t68, t69, t70, t72, t75, t78, t79; HERO_NODEBUG uint8_t t5, t6, t7, t9, t10, t13, t46, t47, t49, t50, t55, t56, t59, t60, t63, t64; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1coreencodingjsoninternalcursor_at_end(&(*ph0_c)); if (t1) goto bb2; else goto bb3; bb1:
 #line 86
@@ -2709,7 +2709,7 @@ HeroStr h_1coreencodingjsoninternalcursor_found(h_1coreencodingjsoninternalcurso
     hero_panic_must_at(t20, "<core>/encoding/json/internal/cursor.hero", "cursor.found", 89, 13);
     hero_unreachable();
 bb11:
-#line 94 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 94 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
     t54 = INT64_C(1); h6_width = t54;
 #line 96
     t55 = h1_b; t56 = UINT64_C(240); t57 = t55 >= t56; if (t57) goto bb17; else goto bb18; bb12:
@@ -2747,7 +2747,7 @@ bb11:
     return t84;
 }
 
-#line 111 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/cursor.hero"
+#line 111 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/cursor.hero"
 HeroStr h_1coreencodingjsoninternalcursor_wanted(h_1coreencodingjsoninternalcursor_Cursor *ph0_c, HeroStr h1_expected) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_73a616c5); t2 = h1_expected; t3 = hero_str_concat(t1, t2); t12 = h2_own2; h2_own2 = t3; hero_str_decref(t12); t4 = HERO_STR_LIT(hero_str_7f933ce3); t5 = hero_str_concat(t3, t4); t13 = h3_own3; h3_own3 = t5; hero_str_decref(t13); t6 = h_1coreencodingjsoninternalcursor_found(&(*ph0_c)); t14 = h4_own4; h4_own4 = t6; hero_str_decref(t14); t7 = hero_str_concat(t5, t6); t15 = h5_own5; h5_own5 = t7; hero_str_decref(t15); t8 = HERO_STR_LIT(hero_str_4635545); t9 = hero_str_concat(t7, t8); t16 = h6_own6; h6_own6 = t9; hero_str_decref(t16); t10 = h_1coreencodingjsoninternalcursor_place(&(*ph0_c)); t17 = h7_own7; h7_own7 = t10; hero_str_decref(t17); t11 = hero_str_concat(t9, t10); t18 = h8_own8; h8_own8 = t11; hero_str_decref(t18);
 #line 2754 "main.c"
@@ -2762,26 +2762,26 @@ HeroStr h_1coreencodingjsoninternalcursor_wanted(h_1coreencodingjsoninternalcurs
     return t11;
 }
 
-#line 29 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 29 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 int64_t h_1coreencodingjsoninternaldecimal_CAPACITY(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(800); return t1;
 #line 2769 "main.c"
 }
 
-#line 35 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 35 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 int64_t h_1coreencodingjsoninternaldecimal_WIDEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(59); return t1;
 #line 2775 "main.c"
 }
 
 #if HERO_STATIC_CONSTANTS
-#line 48 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 48 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternaldecimal_STEPS_10, int64_t, &hero_desc_int, 9, INT64_C(1), INT64_C(3), INT64_C(6), INT64_C(9), INT64_C(13), INT64_C(16), INT64_C(19), INT64_C(23), INT64_C(26)); HeroArrayHeader * h_1coreencodingjsoninternaldecimal_STEPS(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternaldecimal_STEPS_10);
 #line 2781 "main.c"
 }
 #else
 
-#line 48 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 48 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 HeroArrayHeader * h_1coreencodingjsoninternaldecimal_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t10, *t11; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(3); t3 = INT64_C(6); t4 = INT64_C(9); t5 = INT64_C(13); t6 = INT64_C(16); t7 = INT64_C(19); t8 = INT64_C(23); t9 = INT64_C(26); t10 = hero_array_new(&hero_desc_int, 9); hero_array_push_owned(&t10, &t1); hero_array_push_owned(&t10, &t2); hero_array_push_owned(&t10, &t3); hero_array_push_owned(&t10, &t4); hero_array_push_owned(&t10, &t5); hero_array_push_owned(&t10, &t6); hero_array_push_owned(&t10, &t7); hero_array_push_owned(&t10, &t8); hero_array_push_owned(&t10, &t9); t11 = h0_own0; h0_own0 = t10; hero_array_decref(t11);
 #line 2788 "main.c"
@@ -2791,7 +2791,7 @@ HeroArrayHeader * h_1coreencodingjsoninternaldecimal_STEPS(void) { HERO_NODEBUG 
 }
 #endif
 
-#line 63 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 63 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_nearest(HeroStr h0_digits, int64_t h1_point) { HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h2_own2 = {0}, t3, t5; HERO_NODEBUG h_0opt_db92a83 h3_own3 = {0}, t4, t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_digits; t2 = h1_point; t3 = h_1coreencodingjsoninternaldecimal_decimal_of(t1, t2); t5 = h2_own2; h2_own2 = t3; h_1coreencodingjsoninternaldecimal_0Decimal_release(&t5); t4 = h_1coreencodingjsoninternaldecimal_rounded_to_float(t3); t6 = h3_own3; h3_own3 = t4; h_0opt_db92a83_release(&t6);
 #line 2798 "main.c"
@@ -2801,7 +2801,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_nearest(HeroStr h0_digits, int
     return t4;
 }
 
-#line 67 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 67 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_decimal_of(HeroStr h0_digits, int64_t h1_point) { HeroArrayHeader * h2_kept = {0}; bool h3_truncated; int64_t h4_i; uint8_t h5_digit; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t13, *t27, *t32, *t33; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h7_own7 = {0}, h8_own8 = {0}, t30, t31, t34, t35; HERO_NODEBUG bool t2, t7, t16, t22, t23, t29; HERO_NODEBUG int64_t t3, t4, t6, t9, t14, t15, t24, t25, t26, t28; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG uint8_t t10, t11, t12, t18, t20, t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t32 = h6_own6; h6_own6 = t1; hero_array_decref(t32); t33 = h2_kept; hero_array_incref(t1); h2_kept = t1; hero_array_decref(t33);
     t2 = false; h3_truncated = t2;
@@ -2821,7 +2821,7 @@ h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_de
     h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h8_own8));
     return t31;
 bb4:
-#line 79 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 79 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t24 = h4_i; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.decimal_of", 79, 13); h4_i = t26; goto bb1; bb5:
 #line 76
     t18 = h5_digit; hero_array_push_owned(&h2_kept, &t18); goto bb4; bb6:
@@ -2830,7 +2830,7 @@ bb4:
 #line 2831 "main.c"
 }
 
-#line 85 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 85 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_trimmed(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { int64_t h1_end; HERO_NODEBUG bool h2_b0, t5, t12, t13, t20, t24, t28, t35; HeroArrayHeader * h3_nothing = {0}; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h4_ret0 = {0}, h6_own6 = {0}, h8_own8 = {0}, t21, t29, t36, t37, t39, t42; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *t1, *t6, *t18, *t25, *t26, *t30, *t33, *t38, *t40, *t41; HERO_NODEBUG int64_t t2, t3, t4, t7, t8, t9, t14, t15, t16, t17, t19, t22, t23, t27, t31, t32, t34; HERO_NODEBUG uint8_t t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_d.f_digits; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); h1_end = t2; goto bb1; bb1:
 #line 88
@@ -2860,7 +2860,7 @@ h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_tr
     return t37;
 }
 
-#line 101 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 101 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_shifted(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k) { HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t10, t14, t15, t16, t17, t18; HERO_NODEBUG int64_t t1, t2, t5, t7, t8, t11, t12, t13; HERO_NODEBUG bool t3, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_k; t2 = INT64_C(0); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 105
@@ -2879,7 +2879,7 @@ h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_sh
     return t16;
 }
 
-#line 111 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 111 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_doubled(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k) { HeroArrayHeader * h2_backwards = {0}; int64_t h3_n; int64_t h4_read; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h12_own12 = {0}, t14, t15, t19, t21, t106, t107; HERO_NODEBUG h_0opt_1ec004 h6_f1 = {0}, h7_f2 = {0}, h13_own13 = {0}, h14_own14 = {0}, t30, t31, t35, t37, t53, t54, t58, t60, t108, t109, t110, t111; HeroArrayHeader * h8_digits = {0}; bool h9_truncated; int64_t h10_at; HERO_NODEBUG HeroArrayHeader *h11_own11 = {0}, *h15_own15 = {0}, *t1, *t3, *t11, *t66, *t68, *t75, *t80, *t84, *t93, *t95, *t98, *t104, *t105, *t112, *t113; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h16_own16 = {0}, h17_own17 = {0}, t102, t103, t114, t115; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t12, t16, t17, t22, t23, t24, t25, t27, t28, t29, t32, t33, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51, t52, t55, t56, t63, t64, t65, t69, t70, t71, t72, t73, t76, t77, t81, t85, t90, t91, t92, t94, t96, t97, t99, t100; HERO_NODEBUG bool t9, t18, t34, t48, t57, t67, t74, t78, t88, t89, t101; HERO_NODEBUG uint8_t t13, t38, t61, t82, t86, t87; HERO_NODEBUG HeroFailure t20, t36, t59; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t104 = h11_own11; h11_own11 = t1; hero_array_decref(t104); t105 = h2_backwards; hero_array_incref(t1); h2_backwards = t1; hero_array_decref(t105);
     t2 = INT64_C(0); h3_n = t2;
@@ -2894,7 +2894,7 @@ h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_do
     hero_panic_must_at(t20, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 117, 18);
     hero_unreachable();
 bb6:
-#line 118 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 118 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t37 = h6_f1; t38 = t37.as.ok; hero_array_push_owned(&h2_backwards, &t38);
     t40 = h3_n; t41 = INT64_C(10); if (t41 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 119, 13); if (t40 == INT64_MIN && t41 == INT64_C(-1)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 119, 13); t42 = t40 / t41; h3_n = t42;
     t43 = h4_read; t44 = INT64_C(1); if (__builtin_sub_overflow(t43, t44, &t45)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 120, 16); h4_read = t45; goto bb1; bb7:
@@ -2904,7 +2904,7 @@ bb6:
     hero_panic_must_at(t36, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 118, 36);
     hero_unreachable();
 bb8:
-#line 122 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 122 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t46 = h3_n; t47 = INT64_C(0); t48 = t46 > t47; if (t48) goto bb9; else goto bb10; bb9:
     t50 = h3_n; t51 = INT64_C(10); if (t51 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 123, 42); if (t50 == INT64_MIN && t51 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 123, 42); t52 = t50 % t51; if (t52 >= 0LL && t52 <= 255LL) { t53 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t52}; } else { t53 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t110 = h14_own14; h14_own14 = t53; h_0opt_1ec004_release(&t110); t111 = h7_f2; h_0opt_1ec004_retain(&t53); h7_f2 = t53; h_0opt_1ec004_release(&t111); t54 = h7_f2; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb11; else goto bb12; bb10:
 #line 126
@@ -2920,7 +2920,7 @@ bb8:
     hero_panic_must_at(t59, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 123, 36);
     hero_unreachable();
 bb13:
-#line 130 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 130 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t72 = h10_at; t73 = INT64_C(0); t74 = t72 >= t73; if (t74) goto bb14; else goto bb15; bb14:
     t75 = h8_digits; t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len); t77 = h_1coreencodingjsoninternaldecimal_CAPACITY(); t78 = t76 < t77; if (t78) goto bb17; else goto bb18; bb15:
 #line 138
@@ -2943,7 +2943,7 @@ bb13:
     h_1coreencodingjsoninternaldecimal_0Decimal_release(hero_slot_escape(&h17_own17));
     return t103;
 bb16:
-#line 135 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 135 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t90 = h10_at; t91 = INT64_C(1); if (__builtin_sub_overflow(t90, t91, &t92)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 135, 14); h10_at = t92; goto bb13; bb17:
 #line 132
     t80 = h2_backwards; t81 = h10_at; t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? hero_panic_index_at(t80, t81, "<core>/encoding/json/internal/decimal.hero", "decimal.doubled", 132, 34) : (void)0), (void)(t80->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t80 + 1))[t81]); hero_array_push_owned(&h8_digits, &t82); goto bb16; bb18:
@@ -2952,7 +2952,7 @@ bb16:
 #line 2953 "main.c"
 }
 
-#line 144 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 144 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_halved(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_k) { int64_t h2_read; int64_t h3_n; HeroArrayHeader * h4_nothing = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h10_f2 = {0}, h16_own16 = {0}, h20_own20 = {0}, t37, t38, t42, t44, t87, t88, t92, t94, t140, t141, t147, t148; int64_t h6_point; int64_t h7_mask; HeroArrayHeader * h8_digits = {0}; HERO_NODEBUG h_0opt_1ec004 h9_f1 = {0}, h12_f3 = {0}, h19_own19 = {0}, h21_own21 = {0}, t69, t70, t74, t76, t107, t108, t112, t114, t145, t146, t149, t150; bool h11_truncated; uint8_t h13_digit; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h14_ret0 = {0}, h18_own18 = {0}, h22_own22 = {0}, h23_own23 = {0}, t19, t135, t136, t137, t144, t151, t152; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h17_own17 = {0}, *t9, *t15, *t16, *t34, *t60, *t62, *t84, *t121, *t132, *t138, *t139, *t142, *t143; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t8, t10, t12, t13, t17, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30, t31, t32, t33, t35, t39, t40, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t61, t63, t66, t67, t68, t71, t72, t79, t80, t81, t82, t83, t85, t89, t90, t95, t96, t97, t98, t99, t101, t102, t104, t105, t106, t109, t110, t116, t117, t118, t119, t120, t122, t123, t133; HERO_NODEBUG bool t7, t11, t14, t18, t24, t41, t64, t73, t91, t100, t103, t111, t124, t130, t131, t134; HERO_NODEBUG uint8_t t36, t77, t86, t115, t126, t128, t129; HERO_NODEBUG HeroFailure t43, t75, t93, t113; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h2_read = t1;
     t2 = INT64_C(0); h3_n = t2; goto bb1; bb1:
@@ -2982,7 +2982,7 @@ h_1coreencodingjsoninternaldecimal_Decimal h_1coreencodingjsoninternaldecimal_ha
     hero_panic_must_at(t43, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 159, 22);
     hero_unreachable();
 bb15:
-#line 168 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 168 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t61 = h2_read; t62 = h0_d.f_digits; t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len); t64 = t61 < t63; if (t64) goto bb16; else goto bb17; bb16:
     t66 = h3_n; t67 = h1_k; if (t67 < 0 || t67 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 169, 36); t68 = (t66 < 0) ? ~(int64_t)((~(uint64_t)t66) >> (uint64_t)t67) : (int64_t)((uint64_t)t66 >> (uint64_t)t67); if (t68 >= 0LL && t68 <= 255LL) { t69 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t68}; } else { t69 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t145 = h19_own19; h19_own19 = t69; h_0opt_1ec004_release(&t145); t146 = h9_f1; h_0opt_1ec004_retain(&t69); h9_f1 = t69; h_0opt_1ec004_release(&t146); t70 = h9_f1; t71 = t70.tag; t72 = INT64_C(0); t73 = t71 == t72; if (t73) goto bb18; else goto bb19; bb17:
 #line 173
@@ -2996,7 +2996,7 @@ bb15:
     hero_panic_must_at(t75, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 169, 30);
     hero_unreachable();
 bb20:
-#line 170 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 170 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t94 = h10_f2; t95 = t94.as.ok; if (__builtin_add_overflow(t83, t95, &t96)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 170, 13); h3_n = t96;
     t97 = h2_read; t98 = INT64_C(1); if (__builtin_add_overflow(t97, t98, &t99)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.halved", 171, 16); h2_read = t99; goto bb15; bb21:
 #line 170
@@ -3005,7 +3005,7 @@ bb20:
     hero_panic_must_at(t93, "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 170, 31);
     hero_unreachable();
 bb22:
-#line 175 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 175 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t101 = h3_n; t102 = INT64_C(0); t103 = t101 > t102; if (t103) goto bb23; else goto bb24; bb23:
     t104 = h3_n; t105 = h1_k; if (t105 < 0 || t105 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/decimal.hero", "decimal.halved", 176, 23); t106 = (t104 < 0) ? ~(int64_t)((~(uint64_t)t104) >> (uint64_t)t105) : (int64_t)((uint64_t)t104 >> (uint64_t)t105); if (t106 >= 0LL && t106 <= 255LL) { t107 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t106}; } else { t107 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t149 = h21_own21; h21_own21 = t107; h_0opt_1ec004_release(&t149); t150 = h12_f3; h_0opt_1ec004_retain(&t107); h12_f3 = t107; h_0opt_1ec004_release(&t150); t108 = h12_f3; t109 = t108.tag; t110 = INT64_C(0); t111 = t109 == t110; if (t111) goto bb25; else goto bb26; bb24:
 #line 184
@@ -3023,7 +3023,7 @@ bb22:
 bb27:
     goto bb22;
 bb28:
-#line 180 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 180 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t126 = h13_digit; hero_array_push_owned(&h8_digits, &t126); goto bb27; bb29:
     t128 = h13_digit; t129 = UINT64_C(0); t130 = t128 != t129; if (t130) goto bb30; else goto bb31; bb30:
     t131 = true; h11_truncated = t131; goto bb27; bb31: goto bb27; bb32:
@@ -3048,7 +3048,7 @@ bb28:
     return t137;
 }
 
-#line 188 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 188 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 bool h_1coreencodingjsoninternaldecimal_rounds_up(h_1coreencodingjsoninternaldecimal_Decimal h0_d, int64_t h1_at) { HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, h5_ret0, t3, t7, t8, t9, t14, t20, t21, t22, t23, t26, t35, t36, t41, t42; HERO_NODEBUG int64_t t1, t2, t4, t6, t11, t15, t16, t17, t19, t24, t25, t28, t29, t30, t38; HERO_NODEBUG HeroArrayHeader *t5, *t10, *t18, *t27, *t37; HERO_NODEBUG uint8_t t12, t13, t31, t32, t33, t34, t39, t40; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_at; t2 = INT64_C(0); t3 = t1 < t2; h2_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
 #line 192
@@ -3071,7 +3071,7 @@ bool h_1coreencodingjsoninternaldecimal_rounds_up(h_1coreencodingjsoninternaldec
     return t42;
 }
 
-#line 200 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 200 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 int64_t h_1coreencodingjsoninternaldecimal_rounded(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { int64_t h1_n; int64_t h2_i; HERO_NODEBUG bool h3_b0, t5, t9, t10, t21, t32, t41; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h6_own6 = {0}, t17, t18, t22, t24, t47, t48; HERO_NODEBUG int64_t h5_ret0, t1, t2, t3, t4, t6, t8, t11, t12, t13, t15, t19, t20, t25, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t37, t38, t40, t42, t43, t44, t45, t46; HERO_NODEBUG HeroArrayHeader *t7, *t14; HERO_NODEBUG uint8_t t16; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal t39; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_n = t1;
     t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
@@ -3088,7 +3088,7 @@ int64_t h_1coreencodingjsoninternaldecimal_rounded(h_1coreencodingjsoninternalde
     hero_panic_must_at(t23, "<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 205, 22);
     hero_unreachable();
 bb8:
-#line 208 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 208 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
     t30 = h2_i; t31 = h0_d.f_point; t32 = t30 < t31; if (t32) goto bb9; else goto bb10; bb9:
     t33 = h1_n; t34 = INT64_C(10); if (__builtin_mul_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 209, 13); h1_n = t35;
     t36 = h2_i; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("<core>/encoding/json/internal/decimal.hero", "decimal.rounded", 210, 13); h2_i = t38; goto bb8; bb10:
@@ -3105,7 +3105,7 @@ bb8:
     return t46;
 }
 
-#line 217 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 217 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 int64_t h_1coreencodingjsoninternaldecimal_step_for(int64_t h0_n) { HERO_NODEBUG int64_t h1_ret0, t1, t3, t6, t7, t8, t9, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t2, *t5, *t14, *t15; HERO_NODEBUG bool t4, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h_1coreencodingjsoninternaldecimal_STEPS(); t14 = h2_own2; h2_own2 = t2; hero_array_decref(t14); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = t1 < t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 221
@@ -3123,7 +3123,7 @@ int64_t h_1coreencodingjsoninternaldecimal_step_for(int64_t h0_n) { HERO_NODEBUG
     return t13;
 }
 
-#line 228 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 228 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_rounded_to_float(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { h_1coreencodingjsoninternaldecimal_Decimal h1_x = {0}; int64_t h2_exponent; int64_t h3_n; HERO_NODEBUG bool h4_b0, h5_b1, t4, t9, t15, t22, t35, t38, t43, t44, t45, t61, t75, t87, t96; int64_t h6_n; int64_t h7_n; int64_t h8_significand; HERO_NODEBUG h_0opt_db92a83 h9_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t6, t12, t17, t78, t99, t106, t107, t108, t109, t111, t119, t120, t121; HERO_NODEBUG h_1coreencodingjsoninternaldecimal_Decimal h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t18, t25, t29, t50, t52, t65, t69, t79, t81, t110, t112, t113, t114, t115, t116, t117, t118; HERO_NODEBUG HeroArrayHeader *t1, *t39; HERO_NODEBUG int64_t t2, t3, t7, t8, t13, t14, t19, t20, t21, t23, t24, t26, t27, t28, t30, t31, t32, t33, t34, t36, t37, t40, t46, t47, t48, t49, t51, t53, t54, t55, t56, t57, t58, t59, t60, t62, t63, t64, t66, t67, t68, t70, t71, t72, t73, t74, t80, t82, t83, t84, t85, t86, t88, t89, t90, t91, t92, t93, t94, t95, t100, t102, t103, t104; HERO_NODEBUG double t5, t16, t101, t105; HERO_NODEBUG HeroStr t10, t11, t76, t77, t97, t98; HERO_NODEBUG uint8_t t41, t42; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_d.f_digits; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 232
@@ -3196,7 +3196,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternaldecimal_rounded_to_float(h_1coreencodi
     return t107;
 }
 
-#line 279 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 279 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 double h_1coreencodingjsoninternaldecimal_scaled(double h0_x, int64_t h1_k) { double h2_out; int64_t h3_i; HERO_NODEBUG double t1, t6, t7, t8, t15, t16, t17, t21; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11, t12, t13, t18, t19, t20; HERO_NODEBUG bool t5, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; h2_out = t1;
     t2 = INT64_C(0); h3_i = t2; goto bb1; bb1:
@@ -3213,7 +3213,7 @@ double h_1coreencodingjsoninternaldecimal_scaled(double h0_x, int64_t h1_k) { do
 #line 3214 "main.c"
 }
 
-#line 296 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/decimal.hero"
+#line 296 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/decimal.hero"
 HeroStr h_1coreencodingjsoninternaldecimal_shown(h_1coreencodingjsoninternaldecimal_Decimal h0_d) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t26, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17, t23; uint8_t h4_digit; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t13, t19, t20, t21, t22, t24, t25, t29, t30, t31, t32, t33; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t26 = h5_own5; h5_own5 = t1; hero_array_decref(t26); t27 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t27);
 #line 299
@@ -3236,80 +3236,80 @@ HeroStr h_1coreencodingjsoninternaldecimal_shown(h_1coreencodingjsoninternaldeci
     return t25;
 }
 
-#line 23 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 23 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_LEAST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-342); return t1;
 #line 3243 "main.c"
 }
 
-#line 27 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 27 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_MOST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(308); return t1;
 #line 3249 "main.c"
 }
 
-#line 32 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 32 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(19); return t1;
 #line 3255 "main.c"
 }
 
-#line 36 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 36 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 uint64_t h_1coreencodingjsoninternalpowers_NINES(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(9999999999999999999); return t1;
 #line 3261 "main.c"
 }
 
-#line 40 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 40 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_SIGNIFICAND_BITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(53); return t1;
 #line 3267 "main.c"
 }
 
-#line 45 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 45 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_SUBNORMAL_EXPONENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-1074); return t1;
 #line 3273 "main.c"
 }
 
-#line 51 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 51 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_PAST_EXPONENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(972); return t1;
 #line 3279 "main.c"
 }
 
-#line 57 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 57 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_LOG_TIMES(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(108853); return t1;
 #line 3285 "main.c"
 }
 
-#line 61 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 61 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 int64_t h_1coreencodingjsoninternalpowers_LOG_SHIFT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(15); return t1;
 #line 3291 "main.c"
 }
 
-#line 66 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 66 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 uint64_t h_1coreencodingjsoninternalpowers_HALF(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(4294967296); return t1;
 #line 3297 "main.c"
 }
 
-#line 70 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 70 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 uint64_t h_1coreencodingjsoninternalpowers_ALL_ONES(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(18446744073709551615); return t1;
 #line 3303 "main.c"
 }
 
 #if HERO_STATIC_CONSTANTS
-#line 74 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 74 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternalpowers_TWO_TO_65, uint64_t, &hero_desc_u64, 64, UINT64_C(1), UINT64_C(2), UINT64_C(4), UINT64_C(8), UINT64_C(16), UINT64_C(32), UINT64_C(64), UINT64_C(128), UINT64_C(256), UINT64_C(512), UINT64_C(1024), UINT64_C(2048), UINT64_C(4096), UINT64_C(8192), UINT64_C(16384), UINT64_C(32768), UINT64_C(65536), UINT64_C(131072), UINT64_C(262144), UINT64_C(524288), UINT64_C(1048576), UINT64_C(2097152), UINT64_C(4194304), UINT64_C(8388608), UINT64_C(16777216), UINT64_C(33554432), UINT64_C(67108864), UINT64_C(134217728), UINT64_C(268435456), UINT64_C(536870912), UINT64_C(1073741824), UINT64_C(2147483648), UINT64_C(4294967296), UINT64_C(8589934592), UINT64_C(17179869184), UINT64_C(34359738368), UINT64_C(68719476736), UINT64_C(137438953472), UINT64_C(274877906944), UINT64_C(549755813888), UINT64_C(1099511627776), UINT64_C(2199023255552), UINT64_C(4398046511104), UINT64_C(8796093022208), UINT64_C(17592186044416), UINT64_C(35184372088832), UINT64_C(70368744177664), UINT64_C(140737488355328), UINT64_C(281474976710656), UINT64_C(562949953421312), UINT64_C(1125899906842624), UINT64_C(2251799813685248), UINT64_C(4503599627370496), UINT64_C(9007199254740992), UINT64_C(18014398509481984), UINT64_C(36028797018963968), UINT64_C(72057594037927936), UINT64_C(144115188075855872), UINT64_C(288230376151711744), UINT64_C(576460752303423488), UINT64_C(1152921504606846976), UINT64_C(2305843009213693952), UINT64_C(4611686018427387904), UINT64_C(9223372036854775808)); HeroArrayHeader * h_1coreencodingjsoninternalpowers_TWO_TO(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternalpowers_TWO_TO_65);
 #line 3309 "main.c"
 }
 #else
 
-#line 74 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 74 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 HeroArrayHeader * h_1coreencodingjsoninternalpowers_TWO_TO(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t65, *t66; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 76
     t1 = UINT64_C(1);
@@ -3386,13 +3386,13 @@ HeroArrayHeader * h_1coreencodingjsoninternalpowers_TWO_TO(void) { HERO_NODEBUG 
 #endif
 
 #if HERO_STATIC_CONSTANTS
-#line 143 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 143 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternalpowers_HIGH_652, uint64_t, &hero_desc_u64, 651, UINT64_C(17218479456385750619), UINT64_C(10761549660241094137), UINT64_C(13451937075301367671), UINT64_C(16814921344126709588), UINT64_C(10509325840079193493), UINT64_C(13136657300098991866), UINT64_C(16420821625123739832), UINT64_C(10263013515702337395), UINT64_C(12828766894627921744), UINT64_C(16035958618284902180), UINT64_C(10022474136428063863), UINT64_C(12528092670535079828), UINT64_C(15660115838168849785), UINT64_C(9787572398855531116), UINT64_C(12234465498569413895), UINT64_C(15293081873211767369), UINT64_C(9558176170757354606), UINT64_C(11947720213446693257), UINT64_C(14934650266808366571), UINT64_C(9334156416755229107), UINT64_C(11667695520944036384), UINT64_C(14584619401180045479), UINT64_C(18230774251475056849), UINT64_C(11394233907171910531), UINT64_C(14242792383964888163), UINT64_C(17803490479956110204), UINT64_C(11127181549972568878), UINT64_C(13908976937465711097), UINT64_C(17386221171832138871), UINT64_C(10866388232395086795), UINT64_C(13582985290493858493), UINT64_C(16978731613117323116), UINT64_C(10611707258198326948), UINT64_C(13264634072747908685), UINT64_C(16580792590934885856), UINT64_C(10362995369334303660), UINT64_C(12953744211667879575), UINT64_C(16192180264584849469), UINT64_C(10120112665365530918), UINT64_C(12650140831706913648), UINT64_C(15812676039633642059), UINT64_C(9882922524771026287), UINT64_C(12353653155963782859), UINT64_C(15442066444954728574), UINT64_C(9651291528096705359), UINT64_C(12064114410120881698), UINT64_C(15080143012651102123), UINT64_C(9425089382906938827), UINT64_C(11781361728633673533), UINT64_C(14726702160792091917), UINT64_C(18408377700990114896), UINT64_C(11505236063118821810), UINT64_C(14381545078898527262), UINT64_C(17976931348623159078), UINT64_C(11235582092889474424), UINT64_C(14044477616111843030), UINT64_C(17555597020139803787), UINT64_C(10972248137587377367), UINT64_C(13715310171984221709), UINT64_C(17144137714980277136), UINT64_C(10715086071862673210), UINT64_C(13393857589828341512), UINT64_C(16742321987285426890), UINT64_C(10463951242053391807), UINT64_C(13079939052566739758), UINT64_C(16349923815708424698), UINT64_C(10218702384817765436), UINT64_C(12773377981022206795), UINT64_C(15966722476277758494), UINT64_C(9979201547673599059), UINT64_C(12474001934591998823), UINT64_C(15592502418239998529), UINT64_C(9745314011399999081), UINT64_C(12181642514249998851), UINT64_C(15227053142812498564), UINT64_C(9516908214257811602), UINT64_C(11896135267822264503), UINT64_C(14870169084777830628), UINT64_C(9293855677986144143), UINT64_C(11617319597482680179), UINT64_C(14521649496853350223), UINT64_C(18152061871066687779), UINT64_C(11345038669416679862), UINT64_C(14181298336770849827), UINT64_C(17726622920963562284), UINT64_C(11079139325602226428), UINT64_C(13848924157002783034), UINT64_C(17311155196253478793), UINT64_C(10819471997658424246), UINT64_C(13524339997073030307), UINT64_C(16905424996341287884), UINT64_C(10565890622713304928), UINT64_C(13207363278391631159), UINT64_C(16509204097989538949), UINT64_C(10318252561243461843), UINT64_C(12897815701554327304), UINT64_C(16122269626942909130), UINT64_C(10076418516839318206), UINT64_C(12595523146049147758), UINT64_C(15744403932561434697), UINT64_C(9840252457850896686), UINT64_C(12300315572313620857), UINT64_C(15375394465392026071), UINT64_C(9609621540870016295), UINT64_C(12012026926087520368), UINT64_C(15015033657609400460), UINT64_C(9384396036005875288), UINT64_C(11730495045007344110), UINT64_C(14663118806259180137), UINT64_C(18328898507823975171), UINT64_C(11455561567389984482), UINT64_C(14319451959237480603), UINT64_C(17899314949046850753), UINT64_C(11187071843154281721), UINT64_C(13983839803942852151), UINT64_C(17479799754928565189), UINT64_C(10924874846830353243), UINT64_C(13656093558537941554), UINT64_C(17070116948172426942), UINT64_C(10668823092607766839), UINT64_C(13336028865759708549), UINT64_C(16670036082199635686), UINT64_C(10418772551374772304), UINT64_C(13023465689218465380), UINT64_C(16279332111523081724), UINT64_C(10174582569701926078), UINT64_C(12718228212127407597), UINT64_C(15897785265159259496), UINT64_C(9936115790724537185), UINT64_C(12420144738405671482), UINT64_C(15525180923007089352), UINT64_C(9703238076879430845), UINT64_C(12129047596099288556), UINT64_C(15161309495124110695), UINT64_C(9475818434452569185), UINT64_C(11844773043065711481), UINT64_C(14805966303832139351), UINT64_C(9253728939895087095), UINT64_C(11567161174868858868), UINT64_C(14458951468586073585), UINT64_C(18073689335732591981), UINT64_C(11296055834832869988), UINT64_C(14120069793541087485), UINT64_C(17650087241926359356), UINT64_C(11031304526203974598), UINT64_C(13789130657754968247), UINT64_C(17236413322193710309), UINT64_C(10772758326371068943), UINT64_C(13465947907963836179), UINT64_C(16832434884954795224), UINT64_C(10520271803096747015), UINT64_C(13150339753870933769), UINT64_C(16437924692338667211), UINT64_C(10273702932711667007), UINT64_C(12842128665889583758), UINT64_C(16052660832361979698), UINT64_C(10032913020226237311), UINT64_C(12541141275282796639), UINT64_C(15676426594103495799), UINT64_C(9797766621314684874), UINT64_C(12247208276643356093), UINT64_C(15309010345804195116), UINT64_C(9568131466127621948), UINT64_C(11960164332659527434), UINT64_C(14950205415824409293), UINT64_C(9343878384890255808), UINT64_C(11679847981112819760), UINT64_C(14599809976391024700), UINT64_C(18249762470488780875), UINT64_C(11406101544055488047), UINT64_C(14257626930069360059), UINT64_C(17822033662586700073), UINT64_C(11138771039116687546), UINT64_C(13923463798895859432), UINT64_C(17404329748619824290), UINT64_C(10877706092887390182), UINT64_C(13597132616109237727), UINT64_C(16996415770136547159), UINT64_C(10622759856335341974), UINT64_C(13278449820419177468), UINT64_C(16598062275523971835), UINT64_C(10373788922202482397), UINT64_C(12967236152753102996), UINT64_C(16209045190941378745), UINT64_C(10130653244338361716), UINT64_C(12663316555422952144), UINT64_C(15829145694278690180), UINT64_C(9893216058924181363), UINT64_C(12366520073655226704), UINT64_C(15458150092069033379), UINT64_C(9661343807543145862), UINT64_C(12076679759428932328), UINT64_C(15095849699286165409), UINT64_C(9434906062053853381), UINT64_C(11793632577567316726), UINT64_C(14742040721959145908), UINT64_C(18427550902448932384), UINT64_C(11517219314030582740), UINT64_C(14396524142538228425), UINT64_C(17995655178172785532), UINT64_C(11247284486357990958), UINT64_C(14059105607947488697), UINT64_C(17573882009934360871), UINT64_C(10983676256208975544), UINT64_C(13729595320261219430), UINT64_C(17161994150326524288), UINT64_C(10726246343954077680), UINT64_C(13407807929942597100), UINT64_C(16759759912428246375), UINT64_C(10474849945267653985), UINT64_C(13093562431584567481), UINT64_C(16366953039480709351), UINT64_C(10229345649675443344), UINT64_C(12786682062094304180), UINT64_C(15983352577617880225), UINT64_C(9989595361011175141), UINT64_C(12486994201263968926), UINT64_C(15608742751579961157), UINT64_C(9755464219737475724), UINT64_C(12194330274671844654), UINT64_C(15242912843339805818), UINT64_C(9526820527087378636), UINT64_C(11908525658859223295), UINT64_C(14885657073574029119), UINT64_C(9303535670983768200), UINT64_C(11629419588729710249), UINT64_C(14536774485912137811), UINT64_C(18170968107390172264), UINT64_C(11356855067118857665), UINT64_C(14196068833898572082), UINT64_C(17745086042373215102), UINT64_C(11090678776483259439), UINT64_C(13863348470604074298), UINT64_C(17329185588255092873), UINT64_C(10830740992659433046), UINT64_C(13538426240824291307), UINT64_C(16923032801030364134), UINT64_C(10576895500643977584), UINT64_C(13221119375804971980), UINT64_C(16526399219756214974), UINT64_C(10328999512347634359), UINT64_C(12911249390434542949), UINT64_C(16139061738043178686), UINT64_C(10086913586276986679), UINT64_C(12608641982846233348), UINT64_C(15760802478557791685), UINT64_C(9850501549098619804), UINT64_C(12313126936373274754), UINT64_C(15391408670466593443), UINT64_C(9619630419041620902), UINT64_C(12024538023802026127), UINT64_C(15030672529752532659), UINT64_C(9394170331095332912), UINT64_C(11742712913869166140), UINT64_C(14678391142336457675), UINT64_C(18347988927920572093), UINT64_C(11467493079950357559), UINT64_C(14334366349937946948), UINT64_C(17917957937422433685), UINT64_C(11198723710889021053), UINT64_C(13998404638611276316), UINT64_C(17498005798264095395), UINT64_C(10936253623915059622), UINT64_C(13670317029893824528), UINT64_C(17087896287367280660), UINT64_C(10679935179604550412), UINT64_C(13349918974505688015), UINT64_C(16687398718132110019), UINT64_C(10429624198832568762), UINT64_C(13037030248540710953), UINT64_C(16296287810675888691), UINT64_C(10185179881672430432), UINT64_C(12731474852090538040), UINT64_C(15914343565113172549), UINT64_C(9946464728195732844), UINT64_C(12433080910244666054), UINT64_C(15541351137805832568), UINT64_C(9713344461128645355), UINT64_C(12141680576410806694), UINT64_C(15177100720513508367), UINT64_C(9485687950320942730), UINT64_C(11857109937901178412), UINT64_C(14821387422376473015), UINT64_C(9263367138985295634), UINT64_C(11579208923731619543), UINT64_C(14474011154664524428), UINT64_C(18092513943330655535), UINT64_C(11307821214581659710), UINT64_C(14134776518227074637), UINT64_C(17668470647783843296), UINT64_C(11042794154864902060), UINT64_C(13803492693581127575), UINT64_C(17254365866976409469), UINT64_C(10783978666860255918), UINT64_C(13479973333575319898), UINT64_C(16849966666969149872), UINT64_C(10531229166855718670), UINT64_C(13164036458569648338), UINT64_C(16455045573212060422), UINT64_C(10284403483257537764), UINT64_C(12855504354071922205), UINT64_C(16069380442589902756), UINT64_C(10043362776618689223), UINT64_C(12554203470773361528), UINT64_C(15692754338466701910), UINT64_C(9807971461541688694), UINT64_C(12259964326927110867), UINT64_C(15324955408658888584), UINT64_C(9578097130411805365), UINT64_C(11972621413014756706), UINT64_C(14965776766268445883), UINT64_C(9353610478917778677), UINT64_C(11692013098647223346), UINT64_C(14615016373309029183), UINT64_C(18268770466636286478), UINT64_C(11417981541647679049), UINT64_C(14272476927059598811), UINT64_C(17840596158824498514), UINT64_C(11150372599265311571), UINT64_C(13937965749081639464), UINT64_C(17422457186352049330), UINT64_C(10889035741470030831), UINT64_C(13611294676837538539), UINT64_C(17014118346046923174), UINT64_C(10633823966279326984), UINT64_C(13292279957849158730), UINT64_C(16615349947311448412), UINT64_C(10384593717069655258), UINT64_C(12980742146337069072), UINT64_C(16225927682921336340), UINT64_C(10141204801825835212), UINT64_C(12676506002282294015), UINT64_C(15845632502852867519), UINT64_C(9903520314283042200), UINT64_C(12379400392853802749), UINT64_C(15474250491067253437), UINT64_C(9671406556917033398), UINT64_C(12089258196146291748), UINT64_C(15111572745182864684), UINT64_C(9444732965739290428), UINT64_C(11805916207174113035), UINT64_C(14757395258967641293), UINT64_C(9223372036854775808), UINT64_C(11529215046068469760), UINT64_C(14411518807585587200), UINT64_C(18014398509481984000), UINT64_C(11258999068426240000), UINT64_C(14073748835532800000), UINT64_C(17592186044416000000), UINT64_C(10995116277760000000), UINT64_C(13743895347200000000), UINT64_C(17179869184000000000), UINT64_C(10737418240000000000), UINT64_C(13421772800000000000), UINT64_C(16777216000000000000), UINT64_C(10485760000000000000), UINT64_C(13107200000000000000), UINT64_C(16384000000000000000), UINT64_C(10240000000000000000), UINT64_C(12800000000000000000), UINT64_C(16000000000000000000), UINT64_C(10000000000000000000), UINT64_C(12500000000000000000), UINT64_C(15625000000000000000), UINT64_C(9765625000000000000), UINT64_C(12207031250000000000), UINT64_C(15258789062500000000), UINT64_C(9536743164062500000), UINT64_C(11920928955078125000), UINT64_C(14901161193847656250), UINT64_C(9313225746154785157), UINT64_C(11641532182693481446), UINT64_C(14551915228366851807), UINT64_C(18189894035458564759), UINT64_C(11368683772161602974), UINT64_C(14210854715202003718), UINT64_C(17763568394002504647), UINT64_C(11102230246251565405), UINT64_C(13877787807814456756), UINT64_C(17347234759768070945), UINT64_C(10842021724855044341), UINT64_C(13552527156068805426), UINT64_C(16940658945086006782), UINT64_C(10587911840678754239), UINT64_C(13234889800848442798), UINT64_C(16543612251060553498), UINT64_C(10339757656912845936), UINT64_C(12924697071141057420), UINT64_C(16155871338926321775), UINT64_C(10097419586828951110), UINT64_C(12621774483536188887), UINT64_C(15777218104420236109), UINT64_C(9860761315262647568), UINT64_C(12325951644078309460), UINT64_C(15407439555097886825), UINT64_C(9629649721936179266), UINT64_C(12037062152420224082), UINT64_C(15046327690525280102), UINT64_C(9403954806578300064), UINT64_C(11754943508222875080), UINT64_C(14693679385278593850), UINT64_C(18367099231598242313), UINT64_C(11479437019748901446), UINT64_C(14349296274686126807), UINT64_C(17936620343357658508), UINT64_C(11210387714598536568), UINT64_C(14012984643248170710), UINT64_C(17516230804060213387), UINT64_C(10947644252537633367), UINT64_C(13684555315672041709), UINT64_C(17105694144590052136), UINT64_C(10691058840368782585), UINT64_C(13363823550460978231), UINT64_C(16704779438076222789), UINT64_C(10440487148797639243), UINT64_C(13050608935997049054), UINT64_C(16313261169996311317), UINT64_C(10195788231247694573), UINT64_C(12744735289059618217), UINT64_C(15930919111324522771), UINT64_C(9956824444577826732), UINT64_C(12446030555722283415), UINT64_C(15557538194652854268), UINT64_C(9723461371658033918), UINT64_C(12154326714572542397), UINT64_C(15192908393215677996), UINT64_C(9495567745759798748), UINT64_C(11869459682199748435), UINT64_C(14836824602749685543), UINT64_C(9273015376718553465), UINT64_C(11591269220898191831), UINT64_C(14489086526122739789), UINT64_C(18111358157653424736), UINT64_C(11319598848533390460), UINT64_C(14149498560666738075), UINT64_C(17686873200833422593), UINT64_C(11054295750520889121), UINT64_C(13817869688151111401), UINT64_C(17272337110188889251), UINT64_C(10795210693868055782), UINT64_C(13494013367335069728), UINT64_C(16867516709168837159), UINT64_C(10542197943230523225), UINT64_C(13177747429038154031), UINT64_C(16472184286297692539), UINT64_C(10295115178936057837), UINT64_C(12868893973670072296), UINT64_C(16086117467087590370), UINT64_C(10053823416929743981), UINT64_C(12567279271162179976), UINT64_C(15709099088952724970), UINT64_C(9818186930595453107), UINT64_C(12272733663244316383), UINT64_C(15340917079055395479), UINT64_C(9588073174409622175), UINT64_C(11985091468012027718), UINT64_C(14981364335015034647), UINT64_C(9363352709384396655), UINT64_C(11704190886730495818), UINT64_C(14630238608413119773), UINT64_C(18287798260516399716), UINT64_C(11429873912822749823), UINT64_C(14287342391028437278), UINT64_C(17859177988785546598), UINT64_C(11161986242990966624), UINT64_C(13952482803738708280), UINT64_C(17440603504673385349), UINT64_C(10900377190420865843), UINT64_C(13625471488026082304), UINT64_C(17031839360032602880), UINT64_C(10644899600020376800), UINT64_C(13306124500025471000), UINT64_C(16632655625031838750), UINT64_C(10395409765644899219), UINT64_C(12994262207056124024), UINT64_C(16242827758820155029), UINT64_C(10151767349262596894), UINT64_C(12689709186578246117), UINT64_C(15862136483222807646), UINT64_C(9913835302014254779), UINT64_C(12392294127517818474), UINT64_C(15490367659397273092), UINT64_C(9681479787123295683), UINT64_C(12101849733904119603), UINT64_C(15127312167380149504), UINT64_C(9454570104612593440), UINT64_C(11818212630765741800), UINT64_C(14772765788457177250), UINT64_C(9232978617785735781), UINT64_C(11541223272232169726), UINT64_C(14426529090290212158), UINT64_C(18033161362862765197), UINT64_C(11270725851789228248), UINT64_C(14088407314736535310), UINT64_C(17610509143420669138), UINT64_C(11006568214637918211), UINT64_C(13758210268297397764), UINT64_C(17197762835371747205), UINT64_C(10748601772107342003), UINT64_C(13435752215134177504), UINT64_C(16794690268917721880), UINT64_C(10496681418073576175), UINT64_C(13120851772591970219), UINT64_C(16401064715739962773), UINT64_C(10250665447337476734), UINT64_C(12813331809171845917), UINT64_C(16016664761464807396), UINT64_C(10010415475915504623), UINT64_C(12513019344894380778), UINT64_C(15641274181117975973), UINT64_C(9775796363198734983), UINT64_C(12219745453998418729), UINT64_C(15274681817498023411), UINT64_C(9546676135936264632), UINT64_C(11933345169920330790), UINT64_C(14916681462400413487), UINT64_C(9322925914000258430), UINT64_C(11653657392500323037), UINT64_C(14567071740625403796), UINT64_C(18208839675781754745), UINT64_C(11380524797363596716), UINT64_C(14225655996704495895), UINT64_C(17782069995880619868), UINT64_C(11113793747425387418), UINT64_C(13892242184281734272), UINT64_C(17365302730352167840), UINT64_C(10853314206470104900), UINT64_C(13566642758087631125), UINT64_C(16958303447609538906), UINT64_C(10598939654755961817), UINT64_C(13248674568444952271), UINT64_C(16560843210556190338), UINT64_C(10350527006597618961), UINT64_C(12938158758247023702), UINT64_C(16172698447808779627), UINT64_C(10107936529880487267), UINT64_C(12634920662350609084), UINT64_C(15793650827938261355), UINT64_C(9871031767461413347), UINT64_C(12338789709326766683), UINT64_C(15423487136658458354), UINT64_C(9639679460411536471), UINT64_C(12049599325514420589), UINT64_C(15061999156893025736), UINT64_C(9413749473058141085), UINT64_C(11767186841322676357), UINT64_C(14708983551653345446), UINT64_C(18386229439566681807), UINT64_C(11491393399729176130), UINT64_C(14364241749661470162), UINT64_C(17955302187076837702), UINT64_C(11222063866923023564), UINT64_C(14027579833653779455), UINT64_C(17534474792067224319), UINT64_C(10959046745042015199), UINT64_C(13698808431302518999), UINT64_C(17123510539128148749), UINT64_C(10702194086955092968), UINT64_C(13377742608693866210), UINT64_C(16722178260867332762), UINT64_C(10451361413042082977), UINT64_C(13064201766302603721), UINT64_C(16330252207878254651), UINT64_C(10206407629923909157), UINT64_C(12758009537404886446), UINT64_C(15947511921756108057), UINT64_C(9967194951097567536), UINT64_C(12458993688871959420), UINT64_C(15573742111089949275), UINT64_C(9733588819431218297), UINT64_C(12166986024289022871), UINT64_C(15208732530361278589), UINT64_C(9505457831475799118), UINT64_C(11881822289344748897), UINT64_C(14852277861680936122), UINT64_C(9282673663550585076), UINT64_C(11603342079438231345), UINT64_C(14504177599297789181), UINT64_C(18130221999122236477), UINT64_C(11331388749451397798), UINT64_C(14164235936814247247), UINT64_C(17705294921017809059), UINT64_C(11065809325636130662), UINT64_C(13832261657045163328), UINT64_C(17290327071306454159), UINT64_C(10806454419566533850), UINT64_C(13508068024458167312), UINT64_C(16885085030572709140), UINT64_C(10553178144107943213), UINT64_C(13191472680134929016), UINT64_C(16489340850168661270), UINT64_C(10305838031355413294), UINT64_C(12882297539194266617), UINT64_C(16102871923992833271), UINT64_C(10064294952495520795), UINT64_C(12580368690619400993), UINT64_C(15725460863274251241), UINT64_C(9828413039546407026), UINT64_C(12285516299433008782), UINT64_C(15356895374291260978), UINT64_C(9598059608932038111), UINT64_C(11997574511165047639), UINT64_C(14996968138956309549), UINT64_C(9373105086847693468), UINT64_C(11716381358559616835), UINT64_C(14645476698199521044), UINT64_C(18306845872749401304), UINT64_C(11441778670468375815), UINT64_C(14302223338085469769), UINT64_C(17877779172606837211), UINT64_C(11173611982879273257), UINT64_C(13967014978599091571), UINT64_C(17458768723248864464), UINT64_C(10911730452030540290), UINT64_C(13639663065038175363), UINT64_C(17049578831297719203), UINT64_C(10655986769561074502), UINT64_C(13319983461951343128), UINT64_C(16649979327439178910), UINT64_C(10406237079649486819), UINT64_C(13007796349561858523), UINT64_C(16259745436952323154), UINT64_C(10162340898095201971), UINT64_C(12702926122619002464), UINT64_C(15878657653273753080), UINT64_C(9924161033296095675), UINT64_C(12405201291620119594), UINT64_C(15506501614525149492), UINT64_C(9691563509078218433), UINT64_C(12114454386347773041), UINT64_C(15143067982934716301), UINT64_C(9464417489334197688), UINT64_C(11830521861667747110), UINT64_C(14788152327084683888), UINT64_C(9242595204427927430), UINT64_C(11553244005534909287), UINT64_C(14441555006918636609), UINT64_C(18051943758648295761), UINT64_C(11282464849155184851), UINT64_C(14103081061443981064), UINT64_C(17628851326804976329), UINT64_C(11018032079253110206), UINT64_C(13772540099066387757), UINT64_C(17215675123832984697), UINT64_C(10759796952395615436), UINT64_C(13449746190494519294), UINT64_C(16812182738118149118), UINT64_C(10507614211323843199), UINT64_C(13134517764154803998), UINT64_C(16418147205193504998), UINT64_C(10261342003245940624)); HeroArrayHeader * h_1coreencodingjsoninternalpowers_HIGH(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternalpowers_HIGH_652);
 #line 3392 "main.c"
 }
 #else
 
-#line 143 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 143 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 HeroArrayHeader * h_1coreencodingjsoninternalpowers_HIGH(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t652, *t653; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t204, t205, t206, t207, t208, t209, t210, t211, t212, t213, t214, t215, t216, t217, t218, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235, t236, t237, t238, t239, t240, t241, t242, t243, t244, t245, t246, t247, t248, t249, t250, t251, t252, t253, t254, t255, t256, t257, t258, t259, t260, t261, t262, t263, t264, t265, t266, t267, t268, t269, t270, t271, t272, t273, t274, t275, t276, t277, t278, t279, t280, t281, t282, t283, t284, t285, t286, t287, t288, t289, t290, t291, t292, t293, t294, t295, t296, t297, t298, t299, t300, t301, t302, t303, t304, t305, t306, t307, t308, t309, t310, t311, t312, t313, t314, t315, t316, t317, t318, t319, t320, t321, t322, t323, t324, t325, t326, t327, t328, t329, t330, t331, t332, t333, t334, t335, t336, t337, t338, t339, t340, t341, t342, t343, t344, t345, t346, t347, t348, t349, t350, t351, t352, t353, t354, t355, t356, t357, t358, t359, t360, t361, t362, t363, t364, t365, t366, t367, t368, t369, t370, t371, t372, t373, t374, t375, t376, t377, t378, t379, t380, t381, t382, t383, t384, t385, t386, t387, t388, t389, t390, t391, t392, t393, t394, t395, t396, t397, t398, t399, t400, t401, t402, t403, t404, t405, t406, t407, t408, t409, t410, t411, t412, t413, t414, t415, t416, t417, t418, t419, t420, t421, t422, t423, t424, t425, t426, t427, t428, t429, t430, t431, t432, t433, t434, t435, t436, t437, t438, t439, t440, t441, t442, t443, t444, t445, t446, t447, t448, t449, t450, t451, t452, t453, t454, t455, t456, t457, t458, t459, t460, t461, t462, t463, t464, t465, t466, t467, t468, t469, t470, t471, t472, t473, t474, t475, t476, t477, t478, t479, t480, t481, t482, t483, t484, t485, t486, t487, t488, t489, t490, t491, t492, t493, t494, t495, t496, t497, t498, t499, t500, t501, t502, t503, t504, t505, t506, t507, t508, t509, t510, t511, t512, t513, t514, t515, t516, t517, t518, t519, t520, t521, t522, t523, t524, t525, t526, t527, t528, t529, t530, t531, t532, t533, t534, t535, t536, t537, t538, t539, t540, t541, t542, t543, t544, t545, t546, t547, t548, t549, t550, t551, t552, t553, t554, t555, t556, t557, t558, t559, t560, t561, t562, t563, t564, t565, t566, t567, t568, t569, t570, t571, t572, t573, t574, t575, t576, t577, t578, t579, t580, t581, t582, t583, t584, t585, t586, t587, t588, t589, t590, t591, t592, t593, t594, t595, t596, t597, t598, t599, t600, t601, t602, t603, t604, t605, t606, t607, t608, t609, t610, t611, t612, t613, t614, t615, t616, t617, t618, t619, t620, t621, t622, t623, t624, t625, t626, t627, t628, t629, t630, t631, t632, t633, t634, t635, t636, t637, t638, t639, t640, t641, t642, t643, t644, t645, t646, t647, t648, t649, t650, t651; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 145
     t1 = UINT64_C(17218479456385750619);
@@ -4056,13 +4056,13 @@ HeroArrayHeader * h_1coreencodingjsoninternalpowers_HIGH(void) { HERO_NODEBUG He
 #endif
 
 #if HERO_STATIC_CONSTANTS
-#line 799 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 799 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1coreencodingjsoninternalpowers_LOW_652, uint64_t, &hero_desc_u64, 651, UINT64_C(17203844958350394560), UINT64_C(13058246108182690552), UINT64_C(11711121616800975286), UINT64_C(803843965719055395), UINT64_C(9725774515429185430), UINT64_C(7545532125859093883), UINT64_C(208543120469091546), UINT64_C(130339450293182216), UINT64_C(4774610331293865674), UINT64_C(5968262914117332093), UINT64_C(12953536358178108366), UINT64_C(2356862392440471746), UINT64_C(2946077990550589682), UINT64_C(8758827771735200407), UINT64_C(10948534714669000509), UINT64_C(18297354411763638541), UINT64_C(18353375534993355944), UINT64_C(13718347381886919122), UINT64_C(12536248208931260998), UINT64_C(10140998139795732076), UINT64_C(17287933693172052999), UINT64_C(3163173042755514633), UINT64_C(8565652321871781195), UINT64_C(12271061728810945103), UINT64_C(1503769105731517666), UINT64_C(6491397400591784987), UINT64_C(13280495412224641425), UINT64_C(7377247228426025973), UINT64_C(4609873017105144562), UINT64_C(14410385681759185111), UINT64_C(4177924046916817677), UINT64_C(610719040218634193), UINT64_C(9605071436991422178), UINT64_C(12006339296239277723), UINT64_C(10396238101871709250), UINT64_C(6497648813669818281), UINT64_C(8122061017087272851), UINT64_C(14764262289786478968), UINT64_C(6921820921902855403), UINT64_C(17875648189233345062), UINT64_C(3897816162832129711), UINT64_C(4741978110983775021), UINT64_C(10539158657157106681), UINT64_C(17785634339873771255), UINT64_C(15727707480848494938), UINT64_C(5824576295778454961), UINT64_C(16504092406577844510), UINT64_C(12620900763324846770), UINT64_C(1941067898873894751), UINT64_C(16261392928874532151), UINT64_C(15715055142665777285), UINT64_C(9821909464166110803), UINT64_C(3054014793352862696), UINT64_C(13040890528545854178), UINT64_C(12762242598768546765), UINT64_C(15952803248460683456), UINT64_C(10717632023721078512), UINT64_C(9004363024039368022), UINT64_C(15867139798476597932), UINT64_C(15222238729668359511), UINT64_C(9513899206042724694), UINT64_C(2669001970698630060), UINT64_C(3336252463373287575), UINT64_C(15920215844890468446), UINT64_C(6065211750830921845), UINT64_C(16804886725393428115), UINT64_C(5891368184943504668), UINT64_C(7364210231179380835), UINT64_C(13816948807401613948), UINT64_C(13247279023053396621), UINT64_C(2724040723534582064), UINT64_C(8016736922845615485), UINT64_C(11927989604419591534), UINT64_C(10298300987097101513), UINT64_C(17484562252298764796), UINT64_C(1704479370831952189), UINT64_C(11353971250394716045), UINT64_C(357406007711231344), UINT64_C(9446750791674295398), UINT64_C(16420124508020257151), UINT64_C(6690097579743157727), UINT64_C(12974307993106335063), UINT64_C(10414785504905153366), UINT64_C(3795109844276665900), UINT64_C(9355573323773220279), UINT64_C(15070605364213038482), UINT64_C(391512631556746487), UINT64_C(9712762826300708917), UINT64_C(12988005794079024929), UINT64_C(7011635205744005353), UINT64_C(13376230025607394595), UINT64_C(17583515802859397430), UINT64_C(3532650679864695172), UINT64_C(9027499368258256869), UINT64_C(3336344095947716591), UINT64_C(8782116138362033642), UINT64_C(10977645172952542053), UINT64_C(2249342214667950879), UINT64_C(12035049805189714407), UINT64_C(5820440219632367201), UINT64_C(10555304164911311356), UINT64_C(3970758169284363388), UINT64_C(351761693178066331), UINT64_C(11749066104304761216), UINT64_C(851274575098787809), UINT64_C(1064093218873484761), UINT64_C(9888430298650703783), UINT64_C(12360537873313379729), UINT64_C(6227300304786948854), UINT64_C(3172439362556298163), UINT64_C(4288617610811380304), UINT64_C(14584144050369001188), UINT64_C(4395122007679087773), UINT64_C(9664480282440511714), UINT64_C(7468914334623251739), UINT64_C(13947828936706452578), UINT64_C(6411550076227838909), UINT64_C(12626123613712186540), UINT64_C(6559282480285457367), UINT64_C(8711237568605798758), UINT64_C(15500732979184636352), UINT64_C(14764230205553407536), UINT64_C(13839329896898267614), UINT64_C(17299162371122834518), UINT64_C(3177208890193991531), UINT64_C(11209127593226020515), UINT64_C(4788037454677749836), UINT64_C(1373360799919799391), UINT64_C(858350499949874619), UINT64_C(14907996180219506986), UINT64_C(9411623188419607924), UINT64_C(5882264492762254952), UINT64_C(2741144597525430787), UINT64_C(3426430746906788484), UINT64_C(13670734262885212562), UINT64_C(12476731810179127799), UINT64_C(10984228744296521844), UINT64_C(18394358011253795913), UINT64_C(9157889458785081179), UINT64_C(11447361823481351474), UINT64_C(9697516260924301438), UINT64_C(3755104653863994447), UINT64_C(4693880817329993059), UINT64_C(1255665003235103419), UINT64_C(10008162663876715445), UINT64_C(3286831292991118498), UINT64_C(8720225134666286027), UINT64_C(3144297699952734815), UINT64_C(8542058143368306422), UINT64_C(15289258697637770932), UINT64_C(9555786686023606832), UINT64_C(16556419375956896445), UINT64_C(16083838201518732652), UINT64_C(12358241885162901859), UINT64_C(1612744301171463612), UINT64_C(11239302413319105323), UINT64_C(2412877989897052923), UINT64_C(7627783505798704058), UINT64_C(14146415400675767976), UINT64_C(1923980597781273129), UINT64_C(11628347784081367219), UINT64_C(9923748711674321120), UINT64_C(15425714981651226508), UINT64_C(835399653354481519), UINT64_C(10267621603547877707), UINT64_C(4111420493003729615), UINT64_C(5139275616254662019), UINT64_C(6424094520318327523), UINT64_C(8030118150397909404), UINT64_C(7324666853212387329), UINT64_C(13767519584942872066), UINT64_C(3374341425896426371), UINT64_C(9026492418826348337), UINT64_C(2059743486678159614), UINT64_C(2574679358347699518), UINT64_C(15444232654249475910), UINT64_C(10081918780957069080), UINT64_C(17214084494623724254), UINT64_C(3841273781498745803), UINT64_C(14024964263728208061), UINT64_C(17531205329660260077), UINT64_C(13262846340251356500), UINT64_C(11966871906886807721), UINT64_C(14958589883608509651), UINT64_C(16266647704896400388), UINT64_C(1886565557410948869), UINT64_C(2358206946763686086), UINT64_C(10697251378582079612), UINT64_C(17983250241654987419), UINT64_C(4032318728359182658), UINT64_C(4826042214438183113), UINT64_C(15255924804902504699), UINT64_C(623161932418579258), UINT64_C(7307005235402693892), UINT64_C(4522070525825979461), UINT64_C(14875960194137250135), UINT64_C(148206168962011053), UINT64_C(92628855601256908), UINT64_C(115786069501571135), UINT64_C(13979790642159127631), UINT64_C(17960741188204230577), UINT64_C(13227554448400512413), UINT64_C(11922757042073252613), UINT64_C(534194123654701027), UINT64_C(667742654568376284), UINT64_C(10058050355065246163), UINT64_C(6286281471915778851), UINT64_C(7857851839894723564), UINT64_C(9822314799868404456), UINT64_C(17668161795986222545), UINT64_C(17473516226555390277), UINT64_C(17230209264766849942), UINT64_C(3851351762838199358), UINT64_C(4814189703547749197), UINT64_C(6017737129434686497), UINT64_C(10678614733537760916), UINT64_C(8736582398494813241), UINT64_C(1697355961263740744), UINT64_C(17201748540285695629), UINT64_C(3055441601647567920), UINT64_C(13042674038914235708), UINT64_C(3539985255894009413), UINT64_C(4424981569867511767), UINT64_C(10142912980761777613), UINT64_C(17868535659044580768), UINT64_C(3888925500096174344), UINT64_C(249470856692830026), UINT64_C(4923524589293425437), UINT64_C(3077202868308390898), UINT64_C(17681561640667652334), UINT64_C(12878580013979789610), UINT64_C(12660798527164756410), UINT64_C(1990940103673781801), UINT64_C(11712047166447003059), UINT64_C(14237558506670458768), UINT64_C(8573576096483297652), UINT64_C(15328656139031509969), UINT64_C(14192096105322081634), UINT64_C(17740120131652602043), UINT64_C(3728406090856200938), UINT64_C(6941939825212513490), UINT64_C(13289110799943029766), UINT64_C(11999702481501399304), UINT64_C(12111500069365762469), UINT64_C(1304317031425039374), UINT64_C(1630396289281299218), UINT64_C(17159898745296669675), UINT64_C(3003129357911285478), UINT64_C(12977283734243882656), UINT64_C(10416645343116120612), UINT64_C(3797434642040374957), UINT64_C(9358479320977856600), UINT64_C(8154892584824854327), UINT64_C(10193615731031067909), UINT64_C(12742019663788834886), UINT64_C(2092466524453879895), UINT64_C(17448692642279532598), UINT64_C(7975807747567252036), UINT64_C(9969759684459065045), UINT64_C(3925256793573221701), UINT64_C(294884973539139223), UINT64_C(368606216923924028), UINT64_C(2536221894791146469), UINT64_C(12393649405343708895), UINT64_C(15492061756679636119), UINT64_C(459166561069996766), UINT64_C(573958201337495958), UINT64_C(5329133770099257851), UINT64_C(5636551615525730109), UINT64_C(16269061556261938444), UINT64_C(15724640926900035151), UINT64_C(12133743588526215921), UINT64_C(15167179485657769902), UINT64_C(512230283362660762), UINT64_C(16461044991597520640), UINT64_C(2129562165787349184), UINT64_C(11885324744088962288), UINT64_C(7428327965055601430), UINT64_C(13897095974746889691), UINT64_C(8147997931578836306), UINT64_C(16621713753305242451), UINT64_C(11553770154776777256), UINT64_C(14442212693470971570), UINT64_C(2108853905778275375), UINT64_C(11859439419077620027), UINT64_C(989241218564861322), UINT64_C(1236551523206076653), UINT64_C(12302059748072267668), UINT64_C(6154202648235558777), UINT64_C(3081067291867060567), UINT64_C(1925667057416912854), UINT64_C(2407083821771141068), UINT64_C(7620540795641314239), UINT64_C(2456994988062127447), UINT64_C(12294615771932435117), UINT64_C(6144897678060768089), UINT64_C(3840561048787980055), UINT64_C(14024073347839750877), UINT64_C(8306719647944912789), UINT64_C(9803385798392958397), UINT64_C(12254232247991197996), UINT64_C(10706104291561609591), UINT64_C(15914687219080781802), UINT64_C(6058300968568813541), UINT64_C(7572876210711016926), UINT64_C(9344733650121773483), UINT64_C(2457545025797441046), UINT64_C(7683617300674189211), UINT64_C(4802260812921368257), UINT64_C(1391139997724322417), UINT64_C(10962297034010178829), UINT64_C(9157278655470055720), UINT64_C(6834912300910181746), UINT64_C(17767012412992502991), UINT64_C(8373707460958465027), UINT64_C(9845253181526428546), UINT64_C(7694880458480647778), UINT64_C(14230286591528197627), UINT64_C(4282243101277735613), UINT64_C(9964489895024557420), UINT64_C(12455612368780696775), UINT64_C(3173071712060547580), UINT64_C(8578025658503072379), UINT64_C(15334218091556228378), UINT64_C(14195572325650030640), UINT64_C(17744465407062538301), UINT64_C(12957209721973397068), UINT64_C(17321628113088148975), UINT64_C(12428663104505410411), UINT64_C(15535828880631763014), UINT64_C(486521013540076076), UINT64_C(608151266925095095), UINT64_C(5371875102083756772), UINT64_C(14886636984870817743), UINT64_C(161552157378970562), UINT64_C(14036998252005876915), UINT64_C(6467280898289979120), UINT64_C(17307473159717249708), UINT64_C(3187597375937010519), UINT64_C(11215620396815407382), UINT64_C(14019525496019259228), UINT64_C(3689348814741910323), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(13835058055282163712), UINT64_C(12682136550675316736), UINT64_C(6629298651489370112), UINT64_C(12898309332789100544), UINT64_C(1143914305352105984), UINT64_C(10653264918544908288), UINT64_C(4093209111326359552), UINT64_C(14087470740647444480), UINT64_C(12997652407381917696), UINT64_C(16247065509227397120), UINT64_C(17071944970908205056), UINT64_C(16728245195207868416), UINT64_C(11686934457155059712), UINT64_C(11916020054149300224), UINT64_C(1059967012404461568), UINT64_C(10548330802360352768), UINT64_C(1981020733047832576), UINT64_C(2476275916309790720), UINT64_C(3095344895387238400), UINT64_C(13463805605685493760), UINT64_C(7606384970252091392), UINT64_C(14119667231242502144), UINT64_C(6518949010312869888), UINT64_C(8148686262891087360), UINT64_C(10185857828613859200), UINT64_C(13283690170524743856), UINT64_C(7381240676301154012), UINT64_C(3178808521666707), UINT64_C(4613672773753429595), UINT64_C(5767090967191786994), UINT64_C(7208863708989733743), UINT64_C(18234451673091942987), UINT64_C(18314061323323546223), UINT64_C(13669204617299656970), UINT64_C(3251447716342407501), UINT64_C(11255526859568780496), UINT64_C(14069408574460975620), UINT64_C(8363388681221443717), UINT64_C(7532960934977096275), UINT64_C(14027887187148758248), UINT64_C(12923172965508559906), UINT64_C(8076983103442849941), UINT64_C(5484542860876174523), UINT64_C(11467364594522606057), UINT64_C(4861259862362934834), UINT64_C(10688260846381056446), UINT64_C(4136954021121544750), UINT64_C(279753253987271517), UINT64_C(14184749622766253108), UINT64_C(13119251010030428481), UINT64_C(10505374890482711752), UINT64_C(13131718613103389691), UINT64_C(2579590211097073401), UINT64_C(10835615918790446684), UINT64_C(4321147861633282547), UINT64_C(789748808614215279), UINT64_C(9716965042238660357), UINT64_C(12146206302798325447), UINT64_C(1347699823215743097), UINT64_C(12371527435578309195), UINT64_C(10852723276045498590), UINT64_C(18177590113484261142), UINT64_C(18110301623427938524), UINT64_C(11318938514642461577), UINT64_C(14148673143303076971), UINT64_C(3850783373846682502), UINT64_C(9324268636295258420), UINT64_C(7043649776941685121), UINT64_C(4192876202749718497), UINT64_C(4926390635932268013), UINT64_C(15381360331770110824), UINT64_C(779956341003086914), UINT64_C(12016687759195399081), UINT64_C(10409173680566860947), UINT64_C(17623153119135964088), UINT64_C(13320313708673671507), UINT64_C(12038706117414701480), UINT64_C(15048382646768376850), UINT64_C(4793553135802847627), UINT64_C(1380255401326171630), UINT64_C(1725319251657714538), UINT64_C(14913382587568235298), UINT64_C(4806670179178130410), UINT64_C(10620023742400050917), UINT64_C(18166729885068501583), UINT64_C(8873354301053463267), UINT64_C(1868320839462053276), UINT64_C(12696915570732253057), UINT64_C(2036086408133152610), UINT64_C(11768480047021216570), UINT64_C(10098914040349132809), UINT64_C(15535193312072983813), UINT64_C(5583933584809066055), UINT64_C(16203289017866108377), UINT64_C(14738741654593705639), UINT64_C(18423427068242132049), UINT64_C(4582539761593113445), UINT64_C(558244341782001951), UINT64_C(5309491445654890343), UINT64_C(6636864307068612929), UINT64_C(4148040191917883080), UINT64_C(5185050239897353851), UINT64_C(6481312799871692314), UINT64_C(8662506518347195600), UINT64_C(15439819166361382404), UINT64_C(853029884242176389), UINT64_C(16674044742147217907), UINT64_C(11619183890829246576), UINT64_C(9912293845109170316), UINT64_C(10806869671620619351), UINT64_C(18120273107953162093), UINT64_C(13426969348086676809), UINT64_C(17615227879408948813), UINT64_C(8183976793979022305), UINT64_C(14841657010901165785), UINT64_C(9276035631813228615), UINT64_C(11595044539766535769), UINT64_C(14493805674708169712), UINT64_C(4446942528265218166), UINT64_C(946992141904134803), UINT64_C(10407112214234944312), UINT64_C(3785518230938904582), UINT64_C(60105885123121412), UINT64_C(75132356403901765), UINT64_C(9317287482359653014), UINT64_C(1211618658047395230), UINT64_C(6126209340986631941), UINT64_C(7657761676233289927), UINT64_C(2480258038432112252), UINT64_C(7712008566467528219), UINT64_C(9640010708084410274), UINT64_C(6025006692552756421), UINT64_C(12142944384118333430), UINT64_C(1343622424865753076), UINT64_C(16980665080036953336), UINT64_C(12002459313191415863), UINT64_C(10391388123061881924), UINT64_C(15717989613768452011), UINT64_C(5812428961928401301), UINT64_C(16488908239265277435), UINT64_C(7999724640327104445), UINT64_C(14611341818836268460), UINT64_C(13652491255117947671), UINT64_C(10838650043662411246), UINT64_C(13548312554578014058), UINT64_C(7712018656367741764), UINT64_C(16349226706298308362), UINT64_C(11213161346018109645), UINT64_C(9404765664095249153), UINT64_C(11755957080119061441), UINT64_C(14265002202715495256), UINT64_C(17831252753394369071), UINT64_C(8454007886460797626), UINT64_C(14507126965892774324), UINT64_C(8910536670511192098), UINT64_C(11138170838138990122), UINT64_C(6961356773836868826), UINT64_C(8701695967296086033), UINT64_C(6265433940692719637), UINT64_C(17750954268215113485), UINT64_C(17577006816841503952), UINT64_C(8136200465769716229), UINT64_C(473439272678684739), UINT64_C(14426857146130519635), UINT64_C(8810199395808373736), UINT64_C(7812217631593927537), UINT64_C(14376958057919797325), UINT64_C(17971197572399746657), UINT64_C(13537841491963535612), UINT64_C(3087243809672255804), UINT64_C(8470740780517707659), UINT64_C(682526969396179382), UINT64_C(5464844730172612132), UINT64_C(2219369894288377261), UINT64_C(1387106183930235788), UINT64_C(15568940785194958447), UINT64_C(14849489963066310155), UINT64_C(9338490416978111886), UINT64_C(17365771556679789689), UINT64_C(12483842408994961303), UINT64_C(6381430974388925821), UINT64_C(8600080377420466542), UINT64_C(10750100471775583178), UINT64_C(18049311608146866876), UINT64_C(4363290727450709941), UINT64_C(10065799427740775331), UINT64_C(17193935303103357068), UINT64_C(8440366555225904215), UINT64_C(10550458194032380269), UINT64_C(3964700705685699528), UINT64_C(16312995996335725917), UINT64_C(15779558976992269492), UINT64_C(15112762702812948962), UINT64_C(11751319698471787053), UINT64_C(10077463604662345912), UINT64_C(3373457468973156582), UINT64_C(9025939945749304720), UINT64_C(11282424932186630900), UINT64_C(14103031165233288625), UINT64_C(11120237487484499342), UINT64_C(9288610840928236274), UINT64_C(16222449569587683247), UINT64_C(7833187971778608077), UINT64_C(568112927868484288), UINT64_C(14545199215117769073), UINT64_C(4479063491021217766), UINT64_C(5598829363776522208), UINT64_C(2386850686293264856), UINT64_C(16818621413148744782), UINT64_C(8205795374004271537), UINT64_C(1033872180650563613), UINT64_C(5904026244240592420), UINT64_C(5995859411864064214), UINT64_C(16718196301684856076), UINT64_C(2451001303396518479), UINT64_C(13061090860691293809), UINT64_C(7102991539009341454), UINT64_C(8878739423761676818), UINT64_C(14772584176705823819), UINT64_C(13854044202454891870), UINT64_C(17317555253068614837), UINT64_C(15435158051595272177), UINT64_C(10070575527639314413), UINT64_C(7976533391121755113), UINT64_C(16514548415519566705), UINT64_C(6808127464117294670), UINT64_C(3898473311719230433), UINT64_C(9354074847465600877), UINT64_C(2469221522477225288), UINT64_C(12309898939951307418), UINT64_C(3082000819042179232), UINT64_C(8464187042230111944), UINT64_C(15191919821215027834), UINT64_C(7189106879045698444), UINT64_C(8986383598807123056), UINT64_C(15844665516936291724), UINT64_C(1359087822460813039), UINT64_C(849429889038008149), UINT64_C(5673473379724898090), UINT64_C(2480155706228734709), UINT64_C(3855940325606653145), UINT64_C(208239388580928527), UINT64_C(4871985254153548563), UINT64_C(3044990783845967852), UINT64_C(13029610516662235623), UINT64_C(2451955090545630817), UINT64_C(3838314940804713212), UINT64_C(14021265712860667324), UINT64_C(17526582141075834155), UINT64_C(15565799856599784250), UINT64_C(5622191765467566601), UINT64_C(11639425725261846156), UINT64_C(2662955059861265943), UINT64_C(7940379843253970333), UINT64_C(9925474804067462916), UINT64_C(6203421752542164322), UINT64_C(12365963209105093307), UINT64_C(6234081974526590826), UINT64_C(13119673270933895074), UINT64_C(11787905570239980939), UINT64_C(10123195944372588270), UINT64_C(4021154456019173716), UINT64_C(5026443070023967146), UINT64_C(15506425874384734740), UINT64_C(9691516171490459212), UINT64_C(2891023177508298208), UINT64_C(8225464990312760664), UINT64_C(5670145219463562926), UINT64_C(10461369789805808684), UINT64_C(17688398255684648759), UINT64_C(3663753745896259333), UINT64_C(9207375118826243939), UINT64_C(2285846861678029116), UINT64_C(16692366632379700107), UINT64_C(17350258172878394423), UINT64_C(3241078642388441413), UINT64_C(13274720339840327574), UINT64_C(12908386230827592638), UINT64_C(2300424733252327085), UINT64_C(12098902953420184665), UINT64_C(12173500364315003319)); HeroArrayHeader * h_1coreencodingjsoninternalpowers_LOW(void) { return HERO_ARRAY_LIT(hero_constant_h_1coreencodingjsoninternalpowers_LOW_652);
 #line 4062 "main.c"
 }
 #else
 
-#line 799 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/powers.hero"
+#line 799 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/powers.hero"
 HeroArrayHeader * h_1coreencodingjsoninternalpowers_LOW(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t652, *t653; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t204, t205, t206, t207, t208, t209, t210, t211, t212, t213, t214, t215, t216, t217, t218, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235, t236, t237, t238, t239, t240, t241, t242, t243, t244, t245, t246, t247, t248, t249, t250, t251, t252, t253, t254, t255, t256, t257, t258, t259, t260, t261, t262, t263, t264, t265, t266, t267, t268, t269, t270, t271, t272, t273, t274, t275, t276, t277, t278, t279, t280, t281, t282, t283, t284, t285, t286, t287, t288, t289, t290, t291, t292, t293, t294, t295, t296, t297, t298, t299, t300, t301, t302, t303, t304, t305, t306, t307, t308, t309, t310, t311, t312, t313, t314, t315, t316, t317, t318, t319, t320, t321, t322, t323, t324, t325, t326, t327, t328, t329, t330, t331, t332, t333, t334, t335, t336, t337, t338, t339, t340, t341, t342, t343, t344, t345, t346, t347, t348, t349, t350, t351, t352, t353, t354, t355, t356, t357, t358, t359, t360, t361, t362, t363, t364, t365, t366, t367, t368, t369, t370, t371, t372, t373, t374, t375, t376, t377, t378, t379, t380, t381, t382, t383, t384, t385, t386, t387, t388, t389, t390, t391, t392, t393, t394, t395, t396, t397, t398, t399, t400, t401, t402, t403, t404, t405, t406, t407, t408, t409, t410, t411, t412, t413, t414, t415, t416, t417, t418, t419, t420, t421, t422, t423, t424, t425, t426, t427, t428, t429, t430, t431, t432, t433, t434, t435, t436, t437, t438, t439, t440, t441, t442, t443, t444, t445, t446, t447, t448, t449, t450, t451, t452, t453, t454, t455, t456, t457, t458, t459, t460, t461, t462, t463, t464, t465, t466, t467, t468, t469, t470, t471, t472, t473, t474, t475, t476, t477, t478, t479, t480, t481, t482, t483, t484, t485, t486, t487, t488, t489, t490, t491, t492, t493, t494, t495, t496, t497, t498, t499, t500, t501, t502, t503, t504, t505, t506, t507, t508, t509, t510, t511, t512, t513, t514, t515, t516, t517, t518, t519, t520, t521, t522, t523, t524, t525, t526, t527, t528, t529, t530, t531, t532, t533, t534, t535, t536, t537, t538, t539, t540, t541, t542, t543, t544, t545, t546, t547, t548, t549, t550, t551, t552, t553, t554, t555, t556, t557, t558, t559, t560, t561, t562, t563, t564, t565, t566, t567, t568, t569, t570, t571, t572, t573, t574, t575, t576, t577, t578, t579, t580, t581, t582, t583, t584, t585, t586, t587, t588, t589, t590, t591, t592, t593, t594, t595, t596, t597, t598, t599, t600, t601, t602, t603, t604, t605, t606, t607, t608, t609, t610, t611, t612, t613, t614, t615, t616, t617, t618, t619, t620, t621, t622, t623, t624, t625, t626, t627, t628, t629, t630, t631, t632, t633, t634, t635, t636, t637, t638, t639, t640, t641, t642, t643, t644, t645, t646, t647, t648, t649, t650, t651; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 801
     t1 = UINT64_C(17203844958350394560);
@@ -4725,7 +4725,7 @@ HeroArrayHeader * h_1coreencodingjsoninternalpowers_LOW(void) { HERO_NODEBUG Her
 }
 #endif
 
-#line 39 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 39 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalscaling_nearest(uint64_t h0_d, int64_t h1_p) { int64_t h2_width; int64_t h3_lp; int64_t h4_e; int64_t h5_s; uint64_t h6_u; HERO_NODEBUG h_0opt_db92a83 h7_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h12_own12 = {0}, h13_own13 = {0}, t6, t11, t36, t75, t76, t77, t78, t81, t82; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t38, *t50, *t79, *t80; HERO_NODEBUG int64_t t1, t2, t7, t8, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t39, t40, t41, t44, t45, t46, t47, t51, t52, t53, t67, t68, t69, t72, t73, t74; HERO_NODEBUG bool t3, t9, t34, t57, t65; HERO_NODEBUG HeroStr t4, t5; HERO_NODEBUG double t10, t35; HERO_NODEBUG uint64_t t12, t37, t42, t43, t48, t49, t54, t55, t56, t58, t59, t60, t61, t62, t63, t64, t66, t70, t71; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_p; t2 = h_1coreencodingjsoninternalpowers_MOST(); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 43
@@ -4766,7 +4766,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalscaling_nearest(uint64_t h0_d, int64_t
     return t76;
 }
 
-#line 81 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 81 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 uint64_t h_1coreencodingjsoninternalscaling_unrounded(uint64_t h0_x, int64_t h1_at, int64_t h2_s) { uint64_t h3_unit; h_1coreencodingjsoninternalscaling_Wide h4_first; uint64_t h5_below; uint64_t h6_high; uint64_t h7_middle; HERO_NODEBUG uint64_t h8_ret0, t3, t4, t7, t9, t10, t11, t12, t14, t15, t16, t18, t19, t22, t24, t25, t26, t27, t28, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t49, t50; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *t1, *t5, *t20, *t51, *t52, *t53; HERO_NODEBUG int64_t t2, t6, t21; HERO_NODEBUG h_1coreencodingjsoninternalscaling_Wide t8, t23; HERO_NODEBUG bool t13, t17, t29, t48; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1coreencodingjsoninternalpowers_TWO_TO(); t51 = h9_own9; h9_own9 = t1; hero_array_decref(t51); t2 = h2_s; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "<core>/encoding/json/internal/scaling.hero", "scaling.unrounded", 82, 12) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]); h3_unit = t3;
     t4 = h0_x; t5 = h_1coreencodingjsoninternalpowers_HIGH(); t52 = h10_own10; h10_own10 = t5; hero_array_decref(t52); t6 = h1_at; t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "<core>/encoding/json/internal/scaling.hero", "scaling.unrounded", 83, 30) : (void)0), (void)(t5->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t5 + 1))[t6]); t8 = h_1coreencodingjsoninternalscaling_product(t4, t7); h4_first = t8;
@@ -4795,7 +4795,7 @@ uint64_t h_1coreencodingjsoninternalscaling_unrounded(uint64_t h0_x, int64_t h1_
     return t50;
 }
 
-#line 100 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 100 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 uint64_t h_1coreencodingjsoninternalscaling_marked(uint64_t h0_q, bool h1_inexact) { HERO_NODEBUG bool h2_b0, t1, t6, t7; HERO_NODEBUG uint64_t h3_ret0, t2, t3, t4, t5, t8, t9, t10, t11, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_inexact; h2_b0 = t1; if (t1) goto bb2; else goto bb3; bb1:
 #line 103
@@ -4808,13 +4808,13 @@ uint64_t h_1coreencodingjsoninternalscaling_marked(uint64_t h0_q, bool h1_inexac
     return t12;
 }
 
-#line 107 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 107 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 uint64_t h_1coreencodingjsoninternalscaling_rounded(uint64_t h0_u) { HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_u; t2 = UINT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.rounded", 108, 13); t4 = h0_u; t5 = UINT64_C(4); if (t5 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.rounded", 108, 21); t6 = t4 / t5; t7 = UINT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.rounded", 108, 21); t8 = t6 % t7; if (__builtin_add_overflow(t3, t8, &t9)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.rounded", 108, 13); t10 = UINT64_C(4); if (t10 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.rounded", 108, 12); t11 = t9 / t10; return t11;
 #line 4815 "main.c"
 }
 
-#line 117 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 117 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 h_0opt_db92a83 h_1coreencodingjsoninternalscaling_packed(uint64_t h0_m, int64_t h1_k) { HERO_NODEBUG bool h2_b0, t6, t13, t16, t17, t26; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h7_own7 = {0}, t22, t23, t27, t29, t39, t40; HERO_NODEBUG h_0opt_db92a83 h4_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, t20, t35, t36, t41, t42; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t3, *t8, *t37, *t38; HERO_NODEBUG HeroStr t1, t18, t19; HERO_NODEBUG uint64_t t2, t5, t7, t12, t21; HERO_NODEBUG int64_t t4, t9, t10, t11, t14, t15, t24, t25, t30, t32; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG double t31, t33, t34; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3bec0c04); t2 = h0_m; t3 = h_1coreencodingjsoninternalpowers_TWO_TO(); t37 = h5_own5; h5_own5 = t3; hero_array_decref(t37); t4 = h_1coreencodingjsoninternalpowers_SIGNIFICAND_BITS(); t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? hero_panic_index_at(t3, t4, "<core>/encoding/json/internal/scaling.hero", "scaling.packed", 118, 16) : (void)0), (void)(t3->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t3 + 1))[t4]); t6 = t2 < t5; if (t6) goto bb1; else goto bb2; bb1:
 #line 120
@@ -4823,7 +4823,7 @@ h_0opt_db92a83 h_1coreencodingjsoninternalscaling_packed(uint64_t h0_m, int64_t 
     hero_panic_assert_shown_at(t1, hero_show_u64, &t2, &t5, 0, "<core>/encoding/json/internal/scaling.hero", "scaling.packed", 118, 12);
     hero_unreachable();
 bb3:
-#line 122 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 122 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
     t21 = h0_m; if (t21 <= 9223372036854775807ULL) { t22 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t21}; } else { t22 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t39 = h7_own7; h7_own7 = t22; h_0opt_e201354_release(&t39); t40 = h3_f0; h_0opt_e201354_retain(&t22); h3_f0 = t22; h_0opt_e201354_release(&t40); t23 = h3_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb8; else goto bb9; bb4:
 #line 120
     t14 = h1_k; t15 = h_1coreencodingjsoninternalpowers_PAST_EXPONENT(); t16 = t14 >= t15; h2_b0 = t16; goto bb5; bb5: t17 = h2_b0; if (t17) goto bb6; else goto bb7; bb6:
@@ -4844,7 +4844,7 @@ bb10:
     return t36;
 }
 
-#line 128 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 128 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 double h_1coreencodingjsoninternalscaling_two_to(int64_t h0_k) { double h1_base; int64_t h2_n; double h3_out; HERO_NODEBUG double t1, t6, t10, t19, t20, t21, t22, t23, t24, t28; HERO_NODEBUG int64_t t2, t3, t4, t7, t8, t9, t11, t12, t14, t15, t16, t17, t25, t26, t27; HERO_NODEBUG bool t5, t13, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1p+1; h1_base = t1;
     t2 = h0_k; h2_n = t2;
@@ -4868,7 +4868,7 @@ double h_1coreencodingjsoninternalscaling_two_to(int64_t h0_k) { double h1_base;
 #line 4869 "main.c"
 }
 
-#line 150 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 150 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 h_1coreencodingjsoninternalscaling_Wide h_1coreencodingjsoninternalscaling_product(uint64_t h0_x, uint64_t h1_y) { uint64_t h2_x_high; uint64_t h3_x_low; uint64_t h4_y_high; uint64_t h5_y_low; uint64_t h6_low_low; uint64_t h7_low_high; uint64_t h8_high_low; uint64_t h9_middle; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56; HERO_NODEBUG h_1coreencodingjsoninternalscaling_Wide t57; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = h_1coreencodingjsoninternalpowers_HALF(); if (t2 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.product", 151, 14); t3 = t1 / t2; h2_x_high = t3;
     t4 = h0_x; t5 = h_1coreencodingjsoninternalpowers_HALF(); if (t5 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.product", 152, 13); t6 = t4 % t5; h3_x_low = t6;
@@ -4886,7 +4886,7 @@ h_1coreencodingjsoninternalscaling_Wide h_1coreencodingjsoninternalscaling_produ
 #line 4887 "main.c"
 }
 
-#line 167 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 167 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 int64_t h_1coreencodingjsoninternalscaling_bits_of(uint64_t h0_d) { int64_t h1_low; int64_t h2_high; int64_t h3_mid; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t12, *t21; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t13, t16, t17, t18, t19, t20; HERO_NODEBUG bool t5, t15; HERO_NODEBUG uint64_t t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); h1_low = t1;
     t2 = INT64_C(64); h2_high = t2; goto bb1; bb1:
@@ -4903,20 +4903,20 @@ int64_t h_1coreencodingjsoninternalscaling_bits_of(uint64_t h0_d) { int64_t h1_l
 bb4:
     goto bb1;
 bb5:
-#line 175 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 175 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
     t16 = h3_mid; h2_high = t16; goto bb4; bb6:
 #line 177
     t17 = h3_mid; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.bits_of", 177, 19); h1_low = t19; goto bb4;
 #line 4911 "main.c"
 }
 
-#line 184 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 184 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 int64_t h_1coreencodingjsoninternalscaling_log2_of_ten_to(int64_t h0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p; t2 = h_1coreencodingjsoninternalpowers_LOG_TIMES(); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.log2_of_ten_to", 185, 12); t4 = h_1coreencodingjsoninternalpowers_LOG_SHIFT(); if (t4 < 0 || t4 > 63) hero_panic_at("shift count outside 0..63", "<core>/encoding/json/internal/scaling.hero", "scaling.log2_of_ten_to", 185, 12); t5 = (t3 < 0) ? ~(int64_t)((~(uint64_t)t3) >> (uint64_t)t4) : (int64_t)((uint64_t)t3 >> (uint64_t)t4); return t5;
 #line 4917 "main.c"
 }
 
-#line 188 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 188 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 int64_t h_1coreencodingjsoninternalscaling_min_of(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 191
@@ -4928,7 +4928,7 @@ int64_t h_1coreencodingjsoninternalscaling_min_of(int64_t h0_a, int64_t h1_b) { 
     return t6;
 }
 
-#line 197 "examples/json/heroes.packages/core@0.2.1-e8db5b383e666067/encoding/json/internal/scaling.hero"
+#line 197 "examples/json/heroes.packages/core@0.4.0-c65a01aeebf10d3c/encoding/json/internal/scaling.hero"
 h_1coreencodingjsoninternalscaling_Wide h_1coreencodingjsoninternalscaling_doubled(h_1coreencodingjsoninternalscaling_Wide h0_w) { uint64_t h1_top; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t19; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint64_t t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_NODEBUG h_1coreencodingjsoninternalscaling_Wide t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1coreencodingjsoninternalpowers_TWO_TO(); t19 = h2_own2; h2_own2 = t1; hero_array_decref(t19); t2 = INT64_C(63); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 198, 11) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]); h1_top = t3;
     t4 = h0_w.f_high; t5 = h1_top; if (t5 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 199, 23); t6 = t4 % t5; t7 = UINT64_C(2); if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 199, 23); t9 = h0_w.f_low; t10 = h1_top; if (t10 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 199, 42); t11 = t9 / t10; if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 199, 23); t13 = h0_w.f_low; t14 = h1_top; if (t14 == 0) hero_panic_at("division by zero", "<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 199, 60); t15 = t13 % t14; t16 = UINT64_C(2); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/encoding/json/internal/scaling.hero", "scaling.doubled", 199, 60); t18 = (h_1coreencodingjsoninternalscaling_Wide){.f_high = t12, .f_low = t17};
@@ -5752,7 +5752,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3819904e4fdce559", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f4607242e1be2fb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1coreencodingjson\tjson\n1coreencodingjsoninternalnumeral\tnumeral\n1coreencodingjsoninternalquoted\tquoted\n1coreencodingjsoninternaltokens\ttokens\n1coreencodingjsoninternalcursor\tcursor\n1coreencodingjsoninternaldecimal\tdecimal\n1coreencodingjsoninternalpowers\tpowers\n1coreencodingjsoninternalscaling\tscaling\n");

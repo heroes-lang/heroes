@@ -271,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ec3021a06e171d8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("45ef78f065206f79", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffivariadicatafixedarity\tffi-variadic-at-a-fixed-arity\n");

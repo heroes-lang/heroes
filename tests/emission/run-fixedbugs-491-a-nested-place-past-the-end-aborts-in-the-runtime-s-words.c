@@ -265,7 +265,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66aa87cc79a2b8a6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dd6fea357e1b648", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs491anestedplacepasttheendabortsintheruntimeswords\tfixedbugs-491-a-nested-place-past-the-end-aborts-in-the-runtime-s-words\n");

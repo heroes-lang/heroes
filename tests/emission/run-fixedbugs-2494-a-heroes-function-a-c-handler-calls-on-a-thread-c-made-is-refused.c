@@ -102,10 +102,11 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_7b0df5c2, "the answer ran for signal ");
 HERO_STR_STATIC(hero_str_6e4807ae, "started: ");
-HERO_STR_STATIC(hero_str_7832b139, "sent: ");
+HERO_STR_STATIC(hero_str_5c13481a, "sending SIGUSR1 to the thread C made");
+HERO_STR_STATIC(hero_str_1b1bc257, "not sent: ");
 HERO_STR_STATIC(hero_str_16233ff4, "not stopped, seen ");
 
-#line 109 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
+#line 110 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -147,7 +148,7 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 18 "tests/golden/run/fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero"
+#line 27 "tests/golden/run/fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_made_start(h_0fn_48ac9712 a0) { (void)(made_start)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
@@ -158,7 +159,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
+#line 163 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -185,11 +186,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 }
 
 
-#line 22 "tests/golden/run/fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero"
+#line 31 "tests/golden/run/fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero"
 int64_t h_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_answer(int64_t h0_sig) { hero_thread_guard("fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.answer"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7b0df5c2); t2 = h0_sig; hero_print_str(t1); hero_print_int(t2); hero_print_end();
-    t3 = h0_sig; t4 = INT64_C(2); if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.answer", 24, 12); return t5;
-#line 193 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
+    t3 = h0_sig; t4 = INT64_C(2); if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.answer", 33, 12); return t5;
+#line 194 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
 }
 
 int64_t h_0cb_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_answer(int64_t h0_sig) {
@@ -198,12 +199,18 @@ int64_t h_0cb_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_
     return hero_result;
 }
 
-#line 26 "tests/golden/run/fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero"
-void h_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_main(void) { HERO_NODEBUG HeroStr t1, t4, t6; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int32_t t3, t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_6e4807ae); t2 = h_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_answer; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.main", 27, 24}; t3 = made_start((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2)); } hero_print_str(t1); hero_print_int(t3); hero_print_end();
-    t4 = HERO_STR_LIT(hero_str_7832b139); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.main", 28, 21}; t5 = made_send(); } hero_print_str(t4); hero_print_int(t5); hero_print_end();
-    t6 = HERO_STR_LIT(hero_str_16233ff4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.main", 29, 33}; t7 = made_wait(); } hero_print_str(t6); hero_print_int(t7); hero_print_end(); return;
-#line 207 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
+#line 35 "tests/golden/run/fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero"
+void h_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_main(void) { int32_t h0_sent; HERO_NODEBUG HeroStr t1, t4, t9, t11; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int32_t t3, t5, t6, t7, t10; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_6e4807ae); t2 = h_fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused_answer; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.main", 36, 24}; t3 = made_start((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2)); } hero_print_str(t1); hero_print_int(t3); hero_print_end();
+    t4 = HERO_STR_LIT(hero_str_5c13481a); hero_print_str(t4); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.main", 38, 12}; t5 = made_send(); } h0_sent = t5;
+#line 40
+    t6 = h0_sent; t7 = INT64_C(0); t8 = t6 != t7; if (t8) goto bb2; else goto bb3; bb1:
+#line 42
+    t11 = HERO_STR_LIT(hero_str_16233ff4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.hero", "fixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused.main", 42, 33}; t12 = made_wait(); } hero_print_str(t11); hero_print_int(t12); hero_print_end(); return; bb2:
+#line 41
+    t9 = HERO_STR_LIT(hero_str_1b1bc257); t10 = h0_sent; hero_print_str(t9); hero_print_int(t10); hero_print_end(); goto bb1; bb3: goto bb1;
+#line 214 "fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -302,7 +309,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e56056e76c69783", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4873166b0dbb11a7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494aheroesfunctionachandlercallsonathreadcmadeisrefused\tfixedbugs-2494-a-heroes-function-a-c-handler-calls-on-a-thread-c-made-is-refused\n");

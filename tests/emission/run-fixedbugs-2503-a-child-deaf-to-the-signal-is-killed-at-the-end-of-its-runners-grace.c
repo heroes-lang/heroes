@@ -185,20 +185,20 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 37 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 45 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_sleep(uint32_t a0) { (void)(sleep)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_usleep(uint32_t a0) { (void)(usleep)(a0); }
-#line 41
+#line 49
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_time(void * a0) { (void)(time)(a0); }
-#line 45
+#line 53
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_exe_path_shown(int64_t * a0, int64_t * a1) { (void)(hero_exe_path_shown)((void *)a0, (void *)a1); }
-#line 50
+#line 58
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_dir_scan(const char * a0, int64_t a1, int64_t a2) { (void)(hero_dir_scan)(a0, a1, a2); }
-#line 53
+#line 61
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
@@ -247,7 +247,7 @@ __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
 
-#line 54 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 62 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 int64_t h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_HERO_DIR_FILES(void) {
 #line 253 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
@@ -259,29 +259,29 @@ int64_t h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_HE
 #pragma clang diagnostic error "-Wshift-sign-overflow"
 #pragma clang diagnostic error "-Winteger-overflow"
 #pragma clang diagnostic error "-Wdivision-by-zero"
-#line 54 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 62 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
     return HERO_DIR_FILES;
 #line 265 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
 #pragma clang diagnostic pop
 }
 
-#line 58 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 66 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 int64_t h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_LIFE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(30); return t1;
 #line 272 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
 }
 
-#line 62 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 70 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 HeroStr h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_itself(void) {
-#line 62
+#line 70
 #define h0_status (*hero_lend_h0_status)
-#line 62
+#line 70
 #define h1_marks (*hero_lend_h1_marks)
-#line 62
+#line 70
     int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h0_status = t1;
     t2 = INT64_C(0); h1_marks = t2;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.itself", 65, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.itself", 73, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
 #line 286 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
@@ -292,25 +292,25 @@ HeroStr h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_it
 #undef h0_status
 #undef h1_marks
 
-#line 69 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 77 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 int64_t h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_again(HeroArrayHeader * h0_words, int64_t h1_seconds) {
-#line 69
+#line 77
 #define h6_status (*hero_lend_h6_status)
-#line 69
+#line 77
     HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t3, *t6, *t9, *t30; HERO_NODEBUG int64_t h4_i0, t4, t5, t7, t10, t13, t14, t15, t16, t17, t26, t27; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}, t1, t2, t11, t12, t18, t20, t22, t24, t28, t29, t31; HERO_NODEBUG bool t8; HERO_NODEBUG const char *t19, *t21, *t23, *t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_itself(); t28 = h8_own8; h8_own8 = t1; hero_str_decref(t28); t29 = h2_program; hero_str_incref(t1); h2_program = t1; hero_str_decref(t29);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 71, 5}; (void)hero_run_reset(); }
-    t2 = h2_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 72, 5}; (void)hero_run_arg(t2); }
-#line 74
-    t3 = h0_words; t30 = h3_xs0; hero_array_incref(t3); h3_xs0 = t3; hero_array_decref(t30); t4 = INT64_C(0); h4_i0 = t4; goto bb1; bb1: t5 = h4_i0; t6 = h3_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h3_xs0; t10 = h4_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 74, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t31 = h5_word; hero_str_incref(t11); h5_word = t11; hero_str_decref(t31);
-    t12 = h5_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 75, 9}; (void)hero_run_arg(t12); } goto bb3; bb3:
-#line 74
-    t13 = h4_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 74, 9); h4_i0 = t15; goto bb1; bb4:
-#line 77
-    t16 = h1_seconds; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 77, 5}; (void)hero_run_limit(t16); }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 79, 5}; (void)hero_run_reset(); }
+    t2 = h2_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 80, 5}; (void)hero_run_arg(t2); }
+#line 82
+    t3 = h0_words; t30 = h3_xs0; hero_array_incref(t3); h3_xs0 = t3; hero_array_decref(t30); t4 = INT64_C(0); h4_i0 = t4; goto bb1; bb1: t5 = h4_i0; t6 = h3_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h3_xs0; t10 = h4_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 82, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t31 = h5_word; hero_str_incref(t11); h5_word = t11; hero_str_decref(t31);
+    t12 = h5_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 83, 9}; (void)hero_run_arg(t12); } goto bb3; bb3:
+#line 82
+    t13 = h4_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 82, 9); h4_i0 = t15; goto bb1; bb4:
+#line 85
+    t16 = h1_seconds; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 85, 5}; (void)hero_run_limit(t16); }
     t17 = INT64_C(0); h6_status = t17;
-    t18 = h2_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 79, 33}; t19 = hero_str_lend_at(t18, &hero_here); } t20 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 79, 58}; t21 = hero_str_lend_at(t20, &hero_here); } t22 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 79, 79}; t23 = hero_str_lend_at(t22, &hero_here); } t24 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 79, 100}; t25 = hero_str_lend_at(t24, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 79, 12}; hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status"); t26 = hero_run_go(hero_cstr_nonnull_at(t19, &hero_here), hero_cstr_nonnull_at(t21, &hero_here), hero_cstr_nonnull_at(t23, &hero_here), hero_cstr_nonnull_at(t25, &hero_here), (void *)&h6_status); } h7_code = t26;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 80, 5}; (void)hero_run_reset(); }
+    t18 = h2_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 87, 33}; t19 = hero_str_lend_at(t18, &hero_here); } t20 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 87, 58}; t21 = hero_str_lend_at(t20, &hero_here); } t22 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 87, 79}; t23 = hero_str_lend_at(t22, &hero_here); } t24 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 87, 100}; t25 = hero_str_lend_at(t24, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 87, 12}; hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status"); t26 = hero_run_go(hero_cstr_nonnull_at(t19, &hero_here), hero_cstr_nonnull_at(t21, &hero_here), hero_cstr_nonnull_at(t23, &hero_here), hero_cstr_nonnull_at(t25, &hero_here), (void *)&h6_status); } h7_code = t26;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.again", 88, 5}; (void)hero_run_reset(); }
     t27 = h7_code;
 #line 316 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
     hero_str_release_at(&h2_program);
@@ -322,35 +322,35 @@ int64_t h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_ag
 }
 #undef h6_status
 
-#line 84 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 92 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 int64_t h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_beats(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.beats", 85, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.beats", 85, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.beats", 86, 5}; (void)hero_dir_release(); }
+    t1 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.beats", 93, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.beats", 93, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.beats", 94, 5}; (void)hero_dir_release(); }
     t6 = h1_count; return t6;
 #line 331 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
 }
 
-#line 92 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 100 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 void h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_third(HeroStr h0_dir) { int64_t h1_born; bool h2_told; int64_t h3_k; HERO_NODEBUG bool h4_b0, t3, t6, t13, t14, t15, t18, t19, t28, t29, t44; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h6_f1 = {0}, h10_own10 = {0}, h12_own12 = {0}, t24, t25, t40, t41, t53, t54, t56, t57; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h11_own11 = {0}, t20, t21, t22, t23, t33, t34, t35, t37, t38, t39, t50, t51, t52, t55; HERO_NODEBUG int32_t t1, t2, t16, t17; HERO_NODEBUG void *t4, *t8; HERO_NODEBUG int64_t t5, t7, t9, t10, t11, t12, t26, t27, t30, t31, t32, t36, t42, t43, t45, t46, t47; HERO_NODEBUG uint32_t t48; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 93, 8}; t1 = case2503_deaf(); } t2 = INT64_C(0); t3 = t1 != t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 95
-    t4 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 95, 12}; t5 = time(t4); } h1_born = t5;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 101, 8}; t1 = case2503_deaf(); } t2 = INT64_C(0); t3 = t1 != t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 103
+    t4 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 103, 12}; t5 = time(t4); } h1_born = t5;
     t6 = false; h2_told = t6;
     t7 = INT64_C(0); h3_k = t7; goto bb4; bb2: goto bb15; bb3: goto bb1; bb4:
-#line 99
-    t8 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 99, 11}; t9 = time(t8); } t10 = h1_born; if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 99, 11); t12 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_LIFE(); t13 = t11 < t12; if (t13) goto bb5; else goto bb6; bb5:
-    t14 = h2_told; t15 = !t14; h4_b0 = t15; if (t15) goto bb8; else goto bb9; bb6: goto bb15; bb7:
-#line 102
-    t30 = h3_k; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 102, 13); h3_k = t32;
-#line 105
-    t33 = h0_dir; t34 = HERO_STR_LIT(hero_str_6f7826a9); t35 = hero_str_concat(t33, t34); t50 = h7_own7; h7_own7 = t35; hero_str_decref(t50); t36 = h3_k; t37 = hero_int_to_str(t36); t51 = h8_own8; h8_own8 = t37; hero_str_decref(t51); t38 = hero_str_concat(t35, t37); t52 = h9_own9; h9_own9 = t38; hero_str_decref(t52); t39 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 105, 12}; t40 = h_library_write_file(t38, t39, &hero_here); } t53 = h10_own10; h10_own10 = t40; h_0opt_a8ea2_release(&t53); t54 = h6_f1; h_0opt_a8ea2_retain(&t40); h6_f1 = t40; h_0opt_a8ea2_release(&t54); t41 = h6_f1; t42 = t41.tag; t43 = INT64_C(1); t44 = t42 == t43; if (t44) goto bb13; else goto bb14; bb8:
-#line 100
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 100, 21}; t16 = case2503_heard(); } t17 = INT64_C(1); t18 = t16 == t17; h4_b0 = t18; goto bb9; bb9: t19 = h4_b0; if (t19) goto bb10; else goto bb11; bb10:
-    t20 = h0_dir; t21 = HERO_STR_LIT(hero_str_5c7e2da9); t22 = hero_str_concat(t20, t21); t55 = h11_own11; h11_own11 = t22; hero_str_decref(t55); t23 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 101, 21}; t24 = h_library_write_file(t22, t23, &hero_here); } t56 = h12_own12; h12_own12 = t24; h_0opt_a8ea2_release(&t56); t57 = h5_f0; h_0opt_a8ea2_retain(&t24); h5_f0 = t24; h_0opt_a8ea2_release(&t57); t25 = h5_f0; t26 = t25.tag; t27 = INT64_C(1); t28 = t26 == t27; t29 = !t28; h2_told = t29; goto bb7; bb11: goto bb7; bb12:
 #line 107
-    t48 = UINT64_C(20000); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 107, 13}; (void)usleep(t48); } goto bb4; bb13:
-#line 106
-    t45 = h3_k; t46 = INT64_C(1); if (__builtin_sub_overflow(t45, t46, &t47)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 106, 17); h3_k = t47; goto bb12; bb14: goto bb12; bb15:
+    t8 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 107, 11}; t9 = time(t8); } t10 = h1_born; if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 107, 11); t12 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_LIFE(); t13 = t11 < t12; if (t13) goto bb5; else goto bb6; bb5:
+    t14 = h2_told; t15 = !t14; h4_b0 = t15; if (t15) goto bb8; else goto bb9; bb6: goto bb15; bb7:
+#line 110
+    t30 = h3_k; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 110, 13); h3_k = t32;
+#line 113
+    t33 = h0_dir; t34 = HERO_STR_LIT(hero_str_6f7826a9); t35 = hero_str_concat(t33, t34); t50 = h7_own7; h7_own7 = t35; hero_str_decref(t50); t36 = h3_k; t37 = hero_int_to_str(t36); t51 = h8_own8; h8_own8 = t37; hero_str_decref(t51); t38 = hero_str_concat(t35, t37); t52 = h9_own9; h9_own9 = t38; hero_str_decref(t52); t39 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 113, 12}; t40 = h_library_write_file(t38, t39, &hero_here); } t53 = h10_own10; h10_own10 = t40; h_0opt_a8ea2_release(&t53); t54 = h6_f1; h_0opt_a8ea2_retain(&t40); h6_f1 = t40; h_0opt_a8ea2_release(&t54); t41 = h6_f1; t42 = t41.tag; t43 = INT64_C(1); t44 = t42 == t43; if (t44) goto bb13; else goto bb14; bb8:
+#line 108
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 108, 21}; t16 = case2503_heard(); } t17 = INT64_C(1); t18 = t16 == t17; h4_b0 = t18; goto bb9; bb9: t19 = h4_b0; if (t19) goto bb10; else goto bb11; bb10:
+    t20 = h0_dir; t21 = HERO_STR_LIT(hero_str_5c7e2da9); t22 = hero_str_concat(t20, t21); t55 = h11_own11; h11_own11 = t22; hero_str_decref(t55); t23 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 109, 21}; t24 = h_library_write_file(t22, t23, &hero_here); } t56 = h12_own12; h12_own12 = t24; h_0opt_a8ea2_release(&t56); t57 = h5_f0; h_0opt_a8ea2_retain(&t24); h5_f0 = t24; h_0opt_a8ea2_release(&t57); t25 = h5_f0; t26 = t25.tag; t27 = INT64_C(1); t28 = t26 == t27; t29 = !t28; h2_told = t29; goto bb7; bb11: goto bb7; bb12:
+#line 115
+    t48 = UINT64_C(20000); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 115, 13}; (void)usleep(t48); } goto bb4; bb13:
+#line 114
+    t45 = h3_k; t46 = INT64_C(1); if (__builtin_sub_overflow(t45, t46, &t47)) hero_panic_overflow_at("fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.third", 114, 17); h3_k = t47; goto bb12; bb14: goto bb12; bb15:
 #line 355 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
     h_0opt_a8ea2_release(hero_slot_escape(&h6_f1));
@@ -363,17 +363,17 @@ void h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_third
     return;
 }
 
-#line 109 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 117 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 void h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_first(void) { HeroStr h0_dir = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h8_own8 = {0}, t20, t21, t53, t54; int64_t h2_before; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h7_own7 = {0}, h9_own9 = {0}, h10_own10 = {0}, t1, t3, t4, t5, t6, t7, t10, t11, t12, t16, t17, t18, t19, t26, t27, t28, t33, t36, t37, t38, t42, t43, t44, t47, t48, t49, t50, t52, t55, t56; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t13, *t51; HERO_NODEBUG int64_t t2, t14, t15, t22, t23, t29, t30, t31, t39, t40; HERO_NODEBUG const char *t8, *t45; HERO_NODEBUG bool t24, t25, t32, t41; HERO_NODEBUG uint32_t t34; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_21726102); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 110, 41}; t2 = hero_os_pid(); } t3 = hero_int_to_str(t2); t47 = h3_own3; h3_own3 = t3; hero_str_decref(t47); t4 = hero_str_concat(t1, t3); t48 = h4_own4; h4_own4 = t4; hero_str_decref(t48); t49 = h0_dir; hero_str_incref(t4); h0_dir = t4; hero_str_decref(t49);
-    t5 = h0_dir; t6 = HERO_STR_LIT(hero_str_732be8d7); t7 = hero_str_concat(t5, t6); t50 = h5_own5; h5_own5 = t7; hero_str_decref(t50); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 111, 33}; t8 = hero_str_lend_at(t7, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 111, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t8, &hero_here)); }
+    t1 = HERO_STR_LIT(hero_str_21726102); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 118, 41}; t2 = hero_os_pid(); } t3 = hero_int_to_str(t2); t47 = h3_own3; h3_own3 = t3; hero_str_decref(t47); t4 = hero_str_concat(t1, t3); t48 = h4_own4; h4_own4 = t4; hero_str_decref(t48); t49 = h0_dir; hero_str_incref(t4); h0_dir = t4; hero_str_decref(t49);
+    t5 = h0_dir; t6 = HERO_STR_LIT(hero_str_732be8d7); t7 = hero_str_concat(t5, t6); t50 = h5_own5; h5_own5 = t7; hero_str_decref(t50); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 119, 33}; t8 = hero_str_lend_at(t7, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 119, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t8, &hero_here)); }
     t10 = HERO_STR_LIT(hero_str_1d45d9b7); t11 = HERO_STR_LIT(hero_str_76b82743); t12 = h0_dir; t13 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t13, &t11); hero_array_push_owned(&t13, &t12); t51 = h6_own6; h6_own6 = t13; hero_array_decref(t51); t14 = INT64_C(3); t15 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_again(t13, t14); hero_print_str(t10); hero_print_int(t15); hero_print_end();
-    t16 = HERO_STR_LIT(hero_str_41647408); t17 = h0_dir; t18 = HERO_STR_LIT(hero_str_5c7e2da9); t19 = hero_str_concat(t17, t18); t52 = h7_own7; h7_own7 = t19; hero_str_decref(t52); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 113, 65}; t20 = h_library_read_file(t19, &hero_here); } t53 = h8_own8; h8_own8 = t20; h_0opt_f87774a_release(&t53); t54 = h1_f0; h_0opt_f87774a_retain(&t20); h1_f0 = t20; h_0opt_f87774a_release(&t54); t21 = h1_f0; t22 = t21.tag; t23 = INT64_C(1); t24 = t22 == t23; t25 = !t24; hero_print_str(t16); hero_print_bool(t25); hero_print_end();
+    t16 = HERO_STR_LIT(hero_str_41647408); t17 = h0_dir; t18 = HERO_STR_LIT(hero_str_5c7e2da9); t19 = hero_str_concat(t17, t18); t52 = h7_own7; h7_own7 = t19; hero_str_decref(t52); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 121, 65}; t20 = h_library_read_file(t19, &hero_here); } t53 = h8_own8; h8_own8 = t20; h_0opt_f87774a_release(&t53); t54 = h1_f0; h_0opt_f87774a_retain(&t20); h1_f0 = t20; h_0opt_f87774a_release(&t54); t21 = h1_f0; t22 = t21.tag; t23 = INT64_C(1); t24 = t22 == t23; t25 = !t24; hero_print_str(t16); hero_print_bool(t25); hero_print_end();
     t26 = h0_dir; t27 = HERO_STR_LIT(hero_str_732be8d7); t28 = hero_str_concat(t26, t27); t55 = h9_own9; h9_own9 = t28; hero_str_decref(t55); t29 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_beats(t28); h2_before = t29;
-#line 116
+#line 124
     t30 = h2_before; t31 = INT64_C(1); t32 = t30 < t31; if (t32) goto bb2; else goto bb3; bb1:
-#line 125
-    t44 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 125, 36}; t45 = hero_str_lend_at(t44, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 125, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t45, &hero_here)); }
+#line 133
+    t44 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 133, 36}; t45 = hero_str_lend_at(t44, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 133, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t45, &hero_here)); }
 #line 378 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
     hero_str_release_at(&h0_dir);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
@@ -387,22 +387,22 @@ void h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_first
     hero_str_release_at(&h10_own10);
     return;
 bb2:
-#line 117 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 125 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
     t33 = HERO_STR_LIT(hero_str_35dcd79a); hero_print_str(t33); hero_print_end(); goto bb1; bb3:
-#line 119
-    t34 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 119, 13}; (void)sleep(t34); }
-#line 121
+#line 127
+    t34 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.first", 127, 13}; (void)sleep(t34); }
+#line 129
     t36 = h0_dir; t37 = HERO_STR_LIT(hero_str_732be8d7); t38 = hero_str_concat(t36, t37); t56 = h10_own10; h10_own10 = t38; hero_str_decref(t56); t39 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_beats(t38); t40 = h2_before; t41 = t39 == t40; if (t41) goto bb5; else goto bb6; bb4: goto bb1; bb5:
     t42 = HERO_STR_LIT(hero_str_31b442c5); hero_print_str(t42); hero_print_end(); goto bb4; bb6:
-#line 124
+#line 132
     t43 = HERO_STR_LIT(hero_str_6dbaa06f); hero_print_str(t43); hero_print_end(); goto bb4;
 #line 400 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
 }
 
-#line 127 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 135 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
 void h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_main(void) { HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t1, *t2, *t6, *t13, *t16, *t19, *t22, *t23, *t24; HERO_NODEBUG int64_t t3, t4, t7, t14, t17, t18, t20; HERO_NODEBUG bool t5, t10; HERO_NODEBUG HeroStr t8, t9, t11, t12, t15, t21; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 128, 13}; t1 = h_library_args(&hero_here); } t22 = h1_own1; h1_own1 = t1; hero_array_decref(t22); t23 = h0_words; hero_array_incref(t1); h0_words = t1; hero_array_decref(t23);
-#line 130
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 136, 13}; t1 = h_library_args(&hero_here); } t22 = h1_own1; h1_own1 = t1; hero_array_decref(t22); t23 = h0_words; hero_array_incref(t1); h0_words = t1; hero_array_decref(t23);
+#line 138
     t2 = h0_words; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 408 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
     hero_array_release_at(&h0_words);
@@ -410,12 +410,12 @@ void h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_main(
     hero_array_release_at(&h2_own2);
     return;
 bb2:
-#line 131 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
+#line 139 "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero"
     h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_first(); goto bb1; bb3:
-    t6 = h0_words; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 132, 13) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]); t9 = HERO_STR_LIT(hero_str_76b82743); t10 = hero_str_eq(t8, t9); if (t10) goto bb4; else goto bb5; bb4:
-    t11 = HERO_STR_LIT(hero_str_52763981); t12 = HERO_STR_LIT(hero_str_241dd27); t13 = h0_words; t14 = INT64_C(1); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 133, 74) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]); t16 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t16, &t12); hero_array_push_owned(&t16, &t15); t24 = h2_own2; h2_own2 = t16; hero_array_decref(t24); t17 = INT64_C(0); t18 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_again(t16, t17); hero_print_str(t11); hero_print_int(t18); hero_print_end(); goto bb1; bb5:
-#line 135
-    t19 = h0_words; t20 = INT64_C(1); t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? hero_panic_index_at(t19, t20, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 135, 15) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]); h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_third(t21); goto bb1;
+    t6 = h0_words; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 140, 13) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]); t9 = HERO_STR_LIT(hero_str_76b82743); t10 = hero_str_eq(t8, t9); if (t10) goto bb4; else goto bb5; bb4:
+    t11 = HERO_STR_LIT(hero_str_52763981); t12 = HERO_STR_LIT(hero_str_241dd27); t13 = h0_words; t14 = INT64_C(1); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 141, 74) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]); t16 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t16, &t12); hero_array_push_owned(&t16, &t15); t24 = h2_own2; h2_own2 = t16; hero_array_decref(t24); t17 = INT64_C(0); t18 = h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_again(t16, t17); hero_print_str(t11); hero_print_int(t18); hero_print_end(); goto bb1; bb5:
+#line 143
+    t19 = h0_words; t20 = INT64_C(1); t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? hero_panic_index_at(t19, t20, "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", "fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.main", 143, 15) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]); h_fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace_third(t21); goto bb1;
 #line 420 "fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace.c"
 }
 
@@ -697,7 +697,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12a1c3904c75d12d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3952ec0d5468ad5c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2503achilddeaftothesignaliskilledattheendofitsrunnersgrace\tfixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace\n");

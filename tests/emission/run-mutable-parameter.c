@@ -222,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("52b648d85803b78d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("79e2bfae3642b52f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("mutableparameter\tmutable-parameter\n");

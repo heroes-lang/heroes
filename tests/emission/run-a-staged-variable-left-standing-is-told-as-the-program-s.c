@@ -214,7 +214,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5de6a0fc1ab5bda1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("051317d378f4bb42", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("astagedvariableleftstandingistoldastheprograms\ta-staged-variable-left-standing-is-told-as-the-program-s\n");

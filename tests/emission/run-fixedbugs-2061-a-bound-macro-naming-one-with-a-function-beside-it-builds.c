@@ -270,7 +270,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b23096159c6f0a7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("424f80373805ee49", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2061aboundmacronamingonewithafunctionbesideitbuilds\tfixedbugs-2061-a-bound-macro-naming-one-with-a-function-beside-it-builds\n");

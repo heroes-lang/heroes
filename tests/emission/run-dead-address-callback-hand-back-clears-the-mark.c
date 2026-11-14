@@ -316,7 +316,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("674f3b8a08f2dfef", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e7bb2616731dd90", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadaddresscallbackhandbackclearsthemark\tdead-address-callback-hand-back-clears-the-mark\n");

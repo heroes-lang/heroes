@@ -210,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("61cb69b72e95ff06", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08f7e08e0cd4fca8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialdivisionedges\tadversarial-division-edges\n");
