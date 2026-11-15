@@ -1,0 +1,6 @@
+add https:/github.com/acme/json --tag v1 -C <work>/app
+add https:github.com/acme/json --tag v1 -C <work>/app
+add http:/github.com/acme/json --tag v1 -C <work>/app
+add file:/srv/json --tag v1 -C <work>/app
+add file:../git/json --tag v1 -C <work>/app
+add json --index https:/index.example.org -C <work>/app

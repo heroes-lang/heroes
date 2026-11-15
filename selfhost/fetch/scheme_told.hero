@@ -30,6 +30,11 @@ function other(written: str) -> str
             return "`" + shown + "` writes its scheme in capitals: write `" + lowered(scheme) + "://" + rest + "`"
         return "`" + shown + "` is fetched over `" + scheme + "://`, which this command does not read: " + SHAPES
 
+    slashed = slashes_missing(written)
+
+    if slashed.len() > 0
+        return slashed
+
     if strings.holds(text: written, needle: "::")
         return "`" + shown + "` names one of git's remote helpers, which runs a program to fetch: " + SHAPES
     at = ssh_at(written)
@@ -42,6 +47,50 @@ function other(written: str) -> str
     if strings.starts_with(text: written, prefix: "/") || strings.starts_with(text: written, prefix: "./") || strings.starts_with(text: written, prefix: "../")
         as_file @ "file://" + shown
     return "`" + shown + "` is a path and no address: a repository inside the program's own is `file://` and its path, `" + as_file + "` here, and a package's folder while it is developed is its entry's `path`"
+
+# An address of a scheme this command reads, or of `http`, written with fewer
+# than two slashes after its `:`, its scheme in any case (defect 2543):
+# `https:/host/x`, `https:host/x`, `file:/x`. It was told *a path and no
+# address*, offered `file://./https:/host/x`, where a slash was plainly
+# missing; it is told by what it is, the address written with its two
+# slashes, "" where `written` is no such address. A drive, `C:/x`, names no
+# scheme here and stays a path.
+function slashes_missing(written: str) -> str
+    colon = colon_after(written, from: 0)
+
+    if colon >= written.len()
+        return ""
+    scheme = lowered(written.slice(from: 0, to: colon))
+
+    if scheme != "https" && scheme != "http" && scheme != "file"
+        return ""
+    slashes: i64 @= colon + 1
+
+    while slashes < written.len() && written[slashes] == '/'
+        slashes @ slashes + 1
+
+    rest = written.slice(from: slashes, to: written.len())
+    said: str @= "`" + url_bytes.shown(written) + "` writes no slash after `" + written.slice(from: 0, to: colon + 1) + "`"
+
+    if slashes - colon - 1 == 1
+        said @ "`" + url_bytes.shown(written) + "` writes one slash after `" + written.slice(from: 0, to: colon + 1) + "`"
+
+    if rest.len() == 0
+        return said + ", and names nothing after it: " + SHAPES
+
+    if scheme == "http"
+        return said + ", where an address writes two, and `http://` is read in clear, so anything between could change what is fetched: write `https://" + rest + "`"
+
+    if scheme == "https"
+        return said + ", where an address writes two: write `https://" + rest + "`"
+
+    if slashes - colon - 1 == 1
+        return said + ", where an address writes two, and an absolute path a third: write `file:///" + rest + "`"
+    meant: str @= "file://./" + rest
+
+    if rest == "." || rest == ".." || strings.starts_with(text: rest, prefix: "./") || strings.starts_with(text: rest, prefix: "../")
+        meant @ "file://" + rest
+    return said + ", where an address writes two: a path from the program's folder is `" + meant + "`"
 
 # Where `://` follows a scheme of letters, digits, `+`, `-` and `.` at the
 # address's start, or -1.
@@ -106,6 +155,19 @@ test "an address of another scheme is told what it looks like, and the address t
     assert other("ext::sh -c touch% /tmp/x") == "`ext::sh -c touch% /tmp/x` names one of git's remote helpers, which runs a program to fetch: " + SHAPES
     assert other("../json") == "`../json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../json` here, and a package's folder while it is developed is its entry's `path`"
     assert other("vendor/json") == "`vendor/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./vendor/json` here, and a package's folder while it is developed is its entry's `path`"
+
+    # Defect 2543: a slash missing after the scheme is told as the address
+    # meant, never as a path; a drive stays a path.
+    assert other("https:/github.com/acme/json") == "`https:/github.com/acme/json` writes one slash after `https:`, where an address writes two: write `https://github.com/acme/json`"
+    assert other("https:github.com/acme/json") == "`https:github.com/acme/json` writes no slash after `https:`, where an address writes two: write `https://github.com/acme/json`"
+    assert other("HTTPS:/h/x") == "`HTTPS:/h/x` writes one slash after `HTTPS:`, where an address writes two: write `https://h/x`"
+    assert other("http:/h/x") == "`http:/h/x` writes one slash after `http:`, where an address writes two, and `http://` is read in clear, so anything between could change what is fetched: write `https://h/x`"
+    assert other("file:/srv/json") == "`file:/srv/json` writes one slash after `file:`, where an address writes two, and an absolute path a third: write `file:///srv/json`"
+    assert other("file:vendor/json") == "`file:vendor/json` writes no slash after `file:`, where an address writes two: a path from the program's folder is `file://./vendor/json`"
+    assert other("file:../json") == "`file:../json` writes no slash after `file:`, where an address writes two: a path from the program's folder is `file://../json`"
+    assert other("https:/") == "`https:/` writes one slash after `https:`, and names nothing after it: " + SHAPES
+    assert slashes_missing("C:/json") == ""
+    assert other("C:/json") == "`C:/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./C:/json` here, and a package's folder while it is developed is its entry's `path`"
 
     # `user@host` with no path after the `:` is no ssh address, and a `/`
     # before the `@` makes it a path.
