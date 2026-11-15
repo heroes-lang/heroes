@@ -60,11 +60,43 @@ function unknown_flag(command: cli_table.Command, arg: str) -> str
 # Both values are named, `first` and `second`, for a flag that takes one; a
 # flag that takes none is told it was given twice.
 function repeated(command: cli_table.Command, flag: cli_table.Flag, first: str?, second: str?) -> str
-    usage = "`heroes " + command.name + operand_said(command) + " " + flag.spelling
-
     if !flag.value
-        return "`" + flag.spelling + "` was given twice: give it once, " + usage + "`"
-    return "`" + flag.spelling + "` takes one " + flag.placeholder + ", and was given two, `" + first.default("") + "` and `" + second.default("") + "`: give it once, " + usage + " <" + flag.placeholder + ">`"
+        return "`" + flag.spelling + "` was given twice: give it once, " + usage_of(command, flag: flag)
+    return "`" + flag.spelling + "` takes one " + flag.placeholder + ", and was given two, `" + first.default("") + "` and `" + second.default("") + "`: give it once, " + usage_of(command, flag: flag)
+
+# A flag that takes a value, given none: the next word is missing or is
+# another flag (defect 349's shape for an empty one, below).
+function value_missing(command: cli_table.Command, flag: cli_table.Flag) -> str
+    return "`" + flag.spelling + "` needs " + with_article(flag.placeholder) + ": " + usage_of(command, flag: flag)
+
+# A flag that takes a value, given an empty one, which names nothing (defect
+# 349): `-o ""` reached the writer, which told it as a link that cannot be
+# followed.
+function value_empty(command: cli_table.Command, flag: cli_table.Flag) -> str
+    return "`" + flag.spelling + "` needs " + with_article(flag.placeholder) + ", and was given an empty one: " + usage_of(command, flag: flag)
+
+# A flag as the usage line writes it, `heroes build <file.hero> -o <path>`.
+function usage_of(command: cli_table.Command, flag: cli_table.Flag) -> str
+    said = "`heroes " + command.name + operand_said(command) + " " + flag.spelling
+
+    if flag.value
+        return said + " <" + flag.placeholder + ">`"
+    return said + "`"
+
+# A placeholder with the article it takes, `a path`, `an address` (defect
+# 2541): the article was a fixed `a`, so `--index` was told it *needs a
+# address*. Read from the first letter, a vowel taking `an`, which is what the
+# sound of every placeholder of the table gives today; a word whose sound is
+# not its letter (`an hour`, `a unit`) would be wrong, so a test holds the
+# table's placeholders to the words this rule was read against, and a new one
+# fails it until its article is read here.
+function with_article(placeholder: str) -> str
+    if placeholder.len() > 0
+        first = placeholder[0]
+
+        if first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u'
+            return "an " + placeholder
+    return "a " + placeholder
 
 ## Tests
 
@@ -87,3 +119,32 @@ test "a flag given twice names both values, and the form that gives it once (def
                 asked @ asked + 1
 
     assert asked == 3
+
+# The placeholders whose sound `with_article` was read against: every one the
+# table writes, so a flag added with another placeholder fails here until its
+# article is read.
+constant READ_PLACEHOLDERS: [str]
+    ["path", "address", "tag", "folder", "name", "text", "count"]
+
+test "a placeholder takes the article its sound does, and a missing address is told an address (defect 2541)"
+    assert with_article("address") == "an address"
+    assert with_article("path") == "a path"
+    asked: i64 @= 0
+
+    for c in cli_table.commands()
+        for f in c.flags
+            if f.value
+                known: bool @= false
+
+                for one in READ_PLACEHOLDERS
+                    if one == f.placeholder
+                        known @ true
+
+                assert known
+                asked @ asked + 1
+
+            if c.name == "add" && f.spelling == "--index"
+                assert value_missing(c, flag: f) == "`--index` needs an address: `heroes add [package] --index <address>`"
+                assert value_empty(c, flag: f) == "`--index` needs an address, and was given an empty one: `heroes add [package] --index <address>`"
+
+    assert asked > 20
