@@ -1,0 +1,426 @@
+# Paths read as text, as Go's `path/filepath` reads them on each system
+# (`src/path/filepath/path.go`, `path_unix.go` and `path_windows.go`, and
+# `src/internal/filepathlite`): the separator, the volume a Windows path opens
+# with, and the lexical cleaning every other function stands on. Each
+# function takes the system as a value, `windows`, so both arms are asked on
+# every machine by the tests below; the face asks the runtime which arm is
+# this machine's.
+#
+# On Windows both `\` and `/` separate, a path opens with a volume, a drive
+# `C:` or a share `\\host\share` (and the device forms `\\.\`, `\\?\` and
+# `\??\`), and a cleaned path is written with `\`. Elsewhere `/` alone
+# separates and there is no volume.
+
+use os/hero_os
+
+# Whether the program runs on Windows, asked of the runtime as the compiler
+# asks it: the one system whose programs need `.exe` to be started.
+function on_windows() -> bool
+    return hero_os.run_exe_suffix() == ".exe"
+
+# Whether `b` separates a path's parts on that system.
+function separates(b: u8, windows: bool) -> bool
+    return b == '/' || windows && b == '\\'
+
+# The separator a cleaned path is written with.
+function separator(windows: bool) -> str
+    if windows
+        return "\\"
+    return "/"
+
+# The length of the volume `path` opens with, 0 outside Windows or where it
+# opens with none: Go's `volumeNameLen`.
+function volume_length(path: str, windows: bool) -> i64
+    if !windows
+        return 0
+
+    if path.len() >= 2 && path[1] == ':'
+        return 2
+
+    if path.len() == 0 || !separates(path[0], windows)
+        return 0
+
+    if opens_folded(path: path, prefix: "\\\\.\\UNC")
+        return share_length(path: path, from: 8)
+
+    if opens_folded(path: path, prefix: "\\\\.") || opens_folded(path: path, prefix: "\\\\?") || opens_folded(path: path, prefix: "\\??")
+        if path.len() == 3
+            return 3
+
+        if path.len() < 4
+            return path.len()
+        at: i64 @= 4
+
+        while at < path.len() && !separates(path[at], windows)
+            at @ at + 1
+
+        return at
+
+    if path.len() >= 2 && separates(path[1], windows)
+        return share_length(path: path, from: 2)
+    return 0
+
+# Whether `path` opens with `prefix`, a letter in either case and either
+# separator standing for a `\`: Go's `pathHasPrefixFold`.
+function opens_folded(path: str, prefix: str) -> bool
+    if path.len() < prefix.len()
+        return false
+    at: i64 @= 0
+
+    while at < prefix.len()
+        want = prefix[at]
+        got = path[at]
+
+        if want == '\\'
+            if !separates(got, true)
+                return false
+        else if lower(got) != lower(want)
+            return false
+        at @ at + 1
+
+    return path.len() == prefix.len() || separates(path[prefix.len()], true)
+
+# Where a share's volume ends, `\\host\share`, its two names read from
+# `from`: at the separator after the second, or the path's end.
+function share_length(path: str, from: i64) -> i64
+    count: i64 @= 0
+    at: i64 @= from
+
+    while at < path.len()
+        if separates(path[at], true)
+            count @ count + 1
+
+            if count == 2
+                return at
+        at @ at + 1
+
+    return path.len()
+
+# `b` in lower case where it is an ASCII capital letter.
+function lower(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# `path` written with that system's separator, every `/` a `\` on Windows:
+# Go's `FromSlash`.
+function from_slash(path: str, windows: bool) -> str
+    if !windows
+        return path
+    out: str @= ""
+    start: i64 @= 0
+
+    for at in range(from: 0, to: path.len())
+        if path[at] == '/'
+            out @ out + path.slice(from: start, to: at) + "\\"
+            start @ at + 1
+
+    return out + path.slice(from: start, to: path.len())
+
+# The shortest path naming what `path` names, by text alone: Go's `Clean`.
+# Each run of separators becomes one, each `.` part goes, each `..` takes the
+# part before it, a `..` at the root goes, and a path left empty is `.`.
+function clean(path: str, windows: bool) -> str
+    volume_end = volume_length(path: path, windows: windows)
+    volume = path.slice(from: 0, to: volume_end)
+    rest = path.slice(from: volume_end, to: path.len())
+
+    if rest.len() == 0
+        if volume_end > 1 && separates(path[0], windows) && separates(path[1], windows)
+            return from_slash(path: path, windows: windows)
+        return path + "."
+    sep = separator(windows)
+    rooted = separates(rest[0], windows)
+    parts: [str] @= []
+
+    # How many leading parts are `..` that no part before them can take.
+    held: i64 @= 0
+    at: i64 @= 0
+
+    while at < rest.len()
+        if separates(rest[at], windows)
+            at @ at + 1
+        else
+            end: i64 @= at
+
+            while end < rest.len() && !separates(rest[end], windows)
+                end @ end + 1
+
+            part = rest.slice(from: at, to: end)
+            at @ end
+
+            if part == ".."
+                if parts.len() > held
+                    parts @ parts.slice(from: 0, to: parts.len() - 1)
+                else if !rooted
+                    parts @ parts.push("..")
+                    held @ held + 1
+            else if part != "."
+                parts @ parts.push(part)
+
+    body: str @= join(parts, sep)
+
+    if rooted
+        body @ sep + body
+    else if body.len() == 0
+        body @ "."
+
+    # Go's `lazybuf` writes nothing new while the cleaned text is the text it
+    # reads, and its `postClean` guards only a text cleaning changed.
+    changed = rest.slice(from: 0, to: min_of(a: body.len(), b: rest.len())) != body
+
+    if windows && volume_end == 0 && changed
+        body @ guarded(body)
+    return from_slash(path: volume + body, windows: windows)
+
+# A cleaned relative Windows path kept from reading as another: `.\` before
+# one whose first part holds a `:`, which would read as a drive, and `\.`
+# before one opening `\??`, which would read as a device: Go's `postClean`,
+# asked only where cleaning changed the text.
+function guarded(body: str) -> str
+    at: i64 @= 0
+
+    while at < body.len() && !separates(body[at], true)
+        if body[at] == ':'
+            return ".\\" + body
+        at @ at + 1
+
+    if body.len() >= 3 && separates(body[0], true) && body[1] == '?' && body[2] == '?'
+        return "\\." + body
+    return body
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The parts written one after another with the separator and cleaned, the
+# empty ones passed over, "" where every one is empty: Go's `Join`.
+function joined(parts: [str], windows: bool) -> str
+    if !windows
+        at: i64 @= 0
+
+        while at < parts.len() && parts[at].len() == 0
+            at @ at + 1
+
+        if at == parts.len()
+            return ""
+        return clean(path: join(parts.slice(from: at, to: parts.len()), "/"), windows: false)
+    out: str @= ""
+    last: u8 @= 0
+
+    for part in parts
+        piece: str @= part
+
+        if out.len() > 0 && separates(last, true)
+            while piece.len() > 0 && separates(piece[0], true)
+                piece @ piece.slice(from: 1, to: piece.len())
+
+            if out.len() == 1 && piece.len() >= 2 && piece[0] == '?' && piece[1] == '?' && (piece.len() == 2 || separates(piece[2], true))
+                out @ out + ".\\"
+        else if out.len() > 0 && last != ':'
+            out @ out + "\\"
+            last @ '\\'
+
+        if piece.len() > 0
+            out @ out + piece
+            last @ piece[piece.len() - 1]
+
+    if out.len() == 0
+        return ""
+    return clean(path: out, windows: true)
+
+# All of `path` but its last part, cleaned, the volume kept: Go's `Dir`.
+function dir(path: str, windows: bool) -> str
+    volume_end = volume_length(path: path, windows: windows)
+    at: i64 @= path.len() - 1
+
+    while at >= volume_end && !separates(path[at], windows)
+        at @ at - 1
+
+    volume = path.slice(from: 0, to: volume_end)
+    inner = clean(path: path.slice(from: volume_end, to: at + 1), windows: windows)
+
+    if inner == "." && volume_end > 2
+        return volume
+    return volume + inner
+
+# Whether `path` is absolute: Go's `IsAbs`. Elsewhere a path opening with
+# `/`; on Windows one opening with a share, or with a volume and a separator
+# after it, so `\a` and `C:a` are not.
+function is_abs(path: str, windows: bool) -> bool
+    if !windows
+        return path.len() > 0 && path[0] == '/'
+    volume_end = volume_length(path: path, windows: true)
+
+    if volume_end == 0
+        return false
+
+    if separates(path[0], true) && separates(path[1], true)
+        return true
+    return volume_end < path.len() && separates(path[volume_end], true)
+
+# Whether two parts name the same: their bytes elsewhere, and on Windows with
+# ASCII letters in either case, as the file system compares them.
+function same_word(a: str, b: str, windows: bool) -> bool
+    if !windows
+        return a == b
+
+    if a.len() != b.len()
+        return false
+
+    for at in range(from: 0, to: a.len())
+        if lower(a[at]) != lower(b[at])
+            return false
+
+    return true
+
+# The path that names `target` read from `base`, by text alone: Go's `Rel`.
+# It fails `not_relative` where none does: one is rooted and the other not,
+# their volumes differ, or the way would climb out of `base` through a `..`.
+function rel(base: str, target: str, windows: bool) -> str?
+    sep = separator(windows)
+    sep_byte = sep[0]
+    base_volume = base.slice(from: 0, to: volume_length(path: base, windows: windows))
+    target_volume = target.slice(from: 0, to: volume_length(path: target, windows: windows))
+    cleaned_base = clean(path: base, windows: windows)
+    cleaned_target = clean(path: target, windows: windows)
+
+    if same_word(a: cleaned_target, b: cleaned_base, windows: windows)
+        return ok(".")
+    b_text: str @= cleaned_base.slice(from: base_volume.len(), to: cleaned_base.len())
+    t_text = cleaned_target.slice(from: target_volume.len(), to: cleaned_target.len())
+
+    if b_text == "."
+        b_text @ ""
+    else if b_text == "" && volume_length(path: base_volume, windows: windows) > 2
+        b_text @ sep
+    base_rooted = b_text.len() > 0 && b_text[0] == sep_byte
+    target_rooted = t_text.len() > 0 && t_text[0] == sep_byte
+
+    if base_rooted != target_rooted || !same_word(a: base_volume, b: target_volume, windows: windows)
+        return fail(code: "not_relative", msg: "cannot make " + target + " relative to " + base)
+    b_end = b_text.len()
+    t_end = t_text.len()
+    b0: i64 @= 0
+    bi: i64 @= 0
+    t0: i64 @= 0
+    ti: i64 @= 0
+    walking: bool @= true
+
+    while walking
+        while bi < b_end && b_text[bi] != sep_byte
+            bi @ bi + 1
+
+        while ti < t_end && t_text[ti] != sep_byte
+            ti @ ti + 1
+
+        if !same_word(a: t_text.slice(from: t0, to: ti), b: b_text.slice(from: b0, to: bi), windows: windows)
+            walking @ false
+        else
+            if bi < b_end
+                bi @ bi + 1
+
+            if ti < t_end
+                ti @ ti + 1
+            b0 @ bi
+            t0 @ ti
+
+    if b_text.slice(from: b0, to: bi) == ".."
+        return fail(code: "not_relative", msg: "cannot make " + target + " relative to " + base)
+
+    if b0 != b_end
+        ups = count_of(text: b_text.slice(from: b0, to: b_end), sep: sep_byte)
+        out: str @= ".."
+
+        for _ in range(from: 0, to: ups)
+            out @ out + sep + ".."
+
+        if t0 != t_end
+            out @ out + sep + t_text.slice(from: t0, to: t_end)
+        return ok(out)
+    return ok(t_text.slice(from: t0, to: t_end))
+
+# How many times the byte `sep` stands in `text`.
+function count_of(text: str, sep: u8) -> i64
+    n: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == sep
+            n @ n + 1
+
+    return n
+
+## Tests
+
+test "lexical: separators and volumes on each system"
+    assert on_windows() == (hero_os.run_exe_suffix() == ".exe")
+    assert separates('/', false) && !separates('\\', false) && separates('\\', true)
+    assert separator(false) == "/" && separator(true) == "\\"
+    assert volume_length(path: "C:\\a", windows: true) == 2
+    assert volume_length(path: "C:\\a", windows: false) == 0
+    assert volume_length(path: "\\\\host\\share\\x", windows: true) == 12
+    assert volume_length(path: "//host/share", windows: true) == 12
+    assert volume_length(path: "\\\\.\\UNC\\host\\share\\x", windows: true) == 18
+    assert volume_length(path: "\\\\?\\C:\\x", windows: true) == 6
+    assert volume_length(path: "\\a", windows: true) == 0 && volume_length(path: "", windows: true) == 0
+    assert opens_folded(path: "//./unc/x", prefix: "\\\\.\\UNC") && !opens_folded(path: "\\\\.\\UNCx", prefix: "\\\\.\\UNC")
+    assert share_length(path: "\\\\h\\s", from: 2) == 5
+    assert lower('A') == 'a' && lower('1') == '1'
+    assert from_slash(path: "a/b", windows: true) == "a\\b" && from_slash(path: "a/b", windows: false) == "a/b"
+
+test "lexical: clean, as Go cleans on each system"
+    assert clean(path: "", windows: false) == "."
+    assert clean(path: "a//b/./c/..", windows: false) == "a/b"
+    assert clean(path: "/../a", windows: false) == "/a"
+    assert clean(path: "../../a/..", windows: false) == "../.."
+    assert clean(path: "//a/", windows: false) == "/a"
+    assert clean(path: "abc/def/../../..", windows: false) == ".."
+    assert clean(path: "a/b\\c", windows: false) == "a/b\\c"
+    assert clean(path: "c:", windows: true) == "c:."
+    assert clean(path: "C:/a/../b", windows: true) == "C:\\b"
+    assert clean(path: "\\\\host\\share", windows: true) == "\\\\host\\share"
+    assert clean(path: "//host/share/a/..", windows: true) == "\\\\host\\share\\"
+    assert clean(path: "a/../c:", windows: true) == ".\\c:"
+    assert clean(path: "a:b", windows: true) == "a:b"
+    assert clean(path: "/a/../??/x", windows: true) == "\\.\\??\\x"
+    assert guarded("x:y") == ".\\x:y" && guarded("\\??\\a") == "\\.\\??\\a" && guarded("a") == "a"
+    assert min_of(a: 2, b: 3) == 2
+
+test "lexical: joined, as Go joins on each system"
+    assert joined(parts: [], windows: false) == "" && joined(parts: ["", ""], windows: false) == ""
+    assert joined(parts: ["a", "b/c"], windows: false) == "a/b/c"
+    assert joined(parts: ["", "a"], windows: false) == "a"
+    assert joined(parts: ["/x", "../y"], windows: false) == "/y"
+    assert joined(parts: ["a", "/b"], windows: false) == "a/b"
+    assert joined(parts: ["C:", "f"], windows: true) == "C:f"
+    assert joined(parts: ["C:", "\\f"], windows: true) == "C:\\f"
+    assert joined(parts: ["a\\", "\\b"], windows: true) == "a\\b"
+    assert joined(parts: ["\\", "??", "x"], windows: true) == "\\.\\??\\x"
+
+test "lexical: dir and is_abs, on each system"
+    assert dir(path: "/a/b", windows: false) == "/a" && dir(path: "a", windows: false) == "."
+    assert dir(path: "/", windows: false) == "/" && dir(path: "a/b/", windows: false) == "a/b"
+    assert dir(path: "", windows: false) == "."
+    assert dir(path: "C:\\a\\b", windows: true) == "C:\\a"
+    assert dir(path: "\\\\host\\share", windows: true) == "\\\\host\\share"
+    assert is_abs(path: "/a", windows: false) && !is_abs(path: "a", windows: false) && !is_abs(path: "", windows: false)
+    assert is_abs(path: "C:\\a", windows: true) && !is_abs(path: "C:a", windows: true)
+    assert !is_abs(path: "\\a", windows: true) && is_abs(path: "\\\\host\\share", windows: true)
+    assert !is_abs(path: "/a", windows: true)
+
+test "lexical: rel, as Go relates two paths on each system"
+    assert rel(base: "/a", target: "/a/b/c", windows: false).must() == "b/c"
+    assert rel(base: "/a/b", target: "/a", windows: false).must() == ".."
+    assert rel(base: "/a/b/c", target: "/a/x", windows: false).must() == "../../x"
+    assert rel(base: "/a", target: "/a", windows: false).must() == "."
+    assert rel(base: "a", target: "a/b", windows: false).must() == "b"
+    assert rel(base: ".", target: "a", windows: false).must() == "a"
+    assert rel(base: "/", target: "/a", windows: false).must() == "a"
+    assert rel(base: "/a", target: "b", windows: false).is_err()
+    assert rel(base: "../a", target: "b", windows: false).is_err()
+    assert rel(base: "C:\\A", target: "c:\\a\\b", windows: true).must() == "b"
+    assert rel(base: "C:\\a", target: "D:\\a", windows: true).is_err()
+    assert same_word(a: "Ab", b: "aB", windows: true) && !same_word(a: "Ab", b: "aB", windows: false)
+    assert count_of(text: "a/b/c", sep: '/') == 2
