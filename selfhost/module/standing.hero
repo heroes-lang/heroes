@@ -17,9 +17,14 @@
 # the verbs before they make it and by a build before it asks a key under
 # it: a file there was told as the system's number 17 at exit 2 by both
 # verbs, and through it every key read as a name of no kind to the build.
+#
+# **And the catalogue's own name is read here** (defect 2572), through the
+# compiler's door, which opens a regular file alone and never waits: a FIFO
+# at `heroes.toml` hung every verb and every build that read it.
 
 use cli/files
 use cli/process
+use module/reading
 
 # What stands at a key: no name; a folder; a link naming a folder; a link
 # naming nothing; a link naming something that is not a folder; a file; or a
@@ -92,9 +97,39 @@ function unread_said(path: str, named: str, code: str) -> str
     if stands == .tree || stands == .linked_tree || stands == .other && files.entry(path) == .other
         return "`" + named + "` is " + said(stands) + ", where a catalogue is a file: rename it to keep it, or remove it"
 
+    # A link to a FIFO, a device or a socket (defect 2572): what it names is
+    # asked, since the link itself reads as one to a file.
+    if stands == .linked_file && named_kind(path) == .other
+        return "`" + named + "` is a link to " + said(.other) + ", where a catalogue is a file: rename it to keep it, or remove it"
+
     if code == "not_text"
         return "`" + named + "` is not UTF-8, and a catalogue is text: write it again in UTF-8"
     return "`" + named + "` cannot be read: the system refused to read it, as it does a file this user may not read"
+
+# What the chain of links at `path` finally names, `.unknown` where the
+# system cannot follow it.
+function named_kind(path: str) -> files.Entry
+    landed = files.landing(path)
+
+    if landed.is_err()
+        return .unknown
+    return files.entry(landed.must())
+
+# The catalogue at `path`, read through the compiler's own door
+# (`module/reading.hero`), which opens a regular file alone and never waits
+# to open one (defect 2572: a FIFO at `heroes.toml` hung every verb and
+# every build reading it, `read_file` waiting for a writer); a failure is
+# `file_not_found` where nothing stands there, else `unread_said`'s words.
+function catalogue_text(path: str, named: str) -> str?
+    match reading.source_text(path)
+        .ok got =>
+            if got.faults.len() == 0
+                return ok(got.text)
+            return fail(code: "not_text", msg: unread_said(path: path, named: named, code: "not_text"))
+        .err e =>
+            if e.code == "file_not_found"
+                return fail(code: e.code, msg: e.msg)
+            return fail(code: e.code, msg: unread_said(path: path, named: named, code: e.code))
 
 # A placed tree's path as a build holds it, `heroes.packages/<key>/`, with its
 # last `/` taken off for `at`.
@@ -150,3 +185,43 @@ test "what stands at a key is asked of its own name, a link's kind told apart (d
     assert unread_said(path: SCRATCH + "/afile", named: "app/heroes.toml", code: "not_text") == "`app/heroes.toml` is not UTF-8, and a catalogue is text: write it again in UTF-8"
     assert unread_said(path: SCRATCH + "/afile", named: "app/heroes.toml", code: "read_failed") == "`app/heroes.toml` cannot be read: the system refused to read it, as it does a file this user may not read"
     assert !process.remove_tree(SCRATCH).is_err()
+
+# Defect 2572: a FIFO at the catalogue's name, or a link to one, is told
+# what it is, and no reader of the compiler waits on it: the catalogue's,
+# a source's and a key's read through the compiler's door all answer at
+# once. A FIFO is made by the system's `mkfifo` where this machine has one;
+# Windows has none, and a FIFO there has no name in the filesystem.
+test "a FIFO at the catalogue's name is told what it is, and no reader waits on it (defect 2572)"
+    dir = SCRATCH + "-2572"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    made = process.run(
+        program: "mkfifo",
+        words: ["mkfifo", dir + "/heroes.toml"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if made.started && made.code == 0
+        match catalogue_text(path: dir + "/heroes.toml", named: "app/heroes.toml")
+            .ok _  => assert false
+            .err e => assert e.msg == "`app/heroes.toml` is a name that is neither a folder, a file nor a link, where a catalogue is a file: rename it to keep it, or remove it"
+
+        assert reading.source_text(dir + "/heroes.toml").is_err()
+        assert reading.key_of(dir + "/heroes.toml").is_err()
+
+        if !files.symbolic_link(target: "heroes.toml", name: dir + "/linked.toml").is_err()
+            match catalogue_text(path: dir + "/linked.toml", named: "app/heroes.toml")
+                .ok _  => assert false
+                .err e => assert e.msg == "`app/heroes.toml` is a link to a name that is neither a folder, a file nor a link, where a catalogue is a file: rename it to keep it, or remove it"
+
+    # A file of text reads as it is, and a name where nothing stands is
+    # absent, as the build reads a program with no catalogue.
+    assert !write_file(path: dir + "/kept.toml", text: "index = \"file://../idx\"\n").is_err()
+    assert catalogue_text(path: dir + "/kept.toml", named: "kept.toml").must() == "index = \"file://../idx\"\n"
+
+    match catalogue_text(path: dir + "/none.toml", named: "none.toml")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+    assert !process.remove_tree(dir).is_err()

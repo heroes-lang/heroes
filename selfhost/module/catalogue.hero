@@ -91,13 +91,12 @@ function empty() -> Catalogue
 function read(opened: str, named: str) -> Catalogue
     file = named + FILE
 
-    match read_file(opened + FILE)
+    match standing.catalogue_text(path: opened + FILE, named: file)
         .ok text => return parsed(file: file, text: text)
         .err e =>
             if e.code == "file_not_found"
                 return empty()
-            said = standing.unread_said(path: opened + FILE, named: file, code: e.code)
-            return refused(empty(), code: "catalogue_refused", at: "", said: said)
+            return refused(empty(), code: "catalogue_refused", at: "", said: e.msg)
 
 # The entry named `name`, or a failure saying the catalogue holds none, or
 # that it does not read: a catalogue that did not read names nothing.
