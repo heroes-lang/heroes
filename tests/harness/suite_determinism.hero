@@ -128,7 +128,7 @@ function walk(scratch: str, compiler: str, ir: floors.Walked, c: [floors.Walked]
         report.keep_failure(
             @r,
             label: "determinism",
-            detail: "  " + skipped.to_str() + " of " + total.to_str() + " cases were skipped for a missing library — this machine is not checking determinism"
+            detail: cases.starved_words(skipped: skipped, count: total, noun: "cases", only: only, whole: "checking determinism")
         )
     return ok(r)
 

@@ -256,7 +256,8 @@ function selected(found: [Case], only: str) -> [Case]
     return matching(found: found, only: only)
 
 # Whether the word asks for a shard, which asks the floor of the whole
-# directory and the skip ratio of its own cases (`asks_floor`, `walked`).
+# directory and the skip ratio of its own cases (`asks_floor`,
+# `starved_words`).
 function is_shard(only: str) -> bool
     return shard_shaped(only)
 
@@ -268,15 +269,35 @@ function is_shard(only: str) -> bool
 function asks_floor(only: str) -> bool
     return only == "" || is_shard(only)
 
-# How a suite's message names the `count` cases it walked: `<count> cases`, and
-# for a shard `<count> cases of shard <i> of <n>`, so the skip ratio a shard
-# asks of its own cases is never read as the whole suite's (task 2505).
-function walked(count: i64, only: str) -> str
+# **The skip ratio's failure, in words true of what it was asked of** (defect
+# 2559): `skipped` of the `count` `noun` the run walked were skipped for a
+# missing library, a third of them or more. A skip is never a pass, so the run
+# is red whatever the third word chose, and that verdict is the rule's; what
+# the words may say is not the same. Of the whole suite, the machine is not
+# doing the suite's work, `whole` (`running the corpus` for `run`). Of a
+# filter's cases or a shard's that sentence names more than was asked: a
+# filter chose its cases, often one this platform does not build, and a shard
+# is one part of the suite. What is true of them is said instead: a third of
+# them or more were not judged on this machine. The shard is named, so its
+# ratio is never read as the whole suite's (task 2505), and so is the filter.
+# Until defect 2559 a filter of two cases on the Windows box, one skipped, was
+# told this machine was not running the corpus, which sends a reader looking
+# for a broken toolchain where a filter chose a case the platform lacks.
+function starved_words(skipped: i64, count: i64, noun: str, only: str, whole: str) -> str
+    said = "  " + skipped.to_str() + " of " + count.to_str() + " " + noun
+    tail = " were skipped for a missing library — "
     shard = shard_of(only)
 
-    if shard.is_err()
-        return count.to_str() + " cases"
-    return count.to_str() + " cases of shard " + shard.must().index.to_str() + " of " + shard.must().count.to_str()
+    if !shard.is_err()
+        return said + " of shard " + shard.must().index.to_str() + " of " + shard.must().count.to_str() + tail + NOT_JUDGED
+
+    if only != ""
+        return said + " selected by `" + only + "`" + tail + NOT_JUDGED
+    return said + tail + "this machine is not " + whole
+
+# What a filter's or a shard's starved run says after its count.
+constant NOT_JUDGED: str
+    "a skip is not a pass, so a third of them or more were not judged on this machine"
 
 # The code of a shard's answer, `ok` where it is one, for the refusal `main`
 # makes and the tests that read it.
@@ -362,9 +383,27 @@ test "a shard asks the floor of the whole directory and names its own cases, and
     assert asks_floor("")
     assert asks_floor("2/6")
     assert !asks_floor("fixedbugs-133")
-    assert walked(count: 5, only: "") == "5 cases"
-    assert walked(count: 5, only: "fixedbugs-133") == "5 cases"
-    assert walked(count: 5, only: "2/6") == "5 cases of shard 2 of 6"
+    assert core_strings.has_prefix(
+        s: starved_words(skipped: 2, count: 5, noun: "cases", only: "2/6", whole: "x"),
+        prefix: "  2 of 5 cases of shard 2 of 6 were"
+    )
+
+# DEFECT 2559, held as a test (2026-11-15): a filter of two cases, one skipped
+# for a missing library, was told `this machine is not running the corpus`, a
+# sentence about the whole suite said of two cases the reader chose; a shard's
+# alike. The whole suite's sentence stays its own; a filter and a shard are
+# named and told what is true of them, that a third of their cases or more
+# were not judged here.
+test "fixedbugs: the skip ratio's failure says the machine's verdict of the whole suite alone, and what is true of a filter's or a shard's cases (defect 2559)"
+    whole = starved_words(skipped: 300, count: 825, noun: "cases", only: "", whole: "running the corpus")
+    assert whole == "  300 of 825 cases were skipped for a missing library — this machine is not running the corpus"
+    filtered = starved_words(skipped: 1, count: 2, noun: "cases", only: "fixedbugs-2531", whole: "running the corpus")
+    assert filtered == "  1 of 2 cases selected by `fixedbugs-2531` were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
+    shard = starved_words(skipped: 1, count: 1, noun: "programs", only: "1/2", whole: "running the corpus")
+    assert shard == "  1 of 1 programs of shard 1 of 2 were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
+
+    for told in [filtered, shard]
+        assert !core_strings.contains(s: told, substr: "this machine is not")
 
 test "the filter keeps the cases whose name holds the word, and an empty word keeps all"
     a = Case(source: "x/a.hero", expected: "x/a.expected", name: "a")

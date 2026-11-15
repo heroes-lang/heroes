@@ -140,7 +140,7 @@ function walk(scratch: str, compiler: str, dir: str, least: i64, only: str) -> r
         report.keep_failure(
             @r,
             label: "lines",
-            detail: "  " + skipped.to_str() + " of " + cases.walked(count: found.len(), only: only) + " were skipped for a missing library — this machine is not running the corpus"
+            detail: cases.starved_words(skipped: skipped, count: found.len(), noun: "cases", only: only, whole: "running the corpus")
         )
     return ok(r)
 
@@ -421,20 +421,25 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
 
     floor = "FAIL lines\n  the walk found 2 cases in " + tree + " and had 3"
     tail = " were skipped for a missing library — this machine is not running the corpus"
+    part = " were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
     shard = walk(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.skips.len() == 1
     assert shard.failed == 2
     assert core_strings.has_prefix(s: shard.failures[0], prefix: floor)
-    assert shard.failures[1] == "FAIL lines\n  1 of 1 cases of shard 1 of 2" + tail
+    assert shard.failures[1] == "FAIL lines\n  1 of 1 cases of shard 1 of 2" + part
 
     # The floor counts the directory, two, and never the shard's one case:
     # met, it is a pass of its own.
     met = walk(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "2/2").must()
     assert met.passed == 1
-    assert met.failures == ["FAIL lines\n  1 of 1 cases of shard 2 of 2" + tail]
+    assert met.failures == ["FAIL lines\n  1 of 1 cases of shard 2 of 2" + part]
     filtered = walk(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "lacks-a").must()
     assert filtered.passed == 0
-    assert filtered.failures == ["FAIL lines\n  1 of 1 cases" + tail]
+    assert filtered.failures == ["FAIL lines\n  1 of 1 cases selected by `lacks-a`" + part]
+
+    # The whole walk keeps the machine's verdict (defect 2559).
+    whole = walk(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "").must()
+    assert whole.failures == ["FAIL lines\n  2 of 2 cases" + tail]
     assert !shell.remove_tree(scratch).is_err()
 
 test "a few skips for a missing library pass, a third of the tree does not"

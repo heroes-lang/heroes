@@ -379,7 +379,7 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
         report.keep_failure(
             @r,
             label: shape.name,
-            detail: "  " + skipped.to_str() + " of " + cases.walked(count: found.len(), only: only) + " were skipped for a missing library — this machine is not testing the refusals"
+            detail: cases.starved_words(skipped: skipped, count: found.len(), noun: "cases", only: only, whole: "testing the refusals")
         )
     return ok(r)
 
@@ -784,17 +784,22 @@ test "a shard of a form asks the floor of the whole directory and the skip ratio
     form.least @ 3
     floor = "FAIL unsupported\n  " + tree + " has 2 cases and had 3 — a golden that stopped running is not a golden"
     tail = " were skipped for a missing library — this machine is not testing the refusals"
+    part = " were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
     shard = run_all(scratch: scratch, compiler: compiler, shape: form, only: "1/2").must()
     assert shard.skips.len() == 1
-    assert shard.failures == [floor, "FAIL unsupported\n  1 of 1 cases of shard 1 of 2" + tail]
+    assert shard.failures == [floor, "FAIL unsupported\n  1 of 1 cases of shard 1 of 2" + part]
 
     # The floor counts the directory, two, and never the shard's one case.
     form.least @ 2
     met = run_all(scratch: scratch, compiler: compiler, shape: form, only: "2/2").must()
-    assert met.failures == ["FAIL unsupported\n  1 of 1 cases of shard 2 of 2" + tail]
+    assert met.failures == ["FAIL unsupported\n  1 of 1 cases of shard 2 of 2" + part]
     form.least @ 3
     filtered = run_all(scratch: scratch, compiler: compiler, shape: form, only: "lacks-a").must()
-    assert filtered.failures == ["FAIL unsupported\n  1 of 1 cases" + tail]
+    assert filtered.failures == ["FAIL unsupported\n  1 of 1 cases selected by `lacks-a`" + part]
+
+    # The whole form keeps the machine's verdict (defect 2559).
+    whole = run_all(scratch: scratch, compiler: compiler, shape: form, only: "").must()
+    assert whole.failures == [floor, "FAIL unsupported\n  2 of 2 cases" + tail]
 
     # A watched floor is `floors.check`'s, asked of the whole directory alike.
     form.watched @ true
