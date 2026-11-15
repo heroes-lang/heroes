@@ -1,0 +1,276 @@
+# THE PACKAGE TREE A PAIRED RUN PLACES BESIDE THE ANSWER (task 2300; panel
+# 234's R14, its spec-warden's § 8 and its critic's G17).
+#
+# R14 measures what the core packages buy a model by a run whose two arms
+# differ in the packages alone: the specification, against the specification
+# and the cards with the package tree beside the answer. **A tree** is what a
+# program carries to reach its packages, a folder holding the catalogue
+# `heroes.toml` and the placed packages under `heroes.packages/`, as `heroes
+# add` leaves them (spec § 1; design.md §1.11, panel 235's R15): a program's
+# root without its program. The grader copies those two entries beside
+# `answer.hero` before it checks it, so `use <core>/strings` in an answer
+# compiles against the tree, and nothing else of the folder travels.
+#
+# **What pins a tree is its catalogue's sums, which the compiler checks at
+# every build**: a placed file changed since it was placed is `package_unread`
+# at `check` and at `build` (measured 2026-11-15 on core 0.5.0). So a tree
+# whose entry has no `sum` (a `path` entry, read where it stands and verified
+# by nothing) is refused here, and a tree's digest is taken over its catalogue
+# and every placed file's bytes, which a run records and a context file names
+# (`thesis_cards.hero`), so a tree damaged between `dry` and the run is refused
+# before a request is sent rather than charged to a model as a refusal. The
+# digest leaves out two things that name where a tree came from and not what
+# it holds: the catalogue's `index` line, and the sixteen hexadecimal digits
+# that end a placed folder's name, which the compiler takes over the entry's
+# source (`selfhost/module/packages.hero`, R7), so one version placed from two
+# spellings of one index is one tree. **The build never reads the index**
+# (measured: a copied tree whose relative `index` names nothing from its new
+# folder builds and runs), so a copy builds wherever it stands.
+#
+# **`binds_c` stays on the answer alone** (R14): a package's own `extern`, the
+# platform layer's sockets in `<core>/net/hero_net`, builds beside the answer,
+# while an answer that binds C is still `refused_extern`
+# (`thesis_grade.hero`). And a tree beside a program that names no package is
+# inert: a program with no bracketed `use` reads no catalogue (panel 235's
+# R12), so the arm with the tree grades such a program as the arm without it.
+
+use <core>/strings as core_strings
+
+use shell
+use strings
+use thesis_sha256
+
+# The two entries of a program's root the grader copies beside the answer.
+constant CATALOGUE: str
+    "heroes.toml"
+
+constant PLACED: str
+    "heroes.packages"
+
+# The reference a package task carries beside `reference.hero`: the same
+# task solved over the packages, which `dry --packages <tree>` grades with the
+# tree beside it, as `dry` grades `reference.hero` without one (the
+# spec-warden's § 8: *each carries two references, one with the packages and
+# one without, both graded by `dry` in their arm*).
+constant PACKAGED_REFERENCE: str
+    "reference-packages.hero"
+
+# A tree read: the folder it stands in, its digest, and its catalogue's entry
+# names in the order the catalogue writes them.
+record Tree
+    dir: str
+    sha: str
+    entries: [str]
+
+# The tree at `dir`, read and digested; refused by name where it holds no
+# catalogue or no placed folder, where its catalogue names no entry, where an
+# entry carries no `sum`, or where a placed file is not text.
+function tree_at(scratch: str, dir: str) -> Tree?
+    catalogue = read_file(path: dir + "/" + CATALOGUE)
+
+    if catalogue.is_err() || !shell.is_directory(dir + "/" + PLACED)
+        return fail(
+            code: "no_tree",
+            msg: dir + " is no package tree: a tree holds the catalogue `" + CATALOGUE + "` and the placed packages under `" + PLACED + "/`, as `heroes add <name> -C " + dir + "` leaves them"
+        )
+    entries = pinned_entries(dir: dir, text: catalogue.must())?
+    rows: [str] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: dir + "/" + PLACED, skip: [])?
+        rel = strings.without_prefix(text: path, prefix: dir + "/" + PLACED + "/")
+        content = read_file(path: path)
+
+        if content.is_err()
+            return fail(
+                code: "tree_not_text",
+                msg: path + " cannot be read as text, and a tree's digest is taken over its files' text: a package carrying a file of another kind is one this instrument does not take yet"
+            )
+        rows @ rows.push("file " + keyless(rel) + " " + thesis_sha256.of(content.must()))
+
+    if rows.len() == 0
+        return fail(code: "no_tree", msg: dir + "/" + PLACED + " holds no file: nothing is placed")
+    material = "catalogue\n" + without_index(catalogue.must()) + rows.sort().join("\n") + "\n"
+    return ok(Tree(dir: dir, sha: thesis_sha256.of(material), entries: entries))
+
+# The entry names a catalogue's `[dependencies.<name>]` tables give, each
+# required to carry a `sum = ` line, since a sum is what the compiler checks a
+# placed tree against; none at all is refused too.
+function pinned_entries(dir: str, text: str) -> [str]?
+    names: [str] @= []
+    summed: [bool] @= []
+
+    for raw in strings.lines(text: text)
+        line = strings.trimmed(text: raw)
+
+        if core_strings.has_prefix(s: line, prefix: "[dependencies.") && core_strings.has_suffix(s: line, suffix: "]")
+            names @ names.push(
+                strings.without_suffix(text: strings.without_prefix(text: line, prefix: "[dependencies."), suffix: "]")
+            )
+            summed @ summed.push(false)
+        else if core_strings.has_prefix(s: line, prefix: "sum = ") && names.len() > 0
+            summed[summed.len() - 1] @ true
+
+    if names.len() == 0
+        return fail(
+            code: "no_entry",
+            msg: dir + "/" + CATALOGUE + " names no package, and a tree beside an answer holds one at least"
+        )
+
+    for i in range(from: 0, to: names.len())
+        if !summed[i]
+            return fail(
+                code: "unpinned_entry",
+                msg: dir + "/" + CATALOGUE + "'s entry `" + names[i] + "` carries no `sum`, so nothing pins what it places: a tree beside an answer holds entries a sum pins, a `path` entry being read where it stands and verified by nothing"
+            )
+
+    return ok(names)
+
+# The catalogue's text without its `index` line, each other line ended: where
+# the packages were fetched from is not what they are.
+function without_index(text: str) -> str
+    kept: [str] @= []
+
+    for line in strings.lines(text: text)
+        if !core_strings.has_prefix(s: strings.trimmed(text: line), prefix: "index = ")
+            kept @ kept.push(line + "\n")
+
+    return kept.join("")
+
+# A placed file's path with its folder's key left out:
+# `core@0.5.0-f58b55a0517ed0eb/strings.hero` is `core@0.5.0/strings.hero`.
+# The key is the last sixteen lowercase hexadecimal digits of the first part,
+# after a `-`; a part of another shape is kept whole.
+function keyless(rel: str) -> str
+    slash = strings.index_of(text: rel, needle: "/")
+    head: str @= rel
+    rest: str @= ""
+
+    if !slash.is_err()
+        head @ rel.slice(from: 0, to: slash.must())
+        rest @ rel.slice(from: slash.must(), to: rel.len())
+
+    if head.len() < 18 || head[head.len() - 17] != '-'
+        return rel
+    key = head.slice(from: head.len() - 16, to: head.len())
+
+    for i in range(from: 0, to: key.len())
+        if !(key[i] >= '0' && key[i] <= '9' || key[i] >= 'a' && key[i] <= 'f')
+            return rel
+
+    return head.slice(from: 0, to: head.len() - 17) + rest
+
+# The tree at `dir` copied into `into`, beside the answer written there: its
+# catalogue and its placed folder, a placed folder already there removed
+# first so a copy never lands inside an older one.
+function placed(scratch: str, dir: str, into: str) -> ()?
+    shell.mkdir_all(into)?
+    catalogue = read_file(path: dir + "/" + CATALOGUE)?
+    write_file(path: into + "/" + CATALOGUE, text: catalogue)?
+
+    if shell.exists(into + "/" + PLACED)
+        shell.remove_tree(into + "/" + PLACED)?
+    copied = shell.run(scratch: scratch, program: "cp", words: ["cp", "-R", dir + "/" + PLACED, into + "/" + PLACED])?
+
+    if copied.code != 0
+        return fail(
+            code: "tree_not_placed",
+            msg: "cannot copy " + dir + "/" + PLACED + " beside the answer in " + into + ": " + copied.err
+        )
+    return ok()
+
+# Whether a program names a package: a `use` whose first part is a name in
+# angle brackets (spec § 1). A package task's reference over the packages
+# must, or the packages do not touch the task (the spec-warden's condition:
+# such a task is replaced from the reserve before the freeze).
+function names_a_package(program: str) -> bool
+    for line in strings.lines(text: program)
+        if core_strings.has_prefix(s: line, prefix: "use <")
+            return true
+
+    return false
+
+# A tree written by a test: a catalogue with `index` and one pinned entry,
+# and one placed folder under `key` holding two files.
+function written_tree(dir: str, index: str, key: str, body: str) -> ()?
+    shell.mkdir_all(dir + "/" + PLACED + "/core@0.5.0-" + key)?
+    write_file(path: dir + "/" + CATALOGUE, text: "index = \"" + index + "\"\n\n[dependencies.core]\nversion = \"0.5.0\"\nsum = \"sha256-38e6194310472ac1e5779c6bf0fd30c0b725db0db8bcf149cb44f97cbde04204\"\n")?
+    write_file(path: dir + "/" + PLACED + "/core@0.5.0-" + key + "/strings.hero", text: body)?
+    return write_file(
+        path: dir + "/" + PLACED + "/core@0.5.0-" + key + "/strings.md",
+        text: "# strings: `use <core>/strings`\n"
+    )
+
+test "a tree's digest is its catalogue's and its placed files', the index line and the folder's key left out"
+    scratch = shell.own_scratch()
+    written_tree(
+        dir: scratch + "/one",
+        index: "file://../../packages",
+        key: "f58b55a0517ed0eb",
+        body: "function f() -> i64\n    return 1\n"
+    ).must()
+    written_tree(
+        dir: scratch + "/two",
+        index: "file:///elsewhere/packages",
+        key: "3597a2f03fa5cc45",
+        body: "function f() -> i64\n    return 1\n"
+    ).must()
+    written_tree(
+        dir: scratch + "/three",
+        index: "file://../../packages",
+        key: "f58b55a0517ed0eb",
+        body: "function f() -> i64\n    return 2\n"
+    ).must()
+    one = tree_at(scratch: scratch, dir: scratch + "/one").must()
+    assert one.sha.len() == 64
+    assert one.entries == ["core"]
+    assert one.dir == scratch + "/one"
+
+    # One version placed from two spellings of one index is one tree, and a
+    # placed byte moved is another.
+    assert tree_at(scratch: scratch, dir: scratch + "/two").must().sha == one.sha
+    assert tree_at(scratch: scratch, dir: scratch + "/three").must().sha != one.sha
+    assert tree_at(scratch: scratch, dir: scratch + "/one").must().sha == one.sha
+
+test "a folder that is no tree, a catalogue naming nothing and an entry no sum pins are refused by name"
+    scratch = shell.own_scratch()
+
+    match tree_at(scratch: scratch, dir: scratch + "/absent")
+        .ok _  => assert false
+        .err e => assert e.code == "no_tree"
+
+    written_tree(dir: scratch + "/bare", index: "file://x", key: "f58b55a0517ed0eb", body: "x\n").must()
+    shell.remove_tree(scratch + "/bare/" + PLACED).must()
+
+    match tree_at(scratch: scratch, dir: scratch + "/bare")
+        .ok _  => assert false
+        .err e => assert e.code == "no_tree"
+
+    written_tree(dir: scratch + "/path", index: "file://x", key: "f58b55a0517ed0eb", body: "x\n").must()
+    write_file(path: scratch + "/path/" + CATALOGUE, text: "[dependencies.core]\npath = \"../core\"\n").must()
+
+    match tree_at(scratch: scratch, dir: scratch + "/path")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "unpinned_entry"
+            assert core_strings.contains(s: e.msg, substr: "entry `core` carries no `sum`")
+
+    write_file(path: scratch + "/path/" + CATALOGUE, text: "index = \"file://x\"\n").must()
+
+    match tree_at(scratch: scratch, dir: scratch + "/path")
+        .ok _  => assert false
+        .err e => assert e.code == "no_entry"
+
+test "a placed folder's key is left out of a path, and only a key of sixteen lowercase hexadecimal digits"
+    assert keyless("core@0.5.0-f58b55a0517ed0eb/strings.hero") == "core@0.5.0/strings.hero"
+    assert keyless("core@0.5.0-f58b55a0517ed0eb/net/http.md") == "core@0.5.0/net/http.md"
+    assert keyless("core@0.5.0-f58b55a0517ed0eb") == "core@0.5.0"
+    assert keyless("core@0.5.0-F58B55A0517ED0EB/strings.hero") == "core@0.5.0-F58B55A0517ED0EB/strings.hero"
+    assert keyless("core@0.5.0-f58b55a0517ed0e/strings.hero") == "core@0.5.0-f58b55a0517ed0e/strings.hero"
+    assert keyless("leftover/strings.hero") == "leftover/strings.hero"
+    assert keyless("") == ""
+
+test "a program names a package by a use whose first part is in angle brackets, and by nothing else"
+    assert names_a_package("use <core>/strings\n\nfunction main()\n    print(1)\n")
+    assert names_a_package("use geom\nuse <json>/parse as p\n")
+    assert !names_a_package("use geom\n\nfunction main()\n    print(\"use <core>/strings\")\n")
+    assert !names_a_package("# use <core>/strings\nfunction main()\n    print(1)\n")
