@@ -575,9 +575,10 @@ without an entry of its own catalogue is a package's code, and no package's sour
 like any other here, and may carry a package through a catalogue of its own beside its root
 module, none of which a program it compiles can reach; it checks every placed tree's fingerprint, its own
 included, with the runtime's SHA-256 door and never with a package's code, so no package verifies
-itself; and it takes one only where its own tree, placed files counted, is smaller after the step
-than before, or a copy the step deletes is measured crashing or answering wrong, the step deleting
-every live copy of that package's contract in the compiler (panel 242's R1 to R4, ratified 2026-11-10;
+itself; and it takes one only where its own tree, every line of every placed file counted, is smaller
+after the step than before, or a copy the step deletes is measured crashing or answering wrong, the step deleting
+every live copy of that package's contract in the compiler (panel 242's R1 to R4, ratified 2026-11-10, the
+unit written by panel 250's R2, provisional, 2026-11-15;
 until 2026-11-10 this sentence read *"No package is compiled into the compiler or the runtime"*,
 wider than R1's *shipped*). And none ships platform C of its own:
 what a package needs of the platform is the runtime's `hero_os.h` or the platform layer archived
