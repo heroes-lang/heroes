@@ -147,6 +147,36 @@ SHAPES = [
 ]
 
 
+# Shapes judged in a folder that is there, where the Python guard's overwrite
+# rules read the words and answer nothing before asking git anything.
+IN_A_FOLDER = [
+    "git rm x",
+    "git rm -r --cached-not x",
+    "git rm -f -n x",
+    "git restore x",
+    "git restore --staged",
+    "git restore --no-staged x",
+    "git mv a b",
+    "git mv -f a",
+    "git checkout main",
+    "git checkout -b fix",
+    "git checkout -bfix main",
+    "git checkout --orphan new",
+    "git checkout -- f",
+    "git checkout --bogus x",
+    "git switch main",
+    "git reset --soft -- x",
+    "git reset --merge-not",
+    "git cherry-pick abc",
+    "git revert abc",
+    "git am patch",
+    "git merge --quit",
+    "git rebase --edit-todo",
+    "xargs git rm x",
+    "git -C . rm x",
+]
+
+
 class Corpus(unittest.TestCase):
     """Every shape above, held identical by the two guards, none of them a
     command the Heroes guard leaves unwritten."""
@@ -176,6 +206,17 @@ class Corpus(unittest.TestCase):
                 twins.held("git add -A")
             finally:
                 twins.answers = original
+
+    def test_what_names_its_paths_is_held_identical_where_git_is_asked_nothing(self):
+        if twins.guard() is None:
+            self.skipTest("nothing twinned: " + twins.why_not())
+        folder = os.path.realpath(tempfile.mkdtemp(prefix="hooks-twins-"))
+        before = dict(twins.TALLY)
+        for command in IN_A_FOLDER:
+            with self.subTest(command=command):
+                twins.held(command, folder)
+        self.assertEqual(twins.TALLY["unwritten"], before["unwritten"], "a shape git is asked nothing of left unwritten")
+        self.assertEqual(twins.TALLY["identical"] - before["identical"], len(IN_A_FOLDER))
 
     def test_a_folder_that_is_a_tree_twins_its_text_rules(self):
         if twins.guard() is None:

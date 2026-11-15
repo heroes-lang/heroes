@@ -233,7 +233,7 @@ function judged(c: Command, segment: str, command: str, cwd: str) -> answer.Answ
     where = command_line.git_dir(w: w, here: c.here)
 
     if git_judged.is_git(w)
-        said = git_judged.judged(w: w, where: where, command: command, cwd: cwd)
+        said = git_judged.judged(w: w, where: where, command: command, cwd: cwd, appended: through_xargs(c))
 
         if answer.stops(said)
             return said
@@ -248,6 +248,17 @@ function judged(c: Command, segment: str, command: str, cwd: str) -> answer.Answ
         if answer.stops(said)
             return said
     return rules.no_line(w)
+
+# Whether `c` runs through `xargs`, which adds words its text does not hold:
+# a wrapper before its words is `xargs`.
+function through_xargs(c: Command) -> bool
+    b = command_line.bare(c.raw)
+
+    for word in b.slice(from: 0, to: b.len() - c.w.len())
+        if pypath.basename(word) == "xargs"
+            return true
+
+    return false
 
 ## Tests
 
@@ -277,3 +288,4 @@ test "verdict: commands_in, commits_by and writes"
     assert writes(ran: commands_in(raw: ["cp", "a", "b"], here: ""), here: "", segment: "cp a b", cwd: "/") != .none
     assert line_writes(command: "ls && pwd", cwd: "/") == .none
     assert refusal_or(said: .unwritten(rule: "r"), writer: "w", committer: "c") == .unwritten(rule: "r")
+    assert through_xargs(Command(raw: ["xargs", "-0", "git", "rm"], w: ["git", "rm"], here: "")) && !through_xargs(Command(raw: ["git", "rm"], w: ["git", "rm"], here: ""))

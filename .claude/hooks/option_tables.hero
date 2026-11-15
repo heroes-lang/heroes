@@ -1,0 +1,114 @@
+# Each verb's options as `git <verb> -h` lists them on git 2.56.0, the
+# tables the Python guard's `overwrites.py` reads a restore, a checkout, a
+# removal, a reset and a move by (`overwrites.hero` reads the words with
+# them, as git's parse-options does). A table is a premise about git's own
+# options; the Python hooks' tests hold theirs to the git that runs them.
+
+# One option of a verb: its long name ("" for a letter alone), its letter
+# ("" for a long name alone), how it takes a value ("" none, "=" one, "?"
+# only joined), and whether `--no-` negates it.
+record Row
+    long: str
+    letter: str
+    value: str
+    negatable: bool
+
+# The table of `verb`, one of restore, checkout, rm, reset and mv.
+function table(verb: str) -> [Row]
+    if verb == "restore"
+        return [
+            Row(long: "source", letter: "s", value: "=", negatable: true)
+            Row(long: "staged", letter: "S", value: "", negatable: true)
+            Row(long: "worktree", letter: "W", value: "", negatable: true)
+            Row(long: "ignore-unmerged", letter: "", value: "", negatable: true)
+            Row(long: "overlay", letter: "", value: "", negatable: true)
+            Row(long: "quiet", letter: "q", value: "", negatable: true)
+            Row(long: "recurse-submodules", letter: "", value: "?", negatable: true)
+            Row(long: "progress", letter: "", value: "", negatable: true)
+            Row(long: "merge", letter: "m", value: "", negatable: true)
+            Row(long: "conflict", letter: "", value: "=", negatable: true)
+            Row(long: "ours", letter: "2", value: "", negatable: false)
+            Row(long: "theirs", letter: "3", value: "", negatable: false)
+            Row(long: "patch", letter: "p", value: "", negatable: true)
+            Row(long: "unified", letter: "U", value: "=", negatable: false)
+            Row(long: "inter-hunk-context", letter: "", value: "=", negatable: false)
+            Row(long: "ignore-skip-worktree-bits", letter: "", value: "", negatable: true)
+            Row(long: "pathspec-from-file", letter: "", value: "=", negatable: true)
+            Row(long: "pathspec-file-nul", letter: "", value: "", negatable: true)
+        ]
+
+    if verb == "checkout"
+        return [
+            Row(long: "", letter: "b", value: "=", negatable: false)
+            Row(long: "", letter: "B", value: "=", negatable: false)
+            Row(long: "", letter: "l", value: "", negatable: false)
+            Row(long: "guess", letter: "", value: "", negatable: true)
+            Row(long: "overlay", letter: "", value: "", negatable: true)
+            Row(long: "auto-advance", letter: "", value: "", negatable: true)
+            Row(long: "quiet", letter: "q", value: "", negatable: true)
+            Row(long: "recurse-submodules", letter: "", value: "?", negatable: true)
+            Row(long: "progress", letter: "", value: "", negatable: true)
+            Row(long: "merge", letter: "m", value: "", negatable: true)
+            Row(long: "conflict", letter: "", value: "=", negatable: true)
+            Row(long: "detach", letter: "d", value: "", negatable: true)
+            Row(long: "track", letter: "t", value: "?", negatable: true)
+            Row(long: "force", letter: "f", value: "", negatable: true)
+            Row(long: "orphan", letter: "", value: "=", negatable: true)
+            Row(long: "overwrite-ignore", letter: "", value: "", negatable: true)
+            Row(long: "ignore-other-worktrees", letter: "", value: "", negatable: true)
+            Row(long: "ours", letter: "2", value: "", negatable: false)
+            Row(long: "theirs", letter: "3", value: "", negatable: false)
+            Row(long: "patch", letter: "p", value: "", negatable: true)
+            Row(long: "unified", letter: "U", value: "=", negatable: false)
+            Row(long: "inter-hunk-context", letter: "", value: "=", negatable: false)
+            Row(long: "ignore-skip-worktree-bits", letter: "", value: "", negatable: true)
+            Row(long: "pathspec-from-file", letter: "", value: "=", negatable: true)
+            Row(long: "pathspec-file-nul", letter: "", value: "", negatable: true)
+        ]
+
+    if verb == "rm"
+        return [
+            Row(long: "dry-run", letter: "n", value: "", negatable: true)
+            Row(long: "quiet", letter: "q", value: "", negatable: true)
+            Row(long: "cached", letter: "", value: "", negatable: true)
+            Row(long: "force", letter: "f", value: "", negatable: true)
+            Row(long: "", letter: "r", value: "", negatable: false)
+            Row(long: "ignore-unmatch", letter: "", value: "", negatable: true)
+            Row(long: "sparse", letter: "", value: "", negatable: true)
+            Row(long: "pathspec-from-file", letter: "", value: "=", negatable: true)
+            Row(long: "pathspec-file-nul", letter: "", value: "", negatable: true)
+        ]
+
+    if verb == "reset"
+        return [
+            Row(long: "quiet", letter: "q", value: "", negatable: true)
+            Row(long: "no-refresh", letter: "", value: "", negatable: false)
+            Row(long: "refresh", letter: "", value: "", negatable: false)
+            Row(long: "mixed", letter: "", value: "", negatable: false)
+            Row(long: "soft", letter: "", value: "", negatable: false)
+            Row(long: "hard", letter: "", value: "", negatable: false)
+            Row(long: "merge", letter: "", value: "", negatable: false)
+            Row(long: "keep", letter: "", value: "", negatable: false)
+            Row(long: "recurse-submodules", letter: "", value: "?", negatable: true)
+            Row(long: "patch", letter: "p", value: "", negatable: true)
+            Row(long: "auto-advance", letter: "", value: "", negatable: true)
+            Row(long: "unified", letter: "U", value: "=", negatable: false)
+            Row(long: "inter-hunk-context", letter: "", value: "=", negatable: false)
+            Row(long: "intent-to-add", letter: "N", value: "", negatable: true)
+            Row(long: "pathspec-from-file", letter: "", value: "=", negatable: true)
+            Row(long: "pathspec-file-nul", letter: "", value: "", negatable: true)
+        ]
+    return [
+        Row(long: "verbose", letter: "v", value: "", negatable: true)
+        Row(long: "dry-run", letter: "n", value: "", negatable: true)
+        Row(long: "force", letter: "f", value: "", negatable: true)
+        Row(long: "", letter: "k", value: "", negatable: false)
+        Row(long: "sparse", letter: "", value: "", negatable: true)
+    ]
+
+## Tests
+
+test "option_tables: each verb's table holds the options its rules read"
+    assert table("restore")[1] == Row(long: "staged", letter: "S", value: "", negatable: true)
+    assert table("checkout")[0].letter == "b" && table("rm")[3].long == "force" && table("reset")[5].long == "hard"
+    assert table("mv")[2].long == "force" && table("mv").len() == 5
