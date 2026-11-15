@@ -1,0 +1,89 @@
+# What a command line the table refuses is told (CLAUDE.md §10; panels 016,
+# 020): every refusal names what was wrong and the form that is accepted, the
+# operand and the flag written as the help writes them, so one round trip is
+# enough. Out of `cli/argv.hero` since defect 2536, whose repair took that
+# module past its ceiling: this file is what the parser says, `argv.hero` how
+# it reads a line against the table.
+
+use cli/table as cli_table
+
+# The operand as a usage line shows it, the help's form: `<file.hero>` where
+# one is needed, `[file]` where it may be left out, `[package]` for what `add`
+# adds, `<name>` for the folder `new` makes, and nothing for a command that
+# takes none, whose usage line would otherwise name a file it refuses.
+function operand_said(command: cli_table.Command) -> str
+    match command.operand
+        .file_operand     => return " <file.hero>"
+        .optional_operand => return " [file]"
+        .package_operand  => return " [package]"
+        .name_operand     => return " <name>"
+        .no_operand       => return ""
+
+# What an empty operand is told, in the form the help gives the operand:
+# `<file.hero>` where one is needed, `[file]` where it may be left out.
+function empty_operand(command: cli_table.Command) -> str
+    match command.operand
+        .file_operand => return "`" + command.name + "` needs a file, and was given an empty one: `heroes " + command.name + " <file.hero>`"
+        .optional_operand | .no_operand =>
+            return "`" + command.name + "` was given an empty file, which names none: `heroes " + command.name + " [file]`, or no file for its default"
+        .package_operand => return "`" + command.name + "` was given an empty package, which names none: `heroes " + command.name + " json`, or `--path` and a folder"
+        .name_operand => return "`" + command.name + "` was given an empty name, which names no folder: `heroes " + command.name + " <name>`"
+
+# What a missing operand is told, in the help's form of it.
+function missing_operand(command: cli_table.Command) -> str
+    match command.operand
+        .name_operand => return "`" + command.name + "` needs the name of the folder it makes: `heroes " + command.name + " <name>`, or `heroes " + command.name + " <name> --package` for a package"
+        .file_operand | .optional_operand | .package_operand | .no_operand => return "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`"
+
+# A second operand, told as the package or the folder it is, not *one file*.
+function second_operand(command: cli_table.Command, first: str, second: str) -> str
+    match command.operand
+        .name_operand => return "`" + command.name + "` makes one folder, and was given two names, `" + first + "` and `" + second + "`: `heroes " + command.name + " <name>`"
+        .package_operand => return "`" + command.name + "` adds one package at a time, and was given two, `" + first + "` and `" + second + "`: run `heroes " + command.name + "` once for each"
+        .file_operand | .optional_operand | .no_operand => return "`" + command.name + "` takes one file, and two were given"
+
+# The enumerating error the llm-ergonomist asked for: every wrong flag
+# is one round trip, because the message carries the list.
+function unknown_flag(command: cli_table.Command, arg: str) -> str
+    if command.flags.len() == 0
+        return "`" + command.name + "` takes no flags, and `" + arg + "` was given"
+    accepted: [str] @= []
+
+    for f in command.flags
+        accepted @ accepted.push(f.spelling)
+
+    return "`" + command.name + "` does not accept `" + arg + "` — it accepts " + accepted.join(", ")
+
+# A flag the table does not let repeat, given a second time (defect 2536): the
+# second was dropped in silence, so `-o a1 -o a2` wrote `a1` alone and `add
+# --path a --path b` added `a`, a file written from half of what was asked.
+# Both values are named, `first` and `second`, for a flag that takes one; a
+# flag that takes none is told it was given twice.
+function repeated(command: cli_table.Command, flag: cli_table.Flag, first: str?, second: str?) -> str
+    usage = "`heroes " + command.name + operand_said(command) + " " + flag.spelling
+
+    if !flag.value
+        return "`" + flag.spelling + "` was given twice: give it once, " + usage + "`"
+    return "`" + flag.spelling + "` takes one " + flag.placeholder + ", and was given two, `" + first.default("") + "` and `" + second.default("") + "`: give it once, " + usage + " <" + flag.placeholder + ">`"
+
+## Tests
+
+test "a flag given twice names both values, and the form that gives it once (defect 2536)"
+    none: str? = fail(code: "none", msg: "no value")
+    asked: i64 @= 0
+
+    for c in cli_table.commands()
+        for f in c.flags
+            if c.name == "build" && f.spelling == "-o"
+                assert repeated(c, flag: f, first: ok("a1"), second: ok("a2")) == "`-o` takes one path, and was given two, `a1` and `a2`: give it once, `heroes build <file.hero> -o <path>`"
+                asked @ asked + 1
+
+            if c.name == "build" && f.spelling == "--emit-c"
+                assert repeated(c, flag: f, first: none, second: none) == "`--emit-c` was given twice: give it once, `heroes build <file.hero> --emit-c`"
+                asked @ asked + 1
+
+            if c.name == "fetch" && f.spelling == "-C"
+                assert repeated(c, flag: f, first: ok("a"), second: ok("b")) == "`-C` takes one folder, and was given two, `a` and `b`: give it once, `heroes fetch -C <folder>`"
+                asked @ asked + 1
+
+    assert asked == 3

@@ -18,6 +18,7 @@
 # follows it), and a link to a file reads.
 
 use cli/argv
+use cli/argv_told
 use cli/files
 use cli/io
 use cli/process
@@ -70,7 +71,7 @@ function one_file_given(tag: cli_table.Tag) -> bool
 
 # The refusal of `path` as the operand of `c`.
 function said(c: cli_table.Command, path: str) -> str
-    return "`" + c.name + "` " + takes(c.tag) + ", and `" + path + "` is a directory: `heroes " + c.name + argv.operand_said(c) + "`"
+    return "`" + c.name + "` " + takes(c.tag) + ", and `" + path + "` is a directory: `heroes " + c.name + argv_told.operand_said(c) + "`"
 
 # What a verb does with its one file, as its refusal says it.
 function takes(tag: cli_table.Tag) -> str

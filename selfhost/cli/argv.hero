@@ -4,9 +4,11 @@
 # heroes-cli/src/cli.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # Three properties this file exists to guarantee: STRICT (an unknown
-# flag, a flag on the wrong command, a second operand — each an error
-# that NAMES WHAT IS ACCEPTED, the llm-ergonomist's condition, because
-# a model reading "unknown flag" learns nothing); ONE EXIT CONTRACT (0
+# flag, a flag on the wrong command, a second operand, a second time of a
+# flag the table does not let repeat — each an error that NAMES WHAT IS
+# ACCEPTED, the llm-ergonomist's condition, because a model reading
+# "unknown flag" learns nothing; the words are `cli/argv_told.hero`'s); ONE
+# EXIT CONTRACT (0
 # clean, 1 diagnostics, 2 the tool could not run — the caller's, keyed
 # on the fail code this parser uses); and TAG, NOT A NAME STRING
 # (dispatch is an exhaustive match, so a table entry with no arm is a
@@ -19,6 +21,7 @@
 # (§4.13), because the language has no is_dir builtin: the driver
 # passes the real probe, a test passes its own.
 
+use cli/argv_told
 use cli/table as cli_table
 
 record FlagHit
@@ -161,7 +164,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                         code: "bad_usage",
                         msg: "`" + arg + "` is no longer a flag of `" + command.name + "` — use `" + retired_f.must() + "`"
                     )
-                return fail(code: "bad_usage", msg: unknown_flag(command: command, arg: arg))
+                return fail(code: "bad_usage", msg: argv_told.unknown_flag(command: command, arg: arg))
             wanted = command.flags[known]
             value: str? @= fail(code: "none", msg: "no value")
 
@@ -169,7 +172,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 if at + 1 >= given.len() || starts_with_dash(given[at + 1])
                     return fail(
                         code: "bad_usage",
-                        msg: "`" + arg + "` needs a " + wanted.placeholder + ": `heroes " + command.name + operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
+                        msg: "`" + arg + "` needs a " + wanted.placeholder + ": `heroes " + command.name + argv_told.operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
                     )
 
                 # An empty value names nothing, and is refused as a missing one
@@ -178,7 +181,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 if given[at + 1].len() == 0
                     return fail(
                         code: "bad_usage",
-                        msg: "`" + arg + "` needs a " + wanted.placeholder + ", and was given an empty one: `heroes " + command.name + operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
+                        msg: "`" + arg + "` needs a " + wanted.placeholder + ", and was given an empty one: `heroes " + command.name + argv_told.operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
                     )
                 value @ ok(given[at + 1])
                 at @ at + 1
@@ -197,13 +200,20 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                         msg: "`" + arg + " " + value.must() + "` names no directory on this machine — clang searches it in silence and builds against whatever header it finds elsewhere, so this is refused here rather than discovered as a wrong answer"
                     )
 
-            # A second -o is dropped in favour of the first — a second
-            # output path is a mistake and the first is what the
-            # reader meant — where a second --include is ONE MORE
-            # search entry: dropping it silently was a wrong build
-            # rather than a failed one (panel 055, §1.12).
-            if wanted.repeatable || !has(Invocation(tag: command.tag, file: file, program_args: program_args, flags: flags), spelling: wanted.spelling)
-                flags @ flags.push(FlagHit(spelling: wanted.spelling, value: value))
+            # A second --include is ONE MORE search entry: dropping it
+            # silently was a wrong build rather than a failed one (panel
+            # 055, §1.12). Any other flag is given once, and a second is
+            # refused with both values named (defect 2536): it was dropped
+            # in favour of the first, so `-o a1 -o a2` wrote `a1` alone and
+            # `add --path a --path b` added `a`, half of what was asked.
+            if !wanted.repeatable
+                for f in flags
+                    if f.spelling == wanted.spelling
+                        return fail(
+                            code: "bad_usage",
+                            msg: argv_told.repeated(command, flag: wanted, first: f.value, second: value)
+                        )
+            flags @ flags.push(FlagHit(spelling: wanted.spelling, value: value))
             at @ at + 1
             continue
         no_operand: bool @= false
@@ -219,10 +229,10 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         # (defect 347, as defect 349 for `-o ""`): it reached the reader, which
         # said *cannot read ``* as if a file had been named.
         if arg.len() == 0
-            return fail(code: "bad_usage", msg: empty_operand(command))
+            return fail(code: "bad_usage", msg: argv_told.empty_operand(command))
 
         if !file.is_err()
-            return fail(code: "bad_usage", msg: second_operand(command, first: file.must(), second: arg))
+            return fail(code: "bad_usage", msg: argv_told.second_operand(command, first: file.must(), second: arg))
         file @ ok(arg)
         at @ at + 1
 
@@ -233,55 +243,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         .no_operand | .optional_operand | .package_operand => needs_file @ needs_file
 
     if needs_file && file.is_err()
-        return fail(code: "bad_usage", msg: missing_operand(command))
+        return fail(code: "bad_usage", msg: argv_told.missing_operand(command))
     return ok(Invocation(tag: command.tag, file: file, program_args: program_args, flags: flags))
-
-# The operand as a usage line shows it, the help's form: `<file.hero>` where
-# one is needed, `[file]` where it may be left out, `[package]` for what `add`
-# adds, `<name>` for the folder `new` makes, and nothing for a command that
-# takes none, whose usage line would otherwise name a file it refuses.
-function operand_said(command: cli_table.Command) -> str
-    match command.operand
-        .file_operand     => return " <file.hero>"
-        .optional_operand => return " [file]"
-        .package_operand  => return " [package]"
-        .name_operand     => return " <name>"
-        .no_operand       => return ""
-
-# What an empty operand is told, in the form the help gives the operand:
-# `<file.hero>` where one is needed, `[file]` where it may be left out.
-function empty_operand(command: cli_table.Command) -> str
-    match command.operand
-        .file_operand => return "`" + command.name + "` needs a file, and was given an empty one: `heroes " + command.name + " <file.hero>`"
-        .optional_operand | .no_operand =>
-            return "`" + command.name + "` was given an empty file, which names none: `heroes " + command.name + " [file]`, or no file for its default"
-        .package_operand => return "`" + command.name + "` was given an empty package, which names none: `heroes " + command.name + " json`, or `--path` and a folder"
-        .name_operand => return "`" + command.name + "` was given an empty name, which names no folder: `heroes " + command.name + " <name>`"
-
-# What a missing operand is told, in the help's form of it.
-function missing_operand(command: cli_table.Command) -> str
-    match command.operand
-        .name_operand => return "`" + command.name + "` needs the name of the folder it makes: `heroes " + command.name + " <name>`, or `heroes " + command.name + " <name> --package` for a package"
-        .file_operand | .optional_operand | .package_operand | .no_operand => return "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`"
-
-# A second operand, told as the package or the folder it is, not *one file*.
-function second_operand(command: cli_table.Command, first: str, second: str) -> str
-    match command.operand
-        .name_operand => return "`" + command.name + "` makes one folder, and was given two names, `" + first + "` and `" + second + "`: `heroes " + command.name + " <name>`"
-        .package_operand => return "`" + command.name + "` adds one package at a time, and was given two, `" + first + "` and `" + second + "`: run `heroes " + command.name + "` once for each"
-        .file_operand | .optional_operand | .no_operand => return "`" + command.name + "` takes one file, and two were given"
-
-# The enumerating error the llm-ergonomist asked for: every wrong flag
-# is one round trip, because the message carries the list.
-function unknown_flag(command: cli_table.Command, arg: str) -> str
-    if command.flags.len() == 0
-        return "`" + command.name + "` takes no flags, and `" + arg + "` was given"
-    accepted: [str] @= []
-
-    for f in command.flags
-        accepted @ accepted.push(f.spelling)
-
-    return "`" + command.name + "` does not accept `" + arg + "` — it accepts " + accepted.join(", ")
 
 # A command line holding an argument that is not UTF-8, told by what that
 # argument is to the command (defect 281): the lines of the refusal. `given`
@@ -387,16 +350,19 @@ test "strict against the table, and every refusal names what is accepted"
     missing: [str] = ["build"]
     assert parse(missing, dir_probe: yes_dir).is_err()
 
-test "repeatable flags accumulate, -o keeps the first, -- feeds run only"
-    paths: [str] = ["build", "m.hero", "--include", "/a", "--include", "/b", "-o", "x", "-o", "y"]
+test "repeatable flags accumulate, -o is given once, -- feeds run only"
+    paths: [str] = ["build", "m.hero", "--include", "/a", "--include", "/b", "-o", "x"]
     inv = parse(paths, dir_probe: yes_dir).must()
     got = values_of(inv, spelling: "--include")
     assert got.len() == 2
     assert got[0] == "/a"
     assert got[1] == "/b"
-
-    # The second -o is dropped in favour of the first.
     assert value_of(inv, spelling: "-o").must() == "x"
+
+    # A second -o is refused, both paths named (defect 2536).
+    match parse(["build", "m.hero", "-o", "x", "-o", "y"], dir_probe: yes_dir)
+        .ok _  => assert false
+        .err e => assert e.code == "bad_usage" && e.msg == "`-o` takes one path, and was given two, `x` and `y`: give it once, `heroes build <file.hero> -o <path>`"
 
     # The machine probe fires only for a directory-valued flag.
     nodir: [str] = ["build", "m.hero", "--include", "/ghost"]
@@ -472,13 +438,13 @@ test "an empty value for a flag that takes one is refused, naming the flag (defe
             if f.value
                 given: [str] @= [c.name, "x.hero", f.spelling, ""]
 
-                if operand_said(c).len() == 0
+                if argv_told.operand_said(c).len() == 0
                     given @ [c.name, f.spelling, ""]
                 asked @ asked + 1
 
                 match parse(given, dir_probe: yes_dir)
                     .ok _  => assert false
-                    .err e => assert e.msg == "`" + f.spelling + "` needs a " + f.placeholder + ", and was given an empty one: `heroes " + c.name + operand_said(c) + " " + f.spelling + " <" + f.placeholder + ">`"
+                    .err e => assert e.msg == "`" + f.spelling + "` needs a " + f.placeholder + ", and was given an empty one: `heroes " + c.name + argv_told.operand_said(c) + " " + f.spelling + " <" + f.placeholder + ">`"
 
     # A command that takes no file names none in its usage line.
     fetched: [str] = ["fetch", "-C", ""]
@@ -528,6 +494,42 @@ test "an empty operand is refused, naming the command, before anything is read (
 
     assert asked >= 10
 
+# Defect 2536: every flag of the table is given twice, and only a search path
+# is taken twice; any other is refused, both values named, where the second
+# was dropped in silence. Asked of the table, so a flag added to it is asked.
+test "a flag the table does not let repeat is refused when given twice, naming both (defect 2536)"
+    refused: i64 @= 0
+    taken: i64 @= 0
+
+    for c in cli_table.commands()
+        for f in c.flags
+            given: [str] @= [c.name]
+
+            if argv_told.operand_said(c).len() > 0
+                given @ given.push("x.hero")
+
+            for word in [f.spelling, "a1", f.spelling, "a2"]
+                if f.value || word == f.spelling
+                    given @ given.push(word)
+
+            match parse(given, dir_probe: yes_dir)
+                .ok inv =>
+                    assert f.repeatable && values_of(inv, spelling: f.spelling) == ["a1", "a2"]
+                    taken @ taken + 1
+                .err e =>
+                    assert !f.repeatable && e.code == "bad_usage"
+                    assert e.msg == argv_told.repeated(c, flag: f, first: value_given(f, value: "a1"), second: value_given(f, value: "a2"))
+                    refused @ refused + 1
+
+    assert refused > 20 && taken >= 6
+
+# The value `repeated` is handed for a flag given `value`, none where it takes
+# none.
+function value_given(f: cli_table.Flag, value: str) -> str?
+    if f.value
+        return ok(value)
+    return fail(code: "none", msg: "no value")
+
 # Feature 2441 (panel 244's R2): `new` takes one name, the folder it makes,
 # and every refusal of its operand names a name and the form that works,
 # never a file; a second package given to `add` names a package, where both
@@ -559,7 +561,7 @@ test "the folder new makes and the package add adds are named as what they are (
     within: [str] = ["new", "x", "-C", "d<0xE9>"]
     assert unheld(within, at: 3)[0] == "error: the value of `-C`, `d<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
 
-# The flags the table gives a command, as `unknown_flag` lists them.
+# The flags the table gives a command, as `argv_told.unknown_flag` lists them.
 function flag_list(name: str) -> str
     spellings: [str] @= []
 

@@ -1,0 +1,29 @@
+$ heroes add --path ../local/yaml --path ../local/other -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `--path` takes one folder, and was given two, `../local/yaml` and `../local/other`: give it once, `heroes add [package] --path <folder>`
+$ heroes add json --index file://../idx --index file://../elsewhere -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `--index` takes one address, and was given two, `file://../idx` and `file://../elsewhere`: give it once, `heroes add [package] --index <address>`
+$ heroes add file://../git/yaml --tag v1 --tag v2 -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `--tag` takes one tag, and was given two, `v1` and `v2`: give it once, `heroes add [package] --tag <tag>`
+$ heroes add --path ../local/yaml --as one --as two -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `--as` takes one name, and was given two, `one` and `two`: give it once, `heroes add [package] --as <name>`
+$ heroes fetch -C <work>/app -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `-C` takes one folder, and was given two, `<work>/app` and `<work>/app`: give it once, `heroes fetch -C <folder>`
+heroes.toml:
+(none)
+heroes.packages:
+(none)
