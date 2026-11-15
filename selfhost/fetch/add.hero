@@ -29,7 +29,6 @@ use cli/argv
 use cli/files
 use cli/process
 use cli/publish
-use cli/strings
 use cli/table as cli_table
 use fetch/add_wanted
 use fetch/address_form
@@ -333,12 +332,13 @@ test "an add that cannot be is refused with its code, and the catalogue is left 
     assert told_line == [SCRATCH + "/app/heroes.toml:1: error[catalogue_refused]: a value is a string between double quotes: `version = \"1.4.2\"`"]
     assert read_file(SCRATCH + "/app/heroes.toml").must() == "version = 1\n"
 
-    # One that cannot be read at all has no place, and its words name it.
+    # One that cannot be read at all has no place, and its words name what
+    # stands there, a folder (defect 2544).
     assert !process.remove_tree(SCRATCH + "/app/heroes.toml").is_err()
     assert !process.mkdir_all(SCRATCH + "/app/heroes.toml").is_err()
     unread = outcome(invoked(["add", "json", "-C", SCRATCH + "/app"]), tools: transport.path_tools())
     assert unread.len() == 1 && unread[0].code == "catalogue_refused" && unread[0].at == ""
-    assert strings.starts_with(text: unread[0].said, prefix: "`" + SCRATCH + "/app/heroes.toml` cannot be read: ")
+    assert unread[0].said == "`" + SCRATCH + "/app/heroes.toml` is a folder, where a catalogue is a file: rename it to keep it, or remove it"
     assert !process.remove_tree(SCRATCH).is_err()
 
 # Defect 2392: the refusals a machine's state causes, each the tool's at exit

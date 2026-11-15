@@ -80,6 +80,22 @@ function home_blocked(path: str) -> Standing
         return .nothing
     return stands
 
+# What a catalogue that did not read is told, `path` as it is opened, `named`
+# as a message names it and `code` the read's failure (defect 2544): by what
+# stands there where that is no file, a folder above all; by the bytes where
+# they are not text; else as the file the system refused to read, named once.
+# Until then a folder was told *`app/heroes.toml` cannot be read: could not
+# read app/heroes.toml*, the file named twice and the folder never.
+function unread_said(path: str, named: str, code: str) -> str
+    stands = at(path)
+
+    if stands == .tree || stands == .linked_tree || stands == .other && files.entry(path) == .other
+        return "`" + named + "` is " + said(stands) + ", where a catalogue is a file: rename it to keep it, or remove it"
+
+    if code == "not_text"
+        return "`" + named + "` is not UTF-8, and a catalogue is text: write it again in UTF-8"
+    return "`" + named + "` cannot be read: the system refused to read it, as it does a file this user may not read"
+
 # A placed tree's path as a build holds it, `heroes.packages/<key>/`, with its
 # last `/` taken off for `at`.
 function unslashed(path: str) -> str
@@ -127,4 +143,10 @@ test "what stands at a key is asked of its own name, a link's kind told apart (d
     assert home_blocked(SCRATCH + "/afile") == .file
     assert home_blocked(SCRATCH + "/tree") == .nothing
     assert home_blocked(SCRATCH + "/none") == .nothing
+
+    # Defect 2544: a catalogue that did not read is told by what stands
+    # there, a folder named once and as the folder it is.
+    assert unread_said(path: SCRATCH + "/tree", named: "app/heroes.toml", code: "read_failed") == "`app/heroes.toml` is a folder, where a catalogue is a file: rename it to keep it, or remove it"
+    assert unread_said(path: SCRATCH + "/afile", named: "app/heroes.toml", code: "not_text") == "`app/heroes.toml` is not UTF-8, and a catalogue is text: write it again in UTF-8"
+    assert unread_said(path: SCRATCH + "/afile", named: "app/heroes.toml", code: "read_failed") == "`app/heroes.toml` cannot be read: the system refused to read it, as it does a file this user may not read"
     assert !process.remove_tree(SCRATCH).is_err()

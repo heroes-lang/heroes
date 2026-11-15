@@ -34,6 +34,7 @@ use bytes
 use fetch/address
 use fetch/address_form
 use module/entry_name
+use module/standing
 use module/sums
 use module/toml_line
 
@@ -95,7 +96,8 @@ function read(opened: str, named: str) -> Catalogue
         .err e =>
             if e.code == "file_not_found"
                 return empty()
-            return refused(empty(), code: "catalogue_refused", at: "", said: "`" + file + "` cannot be read: " + e.msg)
+            said = standing.unread_said(path: opened + FILE, named: file, code: e.code)
+            return refused(empty(), code: "catalogue_refused", at: "", said: said)
 
 # The entry named `name`, or a failure saying the catalogue holds none, or
 # that it does not read: a catalogue that did not read names nothing.
