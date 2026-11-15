@@ -1,0 +1,3 @@
+before
+!sanitizer: on unknown address
+!panic: a null function pointer was called

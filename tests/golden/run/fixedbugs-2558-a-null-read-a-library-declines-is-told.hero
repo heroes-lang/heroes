@@ -1,0 +1,18 @@
+# DEFECT 2558, beside it: a null read the library before the runtime declines
+# is still told (2026-11-15).
+#
+# The guard now asks the handler installed before it about a fault at a low
+# address on a stack the runtime did not measure, and that handler may give
+# the fault back: Go's archive, for a fault it did not make, puts SIGSEGV back
+# to the default it found and returns, so the access would fault again and
+# the process die at 139 in silence. The guard reads the register file before
+# and after the call, finds it as it was, and tells the read as it always did.
+# Under `--sanitize` the library hands the fault to the handler it found,
+# AddressSanitizer's, which reports it (`fixedbugs-2558-library.h`).
+
+extern "fixedbugs-2558-library.h"
+    function lib_read_declined() -> i64
+
+function main()
+    print("before")
+    print(lib_read_declined())

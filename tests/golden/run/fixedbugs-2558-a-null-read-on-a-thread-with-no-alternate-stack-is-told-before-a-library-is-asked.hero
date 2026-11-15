@@ -1,0 +1,22 @@
+# DEFECT 2558, beside it: a null read on a thread C made with no alternate
+# signal stack is told without asking the library before the runtime
+# (2026-11-15).
+#
+# Off the stack the runtime measured is not enough to make a fault another's:
+# a null read on a thread a C library started for itself, in a program linking
+# a Go archive it had not yet called, died at 139 once and hung twice in three
+# runs when the guard asked Go's handler, and was told at 134 three of three
+# once Go had been called. Every thread that runs Go code holds an alternate
+# signal stack, Go's or the runtime's; a thread with none was made ready for
+# no runtime's signals, and its fault is told at once. The library here ends
+# the process in silence when it is handed a fault it did not make
+# (`fixedbugs-2558-library.h`).
+
+extern "fixedbugs-2558-library.h"
+    function lib_ends_in_silence()
+    function lib_read_on_plain_thread() -> i64
+
+function main()
+    lib_ends_in_silence()
+    print("before")
+    print(lib_read_on_plain_thread())

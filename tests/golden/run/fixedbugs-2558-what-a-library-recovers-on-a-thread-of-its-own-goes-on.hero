@@ -1,0 +1,30 @@
+# DEFECT 2558: the runtime's null arm killed a fault a library's own handler
+# would recover (panel 249's ffi-pragmatist and compiler-engineer, each apart,
+# 2026-11-15).
+#
+# A Go c-archive installs its fault handler from its constructor, before
+# `main`, and turns a nil dereference into a panic its `recover` catches by
+# editing the faulting context into a call of `runtime.sigpanic`. The guard
+# the runtime installs in `main` found that handler and saved it, then claimed
+# every fault under its null window as the program's own before handing it
+# on: a Heroes program binding such an archive died at its first recovered
+# nil dereference, exit 134, `a null pointer was read through, at offset 0x0,
+# called from main.GoNilPanic`, three runs of three on this Mac and in Linux
+# arm64. Now a fault at a low address that ran off the stack the runtime
+# measured, on a thread made ready for signals of its own, goes to the handler
+# before the runtime's first, and the program goes on where it sent it.
+#
+# The library here does what Go does, on a thread of its own holding an
+# alternate stack as every thread that runs Go code does: it steps over a null
+# read, returns 9 from a call to address zero, and jumps out of a second null
+# read, each by its own handler; then it steps over the first again, the guard
+# still in place (`fixedbugs-2558-library.h`).
+
+extern "fixedbugs-2558-library.h"
+    function lib_recovered(which: i64) -> i64
+
+function main()
+    print("a read stepped over: ", lib_recovered(which: 0))
+    print("a call returned from: ", lib_recovered(which: 1))
+    print("a read jumped out of: ", lib_recovered(which: 2))
+    print("the first again: ", lib_recovered(which: 0))
