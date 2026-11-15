@@ -31,7 +31,11 @@ this page says only what a task is and where it stands.
   where the key is set, and graded, `dry <dir>` or `run <dir>`, in a shell where it is not; the
   grader refuses to run while a `HEROES_*_KEY` stands in its environment, because a program inside
   the sandbox reads another process's environment through `sysctl` (the sitting's ffi-pragmatist,
-  measured). The CI does the same in two steps.
+  measured). The CI does the same in two steps. **Every name of that shape is refused, read from
+  the environment itself**, and only the tests' throwaway `HEROES_SEAL_TEST_KEY` is not, which
+  seals a suite of the tests' own (`tests/harness/thesis_sandbox.hero`); until defect 2569 the
+  grader refused only the five names this page gives, so a suite sealed under a sixth would have
+  been graded beside its key.
 
 ## The shape on disk
 

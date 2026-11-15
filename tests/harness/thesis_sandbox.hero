@@ -30,8 +30,8 @@
 # environment**: a C program calling `sysctl(KERN_PROCARGS2)` inside it reads
 # the grader's, with `sysctl-read` and `process-info*` denied too (measured,
 # `hits=1`), so a seal's key is never in the environment of a process that runs
-# a model's program (`KEYS`, `prepared`), and the secrecy rests on that rule
-# and on `refused_extern`, never on this profile.
+# a model's program (`keys_held`, `prepared`), and the secrecy rests on that
+# rule and on `refused_extern`, never on this profile.
 #
 # ON LINUX (the CI's `thesis-attest` and any Linux leg), `bwrap`: the system
 # bound read-only, the scratch bound read-write, `--unshare-all` (no network,
@@ -53,6 +53,7 @@ use <core>/strings as core_strings
 
 use shell
 use strings
+use thesis_seal
 
 constant DARWIN_TOOL: str
     "/usr/bin/sandbox-exec"
@@ -68,48 +69,106 @@ constant FILE_BLOCKS: i64
 constant ADDRESS_KIB: i64
     1048576
 
-# The variables that hold a seal's key (`thesis_seal.hero`): a process with one
-# of them set runs no model's program, since the profile cannot hide one
-# process's environment from another (the ffi-pragmatist's measurement, panel
-# 226 § 3: `sysctl(KERN_PROCARGS2)` reads it with `sysctl-read` denied too).
-# The throwaway `HEROES_SEAL_TEST_KEY` is not among them: it seals a suite of
-# the tests' own, and no model's program ever runs under it. The last two seal
-# the paired run's suite of package tasks and its reserve (task 2300, panel
-# 234's R14), a suite of its own whose keys are its own: the held-out suite's
-# key is committed when that suite opens (`tests/thesis/held-out/README.md`),
-# and a package suite sealed under it would open with it.
-constant KEYS: [str]
-    ["HEROES_TASKS_KEY", "HEROES_RESERVE_KEY", "HEROES_RUNS_KEY", "HEROES_PACKAGES_KEY", "HEROES_PACKAGES_RESERVE_KEY"]
+# A seal's key is held in a variable whose name opens with `KEY_OPENING` and
+# ends with `KEY_CLOSING`, `HEROES_*_KEY`, as panel 226's R10 and R11 write
+# the rule: a process holding one runs no model's program, since the profile
+# cannot hide one process's environment from another (the ffi-pragmatist's
+# measurement, panel 226 § 3: `sysctl(KERN_PROCARGS2)` reads it with
+# `sysctl-read` denied too). Today's are the held-out suite's three, its suite,
+# its reserve and its runs' transcripts, and the paired run's package suite and
+# reserve (task 2300, panel 234's R14).
+#
+# **Every such name, never a list of them, since defect 2569** (2026-11-15):
+# until then the five names above were a list here, three of them until task
+# 2300 added two, so a suite sealed under a sixth name would have been graded
+# beside its key. The one name apart is the tests' throwaway
+# `thesis_seal.TEST_KEY`: it seals a suite of the tests' own, and no model's
+# program ever runs under it.
+constant KEY_OPENING: str
+    "HEROES_"
 
-# Why a model's program cannot run on this machine now, or "" where it can: a
-# seal's key in this process's environment, or neither sandbox tool present.
-# Every test that runs one asks it first and says `SKIP` with the answer, so a
-# suite's verdict never depends on what the machine or the shell held.
+constant KEY_CLOSING: str
+    "_KEY"
+
+# Lists the environment it was given, through POSIX awk's `ENVIRON`, which
+# macOS's awk, gawk, mawk and BusyBox's all hold: the name of every variable
+# that holds a value, one a line, a newline inside a name written as a space so
+# the name stays one line, and never a value, so no key reaches the capture
+# file under `build/`. A variable set to nothing holds no key, and awk alone
+# reads a value, so one that is not UTF-8 is listed as any other is.
+constant AWK: str
+    "/usr/bin/awk"
+
+constant NAMES_ONLY: str
+    "BEGIN { for (name in ENVIRON) if (ENVIRON[name] != \"\") { shown = name; gsub(/\\n/, \" \", shown); print shown } }"
+
+# Where the listing's two captures are written and removed: the grader's own
+# folder under `build/`, never a sample's scratch, which a model's program reads.
+constant LISTING_SCRATCH: str
+    "build/thesis-environment"
+
+# Why a model's program cannot run on this machine now, or "" where it can:
+# neither sandbox tool present, a seal's key in this process's environment, or
+# an environment that cannot be listed to say there is none. Every test that
+# runs one asks it first and says `SKIP` with the answer, so a suite's verdict
+# never depends on what the machine or the shell held.
 function unrunnable() -> str
-    return unrunnable_with(darwin: DARWIN_TOOL, linux: LINUX_TOOL)
+    return unrunnable_with(darwin: DARWIN_TOOL, linux: LINUX_TOOL, held: keys_held())
 
-function unrunnable_with(darwin: str, linux: str) -> str
-    held = key_held()
-
-    if held != ""
-        return held + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-
+# The tools are asked first, so a machine that has neither, Windows, answers
+# that, whatever its environment's listing could say.
+function unrunnable_with(darwin: str, linux: str, held: [str]?) -> str
     if !shell.exists(darwin) && !shell.exists(linux)
         return "neither " + darwin + " nor " + linux + " is on this machine, and a model's program runs inside one or not at all"
-    return ""
 
-# The first of `KEYS` this process's environment holds, or "" where it holds
-# none: `prepared` refuses to run a model's program while one is set, and a
-# test that grades says `SKIP` naming it, so that a suite's verdict never
-# depends on what the shell it ran in had exported.
-function key_held() -> str
-    for name in KEYS
-        got = shell.env(name)
-
-        if !got.is_err() && got.must() != ""
-            return name
+    match held
+        .err e => return e.msg
+        .ok names =>
+            if names.len() > 0
+                return key_said(names) + ", and no process holding a seal's key runs a program; run the tests in a shell where it is not"
 
     return ""
+
+# Whether `name` is a seal key's variable: `HEROES_*_KEY`, the `*` any run of
+# characters, none included, and not the tests' throwaway key.
+function is_key_name(name: str) -> bool
+    if name == thesis_seal.TEST_KEY || name.len() < KEY_OPENING.len() + KEY_CLOSING.len()
+        return false
+    return core_strings.has_prefix(s: name, prefix: KEY_OPENING) && core_strings.has_suffix(s: name, suffix: KEY_CLOSING)
+
+# Every seal key's variable this process's environment holds, in order, or why
+# the environment could not be listed: `prepared` refuses to run a model's
+# program while one is set or while none can be said to be, and a test that
+# grades says `SKIP` naming them.
+function keys_held() -> [str]?
+    return ok(sort(environment_names(given: [])?).filter(is_key_name))
+
+# The names holding a value in the environment a child of this process is
+# given, this process's own with `given` laid over it (`shell.run_given`), as
+# `AWK` lists them.
+function environment_names(given: [shell.Variable]) -> [str]?
+    ran = shell.run_given(scratch: LISTING_SCRATCH, program: AWK, words: [AWK, NAMES_ONLY], given: given)
+
+    match ran
+        .err e =>
+            return fail(
+                code: "environment_unlisted",
+                msg: "this process's environment could not be listed, so no seal's key can be said to be absent from it: " + e.msg
+            )
+        .ok r =>
+            if r.code != 0
+                return fail(
+                    code: "environment_unlisted",
+                    msg: "this process's environment could not be listed, so no seal's key can be said to be absent from it: " + AWK + " exited " + r.code.to_str() + ": " + strings.trimmed(r.err)
+                )
+            return ok(strings.lines(r.out))
+
+# The variables `held` names, as a sentence's subject: `A is set`, `A and B
+# are set`.
+function key_said(held: [str]) -> str
+    if held.len() == 1
+        return held[0] + " is set"
+    return held.slice(from: 0, to: held.len() - 1).join(", ") + " and " + held[held.len() - 1] + " are set"
 
 # How a program is run inside the sandbox: the program spawned and the words
 # before the program's own, which the caller appends its arguments to.
@@ -199,27 +258,39 @@ function prepared(scratch: str, binary: str) -> Sandbox?
             msg: "a sandbox names its scratch and its binary by absolute paths; given " + scratch + " and " + binary
         )
 
-    held = key_held()
+    tool = tool_here()
 
-    if held != ""
+    if tool == ""
+        return fail(
+            code: "no_sandbox",
+            msg: "neither " + DARWIN_TOOL + " nor " + LINUX_TOOL + " is on this machine, and a model's program is run inside one or not at all"
+        )
+    held = keys_held()?
+
+    if held.len() > 0
         return fail(
             code: "key_in_environment",
-            msg: held + " is set in this process's environment, and no process holding a seal's key runs a model's program: a program inside the sandbox reads another process's environment through `sysctl(KERN_PROCARGS2)` (panel 226, the ffi-pragmatist). Open the archive first, `unseal --sealed <file> --into <dir>`, then grade the folder in a shell where the key is not set"
+            msg: key_said(held) + " in this process's environment, and no process holding a seal's key, a `" + KEY_OPENING + "*" + KEY_CLOSING + "`, runs a model's program: a program inside the sandbox reads another process's environment through `sysctl(KERN_PROCARGS2)` (panel 226, the ffi-pragmatist). Open the archive first, `unseal --sealed <file> --into <dir>`, then grade the folder in a shell where no such key is set"
         )
 
-    if shell.exists(DARWIN_TOOL)
+    if tool == DARWIN_TOOL
         path = scratch + "/sandbox.sb"
         write_file(path: path, text: profile(scratch: scratch, binary: binary))?
         return ok(
             Sandbox(program: "/bin/sh", words: darwin_words(profile_path: path, binary: binary), tool: DARWIN_TOOL)
         )
+    return ok(Sandbox(program: LINUX_TOOL, words: linux_words(scratch: scratch, binary: binary), tool: LINUX_TOOL))
+
+# The sandbox tool this machine holds, `DARWIN_TOOL` before `LINUX_TOOL`, or
+# "" where it holds neither. The tool is asked before the environment, so a
+# machine that has neither, Windows, is told that, whatever its listing says.
+function tool_here() -> str
+    if shell.exists(DARWIN_TOOL)
+        return DARWIN_TOOL
 
     if shell.exists(LINUX_TOOL)
-        return ok(Sandbox(program: LINUX_TOOL, words: linux_words(scratch: scratch, binary: binary), tool: LINUX_TOOL))
-    return fail(
-        code: "no_sandbox",
-        msg: "neither " + DARWIN_TOOL + " nor " + LINUX_TOOL + " is on this machine, and a model's program is run inside one or not at all"
-    )
+        return LINUX_TOOL
+    return ""
 
 # The words to spawn: the sandbox's, then the program's own arguments.
 function words_with(sandbox: Sandbox, arguments: [str]) -> [str]
@@ -298,11 +369,10 @@ test "a program run inside the sandbox writes in its scratch, is refused outside
     assert !shell.exists(outside + "/leak.txt")
 
 test "a machine with neither sandbox tool cannot run a model's program, and says which two it looked for"
-    if key_held() != ""
-        print("SKIP thesis_sandbox: " + key_held() + " is set, so the answer would name the key")
-        return
-
-    told = unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap")
+    # The environment's answer is given, not read, so the test asks the tools
+    # alone on every machine, a shell holding a key included.
+    none: [str] = []
+    told = unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap", held: ok(none))
     assert core_strings.contains(s: told, substr: "neither /no/such/sandbox-exec nor /no/such/bwrap")
 
     # A tool that exists answers nothing, whichever of the two it is: the test
@@ -311,8 +381,64 @@ test "a machine with neither sandbox tool cannot run a model's program, and says
     scratch = shell.own_scratch()
     tool = scratch + "/tool"
     write_file(path: tool, text: "").must()
-    assert unrunnable_with(darwin: tool, linux: "/no/such/bwrap") == ""
-    assert unrunnable_with(darwin: "/no/such/sandbox-exec", linux: tool) == ""
+    assert unrunnable_with(darwin: tool, linux: "/no/such/bwrap", held: ok(none)) == ""
+    assert unrunnable_with(darwin: "/no/such/sandbox-exec", linux: tool, held: ok(none)) == ""
+
+    # And with a tool present, a key held or an environment unlisted is the
+    # answer, while with neither tool the tools are.
+    held = unrunnable_with(darwin: tool, linux: "/no/such/bwrap", held: ok(["HEROES_A_KEY", "HEROES_B_KEY"]))
+    assert core_strings.has_prefix(
+        s: held,
+        prefix: "HEROES_A_KEY and HEROES_B_KEY are set, and no process holding a seal's key runs a program"
+    )
+    unlisted: [str]? = fail(code: "environment_unlisted", msg: "this process's environment could not be listed")
+    assert unrunnable_with(darwin: tool, linux: "/no/such/bwrap", held: unlisted) == "this process's environment could not be listed"
+    assert core_strings.contains(
+        s: unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap", held: unlisted),
+        substr: "neither "
+    )
+
+# DEFECT 2569, held as a test (2026-11-15): the grader refused five names it
+# listed where panel 226's R10 and R11 and `docs/metrics/tasks.md` say every
+# `HEROES_*_KEY`, so a suite sealed under a sixth name would have been graded
+# beside its key. Every such name is a key's now, the tests' throwaway apart,
+# and the names are listed from the environment itself: a child given a sixth
+# name lists it, and the rule calls it a key's.
+test "fixedbugs: every HEROES_*_KEY in the environment is a seal key's, the five once listed and a sixth alike (defect 2569)"
+    for name in ["HEROES_TASKS_KEY", "HEROES_RESERVE_KEY", "HEROES_RUNS_KEY", "HEROES_PACKAGES_KEY", "HEROES_PACKAGES_RESERVE_KEY", "HEROES_SIXTH_SUITE_KEY", "HEROES__KEY", "HEROES_a-b.c_KEY"]
+        assert is_key_name(name)
+
+    for name in [thesis_seal.TEST_KEY, "HEROES_KEY", "HEROES_TASKS_KEYS", "HEROES_TASKS_KEY_OLD", "heroes_tasks_key", "XHEROES_TASKS_KEY", "ANTHROPIC_API_KEY", ""]
+        assert !is_key_name(name)
+
+    assert key_said(["HEROES_A_KEY"]) == "HEROES_A_KEY is set"
+    assert key_said(["HEROES_A_KEY", "HEROES_B_KEY", "HEROES_C_KEY"]) == "HEROES_A_KEY, HEROES_B_KEY and HEROES_C_KEY are set"
+
+    if !shell.exists(AWK)
+        print("SKIP thesis_sandbox: " + AWK + " is not on this machine, so no environment is listed here")
+        return
+
+    # A variable set to nothing holds no key, and is not listed.
+    given = [
+        shell.Variable(name: "HEROES_SIXTH_SUITE_KEY", value: "not-a-key")
+        shell.Variable(name: "HEROES_EMPTY_SUITE_KEY", value: "")
+    ]
+    names = environment_names(given: given).must()
+    assert names.filter(is_key_name).any(sixth_named)
+    assert !names.any(empty_named)
+    assert names.any(path_named)
+
+    # This process's own listing reads the same way, whatever the shell held.
+    _ = keys_held().must()
+
+function sixth_named(name: str) -> bool
+    return name == "HEROES_SIXTH_SUITE_KEY"
+
+function empty_named(name: str) -> bool
+    return name == "HEROES_EMPTY_SUITE_KEY"
+
+function path_named(name: str) -> bool
+    return name == "PATH"
 
 test "every limit is set by a `ulimit` of its own, joined so a refused one stops the program (defect 2167)"
     linux = linux_words(scratch: "/s", binary: "/s/answer")

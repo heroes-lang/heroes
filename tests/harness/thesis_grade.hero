@@ -580,3 +580,28 @@ test "a grading child holding the package suite's key runs no program, and says 
         ).must()
         assert ran.code == 2
         assert core_strings.contains(s: ran.err, substr: name + " is set in this process's environment")
+
+# DEFECT 2569, held as a test (2026-11-15): the grader refused the five key
+# names it listed, so a child holding a sixth `HEROES_*_KEY` graded a model's
+# program beside it (measured on the trunk's grader: `cases_pass 9/9`, exit
+# 0). Any such name refuses now, and two are named together.
+test "fixedbugs: a grading child holding a sixth HEROES_*_KEY runs no program, and names every key it holds (defect 2569)"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_grade: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    _ = counting_task(scratch + "/task").must()
+    write_file(path: scratch + "/answer.md", text: fenced("function main()\n    print(3)\n")).must()
+    ran = shell.run_given(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "run", "tests/harness/thesis.hero", "--", "grade", scratch + "/answer.md", "--task", scratch + "/task", "--compiler", compiler],
+        given: [shell.Variable(name: "HEROES_SIXTH_SUITE_KEY", value: "not-a-key"), shell.Variable(name: "HEROES_ANOTHER_SUITE_KEY", value: "not-a-key")]
+    ).must()
+    assert ran.code == 2
+    assert core_strings.contains(
+        s: ran.err,
+        substr: "HEROES_ANOTHER_SUITE_KEY and HEROES_SIXTH_SUITE_KEY are set in this process's environment"
+    )
