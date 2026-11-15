@@ -3,18 +3,18 @@
 # that the same is true with the file cut into four, and that reading it tells
 # you where every name comes from.
 #
-# Two differences from the appendix. There the `simplify` function is a `???` under a
+# Three differences from the appendix. There the `simplify` function is a `???` under a
 # "## To do" heading, because §4.16's hole is a form the document has to demonstrate
 # somewhere; here it is written, because a program with a hole produces no binary by
-# design and this one has to run. And `lex.read_number` refuses a number past an `i64`
-# by name, where the appendix's aborts (defect 2548). Everything else is the appendix,
-# redistributed and qualified; `resolve/tests/acceptance.rs` and
+# design and this one has to run. And a literal, a sum or a product past an `i64` is
+# told by name where the appendix aborts (defects 2548 and 2567). Everything else is the
+# appendix, redistributed and qualified; `resolve/tests/acceptance.rs` and
 # `types/tests/acceptance.rs` still read design.md's single-file copy, so the two are
 # checked by different things and neither is a copy nobody looks at.
 #
 # What it exercises: a recursive variant through `[Expr]`, a hand-written
 # tokeniser and recursive-descent parser, `T?` with `?` propagation, a map as an
-# environment, a user-declared generic, eight `test` blocks — and now a module
+# environment, a user-declared generic, nine `test` blocks — and now a module
 # graph four deep, `main` → `eval` → `parse` → `lex`.
 #
 #     main.hero    the generic library, and the program
