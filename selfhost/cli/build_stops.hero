@@ -142,6 +142,10 @@ test "every flag of build beside --dump-ir is read by the dump or refused by nam
     for c in cli_table.commands()
         if c.tag == .build_cmd
             for f in c.flags
+                # `--dump-ir` itself is the flag the others stand beside; given twice it
+                # is refused by the parser before any stop is asked (defect 2536).
+                if f.spelling == "--dump-ir"
+                    continue
                 given: [str] @= ["build", "x.hero", "--dump-ir", f.spelling]
 
                 if f.value
