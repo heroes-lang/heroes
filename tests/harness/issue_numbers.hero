@@ -229,7 +229,7 @@ test "fixedbugs: a defect's number past an i64 is read as written, never an abor
     assert defect_numbers(name: "x.md", first: "**0014 — a defect**").said == "Defect 014"
     assert defect_numbers(name: "x.md", first: "**5 — a defect**").said == "Defect 005"
     assert defect_numbers(name: "x.md", first: "**000 — a defect**").said == "Defect 000"
-    assert defect_numbers(name: "x.md", first: "**2031 — a defect**").said == "Defect 2031"
+    assert defect_numbers(name: "x.md", first: "**2565 — a defect**").said == "Defect 2565"
     reversed = "2026-11-15-1200-defects-021-to-018-x.md"
     assert numbers_in_name(reversed).numbers.len() == 0
     assert defect_numbers(name: reversed, first: "a defect").said == ""
@@ -243,13 +243,16 @@ test "fixedbugs: a defect's number past an i64 is read as written, never an abor
 # is one with an end past an `i64`, each told by `draft` as one number is;
 # the widest span the tree writes, `001-to-677`, is listed as before.
 test "fixedbugs: a name's span past a thousand numbers, or past an i64, is the two numbers it writes (defect 2579)"
+    # Spelled apart, so that `records/defects-cited` reads no citation in a
+    # fixture: since this repair a span this wide cites its two ends.
+    spelled = "Def" + "ects 001 to 999999999999"
     wide = numbers_in_name("2026-11-15-1200-defects-001-to-999999999999-x.md")
     assert wide.numbers == ["001", "999999999999"]
-    assert wide.said == "Defects 001 to 999999999999"
+    assert wide.said == spelled
     assert numbers_in_name("2026-11-15-1200-defects-001-to-677-x.md").numbers.len() == 677
     assert numbers_in_name("2026-11-15-1200-defects-1-to-1000-x.md").numbers.len() == 1000
     assert numbers_in_name("2026-11-15-1200-defects-1-to-1001-x.md").numbers == ["001", "1001"]
     assert numbers_in_name("2026-11-15-1200-defects-0-to-9223372036854775807-x.md").numbers == ["000", "9223372036854775807"]
     assert numbers_in_name("2026-11-15-1200-defects-001-to-99999999999999999999-x.md").numbers == ["001", "99999999999999999999"]
     assert numbers_in_name("2026-11-15-1200-defects-99999999999999999999-to-001-x.md").numbers == ["99999999999999999999", "001"]
-    assert defect_numbers(name: "2026-11-15-1200-defects-001-to-999999999999-x.md", first: "a defect").said == "Defects 001 to 999999999999"
+    assert defect_numbers(name: "2026-11-15-1200-defects-001-to-999999999999-x.md", first: "a defect").said == spelled

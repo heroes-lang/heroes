@@ -272,11 +272,11 @@ function url_of(t: Targets, kind: str, number: i64, own: i64) -> str
 # files of `docs/panel/` itself whose name opens with the number and `-`, its
 # reports' folders apart; a number two files open with answers none.
 #
-# **A run of digits past an `i64` names no sitting** (defect 2565,
-# 2026-11-15): no `panel NNN` reaches it, since `linked_prose` reads six
-# digits at most, so its file is passed by. Until then the run was read by
-# `.must()`, and since defect 2545 made `to_number` refuse such a run by name,
-# `docs/panel/99999999999999999999-x.md` stopped `link` at exit 134.
+# **A run of digits past an `i64` names no sitting** (defect 2565): no
+# `panel NNN` reaches it, since `linked_prose` reads six digits at most, so
+# its file is passed by. Until then the run was read by `.must()`, and since
+# defect 2545 made `to_number` refuse such a run by name,
+# `docs/panel/99999999999999999999-x.md` stopped `link` at exit 134, 2026-11-15.
 function sittings_of(paths: [str]) -> {i64: str}
     found: {i64: [str]} @= {}
     none: [str] = []
