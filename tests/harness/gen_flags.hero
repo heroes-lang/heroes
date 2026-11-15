@@ -1,0 +1,88 @@
+# The generator's flags, read from its words (`generate.hero`; panel 231's
+# prototype, M-generated-programs): `--count 128` is the number after
+# `--count`, `-o DIR` the word after `-o`, and a flag the words do not give
+# takes the caller's fallback. The first such flag is the one read.
+#
+# **A number is told, never aborted on** (defect 2566, 2026-11-15): a value
+# that is no decimal integer, or one past an `i64`, ends the generator at
+# exit 2 with the flag and the value named, as its usage line does, where it
+# ended at exit 134 inside `.must()`; the harness's `to_number` says which,
+# `not_a_number` or `does_not_fit` (defect 2545).
+
+use <core>/strings as core_strings
+
+use strings
+
+# The number given after `flag`, or `fallback` where the flag is not given; a
+# value that is no number ends the program at exit 2, the flag and the value
+# named, as the usage line does (`number_given`).
+function number_after(words: [str], flag: str, fallback: i64) -> i64
+    match number_given(words, flag: flag, fallback: fallback)
+        .ok n => return n
+        .err e =>
+            print("generate: ", e.msg)
+            exit(2)
+
+# What `number_after` reads, as a value: `fallback` where `flag` is not given,
+# the decimal integer after it where it is, and `not_a_number` or
+# `does_not_fit` naming the flag where the word after it is no `i64`, the empty
+# word included.
+#
+# **Read by `.must()` until defect 2566** (2026-11-15): `answers --count
+# three` ended at exit 134 in this function, and so did `--count +5` and
+# `--count 99999999999999999999` (`does_not_fit` since defect 2545), a
+# mistyped flag killing the instrument where it could be told; and an empty
+# value was read as no flag, the default taken in silence.
+function number_given(words: [str], flag: str, fallback: i64) -> i64?
+    at = value_at(words, flag: flag)
+
+    if at < 0
+        return ok(fallback)
+
+    match strings.to_number(words[at])
+        .ok n  => return ok(n)
+        .err e => return fail(code: e.code, msg: "`" + flag + "` takes a number: " + e.msg)
+
+function text_after(words: [str], flag: str, fallback: str) -> str
+    at = value_at(words, flag: flag)
+
+    if at < 0
+        return fallback
+    return words[at]
+
+# Where the word after the first `flag` of `words` stands, or -1 where no
+# `flag` has a word after it.
+function value_at(words: [str], flag: str) -> i64
+    i: i64 @= 0
+
+    while i + 1 < words.len()
+        if words[i] == flag
+            return i + 1
+        i @ i + 1
+
+    return -1
+
+# DEFECT 2566, held as a test (2026-11-15): a flag's value that is no number
+# ended the generator at exit 134, `.must()` on `to_number`'s refusal, where
+# the flag and the value can be told; an empty value took the default in
+# silence. Each is refused by name now, and a number, a negative one and the
+# largest `i64` included, is read as before.
+test "fixedbugs: a flag's value that is no number is refused naming the flag and the value, never an abort (defect 2566)"
+    assert number_given(["answers", "--count", "3"], flag: "--count", fallback: 128).must() == 3
+    assert number_given(["answers"], flag: "--count", fallback: 128).must() == 128
+    assert number_given(["make", "--seed", "-4", "--count", "2"], flag: "--seed", fallback: 1).must() == -4
+    assert number_given(["make", "--seed", "9223372036854775807"], flag: "--seed", fallback: 1).must() == 9223372036854775807
+    assert number_given(["make", "--count", "2", "--seed", "7"], flag: "--seed", fallback: 1).must() == 7
+
+    for value in ["three", "+5", "", "3x", " 3", "0x10"]
+        match number_given(["answers", "--count", value], flag: "--count", fallback: 128)
+            .ok _  => assert false
+            .err e => assert e.code == "not_a_number" && core_strings.has_prefix(s: e.msg, prefix: "`--count` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
+
+    for value in ["99999999999999999999", "9223372036854775808", "-9223372036854775809"]
+        match number_given(["hunt", "--from", value], flag: "--from", fallback: 1)
+            .ok _  => assert false
+            .err e => assert e.code == "does_not_fit" && core_strings.has_prefix(s: e.msg, prefix: "`--from` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
+
+    assert text_after(["judge", "dir", "--compiler", "./heroes"], flag: "--compiler", fallback: "heroes") == "./heroes"
+    assert text_after(["judge", "dir"], flag: "--compiler", fallback: "heroes") == "heroes"

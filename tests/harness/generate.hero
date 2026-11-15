@@ -23,6 +23,7 @@ use <core>/strings as core_strings
 
 use gen_depth
 use gen_eval
+use gen_flags
 use gen_hunt
 use gen_judge
 use gen_program
@@ -41,8 +42,8 @@ function main()
 
     if words.len() > 0 && words[0] == "answers"
         answers(
-            count: number_after(words, flag: "--count", fallback: 128),
-            declared: number_after(words, flag: "--declared", fallback: 30)
+            count: gen_flags.number_after(words, flag: "--count", fallback: 128),
+            declared: gen_flags.number_after(words, flag: "--declared", fallback: 30)
         )
         return
 
@@ -56,17 +57,17 @@ function main()
         exit(deep(words))
 
     if words.len() > 1 && words[0] == "judge"
-        exit(judge(dir: words[1], compiler: text_after(words, flag: "--compiler", fallback: "heroes")))
+        exit(judge(dir: words[1], compiler: gen_flags.text_after(words, flag: "--compiler", fallback: "heroes")))
 
     if words.len() < 1 || words[0] != "make"
         print(
             "usage: generate make --seed N --count K -o DIR [--declared PERCENT] | judge DIR --compiler PATH | reduce --seed N --compiler PATH -o DIR [--level L] | hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT] | deep --depth N --compiler PATH -o DIR [--shapes if,while,records,variants,calls]"
         )
         exit(2)
-    seed = number_after(words, flag: "--seed", fallback: 1)
-    count = number_after(words, flag: "--count", fallback: 10)
-    declared = number_after(words, flag: "--declared", fallback: 0)
-    dir = text_after(words, flag: "-o", fallback: "build/generated")
+    seed = gen_flags.number_after(words, flag: "--seed", fallback: 1)
+    count = gen_flags.number_after(words, flag: "--count", fallback: 10)
+    declared = gen_flags.number_after(words, flag: "--declared", fallback: 0)
+    dir = gen_flags.text_after(words, flag: "-o", fallback: "build/generated")
     shell.mkdir_all(dir).must()
     k: i64 @= 0
 
@@ -82,14 +83,14 @@ function main()
 # `reduce --seed N --declared PERCENT --compiler PATH -o DIR`: the program
 # `make` wrote for seed N, taken down while PATH still fails it.
 function reduce(words: [str])
-    n = number_after(words, flag: "--seed", fallback: 1)
-    declared = number_after(words, flag: "--declared", fallback: 0)
-    compiler = text_after(words, flag: "--compiler", fallback: "heroes")
-    dir = text_after(words, flag: "-o", fallback: "build/reduced")
+    n = gen_flags.number_after(words, flag: "--seed", fallback: 1)
+    declared = gen_flags.number_after(words, flag: "--declared", fallback: 0)
+    compiler = gen_flags.text_after(words, flag: "--compiler", fallback: "heroes")
+    dir = gen_flags.text_after(words, flag: "-o", fallback: "build/reduced")
     shell.mkdir_all(dir).must()
     g = gen_program.from_seed(seed: n, percent: declared)
     t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
-    level = levels(text_after(words, flag: "--level", fallback: "-O0"))
+    level = levels(gen_flags.text_after(words, flag: "--level", fallback: "-O0"))
     seen = gen_symptom.symptom(g.p, compiler: compiler, dir: dir, level: level, @t)
 
     if seen == ""
@@ -168,14 +169,14 @@ function judge(dir: str, compiler: str) -> i64
 # or under the floor and recorded past it; anything else wrong is a defect.
 # 0 where none is, 1 where one is.
 function deep(words: [str]) -> i64
-    n = number_after(words, flag: "--depth", fallback: gen_depth.FLOOR)
-    compiler = text_after(words, flag: "--compiler", fallback: "heroes")
-    dir = text_after(words, flag: "-o", fallback: "build/deep")
+    n = gen_flags.number_after(words, flag: "--depth", fallback: gen_depth.FLOOR)
+    compiler = gen_flags.text_after(words, flag: "--compiler", fallback: "heroes")
+    dir = gen_flags.text_after(words, flag: "-o", fallback: "build/deep")
     shell.mkdir_all(dir).must()
     defects: i64 @= 0
     every: [gen_depth.Shape] @= gen_depth.shapes_at(n)
     every @ every.push(gen_depth.calls(n))
-    asked = text_after(words, flag: "--shapes", fallback: "if,while,records,variants,calls")
+    asked = gen_flags.text_after(words, flag: "--shapes", fallback: "if,while,records,variants,calls")
     shapes: [gen_depth.Shape] @= []
 
     for shape in every
@@ -259,16 +260,16 @@ function answers(count: i64, declared: i64)
 # reduction would hold, printed alone; 1 where it does something wrong, 0
 # where it does not.
 function symptom_word(words: [str]) -> i64
-    n = number_after(words, flag: "--seed", fallback: 1)
-    dir = text_after(words, flag: "-o", fallback: "build/symptom")
+    n = gen_flags.number_after(words, flag: "--seed", fallback: 1)
+    dir = gen_flags.text_after(words, flag: "-o", fallback: "build/symptom")
     shell.mkdir_all(dir).must()
-    g = gen_program.from_seed(seed: n, percent: number_after(words, flag: "--declared", fallback: 0))
+    g = gen_program.from_seed(seed: n, percent: gen_flags.number_after(words, flag: "--declared", fallback: 0))
     t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
     seen = gen_symptom.symptom(
         g.p,
-        compiler: text_after(words, flag: "--compiler", fallback: "heroes"),
+        compiler: gen_flags.text_after(words, flag: "--compiler", fallback: "heroes"),
         dir: dir,
-        level: levels(text_after(words, flag: "--level", fallback: "-O0")),
+        level: levels(gen_flags.text_after(words, flag: "--level", fallback: "-O0")),
         @t
     )
     print("seed ", n, ": ", seen)
@@ -281,12 +282,12 @@ function symptom_word(words: [str]) -> i64
 # answer reduced; 0 where none failed, 1 where one did, 2 where it could not
 # run (`gen_hunt.hero`).
 function hunt(words: [str]) -> i64
-    out = text_after(words, flag: "-o", fallback: "build/hunt")
+    out = gen_flags.text_after(words, flag: "-o", fallback: "build/hunt")
     got = gen_hunt.hunted(
-        from: number_after(words, flag: "--from", fallback: 1),
-        count: number_after(words, flag: "--count", fallback: 100),
-        declared: number_after(words, flag: "--declared", fallback: 30),
-        compiler: text_after(words, flag: "--compiler", fallback: "heroes"),
+        from: gen_flags.number_after(words, flag: "--from", fallback: 1),
+        count: gen_flags.number_after(words, flag: "--count", fallback: 100),
+        declared: gen_flags.number_after(words, flag: "--declared", fallback: 30),
+        compiler: gen_flags.text_after(words, flag: "--compiler", fallback: "heroes"),
         out: out
     )
 
@@ -315,77 +316,3 @@ function written(path: str, text: str)
     if write_file(path: path, text: text).is_err()
         print("cannot write ", path)
         exit(2)
-
-# The number given after `flag`, or `fallback` where the flag is not given; a
-# value that is no number ends the program at exit 2, the flag and the value
-# named, as the usage line does (`number_given`).
-function number_after(words: [str], flag: str, fallback: i64) -> i64
-    match number_given(words, flag: flag, fallback: fallback)
-        .ok n => return n
-        .err e =>
-            print("generate: ", e.msg)
-            exit(2)
-
-# What `number_after` reads, as a value: `fallback` where `flag` is not given,
-# the decimal integer after it where it is, and `not_a_number` or
-# `does_not_fit` naming the flag where the word after it is no `i64`, the empty
-# word included.
-#
-# **Read by `.must()` until defect 2566** (2026-11-15): `answers --count
-# three` ended at exit 134 in this function, and so did `--count +5` and
-# `--count 99999999999999999999` (`does_not_fit` since defect 2545), a
-# mistyped flag killing the instrument where it could be told; and an empty
-# value was read as no flag, the default taken in silence.
-function number_given(words: [str], flag: str, fallback: i64) -> i64?
-    at = value_at(words, flag: flag)
-
-    if at < 0
-        return ok(fallback)
-
-    match strings.to_number(words[at])
-        .ok n  => return ok(n)
-        .err e => return fail(code: e.code, msg: "`" + flag + "` takes a number: " + e.msg)
-
-function text_after(words: [str], flag: str, fallback: str) -> str
-    at = value_at(words, flag: flag)
-
-    if at < 0
-        return fallback
-    return words[at]
-
-# Where the word after the first `flag` of `words` stands, or -1 where no
-# `flag` has a word after it.
-function value_at(words: [str], flag: str) -> i64
-    i: i64 @= 0
-
-    while i + 1 < words.len()
-        if words[i] == flag
-            return i + 1
-        i @ i + 1
-
-    return -1
-
-# DEFECT 2566, held as a test (2026-11-15): a flag's value that is no number
-# ended the generator at exit 134, `.must()` on `to_number`'s refusal, where
-# the flag and the value can be told; an empty value took the default in
-# silence. Each is refused by name now, and a number, a negative one and the
-# largest `i64` included, is read as before.
-test "fixedbugs: a flag's value that is no number is refused naming the flag and the value, never an abort (defect 2566)"
-    assert number_given(["answers", "--count", "3"], flag: "--count", fallback: 128).must() == 3
-    assert number_given(["answers"], flag: "--count", fallback: 128).must() == 128
-    assert number_given(["make", "--seed", "-4", "--count", "2"], flag: "--seed", fallback: 1).must() == -4
-    assert number_given(["make", "--seed", "9223372036854775807"], flag: "--seed", fallback: 1).must() == 9223372036854775807
-    assert number_given(["make", "--count", "2", "--seed", "7"], flag: "--seed", fallback: 1).must() == 7
-
-    for value in ["three", "+5", "", "3x", " 3", "0x10"]
-        match number_given(["answers", "--count", value], flag: "--count", fallback: 128)
-            .ok _  => assert false
-            .err e => assert e.code == "not_a_number" && core_strings.has_prefix(s: e.msg, prefix: "`--count` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
-
-    for value in ["99999999999999999999", "9223372036854775808", "-9223372036854775809"]
-        match number_given(["hunt", "--from", value], flag: "--from", fallback: 1)
-            .ok _  => assert false
-            .err e => assert e.code == "does_not_fit" && core_strings.has_prefix(s: e.msg, prefix: "`--from` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
-
-    assert text_after(["judge", "dir", "--compiler", "./heroes"], flag: "--compiler", fallback: "heroes") == "./heroes"
-    assert text_after(["judge", "dir"], flag: "--compiler", fallback: "heroes") == "heroes"
