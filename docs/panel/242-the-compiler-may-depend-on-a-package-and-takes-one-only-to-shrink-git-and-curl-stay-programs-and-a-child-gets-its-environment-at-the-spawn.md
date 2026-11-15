@@ -280,3 +280,8 @@ feature 2315 stays open and waits for the compiler's first package by R2's ruler
 takes all fifteen open defects and features 2424 (R6) and 2425 (R7); the site publishes with that
 batch's push. What the yes settles: every resolution as adopted, design.md §1.11 as amended at
 `498c32967`, now ratified. What it does not: the predictions above, on their own clocks.
+
+**Amended 2026-11-15 by panel 250's R3**, ratified that morning (decision 2564, the author's *(b)*):
+R7's feature 2315 waits for its package in row 78, M-package-index, and no longer as an acceptance
+condition of M-core-packages; R2 stands, its unit written into design.md §1.11 by panel 250's R2.
+The paragraphs above are left as written.

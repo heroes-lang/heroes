@@ -547,3 +547,13 @@ seat's ceiling until the author names it, nor any route, nor the predictions, on
 
 **Filed 2026-11-15** as decision 2563, which asks the author's reading of R1 to R4 and the blind seat's
 ceiling; the paragraph above is left as written.
+
+**Ratified, R1 to R4, 2026-11-15**: the author's answer at about 09:35, *I accept all your
+recommendations*, to the coordinator's recommendations put in plain text that morning with decision
+2563, recorded as a reading (`.claude/rules/records.md` § And the record says whose idea it was).
+**What the yes settles**: R1 and R2 as adopted, the census approved and no route adopted, defect 2522
+open and `blocking` with panel 247's R1, R2 and D beneath it; R3's order, the route that tells a jump
+out of a handler from a jump within it built and run first; route K answered **no, for now**, panel
+247's R3 standing as written; and the blind seat of question 3 bounded at **10 USD** for all its paid
+sessions together, the spec-warden's `--refresh` calls asked with it. **What it does not**: the
+follow-up's route; the predictions, on their own clocks.

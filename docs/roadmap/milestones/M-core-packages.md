@@ -510,3 +510,14 @@ Heroes beside the Python ones (feature 2082, as the answer of 2026-11-12 ruled),
 `path/filepath` and `os` as the hooks need them, the switch kept for when the author is present.
 **3a**: the instrument of the paired run (task 2300) is written in batch 38, ready for the author's
 sealed suite of package tasks by 2026-11-24. **4a**: three worktrees of earlier sessions removed.
+
+**The author's answers of 2026-11-15, morning: two sittings read.** At about 09:35, *I accept all
+your recommendations*, on decisions 2563 and 2564. **Panel 249** (defect 2522, a Heroes function a
+signal reaches): the census approved, no candidate holding on any platform, 2522 open and `blocking`;
+the route that tells a jump out of a handler from a jump within it is built first, then question 3
+with the spec-warden and a blind seat bounded at 10 USD; route K answered no, for now. **Panel 250**
+(placing only the modules a program uses): every version stays placed whole, panel 242's R2 stands
+with its unit written down, and **feature 2315, the package manager rewritten over the core
+packages, leaves this row for row 78, M-package-index** (the author's *(b)*), since no placement
+meets R2 and `core` replaces none of its C parts; so this row no longer closes with it, and the
+acceptance condition written above on 2026-11-08 stands as written at its date.

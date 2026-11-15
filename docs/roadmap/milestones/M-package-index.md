@@ -28,3 +28,9 @@ a service, who may publish a name and what a withdrawn name does; and panel
 it has no service to keep running and can be tried from a local folder. The
 code does not change when a dependency moves from git to the index: it writes
 `<json>` either way, and only the catalogue's entry changes.
+
+**Feature 2315 is this row's since 2026-11-15**: the package manager rewritten over the core
+packages, every golden of its interface unchanged, moved here from M-core-packages by the author's
+answer *(b)* on panel 250 (decision 2564), panel 242's R7 *"Feature 2315 waits for that package"*
+holding here: the parts it would replace (`git` and `curl` launched, the index read over HTTP) wait
+for core packages that hold them.

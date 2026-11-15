@@ -628,3 +628,13 @@ subset placement, nor the predictions, on their own clocks.
 
 **Filed 2026-11-15** as decision 2564, which asks the author's reading of R1 to R4 and R3's choice; the
 paragraph above is left as written. R2's unit landed in design.md §1.11 at a1109217a, provisional.
+
+**Ratified, R1 to R4, 2026-11-15**: the author's answer at about 09:35, *I accept all your
+recommendations*, to the coordinator's recommendations put in plain text that morning with decision
+2564, recorded as a reading. **What the yes settles**: R1 to R4 as adopted, every version placed
+whole, panel 242's R2 standing with its unit as landed at a1109217a, spec § 1 unchanged and p1r not
+adopted; and R3 answered **(*b*)**: feature 2315 moved to row 78, M-package-index, on GitHub that
+morning (its milestone alone written, its body read back byte for byte unchanged), M-core-packages'
+row no longer closing with it, panel 242's R7 *"Feature 2315 waits for that package"* holding in
+M-package-index. The conservative alternative, (*c*), not taken. **What it does not**: a reopening of
+subset placement; the predictions, on their own clocks.
