@@ -675,11 +675,13 @@ int64_t hero_fs_why(void) {
 #include <sys/stat.h>
 #endif
 
-/* 1 for a directory, -1 where the descriptor cannot be described, 0 otherwise,
- * with `*first_room` the capacity to start from: one byte past a regular file's
- * stated size, so a file read whole meets its end in the same call, and 4096
- * where nothing states a size. Asked of the descriptor rather than the path, so
- * the answer is about the file that was opened. */
+/* 1 for a directory, 2 for what is neither a directory nor a regular file (a
+ * FIFO, a device, a socket, Windows' `CON`), -1 where the descriptor cannot be
+ * described, 0 for a regular file, with `*first_room` the capacity to start
+ * from: one byte past a regular file's stated size, so a file read whole
+ * meets its end in the same call, and 4096 where nothing states a size. Asked
+ * of the descriptor rather than the path, so the answer is about the file
+ * that was opened. */
 static int hero_file_kind(FILE *file, size_t *first_room) {
     *first_room = 4096;
 #if defined(_WIN32)
@@ -693,7 +695,8 @@ static int hero_file_kind(FILE *file, size_t *first_room) {
     if (S_ISDIR(info.st_mode)) return 1;
     int regular = S_ISREG(info.st_mode);
 #endif
-    if (regular && info.st_size > 0 && (uint64_t)info.st_size < (uint64_t)(SIZE_MAX / 2))
+    if (!regular) return 2;
+    if (info.st_size > 0 && (uint64_t)info.st_size < (uint64_t)(SIZE_MAX / 2))
         *first_room = (size_t)info.st_size + 1;
     return 0;
 }
@@ -802,9 +805,9 @@ static HeroStr hero_bytes_shown(const char *buffer, int64_t got, int64_t *status
  * translates newlines, and a language whose `str` is measured in bytes cannot have
  * a file grow one byte per line on one platform. */
 /* The bytes of a file, whole, in a buffer `hero_release` frees, or NULL with
- * `*status` saying why. The one read both `hero_file_read` and
- * `hero_file_read_shown` make, split out of the first on 2026-10-04 (panel 189)
- * so that a second copy of the walk cannot drift.
+ * `*status` saying why. The one read `hero_file_read` and the compiler's doors
+ * make, split out of the first on 2026-10-04 (panel 189) so that a second copy
+ * of the walk cannot drift.
  *
  * **Defects 273 and 274 live here, and nowhere else** (panel 189's R7, the
  * ffi-pragmatist's composition). `71488f58` and `57bc980c` repaired them in
@@ -816,16 +819,62 @@ static HeroStr hero_bytes_shown(const char *buffer, int64_t got, int64_t *status
  * NOT_FOUND only where nothing is at the path (defect 274, 2026-10-04): a
  * file of mode 000 was `file_not_found`, *no file at* a path where a file
  * is, and Windows' `fopen` of a directory fails EACCES. `ENOTDIR` is a path
- * through a file, where nothing can be. */
-static char *hero_file_bytes(const char *path, int64_t *got, int64_t *status) {
+ * through a file, where nothing can be.
+ *
+ * **The compiler's doors read a regular file and nothing else, and never wait
+ * to open one** (defect 2572, 2026-11-15): `hero_file_read_shown`, the key of
+ * a file (`parts/key.c`) and a placed tree's sum (`parts/sha256.c`) come here
+ * with `ordinary_only`, a program's `read_file` without it. `fopen` of a FIFO
+ * waits for a writer, so a FIFO standing at `heroes.toml`, at a source, at a
+ * module a `use` names or in a placed tree hung `heroes fetch`, `add`, `check`
+ * and `build` until they were killed (measured on this Mac, each under
+ * `timeout -s KILL 5`). So on POSIX such a read opens with `O_NONBLOCK`, which
+ * a FIFO answers at once, and asks the descriptor what it opened before a byte
+ * is read: a FIFO, a device or a socket is FAILED there, and the caller tells
+ * what stands at the name. The flag is taken off a regular file before it is
+ * read, where it changes nothing. A question asked of the path before the open
+ * would leave the instant between the two, where a FIFO made at the name hung
+ * the read again. On Windows a FIFO has no name in the filesystem, and `fopen`
+ * of a device or a pipe returns at once (unrun on the box, off that day), so
+ * the descriptor's answer refuses `CON` and a pipe there before a byte is read
+ * the same way. A program's `read_file` keeps waiting: a program may read a
+ * pipe, and that is the language's to decide. */
+#if !defined(_WIN32)
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+static FILE *hero_file_opened(const char *path, int ordinary_only, int64_t *status) {
     errno = 0;
+#if defined(_WIN32)
+    (void)ordinary_only;
     FILE *file = fopen(path, "rb");
-    if (file == NULL) {
-        *status = (errno == ENOENT || errno == ENOTDIR) ? HERO_OS_NOT_FOUND : HERO_OS_FAILED;
-        return NULL;
+#else
+    FILE *file = NULL;
+    if (!ordinary_only) {
+        file = fopen(path, "rb");
+    } else {
+        int fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+        if (fd >= 0) {
+            int flags = fcntl(fd, F_GETFL);
+            if (flags >= 0 && fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) == 0) file = fdopen(fd, "rb");
+            if (file == NULL) {
+                close(fd);
+                *status = HERO_OS_FAILED;
+                return NULL;
+            }
+        }
     }
+#endif
+    if (file == NULL) *status = (errno == ENOENT || errno == ENOTDIR) ? HERO_OS_NOT_FOUND : HERO_OS_FAILED;
+    return file;
+}
+
+static char *hero_file_bytes_of(const char *path, int ordinary_only, int64_t *got, int64_t *status) {
+    FILE *file = hero_file_opened(path, ordinary_only, status);
+    if (file == NULL) return NULL;
     size_t room = 0;
-    if (hero_file_kind(file, &room) != 0) {
+    int kind = hero_file_kind(file, &room);
+    if (kind < 0 || kind == 1 || (kind == 2 && ordinary_only)) {
         fclose(file);
         *status = HERO_OS_FAILED;
         return NULL;
@@ -863,9 +912,14 @@ static char *hero_file_bytes(const char *path, int64_t *got, int64_t *status) {
     return buffer;
 }
 
+/* The compiler's read: a regular file, opened without waiting (above). */
+static char *hero_file_bytes(const char *path, int64_t *got, int64_t *status) {
+    return hero_file_bytes_of(path, 1, got, status);
+}
+
 HeroStr hero_file_read(const char *path, int64_t *status) {
     int64_t got = 0;
-    char *buffer = hero_file_bytes(path, &got, status);
+    char *buffer = hero_file_bytes_of(path, 0, &got, status);
     if (buffer == NULL) return hero_str_from_bytes("", 0);
     /* **The bytes are not text, and that is a value rather than a death** (panel
      * 087). `hero_str_from_bytes` aborts on ill-formed UTF-8, and that abort is

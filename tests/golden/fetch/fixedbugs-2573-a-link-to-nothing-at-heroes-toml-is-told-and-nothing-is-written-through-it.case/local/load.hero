@@ -1,0 +1,3 @@
+# The folder the case beside it adds with `--path`.
+function size() -> i64
+    return 3

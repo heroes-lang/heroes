@@ -1,0 +1,6 @@
+# The package `json` of the case two folders up: it reads the package
+# `strings` through its own catalogue, which a program places beside it.
+use <strings>/cut
+
+function x() -> i64
+    return cut.cut()

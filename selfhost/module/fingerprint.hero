@@ -242,3 +242,25 @@ test "the files a tree gained are named where its sum proves them, and nothing i
     assert !process.remove_file(dir + "/sub/mine.hero").is_err()
     assert added(root: dir, sum: placed) == []
     assert !process.remove_tree(dir).is_err()
+
+# Defect 2572: a FIFO in a tree is no file the sum can read, and the read
+# answers at once rather than waiting for a writer, which hung every build
+# of the program that placed the tree. Made where the machine has `mkfifo`.
+test "a FIFO in a tree fails its fingerprint at once (defect 2572)"
+    dir = "build/selftest-fingerprint-2572"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/a.hero", text: "function a() -> i64\n    return 1\n").is_err()
+    made = process.run(
+        program: "mkfifo",
+        words: ["mkfifo", dir + "/pipe"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if made.started && made.code == 0
+        match of(dir)
+            .ok _  => assert false
+            .err e => assert e.code == "unreadable" && e.msg == "`" + dir + "/pipe` cannot be read"
+
+    assert !process.remove_tree(dir).is_err()

@@ -1,0 +1,4 @@
+add json -C <work>/app
+check <work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e/parse.hero
+cd <work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e && check parse.hero
+check <work>/app/main.hero

@@ -1,0 +1,3 @@
+fetch -C <work>/app
+check <work>/app/main.hero
+add --path ../local --as yaml -C <work>/app
