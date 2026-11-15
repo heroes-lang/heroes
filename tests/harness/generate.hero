@@ -23,6 +23,7 @@ use <core>/strings as core_strings
 
 use gen_depth
 use gen_eval
+use gen_flags
 use gen_hunt
 use gen_judge
 use gen_program
@@ -40,10 +41,8 @@ function main()
         return
 
     if words.len() > 0 && words[0] == "answers"
-        answers(
-            count: number_after(words, flag: "--count", fallback: 128),
-            declared: number_after(words, flag: "--declared", fallback: 30)
-        )
+        f = gen_flags.flags_of(words: words, positional: 0, known: ["--count", "--declared"])
+        answers(count: gen_flags.count_after(f, fallback: 128), declared: gen_flags.percent_after(f, fallback: 30))
         return
 
     if words.len() > 0 && words[0] == "symptom"
@@ -56,17 +55,20 @@ function main()
         exit(deep(words))
 
     if words.len() > 1 && words[0] == "judge"
-        exit(judge(dir: words[1], compiler: text_after(words, flag: "--compiler", fallback: "heroes")))
+        judged = gen_flags.flags_of(words: words, positional: 1, known: ["--compiler"])
+        exit(judge(dir: words[1], compiler: gen_flags.text(judged, flag: "--compiler", fallback: "heroes")))
 
     if words.len() < 1 || words[0] != "make"
         print(
             "usage: generate make --seed N --count K -o DIR [--declared PERCENT] | judge DIR --compiler PATH | reduce --seed N --compiler PATH -o DIR [--level L] | hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT] | deep --depth N --compiler PATH -o DIR [--shapes if,while,records,variants,calls]"
         )
         exit(2)
-    seed = number_after(words, flag: "--seed", fallback: 1)
-    count = number_after(words, flag: "--count", fallback: 10)
-    declared = number_after(words, flag: "--declared", fallback: 0)
-    dir = text_after(words, flag: "-o", fallback: "build/generated")
+    made = gen_flags.flags_of(words: words, positional: 0, known: ["--seed", "--count", "-o", "--declared"])
+    seed = gen_flags.seed_after(made, flag: "--seed", fallback: 1)
+    count = gen_flags.count_after(made, fallback: 10)
+    gen_flags.told(gen_flags.seeds_fit(first: seed, count: count, first_flag: "--seed"))
+    declared = gen_flags.percent_after(made, fallback: 0)
+    dir = gen_flags.text(made, flag: "-o", fallback: "build/generated")
     shell.mkdir_all(dir).must()
     k: i64 @= 0
 
@@ -82,14 +84,15 @@ function main()
 # `reduce --seed N --declared PERCENT --compiler PATH -o DIR`: the program
 # `make` wrote for seed N, taken down while PATH still fails it.
 function reduce(words: [str])
-    n = number_after(words, flag: "--seed", fallback: 1)
-    declared = number_after(words, flag: "--declared", fallback: 0)
-    compiler = text_after(words, flag: "--compiler", fallback: "heroes")
-    dir = text_after(words, flag: "-o", fallback: "build/reduced")
+    f = gen_flags.flags_of(words: words, positional: 0, known: ["--seed", "--declared", "--compiler", "-o", "--level"])
+    n = gen_flags.seed_after(f, flag: "--seed", fallback: 1)
+    declared = gen_flags.percent_after(f, fallback: 0)
+    compiler = gen_flags.text(f, flag: "--compiler", fallback: "heroes")
+    dir = gen_flags.text(f, flag: "-o", fallback: "build/reduced")
+    level = levels(f)
     shell.mkdir_all(dir).must()
     g = gen_program.from_seed(seed: n, percent: declared)
     t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
-    level = levels(text_after(words, flag: "--level", fallback: "-O0"))
     seen = gen_symptom.symptom(g.p, compiler: compiler, dir: dir, level: level, @t)
 
     if seen == ""
@@ -168,14 +171,17 @@ function judge(dir: str, compiler: str) -> i64
 # or under the floor and recorded past it; anything else wrong is a defect.
 # 0 where none is, 1 where one is.
 function deep(words: [str]) -> i64
-    n = number_after(words, flag: "--depth", fallback: gen_depth.FLOOR)
-    compiler = text_after(words, flag: "--compiler", fallback: "heroes")
-    dir = text_after(words, flag: "-o", fallback: "build/deep")
+    f = gen_flags.flags_of(words: words, positional: 0, known: ["--depth", "--compiler", "-o", "--shapes"])
+    n = gen_flags.told(
+        gen_flags.number(f, flag: "--depth", fallback: gen_depth.FLOOR, least: 1, most: gen_flags.I64_MOST)
+    )
+    compiler = gen_flags.text(f, flag: "--compiler", fallback: "heroes")
+    dir = gen_flags.text(f, flag: "-o", fallback: "build/deep")
+    asked = gen_flags.told(gen_flags.listed(f, flag: "--shapes", fallback: SHAPES.join(","), allowed: SHAPES))
     shell.mkdir_all(dir).must()
     defects: i64 @= 0
     every: [gen_depth.Shape] @= gen_depth.shapes_at(n)
     every @ every.push(gen_depth.calls(n))
-    asked = text_after(words, flag: "--shapes", fallback: "if,while,records,variants,calls")
     shapes: [gen_depth.Shape] @= []
 
     for shape in every
@@ -228,9 +234,13 @@ function deep(words: [str]) -> i64
         return 1
     return 0
 
+# The shapes `deep` writes, each a kind `--shapes` may name.
+constant SHAPES: [str]
+    ["if", "while", "records", "variants", "calls"]
+
 # Whether the shape named `name`, `<kind>-<n>-deep`, is one `asked` lists.
-function asked_for(name: str, asked: str) -> bool
-    for kind in strings.split_text(text: asked, separator: ",")
+function asked_for(name: str, asked: [str]) -> bool
+    for kind in asked
         if core_strings.has_prefix(s: name, prefix: kind + "-")
             return true
 
@@ -259,16 +269,19 @@ function answers(count: i64, declared: i64)
 # reduction would hold, printed alone; 1 where it does something wrong, 0
 # where it does not.
 function symptom_word(words: [str]) -> i64
-    n = number_after(words, flag: "--seed", fallback: 1)
-    dir = text_after(words, flag: "-o", fallback: "build/symptom")
+    f = gen_flags.flags_of(words: words, positional: 0, known: ["--seed", "--compiler", "--declared", "--level", "-o"])
+    n = gen_flags.seed_after(f, flag: "--seed", fallback: 1)
+    declared = gen_flags.percent_after(f, fallback: 0)
+    level = levels(f)
+    dir = gen_flags.text(f, flag: "-o", fallback: "build/symptom")
     shell.mkdir_all(dir).must()
-    g = gen_program.from_seed(seed: n, percent: number_after(words, flag: "--declared", fallback: 0))
+    g = gen_program.from_seed(seed: n, percent: declared)
     t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
     seen = gen_symptom.symptom(
         g.p,
-        compiler: text_after(words, flag: "--compiler", fallback: "heroes"),
+        compiler: gen_flags.text(f, flag: "--compiler", fallback: "heroes"),
         dir: dir,
-        level: levels(text_after(words, flag: "--level", fallback: "-O0")),
+        level: level,
         @t
     )
     print("seed ", n, ": ", seen)
@@ -281,12 +294,17 @@ function symptom_word(words: [str]) -> i64
 # answer reduced; 0 where none failed, 1 where one did, 2 where it could not
 # run (`gen_hunt.hero`).
 function hunt(words: [str]) -> i64
-    out = text_after(words, flag: "-o", fallback: "build/hunt")
+    f = gen_flags.flags_of(words: words, positional: 0, known: ["--from", "--count", "--compiler", "-o", "--declared"])
+    from = gen_flags.seed_after(f, flag: "--from", fallback: 1)
+    count = gen_flags.count_after(f, fallback: 100)
+    gen_flags.told(gen_flags.seeds_fit(first: from, count: count, first_flag: "--from"))
+    declared = gen_flags.percent_after(f, fallback: 30)
+    out = gen_flags.text(f, flag: "-o", fallback: "build/hunt")
     got = gen_hunt.hunted(
-        from: number_after(words, flag: "--from", fallback: 1),
-        count: number_after(words, flag: "--count", fallback: 100),
-        declared: number_after(words, flag: "--declared", fallback: 30),
-        compiler: text_after(words, flag: "--compiler", fallback: "heroes"),
+        from: from,
+        count: count,
+        declared: declared,
+        compiler: gen_flags.text(f, flag: "--compiler", fallback: "heroes"),
         out: out
     )
 
@@ -302,8 +320,11 @@ function hunt(words: [str]) -> i64
             return 0
 
 # The flags a reduction builds with, from `--level`: `-O0` (the default),
-# `-O2`, or `sanitize`, the `--sanitize -O0` configuration.
-function levels(said: str) -> [str]
+# `-O2`, or `sanitize`, the `--sanitize -O0` configuration; any other word is
+# told, where it read as `-O0` until defect 2580.
+function levels(f: gen_flags.Flags) -> [str]
+    said = gen_flags.told(gen_flags.one_of(f, flag: "--level", fallback: "-O0", allowed: ["-O0", "-O2", "sanitize"]))
+
     if said == "-O2"
         return ["-O2"]
 
@@ -315,20 +336,3 @@ function written(path: str, text: str)
     if write_file(path: path, text: text).is_err()
         print("cannot write ", path)
         exit(2)
-
-function number_after(words: [str], flag: str, fallback: i64) -> i64
-    said = text_after(words, flag: flag, fallback: "")
-
-    if said == ""
-        return fallback
-    return strings.to_number(said).must()
-
-function text_after(words: [str], flag: str, fallback: str) -> str
-    i: i64 @= 0
-
-    while i + 1 < words.len()
-        if words[i] == flag
-            return words[i + 1]
-        i @ i + 1
-
-    return fallback

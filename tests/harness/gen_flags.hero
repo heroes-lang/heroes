@@ -1,0 +1,265 @@
+# The generator's flags, read from its words (`generate.hero`; panel 231's
+# prototype, M-generated-programs): each word takes the flags its usage line
+# names, each at most once and followed by its value, `--count 128` the
+# number after `--count` and `-o DIR` the word after `-o`; a flag the words
+# do not give takes the word's fallback.
+#
+# **A number is told, never aborted on** (defect 2566, 2026-11-15): a value
+# that is no decimal integer, or one past an `i64`, ends the generator at
+# exit 2 with the flag and the value named, as its usage line does, where it
+# ended at exit 134 inside `.must()`; the harness's `to_number` says which,
+# `not_a_number` or `does_not_fit` (defect 2545).
+#
+# **And the words are read whole, every value against what it may be**
+# (defect 2580, the same day). Until then a flag was looked up where it
+# stood, so a flag with no word after it, one given twice and one the word
+# does not take were passed over in silence, the default or the first taken
+# (`make --count 1 -o` wrote into `build/generated`); and a number was taken
+# whatever it was: `deep --depth -1` ended at exit 134 in `gen_depth.calls`,
+# `make --seed 9223372036854775807 --count 2` overflowed in
+# `gen_program.from_seed`, a negative seed wrote `use g-24m4`, which is no
+# module's name, `--declared 200` read as 100, `--count -1` wrote nothing at
+# exit 0, and `--level O2` and `--shapes iff` read as the default and as no
+# shape. Each is told now, at exit 2, naming the flag.
+
+use <core>/strings as core_strings
+
+use gen_program
+use strings
+
+# The flags a word was given, read whole (`read`): each flag to its value.
+record Flags
+    given: {str: str}
+
+constant PERCENT_MOST: i64
+    100
+
+constant I64_MOST: i64
+    9223372036854775807
+
+# What `got` holds, or the generator ended at exit 2 with its reason after
+# `generate: `, as the usage line ends it.
+function told<T>(got: T?) -> T
+    match got
+        .ok v => return v
+        .err e =>
+            print("generate: ", e.msg)
+            exit(2)
+
+# The flags of `words`, whose first is the word and whose next `positional`
+# are its operands: every later word a flag the word takes (`known`), given
+# once, with a value after it.
+function read(words: [str], positional: i64, known: [str]) -> Flags?
+    given: {str: str} @= {}
+    i: i64 @= 1 + positional
+
+    while i < words.len()
+        flag = words[i]
+
+        if !among(word: flag, words: known)
+            return fail(
+                code: "unknown_flag",
+                msg: "`" + words[0] + "` takes no `" + flag + "`: it takes " + quoted(known)
+            )
+
+        if i + 1 >= words.len()
+            return fail(code: "no_value", msg: "`" + flag + "` takes a value, and none follows it")
+
+        if !given[flag].is_err()
+            return fail(
+                code: "given_twice",
+                msg: "`" + flag + "` is given twice, `" + given[flag].must() + "` and `" + words[i + 1] + "`"
+            )
+        given[flag] @ words[i + 1]
+        i @ i + 2
+
+    return ok(Flags(given: given))
+
+# The flags of `words`, as `read` reads them, or the generator told why not.
+function flags_of(words: [str], positional: i64, known: [str]) -> Flags
+    return told(read(words: words, positional: positional, known: known))
+
+# A seed, `0` to `gen_program.SEED_MOST`, given after `flag`, or the
+# generator told why not.
+function seed_after(f: Flags, flag: str, fallback: i64) -> i64
+    return told(number(f, flag: flag, fallback: fallback, least: 0, most: gen_program.SEED_MOST))
+
+# How many programs, at least one, given after `--count`, or the generator
+# told why not: a count of none wrote nothing and exited 0.
+function count_after(f: Flags, fallback: i64) -> i64
+    return told(number(f, flag: "--count", fallback: fallback, least: 1, most: gen_program.SEED_MOST))
+
+# The declared arm's share, `0` to `100` percent, given after `--declared`,
+# or the generator told why not.
+function percent_after(f: Flags, fallback: i64) -> i64
+    return told(number(f, flag: "--declared", fallback: fallback, least: 0, most: PERCENT_MOST))
+
+# The whole number given after `flag`, from `least` to `most`, or `fallback`
+# where the flag is not given.
+function number(f: Flags, flag: str, fallback: i64, least: i64, most: i64) -> i64?
+    said = f.given[flag]
+
+    if said.is_err()
+        return ok(fallback)
+    n = value_number(said: said.must(), flag: flag)?
+
+    if n < least || n > most
+        return fail(
+            code: "out_of_range",
+            msg: "`" + flag + "` is " + range_said(least: least, most: most) + ", not `" + said.must() + "`"
+        )
+    return ok(n)
+
+# `said` read as the number `flag` takes, `not_a_number` or `does_not_fit`
+# naming both where it is none: the empty word, `+5` and a number past an
+# `i64` included (defect 2566).
+function value_number(said: str, flag: str) -> i64?
+    match strings.to_number(said)
+        .ok n  => return ok(n)
+        .err e => return fail(code: e.code, msg: "`" + flag + "` takes a number: " + e.msg)
+
+function range_said(least: i64, most: i64) -> str
+    if most == I64_MOST
+        return "a whole number from " + least.to_str() + " up"
+    return "a whole number from " + least.to_str() + " to " + most.to_str()
+
+# The word given after `flag`, or `fallback` where the flag is not given.
+function text(f: Flags, flag: str, fallback: str) -> str
+    return f.given[flag].default(fallback)
+
+# The word given after `flag`, one of `allowed`, or `fallback` where the flag
+# is not given.
+function one_of(f: Flags, flag: str, fallback: str, allowed: [str]) -> str?
+    said = text(f, flag: flag, fallback: fallback)
+
+    if !among(word: said, words: allowed)
+        return fail(code: "unknown_value", msg: "`" + flag + "` is " + quoted(allowed) + ", not `" + said + "`")
+    return ok(said)
+
+# The comma-separated names given after `flag`, each one of `allowed`, or
+# those of `fallback` where the flag is not given.
+function listed(f: Flags, flag: str, fallback: str, allowed: [str]) -> [str]?
+    names = strings.split_text(text: text(f, flag: flag, fallback: fallback), separator: ",")
+
+    for name in names
+        if !among(word: name, words: allowed)
+            return fail(code: "unknown_value", msg: "`" + flag + "` names " + quoted(allowed) + ", not `" + name + "`")
+
+    return ok(names)
+
+# The seeds `first` to `first + count - 1` whose programs a word makes, each
+# one `gen_program.from_seed` can take, `first_flag` naming the first.
+function seeds_fit(first: i64, count: i64, first_flag: str) -> ()?
+    # `number` held both to their ranges, so neither side leaves an `i64`.
+    if count - 1 > gen_program.SEED_MOST - first
+        return fail(
+            code: "out_of_range",
+            msg: "`" + first_flag + " " + first.to_str() + "` and `--count " + count.to_str() + "` reach past seed " + gen_program.SEED_MOST.to_str() + ", the largest a program is made from"
+        )
+    return ok()
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# `a`, `b` or `c`.
+function quoted(words: [str]) -> str
+    shown: [str] @= []
+
+    for word in words
+        shown @ shown.push("`" + word + "`")
+
+    if shown.len() == 1
+        return shown[0]
+    return shown.slice(from: 0, to: shown.len() - 1).join(", ") + " or " + shown[shown.len() - 1]
+
+# DEFECT 2566, held as a test (2026-11-15): a flag's value that is no number
+# ended the generator at exit 134, `.must()` on `to_number`'s refusal, where
+# the flag and the value can be told; an empty value took the default in
+# silence. Each is refused by name now, and a number, a negative one and the
+# largest `i64` included, is read as before.
+test "fixedbugs: a flag's value that is no number is refused naming the flag and the value, never an abort (defect 2566)"
+    assert value_number(said: "3", flag: "--count").must() == 3
+    assert value_number(said: "-4", flag: "--seed").must() == -4
+    assert value_number(said: "9223372036854775807", flag: "--seed").must() == 9223372036854775807
+    f = read(words: ["make", "--count", "2", "--seed", "7"], positional: 0, known: ["--seed", "--count"]).must()
+    assert number(f, flag: "--seed", fallback: 1, least: 0, most: I64_MOST).must() == 7
+    assert number(f, flag: "--declared", fallback: 30, least: 0, most: PERCENT_MOST).must() == 30
+
+    for value in ["three", "+5", "", "3x", " 3", "0x10"]
+        match value_number(said: value, flag: "--count")
+            .ok _  => assert false
+            .err e => assert e.code == "not_a_number" && core_strings.has_prefix(s: e.msg, prefix: "`--count` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
+
+    for value in ["99999999999999999999", "9223372036854775808", "-9223372036854775809"]
+        match value_number(said: value, flag: "--from")
+            .ok _  => assert false
+            .err e => assert e.code == "does_not_fit" && core_strings.has_prefix(s: e.msg, prefix: "`--from` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
+
+    assert text(f, flag: "--compiler", fallback: "heroes") == "heroes"
+    judged = read(words: ["judge", "dir", "--compiler", "./heroes"], positional: 1, known: ["--compiler"]).must()
+    assert text(judged, flag: "--compiler", fallback: "heroes") == "./heroes"
+
+# DEFECT 2580, held as a test (2026-11-15): the generator passed over a flag
+# with no value, one given twice and one its word does not take, taking the
+# default or the first, and took any number: a negative depth aborted, a seed
+# past `gen_program.SEED_MOST` overflowed, a negative one wrote a module named
+# `g-24m4`, a percent past 100 read as 100, a negative count wrote nothing.
+# Each is refused by name, and every value in range is read as before.
+test "fixedbugs: a flag with no value, given twice, not the word's, or out of its range is refused by name (defect 2580)"
+    make = ["--seed", "--count", "-o", "--declared"]
+
+    match read(words: ["make", "--count", "1", "-o"], positional: 0, known: make)
+        .ok _  => assert false
+        .err e => assert e.code == "no_value" && e.msg == "`-o` takes a value, and none follows it"
+
+    match read(words: ["make", "--count", "1", "--count", "2"], positional: 0, known: make)
+        .ok _  => assert false
+        .err e => assert e.code == "given_twice" && e.msg == "`--count` is given twice, `1` and `2`"
+
+    match read(words: ["make", "--cout", "3"], positional: 0, known: make)
+        .ok _  => assert false
+        .err e => assert e.code == "unknown_flag" && e.msg == "`make` takes no `--cout`: it takes `--seed`, `--count`, `-o` or `--declared`"
+
+    match read(words: ["judge", "dir", "dir2"], positional: 1, known: ["--compiler"])
+        .ok _  => assert false
+        .err e => assert e.code == "unknown_flag"
+
+    given = read(
+        words: ["deep", "--depth", "-1", "--declared", "200", "--count", "0", "--seed", "-3"],
+        positional: 0,
+        known: ["--depth", "--declared", "--count", "--seed"]
+    ).must()
+    told_range = [
+        number(given, flag: "--depth", fallback: 1, least: 1, most: I64_MOST)
+        number(given, flag: "--declared", fallback: 0, least: 0, most: PERCENT_MOST)
+        number(given, flag: "--count", fallback: 1, least: 1, most: gen_program.SEED_MOST)
+        number(given, flag: "--seed", fallback: 1, least: 0, most: gen_program.SEED_MOST)
+    ]
+
+    for one in told_range
+        match one
+            .ok _  => assert false
+            .err e => assert e.code == "out_of_range"
+
+    match number(given, flag: "--depth", fallback: 1, least: 1, most: I64_MOST)
+        .ok _  => assert false
+        .err e => assert e.msg == "`--depth` is a whole number from 1 up, not `-1`"
+
+    match number(given, flag: "--declared", fallback: 0, least: 0, most: PERCENT_MOST)
+        .ok _  => assert false
+        .err e => assert e.msg == "`--declared` is a whole number from 0 to 100, not `200`"
+
+    assert !seeds_fit(first: gen_program.SEED_MOST, count: 1, first_flag: "--seed").is_err()
+    assert seeds_fit(first: gen_program.SEED_MOST, count: 2, first_flag: "--seed").is_err()
+    assert !seeds_fit(first: 1, count: gen_program.SEED_MOST, first_flag: "--from").is_err()
+    assert !seeds_fit(first: 0, count: gen_program.SEED_MOST, first_flag: "--from").is_err()
+    levels = read(words: ["reduce", "--level", "O2"], positional: 0, known: ["--level"]).must()
+    assert one_of(levels, flag: "--level", fallback: "-O0", allowed: ["-O0", "-O2", "sanitize"]).is_err()
+    assert one_of(levels, flag: "--other", fallback: "-O0", allowed: ["-O0", "-O2", "sanitize"]).must() == "-O0"
+    shapes = read(words: ["deep", "--shapes", "if,iff"], positional: 0, known: ["--shapes"]).must()
+    assert listed(shapes, flag: "--shapes", fallback: "if", allowed: ["if", "while"]).is_err()
+    assert listed(shapes, flag: "--none", fallback: "if,while", allowed: ["if", "while"]).must() == ["if", "while"]

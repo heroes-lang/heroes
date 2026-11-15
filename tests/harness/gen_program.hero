@@ -20,6 +20,13 @@ record File
     name: str
     text: str
 
+# The largest seed a program is made from: `from_seed` seeds its stream with
+# `seed * 31 + 7`, which one past it would leave an `i64` (defect 2580). The
+# least is 0, since a seed is written into a module's name, `g24m4`, and a
+# negative one wrote `g-24m4`, which names nothing.
+constant SEED_MOST: i64
+    (9223372036854775807 - 7) / 31
+
 # The program a seed names, the declared arm planted in `percent` of seeds
 # and the C group in `C_PERCENT` of them: the one map `make`, `reduce`,
 # `hunt` and the `generated` suite all read, so a failure is reproduced by
