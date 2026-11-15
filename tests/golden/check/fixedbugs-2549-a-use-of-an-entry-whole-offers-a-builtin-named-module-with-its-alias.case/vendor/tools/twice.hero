@@ -1,0 +1,3 @@
+# Once n.
+function once(n: i64) -> i64
+    return n

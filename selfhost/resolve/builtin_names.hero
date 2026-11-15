@@ -22,11 +22,14 @@
 # cost was the compiler's own function of that name, renamed
 # (`bytes_text.emit`); the `owned` machinery still asks for the
 # library's by name and origin (`ir/owned_release.hero`).
+#
+# **No parser is reached from here since defect 2549**: the parse stage
+# asks which names are taken, to offer a package's module by a line the
+# rule accepts (`module/offered_modules.hero`), so the library's names read
+# from its own text, which needs the parser, are `resolve/library_declared.hero`'s.
 
 use ast
 use inventory
-use library_source
-use parse
 use source
 
 # Whether no program may declare `name`: a built-in's, or one of the
@@ -44,13 +47,6 @@ function of_library(s: source.Source, decls: [ast.Decl]) -> {str: bool}
 
     return names
 
-# Every name the library declares, read from its own text, for a tool that
-# asks where no compilation is in hand: `heroes new`, whose advice names the
-# line a program writes to reach a package (feature 2299).
-function of_library_text() -> {str: bool}
-    s = source.with_library(name: "main.hero", user: "", library: library_source.text())
-    return of_library(s, parse.parse_source(s).decls)
-
 # Whether a declaration gives the library a name a program can read: any
 # but an extern's, and but a test's, whose name is its title.
 function names_one(d: ast.Decl) -> bool
@@ -60,36 +56,3 @@ function names_one(d: ast.Decl) -> bool
         .record_decl rd   => return rd.header.is_err()
         .variant_decl     => return true
         .test_decl        => return false
-
-## Tests
-
-# The library as every program reads it, beside a file of one function.
-function with_library() -> parse.ParseOutput
-    return parse.parse_source(library_beside())
-
-function library_beside() -> source.Source
-    return source.with_library(
-        name: "main.hero",
-        user: "function main()\n    print(1)\n",
-        library: library_source.text()
-    )
-
-test "what the library declares is taken, `validated` with it, but its externs"
-    s = library_beside()
-    names = of_library(s, with_library().decls)
-    assert taken(names, "args_checked")
-    assert taken(names, "args")
-    assert taken(names, "range")
-    assert taken(names, "print")
-
-    # Defect 501: the one name left free until 2026-10-09.
-    assert taken(names, "validated")
-    assert !taken(names, "hero_exit")
-    assert !taken(names, "HERO_OS_OK")
-    assert !taken(names, "main")
-
-    # Read with no program beside it, the library names the same.
-    alone = of_library_text()
-    assert alone.keys().len() == names.keys().len()
-    assert taken(alone, "args_checked")
-    assert taken(alone, "validated")

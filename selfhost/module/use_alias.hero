@@ -1,0 +1,87 @@
+# The alias a `use` line is given where its binding is taken, by another
+# `use` line of the file or by a built-in of the language (panel 100 R3;
+# feature 2299; spec § Files and layout): the path the line writes with its
+# separators closed up, and none where that would change nothing, not parse,
+# or take a built-in's name.
+#
+# **Apart from `module/binding_taken.hero` since defect 2549**, so the parse
+# stage can ask it: `use <tools>` alone is offered the modules at its
+# package's root (`module/offered_modules.hero`), and a module named like a
+# built-in is offered with this alias, as the refusal of the line it would
+# otherwise write offers it. The parser reaches the offer, so the rule lives
+# where no parser is reached; `binding_taken` tells the two refusals with it.
+
+use keywords
+use module/placed
+use module_text
+use resolve/builtin_names
+
+# The alias a taken binding's fix gives the line whose path is
+# `written` and whose binding is `binding`, or "" where it offers none.
+#
+# **A fix is offered only where it would CHANGE something.** The suggestion
+# closes up a path's separators, so for a path with none — a root module
+# colliding with a nested one's last part — it is the taken name again and
+# `use scale as scale` repairs nothing. Found by the corpus:
+# `examples/shapes/` provoked exactly that while it was being written. The
+# rule is `use_wants_a_name`'s, one department over — a fix that leaves the
+# program where it was is worse than a message with no fix, because the
+# author reads it as the answer.
+#
+# **And only where the alias is a name the parser reads after `as`** (defect
+# 2368): the suggestion kept a package's `<` and `>`, so `use <core>/strings`
+# was offered `as <core>_strings`, which does not parse. The suggestion no
+# longer writes a mark, and this asks the alias itself rather than trusting
+# that: a fix that does not parse is the one thing a fix may never be.
+#
+# **Nor a built-in's name** (feature 2299): a line binding one is refused, so
+# `use to/str` offered `as to_str`, or `use map as m` renamed to `map`, would
+# be a fix whose line is told again. `library` is what the library declares.
+function alias_for(written: str, binding: str, library: {str: bool}) -> str
+    suggested = suggestion(written)
+
+    if suggested == binding || !module_text.is_one_part(suggested) || !keywords.keyword(suggested).is_err()
+        return ""
+
+    if builtin_names.taken(library, suggested)
+        return ""
+    return suggested
+
+# A name for the module a `use` line writes as `written` that is unlikely to
+# be taken: its path with the separators closed up, which is the same shape
+# its C component already has, and for a package's module the entry's name
+# before its path, the mark left out (defect 2368): `ir/state` is `ir_state`
+# and `<json>/text/strs` is `json_text_strs`. A GUESS rather than a certain
+# fix — the author knows a better word than the compiler does, and §4.17
+# says a certain fix must be the one repair, not the first one that parses.
+#
+# Whether the path is a package's is `placed.hero`'s to say, which every
+# reader of a module name asks.
+function suggestion(written: str) -> str
+    entry = placed.entry_of(written)
+
+    if entry.len() > 0
+        return entry + "_" + closed_up(placed.inside_of(written))
+    return closed_up(written)
+
+# `path` with each `/` written `_`.
+#
+# The path is cut only beside its `/`, one byte that is never inside another
+# character, and never a byte at a time: a module path is identifier text
+# and ASCII today, and the byte-at-a-time spelling is the one that aborted
+# `build` on `f"é {x}"` (defect 110), so it is not kept where nothing but
+# today's lexer stands between it and a character above ASCII.
+function closed_up(path: str) -> str
+    parts: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < path.len()
+        if path[i] == '/'
+            parts @ parts.push(path.slice(from: start, to: i))
+            parts @ parts.push("_")
+            start @ i + 1
+        i @ i + 1
+
+    parts @ parts.push(path.slice(from: start, to: path.len()))
+    return parts.join("")

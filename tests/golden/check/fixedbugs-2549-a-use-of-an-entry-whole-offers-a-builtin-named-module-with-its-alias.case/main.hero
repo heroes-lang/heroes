@@ -1,0 +1,15 @@
+# Fixed defect 2549, 2026-11-15, lane b38-module: `use tools`, an entry of
+# the catalogue named whole, its root holding `sort.hero`, `twice.hero` and
+# `validated.hero`.
+#
+# SYMPTOM: told with `use <tools>/sort` among its modules, a line feature
+# 2299's rule refuses `builtin_name_taken`, as `validated`'s.
+#
+# CAUSE: the offer named a module's plain line whatever its name.
+#
+# FIX: a module named like a built-in is offered with the alias its line's
+# refusal would offer.
+use tools  #~ unknown_module
+
+function main()
+    print("x")

@@ -1,0 +1,18 @@
+# Fixed defect 2549, 2026-11-15, lane b38-module: `use <tools>` alone, the
+# package's root holding `sort.hero`, `twice.hero` and `validated.hero`.
+#
+# SYMPTOM: the line was offered `use <tools>/sort`, a line feature 2299's
+# rule refuses `builtin_name_taken`, `sort` being a built-in's name, so the
+# offer led to a second refusal; and so for `validated`, a name only the
+# library declares.
+#
+# CAUSE: the offer is told in the parse stage, which no rule of the built-in
+# names could be asked from, the rule reaching the parser itself.
+#
+# FIX: a module named like a built-in is offered as the refusal's own
+# `guess` writes its line, `as tools_sort`, the library's names read from
+# the parse in hand.
+use <tools>  #~ package_wants_a_module
+
+function main()
+    print("x")

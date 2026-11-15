@@ -29,8 +29,8 @@ use ast
 use diag
 use inventory
 use module/answering
-use module/binding_taken
 use module/names as module_names
+use module/use_alias
 use resolve/builtin_names
 use resolve/state
 use resolved
@@ -80,14 +80,14 @@ function named(r: state.Resolver, s: source.Source, name: str, span: token.Span)
     return ok(d)
 
 # The message where `name`, the qualifier, is a built-in's and `found` the
-# modules that answer it: each named by the line with the alias
-# `binding_taken` offers, `<another name>` where it offers none, and the
-# qualifier written with that alias.
+# modules that answer it: each named by the line with the alias a taken
+# binding is offered (`module/use_alias.hero`), `<another name>` where it
+# offers none, and the qualifier written with that alias.
 function aliased(r: state.Resolver, name: str, found: [str], span: token.Span) -> diag.Diagnostic
     said: [str] @= []
 
     for module in found
-        alias: str @= binding_taken.alias_for(written: module, binding: name, library: r.library)
+        alias: str @= use_alias.alias_for(written: module, binding: name, library: r.library)
 
         if alias == ""
             alias @ "<another name>"

@@ -15,7 +15,17 @@
 #
 # A leaf of the parse stage: nothing here reaches the parser, which
 # `module/paths.hero` does, so the directory is `module/folders.hero`'s.
+#
+# **A module named like a built-in is offered with an alias** (defect 2549):
+# no `use` line binds a built-in's name (feature 2299), so `use <tools>/sort`
+# was offered and then refused `builtin_name_taken`. It is offered as the
+# refusal's own `guess` would write it, `use <tools>/sort as tools_sort`
+# (`module/use_alias.hero`), as `heroes new` names a face (`cli/stub.hero`).
+# The built-in names are the inventory's and the library's declarations,
+# read from the parse in hand, since the parser reaches this and no parser
+# can be reached from here (`resolve/builtin_names.hero`).
 
+use ast
 use cli/strings
 use diag
 use module/folders
@@ -23,8 +33,10 @@ use module/packages
 use module/placed
 use module/private
 use module/spelling
+use module/use_alias
 use module_text
 use package_mark
+use resolve/builtin_names
 use source
 
 # How many of a package's modules a message names.
@@ -33,13 +45,19 @@ constant SHOWN: i64
 
 # The parse stage's reports, each `package_wants_a_module` told the modules
 # its package offers where its tree can be listed; every other report as it
-# was.
-function wants_a_module(s: source.Source, said: [diag.Diagnostic]) -> [diag.Diagnostic]
+# was. `decls` is the parse's, whose library declarations name the
+# built-ins, read only where a report asks.
+function wants_a_module(s: source.Source, said: [diag.Diagnostic], decls: [ast.Decl]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
+    library: {str: bool} @= {}
+    asked: bool @= false
 
     for d in said
         if d.code == "package_wants_a_module"
-            out @ out.push(listed(s, d: d))
+            if !asked
+                library @ builtin_names.of_library(s, decls)
+                asked @ true
+            out @ out.push(listed(s, d: d, library: library))
         else
             out @ out.push(d)
 
@@ -48,7 +66,7 @@ function wants_a_module(s: source.Source, said: [diag.Diagnostic]) -> [diag.Diag
 # `use <core>` told the modules at the root of the package the file's own
 # catalogue names `core` (a package's file reads its own, R3), as that file
 # writes them; `d` as the parser said it where none can be listed.
-function listed(s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
+function listed(s: source.Source, d: diag.Diagnostic, library: {str: bool}) -> diag.Diagnostic
     written = placed.entry_of(source.span_text(s, d.span) + "/")
     from = source.module_at(s, d.span.start)
     meant = placed.entry_of(placed.identity(s.reached.aliases, from: from, named: "<" + written + ">/" + "x"))
@@ -56,29 +74,57 @@ function listed(s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
     if written.len() == 0 || meant.len() == 0
         return d
     found = root_modules(base: folders.directory_text(s.name), from: from, meant: meant)
+    said = phrase(written: written, found: found, library: library)
 
-    if found.len() == 0
+    if said.len() == 0
         return d
     out: diag.Diagnostic @= d
-    out.message @ package_mark.MODULE_WANTED + phrase(written: written, found: found)
+    out.message @ package_mark.MODULE_WANTED + said
     return out
 
 # `use <core>/strconv`, the one module at its root; `use <core>/a` or
 # `use <core>/b`, the modules at its root; three and `or another`, past
-# three. `found` holds one module at least.
-function phrase(written: str, found: [str]) -> str
-    lines: [str] @= []
+# three; "" where `found` offers no line. A module named like a built-in of
+# `library` takes its alias (`offered_line`).
+function phrase(written: str, found: [str], library: {str: bool}) -> str
+    offered: [str] @= []
 
     for module in found
-        if lines.len() < SHOWN
-            lines @ lines.push("`use <" + written + ">/" + module + "`")
+        line = offered_line(written: written, module: module, library: library)
 
-    if found.len() > SHOWN
+        if line.len() > 0
+            offered @ offered.push(line)
+
+    lines: [str] @= []
+
+    for line in offered
+        if lines.len() < SHOWN
+            lines @ lines.push("`" + line + "`")
+
+    if lines.len() == 0
+        return ""
+
+    if offered.len() > SHOWN
         return lines.join(", ") + " or another of the modules at its root"
 
     if lines.len() == 1
         return lines[0] + ", the one module at its root"
     return listed_or(lines) + ", the modules at its root"
+
+# The line a `use` writes to reach `module` of the package it calls
+# `written`: the plain line, or for a module named like a built-in, which no
+# `use` line may bind, the line with the alias the refusal's fix writes; ""
+# where that alias is none (`use_alias.alias_for`).
+function offered_line(written: str, module: str, library: {str: bool}) -> str
+    path = "<" + written + ">/" + module
+
+    if !builtin_names.taken(library, module)
+        return "use " + path
+    alias = use_alias.alias_for(written: path, binding: module, library: library)
+
+    if alias.len() == 0
+        return ""
+    return "use " + path + " as " + alias
 
 # The modules at the root of the tree of the package the program calls
 # `meant` that a `use` of the module `from` can name, in their names' byte
@@ -112,6 +158,17 @@ test "the lines an entry is offered are listed with an `or` before the last"
     assert listed_or(["`a`"]) == "`a`"
     assert listed_or(["`a`", "`b`"]) == "`a` or `b`"
     assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"
-    assert phrase(written: "core", found: ["strconv"]) == "`use <core>/strconv`, the one module at its root"
-    assert phrase(written: "core", found: ["a", "b"]) == "`use <core>/a` or `use <core>/b`, the modules at its root"
-    assert phrase(written: "core", found: ["a", "b", "c", "d"]) == "`use <core>/a`, `use <core>/b`, `use <core>/c` or another of the modules at its root"
+    none: {str: bool} = {}
+    assert phrase(written: "core", found: ["strconv"], library: none) == "`use <core>/strconv`, the one module at its root"
+    assert phrase(written: "core", found: ["a", "b"], library: none) == "`use <core>/a` or `use <core>/b`, the modules at its root"
+    assert phrase(written: "core", found: ["a", "b", "c", "d"], library: none) == "`use <core>/a`, `use <core>/b`, `use <core>/c` or another of the modules at its root"
+
+# Defect 2549: `sort` is the inventory's, `validated` the library's alone;
+# each is offered by the line the built-in rule's own fix writes, and a
+# module of another name as it was.
+test "a module named like a built-in is offered with the alias its line's refusal would offer (defect 2549)"
+    library: {str: bool} = {"validated": true}
+    assert offered_line(written: "tools", module: "sort", library: library) == "use <tools>/sort as tools_sort"
+    assert offered_line(written: "tools", module: "validated", library: library) == "use <tools>/validated as tools_validated"
+    assert offered_line(written: "tools", module: "twice", library: library) == "use <tools>/twice"
+    assert phrase(written: "tools", found: ["sort"], library: library) == "`use <tools>/sort as tools_sort`, the one module at its root"
