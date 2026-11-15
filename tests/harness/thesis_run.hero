@@ -22,6 +22,14 @@
 # before the request whose bound, added to what the answers kept under `out`
 # already cost, would pass the cap (`thesis_price.hero`), so a rerun under the
 # same cap counts what the stopped one spent.
+#
+# **A context's package tree goes beside its answers alone** (task 2300, panel
+# 234's R14): a context `cards` wrote names the tree its cards describe, and
+# every turn of every arm of that context's generations is graded with the
+# tree beside the answer, every other context's without it; so `--context spec
+# --context <the cards' file>` is the paired run, two arms that differ in the
+# packages alone. The tree is checked against its digest when the context is
+# read, before anything is asked, and the provenance names it.
 
 use <core>/strings as core_strings
 
@@ -31,12 +39,14 @@ use json_read
 use shell
 use strings
 use thesis_answer
+use thesis_cards
 use thesis_grade
 use thesis_json
 use thesis_pace
 use thesis_price
 use thesis_prompt
 use thesis_protocol
+use thesis_report
 use thesis_sandbox
 use thesis_sha256
 use thesis_tasks
@@ -161,7 +171,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
         tally.spent @ spent_under(scratch: scratch, out: plan.out)?
 
     for name in plan.contexts
-        contexts @ contexts.push(thesis_prompt.context_of(name: name)?)
+        contexts @ contexts.push(thesis_prompt.context_of(scratch: scratch, name: name)?)
 
     if plan.live
         shell.mkdir_all(plan.out)?
@@ -292,7 +302,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
                         if !done.is_err() && !thesis_verdict.read_verdict(done.must()).is_err()
                             tally.skipped @ tally.skipped + 1
                             continue
-                        followed = conversation(plan: plan, transport: transport, world: w, tally: tally, compiler: compiler, scratch: scratch + "/" + vkey, task: task, arm: arm, generation: generation, user: prompt.user, system: prompt.system, template: template)?
+                        followed = conversation(plan: plan, transport: transport, world: w, tally: tally, compiler: compiler, scratch: scratch + "/" + vkey, task: task, arm: arm, tree: context.tree, generation: generation, user: prompt.user, system: prompt.system, template: template)?
                         w @ followed.world
                         tally @ followed.tally
 
@@ -542,8 +552,9 @@ record Followed
     verdict: thesis_verdict.Verdict
 
 # One arm's conversation from the generation to green, the cap or a dead end,
-# its verdict kept under `samples/`.
-function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_wire.World, tally: Tally, compiler: str, scratch: str, task: thesis_tasks.Task, arm: str, generation: thesis_verdict.Generation, user: str, system: str, template: thesis_prompt.Template) -> Followed?
+# its verdict kept under `samples/`, every turn graded with the context's
+# package tree `tree` beside the answer, or none where it is "".
+function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_wire.World, tally: Tally, compiler: str, scratch: str, task: thesis_tasks.Task, arm: str, tree: str, generation: thesis_verdict.Generation, user: str, system: str, template: thesis_prompt.Template) -> Followed?
     w: issue_wire.World @= world
     t: Tally @= tally
     messages: [str] @= [thesis_answer.user_turn(user)]
@@ -564,7 +575,7 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
     turn_no: i64 @= 1
 
     while true
-        graded = thesis_grade.graded(scratch: scratch + "/t" + turn_no.to_str(), compiler: compiler, arm: arm, answer: text, task: task, seconds: plan.seconds, bytes: plan.bytes)?
+        graded = thesis_grade.graded(scratch: scratch + "/t" + turn_no.to_str(), compiler: compiler, arm: arm, answer: text, task: task, tree: tree, seconds: plan.seconds, bytes: plan.bytes)?
         outcome: str @= graded.outcome
 
         if stop == "refusal"
@@ -745,19 +756,23 @@ function kept_record(plan: Plan, scratch: str) -> ()?
 # the `preregister` word prints for the freeze's `prediction.md`: one
 # function, so the report sets the two side by side byte for byte.
 function planned_provenance(plan: Plan, scratch: str) -> str?
-    return provenance_for(plan: plan, suite: thesis_tasks.read_suite(scratch: scratch, dir: plan.suite_dir)?)
+    return provenance_for(
+        scratch: scratch,
+        plan: plan,
+        suite: thesis_tasks.read_suite(scratch: scratch, dir: plan.suite_dir)?
+    )
 
 # The provenance a run of `plan` would write over `suite`, read already: what
 # `preregister --sealed` prints of a suite opened from its archive, the plan
 # naming the archive (2026-10-24, the freeze), where `planned_provenance` reads
 # the suite from the plan's folder. `suite`, the path, is no protocol field
 # (`thesis_protocol.PROTOCOL`); `suite_sha` is, and is the same either way.
-function provenance_for(plan: Plan, suite: thesis_tasks.Suite) -> str?
+function provenance_for(scratch: str, plan: Plan, suite: thesis_tasks.Suite) -> str?
     template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE)?
     contexts: [thesis_prompt.Context] @= []
 
     for name in plan.contexts
-        contexts @ contexts.push(thesis_prompt.context_of(name: name)?)
+        contexts @ contexts.push(thesis_prompt.context_of(scratch: scratch, name: name)?)
 
     return ok(
         provenance_json(plan: plan, suite: suite, template: template, layout_sha: thesis_answer.layout_sha(dialect: plan.dialect, layout: plan.layout), contexts: contexts)
@@ -777,10 +792,20 @@ function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis
             thesis_json.object([thesis_json.member(key: "model", value: model), thesis_json.member(key: "effort", value: effort)])
         )
 
+    # A context that carries a package tree names it and its digest, and a
+    # context with none writes what it wrote before the trees were.
     for c in contexts
-        named @ named.push(
-            thesis_json.object([thesis_json.member(key: "name", value: c.name), thesis_json.member(key: "path", value: c.path), thesis_json.member(key: "sha", value: c.spec_sha)])
-        )
+        members: [str] @= [
+            thesis_json.member(key: "name", value: c.name)
+            thesis_json.member(key: "path", value: c.path)
+            thesis_json.member(key: "sha", value: c.spec_sha)
+        ]
+
+        if c.tree != ""
+            members @ members.push(thesis_json.member(key: "packages", value: c.tree)).push(
+                thesis_json.member(key: "packages_sha", value: c.tree_sha)
+            )
+        named @ named.push(thesis_json.object(members))
 
     return thesis_json.object(
         [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "transport", value: plan.transport), thesis_json.member(key: "harness", value: plan.harness), thesis_json.member(key: "instrument", value: plan.instrument), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.raw(key: "efforts", json: thesis_json.list(efforts)), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
@@ -1048,7 +1073,7 @@ test "a run's provenance names the template and the layout apart, the suite, the
         compiler: "./heroes-next",
         quiet: true
     )
-    spec = thesis_prompt.context_of(name: "spec").must()
+    spec = thesis_prompt.context_of(scratch: shell.own_scratch(), name: "spec").must()
     text = provenance_json(
         plan: plan,
         suite: suite,
@@ -1501,3 +1526,94 @@ test "every model of a run is asked by its own name at turn 1 and at a later tur
 
     for text in thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/turns").must()
         assert thesis_verdict.read_generation(text).must().answered_by == "claude-sonnet-5-5"
+
+test "the paired run on the scripted transport: one answer naming a package is refused in the spec context and passes in the cards' context, whose tree alone is beside its answers"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    suite = scratch + "/suite"
+    _ = thesis_grade.counting_task(suite + "/01").must()
+    write_file(path: suite + "/LABEL", text: "assistant\n").must()
+
+    # The cards' context over the harness's own tree, as `cards` writes it.
+    cards = scratch + "/spec-and-cards.md"
+    write_file(
+        path: cards,
+        text: thesis_cards.made(scratch: scratch, dir: "tests/harness", spec_path: thesis_prompt.SPEC).must().text
+    ).must()
+    over = answer_json(
+        text: "```\nuse <core>/strings\n\nfunction main()\n    given = args()\n    print(strings.fields(given[0]).len())\n```\n"
+    )
+    plan = Plan(
+        suite_dir: suite,
+        models: ["claude-haiku-5-5"],
+        arms: ["strict"],
+        contexts: ["spec", cards],
+        samples: 1,
+        turns: 1,
+        effort: "low",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        transport: "api",
+        harness: "",
+        instrument: "",
+        base: "https://api.example",
+        out: scratch + "/out",
+        live: true,
+        max_requests: 0,
+        max_dollars: 0,
+        seconds: 10,
+        bytes: 1048576,
+        date: "",
+        head: "",
+        sources: "",
+        compiler: "",
+        quiet: true
+    )
+    world = issue_wire.world_of(
+        scratch: scratch,
+        script: [issue_wire.answer(status: 200, headers: [], body: over), issue_wire.answer(status: 200, headers: [], body: over)]
+    )
+    tally = run(plan: plan, transport: issue_wire.scripted(), world: world, scratch: scratch, compiler: compiler).must()
+    assert tally.generations == 2
+    assert tally.verdicts == 2
+    spec_sha = thesis_prompt.context_of(scratch: scratch, name: "spec").must().spec_sha
+    cards_sha = thesis_prompt.context_of(scratch: scratch, name: cards).must().spec_sha
+    assert spec_sha != cards_sha
+    seen: i64 @= 0
+
+    for text in thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/samples").must()
+        v = thesis_verdict.read_verdict(text).must()
+
+        if v.context_sha == spec_sha
+            assert v.turns[0].outcome == "compile_error"
+            assert v.turns[0].codes == ["unknown_entry"]
+            seen @ seen + 1
+
+        if v.context_sha == cards_sha
+            assert v.turns[0].outcome == "cases_pass"
+            seen @ seen + 10
+
+    assert seen == 11
+    kept = read_file(path: scratch + "/out/provenance.json").must()
+    assert core_strings.contains(s: kept, substr: "\"packages\":\"tests/harness\"")
+    assert !core_strings.contains(s: kept.slice(from: 0, to: strings.index_of(text: kept, needle: cards).must()), substr: "\"packages\"")
+
+    # And the report reads the run back: the cards' context against `spec`,
+    # the first its provenance lists, one pair the cards' alone.
+    reported = thesis_report.report(
+        scratch: scratch,
+        out: scratch + "/out",
+        seed: 1,
+        primary: "green@1, the cards minus spec",
+        labels: suite
+    ).must()
+    assert core_strings.contains(s: reported, substr: "## The contexts, paired: each against `spec`")
+    assert core_strings.contains(
+        s: reported,
+        substr: "| claude-haiku-5-5 | strict | " + cards + " `" + cards_sha.slice(from: 0, to: 8) + "` | 1 | 1 | 0 | +100.0pp | "
+    )

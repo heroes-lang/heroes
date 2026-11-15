@@ -36,6 +36,14 @@
 # beside the flat one, each with its bootstrap interval; a label that is not
 # there is said so, and a verdict the run's `tasks.txt` does not list is
 # counted and stands in no stratum.
+#
+# **And where the run asked more than one context, the contexts paired**
+# (task 2300, panel 234's R14; `thesis_contexts.hero`): every context against
+# the first the provenance lists, a verdict of each for one task, model,
+# sample and arm, by green at the first turn, which is the paired run's
+# primary as its spec-warden registered it, green by turn 3 and silent by turn
+# 3, each with the bootstrap's interval over tasks and McNemar's p; the
+# primary's sentence, `--primary`, names which row is the pre-registered one.
 
 use <core>/strings as core_strings
 
@@ -43,6 +51,7 @@ use json_fields
 use json_read
 use shell
 use strings
+use thesis_contexts
 use thesis_protocol
 use thesis_stats
 use thesis_strata
@@ -96,9 +105,86 @@ function report(scratch: str, out: str, seed: i64, primary: str, labels: str) ->
     for line in deviation_lines(out: out, dir: dir)
         strata @ strata.push(line)
 
+    pieces: [str] @= contexts_lines(groups: grouped(verdicts), named: thesis_contexts.named_contexts(out), seed: seed)
+
+    for line in strata
+        pieces @ pieces.push(line)
+
     return ok(
-        rendered(verdicts: verdicts, seed: seed, primary: primary, through: [asked_through(out), capped_at(out), resumed_at(out)].join(" ")) + strata.join("\n") + "\n"
+        rendered(verdicts: verdicts, seed: seed, primary: primary, through: [asked_through(out), capped_at(out), resumed_at(out)].join(" ")) + pieces.join("\n") + "\n"
     )
+
+# The contexts paired, each against the first of `named`: one table per
+# measure, a row per (model, arm, context) past the first where the first
+# was asked in that model and arm too; nothing where the run asked one context.
+function contexts_lines(groups: [Group], named: [thesis_contexts.Named], seed: i64) -> [str]
+    if named.len() < 2
+        return []
+    first = named[0]
+    out: [str] @= [
+        ""
+        "## The contexts, paired: each against `" + first.name + "`"
+        ""
+        "A pair is a verdict of each context for one task, model, sample and arm, two generations asked apart (panel 234's R14, the paired run); the difference is the context minus `" + first.name + "`, a pair either of whose verdicts is out leaves it, and the pre-registered row is the one the primary's sentence names."
+    ]
+    measures = [
+        thesis_contexts.Measure(name: "green@1", holds: green_at_one)
+        thesis_contexts.Measure(name: "green@3", holds: green_at_three)
+        thesis_contexts.Measure(name: "silent@3", holds: silent_at_three)
+    ]
+
+    for m in measures
+        out @ out.push("").push("| model | arm | context | pairs | context " + m.name + " | `" + first.name + "` " + m.name + " | difference | bootstrap 95% | discordant (context only / `" + first.name + "` only) | McNemar mid-p (exact beside) |").push(
+            "|---|---|---|---|---|---|---|---|---|---|"
+        )
+
+        for g in groups
+            if g.context_sha == first.sha
+                continue
+            base = group_of(groups: groups, model: g.model, arm: g.arm, context_sha: first.sha)
+
+            if base.len() == 0
+                continue
+            made = thesis_contexts.across(
+                first: base[0].verdicts,
+                second: g.verdicts,
+                holds: m.holds,
+                left_out: excluded
+            )
+            out @ out.push(context_row(g: g, named: named, made: made, seed: seed))
+
+    return out
+
+# One row of a contexts' table: the context by its name and digest, then the
+# pairs, the two counts, the difference and its interval, the discordant and
+# the p.
+function context_row(g: Group, named: [thesis_contexts.Named], made: thesis_contexts.Across, seed: i64) -> str
+    name: str @= context_name(g.context_sha)
+
+    for n in named
+        if n.sha == g.context_sha
+            name @ n.name + " `" + context_name(g.context_sha) + "`"
+
+    lead = "| " + g.model + " | " + g.arm + " | " + name + " | "
+
+    if made.pairs == 0
+        return lead + "0 | | | | | | |"
+    interval = thesis_stats.bootstrap(cells: made.cells, rounds: ROUNDS, seed: seed)
+    p: str @= thesis_stats.p_written(thesis_stats.mcnemar_midp(b: made.b, c: made.c)) + " (exact " + thesis_stats.p_written(thesis_stats.mcnemar(b: made.b, c: made.c)) + ")"
+
+    if made.b + made.c == 0
+        p @ "no discordant pair"
+    return lead + made.pairs.to_str() + " | " + made.second_count.to_str() + " | " + made.first_count.to_str() + " | " + signed_percent(thesis_stats.difference(made.cells)) + " | " + signed_percent(interval.low) + " to " + signed_percent(interval.high) + " | " + made.b.to_str() + " / " + made.c.to_str() + " | " + p + " |"
+
+# The three measures the contexts are paired by, each a verdict's own.
+function green_at_one(v: thesis_verdict.Verdict) -> bool
+    return green_by(v: v, k: 1)
+
+function green_at_three(v: thesis_verdict.Verdict) -> bool
+    return green_by(v: v, k: 3)
+
+function silent_at_three(v: thesis_verdict.Verdict) -> bool
+    return silent_by(v: v, k: 3)
 
 # The run set against the pre-registration beside the suite: the block of
 # `prediction.md` the `preregister` word printed, field by protocol field
@@ -675,7 +761,7 @@ function paired(first: Group, second: Group, measure: str, refused_only: bool) -
 
             if in_first && !in_second
                 c @ c + 1
-            cells @ added(cells: cells, task: s.task_sha, first: in_first, second: in_second)
+            cells @ thesis_stats.added(cells: cells, task: s.task_sha, first: in_first, second: in_second)
 
     return Paired(pairs: pairs, b: b, c: c, second_count: second_count, first_count: first_count, cells: cells)
 
@@ -697,26 +783,6 @@ function paired_row(first: Group, second: Group, measure: str, refused_only: boo
     if b + c == 0
         p @ "no discordant pair"
     return "| " + second.model + " | " + context_name(second.context_sha) + " | " + pairs.to_str() + " | " + second_count.to_str() + " | " + first_count.to_str() + " | " + signed_percent(difference) + " | " + signed_percent(interval.low) + " to " + signed_percent(interval.high) + " | " + b.to_str() + " / " + c.to_str() + " | " + p + " |"
-
-function added(cells: [thesis_stats.Cell], task: str, first: bool, second: bool) -> [thesis_stats.Cell]
-    out: [thesis_stats.Cell] @= cells
-    one: i64 @= 0
-    two: i64 @= 0
-
-    if first
-        one @ 1
-
-    if second
-        two @ 1
-
-    for i in range(from: 0, to: out.len())
-        if out[i].task == task
-            out[i].first @ out[i].first + one
-            out[i].second @ out[i].second + two
-            out[i].n @ out[i].n + 1
-            return out
-
-    return out.push(thesis_stats.Cell(task: task, first: one, second: two, n: 1))
 
 # A difference of rates as signed percentage points.
 function signed_percent(x: f64) -> str
@@ -1108,3 +1174,50 @@ test "a run is set against its pre-registration field by protocol field, and a m
     assert core_strings.contains(s: moved, substr: "| `turns` | (absent) | 5 |")
     assert !core_strings.contains(s: moved, substr: "`date`")
     assert !core_strings.contains(s: moved, substr: "`head`")
+
+test "the contexts are paired each against the first the provenance lists, by green at turn one, green by turn three and silent by turn three"
+    spec = "aaaaaaaaaaaaaaaa"
+    cards = "bbbbbbbbbbbbbbbb"
+    verdicts: [thesis_verdict.Verdict] @= []
+
+    # Two tasks, two samples each: the cards green at turn one in all four;
+    # the specification green at turn one once, at turn two once, refused
+    # once and wrong once.
+    for task in ["taskaaaaaaaaaaaa", "taskbbbbbbbbbbbb"]
+        for sample in [1, 2]
+            verdicts @ verdicts.push(
+                thesis_contexts.one_turn(task: task, context: cards, sample: sample, arm: "strict", outcome: "cases_pass")
+            )
+
+    verdicts @ verdicts.push(
+        thesis_contexts.one_turn(task: "taskaaaaaaaaaaaa", context: spec, sample: 1, arm: "strict", outcome: "cases_pass")
+    )
+    verdicts @ verdicts.push(
+        thesis_contexts.turned(task: "taskaaaaaaaaaaaa", context: spec, sample: 2, arm: "strict", outcomes: ["compile_error", "cases_pass"])
+    )
+    verdicts @ verdicts.push(
+        thesis_contexts.one_turn(task: "taskbbbbbbbbbbbb", context: spec, sample: 1, arm: "strict", outcome: "compile_error")
+    )
+    verdicts @ verdicts.push(
+        thesis_contexts.one_turn(task: "taskbbbbbbbbbbbb", context: spec, sample: 2, arm: "strict", outcome: "compiled_wrong")
+    )
+    named = [thesis_contexts.Named(sha: spec, name: "spec"), thesis_contexts.Named(sha: cards, name: "c.md")]
+    lines = contexts_lines(groups: grouped(verdicts), named: named, seed: 1)
+    assert core_strings.contains(s: lines.join("\n"), substr: "## The contexts, paired: each against `spec`")
+    rows: [str] @= []
+
+    for line in lines
+        if core_strings.has_prefix(s: line, prefix: "| m | strict | c.md")
+            rows @ rows.push(line)
+
+    # green@1: the cards 4 of 4, the specification 1 of 4, three pairs the cards' alone.
+    assert rows.len() == 3
+    assert core_strings.has_prefix(s: rows[0], prefix: "| m | strict | c.md `bbbbbbbb` | 4 | 4 | 1 | +75.0pp | ")
+    assert core_strings.contains(s: rows[0], substr: " | 3 / 0 | ")
+
+    # green@3: the specification's second sample of the first task is green at turn two.
+    assert core_strings.has_prefix(s: rows[1], prefix: "| m | strict | c.md `bbbbbbbb` | 4 | 4 | 2 | +50.0pp | ")
+
+    # silent@3: one program of the specification ran to the wrong output.
+    assert core_strings.has_prefix(s: rows[2], prefix: "| m | strict | c.md `bbbbbbbb` | 4 | 0 | 1 | -25.0pp | ")
+    assert contexts_lines(groups: grouped(verdicts), named: [named[0]], seed: 1).len() == 0

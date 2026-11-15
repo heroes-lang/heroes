@@ -3,8 +3,8 @@
 # 2026-10-20):
 #
 #     heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out]
-#     heroes run tests/harness/thesis.hero -- dry <folder> [--arm strict|brief|control] [--mute]
-#     heroes run tests/harness/thesis.hero -- grade <answer.hero> --task <folder/NN> [--arm ...]
+#     heroes run tests/harness/thesis.hero -- dry <folder> [--arm strict|brief|control] [--mute] [--packages <tree>]
+#     heroes run tests/harness/thesis.hero -- grade <answer.hero> --task <folder/NN> [--arm ...] [--packages <tree>]
 #     heroes run tests/harness/thesis.hero -- plan <folder> --model <id>... [--arm ...] [--context ...]...
 #     heroes run tests/harness/thesis.hero -- run <folder> --model <id>... --live --max-dollars n [--max-requests n]
 #     heroes run tests/harness/thesis.hero -- preregister <folder> --model <id>... [plan's flags]
@@ -13,6 +13,7 @@
 #     heroes run tests/harness/thesis.hero -- canary <folder>
 #     heroes run tests/harness/thesis.hero -- unseal --sealed <file> --into <dir> [--key VAR]
 #     heroes run tests/harness/thesis.hero -- canary-probe <folder> --model <id>... [--live]
+#     heroes run tests/harness/thesis.hero -- cards --packages <tree> -o <file>
 #
 # from the repository's root, always. A program of the harness and no verb of
 # `heroes`, by the author's decision of 2026-10-19 (panel 212's reading of
@@ -48,6 +49,18 @@
 # without `--live`**: `run` without it is `plan`, and no other word reaches a
 # transport that spawns `curl`.
 #
+# **The paired run of panel 234's R14** (task 2300): two arms that differ in
+# the packages alone, the specification against the specification and the
+# package cards with the package tree beside the answer. `--packages <tree>`
+# names a tree, a folder holding `heroes.toml` and `heroes.packages/` as
+# `heroes add` leaves them (`thesis_packages.hero`): `dry` grades each task's
+# `reference-packages.hero` with it beside the answer, as it grades
+# `reference.hero` without, and `grade` grades one answer so; `cards` writes the
+# package arm's context from it, the specification then the faces' cards, its
+# first line naming the tree (`thesis_cards.hero`), so `run --context spec
+# --context <that file>` places the tree beside the answers of the second
+# context and of no other.
+#
 # Exit 0 clean; 1 where the input refuses (a folder that is no suite); 2 where
 # the program could not run (no word, a wrong flag).
 
@@ -58,10 +71,12 @@ use shell
 use strings
 use thesis_args
 use thesis_canary
+use thesis_cards
 use thesis_grade
 use thesis_harness
 use thesis_kit
 use thesis_mutants
+use thesis_packages
 use thesis_price
 use thesis_prompt
 use thesis_report
@@ -104,6 +119,7 @@ function main()
         "canary-probe" => canary_probe_word(scratch: scratch, asked: asked)
         "scaffold"     => scaffold_word(asked: asked)
         "lint"         => lint_word(scratch: scratch, asked: asked)
+        "cards"        => cards_word(scratch: scratch, asked: asked)
         _              => 2
 
     _ = shell.remove_tree(scratch).is_err()
@@ -166,6 +182,14 @@ function compiler_of(asked: thesis_args.Asked) -> str?
 # trap (decision 2172, `thesis_mutants.trap_refusal`) or its reference is not
 # 25 to 80 lines of code, 2 where the grader could not run. The bound per case
 # is the grader's own: ten seconds and a mebibyte.
+#
+# With `--packages <tree>`, the package arm of a paired run (task 2300): each
+# task's `reference-packages.hero` is graded with the tree beside it, and red
+# where it is missing, where it names no package (the spec-warden's condition
+# of panel 234: a task the packages do not touch is replaced from the reserve)
+# or where a case fails; the mutants are graded with the tree beside them too,
+# and the size rule stays `reference.hero`'s, the task's own measure, which
+# `dry` without the tree holds.
 function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
     compiler = compiler_of(asked)
 
@@ -177,22 +201,41 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
     if suite.is_err()
         hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: "the suite") + "\n")
         return 1
+    tree: str @= ""
+    beside: str @= ""
+
+    if asked.packages != ""
+        match thesis_packages.tree_at(scratch: scratch, dir: asked.packages)
+            .ok t =>
+                tree @ t.dir
+                beside @ " beside " + t.dir + " " + t.sha
+            .err e =>
+                hero_write_err(text: "thesis: " + e.msg + "\n")
+                return 1
     red: i64 @= 0
     mutants: i64 @= 0
 
     for task in suite.must().tasks
-        reference = read_file(path: task.dir + "/reference.hero")
+        reference_name: str @= "reference.hero"
+
+        if tree != ""
+            reference_name @ thesis_packages.PACKAGED_REFERENCE
+        reference = read_file(path: task.dir + "/" + reference_name)
 
         if reference.is_err()
-            print(said(task: task, outcome: "no_reference", detail: "", mute: asked.mute))
+            print(said(task: task, outcome: missing_reference(tree), detail: "", mute: asked.mute))
             red @ red + 1
             continue
         size = thesis_tasks.code_lines(reference.must())
 
-        if size < REFERENCE_LEAST || size > REFERENCE_MOST
+        if tree == "" && (size < REFERENCE_LEAST || size > REFERENCE_MOST)
             print(
                 said(task: task, outcome: "reference_size", detail: "the reference holds " + size.to_str() + " lines of code, where a task's holds " + REFERENCE_LEAST.to_str() + " to " + REFERENCE_MOST.to_str() + " (`docs/metrics/tasks.md`)", mute: asked.mute)
             )
+            red @ red + 1
+
+        if tree != "" && !thesis_packages.names_a_package(reference.must())
+            print(said(task: task, outcome: "packages_untouched", detail: UNTOUCHED, mute: asked.mute))
             red @ red + 1
         got = thesis_grade.graded(
             scratch: scratch + "/" + task.number,
@@ -200,6 +243,7 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
             arm: asked.arm,
             answer: thesis_grade.as_answer(reference.must()),
             task: task,
+            tree: tree,
             seconds: 10,
             bytes: 1048576
         )
@@ -221,6 +265,7 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
             compiler: compiler.must(),
             arm: asked.arm,
             task: task,
+            tree: tree,
             seconds: 10,
             bytes: 1048576
         )
@@ -254,7 +299,7 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
                 red @ red + 1
 
     print(
-        "dry " + suite.must().sha + " " + asked.arm + " " + suite.must().tasks.len().to_str() + " tasks, " + mutants.to_str() + " mutants, " + red.to_str() + " red"
+        "dry " + suite.must().sha + " " + asked.arm + " " + suite.must().tasks.len().to_str() + " tasks, " + mutants.to_str() + " mutants, " + red.to_str() + " red" + beside
     )
 
     if red > 0
@@ -268,6 +313,17 @@ constant REFERENCE_LEAST: i64
 
 constant REFERENCE_MOST: i64
     80
+
+# The outcome `dry` says of a task whose reference of the arm is missing.
+function missing_reference(tree: str) -> str
+    if tree == ""
+        return "no_reference"
+    return "no_packaged_reference"
+
+# What `dry --packages` says of a task whose reference over the packages names
+# none: the spec-warden's condition the task falls under.
+constant UNTOUCHED: str
+    "the reference over the packages names no package by a `use <...>` line, so the packages do not touch the task, which is replaced from the reserve before the freeze (panel 234's spec-warden, § 8)"
 
 # What `dry` says of a task with no mutant: the rule it breaks.
 constant NO_MUTANTS: str
@@ -315,12 +371,21 @@ function grade_word(scratch: str, asked: thesis_args.Asked) -> i64
     if task.is_err()
         hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: task.is_err(), of: asked.task) + "\n")
         return 1
+    tree: str @= ""
+
+    if asked.packages != ""
+        match thesis_packages.tree_at(scratch: scratch, dir: asked.packages)
+            .ok t => tree @ t.dir
+            .err e =>
+                hero_write_err(text: "thesis: " + e.msg + "\n")
+                return 1
     got = thesis_grade.graded(
         scratch: scratch,
         compiler: compiler.must(),
         arm: asked.arm,
         answer: answer.must(),
         task: task.must(),
+        tree: tree,
         seconds: 10,
         bytes: 1048576
     )
@@ -376,7 +441,7 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
     # `preregister`: the provenance a run of these flags would write, in the
     # block the freeze's `prediction.md` holds, and nothing run.
     if asked.word == "preregister"
-        match thesis_run.provenance_for(plan: plan, suite: suite.must())
+        match thesis_run.provenance_for(scratch: scratch, plan: plan, suite: suite.must())
             .ok text =>
                 print("```preregistered\n" + text + "\n```")
                 return 0
@@ -607,6 +672,36 @@ function lint_word(scratch: str, asked: thesis_args.Asked) -> i64
         .err e =>
             hero_write_err(text: "thesis: " + e.msg + "\n")
             return 2
+
+# `cards`: the package arm's context written into `-o <file>` from the tree
+# `--packages` names, the specification then the faces' cards
+# (`thesis_cards.hero`), then read back as a run will read it. Exit 0 with the
+# file's digest, the two its first line names and the cards taken and left
+# out; 1 where the tree or the specification refuses; 2 where the file could
+# not be written or does not read back.
+function cards_word(scratch: str, asked: thesis_args.Asked) -> i64
+    match thesis_cards.made(scratch: scratch, dir: asked.packages, spec_path: thesis_prompt.SPEC)
+        .ok made =>
+            if write_file(path: asked.out, text: made.text).is_err()
+                hero_write_err(text: "thesis: cannot write " + asked.out + "\n")
+                return 2
+
+            match thesis_prompt.context_of(scratch: scratch, name: asked.out)
+                .ok _ => print(
+                    "cards " + asked.out + " " + thesis_sha256.of(made.text) + " tree " + asked.packages + " " + made.tree_sha + " spec " + made.spec_sha
+                )
+                .err e =>
+                    hero_write_err(
+                        text: "thesis: " + asked.out + " was written and does not read back as a context: " + e.msg + "\n"
+                    )
+                    return 2
+
+            print("faces " + made.faces.len().to_str() + ": " + made.faces.join(" "))
+            print("floors left out " + made.floors.len().to_str() + ": " + made.floors.join(" "))
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 1
 
 # `unseal`: the archive opened under the key `--key` names into `--into`, a
 # folder this process makes and leaves, and nothing else run: the key is in

@@ -30,6 +30,13 @@
 # that holds `function main`, whatever its info string; CR dropped. A block's
 # text is written as `answer.hero` in the sample's scratch and nothing else is
 # read of the answer.
+#
+# **A package tree beside the answer** (task 2300, panel 234's R14): where the
+# grading names one, its catalogue and placed packages are copied into the
+# scratch beside `answer.hero` before `check`, so an answer's `use
+# <core>/strings` compiles against it (`thesis_packages.hero`). `binds_c` is
+# asked of the answer's own text, before the tree is placed and never of it:
+# a package's `extern` builds, an answer's is `refused_extern`.
 
 use <core>/strings as core_strings
 
@@ -38,6 +45,7 @@ use json_fields
 use json_read
 use shell
 use strings
+use thesis_packages
 use thesis_sandbox
 use thesis_tasks
 
@@ -128,8 +136,9 @@ function build_words(compiler: str, arm: str, path: str, binary: str) -> [str]
     return [compiler, "build", path, "-o", binary]
 
 # `answer` graded for `task` in `arm`, every child under `scratch`, the cases
-# under `seconds` and `bytes` each.
-function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis_tasks.Task, seconds: i64, bytes: i64) -> Graded?
+# under `seconds` and `bytes` each, the package tree at `tree` beside it, or
+# none where `tree` is "".
+function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis_tasks.Task, tree: str, seconds: i64, bytes: i64) -> Graded?
     if arm != "strict" && arm != "brief" && arm != "control"
         return fail(code: "bad_arm", msg: "an arm is `strict`, `brief` or `control`, not `" + arm + "`")
     shell.mkdir_all(scratch)?
@@ -148,6 +157,10 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
             Graded(outcome: "refused_extern", codes: [], message: "the program binds C with `extern`, which the grader never runs", passed: 0, total: task.cases.len(), at_case: "")
         )
 
+    # The tree goes beside the answer only once the answer's own text has
+    # been asked whether it binds C, so its packages' `extern` lines never are.
+    if tree != ""
+        thesis_packages.placed(scratch: scratch, dir: tree, into: scratch)?
     path = scratch + "/answer.hero"
     write_file(path: path, text: text)?
     checked = shell.run(scratch: scratch, program: compiler, words: check_words(compiler: compiler, arm: arm, json: true).push(path))?
@@ -324,6 +337,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
         arm: "strict",
         answer: "```\nfunction main()\n    print(\"2\")\n```\n",
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -338,6 +352,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
         arm: "strict",
         answer: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n",
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -351,6 +366,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
         arm: "brief",
         answer: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n",
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -363,6 +379,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
         arm: "strict",
         answer: "```\nfunction main()\n    n: i64 @= 0\n    while true\n        n @ n + 1\n        if n < 0\n            print(n)\n```\n",
         task: task,
+        tree: "",
         seconds: 1,
         bytes: 1048576
     ).must()
@@ -374,6 +391,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
         arm: "strict",
         answer: "No program, only prose.",
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -387,6 +405,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
         arm: "control",
         answer: as_answer(reference),
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -408,6 +427,7 @@ test "the control arm builds what the strict build refuses and runs it: a droppe
         arm: "strict",
         answer: dropped,
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -419,6 +439,7 @@ test "the control arm builds what the strict build refuses and runs it: a droppe
         arm: "control",
         answer: dropped,
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -431,6 +452,7 @@ test "the control arm builds what the strict build refuses and runs it: a droppe
         arm: "strict",
         answer: unmatched,
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
@@ -442,9 +464,119 @@ test "the control arm builds what the strict build refuses and runs it: a droppe
         arm: "control",
         answer: unmatched,
         task: task,
+        tree: "",
         seconds: 5,
         bytes: 1048576
     ).must()
     assert loud.outcome == "abort"
     assert loud.passed == 0
     assert core_strings.contains(s: loud.message, substr: "panic: this match has no arm for .empty")
+
+# A task of one case, written by a test: its one argument's words counted.
+function counting_task(dir: str) -> thesis_tasks.Task?
+    shell.mkdir_all(dir + "/cases")?
+    write_file(path: dir + "/task.md", text: "Print how many words the one argument holds.\n")?
+    write_file(path: dir + "/cases/0.args", text: "a b c\n")?
+    write_file(path: dir + "/cases/0.expected", text: "3\n")?
+    return thesis_tasks.read_task(scratch: dir, dir: dir, number: "01")
+
+# The answer `program` in a fenced block, as a model would give it.
+function fenced(program: str) -> str
+    return "```\n" + program + "```\n"
+
+test "a package tree beside the answer: a package compiles, the package's own extern builds, an answer's is refused, and a program naming none is graded as without it"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_grade: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    task = counting_task(scratch + "/task").must()
+
+    # The harness's own tree, its catalogue and its placed core, committed.
+    tree = thesis_packages.tree_at(scratch: scratch, dir: "tests/harness").must()
+    over = fenced(
+        "use <core>/strings\n\nfunction main()\n    given = args()\n    print(strings.fields(given[0]).len())\n"
+    )
+
+    for arm in ["strict", "control"]
+        beside = graded(
+            scratch: scratch + "/over-" + arm,
+            compiler: compiler,
+            arm: arm,
+            answer: over,
+            task: task,
+            tree: tree.dir,
+            seconds: 5,
+            bytes: 1048576
+        ).must()
+        assert beside.outcome == "cases_pass"
+
+    bare = graded(
+        scratch: scratch + "/bare",
+        compiler: compiler,
+        arm: "strict",
+        answer: over,
+        task: task,
+        tree: "",
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert bare.outcome == "compile_error"
+    assert bare.codes == ["unknown_entry"]
+
+    # `<core>/net/hero_net` binds the platform layer's header, and builds.
+    floor = graded(
+        scratch: scratch + "/floor",
+        compiler: compiler,
+        arm: "strict",
+        answer: fenced("use <core>/net/hero_net\n\nfunction main()\n    print(3 + hero_net.HERO_NET_OK)\n"),
+        task: task,
+        tree: tree.dir,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert floor.outcome == "cases_pass"
+    own = graded(
+        scratch: scratch + "/own",
+        compiler: compiler,
+        arm: "strict",
+        answer: fenced("extern \"math.h\" link \"m\"\n    function sqrt(x: f64) -> f64\n\nfunction main()\n    print(3)\n"),
+        task: task,
+        tree: tree.dir,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert own.outcome == "refused_extern"
+    plain = graded(
+        scratch: scratch + "/plain",
+        compiler: compiler,
+        arm: "strict",
+        answer: fenced("function main()\n    unused = 3\n    print(3)\n"),
+        task: task,
+        tree: tree.dir,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert plain.outcome == "compile_error"
+    assert plain.codes == ["unused_binding"]
+
+test "a grading child holding the package suite's key runs no program, and says which key"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_grade: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    _ = counting_task(scratch + "/task").must()
+    write_file(path: scratch + "/answer.md", text: fenced("function main()\n    print(3)\n")).must()
+
+    for name in ["HEROES_PACKAGES_KEY", "HEROES_PACKAGES_RESERVE_KEY"]
+        ran = shell.run_given(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "run", "tests/harness/thesis.hero", "--", "grade", scratch + "/answer.md", "--task", scratch + "/task", "--compiler", compiler],
+            given: [shell.Variable(name: name, value: "not-a-key")]
+        ).must()
+        assert ran.code == 2
+        assert core_strings.contains(s: ran.err, substr: name + " is set in this process's environment")

@@ -66,3 +66,43 @@ exhaustive.
 sha256 `b36c80dd616737bd4ad15c8472dae9cdbc776924cc0372e3d98d63b7791318e2`;
 8,015 tokens on the vendored `cl100k_base` table, 159 more than the
 specification.
+
+## `spec-and-cards.md`
+
+The package arm of panel 234's R14, the paired run at M-core-packages' close
+(task 2300): the specification, then the heading *The packages beside the
+program*, one sentence saying that the program is compiled beside a catalogue
+holding the packages whose cards follow, then the card of every face of the
+tree its first line names, in E2's call form and in path order, a floor's card
+left out (R5: only a program that reaches the floor reads it). It is written by
+a command, never by hand:
+
+    heroes run tests/harness/thesis.hero -- cards --packages build/thesis-packages -o tests/thesis/contexts/spec-and-cards.md
+
+Its first line, `packages <tree> <digest> spec <digest>`, names the tree and the
+specification it was written from. The instrument drops that line from the
+prompt, places the tree beside every answer of this context and of no other,
+and refuses the file before any request where the tree's digest, the
+specification's, or any byte of the file differs from what `cards` writes now
+(`tests/harness/thesis_cards.hero`), so the run's two arms hold one
+specification and the cards describe the packages the answers compile against.
+The tree is a folder git ignores, placed by the compiler from the repository's
+own index:
+
+    mkdir -p build/thesis-packages
+    heroes add core --index file://../../packages -C build/thesis-packages
+
+and its digest leaves out the catalogue's `index` line and the key ending a
+placed folder's name, so one version placed from any spelling of the index is
+one tree (`tests/harness/thesis_packages.hero`).
+
+Written 2026-11-15 from core 0.5.0, its six faces `encoding/json`, `net`,
+`net/http`, `slices`, `strconv` and `strings`, the floor `net/hero_net` left
+out, over the specification of sha256
+`1d532d514831aa70234ef0eb8ad77850ebd4c2e390234f22e973a363ed757001`; the tree's
+digest `c076bc950ef607fa0448fb9da6be761612d39c340e9276f459ebf7be310e7098`, the
+file's `72ca41bf187ff3fe30951e0397393aa8d41f4d73bbb778d99d8216c1a3977f92`;
+11,704 tokens on the vendored tables' maximum, beside the specification's
+8,702 (`heroes measure` of the file without its first line). **The run at the
+close writes it again** from the core of that day, before the run is
+registered: today's file then refuses itself against the newer tree, by name.

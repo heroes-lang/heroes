@@ -33,6 +33,13 @@ pre-registered tasks per milestone, ~16 samples by v1.* What stands from it: **t
 must be author-written**, since an assistant-written suite would measure the assistant's priors;
 the assistant's tasks in `tests/thesis/` prove the instrument and enter no published number.
 
+**Panel 234's R14 paired run has its instrument since 2026-11-15** (task 2300): `--packages <tree>`
+on `dry` and `grade` places a package tree, `heroes.toml` and `heroes.packages/`, beside the answer;
+the word `cards --packages <tree> -o <file>` writes the package arm's context, the specification then
+the faces' cards, its first line naming the tree, which a run places beside that context's answers
+alone; and `report` sets the contexts against the first a run lists. The suite of package tasks is
+the author's, and its rules are `tasks.md` § A package task.
+
 **Metric 3 is primary but never pooled** (panel 011): per-operator kill
 rates in three arms (`check`, `check --permissive`, and a one-time C +
 Python transliteration of the golden corpus), plus a meaning-preserving

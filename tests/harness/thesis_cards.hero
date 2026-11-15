@@ -1,0 +1,359 @@
+# THE PACKAGE ARM'S CONTEXT: the specification, then the cards of a package
+# tree, in one file that names the tree it was written from (task 2300; panel
+# 234's R14 and R5, its spec-warden's § 8 item 3, its critic's G17).
+#
+# R14's two arms differ in the packages alone: `spec`, against the
+# specification and the cards with the tree beside the answer. A context is
+# what stands in the template's `{{SPEC}}` (`thesis_prompt.hero`), so the
+# package arm needs no new prompt machinery, only a file holding the
+# specification and then the cards (the spec-warden's § 8, its second fact).
+# `cards --packages <tree> -o <file>` writes it, by construction:
+#
+#     packages <tree> <the tree's digest> spec <the specification's digest>
+#     <the specification, byte for byte>
+#
+#     ## The packages beside the program
+#
+#     <LEAD>
+#
+#     <each face's card, byte for byte, in path order>
+#
+# **Its first line names the tree and is never sent**: `thesis_prompt` reads
+# it, drops it from the prompt as a task's canary line is dropped from its
+# prose, and the run places that tree beside every answer the context's
+# generations give. So a run's contexts are its arms whole, `--context spec
+# --context <file>` being the paired run, the tree going with the cards that
+# describe it and with no other context; and the file's digest, which keys
+# every generation and verdict of the context, covers the tree's.
+#
+# **The file is held to what `cards` writes every time it is read**: the tree
+# at that path has the digest the line names, the specification the line
+# names is `spec/heroes-spec.md` as it stands, and the file is byte for byte
+# what `cards` writes from the two now. So one run holds one specification in
+# both arms (R14: one compiler, one specification), and a card edited by hand,
+# a tree placed again or a sentence of the specification moved since the file
+# was written refuses the run by name, before anything is asked.
+#
+# **The cards are the faces'; a floor's is left out** (R5): a floor is a face
+# whose module binds a header, and its card counts apart from the faces'
+# because only a program that reaches the floor reads it
+# (`package_judge.hero`); the floor itself still builds beside the answer. The
+# cards are the ones placed in the tree, `<path>.md` beside `<path>.hero`
+# (`examples/packages/README.md` § 8), so a model reads the cards of the
+# packages its answer compiles against, in E2's form, each function's
+# signature beside the call a program writes (R5; R14's *the card's form is
+# E2's*), taken as the card program wrote them. A `.md` beside no module is
+# refused, as the card program refuses one.
+
+use <core>/strings as core_strings
+
+use shell
+use strings
+use thesis_grade
+use thesis_packages
+use thesis_sha256
+
+# The heading the cards stand under, after the specification's last section.
+constant HEADING: str
+    "## The packages beside the program"
+
+# The one sentence before the cards: what the reader test's carded brief said
+# of the package's modules standing beside the program (panel 234's
+# `234-briefs/blind/templates/brief-card.md`), which the frozen template
+# cannot say, so the context does.
+constant LEAD: str
+    "The program is compiled beside a catalogue, `heroes.toml`, holding the packages whose cards follow: each card's heading is the `use` line that reaches its module, and the card is what that module gives a program."
+
+# The first word of the line that names the tree.
+constant HEADER_WORD: str
+    "packages"
+
+# What a context file's first line names: the tree, its digest, and the
+# digest of the specification the file was written from.
+record Header
+    tree: str
+    tree_sha: str
+    spec_sha: str
+
+# One card of a tree: its path under the placed folder with the key left out,
+# its text, and whether its module is a floor's.
+record Card
+    path: str
+    text: str
+    floor: bool
+
+# What `cards` made: the file's text, the digests its first line names, and
+# the cards it took and left out, by path.
+record Made
+    text: str
+    tree_sha: str
+    spec_sha: str
+    faces: [str]
+    floors: [str]
+
+# The header a context file opens with: `no_header` where its first line does
+# not open with `packages `, a plain context; `bad_header` where it does and
+# is not the five words `packages <tree> <digest> spec <digest>`.
+function header_of(text: str) -> Header?
+    rows = strings.lines(text: text)
+
+    if rows.len() == 0 || !core_strings.has_prefix(s: rows[0], prefix: HEADER_WORD + " ")
+        return fail(code: "no_header", msg: "the file names no package tree")
+    words = strings.words(text: rows[0])
+
+    if words.len() != 5 || words[3] != "spec" || !digest_shape(words[2]) || !digest_shape(words[4])
+        return fail(
+            code: "bad_header",
+            msg: "its first line, `" + rows[0] + "`, opens as a package arm's does and is not `packages <tree> <digest> spec <digest>`, the line `cards` writes"
+        )
+    return ok(Header(tree: words[1], tree_sha: words[2], spec_sha: words[4]))
+
+# Sixty-four lowercase hexadecimal digits, a SHA-256 as `thesis_sha256` writes it.
+function digest_shape(word: str) -> bool
+    if word.len() != 64
+        return false
+
+    for i in range(from: 0, to: word.len())
+        if !(word[i] >= '0' && word[i] <= '9' || word[i] >= 'a' && word[i] <= 'f')
+            return false
+
+    return true
+
+# The text a model reads of a context file: everything after its first line.
+function body_of(text: str) -> str
+    at = strings.index_of(text: text, needle: "\n")
+
+    if at.is_err()
+        return ""
+    return text.slice(from: at.must() + 1, to: text.len())
+
+# Every card placed in `tree`, in the order of its path with the key left out;
+# a `.md` beside no `.hero` is refused by name.
+function cards_of(scratch: str, tree: thesis_packages.Tree) -> [Card]?
+    root = tree.dir + "/" + thesis_packages.PLACED
+    by_path: {str: str} @= {}
+    paths: [str] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: root, skip: [])?
+        if core_strings.has_suffix(s: path, suffix: ".md")
+            rel = thesis_packages.keyless(strings.without_prefix(text: path, prefix: root + "/"))
+            by_path[rel] @ path
+            paths @ paths.push(rel)
+
+    out: [Card] @= []
+
+    for rel in paths.sort()
+        path = by_path[rel]?
+        module = read_file(path: strings.without_suffix(text: path, suffix: ".md") + ".hero")
+
+        if module.is_err()
+            return fail(
+                code: "stray_card",
+                msg: path + " stands beside no module of its name, so it is the card of no face"
+            )
+        out @ out.push(Card(path: rel, text: read_file(path: path)?, floor: thesis_grade.binds_c(module.must())))
+
+    return ok(out)
+
+# What a model reads in the package arm: the specification, the heading, the
+# lead, then each face's card, every text ended by one line feed.
+function context_text(spec: str, cards: [Card]) -> str
+    parts: [str] @= [ended(spec), "\n", HEADING, "\n\n", LEAD, "\n"]
+
+    for card in cards
+        if !card.floor
+            parts @ parts.push("\n").push(ended(card.text))
+
+    return parts.join("")
+
+function ended(text: str) -> str
+    if core_strings.has_suffix(s: text, suffix: "\n")
+        return text
+    return text + "\n"
+
+# The context `cards` writes from the tree at `dir` and the specification at
+# `spec_path`; refused where the path is not one word (the first line names
+# it so), where it is not relative to the repository's root or climbs out of
+# it, where the tree does not read, or where it holds no face's card.
+function made(scratch: str, dir: str, spec_path: str) -> Made?
+    if dir == "" || strings.words(text: dir).len() != 1 || strings.words(text: dir)[0] != dir
+        return fail(
+            code: "bad_tree_path",
+            msg: "the tree's path `" + dir + "` is not one word, and a context's first line names its tree by a path of one word"
+        )
+
+    # A committed context names its tree where every checkout finds it, and
+    # no folder of one person's machine.
+    if core_strings.has_prefix(s: dir, prefix: "/") || climbs(dir)
+        return fail(
+            code: "bad_tree_path",
+            msg: "the tree's path `" + dir + "` is not a path inside the repository from its root, where the instrument runs, so a context naming it would read on one machine alone: place the tree under it, `build/thesis-packages` for one"
+        )
+    tree = thesis_packages.tree_at(scratch: scratch, dir: dir)?
+    spec = read_file(path: spec_path)
+
+    if spec.is_err()
+        return fail(code: "no_spec", msg: spec_path + " cannot be read, and the package arm's context opens with it")
+    cards = cards_of(scratch: scratch, tree: tree)?
+    faces: [str] @= []
+    floors: [str] @= []
+
+    for card in cards
+        if card.floor
+            floors @ floors.push(card.path)
+        else
+            faces @ faces.push(card.path)
+
+    if faces.len() == 0
+        return fail(
+            code: "no_cards",
+            msg: dir + " places no face's card, `<path>.md` beside a module that binds no header, and the package arm's context is the specification with the cards"
+        )
+    spec_sha = thesis_sha256.of(spec.must())
+    line = HEADER_WORD + " " + dir + " " + tree.sha + " spec " + spec_sha
+    return ok(
+        Made(text: line + "\n" + context_text(spec: spec.must(), cards: cards), tree_sha: tree.sha, spec_sha: spec_sha, faces: faces, floors: floors)
+    )
+
+# Whether a path has a part `..`, which leaves the folder it starts from.
+function climbs(path: str) -> bool
+    for part in strings.split_text(text: path, separator: "/")
+        if part == ".."
+            return true
+
+    return false
+
+# The prompt's text of the context file at `path`, whose text is `text` and
+# whose first line is `header`, once the file is shown to be what `cards`
+# writes now: the tree's digest, then the specification's, then every byte.
+function verified(scratch: str, path: str, text: str, header: Header, spec_path: str) -> str?
+    again = "write the context again, `heroes run tests/harness/thesis.hero -- cards --packages " + header.tree + " -o " + path + "`"
+    tree = thesis_packages.tree_at(scratch: scratch, dir: header.tree)
+
+    if tree.is_err()
+        return fail(
+            code: "context_tree",
+            msg: "the context " + path + " names the tree " + header.tree + ", which does not read: " + said(tree) + "; place it again with `heroes add`, or " + again
+        )
+
+    if tree.must().sha != header.tree_sha
+        return fail(
+            code: "context_tree",
+            msg: "the context " + path + " was written from a tree whose digest is " + header.tree_sha + ", and " + header.tree + "'s is " + tree.must().sha + " now: its cards describe another tree than the answers would compile against; " + again
+        )
+    spec = read_file(path: spec_path)
+
+    if spec.is_err() || thesis_sha256.of(spec.must()) != header.spec_sha
+        return fail(
+            code: "context_spec",
+            msg: "the context " + path + " was written from a specification whose digest is " + header.spec_sha + ", and " + spec_path + " is another now, so its two arms would read two specifications; " + again
+        )
+    want = made(scratch: scratch, dir: header.tree, spec_path: spec_path)?
+
+    if want.text != text
+        return fail(
+            code: "context_moved",
+            msg: "the context " + path + " is not what `cards` writes from " + header.tree + " and " + spec_path + ": a byte of it moved since it was written; " + again
+        )
+    return ok(body_of(text))
+
+function said(got: thesis_packages.Tree?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# A face and a floor placed in a tree written by a test, beside the tree
+# `thesis_packages.written_tree` writes: `strings` and `net/hero_net`.
+function written_cards(dir: str) -> ()?
+    folder = dir + "/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb"
+    thesis_packages.written_tree(dir: dir, index: "file://../../packages", key: "f58b55a0517ed0eb", body: "function f() -> i64\n    return 1\n")?
+    shell.mkdir_all(folder + "/net")?
+    write_file(path: folder + "/net/hero_net.hero", text: "extern \"hero_net.h\"\n    constant HERO_NET_OK: i64\n")?
+    return write_file(path: folder + "/net/hero_net.md", text: "# hero_net: `use <core>/net/hero_net`\n")
+
+test "a context is the specification, the heading, the lead and the faces' cards, and its first line names the tree and the specification"
+    scratch = shell.own_scratch()
+    written_cards(scratch + "/tree").must()
+    write_file(path: scratch + "/spec.md", text: "# Report\n\nThe language.\n").must()
+    got = made(scratch: scratch, dir: scratch + "/tree", spec_path: scratch + "/spec.md").must()
+    assert got.faces == ["core@0.5.0/strings.md"]
+    assert got.floors == ["core@0.5.0/net/hero_net.md"]
+    header = header_of(got.text).must()
+    assert header.tree == scratch + "/tree"
+    assert header.tree_sha == thesis_packages.tree_at(scratch: scratch, dir: scratch + "/tree").must().sha
+    assert header.spec_sha == thesis_sha256.of("# Report\n\nThe language.\n")
+    assert body_of(got.text) == "# Report\n\nThe language.\n\n" + HEADING + "\n\n" + LEAD + "\n\n# strings: `use <core>/strings`\n"
+    assert !core_strings.contains(s: body_of(got.text), substr: "hero_net")
+
+    # What `cards` wrote reads back as the prompt's text, and a byte moved
+    # anywhere refuses it by what moved.
+    assert verified(scratch: scratch, path: "c.md", text: got.text, header: header, spec_path: scratch + "/spec.md").must() == body_of(got.text)
+
+    match verified(scratch: scratch, path: "c.md", text: got.text + "\n", header: header, spec_path: scratch + "/spec.md")
+        .ok _  => assert false
+        .err e => assert e.code == "context_moved"
+
+    write_file(path: scratch + "/spec.md", text: "# Report\n\nThe language, moved.\n").must()
+
+    match verified(scratch: scratch, path: "c.md", text: got.text, header: header, spec_path: scratch + "/spec.md")
+        .ok _  => assert false
+        .err e => assert e.code == "context_spec"
+
+    write_file(path: scratch + "/spec.md", text: "# Report\n\nThe language.\n").must()
+    write_file(
+        path: scratch + "/tree/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb/strings.md",
+        text: "# moved\n"
+    ).must()
+
+    match verified(scratch: scratch, path: "c.md", text: got.text, header: header, spec_path: scratch + "/spec.md")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "context_tree"
+            assert core_strings.contains(s: e.msg, substr: "cards --packages " + scratch + "/tree -o c.md")
+
+test "a first line that is not the tree's is no header, and one that opens as the tree's and is not its five words is refused"
+    match header_of("# Report on the Programming Language Heroes\n")
+        .ok _  => assert false
+        .err e => assert e.code == "no_header"
+
+    match header_of("")
+        .ok _  => assert false
+        .err e => assert e.code == "no_header"
+
+    match header_of("packages build/t 0123 spec 4567\nrest\n")
+        .ok _  => assert false
+        .err e => assert e.code == "bad_header"
+
+    digest = thesis_sha256.of("x")
+    whole = header_of("packages build/t " + digest + " spec " + digest + "\n# Report\n").must()
+    assert whole.tree == "build/t"
+    assert whole.spec_sha == digest
+    assert body_of("packages build/t " + digest + " spec " + digest + "\n# Report\n") == "# Report\n"
+
+test "a tree with a path of two words, an absolute one or one climbing out, no face's card or a card beside no module is refused by name"
+    scratch = shell.own_scratch()
+    write_file(path: scratch + "/spec.md", text: "# Report\n").must()
+
+    for crooked in ["two words", "/Users/someone/tree", "build/../../tree", ""]
+        match made(scratch: scratch, dir: crooked, spec_path: scratch + "/spec.md")
+            .ok _  => assert false
+            .err e => assert e.code == "bad_tree_path"
+
+    written_cards(scratch + "/floors").must()
+    shell.remove_tree(scratch + "/floors/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb/strings.md").must()
+
+    match made(scratch: scratch, dir: scratch + "/floors", spec_path: scratch + "/spec.md")
+        .ok _  => assert false
+        .err e => assert e.code == "no_cards"
+
+    written_cards(scratch + "/stray").must()
+    write_file(
+        path: scratch + "/stray/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb/notes.md",
+        text: "notes\n"
+    ).must()
+
+    match made(scratch: scratch, dir: scratch + "/stray", spec_path: scratch + "/spec.md")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "stray_card"
+            assert core_strings.contains(s: e.msg, substr: "notes.md stands beside no module")

@@ -195,15 +195,16 @@ function named(codes: [str], code: str) -> bool
 
     return false
 
-# Every mutant of `task` graded in `arm` under the grader's bounds, one
-# line each, in the folder's order.
-function judged_all(scratch: str, compiler: str, arm: str, task: thesis_tasks.Task, seconds: i64, bytes: i64) -> [Judged]?
+# Every mutant of `task` graded in `arm` under the grader's bounds, the
+# package tree at `tree` beside each where it is not "", one line each, in
+# the folder's order.
+function judged_all(scratch: str, compiler: str, arm: str, task: thesis_tasks.Task, tree: str, seconds: i64, bytes: i64) -> [Judged]?
     mutants = mutants_of(scratch: scratch, task: task)?
     out: [Judged] @= []
 
     for i in range(from: 0, to: mutants.len())
         m = mutants[i]
-        graded = thesis_grade.graded(scratch: scratch + "/mutant-" + (i + 1).to_str(), compiler: compiler, arm: arm, answer: thesis_grade.as_answer(m.text), task: task, seconds: seconds, bytes: bytes)?
+        graded = thesis_grade.graded(scratch: scratch + "/mutant-" + (i + 1).to_str(), compiler: compiler, arm: arm, answer: thesis_grade.as_answer(m.text), task: task, tree: tree, seconds: seconds, bytes: bytes)?
         got = seen(graded)
         out @ out.push(
             Judged(name: m.name, outcome: got.outcome, detail: got.detail, why: unmet(m: m, arm: arm, graded: graded))
@@ -335,7 +336,7 @@ test "the assistant's third task's mutants end as they say in both arms, and one
     assert own.len() >= 1
 
     for arm in ["strict", "control"]
-        for one in judged_all(scratch: scratch + "/" + arm, compiler: compiler, arm: arm, task: task, seconds: 10, bytes: 1048576).must()
+        for one in judged_all(scratch: scratch + "/" + arm, compiler: compiler, arm: arm, task: task, tree: "", seconds: 10, bytes: 1048576).must()
             assert one.why == ""
 
     reference = read_file(path: scratch + "/03/reference.hero").must()
@@ -348,6 +349,7 @@ test "the assistant's third task's mutants end as they say in both arms, and one
         compiler: compiler,
         arm: "control",
         task: task,
+        tree: "",
         seconds: 10,
         bytes: 1048576
     ).must()

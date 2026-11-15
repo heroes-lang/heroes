@@ -14,13 +14,18 @@
 # single|cached`, `--dialect anthropic|openai`, `--transport api|claude|codex`
 # (the harnesses of `thesis_harness.hero`, in Anthropic's dialect alone),
 # `--base <url>`, `--out <dir>`, `--max-requests <n>`, `--max-dollars <n>`.
+# `--packages <tree>` names the package tree `dry` and `grade` place beside the
+# answer, and the tree `cards --packages <tree> -o <file>` writes a context
+# from (task 2300, panel 234's R14); a run takes a tree through the context
+# that names it, never through a flag of its own, so a tree goes with the
+# cards that describe it and with no other context (`thesis_cards.hero`).
 
 use <core>/strings as core_strings
 
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> | --sealed <file> [--key VAR] --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live] | scaffold <folder> <NN> | lint <folder>; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] [--packages <tree>] | grade <answer.hero> --task <folder/NN> [--arm ...] [--packages <tree>] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> | --sealed <file> [--key VAR] --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live] | scaffold <folder> <NN> | lint <folder> | cards --packages <tree> -o <file>; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
@@ -38,6 +43,7 @@ constant WORDS: [str]
         "canary-probe"
         "scaffold"
         "lint"
+        "cards"
     ]
 
 # The labels a suite may carry: the assistant's tasks, in clear, which the
@@ -84,6 +90,8 @@ record Asked
     key: str
     into: str
     labels: str
+    # The package tree `dry`, `grade` and `cards` read, "" for none.
+    packages: str
     wrong: str
 
 # Why the first word is not one this program takes.
@@ -119,7 +127,10 @@ function valued(flag: str, word: str) -> bool
         return word == "unseal"
 
     if flag == "-o"
-        return word == "seal"
+        return word == "seal" || word == "cards"
+
+    if flag == "--packages"
+        return word == "dry" || word == "grade" || word == "cards"
 
     if flag == "--arm"
         return word != "tasks"
@@ -204,6 +215,9 @@ function parsed(word: str, words: [str]) -> Asked
     if word == "lint" && a.paths.len() != 1
         return wrong(word: word, why: "`lint` takes one folder")
 
+    if word == "cards" && (a.paths.len() != 0 || a.packages == "" || a.out == "")
+        return wrong(word: word, why: "`cards` takes `--packages <tree>` and `-o <file>`, and no folder")
+
     if word == "report" && a.paths.len() != 1
         return wrong(word: word, why: "`report` takes one run folder, the `--out` of a run")
 
@@ -274,6 +288,8 @@ function took(@a: Asked, flag: str, value: str) -> str
         a.key @ value
     else if flag == "--labels"
         a.labels @ value
+    else if flag == "--packages"
+        a.packages @ value
     else if flag == "--into"
         a.into @ value
     else if flag == "--effort"
@@ -333,6 +349,7 @@ function blank(word: str) -> Asked
         key: "HEROES_TASKS_KEY",
         into: "",
         labels: "",
+        packages: "",
         wrong: ""
     )
 
@@ -586,4 +603,40 @@ test "preregister takes a folder or a sealed archive with its key, never both an
     assert core_strings.contains(
         s: parsed(word: "plan", words: ["--sealed", "x.enc", "--model", "m"]).wrong,
         substr: "no flag"
+    )
+
+test "`--packages` names a tree for `dry`, `grade` and `cards` alone, and `cards` takes it with `-o` and no folder"
+    dry = parsed(word: "dry", words: ["held-out-draft/packages", "--packages", "build/thesis-packages"])
+    assert dry.wrong == ""
+    assert dry.packages == "build/thesis-packages"
+    assert parsed(word: "dry", words: ["tests/thesis"]).packages == ""
+    graded = parsed(word: "grade", words: ["answer.hero", "--task", "tests/thesis/01", "--packages", "t"])
+    assert graded.wrong == ""
+    assert graded.packages == "t"
+    made = parsed(
+        word: "cards",
+        words: ["--packages", "build/thesis-packages", "-o", "tests/thesis/contexts/spec-and-cards.md"]
+    )
+    assert made.wrong == ""
+    assert made.packages == "build/thesis-packages"
+    assert made.out == "tests/thesis/contexts/spec-and-cards.md"
+    assert core_strings.contains(s: parsed(word: "cards", words: ["--packages", "t"]).wrong, substr: "`-o <file>`")
+    assert core_strings.contains(s: parsed(word: "cards", words: ["-o", "c.md"]).wrong, substr: "`--packages <tree>`")
+    assert core_strings.contains(
+        s: parsed(word: "cards", words: ["x", "--packages", "t", "-o", "c.md"]).wrong,
+        substr: "no folder"
+    )
+
+    # A run takes its tree through the context that names it.
+    assert core_strings.contains(
+        s: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--packages", "t"]).wrong,
+        substr: "`--packages` is no flag of `run`"
+    )
+    assert core_strings.contains(
+        s: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--packages", "t"]).wrong,
+        substr: "`--packages` is no flag of `plan`"
+    )
+    assert core_strings.contains(
+        s: parsed(word: "tasks", words: ["tests/thesis", "--packages", "t"]).wrong,
+        substr: "`--packages` is no flag of `tasks`"
     )

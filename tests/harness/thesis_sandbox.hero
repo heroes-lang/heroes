@@ -73,9 +73,13 @@ constant ADDRESS_KIB: i64
 # process's environment from another (the ffi-pragmatist's measurement, panel
 # 226 § 3: `sysctl(KERN_PROCARGS2)` reads it with `sysctl-read` denied too).
 # The throwaway `HEROES_SEAL_TEST_KEY` is not among them: it seals a suite of
-# the tests' own, and no model's program ever runs under it.
+# the tests' own, and no model's program ever runs under it. The last two seal
+# the paired run's suite of package tasks and its reserve (task 2300, panel
+# 234's R14), a suite of its own whose keys are its own: the held-out suite's
+# key is committed when that suite opens (`tests/thesis/held-out/README.md`),
+# and a package suite sealed under it would open with it.
 constant KEYS: [str]
-    ["HEROES_TASKS_KEY", "HEROES_RESERVE_KEY", "HEROES_RUNS_KEY"]
+    ["HEROES_TASKS_KEY", "HEROES_RESERVE_KEY", "HEROES_RUNS_KEY", "HEROES_PACKAGES_KEY", "HEROES_PACKAGES_RESERVE_KEY"]
 
 # Why a model's program cannot run on this machine now, or "" where it can: a
 # seal's key in this process's environment, or neither sandbox tool present.

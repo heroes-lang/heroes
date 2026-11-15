@@ -24,11 +24,20 @@
 # where the specification block is replaced by one sentence saying there is
 # none and the language is Heroes, so that what a model knows of the language
 # without the document shows.
+#
+# **A context may carry a package tree** (task 2300, panel 234's R14): a file
+# `cards --packages <tree> -o <file>` wrote opens with a line naming the tree
+# it was written from, which is held to what `cards` writes now and dropped
+# from the prompt (`thesis_cards.hero`), and the run places that tree beside
+# every answer of the context. Its digest, over the whole file, keys the
+# context's generations, so the same words with another tree are another
+# context.
 
 use <core>/strings as core_strings
 
 use shell
 use strings
+use thesis_cards
 use thesis_sha256
 
 constant TEMPLATE: str
@@ -55,11 +64,16 @@ constant NONE_OPENING: str
 constant CUT: str
     "</specification>"
 
+# A context: what it is called, the file it was read from, the text that
+# stands in `{{SPEC}}`, the file's digest, and the package tree its first line
+# names with that tree's digest, "" for a context with none.
 record Context
     name: str
     path: str
     spec: str
     spec_sha: str
+    tree: str
+    tree_sha: str
 
 record Template
     path: str
@@ -76,10 +90,11 @@ record Rendered
     user: str
     layout: str
 
-# `name` is `spec`, `none`, or the path of a variant specification.
-function context_of(name: str) -> Context?
+# `name` is `spec`, `none`, or the path of a variant specification, which may
+# be a package arm's context naming its tree.
+function context_of(scratch: str, name: str) -> Context?
     if name == "none"
-        return ok(Context(name: name, path: "", spec: "", spec_sha: ""))
+        return ok(Context(name: name, path: "", spec: "", spec_sha: "", tree: "", tree_sha: ""))
     path: str @= name
 
     if name == "spec"
@@ -88,7 +103,18 @@ function context_of(name: str) -> Context?
 
     if text.is_err()
         return fail(code: "no_spec", msg: "the context `" + name + "` names " + path + ", which cannot be read")
-    return ok(Context(name: name, path: path, spec: text.must(), spec_sha: thesis_sha256.of(text.must())))
+    sha = thesis_sha256.of(text.must())
+
+    match thesis_cards.header_of(text.must())
+        .ok header =>
+            body = thesis_cards.verified(scratch: scratch, path: path, text: text.must(), header: header, spec_path: SPEC)?
+            return ok(
+                Context(name: name, path: path, spec: body, spec_sha: sha, tree: header.tree, tree_sha: header.tree_sha)
+            )
+        .err e =>
+            if e.code != "no_header"
+                return fail(code: "bad_context", msg: "the context " + path + " cannot be read: " + e.msg)
+            return ok(Context(name: name, path: path, spec: text.must(), spec_sha: sha, tree: "", tree_sha: ""))
 
 # The template's turn-1 prompt, between its two lines of three dashes, its
 # feedback blocks after the second, and its digest over the whole file.
@@ -259,7 +285,7 @@ test "the frozen template renders in both layouts, and the digests are the files
     template = template_at(path: TEMPLATE).must()
     assert template.sha.len() == 64
     assert core_strings.contains(s: template.text, substr: "<specification>")
-    spec = context_of(name: "spec").must()
+    spec = context_of(scratch: shell.own_scratch(), name: "spec").must()
     assert spec.spec_sha.len() == 64
     assert spec.spec.len() > 1000
 
@@ -323,7 +349,7 @@ test "the feedback blocks are the template's four, filled where their placeholde
 
 test "the canary context holds no specification, and a layout or a context nobody named is refused"
     template = template_at(path: TEMPLATE).must()
-    none = context_of(name: "none").must()
+    none = context_of(scratch: shell.own_scratch(), name: "none").must()
     assert none.spec == ""
     canary = rendered(template: template, context: none, task: "Print `hello`.", layout: "cached").must()
     assert canary.system == ""
@@ -338,7 +364,7 @@ test "the canary context holds no specification, and a layout or a context nobod
     assert !core_strings.contains(s: canary.user, substr: "complete specification")
     given = rendered(
         template: template,
-        context: context_of(name: "spec").must(),
+        context: context_of(scratch: shell.own_scratch(), name: "spec").must(),
         task: "Print `hello`.",
         layout: "single"
     ).must()
@@ -360,7 +386,7 @@ test "the canary context holds no specification, and a layout or a context nobod
         .ok _  => assert false
         .err e => assert e.code == "bad_layout"
 
-    match context_of(name: "docs/metrics/no-such-spec.md")
+    match context_of(scratch: shell.own_scratch(), name: "docs/metrics/no-such-spec.md")
         .ok _  => assert false
         .err e => assert e.code == "no_spec"
 
@@ -399,3 +425,32 @@ test "the instrument's digest is the same twice, moves with a thesis module or t
     shell.mkdir_all(empty).must()
     assert instrument_digest(scratch: scratch, dir: empty).is_err()
     assert instrument_digest(scratch: scratch, dir: "tests/harness").must().len() == 64
+
+test "a package arm's context reads with its tree, its first line out of the prompt and its digest the file's, and a line opening as the tree's and broken is refused"
+    scratch = shell.own_scratch()
+    thesis_cards.written_cards(scratch + "/tree").must()
+    made = thesis_cards.made(scratch: scratch, dir: scratch + "/tree", spec_path: SPEC).must()
+    path = scratch + "/spec-and-cards.md"
+    write_file(path: path, text: made.text).must()
+    context = context_of(scratch: scratch, name: path).must()
+    assert context.tree == scratch + "/tree"
+    assert context.tree_sha == made.tree_sha
+    assert context.spec_sha == thesis_sha256.of(made.text)
+    assert context.spec == thesis_cards.body_of(made.text)
+    assert core_strings.has_prefix(s: context.spec, prefix: read_file(path: SPEC).must())
+    template = template_at(path: TEMPLATE).must()
+    prompt = rendered(template: template, context: context, task: "Print `hello`.", layout: "cached").must()
+    assert !core_strings.contains(s: prompt.system, substr: "packages " + scratch)
+    assert core_strings.contains(s: prompt.system, substr: thesis_cards.HEADING)
+    assert core_strings.has_suffix(s: prompt.system, suffix: "# strings: `use <core>/strings`\n\n</specification>")
+
+    # The `spec` context carries no tree.
+    assert context_of(scratch: scratch, name: "spec").must().tree == ""
+    broken = scratch + "/broken.md"
+    write_file(path: broken, text: "packages " + scratch + "/tree 0123 spec 4567\n# Report\n").must()
+
+    match context_of(scratch: scratch, name: broken)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "bad_context"
+            assert core_strings.contains(s: e.msg, substr: "`packages <tree> <digest> spec <digest>`")
