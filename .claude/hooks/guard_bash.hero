@@ -1,0 +1,85 @@
+# PreToolUse guard on Bash, written in Heroes beside the Python one
+# (`guard_bash.py`): it refuses the commands CLAUDE.md § Hard stops forbids,
+# and what § Verification forbids before a suite runs. The author's answer
+# `4a` of 2026-11-12 (feature 2082): the Heroes hooks stand BESIDE the
+# Python ones, a differential test holds their answers identical, the
+# decision, the message and the exit code, and the switch, `.claude/settings.json`
+# pointing here and the Python hooks removed, is made only with the author
+# present, since a hook that fails open turns a guard off in silence. Until
+# then nothing runs this program but its tests.
+#
+# Contract with the harness, the Python hook's: the tool call arrives as JSON
+# on stdin, `tool_input.command` is judged in `cwd` (the process's own folder
+# where the event names none), and the reason goes to stderr with exit 2 to
+# block; exit 0 is no opinion. An event that is not JSON, or names no
+# command, is no opinion. It runs as `heroes run .claude/hooks/guard_bash.hero`,
+# the one command (CLAUDE.md § 10).
+#
+# Where the Python guard asks git or a compiler, this program does not yet,
+# and refuses rather than pass (`answer.hero`); which rules those are is
+# feature 2082's report.
+#
+# One answer differs from the Python guard's on purpose: an event whose
+# `tool_input` is no object, or whose `cwd` is no text, stops the Python hook
+# with a traceback, exit 1, which Claude Code reads as no opinion; here it is
+# no opinion, exit 0.
+
+use <core>/encoding/json
+use <core>/os
+
+use answer
+use stderr
+use verdict
+
+# The exit that blocks the tool call.
+constant REFUSED: i64
+    2
+
+function main()
+    event = match read_file("/dev/stdin")
+        .ok text => text
+        .err _   => return
+
+    reason = answer.reason_of(judged(event))
+
+    if reason.len() > 0
+        stderr.write(reason + "\n")
+        exit(code: REFUSED)
+
+# What the guard answers of the event `text`.
+function judged(text: str) -> answer.Answer
+    payload = match json.parse(text)
+        .ok v  => v
+        .err _ => return .none
+
+    tool_input = match json.field(payload, "tool_input")
+        .ok v  => v
+        .err _ => return .none
+
+    command = match json.field(tool_input, "command")
+        .ok v  => v
+        .err _ => return .none
+
+    line = match command
+        .string s                                                => s.value
+        .nothing | .boolean _ | .number _ | .array _ | .object _ => return .none
+
+    cwd = match json.field(payload, "cwd")
+        .ok v =>
+            match v
+                .string s                                                => s.value
+                .nothing | .boolean _ | .number _ | .array _ | .object _ => ""
+        .err _ => ""
+
+    if cwd.len() > 0
+        return verdict.verdict(command: line, cwd: cwd)
+    return verdict.verdict(command: line, cwd: os.getwd().default("."))
+
+## Tests
+
+test "guard_bash: an event judged, and one that names no command"
+    assert answer.stops(judged("{\"cwd\": \"/\", \"tool_input\": {\"command\": \"git add -A\"}}"))
+    assert judged("{\"cwd\": \"/\", \"tool_input\": {\"command\": \"ls\"}}") == .none
+    assert judged("not json") == .none && judged("{\"tool_input\": {}}") == .none
+    assert judged("{\"tool_input\": {\"command\": 7}}") == .none && judged("[1]") == .none
+    assert answer.stops(judged("{\"tool_input\": {\"command\": \"git stash\"}}"))

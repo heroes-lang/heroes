@@ -1,0 +1,116 @@
+# A push that can carry a milestone tag, judged by `records/tagged` with the
+# tag placed (defect 2198): a local tag can be removed until it is pushed and
+# never after. Which pushes can carry an `m-*` tag is read on the text here,
+# the Python guard's `carries_tag`; the judging is a harness run by the tree's
+# own compiler, which this program does not start yet (`answer.hero`), so a
+# push it would judge is `unwritten`, and one from a tree whose compiler is
+# not built is refused in the Python guard's words.
+
+use answer
+use pystr
+use runs
+use trees
+
+# The rule a refusal here cites.
+constant RULE: str
+    "CLAUDE.md § Verification, a milestone tagged only over a clean list; defect 2198"
+
+# Whether one side of a refspec names a milestone tag.
+function milestone_ref(word: str) -> bool
+    name = if pystr.opens(s: word, prefix: "refs/tags/")
+        word.slice(from: 10, to: word.len())
+    else
+        word
+    return pystr.opens(s: name, prefix: "m-")
+
+# Whether `git push <rest>` can carry an `m-*` tag: `--tags`, `--mirror` or
+# `--follow-tags`, or a refspec whose source or destination is one.
+function carries_tag(rest: [str]) -> bool
+    words: [str] @= []
+    named_repo: bool @= false
+    at: i64 @= 0
+
+    while at < rest.len()
+        word = rest[at]
+
+        if word == "--"
+            for each in rest.slice(from: at + 1, to: rest.len())
+                words @ words.push(each)
+
+            break
+
+        if word == "--tags" || word == "--mirror" || word == "--follow-tags"
+            return true
+
+        if runs.has(list: ["-o", "--push-option", "--receive-pack", "--exec", "--repo"], word: word)
+            named_repo @ named_repo || word == "--repo"
+            at @ at + 2
+            continue
+
+        if pystr.opens(s: word, prefix: "--repo=")
+            named_repo @ true
+        else if !pystr.opens(s: word, prefix: "-")
+            words @ words.push(word)
+        at @ at + 1
+
+    specs = if named_repo
+        words
+    else if words.len() > 0
+        words.slice(from: 1, to: words.len())
+    else
+        words
+    j: i64 @= 0
+
+    while j < specs.len()
+        spec = specs[j]
+
+        if spec == "tag" && j + 1 < specs.len()
+            if pystr.opens(s: specs[j + 1], prefix: "m-")
+                return true
+            j @ j + 2
+            continue
+        start: i64 @= 0
+
+        while start < spec.len() && spec[start] == '+'
+            start @ start + 1
+
+        for side in pystr.split_at(spec.slice(from: start, to: spec.len()), ':')
+            if side.len() > 0 && milestone_ref(side)
+                return true
+
+        j @ j + 1
+
+    return false
+
+# How to rebuild a tree's compiler, as the Python hooks name it for `where`.
+function rebuild_hint(where: str) -> str
+    from_seed = "`clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`"
+    from_source = "`./heroes build selfhost/main.hero -o heroes`"
+
+    if pystr.opens(s: where, prefix: "selfhost")
+        return from_source + " (the source as it stands), or " + from_seed
+    return from_seed + ", then " + from_source + " if `selfhost/` moved too"
+
+# The answer to a push from `where` that can carry an `m-*` tag.
+function verdict(where: str) -> answer.Answer
+    tree = if where.len() > 0
+        trees.tree_of(where)
+    else
+        ""
+
+    if tree.len() == 0
+        return .none
+
+    if !trees.runnable(trees.compiler_of(tree))
+        return .refused(
+            reason: "refused: this push can carry a milestone tag, and `records/tagged` is asked of it with the tag placed, by the tree's own compiler, which " + tree + " has not built. " + rebuild_hint(tree) + "\n" + RULE
+        )
+    return .unwritten(rule: "`records/tagged`, asked of the harness before a push that can carry a milestone tag")
+
+test "tagged: the pushes that can carry a milestone tag"
+    assert carries_tag(["--tags"]) && carries_tag(["origin", "m-x"]) && carries_tag(["origin", "+refs/tags/m-x:refs/tags/m-x"])
+    assert carries_tag(["origin", "tag", "m-y"]) && !carries_tag(["origin", "tag", "v1"]) && !carries_tag(["origin", "main"])
+    assert carries_tag(["--repo=origin", "m-x"]) && !carries_tag(["m-x"]) && carries_tag(["-o", "x", "origin", "--", "m-z"])
+    assert milestone_ref("refs/tags/m-a") && !milestone_ref("main")
+    assert pystr.opens(s: rebuild_hint("/t"), prefix: "`clang") && pystr.opens(s: rebuild_hint("selfhost/x"), prefix: "`./heroes")
+    assert verdict("") == .none && verdict("/") == .none

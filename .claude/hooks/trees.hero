@@ -1,0 +1,111 @@
+# Which tree a written file or a command stands in: the nearest directory,
+# from a path upward, that holds `seed/heroes.c` and a `.git` entry, a
+# directory in a clone and a file in a worktree, so a lane under
+# `.claude/worktrees/<lane>/` is a tree of its own, with its own compiler
+# `<tree>/heroes` (defects 254 and 348). The Python hooks' `trees.py`, its
+# questions of a tree; the age of a tree's compiler, which that file also
+# asks, needs a file's modification time as a number, and the runtime holds
+# no door that answers it, so that question is not here (feature 2082's
+# report names it).
+#
+# Python's `os.path.isfile`, `isdir` and `lexists` answer false where the
+# path cannot be asked, a zero byte in it included; so do these, where the
+# zero byte would otherwise stop the program at the lend to C.
+
+use <core>/os
+
+use pypath
+
+# The seed, the one file a tree holds that a copy of its sources would not.
+constant SEED: str
+    "seed/heroes.c"
+
+# Whether `path` holds a zero byte, which names no file anywhere.
+function holds_zero(path: str) -> bool
+    for at in range(from: 0, to: path.len())
+        if path[at] == 0
+            return true
+
+    return false
+
+# Whether a regular file stands at `path`, a link followed: Python's
+# `os.path.isfile`.
+function is_file(path: str) -> bool
+    if path.len() == 0 || holds_zero(path)
+        return false
+
+    return match os.stat(path)
+        .ok info => info.kind == .regular
+        .err _   => false
+
+# Whether a folder stands at `path`, a link followed: Python's
+# `os.path.isdir`.
+function is_dir(path: str) -> bool
+    if path.len() == 0 || holds_zero(path)
+        return false
+
+    return match os.stat(path)
+        .ok info => info.kind == .directory
+        .err _   => false
+
+# Whether anything stands at `path`, a link itself counting: Python's
+# `os.path.lexists`.
+function lexists(path: str) -> bool
+    if path.len() == 0 || holds_zero(path)
+        return false
+    return !os.lstat(path).is_err()
+
+# The nearest folder at or above `path` holding `seed/heroes.c` and a `.git`
+# entry, as an absolute path, or "" where none does: `trees.tree_of`.
+function tree_of(path: str) -> str
+    if path.len() == 0
+        return ""
+
+    here: str @= match pypath.abspath(path)
+        .ok p  => p
+        .err _ => return ""
+
+    if !is_dir(here)
+        here @ pypath.dirname(here)
+
+    while true
+        if is_file(pypath.join_two(a: here, b: SEED)) && lexists(pypath.join_two(a: here, b: ".git"))
+            return here
+        parent = pypath.dirname(here)
+
+        if parent == here
+            return ""
+        here @ parent
+
+# The compiler a tree builds for itself, `<tree>/heroes`.
+function compiler_of(tree: str) -> str
+    return pypath.join_two(a: tree, b: "heroes")
+
+# Whether `path` is a file that can be run: a regular file with an execute
+# bit, where Python asks `os.access(path, X_OK)` of the process's own user;
+# the two differ only for a file whose owner bits deny it what the group's or
+# the others' grant.
+function runnable(path: str) -> bool
+    if !is_file(path)
+        return false
+
+    return match os.stat(path)
+        .ok info => info.mode % 2 == 1 || info.mode / 8 % 2 == 1 || info.mode / 64 % 2 == 1
+        .err _   => false
+
+## Tests
+
+test "trees: the lane this file stands in is a tree, and its compiler is its own"
+    here = os.getwd().must()
+    tree = tree_of(here)
+    assert tree.len() > 0 && is_file(tree + "/seed/heroes.c") && lexists(tree + "/.git")
+    assert compiler_of(tree) == tree + "/heroes"
+    assert tree_of(tree + "/selfhost/main.hero") == tree
+
+test "trees: a path with a zero byte, an empty one and an absent one answer false"
+    assert !is_file("") && !is_dir("") && !lexists("") && tree_of("") == ""
+    bytes: [u8] = ['a', 0, 'b']
+    zero = bytes.validated_bytes().must()
+    assert holds_zero(zero) && !is_file(zero) && !is_dir(zero) && !lexists(zero) && !holds_zero("ab")
+    assert !is_file("/heroes-hooks-never-there") && !runnable("/heroes-hooks-never-there")
+    assert is_dir("/") && !is_file("/") && tree_of("/") == ""

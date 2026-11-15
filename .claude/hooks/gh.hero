@@ -1,0 +1,254 @@
+# A GitHub write is an outward act, asked for every time (CLAUDE.md § Hard
+# stops; defect 671, panel 212), and the credential is a secret (defect 672).
+# So `gh` is read through an ALLOW-list of reads and every other `gh` is
+# refused, the direction the guard errs in: `gh api` with a field or an input
+# is a POST by `gh`'s own rule, a GraphQL `mutation` a write, `gh auth token`
+# a secret printed into a transcript. What it cannot see is a program that
+# spawns `gh` inside, and an endpoint held in a variable. The Python guard's
+# `gh_api` and `gh_rule`, word for word.
+
+use answer
+use pystr
+use runs
+
+# The rule a refusal here cites.
+constant CONTRACT: str
+    "CLAUDE.md § Hard stops"
+
+# The second words of a command group that only read.
+constant READS: [str]
+    ["view", "list", "status", "diff", "checks", "watch", "download", "search", "browse", "clone", "get"]
+
+# `gh`'s command groups.
+constant GROUPS: [str]
+    [
+        "issue"
+        "pr"
+        "run"
+        "release"
+        "label"
+        "repo"
+        "workflow"
+        "project"
+        "gist"
+        "ruleset"
+        "cache"
+        "codespace"
+        "variable"
+        "secret"
+        "extension"
+        "alias"
+        "config"
+        "ssh-key"
+        "gpg-key"
+        "milestone"
+        "attestation"
+        "agent-task"
+        "org"
+    ]
+
+# The flags that take the next word as their value.
+constant VALUE_FLAGS: [str]
+    [
+        "-R"
+        "--repo"
+        "--hostname"
+        "-H"
+        "--header"
+        "-q"
+        "--jq"
+        "-t"
+        "--template"
+        "--cache"
+        "-p"
+        "--preview"
+        "-X"
+        "--method"
+        "-f"
+        "-F"
+        "--field"
+        "--raw-field"
+        "--input"
+    ]
+
+# The flags that give a request a body, which makes `gh api` a POST.
+constant BODY_FLAGS: [str]
+    ["-f", "-F", "--field", "--raw-field", "--input"]
+
+# `s` with its ASCII letters in upper case.
+function upper(s: str) -> str
+    out: str @= ""
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] >= 'a' && s[at] <= 'z'
+            letters: [u8] = [s[at] - 32]
+            out @ out + s.slice(from: start, to: at) + letters.validated_bytes().must()
+            start @ at + 1
+
+    return out + s.slice(from: start, to: s.len())
+
+# `s` with its ASCII letters in lower case.
+function lower(s: str) -> str
+    out: str @= ""
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] >= 'A' && s[at] <= 'Z'
+            letters: [u8] = [s[at] + 32]
+            out @ out + s.slice(from: start, to: at) + letters.validated_bytes().must()
+            start @ at + 1
+
+    return out + s.slice(from: start, to: s.len())
+
+# The refusal of `gh api <args>`, or `none`: a read is a GET, an explicit
+# `-X GET` keeping its fields as query parameters; the Markdown renderer and a
+# GraphQL query that carries no `mutation` change nothing.
+function api(words: [str], segment: str) -> answer.Answer
+    method: str @= ""
+    body: bool @= false
+    endpoint: str @= ""
+    found: bool @= false
+    at: i64 @= 0
+
+    while at < words.len()
+        a = words[at]
+
+        if (a == "-X" || a == "--method") && at + 1 < words.len()
+            method @ upper(words[at + 1])
+            at @ at + 2
+        else if pystr.opens(s: a, prefix: "--method=")
+            method @ upper(a.slice(from: 9, to: a.len()))
+            at @ at + 1
+        else if pystr.opens(s: a, prefix: "-X") && a.len() > 2
+            method @ upper(a.slice(from: 2, to: a.len()))
+            at @ at + 1
+        else if runs.has(list: BODY_FLAGS, word: a)
+            body @ true
+            at @ at + 2
+        else if pystr.opens(s: a, prefix: "--field=") || pystr.opens(s: a, prefix: "--raw-field=") || pystr.opens(s: a, prefix: "--input=") || (pystr.opens(s: a, prefix: "-f") || pystr.opens(s: a, prefix: "-F")) && a.len() > 2
+            body @ true
+            at @ at + 1
+        else if runs.has(list: VALUE_FLAGS, word: a)
+            at @ at + 2
+        else if pystr.opens(s: a, prefix: "-")
+            at @ at + 1
+        else
+            if !found
+                endpoint @ without_slashes(a)
+                found @ true
+            at @ at + 1
+
+    if found && (endpoint == "markdown" || endpoint == "markdown/raw")
+        return .none
+
+    if found && endpoint == "graphql"
+        if pystr.holds(s: lower(segment), piece: "mutation")
+            return .refused(
+                reason: "refused: a GraphQL `mutation` writes to GitHub, an outward act the author asks for every time. A query is allowed. " + CONTRACT
+            )
+        return .none
+
+    effective = if method.len() > 0
+        method
+    else if body
+        "POST"
+    else
+        "GET"
+
+    if effective == "GET" || effective == "HEAD"
+        return .none
+
+    switched = if method.len() == 0
+        "(a field or an input switches it to POST) "
+    else
+        ""
+    return .refused(
+        reason: "refused: `gh api` here would send a " + effective + " " + switched + "to GitHub, an outward act the author asks for every time. A read is `gh api <endpoint>`, or `-X GET` with its fields as query parameters. " + CONTRACT
+    )
+
+# `s` without the `/` it opens with.
+function without_slashes(s: str) -> str
+    at: i64 @= 0
+
+    while at < s.len() && s[at] == '/'
+        at @ at + 1
+
+    return s.slice(from: at, to: s.len())
+
+# The refusal of one `gh` command `w`, or `none`.
+function rule(w: [str], segment: str) -> answer.Answer
+    path: [str] @= []
+    at: i64 @= 1
+
+    while at < w.len()
+        a = w[at]
+
+        if runs.has(list: VALUE_FLAGS, word: a)
+            at @ at + 2
+        else if pystr.opens(s: a, prefix: "-")
+            at @ at + 1
+        else
+            path @ path.push(a)
+            at @ at + 1
+
+    if path.len() == 0
+        return .none
+    head = path[0]
+
+    if head == "auth"
+        if path.len() > 1 && path[1] == "token"
+            return .refused(
+                reason: "refused: `gh auth token` prints the credential into the transcript, and a secret in a transcript is a leaked secret (defect 672). `gh auth status` masks it. `.env.example`"
+            )
+
+        if path.len() > 1 && path[1] == "status"
+            return .none
+        return .refused(
+            reason: "refused: `gh auth` other than `status` changes or prints the credential, which is the author's to do. " + CONTRACT
+        )
+
+    if head == "api"
+        for k in range(from: 0, to: w.len())
+            if w[k] == "api"
+                return api(words: w.slice(from: k + 1, to: w.len()), segment: segment)
+
+        return .none
+
+    if runs.has(list: GROUPS, word: head)
+        if path.len() > 1 && runs.has(list: READS, word: path[1])
+            return .none
+
+        shown = if path.len() > 1
+            path[0] + " " + path[1]
+        else
+            path[0]
+        return .refused(
+            reason: "refused: `gh " + shown + "` is not on the list of reads (view, list, status, diff, checks, watch, download, search, browse). A create, edit, close, delete, comment, rerun or cancel changes GitHub, an outward act the author asks for every time. " + CONTRACT
+        )
+    return .none
+
+## Tests
+
+test "gh: the reads pass, the writes and the credential are refused"
+    assert rule(w: ["gh", "issue", "view", "2082"], segment: "") == .none
+    assert rule(w: ["gh", "-R", "x/y", "pr", "list"], segment: "") == .none
+    assert answer.stops(rule(w: ["gh", "issue", "close", "1"], segment: ""))
+    assert answer.reason_of(rule(w: ["gh", "issue"], segment: "")).len() > 0
+    assert answer.stops(rule(w: ["gh", "auth", "token"], segment: "")) && rule(w: ["gh", "auth", "status"], segment: "") == .none
+    assert answer.stops(rule(w: ["gh", "auth", "login"], segment: "")) && rule(w: ["gh", "--version"], segment: "") == .none
+    assert rule(w: ["gh", "browse"], segment: "") == .none
+
+test "gh: an api call is a read only as a GET, a query or the Markdown renderer"
+    assert api(words: ["repos/x/issues"], segment: "") == .none
+    assert answer.stops(api(words: ["repos/x/issues", "-f", "title=t"], segment: ""))
+    assert api(words: ["-X", "get", "repos/x", "-f", "q=1"], segment: "") == .none
+    assert answer.stops(api(words: ["-XPATCH", "repos/x"], segment: "")) && answer.stops(api(words: ["--method=delete", "x"], segment: ""))
+    assert api(words: ["/markdown", "-f", "text=x"], segment: "") == .none
+    assert api(words: ["graphql", "-f", "query={x}"], segment: "gh api graphql") == .none
+    assert answer.stops(api(words: ["graphql"], segment: "gh api graphql -f query='MUTATION {x}'"))
+    assert answer.stops(api(words: ["-Fa=1", "x"], segment: ""))
+
+test "gh: the text helpers"
+    assert upper("get") == "GET" && lower("MuTaTiOn") == "mutation" && upper("é-x") == "é-X"
+    assert without_slashes("//a/b") == "a/b" && without_slashes("a") == "a"

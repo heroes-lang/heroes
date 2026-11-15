@@ -1,0 +1,168 @@
+# Where each segment of a command line runs, and which segments are gates.
+# Until 2026-10-07 every segment was read in the session's directory, so
+# `cd <lane> && ./heroes run ...` was judged in the trunk (defect 348); each
+# segment now carries the directory its `cd`, `pushd` or `popd` leaves, ""
+# where the text cannot tell. A gate is a harness run or `heroes test`, the
+# commands whose exit is a verdict. The Python guard's `moved_to`, `placed`,
+# `is_harness_run` and `is_gate`, and the first question of `stale_compiler`:
+# whether a harness run names a compiler file in a tree, the point where the
+# Python guard asks that compiler what it was compiled from.
+
+use command_line
+use pypath
+use pystr
+use runs
+use shell_text
+use trees
+
+# The harness the net runs from.
+constant HARNESS: str
+    "tests/harness/main.hero"
+
+# One segment of a command line: its words, the directory it runs in, ""
+# where the text cannot tell, and its text.
+record Step
+    words: [str]
+    here: str
+    segment: str
+
+# Where a segment leaves the directory: the directory, "" where the text
+# cannot tell, and the `~name` of another user's home it named, which this
+# cannot read, "" where it named none.
+record Move
+    here: str
+    unread: str
+
+# Where the directory stands after the segment `w`, run in `here`.
+function moved_to(w: [str], here: str) -> Move
+    b = command_line.bare(w)
+
+    if b.len() == 0 || b[0] != "cd" && b[0] != "pushd" && b[0] != "popd"
+        return Move(here: here, unread: "")
+
+    if b[0] == "popd"
+        return Move(here: "", unread: "")
+    named: [str] @= []
+
+    for word in b.slice(from: 1, to: b.len())
+        if !pystr.opens(s: word, prefix: "-") || word == "-"
+            named @ named.push(word)
+
+    target = if named.len() > 0
+        named[0]
+    else
+        "~"
+
+    if target == "-"
+        return Move(here: "", unread: "")
+
+    home = match pypath.expanduser(target)
+        .path p   => p.text
+        .unread u => return Move(here: "", unread: "~" + u.name)
+
+    expanded = pypath.expandvars(home)
+
+    if pystr.holds(s: expanded, piece: "$") || pystr.holds(s: expanded, piece: "`")
+        return Move(here: "", unread: "")
+
+    if pypath.isabs(expanded)
+        return Move(here: pypath.normpath(expanded), unread: "")
+
+    if here.len() == 0
+        return Move(here: "", unread: "")
+    return Move(here: pypath.normpath(pypath.join_two(a: here, b: expanded)), unread: "")
+
+# A command line's segments, each with the directory it runs in, and the
+# first `~name` a `cd` among them named that this cannot read.
+record Placed
+    steps: [Step]
+    unread: str
+
+# Each segment of `command`, given in `cwd`, with its words and directory.
+function placed(command: str, cwd: str) -> Placed
+    here: str @= ""
+
+    if cwd.len() > 0
+        here @ pypath.abspath(cwd).default("")
+    steps: [Step] @= []
+    unread: str @= ""
+
+    for segment in shell_text.segments(command)
+        w = command_line.words(segment)
+
+        if w.len() == 0
+            continue
+        steps @ steps.push(Step(words: w, here: here, segment: segment))
+        move = moved_to(w: w, here: here)
+
+        if unread.len() == 0
+            unread @ move.unread
+        here @ move.here
+
+    return Placed(steps: steps, unread: unread)
+
+# Whether `w` runs the harness: a word naming it, from the root or whole,
+# and a `run`.
+function is_harness_run(w: [str]) -> bool
+    for word in w
+        if word == HARNESS || pystr.closes(s: word, suffix: "/" + HARNESS)
+            return runs.has(list: w, word: "run")
+
+    return false
+
+# Whether `w` is a gate: a harness run, or `heroes test <file>`.
+function is_gate(w: [str]) -> bool
+    if is_harness_run(w)
+        return true
+    return w.len() > 2 && w[1] == "test" && pystr.opens(s: pypath.basename(w[0]), prefix: "heroes")
+
+# Whether the harness run `w`, run in `here`, names after its `--` a compiler
+# file standing in a tree: where the Python guard asks that compiler, by its
+# `--version`, what it was compiled from.
+function asks_compiler(w: [str], here: str) -> bool
+    if !is_harness_run(w) || !runs.has(list: w, word: "--")
+        return false
+    at: i64 @= 0
+
+    while w[at] != "--"
+        at @ at + 1
+
+    if at + 1 >= w.len()
+        return false
+    named = w[at + 1]
+
+    compiler = if pypath.isabs(named)
+        named
+    else if here.len() > 0
+        pypath.join_two(a: here, b: named)
+    else
+        ""
+
+    if compiler.len() == 0 || !trees.is_file(compiler)
+        return false
+
+    tree = if here.len() > 0
+        trees.tree_of(here)
+    else
+        ""
+    return tree.len() > 0 || trees.tree_of(compiler).len() > 0
+
+## Tests
+
+test "places: a cd moves the segments after it"
+    got = placed(command: "cd /a && ls; cd b && pwd; cd - && x", cwd: "/t")
+    assert got.steps.len() == 6 && got.steps[0].here == "/t" && got.steps[1].here == "/a" && got.steps[3].here == "/a/b"
+    assert got.steps[5].here == "" && got.unread == ""
+    assert moved_to(w: ["(cd", "x/../y)"], here: "/t") == Move(here: "/t/y", unread: "")
+    assert moved_to(w: ["cd", "$NEVER_SET_HERE"], here: "/t") == Move(here: "", unread: "")
+    assert moved_to(w: ["popd"], here: "/t") == Move(here: "", unread: "")
+    assert moved_to(w: ["cd", "~bob/x"], here: "/t") == Move(here: "", unread: "~bob")
+    assert moved_to(w: ["ls"], here: "/t") == Move(here: "/t", unread: "")
+    assert placed(command: "cd ~bob && ls", cwd: "/t").unread == "~bob"
+
+test "places: gates and harness runs"
+    assert is_harness_run(["./heroes", "run", "tests/harness/main.hero", "--", "./heroes", "records"])
+    assert is_harness_run(["heroes", "run", "/x/tests/harness/main.hero"]) && !is_harness_run(["cat", "tests/harness/main.hero"])
+    assert is_gate(["./heroes-next", "test", "selfhost/main.hero"]) && !is_gate(["./heroes", "test"])
+    assert !asks_compiler(w: ["./heroes", "run", "tests/harness/main.hero", "--", "./nope"], here: "/")
+    assert !asks_compiler(w: ["ls"], here: "/") && !asks_compiler(w: ["x", "run", "tests/harness/main.hero", "--"], here: "/")

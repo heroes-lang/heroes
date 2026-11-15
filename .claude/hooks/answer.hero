@@ -1,0 +1,37 @@
+# What the guard answers of a command line: nothing to say, which lets the
+# command run; a refusal, with its reason, which stops it; or a rule this
+# program does not yet judge, which stops it too. The Python guard asks git
+# or a compiler at a few points of its rules (a commit's staged files, an
+# alias, a harness run's compiler, a reset's paths); where the Heroes guard
+# reaches one of those points before it is written, it refuses, naming the
+# rule, at the same place in the same order, and never answers nothing in
+# its stead: a guard that fails open turns a hard stop off in silence (the
+# author's answer `4a` of 2026-11-12, feature 2082).
+
+variant Answer
+    none
+    refused
+        reason: str
+    unwritten
+        rule: str
+
+# The reason the program prints for an answer that stops the command, ""
+# for `none`.
+function reason_of(a: Answer) -> str
+    return match a
+        .none      => ""
+        .refused r => r.reason
+        .unwritten u => "refused: the Heroes guard does not judge this command yet: " + u.rule + "; this program asks the system nothing of the kind so far, so it refuses rather than let the command pass unjudged (feature 2082)."
+
+# Whether `a` stops the command.
+function stops(a: Answer) -> bool
+    return match a
+        .none                     => false
+        .refused _ | .unwritten _ => true
+
+test "answer: none says nothing, the other two stop and say why"
+    assert reason_of(.none) == "" && !stops(.none)
+    assert reason_of(.refused(reason: "refused: x")) == "refused: x" && stops(.refused(reason: "r"))
+    unwritten = reason_of(.unwritten(rule: "the alias"))
+    assert stops(.unwritten(rule: "the alias"))
+    assert unwritten.slice(from: 0, to: 68) == "refused: the Heroes guard does not judge this command yet: the alias"

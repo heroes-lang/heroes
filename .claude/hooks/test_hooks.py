@@ -45,10 +45,18 @@ import marks  # noqa: E402
 import provenance  # noqa: E402
 import runs as what_runs  # noqa: E402
 import tagged  # noqa: E402
+import twins  # noqa: E402
+
+# Every verdict a test below asks of the guard is asked of the Heroes guard
+# too, and held identical where it judges the command (feature 2082, the
+# author's answer `4a` of 2026-11-12; `twins.py` says how).
+twins.install(guard_bash)
 
 FAKE = r"""#!/bin/sh
 here=$(cd "$(dirname "$0")" && pwd)
-echo "$PWD|$*" >> "$here/calls.log"
+# A call the differential test makes (`twins.py`) is not logged: it asks the
+# same question again, and a test counting the calls counts the hook's own.
+[ -n "$HEROES_HOOKS_TWIN" ] || echo "$PWD|$*" >> "$here/calls.log"
 case "$1" in
 --version)
     echo "heroes 0.0.0"

@@ -1,0 +1,201 @@
+# A command line cut as the guard reads it before any rule: each heredoc's
+# body taken out, since a body is data fed to a program and never a command
+# (the guard's first false refusal read a record's prose quoting `git add .`
+# as that command), and the rest split where a shell would run a separate
+# command, `&&`, `||`, `;`, a pipe or a new line, outside quotes. The Python
+# guard's `without_heredocs`, `heredoc_bodies` and `segments`, answer for
+# answer (feature 2082, the author's answer `4a` of 2026-11-12).
+#
+# Every byte this reads for its meaning is ASCII, and a byte of a character
+# past ASCII is never one of them, so the text is walked byte by byte and
+# each piece kept is a slice of it: the characters come out whole.
+
+use pystr
+
+# The markers of the heredocs a line opens, in order: each `<<` or `<<-`,
+# white space after it, then `'word'`, `"word"` or a bare word of letters,
+# digits and `_` that does not open with a digit. A here-string, `<<<x`, reads
+# as a heredoc marked `x`, as the Python guard's pattern reads it.
+function markers(line: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + 1 < line.len()
+        if line[at] != '<' || line[at + 1] != '<'
+            at @ at + 1
+            continue
+        j: i64 @= at + 2
+
+        if j < line.len() && line[j] == '-'
+            j @ j + 1
+
+        while j < line.len() && pystr.space_at(line, j)
+            j @ j + pystr.width_at(line, j)
+
+        end = marker_end(line: line, from: j)
+
+        if end < 0
+            at @ at + 1
+        else
+            out @ out.push(marker_text(line: line, from: j, to: end))
+            at @ end
+
+    return out
+
+# Where the marker that starts at `from` ends, past its closing quote, or -1
+# where none starts there: a quoted one holds at least one byte.
+function marker_end(line: str, from: i64) -> i64
+    if from >= line.len()
+        return -1
+    c = line[from]
+
+    if c == '\'' || c == '"'
+        close = pystr.index_from(s: line, piece: line.slice(from: from, to: from + 1), from: from + 1)
+
+        if close > from + 1
+            return close + 1
+        return -1
+
+    if !word_start(c)
+        return -1
+    end: i64 @= from + 1
+
+    while end < line.len() && (word_start(line[end]) || line[end] >= '0' && line[end] <= '9')
+        end @ end + 1
+
+    return end
+
+# The marker's text: its word, its quotes left out.
+function marker_text(line: str, from: i64, to: i64) -> str
+    if line[from] == '\'' || line[from] == '"'
+        return line.slice(from: from + 1, to: to - 1)
+    return line.slice(from: from, to: to)
+
+# Whether `b` may open a bare marker: an ASCII letter or `_`.
+function word_start(b: u8) -> bool
+    return b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b == '_'
+
+# `command` with every heredoc's body and closing line taken out, the lines
+# around them kept: the Python guard's `without_heredocs`.
+function without_heredocs(command: str) -> str
+    lines = pystr.split_at(command, '\n')
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < lines.len()
+        line = lines[at]
+        out @ out.push(line)
+        at @ at + 1
+
+        for marker in markers(line)
+            while at < lines.len() && pystr.strip(lines[at]) != marker
+                at @ at + 1
+
+            at @ at + 1
+
+    return join(out, "\n")
+
+# Every heredoc body of `command`, in order: what a commit's `-F -` or a
+# `$(cat <<EOF ...)` message reads (defect 378).
+function heredoc_bodies(command: str) -> [str]
+    lines = pystr.split_at(command, '\n')
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < lines.len()
+        line = lines[at]
+        at @ at + 1
+
+        for marker in markers(line)
+            body: [str] @= []
+
+            while at < lines.len() && pystr.strip(lines[at]) != marker
+                body @ body.push(lines[at])
+                at @ at + 1
+
+            at @ at + 1
+            out @ out.push(join(body, "\n"))
+
+    return out
+
+# The pieces of `command` a shell runs one after another, its heredoc bodies
+# out first: cut at `&&`, `||`, `;`, `|` and a new line outside quotes, a
+# backslash outside quotes keeping the byte after it and joining two lines
+# where a new line follows it, each piece stripped of white space and an
+# empty one dropped. Inside double quotes a backslash keeps the byte after
+# it; inside single quotes it is a byte like any other.
+function segments(command: str) -> [str]
+    text = without_heredocs(command)
+    out: [str] @= []
+    kept: str @= ""
+    start: i64 @= 0
+    quote: u8 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        c = text[at]
+
+        if quote == 0 && c == '\\' && at + 1 < text.len()
+            if text[at + 1] == '\n'
+                kept @ kept + text.slice(from: start, to: at)
+                start @ at + 2
+            at @ at + 2
+        else if quote != 0
+            if c == '\\' && quote == '"' && at + 1 < text.len()
+                at @ at + 2
+            else
+                if c == quote
+                    quote @ 0
+                at @ at + 1
+        else if c == '\'' || c == '"'
+            quote @ c
+            at @ at + 1
+        else if at + 1 < text.len() && (c == '&' && text[at + 1] == '&' || c == '|' && text[at + 1] == '|')
+            out @ out.push(kept + text.slice(from: start, to: at))
+            kept @ ""
+            start @ at + 2
+            at @ at + 2
+        else if c == ';' || c == '\n' || c == '|'
+            out @ out.push(kept + text.slice(from: start, to: at))
+            kept @ ""
+            start @ at + 1
+            at @ at + 1
+        else
+            at @ at + 1
+
+    out @ out.push(kept + text.slice(from: start, to: text.len()))
+    stripped: [str] @= []
+
+    for piece in out
+        s = pystr.strip(piece)
+
+        if s.len() > 0
+            stripped @ stripped.push(s)
+
+    return stripped
+
+## Tests
+
+test "markers: each form, two on a line, a here-string, and what is none"
+    assert markers("cat <<EOF") == ["EOF"] && markers("cat <<-'X Y' z") == ["X Y"]
+    assert markers("a <<A b <<\"B\"") == ["A", "B"] && markers("cat <<<word") == ["word"]
+    assert markers("x << 1") == [] && markers("x <<''") == [] && markers("x <") == []
+    assert marker_end(line: "'ab'", from: 0) == 4 && marker_end(line: "9a", from: 0) == -1
+    assert marker_text(line: "\"Q\"", from: 0, to: 3) == "Q" && word_start('_') && !word_start('1')
+
+test "without_heredocs and heredoc_bodies: the body out, the line after kept"
+    command = "python3 - <<'EOF'\ngit add .\nEOF\ngit status"
+    assert without_heredocs(command) == "python3 - <<'EOF'\ngit status"
+    assert heredoc_bodies(command) == ["git add ."]
+    assert heredoc_bodies("a <<X <<Y\n1\nX\n2\n Y \nb") == ["1", "2"]
+    assert without_heredocs("cat <<EOF\nnever closed") == "cat <<EOF"
+
+test "segments: cut outside quotes, backslashes as a shell reads them"
+    assert segments("cd x && git add -A") == ["cd x", "git add -A"]
+    assert segments("echo \"cd x && git commit -m y\"") == ["echo \"cd x && git commit -m y\""]
+    assert segments("a; b | c || d\ne") == ["a", "b", "c", "d", "e"]
+    assert segments("find . -exec git rm {} \\; ") == ["find . -exec git rm {} \\;"]
+    assert segments("git commit \\\n-- a") == ["git commit -- a"]
+    assert segments("echo 'a\\' ; b") == ["echo 'a\\'", "b"]
+    assert segments("echo \"a\\\" ; b\"") == ["echo \"a\\\" ; b\""]
+    assert segments("  ;; ") == [] && segments("x\\") == ["x\\"]

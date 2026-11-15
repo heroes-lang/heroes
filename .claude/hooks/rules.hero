@@ -1,0 +1,280 @@
+# The guard's rules on a command's text alone, none of them git's: a bare
+# dump of the environment, `UPDATE_GOLDEN`, the one endpoint the Anthropic
+# key is for, a secret expanded into the transcript, `.env` read, a folder of
+# held-out tasks named in clear, and `--no-line` passed to the compiler. Each
+# function answers `none` or the refusal, in the Python guard's words, and
+# `verdict.hero` asks them in the Python guard's order.
+
+use answer
+use pypath
+use pystr
+use runs
+
+# The commands that print the whole environment when given nothing.
+constant DUMPERS: [str]
+    ["env", "printenv", "set", "export", "declare"]
+
+# The clients that can reach the Anthropic API; a reader is no client.
+constant CLIENTS: [str]
+    ["curl", "wget", "http", "https", "xh", "httpie", "python", "python3", "node", "deno"]
+
+# The commands that print their words.
+constant PRINTERS: [str]
+    ["echo", "printf", "print", "printenv", "env", "set"]
+
+# The commands that read a file into the transcript.
+constant READERS: [str]
+    ["cat", "less", "more", "head", "tail", "bat", "open", "nl", "strings"]
+
+# The secrets `.env` holds, as a command expands them.
+constant SECRETS: [str]
+    ["$ANTHROPIC_API_KEY", "${ANTHROPIC_API_KEY}", "$CLOUDFLARE_API_TOKEN", "${CLOUDFLARE_API_TOKEN}"]
+
+# The one endpoint the Anthropic key is in `.env` for.
+constant COUNT_TOKENS: str
+    "/v1/messages/count_tokens"
+
+# The thesis instrument, whose task-free words may name a held-out folder.
+constant THESIS: str
+    "tests/harness/thesis.hero"
+
+# A bare dump: `env`, `printenv`, `set`, `export` or `declare` alone, read on
+# the words as written, `env` being a wrapper too.
+function dump(raw: [str]) -> answer.Answer
+    if raw.len() == 1 && runs.has(list: DUMPERS, word: raw[0])
+        return .refused(
+            reason: "refused: a bare `" + raw[0] + "` prints every variable in the environment, the live keys included. Name the one you want. `.env.example`"
+        )
+    return .none
+
+# An assignment of `UPDATE_GOLDEN`, which does not exist and must not; the
+# bare word, which somebody greps for, is no assignment.
+function update_golden(raw: [str]) -> answer.Answer
+    for word in raw
+        if pystr.opens(s: word, prefix: "UPDATE_GOLDEN=")
+            return .refused(
+                reason: "refused: UPDATE_GOLDEN does not exist and must not; a red golden is read and repaired, never regenerated. CLAUDE.md § Hard stops"
+            )
+
+    return .none
+
+# A client whose segment mentions the Anthropic host followed by anything but
+# the token-counting endpoint (defect 670): each mention, its case ignored as
+# Python's `re.IGNORECASE` ignores it, and the characters after it to the end
+# of the word.
+function anthropic(w: [str], segment: str) -> answer.Answer
+    if w.len() == 0 || !runs.has(list: CLIENTS, word: w[0])
+        return .none
+
+    for after in followers(segment)
+        if !endpoint_only(after)
+            return .refused(
+                reason: "refused: the Anthropic key is for `" + COUNT_TOKENS + "` and nothing else. Inference, agents and the organisation endpoints are not why it is in `.env`. `.env.example` § Anthropic"
+            )
+
+    return .none
+
+# What follows each mention of `api.anthropic.com` in `text`, up to white
+# space or a quote: Python's `findall` of `api\.anthropic\.com([^\s'"]*)`.
+function followers(text: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        end = host_end(text: text, at: at)
+
+        if end < 0
+            at @ at + pystr.width_at(text, at)
+            continue
+        stop: i64 @= end
+
+        while stop < text.len() && text[stop] != '\'' && text[stop] != '"' && !pystr.space_at(text, stop)
+            stop @ stop + pystr.width_at(text, stop)
+
+        out @ out.push(text.slice(from: end, to: stop))
+        at @ stop
+
+    return out
+
+# Where a mention of the host starting at `at` ends, or -1: each letter in
+# either case, and an `i` also as `İ` or `ı`, which Python's case-blind match
+# takes for it.
+function host_end(text: str, at: i64) -> i64
+    host = "api.anthropic.com"
+    j: i64 @= at
+
+    for k in range(from: 0, to: host.len())
+        if j >= text.len()
+            return -1
+        want = host[k]
+        got = text[j]
+
+        if got == want || want >= 'a' && want <= 'z' && got == want - 32
+            j @ j + 1
+        else if want == 'i' && got == 0xc4 && j + 1 < text.len() && (text[j + 1] == 0xb0 || text[j + 1] == 0xb1)
+            j @ j + 2
+        else
+            return -1
+
+    return j
+
+# Whether `after` is the endpoint, alone or with a query or a fragment.
+function endpoint_only(after: str) -> bool
+    if after == COUNT_TOKENS
+        return true
+    return pystr.opens(s: after, prefix: COUNT_TOKENS) && (after[COUNT_TOKENS.len()] == '?' || after[COUNT_TOKENS.len()] == '#')
+
+# A printer that expands a secret's value into the transcript.
+function secrets(w: [str]) -> answer.Answer
+    if w.len() == 0 || !runs.has(list: PRINTERS, word: w[0])
+        return .none
+
+    for word in w
+        for secret in SECRETS
+            if pystr.holds(s: word, piece: secret)
+                return .refused(
+                    reason: "refused: that expands a secret into the transcript. Test it without printing it, or print `${#VAR}`. `.env.example`"
+                )
+
+    return .none
+
+# A reader of `.env` itself.
+function dotenv(w: [str]) -> answer.Answer
+    if w.len() == 0 || !runs.has(list: READERS, word: w[0])
+        return .none
+
+    for word in w
+        if word == ".env" || pystr.closes(s: word, suffix: "/.env")
+            return .refused(
+                reason: "refused: `.env` holds the live keys. `.env.example` is the shape and carries no value. `.env.example`"
+            )
+
+    return .none
+
+# A word of `raw` naming a folder of held-out tasks in clear, where the
+# thesis instrument's task-free words do not run it.
+function held_out(raw: [str], w: [str]) -> answer.Answer
+    if !names_held_out(raw) || task_free(w)
+        return .none
+    return .refused(
+        reason: "refused: that names a folder of held-out tasks in clear (`held-out-draft/` or `build/opened/`), and a task a model has read is held out no longer. Run it in a shell no model reads; from here only the thesis instrument's `lint`, `tasks`, `seal`, `canary`, `scaffold`, `unseal` and `dry --mute`. `docs/metrics/writing-a-held-out-task.md`"
+    )
+
+# Whether a word of `raw` is a path naming `held-out-draft` or `build/opened`
+# or a path inside one: a word read as the paths it holds, split at `=`, `:`
+# and `,`, and a piece holding white space, a message's, holds none.
+function names_held_out(raw: [str]) -> bool
+    for word in raw
+        for piece in pieces(word)
+            if !pystr.has_space(piece) && naming(parts_of(piece))
+                return true
+
+    return false
+
+# `word` split at `=`, `:` and `,`.
+function pieces(word: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: word.len())
+        if word[at] == '=' || word[at] == ':' || word[at] == ','
+            out @ out.push(word.slice(from: start, to: at))
+            start @ at + 1
+
+    return out.push(word.slice(from: start, to: word.len()))
+
+# The parts of a path, its quotes at either end taken off, `""` and `.` left
+# out.
+function parts_of(piece: str) -> [str]
+    start: i64 @= 0
+    end: i64 @= piece.len()
+
+    while start < end && (piece[start] == '\'' || piece[start] == '"')
+        start @ start + 1
+
+    while end > start && (piece[end - 1] == '\'' || piece[end - 1] == '"')
+        end @ end - 1
+
+    out: [str] @= []
+
+    for part in pystr.split_at(piece.slice(from: start, to: end), '/')
+        if part != "" && part != "."
+            out @ out.push(part)
+
+    return out
+
+# Whether `parts` hold `held-out-draft`, or `build` then `opened`.
+function naming(parts: [str]) -> bool
+    for at in range(from: 0, to: parts.len())
+        if parts[at] == "held-out-draft"
+            return true
+
+        if parts[at] == "build" && at + 1 < parts.len() && parts[at + 1] == "opened"
+            return true
+
+    return false
+
+# Whether `w` runs the thesis instrument with a word that prints no word of a
+# task: the word after the program's `--`.
+function task_free(w: [str]) -> bool
+    named: bool @= false
+
+    for word in w
+        if word == THESIS || pystr.closes(s: word, suffix: "/" + THESIS)
+            named @ true
+
+    if !named || !runs.has(list: w, word: "--")
+        return false
+    at: i64 @= 0
+
+    while w[at] != "--"
+        at @ at + 1
+
+    if at + 1 >= w.len()
+        return false
+    first = w[at + 1]
+
+    if runs.has(list: ["lint", "tasks", "seal", "canary", "scaffold", "unseal"], word: first)
+        return true
+    return first == "dry" && runs.has(list: w.slice(from: at + 1, to: w.len()), word: "--mute")
+
+# `--no-line` passed to the compiler.
+function no_line(w: [str]) -> answer.Answer
+    if w.len() > 0 && runs.has(list: w, word: "--no-line") && pystr.holds(s: w[0], piece: "heroes")
+        return .refused(
+            reason: "refused: `--no-line` is not on the tool surface; emitter debugging is the test helper's job. `.claude/rules/cli-surface.md`"
+        )
+    return .none
+
+# Whether `w` runs `gh`.
+function is_gh(w: [str]) -> bool
+    return w.len() > 0 && pypath.basename(w[0]) == "gh"
+
+## Tests
+
+test "rules: a bare dump and UPDATE_GOLDEN"
+    assert answer.stops(dump(["env"])) && dump(["env", "A=1", "x"]) == .none && dump(["ls"]) == .none
+    assert answer.stops(update_golden(["UPDATE_GOLDEN=1", "x"])) && update_golden(["grep", "UPDATE_GOLDEN"]) == .none
+
+test "rules: the Anthropic host, its endpoint, and its case"
+    assert anthropic(w: ["curl", "https://api.anthropic.com/v1/messages/count_tokens"], segment: "curl https://api.anthropic.com/v1/messages/count_tokens") == .none
+    assert answer.stops(anthropic(w: ["curl", "x"], segment: "curl https://API.Anthropic.COM/v1/messages"))
+    assert answer.stops(anthropic(w: ["curl", "x"], segment: "curl api.anthropic.com:443/v1/messages/count_tokens"))
+    assert anthropic(w: ["grep", "x"], segment: "grep api.anthropic.com .") == .none
+    assert followers("a api.anthropic.com/x?y 'api.anthropic.com'") == ["/x?y", ""]
+    dotless: [u8] = ['a', 'p', 0xc4, 0xb1]
+    assert host_end(text: dotless.validated_bytes().must() + ".anthropic.com", at: 0) == 18
+    assert endpoint_only("/v1/messages/count_tokens?beta=1") && !endpoint_only("/v1/messages/count_tokensx")
+
+test "rules: secrets, .env, held-out folders and --no-line"
+    assert answer.stops(secrets(["echo", "$ANTHROPIC_API_KEY"])) && secrets(["echo", "${#ANTHROPIC_API_KEY}"]) == .none
+    assert answer.stops(dotenv(["cat", "x/.env"])) && dotenv(["cat", ".env.example"]) == .none
+    assert answer.stops(held_out(raw: ["ls", "held-out-draft/a"], w: ["ls", "held-out-draft/a"]))
+    assert answer.stops(held_out(raw: ["x", "--into=./build/opened"], w: ["x"]))
+    assert held_out(raw: ["git", "commit", "-m", "about build/opened folders"], w: []) == .none
+    thesis = ["heroes", "run", "tests/harness/thesis.hero", "--", "dry", "--mute", "build/opened"]
+    assert held_out(raw: thesis, w: thesis) == .none
+    assert !task_free(["heroes", "run", "tests/harness/thesis.hero", "--", "dry", "build/opened"])
+    assert pieces("a=b:c,d") == ["a", "b", "c", "d"] && parts_of("'./build//opened/'") == ["build", "opened"] && naming(["held-out-draft"])
+    assert answer.stops(no_line(["./heroes", "build", "--no-line"])) && no_line(["grep", "--no-line"]) == .none
+    assert is_gh(["/usr/local/bin/gh", "x"]) && !is_gh(["git"])

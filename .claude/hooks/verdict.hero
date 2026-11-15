@@ -1,0 +1,279 @@
+# A command line judged whole, in the Python guard's order (its `verdict`):
+# a gate and a commit never share a line (CL-079); a gate's output is never
+# cut; a harness run's compiler is the tree's; then each segment, each command
+# it runs that its first word does not say (a `find`'s, a shell's `-c`, a
+# substitution's), judged one by one; and last, a commit is judged on what its
+# line leaves it, nothing ahead of it writing (defect 2380). A shell's `-c`
+# and a substitution are command lines of their own and are judged here
+# again, which is why this one module holds the recursion. A git alias, which
+# the Python guard reads from git, is `unwritten` here (`answer.hero`).
+
+use ahead
+use answer
+use command_line
+use commits
+use gh
+use git_judged
+use places
+use pypath
+use rules
+use runs
+
+# The rule a refusal of a gate cites.
+constant LAST_JUDGE: str
+    "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
+
+# A command a segment runs: its words as written, its words with the wrappers
+# left out, and the directory it runs in.
+record Command
+    raw: [str]
+    w: [str]
+    here: str
+
+# The commands a segment runs, or the rule this cannot read them without.
+record Commands
+    list: [Command]
+    unwritten: str
+
+# Every command the segment `raw`, run in `here`, runs: the one its words
+# name and each one a `find` runs for its files, recursively.
+function commands_in(raw: [str], here: str) -> Commands
+    w = command_line.command_words(command_line.bare(raw))
+    out: [Command] @= [Command(raw: raw, w: w, here: here)]
+
+    if w.len() == 0
+        return Commands(list: out, unwritten: "")
+    base = pypath.basename(w[0])
+
+    if base == "find"
+        for ran in runs.executed(w: w, here: here)
+            inner = commands_in(raw: ran.words, here: ran.there)
+
+            for each in inner.list
+                out @ out.push(each)
+
+            if inner.unwritten.len() > 0
+                return Commands(list: out, unwritten: inner.unwritten)
+
+        return Commands(list: out, unwritten: "")
+
+    if base == "git" && runs.asks_alias(w: w, where: command_line.git_dir(w: w, here: here))
+        return Commands(
+            list: out,
+            unwritten: "whether `git " + runs.verb_of(w).name + "` is an alias, which the Python guard asks of `git config`"
+        )
+    return Commands(list: out, unwritten: "")
+
+# The answer to the command line `command`, given in `cwd`.
+function verdict(command: str, cwd: str) -> answer.Answer
+    laid = places.placed(command: command, cwd: cwd)
+
+    if laid.unread.len() > 0
+        return .unwritten(
+            rule: "`" + laid.unread + "`, another user's home, which the Python guard reads from the user database"
+        )
+    steps = laid.steps
+    gated: bool @= false
+    cut: str @= ""
+
+    for step in steps
+        if places.is_gate(step.words)
+            gated @ true
+
+        if cut.len() == 0 && (step.words[0] == "head" || step.words[0] == "tail")
+            cut @ step.words[0]
+
+    if gated
+        for step in steps
+            ran = commands_in(raw: step.words, here: step.here)
+
+            if ran.unwritten.len() > 0
+                return .unwritten(rule: ran.unwritten)
+
+            for c in ran.list
+                if !command_line.git_args(w: c.w, verbs: ["commit"]).is_err()
+                    return .refused(
+                        reason: "refused: a gate and a `git commit` on one command line, so the commit cannot wait for the gate's line to be read. Run the gate, read its counts, then commit as its own command. " + LAST_JUDGE
+                    )
+
+    if cut.len() > 0
+        for step in steps
+            if places.is_harness_run(step.words)
+                return .refused(
+                    reason: "refused: the net's output piped into `" + cut + "` cuts the lines that carry the verdict. Send it to a file and read the whole file, or read the terminal as it is. " + LAST_JUDGE
+                )
+
+    for step in steps
+        if places.asks_compiler(w: step.words, here: step.here)
+            return .unwritten(
+                rule: "a harness run's compiler, which the Python guard asks what it was compiled from (`--version`, panel 222)"
+            )
+
+    ran_by_step: [Commands] @= []
+
+    for step in steps
+        there = place_or(here: step.here, cwd: cwd)
+
+        for inner in runs.substitutions(step.segment)
+            said = verdict(command: inner, cwd: there)
+
+            if answer.stops(said)
+                return said
+
+        ran = commands_in(raw: step.words, here: step.here)
+
+        if ran.unwritten.len() > 0
+            return .unwritten(rule: ran.unwritten)
+        ran_by_step @ ran_by_step.push(ran)
+
+        for c in ran.list
+            said = judged(c: c, segment: step.segment, command: command, cwd: cwd)
+
+            if answer.stops(said)
+                return said
+
+    return ahead_of_commits(steps: steps, ran_by_step: ran_by_step, cwd: cwd)
+
+# `here`, or `cwd` where the text could not tell.
+function place_or(here: str, cwd: str) -> str
+    if here.len() > 0
+        return here
+    return cwd
+
+# The refusal of a commit behind a command that may write, or `none`.
+function ahead_of_commits(steps: [places.Step], ran_by_step: [Commands], cwd: str) -> answer.Answer
+    for i in range(from: 0, to: steps.len())
+        if !commits_by(ran_by_step[i])
+            continue
+
+        for j in range(from: 0, to: i)
+            said = writes(ran: ran_by_step[j], here: steps[j].here, segment: steps[j].segment, cwd: cwd)
+
+            if said != .none
+                return refusal_or(said: said, writer: steps[j].segment, committer: steps[i].segment)
+
+        for inner in runs.substitutions(steps[i].segment)
+            said = line_writes(command: inner, cwd: place_or(here: steps[i].here, cwd: cwd))
+
+            if said != .none
+                return refusal_or(said: said, writer: "$(" + inner + ")", committer: steps[i].segment)
+
+    return .none
+
+# `ahead`'s refusal where `said` says a command writes, `said` where it is
+# `unwritten`.
+function refusal_or(said: answer.Answer, writer: str, committer: str) -> answer.Answer
+    return match said
+        .unwritten _       => said
+        .none | .refused _ => .refused(reason: ahead.refusal(writer: writer, committer: committer) + LAST_JUDGE)
+
+# Whether one of the commands `ran` makes a commit the staged-file check
+# judges: a `git commit`, or a `--continue` that concludes with the index.
+function commits_by(ran: Commands) -> bool
+    for c in ran.list
+        if !git_judged.is_git(c.w)
+            continue
+
+        if !command_line.git_args(w: c.w, verbs: ["commit"]).is_err()
+            return true
+
+        for name in commits.CONCLUDED_BY
+            more = command_line.git_args(w: c.w, verbs: [name])
+
+            if !more.is_err() && commits.continues(verb: name, words: more.must())
+                return true
+
+    return false
+
+# `none` where the segment whose commands are `ran`, run in `here`, writes
+# neither a file nor an index; a refusal (its reason unused) where it may;
+# `unwritten` where this cannot tell.
+function writes(ran: Commands, here: str, segment: str, cwd: str) -> answer.Answer
+    for c in ran.list
+        if !ahead.inert(w: c.w, segment: segment)
+            return .refused(reason: "writes")
+
+    for inner in runs.substitutions(segment)
+        said = line_writes(command: inner, cwd: place_or(here: here, cwd: cwd))
+
+        if said != .none
+            return said
+
+    return .none
+
+# `writes` for each segment of the command line `command`.
+function line_writes(command: str, cwd: str) -> answer.Answer
+    for step in places.placed(command: command, cwd: cwd).steps
+        ran = commands_in(raw: step.words, here: step.here)
+
+        if ran.unwritten.len() > 0
+            return .unwritten(rule: ran.unwritten)
+        said = writes(ran: ran, here: step.here, segment: step.segment, cwd: cwd)
+
+        if said != .none
+            return said
+
+    return .none
+
+# The answer to one command `c` inside the segment `segment` of the command
+# line `command`, given in `cwd`.
+function judged(c: Command, segment: str, command: str, cwd: str) -> answer.Answer
+    dumped = rules.dump(c.raw)
+
+    if answer.stops(dumped)
+        return dumped
+    w = c.w
+
+    if w.len() == 0
+        return .none
+    script = command_line.script_of(w)
+
+    if script.found
+        return verdict(command: script.line, cwd: place_or(here: c.here, cwd: cwd))
+    where = command_line.git_dir(w: w, here: c.here)
+
+    if git_judged.is_git(w)
+        said = git_judged.judged(w: w, where: where, command: command, cwd: cwd)
+
+        if answer.stops(said)
+            return said
+
+    for said in [rules.update_golden(c.raw), rules.anthropic(w: w, segment: segment), rules.secrets(w), rules.dotenv(w), rules.held_out(raw: c.raw, w: w)]
+        if answer.stops(said)
+            return said
+
+    if rules.is_gh(w)
+        said = gh.rule(w: w, segment: segment)
+
+        if answer.stops(said)
+            return said
+    return rules.no_line(w)
+
+## Tests
+
+test "verdict: the order, and each command a line runs"
+    assert answer.stops(verdict(command: "cd x && git add -A", cwd: "/"))
+    assert verdict(command: "echo \"git add -A\"", cwd: "/") == .none
+    assert answer.stops(verdict(command: "bash -c 'git stash'", cwd: "/"))
+    assert answer.stops(verdict(command: "echo $(git add -A)", cwd: "/"))
+    assert answer.stops(verdict(command: "find . -exec git add -A {} ;", cwd: "/"))
+    assert answer.stops(
+        verdict(command: "./heroes run tests/harness/main.hero -- ./heroes x | tail -3", cwd: "/heroes-hooks-never-there")
+    )
+    assert answer.stops(
+        verdict(command: "./heroes test x.hero && git commit -m y -- x", cwd: "/heroes-hooks-never-there")
+    )
+    assert answer.stops(verdict(command: "git add x && git commit -F m -- x", cwd: "/heroes-hooks-never-there"))
+    assert verdict(command: "git status && git commit -F m -- x", cwd: "/heroes-hooks-never-there") == .none
+    assert answer.stops(verdict(command: "cd ~bob && ls", cwd: "/"))
+    assert verdict(command: "ls -la", cwd: "/") == .none && place_or(here: "", cwd: "/c") == "/c"
+
+test "verdict: commands_in, commits_by and writes"
+    got = commands_in(raw: ["find", ".", "-exec", "git", "rm", "{}", ";"], here: "/t")
+    assert got.list.len() == 2 && got.unwritten == ""
+    assert commands_in(raw: ["git", "lol"], here: "/").unwritten.len() > 0
+    assert commits_by(commands_in(raw: ["git", "rebase", "--cont"], here: ""))
+    assert !commits_by(commands_in(raw: ["git", "status"], here: ""))
+    assert writes(ran: commands_in(raw: ["cp", "a", "b"], here: ""), here: "", segment: "cp a b", cwd: "/") != .none
+    assert line_writes(command: "ls && pwd", cwd: "/") == .none
+    assert refusal_or(said: .unwritten(rule: "r"), writer: "w", committer: "c") == .unwritten(rule: "r")

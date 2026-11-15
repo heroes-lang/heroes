@@ -1,0 +1,166 @@
+# One git command judged by the guard's git rules, in the Python guard's
+# order (its `judged`, from the message rule to the milestone push): a
+# message's unseen character, `git add` and `git stage` of everything, `git
+# commit -a`, a commit's pathspec and its index, a conclusion's index, `git
+# stash`, what a command throws away or writes over, a force push and a push
+# that can carry a milestone tag. Each rule that asks git in the Python guard
+# answers `unwritten` here where it would ask (`answer.hero`).
+
+use answer
+use command_line
+use commits
+use discards
+use pypath
+use runs
+use shell_text
+use tagged
+use trees
+use unseen
+
+# The rule a refusal here cites.
+constant CONTRACT: str
+    "CLAUDE.md § Hard stops"
+
+# Whether `list` holds any of `words`.
+function any_of(list: [str], words: [str]) -> bool
+    for word in words
+        if runs.has(list: list, word: word)
+            return true
+
+    return false
+
+# The answer of the git rules to the git command `w`, run in `where`, inside
+# the command line `command` given in `cwd`.
+function judged(w: [str], where: str, command: str, cwd: str) -> answer.Answer
+    for verb in unseen.VERBS
+        more = command_line.git_args(w: w, verbs: [verb])
+
+        if !more.is_err()
+            tree = if where.len() > 0
+                trees.tree_of(where)
+            else
+                ""
+
+            spans = if tree.len() > 0
+                unseen.runs(tree)
+            else
+                unseen.runs(trees.tree_of(cwd))
+            said = unseen.verdict(
+                rest: more.must(),
+                verb: verb,
+                where: where,
+                bodies: shell_text.heredoc_bodies(command),
+                spans: spans
+            )
+
+            if answer.stops(said)
+                return said
+
+    added = command_line.git_args(w: w, verbs: ["add", "stage"])
+
+    if !added.is_err()
+        said_as = "git " + runs.verb_of(w).name
+
+        if any_of(list: added.must(), words: ["-A", "--all", "-u", "--update"])
+            return .refused(
+                reason: "refused: `" + said_as + "` with -A, --all or -u stages every session's work in this shared checkout. Name each file this conversation touched. " + CONTRACT
+            )
+
+        if runs.has(list: added.must(), word: ".")
+            return .refused(
+                reason: "refused: `" + said_as + " .` stages every session's work in this shared checkout. Name each file this conversation touched. " + CONTRACT
+            )
+    commit = command_line.git_args(w: w, verbs: ["commit"])
+    carried: bool @= !commit.is_err()
+
+    if carried
+        rest = commit.must()
+
+        if runs.has(list: rest, word: "--all") || runs.has(list: pystr_letters(rest), word: "a")
+            return .refused(
+                reason: "refused: `git commit -a` stages files this conversation may not have read. Stage by name, then commit. " + CONTRACT
+            )
+
+        if !runs.has(list: rest, word: "--")
+            return commits.bare_commit(where)
+        said = commits.pathspec(rest: rest, where: where)
+
+        if answer.stops(said)
+            return said
+
+    for name in commits.CONCLUDED_BY
+        more = command_line.git_args(w: w, verbs: [name])
+
+        if !more.is_err() && commits.continues(verb: name, words: more.must())
+            said = commits.concluded(where)
+
+            if answer.stops(said)
+                return said
+            carried @ true
+
+    if carried
+        said = commits.offences(where)
+
+        if answer.stops(said)
+            return said
+    stash = command_line.git_args(w: w, verbs: ["stash"])
+
+    if !stash.is_err() && !any_of(list: stash.must(), words: ["list", "show"])
+        return .refused(reason: "refused: `git stash` takes every session's changes, not this one's. " + CONTRACT)
+
+    for verb in discards.VERBS
+        more = command_line.git_args(w: w, verbs: [verb])
+
+        if !more.is_err()
+            said = discards.verdict(verb: verb, words: more.must(), where: where)
+
+            if answer.stops(said)
+                return said
+
+    pushed = command_line.git_args(w: w, verbs: ["push"])
+
+    if !pushed.is_err()
+        if any_of(list: pushed.must(), words: ["-f", "--force"])
+            return .refused(
+                reason: "refused: a force push rewrites what other sessions and CI have already read. " + CONTRACT
+            )
+
+        if tagged.carries_tag(pushed.must())
+            said = tagged.verdict(where)
+
+            if answer.stops(said)
+                return said
+    return .none
+
+# Every letter of every clustered short flag of `words`, one a word.
+function pystr_letters(words: [str]) -> [str]
+    out: [str] @= []
+
+    for b in command_line.short_letters(words).chars()
+        out @ out.push(b)
+
+    return out
+
+# Whether `w` runs git, by its first word's last part.
+function is_git(w: [str]) -> bool
+    return w.len() > 0 && pypath.basename(w[0]) == "git"
+
+## Tests
+
+test "git_judged: add, stage, commit -a, stash and a force push, on text"
+    assert answer.reason_of(judged(w: ["git", "stage", "-A"], where: "", command: "", cwd: "")) == "refused: `git stage` with -A, --all or -u stages every session's work in this shared checkout. Name each file this conversation touched. CLAUDE.md § Hard stops"
+    assert answer.stops(judged(w: ["git", "add", "."], where: "", command: "", cwd: ""))
+    assert judged(w: ["git", "add", "a.hero"], where: "", command: "", cwd: "") == .none
+    assert answer.stops(judged(w: ["git", "commit", "-am", "x"], where: "", command: "", cwd: ""))
+    assert answer.stops(judged(w: ["git", "commit", "-m", "x"], where: "", command: "", cwd: ""))
+    assert judged(w: ["git", "commit", "-m", "x", "--", "a"], where: "", command: "", cwd: "") == .none
+    assert answer.stops(judged(w: ["git", "stash"], where: "", command: "", cwd: "")) && judged(w: ["git", "stash", "list"], where: "", command: "", cwd: "") == .none
+    assert answer.stops(judged(w: ["git", "push", "-f"], where: "", command: "", cwd: "")) && judged(w: ["git", "push"], where: "", command: "", cwd: "") == .none
+    assert judged(w: ["git", "status"], where: "/", command: "", cwd: "/") == .none
+
+test "git_judged: where git is asked, the answer is unwritten"
+    assert judged(w: ["git", "commit", "-m", "x", "--", "a"], where: "/", command: "", cwd: "/") != .none
+    assert judged(w: ["git", "rebase", "--continue"], where: "/", command: "", cwd: "/") != .none
+    assert judged(w: ["git", "rm", "x"], where: "/", command: "", cwd: "/") != .none
+    assert any_of(list: ["a", "b"], words: ["x", "b"]) && !any_of(list: [], words: ["a"])
+    assert pystr_letters(["-am"]) == ["a", "m"] && is_git(["/usr/bin/git"]) && !is_git(["gitx"])
