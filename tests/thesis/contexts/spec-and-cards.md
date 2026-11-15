@@ -1,4 +1,4 @@
-packages build/thesis-packages c076bc950ef607fa0448fb9da6be761612d39c340e9276f459ebf7be310e7098 spec 1d532d514831aa70234ef0eb8ad77850ebd4c2e390234f22e973a363ed757001
+packages build/thesis-packages 97f569c6abfb381d11379ffeabd6726b63253ae59a1bbe3a381812ad32b8241a spec 1d532d514831aa70234ef0eb8ad77850ebd4c2e390234f22e973a363ed757001
 # Report on the Programming Language Heroes
 
 Heroes is a language for the age of agents. This document is the whole language.
@@ -582,6 +582,47 @@ HTTP/1.1 over a `net` connection, Go's `net/http` in Heroes' idiom: the requests
 
 - `malformed`, `http.MALFORMED`: What a failure is where a message is no HTTP/1.1 message this package reads, or a request no server could read back.
 
+# os: `use <core>/os`
+
+The process's surroundings read as values: the folder it works in, its environment, and what stands at a path, each a failure the caller answers where the system cannot say, and never an abort.
+
+## Types
+
+`record FileInfo` with `kind: Kind` and `mode: i64`: What `stat` and `lstat` answer about a path: its kind, and its permission bits, Go's `Mode().Perm()`, 0 for a link, whose own bits the runtime does not read, and on Windows 0444 for a read-only file and 0666 for any other.
+
+`variant Kind`, one of `.regular`, `.directory`, `.link` or `.other`: What a path holds: Go's file modes, the kinds the runtime can tell apart.
+
+## Functions
+
+- `getwd() -> str?`, called `os.getwd()`: The absolute path of the folder the process works in, every link on the way followed: Go's `os.Getwd`.
+- `env(key: str) -> str?`, called `os.env(key)`: The value of the environment variable `key`.
+- `stat(name: str) -> FileInfo?`, called `os.stat(name)`: What `name` names, a link followed to what it names: Go's `os.Stat`.
+- `lstat(name: str) -> FileInfo?`, called `os.lstat(name)`: What stands at `name`, the link itself where it is one: Go's `os.Lstat`.
+
+## Codes
+
+- `file_not_found`: where the folder is gone (`getwd`); where nothing stands there (`stat`); where nothing stands there (`lstat`).
+- `not_found`: where the variable is unset (`env`).
+- `not_text`: where its path is not UTF-8 (`getwd`); where its value is not UTF-8 (`env`).
+- `read_failed`: where the system could not be asked (`stat`); where the system could not be asked (`lstat`).
+
+# filepath: `use <core>/path/filepath`
+
+Paths read and written as text the way the system the program runs on writes them: Go's `path/filepath`.
+
+## Functions
+
+- `clean(path: str) -> str`, called `filepath.clean(path)`: The shortest path naming what `path` names, by text alone: Go's `filepath.Clean`.
+- `joined(parts: [str]) -> str`, called `filepath.joined(parts)`: The parts written one after another with the system's separator and cleaned, an empty part passed over, "" where every part is empty: Go's `filepath.Join`, named otherwise since `join` is a built-in's name.
+- `dir(path: str) -> str`, called `filepath.dir(path)`: All of `path` but its last part, cleaned, a Windows volume kept: Go's `filepath.Dir`.
+- `is_abs(path: str) -> bool`, called `filepath.is_abs(path)`: Whether `path` is absolute: Go's `filepath.IsAbs`.
+- `rel(base: str, target: str) -> str?`, called `filepath.rel(base: base, target: target)`: The path that names `target` read from `base`, by text alone, each cleaned first: Go's `filepath.Rel`.
+- `abs(path: str) -> str?`, called `filepath.abs(path)`: `path` made absolute, joined to the working folder where it is not and cleaned: Go's `filepath.Abs`.
+
+## Codes
+
+- `not_relative`, `filepath.NOT_RELATIVE`: What `rel` fails with where no path leads from one path to the other.
+
 # slices: `use <core>/slices`
 
 Arrays put in an order the caller writes, where the built-in `sort` puts numbers, text and booleans in the order of their values alone.
@@ -597,10 +638,11 @@ Numbers read from text, where a number too large for its type is a failure the c
 ## Functions
 
 - `atoi(s: str) -> i64?`, called `strconv.atoi(s)`: The integer `s` writes in decimal, with an optional `+` or `-` before its digits: Go's `strconv.Atoi`.
+- `parse_float(s: str) -> f64?`, called `strconv.parse_float(s)`: The `f64` the whole of `s` writes, rounded once to the nearest, ties to even: Go's `strconv.ParseFloat(s, 64)`.
 
 ## Codes
 
-- `does_not_fit`: where the number lies beyond an `i64` (`atoi`).
+- `does_not_fit`: where the number lies beyond an `i64` (`atoi`); where the number lies past the largest `f64` (`parse_float`).
 - `not_a_number`, `strconv.NOT_A_NUMBER`: What `atoi` fails with where a text is not a number at all.
 
 # strings: `use <core>/strings`
