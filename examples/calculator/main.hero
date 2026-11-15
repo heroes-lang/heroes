@@ -8,9 +8,9 @@
 # somewhere; here it is written, because a program with a hole produces no binary by
 # design and this one has to run. And a literal, a sum or a product past an `i64` is
 # told by name where the appendix aborts (defects 2548 and 2567). Everything else is the
-# appendix, redistributed and qualified; `resolve/tests/acceptance.rs` and
-# `types/tests/acceptance.rs` still read design.md's single-file copy, so the two are
-# checked by different things and neither is a copy nobody looks at.
+# appendix, redistributed and qualified. The net's `special` suite asks that this form
+# and `whole.hero` print the same; design.md's copy was resolved and typed by the Rust
+# bootstrap's `acceptance.rs` tests until the tag `m-bootstrap-archive`, by none since.
 #
 # What it exercises: a recursive variant through `[Expr]`, a hand-written
 # tokeniser and recursive-descent parser, `T?` with `?` propagation, a map as an

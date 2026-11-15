@@ -7,10 +7,10 @@
 # produces no binary by design and this one has to run. And a literal, a sum or a
 # product past an `i64` is told by name, `does_not_fit`, where the appendix's copy
 # aborts, `integer overflow`: `read_number` (defect 2548), `sum_of` and
-# `product_of` (defect 2567). Everything else is the appendix verbatim;
-# `resolve/tests/acceptance.rs` and `types/tests/acceptance.rs` still read
-# design.md's copy, so the two are checked by different things and neither is a
-# copy nobody looks at.
+# `product_of` (defect 2567). Everything else is the appendix verbatim. The
+# net's `special` suite asks that this file and `main.hero`'s four modules print
+# the same; design.md's copy was resolved and typed by the Rust bootstrap's
+# `acceptance.rs` tests until the tag `m-bootstrap-archive`, and by none since.
 #
 # What it exercises: a recursive variant through `[Expr]`, a hand-written
 # tokeniser and recursive-descent parser, `T?` with `?` propagation, a map as an
