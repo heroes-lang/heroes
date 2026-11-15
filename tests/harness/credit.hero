@@ -429,11 +429,27 @@ function has_at(text: str, at: i64, piece: str) -> bool
 
     return true
 
+# The most numbers a span is listed as: the old series' three digits hold a
+# thousand, and the widest span the tree wrote on 2026-11-15 is `001 to 677`,
+# 677 numbers (`git grep -i -E 'defects? [0-9]+ to [0-9]+'`, 59 spans).
+constant SPAN_LIMIT: i64
+    1000
+
 # The numbers a list names from `at`: `235`, `324 and 325`, `018 to 021`,
 # `130, 131`; and not the day of `130, 2026-09-28` nor the lane of `130, lane
 # b6`. A number of the old series has at most three digits; `wide` reads one
 # of any length as well, a new defect's issue number, `2031`, and a run of
 # digits a `-` and another digit follow is a day and ends the list.
+#
+# **A span of more than `SPAN_LIMIT` numbers is read as the two it writes**
+# (defect 2579, 2026-11-15): until then every number between was listed, so
+# a defect's title any stranger may write, the word and then `1 to
+# 999999999999999999: x`, asked some 10^19 bytes of `records`, `link` and the
+# issue program (`records_github.title_numbers`; the trunk's reader held 873
+# MB 0.52 s in, measured, and was still growing). Every reader of these
+# numbers asks each of a register, so the two ends are told as any number is,
+# a defect or not, and the numbers between them, which no word of the text
+# writes, are left.
 function numbers_after(text: str, at: i64, wide: bool) -> [i64]
     out: [i64] @= []
     i: i64 @= at
@@ -460,11 +476,17 @@ function numbers_after(text: str, at: i64, wide: bool) -> [i64]
 
             if more > 0 && more <= longest && !dated(text: text, at: i + 4 + more)
                 m = strings.to_number(text.slice(from: i + 4, to: i + 4 + more)).must()
-                k: i64 @= n
 
-                while k <= m
-                    out @ out.push(k)
-                    k @ k + 1
+                # Eighteen digits at most a side, so the width cannot leave an
+                # `i64`.
+                if m - n >= SPAN_LIMIT
+                    out @ out.push(n).push(m)
+                else
+                    k: i64 @= n
+
+                    while k <= m
+                        out @ out.push(k)
+                        k @ k + 1
 
                 i @ i + 4 + more
             else
@@ -719,6 +741,19 @@ test "a new defect's name is its issue number, read where the file is not frozen
     assert numbers_cited(text: "def" + "ects 130 to 2026-09-28", wide: true) == [130]
     assert old_names_only("tests/golden/recovery/corpus/tests/harness/suite_records.hero.frozen")
     assert !old_names_only("tests/harness/suite_records.hero")
+
+# DEFECT 2579, held as a test (2026-11-15): a cited span was listed whole,
+# so a line of the tree, or a stranger's title through
+# `records_github.title_numbers`, could ask some 10^19 numbers. A span of
+# more than `SPAN_LIMIT` numbers is its two ends, each asked of the register
+# as any number is; the widest the tree writes, 677, is listed as before.
+test "fixedbugs: a cited span past a thousand numbers is its two ends, and a narrower one is listed (defect 2579)"
+    assert numbers_cited(text: "def" + "ects 1 to 999999999999999999 at once", wide: true) == [1, 999999999999999999]
+    assert numbers_cited(text: "def" + "ects 001 to 677", wide: true).len() == 677
+    assert numbers_cited(text: "def" + "ects 100 to 1099", wide: true).len() == 1000
+    assert numbers_cited(text: "def" + "ects 100 to 1100", wide: true) == [100, 1100]
+    assert numbers_cited(text: "def" + "ects 001 to 999", wide: false).len() == 999
+    assert numbers_cited(text: "def" + "ects 2044 to 2053 and 2060", wide: true).len() == 11
 
 test "the cited roots are the compiler, the runtime, the seed and the tests"
     assert under_roots("tests/golden/check/x.hero")

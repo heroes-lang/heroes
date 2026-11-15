@@ -1440,6 +1440,33 @@ test "a stranger's defect names nothing but itself and is no offence of the proj
         substr: "GitHub listed 1 issues and none of them is the project's own"
     )
 
+# DEFECT 2579, held as a test (2026-11-15): a span in a defect's title was
+# listed whole, so a stranger's title, the word and then `1 to
+# 999999999999999999: x`, asked some 10^19 bytes of every instrument that
+# reads the issues (the trunk's reader held 873 MB 0.52 s in, still
+# growing). A span of more than `credit.SPAN_LIMIT` numbers is its two ends
+# now, read at once; a stranger's names nothing, and the project's own is
+# told for the end that is neither an old number nor its own.
+test "fixedbugs: a span past a thousand numbers in a defect's title is read as its two ends, never listed whole (defect 2579)"
+    wide = "Def" + "ect 1 to 999999999999999999: x"
+    assert title_numbers(wide) == [1, 999999999999999999]
+    assert title_numbers("Def" + "ects 001 to 677: every old one").len() == 677
+    assert title_numbers("Def" + "ects 1 to 1000: x").len() == 1000
+    assert title_numbers("Def" + "ects 1 to 1001: x") == [1, 1001]
+    assert title_numbers("Def" + "ects 2044 to 2053: x").len() == 10
+    stranger = register_of(
+        github_issues.held_of([foreign(number: 2200, title: wide, kind: "defect", body: FORM, milestone: "")])
+    )
+    assert keys(stranger.old).len() == 0
+    assert keys(stranger.new).len() == 0
+    assert stranger.misnamed.len() == 0
+    own = register_of(
+        github_issues.held_of([fixture(number: 2201, title: wide, kind: "defect", extra: [], body: "b", state: "open", created: "2026-11-15T08:00:00Z", closed: "")])
+    )
+    assert own.old[1].must() == [2201]
+    assert own.misnamed.len() == 1
+    assert core_strings.contains(s: own.misnamed[0], substr: "names def" + "ect 999999999999999999")
+
 test "a stranger's prior art, wish and decision are none of the project's, and a listing of strangers alone is no pass (defect 2042)"
     known: {str: bool} @= {}
     known["docs/panel/196-a-sitting.md"] @ true

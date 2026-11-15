@@ -12,6 +12,7 @@
 
 use <core>/strings as core_strings
 
+use credit
 use strings
 
 # The numbers a defect's file name carries and how a title says them:
@@ -69,23 +70,34 @@ function all_digits(word: str) -> bool
 
     return true
 
-# Every number from one to the other, three digits each, and none where the
-# span lists none: an end past an `i64`, which no count reaches, or a last
-# below the first.
+# Every number from one to the other, three digits each; none where the last
+# is below the first; and the two numbers the name writes, as written, where
+# the span is wider than `credit.SPAN_LIMIT` or an end lies past an `i64`,
+# which no count reaches.
 #
 # **Read by `.must()` until defect 2565** (2026-11-15): since defect 2545 the
 # harness's `to_number` refuses an end past an `i64` by name, `does_not_fit`,
 # and the `.must()` here turned that refusal into an abort of the issue
-# program at exit 134, so `defects-001-to-99999999999999999999-` stopped a
-# `draft` where the name names no span it can list. And the walk stops at its
-# last number rather than stepping past it, since one past the largest `i64`
-# aborts too.
+# program at exit 134. And the walk stops at its last number rather than
+# stepping past it, since one past the largest `i64` aborts too.
+#
+# **And listed whole until defect 2579** (the same day): a name's
+# `defects-001-to-999999999999-` asked `draft` for a trillion numbers, as a
+# title's span asked `credit.numbers_after`. A span past the limit is the two
+# numbers its name writes, which `draft` tells as it tells one, and so is a
+# span with an end past an `i64`, which defect 2565's repair read as naming
+# none, so that such a name went untold.
 function spanned(from: str, to: str) -> [str]
-    out: [str] @= []
     first = strings.to_number(from)
     last = strings.to_number(to)
 
-    if first.is_err() || last.is_err() || last.must() < first.must()
+    # Both ends are digits alone, so neither is negative and the width
+    # cannot leave an `i64`.
+    if first.is_err() || last.is_err() || last.must() - first.must() >= credit.SPAN_LIMIT
+        return [padded(from), padded(to)]
+    out: [str] @= []
+
+    if last.must() < first.must()
         return out
     n: i64 @= first.must()
 
@@ -207,9 +219,10 @@ test "a ratification's first field gives its sitting's number as written, and no
 # program at exit 134, `.must()` on the `does_not_fit` that `to_number`
 # answers since defect 2545; and a span ending at the largest `i64` stepped
 # one past it. A first field's run is read as written, as `issue_title`
-# takes it off the title, so `draft` tells the writer the number it names; a
-# span it cannot list names none.
-test "fixedbugs: a defect's number past an i64 is read as written and a span past one names none, never an abort (defect 2565)"
+# takes it off the title, so `draft` tells the writer the number it names. A
+# span it cannot list named none until defect 2579, the same day, and is the
+# two numbers its name writes since (the test below).
+test "fixedbugs: a defect's number past an i64 is read as written, never an abort (defect 2565)"
     long = defect_numbers(name: "x.md", first: "**99999999999999999999 — a defect**")
     assert long.numbers == ["99999999999999999999"]
     assert long.said == "Defect 99999999999999999999"
@@ -217,11 +230,26 @@ test "fixedbugs: a defect's number past an i64 is read as written and a span pas
     assert defect_numbers(name: "x.md", first: "**5 — a defect**").said == "Defect 005"
     assert defect_numbers(name: "x.md", first: "**000 — a defect**").said == "Defect 000"
     assert defect_numbers(name: "x.md", first: "**2031 — a defect**").said == "Defect 2031"
-
-    for name in ["2026-11-15-1200-defects-001-to-99999999999999999999-x.md", "2026-11-15-1200-defects-99999999999999999999-to-001-x.md", "2026-11-15-1200-defects-021-to-018-x.md"]
-        assert numbers_in_name(name).numbers.len() == 0
-        assert defect_numbers(name: name, first: "a defect").said == ""
-
+    reversed = "2026-11-15-1200-defects-021-to-018-x.md"
+    assert numbers_in_name(reversed).numbers.len() == 0
+    assert defect_numbers(name: reversed, first: "a defect").said == ""
     edge = numbers_in_name("2026-11-15-1200-defects-9223372036854775806-to-9223372036854775807-x.md")
     assert edge.numbers == ["9223372036854775806", "9223372036854775807"]
     assert numbers_in_name("2026-11-15-1200-defects-007-to-007-x.md").numbers == ["007"]
+
+# DEFECT 2579, held as a test (2026-11-15): a name's span was listed whole, so
+# `defects-001-to-999999999999-` asked `draft` for a trillion numbers. A span
+# of more than `credit.SPAN_LIMIT` numbers is the two its name writes, and so
+# is one with an end past an `i64`, each told by `draft` as one number is;
+# the widest span the tree writes, `001-to-677`, is listed as before.
+test "fixedbugs: a name's span past a thousand numbers, or past an i64, is the two numbers it writes (defect 2579)"
+    wide = numbers_in_name("2026-11-15-1200-defects-001-to-999999999999-x.md")
+    assert wide.numbers == ["001", "999999999999"]
+    assert wide.said == "Defects 001 to 999999999999"
+    assert numbers_in_name("2026-11-15-1200-defects-001-to-677-x.md").numbers.len() == 677
+    assert numbers_in_name("2026-11-15-1200-defects-1-to-1000-x.md").numbers.len() == 1000
+    assert numbers_in_name("2026-11-15-1200-defects-1-to-1001-x.md").numbers == ["001", "1001"]
+    assert numbers_in_name("2026-11-15-1200-defects-0-to-9223372036854775807-x.md").numbers == ["000", "9223372036854775807"]
+    assert numbers_in_name("2026-11-15-1200-defects-001-to-99999999999999999999-x.md").numbers == ["001", "99999999999999999999"]
+    assert numbers_in_name("2026-11-15-1200-defects-99999999999999999999-to-001-x.md").numbers == ["99999999999999999999", "001"]
+    assert defect_numbers(name: "2026-11-15-1200-defects-001-to-999999999999-x.md", first: "a defect").said == "Defects 001 to 999999999999"
