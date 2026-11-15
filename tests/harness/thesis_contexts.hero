@@ -1,0 +1,201 @@
+# THE CONTEXTS OF ONE RUN SET AGAINST EACH OTHER, the paired run's contrast
+# (task 2300; panel 234's R14 and its spec-warden's § 8; design.md Part 11).
+#
+# The report's three contrasts pair two arms of one generation
+# (`thesis_report.hero`). R14's paired run asks across contexts instead: the
+# specification, against the specification and the cards with the package
+# tree beside the answer, in one arm. **A pair is a verdict of each context
+# for one task, one model, one sample and one arm**: two generations asked
+# apart and matched by the sample's number, the design the spec-warden
+# registered (three samples a task, the cluster bootstrap over tasks, McNemar's
+# mid-p over the discordant pairs). The first context the run's provenance
+# lists is the baseline and every other is set against it, the difference
+# being the other minus the first, so `--context spec --context <the cards'
+# file>` reads the cards minus the specification. A pair either of whose
+# verdicts stands outside every denominator leaves the contrast, as it leaves
+# the arms' (panel 226's R8); what a measure holds and what is left out are the
+# report's own, handed in as function values, so the two kinds of contrast
+# cannot read one verdict two ways.
+
+use json_fields
+use json_read
+use shell
+use thesis_stats
+use thesis_verdict
+
+# A context as a run's provenance names it: its digest, which its verdicts
+# carry, and its name, `spec`, `none` or a file's path.
+record Named
+    sha: str
+    name: str
+
+# A measure a contrast reads by turn: its name in the table, and whether a
+# verdict holds it.
+record Measure
+    name: str
+    holds: (function(thesis_verdict.Verdict) -> bool)
+
+# The pairs two contexts' verdicts make: how many, the discordant both ways
+# (`b` the second context alone, `c` the first alone), how many of each
+# context the measure holds, and a cell a task for the bootstrap.
+record Across
+    pairs: i64
+    b: i64
+    c: i64
+    second_count: i64
+    first_count: i64
+    cells: [thesis_stats.Cell]
+
+# The contexts the run's provenance lists, in its order; none where the folder
+# holds no provenance that reads, so a report of such a folder sets no context
+# against another.
+function named_contexts(out: str) -> [Named]
+    held = read_file(path: out + "/provenance.json")
+
+    if held.is_err()
+        return []
+    doc = json_read.read_json(held.must())
+
+    if doc.is_err()
+        return []
+    listed = json_fields.field(of: doc.must(), name: "contexts")
+
+    if listed.is_err()
+        return []
+    items = json_fields.items_of(listed.must())
+
+    if items.is_err()
+        return []
+    found: [Named] @= []
+
+    for item in items.must()
+        found @ found.push(
+            Named(sha: json_fields.text_at(of: item, name: "sha").default(""), name: json_fields.text_at(of: item, name: "name").default(""))
+        )
+
+    return found
+
+# The pairs of `first` and `second`, two contexts' verdicts, matched by task,
+# model, sample and arm, `left_out` dropping a pair either of whose verdicts it
+# holds, and `holds` read of each side.
+function across(first: [thesis_verdict.Verdict], second: [thesis_verdict.Verdict], holds: (function(thesis_verdict.Verdict) -> bool), left_out: (function(thesis_verdict.Verdict) -> bool)) -> Across
+    made: Across @= Across(pairs: 0, b: 0, c: 0, second_count: 0, first_count: 0, cells: [])
+
+    for s in second
+        for w in first
+            if w.task_sha != s.task_sha || w.model != s.model || w.sample != s.sample || w.arm != s.arm
+                continue
+
+            if left_out(s) || left_out(w)
+                continue
+            in_second = holds(s)
+            in_first = holds(w)
+            made.pairs @ made.pairs + 1
+
+            if in_second
+                made.second_count @ made.second_count + 1
+
+            if in_first
+                made.first_count @ made.first_count + 1
+
+            if in_second && !in_first
+                made.b @ made.b + 1
+
+            if in_first && !in_second
+                made.c @ made.c + 1
+            made.cells @ thesis_stats.added(cells: made.cells, task: s.task_sha, first: in_first, second: in_second)
+
+    return made
+
+# A verdict green at its first turn, with no turn after it: what a test
+# hands `across`, as the report hands it its own measures.
+function first_turn_green(v: thesis_verdict.Verdict) -> bool
+    return v.green_turn == 1
+
+function never_left_out(v: thesis_verdict.Verdict) -> bool
+    return v.turns.len() == 0
+
+function lost(v: thesis_verdict.Verdict) -> bool
+    return v.turns.len() > 0 && v.turns[v.turns.len() - 1].outcome == "transport_error"
+
+# A verdict of `outcomes`, one a turn, written by a test: green at the first
+# turn whose outcome is `cases_pass`.
+function turned(task: str, context: str, sample: i64, arm: str, outcomes: [str]) -> thesis_verdict.Verdict
+    turns: [thesis_verdict.Turn] @= []
+    green: i64 @= 0
+
+    for i in range(from: 0, to: outcomes.len())
+        turns @ turns.push(
+            thesis_verdict.Turn(outcome: outcomes[i], codes: [], stop: "end_turn", input: 0, output: 0, cache_read: 0, cache_write: 0)
+        )
+
+        if outcomes[i] == "cases_pass" && green == 0
+            green @ i + 1
+
+    return thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: task, model: "m", context_sha: context, sample: sample, arm: arm),
+        task_sha: task,
+        model: "m",
+        arm: arm,
+        context_sha: context,
+        sample: sample,
+        turns: turns,
+        green_turn: green,
+        converged: green > 0
+    )
+
+function one_turn(task: str, context: str, sample: i64, arm: str, outcome: str) -> thesis_verdict.Verdict
+    return turned(task: task, context: context, sample: sample, arm: arm, outcomes: [outcome])
+
+test "two contexts pair by task, model, sample and arm, the discordant counted both ways and a cell a task"
+    spec = "aaaaaaaaaaaaaaaa"
+    cards = "bbbbbbbbbbbbbbbb"
+    first = [
+        one_turn(task: "taskaaaaaaaaaaaa", context: spec, sample: 1, arm: "strict", outcome: "compile_error")
+        one_turn(task: "taskaaaaaaaaaaaa", context: spec, sample: 2, arm: "strict", outcome: "cases_pass")
+        one_turn(task: "taskbbbbbbbbbbbb", context: spec, sample: 1, arm: "strict", outcome: "cases_pass")
+        one_turn(task: "taskcccccccccccc", context: spec, sample: 1, arm: "strict", outcome: "cases_pass")
+    ]
+    second = [
+        one_turn(task: "taskaaaaaaaaaaaa", context: cards, sample: 1, arm: "strict", outcome: "cases_pass")
+        one_turn(task: "taskaaaaaaaaaaaa", context: cards, sample: 2, arm: "strict", outcome: "cases_pass")
+        one_turn(task: "taskbbbbbbbbbbbb", context: cards, sample: 1, arm: "strict", outcome: "compiled_wrong")
+        one_turn(task: "taskcccccccccccc", context: cards, sample: 1, arm: "control", outcome: "cases_pass")
+    ]
+    made = across(first: first, second: second, holds: first_turn_green, left_out: never_left_out)
+
+    # The third task is asked in another arm by the second context, so it pairs with nothing.
+    assert made.pairs == 3
+    assert made.second_count == 2
+    assert made.first_count == 2
+    assert made.b == 1
+    assert made.c == 1
+    assert made.cells.len() == 2
+    assert made.cells[0] == thesis_stats.Cell(task: "taskaaaaaaaaaaaa", first: 1, second: 2, n: 2)
+    assert made.cells[1] == thesis_stats.Cell(task: "taskbbbbbbbbbbbb", first: 1, second: 0, n: 1)
+    assert thesis_stats.difference(made.cells) == 0.0
+
+test "a pair either of whose verdicts is left out leaves the contrast"
+    first = [
+        one_turn(task: "taskaaaaaaaaaaaa", context: "aaaaaaaaaaaaaaaa", sample: 1, arm: "strict", outcome: "transport_error")
+        one_turn(task: "taskbbbbbbbbbbbb", context: "aaaaaaaaaaaaaaaa", sample: 1, arm: "strict", outcome: "compile_error")
+    ]
+    second = [
+        one_turn(task: "taskaaaaaaaaaaaa", context: "bbbbbbbbbbbbbbbb", sample: 1, arm: "strict", outcome: "cases_pass")
+        one_turn(task: "taskbbbbbbbbbbbb", context: "bbbbbbbbbbbbbbbb", sample: 1, arm: "strict", outcome: "cases_pass")
+    ]
+    made = across(first: first, second: second, holds: first_turn_green, left_out: lost)
+    assert made.pairs == 1
+    assert made.b == 1
+    assert made.c == 0
+    assert thesis_stats.difference(made.cells) == 1.0
+
+test "the contexts a provenance lists are read in its order, and a folder with none lists none"
+    scratch = shell.own_scratch()
+    write_file(
+        path: scratch + "/provenance.json",
+        text: "{\"schema\":1,\"contexts\":[{\"name\":\"spec\",\"path\":\"spec/heroes-spec.md\",\"sha\":\"1d53\"},{\"name\":\"c.md\",\"path\":\"c.md\",\"sha\":\"72ca\",\"packages\":\"build/t\",\"packages_sha\":\"c076\"}]}"
+    ).must()
+    named = named_contexts(scratch)
+    assert named == [Named(sha: "1d53", name: "spec"), Named(sha: "72ca", name: "c.md")]
+    assert named_contexts(scratch + "/absent").len() == 0

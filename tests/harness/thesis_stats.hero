@@ -118,6 +118,30 @@ function seeded(seed: i64) -> i64
         return s + MODULUS - 1
     return s
 
+# `cells` with one pair of `task` counted in: its task's cell where it has
+# one, a new cell after the others where it has none, so the cells keep the
+# order their tasks first came in. Both of the report's contrasts, the arms'
+# and the contexts', count their pairs through it.
+function added(cells: [Cell], task: str, first: bool, second: bool) -> [Cell]
+    out: [Cell] @= cells
+    one: i64 @= 0
+    two: i64 @= 0
+
+    if first
+        one @ 1
+
+    if second
+        two @ 1
+
+    for i in range(from: 0, to: out.len())
+        if out[i].task == task
+            out[i].first @ out[i].first + one
+            out[i].second @ out[i].second + two
+            out[i].n @ out[i].n + 1
+            return out
+
+    return out.push(Cell(task: task, first: one, second: two, n: 1))
+
 # The paired difference of rates, second minus first, over `cells` weighted by
 # their samples.
 function difference(cells: [Cell]) -> f64
