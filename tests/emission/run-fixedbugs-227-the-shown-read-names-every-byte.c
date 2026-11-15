@@ -486,7 +486,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("47f5fe29539a21df", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("34884f7d6dda9a13", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs227theshownreadnameseverybyte\tfixedbugs-227-the-shown-read-names-every-byte\n");

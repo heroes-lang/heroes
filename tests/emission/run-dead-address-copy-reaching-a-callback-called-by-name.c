@@ -339,7 +339,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a18e8ef1faa7733", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36ab3a4339eaef67", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadaddresscopyreachingacallbackcalledbyname\tdead-address-copy-reaching-a-callback-called-by-name\n");

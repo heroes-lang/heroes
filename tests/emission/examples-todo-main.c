@@ -67,6 +67,7 @@ HERO_STR_STATIC(hero_str_71877a9b, "not_a_number");
 HERO_STR_STATIC(hero_str_2df6a0c8, " is not a number");
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_34adc7ac, " does not fit an i64");
+HERO_STR_STATIC(hero_str_1cffef, "nan");
 HERO_STR_STATIC(hero_str_49ade4, "bad_line");
 HERO_STR_STATIC(hero_str_3abb5ee9, "bad_marker");
 HERO_STR_STATIC(hero_str_44fcfd11, "empty_task");
@@ -82,9 +83,14 @@ HERO_STR_STATIC(hero_str_56849f55, "there is no task ");
 HERO_STR_STATIC(hero_str_ca71b43, " \342\200\224 the list has ");
 HERO_STR_STATIC(hero_str_17aa, ". ");
 HERO_STR_STATIC(hero_str_7b992235, "no_error");
+HERO_STR_STATIC(hero_str_24a05cd4, " lies past the largest f64, about 1.8 times ten to the 308");
+HERO_STR_STATIC(hero_str_181b9248, "infinity");
+HERO_STR_STATIC(hero_str_37842519, "the number lies past the largest f64, about 1.8 times ten to the 308");
 HERO_STR_STATIC(hero_str_75bf279b, "a text of ");
 HERO_STR_STATIC(hero_str_391e7e27, " bytes");
 HERO_STR_STATIC(hero_str_22, "\"");
+HERO_STR_STATIC(hero_str_3bec0c04, "m < powers.TWO_TO[powers.SIGNIFICAND_BITS]");
+HERO_STR_STATIC(hero_str_10c5, " e");
 HERO_STR_STATIC(hero_str_59e06249, "not_found");
 HERO_STR_STATIC(hero_str_eda7a03, "no \"");
 HERO_STR_STATIC(hero_str_2cee3aa3, "\" in a text of ");
@@ -107,11 +113,39 @@ HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 111 "main.c"
+#line 117 "main.c"
 typedef struct h_list_Task {
     bool f_done;
     HeroStr f_text;
 } h_list_Task;
+
+typedef struct h_1corestrconvinternalfloat_Special {
+    int64_t f_length;
+    double f_value;
+} h_1corestrconvinternalfloat_Special;
+
+typedef struct h_1corestrconvinternalfloat_Grammar {
+    int64_t f_length;
+    bool f_negative;
+    bool f_hex;
+    HeroStr f_whole;
+    HeroStr f_fraction;
+    int64_t f_exponent;
+    uint64_t f_mantissa;
+    bool f_dropped;
+    int64_t f_power;
+} h_1corestrconvinternalfloat_Grammar;
+
+typedef struct h_1corestrconvinternalscaling_Wide {
+    uint64_t f_high;
+    uint64_t f_low;
+} h_1corestrconvinternalscaling_Wide;
+
+typedef struct h_1corestrconvinternaldecimal_Decimal {
+    HeroArrayHeader * f_digits;
+    int64_t f_point;
+    bool f_truncated;
+} h_1corestrconvinternaldecimal_Decimal;
 
 typedef struct h_1corestrings_Halves {
     HeroStr f_before;
@@ -149,6 +183,30 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_db92a83 {
+    int64_t tag;
+    union {
+        double ok;
+        HeroFailure err;
+    } as;
+} h_0opt_db92a83;
+
+typedef struct h_0opt_fbbb698 {
+    int64_t tag;
+    union {
+        uint64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_fbbb698;
+
+typedef struct h_0opt_1ec004 {
+    int64_t tag;
+    union {
+        uint8_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_1ec004;
+
 typedef struct h_0opt_48a26f25 {
     int64_t tag;
     union {
@@ -171,13 +229,25 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "main.c"
+#line 233 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_list_0Task_retain(const h_list_Task *v);
 HERO_TU_LOCAL void h_list_0Task_release(h_list_Task *v);
 HERO_TU_LOCAL bool h_list_0Task_eq(const h_list_Task *a, const h_list_Task *b);
 HERO_TU_LOCAL uint64_t h_list_0Task_hash(const void *elem);
+HERO_TU_LOCAL bool h_1corestrconvinternalfloat_0Special_eq(const h_1corestrconvinternalfloat_Special *a, const h_1corestrconvinternalfloat_Special *b);
+HERO_TU_LOCAL uint64_t h_1corestrconvinternalfloat_0Special_hash(const void *elem);
+HERO_TU_LOCAL void h_1corestrconvinternalfloat_0Grammar_retain(const h_1corestrconvinternalfloat_Grammar *v);
+HERO_TU_LOCAL void h_1corestrconvinternalfloat_0Grammar_release(h_1corestrconvinternalfloat_Grammar *v);
+HERO_TU_LOCAL bool h_1corestrconvinternalfloat_0Grammar_eq(const h_1corestrconvinternalfloat_Grammar *a, const h_1corestrconvinternalfloat_Grammar *b);
+HERO_TU_LOCAL uint64_t h_1corestrconvinternalfloat_0Grammar_hash(const void *elem);
+HERO_TU_LOCAL bool h_1corestrconvinternalscaling_0Wide_eq(const h_1corestrconvinternalscaling_Wide *a, const h_1corestrconvinternalscaling_Wide *b);
+HERO_TU_LOCAL uint64_t h_1corestrconvinternalscaling_0Wide_hash(const void *elem);
+HERO_TU_LOCAL void h_1corestrconvinternaldecimal_0Decimal_retain(const h_1corestrconvinternaldecimal_Decimal *v);
+HERO_TU_LOCAL void h_1corestrconvinternaldecimal_0Decimal_release(h_1corestrconvinternaldecimal_Decimal *v);
+HERO_TU_LOCAL bool h_1corestrconvinternaldecimal_0Decimal_eq(const h_1corestrconvinternaldecimal_Decimal *a, const h_1corestrconvinternaldecimal_Decimal *b);
+HERO_TU_LOCAL uint64_t h_1corestrconvinternaldecimal_0Decimal_hash(const void *elem);
 HERO_TU_LOCAL void h_1corestrings_0Halves_retain(const h_1corestrings_Halves *v);
 HERO_TU_LOCAL void h_1corestrings_0Halves_release(h_1corestrings_Halves *v);
 HERO_TU_LOCAL bool h_1corestrings_0Halves_eq(const h_1corestrings_Halves *a, const h_1corestrings_Halves *b);
@@ -198,6 +268,18 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *v);
+HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *v);
+HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *a, const h_0opt_db92a83 *b);
+HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v);
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b);
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v);
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_48a26f25_retain(const h_0opt_48a26f25 *v);
 HERO_TU_LOCAL void h_0opt_48a26f25_release(h_0opt_48a26f25 *v);
 HERO_TU_LOCAL bool h_0opt_48a26f25_eq(const h_0opt_48a26f25 *a, const h_0opt_48a26f25 *b);
@@ -251,6 +333,7 @@ HeroStr h_main_rest_of(HeroArrayHeader * h0_given, int64_t h1_at);
 h_0opt_e201354 h_main_number_of(HeroStr h0_word);
 HeroStr h_1corestrconv_NOT_A_NUMBER(void);
 h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s);
+h_0opt_db92a83 h_1corestrconv_parse_float(HeroStr h0_s);
 HeroStr h_list_ERR_BAD_LINE(void);
 HeroStr h_list_ERR_BAD_MARKER(void);
 HeroStr h_list_ERR_EMPTY_TASK(void);
@@ -263,7 +346,67 @@ h_0opt_4f4c4677 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n);
 int64_t h_list_left_to_do(HeroArrayHeader * h0_tasks);
 HeroArrayHeader * h_list_numbered(HeroArrayHeader * h0_tasks);
 HeroStr h_list_code_of(HeroStr h0_text);
+int64_t h_1corestrconvinternalfloat_EXPONENT_CAP(void);
+h_0opt_db92a83 h_1corestrconvinternalfloat_parsed(HeroStr h0_s);
+h_0opt_db92a83 h_1corestrconvinternalfloat_magnitude_of(h_1corestrconvinternalfloat_Grammar h0_g);
+h_1corestrconvinternalfloat_Special h_1corestrconvinternalfloat_special(HeroStr h0_s);
+int64_t h_1corestrconvinternalfloat_same_letters(HeroStr h0_s, int64_t h1_from, HeroStr h2_word);
+uint8_t h_1corestrconvinternalfloat_lower(uint8_t h0_b);
+bool h_1corestrconvinternalfloat_digit(uint8_t h0_b);
+uint64_t h_1corestrconvinternalfloat_hex_value(uint8_t h0_b);
+h_1corestrconvinternalfloat_Grammar h_1corestrconvinternalfloat_grammar(HeroStr h0_s);
+bool h_1corestrconvinternalfloat_underscores_placed(HeroStr h0_s);
+h_0opt_db92a83 h_1corestrconvinternalfloat_hexadecimal(uint64_t h0_mantissa, int64_t h1_power, bool h2_dropped);
+uint64_t h_1corestrconvinternalfloat_sticky_half(uint64_t h0_m);
 HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s);
+HeroArrayHeader * h_1corestrconvinternalnearest_EXACT(void);
+int64_t h_1corestrconvinternalnearest_EXACT_DIGITS(void);
+h_0opt_db92a83 h_1corestrconvinternalnearest_value_of(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent);
+h_0opt_db92a83 h_1corestrconvinternalnearest_nearest(HeroStr h0_digits, int64_t h1_point);
+h_0opt_db92a83 h_1corestrconvinternalnearest_truncated(HeroStr h0_digits, int64_t h1_point);
+h_0opt_db92a83 h_1corestrconvinternalnearest_one_more(uint64_t h0_head, int64_t h1_p);
+bool h_1corestrconvinternalnearest_agree(h_0opt_db92a83 h0_below, h_0opt_db92a83 h1_above);
+uint64_t h_1corestrconvinternalnearest_word_of(HeroStr h0_digits);
+h_0opt_db92a83 h_1corestrconvinternalscaling_nearest(uint64_t h0_d, int64_t h1_p);
+uint64_t h_1corestrconvinternalscaling_unrounded(uint64_t h0_x, int64_t h1_at, int64_t h2_s);
+uint64_t h_1corestrconvinternalscaling_marked(uint64_t h0_q, bool h1_inexact);
+uint64_t h_1corestrconvinternalscaling_rounded(uint64_t h0_u);
+h_0opt_db92a83 h_1corestrconvinternalscaling_packed(uint64_t h0_m, int64_t h1_k);
+double h_1corestrconvinternalscaling_two_to(int64_t h0_k);
+h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_product(uint64_t h0_x, uint64_t h1_y);
+int64_t h_1corestrconvinternalscaling_bits_of(uint64_t h0_d);
+int64_t h_1corestrconvinternalscaling_log2_of_ten_to(int64_t h0_p);
+int64_t h_1corestrconvinternalscaling_min_of(int64_t h0_a, int64_t h1_b);
+h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_doubled(h_1corestrconvinternalscaling_Wide h0_w);
+int64_t h_1corestrconvinternaldecimal_CAPACITY(void);
+int64_t h_1corestrconvinternaldecimal_WIDEST(void);
+HeroArrayHeader * h_1corestrconvinternaldecimal_STEPS(void);
+h_0opt_db92a83 h_1corestrconvinternaldecimal_nearest(HeroStr h0_digits, int64_t h1_point);
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_decimal_of(HeroStr h0_digits, int64_t h1_point);
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_trimmed(h_1corestrconvinternaldecimal_Decimal h0_d);
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_shifted(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_k);
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_doubled(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_k);
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_halved(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_k);
+bool h_1corestrconvinternaldecimal_rounds_up(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_at);
+int64_t h_1corestrconvinternaldecimal_rounded(h_1corestrconvinternaldecimal_Decimal h0_d);
+int64_t h_1corestrconvinternaldecimal_step_for(int64_t h0_n);
+h_0opt_db92a83 h_1corestrconvinternaldecimal_rounded_to_float(h_1corestrconvinternaldecimal_Decimal h0_d);
+double h_1corestrconvinternaldecimal_scaled(double h0_x, int64_t h1_k);
+HeroStr h_1corestrconvinternaldecimal_shown(h_1corestrconvinternaldecimal_Decimal h0_d);
+int64_t h_1corestrconvinternalpowers_LEAST(void);
+int64_t h_1corestrconvinternalpowers_MOST(void);
+int64_t h_1corestrconvinternalpowers_DIGITS(void);
+uint64_t h_1corestrconvinternalpowers_NINES(void);
+int64_t h_1corestrconvinternalpowers_SIGNIFICAND_BITS(void);
+int64_t h_1corestrconvinternalpowers_SUBNORMAL_EXPONENT(void);
+int64_t h_1corestrconvinternalpowers_PAST_EXPONENT(void);
+int64_t h_1corestrconvinternalpowers_LOG_TIMES(void);
+int64_t h_1corestrconvinternalpowers_LOG_SHIFT(void);
+uint64_t h_1corestrconvinternalpowers_HALF(void);
+uint64_t h_1corestrconvinternalpowers_ALL_ONES(void);
+HeroArrayHeader * h_1corestrconvinternalpowers_TWO_TO(void);
+HeroArrayHeader * h_1corestrconvinternalpowers_HIGH(void);
+HeroArrayHeader * h_1corestrconvinternalpowers_LOW(void);
 bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix);
 bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix);
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr);
@@ -295,7 +438,7 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code);
 #line 29 "examples/todo/main.hero"
 HeroStr h_main_ERR_NO_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4afd5a8c);
-#line 299 "main.c"
+#line 442 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -310,7 +453,7 @@ void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f
 #line 36
     t6 = HERO_STR_LIT(hero_str_16f68369); hero_print_str(t6); hero_print_end();
     t7 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 37, 9}; h_library_exit(t7, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1; bb4:
-#line 314 "main.c"
+#line 457 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_text);
@@ -322,20 +465,20 @@ bb5:
 #line 40 "examples/todo/main.hero"
     t14 = HERO_STR_LIT(hero_str_2d78c599); t15 = h0_given; t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? hero_panic_index_at(t15, t16, "main.hero", "main.main", 40, 43) : (void)0), (void)(t15->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t15 + 1))[t16]); t18 = hero_str_concat(t14, t17); t27 = h5_own5; h5_own5 = t18; hero_str_decref(t27); h_main_stop(t18); goto bb4; bb6:
     t19 = h1_s0; t20 = t19.as.ok; t28 = h2_text; hero_str_incref(t20); h2_text = t20; hero_str_decref(t28); t21 = h2_text; t22 = h0_given; h_main_run(t21, t22); goto bb4;
-#line 326 "main.c"
+#line 469 "main.c"
 }
 
 #line 43 "examples/todo/main.hero"
 void h_main_stop(HeroStr h0_message) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_message; hero_print_str(t1); hero_print_end();
     t2 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.stop", 45, 5}; h_library_exit(t2, &hero_here); } hero_unreachable(); return;
-#line 333 "main.c"
+#line 476 "main.c"
 }
 
 #line 47 "examples/todo/main.hero"
 void h_main_run(HeroStr h0_text, HeroArrayHeader * h1_given) { HERO_NODEBUG h_0opt_4f4c4677 h2_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t12, t16, t17; HeroFailure h3_e = {0}; HeroArrayHeader * h4_tasks = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, t1, t7, t8, t9, t10, t11, t19, t20; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t6, t18; HERO_NODEBUG HeroArrayHeader *t13, *t14, *t15, *t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_list_read(t1); t16 = h5_own5; h5_own5 = t2; h_0opt_4f4c4677_release(&t16); t17 = h2_s0; h_0opt_4f4c4677_retain(&t2); h2_s0 = t2; h_0opt_4f4c4677_release(&t17); t3 = h2_s0; t4 = t3.tag; switch (t4) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 339 "main.c"
+#line 482 "main.c"
     h_0opt_4f4c4677_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h3_e);
     hero_array_release_at(&h4_tasks);
@@ -347,7 +490,7 @@ bb2:
 #line 49 "examples/todo/main.hero"
     t5 = h2_s0; t6 = t5.as.err; t18 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t18); t7 = h3_e.code; t8 = HERO_STR_LIT(hero_str_1dce); t9 = hero_str_concat(t7, t8); t19 = h6_own6; h6_own6 = t9; hero_str_decref(t19); t10 = h3_e.msg; t11 = hero_str_concat(t9, t10); t20 = h7_own7; h7_own7 = t11; hero_str_decref(t20); h_main_stop(t11); goto bb1; bb3:
     t12 = h2_s0; t13 = t12.as.ok; t21 = h4_tasks; hero_array_incref(t13); h4_tasks = t13; hero_array_decref(t21); t14 = h4_tasks; t15 = h1_given; h_main_act(t14, t15); goto bb1;
-#line 351 "main.c"
+#line 494 "main.c"
 }
 
 #line 52 "examples/todo/main.hero"
@@ -373,7 +516,7 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) { HeroSt
 #line 64
     t41 = h6_s1; t42 = t41.as.err; t73 = h7_e; hero_failure_retain(&t42); h7_e = t42; hero_failure_release(&t73); t43 = h7_e.code; t44 = HERO_STR_LIT(hero_str_1dce); t45 = hero_str_concat(t43, t44); t74 = h17_own17; h17_own17 = t45; hero_str_decref(t74); t46 = h7_e.msg; t47 = hero_str_concat(t45, t46); t75 = h18_own18; h18_own18 = t47; hero_str_decref(t75); h_main_stop(t47); goto bb12; bb14:
     t48 = h6_s1; t49 = t48.as.ok; h8_n = t49; t50 = h0_tasks; t51 = h8_n; t52 = h1_given; t53 = INT64_C(0); t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? hero_panic_index_at(t52, t53, "main.hero", "main.act", 65, 40) : (void)0), (void)(t52->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t52 + 1))[t53]); h_main_finish(t50, t51, t54); goto bb12; bb15:
-#line 377 "main.c"
+#line 520 "main.c"
     hero_str_release_at(&h2_command);
     h_0opt_4f4c4677_release(hero_slot_escape(&h3_s0));
     hero_failure_release(&h4_e);
@@ -396,7 +539,7 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) { HeroSt
 #line 69 "examples/todo/main.hero"
 void h_main_finish(HeroArrayHeader * h0_tasks, int64_t h1_n, HeroStr h2_path) { HERO_NODEBUG h_0opt_4f4c4677 h3_s0 = {0}, h6_own6 = {0}, t3, t4, t6, t13, t17, t18; HeroFailure h4_e = {0}; HeroArrayHeader * h5_after = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t8, t9, t10, t11, t12, t16, t20, t21; HERO_NODEBUG HeroArrayHeader *t1, *t14, *t15, *t22; HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroFailure t7, t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_tasks; t2 = h1_n; t3 = h_list_complete(t1, t2); t17 = h6_own6; h6_own6 = t3; h_0opt_4f4c4677_release(&t17); t18 = h3_s0; h_0opt_4f4c4677_retain(&t3); h3_s0 = t3; h_0opt_4f4c4677_release(&t18); t4 = h3_s0; t5 = t4.tag; switch (t5) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 400 "main.c"
+#line 543 "main.c"
     h_0opt_4f4c4677_release(hero_slot_escape(&h3_s0));
     hero_failure_release(&h4_e);
     hero_array_release_at(&h5_after);
@@ -408,13 +551,13 @@ bb2:
 #line 71 "examples/todo/main.hero"
     t6 = h3_s0; t7 = t6.as.err; t19 = h4_e; hero_failure_retain(&t7); h4_e = t7; hero_failure_release(&t19); t8 = h4_e.code; t9 = HERO_STR_LIT(hero_str_1dce); t10 = hero_str_concat(t8, t9); t20 = h7_own7; h7_own7 = t10; hero_str_decref(t20); t11 = h4_e.msg; t12 = hero_str_concat(t10, t11); t21 = h8_own8; h8_own8 = t12; hero_str_decref(t21); h_main_stop(t12); goto bb1; bb3:
     t13 = h3_s0; t14 = t13.as.ok; t22 = h5_after; hero_array_incref(t14); h5_after = t14; hero_array_decref(t22); t15 = h5_after; t16 = h2_path; h_main_save(t15, t16); goto bb1;
-#line 412 "main.c"
+#line 555 "main.c"
 }
 
 #line 75 "examples/todo/main.hero"
 void h_main_save(HeroArrayHeader * h0_tasks, HeroStr h1_path) { HERO_NODEBUG h_0opt_a8ea2 h2_s0 = {0}, h4_own4 = {0}, t4, t5, t12, t13; HERO_NODEBUG HeroStr h3_own3 = {0}, h5_own5 = {0}, t1, t3, t7, t8, t9, t11, t14; HERO_NODEBUG HeroArrayHeader *t2, *t10; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_path; t2 = h0_tasks; t3 = h_list_render(t2); t11 = h3_own3; h3_own3 = t3; hero_str_decref(t11); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.save", 76, 11}; t4 = h_library_write_file(t1, t3, &hero_here); } t12 = h4_own4; h4_own4 = t4; h_0opt_a8ea2_release(&t12); t13 = h2_s0; h_0opt_a8ea2_retain(&t4); h2_s0 = t4; h_0opt_a8ea2_release(&t13); t5 = h2_s0; t6 = t5.tag; switch (t6) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 418 "main.c"
+#line 561 "main.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h2_s0));
     hero_str_release_at(&h3_own3);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -424,7 +567,7 @@ bb2:
 #line 77 "examples/todo/main.hero"
     t7 = HERO_STR_LIT(hero_str_13ab9a08); t8 = h1_path; t9 = hero_str_concat(t7, t8); t14 = h5_own5; h5_own5 = t9; hero_str_decref(t14); h_main_stop(t9); goto bb1; bb3:
     t10 = h0_tasks; h_main_show(t10); goto bb1;
-#line 428 "main.c"
+#line 571 "main.c"
 }
 
 #line 80 "examples/todo/main.hero"
@@ -435,7 +578,7 @@ void h_main_show(HeroArrayHeader * h0_tasks) { HERO_NODEBUG HeroArrayHeader *h1_
     t12 = h2_i0; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("main.hero", "main.show", 81, 9); h2_i0 = t14; goto bb1; bb4:
 #line 84
     t15 = h0_tasks; t16 = h_list_left_to_do(t15); t17 = HERO_STR_LIT(hero_str_466f899); t18 = h0_tasks; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = HERO_STR_LIT(hero_str_404a2ebb); hero_print_int(t16); hero_print_str(t17); hero_print_int(t19); hero_print_str(t20); hero_print_end();
-#line 439 "main.c"
+#line 582 "main.c"
     hero_array_release_at(&h1_xs0);
     hero_str_release_at(&h3_line);
     hero_array_release_at(&h4_own4);
@@ -452,7 +595,7 @@ HeroStr h_main_rest_of(HeroArrayHeader * h0_given, int64_t h1_at) { HeroArrayHea
     t19 = h4_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("main.hero", "main.rest_of", 91, 9); h4_i0 = t21; goto bb1; bb4:
 #line 94
     t22 = h2_words; t23 = HERO_STR_LIT(hero_str_20); t24 = hero_str_join(t22, t23); t29 = h8_own8; h8_own8 = t24; hero_str_decref(t29);
-#line 456 "main.c"
+#line 599 "main.c"
     hero_str_incref(t24);
     hero_array_release_at(&h2_words);
     hero_array_release_at(&h3_xs0);
@@ -472,7 +615,7 @@ h_0opt_e201354 h_main_number_of(HeroStr h0_word) { HERO_NODEBUG h_0opt_e201354 h
 #line 101
     t12 = h1_s0; t13 = t12.as.ok; h2_n = t13; t14 = h2_n; t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t14}; t26 = h8_own8; h8_own8 = t15; h_0opt_e201354_release(&t26); h4_ret0 = t15; goto bb7; bb6:
     t16 = h1_s0; t17 = t16.as.err; t27 = h3_e; hero_failure_retain(&t17); h3_e = t17; hero_failure_release(&t27); t18 = h_main_ERR_NO_NUMBER(); t28 = h9_own9; h9_own9 = t18; hero_str_decref(t28); t19 = h3_e.msg; hero_str_incref(t18); hero_str_incref(t19); t20 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t19}}; t29 = h10_own10; h10_own10 = t20; h_0opt_e201354_release(&t29); h4_ret0 = t20; goto bb7; bb7:
-#line 476 "main.c"
+#line 619 "main.c"
     t21 = h4_ret0;
     h_0opt_e201354_retain(&t21);
     h_0opt_e201354_release(hero_slot_escape(&h1_s0));
@@ -486,66 +629,66 @@ h_0opt_e201354 h_main_number_of(HeroStr h0_word) { HERO_NODEBUG h_0opt_e201354 h
     return t21;
 }
 
-#line 10 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv.hero"
+#line 11 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv.hero"
 HeroStr h_1corestrconv_NOT_A_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_71877a9b);
-#line 493 "main.c"
+#line 636 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 17 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv.hero"
+#line 18 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv.hero"
 h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s) { int64_t h1_at; bool h2_negative; HERO_NODEBUG bool h3_b0, h4_b1, h8_b2, t2, t6, t11, t16, t17, t18, t23, t28, t42, t48, t51, t52, t66, t77, t92, t97; int64_t h5_lowest; int64_t h6_total; uint8_t h7_c; HERO_NODEBUG h_0opt_e201354 h9_f0 = {0}, h11_ret0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h28_own28 = {0}, t34, t58, t62, t63, t67, t69, t83, t94, t103, t106, t107, t111, t112, t113, t117, t120, t121, t122, t125; int64_t h10_digit; HERO_NODEBUG HeroStr h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, t3, t7, t12, t19, t26, t29, t30, t31, t32, t33, t40, t43, t53, t54, t55, t56, t57, t78, t79, t80, t81, t82, t98, t99, t100, t101, t102, t108, t109, t110, t114, t115, t116, t118, t119, t123, t124; HERO_NODEBUG int64_t t1, t4, t5, t8, t13, t20, t24, t25, t27, t35, t36, t37, t38, t39, t41, t44, t64, t65, t70, t71, t72, t73, t74, t75, t76, t84, t85, t86, t87, t88, t89, t90, t91, t93, t95, t96, t104, t105; HERO_NODEBUG uint8_t t9, t10, t14, t15, t21, t22, t45, t46, t47, t49, t50, t59, t60, t61; HERO_NODEBUG HeroFailure t68; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_at = t1;
     t2 = false; h2_negative = t2;
-#line 21
+#line 22
     t3 = h0_s; t4 = hero_str_len(t3); t5 = INT64_C(0); t6 = t4 > t5; h3_b0 = t6; if (t6) goto bb2; else goto bb3; bb1:
-#line 25
-    t25 = h1_at; t26 = h0_s; t27 = hero_str_len(t26); t28 = t25 == t27; if (t28) goto bb9; else goto bb10; bb2:
-#line 21
-    t7 = h0_s; t8 = INT64_C(0); t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? hero_panic_byte_at(t7, t8, "<core>/strconv.hero", "strconv.atoi", 21, 24) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]); t10 = UINT64_C(45); t11 = t9 == t10; h4_b1 = t11; if (t11) goto bb5; else goto bb4; bb3: t18 = h3_b0; if (t18) goto bb6; else goto bb7; bb4: t12 = h0_s; t13 = INT64_C(0); t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "<core>/strconv.hero", "strconv.atoi", 21, 39) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); t15 = UINT64_C(43); t16 = t14 == t15; h4_b1 = t16; goto bb5; bb5: t17 = h4_b1; h3_b0 = t17; goto bb3; bb6:
-    t19 = h0_s; t20 = INT64_C(0); t21 = ((void)((t19.ptr == NULL || t20 < 0 || t20 >= t19.len) ? hero_panic_byte_at(t19, t20, "<core>/strconv.hero", "strconv.atoi", 22, 20) : (void)0), (int64_t)(unsigned char)t19.ptr[t20]); t22 = UINT64_C(45); t23 = t21 == t22; h2_negative = t23;
-    t24 = INT64_C(1); h1_at = t24; goto bb1; bb7: goto bb1; bb8:
-#line 31
-    t35 = INT64_C(-9223372036854775807); t36 = INT64_C(1); if (__builtin_sub_overflow(t35, t36, &t37)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 31, 14); h5_lowest = t37;
-    t38 = INT64_C(0); h6_total = t38; goto bb11; bb9:
 #line 26
+    t25 = h1_at; t26 = h0_s; t27 = hero_str_len(t26); t28 = t25 == t27; if (t28) goto bb9; else goto bb10; bb2:
+#line 22
+    t7 = h0_s; t8 = INT64_C(0); t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? hero_panic_byte_at(t7, t8, "<core>/strconv.hero", "strconv.atoi", 22, 24) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]); t10 = UINT64_C(45); t11 = t9 == t10; h4_b1 = t11; if (t11) goto bb5; else goto bb4; bb3: t18 = h3_b0; if (t18) goto bb6; else goto bb7; bb4: t12 = h0_s; t13 = INT64_C(0); t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "<core>/strconv.hero", "strconv.atoi", 22, 39) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); t15 = UINT64_C(43); t16 = t14 == t15; h4_b1 = t16; goto bb5; bb5: t17 = h4_b1; h3_b0 = t17; goto bb3; bb6:
+    t19 = h0_s; t20 = INT64_C(0); t21 = ((void)((t19.ptr == NULL || t20 < 0 || t20 >= t19.len) ? hero_panic_byte_at(t19, t20, "<core>/strconv.hero", "strconv.atoi", 23, 20) : (void)0), (int64_t)(unsigned char)t19.ptr[t20]); t22 = UINT64_C(45); t23 = t21 == t22; h2_negative = t23;
+    t24 = INT64_C(1); h1_at = t24; goto bb1; bb7: goto bb1; bb8:
+#line 32
+    t35 = INT64_C(-9223372036854775807); t36 = INT64_C(1); if (__builtin_sub_overflow(t35, t36, &t37)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 32, 14); h5_lowest = t37;
+    t38 = INT64_C(0); h6_total = t38; goto bb11; bb9:
+#line 27
     t29 = h_1corestrconv_NOT_A_NUMBER(); t108 = h12_own12; h12_own12 = t29; hero_str_decref(t108); t30 = h0_s; t31 = h_1corestrconvinternalshown_quoted(t30); t109 = h13_own13; h13_own13 = t31; hero_str_decref(t109); t32 = HERO_STR_LIT(hero_str_2df6a0c8); t33 = hero_str_concat(t31, t32); t110 = h14_own14; h14_own14 = t33; hero_str_decref(t110); hero_str_incref(t29); hero_str_incref(t33); t34 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t33}}; t111 = h15_own15; h15_own15 = t34; h_0opt_e201354_release(&t111); h11_ret0 = t34; goto bb30; bb10: goto bb8; bb11:
-#line 34
+#line 35
     t39 = h1_at; t40 = h0_s; t41 = hero_str_len(t40); t42 = t39 < t41; if (t42) goto bb12; else goto bb13; bb12:
-    t43 = h0_s; t44 = h1_at; t45 = ((void)((t43.ptr == NULL || t44 < 0 || t44 >= t43.len) ? hero_panic_byte_at(t43, t44, "<core>/strconv.hero", "strconv.atoi", 35, 13) : (void)0), (int64_t)(unsigned char)t43.ptr[t44]); h7_c = t45;
-#line 37
+    t43 = h0_s; t44 = h1_at; t45 = ((void)((t43.ptr == NULL || t44 < 0 || t44 >= t43.len) ? hero_panic_byte_at(t43, t44, "<core>/strconv.hero", "strconv.atoi", 36, 13) : (void)0), (int64_t)(unsigned char)t43.ptr[t44]); h7_c = t45;
+#line 38
     t46 = h7_c; t47 = UINT64_C(48); t48 = t46 < t47; h8_b2 = t48; if (t48) goto bb16; else goto bb15; bb13:
-#line 46
+#line 47
     t92 = h2_negative; if (t92) goto bb25; else goto bb26; bb14:
-#line 39
-    t59 = h7_c; t60 = UINT64_C(48); if (__builtin_sub_overflow(t59, t60, &t61)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 39, 24); t62 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t61}; t112 = h16_own16; h16_own16 = t62; h_0opt_e201354_release(&t112); t113 = h9_f0; h_0opt_e201354_retain(&t62); h9_f0 = t62; h_0opt_e201354_release(&t113); t63 = h9_f0; t64 = t63.tag; t65 = INT64_C(0); t66 = t64 == t65; if (t66) goto bb19; else goto bb20; bb15:
-#line 37
+#line 40
+    t59 = h7_c; t60 = UINT64_C(48); if (__builtin_sub_overflow(t59, t60, &t61)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 40, 24); t62 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t61}; t112 = h16_own16; h16_own16 = t62; h_0opt_e201354_release(&t112); t113 = h9_f0; h_0opt_e201354_retain(&t62); h9_f0 = t62; h_0opt_e201354_release(&t113); t63 = h9_f0; t64 = t63.tag; t65 = INT64_C(0); t66 = t64 == t65; if (t66) goto bb19; else goto bb20; bb15:
+#line 38
     t49 = h7_c; t50 = UINT64_C(57); t51 = t49 > t50; h8_b2 = t51; goto bb16; bb16: t52 = h8_b2; if (t52) goto bb17; else goto bb18; bb17:
     t53 = h_1corestrconv_NOT_A_NUMBER(); t114 = h17_own17; h17_own17 = t53; hero_str_decref(t114); t54 = h0_s; t55 = h_1corestrconvinternalshown_quoted(t54); t115 = h18_own18; h18_own18 = t55; hero_str_decref(t115); t56 = HERO_STR_LIT(hero_str_2df6a0c8); t57 = hero_str_concat(t55, t56); t116 = h19_own19; h19_own19 = t57; hero_str_decref(t116); hero_str_incref(t53); hero_str_incref(t57); t58 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t53, .msg = t57}}; t117 = h20_own20; h20_own20 = t58; h_0opt_e201354_release(&t117); h11_ret0 = t58; goto bb30; bb18: goto bb14; bb19:
     t69 = h9_f0; t70 = t69.as.ok; h10_digit = t70;
-#line 41
-    t71 = h6_total; t72 = h5_lowest; t73 = h10_digit; if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 41, 21); t75 = INT64_C(10); if (t75 == 0) hero_panic_at("division by zero", "<core>/strconv.hero", "strconv.atoi", 41, 20); if (t74 == INT64_MIN && t75 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 41, 20); t76 = t74 / t75; t77 = t71 < t76; if (t77) goto bb22; else goto bb23; bb20:
-#line 39
+#line 42
+    t71 = h6_total; t72 = h5_lowest; t73 = h10_digit; if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 42, 21); t75 = INT64_C(10); if (t75 == 0) hero_panic_at("division by zero", "<core>/strconv.hero", "strconv.atoi", 42, 20); if (t74 == INT64_MIN && t75 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 42, 20); t76 = t74 / t75; t77 = t71 < t76; if (t77) goto bb22; else goto bb23; bb20:
+#line 40
     t67 = h9_f0; t68 = t67.as.err;
-#line 532 "main.c"
-    hero_panic_must_at(t68, "<core>/strconv.hero", "strconv.atoi", 39, 17);
+#line 675 "main.c"
+    hero_panic_must_at(t68, "<core>/strconv.hero", "strconv.atoi", 40, 17);
     hero_unreachable();
 bb21:
-#line 43 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv.hero"
-    t84 = h6_total; t85 = INT64_C(10); if (__builtin_mul_overflow(t84, t85, &t86)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 43, 17); t87 = h10_digit; if (__builtin_sub_overflow(t86, t87, &t88)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 43, 17); h6_total = t88;
-    t89 = h1_at; t90 = INT64_C(1); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 44, 14); h1_at = t91; goto bb11; bb22:
-#line 42
+#line 44 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv.hero"
+    t84 = h6_total; t85 = INT64_C(10); if (__builtin_mul_overflow(t84, t85, &t86)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 44, 17); t87 = h10_digit; if (__builtin_sub_overflow(t86, t87, &t88)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 44, 17); h6_total = t88;
+    t89 = h1_at; t90 = INT64_C(1); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 45, 14); h1_at = t91; goto bb11; bb22:
+#line 43
     t78 = HERO_STR_LIT(hero_str_2633b9f3); t79 = h0_s; t80 = h_1corestrconvinternalshown_quoted(t79); t118 = h21_own21; h21_own21 = t80; hero_str_decref(t118); t81 = HERO_STR_LIT(hero_str_34adc7ac); t82 = hero_str_concat(t80, t81); t119 = h22_own22; h22_own22 = t82; hero_str_decref(t119); hero_str_incref(t78); hero_str_incref(t82); t83 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t78, .msg = t82}}; t120 = h23_own23; h23_own23 = t83; h_0opt_e201354_release(&t120); h11_ret0 = t83; goto bb30; bb23: goto bb21; bb24:
-#line 49
-    t95 = h6_total; t96 = h5_lowest; t97 = t95 == t96; if (t97) goto bb28; else goto bb29; bb25:
-#line 47
-    t93 = h6_total; t94 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t93}; t121 = h24_own24; h24_own24 = t94; h_0opt_e201354_release(&t121); h11_ret0 = t94; goto bb30; bb26: goto bb24; bb27:
-#line 51
-    t104 = h6_total; if (__builtin_sub_overflow(INT64_C(0), t104, &t105)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 51, 15); t106 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t105}; t122 = h25_own25; h25_own25 = t106; h_0opt_e201354_release(&t122); h11_ret0 = t106; goto bb30; bb28:
 #line 50
+    t95 = h6_total; t96 = h5_lowest; t97 = t95 == t96; if (t97) goto bb28; else goto bb29; bb25:
+#line 48
+    t93 = h6_total; t94 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t93}; t121 = h24_own24; h24_own24 = t94; h_0opt_e201354_release(&t121); h11_ret0 = t94; goto bb30; bb26: goto bb24; bb27:
+#line 52
+    t104 = h6_total; if (__builtin_sub_overflow(INT64_C(0), t104, &t105)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 52, 15); t106 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t105}; t122 = h25_own25; h25_own25 = t106; h_0opt_e201354_release(&t122); h11_ret0 = t106; goto bb30; bb28:
+#line 51
     t98 = HERO_STR_LIT(hero_str_2633b9f3); t99 = h0_s; t100 = h_1corestrconvinternalshown_quoted(t99); t123 = h26_own26; h26_own26 = t100; hero_str_decref(t123); t101 = HERO_STR_LIT(hero_str_34adc7ac); t102 = hero_str_concat(t100, t101); t124 = h27_own27; h27_own27 = t102; hero_str_decref(t124); hero_str_incref(t98); hero_str_incref(t102); t103 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t98, .msg = t102}}; t125 = h28_own28; h28_own28 = t103; h_0opt_e201354_release(&t125); h11_ret0 = t103; goto bb30; bb29: goto bb27; bb30:
-#line 549 "main.c"
+#line 692 "main.c"
     t107 = h11_ret0;
     h_0opt_e201354_retain(&t107);
     h_0opt_e201354_release(hero_slot_escape(&h9_f0));
@@ -569,10 +712,19 @@ bb21:
     return t107;
 }
 
+#line 63 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv.hero"
+h_0opt_db92a83 h_1corestrconv_parse_float(HeroStr h0_s) { HERO_NODEBUG h_0opt_db92a83 h1_own1 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = h_1corestrconvinternalfloat_parsed(t1); t3 = h1_own1; h1_own1 = t2; h_0opt_db92a83_release(&t3);
+#line 719 "main.c"
+    h_0opt_db92a83_retain(&t2);
+    h_0opt_db92a83_release(hero_slot_escape(&h1_own1));
+    return t2;
+}
+
 #line 24 "examples/todo/list.hero"
 HeroStr h_list_ERR_BAD_LINE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_49ade4);
-#line 576 "main.c"
+#line 728 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -580,7 +732,7 @@ HeroStr h_list_ERR_BAD_LINE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; go
 #line 27 "examples/todo/list.hero"
 HeroStr h_list_ERR_BAD_MARKER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3abb5ee9);
-#line 584 "main.c"
+#line 736 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -588,7 +740,7 @@ HeroStr h_list_ERR_BAD_MARKER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; 
 #line 30 "examples/todo/list.hero"
 HeroStr h_list_ERR_EMPTY_TASK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_44fcfd11);
-#line 592 "main.c"
+#line 744 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -596,7 +748,7 @@ HeroStr h_list_ERR_EMPTY_TASK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; 
 #line 33 "examples/todo/list.hero"
 HeroStr h_list_ERR_NO_SUCH_TASK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_18d8f3f9);
-#line 600 "main.c"
+#line 752 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -629,7 +781,7 @@ h_0opt_4f4c4677 h_list_read(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; i
 #line 57
     t57 = h10_marker; t58 = UINT64_C(120); t59 = t57 != t58; h11_b3 = t59; goto bb19; bb19: t60 = h11_b3; if (t60) goto bb20; else goto bb21; bb20:
     t61 = h_list_ERR_BAD_MARKER(); t103 = h25_own25; h25_own25 = t61; hero_str_decref(t103); t62 = HERO_STR_LIT(hero_str_75f7c07a); t63 = h2_number; t64 = hero_int_to_str(t63); t104 = h26_own26; h26_own26 = t64; hero_str_decref(t104); t65 = hero_str_concat(t62, t64); t105 = h27_own27; h27_own27 = t65; hero_str_decref(t105); t66 = HERO_STR_LIT(hero_str_40e65880); t67 = hero_str_concat(t65, t66); t106 = h28_own28; h28_own28 = t67; hero_str_decref(t106); hero_str_incref(t61); hero_str_incref(t67); t68 = (h_0opt_4f4c4677){.tag = INT64_C(1), .as.err = {.code = t61, .msg = t67}}; t107 = h29_own29; h29_own29 = t68; h_0opt_4f4c4677_release(&t107); h12_ret0 = t68; goto bb22; bb21: goto bb17; bb22:
-#line 633 "main.c"
+#line 785 "main.c"
     t86 = h12_ret0;
     h_0opt_4f4c4677_retain(&t86);
     hero_array_release_at(&h1_out);
@@ -672,7 +824,7 @@ HeroStr h_list_render(HeroArrayHeader * h0_tasks) { HeroArrayHeader * h1_lines =
     t24 = h3_i0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("list.hero", "list.render", 68, 9); h3_i0 = t26; goto bb4; bb7:
 #line 71
     t27 = h1_lines; t28 = HERO_STR_LIT(hero_str_a); t29 = hero_str_join(t27, t28); t40 = h10_own10; h10_own10 = t29; hero_str_decref(t40); t30 = HERO_STR_LIT(hero_str_a); t31 = hero_str_concat(t29, t30); t41 = h11_own11; h11_own11 = t31; hero_str_decref(t41); h5_ret0 = t31; goto bb8; bb8:
-#line 676 "main.c"
+#line 828 "main.c"
     t32 = h5_ret0;
     hero_str_incref(t32);
     hero_array_release_at(&h1_lines);
@@ -694,7 +846,7 @@ HeroStr h_list_marker_of(h_list_Task h0_task) { HERO_NODEBUG HeroStr h1_ret0 = {
     t3 = HERO_STR_LIT(hero_str_17e4f0); h1_ret0 = t3; goto bb4; bb2:
 #line 75
     t2 = HERO_STR_LIT(hero_str_1811f8); h1_ret0 = t2; goto bb4; bb3: goto bb1; bb4:
-#line 698 "main.c"
+#line 850 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -707,7 +859,7 @@ h_0opt_4f4c4677 h_list_add(HeroArrayHeader * h0_tasks, HeroStr h1_text) { HERO_N
     t8 = h0_tasks; t9 = false; t10 = h1_text; t11 = h_1corestrings_trim_space(t10); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); hero_str_incref(t11); t12 = (h_list_Task){.f_done = t9, .f_text = t11}; t18 = h5_own5; h5_own5 = t12; h_list_0Task_release(&t18); t13 = hero_array_push(t8, &t12); t19 = h6_own6; h6_own6 = t13; hero_array_decref(t19); hero_array_incref(t13); t14 = (h_0opt_4f4c4677){.tag = INT64_C(0), .as.ok = t13}; t20 = h7_own7; h7_own7 = t14; h_0opt_4f4c4677_release(&t20); h2_ret0 = t14; goto bb4; bb2:
 #line 82
     t5 = h_list_ERR_EMPTY_TASK(); t21 = h8_own8; h8_own8 = t5; hero_str_decref(t21); t6 = HERO_STR_LIT(hero_str_32a3b299); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_4f4c4677){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t22 = h9_own9; h9_own9 = t7; h_0opt_4f4c4677_release(&t22); h2_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
-#line 711 "main.c"
+#line 863 "main.c"
     t15 = h2_ret0;
     h_0opt_4f4c4677_retain(&t15);
     hero_str_release_at(&h3_own3);
@@ -745,7 +897,7 @@ h_0opt_4f4c4677 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) { HERO
     t40 = true; t41 = h0_tasks; t42 = h6_i; t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "list.hero", "list.complete", 98, 51) : (void)0), (void)(t41->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t41 + 1))[t42]); t44 = t43.f_text; hero_str_incref(t44); t45 = (h_list_Task){.f_done = t40, .f_text = t44}; t70 = h18_own18; h18_own18 = t45; h_list_0Task_release(&t70); hero_array_push_owned(&h3_out, &t45); goto bb10; bb12:
 #line 100
     t48 = h0_tasks; t49 = h6_i; t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? hero_panic_index_at(t48, t49, "list.hero", "list.complete", 100, 28) : (void)0), (void)(t48->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t48 + 1))[t49]); hero_array_push_owned(&h3_out, &t50); goto bb10; bb13:
-#line 749 "main.c"
+#line 901 "main.c"
     t57 = h7_ret0;
     h_0opt_4f4c4677_retain(&t57);
     hero_array_release_at(&h3_out);
@@ -774,7 +926,7 @@ int64_t h_list_left_to_do(HeroArrayHeader * h0_tasks) { int64_t h1_open; HERO_NO
     t16 = h3_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("list.hero", "list.left_to_do", 107, 9); h3_i0 = t18; goto bb1; bb4:
 #line 111
     t19 = h1_open;
-#line 778 "main.c"
+#line 930 "main.c"
     hero_array_release_at(&h2_xs0);
     h_list_0Task_release(hero_slot_escape(&h4_task));
     return t19;
@@ -783,7 +935,7 @@ bb5:
 bb6:
 #line 109 "examples/todo/list.hero"
     t13 = h1_open; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("list.hero", "list.left_to_do", 109, 20); h1_open = t15; goto bb5; bb7: goto bb5;
-#line 787 "main.c"
+#line 939 "main.c"
 }
 
 #line 114 "examples/todo/list.hero"
@@ -796,7 +948,7 @@ HeroArrayHeader * h_list_numbered(HeroArrayHeader * h0_tasks) { HeroArrayHeader 
     t34 = h3_i0; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("list.hero", "list.numbered", 117, 9); h3_i0 = t36; goto bb1; bb4:
 #line 120
     t37 = h1_out;
-#line 800 "main.c"
+#line 952 "main.c"
     hero_array_incref(t37);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -814,7 +966,7 @@ HeroArrayHeader * h_list_numbered(HeroArrayHeader * h0_tasks) { HeroArrayHeader 
 #line 164 "examples/todo/list.hero"
 HeroStr h_list_code_of(HeroStr h0_text) { HERO_NODEBUG h_0opt_4f4c4677 h1_s0 = {0}, h4_own4 = {0}, t2, t3, t6, t10, t11; HERO_NODEBUG HeroStr h2_r0 = {0}, t1, t5, t8, t9, t12, t14; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t7, t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_list_read(t1); t10 = h4_own4; h4_own4 = t2; h_0opt_4f4c4677_release(&t10); t11 = h1_s0; h_0opt_4f4c4677_retain(&t2); h1_s0 = t2; h_0opt_4f4c4677_release(&t11); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t9 = h2_r0;
-#line 818 "main.c"
+#line 970 "main.c"
     hero_str_incref(t9);
     h_0opt_4f4c4677_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -830,17 +982,533 @@ bb2:
     t6 = h1_s0; t7 = t6.as.err; t13 = h3_e; hero_failure_retain(&t7); h3_e = t7; hero_failure_release(&t13); t8 = h3_e.code;
 #line 165
     t14 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t14); goto bb1;
-#line 834 "main.c"
+#line 986 "main.c"
 }
 
-#line 6 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strconv/internal/shown.hero"
+#line 25 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+int64_t h_1corestrconvinternalfloat_EXPONENT_CAP(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1000000000000000); return t1;
+#line 992 "main.c"
+}
+
+#line 54 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+h_0opt_db92a83 h_1corestrconvinternalfloat_parsed(HeroStr h0_s) { h_1corestrconvinternalfloat_Special h1_word; h_1corestrconvinternalfloat_Grammar h2_g = {0}; HERO_NODEBUG bool h3_b0, t5, t9, t22, t26, t27, t48; HERO_NODEBUG h_0opt_db92a83 h4_s0 = {0}, h8_ret0 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t11, t17, t33, t35, t36, t38, t46, t51, t53, t54, t59, t60, t61, t62, t65, t68, t69, t70; HERO_NODEBUG double h5_r0, t10, t39, t40, t47, t49, t50, t52; double h6_x; double h7_magnitude; HERO_NODEBUG h_1corestrconvinternalfloat_Grammar h9_own9 = {0}, t19, t34, t55, t56; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, t1, t7, t12, t13, t14, t15, t16, t18, t24, t28, t29, t30, t31, t32, t41, t42, t43, t44, t45, t57, t58, t63, t64, t66, t67; HERO_NODEBUG h_1corestrconvinternalfloat_Special t2; HERO_NODEBUG int64_t t3, t4, t6, t8, t20, t21, t23, t25, t37; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = h_1corestrconvinternalfloat_special(t1); h1_word = t2;
+#line 57
+    t3 = h1_word.f_length; t4 = INT64_C(0); t5 = t3 > t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 61
+    t18 = h0_s; t19 = h_1corestrconvinternalfloat_grammar(t18); t55 = h9_own9; h9_own9 = t19; h_1corestrconvinternalfloat_0Grammar_release(&t55); t56 = h2_g; h_1corestrconvinternalfloat_0Grammar_retain(&t19); h2_g = t19; h_1corestrconvinternalfloat_0Grammar_release(&t56);
+#line 63
+    t20 = h2_g.f_length; t21 = INT64_C(0); t22 = t20 == t21; h3_b0 = t22; if (t22) goto bb9; else goto bb8; bb2:
+#line 58
+    t6 = h1_word.f_length; t7 = h0_s; t8 = hero_str_len(t7); t9 = t6 == t8; if (t9) goto bb5; else goto bb6; bb3: goto bb1; bb4:
+#line 60
+    t12 = HERO_STR_LIT(hero_str_71877a9b); t13 = h0_s; t14 = h_1corestrconvinternalshown_quoted(t13); t57 = h10_own10; h10_own10 = t14; hero_str_decref(t57); t15 = HERO_STR_LIT(hero_str_2df6a0c8); t16 = hero_str_concat(t14, t15); t58 = h11_own11; h11_own11 = t16; hero_str_decref(t58); hero_str_incref(t12); hero_str_incref(t16); t17 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t16}}; t59 = h12_own12; h12_own12 = t17; h_0opt_db92a83_release(&t59); h8_ret0 = t17; goto bb18; bb5:
+#line 59
+    t10 = h1_word.f_value; t11 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t10}; t60 = h13_own13; h13_own13 = t11; h_0opt_db92a83_release(&t60); h8_ret0 = t11; goto bb18; bb6: goto bb4; bb7:
+#line 66
+    t34 = h2_g; t35 = h_1corestrconvinternalfloat_magnitude_of(t34); t61 = h14_own14; h14_own14 = t35; h_0opt_db92a83_release(&t61); t62 = h4_s0; h_0opt_db92a83_retain(&t35); h4_s0 = t35; h_0opt_db92a83_release(&t62); t36 = h4_s0; t37 = t36.tag; switch (t37) { case 0: goto bb13; case 1: goto bb14; default: hero_unreachable(); } bb8:
+#line 63
+    t23 = h2_g.f_length; t24 = h0_s; t25 = hero_str_len(t24); t26 = t23 != t25; h3_b0 = t26; goto bb9; bb9: t27 = h3_b0; if (t27) goto bb10; else goto bb11; bb10:
+    t28 = HERO_STR_LIT(hero_str_71877a9b); t29 = h0_s; t30 = h_1corestrconvinternalshown_quoted(t29); t63 = h15_own15; h15_own15 = t30; hero_str_decref(t63); t31 = HERO_STR_LIT(hero_str_2df6a0c8); t32 = hero_str_concat(t30, t31); t64 = h16_own16; h16_own16 = t32; hero_str_decref(t64); hero_str_incref(t28); hero_str_incref(t32); t33 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t28, .msg = t32}}; t65 = h17_own17; h17_own17 = t33; h_0opt_db92a83_release(&t65); h8_ret0 = t33; goto bb18; bb11: goto bb7; bb12:
+#line 66
+    t47 = h5_r0; h7_magnitude = t47;
+#line 73
+    t48 = h2_g.f_negative; if (t48) goto bb16; else goto bb17; bb13:
+#line 67
+    t38 = h4_s0; t39 = t38.as.ok; h6_x = t39; t40 = h6_x;
+#line 66
+    h5_r0 = t40; goto bb12; bb14:
+#line 69
+    t41 = HERO_STR_LIT(hero_str_2633b9f3);
+    t42 = h0_s; t43 = h_1corestrconvinternalshown_quoted(t42); t66 = h18_own18; h18_own18 = t43; hero_str_decref(t66); t44 = HERO_STR_LIT(hero_str_24a05cd4); t45 = hero_str_concat(t43, t44); t67 = h19_own19; h19_own19 = t45; hero_str_decref(t67);
+#line 68
+    hero_str_incref(t41); hero_str_incref(t45); t46 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t41, .msg = t45}}; t68 = h20_own20; h20_own20 = t46; h_0opt_db92a83_release(&t68); h8_ret0 = t46; goto bb18; bb15:
+#line 75
+    t52 = h7_magnitude; t53 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t52}; t69 = h21_own21; h21_own21 = t53; h_0opt_db92a83_release(&t69); h8_ret0 = t53; goto bb18; bb16:
+#line 74
+    t49 = h7_magnitude; t50 = -t49; t51 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t50}; t70 = h22_own22; h22_own22 = t51; h_0opt_db92a83_release(&t70); h8_ret0 = t51; goto bb18; bb17: goto bb15; bb18:
+#line 1032 "main.c"
+    t54 = h8_ret0;
+    h_0opt_db92a83_retain(&t54);
+    h_1corestrconvinternalfloat_0Grammar_release(hero_slot_escape(&h2_g));
+    h_0opt_db92a83_release(hero_slot_escape(&h4_s0));
+    h_1corestrconvinternalfloat_0Grammar_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    h_0opt_db92a83_release(hero_slot_escape(&h13_own13));
+    h_0opt_db92a83_release(hero_slot_escape(&h14_own14));
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    h_0opt_db92a83_release(hero_slot_escape(&h17_own17));
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    h_0opt_db92a83_release(hero_slot_escape(&h20_own20));
+    h_0opt_db92a83_release(hero_slot_escape(&h21_own21));
+    h_0opt_db92a83_release(hero_slot_escape(&h22_own22));
+    return t54;
+}
+
+#line 78 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+h_0opt_db92a83 h_1corestrconvinternalfloat_magnitude_of(h_1corestrconvinternalfloat_Grammar h0_g) { HERO_NODEBUG h_0opt_db92a83 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t5, t9, t10, t11, t12; HERO_NODEBUG bool t1, t4; HERO_NODEBUG uint64_t t2; HERO_NODEBUG int64_t t3, t8; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_g.f_hex; if (t1) goto bb2; else goto bb3; bb1:
+#line 81
+    t6 = h0_g.f_whole; t7 = h0_g.f_fraction; t8 = h0_g.f_exponent; t9 = h_1corestrconvinternalnearest_value_of(t6, t7, t8); t11 = h2_own2; h2_own2 = t9; h_0opt_db92a83_release(&t11); h1_ret0 = t9; goto bb4; bb2:
+#line 80
+    t2 = h0_g.f_mantissa; t3 = h0_g.f_power; t4 = h0_g.f_dropped; t5 = h_1corestrconvinternalfloat_hexadecimal(t2, t3, t4); t12 = h3_own3; h3_own3 = t5; h_0opt_db92a83_release(&t12); h1_ret0 = t5; goto bb4; bb3: goto bb1; bb4:
+#line 1061 "main.c"
+    t10 = h1_ret0;
+    h_0opt_db92a83_retain(&t10);
+    h_0opt_db92a83_release(hero_slot_escape(&h2_own2));
+    h_0opt_db92a83_release(hero_slot_escape(&h3_own3));
+    return t10;
+}
+
+#line 87 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+h_1corestrconvinternalfloat_Special h_1corestrconvinternalfloat_special(HeroStr h0_s) { h_1corestrconvinternalfloat_Special h1_none; uint8_t h2_first; HERO_NODEBUG bool h3_b0, h5_b1, h8_b2, h9_b3, h11_b4, t7, t14, t17, t18, t19, t23, t24, t26, t34, t37, t38, t42, t45, t46, t53, t68, t74, t75; bool h4_signed; int64_t h6_at; int64_t h7_n; double h10_infinity; HERO_NODEBUG h_1corestrconvinternalfloat_Special h12_ret0, t3, t8, t47, t59, t64, t80, t81, t82; HERO_NODEBUG int64_t t1, t5, t6, t10, t25, t27, t29, t31, t32, t33, t35, t36, t39, t40, t41, t43, t44, t54, t55, t56, t60, t61, t62, t70, t72, t73, t76; HERO_NODEBUG double t2, t48, t49, t50, t57, t58, t63, t77, t78, t79; HERO_NODEBUG HeroStr t4, t9, t28, t30, t69, t71; HERO_NODEBUG uint8_t t11, t12, t13, t15, t16, t20, t21, t22, t51, t52, t65, t66, t67; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = 0x0p+0; t3 = (h_1corestrconvinternalfloat_Special){.f_length = t1, .f_value = t2}; h1_none = t3;
+#line 90
+    t4 = h0_s; t5 = hero_str_len(t4); t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb2; else goto bb3; bb1:
+#line 92
+    t9 = h0_s; t10 = INT64_C(0); t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? hero_panic_byte_at(t9, t10, "<core>/strconv/internal/float.hero", "float.special", 92, 13) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]); h2_first = t11;
+    t12 = h2_first; t13 = UINT64_C(43); t14 = t12 == t13; h3_b0 = t14; if (t14) goto bb5; else goto bb4; bb2:
+#line 91
+    t8 = h1_none; h12_ret0 = t8; goto bb32; bb3: goto bb1; bb4:
+#line 93
+    t15 = h2_first; t16 = UINT64_C(45); t17 = t15 == t16; h3_b0 = t17; goto bb5; bb5: t18 = h3_b0; h4_signed = t18;
+#line 95
+    t19 = h4_signed; h5_b1 = t19; if (t19) goto bb8; else goto bb7; bb6:
+#line 113
+    t65 = h2_first; t66 = h_1corestrconvinternalfloat_lower(t65); t67 = UINT64_C(110); t68 = t66 == t67; h11_b4 = t68; if (t68) goto bb28; else goto bb29; bb7:
+#line 95
+    t20 = h2_first; t21 = h_1corestrconvinternalfloat_lower(t20); t22 = UINT64_C(105); t23 = t21 == t22; h5_b1 = t23; goto bb8; bb8: t24 = h5_b1; if (t24) goto bb9; else goto bb10; bb9:
+    t25 = INT64_C(0); h6_at = t25;
+#line 98
+    t26 = h4_signed; if (t26) goto bb12; else goto bb13; bb10: goto bb6; bb11:
+#line 100
+    t28 = h0_s; t29 = h6_at; t30 = HERO_STR_LIT(hero_str_181b9248); t31 = h_1corestrconvinternalfloat_same_letters(t28, t29, t30); h7_n = t31;
+#line 102
+    t32 = h7_n; t33 = INT64_C(3); t34 = t32 > t33; h8_b2 = t34; if (t34) goto bb15; else goto bb16; bb12:
+#line 99
+    t27 = INT64_C(1); h6_at = t27; goto bb11; bb13: goto bb11; bb14:
+#line 105
+    t40 = h7_n; t41 = INT64_C(3); t42 = t40 != t41; h9_b3 = t42; if (t42) goto bb20; else goto bb21; bb15:
+#line 102
+    t35 = h7_n; t36 = INT64_C(8); t37 = t35 < t36; h8_b2 = t37; goto bb16; bb16: t38 = h8_b2; if (t38) goto bb17; else goto bb18; bb17:
+    t39 = INT64_C(3); h7_n = t39; goto bb14; bb18: goto bb14; bb19:
+#line 107
+    t48 = 0x1p+0; t49 = 0x0p+0; t50 = t48 / t49; h10_infinity = t50;
+#line 109
+    t51 = h2_first; t52 = UINT64_C(45); t53 = t51 == t52; if (t53) goto bb25; else goto bb26; bb20:
+#line 105
+    t43 = h7_n; t44 = INT64_C(8); t45 = t43 != t44; h9_b3 = t45; goto bb21; bb21: t46 = h9_b3; if (t46) goto bb22; else goto bb23; bb22:
+    t47 = h1_none; h12_ret0 = t47; goto bb32; bb23: goto bb19; bb24:
+#line 111
+    t60 = h6_at; t61 = h7_n; if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.special", 111, 32); t63 = h10_infinity; t64 = (h_1corestrconvinternalfloat_Special){.f_length = t62, .f_value = t63}; h12_ret0 = t64; goto bb32; bb25:
+#line 110
+    t54 = h6_at; t55 = h7_n; if (__builtin_add_overflow(t54, t55, &t56)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.special", 110, 36); t57 = h10_infinity; t58 = -t57; t59 = (h_1corestrconvinternalfloat_Special){.f_length = t56, .f_value = t58}; h12_ret0 = t59; goto bb32; bb26: goto bb24; bb27:
+#line 115
+    t81 = h1_none; h12_ret0 = t81; goto bb32; bb28:
+#line 113
+    t69 = h0_s; t70 = INT64_C(0); t71 = HERO_STR_LIT(hero_str_1cffef); t72 = h_1corestrconvinternalfloat_same_letters(t69, t70, t71); t73 = INT64_C(3); t74 = t72 == t73; h11_b4 = t74; goto bb29; bb29: t75 = h11_b4; if (t75) goto bb30; else goto bb31; bb30:
+    t76 = INT64_C(3); t77 = 0x0p+0; t78 = 0x0p+0; t79 = t77 / t78; t80 = (h_1corestrconvinternalfloat_Special){.f_length = t76, .f_value = t79}; h12_ret0 = t80; goto bb32; bb31: goto bb27; bb32:
+#line 1117 "main.c"
+    t82 = h12_ret0;
+    return t82;
+}
+
+#line 118 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+int64_t h_1corestrconvinternalfloat_same_letters(HeroStr h0_s, int64_t h1_from, HeroStr h2_word) { int64_t h3_n; HERO_NODEBUG bool h4_b0, h5_b1, t7, t11, t12, t22, t23; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t10, t14, t15, t16, t20, t24, t25, t26, t27; HERO_NODEBUG HeroStr t5, t9, t13, t19; HERO_NODEBUG uint8_t t17, t18, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h3_n = t1; goto bb1; bb1:
+#line 121
+    t2 = h1_from; t3 = h3_n; if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.same_letters", 121, 11); t5 = h0_s; t6 = hero_str_len(t5); t7 = t4 < t6; h5_b1 = t7; if (t7) goto bb4; else goto bb5; bb2:
+    t24 = h3_n; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.same_letters", 122, 13); h3_n = t26; goto bb1; bb3:
+#line 124
+    t27 = h3_n; return t27; bb4:
+#line 121
+    t8 = h3_n; t9 = h2_word; t10 = hero_str_len(t9); t11 = t8 < t10; h5_b1 = t11; goto bb5; bb5: t12 = h5_b1; h4_b0 = t12; if (t12) goto bb6; else goto bb7; bb6: t13 = h0_s; t14 = h1_from; t15 = h3_n; if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.same_letters", 121, 59); t17 = ((void)((t13.ptr == NULL || t16 < 0 || t16 >= t13.len) ? hero_panic_byte_at(t13, t16, "<core>/strconv/internal/float.hero", "float.same_letters", 121, 57) : (void)0), (int64_t)(unsigned char)t13.ptr[t16]); t18 = h_1corestrconvinternalfloat_lower(t17); t19 = h2_word; t20 = h3_n; t21 = ((void)((t19.ptr == NULL || t20 < 0 || t20 >= t19.len) ? hero_panic_byte_at(t19, t20, "<core>/strconv/internal/float.hero", "float.same_letters", 121, 73) : (void)0), (int64_t)(unsigned char)t19.ptr[t20]); t22 = t18 == t21; h4_b0 = t22; goto bb7; bb7: t23 = h4_b0; if (t23) goto bb2; else goto bb3;
+#line 1132 "main.c"
+}
+
+#line 127 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+uint8_t h_1corestrconvinternalfloat_lower(uint8_t h0_b) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t h2_ret0, t1, t2, t4, t5, t8, t9, t10, t11, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; t2 = UINT64_C(65); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb2; else goto bb3; bb1:
+#line 130
+    t11 = h0_b; h2_ret0 = t11; goto bb6; bb2:
+#line 128
+    t4 = h0_b; t5 = UINT64_C(90); t6 = t4 <= t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = h0_b; t9 = UINT64_C(32); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.lower", 129, 16); h2_ret0 = t10; goto bb6; bb5: goto bb1; bb6:
+#line 1143 "main.c"
+    t12 = h2_ret0;
+    return t12;
+}
+
+#line 133 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+bool h_1corestrconvinternalfloat_digit(uint8_t h0_b) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_b; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
+#line 1151 "main.c"
+}
+
+#line 137 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+uint64_t h_1corestrconvinternalfloat_hex_value(uint8_t h0_b) { HERO_NODEBUG h_0opt_fbbb698 h1_f0 = {0}, h4_f1 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t7, t11, t13, t27, t28, t32, t34, t40, t41, t42, t43; uint8_t h2_low; HERO_NODEBUG bool h3_b0, t2, t10, t19, t22, t23, t31; HERO_NODEBUG uint64_t h5_ret0, t14, t35, t36, t37, t38, t39; HERO_NODEBUG uint8_t t1, t3, t4, t5, t15, t16, t17, t18, t20, t21, t24, t25, t26; HERO_NODEBUG int64_t t8, t9, t29, t30; HERO_NODEBUG HeroFailure t12, t33; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; t2 = h_1corestrconvinternalfloat_digit(t1); if (t2) goto bb2; else goto bb3; bb1:
+#line 140
+    t15 = h0_b; t16 = h_1corestrconvinternalfloat_lower(t15); h2_low = t16;
+#line 142
+    t17 = h2_low; t18 = UINT64_C(97); t19 = t17 >= t18; h3_b0 = t19; if (t19) goto bb7; else goto bb8; bb2:
+#line 139
+    t3 = h0_b; t4 = UINT64_C(48); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hex_value", 139, 23); t6 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t5}; t40 = h6_own6; h6_own6 = t6; h_0opt_fbbb698_release(&t40); t41 = h1_f0; h_0opt_fbbb698_retain(&t6); h1_f0 = t6; h_0opt_fbbb698_release(&t41); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3: goto bb1; bb4: t13 = h1_f0; t14 = t13.as.ok; h5_ret0 = t14; goto bb13; bb5: t11 = h1_f0; t12 = t11.as.err;
+#line 1163 "main.c"
+    hero_panic_must_at(t12, "<core>/strconv/internal/float.hero", "float.hex_value", 139, 16);
+    hero_unreachable();
+bb6:
+#line 144 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+    t38 = UINT64_C(16); h5_ret0 = t38; goto bb13; bb7:
+#line 142
+    t20 = h2_low; t21 = UINT64_C(102); t22 = t20 <= t21; h3_b0 = t22; goto bb8; bb8: t23 = h3_b0; if (t23) goto bb9; else goto bb10; bb9:
+    t24 = h2_low; t25 = UINT64_C(97); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hex_value", 143, 23); t27 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t26}; t42 = h7_own7; h7_own7 = t27; h_0opt_fbbb698_release(&t42); t43 = h4_f1; h_0opt_fbbb698_retain(&t27); h4_f1 = t27; h_0opt_fbbb698_release(&t43); t28 = h4_f1; t29 = t28.tag; t30 = INT64_C(0); t31 = t29 == t30; if (t31) goto bb11; else goto bb12; bb10: goto bb6; bb11: t34 = h4_f1; t35 = t34.as.ok; t36 = UINT64_C(10); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hex_value", 143, 16); h5_ret0 = t37; goto bb13; bb12: t32 = h4_f1; t33 = t32.as.err;
+#line 1172 "main.c"
+    hero_panic_must_at(t33, "<core>/strconv/internal/float.hero", "float.hex_value", 143, 16);
+    hero_unreachable();
+bb13:
+    t39 = h5_ret0;
+    h_0opt_fbbb698_release(hero_slot_escape(&h1_f0));
+    h_0opt_fbbb698_release(hero_slot_escape(&h4_f1));
+    h_0opt_fbbb698_release(hero_slot_escape(&h6_own6));
+    h_0opt_fbbb698_release(hero_slot_escape(&h7_own7));
+    return t39;
+}
+
+#line 152 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+h_1corestrconvinternalfloat_Grammar h_1corestrconvinternalfloat_grammar(HeroStr h0_s) { h_1corestrconvinternalfloat_Grammar h1_g = {0}; int64_t h2_at; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h16_b4, h18_b5, h19_b6, h20_b7, h21_b8, h25_b9, h26_b10, h27_b11, h29_b12, h30_b13, h31_b14, h33_b15, h34_b16, t2, t3, t8, t15, t20, t25, t26, t27, t32, t39, t44, t45, t53, t54, t55, t59, t60, t61, t67, t68, t72, t73, t79, t80, t86, t87, t88, t89, t95, t96, t100, t101, t102, t103, t104, t107, t110, t111, t120, t132, t133, t134, t154, t155, t156, t158, t159, t160, t161, t163, t171, t177, t178, t185, t190, t195, t196, t197, t207, t211, t215, t216, t217, t222, t226, t231, t232, t233, t238, t239, t242, t255, t264, t268, t270, t275, t276, t277, t282, t285, t286; bool h7_underscores; bool h8_point; bool h9_digits; HeroStr h10_whole = {0}; HeroStr h11_fraction = {0}; int64_t h12_count; int64_t h13_kept; int64_t h14_place; bool h15_reading; uint8_t h17_c; HERO_NODEBUG uint8_t h22_r0, t18, t19, t23, t24, t30, t31, t42, t43, t50, t51, t52, t76, t77, t78, t84, t85, t94, t97, t105, t106, t124, t130, t131, t164, t165, t166, t174, t175, t176, t188, t189, t193, t194, t205, t206, t214, t225, t229, t230, t236, t237, t248, t249, t250; uint8_t h23_letter; int64_t h24_exponent; bool h28_below; HERO_NODEBUG h_0opt_e201354 h32_f0 = {0}, h41_own41 = {0}, t251, t252, t256, t258, t309, t310; HERO_NODEBUG h_1corestrconvinternalfloat_Grammar h35_ret0 = {0}, h36_own36 = {0}, t10, t157, t218, t269, t278, t297, t298, t299, t300; HERO_NODEBUG HeroStr h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h42_own42 = {0}, t4, t5, t12, t16, t21, t28, t37, t40, t46, t62, t63, t70, t74, t135, t136, t141, t142, t143, t144, t149, t150, t169, t172, t183, t186, t191, t201, t209, t212, t220, t223, t227, t234, t246, t271, t274, t279, t280, t301, t302, t303, t304, t305, t306, t307, t308, t311, t312, t313; HERO_NODEBUG int64_t t1, t6, t9, t11, t13, t14, t17, t22, t29, t33, t34, t35, t36, t38, t41, t47, t48, t49, t56, t57, t58, t64, t65, t66, t69, t71, t75, t81, t82, t83, t90, t91, t92, t93, t108, t109, t112, t113, t114, t115, t116, t117, t118, t119, t127, t128, t129, t137, t138, t139, t140, t145, t146, t147, t148, t151, t152, t153, t162, t167, t168, t170, t173, t179, t180, t181, t182, t184, t187, t192, t198, t199, t200, t202, t203, t204, t208, t210, t213, t219, t221, t224, t228, t235, t240, t241, t243, t244, t245, t247, t253, t254, t259, t260, t261, t262, t263, t265, t266, t267, t272, t273, t281, t287, t288, t289, t290, t291, t292, t293, t294, t295, t296; HERO_NODEBUG uint64_t t7, t98, t99, t121, t122, t123, t125, t126, t283, t284; HERO_NODEBUG HeroFailure t257; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 154
+    t1 = INT64_C(0);
+    t2 = false;
+    t3 = false;
+    t4 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_0);
+    t6 = INT64_C(0);
+    t7 = UINT64_C(0);
+    t8 = false;
+    t9 = INT64_C(0);
+#line 153
+    hero_str_incref(t4); hero_str_incref(t5); t10 = (h_1corestrconvinternalfloat_Grammar){.f_length = t1, .f_negative = t2, .f_hex = t3, .f_whole = t4, .f_fraction = t5, .f_exponent = t6, .f_mantissa = t7, .f_dropped = t8, .f_power = t9}; t299 = h36_own36; h36_own36 = t10; h_1corestrconvinternalfloat_0Grammar_release(&t299); t300 = h1_g; h_1corestrconvinternalfloat_0Grammar_retain(&t10); h1_g = t10; h_1corestrconvinternalfloat_0Grammar_release(&t300);
+#line 164
+    t11 = INT64_C(0); h2_at = t11;
+#line 166
+    t12 = h0_s; t13 = hero_str_len(t12); t14 = INT64_C(0); t15 = t13 > t14; h3_b0 = t15; if (t15) goto bb2; else goto bb3; bb1:
+#line 170
+    t34 = h2_at; t35 = INT64_C(2); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 170, 8); t37 = h0_s; t38 = hero_str_len(t37); t39 = t36 < t38; h6_b3 = t39; if (t39) goto bb9; else goto bb10; bb2:
+#line 166
+    t16 = h0_s; t17 = INT64_C(0); t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? hero_panic_byte_at(t16, t17, "<core>/strconv/internal/float.hero", "float.grammar", 166, 24) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]); t19 = UINT64_C(43); t20 = t18 == t19; h4_b1 = t20; if (t20) goto bb5; else goto bb4; bb3: t27 = h3_b0; if (t27) goto bb6; else goto bb7; bb4: t21 = h0_s; t22 = INT64_C(0); t23 = ((void)((t21.ptr == NULL || t22 < 0 || t22 >= t21.len) ? hero_panic_byte_at(t21, t22, "<core>/strconv/internal/float.hero", "float.grammar", 166, 39) : (void)0), (int64_t)(unsigned char)t21.ptr[t22]); t24 = UINT64_C(45); t25 = t23 == t24; h4_b1 = t25; goto bb5; bb5: t26 = h4_b1; h3_b0 = t26; goto bb3; bb6:
+    t28 = h0_s; t29 = INT64_C(0); t30 = ((void)((t28.ptr == NULL || t29 < 0 || t29 >= t28.len) ? hero_panic_byte_at(t28, t29, "<core>/strconv/internal/float.hero", "float.grammar", 167, 22) : (void)0), (int64_t)(unsigned char)t28.ptr[t29]); t31 = UINT64_C(45); t32 = t30 == t31; h1_g.f_negative = t32;
+    t33 = INT64_C(1); h2_at = t33; goto bb1; bb7: goto bb1; bb8:
+#line 173
+    t59 = false; h7_underscores = t59;
+    t60 = false; h8_point = t60;
+    t61 = false; h9_digits = t61;
+    t62 = HERO_STR_LIT(hero_str_0); t301 = h10_whole; hero_str_incref(t62); h10_whole = t62; hero_str_decref(t301);
+    t63 = HERO_STR_LIT(hero_str_0); t302 = h11_fraction; hero_str_incref(t63); h11_fraction = t63; hero_str_decref(t302);
+#line 182
+    t64 = INT64_C(0); h12_count = t64;
+    t65 = INT64_C(0); h13_kept = t65;
+    t66 = INT64_C(0); h14_place = t66;
+    t67 = true; h15_reading = t67; goto bb15; bb9:
+#line 170
+    t40 = h0_s; t41 = h2_at; t42 = ((void)((t40.ptr == NULL || t41 < 0 || t41 >= t40.len) ? hero_panic_byte_at(t40, t41, "<core>/strconv/internal/float.hero", "float.grammar", 170, 28) : (void)0), (int64_t)(unsigned char)t40.ptr[t41]); t43 = UINT64_C(48); t44 = t42 == t43; h6_b3 = t44; goto bb10; bb10: t45 = h6_b3; h5_b2 = t45; if (t45) goto bb11; else goto bb12; bb11: t46 = h0_s; t47 = h2_at; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 170, 52); t50 = ((void)((t46.ptr == NULL || t49 < 0 || t49 >= t46.len) ? hero_panic_byte_at(t46, t49, "<core>/strconv/internal/float.hero", "float.grammar", 170, 50) : (void)0), (int64_t)(unsigned char)t46.ptr[t49]); t51 = h_1corestrconvinternalfloat_lower(t50); t52 = UINT64_C(120); t53 = t51 == t52; h5_b2 = t53; goto bb12; bb12: t54 = h5_b2; if (t54) goto bb13; else goto bb14; bb13:
+    t55 = true; h1_g.f_hex = t55;
+    t56 = h2_at; t57 = INT64_C(2); if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 172, 14); h2_at = t58; goto bb8; bb14: goto bb8; bb15:
+#line 187
+    t68 = h15_reading; h16_b4 = t68; if (t68) goto bb18; else goto bb19; bb16:
+    t74 = h0_s; t75 = h2_at; t76 = ((void)((t74.ptr == NULL || t75 < 0 || t75 >= t74.len) ? hero_panic_byte_at(t74, t75, "<core>/strconv/internal/float.hero", "float.grammar", 188, 13) : (void)0), (int64_t)(unsigned char)t74.ptr[t75]); h17_c = t76;
+#line 190
+    t77 = h17_c; t78 = UINT64_C(95); t79 = t77 == t78; if (t79) goto bb21; else goto bb22; bb17:
+#line 222
+    t155 = h9_digits; t156 = !t155; if (t156) goto bb50; else goto bb51; bb18:
+#line 187
+    t69 = h2_at; t70 = h0_s; t71 = hero_str_len(t70); t72 = t69 < t71; h16_b4 = t72; goto bb19; bb19: t73 = h16_b4; if (t73) goto bb16; else goto bb17; bb20: goto bb15; bb21:
+#line 191
+    t80 = true; h7_underscores = t80;
+    t81 = h2_at; t82 = INT64_C(1); if (__builtin_add_overflow(t81, t82, &t83)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 192, 18); h2_at = t83; goto bb20; bb22:
+    t84 = h17_c; t85 = UINT64_C(46); t86 = t84 == t85; if (t86) goto bb23; else goto bb24; bb23:
+    t87 = h8_point; if (t87) goto bb26; else goto bb27; bb24:
+#line 200
+    t94 = h17_c; t95 = h_1corestrconvinternalfloat_digit(t94); h18_b5 = t95; if (t95) goto bb29; else goto bb28; bb25: goto bb20; bb26:
+#line 195
+    t88 = false; h15_reading = t88; goto bb25; bb27:
+#line 197
+    t89 = true; h8_point = t89;
+    t90 = h12_count; h14_place = t90;
+    t91 = h2_at; t92 = INT64_C(1); if (__builtin_add_overflow(t91, t92, &t93)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 199, 22); h2_at = t93; goto bb25; bb28:
+    t96 = h1_g.f_hex; h19_b6 = t96; if (t96) goto bb30; else goto bb31; bb29: t102 = h18_b5; if (t102) goto bb32; else goto bb33; bb30: t97 = h17_c; t98 = h_1corestrconvinternalfloat_hex_value(t97); t99 = UINT64_C(16); t100 = t98 < t99; h19_b6 = t100; goto bb31; bb31: t101 = h19_b6; h18_b5 = t101; goto bb29; bb32:
+    t103 = true; h9_digits = t103;
+#line 203
+    t104 = h1_g.f_hex; if (t104) goto bb35; else goto bb36; bb33:
+#line 220
+    t154 = false; h15_reading = t154; goto bb20; bb34:
+#line 218
+    t151 = h2_at; t152 = INT64_C(1); if (__builtin_add_overflow(t151, t152, &t153)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 218, 18); h2_at = t153; goto bb20; bb35:
+#line 204
+    t105 = h17_c; t106 = UINT64_C(48); t107 = t105 == t106; h20_b7 = t107; if (t107) goto bb38; else goto bb39; bb36:
+#line 214
+    t134 = h8_point; if (t134) goto bb47; else goto bb48; bb37: goto bb34; bb38:
+#line 204
+    t108 = h12_count; t109 = INT64_C(0); t110 = t108 == t109; h20_b7 = t110; goto bb39; bb39: t111 = h20_b7; if (t111) goto bb40; else goto bb41; bb40:
+    t112 = h14_place; t113 = INT64_C(1); if (__builtin_sub_overflow(t112, t113, &t114)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 205, 29); h14_place = t114; goto bb37; bb41:
+#line 207
+    t115 = h12_count; t116 = INT64_C(1); if (__builtin_add_overflow(t115, t116, &t117)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 207, 29); h12_count = t117;
+#line 209
+    t118 = h13_kept; t119 = INT64_C(16); t120 = t118 < t119; if (t120) goto bb43; else goto bb44; bb42: goto bb37; bb43:
+    t121 = h1_g.f_mantissa; t122 = UINT64_C(16); if (__builtin_mul_overflow(t121, t122, &t123)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 210, 38); t124 = h17_c; t125 = h_1corestrconvinternalfloat_hex_value(t124); if (__builtin_add_overflow(t123, t125, &t126)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 210, 38); h1_g.f_mantissa = t126;
+    t127 = h13_kept; t128 = INT64_C(1); if (__builtin_add_overflow(t127, t128, &t129)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 211, 32); h13_kept = t129; goto bb42; bb44:
+    t130 = h17_c; t131 = UINT64_C(48); t132 = t130 != t131; if (t132) goto bb45; else goto bb46; bb45:
+    t133 = true; h1_g.f_dropped = t133; goto bb42; bb46: goto bb42; bb47:
+#line 215
+    t135 = h11_fraction; t136 = h0_s; t137 = h2_at; t138 = h2_at; t139 = INT64_C(1); if (__builtin_add_overflow(t138, t139, &t140)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 215, 61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/float.hero", "float.grammar", 215, 39}; t141 = hero_str_slice_at(t136, t137, t140, &hero_here); } t303 = h37_own37; h37_own37 = t141; hero_str_decref(t303); t142 = hero_str_concat(t135, t141); t304 = h38_own38; h38_own38 = t142; hero_str_decref(t304); t305 = h11_fraction; hero_str_incref(t142); h11_fraction = t142; hero_str_decref(t305); goto bb34; bb48:
+#line 217
+    t143 = h10_whole; t144 = h0_s; t145 = h2_at; t146 = h2_at; t147 = INT64_C(1); if (__builtin_add_overflow(t146, t147, &t148)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 217, 55); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/float.hero", "float.grammar", 217, 33}; t149 = hero_str_slice_at(t144, t145, t148, &hero_here); } t306 = h39_own39; h39_own39 = t149; hero_str_decref(t306); t150 = hero_str_concat(t143, t149); t307 = h40_own40; h40_own40 = t150; hero_str_decref(t307); t308 = h10_whole; hero_str_incref(t150); h10_whole = t150; hero_str_decref(t308); goto bb34; bb49:
+#line 225
+    t158 = h1_g.f_hex; h21_b8 = t158; if (t158) goto bb53; else goto bb54; bb50:
+#line 223
+    t157 = h1_g; h35_ret0 = t157; goto bb106; bb51: goto bb49; bb52:
+#line 228
+    t163 = h1_g.f_hex; if (t163) goto bb58; else goto bb59; bb53:
+#line 225
+    t159 = h8_point; t160 = !t159; h21_b8 = t160; goto bb54; bb54: t161 = h21_b8; if (t161) goto bb55; else goto bb56; bb55:
+    t162 = h12_count; h14_place = t162; goto bb52; bb56: goto bb52; bb57:
+#line 228
+    t166 = h22_r0; h23_letter = t166;
+#line 232
+    t167 = INT64_C(0); h24_exponent = t167;
+#line 234
+    t168 = h2_at; t169 = h0_s; t170 = hero_str_len(t169); t171 = t168 < t170; h25_b9 = t171; if (t171) goto bb61; else goto bb62; bb58:
+#line 229
+    t164 = UINT64_C(112);
+#line 228
+    h22_r0 = t164; goto bb57; bb59:
+#line 231
+    t165 = UINT64_C(101);
+#line 228
+    h22_r0 = t165; goto bb57; bb60:
+#line 256
+    t270 = h7_underscores; h33_b15 = t270; if (t270) goto bb97; else goto bb98; bb61:
+#line 234
+    t172 = h0_s; t173 = h2_at; t174 = ((void)((t172.ptr == NULL || t173 < 0 || t173 >= t172.len) ? hero_panic_byte_at(t172, t173, "<core>/strconv/internal/float.hero", "float.grammar", 234, 30) : (void)0), (int64_t)(unsigned char)t172.ptr[t173]); t175 = h_1corestrconvinternalfloat_lower(t174); t176 = h23_letter; t177 = t175 == t176; h25_b9 = t177; goto bb62; bb62: t178 = h25_b9; if (t178) goto bb63; else goto bb64; bb63:
+    t179 = h2_at; t180 = INT64_C(1); if (__builtin_add_overflow(t179, t180, &t181)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 235, 14); h2_at = t181;
+#line 237
+    t182 = h2_at; t183 = h0_s; t184 = hero_str_len(t183); t185 = t182 < t184; h26_b10 = t185; if (t185) goto bb66; else goto bb67; bb64:
+#line 253
+    t268 = h1_g.f_hex; if (t268) goto bb94; else goto bb95; bb65:
+#line 239
+    t201 = h0_s; t202 = h2_at; t203 = INT64_C(1); if (__builtin_sub_overflow(t202, t203, &t204)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 239, 19); t205 = ((void)((t201.ptr == NULL || t204 < 0 || t204 >= t201.len) ? hero_panic_byte_at(t201, t204, "<core>/strconv/internal/float.hero", "float.grammar", 239, 17) : (void)0), (int64_t)(unsigned char)t201.ptr[t204]); t206 = UINT64_C(45); t207 = t205 == t206; h28_below = t207;
+#line 241
+    t208 = h2_at; t209 = h0_s; t210 = hero_str_len(t209); t211 = t208 >= t210; h29_b12 = t211; if (t211) goto bb74; else goto bb73; bb66:
+#line 237
+    t186 = h0_s; t187 = h2_at; t188 = ((void)((t186.ptr == NULL || t187 < 0 || t187 >= t186.len) ? hero_panic_byte_at(t186, t187, "<core>/strconv/internal/float.hero", "float.grammar", 237, 29) : (void)0), (int64_t)(unsigned char)t186.ptr[t187]); t189 = UINT64_C(43); t190 = t188 == t189; h27_b11 = t190; if (t190) goto bb69; else goto bb68; bb67: t197 = h26_b10; if (t197) goto bb70; else goto bb71; bb68: t191 = h0_s; t192 = h2_at; t193 = ((void)((t191.ptr == NULL || t192 < 0 || t192 >= t191.len) ? hero_panic_byte_at(t191, t192, "<core>/strconv/internal/float.hero", "float.grammar", 237, 45) : (void)0), (int64_t)(unsigned char)t191.ptr[t192]); t194 = UINT64_C(45); t195 = t193 == t194; h27_b11 = t195; goto bb69; bb69: t196 = h27_b11; h26_b10 = t196; goto bb67; bb70:
+    t198 = h2_at; t199 = INT64_C(1); if (__builtin_add_overflow(t198, t199, &t200)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 238, 18); h2_at = t200; goto bb65; bb71: goto bb65; bb72: goto bb77; bb73:
+#line 241
+    t212 = h0_s; t213 = h2_at; t214 = ((void)((t212.ptr == NULL || t213 < 0 || t213 >= t212.len) ? hero_panic_byte_at(t212, t213, "<core>/strconv/internal/float.hero", "float.grammar", 241, 36) : (void)0), (int64_t)(unsigned char)t212.ptr[t213]); t215 = h_1corestrconvinternalfloat_digit(t214); t216 = !t215; h29_b12 = t216; goto bb74; bb74: t217 = h29_b12; if (t217) goto bb75; else goto bb76; bb75:
+    t218 = h1_g; h35_ret0 = t218; goto bb106; bb76: goto bb72; bb77:
+#line 244
+    t219 = h2_at; t220 = h0_s; t221 = hero_str_len(t220); t222 = t219 < t221; h30_b13 = t222; if (t222) goto bb80; else goto bb81; bb78:
+    t234 = h0_s; t235 = h2_at; t236 = ((void)((t234.ptr == NULL || t235 < 0 || t235 >= t234.len) ? hero_panic_byte_at(t234, t235, "<core>/strconv/internal/float.hero", "float.grammar", 245, 16) : (void)0), (int64_t)(unsigned char)t234.ptr[t235]); t237 = UINT64_C(95); t238 = t236 == t237; if (t238) goto bb85; else goto bb86; bb79:
+#line 251
+    t264 = h28_below; if (t264) goto bb92; else goto bb93; bb80:
+#line 244
+    t223 = h0_s; t224 = h2_at; t225 = ((void)((t223.ptr == NULL || t224 < 0 || t224 >= t223.len) ? hero_panic_byte_at(t223, t224, "<core>/strconv/internal/float.hero", "float.grammar", 244, 38) : (void)0), (int64_t)(unsigned char)t223.ptr[t224]); t226 = h_1corestrconvinternalfloat_digit(t225); h31_b14 = t226; if (t226) goto bb83; else goto bb82; bb81: t233 = h30_b13; if (t233) goto bb78; else goto bb79; bb82: t227 = h0_s; t228 = h2_at; t229 = ((void)((t227.ptr == NULL || t228 < 0 || t228 >= t227.len) ? hero_panic_byte_at(t227, t228, "<core>/strconv/internal/float.hero", "float.grammar", 244, 48) : (void)0), (int64_t)(unsigned char)t227.ptr[t228]); t230 = UINT64_C(95); t231 = t229 == t230; h31_b14 = t231; goto bb83; bb83: t232 = h31_b14; h30_b13 = t232; goto bb81; bb84:
+#line 249
+    t261 = h2_at; t262 = INT64_C(1); if (__builtin_add_overflow(t261, t262, &t263)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 249, 18); h2_at = t263; goto bb77; bb85:
+#line 246
+    t239 = true; h7_underscores = t239; goto bb84; bb86:
+    t240 = h24_exponent; t241 = h_1corestrconvinternalfloat_EXPONENT_CAP(); t242 = t240 < t241; if (t242) goto bb87; else goto bb88; bb87:
+    t243 = h24_exponent; t244 = INT64_C(10); if (__builtin_mul_overflow(t243, t244, &t245)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 248, 28); t246 = h0_s; t247 = h2_at; t248 = ((void)((t246.ptr == NULL || t247 < 0 || t247 >= t246.len) ? hero_panic_byte_at(t246, t247, "<core>/strconv/internal/float.hero", "float.grammar", 248, 51) : (void)0), (int64_t)(unsigned char)t246.ptr[t247]); t249 = UINT64_C(48); if (__builtin_sub_overflow(t248, t249, &t250)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 248, 51); t251 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t250}; t309 = h41_own41; h41_own41 = t251; h_0opt_e201354_release(&t309); t310 = h32_f0; h_0opt_e201354_retain(&t251); h32_f0 = t251; h_0opt_e201354_release(&t310); t252 = h32_f0; t253 = t252.tag; t254 = INT64_C(0); t255 = t253 == t254; if (t255) goto bb89; else goto bb90; bb88: goto bb84; bb89: t258 = h32_f0; t259 = t258.as.ok; if (__builtin_add_overflow(t245, t259, &t260)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 248, 28); h24_exponent = t260; goto bb84; bb90: t256 = h32_f0; t257 = t256.as.err;
+#line 1327 "main.c"
+    hero_panic_must_at(t257, "<core>/strconv/internal/float.hero", "float.grammar", 248, 44);
+    hero_unreachable();
+bb91:
+    goto bb60;
+bb92:
+#line 252 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+    t265 = INT64_C(0); t266 = h24_exponent; if (__builtin_sub_overflow(t265, t266, &t267)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 252, 24); h24_exponent = t267; goto bb91; bb93: goto bb91; bb94:
+#line 254
+    t269 = h1_g; h35_ret0 = t269; goto bb106; bb95: goto bb60; bb96:
+#line 258
+    t279 = h10_whole; t311 = h1_g.f_whole; hero_str_incref(t279); h1_g.f_whole = t279; hero_str_decref(t311);
+    t280 = h11_fraction; t312 = h1_g.f_fraction; hero_str_incref(t280); h1_g.f_fraction = t280; hero_str_decref(t312);
+    t281 = h24_exponent; h1_g.f_exponent = t281;
+#line 262
+    t282 = h1_g.f_hex; h34_b16 = t282; if (t282) goto bb102; else goto bb103; bb97:
+#line 256
+    t271 = h0_s; t272 = INT64_C(0); t273 = h2_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/float.hero", "float.grammar", 256, 43}; t274 = hero_str_slice_at(t271, t272, t273, &hero_here); } t313 = h42_own42; h42_own42 = t274; hero_str_decref(t313); t275 = h_1corestrconvinternalfloat_underscores_placed(t274); t276 = !t275; h33_b15 = t276; goto bb98; bb98: t277 = h33_b15; if (t277) goto bb99; else goto bb100; bb99:
+    t278 = h1_g; h35_ret0 = t278; goto bb106; bb100: goto bb96; bb101:
+#line 264
+    t296 = h2_at; h1_g.f_length = t296;
+    t297 = h1_g; h35_ret0 = t297; goto bb106; bb102:
+#line 262
+    t283 = h1_g.f_mantissa; t284 = UINT64_C(0); t285 = t283 != t284; h34_b16 = t285; goto bb103; bb103: t286 = h34_b16; if (t286) goto bb104; else goto bb105; bb104:
+    t287 = h14_place; t288 = INT64_C(4); if (__builtin_mul_overflow(t287, t288, &t289)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 19); t290 = h13_kept; t291 = INT64_C(4); if (__builtin_mul_overflow(t290, t291, &t292)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 31); if (__builtin_sub_overflow(t289, t292, &t293)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 19); t294 = h24_exponent; if (__builtin_add_overflow(t293, t294, &t295)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 19); h1_g.f_power = t295; goto bb101; bb105: goto bb101; bb106:
+#line 1352 "main.c"
+    t298 = h35_ret0;
+    h_1corestrconvinternalfloat_0Grammar_retain(&t298);
+    h_1corestrconvinternalfloat_0Grammar_release(hero_slot_escape(&h1_g));
+    hero_str_release_at(&h10_whole);
+    hero_str_release_at(&h11_fraction);
+    h_0opt_e201354_release(hero_slot_escape(&h32_f0));
+    h_1corestrconvinternalfloat_0Grammar_release(hero_slot_escape(&h36_own36));
+    hero_str_release_at(&h37_own37);
+    hero_str_release_at(&h38_own38);
+    hero_str_release_at(&h39_own39);
+    hero_str_release_at(&h40_own40);
+    h_0opt_e201354_release(hero_slot_escape(&h41_own41));
+    hero_str_release_at(&h42_own42);
+    return t298;
+}
+
+#line 269 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+bool h_1corestrconvinternalfloat_underscores_placed(HeroStr h0_s) { int64_t h1_at; HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, h5_b3, h9_b4, h10_b5, h11_ret0, t5, t10, t15, t16, t17, t24, t29, t30, t38, t39, t41, t49, t54, t55, t59, t60, t61, t65, t68, t69, t73, t74, t81, t82; bool h6_hex; uint8_t h7_saw; uint8_t h8_c; HERO_NODEBUG int64_t t1, t3, t4, t7, t12, t18, t19, t20, t21, t23, t26, t32, t33, t34, t42, t43, t44, t46, t48, t51, t76, t77, t78; HERO_NODEBUG HeroStr t2, t6, t11, t22, t25, t31, t47, t50; HERO_NODEBUG uint8_t t8, t9, t13, t14, t27, t28, t35, t36, t37, t40, t45, t52, t53, t56, t62, t63, t64, t66, t67, t70, t71, t72, t75, t79, t80; HERO_NODEBUG uint64_t t57, t58; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_at = t1;
+#line 272
+    t2 = h0_s; t3 = hero_str_len(t2); t4 = INT64_C(0); t5 = t3 > t4; h2_b0 = t5; if (t5) goto bb2; else goto bb3; bb1:
+#line 274
+    t19 = h1_at; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.underscores_placed", 274, 11); t22 = h0_s; t23 = hero_str_len(t22); t24 = t21 < t23; h5_b3 = t24; if (t24) goto bb8; else goto bb9; bb2:
+#line 272
+    t6 = h0_s; t7 = INT64_C(0); t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "<core>/strconv/internal/float.hero", "float.underscores_placed", 272, 24) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = UINT64_C(45); t10 = t8 == t9; h3_b1 = t10; if (t10) goto bb5; else goto bb4; bb3: t17 = h2_b0; if (t17) goto bb6; else goto bb7; bb4: t11 = h0_s; t12 = INT64_C(0); t13 = ((void)((t11.ptr == NULL || t12 < 0 || t12 >= t11.len) ? hero_panic_byte_at(t11, t12, "<core>/strconv/internal/float.hero", "float.underscores_placed", 272, 39) : (void)0), (int64_t)(unsigned char)t11.ptr[t12]); t14 = UINT64_C(43); t15 = t13 == t14; h3_b1 = t15; goto bb5; bb5: t16 = h3_b1; h2_b0 = t16; goto bb3; bb6:
+    t18 = INT64_C(1); h1_at = t18; goto bb1; bb7: goto bb1; bb8:
+    t25 = h0_s; t26 = h1_at; t27 = ((void)((t25.ptr == NULL || t26 < 0 || t26 >= t25.len) ? hero_panic_byte_at(t25, t26, "<core>/strconv/internal/float.hero", "float.underscores_placed", 274, 31) : (void)0), (int64_t)(unsigned char)t25.ptr[t26]); t28 = UINT64_C(48); t29 = t27 == t28; h5_b3 = t29; goto bb9; bb9: t30 = h5_b3; h4_b2 = t30; if (t30) goto bb10; else goto bb11; bb10: t31 = h0_s; t32 = h1_at; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.underscores_placed", 274, 55); t35 = ((void)((t31.ptr == NULL || t34 < 0 || t34 >= t31.len) ? hero_panic_byte_at(t31, t34, "<core>/strconv/internal/float.hero", "float.underscores_placed", 274, 53) : (void)0), (int64_t)(unsigned char)t31.ptr[t34]); t36 = h_1corestrconvinternalfloat_lower(t35); t37 = UINT64_C(120); t38 = t36 == t37; h4_b2 = t38; goto bb11; bb11: t39 = h4_b2; h6_hex = t39;
+#line 278
+    t40 = UINT64_C(94); h7_saw = t40;
+#line 280
+    t41 = h6_hex; if (t41) goto bb13; else goto bb14; bb12: goto bb15; bb13:
+    t42 = h1_at; t43 = INT64_C(2); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.underscores_placed", 281, 14); h1_at = t44;
+    t45 = UINT64_C(48); h7_saw = t45; goto bb12; bb14: goto bb12; bb15:
+#line 284
+    t46 = h1_at; t47 = h0_s; t48 = hero_str_len(t47); t49 = t46 < t48; if (t49) goto bb16; else goto bb17; bb16:
+    t50 = h0_s; t51 = h1_at; t52 = ((void)((t50.ptr == NULL || t51 < 0 || t51 >= t50.len) ? hero_panic_byte_at(t50, t51, "<core>/strconv/internal/float.hero", "float.underscores_placed", 285, 13) : (void)0), (int64_t)(unsigned char)t50.ptr[t51]); h8_c = t52;
+#line 287
+    t53 = h8_c; t54 = h_1corestrconvinternalfloat_digit(t53); h9_b4 = t54; if (t54) goto bb20; else goto bb19; bb17:
+#line 299
+    t79 = h7_saw; t80 = UINT64_C(95); t81 = t79 != t80; h11_ret0 = t81; goto bb32; bb18:
+#line 297
+    t76 = h1_at; t77 = INT64_C(1); if (__builtin_add_overflow(t76, t77, &t78)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.underscores_placed", 297, 14); h1_at = t78; goto bb15; bb19:
+#line 287
+    t55 = h6_hex; h10_b5 = t55; if (t55) goto bb21; else goto bb22; bb20: t61 = h9_b4; if (t61) goto bb23; else goto bb24; bb21: t56 = h8_c; t57 = h_1corestrconvinternalfloat_hex_value(t56); t58 = UINT64_C(16); t59 = t57 < t58; h10_b5 = t59; goto bb22; bb22: t60 = h10_b5; h9_b4 = t60; goto bb20; bb23:
+    t62 = UINT64_C(48); h7_saw = t62; goto bb18; bb24:
+    t63 = h8_c; t64 = UINT64_C(95); t65 = t63 == t64; if (t65) goto bb25; else goto bb26; bb25:
+    t66 = h7_saw; t67 = UINT64_C(48); t68 = t66 != t67; if (t68) goto bb28; else goto bb29; bb26:
+#line 293
+    t71 = h7_saw; t72 = UINT64_C(95); t73 = t71 == t72; if (t73) goto bb30; else goto bb31; bb27:
+#line 292
+    t70 = UINT64_C(95); h7_saw = t70; goto bb18; bb28:
+#line 291
+    t69 = false; h11_ret0 = t69; goto bb32; bb29: goto bb27; bb30:
+#line 294
+    t74 = false; h11_ret0 = t74; goto bb32; bb31:
+#line 296
+    t75 = UINT64_C(33); h7_saw = t75; goto bb18; bb32:
+#line 1410 "main.c"
+    t82 = h11_ret0;
+    return t82;
+}
+
+#line 307 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+h_0opt_db92a83 h_1corestrconvinternalfloat_hexadecimal(uint64_t h0_mantissa, int64_t h1_power, bool h2_dropped) { uint64_t h3_two_to_52; uint64_t h4_m; int64_t h5_e; HERO_NODEBUG bool h6_b0, h7_b1, h8_b2, h10_b3, t8, t13, t14, t21, t26, t27, t35, t43, t46, t47, t63, t68, t69, t78, t86, t95, t101, t113, t122; uint64_t h9_round; HERO_NODEBUG h_0opt_e201354 h11_f0 = {0}, h12_f1 = {0}, h14_own14 = {0}, h16_own16 = {0}, t97, t98, t102, t104, t118, t119, t123, t125, t135, t136, t138, t139; HERO_NODEBUG h_0opt_db92a83 h13_ret0 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, t110, t116, t133, t134, t137, t140, t141; HERO_NODEBUG uint64_t t1, t2, t6, t7, t9, t10, t11, t12, t15, t16, t17, t22, t23, t24, t25, t28, t29, t30, t31, t32, t33, t34, t36, t37, t41, t42, t48, t49, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t64, t65, t66, t67, t70, t71, t72, t76, t77, t79, t80, t81, t82, t83, t84, t85, t87, t88, t89, t93, t94, t96, t117; HERO_NODEBUG int64_t t3, t4, t5, t18, t19, t20, t38, t39, t40, t44, t45, t50, t51, t52, t73, t74, t75, t90, t91, t92, t99, t100, t105, t107, t111, t112, t120, t121, t126, t128, t129, t130; HERO_NODEBUG HeroFailure t103, t124; HERO_NODEBUG double t106, t108, t109, t127, t131, t132; HERO_NODEBUG HeroStr t114, t115; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(4503599627370496); h3_two_to_52 = t1;
+    t2 = h0_mantissa; h4_m = t2;
+    t3 = h1_power; t4 = INT64_C(52); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 310, 15); h5_e = t5; goto bb1; bb1:
+#line 312
+    t6 = h4_m; t7 = UINT64_C(0); t8 = t6 != t7; h6_b0 = t8; if (t8) goto bb4; else goto bb5; bb2:
+    t15 = h4_m; t16 = UINT64_C(2); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 313, 13); h4_m = t17;
+    t18 = h5_e; t19 = INT64_C(1); if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 314, 13); h5_e = t20; goto bb1; bb3:
+#line 316
+    t21 = h2_dropped; h7_b1 = t21; if (t21) goto bb7; else goto bb8; bb4:
+#line 312
+    t9 = h4_m; t10 = h3_two_to_52; t11 = UINT64_C(4); if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 312, 25); t13 = t9 < t12; h6_b0 = t13; goto bb5; bb5: t14 = h6_b0; if (t14) goto bb2; else goto bb3; bb6: goto bb11; bb7:
+#line 316
+    t22 = h4_m; t23 = UINT64_C(2); if (t23 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.hexadecimal", 316, 19); t24 = t22 % t23; t25 = UINT64_C(0); t26 = t24 == t25; h7_b1 = t26; goto bb8; bb8: t27 = h7_b1; if (t27) goto bb9; else goto bb10; bb9:
+    t28 = h4_m; t29 = UINT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 317, 13); h4_m = t30; goto bb6; bb10: goto bb6; bb11:
+#line 319
+    t31 = h4_m; t32 = h3_two_to_52; t33 = UINT64_C(8); if (__builtin_mul_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 319, 16); t35 = t31 >= t34; if (t35) goto bb12; else goto bb13; bb12:
+    t36 = h4_m; t37 = h_1corestrconvinternalfloat_sticky_half(t36); h4_m = t37;
+    t38 = h5_e; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 321, 13); h5_e = t40; goto bb11; bb13: goto bb14; bb14:
+#line 323
+    t41 = h4_m; t42 = UINT64_C(1); t43 = t41 > t42; h8_b2 = t43; if (t43) goto bb17; else goto bb18; bb15:
+    t48 = h4_m; t49 = h_1corestrconvinternalfloat_sticky_half(t48); h4_m = t49;
+    t50 = h5_e; t51 = INT64_C(1); if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 325, 13); h5_e = t52; goto bb14; bb16:
+#line 327
+    t53 = h4_m; t54 = UINT64_C(4); if (t54 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.hexadecimal", 327, 19); t55 = t53 % t54; h9_round = t55;
+    t56 = h4_m; t57 = UINT64_C(4); if (t57 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.hexadecimal", 328, 9); t58 = t56 / t57; h4_m = t58;
+#line 330
+    t59 = h4_m; t60 = UINT64_C(2); if (t60 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.hexadecimal", 330, 8); t61 = t59 % t60; t62 = UINT64_C(1); t63 = t61 == t62; h10_b3 = t63; if (t63) goto bb20; else goto bb21; bb17:
+#line 323
+    t44 = h5_e; t45 = INT64_C(-1024); t46 = t44 < t45; h8_b2 = t46; goto bb18; bb18: t47 = h8_b2; if (t47) goto bb15; else goto bb16; bb19:
+#line 332
+    t73 = h5_e; t74 = INT64_C(2); if (__builtin_add_overflow(t73, t74, &t75)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 332, 9); h5_e = t75;
+#line 334
+    t76 = h9_round; t77 = UINT64_C(3); t78 = t76 == t77; if (t78) goto bb25; else goto bb26; bb20:
+#line 330
+    t64 = h9_round; t65 = UINT64_C(2); if (t65 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.hexadecimal", 330, 22); t66 = t64 % t65; t67 = UINT64_C(0); t68 = t66 == t67; h10_b3 = t68; goto bb21; bb21: t69 = h10_b3; if (t69) goto bb22; else goto bb23; bb22:
+    t70 = h9_round; t71 = UINT64_C(1); if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 331, 17); h9_round = t72; goto bb19; bb23: goto bb19; bb24:
+#line 341
+    t93 = h4_m; t94 = h3_two_to_52; t95 = t93 < t94; if (t95) goto bb31; else goto bb32; bb25:
+#line 335
+    t79 = h4_m; t80 = UINT64_C(1); if (__builtin_add_overflow(t79, t80, &t81)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 335, 13); h4_m = t81;
+#line 337
+    t82 = h4_m; t83 = h3_two_to_52; t84 = UINT64_C(2); if (__builtin_mul_overflow(t83, t84, &t85)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 337, 17); t86 = t82 == t85; if (t86) goto bb28; else goto bb29; bb26: goto bb24; bb27: goto bb24; bb28:
+    t87 = h4_m; t88 = UINT64_C(2); if (t88 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.hexadecimal", 338, 17); t89 = t87 / t88; h4_m = t89;
+    t90 = h5_e; t91 = INT64_C(1); if (__builtin_add_overflow(t90, t91, &t92)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 339, 17); h5_e = t92; goto bb27; bb29: goto bb27; bb30:
+#line 345
+    t111 = h5_e; t112 = INT64_C(1023); t113 = t111 > t112; if (t113) goto bb36; else goto bb37; bb31:
+#line 343
+    t96 = h4_m; if (t96 <= 9223372036854775807ULL) { t97 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t96}; } else { t97 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t135 = h14_own14; h14_own14 = t97; h_0opt_e201354_release(&t135); t136 = h11_f0; h_0opt_e201354_retain(&t97); h11_f0 = t97; h_0opt_e201354_release(&t136); t98 = h11_f0; t99 = t98.tag; t100 = INT64_C(0); t101 = t99 == t100; if (t101) goto bb33; else goto bb34; bb32: goto bb30; bb33: t104 = h11_f0; t105 = t104.as.ok; t106 = hero_int_to_f64(t105); t107 = INT64_C(-1074); t108 = h_1corestrconvinternalscaling_two_to(t107); t109 = t106 * t108; t110 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t109}; t137 = h15_own15; h15_own15 = t110; h_0opt_db92a83_release(&t137); h13_ret0 = t110; goto bb40; bb34: t102 = h11_f0; t103 = t102.as.err;
+#line 1465 "main.c"
+    hero_panic_must_at(t103, "<core>/strconv/internal/float.hero", "float.hexadecimal", 343, 26);
+    hero_unreachable();
+bb35:
+#line 347 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+    t117 = h4_m; if (t117 <= 9223372036854775807ULL) { t118 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t117}; } else { t118 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t138 = h16_own16; h16_own16 = t118; h_0opt_e201354_release(&t138); t139 = h12_f1; h_0opt_e201354_retain(&t118); h12_f1 = t118; h_0opt_e201354_release(&t139); t119 = h12_f1; t120 = t119.tag; t121 = INT64_C(0); t122 = t120 == t121; if (t122) goto bb38; else goto bb39; bb36:
+#line 346
+    t114 = HERO_STR_LIT(hero_str_2633b9f3); t115 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t114); hero_str_incref(t115); t116 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t114, .msg = t115}}; t140 = h17_own17; h17_own17 = t116; h_0opt_db92a83_release(&t140); h13_ret0 = t116; goto bb40; bb37: goto bb35; bb38:
+    t125 = h12_f1; t126 = t125.as.ok; t127 = hero_int_to_f64(t126); t128 = h5_e; t129 = INT64_C(52); if (__builtin_sub_overflow(t128, t129, &t130)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 347, 57); t131 = h_1corestrconvinternalscaling_two_to(t130); t132 = t127 * t131; t133 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t132}; t141 = h18_own18; h18_own18 = t133; h_0opt_db92a83_release(&t141); h13_ret0 = t133; goto bb40; bb39: t123 = h12_f1; t124 = t123.as.err;
+#line 1474 "main.c"
+    hero_panic_must_at(t124, "<core>/strconv/internal/float.hero", "float.hexadecimal", 347, 22);
+    hero_unreachable();
+bb40:
+    t134 = h13_ret0;
+    h_0opt_db92a83_retain(&t134);
+    h_0opt_e201354_release(hero_slot_escape(&h11_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h12_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_db92a83_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_0opt_db92a83_release(hero_slot_escape(&h17_own17));
+    h_0opt_db92a83_release(hero_slot_escape(&h18_own18));
+    return t134;
+}
+
+#line 350 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
+uint64_t h_1corestrconvinternalfloat_sticky_half(uint64_t h0_m) { uint64_t h1_half; HERO_NODEBUG bool h2_b0, t8, t13, t14; HERO_NODEBUG uint64_t h3_ret0, t1, t2, t3, t4, t5, t6, t7, t9, t10, t11, t12, t15, t16, t17, t18, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_m; t2 = UINT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.sticky_half", 351, 12); t3 = t1 / t2; h1_half = t3;
+#line 353
+    t4 = h0_m; t5 = UINT64_C(2); if (t5 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.sticky_half", 353, 8); t6 = t4 % t5; t7 = UINT64_C(1); t8 = t6 == t7; h2_b0 = t8; if (t8) goto bb2; else goto bb3; bb1:
+#line 355
+    t18 = h1_half; h3_ret0 = t18; goto bb6; bb2:
+#line 353
+    t9 = h1_half; t10 = UINT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.sticky_half", 353, 22); t11 = t9 % t10; t12 = UINT64_C(0); t13 = t11 == t12; h2_b0 = t13; goto bb3; bb3: t14 = h2_b0; if (t14) goto bb4; else goto bb5; bb4:
+    t15 = h1_half; t16 = UINT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.sticky_half", 354, 16); h3_ret0 = t17; goto bb6; bb5: goto bb1; bb6:
+#line 1500 "main.c"
+    t19 = h3_ret0;
+    return t19;
+}
+
+#line 6 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/shown.hero"
 HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t5, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG int64_t t2, t3, t6; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = INT64_C(40); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 9
     t12 = h0_s; t13 = HERO_STR_LIT(hero_str_22); t14 = HERO_STR_LIT(hero_str_22); t15 = hero_str_concat(t13, t12); t18 = h2_own2; h2_own2 = t15; hero_str_decref(t18); t16 = hero_str_concat(t15, t14); t19 = h3_own3; h3_own3 = t16; hero_str_decref(t19); h1_ret0 = t16; goto bb4; bb2:
 #line 8
     t5 = h0_s; t6 = hero_str_len(t5); t7 = HERO_STR_LIT(hero_str_75bf279b); t8 = hero_int_to_str(t6); t20 = h4_own4; h4_own4 = t8; hero_str_decref(t20); t9 = HERO_STR_LIT(hero_str_391e7e27); t10 = hero_str_concat(t7, t8); t21 = h5_own5; h5_own5 = t10; hero_str_decref(t21); t11 = hero_str_concat(t10, t9); t22 = h6_own6; h6_own6 = t11; hero_str_decref(t22); h1_ret0 = t11; goto bb4; bb3: goto bb1; bb4:
-#line 844 "main.c"
+#line 1512 "main.c"
     t17 = h1_ret0;
     hero_str_incref(t17);
     hero_str_release_at(&h2_own2);
@@ -851,7 +1519,2391 @@ HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr 
     return t17;
 }
 
-#line 17 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#if HERO_STATIC_CONSTANTS
+#line 28 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalnearest_EXACT_24, double, &hero_desc_f64, 23, 0x1p+0, 0x1.4p+3, 0x1.9p+6, 0x1.f4p+9, 0x1.388p+13, 0x1.86ap+16, 0x1.e848p+19, 0x1.312dp+23, 0x1.7d784p+26, 0x1.dcd65p+29, 0x1.2a05f2p+33, 0x1.74876e8p+36, 0x1.d1a94a2p+39, 0x1.2309ce54p+43, 0x1.6bcc41e9p+46, 0x1.c6bf52634p+49, 0x1.1c37937e08p+53, 0x1.6345785d8ap+56, 0x1.bc16d674ec8p+59, 0x1.158e460913dp+63, 0x1.5af1d78b58c4p+66, 0x1.b1ae4d6e2ef5p+69, 0x1.0f0cf064dd592p+73); HeroArrayHeader * h_1corestrconvinternalnearest_EXACT(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalnearest_EXACT_24);
+#line 1526 "main.c"
+}
+#else
+
+#line 28 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+HeroArrayHeader * h_1corestrconvinternalnearest_EXACT(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t24, *t25; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 30
+    t1 = 0x1p+0;
+    t2 = 0x1.4p+3;
+    t3 = 0x1.9p+6;
+    t4 = 0x1.f4p+9;
+    t5 = 0x1.388p+13;
+    t6 = 0x1.86ap+16;
+    t7 = 0x1.e848p+19;
+    t8 = 0x1.312dp+23;
+    t9 = 0x1.7d784p+26;
+    t10 = 0x1.dcd65p+29;
+    t11 = 0x1.2a05f2p+33;
+    t12 = 0x1.74876e8p+36;
+    t13 = 0x1.d1a94a2p+39;
+    t14 = 0x1.2309ce54p+43;
+    t15 = 0x1.6bcc41e9p+46;
+    t16 = 0x1.c6bf52634p+49;
+    t17 = 0x1.1c37937e08p+53;
+    t18 = 0x1.6345785d8ap+56;
+    t19 = 0x1.bc16d674ec8p+59;
+    t20 = 0x1.158e460913dp+63;
+    t21 = 0x1.5af1d78b58c4p+66;
+    t22 = 0x1.b1ae4d6e2ef5p+69;
+    t23 = 0x1.0f0cf064dd592p+73;
+#line 29
+    t24 = hero_array_new(&hero_desc_f64, 23); hero_array_push_owned(&t24, &t1); hero_array_push_owned(&t24, &t2); hero_array_push_owned(&t24, &t3); hero_array_push_owned(&t24, &t4); hero_array_push_owned(&t24, &t5); hero_array_push_owned(&t24, &t6); hero_array_push_owned(&t24, &t7); hero_array_push_owned(&t24, &t8); hero_array_push_owned(&t24, &t9); hero_array_push_owned(&t24, &t10); hero_array_push_owned(&t24, &t11); hero_array_push_owned(&t24, &t12); hero_array_push_owned(&t24, &t13); hero_array_push_owned(&t24, &t14); hero_array_push_owned(&t24, &t15); hero_array_push_owned(&t24, &t16); hero_array_push_owned(&t24, &t17); hero_array_push_owned(&t24, &t18); hero_array_push_owned(&t24, &t19); hero_array_push_owned(&t24, &t20); hero_array_push_owned(&t24, &t21); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t25 = h0_own0; h0_own0 = t24; hero_array_decref(t25);
+#line 1558 "main.c"
+    hero_array_incref(t24);
+    hero_array_release_at(&h0_own0);
+    return t24;
+}
+#endif
+
+#line 57 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+int64_t h_1corestrconvinternalnearest_EXACT_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(15); return t1;
+#line 1568 "main.c"
+}
+
+#line 62 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+h_0opt_db92a83 h_1corestrconvinternalnearest_value_of(HeroStr h0_whole, HeroStr h1_fraction, int64_t h2_exponent) { HeroStr h3_digits = {0}; int64_t h4_lead; HERO_NODEBUG bool h5_b0, h7_b1, t8, t13, t14, t22, t29, t30, t36; int64_t h6_end; HERO_NODEBUG h_0opt_db92a83 h8_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t38, t49, t50, t54, t55; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, t1, t2, t3, t6, t9, t18, t23, t39, t42, t43, t51, t52, t53; HERO_NODEBUG int64_t t4, t5, t7, t10, t15, t16, t17, t19, t20, t21, t24, t25, t26, t31, t32, t33, t34, t35, t40, t41, t44, t45, t46, t47, t48; HERO_NODEBUG uint8_t t11, t12, t27, t28; HERO_NODEBUG double t37; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_whole; t2 = h1_fraction; t3 = hero_str_concat(t1, t2); t51 = h9_own9; h9_own9 = t3; hero_str_decref(t51); t52 = h3_digits; hero_str_incref(t3); h3_digits = t3; hero_str_decref(t52);
+    t4 = INT64_C(0); h4_lead = t4; goto bb1; bb1:
+#line 66
+    t5 = h4_lead; t6 = h3_digits; t7 = hero_str_len(t6); t8 = t5 < t7; h5_b0 = t8; if (t8) goto bb4; else goto bb5; bb2:
+    t15 = h4_lead; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 67, 16); h4_lead = t17; goto bb1; bb3:
+#line 69
+    t18 = h3_digits; t19 = hero_str_len(t18); h6_end = t19; goto bb6; bb4:
+#line 66
+    t9 = h3_digits; t10 = h4_lead; t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? hero_panic_byte_at(t9, t10, "<core>/strconv/internal/nearest.hero", "nearest.value_of", 66, 34) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]); t12 = UINT64_C(48); t13 = t11 == t12; h5_b0 = t13; goto bb5; bb5: t14 = h5_b0; if (t14) goto bb2; else goto bb3; bb6:
+#line 71
+    t20 = h6_end; t21 = h4_lead; t22 = t20 > t21; h7_b1 = t22; if (t22) goto bb9; else goto bb10; bb7:
+    t31 = h6_end; t32 = INT64_C(1); if (__builtin_sub_overflow(t31, t32, &t33)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 72, 15); h6_end = t33; goto bb6; bb8:
+#line 74
+    t34 = h6_end; t35 = h4_lead; t36 = t34 == t35; if (t36) goto bb12; else goto bb13; bb9:
+#line 71
+    t23 = h3_digits; t24 = h6_end; t25 = INT64_C(1); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 71, 32); t27 = ((void)((t23.ptr == NULL || t26 < 0 || t26 >= t23.len) ? hero_panic_byte_at(t23, t26, "<core>/strconv/internal/nearest.hero", "nearest.value_of", 71, 25) : (void)0), (int64_t)(unsigned char)t23.ptr[t26]); t28 = UINT64_C(48); t29 = t27 == t28; h7_b1 = t29; goto bb10; bb10: t30 = h7_b1; if (t30) goto bb7; else goto bb8; bb11:
+#line 76
+    t39 = h3_digits; t40 = h4_lead; t41 = h6_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/nearest.hero", "nearest.value_of", 76, 28}; t42 = hero_str_slice_at(t39, t40, t41, &hero_here); } t53 = h10_own10; h10_own10 = t42; hero_str_decref(t53); t43 = h0_whole; t44 = hero_str_len(t43); t45 = h4_lead; if (__builtin_sub_overflow(t44, t45, &t46)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 76, 70); t47 = h2_exponent; if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 76, 70); t49 = h_1corestrconvinternalnearest_nearest(t42, t48); t54 = h11_own11; h11_own11 = t49; h_0opt_db92a83_release(&t54); h8_ret0 = t49; goto bb14; bb12:
+#line 75
+    t37 = 0x0p+0; t38 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t37}; t55 = h12_own12; h12_own12 = t38; h_0opt_db92a83_release(&t55); h8_ret0 = t38; goto bb14; bb13: goto bb11; bb14:
+#line 1593 "main.c"
+    t50 = h8_ret0;
+    h_0opt_db92a83_retain(&t50);
+    hero_str_release_at(&h3_digits);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_db92a83_release(hero_slot_escape(&h11_own11));
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    return t50;
+}
+
+#line 85 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+h_0opt_db92a83 h_1corestrconvinternalnearest_nearest(HeroStr h0_digits, int64_t h1_point) { uint64_t h2_whole; int64_t h3_power; HERO_NODEBUG bool h4_b0, h5_b1, t4, t17, t20, t21, t24, t25, t34, t42; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}, h10_own10 = {0}, t30, t31, t35, t37, t59, t60; double h7_exact; HERO_NODEBUG h_0opt_db92a83 h8_ret0 = {0}, h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t7, t28, t48, t56, t57, t58, t61, t63, t65; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *h14_own14 = {0}, *t44, *t50, *t62, *t64; HERO_NODEBUG HeroStr t1, t5, t8, t11, t14; HERO_NODEBUG int64_t t2, t3, t6, t10, t12, t13, t15, t16, t18, t19, t22, t23, t27, t32, t33, t38, t40, t41, t45, t51, t52, t53; HERO_NODEBUG uint64_t t9, t26, t29; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG double t39, t43, t46, t47, t49, t54, t55; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_digits; t2 = hero_str_len(t1); t3 = h_1corestrconvinternalpowers_DIGITS(); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 88
+    t8 = h0_digits; t9 = h_1corestrconvinternalnearest_word_of(t8); h2_whole = t9;
+    t10 = h1_point; t11 = h0_digits; t12 = hero_str_len(t11); if (__builtin_sub_overflow(t10, t12, &t13)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.nearest", 89, 13); h3_power = t13;
+#line 91
+    t14 = h0_digits; t15 = hero_str_len(t14); t16 = h_1corestrconvinternalnearest_EXACT_DIGITS(); t17 = t15 > t16; h5_b1 = t17; if (t17) goto bb6; else goto bb5; bb2:
+#line 87
+    t5 = h0_digits; t6 = h1_point; t7 = h_1corestrconvinternalnearest_truncated(t5, t6); t58 = h9_own9; h9_own9 = t7; h_0opt_db92a83_release(&t58); h8_ret0 = t7; goto bb16; bb3: goto bb1; bb4:
+#line 96
+    t29 = h2_whole; if (t29 <= 9223372036854775807ULL) { t30 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t29}; } else { t30 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t59 = h10_own10; h10_own10 = t30; h_0opt_e201354_release(&t59); t60 = h6_f0; h_0opt_e201354_retain(&t30); h6_f0 = t30; h_0opt_e201354_release(&t60); t31 = h6_f0; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb11; else goto bb12; bb5:
+#line 91
+    t18 = h3_power; t19 = INT64_C(-22); t20 = t18 < t19; h5_b1 = t20; goto bb6; bb6: t21 = h5_b1; h4_b0 = t21; if (t21) goto bb8; else goto bb7; bb7: t22 = h3_power; t23 = INT64_C(22); t24 = t22 > t23; h4_b0 = t24; goto bb8; bb8: t25 = h4_b0; if (t25) goto bb9; else goto bb10; bb9:
+    t26 = h2_whole; t27 = h3_power; t28 = h_1corestrconvinternalscaling_nearest(t26, t27); t61 = h11_own11; h11_own11 = t28; h_0opt_db92a83_release(&t61); h8_ret0 = t28; goto bb16; bb10: goto bb4; bb11:
+#line 96
+    t37 = h6_f0; t38 = t37.as.ok; t39 = hero_int_to_f64(t38); h7_exact = t39;
+#line 98
+    t40 = h3_power; t41 = INT64_C(0); t42 = t40 >= t41; if (t42) goto bb14; else goto bb15; bb12:
+#line 96
+    t35 = h6_f0; t36 = t35.as.err;
+#line 1625 "main.c"
+    hero_panic_must_at(t36, "<core>/strconv/internal/nearest.hero", "nearest.nearest", 96, 20);
+    hero_unreachable();
+bb13:
+#line 100 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+    t49 = h7_exact; t50 = h_1corestrconvinternalnearest_EXACT(); t62 = h12_own12; h12_own12 = t50; hero_array_decref(t62); t51 = INT64_C(0); t52 = h3_power; if (__builtin_sub_overflow(t51, t52, &t53)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.nearest", 100, 29); t54 = ((void)((t50 == NULL || t53 < 0 || t53 >= t50->len) ? hero_panic_index_at(t50, t53, "<core>/strconv/internal/nearest.hero", "nearest.nearest", 100, 23) : (void)0), (void)(t50->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t50 + 1))[t53]); t55 = t49 / t54; t56 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t55}; t63 = h13_own13; h13_own13 = t56; h_0opt_db92a83_release(&t63); h8_ret0 = t56; goto bb16; bb14:
+#line 99
+    t43 = h7_exact; t44 = h_1corestrconvinternalnearest_EXACT(); t64 = h14_own14; h14_own14 = t44; hero_array_decref(t64); t45 = h3_power; t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? hero_panic_index_at(t44, t45, "<core>/strconv/internal/nearest.hero", "nearest.nearest", 99, 27) : (void)0), (void)(t44->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t44 + 1))[t45]); t47 = t43 * t46; t48 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t47}; t65 = h15_own15; h15_own15 = t48; h_0opt_db92a83_release(&t65); h8_ret0 = t48; goto bb16; bb15: goto bb13; bb16:
+#line 1633 "main.c"
+    t57 = h8_ret0;
+    h_0opt_db92a83_retain(&t57);
+    h_0opt_e201354_release(hero_slot_escape(&h6_f0));
+    h_0opt_db92a83_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_db92a83_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
+    h_0opt_db92a83_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    h_0opt_db92a83_release(hero_slot_escape(&h15_own15));
+    return t57;
+}
+
+#line 109 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+h_0opt_db92a83 h_1corestrconvinternalnearest_truncated(HeroStr h0_digits, int64_t h1_point) { uint64_t h2_head; int64_t h3_p; h_0opt_db92a83 h4_below = {0}; HERO_NODEBUG h_0opt_db92a83 h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t11, t12, t15, t17, t20, t21, t23, t24, t25, t26; HERO_NODEBUG HeroStr h6_own6 = {0}, t1, t4, t18, t22; HERO_NODEBUG int64_t t2, t3, t6, t7, t8, t10, t14, t19; HERO_NODEBUG uint64_t t5, t9, t13; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_digits; t2 = INT64_C(0); t3 = h_1corestrconvinternalpowers_DIGITS(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/nearest.hero", "nearest.truncated", 110, 20}; t4 = hero_str_slice_at(t1, t2, t3, &hero_here); } t22 = h6_own6; h6_own6 = t4; hero_str_decref(t22); t5 = h_1corestrconvinternalnearest_word_of(t4); h2_head = t5;
+    t6 = h1_point; t7 = h_1corestrconvinternalpowers_DIGITS(); if (__builtin_sub_overflow(t6, t7, &t8)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.truncated", 111, 9); h3_p = t8;
+    t9 = h2_head; t10 = h3_p; t11 = h_1corestrconvinternalscaling_nearest(t9, t10); t23 = h7_own7; h7_own7 = t11; h_0opt_db92a83_release(&t23); t24 = h4_below; h_0opt_db92a83_retain(&t11); h4_below = t11; h_0opt_db92a83_release(&t24);
+#line 114
+    t12 = h4_below; t13 = h2_head; t14 = h3_p; t15 = h_1corestrconvinternalnearest_one_more(t13, t14); t25 = h8_own8; h8_own8 = t15; h_0opt_db92a83_release(&t25); t16 = h_1corestrconvinternalnearest_agree(t12, t15); if (t16) goto bb2; else goto bb3; bb1:
+#line 116
+    t18 = h0_digits; t19 = h1_point; t20 = h_1corestrconvinternaldecimal_nearest(t18, t19); t26 = h9_own9; h9_own9 = t20; h_0opt_db92a83_release(&t26); h5_ret0 = t20; goto bb4; bb2:
+#line 115
+    t17 = h4_below; h5_ret0 = t17; goto bb4; bb3: goto bb1; bb4:
+#line 1658 "main.c"
+    t21 = h5_ret0;
+    h_0opt_db92a83_retain(&t21);
+    h_0opt_db92a83_release(hero_slot_escape(&h4_below));
+    hero_str_release_at(&h6_own6);
+    h_0opt_db92a83_release(hero_slot_escape(&h7_own7));
+    h_0opt_db92a83_release(hero_slot_escape(&h8_own8));
+    h_0opt_db92a83_release(hero_slot_escape(&h9_own9));
+    return t21;
+}
+
+#line 121 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+h_0opt_db92a83 h_1corestrconvinternalnearest_one_more(uint64_t h0_head, int64_t h1_p) { HERO_NODEBUG h_0opt_db92a83 h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t8, t13, t14, t15, t16; HERO_NODEBUG uint64_t t1, t2, t4, t9, t10, t11; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t5, t6, t7, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_head; t2 = h_1corestrconvinternalpowers_NINES(); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 124
+    t9 = h0_head; t10 = UINT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.one_more", 124, 31); t12 = h1_p; t13 = h_1corestrconvinternalscaling_nearest(t11, t12); t15 = h3_own3; h3_own3 = t13; h_0opt_db92a83_release(&t15); h2_ret0 = t13; goto bb4; bb2:
+#line 123
+    t4 = UINT64_C(1); t5 = h1_p; t6 = h_1corestrconvinternalpowers_DIGITS(); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.one_more", 123, 41); t8 = h_1corestrconvinternalscaling_nearest(t4, t7); t16 = h4_own4; h4_own4 = t8; h_0opt_db92a83_release(&t16); h2_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
+#line 1676 "main.c"
+    t14 = h2_ret0;
+    h_0opt_db92a83_retain(&t14);
+    h_0opt_db92a83_release(hero_slot_escape(&h3_own3));
+    h_0opt_db92a83_release(hero_slot_escape(&h4_own4));
+    return t14;
+}
+
+#line 127 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+bool h_1corestrconvinternalnearest_agree(h_0opt_db92a83 h0_below, h_0opt_db92a83 h1_above) { HERO_NODEBUG h_0opt_db92a83 h2_s0 = {0}, h6_f0 = {0}, h7_f1 = {0}, h8_f2 = {0}, t1, t2, t4, t6, t7, t12, t13, t17, t19, t24, t25, t30, t31, t32, t33; HERO_NODEBUG bool h3_r0, h5_b0, t10, t11, t16, t22, t23, t28, t29; double h4_x; HERO_NODEBUG int64_t t3, t8, t9, t14, t15, t26, t27; HERO_NODEBUG double t5, t20, t21; HERO_NODEBUG HeroFailure t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_below; t30 = h2_s0; h_0opt_db92a83_retain(&t1); h2_s0 = t1; h_0opt_db92a83_release(&t30); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t29 = h3_r0;
+#line 1687 "main.c"
+    h_0opt_db92a83_release(hero_slot_escape(&h2_s0));
+    h_0opt_db92a83_release(hero_slot_escape(&h6_f0));
+    h_0opt_db92a83_release(hero_slot_escape(&h7_f1));
+    h_0opt_db92a83_release(hero_slot_escape(&h8_f2));
+    return t29;
+bb2:
+#line 129 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+    t4 = h2_s0; t5 = t4.as.ok; h4_x = t5; t6 = h1_above; t31 = h6_f0; h_0opt_db92a83_retain(&t6); h6_f0 = t6; h_0opt_db92a83_release(&t31); t7 = h6_f0; t8 = t7.tag; t9 = INT64_C(1); t10 = t8 == t9; t11 = !t10; h5_b0 = t11; if (t11) goto bb4; else goto bb5; bb3:
+    t24 = h1_above; t32 = h8_f2; h_0opt_db92a83_retain(&t24); h8_f2 = t24; h_0opt_db92a83_release(&t32); t25 = h8_f2; t26 = t25.tag; t27 = INT64_C(1); t28 = t26 == t27;
+#line 128
+    h3_r0 = t28; goto bb1; bb4:
+    t12 = h1_above; t33 = h7_f1; h_0opt_db92a83_retain(&t12); h7_f1 = t12; h_0opt_db92a83_release(&t33); t13 = h7_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb6; else goto bb7; bb5: t23 = h5_b0;
+#line 128
+    h3_r0 = t23; goto bb1; bb6:
+    t19 = h7_f1; t20 = t19.as.ok; t21 = h4_x; t22 = t20 == t21; h5_b0 = t22; goto bb5; bb7: t17 = h7_f1; t18 = t17.as.err;
+#line 1703 "main.c"
+    hero_panic_must_at(t18, "<core>/strconv/internal/nearest.hero", "nearest.agree", 129, 38);
+    hero_unreachable();
+}
+
+#line 134 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+uint64_t h_1corestrconvinternalnearest_word_of(HeroStr h0_digits) { uint64_t h1_n; int64_t h2_i; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h4_own4 = {0}, t15, t16, t20, t22, t29, t30; HERO_NODEBUG uint64_t t1, t7, t8, t9, t23, t24, t28; HERO_NODEBUG int64_t t2, t3, t5, t11, t17, t18, t25, t26, t27; HERO_NODEBUG HeroStr t4, t10; HERO_NODEBUG bool t6, t19; HERO_NODEBUG uint8_t t12, t13, t14; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); h1_n = t1;
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 138
+    t3 = h2_i; t4 = h0_digits; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t7 = h1_n; t8 = UINT64_C(10); if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 13); t10 = h0_digits; t11 = h2_i; t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? hero_panic_byte_at(t10, t11, "<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 29) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]); t13 = UINT64_C(48); if (__builtin_sub_overflow(t12, t13, &t14)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 29); t15 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t14}; t29 = h4_own4; h4_own4 = t15; h_0opt_fbbb698_release(&t29); t30 = h3_f0; h_0opt_fbbb698_retain(&t15); h3_f0 = t15; h_0opt_fbbb698_release(&t30); t16 = h3_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb4; else goto bb5; bb3:
+#line 142
+    t28 = h1_n;
+#line 1717 "main.c"
+    h_0opt_fbbb698_release(hero_slot_escape(&h3_f0));
+    h_0opt_fbbb698_release(hero_slot_escape(&h4_own4));
+    return t28;
+bb4:
+#line 139 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
+    t22 = h3_f0; t23 = t22.as.ok; if (__builtin_add_overflow(t9, t23, &t24)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 13); h1_n = t24;
+    t25 = h2_i; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 140, 13); h2_i = t27; goto bb1; bb5:
+#line 139
+    t20 = h3_f0; t21 = t20.as.err;
+#line 1727 "main.c"
+    hero_panic_must_at(t21, "<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 22);
+    hero_unreachable();
+}
+
+#line 39 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+h_0opt_db92a83 h_1corestrconvinternalscaling_nearest(uint64_t h0_d, int64_t h1_p) { int64_t h2_width; int64_t h3_lp; int64_t h4_e; int64_t h5_s; uint64_t h6_u; HERO_NODEBUG h_0opt_db92a83 h7_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h12_own12 = {0}, h13_own13 = {0}, t6, t11, t36, t75, t76, t77, t78, t81, t82; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t38, *t50, *t79, *t80; HERO_NODEBUG int64_t t1, t2, t7, t8, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t39, t40, t41, t44, t45, t46, t47, t51, t52, t53, t67, t68, t69, t72, t73, t74; HERO_NODEBUG bool t3, t9, t34, t57, t65; HERO_NODEBUG HeroStr t4, t5; HERO_NODEBUG double t10, t35; HERO_NODEBUG uint64_t t12, t37, t42, t43, t48, t49, t54, t55, t56, t58, t59, t60, t61, t62, t63, t64, t66, t70, t71; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_p; t2 = h_1corestrconvinternalpowers_MOST(); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 43
+    t7 = h1_p; t8 = h_1corestrconvinternalpowers_LEAST(); t9 = t7 < t8; if (t9) goto bb5; else goto bb6; bb2:
+#line 41
+    t4 = HERO_STR_LIT(hero_str_2633b9f3); t5 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t77 = h8_own8; h8_own8 = t6; h_0opt_db92a83_release(&t77); h7_ret0 = t6; goto bb13; bb3: goto bb1; bb4:
+#line 45
+    t12 = h0_d; t13 = h_1corestrconvinternalscaling_bits_of(t12); h2_width = t13;
+    t14 = h1_p; t15 = h_1corestrconvinternalscaling_log2_of_ten_to(t14); h3_lp = t15;
+#line 53
+    t16 = INT64_C(0); t17 = h_1corestrconvinternalpowers_SUBNORMAL_EXPONENT(); if (__builtin_sub_overflow(t16, t17, &t18)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 53, 25); t19 = h_1corestrconvinternalpowers_SIGNIFICAND_BITS(); t20 = h2_width; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 53, 59); t22 = h3_lp; if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 53, 59); t24 = h_1corestrconvinternalscaling_min_of(t18, t23); h4_e = t24;
+#line 62
+    t25 = INT64_C(61); t26 = h2_width; if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 62, 9); t28 = h4_e; if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 62, 9); t30 = h3_lp; if (__builtin_sub_overflow(t29, t30, &t31)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 62, 9); h5_s = t31;
+#line 64
+    t32 = h5_s; t33 = INT64_C(64); t34 = t32 >= t33; if (t34) goto bb8; else goto bb9; bb5:
+#line 44
+    t10 = 0x0p+0; t11 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t10}; t78 = h9_own9; h9_own9 = t11; h_0opt_db92a83_release(&t78); h7_ret0 = t11; goto bb13; bb6: goto bb4; bb7:
+#line 66
+    t37 = h0_d; t38 = h_1corestrconvinternalpowers_TWO_TO(); t79 = h10_own10; h10_own10 = t38; hero_array_decref(t79); t39 = INT64_C(64); t40 = h2_width; if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 66, 46); t42 = ((void)((t38 == NULL || t41 < 0 || t41 >= t38->len) ? hero_panic_index_at(t38, t41, "<core>/strconv/internal/scaling.hero", "scaling.nearest", 66, 32) : (void)0), (void)(t38->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t38 + 1))[t41]); if (__builtin_mul_overflow(t37, t42, &t43)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 66, 28); t44 = h1_p; t45 = h_1corestrconvinternalpowers_LEAST(); if (__builtin_sub_overflow(t44, t45, &t46)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 66, 63); t47 = h5_s; t48 = h_1corestrconvinternalscaling_unrounded(t43, t46, t47); h6_u = t48;
+#line 70
+    t49 = h6_u; t50 = h_1corestrconvinternalpowers_TWO_TO(); t80 = h11_own11; h11_own11 = t50; hero_array_decref(t80); t51 = h_1corestrconvinternalpowers_SIGNIFICAND_BITS(); t52 = INT64_C(2); if (__builtin_add_overflow(t51, t52, &t53)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 70, 27); t54 = ((void)((t50 == NULL || t53 < 0 || t53 >= t50->len) ? hero_panic_index_at(t50, t53, "<core>/strconv/internal/scaling.hero", "scaling.nearest", 70, 13) : (void)0), (void)(t50->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t50 + 1))[t53]); t55 = UINT64_C(2); if (__builtin_sub_overflow(t54, t55, &t56)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 70, 13); t57 = t49 >= t56; if (t57) goto bb11; else goto bb12; bb8:
+#line 65
+    t35 = 0x0p+0; t36 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t35}; t81 = h12_own12; h12_own12 = t36; h_0opt_db92a83_release(&t81); h7_ret0 = t36; goto bb13; bb9: goto bb7; bb10:
+#line 73
+    t70 = h6_u; t71 = h_1corestrconvinternalscaling_rounded(t70); t72 = INT64_C(0); t73 = h4_e; if (__builtin_sub_overflow(t72, t73, &t74)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 73, 37); t75 = h_1corestrconvinternalscaling_packed(t71, t74); t82 = h13_own13; h13_own13 = t75; h_0opt_db92a83_release(&t82); h7_ret0 = t75; goto bb13; bb11:
+#line 71
+    t58 = h6_u; t59 = UINT64_C(2); if (t59 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.nearest", 71, 23); t60 = t58 / t59; t61 = h6_u; t62 = UINT64_C(2); if (t62 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.nearest", 71, 39); t63 = t61 % t62; t64 = UINT64_C(1); t65 = t63 == t64; t66 = h_1corestrconvinternalscaling_marked(t60, t65); h6_u = t66;
+    t67 = h4_e; t68 = INT64_C(1); if (__builtin_sub_overflow(t67, t68, &t69)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 72, 13); h4_e = t69; goto bb10; bb12: goto bb10; bb13:
+#line 1761 "main.c"
+    t76 = h7_ret0;
+    h_0opt_db92a83_retain(&t76);
+    h_0opt_db92a83_release(hero_slot_escape(&h8_own8));
+    h_0opt_db92a83_release(hero_slot_escape(&h9_own9));
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    h_0opt_db92a83_release(hero_slot_escape(&h13_own13));
+    return t76;
+}
+
+#line 81 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+uint64_t h_1corestrconvinternalscaling_unrounded(uint64_t h0_x, int64_t h1_at, int64_t h2_s) { uint64_t h3_unit; h_1corestrconvinternalscaling_Wide h4_first; uint64_t h5_below; uint64_t h6_high; uint64_t h7_middle; HERO_NODEBUG uint64_t h8_ret0, t3, t4, t7, t9, t10, t11, t12, t14, t15, t16, t18, t19, t22, t24, t25, t26, t27, t28, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t49, t50; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *t1, *t5, *t20, *t51, *t52, *t53; HERO_NODEBUG int64_t t2, t6, t21; HERO_NODEBUG h_1corestrconvinternalscaling_Wide t8, t23; HERO_NODEBUG bool t13, t17, t29, t48; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_1corestrconvinternalpowers_TWO_TO(); t51 = h9_own9; h9_own9 = t1; hero_array_decref(t51); t2 = h2_s; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "<core>/strconv/internal/scaling.hero", "scaling.unrounded", 82, 12) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]); h3_unit = t3;
+    t4 = h0_x; t5 = h_1corestrconvinternalpowers_HIGH(); t52 = h10_own10; h10_own10 = t5; hero_array_decref(t52); t6 = h1_at; t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "<core>/strconv/internal/scaling.hero", "scaling.unrounded", 83, 30) : (void)0), (void)(t5->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t5 + 1))[t6]); t8 = h_1corestrconvinternalscaling_product(t4, t7); h4_first = t8;
+#line 85
+    t9 = h4_first.f_high; t10 = h3_unit; if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.unrounded", 85, 8); t11 = t9 % t10; t12 = UINT64_C(0); t13 = t11 != t12; if (t13) goto bb2; else goto bb3; bb1:
+#line 87
+    t19 = h0_x; t20 = h_1corestrconvinternalpowers_LOW(); t53 = h11_own11; h11_own11 = t20; hero_array_decref(t53); t21 = h1_at; t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "<core>/strconv/internal/scaling.hero", "scaling.unrounded", 87, 30) : (void)0), (void)(t20->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t20 + 1))[t21]); t23 = h_1corestrconvinternalscaling_product(t19, t22); t24 = t23.f_high; h5_below = t24;
+    t25 = h4_first.f_high; h6_high = t25;
+    t26 = UINT64_C(0); h7_middle = t26;
+#line 92
+    t27 = h4_first.f_low; t28 = h5_below; t29 = t27 < t28; if (t29) goto bb5; else goto bb6; bb2:
+#line 86
+    t14 = h4_first.f_high; t15 = h3_unit; if (t15 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.unrounded", 86, 26); t16 = t14 / t15; t17 = true; t18 = h_1corestrconvinternalscaling_marked(t16, t17); h8_ret0 = t18; goto bb7; bb3: goto bb1; bb4:
+#line 97
+    t43 = h6_high; t44 = h3_unit; if (t44 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.unrounded", 97, 22); t45 = t43 / t44; t46 = h7_middle; t47 = UINT64_C(1); t48 = t46 > t47; t49 = h_1corestrconvinternalscaling_marked(t45, t48); h8_ret0 = t49; goto bb7; bb5:
+#line 93
+    t30 = h6_high; t31 = UINT64_C(1); if (__builtin_sub_overflow(t30, t31, &t32)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 93, 16); h6_high = t32;
+    t33 = h_1corestrconvinternalpowers_ALL_ONES(); t34 = h5_below; if (__builtin_sub_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 94, 18); t36 = h4_first.f_low; if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 94, 18); t38 = UINT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 94, 18); h7_middle = t39; goto bb4; bb6:
+#line 96
+    t40 = h4_first.f_low; t41 = h5_below; if (__builtin_sub_overflow(t40, t41, &t42)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 96, 18); h7_middle = t42; goto bb4; bb7:
+#line 1794 "main.c"
+    t50 = h8_ret0;
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    return t50;
+}
+
+#line 100 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+uint64_t h_1corestrconvinternalscaling_marked(uint64_t h0_q, bool h1_inexact) { HERO_NODEBUG bool h2_b0, t1, t6, t7; HERO_NODEBUG uint64_t h3_ret0, t2, t3, t4, t5, t8, t9, t10, t11, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_inexact; h2_b0 = t1; if (t1) goto bb2; else goto bb3; bb1:
+#line 103
+    t11 = h0_q; h3_ret0 = t11; goto bb6; bb2:
+#line 101
+    t2 = h0_q; t3 = UINT64_C(2); if (t3 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.marked", 101, 19); t4 = t2 % t3; t5 = UINT64_C(0); t6 = t4 == t5; h2_b0 = t6; goto bb3; bb3: t7 = h2_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = h0_q; t9 = UINT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.marked", 102, 16); h3_ret0 = t10; goto bb6; bb5: goto bb1; bb6:
+#line 1810 "main.c"
+    t12 = h3_ret0;
+    return t12;
+}
+
+#line 107 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+uint64_t h_1corestrconvinternalscaling_rounded(uint64_t h0_u) { HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_u; t2 = UINT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 13); t4 = h0_u; t5 = UINT64_C(4); if (t5 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 21); t6 = t4 / t5; t7 = UINT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 21); t8 = t6 % t7; if (__builtin_add_overflow(t3, t8, &t9)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 13); t10 = UINT64_C(4); if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 12); t11 = t9 / t10; return t11;
+#line 1818 "main.c"
+}
+
+#line 117 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+h_0opt_db92a83 h_1corestrconvinternalscaling_packed(uint64_t h0_m, int64_t h1_k) { HERO_NODEBUG bool h2_b0, t6, t13, t16, t17, t26; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h7_own7 = {0}, t22, t23, t27, t29, t39, t40; HERO_NODEBUG h_0opt_db92a83 h4_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, t20, t35, t36, t41, t42; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t3, *t8, *t37, *t38; HERO_NODEBUG HeroStr t1, t18, t19; HERO_NODEBUG uint64_t t2, t5, t7, t12, t21; HERO_NODEBUG int64_t t4, t9, t10, t11, t14, t15, t24, t25, t30, t32; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG double t31, t33, t34; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3bec0c04); t2 = h0_m; t3 = h_1corestrconvinternalpowers_TWO_TO(); t37 = h5_own5; h5_own5 = t3; hero_array_decref(t37); t4 = h_1corestrconvinternalpowers_SIGNIFICAND_BITS(); t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? hero_panic_index_at(t3, t4, "<core>/strconv/internal/scaling.hero", "scaling.packed", 118, 16) : (void)0), (void)(t3->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t3 + 1))[t4]); t6 = t2 < t5; if (t6) goto bb1; else goto bb2; bb1:
+#line 120
+    t7 = h0_m; t8 = h_1corestrconvinternalpowers_TWO_TO(); t38 = h6_own6; h6_own6 = t8; hero_array_decref(t38); t9 = h_1corestrconvinternalpowers_SIGNIFICAND_BITS(); t10 = INT64_C(1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.packed", 120, 27); t12 = ((void)((t8 == NULL || t11 < 0 || t11 >= t8->len) ? hero_panic_index_at(t8, t11, "<core>/strconv/internal/scaling.hero", "scaling.packed", 120, 13) : (void)0), (void)(t8->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t8 + 1))[t11]); t13 = t7 >= t12; h2_b0 = t13; if (t13) goto bb4; else goto bb5; bb2:
+#line 1826 "main.c"
+    hero_panic_assert_shown_at(t1, hero_show_u64, &t2, &t5, 0, "<core>/strconv/internal/scaling.hero", "scaling.packed", 118, 12);
+    hero_unreachable();
+bb3:
+#line 122 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+    t21 = h0_m; if (t21 <= 9223372036854775807ULL) { t22 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t21}; } else { t22 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t39 = h7_own7; h7_own7 = t22; h_0opt_e201354_release(&t39); t40 = h3_f0; h_0opt_e201354_retain(&t22); h3_f0 = t22; h_0opt_e201354_release(&t40); t23 = h3_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb8; else goto bb9; bb4:
+#line 120
+    t14 = h1_k; t15 = h_1corestrconvinternalpowers_PAST_EXPONENT(); t16 = t14 >= t15; h2_b0 = t16; goto bb5; bb5: t17 = h2_b0; if (t17) goto bb6; else goto bb7; bb6:
+    t18 = HERO_STR_LIT(hero_str_2633b9f3); t19 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t18); hero_str_incref(t19); t20 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t19}}; t41 = h8_own8; h8_own8 = t20; h_0opt_db92a83_release(&t41); h4_ret0 = t20; goto bb10; bb7: goto bb3; bb8:
+    t29 = h3_f0; t30 = t29.as.ok; t31 = hero_int_to_f64(t30); t32 = h1_k; t33 = h_1corestrconvinternalscaling_two_to(t32); t34 = t31 * t33; t35 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t34}; t42 = h9_own9; h9_own9 = t35; h_0opt_db92a83_release(&t42); h4_ret0 = t35; goto bb10; bb9: t27 = h3_f0; t28 = t27.as.err;
+#line 1836 "main.c"
+    hero_panic_must_at(t28, "<core>/strconv/internal/scaling.hero", "scaling.packed", 122, 22);
+    hero_unreachable();
+bb10:
+    t36 = h4_ret0;
+    h_0opt_db92a83_retain(&t36);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_db92a83_release(hero_slot_escape(&h8_own8));
+    h_0opt_db92a83_release(hero_slot_escape(&h9_own9));
+    return t36;
+}
+
+#line 128 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+double h_1corestrconvinternalscaling_two_to(int64_t h0_k) { double h1_base; int64_t h2_n; double h3_out; HERO_NODEBUG double t1, t6, t10, t19, t20, t21, t22, t23, t24, t28; HERO_NODEBUG int64_t t2, t3, t4, t7, t8, t9, t11, t12, t14, t15, t16, t17, t25, t26, t27; HERO_NODEBUG bool t5, t13, t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1p+1; h1_base = t1;
+    t2 = h0_k; h2_n = t2;
+#line 132
+    t3 = h0_k; t4 = INT64_C(0); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 135
+    t10 = 0x1p+0; h3_out = t10; goto bb4; bb2:
+#line 133
+    t6 = 0x1p-1; h1_base = t6;
+    t7 = INT64_C(0); t8 = h0_k; if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.two_to", 134, 13); h2_n = t9; goto bb1; bb3: goto bb1; bb4:
+#line 137
+    t11 = h2_n; t12 = INT64_C(0); t13 = t11 > t12; if (t13) goto bb5; else goto bb6; bb5:
+    t14 = h2_n; t15 = INT64_C(2); if (t15 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.two_to", 138, 12); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/strconv/internal/scaling.hero", "scaling.two_to", 138, 12); t16 = t14 % t15; t17 = INT64_C(1); t18 = t16 == t17; if (t18) goto bb8; else goto bb9; bb6:
+#line 143
+    t28 = h3_out; return t28; bb7:
+#line 140
+    t22 = h1_base; t23 = h1_base; t24 = t22 * t23; h1_base = t24;
+    t25 = h2_n; t26 = INT64_C(2); if (t26 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.two_to", 141, 13); if (t25 == INT64_MIN && t26 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.two_to", 141, 13); t27 = t25 / t26; h2_n = t27; goto bb4; bb8:
+#line 139
+    t19 = h3_out; t20 = h1_base; t21 = t19 * t20; h3_out = t21; goto bb7; bb9: goto bb7;
+#line 1872 "main.c"
+}
+
+#line 150 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_product(uint64_t h0_x, uint64_t h1_y) { uint64_t h2_x_high; uint64_t h3_x_low; uint64_t h4_y_high; uint64_t h5_y_low; uint64_t h6_low_low; uint64_t h7_low_high; uint64_t h8_high_low; uint64_t h9_middle; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56; HERO_NODEBUG h_1corestrconvinternalscaling_Wide t57; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = h_1corestrconvinternalpowers_HALF(); if (t2 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 151, 14); t3 = t1 / t2; h2_x_high = t3;
+    t4 = h0_x; t5 = h_1corestrconvinternalpowers_HALF(); if (t5 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 152, 13); t6 = t4 % t5; h3_x_low = t6;
+    t7 = h1_y; t8 = h_1corestrconvinternalpowers_HALF(); if (t8 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 153, 14); t9 = t7 / t8; h4_y_high = t9;
+    t10 = h1_y; t11 = h_1corestrconvinternalpowers_HALF(); if (t11 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 154, 13); t12 = t10 % t11; h5_y_low = t12;
+    t13 = h3_x_low; t14 = h5_y_low; if (__builtin_mul_overflow(t13, t14, &t15)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 155, 15); h6_low_low = t15;
+    t16 = h3_x_low; t17 = h4_y_high; if (__builtin_mul_overflow(t16, t17, &t18)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 156, 16); h7_low_high = t18;
+    t19 = h2_x_high; t20 = h5_y_low; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 157, 16); h8_high_low = t21;
+    t22 = h6_low_low; t23 = h_1corestrconvinternalpowers_HALF(); if (t23 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 158, 14); t24 = t22 / t23; t25 = h7_low_high; t26 = h_1corestrconvinternalpowers_HALF(); if (t26 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 158, 38); t27 = t25 % t26; if (__builtin_add_overflow(t24, t27, &t28)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 158, 14); t29 = h8_high_low; t30 = h_1corestrconvinternalpowers_HALF(); if (t30 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 158, 63); t31 = t29 % t30; if (__builtin_add_overflow(t28, t31, &t32)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 158, 14); h9_middle = t32;
+#line 160
+    t33 = h2_x_high; t34 = h4_y_high; if (__builtin_mul_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 160, 15); t36 = h7_low_high; t37 = h_1corestrconvinternalpowers_HALF(); if (t37 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 160, 33); t38 = t36 / t37; if (__builtin_add_overflow(t35, t38, &t39)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 160, 15); t40 = h8_high_low; t41 = h_1corestrconvinternalpowers_HALF(); if (t41 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 160, 58); t42 = t40 / t41; if (__builtin_add_overflow(t39, t42, &t43)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 160, 15); t44 = h9_middle; t45 = h_1corestrconvinternalpowers_HALF(); if (t45 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 160, 83); t46 = t44 / t45; if (__builtin_add_overflow(t43, t46, &t47)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 160, 15);
+    t48 = h9_middle; t49 = h_1corestrconvinternalpowers_HALF(); if (t49 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 161, 14); t50 = t48 % t49; t51 = h_1corestrconvinternalpowers_HALF(); if (__builtin_mul_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 161, 14); t53 = h6_low_low; t54 = h_1corestrconvinternalpowers_HALF(); if (t54 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 161, 51); t55 = t53 % t54; if (__builtin_add_overflow(t52, t55, &t56)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 161, 14);
+#line 159
+    t57 = (h_1corestrconvinternalscaling_Wide){.f_high = t47, .f_low = t56}; return t57;
+#line 1890 "main.c"
+}
+
+#line 167 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+int64_t h_1corestrconvinternalscaling_bits_of(uint64_t h0_d) { int64_t h1_low; int64_t h2_high; int64_t h3_mid; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t12, *t21; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t13, t16, t17, t18, t19, t20; HERO_NODEBUG bool t5, t15; HERO_NODEBUG uint64_t t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); h1_low = t1;
+    t2 = INT64_C(64); h2_high = t2; goto bb1; bb1:
+#line 171
+    t3 = h1_low; t4 = h2_high; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_low; t7 = h2_high; if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.bits_of", 172, 16); t9 = INT64_C(2); if (t9 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.bits_of", 172, 15); if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.bits_of", 172, 15); t10 = t8 / t9; h3_mid = t10;
+#line 174
+    t11 = h0_d; t12 = h_1corestrconvinternalpowers_TWO_TO(); t21 = h4_own4; h4_own4 = t12; hero_array_decref(t21); t13 = h3_mid; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "<core>/strconv/internal/scaling.hero", "scaling.bits_of", 174, 16) : (void)0), (void)(t12->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t12 + 1))[t13]); t15 = t11 < t14; if (t15) goto bb5; else goto bb6; bb3:
+#line 179
+    t20 = h1_low;
+#line 1904 "main.c"
+    hero_array_release_at(&h4_own4);
+    return t20;
+bb4:
+    goto bb1;
+bb5:
+#line 175 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+    t16 = h3_mid; h2_high = t16; goto bb4; bb6:
+#line 177
+    t17 = h3_mid; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.bits_of", 177, 19); h1_low = t19; goto bb4;
+#line 1914 "main.c"
+}
+
+#line 184 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+int64_t h_1corestrconvinternalscaling_log2_of_ten_to(int64_t h0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_p; t2 = h_1corestrconvinternalpowers_LOG_TIMES(); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.log2_of_ten_to", 185, 12); t4 = h_1corestrconvinternalpowers_LOG_SHIFT(); if (t4 < 0 || t4 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/scaling.hero", "scaling.log2_of_ten_to", 185, 12); t5 = (t3 < 0) ? ~(int64_t)((~(uint64_t)t3) >> (uint64_t)t4) : (int64_t)((uint64_t)t3 >> (uint64_t)t4); return t5;
+#line 1920 "main.c"
+}
+
+#line 188 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+int64_t h_1corestrconvinternalscaling_min_of(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_a; t2 = h1_b; t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 191
+    t5 = h1_b; h2_ret0 = t5; goto bb4; bb2:
+#line 190
+    t4 = h0_a; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+#line 1930 "main.c"
+    t6 = h2_ret0;
+    return t6;
+}
+
+#line 197 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
+h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_doubled(h_1corestrconvinternalscaling_Wide h0_w) { uint64_t h1_top; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t19; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint64_t t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_NODEBUG h_1corestrconvinternalscaling_Wide t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_1corestrconvinternalpowers_TWO_TO(); t19 = h2_own2; h2_own2 = t1; hero_array_decref(t19); t2 = INT64_C(63); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "<core>/strconv/internal/scaling.hero", "scaling.doubled", 198, 11) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]); h1_top = t3;
+    t4 = h0_w.f_high; t5 = h1_top; if (t5 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 23); t6 = t4 % t5; t7 = UINT64_C(2); if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 23); t9 = h0_w.f_low; t10 = h1_top; if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 42); t11 = t9 / t10; if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 23); t13 = h0_w.f_low; t14 = h1_top; if (t14 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 60); t15 = t13 % t14; t16 = UINT64_C(2); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 60); t18 = (h_1corestrconvinternalscaling_Wide){.f_high = t12, .f_low = t17};
+#line 1939 "main.c"
+    hero_array_release_at(&h2_own2);
+    return t18;
+}
+
+#line 29 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+int64_t h_1corestrconvinternaldecimal_CAPACITY(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(800); return t1;
+#line 1947 "main.c"
+}
+
+#line 35 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+int64_t h_1corestrconvinternaldecimal_WIDEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(59); return t1;
+#line 1953 "main.c"
+}
+
+#if HERO_STATIC_CONSTANTS
+#line 48 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternaldecimal_STEPS_10, int64_t, &hero_desc_int, 9, INT64_C(1), INT64_C(3), INT64_C(6), INT64_C(9), INT64_C(13), INT64_C(16), INT64_C(19), INT64_C(23), INT64_C(26)); HeroArrayHeader * h_1corestrconvinternaldecimal_STEPS(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternaldecimal_STEPS_10);
+#line 1959 "main.c"
+}
+#else
+
+#line 48 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+HeroArrayHeader * h_1corestrconvinternaldecimal_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t10, *t11; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(3); t3 = INT64_C(6); t4 = INT64_C(9); t5 = INT64_C(13); t6 = INT64_C(16); t7 = INT64_C(19); t8 = INT64_C(23); t9 = INT64_C(26); t10 = hero_array_new(&hero_desc_int, 9); hero_array_push_owned(&t10, &t1); hero_array_push_owned(&t10, &t2); hero_array_push_owned(&t10, &t3); hero_array_push_owned(&t10, &t4); hero_array_push_owned(&t10, &t5); hero_array_push_owned(&t10, &t6); hero_array_push_owned(&t10, &t7); hero_array_push_owned(&t10, &t8); hero_array_push_owned(&t10, &t9); t11 = h0_own0; h0_own0 = t10; hero_array_decref(t11);
+#line 1966 "main.c"
+    hero_array_incref(t10);
+    hero_array_release_at(&h0_own0);
+    return t10;
+}
+#endif
+
+#line 63 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_0opt_db92a83 h_1corestrconvinternaldecimal_nearest(HeroStr h0_digits, int64_t h1_point) { HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h2_own2 = {0}, t3, t5; HERO_NODEBUG h_0opt_db92a83 h3_own3 = {0}, t4, t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_digits; t2 = h1_point; t3 = h_1corestrconvinternaldecimal_decimal_of(t1, t2); t5 = h2_own2; h2_own2 = t3; h_1corestrconvinternaldecimal_0Decimal_release(&t5); t4 = h_1corestrconvinternaldecimal_rounded_to_float(t3); t6 = h3_own3; h3_own3 = t4; h_0opt_db92a83_release(&t6);
+#line 1976 "main.c"
+    h_0opt_db92a83_retain(&t4);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h2_own2));
+    h_0opt_db92a83_release(hero_slot_escape(&h3_own3));
+    return t4;
+}
+
+#line 67 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_decimal_of(HeroStr h0_digits, int64_t h1_point) { HeroArrayHeader * h2_kept = {0}; bool h3_truncated; int64_t h4_i; uint8_t h5_digit; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t13, *t27, *t32, *t33; HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h7_own7 = {0}, h8_own8 = {0}, t30, t31, t34, t35; HERO_NODEBUG bool t2, t7, t16, t22, t23, t29; HERO_NODEBUG int64_t t3, t4, t6, t9, t14, t15, t24, t25, t26, t28; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG uint8_t t10, t11, t12, t18, t20, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t32 = h6_own6; h6_own6 = t1; hero_array_decref(t32); t33 = h2_kept; hero_array_incref(t1); h2_kept = t1; hero_array_decref(t33);
+    t2 = false; h3_truncated = t2;
+    t3 = INT64_C(0); h4_i = t3; goto bb1; bb1:
+#line 72
+    t4 = h4_i; t5 = h0_digits; t6 = hero_str_len(t5); t7 = t4 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h0_digits; t9 = h4_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "<core>/strconv/internal/decimal.hero", "decimal.decimal_of", 73, 17) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(48); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.decimal_of", 73, 17); h5_digit = t12;
+#line 75
+    t13 = h2_kept; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = h_1corestrconvinternaldecimal_CAPACITY(); t16 = t14 < t15; if (t16) goto bb5; else goto bb6; bb3:
+#line 81
+    t27 = h2_kept; t28 = h1_point; t29 = h3_truncated; hero_array_incref(t27); t30 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t27, .f_point = t28, .f_truncated = t29}; t34 = h7_own7; h7_own7 = t30; h_1corestrconvinternaldecimal_0Decimal_release(&t34); t31 = h_1corestrconvinternaldecimal_trimmed(t30); t35 = h8_own8; h8_own8 = t31; h_1corestrconvinternaldecimal_0Decimal_release(&t35);
+#line 1995 "main.c"
+    h_1corestrconvinternaldecimal_0Decimal_retain(&t31);
+    hero_array_release_at(&h2_kept);
+    hero_array_release_at(&h6_own6);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h7_own7));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h8_own8));
+    return t31;
+bb4:
+#line 79 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t24 = h4_i; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.decimal_of", 79, 13); h4_i = t26; goto bb1; bb5:
+#line 76
+    t18 = h5_digit; hero_array_push_owned(&h2_kept, &t18); goto bb4; bb6:
+    t20 = h5_digit; t21 = UINT64_C(0); t22 = t20 != t21; if (t22) goto bb7; else goto bb8; bb7:
+    t23 = true; h3_truncated = t23; goto bb4; bb8: goto bb4;
+#line 2009 "main.c"
+}
+
+#line 85 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_trimmed(h_1corestrconvinternaldecimal_Decimal h0_d) { int64_t h1_end; HERO_NODEBUG bool h2_b0, t5, t12, t13, t20, t24, t28, t35; HeroArrayHeader * h3_nothing = {0}; HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h4_ret0 = {0}, h6_own6 = {0}, h8_own8 = {0}, t21, t29, t36, t37, t39, t42; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *t1, *t6, *t18, *t25, *t26, *t30, *t33, *t38, *t40, *t41; HERO_NODEBUG int64_t t2, t3, t4, t7, t8, t9, t14, t15, t16, t17, t19, t22, t23, t27, t31, t32, t34; HERO_NODEBUG uint8_t t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_d.f_digits; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); h1_end = t2; goto bb1; bb1:
+#line 88
+    t3 = h1_end; t4 = INT64_C(0); t5 = t3 > t4; h2_b0 = t5; if (t5) goto bb4; else goto bb5; bb2:
+    t14 = h1_end; t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.trimmed", 89, 15); h1_end = t16; goto bb1; bb3:
+#line 91
+    t17 = h1_end; t18 = h0_d.f_digits; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 == t19; if (t20) goto bb7; else goto bb8; bb4:
+#line 88
+    t6 = h0_d.f_digits; t7 = h1_end; t8 = INT64_C(1); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.trimmed", 88, 31); t10 = ((void)((t6 == NULL || t9 < 0 || t9 >= t6->len) ? hero_panic_index_at(t6, t9, "<core>/strconv/internal/decimal.hero", "decimal.trimmed", 88, 22) : (void)0), (void)(t6->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t6 + 1))[t9]); t11 = UINT64_C(0); t12 = t10 == t11; h2_b0 = t12; goto bb5; bb5: t13 = h2_b0; if (t13) goto bb2; else goto bb3; bb6:
+#line 94
+    t22 = h1_end; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb10; else goto bb11; bb7:
+#line 92
+    t21 = h0_d; h4_ret0 = t21; goto bb12; bb8: goto bb6; bb9:
+#line 97
+    t30 = h0_d.f_digits; t31 = INT64_C(0); t32 = h1_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/decimal.hero", "decimal.trimmed", 97, 28}; t33 = hero_array_slice_at(t30, t31, t32, &hero_here); } t38 = h5_own5; h5_own5 = t33; hero_array_decref(t38); t34 = h0_d.f_point; t35 = h0_d.f_truncated; hero_array_incref(t33); t36 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t33, .f_point = t34, .f_truncated = t35}; t39 = h6_own6; h6_own6 = t36; h_1corestrconvinternaldecimal_0Decimal_release(&t39); h4_ret0 = t36; goto bb12; bb10:
+#line 95
+    t25 = hero_array_new(&hero_desc_u8, 1); t40 = h7_own7; h7_own7 = t25; hero_array_decref(t40); t41 = h3_nothing; hero_array_incref(t25); h3_nothing = t25; hero_array_decref(t41);
+    t26 = h3_nothing; t27 = INT64_C(0); t28 = h0_d.f_truncated; hero_array_incref(t26); t29 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t26, .f_point = t27, .f_truncated = t28}; t42 = h8_own8; h8_own8 = t29; h_1corestrconvinternaldecimal_0Decimal_release(&t42); h4_ret0 = t29; goto bb12; bb11: goto bb9; bb12:
+#line 2031 "main.c"
+    t37 = h4_ret0;
+    h_1corestrconvinternaldecimal_0Decimal_retain(&t37);
+    hero_array_release_at(&h3_nothing);
+    hero_array_release_at(&h5_own5);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h6_own6));
+    hero_array_release_at(&h7_own7);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h8_own8));
+    return t37;
+}
+
+#line 101 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_shifted(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_k) { HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t10, t14, t15, t16, t17, t18; HERO_NODEBUG int64_t t1, t2, t5, t7, t8, t11, t12, t13; HERO_NODEBUG bool t3, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_k; t2 = INT64_C(0); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 105
+    t7 = h1_k; t8 = INT64_C(0); t9 = t7 < t8; if (t9) goto bb5; else goto bb6; bb2:
+#line 103
+    t4 = h0_d; t5 = h1_k; t6 = h_1corestrconvinternaldecimal_doubled(t4, t5); t17 = h3_own3; h3_own3 = t6; h_1corestrconvinternaldecimal_0Decimal_release(&t17); h2_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+#line 107
+    t15 = h0_d; h2_ret0 = t15; goto bb7; bb5:
+#line 106
+    t10 = h0_d; t11 = INT64_C(0); t12 = h1_k; if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.shifted", 106, 32); t14 = h_1corestrconvinternaldecimal_halved(t10, t13); t18 = h4_own4; h4_own4 = t14; h_1corestrconvinternaldecimal_0Decimal_release(&t18); h2_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+#line 2053 "main.c"
+    t16 = h2_ret0;
+    h_1corestrconvinternaldecimal_0Decimal_retain(&t16);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h3_own3));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h4_own4));
+    return t16;
+}
+
+#line 111 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_doubled(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_k) { HeroArrayHeader * h2_backwards = {0}; int64_t h3_n; int64_t h4_read; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h12_own12 = {0}, t14, t15, t19, t21, t106, t107; HERO_NODEBUG h_0opt_1ec004 h6_f1 = {0}, h7_f2 = {0}, h13_own13 = {0}, h14_own14 = {0}, t30, t31, t35, t37, t53, t54, t58, t60, t108, t109, t110, t111; HeroArrayHeader * h8_digits = {0}; bool h9_truncated; int64_t h10_at; HERO_NODEBUG HeroArrayHeader *h11_own11 = {0}, *h15_own15 = {0}, *t1, *t3, *t11, *t66, *t68, *t75, *t80, *t84, *t93, *t95, *t98, *t104, *t105, *t112, *t113; HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h16_own16 = {0}, h17_own17 = {0}, t102, t103, t114, t115; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t12, t16, t17, t22, t23, t24, t25, t27, t28, t29, t32, t33, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51, t52, t55, t56, t63, t64, t65, t69, t70, t71, t72, t73, t76, t77, t81, t85, t90, t91, t92, t94, t96, t97, t99, t100; HERO_NODEBUG bool t9, t18, t34, t48, t57, t67, t74, t78, t88, t89, t101; HERO_NODEBUG uint8_t t13, t38, t61, t82, t86, t87; HERO_NODEBUG HeroFailure t20, t36, t59; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t104 = h11_own11; h11_own11 = t1; hero_array_decref(t104); t105 = h2_backwards; hero_array_incref(t1); h2_backwards = t1; hero_array_decref(t105);
+    t2 = INT64_C(0); h3_n = t2;
+    t3 = h0_d.f_digits; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = INT64_C(1); if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 114, 18); h4_read = t6; goto bb1; bb1:
+#line 116
+    t7 = h4_read; t8 = INT64_C(0); t9 = t7 >= t8; if (t9) goto bb2; else goto bb3; bb2:
+    t10 = h3_n; t11 = h0_d.f_digits; t12 = h4_read; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 117, 25) : (void)0), (void)(t11->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t11 + 1))[t12]); t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t13}; t106 = h12_own12; h12_own12 = t14; h_0opt_e201354_release(&t106); t107 = h5_f0; h_0opt_e201354_retain(&t14); h5_f0 = t14; h_0opt_e201354_release(&t107); t15 = h5_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb4; else goto bb5; bb3: goto bb8; bb4: t21 = h5_f0; t22 = t21.as.ok; t23 = h1_k; if (t23 < 0 || t23 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 117, 18); t24 = (int64_t)((uint64_t)t22 << (uint64_t)t23); if (__builtin_add_overflow(t10, t24, &t25)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 117, 13); h3_n = t25;
+    t27 = h3_n; t28 = INT64_C(10); if (t28 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 118, 42); if (t27 == INT64_MIN && t28 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 118, 42); t29 = t27 % t28; if (t29 >= 0LL && t29 <= 255LL) { t30 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t29}; } else { t30 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t108 = h13_own13; h13_own13 = t30; h_0opt_1ec004_release(&t108); t109 = h6_f1; h_0opt_1ec004_retain(&t30); h6_f1 = t30; h_0opt_1ec004_release(&t109); t31 = h6_f1; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb6; else goto bb7; bb5:
+#line 117
+    t19 = h5_f0; t20 = t19.as.err;
+#line 2072 "main.c"
+    hero_panic_must_at(t20, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 117, 18);
+    hero_unreachable();
+bb6:
+#line 118 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t37 = h6_f1; t38 = t37.as.ok; hero_array_push_owned(&h2_backwards, &t38);
+    t40 = h3_n; t41 = INT64_C(10); if (t41 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 119, 13); if (t40 == INT64_MIN && t41 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 119, 13); t42 = t40 / t41; h3_n = t42;
+    t43 = h4_read; t44 = INT64_C(1); if (__builtin_sub_overflow(t43, t44, &t45)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 120, 16); h4_read = t45; goto bb1; bb7:
+#line 118
+    t35 = h6_f1; t36 = t35.as.err;
+#line 2082 "main.c"
+    hero_panic_must_at(t36, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 118, 36);
+    hero_unreachable();
+bb8:
+#line 122 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t46 = h3_n; t47 = INT64_C(0); t48 = t46 > t47; if (t48) goto bb9; else goto bb10; bb9:
+    t50 = h3_n; t51 = INT64_C(10); if (t51 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 123, 42); if (t50 == INT64_MIN && t51 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 123, 42); t52 = t50 % t51; if (t52 >= 0LL && t52 <= 255LL) { t53 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t52}; } else { t53 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t110 = h14_own14; h14_own14 = t53; h_0opt_1ec004_release(&t110); t111 = h7_f2; h_0opt_1ec004_retain(&t53); h7_f2 = t53; h_0opt_1ec004_release(&t111); t54 = h7_f2; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb11; else goto bb12; bb10:
+#line 126
+    t66 = hero_array_new(&hero_desc_u8, 1); t112 = h15_own15; h15_own15 = t66; hero_array_decref(t112); t113 = h8_digits; hero_array_incref(t66); h8_digits = t66; hero_array_decref(t113);
+    t67 = h0_d.f_truncated; h9_truncated = t67;
+    t68 = h2_backwards; t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len); t70 = INT64_C(1); if (__builtin_sub_overflow(t69, t70, &t71)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 128, 16); h10_at = t71; goto bb13; bb11:
+#line 123
+    t60 = h7_f2; t61 = t60.as.ok; hero_array_push_owned(&h2_backwards, &t61);
+    t63 = h3_n; t64 = INT64_C(10); if (t64 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 124, 13); if (t63 == INT64_MIN && t64 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 124, 13); t65 = t63 / t64; h3_n = t65; goto bb8; bb12:
+#line 123
+    t58 = h7_f2; t59 = t58.as.err;
+#line 2098 "main.c"
+    hero_panic_must_at(t59, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 123, 36);
+    hero_unreachable();
+bb13:
+#line 130 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t72 = h10_at; t73 = INT64_C(0); t74 = t72 >= t73; if (t74) goto bb14; else goto bb15; bb14:
+    t75 = h8_digits; t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len); t77 = h_1corestrconvinternaldecimal_CAPACITY(); t78 = t76 < t77; if (t78) goto bb17; else goto bb18; bb15:
+#line 138
+    t93 = h8_digits; t94 = h0_d.f_point; t95 = h2_backwards; t96 = ((void)(t95 == NULL ? ((void)hero_array_len(t95), hero_unreachable()) : (void)0), t95->len); if (__builtin_add_overflow(t94, t96, &t97)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 138, 40); t98 = h0_d.f_digits; t99 = ((void)(t98 == NULL ? ((void)hero_array_len(t98), hero_unreachable()) : (void)0), t98->len); if (__builtin_sub_overflow(t97, t99, &t100)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 138, 40); t101 = h9_truncated; hero_array_incref(t93); t102 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t93, .f_point = t100, .f_truncated = t101}; t114 = h16_own16; h16_own16 = t102; h_1corestrconvinternaldecimal_0Decimal_release(&t114);
+#line 137
+    t103 = h_1corestrconvinternaldecimal_trimmed(t102); t115 = h17_own17; h17_own17 = t103; h_1corestrconvinternaldecimal_0Decimal_release(&t115);
+#line 2109 "main.c"
+    h_1corestrconvinternaldecimal_0Decimal_retain(&t103);
+    hero_array_release_at(&h2_backwards);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    h_0opt_1ec004_release(hero_slot_escape(&h6_f1));
+    h_0opt_1ec004_release(hero_slot_escape(&h7_f2));
+    hero_array_release_at(&h8_digits);
+    hero_array_release_at(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_1ec004_release(hero_slot_escape(&h13_own13));
+    h_0opt_1ec004_release(hero_slot_escape(&h14_own14));
+    hero_array_release_at(&h15_own15);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h16_own16));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h17_own17));
+    return t103;
+bb16:
+#line 135 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t90 = h10_at; t91 = INT64_C(1); if (__builtin_sub_overflow(t90, t91, &t92)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 135, 14); h10_at = t92; goto bb13; bb17:
+#line 132
+    t80 = h2_backwards; t81 = h10_at; t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? hero_panic_index_at(t80, t81, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 132, 34) : (void)0), (void)(t80->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t80 + 1))[t81]); hero_array_push_owned(&h8_digits, &t82); goto bb16; bb18:
+    t84 = h2_backwards; t85 = h10_at; t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 133, 17) : (void)0), (void)(t84->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t84 + 1))[t85]); t87 = UINT64_C(0); t88 = t86 != t87; if (t88) goto bb19; else goto bb20; bb19:
+    t89 = true; h9_truncated = t89; goto bb16; bb20: goto bb16;
+#line 2131 "main.c"
+}
+
+#line 144 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_halved(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_k) { int64_t h2_read; int64_t h3_n; HeroArrayHeader * h4_nothing = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h10_f2 = {0}, h16_own16 = {0}, h20_own20 = {0}, t37, t38, t42, t44, t87, t88, t92, t94, t140, t141, t147, t148; int64_t h6_point; int64_t h7_mask; HeroArrayHeader * h8_digits = {0}; HERO_NODEBUG h_0opt_1ec004 h9_f1 = {0}, h12_f3 = {0}, h19_own19 = {0}, h21_own21 = {0}, t69, t70, t74, t76, t107, t108, t112, t114, t145, t146, t149, t150; bool h11_truncated; uint8_t h13_digit; HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h14_ret0 = {0}, h18_own18 = {0}, h22_own22 = {0}, h23_own23 = {0}, t19, t135, t136, t137, t144, t151, t152; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h17_own17 = {0}, *t9, *t15, *t16, *t34, *t60, *t62, *t84, *t121, *t132, *t138, *t139, *t142, *t143; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t8, t10, t12, t13, t17, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30, t31, t32, t33, t35, t39, t40, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t61, t63, t66, t67, t68, t71, t72, t79, t80, t81, t82, t83, t85, t89, t90, t95, t96, t97, t98, t99, t101, t102, t104, t105, t106, t109, t110, t116, t117, t118, t119, t120, t122, t123, t133; HERO_NODEBUG bool t7, t11, t14, t18, t24, t41, t64, t73, t91, t100, t103, t111, t124, t130, t131, t134; HERO_NODEBUG uint8_t t36, t77, t86, t115, t126, t128, t129; HERO_NODEBUG HeroFailure t43, t75, t93, t113; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h2_read = t1;
+    t2 = INT64_C(0); h3_n = t2; goto bb1; bb1:
+#line 148
+    t3 = h3_n; t4 = h1_k; if (t4 < 0 || t4 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.halved", 148, 11); t5 = (t3 < 0) ? ~(int64_t)((~(uint64_t)t3) >> (uint64_t)t4) : (int64_t)((uint64_t)t3 >> (uint64_t)t4); t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h2_read; t9 = h0_d.f_digits; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = t8 >= t10; if (t11) goto bb5; else goto bb6; bb3:
+#line 164
+    t50 = h0_d.f_point; t51 = h2_read; if (__builtin_sub_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 164, 13); t53 = INT64_C(1); if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 164, 13); h6_point = t54;
+    t55 = INT64_C(1); t56 = h1_k; if (t56 < 0 || t56 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.halved", 165, 13); t57 = (int64_t)((uint64_t)t55 << (uint64_t)t56); t58 = INT64_C(1); if (__builtin_sub_overflow(t57, t58, &t59)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 165, 12); h7_mask = t59;
+    t60 = hero_array_new(&hero_desc_u8, 1); t138 = h15_own15; h15_own15 = t60; hero_array_decref(t138); t139 = h8_digits; hero_array_incref(t60); h8_digits = t60; hero_array_decref(t139); goto bb15; bb4:
+#line 159
+    t31 = h3_n; t32 = INT64_C(10); if (__builtin_mul_overflow(t31, t32, &t33)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 159, 13); t34 = h0_d.f_digits; t35 = h2_read; t36 = ((void)((t34 == NULL || t35 < 0 || t35 >= t34->len) ? hero_panic_index_at(t34, t35, "<core>/strconv/internal/decimal.hero", "decimal.halved", 159, 29) : (void)0), (void)(t34->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t34 + 1))[t35]); t37 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t36}; t140 = h16_own16; h16_own16 = t37; h_0opt_e201354_release(&t140); t141 = h5_f0; h_0opt_e201354_retain(&t37); h5_f0 = t37; h_0opt_e201354_release(&t141); t38 = h5_f0; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb13; else goto bb14; bb5:
+#line 150
+    t12 = h3_n; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb8; else goto bb9; bb6: goto bb4; bb7: goto bb10; bb8:
+    t15 = hero_array_new(&hero_desc_u8, 1); t142 = h17_own17; h17_own17 = t15; hero_array_decref(t142); t143 = h4_nothing; hero_array_incref(t15); h4_nothing = t15; hero_array_decref(t143);
+    t16 = h4_nothing; t17 = INT64_C(0); t18 = h0_d.f_truncated; hero_array_incref(t16); t19 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t16, .f_point = t17, .f_truncated = t18}; t144 = h18_own18; h18_own18 = t19; h_1corestrconvinternaldecimal_0Decimal_release(&t144); h14_ret0 = t19; goto bb32; bb9: goto bb7; bb10:
+#line 154
+    t20 = h3_n; t21 = h1_k; if (t21 < 0 || t21 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.halved", 154, 19); t22 = (t20 < 0) ? ~(int64_t)((~(uint64_t)t20) >> (uint64_t)t21) : (int64_t)((uint64_t)t20 >> (uint64_t)t21); t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb11; else goto bb12; bb11:
+    t25 = h3_n; t26 = INT64_C(10); if (__builtin_mul_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 155, 21); h3_n = t27;
+    t28 = h2_read; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 156, 24); h2_read = t30; goto bb10; bb12: goto bb3; bb13:
+#line 159
+    t44 = h5_f0; t45 = t44.as.ok; if (__builtin_add_overflow(t33, t45, &t46)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 159, 13); h3_n = t46;
+    t47 = h2_read; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 160, 16); h2_read = t49; goto bb1; bb14:
+#line 159
+    t42 = h5_f0; t43 = t42.as.err;
+#line 2160 "main.c"
+    hero_panic_must_at(t43, "<core>/strconv/internal/decimal.hero", "decimal.halved", 159, 22);
+    hero_unreachable();
+bb15:
+#line 168 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t61 = h2_read; t62 = h0_d.f_digits; t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len); t64 = t61 < t63; if (t64) goto bb16; else goto bb17; bb16:
+    t66 = h3_n; t67 = h1_k; if (t67 < 0 || t67 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.halved", 169, 36); t68 = (t66 < 0) ? ~(int64_t)((~(uint64_t)t66) >> (uint64_t)t67) : (int64_t)((uint64_t)t66 >> (uint64_t)t67); if (t68 >= 0LL && t68 <= 255LL) { t69 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t68}; } else { t69 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t145 = h19_own19; h19_own19 = t69; h_0opt_1ec004_release(&t145); t146 = h9_f1; h_0opt_1ec004_retain(&t69); h9_f1 = t69; h_0opt_1ec004_release(&t146); t70 = h9_f1; t71 = t70.tag; t72 = INT64_C(0); t73 = t71 == t72; if (t73) goto bb18; else goto bb19; bb17:
+#line 173
+    t100 = h0_d.f_truncated; h11_truncated = t100; goto bb22; bb18:
+#line 169
+    t76 = h9_f1; t77 = t76.as.ok; hero_array_push_owned(&h8_digits, &t77);
+    t79 = h3_n; t80 = h7_mask; t81 = t79 & t80; t82 = INT64_C(10); if (__builtin_mul_overflow(t81, t82, &t83)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 13); t84 = h0_d.f_digits; t85 = h2_read; t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 38) : (void)0), (void)(t84->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t84 + 1))[t85]); t87 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t86}; t147 = h20_own20; h20_own20 = t87; h_0opt_e201354_release(&t147); t148 = h10_f2; h_0opt_e201354_retain(&t87); h10_f2 = t87; h_0opt_e201354_release(&t148); t88 = h10_f2; t89 = t88.tag; t90 = INT64_C(0); t91 = t89 == t90; if (t91) goto bb20; else goto bb21; bb19:
+#line 169
+    t74 = h9_f1; t75 = t74.as.err;
+#line 2174 "main.c"
+    hero_panic_must_at(t75, "<core>/strconv/internal/decimal.hero", "decimal.halved", 169, 30);
+    hero_unreachable();
+bb20:
+#line 170 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t94 = h10_f2; t95 = t94.as.ok; if (__builtin_add_overflow(t83, t95, &t96)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 13); h3_n = t96;
+    t97 = h2_read; t98 = INT64_C(1); if (__builtin_add_overflow(t97, t98, &t99)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 171, 16); h2_read = t99; goto bb15; bb21:
+#line 170
+    t92 = h10_f2; t93 = t92.as.err;
+#line 2183 "main.c"
+    hero_panic_must_at(t93, "<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 31);
+    hero_unreachable();
+bb22:
+#line 175 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t101 = h3_n; t102 = INT64_C(0); t103 = t101 > t102; if (t103) goto bb23; else goto bb24; bb23:
+    t104 = h3_n; t105 = h1_k; if (t105 < 0 || t105 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.halved", 176, 23); t106 = (t104 < 0) ? ~(int64_t)((~(uint64_t)t104) >> (uint64_t)t105) : (int64_t)((uint64_t)t104 >> (uint64_t)t105); if (t106 >= 0LL && t106 <= 255LL) { t107 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t106}; } else { t107 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t149 = h21_own21; h21_own21 = t107; h_0opt_1ec004_release(&t149); t150 = h12_f3; h_0opt_1ec004_retain(&t107); h12_f3 = t107; h_0opt_1ec004_release(&t150); t108 = h12_f3; t109 = t108.tag; t110 = INT64_C(0); t111 = t109 == t110; if (t111) goto bb25; else goto bb26; bb24:
+#line 184
+    t132 = h8_digits; t133 = h6_point; t134 = h11_truncated; hero_array_incref(t132); t135 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t132, .f_point = t133, .f_truncated = t134}; t151 = h22_own22; h22_own22 = t135; h_1corestrconvinternaldecimal_0Decimal_release(&t151); t136 = h_1corestrconvinternaldecimal_trimmed(t135); t152 = h23_own23; h23_own23 = t136; h_1corestrconvinternaldecimal_0Decimal_release(&t152); h14_ret0 = t136; goto bb32; bb25:
+#line 176
+    t114 = h12_f3; t115 = t114.as.ok; h13_digit = t115;
+    t116 = h3_n; t117 = h7_mask; t118 = t116 & t117; t119 = INT64_C(10); if (__builtin_mul_overflow(t118, t119, &t120)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 177, 13); h3_n = t120;
+#line 179
+    t121 = h8_digits; t122 = ((void)(t121 == NULL ? ((void)hero_array_len(t121), hero_unreachable()) : (void)0), t121->len); t123 = h_1corestrconvinternaldecimal_CAPACITY(); t124 = t122 < t123; if (t124) goto bb28; else goto bb29; bb26:
+#line 176
+    t112 = h12_f3; t113 = t112.as.err;
+#line 2199 "main.c"
+    hero_panic_must_at(t113, "<core>/strconv/internal/decimal.hero", "decimal.halved", 176, 17);
+    hero_unreachable();
+bb27:
+    goto bb22;
+bb28:
+#line 180 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t126 = h13_digit; hero_array_push_owned(&h8_digits, &t126); goto bb27; bb29:
+    t128 = h13_digit; t129 = UINT64_C(0); t130 = t128 != t129; if (t130) goto bb30; else goto bb31; bb30:
+    t131 = true; h11_truncated = t131; goto bb27; bb31: goto bb27; bb32:
+#line 2209 "main.c"
+    t137 = h14_ret0;
+    h_1corestrconvinternaldecimal_0Decimal_retain(&t137);
+    hero_array_release_at(&h4_nothing);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h8_digits);
+    h_0opt_1ec004_release(hero_slot_escape(&h9_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h10_f2));
+    h_0opt_1ec004_release(hero_slot_escape(&h12_f3));
+    hero_array_release_at(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    hero_array_release_at(&h17_own17);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h18_own18));
+    h_0opt_1ec004_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_1ec004_release(hero_slot_escape(&h21_own21));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h22_own22));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h23_own23));
+    return t137;
+}
+
+#line 188 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+bool h_1corestrconvinternaldecimal_rounds_up(h_1corestrconvinternaldecimal_Decimal h0_d, int64_t h1_at) { HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, h5_ret0, t3, t7, t8, t9, t14, t20, t21, t22, t23, t26, t35, t36, t41, t42; HERO_NODEBUG int64_t t1, t2, t4, t6, t11, t15, t16, t17, t19, t24, t25, t28, t29, t30, t38; HERO_NODEBUG HeroArrayHeader *t5, *t10, *t18, *t27, *t37; HERO_NODEBUG uint8_t t12, t13, t31, t32, t33, t34, t39, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_at; t2 = INT64_C(0); t3 = t1 < t2; h2_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 192
+    t10 = h0_d.f_digits; t11 = h1_at; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 192, 8) : (void)0), (void)(t10->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t10 + 1))[t11]); t13 = UINT64_C(5); t14 = t12 == t13; h3_b1 = t14; if (t14) goto bb7; else goto bb8; bb2:
+#line 189
+    t4 = h1_at; t5 = h0_d.f_digits; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 >= t6; h2_b0 = t7; goto bb3; bb3: t8 = h2_b0; if (t8) goto bb4; else goto bb5; bb4:
+    t9 = false; h5_ret0 = t9; goto bb16; bb5: goto bb1; bb6:
+#line 196
+    t37 = h0_d.f_digits; t38 = h1_at; t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? hero_panic_index_at(t37, t38, "<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 196, 12) : (void)0), (void)(t37->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t37 + 1))[t38]); t40 = UINT64_C(5); t41 = t39 >= t40; h5_ret0 = t41; goto bb16; bb7:
+#line 192
+    t15 = h1_at; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 192, 29); t18 = h0_d.f_digits; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 == t19; h3_b1 = t20; goto bb8; bb8: t21 = h3_b1; if (t21) goto bb9; else goto bb10; bb9:
+    t22 = h0_d.f_truncated; if (t22) goto bb12; else goto bb13; bb10: goto bb6; bb11:
+#line 195
+    t24 = h1_at; t25 = INT64_C(0); t26 = t24 > t25; h4_b2 = t26; if (t26) goto bb14; else goto bb15; bb12:
+#line 194
+    t23 = true; h5_ret0 = t23; goto bb16; bb13: goto bb11; bb14:
+    t27 = h0_d.f_digits; t28 = h1_at; t29 = INT64_C(1); if (__builtin_sub_overflow(t28, t29, &t30)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 195, 35); t31 = ((void)((t27 == NULL || t30 < 0 || t30 >= t27->len) ? hero_panic_index_at(t27, t30, "<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 195, 26) : (void)0), (void)(t27->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t27 + 1))[t30]); t32 = UINT64_C(2); if (t32 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 195, 26); t33 = t31 % t32; t34 = UINT64_C(1); t35 = t33 == t34; h4_b2 = t35; goto bb15; bb15: t36 = h4_b2; h5_ret0 = t36; goto bb16; bb16:
+#line 2248 "main.c"
+    t42 = h5_ret0;
+    return t42;
+}
+
+#line 200 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+int64_t h_1corestrconvinternaldecimal_rounded(h_1corestrconvinternaldecimal_Decimal h0_d) { int64_t h1_n; int64_t h2_i; HERO_NODEBUG bool h3_b0, t5, t9, t10, t21, t32, t41; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h6_own6 = {0}, t17, t18, t22, t24, t47, t48; HERO_NODEBUG int64_t h5_ret0, t1, t2, t3, t4, t6, t8, t11, t12, t13, t15, t19, t20, t25, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t37, t38, t40, t42, t43, t44, t45, t46; HERO_NODEBUG HeroArrayHeader *t7, *t14; HERO_NODEBUG uint8_t t16; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal t39; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1;
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 204
+    t3 = h2_i; t4 = h0_d.f_point; t5 = t3 < t4; h3_b0 = t5; if (t5) goto bb4; else goto bb5; bb2:
+    t11 = h1_n; t12 = INT64_C(10); if (__builtin_mul_overflow(t11, t12, &t13)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 205, 13); t14 = h0_d.f_digits; t15 = h2_i; t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "<core>/strconv/internal/decimal.hero", "decimal.rounded", 205, 29) : (void)0), (void)(t14->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t14 + 1))[t15]); t17 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t16}; t47 = h6_own6; h6_own6 = t17; h_0opt_e201354_release(&t47); t48 = h4_f0; h_0opt_e201354_retain(&t17); h4_f0 = t17; h_0opt_e201354_release(&t48); t18 = h4_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb6; else goto bb7; bb3: goto bb8; bb4:
+#line 204
+    t6 = h2_i; t7 = h0_d.f_digits; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; h3_b0 = t9; goto bb5; bb5: t10 = h3_b0; if (t10) goto bb2; else goto bb3; bb6:
+    t24 = h4_f0; t25 = t24.as.ok; if (__builtin_add_overflow(t13, t25, &t26)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 205, 13); h1_n = t26;
+    t27 = h2_i; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 206, 13); h2_i = t29; goto bb1; bb7:
+#line 205
+    t22 = h4_f0; t23 = t22.as.err;
+#line 2266 "main.c"
+    hero_panic_must_at(t23, "<core>/strconv/internal/decimal.hero", "decimal.rounded", 205, 22);
+    hero_unreachable();
+bb8:
+#line 208 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+    t30 = h2_i; t31 = h0_d.f_point; t32 = t30 < t31; if (t32) goto bb9; else goto bb10; bb9:
+    t33 = h1_n; t34 = INT64_C(10); if (__builtin_mul_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 209, 13); h1_n = t35;
+    t36 = h2_i; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 210, 13); h2_i = t38; goto bb8; bb10:
+#line 212
+    t39 = h0_d; t40 = h0_d.f_point; t41 = h_1corestrconvinternaldecimal_rounds_up(t39, t40); if (t41) goto bb12; else goto bb13; bb11:
+#line 214
+    t45 = h1_n; h5_ret0 = t45; goto bb14; bb12:
+#line 213
+    t42 = h1_n; t43 = INT64_C(1); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 213, 16); h5_ret0 = t44; goto bb14; bb13: goto bb11; bb14:
+#line 2280 "main.c"
+    t46 = h5_ret0;
+    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    return t46;
+}
+
+#line 217 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+int64_t h_1corestrconvinternaldecimal_step_for(int64_t h0_n) { HERO_NODEBUG int64_t h1_ret0, t1, t3, t6, t7, t8, t9, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t2, *t5, *t14, *t15; HERO_NODEBUG bool t4, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h_1corestrconvinternaldecimal_STEPS(); t14 = h2_own2; h2_own2 = t2; hero_array_decref(t14); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = t1 < t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 221
+    t8 = h0_n; t9 = INT64_C(18); t10 = t8 < t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 219
+    t5 = h_1corestrconvinternaldecimal_STEPS(); t15 = h3_own3; h3_own3 = t5; hero_array_decref(t15); t6 = h0_n; t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "<core>/strconv/internal/decimal.hero", "decimal.step_for", 219, 16) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]); h1_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+#line 223
+    t12 = h_1corestrconvinternaldecimal_WIDEST(); h1_ret0 = t12; goto bb7; bb5:
+#line 222
+    t11 = INT64_C(27); h1_ret0 = t11; goto bb7; bb6: goto bb4; bb7:
+#line 2298 "main.c"
+    t13 = h1_ret0;
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    return t13;
+}
+
+#line 228 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+h_0opt_db92a83 h_1corestrconvinternaldecimal_rounded_to_float(h_1corestrconvinternaldecimal_Decimal h0_d) { h_1corestrconvinternaldecimal_Decimal h1_x = {0}; int64_t h2_exponent; int64_t h3_n; HERO_NODEBUG bool h4_b0, h5_b1, t4, t9, t15, t22, t35, t38, t43, t44, t45, t61, t75, t87, t96; int64_t h6_n; int64_t h7_n; int64_t h8_significand; HERO_NODEBUG h_0opt_db92a83 h9_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t6, t12, t17, t78, t99, t106, t107, t108, t109, t111, t119, t120, t121; HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t18, t25, t29, t50, t52, t65, t69, t79, t81, t110, t112, t113, t114, t115, t116, t117, t118; HERO_NODEBUG HeroArrayHeader *t1, *t39; HERO_NODEBUG int64_t t2, t3, t7, t8, t13, t14, t19, t20, t21, t23, t24, t26, t27, t28, t30, t31, t32, t33, t34, t36, t37, t40, t46, t47, t48, t49, t51, t53, t54, t55, t56, t57, t58, t59, t60, t62, t63, t64, t66, t67, t68, t70, t71, t72, t73, t74, t80, t82, t83, t84, t85, t86, t88, t89, t90, t91, t92, t93, t94, t95, t100, t102, t103, t104; HERO_NODEBUG double t5, t16, t101, t105; HERO_NODEBUG HeroStr t10, t11, t76, t77, t97, t98; HERO_NODEBUG uint8_t t41, t42; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_d.f_digits; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 232
+    t7 = h0_d.f_point; t8 = INT64_C(310); t9 = t7 > t8; if (t9) goto bb5; else goto bb6; bb2:
+#line 230
+    t5 = 0x0p+0; t6 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t5}; t108 = h10_own10; h10_own10 = t6; h_0opt_db92a83_release(&t108); h9_ret0 = t6; goto bb32; bb3: goto bb1; bb4:
+#line 235
+    t13 = h0_d.f_point; t14 = INT64_C(-330); t15 = t13 < t14; if (t15) goto bb8; else goto bb9; bb5:
+#line 233
+    t10 = HERO_STR_LIT(hero_str_2633b9f3); t11 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t109 = h11_own11; h11_own11 = t12; h_0opt_db92a83_release(&t109); h9_ret0 = t12; goto bb32; bb6: goto bb4; bb7:
+#line 237
+    t18 = h0_d; t110 = h1_x; h_1corestrconvinternaldecimal_0Decimal_retain(&t18); h1_x = t18; h_1corestrconvinternaldecimal_0Decimal_release(&t110);
+    t19 = INT64_C(0); h2_exponent = t19; goto bb10; bb8:
+#line 236
+    t16 = 0x0p+0; t17 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t16}; t111 = h12_own12; h12_own12 = t17; h_0opt_db92a83_release(&t111); h9_ret0 = t17; goto bb32; bb9: goto bb7; bb10:
+#line 240
+    t20 = h1_x.f_point; t21 = INT64_C(0); t22 = t20 > t21; if (t22) goto bb11; else goto bb12; bb11:
+    t23 = h1_x.f_point; t24 = h_1corestrconvinternaldecimal_step_for(t23); h3_n = t24;
+    t25 = h1_x; t26 = INT64_C(0); t27 = h3_n; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 242, 30); t29 = h_1corestrconvinternaldecimal_shifted(t25, t28); t112 = h13_own13; h13_own13 = t29; h_1corestrconvinternaldecimal_0Decimal_release(&t112); t113 = h1_x; h_1corestrconvinternaldecimal_0Decimal_retain(&t29); h1_x = t29; h_1corestrconvinternaldecimal_0Decimal_release(&t113);
+    t30 = h2_exponent; t31 = h3_n; if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 243, 20); h2_exponent = t32; goto bb10; bb12: goto bb13; bb13:
+#line 245
+    t33 = h1_x.f_point; t34 = INT64_C(0); t35 = t33 < t34; h4_b0 = t35; if (t35) goto bb17; else goto bb16; bb14:
+    t46 = INT64_C(0); t47 = h1_x.f_point; if (__builtin_sub_overflow(t46, t47, &t48)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 246, 22); t49 = h_1corestrconvinternaldecimal_step_for(t48); h6_n = t49;
+    t50 = h1_x; t51 = h6_n; t52 = h_1corestrconvinternaldecimal_shifted(t50, t51); t114 = h14_own14; h14_own14 = t52; h_1corestrconvinternaldecimal_0Decimal_release(&t114); t115 = h1_x; h_1corestrconvinternaldecimal_0Decimal_retain(&t52); h1_x = t52; h_1corestrconvinternaldecimal_0Decimal_release(&t115);
+    t53 = h2_exponent; t54 = h6_n; if (__builtin_sub_overflow(t53, t54, &t55)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 248, 20); h2_exponent = t55; goto bb13; bb15:
+#line 251
+    t56 = h2_exponent; t57 = INT64_C(1); if (__builtin_sub_overflow(t56, t57, &t58)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 251, 16); h2_exponent = t58;
+#line 255
+    t59 = h2_exponent; t60 = INT64_C(-1022); t61 = t59 < t60; if (t61) goto bb21; else goto bb22; bb16:
+#line 245
+    t36 = h1_x.f_point; t37 = INT64_C(0); t38 = t36 == t37; h5_b1 = t38; if (t38) goto bb18; else goto bb19; bb17: t45 = h4_b0; if (t45) goto bb14; else goto bb15; bb18: t39 = h1_x.f_digits; t40 = INT64_C(0); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 245, 42) : (void)0), (void)(t39->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t39 + 1))[t40]); t42 = UINT64_C(5); t43 = t41 < t42; h5_b1 = t43; goto bb19; bb19: t44 = h5_b1; h4_b0 = t44; goto bb17; bb20:
+#line 260
+    t73 = h2_exponent; t74 = INT64_C(1023); t75 = t73 > t74; if (t75) goto bb24; else goto bb25; bb21:
+#line 256
+    t62 = INT64_C(-1022); t63 = h2_exponent; if (__builtin_sub_overflow(t62, t63, &t64)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 256, 13); h7_n = t64;
+    t65 = h1_x; t66 = INT64_C(0); t67 = h7_n; if (__builtin_sub_overflow(t66, t67, &t68)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 257, 30); t69 = h_1corestrconvinternaldecimal_shifted(t65, t68); t116 = h15_own15; h15_own15 = t69; h_1corestrconvinternaldecimal_0Decimal_release(&t116); t117 = h1_x; h_1corestrconvinternaldecimal_0Decimal_retain(&t69); h1_x = t69; h_1corestrconvinternaldecimal_0Decimal_release(&t117);
+    t70 = h2_exponent; t71 = h7_n; if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 258, 20); h2_exponent = t72; goto bb20; bb22: goto bb20; bb23:
+#line 262
+    t79 = h1_x; t80 = INT64_C(53); t81 = h_1corestrconvinternaldecimal_shifted(t79, t80); t118 = h16_own16; h16_own16 = t81; h_1corestrconvinternaldecimal_0Decimal_release(&t118); t82 = h_1corestrconvinternaldecimal_rounded(t81); h8_significand = t82;
+#line 265
+    t83 = h8_significand; t84 = INT64_C(1); t85 = INT64_C(53); if (t85 < 0 || t85 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 265, 23); t86 = (int64_t)((uint64_t)t84 << (uint64_t)t85); t87 = t83 == t86; if (t87) goto bb27; else goto bb28; bb24:
+#line 261
+    t76 = HERO_STR_LIT(hero_str_2633b9f3); t77 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t76); hero_str_incref(t77); t78 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t76, .msg = t77}}; t119 = h17_own17; h17_own17 = t78; h_0opt_db92a83_release(&t119); h9_ret0 = t78; goto bb32; bb25: goto bb23; bb26:
+#line 274
+    t100 = h8_significand; t101 = hero_int_to_f64(t100); t102 = h2_exponent; t103 = INT64_C(52); if (__builtin_sub_overflow(t102, t103, &t104)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 274, 49); t105 = h_1corestrconvinternaldecimal_scaled(t101, t104); t106 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t105}; t120 = h18_own18; h18_own18 = t106; h_0opt_db92a83_release(&t120); h9_ret0 = t106; goto bb32; bb27:
+#line 266
+    t88 = h8_significand; t89 = INT64_C(2); if (t89 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 266, 23); if (t88 == INT64_MIN && t89 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 266, 23); t90 = t88 / t89; h8_significand = t90;
+    t91 = h2_exponent; t92 = INT64_C(1); if (__builtin_add_overflow(t91, t92, &t93)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded_to_float", 267, 20); h2_exponent = t93;
+#line 269
+    t94 = h2_exponent; t95 = INT64_C(1023); t96 = t94 > t95; if (t96) goto bb30; else goto bb31; bb28: goto bb26; bb29: goto bb26; bb30:
+#line 271
+    t97 = HERO_STR_LIT(hero_str_2633b9f3);
+    t98 = HERO_STR_LIT(hero_str_37842519);
+#line 270
+    hero_str_incref(t97); hero_str_incref(t98); t99 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t97, .msg = t98}}; t121 = h19_own19; h19_own19 = t99; h_0opt_db92a83_release(&t121); h9_ret0 = t99; goto bb32; bb31: goto bb29; bb32:
+#line 2361 "main.c"
+    t107 = h9_ret0;
+    h_0opt_db92a83_retain(&t107);
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h1_x));
+    h_0opt_db92a83_release(hero_slot_escape(&h10_own10));
+    h_0opt_db92a83_release(hero_slot_escape(&h11_own11));
+    h_0opt_db92a83_release(hero_slot_escape(&h12_own12));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h13_own13));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h14_own14));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h15_own15));
+    h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h16_own16));
+    h_0opt_db92a83_release(hero_slot_escape(&h17_own17));
+    h_0opt_db92a83_release(hero_slot_escape(&h18_own18));
+    h_0opt_db92a83_release(hero_slot_escape(&h19_own19));
+    return t107;
+}
+
+#line 279 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+double h_1corestrconvinternaldecimal_scaled(double h0_x, int64_t h1_k) { double h2_out; int64_t h3_i; HERO_NODEBUG double t1, t6, t7, t8, t15, t16, t17, t21; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11, t12, t13, t18, t19, t20; HERO_NODEBUG bool t5, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; h2_out = t1;
+    t2 = INT64_C(0); h3_i = t2; goto bb1; bb1:
+#line 283
+    t3 = h3_i; t4 = h1_k; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h2_out; t7 = 0x1p+1; t8 = t6 * t7; h2_out = t8;
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.scaled", 285, 13); h3_i = t11; goto bb1; bb3: goto bb4; bb4:
+#line 287
+    t12 = h3_i; t13 = h1_k; t14 = t12 > t13; if (t14) goto bb5; else goto bb6; bb5:
+    t15 = h2_out; t16 = 0x1p+1; t17 = t15 / t16; h2_out = t17;
+    t18 = h3_i; t19 = INT64_C(1); if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.scaled", 289, 13); h3_i = t20; goto bb4; bb6:
+#line 291
+    t21 = h2_out; return t21;
+#line 2392 "main.c"
+}
+
+#line 296 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
+HeroStr h_1corestrconvinternaldecimal_shown(h_1corestrconvinternaldecimal_Decimal h0_d) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t26, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17, t23; uint8_t h4_digit; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t13, t19, t20, t21, t22, t24, t25, t29, t30, t31, t32, t33; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t26 = h5_own5; h5_own5 = t1; hero_array_decref(t26); t27 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t27);
+#line 299
+    t2 = h0_d.f_digits; t28 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t28); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "<core>/strconv/internal/decimal.hero", "decimal.shown", 299, 9) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); h4_digit = t10;
+    t12 = h4_digit; t13 = hero_int_to_str(t12); t29 = h6_own6; h6_own6 = t13; hero_str_decref(t29); hero_array_push_owned(&h1_out, &t13); goto bb3; bb3:
+#line 299
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.shown", 299, 9); h3_i0 = t17; goto bb1; bb4:
+#line 302
+    t18 = h1_out; t19 = HERO_STR_LIT(hero_str_0); t20 = hero_str_join(t18, t19); t30 = h7_own7; h7_own7 = t20; hero_str_decref(t30); t21 = HERO_STR_LIT(hero_str_10c5); t22 = hero_str_concat(t20, t21); t31 = h8_own8; h8_own8 = t22; hero_str_decref(t31); t23 = h0_d.f_point; t24 = hero_int_to_str(t23); t32 = h9_own9; h9_own9 = t24; hero_str_decref(t32); t25 = hero_str_concat(t22, t24); t33 = h10_own10; h10_own10 = t25; hero_str_decref(t33);
+#line 2405 "main.c"
+    hero_str_incref(t25);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    return t25;
+}
+
+#line 23 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_LEAST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-342); return t1;
+#line 2421 "main.c"
+}
+
+#line 27 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_MOST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(308); return t1;
+#line 2427 "main.c"
+}
+
+#line 32 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(19); return t1;
+#line 2433 "main.c"
+}
+
+#line 36 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+uint64_t h_1corestrconvinternalpowers_NINES(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(9999999999999999999); return t1;
+#line 2439 "main.c"
+}
+
+#line 40 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_SIGNIFICAND_BITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(53); return t1;
+#line 2445 "main.c"
+}
+
+#line 45 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_SUBNORMAL_EXPONENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-1074); return t1;
+#line 2451 "main.c"
+}
+
+#line 51 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_PAST_EXPONENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(972); return t1;
+#line 2457 "main.c"
+}
+
+#line 57 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_LOG_TIMES(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(108853); return t1;
+#line 2463 "main.c"
+}
+
+#line 61 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+int64_t h_1corestrconvinternalpowers_LOG_SHIFT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(15); return t1;
+#line 2469 "main.c"
+}
+
+#line 66 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+uint64_t h_1corestrconvinternalpowers_HALF(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(4294967296); return t1;
+#line 2475 "main.c"
+}
+
+#line 70 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+uint64_t h_1corestrconvinternalpowers_ALL_ONES(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(18446744073709551615); return t1;
+#line 2481 "main.c"
+}
+
+#if HERO_STATIC_CONSTANTS
+#line 74 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalpowers_TWO_TO_65, uint64_t, &hero_desc_u64, 64, UINT64_C(1), UINT64_C(2), UINT64_C(4), UINT64_C(8), UINT64_C(16), UINT64_C(32), UINT64_C(64), UINT64_C(128), UINT64_C(256), UINT64_C(512), UINT64_C(1024), UINT64_C(2048), UINT64_C(4096), UINT64_C(8192), UINT64_C(16384), UINT64_C(32768), UINT64_C(65536), UINT64_C(131072), UINT64_C(262144), UINT64_C(524288), UINT64_C(1048576), UINT64_C(2097152), UINT64_C(4194304), UINT64_C(8388608), UINT64_C(16777216), UINT64_C(33554432), UINT64_C(67108864), UINT64_C(134217728), UINT64_C(268435456), UINT64_C(536870912), UINT64_C(1073741824), UINT64_C(2147483648), UINT64_C(4294967296), UINT64_C(8589934592), UINT64_C(17179869184), UINT64_C(34359738368), UINT64_C(68719476736), UINT64_C(137438953472), UINT64_C(274877906944), UINT64_C(549755813888), UINT64_C(1099511627776), UINT64_C(2199023255552), UINT64_C(4398046511104), UINT64_C(8796093022208), UINT64_C(17592186044416), UINT64_C(35184372088832), UINT64_C(70368744177664), UINT64_C(140737488355328), UINT64_C(281474976710656), UINT64_C(562949953421312), UINT64_C(1125899906842624), UINT64_C(2251799813685248), UINT64_C(4503599627370496), UINT64_C(9007199254740992), UINT64_C(18014398509481984), UINT64_C(36028797018963968), UINT64_C(72057594037927936), UINT64_C(144115188075855872), UINT64_C(288230376151711744), UINT64_C(576460752303423488), UINT64_C(1152921504606846976), UINT64_C(2305843009213693952), UINT64_C(4611686018427387904), UINT64_C(9223372036854775808)); HeroArrayHeader * h_1corestrconvinternalpowers_TWO_TO(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalpowers_TWO_TO_65);
+#line 2487 "main.c"
+}
+#else
+
+#line 74 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+HeroArrayHeader * h_1corestrconvinternalpowers_TWO_TO(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t65, *t66; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 76
+    t1 = UINT64_C(1);
+    t2 = UINT64_C(2);
+    t3 = UINT64_C(4);
+    t4 = UINT64_C(8);
+    t5 = UINT64_C(16);
+    t6 = UINT64_C(32);
+    t7 = UINT64_C(64);
+    t8 = UINT64_C(128);
+    t9 = UINT64_C(256);
+    t10 = UINT64_C(512);
+    t11 = UINT64_C(1024);
+    t12 = UINT64_C(2048);
+    t13 = UINT64_C(4096);
+    t14 = UINT64_C(8192);
+    t15 = UINT64_C(16384);
+    t16 = UINT64_C(32768);
+    t17 = UINT64_C(65536);
+    t18 = UINT64_C(131072);
+    t19 = UINT64_C(262144);
+    t20 = UINT64_C(524288);
+    t21 = UINT64_C(1048576);
+    t22 = UINT64_C(2097152);
+    t23 = UINT64_C(4194304);
+    t24 = UINT64_C(8388608);
+    t25 = UINT64_C(16777216);
+    t26 = UINT64_C(33554432);
+    t27 = UINT64_C(67108864);
+    t28 = UINT64_C(134217728);
+    t29 = UINT64_C(268435456);
+    t30 = UINT64_C(536870912);
+    t31 = UINT64_C(1073741824);
+    t32 = UINT64_C(2147483648);
+    t33 = UINT64_C(4294967296);
+    t34 = UINT64_C(8589934592);
+    t35 = UINT64_C(17179869184);
+    t36 = UINT64_C(34359738368);
+    t37 = UINT64_C(68719476736);
+    t38 = UINT64_C(137438953472);
+    t39 = UINT64_C(274877906944);
+    t40 = UINT64_C(549755813888);
+    t41 = UINT64_C(1099511627776);
+    t42 = UINT64_C(2199023255552);
+    t43 = UINT64_C(4398046511104);
+    t44 = UINT64_C(8796093022208);
+    t45 = UINT64_C(17592186044416);
+    t46 = UINT64_C(35184372088832);
+    t47 = UINT64_C(70368744177664);
+    t48 = UINT64_C(140737488355328);
+    t49 = UINT64_C(281474976710656);
+    t50 = UINT64_C(562949953421312);
+    t51 = UINT64_C(1125899906842624);
+    t52 = UINT64_C(2251799813685248);
+    t53 = UINT64_C(4503599627370496);
+    t54 = UINT64_C(9007199254740992);
+    t55 = UINT64_C(18014398509481984);
+    t56 = UINT64_C(36028797018963968);
+    t57 = UINT64_C(72057594037927936);
+    t58 = UINT64_C(144115188075855872);
+    t59 = UINT64_C(288230376151711744);
+    t60 = UINT64_C(576460752303423488);
+    t61 = UINT64_C(1152921504606846976);
+    t62 = UINT64_C(2305843009213693952);
+    t63 = UINT64_C(4611686018427387904);
+    t64 = UINT64_C(9223372036854775808);
+#line 75
+    t65 = hero_array_new(&hero_desc_u64, 64); hero_array_push_owned(&t65, &t1); hero_array_push_owned(&t65, &t2); hero_array_push_owned(&t65, &t3); hero_array_push_owned(&t65, &t4); hero_array_push_owned(&t65, &t5); hero_array_push_owned(&t65, &t6); hero_array_push_owned(&t65, &t7); hero_array_push_owned(&t65, &t8); hero_array_push_owned(&t65, &t9); hero_array_push_owned(&t65, &t10); hero_array_push_owned(&t65, &t11); hero_array_push_owned(&t65, &t12); hero_array_push_owned(&t65, &t13); hero_array_push_owned(&t65, &t14); hero_array_push_owned(&t65, &t15); hero_array_push_owned(&t65, &t16); hero_array_push_owned(&t65, &t17); hero_array_push_owned(&t65, &t18); hero_array_push_owned(&t65, &t19); hero_array_push_owned(&t65, &t20); hero_array_push_owned(&t65, &t21); hero_array_push_owned(&t65, &t22); hero_array_push_owned(&t65, &t23); hero_array_push_owned(&t65, &t24); hero_array_push_owned(&t65, &t25); hero_array_push_owned(&t65, &t26); hero_array_push_owned(&t65, &t27); hero_array_push_owned(&t65, &t28); hero_array_push_owned(&t65, &t29); hero_array_push_owned(&t65, &t30); hero_array_push_owned(&t65, &t31); hero_array_push_owned(&t65, &t32); hero_array_push_owned(&t65, &t33); hero_array_push_owned(&t65, &t34); hero_array_push_owned(&t65, &t35); hero_array_push_owned(&t65, &t36); hero_array_push_owned(&t65, &t37); hero_array_push_owned(&t65, &t38); hero_array_push_owned(&t65, &t39); hero_array_push_owned(&t65, &t40); hero_array_push_owned(&t65, &t41); hero_array_push_owned(&t65, &t42); hero_array_push_owned(&t65, &t43); hero_array_push_owned(&t65, &t44); hero_array_push_owned(&t65, &t45); hero_array_push_owned(&t65, &t46); hero_array_push_owned(&t65, &t47); hero_array_push_owned(&t65, &t48); hero_array_push_owned(&t65, &t49); hero_array_push_owned(&t65, &t50); hero_array_push_owned(&t65, &t51); hero_array_push_owned(&t65, &t52); hero_array_push_owned(&t65, &t53); hero_array_push_owned(&t65, &t54); hero_array_push_owned(&t65, &t55); hero_array_push_owned(&t65, &t56); hero_array_push_owned(&t65, &t57); hero_array_push_owned(&t65, &t58); hero_array_push_owned(&t65, &t59); hero_array_push_owned(&t65, &t60); hero_array_push_owned(&t65, &t61); hero_array_push_owned(&t65, &t62); hero_array_push_owned(&t65, &t63); hero_array_push_owned(&t65, &t64); t66 = h0_own0; h0_own0 = t65; hero_array_decref(t66);
+#line 2560 "main.c"
+    hero_array_incref(t65);
+    hero_array_release_at(&h0_own0);
+    return t65;
+}
+#endif
+
+#if HERO_STATIC_CONSTANTS
+#line 143 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalpowers_HIGH_652, uint64_t, &hero_desc_u64, 651, UINT64_C(17218479456385750619), UINT64_C(10761549660241094137), UINT64_C(13451937075301367671), UINT64_C(16814921344126709588), UINT64_C(10509325840079193493), UINT64_C(13136657300098991866), UINT64_C(16420821625123739832), UINT64_C(10263013515702337395), UINT64_C(12828766894627921744), UINT64_C(16035958618284902180), UINT64_C(10022474136428063863), UINT64_C(12528092670535079828), UINT64_C(15660115838168849785), UINT64_C(9787572398855531116), UINT64_C(12234465498569413895), UINT64_C(15293081873211767369), UINT64_C(9558176170757354606), UINT64_C(11947720213446693257), UINT64_C(14934650266808366571), UINT64_C(9334156416755229107), UINT64_C(11667695520944036384), UINT64_C(14584619401180045479), UINT64_C(18230774251475056849), UINT64_C(11394233907171910531), UINT64_C(14242792383964888163), UINT64_C(17803490479956110204), UINT64_C(11127181549972568878), UINT64_C(13908976937465711097), UINT64_C(17386221171832138871), UINT64_C(10866388232395086795), UINT64_C(13582985290493858493), UINT64_C(16978731613117323116), UINT64_C(10611707258198326948), UINT64_C(13264634072747908685), UINT64_C(16580792590934885856), UINT64_C(10362995369334303660), UINT64_C(12953744211667879575), UINT64_C(16192180264584849469), UINT64_C(10120112665365530918), UINT64_C(12650140831706913648), UINT64_C(15812676039633642059), UINT64_C(9882922524771026287), UINT64_C(12353653155963782859), UINT64_C(15442066444954728574), UINT64_C(9651291528096705359), UINT64_C(12064114410120881698), UINT64_C(15080143012651102123), UINT64_C(9425089382906938827), UINT64_C(11781361728633673533), UINT64_C(14726702160792091917), UINT64_C(18408377700990114896), UINT64_C(11505236063118821810), UINT64_C(14381545078898527262), UINT64_C(17976931348623159078), UINT64_C(11235582092889474424), UINT64_C(14044477616111843030), UINT64_C(17555597020139803787), UINT64_C(10972248137587377367), UINT64_C(13715310171984221709), UINT64_C(17144137714980277136), UINT64_C(10715086071862673210), UINT64_C(13393857589828341512), UINT64_C(16742321987285426890), UINT64_C(10463951242053391807), UINT64_C(13079939052566739758), UINT64_C(16349923815708424698), UINT64_C(10218702384817765436), UINT64_C(12773377981022206795), UINT64_C(15966722476277758494), UINT64_C(9979201547673599059), UINT64_C(12474001934591998823), UINT64_C(15592502418239998529), UINT64_C(9745314011399999081), UINT64_C(12181642514249998851), UINT64_C(15227053142812498564), UINT64_C(9516908214257811602), UINT64_C(11896135267822264503), UINT64_C(14870169084777830628), UINT64_C(9293855677986144143), UINT64_C(11617319597482680179), UINT64_C(14521649496853350223), UINT64_C(18152061871066687779), UINT64_C(11345038669416679862), UINT64_C(14181298336770849827), UINT64_C(17726622920963562284), UINT64_C(11079139325602226428), UINT64_C(13848924157002783034), UINT64_C(17311155196253478793), UINT64_C(10819471997658424246), UINT64_C(13524339997073030307), UINT64_C(16905424996341287884), UINT64_C(10565890622713304928), UINT64_C(13207363278391631159), UINT64_C(16509204097989538949), UINT64_C(10318252561243461843), UINT64_C(12897815701554327304), UINT64_C(16122269626942909130), UINT64_C(10076418516839318206), UINT64_C(12595523146049147758), UINT64_C(15744403932561434697), UINT64_C(9840252457850896686), UINT64_C(12300315572313620857), UINT64_C(15375394465392026071), UINT64_C(9609621540870016295), UINT64_C(12012026926087520368), UINT64_C(15015033657609400460), UINT64_C(9384396036005875288), UINT64_C(11730495045007344110), UINT64_C(14663118806259180137), UINT64_C(18328898507823975171), UINT64_C(11455561567389984482), UINT64_C(14319451959237480603), UINT64_C(17899314949046850753), UINT64_C(11187071843154281721), UINT64_C(13983839803942852151), UINT64_C(17479799754928565189), UINT64_C(10924874846830353243), UINT64_C(13656093558537941554), UINT64_C(17070116948172426942), UINT64_C(10668823092607766839), UINT64_C(13336028865759708549), UINT64_C(16670036082199635686), UINT64_C(10418772551374772304), UINT64_C(13023465689218465380), UINT64_C(16279332111523081724), UINT64_C(10174582569701926078), UINT64_C(12718228212127407597), UINT64_C(15897785265159259496), UINT64_C(9936115790724537185), UINT64_C(12420144738405671482), UINT64_C(15525180923007089352), UINT64_C(9703238076879430845), UINT64_C(12129047596099288556), UINT64_C(15161309495124110695), UINT64_C(9475818434452569185), UINT64_C(11844773043065711481), UINT64_C(14805966303832139351), UINT64_C(9253728939895087095), UINT64_C(11567161174868858868), UINT64_C(14458951468586073585), UINT64_C(18073689335732591981), UINT64_C(11296055834832869988), UINT64_C(14120069793541087485), UINT64_C(17650087241926359356), UINT64_C(11031304526203974598), UINT64_C(13789130657754968247), UINT64_C(17236413322193710309), UINT64_C(10772758326371068943), UINT64_C(13465947907963836179), UINT64_C(16832434884954795224), UINT64_C(10520271803096747015), UINT64_C(13150339753870933769), UINT64_C(16437924692338667211), UINT64_C(10273702932711667007), UINT64_C(12842128665889583758), UINT64_C(16052660832361979698), UINT64_C(10032913020226237311), UINT64_C(12541141275282796639), UINT64_C(15676426594103495799), UINT64_C(9797766621314684874), UINT64_C(12247208276643356093), UINT64_C(15309010345804195116), UINT64_C(9568131466127621948), UINT64_C(11960164332659527434), UINT64_C(14950205415824409293), UINT64_C(9343878384890255808), UINT64_C(11679847981112819760), UINT64_C(14599809976391024700), UINT64_C(18249762470488780875), UINT64_C(11406101544055488047), UINT64_C(14257626930069360059), UINT64_C(17822033662586700073), UINT64_C(11138771039116687546), UINT64_C(13923463798895859432), UINT64_C(17404329748619824290), UINT64_C(10877706092887390182), UINT64_C(13597132616109237727), UINT64_C(16996415770136547159), UINT64_C(10622759856335341974), UINT64_C(13278449820419177468), UINT64_C(16598062275523971835), UINT64_C(10373788922202482397), UINT64_C(12967236152753102996), UINT64_C(16209045190941378745), UINT64_C(10130653244338361716), UINT64_C(12663316555422952144), UINT64_C(15829145694278690180), UINT64_C(9893216058924181363), UINT64_C(12366520073655226704), UINT64_C(15458150092069033379), UINT64_C(9661343807543145862), UINT64_C(12076679759428932328), UINT64_C(15095849699286165409), UINT64_C(9434906062053853381), UINT64_C(11793632577567316726), UINT64_C(14742040721959145908), UINT64_C(18427550902448932384), UINT64_C(11517219314030582740), UINT64_C(14396524142538228425), UINT64_C(17995655178172785532), UINT64_C(11247284486357990958), UINT64_C(14059105607947488697), UINT64_C(17573882009934360871), UINT64_C(10983676256208975544), UINT64_C(13729595320261219430), UINT64_C(17161994150326524288), UINT64_C(10726246343954077680), UINT64_C(13407807929942597100), UINT64_C(16759759912428246375), UINT64_C(10474849945267653985), UINT64_C(13093562431584567481), UINT64_C(16366953039480709351), UINT64_C(10229345649675443344), UINT64_C(12786682062094304180), UINT64_C(15983352577617880225), UINT64_C(9989595361011175141), UINT64_C(12486994201263968926), UINT64_C(15608742751579961157), UINT64_C(9755464219737475724), UINT64_C(12194330274671844654), UINT64_C(15242912843339805818), UINT64_C(9526820527087378636), UINT64_C(11908525658859223295), UINT64_C(14885657073574029119), UINT64_C(9303535670983768200), UINT64_C(11629419588729710249), UINT64_C(14536774485912137811), UINT64_C(18170968107390172264), UINT64_C(11356855067118857665), UINT64_C(14196068833898572082), UINT64_C(17745086042373215102), UINT64_C(11090678776483259439), UINT64_C(13863348470604074298), UINT64_C(17329185588255092873), UINT64_C(10830740992659433046), UINT64_C(13538426240824291307), UINT64_C(16923032801030364134), UINT64_C(10576895500643977584), UINT64_C(13221119375804971980), UINT64_C(16526399219756214974), UINT64_C(10328999512347634359), UINT64_C(12911249390434542949), UINT64_C(16139061738043178686), UINT64_C(10086913586276986679), UINT64_C(12608641982846233348), UINT64_C(15760802478557791685), UINT64_C(9850501549098619804), UINT64_C(12313126936373274754), UINT64_C(15391408670466593443), UINT64_C(9619630419041620902), UINT64_C(12024538023802026127), UINT64_C(15030672529752532659), UINT64_C(9394170331095332912), UINT64_C(11742712913869166140), UINT64_C(14678391142336457675), UINT64_C(18347988927920572093), UINT64_C(11467493079950357559), UINT64_C(14334366349937946948), UINT64_C(17917957937422433685), UINT64_C(11198723710889021053), UINT64_C(13998404638611276316), UINT64_C(17498005798264095395), UINT64_C(10936253623915059622), UINT64_C(13670317029893824528), UINT64_C(17087896287367280660), UINT64_C(10679935179604550412), UINT64_C(13349918974505688015), UINT64_C(16687398718132110019), UINT64_C(10429624198832568762), UINT64_C(13037030248540710953), UINT64_C(16296287810675888691), UINT64_C(10185179881672430432), UINT64_C(12731474852090538040), UINT64_C(15914343565113172549), UINT64_C(9946464728195732844), UINT64_C(12433080910244666054), UINT64_C(15541351137805832568), UINT64_C(9713344461128645355), UINT64_C(12141680576410806694), UINT64_C(15177100720513508367), UINT64_C(9485687950320942730), UINT64_C(11857109937901178412), UINT64_C(14821387422376473015), UINT64_C(9263367138985295634), UINT64_C(11579208923731619543), UINT64_C(14474011154664524428), UINT64_C(18092513943330655535), UINT64_C(11307821214581659710), UINT64_C(14134776518227074637), UINT64_C(17668470647783843296), UINT64_C(11042794154864902060), UINT64_C(13803492693581127575), UINT64_C(17254365866976409469), UINT64_C(10783978666860255918), UINT64_C(13479973333575319898), UINT64_C(16849966666969149872), UINT64_C(10531229166855718670), UINT64_C(13164036458569648338), UINT64_C(16455045573212060422), UINT64_C(10284403483257537764), UINT64_C(12855504354071922205), UINT64_C(16069380442589902756), UINT64_C(10043362776618689223), UINT64_C(12554203470773361528), UINT64_C(15692754338466701910), UINT64_C(9807971461541688694), UINT64_C(12259964326927110867), UINT64_C(15324955408658888584), UINT64_C(9578097130411805365), UINT64_C(11972621413014756706), UINT64_C(14965776766268445883), UINT64_C(9353610478917778677), UINT64_C(11692013098647223346), UINT64_C(14615016373309029183), UINT64_C(18268770466636286478), UINT64_C(11417981541647679049), UINT64_C(14272476927059598811), UINT64_C(17840596158824498514), UINT64_C(11150372599265311571), UINT64_C(13937965749081639464), UINT64_C(17422457186352049330), UINT64_C(10889035741470030831), UINT64_C(13611294676837538539), UINT64_C(17014118346046923174), UINT64_C(10633823966279326984), UINT64_C(13292279957849158730), UINT64_C(16615349947311448412), UINT64_C(10384593717069655258), UINT64_C(12980742146337069072), UINT64_C(16225927682921336340), UINT64_C(10141204801825835212), UINT64_C(12676506002282294015), UINT64_C(15845632502852867519), UINT64_C(9903520314283042200), UINT64_C(12379400392853802749), UINT64_C(15474250491067253437), UINT64_C(9671406556917033398), UINT64_C(12089258196146291748), UINT64_C(15111572745182864684), UINT64_C(9444732965739290428), UINT64_C(11805916207174113035), UINT64_C(14757395258967641293), UINT64_C(9223372036854775808), UINT64_C(11529215046068469760), UINT64_C(14411518807585587200), UINT64_C(18014398509481984000), UINT64_C(11258999068426240000), UINT64_C(14073748835532800000), UINT64_C(17592186044416000000), UINT64_C(10995116277760000000), UINT64_C(13743895347200000000), UINT64_C(17179869184000000000), UINT64_C(10737418240000000000), UINT64_C(13421772800000000000), UINT64_C(16777216000000000000), UINT64_C(10485760000000000000), UINT64_C(13107200000000000000), UINT64_C(16384000000000000000), UINT64_C(10240000000000000000), UINT64_C(12800000000000000000), UINT64_C(16000000000000000000), UINT64_C(10000000000000000000), UINT64_C(12500000000000000000), UINT64_C(15625000000000000000), UINT64_C(9765625000000000000), UINT64_C(12207031250000000000), UINT64_C(15258789062500000000), UINT64_C(9536743164062500000), UINT64_C(11920928955078125000), UINT64_C(14901161193847656250), UINT64_C(9313225746154785157), UINT64_C(11641532182693481446), UINT64_C(14551915228366851807), UINT64_C(18189894035458564759), UINT64_C(11368683772161602974), UINT64_C(14210854715202003718), UINT64_C(17763568394002504647), UINT64_C(11102230246251565405), UINT64_C(13877787807814456756), UINT64_C(17347234759768070945), UINT64_C(10842021724855044341), UINT64_C(13552527156068805426), UINT64_C(16940658945086006782), UINT64_C(10587911840678754239), UINT64_C(13234889800848442798), UINT64_C(16543612251060553498), UINT64_C(10339757656912845936), UINT64_C(12924697071141057420), UINT64_C(16155871338926321775), UINT64_C(10097419586828951110), UINT64_C(12621774483536188887), UINT64_C(15777218104420236109), UINT64_C(9860761315262647568), UINT64_C(12325951644078309460), UINT64_C(15407439555097886825), UINT64_C(9629649721936179266), UINT64_C(12037062152420224082), UINT64_C(15046327690525280102), UINT64_C(9403954806578300064), UINT64_C(11754943508222875080), UINT64_C(14693679385278593850), UINT64_C(18367099231598242313), UINT64_C(11479437019748901446), UINT64_C(14349296274686126807), UINT64_C(17936620343357658508), UINT64_C(11210387714598536568), UINT64_C(14012984643248170710), UINT64_C(17516230804060213387), UINT64_C(10947644252537633367), UINT64_C(13684555315672041709), UINT64_C(17105694144590052136), UINT64_C(10691058840368782585), UINT64_C(13363823550460978231), UINT64_C(16704779438076222789), UINT64_C(10440487148797639243), UINT64_C(13050608935997049054), UINT64_C(16313261169996311317), UINT64_C(10195788231247694573), UINT64_C(12744735289059618217), UINT64_C(15930919111324522771), UINT64_C(9956824444577826732), UINT64_C(12446030555722283415), UINT64_C(15557538194652854268), UINT64_C(9723461371658033918), UINT64_C(12154326714572542397), UINT64_C(15192908393215677996), UINT64_C(9495567745759798748), UINT64_C(11869459682199748435), UINT64_C(14836824602749685543), UINT64_C(9273015376718553465), UINT64_C(11591269220898191831), UINT64_C(14489086526122739789), UINT64_C(18111358157653424736), UINT64_C(11319598848533390460), UINT64_C(14149498560666738075), UINT64_C(17686873200833422593), UINT64_C(11054295750520889121), UINT64_C(13817869688151111401), UINT64_C(17272337110188889251), UINT64_C(10795210693868055782), UINT64_C(13494013367335069728), UINT64_C(16867516709168837159), UINT64_C(10542197943230523225), UINT64_C(13177747429038154031), UINT64_C(16472184286297692539), UINT64_C(10295115178936057837), UINT64_C(12868893973670072296), UINT64_C(16086117467087590370), UINT64_C(10053823416929743981), UINT64_C(12567279271162179976), UINT64_C(15709099088952724970), UINT64_C(9818186930595453107), UINT64_C(12272733663244316383), UINT64_C(15340917079055395479), UINT64_C(9588073174409622175), UINT64_C(11985091468012027718), UINT64_C(14981364335015034647), UINT64_C(9363352709384396655), UINT64_C(11704190886730495818), UINT64_C(14630238608413119773), UINT64_C(18287798260516399716), UINT64_C(11429873912822749823), UINT64_C(14287342391028437278), UINT64_C(17859177988785546598), UINT64_C(11161986242990966624), UINT64_C(13952482803738708280), UINT64_C(17440603504673385349), UINT64_C(10900377190420865843), UINT64_C(13625471488026082304), UINT64_C(17031839360032602880), UINT64_C(10644899600020376800), UINT64_C(13306124500025471000), UINT64_C(16632655625031838750), UINT64_C(10395409765644899219), UINT64_C(12994262207056124024), UINT64_C(16242827758820155029), UINT64_C(10151767349262596894), UINT64_C(12689709186578246117), UINT64_C(15862136483222807646), UINT64_C(9913835302014254779), UINT64_C(12392294127517818474), UINT64_C(15490367659397273092), UINT64_C(9681479787123295683), UINT64_C(12101849733904119603), UINT64_C(15127312167380149504), UINT64_C(9454570104612593440), UINT64_C(11818212630765741800), UINT64_C(14772765788457177250), UINT64_C(9232978617785735781), UINT64_C(11541223272232169726), UINT64_C(14426529090290212158), UINT64_C(18033161362862765197), UINT64_C(11270725851789228248), UINT64_C(14088407314736535310), UINT64_C(17610509143420669138), UINT64_C(11006568214637918211), UINT64_C(13758210268297397764), UINT64_C(17197762835371747205), UINT64_C(10748601772107342003), UINT64_C(13435752215134177504), UINT64_C(16794690268917721880), UINT64_C(10496681418073576175), UINT64_C(13120851772591970219), UINT64_C(16401064715739962773), UINT64_C(10250665447337476734), UINT64_C(12813331809171845917), UINT64_C(16016664761464807396), UINT64_C(10010415475915504623), UINT64_C(12513019344894380778), UINT64_C(15641274181117975973), UINT64_C(9775796363198734983), UINT64_C(12219745453998418729), UINT64_C(15274681817498023411), UINT64_C(9546676135936264632), UINT64_C(11933345169920330790), UINT64_C(14916681462400413487), UINT64_C(9322925914000258430), UINT64_C(11653657392500323037), UINT64_C(14567071740625403796), UINT64_C(18208839675781754745), UINT64_C(11380524797363596716), UINT64_C(14225655996704495895), UINT64_C(17782069995880619868), UINT64_C(11113793747425387418), UINT64_C(13892242184281734272), UINT64_C(17365302730352167840), UINT64_C(10853314206470104900), UINT64_C(13566642758087631125), UINT64_C(16958303447609538906), UINT64_C(10598939654755961817), UINT64_C(13248674568444952271), UINT64_C(16560843210556190338), UINT64_C(10350527006597618961), UINT64_C(12938158758247023702), UINT64_C(16172698447808779627), UINT64_C(10107936529880487267), UINT64_C(12634920662350609084), UINT64_C(15793650827938261355), UINT64_C(9871031767461413347), UINT64_C(12338789709326766683), UINT64_C(15423487136658458354), UINT64_C(9639679460411536471), UINT64_C(12049599325514420589), UINT64_C(15061999156893025736), UINT64_C(9413749473058141085), UINT64_C(11767186841322676357), UINT64_C(14708983551653345446), UINT64_C(18386229439566681807), UINT64_C(11491393399729176130), UINT64_C(14364241749661470162), UINT64_C(17955302187076837702), UINT64_C(11222063866923023564), UINT64_C(14027579833653779455), UINT64_C(17534474792067224319), UINT64_C(10959046745042015199), UINT64_C(13698808431302518999), UINT64_C(17123510539128148749), UINT64_C(10702194086955092968), UINT64_C(13377742608693866210), UINT64_C(16722178260867332762), UINT64_C(10451361413042082977), UINT64_C(13064201766302603721), UINT64_C(16330252207878254651), UINT64_C(10206407629923909157), UINT64_C(12758009537404886446), UINT64_C(15947511921756108057), UINT64_C(9967194951097567536), UINT64_C(12458993688871959420), UINT64_C(15573742111089949275), UINT64_C(9733588819431218297), UINT64_C(12166986024289022871), UINT64_C(15208732530361278589), UINT64_C(9505457831475799118), UINT64_C(11881822289344748897), UINT64_C(14852277861680936122), UINT64_C(9282673663550585076), UINT64_C(11603342079438231345), UINT64_C(14504177599297789181), UINT64_C(18130221999122236477), UINT64_C(11331388749451397798), UINT64_C(14164235936814247247), UINT64_C(17705294921017809059), UINT64_C(11065809325636130662), UINT64_C(13832261657045163328), UINT64_C(17290327071306454159), UINT64_C(10806454419566533850), UINT64_C(13508068024458167312), UINT64_C(16885085030572709140), UINT64_C(10553178144107943213), UINT64_C(13191472680134929016), UINT64_C(16489340850168661270), UINT64_C(10305838031355413294), UINT64_C(12882297539194266617), UINT64_C(16102871923992833271), UINT64_C(10064294952495520795), UINT64_C(12580368690619400993), UINT64_C(15725460863274251241), UINT64_C(9828413039546407026), UINT64_C(12285516299433008782), UINT64_C(15356895374291260978), UINT64_C(9598059608932038111), UINT64_C(11997574511165047639), UINT64_C(14996968138956309549), UINT64_C(9373105086847693468), UINT64_C(11716381358559616835), UINT64_C(14645476698199521044), UINT64_C(18306845872749401304), UINT64_C(11441778670468375815), UINT64_C(14302223338085469769), UINT64_C(17877779172606837211), UINT64_C(11173611982879273257), UINT64_C(13967014978599091571), UINT64_C(17458768723248864464), UINT64_C(10911730452030540290), UINT64_C(13639663065038175363), UINT64_C(17049578831297719203), UINT64_C(10655986769561074502), UINT64_C(13319983461951343128), UINT64_C(16649979327439178910), UINT64_C(10406237079649486819), UINT64_C(13007796349561858523), UINT64_C(16259745436952323154), UINT64_C(10162340898095201971), UINT64_C(12702926122619002464), UINT64_C(15878657653273753080), UINT64_C(9924161033296095675), UINT64_C(12405201291620119594), UINT64_C(15506501614525149492), UINT64_C(9691563509078218433), UINT64_C(12114454386347773041), UINT64_C(15143067982934716301), UINT64_C(9464417489334197688), UINT64_C(11830521861667747110), UINT64_C(14788152327084683888), UINT64_C(9242595204427927430), UINT64_C(11553244005534909287), UINT64_C(14441555006918636609), UINT64_C(18051943758648295761), UINT64_C(11282464849155184851), UINT64_C(14103081061443981064), UINT64_C(17628851326804976329), UINT64_C(11018032079253110206), UINT64_C(13772540099066387757), UINT64_C(17215675123832984697), UINT64_C(10759796952395615436), UINT64_C(13449746190494519294), UINT64_C(16812182738118149118), UINT64_C(10507614211323843199), UINT64_C(13134517764154803998), UINT64_C(16418147205193504998), UINT64_C(10261342003245940624)); HeroArrayHeader * h_1corestrconvinternalpowers_HIGH(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalpowers_HIGH_652);
+#line 2570 "main.c"
+}
+#else
+
+#line 143 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+HeroArrayHeader * h_1corestrconvinternalpowers_HIGH(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t652, *t653; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t204, t205, t206, t207, t208, t209, t210, t211, t212, t213, t214, t215, t216, t217, t218, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235, t236, t237, t238, t239, t240, t241, t242, t243, t244, t245, t246, t247, t248, t249, t250, t251, t252, t253, t254, t255, t256, t257, t258, t259, t260, t261, t262, t263, t264, t265, t266, t267, t268, t269, t270, t271, t272, t273, t274, t275, t276, t277, t278, t279, t280, t281, t282, t283, t284, t285, t286, t287, t288, t289, t290, t291, t292, t293, t294, t295, t296, t297, t298, t299, t300, t301, t302, t303, t304, t305, t306, t307, t308, t309, t310, t311, t312, t313, t314, t315, t316, t317, t318, t319, t320, t321, t322, t323, t324, t325, t326, t327, t328, t329, t330, t331, t332, t333, t334, t335, t336, t337, t338, t339, t340, t341, t342, t343, t344, t345, t346, t347, t348, t349, t350, t351, t352, t353, t354, t355, t356, t357, t358, t359, t360, t361, t362, t363, t364, t365, t366, t367, t368, t369, t370, t371, t372, t373, t374, t375, t376, t377, t378, t379, t380, t381, t382, t383, t384, t385, t386, t387, t388, t389, t390, t391, t392, t393, t394, t395, t396, t397, t398, t399, t400, t401, t402, t403, t404, t405, t406, t407, t408, t409, t410, t411, t412, t413, t414, t415, t416, t417, t418, t419, t420, t421, t422, t423, t424, t425, t426, t427, t428, t429, t430, t431, t432, t433, t434, t435, t436, t437, t438, t439, t440, t441, t442, t443, t444, t445, t446, t447, t448, t449, t450, t451, t452, t453, t454, t455, t456, t457, t458, t459, t460, t461, t462, t463, t464, t465, t466, t467, t468, t469, t470, t471, t472, t473, t474, t475, t476, t477, t478, t479, t480, t481, t482, t483, t484, t485, t486, t487, t488, t489, t490, t491, t492, t493, t494, t495, t496, t497, t498, t499, t500, t501, t502, t503, t504, t505, t506, t507, t508, t509, t510, t511, t512, t513, t514, t515, t516, t517, t518, t519, t520, t521, t522, t523, t524, t525, t526, t527, t528, t529, t530, t531, t532, t533, t534, t535, t536, t537, t538, t539, t540, t541, t542, t543, t544, t545, t546, t547, t548, t549, t550, t551, t552, t553, t554, t555, t556, t557, t558, t559, t560, t561, t562, t563, t564, t565, t566, t567, t568, t569, t570, t571, t572, t573, t574, t575, t576, t577, t578, t579, t580, t581, t582, t583, t584, t585, t586, t587, t588, t589, t590, t591, t592, t593, t594, t595, t596, t597, t598, t599, t600, t601, t602, t603, t604, t605, t606, t607, t608, t609, t610, t611, t612, t613, t614, t615, t616, t617, t618, t619, t620, t621, t622, t623, t624, t625, t626, t627, t628, t629, t630, t631, t632, t633, t634, t635, t636, t637, t638, t639, t640, t641, t642, t643, t644, t645, t646, t647, t648, t649, t650, t651; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 145
+    t1 = UINT64_C(17218479456385750619);
+    t2 = UINT64_C(10761549660241094137);
+    t3 = UINT64_C(13451937075301367671);
+    t4 = UINT64_C(16814921344126709588);
+    t5 = UINT64_C(10509325840079193493);
+    t6 = UINT64_C(13136657300098991866);
+    t7 = UINT64_C(16420821625123739832);
+    t8 = UINT64_C(10263013515702337395);
+    t9 = UINT64_C(12828766894627921744);
+    t10 = UINT64_C(16035958618284902180);
+    t11 = UINT64_C(10022474136428063863);
+    t12 = UINT64_C(12528092670535079828);
+    t13 = UINT64_C(15660115838168849785);
+    t14 = UINT64_C(9787572398855531116);
+    t15 = UINT64_C(12234465498569413895);
+    t16 = UINT64_C(15293081873211767369);
+    t17 = UINT64_C(9558176170757354606);
+    t18 = UINT64_C(11947720213446693257);
+    t19 = UINT64_C(14934650266808366571);
+    t20 = UINT64_C(9334156416755229107);
+    t21 = UINT64_C(11667695520944036384);
+    t22 = UINT64_C(14584619401180045479);
+    t23 = UINT64_C(18230774251475056849);
+    t24 = UINT64_C(11394233907171910531);
+    t25 = UINT64_C(14242792383964888163);
+    t26 = UINT64_C(17803490479956110204);
+    t27 = UINT64_C(11127181549972568878);
+    t28 = UINT64_C(13908976937465711097);
+    t29 = UINT64_C(17386221171832138871);
+    t30 = UINT64_C(10866388232395086795);
+    t31 = UINT64_C(13582985290493858493);
+    t32 = UINT64_C(16978731613117323116);
+    t33 = UINT64_C(10611707258198326948);
+    t34 = UINT64_C(13264634072747908685);
+    t35 = UINT64_C(16580792590934885856);
+    t36 = UINT64_C(10362995369334303660);
+    t37 = UINT64_C(12953744211667879575);
+    t38 = UINT64_C(16192180264584849469);
+    t39 = UINT64_C(10120112665365530918);
+    t40 = UINT64_C(12650140831706913648);
+    t41 = UINT64_C(15812676039633642059);
+    t42 = UINT64_C(9882922524771026287);
+    t43 = UINT64_C(12353653155963782859);
+    t44 = UINT64_C(15442066444954728574);
+    t45 = UINT64_C(9651291528096705359);
+    t46 = UINT64_C(12064114410120881698);
+    t47 = UINT64_C(15080143012651102123);
+    t48 = UINT64_C(9425089382906938827);
+    t49 = UINT64_C(11781361728633673533);
+    t50 = UINT64_C(14726702160792091917);
+    t51 = UINT64_C(18408377700990114896);
+    t52 = UINT64_C(11505236063118821810);
+    t53 = UINT64_C(14381545078898527262);
+    t54 = UINT64_C(17976931348623159078);
+    t55 = UINT64_C(11235582092889474424);
+    t56 = UINT64_C(14044477616111843030);
+    t57 = UINT64_C(17555597020139803787);
+    t58 = UINT64_C(10972248137587377367);
+    t59 = UINT64_C(13715310171984221709);
+    t60 = UINT64_C(17144137714980277136);
+    t61 = UINT64_C(10715086071862673210);
+    t62 = UINT64_C(13393857589828341512);
+    t63 = UINT64_C(16742321987285426890);
+    t64 = UINT64_C(10463951242053391807);
+    t65 = UINT64_C(13079939052566739758);
+    t66 = UINT64_C(16349923815708424698);
+    t67 = UINT64_C(10218702384817765436);
+    t68 = UINT64_C(12773377981022206795);
+    t69 = UINT64_C(15966722476277758494);
+    t70 = UINT64_C(9979201547673599059);
+    t71 = UINT64_C(12474001934591998823);
+    t72 = UINT64_C(15592502418239998529);
+    t73 = UINT64_C(9745314011399999081);
+    t74 = UINT64_C(12181642514249998851);
+    t75 = UINT64_C(15227053142812498564);
+    t76 = UINT64_C(9516908214257811602);
+    t77 = UINT64_C(11896135267822264503);
+    t78 = UINT64_C(14870169084777830628);
+    t79 = UINT64_C(9293855677986144143);
+    t80 = UINT64_C(11617319597482680179);
+    t81 = UINT64_C(14521649496853350223);
+    t82 = UINT64_C(18152061871066687779);
+    t83 = UINT64_C(11345038669416679862);
+    t84 = UINT64_C(14181298336770849827);
+    t85 = UINT64_C(17726622920963562284);
+    t86 = UINT64_C(11079139325602226428);
+    t87 = UINT64_C(13848924157002783034);
+    t88 = UINT64_C(17311155196253478793);
+    t89 = UINT64_C(10819471997658424246);
+    t90 = UINT64_C(13524339997073030307);
+    t91 = UINT64_C(16905424996341287884);
+    t92 = UINT64_C(10565890622713304928);
+    t93 = UINT64_C(13207363278391631159);
+    t94 = UINT64_C(16509204097989538949);
+    t95 = UINT64_C(10318252561243461843);
+    t96 = UINT64_C(12897815701554327304);
+    t97 = UINT64_C(16122269626942909130);
+    t98 = UINT64_C(10076418516839318206);
+    t99 = UINT64_C(12595523146049147758);
+    t100 = UINT64_C(15744403932561434697);
+    t101 = UINT64_C(9840252457850896686);
+    t102 = UINT64_C(12300315572313620857);
+    t103 = UINT64_C(15375394465392026071);
+    t104 = UINT64_C(9609621540870016295);
+    t105 = UINT64_C(12012026926087520368);
+    t106 = UINT64_C(15015033657609400460);
+    t107 = UINT64_C(9384396036005875288);
+    t108 = UINT64_C(11730495045007344110);
+    t109 = UINT64_C(14663118806259180137);
+    t110 = UINT64_C(18328898507823975171);
+    t111 = UINT64_C(11455561567389984482);
+    t112 = UINT64_C(14319451959237480603);
+    t113 = UINT64_C(17899314949046850753);
+    t114 = UINT64_C(11187071843154281721);
+    t115 = UINT64_C(13983839803942852151);
+    t116 = UINT64_C(17479799754928565189);
+    t117 = UINT64_C(10924874846830353243);
+    t118 = UINT64_C(13656093558537941554);
+    t119 = UINT64_C(17070116948172426942);
+    t120 = UINT64_C(10668823092607766839);
+    t121 = UINT64_C(13336028865759708549);
+    t122 = UINT64_C(16670036082199635686);
+    t123 = UINT64_C(10418772551374772304);
+    t124 = UINT64_C(13023465689218465380);
+    t125 = UINT64_C(16279332111523081724);
+    t126 = UINT64_C(10174582569701926078);
+    t127 = UINT64_C(12718228212127407597);
+    t128 = UINT64_C(15897785265159259496);
+    t129 = UINT64_C(9936115790724537185);
+    t130 = UINT64_C(12420144738405671482);
+    t131 = UINT64_C(15525180923007089352);
+    t132 = UINT64_C(9703238076879430845);
+    t133 = UINT64_C(12129047596099288556);
+    t134 = UINT64_C(15161309495124110695);
+    t135 = UINT64_C(9475818434452569185);
+    t136 = UINT64_C(11844773043065711481);
+    t137 = UINT64_C(14805966303832139351);
+    t138 = UINT64_C(9253728939895087095);
+    t139 = UINT64_C(11567161174868858868);
+    t140 = UINT64_C(14458951468586073585);
+    t141 = UINT64_C(18073689335732591981);
+    t142 = UINT64_C(11296055834832869988);
+    t143 = UINT64_C(14120069793541087485);
+    t144 = UINT64_C(17650087241926359356);
+    t145 = UINT64_C(11031304526203974598);
+    t146 = UINT64_C(13789130657754968247);
+    t147 = UINT64_C(17236413322193710309);
+    t148 = UINT64_C(10772758326371068943);
+    t149 = UINT64_C(13465947907963836179);
+    t150 = UINT64_C(16832434884954795224);
+    t151 = UINT64_C(10520271803096747015);
+    t152 = UINT64_C(13150339753870933769);
+    t153 = UINT64_C(16437924692338667211);
+    t154 = UINT64_C(10273702932711667007);
+    t155 = UINT64_C(12842128665889583758);
+    t156 = UINT64_C(16052660832361979698);
+    t157 = UINT64_C(10032913020226237311);
+    t158 = UINT64_C(12541141275282796639);
+    t159 = UINT64_C(15676426594103495799);
+    t160 = UINT64_C(9797766621314684874);
+    t161 = UINT64_C(12247208276643356093);
+    t162 = UINT64_C(15309010345804195116);
+    t163 = UINT64_C(9568131466127621948);
+    t164 = UINT64_C(11960164332659527434);
+    t165 = UINT64_C(14950205415824409293);
+    t166 = UINT64_C(9343878384890255808);
+    t167 = UINT64_C(11679847981112819760);
+    t168 = UINT64_C(14599809976391024700);
+    t169 = UINT64_C(18249762470488780875);
+    t170 = UINT64_C(11406101544055488047);
+    t171 = UINT64_C(14257626930069360059);
+    t172 = UINT64_C(17822033662586700073);
+    t173 = UINT64_C(11138771039116687546);
+    t174 = UINT64_C(13923463798895859432);
+    t175 = UINT64_C(17404329748619824290);
+    t176 = UINT64_C(10877706092887390182);
+    t177 = UINT64_C(13597132616109237727);
+    t178 = UINT64_C(16996415770136547159);
+    t179 = UINT64_C(10622759856335341974);
+    t180 = UINT64_C(13278449820419177468);
+    t181 = UINT64_C(16598062275523971835);
+    t182 = UINT64_C(10373788922202482397);
+    t183 = UINT64_C(12967236152753102996);
+    t184 = UINT64_C(16209045190941378745);
+    t185 = UINT64_C(10130653244338361716);
+    t186 = UINT64_C(12663316555422952144);
+    t187 = UINT64_C(15829145694278690180);
+    t188 = UINT64_C(9893216058924181363);
+    t189 = UINT64_C(12366520073655226704);
+    t190 = UINT64_C(15458150092069033379);
+    t191 = UINT64_C(9661343807543145862);
+    t192 = UINT64_C(12076679759428932328);
+    t193 = UINT64_C(15095849699286165409);
+    t194 = UINT64_C(9434906062053853381);
+    t195 = UINT64_C(11793632577567316726);
+    t196 = UINT64_C(14742040721959145908);
+    t197 = UINT64_C(18427550902448932384);
+    t198 = UINT64_C(11517219314030582740);
+    t199 = UINT64_C(14396524142538228425);
+    t200 = UINT64_C(17995655178172785532);
+    t201 = UINT64_C(11247284486357990958);
+    t202 = UINT64_C(14059105607947488697);
+    t203 = UINT64_C(17573882009934360871);
+    t204 = UINT64_C(10983676256208975544);
+    t205 = UINT64_C(13729595320261219430);
+    t206 = UINT64_C(17161994150326524288);
+    t207 = UINT64_C(10726246343954077680);
+    t208 = UINT64_C(13407807929942597100);
+    t209 = UINT64_C(16759759912428246375);
+    t210 = UINT64_C(10474849945267653985);
+    t211 = UINT64_C(13093562431584567481);
+    t212 = UINT64_C(16366953039480709351);
+    t213 = UINT64_C(10229345649675443344);
+    t214 = UINT64_C(12786682062094304180);
+    t215 = UINT64_C(15983352577617880225);
+    t216 = UINT64_C(9989595361011175141);
+    t217 = UINT64_C(12486994201263968926);
+    t218 = UINT64_C(15608742751579961157);
+    t219 = UINT64_C(9755464219737475724);
+    t220 = UINT64_C(12194330274671844654);
+    t221 = UINT64_C(15242912843339805818);
+    t222 = UINT64_C(9526820527087378636);
+    t223 = UINT64_C(11908525658859223295);
+    t224 = UINT64_C(14885657073574029119);
+    t225 = UINT64_C(9303535670983768200);
+    t226 = UINT64_C(11629419588729710249);
+    t227 = UINT64_C(14536774485912137811);
+    t228 = UINT64_C(18170968107390172264);
+    t229 = UINT64_C(11356855067118857665);
+    t230 = UINT64_C(14196068833898572082);
+    t231 = UINT64_C(17745086042373215102);
+    t232 = UINT64_C(11090678776483259439);
+    t233 = UINT64_C(13863348470604074298);
+    t234 = UINT64_C(17329185588255092873);
+    t235 = UINT64_C(10830740992659433046);
+    t236 = UINT64_C(13538426240824291307);
+    t237 = UINT64_C(16923032801030364134);
+    t238 = UINT64_C(10576895500643977584);
+    t239 = UINT64_C(13221119375804971980);
+    t240 = UINT64_C(16526399219756214974);
+    t241 = UINT64_C(10328999512347634359);
+    t242 = UINT64_C(12911249390434542949);
+    t243 = UINT64_C(16139061738043178686);
+    t244 = UINT64_C(10086913586276986679);
+    t245 = UINT64_C(12608641982846233348);
+    t246 = UINT64_C(15760802478557791685);
+    t247 = UINT64_C(9850501549098619804);
+    t248 = UINT64_C(12313126936373274754);
+    t249 = UINT64_C(15391408670466593443);
+    t250 = UINT64_C(9619630419041620902);
+    t251 = UINT64_C(12024538023802026127);
+    t252 = UINT64_C(15030672529752532659);
+    t253 = UINT64_C(9394170331095332912);
+    t254 = UINT64_C(11742712913869166140);
+    t255 = UINT64_C(14678391142336457675);
+    t256 = UINT64_C(18347988927920572093);
+    t257 = UINT64_C(11467493079950357559);
+    t258 = UINT64_C(14334366349937946948);
+    t259 = UINT64_C(17917957937422433685);
+    t260 = UINT64_C(11198723710889021053);
+    t261 = UINT64_C(13998404638611276316);
+    t262 = UINT64_C(17498005798264095395);
+    t263 = UINT64_C(10936253623915059622);
+    t264 = UINT64_C(13670317029893824528);
+    t265 = UINT64_C(17087896287367280660);
+    t266 = UINT64_C(10679935179604550412);
+    t267 = UINT64_C(13349918974505688015);
+    t268 = UINT64_C(16687398718132110019);
+    t269 = UINT64_C(10429624198832568762);
+    t270 = UINT64_C(13037030248540710953);
+    t271 = UINT64_C(16296287810675888691);
+    t272 = UINT64_C(10185179881672430432);
+    t273 = UINT64_C(12731474852090538040);
+    t274 = UINT64_C(15914343565113172549);
+    t275 = UINT64_C(9946464728195732844);
+    t276 = UINT64_C(12433080910244666054);
+    t277 = UINT64_C(15541351137805832568);
+    t278 = UINT64_C(9713344461128645355);
+    t279 = UINT64_C(12141680576410806694);
+    t280 = UINT64_C(15177100720513508367);
+    t281 = UINT64_C(9485687950320942730);
+    t282 = UINT64_C(11857109937901178412);
+    t283 = UINT64_C(14821387422376473015);
+    t284 = UINT64_C(9263367138985295634);
+    t285 = UINT64_C(11579208923731619543);
+    t286 = UINT64_C(14474011154664524428);
+    t287 = UINT64_C(18092513943330655535);
+    t288 = UINT64_C(11307821214581659710);
+    t289 = UINT64_C(14134776518227074637);
+    t290 = UINT64_C(17668470647783843296);
+    t291 = UINT64_C(11042794154864902060);
+    t292 = UINT64_C(13803492693581127575);
+    t293 = UINT64_C(17254365866976409469);
+    t294 = UINT64_C(10783978666860255918);
+    t295 = UINT64_C(13479973333575319898);
+    t296 = UINT64_C(16849966666969149872);
+    t297 = UINT64_C(10531229166855718670);
+    t298 = UINT64_C(13164036458569648338);
+    t299 = UINT64_C(16455045573212060422);
+    t300 = UINT64_C(10284403483257537764);
+    t301 = UINT64_C(12855504354071922205);
+    t302 = UINT64_C(16069380442589902756);
+    t303 = UINT64_C(10043362776618689223);
+    t304 = UINT64_C(12554203470773361528);
+    t305 = UINT64_C(15692754338466701910);
+    t306 = UINT64_C(9807971461541688694);
+    t307 = UINT64_C(12259964326927110867);
+    t308 = UINT64_C(15324955408658888584);
+    t309 = UINT64_C(9578097130411805365);
+    t310 = UINT64_C(11972621413014756706);
+    t311 = UINT64_C(14965776766268445883);
+    t312 = UINT64_C(9353610478917778677);
+    t313 = UINT64_C(11692013098647223346);
+    t314 = UINT64_C(14615016373309029183);
+    t315 = UINT64_C(18268770466636286478);
+    t316 = UINT64_C(11417981541647679049);
+    t317 = UINT64_C(14272476927059598811);
+    t318 = UINT64_C(17840596158824498514);
+    t319 = UINT64_C(11150372599265311571);
+    t320 = UINT64_C(13937965749081639464);
+    t321 = UINT64_C(17422457186352049330);
+    t322 = UINT64_C(10889035741470030831);
+    t323 = UINT64_C(13611294676837538539);
+    t324 = UINT64_C(17014118346046923174);
+    t325 = UINT64_C(10633823966279326984);
+    t326 = UINT64_C(13292279957849158730);
+    t327 = UINT64_C(16615349947311448412);
+    t328 = UINT64_C(10384593717069655258);
+    t329 = UINT64_C(12980742146337069072);
+    t330 = UINT64_C(16225927682921336340);
+    t331 = UINT64_C(10141204801825835212);
+    t332 = UINT64_C(12676506002282294015);
+    t333 = UINT64_C(15845632502852867519);
+    t334 = UINT64_C(9903520314283042200);
+    t335 = UINT64_C(12379400392853802749);
+    t336 = UINT64_C(15474250491067253437);
+    t337 = UINT64_C(9671406556917033398);
+    t338 = UINT64_C(12089258196146291748);
+    t339 = UINT64_C(15111572745182864684);
+    t340 = UINT64_C(9444732965739290428);
+    t341 = UINT64_C(11805916207174113035);
+    t342 = UINT64_C(14757395258967641293);
+    t343 = UINT64_C(9223372036854775808);
+    t344 = UINT64_C(11529215046068469760);
+    t345 = UINT64_C(14411518807585587200);
+    t346 = UINT64_C(18014398509481984000);
+    t347 = UINT64_C(11258999068426240000);
+    t348 = UINT64_C(14073748835532800000);
+    t349 = UINT64_C(17592186044416000000);
+    t350 = UINT64_C(10995116277760000000);
+    t351 = UINT64_C(13743895347200000000);
+    t352 = UINT64_C(17179869184000000000);
+    t353 = UINT64_C(10737418240000000000);
+    t354 = UINT64_C(13421772800000000000);
+    t355 = UINT64_C(16777216000000000000);
+    t356 = UINT64_C(10485760000000000000);
+    t357 = UINT64_C(13107200000000000000);
+    t358 = UINT64_C(16384000000000000000);
+    t359 = UINT64_C(10240000000000000000);
+    t360 = UINT64_C(12800000000000000000);
+    t361 = UINT64_C(16000000000000000000);
+    t362 = UINT64_C(10000000000000000000);
+    t363 = UINT64_C(12500000000000000000);
+    t364 = UINT64_C(15625000000000000000);
+    t365 = UINT64_C(9765625000000000000);
+    t366 = UINT64_C(12207031250000000000);
+    t367 = UINT64_C(15258789062500000000);
+    t368 = UINT64_C(9536743164062500000);
+    t369 = UINT64_C(11920928955078125000);
+    t370 = UINT64_C(14901161193847656250);
+    t371 = UINT64_C(9313225746154785157);
+    t372 = UINT64_C(11641532182693481446);
+    t373 = UINT64_C(14551915228366851807);
+    t374 = UINT64_C(18189894035458564759);
+    t375 = UINT64_C(11368683772161602974);
+    t376 = UINT64_C(14210854715202003718);
+    t377 = UINT64_C(17763568394002504647);
+    t378 = UINT64_C(11102230246251565405);
+    t379 = UINT64_C(13877787807814456756);
+    t380 = UINT64_C(17347234759768070945);
+    t381 = UINT64_C(10842021724855044341);
+    t382 = UINT64_C(13552527156068805426);
+    t383 = UINT64_C(16940658945086006782);
+    t384 = UINT64_C(10587911840678754239);
+    t385 = UINT64_C(13234889800848442798);
+    t386 = UINT64_C(16543612251060553498);
+    t387 = UINT64_C(10339757656912845936);
+    t388 = UINT64_C(12924697071141057420);
+    t389 = UINT64_C(16155871338926321775);
+    t390 = UINT64_C(10097419586828951110);
+    t391 = UINT64_C(12621774483536188887);
+    t392 = UINT64_C(15777218104420236109);
+    t393 = UINT64_C(9860761315262647568);
+    t394 = UINT64_C(12325951644078309460);
+    t395 = UINT64_C(15407439555097886825);
+    t396 = UINT64_C(9629649721936179266);
+    t397 = UINT64_C(12037062152420224082);
+    t398 = UINT64_C(15046327690525280102);
+    t399 = UINT64_C(9403954806578300064);
+    t400 = UINT64_C(11754943508222875080);
+    t401 = UINT64_C(14693679385278593850);
+    t402 = UINT64_C(18367099231598242313);
+    t403 = UINT64_C(11479437019748901446);
+    t404 = UINT64_C(14349296274686126807);
+    t405 = UINT64_C(17936620343357658508);
+    t406 = UINT64_C(11210387714598536568);
+    t407 = UINT64_C(14012984643248170710);
+    t408 = UINT64_C(17516230804060213387);
+    t409 = UINT64_C(10947644252537633367);
+    t410 = UINT64_C(13684555315672041709);
+    t411 = UINT64_C(17105694144590052136);
+    t412 = UINT64_C(10691058840368782585);
+    t413 = UINT64_C(13363823550460978231);
+    t414 = UINT64_C(16704779438076222789);
+    t415 = UINT64_C(10440487148797639243);
+    t416 = UINT64_C(13050608935997049054);
+    t417 = UINT64_C(16313261169996311317);
+    t418 = UINT64_C(10195788231247694573);
+    t419 = UINT64_C(12744735289059618217);
+    t420 = UINT64_C(15930919111324522771);
+    t421 = UINT64_C(9956824444577826732);
+    t422 = UINT64_C(12446030555722283415);
+    t423 = UINT64_C(15557538194652854268);
+    t424 = UINT64_C(9723461371658033918);
+    t425 = UINT64_C(12154326714572542397);
+    t426 = UINT64_C(15192908393215677996);
+    t427 = UINT64_C(9495567745759798748);
+    t428 = UINT64_C(11869459682199748435);
+    t429 = UINT64_C(14836824602749685543);
+    t430 = UINT64_C(9273015376718553465);
+    t431 = UINT64_C(11591269220898191831);
+    t432 = UINT64_C(14489086526122739789);
+    t433 = UINT64_C(18111358157653424736);
+    t434 = UINT64_C(11319598848533390460);
+    t435 = UINT64_C(14149498560666738075);
+    t436 = UINT64_C(17686873200833422593);
+    t437 = UINT64_C(11054295750520889121);
+    t438 = UINT64_C(13817869688151111401);
+    t439 = UINT64_C(17272337110188889251);
+    t440 = UINT64_C(10795210693868055782);
+    t441 = UINT64_C(13494013367335069728);
+    t442 = UINT64_C(16867516709168837159);
+    t443 = UINT64_C(10542197943230523225);
+    t444 = UINT64_C(13177747429038154031);
+    t445 = UINT64_C(16472184286297692539);
+    t446 = UINT64_C(10295115178936057837);
+    t447 = UINT64_C(12868893973670072296);
+    t448 = UINT64_C(16086117467087590370);
+    t449 = UINT64_C(10053823416929743981);
+    t450 = UINT64_C(12567279271162179976);
+    t451 = UINT64_C(15709099088952724970);
+    t452 = UINT64_C(9818186930595453107);
+    t453 = UINT64_C(12272733663244316383);
+    t454 = UINT64_C(15340917079055395479);
+    t455 = UINT64_C(9588073174409622175);
+    t456 = UINT64_C(11985091468012027718);
+    t457 = UINT64_C(14981364335015034647);
+    t458 = UINT64_C(9363352709384396655);
+    t459 = UINT64_C(11704190886730495818);
+    t460 = UINT64_C(14630238608413119773);
+    t461 = UINT64_C(18287798260516399716);
+    t462 = UINT64_C(11429873912822749823);
+    t463 = UINT64_C(14287342391028437278);
+    t464 = UINT64_C(17859177988785546598);
+    t465 = UINT64_C(11161986242990966624);
+    t466 = UINT64_C(13952482803738708280);
+    t467 = UINT64_C(17440603504673385349);
+    t468 = UINT64_C(10900377190420865843);
+    t469 = UINT64_C(13625471488026082304);
+    t470 = UINT64_C(17031839360032602880);
+    t471 = UINT64_C(10644899600020376800);
+    t472 = UINT64_C(13306124500025471000);
+    t473 = UINT64_C(16632655625031838750);
+    t474 = UINT64_C(10395409765644899219);
+    t475 = UINT64_C(12994262207056124024);
+    t476 = UINT64_C(16242827758820155029);
+    t477 = UINT64_C(10151767349262596894);
+    t478 = UINT64_C(12689709186578246117);
+    t479 = UINT64_C(15862136483222807646);
+    t480 = UINT64_C(9913835302014254779);
+    t481 = UINT64_C(12392294127517818474);
+    t482 = UINT64_C(15490367659397273092);
+    t483 = UINT64_C(9681479787123295683);
+    t484 = UINT64_C(12101849733904119603);
+    t485 = UINT64_C(15127312167380149504);
+    t486 = UINT64_C(9454570104612593440);
+    t487 = UINT64_C(11818212630765741800);
+    t488 = UINT64_C(14772765788457177250);
+    t489 = UINT64_C(9232978617785735781);
+    t490 = UINT64_C(11541223272232169726);
+    t491 = UINT64_C(14426529090290212158);
+    t492 = UINT64_C(18033161362862765197);
+    t493 = UINT64_C(11270725851789228248);
+    t494 = UINT64_C(14088407314736535310);
+    t495 = UINT64_C(17610509143420669138);
+    t496 = UINT64_C(11006568214637918211);
+    t497 = UINT64_C(13758210268297397764);
+    t498 = UINT64_C(17197762835371747205);
+    t499 = UINT64_C(10748601772107342003);
+    t500 = UINT64_C(13435752215134177504);
+    t501 = UINT64_C(16794690268917721880);
+    t502 = UINT64_C(10496681418073576175);
+    t503 = UINT64_C(13120851772591970219);
+    t504 = UINT64_C(16401064715739962773);
+    t505 = UINT64_C(10250665447337476734);
+    t506 = UINT64_C(12813331809171845917);
+    t507 = UINT64_C(16016664761464807396);
+    t508 = UINT64_C(10010415475915504623);
+    t509 = UINT64_C(12513019344894380778);
+    t510 = UINT64_C(15641274181117975973);
+    t511 = UINT64_C(9775796363198734983);
+    t512 = UINT64_C(12219745453998418729);
+    t513 = UINT64_C(15274681817498023411);
+    t514 = UINT64_C(9546676135936264632);
+    t515 = UINT64_C(11933345169920330790);
+    t516 = UINT64_C(14916681462400413487);
+    t517 = UINT64_C(9322925914000258430);
+    t518 = UINT64_C(11653657392500323037);
+    t519 = UINT64_C(14567071740625403796);
+    t520 = UINT64_C(18208839675781754745);
+    t521 = UINT64_C(11380524797363596716);
+    t522 = UINT64_C(14225655996704495895);
+    t523 = UINT64_C(17782069995880619868);
+    t524 = UINT64_C(11113793747425387418);
+    t525 = UINT64_C(13892242184281734272);
+    t526 = UINT64_C(17365302730352167840);
+    t527 = UINT64_C(10853314206470104900);
+    t528 = UINT64_C(13566642758087631125);
+    t529 = UINT64_C(16958303447609538906);
+    t530 = UINT64_C(10598939654755961817);
+    t531 = UINT64_C(13248674568444952271);
+    t532 = UINT64_C(16560843210556190338);
+    t533 = UINT64_C(10350527006597618961);
+    t534 = UINT64_C(12938158758247023702);
+    t535 = UINT64_C(16172698447808779627);
+    t536 = UINT64_C(10107936529880487267);
+    t537 = UINT64_C(12634920662350609084);
+    t538 = UINT64_C(15793650827938261355);
+    t539 = UINT64_C(9871031767461413347);
+    t540 = UINT64_C(12338789709326766683);
+    t541 = UINT64_C(15423487136658458354);
+    t542 = UINT64_C(9639679460411536471);
+    t543 = UINT64_C(12049599325514420589);
+    t544 = UINT64_C(15061999156893025736);
+    t545 = UINT64_C(9413749473058141085);
+    t546 = UINT64_C(11767186841322676357);
+    t547 = UINT64_C(14708983551653345446);
+    t548 = UINT64_C(18386229439566681807);
+    t549 = UINT64_C(11491393399729176130);
+    t550 = UINT64_C(14364241749661470162);
+    t551 = UINT64_C(17955302187076837702);
+    t552 = UINT64_C(11222063866923023564);
+    t553 = UINT64_C(14027579833653779455);
+    t554 = UINT64_C(17534474792067224319);
+    t555 = UINT64_C(10959046745042015199);
+    t556 = UINT64_C(13698808431302518999);
+    t557 = UINT64_C(17123510539128148749);
+    t558 = UINT64_C(10702194086955092968);
+    t559 = UINT64_C(13377742608693866210);
+    t560 = UINT64_C(16722178260867332762);
+    t561 = UINT64_C(10451361413042082977);
+    t562 = UINT64_C(13064201766302603721);
+    t563 = UINT64_C(16330252207878254651);
+    t564 = UINT64_C(10206407629923909157);
+    t565 = UINT64_C(12758009537404886446);
+    t566 = UINT64_C(15947511921756108057);
+    t567 = UINT64_C(9967194951097567536);
+    t568 = UINT64_C(12458993688871959420);
+    t569 = UINT64_C(15573742111089949275);
+    t570 = UINT64_C(9733588819431218297);
+    t571 = UINT64_C(12166986024289022871);
+    t572 = UINT64_C(15208732530361278589);
+    t573 = UINT64_C(9505457831475799118);
+    t574 = UINT64_C(11881822289344748897);
+    t575 = UINT64_C(14852277861680936122);
+    t576 = UINT64_C(9282673663550585076);
+    t577 = UINT64_C(11603342079438231345);
+    t578 = UINT64_C(14504177599297789181);
+    t579 = UINT64_C(18130221999122236477);
+    t580 = UINT64_C(11331388749451397798);
+    t581 = UINT64_C(14164235936814247247);
+    t582 = UINT64_C(17705294921017809059);
+    t583 = UINT64_C(11065809325636130662);
+    t584 = UINT64_C(13832261657045163328);
+    t585 = UINT64_C(17290327071306454159);
+    t586 = UINT64_C(10806454419566533850);
+    t587 = UINT64_C(13508068024458167312);
+    t588 = UINT64_C(16885085030572709140);
+    t589 = UINT64_C(10553178144107943213);
+    t590 = UINT64_C(13191472680134929016);
+    t591 = UINT64_C(16489340850168661270);
+    t592 = UINT64_C(10305838031355413294);
+    t593 = UINT64_C(12882297539194266617);
+    t594 = UINT64_C(16102871923992833271);
+    t595 = UINT64_C(10064294952495520795);
+    t596 = UINT64_C(12580368690619400993);
+    t597 = UINT64_C(15725460863274251241);
+    t598 = UINT64_C(9828413039546407026);
+    t599 = UINT64_C(12285516299433008782);
+    t600 = UINT64_C(15356895374291260978);
+    t601 = UINT64_C(9598059608932038111);
+    t602 = UINT64_C(11997574511165047639);
+    t603 = UINT64_C(14996968138956309549);
+    t604 = UINT64_C(9373105086847693468);
+    t605 = UINT64_C(11716381358559616835);
+    t606 = UINT64_C(14645476698199521044);
+    t607 = UINT64_C(18306845872749401304);
+    t608 = UINT64_C(11441778670468375815);
+    t609 = UINT64_C(14302223338085469769);
+    t610 = UINT64_C(17877779172606837211);
+    t611 = UINT64_C(11173611982879273257);
+    t612 = UINT64_C(13967014978599091571);
+    t613 = UINT64_C(17458768723248864464);
+    t614 = UINT64_C(10911730452030540290);
+    t615 = UINT64_C(13639663065038175363);
+    t616 = UINT64_C(17049578831297719203);
+    t617 = UINT64_C(10655986769561074502);
+    t618 = UINT64_C(13319983461951343128);
+    t619 = UINT64_C(16649979327439178910);
+    t620 = UINT64_C(10406237079649486819);
+    t621 = UINT64_C(13007796349561858523);
+    t622 = UINT64_C(16259745436952323154);
+    t623 = UINT64_C(10162340898095201971);
+    t624 = UINT64_C(12702926122619002464);
+    t625 = UINT64_C(15878657653273753080);
+    t626 = UINT64_C(9924161033296095675);
+    t627 = UINT64_C(12405201291620119594);
+    t628 = UINT64_C(15506501614525149492);
+    t629 = UINT64_C(9691563509078218433);
+    t630 = UINT64_C(12114454386347773041);
+    t631 = UINT64_C(15143067982934716301);
+    t632 = UINT64_C(9464417489334197688);
+    t633 = UINT64_C(11830521861667747110);
+    t634 = UINT64_C(14788152327084683888);
+    t635 = UINT64_C(9242595204427927430);
+    t636 = UINT64_C(11553244005534909287);
+    t637 = UINT64_C(14441555006918636609);
+    t638 = UINT64_C(18051943758648295761);
+    t639 = UINT64_C(11282464849155184851);
+    t640 = UINT64_C(14103081061443981064);
+    t641 = UINT64_C(17628851326804976329);
+    t642 = UINT64_C(11018032079253110206);
+    t643 = UINT64_C(13772540099066387757);
+    t644 = UINT64_C(17215675123832984697);
+    t645 = UINT64_C(10759796952395615436);
+    t646 = UINT64_C(13449746190494519294);
+    t647 = UINT64_C(16812182738118149118);
+    t648 = UINT64_C(10507614211323843199);
+    t649 = UINT64_C(13134517764154803998);
+    t650 = UINT64_C(16418147205193504998);
+    t651 = UINT64_C(10261342003245940624);
+#line 144
+    t652 = hero_array_new(&hero_desc_u64, 651); hero_array_push_owned(&t652, &t1); hero_array_push_owned(&t652, &t2); hero_array_push_owned(&t652, &t3); hero_array_push_owned(&t652, &t4); hero_array_push_owned(&t652, &t5); hero_array_push_owned(&t652, &t6); hero_array_push_owned(&t652, &t7); hero_array_push_owned(&t652, &t8); hero_array_push_owned(&t652, &t9); hero_array_push_owned(&t652, &t10); hero_array_push_owned(&t652, &t11); hero_array_push_owned(&t652, &t12); hero_array_push_owned(&t652, &t13); hero_array_push_owned(&t652, &t14); hero_array_push_owned(&t652, &t15); hero_array_push_owned(&t652, &t16); hero_array_push_owned(&t652, &t17); hero_array_push_owned(&t652, &t18); hero_array_push_owned(&t652, &t19); hero_array_push_owned(&t652, &t20); hero_array_push_owned(&t652, &t21); hero_array_push_owned(&t652, &t22); hero_array_push_owned(&t652, &t23); hero_array_push_owned(&t652, &t24); hero_array_push_owned(&t652, &t25); hero_array_push_owned(&t652, &t26); hero_array_push_owned(&t652, &t27); hero_array_push_owned(&t652, &t28); hero_array_push_owned(&t652, &t29); hero_array_push_owned(&t652, &t30); hero_array_push_owned(&t652, &t31); hero_array_push_owned(&t652, &t32); hero_array_push_owned(&t652, &t33); hero_array_push_owned(&t652, &t34); hero_array_push_owned(&t652, &t35); hero_array_push_owned(&t652, &t36); hero_array_push_owned(&t652, &t37); hero_array_push_owned(&t652, &t38); hero_array_push_owned(&t652, &t39); hero_array_push_owned(&t652, &t40); hero_array_push_owned(&t652, &t41); hero_array_push_owned(&t652, &t42); hero_array_push_owned(&t652, &t43); hero_array_push_owned(&t652, &t44); hero_array_push_owned(&t652, &t45); hero_array_push_owned(&t652, &t46); hero_array_push_owned(&t652, &t47); hero_array_push_owned(&t652, &t48); hero_array_push_owned(&t652, &t49); hero_array_push_owned(&t652, &t50); hero_array_push_owned(&t652, &t51); hero_array_push_owned(&t652, &t52); hero_array_push_owned(&t652, &t53); hero_array_push_owned(&t652, &t54); hero_array_push_owned(&t652, &t55); hero_array_push_owned(&t652, &t56); hero_array_push_owned(&t652, &t57); hero_array_push_owned(&t652, &t58); hero_array_push_owned(&t652, &t59); hero_array_push_owned(&t652, &t60); hero_array_push_owned(&t652, &t61); hero_array_push_owned(&t652, &t62); hero_array_push_owned(&t652, &t63); hero_array_push_owned(&t652, &t64); hero_array_push_owned(&t652, &t65); hero_array_push_owned(&t652, &t66); hero_array_push_owned(&t652, &t67); hero_array_push_owned(&t652, &t68); hero_array_push_owned(&t652, &t69); hero_array_push_owned(&t652, &t70); hero_array_push_owned(&t652, &t71); hero_array_push_owned(&t652, &t72); hero_array_push_owned(&t652, &t73); hero_array_push_owned(&t652, &t74); hero_array_push_owned(&t652, &t75); hero_array_push_owned(&t652, &t76); hero_array_push_owned(&t652, &t77); hero_array_push_owned(&t652, &t78); hero_array_push_owned(&t652, &t79); hero_array_push_owned(&t652, &t80); hero_array_push_owned(&t652, &t81); hero_array_push_owned(&t652, &t82); hero_array_push_owned(&t652, &t83); hero_array_push_owned(&t652, &t84); hero_array_push_owned(&t652, &t85); hero_array_push_owned(&t652, &t86); hero_array_push_owned(&t652, &t87); hero_array_push_owned(&t652, &t88); hero_array_push_owned(&t652, &t89); hero_array_push_owned(&t652, &t90); hero_array_push_owned(&t652, &t91); hero_array_push_owned(&t652, &t92); hero_array_push_owned(&t652, &t93); hero_array_push_owned(&t652, &t94); hero_array_push_owned(&t652, &t95); hero_array_push_owned(&t652, &t96); hero_array_push_owned(&t652, &t97); hero_array_push_owned(&t652, &t98); hero_array_push_owned(&t652, &t99); hero_array_push_owned(&t652, &t100); hero_array_push_owned(&t652, &t101); hero_array_push_owned(&t652, &t102); hero_array_push_owned(&t652, &t103); hero_array_push_owned(&t652, &t104); hero_array_push_owned(&t652, &t105); hero_array_push_owned(&t652, &t106); hero_array_push_owned(&t652, &t107); hero_array_push_owned(&t652, &t108); hero_array_push_owned(&t652, &t109); hero_array_push_owned(&t652, &t110); hero_array_push_owned(&t652, &t111); hero_array_push_owned(&t652, &t112); hero_array_push_owned(&t652, &t113); hero_array_push_owned(&t652, &t114); hero_array_push_owned(&t652, &t115); hero_array_push_owned(&t652, &t116); hero_array_push_owned(&t652, &t117); hero_array_push_owned(&t652, &t118); hero_array_push_owned(&t652, &t119); hero_array_push_owned(&t652, &t120); hero_array_push_owned(&t652, &t121); hero_array_push_owned(&t652, &t122); hero_array_push_owned(&t652, &t123); hero_array_push_owned(&t652, &t124); hero_array_push_owned(&t652, &t125); hero_array_push_owned(&t652, &t126); hero_array_push_owned(&t652, &t127); hero_array_push_owned(&t652, &t128); hero_array_push_owned(&t652, &t129); hero_array_push_owned(&t652, &t130); hero_array_push_owned(&t652, &t131); hero_array_push_owned(&t652, &t132); hero_array_push_owned(&t652, &t133); hero_array_push_owned(&t652, &t134); hero_array_push_owned(&t652, &t135); hero_array_push_owned(&t652, &t136); hero_array_push_owned(&t652, &t137); hero_array_push_owned(&t652, &t138); hero_array_push_owned(&t652, &t139); hero_array_push_owned(&t652, &t140); hero_array_push_owned(&t652, &t141); hero_array_push_owned(&t652, &t142); hero_array_push_owned(&t652, &t143); hero_array_push_owned(&t652, &t144); hero_array_push_owned(&t652, &t145); hero_array_push_owned(&t652, &t146); hero_array_push_owned(&t652, &t147); hero_array_push_owned(&t652, &t148); hero_array_push_owned(&t652, &t149); hero_array_push_owned(&t652, &t150); hero_array_push_owned(&t652, &t151); hero_array_push_owned(&t652, &t152); hero_array_push_owned(&t652, &t153); hero_array_push_owned(&t652, &t154); hero_array_push_owned(&t652, &t155); hero_array_push_owned(&t652, &t156); hero_array_push_owned(&t652, &t157); hero_array_push_owned(&t652, &t158); hero_array_push_owned(&t652, &t159); hero_array_push_owned(&t652, &t160); hero_array_push_owned(&t652, &t161); hero_array_push_owned(&t652, &t162); hero_array_push_owned(&t652, &t163); hero_array_push_owned(&t652, &t164); hero_array_push_owned(&t652, &t165); hero_array_push_owned(&t652, &t166); hero_array_push_owned(&t652, &t167); hero_array_push_owned(&t652, &t168); hero_array_push_owned(&t652, &t169); hero_array_push_owned(&t652, &t170); hero_array_push_owned(&t652, &t171); hero_array_push_owned(&t652, &t172); hero_array_push_owned(&t652, &t173); hero_array_push_owned(&t652, &t174); hero_array_push_owned(&t652, &t175); hero_array_push_owned(&t652, &t176); hero_array_push_owned(&t652, &t177); hero_array_push_owned(&t652, &t178); hero_array_push_owned(&t652, &t179); hero_array_push_owned(&t652, &t180); hero_array_push_owned(&t652, &t181); hero_array_push_owned(&t652, &t182); hero_array_push_owned(&t652, &t183); hero_array_push_owned(&t652, &t184); hero_array_push_owned(&t652, &t185); hero_array_push_owned(&t652, &t186); hero_array_push_owned(&t652, &t187); hero_array_push_owned(&t652, &t188); hero_array_push_owned(&t652, &t189); hero_array_push_owned(&t652, &t190); hero_array_push_owned(&t652, &t191); hero_array_push_owned(&t652, &t192); hero_array_push_owned(&t652, &t193); hero_array_push_owned(&t652, &t194); hero_array_push_owned(&t652, &t195); hero_array_push_owned(&t652, &t196); hero_array_push_owned(&t652, &t197); hero_array_push_owned(&t652, &t198); hero_array_push_owned(&t652, &t199); hero_array_push_owned(&t652, &t200); hero_array_push_owned(&t652, &t201); hero_array_push_owned(&t652, &t202); hero_array_push_owned(&t652, &t203); hero_array_push_owned(&t652, &t204); hero_array_push_owned(&t652, &t205); hero_array_push_owned(&t652, &t206); hero_array_push_owned(&t652, &t207); hero_array_push_owned(&t652, &t208); hero_array_push_owned(&t652, &t209); hero_array_push_owned(&t652, &t210); hero_array_push_owned(&t652, &t211); hero_array_push_owned(&t652, &t212); hero_array_push_owned(&t652, &t213); hero_array_push_owned(&t652, &t214); hero_array_push_owned(&t652, &t215); hero_array_push_owned(&t652, &t216); hero_array_push_owned(&t652, &t217); hero_array_push_owned(&t652, &t218); hero_array_push_owned(&t652, &t219); hero_array_push_owned(&t652, &t220); hero_array_push_owned(&t652, &t221); hero_array_push_owned(&t652, &t222); hero_array_push_owned(&t652, &t223); hero_array_push_owned(&t652, &t224); hero_array_push_owned(&t652, &t225); hero_array_push_owned(&t652, &t226); hero_array_push_owned(&t652, &t227); hero_array_push_owned(&t652, &t228); hero_array_push_owned(&t652, &t229); hero_array_push_owned(&t652, &t230); hero_array_push_owned(&t652, &t231); hero_array_push_owned(&t652, &t232); hero_array_push_owned(&t652, &t233); hero_array_push_owned(&t652, &t234); hero_array_push_owned(&t652, &t235); hero_array_push_owned(&t652, &t236); hero_array_push_owned(&t652, &t237); hero_array_push_owned(&t652, &t238); hero_array_push_owned(&t652, &t239); hero_array_push_owned(&t652, &t240); hero_array_push_owned(&t652, &t241); hero_array_push_owned(&t652, &t242); hero_array_push_owned(&t652, &t243); hero_array_push_owned(&t652, &t244); hero_array_push_owned(&t652, &t245); hero_array_push_owned(&t652, &t246); hero_array_push_owned(&t652, &t247); hero_array_push_owned(&t652, &t248); hero_array_push_owned(&t652, &t249); hero_array_push_owned(&t652, &t250); hero_array_push_owned(&t652, &t251); hero_array_push_owned(&t652, &t252); hero_array_push_owned(&t652, &t253); hero_array_push_owned(&t652, &t254); hero_array_push_owned(&t652, &t255); hero_array_push_owned(&t652, &t256); hero_array_push_owned(&t652, &t257); hero_array_push_owned(&t652, &t258); hero_array_push_owned(&t652, &t259); hero_array_push_owned(&t652, &t260); hero_array_push_owned(&t652, &t261); hero_array_push_owned(&t652, &t262); hero_array_push_owned(&t652, &t263); hero_array_push_owned(&t652, &t264); hero_array_push_owned(&t652, &t265); hero_array_push_owned(&t652, &t266); hero_array_push_owned(&t652, &t267); hero_array_push_owned(&t652, &t268); hero_array_push_owned(&t652, &t269); hero_array_push_owned(&t652, &t270); hero_array_push_owned(&t652, &t271); hero_array_push_owned(&t652, &t272); hero_array_push_owned(&t652, &t273); hero_array_push_owned(&t652, &t274); hero_array_push_owned(&t652, &t275); hero_array_push_owned(&t652, &t276); hero_array_push_owned(&t652, &t277); hero_array_push_owned(&t652, &t278); hero_array_push_owned(&t652, &t279); hero_array_push_owned(&t652, &t280); hero_array_push_owned(&t652, &t281); hero_array_push_owned(&t652, &t282); hero_array_push_owned(&t652, &t283); hero_array_push_owned(&t652, &t284); hero_array_push_owned(&t652, &t285); hero_array_push_owned(&t652, &t286); hero_array_push_owned(&t652, &t287); hero_array_push_owned(&t652, &t288); hero_array_push_owned(&t652, &t289); hero_array_push_owned(&t652, &t290); hero_array_push_owned(&t652, &t291); hero_array_push_owned(&t652, &t292); hero_array_push_owned(&t652, &t293); hero_array_push_owned(&t652, &t294); hero_array_push_owned(&t652, &t295); hero_array_push_owned(&t652, &t296); hero_array_push_owned(&t652, &t297); hero_array_push_owned(&t652, &t298); hero_array_push_owned(&t652, &t299); hero_array_push_owned(&t652, &t300); hero_array_push_owned(&t652, &t301); hero_array_push_owned(&t652, &t302); hero_array_push_owned(&t652, &t303); hero_array_push_owned(&t652, &t304); hero_array_push_owned(&t652, &t305); hero_array_push_owned(&t652, &t306); hero_array_push_owned(&t652, &t307); hero_array_push_owned(&t652, &t308); hero_array_push_owned(&t652, &t309); hero_array_push_owned(&t652, &t310); hero_array_push_owned(&t652, &t311); hero_array_push_owned(&t652, &t312); hero_array_push_owned(&t652, &t313); hero_array_push_owned(&t652, &t314); hero_array_push_owned(&t652, &t315); hero_array_push_owned(&t652, &t316); hero_array_push_owned(&t652, &t317); hero_array_push_owned(&t652, &t318); hero_array_push_owned(&t652, &t319); hero_array_push_owned(&t652, &t320); hero_array_push_owned(&t652, &t321); hero_array_push_owned(&t652, &t322); hero_array_push_owned(&t652, &t323); hero_array_push_owned(&t652, &t324); hero_array_push_owned(&t652, &t325); hero_array_push_owned(&t652, &t326); hero_array_push_owned(&t652, &t327); hero_array_push_owned(&t652, &t328); hero_array_push_owned(&t652, &t329); hero_array_push_owned(&t652, &t330); hero_array_push_owned(&t652, &t331); hero_array_push_owned(&t652, &t332); hero_array_push_owned(&t652, &t333); hero_array_push_owned(&t652, &t334); hero_array_push_owned(&t652, &t335); hero_array_push_owned(&t652, &t336); hero_array_push_owned(&t652, &t337); hero_array_push_owned(&t652, &t338); hero_array_push_owned(&t652, &t339); hero_array_push_owned(&t652, &t340); hero_array_push_owned(&t652, &t341); hero_array_push_owned(&t652, &t342); hero_array_push_owned(&t652, &t343); hero_array_push_owned(&t652, &t344); hero_array_push_owned(&t652, &t345); hero_array_push_owned(&t652, &t346); hero_array_push_owned(&t652, &t347); hero_array_push_owned(&t652, &t348); hero_array_push_owned(&t652, &t349); hero_array_push_owned(&t652, &t350); hero_array_push_owned(&t652, &t351); hero_array_push_owned(&t652, &t352); hero_array_push_owned(&t652, &t353); hero_array_push_owned(&t652, &t354); hero_array_push_owned(&t652, &t355); hero_array_push_owned(&t652, &t356); hero_array_push_owned(&t652, &t357); hero_array_push_owned(&t652, &t358); hero_array_push_owned(&t652, &t359); hero_array_push_owned(&t652, &t360); hero_array_push_owned(&t652, &t361); hero_array_push_owned(&t652, &t362); hero_array_push_owned(&t652, &t363); hero_array_push_owned(&t652, &t364); hero_array_push_owned(&t652, &t365); hero_array_push_owned(&t652, &t366); hero_array_push_owned(&t652, &t367); hero_array_push_owned(&t652, &t368); hero_array_push_owned(&t652, &t369); hero_array_push_owned(&t652, &t370); hero_array_push_owned(&t652, &t371); hero_array_push_owned(&t652, &t372); hero_array_push_owned(&t652, &t373); hero_array_push_owned(&t652, &t374); hero_array_push_owned(&t652, &t375); hero_array_push_owned(&t652, &t376); hero_array_push_owned(&t652, &t377); hero_array_push_owned(&t652, &t378); hero_array_push_owned(&t652, &t379); hero_array_push_owned(&t652, &t380); hero_array_push_owned(&t652, &t381); hero_array_push_owned(&t652, &t382); hero_array_push_owned(&t652, &t383); hero_array_push_owned(&t652, &t384); hero_array_push_owned(&t652, &t385); hero_array_push_owned(&t652, &t386); hero_array_push_owned(&t652, &t387); hero_array_push_owned(&t652, &t388); hero_array_push_owned(&t652, &t389); hero_array_push_owned(&t652, &t390); hero_array_push_owned(&t652, &t391); hero_array_push_owned(&t652, &t392); hero_array_push_owned(&t652, &t393); hero_array_push_owned(&t652, &t394); hero_array_push_owned(&t652, &t395); hero_array_push_owned(&t652, &t396); hero_array_push_owned(&t652, &t397); hero_array_push_owned(&t652, &t398); hero_array_push_owned(&t652, &t399); hero_array_push_owned(&t652, &t400); hero_array_push_owned(&t652, &t401); hero_array_push_owned(&t652, &t402); hero_array_push_owned(&t652, &t403); hero_array_push_owned(&t652, &t404); hero_array_push_owned(&t652, &t405); hero_array_push_owned(&t652, &t406); hero_array_push_owned(&t652, &t407); hero_array_push_owned(&t652, &t408); hero_array_push_owned(&t652, &t409); hero_array_push_owned(&t652, &t410); hero_array_push_owned(&t652, &t411); hero_array_push_owned(&t652, &t412); hero_array_push_owned(&t652, &t413); hero_array_push_owned(&t652, &t414); hero_array_push_owned(&t652, &t415); hero_array_push_owned(&t652, &t416); hero_array_push_owned(&t652, &t417); hero_array_push_owned(&t652, &t418); hero_array_push_owned(&t652, &t419); hero_array_push_owned(&t652, &t420); hero_array_push_owned(&t652, &t421); hero_array_push_owned(&t652, &t422); hero_array_push_owned(&t652, &t423); hero_array_push_owned(&t652, &t424); hero_array_push_owned(&t652, &t425); hero_array_push_owned(&t652, &t426); hero_array_push_owned(&t652, &t427); hero_array_push_owned(&t652, &t428); hero_array_push_owned(&t652, &t429); hero_array_push_owned(&t652, &t430); hero_array_push_owned(&t652, &t431); hero_array_push_owned(&t652, &t432); hero_array_push_owned(&t652, &t433); hero_array_push_owned(&t652, &t434); hero_array_push_owned(&t652, &t435); hero_array_push_owned(&t652, &t436); hero_array_push_owned(&t652, &t437); hero_array_push_owned(&t652, &t438); hero_array_push_owned(&t652, &t439); hero_array_push_owned(&t652, &t440); hero_array_push_owned(&t652, &t441); hero_array_push_owned(&t652, &t442); hero_array_push_owned(&t652, &t443); hero_array_push_owned(&t652, &t444); hero_array_push_owned(&t652, &t445); hero_array_push_owned(&t652, &t446); hero_array_push_owned(&t652, &t447); hero_array_push_owned(&t652, &t448); hero_array_push_owned(&t652, &t449); hero_array_push_owned(&t652, &t450); hero_array_push_owned(&t652, &t451); hero_array_push_owned(&t652, &t452); hero_array_push_owned(&t652, &t453); hero_array_push_owned(&t652, &t454); hero_array_push_owned(&t652, &t455); hero_array_push_owned(&t652, &t456); hero_array_push_owned(&t652, &t457); hero_array_push_owned(&t652, &t458); hero_array_push_owned(&t652, &t459); hero_array_push_owned(&t652, &t460); hero_array_push_owned(&t652, &t461); hero_array_push_owned(&t652, &t462); hero_array_push_owned(&t652, &t463); hero_array_push_owned(&t652, &t464); hero_array_push_owned(&t652, &t465); hero_array_push_owned(&t652, &t466); hero_array_push_owned(&t652, &t467); hero_array_push_owned(&t652, &t468); hero_array_push_owned(&t652, &t469); hero_array_push_owned(&t652, &t470); hero_array_push_owned(&t652, &t471); hero_array_push_owned(&t652, &t472); hero_array_push_owned(&t652, &t473); hero_array_push_owned(&t652, &t474); hero_array_push_owned(&t652, &t475); hero_array_push_owned(&t652, &t476); hero_array_push_owned(&t652, &t477); hero_array_push_owned(&t652, &t478); hero_array_push_owned(&t652, &t479); hero_array_push_owned(&t652, &t480); hero_array_push_owned(&t652, &t481); hero_array_push_owned(&t652, &t482); hero_array_push_owned(&t652, &t483); hero_array_push_owned(&t652, &t484); hero_array_push_owned(&t652, &t485); hero_array_push_owned(&t652, &t486); hero_array_push_owned(&t652, &t487); hero_array_push_owned(&t652, &t488); hero_array_push_owned(&t652, &t489); hero_array_push_owned(&t652, &t490); hero_array_push_owned(&t652, &t491); hero_array_push_owned(&t652, &t492); hero_array_push_owned(&t652, &t493); hero_array_push_owned(&t652, &t494); hero_array_push_owned(&t652, &t495); hero_array_push_owned(&t652, &t496); hero_array_push_owned(&t652, &t497); hero_array_push_owned(&t652, &t498); hero_array_push_owned(&t652, &t499); hero_array_push_owned(&t652, &t500); hero_array_push_owned(&t652, &t501); hero_array_push_owned(&t652, &t502); hero_array_push_owned(&t652, &t503); hero_array_push_owned(&t652, &t504); hero_array_push_owned(&t652, &t505); hero_array_push_owned(&t652, &t506); hero_array_push_owned(&t652, &t507); hero_array_push_owned(&t652, &t508); hero_array_push_owned(&t652, &t509); hero_array_push_owned(&t652, &t510); hero_array_push_owned(&t652, &t511); hero_array_push_owned(&t652, &t512); hero_array_push_owned(&t652, &t513); hero_array_push_owned(&t652, &t514); hero_array_push_owned(&t652, &t515); hero_array_push_owned(&t652, &t516); hero_array_push_owned(&t652, &t517); hero_array_push_owned(&t652, &t518); hero_array_push_owned(&t652, &t519); hero_array_push_owned(&t652, &t520); hero_array_push_owned(&t652, &t521); hero_array_push_owned(&t652, &t522); hero_array_push_owned(&t652, &t523); hero_array_push_owned(&t652, &t524); hero_array_push_owned(&t652, &t525); hero_array_push_owned(&t652, &t526); hero_array_push_owned(&t652, &t527); hero_array_push_owned(&t652, &t528); hero_array_push_owned(&t652, &t529); hero_array_push_owned(&t652, &t530); hero_array_push_owned(&t652, &t531); hero_array_push_owned(&t652, &t532); hero_array_push_owned(&t652, &t533); hero_array_push_owned(&t652, &t534); hero_array_push_owned(&t652, &t535); hero_array_push_owned(&t652, &t536); hero_array_push_owned(&t652, &t537); hero_array_push_owned(&t652, &t538); hero_array_push_owned(&t652, &t539); hero_array_push_owned(&t652, &t540); hero_array_push_owned(&t652, &t541); hero_array_push_owned(&t652, &t542); hero_array_push_owned(&t652, &t543); hero_array_push_owned(&t652, &t544); hero_array_push_owned(&t652, &t545); hero_array_push_owned(&t652, &t546); hero_array_push_owned(&t652, &t547); hero_array_push_owned(&t652, &t548); hero_array_push_owned(&t652, &t549); hero_array_push_owned(&t652, &t550); hero_array_push_owned(&t652, &t551); hero_array_push_owned(&t652, &t552); hero_array_push_owned(&t652, &t553); hero_array_push_owned(&t652, &t554); hero_array_push_owned(&t652, &t555); hero_array_push_owned(&t652, &t556); hero_array_push_owned(&t652, &t557); hero_array_push_owned(&t652, &t558); hero_array_push_owned(&t652, &t559); hero_array_push_owned(&t652, &t560); hero_array_push_owned(&t652, &t561); hero_array_push_owned(&t652, &t562); hero_array_push_owned(&t652, &t563); hero_array_push_owned(&t652, &t564); hero_array_push_owned(&t652, &t565); hero_array_push_owned(&t652, &t566); hero_array_push_owned(&t652, &t567); hero_array_push_owned(&t652, &t568); hero_array_push_owned(&t652, &t569); hero_array_push_owned(&t652, &t570); hero_array_push_owned(&t652, &t571); hero_array_push_owned(&t652, &t572); hero_array_push_owned(&t652, &t573); hero_array_push_owned(&t652, &t574); hero_array_push_owned(&t652, &t575); hero_array_push_owned(&t652, &t576); hero_array_push_owned(&t652, &t577); hero_array_push_owned(&t652, &t578); hero_array_push_owned(&t652, &t579); hero_array_push_owned(&t652, &t580); hero_array_push_owned(&t652, &t581); hero_array_push_owned(&t652, &t582); hero_array_push_owned(&t652, &t583); hero_array_push_owned(&t652, &t584); hero_array_push_owned(&t652, &t585); hero_array_push_owned(&t652, &t586); hero_array_push_owned(&t652, &t587); hero_array_push_owned(&t652, &t588); hero_array_push_owned(&t652, &t589); hero_array_push_owned(&t652, &t590); hero_array_push_owned(&t652, &t591); hero_array_push_owned(&t652, &t592); hero_array_push_owned(&t652, &t593); hero_array_push_owned(&t652, &t594); hero_array_push_owned(&t652, &t595); hero_array_push_owned(&t652, &t596); hero_array_push_owned(&t652, &t597); hero_array_push_owned(&t652, &t598); hero_array_push_owned(&t652, &t599); hero_array_push_owned(&t652, &t600); hero_array_push_owned(&t652, &t601); hero_array_push_owned(&t652, &t602); hero_array_push_owned(&t652, &t603); hero_array_push_owned(&t652, &t604); hero_array_push_owned(&t652, &t605); hero_array_push_owned(&t652, &t606); hero_array_push_owned(&t652, &t607); hero_array_push_owned(&t652, &t608); hero_array_push_owned(&t652, &t609); hero_array_push_owned(&t652, &t610); hero_array_push_owned(&t652, &t611); hero_array_push_owned(&t652, &t612); hero_array_push_owned(&t652, &t613); hero_array_push_owned(&t652, &t614); hero_array_push_owned(&t652, &t615); hero_array_push_owned(&t652, &t616); hero_array_push_owned(&t652, &t617); hero_array_push_owned(&t652, &t618); hero_array_push_owned(&t652, &t619); hero_array_push_owned(&t652, &t620); hero_array_push_owned(&t652, &t621); hero_array_push_owned(&t652, &t622); hero_array_push_owned(&t652, &t623); hero_array_push_owned(&t652, &t624); hero_array_push_owned(&t652, &t625); hero_array_push_owned(&t652, &t626); hero_array_push_owned(&t652, &t627); hero_array_push_owned(&t652, &t628); hero_array_push_owned(&t652, &t629); hero_array_push_owned(&t652, &t630); hero_array_push_owned(&t652, &t631); hero_array_push_owned(&t652, &t632); hero_array_push_owned(&t652, &t633); hero_array_push_owned(&t652, &t634); hero_array_push_owned(&t652, &t635); hero_array_push_owned(&t652, &t636); hero_array_push_owned(&t652, &t637); hero_array_push_owned(&t652, &t638); hero_array_push_owned(&t652, &t639); hero_array_push_owned(&t652, &t640); hero_array_push_owned(&t652, &t641); hero_array_push_owned(&t652, &t642); hero_array_push_owned(&t652, &t643); hero_array_push_owned(&t652, &t644); hero_array_push_owned(&t652, &t645); hero_array_push_owned(&t652, &t646); hero_array_push_owned(&t652, &t647); hero_array_push_owned(&t652, &t648); hero_array_push_owned(&t652, &t649); hero_array_push_owned(&t652, &t650); hero_array_push_owned(&t652, &t651); t653 = h0_own0; h0_own0 = t652; hero_array_decref(t653);
+#line 3230 "main.c"
+    hero_array_incref(t652);
+    hero_array_release_at(&h0_own0);
+    return t652;
+}
+#endif
+
+#if HERO_STATIC_CONSTANTS
+#line 799 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalpowers_LOW_652, uint64_t, &hero_desc_u64, 651, UINT64_C(17203844958350394560), UINT64_C(13058246108182690552), UINT64_C(11711121616800975286), UINT64_C(803843965719055395), UINT64_C(9725774515429185430), UINT64_C(7545532125859093883), UINT64_C(208543120469091546), UINT64_C(130339450293182216), UINT64_C(4774610331293865674), UINT64_C(5968262914117332093), UINT64_C(12953536358178108366), UINT64_C(2356862392440471746), UINT64_C(2946077990550589682), UINT64_C(8758827771735200407), UINT64_C(10948534714669000509), UINT64_C(18297354411763638541), UINT64_C(18353375534993355944), UINT64_C(13718347381886919122), UINT64_C(12536248208931260998), UINT64_C(10140998139795732076), UINT64_C(17287933693172052999), UINT64_C(3163173042755514633), UINT64_C(8565652321871781195), UINT64_C(12271061728810945103), UINT64_C(1503769105731517666), UINT64_C(6491397400591784987), UINT64_C(13280495412224641425), UINT64_C(7377247228426025973), UINT64_C(4609873017105144562), UINT64_C(14410385681759185111), UINT64_C(4177924046916817677), UINT64_C(610719040218634193), UINT64_C(9605071436991422178), UINT64_C(12006339296239277723), UINT64_C(10396238101871709250), UINT64_C(6497648813669818281), UINT64_C(8122061017087272851), UINT64_C(14764262289786478968), UINT64_C(6921820921902855403), UINT64_C(17875648189233345062), UINT64_C(3897816162832129711), UINT64_C(4741978110983775021), UINT64_C(10539158657157106681), UINT64_C(17785634339873771255), UINT64_C(15727707480848494938), UINT64_C(5824576295778454961), UINT64_C(16504092406577844510), UINT64_C(12620900763324846770), UINT64_C(1941067898873894751), UINT64_C(16261392928874532151), UINT64_C(15715055142665777285), UINT64_C(9821909464166110803), UINT64_C(3054014793352862696), UINT64_C(13040890528545854178), UINT64_C(12762242598768546765), UINT64_C(15952803248460683456), UINT64_C(10717632023721078512), UINT64_C(9004363024039368022), UINT64_C(15867139798476597932), UINT64_C(15222238729668359511), UINT64_C(9513899206042724694), UINT64_C(2669001970698630060), UINT64_C(3336252463373287575), UINT64_C(15920215844890468446), UINT64_C(6065211750830921845), UINT64_C(16804886725393428115), UINT64_C(5891368184943504668), UINT64_C(7364210231179380835), UINT64_C(13816948807401613948), UINT64_C(13247279023053396621), UINT64_C(2724040723534582064), UINT64_C(8016736922845615485), UINT64_C(11927989604419591534), UINT64_C(10298300987097101513), UINT64_C(17484562252298764796), UINT64_C(1704479370831952189), UINT64_C(11353971250394716045), UINT64_C(357406007711231344), UINT64_C(9446750791674295398), UINT64_C(16420124508020257151), UINT64_C(6690097579743157727), UINT64_C(12974307993106335063), UINT64_C(10414785504905153366), UINT64_C(3795109844276665900), UINT64_C(9355573323773220279), UINT64_C(15070605364213038482), UINT64_C(391512631556746487), UINT64_C(9712762826300708917), UINT64_C(12988005794079024929), UINT64_C(7011635205744005353), UINT64_C(13376230025607394595), UINT64_C(17583515802859397430), UINT64_C(3532650679864695172), UINT64_C(9027499368258256869), UINT64_C(3336344095947716591), UINT64_C(8782116138362033642), UINT64_C(10977645172952542053), UINT64_C(2249342214667950879), UINT64_C(12035049805189714407), UINT64_C(5820440219632367201), UINT64_C(10555304164911311356), UINT64_C(3970758169284363388), UINT64_C(351761693178066331), UINT64_C(11749066104304761216), UINT64_C(851274575098787809), UINT64_C(1064093218873484761), UINT64_C(9888430298650703783), UINT64_C(12360537873313379729), UINT64_C(6227300304786948854), UINT64_C(3172439362556298163), UINT64_C(4288617610811380304), UINT64_C(14584144050369001188), UINT64_C(4395122007679087773), UINT64_C(9664480282440511714), UINT64_C(7468914334623251739), UINT64_C(13947828936706452578), UINT64_C(6411550076227838909), UINT64_C(12626123613712186540), UINT64_C(6559282480285457367), UINT64_C(8711237568605798758), UINT64_C(15500732979184636352), UINT64_C(14764230205553407536), UINT64_C(13839329896898267614), UINT64_C(17299162371122834518), UINT64_C(3177208890193991531), UINT64_C(11209127593226020515), UINT64_C(4788037454677749836), UINT64_C(1373360799919799391), UINT64_C(858350499949874619), UINT64_C(14907996180219506986), UINT64_C(9411623188419607924), UINT64_C(5882264492762254952), UINT64_C(2741144597525430787), UINT64_C(3426430746906788484), UINT64_C(13670734262885212562), UINT64_C(12476731810179127799), UINT64_C(10984228744296521844), UINT64_C(18394358011253795913), UINT64_C(9157889458785081179), UINT64_C(11447361823481351474), UINT64_C(9697516260924301438), UINT64_C(3755104653863994447), UINT64_C(4693880817329993059), UINT64_C(1255665003235103419), UINT64_C(10008162663876715445), UINT64_C(3286831292991118498), UINT64_C(8720225134666286027), UINT64_C(3144297699952734815), UINT64_C(8542058143368306422), UINT64_C(15289258697637770932), UINT64_C(9555786686023606832), UINT64_C(16556419375956896445), UINT64_C(16083838201518732652), UINT64_C(12358241885162901859), UINT64_C(1612744301171463612), UINT64_C(11239302413319105323), UINT64_C(2412877989897052923), UINT64_C(7627783505798704058), UINT64_C(14146415400675767976), UINT64_C(1923980597781273129), UINT64_C(11628347784081367219), UINT64_C(9923748711674321120), UINT64_C(15425714981651226508), UINT64_C(835399653354481519), UINT64_C(10267621603547877707), UINT64_C(4111420493003729615), UINT64_C(5139275616254662019), UINT64_C(6424094520318327523), UINT64_C(8030118150397909404), UINT64_C(7324666853212387329), UINT64_C(13767519584942872066), UINT64_C(3374341425896426371), UINT64_C(9026492418826348337), UINT64_C(2059743486678159614), UINT64_C(2574679358347699518), UINT64_C(15444232654249475910), UINT64_C(10081918780957069080), UINT64_C(17214084494623724254), UINT64_C(3841273781498745803), UINT64_C(14024964263728208061), UINT64_C(17531205329660260077), UINT64_C(13262846340251356500), UINT64_C(11966871906886807721), UINT64_C(14958589883608509651), UINT64_C(16266647704896400388), UINT64_C(1886565557410948869), UINT64_C(2358206946763686086), UINT64_C(10697251378582079612), UINT64_C(17983250241654987419), UINT64_C(4032318728359182658), UINT64_C(4826042214438183113), UINT64_C(15255924804902504699), UINT64_C(623161932418579258), UINT64_C(7307005235402693892), UINT64_C(4522070525825979461), UINT64_C(14875960194137250135), UINT64_C(148206168962011053), UINT64_C(92628855601256908), UINT64_C(115786069501571135), UINT64_C(13979790642159127631), UINT64_C(17960741188204230577), UINT64_C(13227554448400512413), UINT64_C(11922757042073252613), UINT64_C(534194123654701027), UINT64_C(667742654568376284), UINT64_C(10058050355065246163), UINT64_C(6286281471915778851), UINT64_C(7857851839894723564), UINT64_C(9822314799868404456), UINT64_C(17668161795986222545), UINT64_C(17473516226555390277), UINT64_C(17230209264766849942), UINT64_C(3851351762838199358), UINT64_C(4814189703547749197), UINT64_C(6017737129434686497), UINT64_C(10678614733537760916), UINT64_C(8736582398494813241), UINT64_C(1697355961263740744), UINT64_C(17201748540285695629), UINT64_C(3055441601647567920), UINT64_C(13042674038914235708), UINT64_C(3539985255894009413), UINT64_C(4424981569867511767), UINT64_C(10142912980761777613), UINT64_C(17868535659044580768), UINT64_C(3888925500096174344), UINT64_C(249470856692830026), UINT64_C(4923524589293425437), UINT64_C(3077202868308390898), UINT64_C(17681561640667652334), UINT64_C(12878580013979789610), UINT64_C(12660798527164756410), UINT64_C(1990940103673781801), UINT64_C(11712047166447003059), UINT64_C(14237558506670458768), UINT64_C(8573576096483297652), UINT64_C(15328656139031509969), UINT64_C(14192096105322081634), UINT64_C(17740120131652602043), UINT64_C(3728406090856200938), UINT64_C(6941939825212513490), UINT64_C(13289110799943029766), UINT64_C(11999702481501399304), UINT64_C(12111500069365762469), UINT64_C(1304317031425039374), UINT64_C(1630396289281299218), UINT64_C(17159898745296669675), UINT64_C(3003129357911285478), UINT64_C(12977283734243882656), UINT64_C(10416645343116120612), UINT64_C(3797434642040374957), UINT64_C(9358479320977856600), UINT64_C(8154892584824854327), UINT64_C(10193615731031067909), UINT64_C(12742019663788834886), UINT64_C(2092466524453879895), UINT64_C(17448692642279532598), UINT64_C(7975807747567252036), UINT64_C(9969759684459065045), UINT64_C(3925256793573221701), UINT64_C(294884973539139223), UINT64_C(368606216923924028), UINT64_C(2536221894791146469), UINT64_C(12393649405343708895), UINT64_C(15492061756679636119), UINT64_C(459166561069996766), UINT64_C(573958201337495958), UINT64_C(5329133770099257851), UINT64_C(5636551615525730109), UINT64_C(16269061556261938444), UINT64_C(15724640926900035151), UINT64_C(12133743588526215921), UINT64_C(15167179485657769902), UINT64_C(512230283362660762), UINT64_C(16461044991597520640), UINT64_C(2129562165787349184), UINT64_C(11885324744088962288), UINT64_C(7428327965055601430), UINT64_C(13897095974746889691), UINT64_C(8147997931578836306), UINT64_C(16621713753305242451), UINT64_C(11553770154776777256), UINT64_C(14442212693470971570), UINT64_C(2108853905778275375), UINT64_C(11859439419077620027), UINT64_C(989241218564861322), UINT64_C(1236551523206076653), UINT64_C(12302059748072267668), UINT64_C(6154202648235558777), UINT64_C(3081067291867060567), UINT64_C(1925667057416912854), UINT64_C(2407083821771141068), UINT64_C(7620540795641314239), UINT64_C(2456994988062127447), UINT64_C(12294615771932435117), UINT64_C(6144897678060768089), UINT64_C(3840561048787980055), UINT64_C(14024073347839750877), UINT64_C(8306719647944912789), UINT64_C(9803385798392958397), UINT64_C(12254232247991197996), UINT64_C(10706104291561609591), UINT64_C(15914687219080781802), UINT64_C(6058300968568813541), UINT64_C(7572876210711016926), UINT64_C(9344733650121773483), UINT64_C(2457545025797441046), UINT64_C(7683617300674189211), UINT64_C(4802260812921368257), UINT64_C(1391139997724322417), UINT64_C(10962297034010178829), UINT64_C(9157278655470055720), UINT64_C(6834912300910181746), UINT64_C(17767012412992502991), UINT64_C(8373707460958465027), UINT64_C(9845253181526428546), UINT64_C(7694880458480647778), UINT64_C(14230286591528197627), UINT64_C(4282243101277735613), UINT64_C(9964489895024557420), UINT64_C(12455612368780696775), UINT64_C(3173071712060547580), UINT64_C(8578025658503072379), UINT64_C(15334218091556228378), UINT64_C(14195572325650030640), UINT64_C(17744465407062538301), UINT64_C(12957209721973397068), UINT64_C(17321628113088148975), UINT64_C(12428663104505410411), UINT64_C(15535828880631763014), UINT64_C(486521013540076076), UINT64_C(608151266925095095), UINT64_C(5371875102083756772), UINT64_C(14886636984870817743), UINT64_C(161552157378970562), UINT64_C(14036998252005876915), UINT64_C(6467280898289979120), UINT64_C(17307473159717249708), UINT64_C(3187597375937010519), UINT64_C(11215620396815407382), UINT64_C(14019525496019259228), UINT64_C(3689348814741910323), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(13835058055282163712), UINT64_C(12682136550675316736), UINT64_C(6629298651489370112), UINT64_C(12898309332789100544), UINT64_C(1143914305352105984), UINT64_C(10653264918544908288), UINT64_C(4093209111326359552), UINT64_C(14087470740647444480), UINT64_C(12997652407381917696), UINT64_C(16247065509227397120), UINT64_C(17071944970908205056), UINT64_C(16728245195207868416), UINT64_C(11686934457155059712), UINT64_C(11916020054149300224), UINT64_C(1059967012404461568), UINT64_C(10548330802360352768), UINT64_C(1981020733047832576), UINT64_C(2476275916309790720), UINT64_C(3095344895387238400), UINT64_C(13463805605685493760), UINT64_C(7606384970252091392), UINT64_C(14119667231242502144), UINT64_C(6518949010312869888), UINT64_C(8148686262891087360), UINT64_C(10185857828613859200), UINT64_C(13283690170524743856), UINT64_C(7381240676301154012), UINT64_C(3178808521666707), UINT64_C(4613672773753429595), UINT64_C(5767090967191786994), UINT64_C(7208863708989733743), UINT64_C(18234451673091942987), UINT64_C(18314061323323546223), UINT64_C(13669204617299656970), UINT64_C(3251447716342407501), UINT64_C(11255526859568780496), UINT64_C(14069408574460975620), UINT64_C(8363388681221443717), UINT64_C(7532960934977096275), UINT64_C(14027887187148758248), UINT64_C(12923172965508559906), UINT64_C(8076983103442849941), UINT64_C(5484542860876174523), UINT64_C(11467364594522606057), UINT64_C(4861259862362934834), UINT64_C(10688260846381056446), UINT64_C(4136954021121544750), UINT64_C(279753253987271517), UINT64_C(14184749622766253108), UINT64_C(13119251010030428481), UINT64_C(10505374890482711752), UINT64_C(13131718613103389691), UINT64_C(2579590211097073401), UINT64_C(10835615918790446684), UINT64_C(4321147861633282547), UINT64_C(789748808614215279), UINT64_C(9716965042238660357), UINT64_C(12146206302798325447), UINT64_C(1347699823215743097), UINT64_C(12371527435578309195), UINT64_C(10852723276045498590), UINT64_C(18177590113484261142), UINT64_C(18110301623427938524), UINT64_C(11318938514642461577), UINT64_C(14148673143303076971), UINT64_C(3850783373846682502), UINT64_C(9324268636295258420), UINT64_C(7043649776941685121), UINT64_C(4192876202749718497), UINT64_C(4926390635932268013), UINT64_C(15381360331770110824), UINT64_C(779956341003086914), UINT64_C(12016687759195399081), UINT64_C(10409173680566860947), UINT64_C(17623153119135964088), UINT64_C(13320313708673671507), UINT64_C(12038706117414701480), UINT64_C(15048382646768376850), UINT64_C(4793553135802847627), UINT64_C(1380255401326171630), UINT64_C(1725319251657714538), UINT64_C(14913382587568235298), UINT64_C(4806670179178130410), UINT64_C(10620023742400050917), UINT64_C(18166729885068501583), UINT64_C(8873354301053463267), UINT64_C(1868320839462053276), UINT64_C(12696915570732253057), UINT64_C(2036086408133152610), UINT64_C(11768480047021216570), UINT64_C(10098914040349132809), UINT64_C(15535193312072983813), UINT64_C(5583933584809066055), UINT64_C(16203289017866108377), UINT64_C(14738741654593705639), UINT64_C(18423427068242132049), UINT64_C(4582539761593113445), UINT64_C(558244341782001951), UINT64_C(5309491445654890343), UINT64_C(6636864307068612929), UINT64_C(4148040191917883080), UINT64_C(5185050239897353851), UINT64_C(6481312799871692314), UINT64_C(8662506518347195600), UINT64_C(15439819166361382404), UINT64_C(853029884242176389), UINT64_C(16674044742147217907), UINT64_C(11619183890829246576), UINT64_C(9912293845109170316), UINT64_C(10806869671620619351), UINT64_C(18120273107953162093), UINT64_C(13426969348086676809), UINT64_C(17615227879408948813), UINT64_C(8183976793979022305), UINT64_C(14841657010901165785), UINT64_C(9276035631813228615), UINT64_C(11595044539766535769), UINT64_C(14493805674708169712), UINT64_C(4446942528265218166), UINT64_C(946992141904134803), UINT64_C(10407112214234944312), UINT64_C(3785518230938904582), UINT64_C(60105885123121412), UINT64_C(75132356403901765), UINT64_C(9317287482359653014), UINT64_C(1211618658047395230), UINT64_C(6126209340986631941), UINT64_C(7657761676233289927), UINT64_C(2480258038432112252), UINT64_C(7712008566467528219), UINT64_C(9640010708084410274), UINT64_C(6025006692552756421), UINT64_C(12142944384118333430), UINT64_C(1343622424865753076), UINT64_C(16980665080036953336), UINT64_C(12002459313191415863), UINT64_C(10391388123061881924), UINT64_C(15717989613768452011), UINT64_C(5812428961928401301), UINT64_C(16488908239265277435), UINT64_C(7999724640327104445), UINT64_C(14611341818836268460), UINT64_C(13652491255117947671), UINT64_C(10838650043662411246), UINT64_C(13548312554578014058), UINT64_C(7712018656367741764), UINT64_C(16349226706298308362), UINT64_C(11213161346018109645), UINT64_C(9404765664095249153), UINT64_C(11755957080119061441), UINT64_C(14265002202715495256), UINT64_C(17831252753394369071), UINT64_C(8454007886460797626), UINT64_C(14507126965892774324), UINT64_C(8910536670511192098), UINT64_C(11138170838138990122), UINT64_C(6961356773836868826), UINT64_C(8701695967296086033), UINT64_C(6265433940692719637), UINT64_C(17750954268215113485), UINT64_C(17577006816841503952), UINT64_C(8136200465769716229), UINT64_C(473439272678684739), UINT64_C(14426857146130519635), UINT64_C(8810199395808373736), UINT64_C(7812217631593927537), UINT64_C(14376958057919797325), UINT64_C(17971197572399746657), UINT64_C(13537841491963535612), UINT64_C(3087243809672255804), UINT64_C(8470740780517707659), UINT64_C(682526969396179382), UINT64_C(5464844730172612132), UINT64_C(2219369894288377261), UINT64_C(1387106183930235788), UINT64_C(15568940785194958447), UINT64_C(14849489963066310155), UINT64_C(9338490416978111886), UINT64_C(17365771556679789689), UINT64_C(12483842408994961303), UINT64_C(6381430974388925821), UINT64_C(8600080377420466542), UINT64_C(10750100471775583178), UINT64_C(18049311608146866876), UINT64_C(4363290727450709941), UINT64_C(10065799427740775331), UINT64_C(17193935303103357068), UINT64_C(8440366555225904215), UINT64_C(10550458194032380269), UINT64_C(3964700705685699528), UINT64_C(16312995996335725917), UINT64_C(15779558976992269492), UINT64_C(15112762702812948962), UINT64_C(11751319698471787053), UINT64_C(10077463604662345912), UINT64_C(3373457468973156582), UINT64_C(9025939945749304720), UINT64_C(11282424932186630900), UINT64_C(14103031165233288625), UINT64_C(11120237487484499342), UINT64_C(9288610840928236274), UINT64_C(16222449569587683247), UINT64_C(7833187971778608077), UINT64_C(568112927868484288), UINT64_C(14545199215117769073), UINT64_C(4479063491021217766), UINT64_C(5598829363776522208), UINT64_C(2386850686293264856), UINT64_C(16818621413148744782), UINT64_C(8205795374004271537), UINT64_C(1033872180650563613), UINT64_C(5904026244240592420), UINT64_C(5995859411864064214), UINT64_C(16718196301684856076), UINT64_C(2451001303396518479), UINT64_C(13061090860691293809), UINT64_C(7102991539009341454), UINT64_C(8878739423761676818), UINT64_C(14772584176705823819), UINT64_C(13854044202454891870), UINT64_C(17317555253068614837), UINT64_C(15435158051595272177), UINT64_C(10070575527639314413), UINT64_C(7976533391121755113), UINT64_C(16514548415519566705), UINT64_C(6808127464117294670), UINT64_C(3898473311719230433), UINT64_C(9354074847465600877), UINT64_C(2469221522477225288), UINT64_C(12309898939951307418), UINT64_C(3082000819042179232), UINT64_C(8464187042230111944), UINT64_C(15191919821215027834), UINT64_C(7189106879045698444), UINT64_C(8986383598807123056), UINT64_C(15844665516936291724), UINT64_C(1359087822460813039), UINT64_C(849429889038008149), UINT64_C(5673473379724898090), UINT64_C(2480155706228734709), UINT64_C(3855940325606653145), UINT64_C(208239388580928527), UINT64_C(4871985254153548563), UINT64_C(3044990783845967852), UINT64_C(13029610516662235623), UINT64_C(2451955090545630817), UINT64_C(3838314940804713212), UINT64_C(14021265712860667324), UINT64_C(17526582141075834155), UINT64_C(15565799856599784250), UINT64_C(5622191765467566601), UINT64_C(11639425725261846156), UINT64_C(2662955059861265943), UINT64_C(7940379843253970333), UINT64_C(9925474804067462916), UINT64_C(6203421752542164322), UINT64_C(12365963209105093307), UINT64_C(6234081974526590826), UINT64_C(13119673270933895074), UINT64_C(11787905570239980939), UINT64_C(10123195944372588270), UINT64_C(4021154456019173716), UINT64_C(5026443070023967146), UINT64_C(15506425874384734740), UINT64_C(9691516171490459212), UINT64_C(2891023177508298208), UINT64_C(8225464990312760664), UINT64_C(5670145219463562926), UINT64_C(10461369789805808684), UINT64_C(17688398255684648759), UINT64_C(3663753745896259333), UINT64_C(9207375118826243939), UINT64_C(2285846861678029116), UINT64_C(16692366632379700107), UINT64_C(17350258172878394423), UINT64_C(3241078642388441413), UINT64_C(13274720339840327574), UINT64_C(12908386230827592638), UINT64_C(2300424733252327085), UINT64_C(12098902953420184665), UINT64_C(12173500364315003319)); HeroArrayHeader * h_1corestrconvinternalpowers_LOW(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalpowers_LOW_652);
+#line 3240 "main.c"
+}
+#else
+
+#line 799 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
+HeroArrayHeader * h_1corestrconvinternalpowers_LOW(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t652, *t653; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t204, t205, t206, t207, t208, t209, t210, t211, t212, t213, t214, t215, t216, t217, t218, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235, t236, t237, t238, t239, t240, t241, t242, t243, t244, t245, t246, t247, t248, t249, t250, t251, t252, t253, t254, t255, t256, t257, t258, t259, t260, t261, t262, t263, t264, t265, t266, t267, t268, t269, t270, t271, t272, t273, t274, t275, t276, t277, t278, t279, t280, t281, t282, t283, t284, t285, t286, t287, t288, t289, t290, t291, t292, t293, t294, t295, t296, t297, t298, t299, t300, t301, t302, t303, t304, t305, t306, t307, t308, t309, t310, t311, t312, t313, t314, t315, t316, t317, t318, t319, t320, t321, t322, t323, t324, t325, t326, t327, t328, t329, t330, t331, t332, t333, t334, t335, t336, t337, t338, t339, t340, t341, t342, t343, t344, t345, t346, t347, t348, t349, t350, t351, t352, t353, t354, t355, t356, t357, t358, t359, t360, t361, t362, t363, t364, t365, t366, t367, t368, t369, t370, t371, t372, t373, t374, t375, t376, t377, t378, t379, t380, t381, t382, t383, t384, t385, t386, t387, t388, t389, t390, t391, t392, t393, t394, t395, t396, t397, t398, t399, t400, t401, t402, t403, t404, t405, t406, t407, t408, t409, t410, t411, t412, t413, t414, t415, t416, t417, t418, t419, t420, t421, t422, t423, t424, t425, t426, t427, t428, t429, t430, t431, t432, t433, t434, t435, t436, t437, t438, t439, t440, t441, t442, t443, t444, t445, t446, t447, t448, t449, t450, t451, t452, t453, t454, t455, t456, t457, t458, t459, t460, t461, t462, t463, t464, t465, t466, t467, t468, t469, t470, t471, t472, t473, t474, t475, t476, t477, t478, t479, t480, t481, t482, t483, t484, t485, t486, t487, t488, t489, t490, t491, t492, t493, t494, t495, t496, t497, t498, t499, t500, t501, t502, t503, t504, t505, t506, t507, t508, t509, t510, t511, t512, t513, t514, t515, t516, t517, t518, t519, t520, t521, t522, t523, t524, t525, t526, t527, t528, t529, t530, t531, t532, t533, t534, t535, t536, t537, t538, t539, t540, t541, t542, t543, t544, t545, t546, t547, t548, t549, t550, t551, t552, t553, t554, t555, t556, t557, t558, t559, t560, t561, t562, t563, t564, t565, t566, t567, t568, t569, t570, t571, t572, t573, t574, t575, t576, t577, t578, t579, t580, t581, t582, t583, t584, t585, t586, t587, t588, t589, t590, t591, t592, t593, t594, t595, t596, t597, t598, t599, t600, t601, t602, t603, t604, t605, t606, t607, t608, t609, t610, t611, t612, t613, t614, t615, t616, t617, t618, t619, t620, t621, t622, t623, t624, t625, t626, t627, t628, t629, t630, t631, t632, t633, t634, t635, t636, t637, t638, t639, t640, t641, t642, t643, t644, t645, t646, t647, t648, t649, t650, t651; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 801
+    t1 = UINT64_C(17203844958350394560);
+    t2 = UINT64_C(13058246108182690552);
+    t3 = UINT64_C(11711121616800975286);
+    t4 = UINT64_C(803843965719055395);
+    t5 = UINT64_C(9725774515429185430);
+    t6 = UINT64_C(7545532125859093883);
+    t7 = UINT64_C(208543120469091546);
+    t8 = UINT64_C(130339450293182216);
+    t9 = UINT64_C(4774610331293865674);
+    t10 = UINT64_C(5968262914117332093);
+    t11 = UINT64_C(12953536358178108366);
+    t12 = UINT64_C(2356862392440471746);
+    t13 = UINT64_C(2946077990550589682);
+    t14 = UINT64_C(8758827771735200407);
+    t15 = UINT64_C(10948534714669000509);
+    t16 = UINT64_C(18297354411763638541);
+    t17 = UINT64_C(18353375534993355944);
+    t18 = UINT64_C(13718347381886919122);
+    t19 = UINT64_C(12536248208931260998);
+    t20 = UINT64_C(10140998139795732076);
+    t21 = UINT64_C(17287933693172052999);
+    t22 = UINT64_C(3163173042755514633);
+    t23 = UINT64_C(8565652321871781195);
+    t24 = UINT64_C(12271061728810945103);
+    t25 = UINT64_C(1503769105731517666);
+    t26 = UINT64_C(6491397400591784987);
+    t27 = UINT64_C(13280495412224641425);
+    t28 = UINT64_C(7377247228426025973);
+    t29 = UINT64_C(4609873017105144562);
+    t30 = UINT64_C(14410385681759185111);
+    t31 = UINT64_C(4177924046916817677);
+    t32 = UINT64_C(610719040218634193);
+    t33 = UINT64_C(9605071436991422178);
+    t34 = UINT64_C(12006339296239277723);
+    t35 = UINT64_C(10396238101871709250);
+    t36 = UINT64_C(6497648813669818281);
+    t37 = UINT64_C(8122061017087272851);
+    t38 = UINT64_C(14764262289786478968);
+    t39 = UINT64_C(6921820921902855403);
+    t40 = UINT64_C(17875648189233345062);
+    t41 = UINT64_C(3897816162832129711);
+    t42 = UINT64_C(4741978110983775021);
+    t43 = UINT64_C(10539158657157106681);
+    t44 = UINT64_C(17785634339873771255);
+    t45 = UINT64_C(15727707480848494938);
+    t46 = UINT64_C(5824576295778454961);
+    t47 = UINT64_C(16504092406577844510);
+    t48 = UINT64_C(12620900763324846770);
+    t49 = UINT64_C(1941067898873894751);
+    t50 = UINT64_C(16261392928874532151);
+    t51 = UINT64_C(15715055142665777285);
+    t52 = UINT64_C(9821909464166110803);
+    t53 = UINT64_C(3054014793352862696);
+    t54 = UINT64_C(13040890528545854178);
+    t55 = UINT64_C(12762242598768546765);
+    t56 = UINT64_C(15952803248460683456);
+    t57 = UINT64_C(10717632023721078512);
+    t58 = UINT64_C(9004363024039368022);
+    t59 = UINT64_C(15867139798476597932);
+    t60 = UINT64_C(15222238729668359511);
+    t61 = UINT64_C(9513899206042724694);
+    t62 = UINT64_C(2669001970698630060);
+    t63 = UINT64_C(3336252463373287575);
+    t64 = UINT64_C(15920215844890468446);
+    t65 = UINT64_C(6065211750830921845);
+    t66 = UINT64_C(16804886725393428115);
+    t67 = UINT64_C(5891368184943504668);
+    t68 = UINT64_C(7364210231179380835);
+    t69 = UINT64_C(13816948807401613948);
+    t70 = UINT64_C(13247279023053396621);
+    t71 = UINT64_C(2724040723534582064);
+    t72 = UINT64_C(8016736922845615485);
+    t73 = UINT64_C(11927989604419591534);
+    t74 = UINT64_C(10298300987097101513);
+    t75 = UINT64_C(17484562252298764796);
+    t76 = UINT64_C(1704479370831952189);
+    t77 = UINT64_C(11353971250394716045);
+    t78 = UINT64_C(357406007711231344);
+    t79 = UINT64_C(9446750791674295398);
+    t80 = UINT64_C(16420124508020257151);
+    t81 = UINT64_C(6690097579743157727);
+    t82 = UINT64_C(12974307993106335063);
+    t83 = UINT64_C(10414785504905153366);
+    t84 = UINT64_C(3795109844276665900);
+    t85 = UINT64_C(9355573323773220279);
+    t86 = UINT64_C(15070605364213038482);
+    t87 = UINT64_C(391512631556746487);
+    t88 = UINT64_C(9712762826300708917);
+    t89 = UINT64_C(12988005794079024929);
+    t90 = UINT64_C(7011635205744005353);
+    t91 = UINT64_C(13376230025607394595);
+    t92 = UINT64_C(17583515802859397430);
+    t93 = UINT64_C(3532650679864695172);
+    t94 = UINT64_C(9027499368258256869);
+    t95 = UINT64_C(3336344095947716591);
+    t96 = UINT64_C(8782116138362033642);
+    t97 = UINT64_C(10977645172952542053);
+    t98 = UINT64_C(2249342214667950879);
+    t99 = UINT64_C(12035049805189714407);
+    t100 = UINT64_C(5820440219632367201);
+    t101 = UINT64_C(10555304164911311356);
+    t102 = UINT64_C(3970758169284363388);
+    t103 = UINT64_C(351761693178066331);
+    t104 = UINT64_C(11749066104304761216);
+    t105 = UINT64_C(851274575098787809);
+    t106 = UINT64_C(1064093218873484761);
+    t107 = UINT64_C(9888430298650703783);
+    t108 = UINT64_C(12360537873313379729);
+    t109 = UINT64_C(6227300304786948854);
+    t110 = UINT64_C(3172439362556298163);
+    t111 = UINT64_C(4288617610811380304);
+    t112 = UINT64_C(14584144050369001188);
+    t113 = UINT64_C(4395122007679087773);
+    t114 = UINT64_C(9664480282440511714);
+    t115 = UINT64_C(7468914334623251739);
+    t116 = UINT64_C(13947828936706452578);
+    t117 = UINT64_C(6411550076227838909);
+    t118 = UINT64_C(12626123613712186540);
+    t119 = UINT64_C(6559282480285457367);
+    t120 = UINT64_C(8711237568605798758);
+    t121 = UINT64_C(15500732979184636352);
+    t122 = UINT64_C(14764230205553407536);
+    t123 = UINT64_C(13839329896898267614);
+    t124 = UINT64_C(17299162371122834518);
+    t125 = UINT64_C(3177208890193991531);
+    t126 = UINT64_C(11209127593226020515);
+    t127 = UINT64_C(4788037454677749836);
+    t128 = UINT64_C(1373360799919799391);
+    t129 = UINT64_C(858350499949874619);
+    t130 = UINT64_C(14907996180219506986);
+    t131 = UINT64_C(9411623188419607924);
+    t132 = UINT64_C(5882264492762254952);
+    t133 = UINT64_C(2741144597525430787);
+    t134 = UINT64_C(3426430746906788484);
+    t135 = UINT64_C(13670734262885212562);
+    t136 = UINT64_C(12476731810179127799);
+    t137 = UINT64_C(10984228744296521844);
+    t138 = UINT64_C(18394358011253795913);
+    t139 = UINT64_C(9157889458785081179);
+    t140 = UINT64_C(11447361823481351474);
+    t141 = UINT64_C(9697516260924301438);
+    t142 = UINT64_C(3755104653863994447);
+    t143 = UINT64_C(4693880817329993059);
+    t144 = UINT64_C(1255665003235103419);
+    t145 = UINT64_C(10008162663876715445);
+    t146 = UINT64_C(3286831292991118498);
+    t147 = UINT64_C(8720225134666286027);
+    t148 = UINT64_C(3144297699952734815);
+    t149 = UINT64_C(8542058143368306422);
+    t150 = UINT64_C(15289258697637770932);
+    t151 = UINT64_C(9555786686023606832);
+    t152 = UINT64_C(16556419375956896445);
+    t153 = UINT64_C(16083838201518732652);
+    t154 = UINT64_C(12358241885162901859);
+    t155 = UINT64_C(1612744301171463612);
+    t156 = UINT64_C(11239302413319105323);
+    t157 = UINT64_C(2412877989897052923);
+    t158 = UINT64_C(7627783505798704058);
+    t159 = UINT64_C(14146415400675767976);
+    t160 = UINT64_C(1923980597781273129);
+    t161 = UINT64_C(11628347784081367219);
+    t162 = UINT64_C(9923748711674321120);
+    t163 = UINT64_C(15425714981651226508);
+    t164 = UINT64_C(835399653354481519);
+    t165 = UINT64_C(10267621603547877707);
+    t166 = UINT64_C(4111420493003729615);
+    t167 = UINT64_C(5139275616254662019);
+    t168 = UINT64_C(6424094520318327523);
+    t169 = UINT64_C(8030118150397909404);
+    t170 = UINT64_C(7324666853212387329);
+    t171 = UINT64_C(13767519584942872066);
+    t172 = UINT64_C(3374341425896426371);
+    t173 = UINT64_C(9026492418826348337);
+    t174 = UINT64_C(2059743486678159614);
+    t175 = UINT64_C(2574679358347699518);
+    t176 = UINT64_C(15444232654249475910);
+    t177 = UINT64_C(10081918780957069080);
+    t178 = UINT64_C(17214084494623724254);
+    t179 = UINT64_C(3841273781498745803);
+    t180 = UINT64_C(14024964263728208061);
+    t181 = UINT64_C(17531205329660260077);
+    t182 = UINT64_C(13262846340251356500);
+    t183 = UINT64_C(11966871906886807721);
+    t184 = UINT64_C(14958589883608509651);
+    t185 = UINT64_C(16266647704896400388);
+    t186 = UINT64_C(1886565557410948869);
+    t187 = UINT64_C(2358206946763686086);
+    t188 = UINT64_C(10697251378582079612);
+    t189 = UINT64_C(17983250241654987419);
+    t190 = UINT64_C(4032318728359182658);
+    t191 = UINT64_C(4826042214438183113);
+    t192 = UINT64_C(15255924804902504699);
+    t193 = UINT64_C(623161932418579258);
+    t194 = UINT64_C(7307005235402693892);
+    t195 = UINT64_C(4522070525825979461);
+    t196 = UINT64_C(14875960194137250135);
+    t197 = UINT64_C(148206168962011053);
+    t198 = UINT64_C(92628855601256908);
+    t199 = UINT64_C(115786069501571135);
+    t200 = UINT64_C(13979790642159127631);
+    t201 = UINT64_C(17960741188204230577);
+    t202 = UINT64_C(13227554448400512413);
+    t203 = UINT64_C(11922757042073252613);
+    t204 = UINT64_C(534194123654701027);
+    t205 = UINT64_C(667742654568376284);
+    t206 = UINT64_C(10058050355065246163);
+    t207 = UINT64_C(6286281471915778851);
+    t208 = UINT64_C(7857851839894723564);
+    t209 = UINT64_C(9822314799868404456);
+    t210 = UINT64_C(17668161795986222545);
+    t211 = UINT64_C(17473516226555390277);
+    t212 = UINT64_C(17230209264766849942);
+    t213 = UINT64_C(3851351762838199358);
+    t214 = UINT64_C(4814189703547749197);
+    t215 = UINT64_C(6017737129434686497);
+    t216 = UINT64_C(10678614733537760916);
+    t217 = UINT64_C(8736582398494813241);
+    t218 = UINT64_C(1697355961263740744);
+    t219 = UINT64_C(17201748540285695629);
+    t220 = UINT64_C(3055441601647567920);
+    t221 = UINT64_C(13042674038914235708);
+    t222 = UINT64_C(3539985255894009413);
+    t223 = UINT64_C(4424981569867511767);
+    t224 = UINT64_C(10142912980761777613);
+    t225 = UINT64_C(17868535659044580768);
+    t226 = UINT64_C(3888925500096174344);
+    t227 = UINT64_C(249470856692830026);
+    t228 = UINT64_C(4923524589293425437);
+    t229 = UINT64_C(3077202868308390898);
+    t230 = UINT64_C(17681561640667652334);
+    t231 = UINT64_C(12878580013979789610);
+    t232 = UINT64_C(12660798527164756410);
+    t233 = UINT64_C(1990940103673781801);
+    t234 = UINT64_C(11712047166447003059);
+    t235 = UINT64_C(14237558506670458768);
+    t236 = UINT64_C(8573576096483297652);
+    t237 = UINT64_C(15328656139031509969);
+    t238 = UINT64_C(14192096105322081634);
+    t239 = UINT64_C(17740120131652602043);
+    t240 = UINT64_C(3728406090856200938);
+    t241 = UINT64_C(6941939825212513490);
+    t242 = UINT64_C(13289110799943029766);
+    t243 = UINT64_C(11999702481501399304);
+    t244 = UINT64_C(12111500069365762469);
+    t245 = UINT64_C(1304317031425039374);
+    t246 = UINT64_C(1630396289281299218);
+    t247 = UINT64_C(17159898745296669675);
+    t248 = UINT64_C(3003129357911285478);
+    t249 = UINT64_C(12977283734243882656);
+    t250 = UINT64_C(10416645343116120612);
+    t251 = UINT64_C(3797434642040374957);
+    t252 = UINT64_C(9358479320977856600);
+    t253 = UINT64_C(8154892584824854327);
+    t254 = UINT64_C(10193615731031067909);
+    t255 = UINT64_C(12742019663788834886);
+    t256 = UINT64_C(2092466524453879895);
+    t257 = UINT64_C(17448692642279532598);
+    t258 = UINT64_C(7975807747567252036);
+    t259 = UINT64_C(9969759684459065045);
+    t260 = UINT64_C(3925256793573221701);
+    t261 = UINT64_C(294884973539139223);
+    t262 = UINT64_C(368606216923924028);
+    t263 = UINT64_C(2536221894791146469);
+    t264 = UINT64_C(12393649405343708895);
+    t265 = UINT64_C(15492061756679636119);
+    t266 = UINT64_C(459166561069996766);
+    t267 = UINT64_C(573958201337495958);
+    t268 = UINT64_C(5329133770099257851);
+    t269 = UINT64_C(5636551615525730109);
+    t270 = UINT64_C(16269061556261938444);
+    t271 = UINT64_C(15724640926900035151);
+    t272 = UINT64_C(12133743588526215921);
+    t273 = UINT64_C(15167179485657769902);
+    t274 = UINT64_C(512230283362660762);
+    t275 = UINT64_C(16461044991597520640);
+    t276 = UINT64_C(2129562165787349184);
+    t277 = UINT64_C(11885324744088962288);
+    t278 = UINT64_C(7428327965055601430);
+    t279 = UINT64_C(13897095974746889691);
+    t280 = UINT64_C(8147997931578836306);
+    t281 = UINT64_C(16621713753305242451);
+    t282 = UINT64_C(11553770154776777256);
+    t283 = UINT64_C(14442212693470971570);
+    t284 = UINT64_C(2108853905778275375);
+    t285 = UINT64_C(11859439419077620027);
+    t286 = UINT64_C(989241218564861322);
+    t287 = UINT64_C(1236551523206076653);
+    t288 = UINT64_C(12302059748072267668);
+    t289 = UINT64_C(6154202648235558777);
+    t290 = UINT64_C(3081067291867060567);
+    t291 = UINT64_C(1925667057416912854);
+    t292 = UINT64_C(2407083821771141068);
+    t293 = UINT64_C(7620540795641314239);
+    t294 = UINT64_C(2456994988062127447);
+    t295 = UINT64_C(12294615771932435117);
+    t296 = UINT64_C(6144897678060768089);
+    t297 = UINT64_C(3840561048787980055);
+    t298 = UINT64_C(14024073347839750877);
+    t299 = UINT64_C(8306719647944912789);
+    t300 = UINT64_C(9803385798392958397);
+    t301 = UINT64_C(12254232247991197996);
+    t302 = UINT64_C(10706104291561609591);
+    t303 = UINT64_C(15914687219080781802);
+    t304 = UINT64_C(6058300968568813541);
+    t305 = UINT64_C(7572876210711016926);
+    t306 = UINT64_C(9344733650121773483);
+    t307 = UINT64_C(2457545025797441046);
+    t308 = UINT64_C(7683617300674189211);
+    t309 = UINT64_C(4802260812921368257);
+    t310 = UINT64_C(1391139997724322417);
+    t311 = UINT64_C(10962297034010178829);
+    t312 = UINT64_C(9157278655470055720);
+    t313 = UINT64_C(6834912300910181746);
+    t314 = UINT64_C(17767012412992502991);
+    t315 = UINT64_C(8373707460958465027);
+    t316 = UINT64_C(9845253181526428546);
+    t317 = UINT64_C(7694880458480647778);
+    t318 = UINT64_C(14230286591528197627);
+    t319 = UINT64_C(4282243101277735613);
+    t320 = UINT64_C(9964489895024557420);
+    t321 = UINT64_C(12455612368780696775);
+    t322 = UINT64_C(3173071712060547580);
+    t323 = UINT64_C(8578025658503072379);
+    t324 = UINT64_C(15334218091556228378);
+    t325 = UINT64_C(14195572325650030640);
+    t326 = UINT64_C(17744465407062538301);
+    t327 = UINT64_C(12957209721973397068);
+    t328 = UINT64_C(17321628113088148975);
+    t329 = UINT64_C(12428663104505410411);
+    t330 = UINT64_C(15535828880631763014);
+    t331 = UINT64_C(486521013540076076);
+    t332 = UINT64_C(608151266925095095);
+    t333 = UINT64_C(5371875102083756772);
+    t334 = UINT64_C(14886636984870817743);
+    t335 = UINT64_C(161552157378970562);
+    t336 = UINT64_C(14036998252005876915);
+    t337 = UINT64_C(6467280898289979120);
+    t338 = UINT64_C(17307473159717249708);
+    t339 = UINT64_C(3187597375937010519);
+    t340 = UINT64_C(11215620396815407382);
+    t341 = UINT64_C(14019525496019259228);
+    t342 = UINT64_C(3689348814741910323);
+    t343 = UINT64_C(0);
+    t344 = UINT64_C(0);
+    t345 = UINT64_C(0);
+    t346 = UINT64_C(0);
+    t347 = UINT64_C(0);
+    t348 = UINT64_C(0);
+    t349 = UINT64_C(0);
+    t350 = UINT64_C(0);
+    t351 = UINT64_C(0);
+    t352 = UINT64_C(0);
+    t353 = UINT64_C(0);
+    t354 = UINT64_C(0);
+    t355 = UINT64_C(0);
+    t356 = UINT64_C(0);
+    t357 = UINT64_C(0);
+    t358 = UINT64_C(0);
+    t359 = UINT64_C(0);
+    t360 = UINT64_C(0);
+    t361 = UINT64_C(0);
+    t362 = UINT64_C(0);
+    t363 = UINT64_C(0);
+    t364 = UINT64_C(0);
+    t365 = UINT64_C(0);
+    t366 = UINT64_C(0);
+    t367 = UINT64_C(0);
+    t368 = UINT64_C(0);
+    t369 = UINT64_C(0);
+    t370 = UINT64_C(0);
+    t371 = UINT64_C(13835058055282163712);
+    t372 = UINT64_C(12682136550675316736);
+    t373 = UINT64_C(6629298651489370112);
+    t374 = UINT64_C(12898309332789100544);
+    t375 = UINT64_C(1143914305352105984);
+    t376 = UINT64_C(10653264918544908288);
+    t377 = UINT64_C(4093209111326359552);
+    t378 = UINT64_C(14087470740647444480);
+    t379 = UINT64_C(12997652407381917696);
+    t380 = UINT64_C(16247065509227397120);
+    t381 = UINT64_C(17071944970908205056);
+    t382 = UINT64_C(16728245195207868416);
+    t383 = UINT64_C(11686934457155059712);
+    t384 = UINT64_C(11916020054149300224);
+    t385 = UINT64_C(1059967012404461568);
+    t386 = UINT64_C(10548330802360352768);
+    t387 = UINT64_C(1981020733047832576);
+    t388 = UINT64_C(2476275916309790720);
+    t389 = UINT64_C(3095344895387238400);
+    t390 = UINT64_C(13463805605685493760);
+    t391 = UINT64_C(7606384970252091392);
+    t392 = UINT64_C(14119667231242502144);
+    t393 = UINT64_C(6518949010312869888);
+    t394 = UINT64_C(8148686262891087360);
+    t395 = UINT64_C(10185857828613859200);
+    t396 = UINT64_C(13283690170524743856);
+    t397 = UINT64_C(7381240676301154012);
+    t398 = UINT64_C(3178808521666707);
+    t399 = UINT64_C(4613672773753429595);
+    t400 = UINT64_C(5767090967191786994);
+    t401 = UINT64_C(7208863708989733743);
+    t402 = UINT64_C(18234451673091942987);
+    t403 = UINT64_C(18314061323323546223);
+    t404 = UINT64_C(13669204617299656970);
+    t405 = UINT64_C(3251447716342407501);
+    t406 = UINT64_C(11255526859568780496);
+    t407 = UINT64_C(14069408574460975620);
+    t408 = UINT64_C(8363388681221443717);
+    t409 = UINT64_C(7532960934977096275);
+    t410 = UINT64_C(14027887187148758248);
+    t411 = UINT64_C(12923172965508559906);
+    t412 = UINT64_C(8076983103442849941);
+    t413 = UINT64_C(5484542860876174523);
+    t414 = UINT64_C(11467364594522606057);
+    t415 = UINT64_C(4861259862362934834);
+    t416 = UINT64_C(10688260846381056446);
+    t417 = UINT64_C(4136954021121544750);
+    t418 = UINT64_C(279753253987271517);
+    t419 = UINT64_C(14184749622766253108);
+    t420 = UINT64_C(13119251010030428481);
+    t421 = UINT64_C(10505374890482711752);
+    t422 = UINT64_C(13131718613103389691);
+    t423 = UINT64_C(2579590211097073401);
+    t424 = UINT64_C(10835615918790446684);
+    t425 = UINT64_C(4321147861633282547);
+    t426 = UINT64_C(789748808614215279);
+    t427 = UINT64_C(9716965042238660357);
+    t428 = UINT64_C(12146206302798325447);
+    t429 = UINT64_C(1347699823215743097);
+    t430 = UINT64_C(12371527435578309195);
+    t431 = UINT64_C(10852723276045498590);
+    t432 = UINT64_C(18177590113484261142);
+    t433 = UINT64_C(18110301623427938524);
+    t434 = UINT64_C(11318938514642461577);
+    t435 = UINT64_C(14148673143303076971);
+    t436 = UINT64_C(3850783373846682502);
+    t437 = UINT64_C(9324268636295258420);
+    t438 = UINT64_C(7043649776941685121);
+    t439 = UINT64_C(4192876202749718497);
+    t440 = UINT64_C(4926390635932268013);
+    t441 = UINT64_C(15381360331770110824);
+    t442 = UINT64_C(779956341003086914);
+    t443 = UINT64_C(12016687759195399081);
+    t444 = UINT64_C(10409173680566860947);
+    t445 = UINT64_C(17623153119135964088);
+    t446 = UINT64_C(13320313708673671507);
+    t447 = UINT64_C(12038706117414701480);
+    t448 = UINT64_C(15048382646768376850);
+    t449 = UINT64_C(4793553135802847627);
+    t450 = UINT64_C(1380255401326171630);
+    t451 = UINT64_C(1725319251657714538);
+    t452 = UINT64_C(14913382587568235298);
+    t453 = UINT64_C(4806670179178130410);
+    t454 = UINT64_C(10620023742400050917);
+    t455 = UINT64_C(18166729885068501583);
+    t456 = UINT64_C(8873354301053463267);
+    t457 = UINT64_C(1868320839462053276);
+    t458 = UINT64_C(12696915570732253057);
+    t459 = UINT64_C(2036086408133152610);
+    t460 = UINT64_C(11768480047021216570);
+    t461 = UINT64_C(10098914040349132809);
+    t462 = UINT64_C(15535193312072983813);
+    t463 = UINT64_C(5583933584809066055);
+    t464 = UINT64_C(16203289017866108377);
+    t465 = UINT64_C(14738741654593705639);
+    t466 = UINT64_C(18423427068242132049);
+    t467 = UINT64_C(4582539761593113445);
+    t468 = UINT64_C(558244341782001951);
+    t469 = UINT64_C(5309491445654890343);
+    t470 = UINT64_C(6636864307068612929);
+    t471 = UINT64_C(4148040191917883080);
+    t472 = UINT64_C(5185050239897353851);
+    t473 = UINT64_C(6481312799871692314);
+    t474 = UINT64_C(8662506518347195600);
+    t475 = UINT64_C(15439819166361382404);
+    t476 = UINT64_C(853029884242176389);
+    t477 = UINT64_C(16674044742147217907);
+    t478 = UINT64_C(11619183890829246576);
+    t479 = UINT64_C(9912293845109170316);
+    t480 = UINT64_C(10806869671620619351);
+    t481 = UINT64_C(18120273107953162093);
+    t482 = UINT64_C(13426969348086676809);
+    t483 = UINT64_C(17615227879408948813);
+    t484 = UINT64_C(8183976793979022305);
+    t485 = UINT64_C(14841657010901165785);
+    t486 = UINT64_C(9276035631813228615);
+    t487 = UINT64_C(11595044539766535769);
+    t488 = UINT64_C(14493805674708169712);
+    t489 = UINT64_C(4446942528265218166);
+    t490 = UINT64_C(946992141904134803);
+    t491 = UINT64_C(10407112214234944312);
+    t492 = UINT64_C(3785518230938904582);
+    t493 = UINT64_C(60105885123121412);
+    t494 = UINT64_C(75132356403901765);
+    t495 = UINT64_C(9317287482359653014);
+    t496 = UINT64_C(1211618658047395230);
+    t497 = UINT64_C(6126209340986631941);
+    t498 = UINT64_C(7657761676233289927);
+    t499 = UINT64_C(2480258038432112252);
+    t500 = UINT64_C(7712008566467528219);
+    t501 = UINT64_C(9640010708084410274);
+    t502 = UINT64_C(6025006692552756421);
+    t503 = UINT64_C(12142944384118333430);
+    t504 = UINT64_C(1343622424865753076);
+    t505 = UINT64_C(16980665080036953336);
+    t506 = UINT64_C(12002459313191415863);
+    t507 = UINT64_C(10391388123061881924);
+    t508 = UINT64_C(15717989613768452011);
+    t509 = UINT64_C(5812428961928401301);
+    t510 = UINT64_C(16488908239265277435);
+    t511 = UINT64_C(7999724640327104445);
+    t512 = UINT64_C(14611341818836268460);
+    t513 = UINT64_C(13652491255117947671);
+    t514 = UINT64_C(10838650043662411246);
+    t515 = UINT64_C(13548312554578014058);
+    t516 = UINT64_C(7712018656367741764);
+    t517 = UINT64_C(16349226706298308362);
+    t518 = UINT64_C(11213161346018109645);
+    t519 = UINT64_C(9404765664095249153);
+    t520 = UINT64_C(11755957080119061441);
+    t521 = UINT64_C(14265002202715495256);
+    t522 = UINT64_C(17831252753394369071);
+    t523 = UINT64_C(8454007886460797626);
+    t524 = UINT64_C(14507126965892774324);
+    t525 = UINT64_C(8910536670511192098);
+    t526 = UINT64_C(11138170838138990122);
+    t527 = UINT64_C(6961356773836868826);
+    t528 = UINT64_C(8701695967296086033);
+    t529 = UINT64_C(6265433940692719637);
+    t530 = UINT64_C(17750954268215113485);
+    t531 = UINT64_C(17577006816841503952);
+    t532 = UINT64_C(8136200465769716229);
+    t533 = UINT64_C(473439272678684739);
+    t534 = UINT64_C(14426857146130519635);
+    t535 = UINT64_C(8810199395808373736);
+    t536 = UINT64_C(7812217631593927537);
+    t537 = UINT64_C(14376958057919797325);
+    t538 = UINT64_C(17971197572399746657);
+    t539 = UINT64_C(13537841491963535612);
+    t540 = UINT64_C(3087243809672255804);
+    t541 = UINT64_C(8470740780517707659);
+    t542 = UINT64_C(682526969396179382);
+    t543 = UINT64_C(5464844730172612132);
+    t544 = UINT64_C(2219369894288377261);
+    t545 = UINT64_C(1387106183930235788);
+    t546 = UINT64_C(15568940785194958447);
+    t547 = UINT64_C(14849489963066310155);
+    t548 = UINT64_C(9338490416978111886);
+    t549 = UINT64_C(17365771556679789689);
+    t550 = UINT64_C(12483842408994961303);
+    t551 = UINT64_C(6381430974388925821);
+    t552 = UINT64_C(8600080377420466542);
+    t553 = UINT64_C(10750100471775583178);
+    t554 = UINT64_C(18049311608146866876);
+    t555 = UINT64_C(4363290727450709941);
+    t556 = UINT64_C(10065799427740775331);
+    t557 = UINT64_C(17193935303103357068);
+    t558 = UINT64_C(8440366555225904215);
+    t559 = UINT64_C(10550458194032380269);
+    t560 = UINT64_C(3964700705685699528);
+    t561 = UINT64_C(16312995996335725917);
+    t562 = UINT64_C(15779558976992269492);
+    t563 = UINT64_C(15112762702812948962);
+    t564 = UINT64_C(11751319698471787053);
+    t565 = UINT64_C(10077463604662345912);
+    t566 = UINT64_C(3373457468973156582);
+    t567 = UINT64_C(9025939945749304720);
+    t568 = UINT64_C(11282424932186630900);
+    t569 = UINT64_C(14103031165233288625);
+    t570 = UINT64_C(11120237487484499342);
+    t571 = UINT64_C(9288610840928236274);
+    t572 = UINT64_C(16222449569587683247);
+    t573 = UINT64_C(7833187971778608077);
+    t574 = UINT64_C(568112927868484288);
+    t575 = UINT64_C(14545199215117769073);
+    t576 = UINT64_C(4479063491021217766);
+    t577 = UINT64_C(5598829363776522208);
+    t578 = UINT64_C(2386850686293264856);
+    t579 = UINT64_C(16818621413148744782);
+    t580 = UINT64_C(8205795374004271537);
+    t581 = UINT64_C(1033872180650563613);
+    t582 = UINT64_C(5904026244240592420);
+    t583 = UINT64_C(5995859411864064214);
+    t584 = UINT64_C(16718196301684856076);
+    t585 = UINT64_C(2451001303396518479);
+    t586 = UINT64_C(13061090860691293809);
+    t587 = UINT64_C(7102991539009341454);
+    t588 = UINT64_C(8878739423761676818);
+    t589 = UINT64_C(14772584176705823819);
+    t590 = UINT64_C(13854044202454891870);
+    t591 = UINT64_C(17317555253068614837);
+    t592 = UINT64_C(15435158051595272177);
+    t593 = UINT64_C(10070575527639314413);
+    t594 = UINT64_C(7976533391121755113);
+    t595 = UINT64_C(16514548415519566705);
+    t596 = UINT64_C(6808127464117294670);
+    t597 = UINT64_C(3898473311719230433);
+    t598 = UINT64_C(9354074847465600877);
+    t599 = UINT64_C(2469221522477225288);
+    t600 = UINT64_C(12309898939951307418);
+    t601 = UINT64_C(3082000819042179232);
+    t602 = UINT64_C(8464187042230111944);
+    t603 = UINT64_C(15191919821215027834);
+    t604 = UINT64_C(7189106879045698444);
+    t605 = UINT64_C(8986383598807123056);
+    t606 = UINT64_C(15844665516936291724);
+    t607 = UINT64_C(1359087822460813039);
+    t608 = UINT64_C(849429889038008149);
+    t609 = UINT64_C(5673473379724898090);
+    t610 = UINT64_C(2480155706228734709);
+    t611 = UINT64_C(3855940325606653145);
+    t612 = UINT64_C(208239388580928527);
+    t613 = UINT64_C(4871985254153548563);
+    t614 = UINT64_C(3044990783845967852);
+    t615 = UINT64_C(13029610516662235623);
+    t616 = UINT64_C(2451955090545630817);
+    t617 = UINT64_C(3838314940804713212);
+    t618 = UINT64_C(14021265712860667324);
+    t619 = UINT64_C(17526582141075834155);
+    t620 = UINT64_C(15565799856599784250);
+    t621 = UINT64_C(5622191765467566601);
+    t622 = UINT64_C(11639425725261846156);
+    t623 = UINT64_C(2662955059861265943);
+    t624 = UINT64_C(7940379843253970333);
+    t625 = UINT64_C(9925474804067462916);
+    t626 = UINT64_C(6203421752542164322);
+    t627 = UINT64_C(12365963209105093307);
+    t628 = UINT64_C(6234081974526590826);
+    t629 = UINT64_C(13119673270933895074);
+    t630 = UINT64_C(11787905570239980939);
+    t631 = UINT64_C(10123195944372588270);
+    t632 = UINT64_C(4021154456019173716);
+    t633 = UINT64_C(5026443070023967146);
+    t634 = UINT64_C(15506425874384734740);
+    t635 = UINT64_C(9691516171490459212);
+    t636 = UINT64_C(2891023177508298208);
+    t637 = UINT64_C(8225464990312760664);
+    t638 = UINT64_C(5670145219463562926);
+    t639 = UINT64_C(10461369789805808684);
+    t640 = UINT64_C(17688398255684648759);
+    t641 = UINT64_C(3663753745896259333);
+    t642 = UINT64_C(9207375118826243939);
+    t643 = UINT64_C(2285846861678029116);
+    t644 = UINT64_C(16692366632379700107);
+    t645 = UINT64_C(17350258172878394423);
+    t646 = UINT64_C(3241078642388441413);
+    t647 = UINT64_C(13274720339840327574);
+    t648 = UINT64_C(12908386230827592638);
+    t649 = UINT64_C(2300424733252327085);
+    t650 = UINT64_C(12098902953420184665);
+    t651 = UINT64_C(12173500364315003319);
+#line 800
+    t652 = hero_array_new(&hero_desc_u64, 651); hero_array_push_owned(&t652, &t1); hero_array_push_owned(&t652, &t2); hero_array_push_owned(&t652, &t3); hero_array_push_owned(&t652, &t4); hero_array_push_owned(&t652, &t5); hero_array_push_owned(&t652, &t6); hero_array_push_owned(&t652, &t7); hero_array_push_owned(&t652, &t8); hero_array_push_owned(&t652, &t9); hero_array_push_owned(&t652, &t10); hero_array_push_owned(&t652, &t11); hero_array_push_owned(&t652, &t12); hero_array_push_owned(&t652, &t13); hero_array_push_owned(&t652, &t14); hero_array_push_owned(&t652, &t15); hero_array_push_owned(&t652, &t16); hero_array_push_owned(&t652, &t17); hero_array_push_owned(&t652, &t18); hero_array_push_owned(&t652, &t19); hero_array_push_owned(&t652, &t20); hero_array_push_owned(&t652, &t21); hero_array_push_owned(&t652, &t22); hero_array_push_owned(&t652, &t23); hero_array_push_owned(&t652, &t24); hero_array_push_owned(&t652, &t25); hero_array_push_owned(&t652, &t26); hero_array_push_owned(&t652, &t27); hero_array_push_owned(&t652, &t28); hero_array_push_owned(&t652, &t29); hero_array_push_owned(&t652, &t30); hero_array_push_owned(&t652, &t31); hero_array_push_owned(&t652, &t32); hero_array_push_owned(&t652, &t33); hero_array_push_owned(&t652, &t34); hero_array_push_owned(&t652, &t35); hero_array_push_owned(&t652, &t36); hero_array_push_owned(&t652, &t37); hero_array_push_owned(&t652, &t38); hero_array_push_owned(&t652, &t39); hero_array_push_owned(&t652, &t40); hero_array_push_owned(&t652, &t41); hero_array_push_owned(&t652, &t42); hero_array_push_owned(&t652, &t43); hero_array_push_owned(&t652, &t44); hero_array_push_owned(&t652, &t45); hero_array_push_owned(&t652, &t46); hero_array_push_owned(&t652, &t47); hero_array_push_owned(&t652, &t48); hero_array_push_owned(&t652, &t49); hero_array_push_owned(&t652, &t50); hero_array_push_owned(&t652, &t51); hero_array_push_owned(&t652, &t52); hero_array_push_owned(&t652, &t53); hero_array_push_owned(&t652, &t54); hero_array_push_owned(&t652, &t55); hero_array_push_owned(&t652, &t56); hero_array_push_owned(&t652, &t57); hero_array_push_owned(&t652, &t58); hero_array_push_owned(&t652, &t59); hero_array_push_owned(&t652, &t60); hero_array_push_owned(&t652, &t61); hero_array_push_owned(&t652, &t62); hero_array_push_owned(&t652, &t63); hero_array_push_owned(&t652, &t64); hero_array_push_owned(&t652, &t65); hero_array_push_owned(&t652, &t66); hero_array_push_owned(&t652, &t67); hero_array_push_owned(&t652, &t68); hero_array_push_owned(&t652, &t69); hero_array_push_owned(&t652, &t70); hero_array_push_owned(&t652, &t71); hero_array_push_owned(&t652, &t72); hero_array_push_owned(&t652, &t73); hero_array_push_owned(&t652, &t74); hero_array_push_owned(&t652, &t75); hero_array_push_owned(&t652, &t76); hero_array_push_owned(&t652, &t77); hero_array_push_owned(&t652, &t78); hero_array_push_owned(&t652, &t79); hero_array_push_owned(&t652, &t80); hero_array_push_owned(&t652, &t81); hero_array_push_owned(&t652, &t82); hero_array_push_owned(&t652, &t83); hero_array_push_owned(&t652, &t84); hero_array_push_owned(&t652, &t85); hero_array_push_owned(&t652, &t86); hero_array_push_owned(&t652, &t87); hero_array_push_owned(&t652, &t88); hero_array_push_owned(&t652, &t89); hero_array_push_owned(&t652, &t90); hero_array_push_owned(&t652, &t91); hero_array_push_owned(&t652, &t92); hero_array_push_owned(&t652, &t93); hero_array_push_owned(&t652, &t94); hero_array_push_owned(&t652, &t95); hero_array_push_owned(&t652, &t96); hero_array_push_owned(&t652, &t97); hero_array_push_owned(&t652, &t98); hero_array_push_owned(&t652, &t99); hero_array_push_owned(&t652, &t100); hero_array_push_owned(&t652, &t101); hero_array_push_owned(&t652, &t102); hero_array_push_owned(&t652, &t103); hero_array_push_owned(&t652, &t104); hero_array_push_owned(&t652, &t105); hero_array_push_owned(&t652, &t106); hero_array_push_owned(&t652, &t107); hero_array_push_owned(&t652, &t108); hero_array_push_owned(&t652, &t109); hero_array_push_owned(&t652, &t110); hero_array_push_owned(&t652, &t111); hero_array_push_owned(&t652, &t112); hero_array_push_owned(&t652, &t113); hero_array_push_owned(&t652, &t114); hero_array_push_owned(&t652, &t115); hero_array_push_owned(&t652, &t116); hero_array_push_owned(&t652, &t117); hero_array_push_owned(&t652, &t118); hero_array_push_owned(&t652, &t119); hero_array_push_owned(&t652, &t120); hero_array_push_owned(&t652, &t121); hero_array_push_owned(&t652, &t122); hero_array_push_owned(&t652, &t123); hero_array_push_owned(&t652, &t124); hero_array_push_owned(&t652, &t125); hero_array_push_owned(&t652, &t126); hero_array_push_owned(&t652, &t127); hero_array_push_owned(&t652, &t128); hero_array_push_owned(&t652, &t129); hero_array_push_owned(&t652, &t130); hero_array_push_owned(&t652, &t131); hero_array_push_owned(&t652, &t132); hero_array_push_owned(&t652, &t133); hero_array_push_owned(&t652, &t134); hero_array_push_owned(&t652, &t135); hero_array_push_owned(&t652, &t136); hero_array_push_owned(&t652, &t137); hero_array_push_owned(&t652, &t138); hero_array_push_owned(&t652, &t139); hero_array_push_owned(&t652, &t140); hero_array_push_owned(&t652, &t141); hero_array_push_owned(&t652, &t142); hero_array_push_owned(&t652, &t143); hero_array_push_owned(&t652, &t144); hero_array_push_owned(&t652, &t145); hero_array_push_owned(&t652, &t146); hero_array_push_owned(&t652, &t147); hero_array_push_owned(&t652, &t148); hero_array_push_owned(&t652, &t149); hero_array_push_owned(&t652, &t150); hero_array_push_owned(&t652, &t151); hero_array_push_owned(&t652, &t152); hero_array_push_owned(&t652, &t153); hero_array_push_owned(&t652, &t154); hero_array_push_owned(&t652, &t155); hero_array_push_owned(&t652, &t156); hero_array_push_owned(&t652, &t157); hero_array_push_owned(&t652, &t158); hero_array_push_owned(&t652, &t159); hero_array_push_owned(&t652, &t160); hero_array_push_owned(&t652, &t161); hero_array_push_owned(&t652, &t162); hero_array_push_owned(&t652, &t163); hero_array_push_owned(&t652, &t164); hero_array_push_owned(&t652, &t165); hero_array_push_owned(&t652, &t166); hero_array_push_owned(&t652, &t167); hero_array_push_owned(&t652, &t168); hero_array_push_owned(&t652, &t169); hero_array_push_owned(&t652, &t170); hero_array_push_owned(&t652, &t171); hero_array_push_owned(&t652, &t172); hero_array_push_owned(&t652, &t173); hero_array_push_owned(&t652, &t174); hero_array_push_owned(&t652, &t175); hero_array_push_owned(&t652, &t176); hero_array_push_owned(&t652, &t177); hero_array_push_owned(&t652, &t178); hero_array_push_owned(&t652, &t179); hero_array_push_owned(&t652, &t180); hero_array_push_owned(&t652, &t181); hero_array_push_owned(&t652, &t182); hero_array_push_owned(&t652, &t183); hero_array_push_owned(&t652, &t184); hero_array_push_owned(&t652, &t185); hero_array_push_owned(&t652, &t186); hero_array_push_owned(&t652, &t187); hero_array_push_owned(&t652, &t188); hero_array_push_owned(&t652, &t189); hero_array_push_owned(&t652, &t190); hero_array_push_owned(&t652, &t191); hero_array_push_owned(&t652, &t192); hero_array_push_owned(&t652, &t193); hero_array_push_owned(&t652, &t194); hero_array_push_owned(&t652, &t195); hero_array_push_owned(&t652, &t196); hero_array_push_owned(&t652, &t197); hero_array_push_owned(&t652, &t198); hero_array_push_owned(&t652, &t199); hero_array_push_owned(&t652, &t200); hero_array_push_owned(&t652, &t201); hero_array_push_owned(&t652, &t202); hero_array_push_owned(&t652, &t203); hero_array_push_owned(&t652, &t204); hero_array_push_owned(&t652, &t205); hero_array_push_owned(&t652, &t206); hero_array_push_owned(&t652, &t207); hero_array_push_owned(&t652, &t208); hero_array_push_owned(&t652, &t209); hero_array_push_owned(&t652, &t210); hero_array_push_owned(&t652, &t211); hero_array_push_owned(&t652, &t212); hero_array_push_owned(&t652, &t213); hero_array_push_owned(&t652, &t214); hero_array_push_owned(&t652, &t215); hero_array_push_owned(&t652, &t216); hero_array_push_owned(&t652, &t217); hero_array_push_owned(&t652, &t218); hero_array_push_owned(&t652, &t219); hero_array_push_owned(&t652, &t220); hero_array_push_owned(&t652, &t221); hero_array_push_owned(&t652, &t222); hero_array_push_owned(&t652, &t223); hero_array_push_owned(&t652, &t224); hero_array_push_owned(&t652, &t225); hero_array_push_owned(&t652, &t226); hero_array_push_owned(&t652, &t227); hero_array_push_owned(&t652, &t228); hero_array_push_owned(&t652, &t229); hero_array_push_owned(&t652, &t230); hero_array_push_owned(&t652, &t231); hero_array_push_owned(&t652, &t232); hero_array_push_owned(&t652, &t233); hero_array_push_owned(&t652, &t234); hero_array_push_owned(&t652, &t235); hero_array_push_owned(&t652, &t236); hero_array_push_owned(&t652, &t237); hero_array_push_owned(&t652, &t238); hero_array_push_owned(&t652, &t239); hero_array_push_owned(&t652, &t240); hero_array_push_owned(&t652, &t241); hero_array_push_owned(&t652, &t242); hero_array_push_owned(&t652, &t243); hero_array_push_owned(&t652, &t244); hero_array_push_owned(&t652, &t245); hero_array_push_owned(&t652, &t246); hero_array_push_owned(&t652, &t247); hero_array_push_owned(&t652, &t248); hero_array_push_owned(&t652, &t249); hero_array_push_owned(&t652, &t250); hero_array_push_owned(&t652, &t251); hero_array_push_owned(&t652, &t252); hero_array_push_owned(&t652, &t253); hero_array_push_owned(&t652, &t254); hero_array_push_owned(&t652, &t255); hero_array_push_owned(&t652, &t256); hero_array_push_owned(&t652, &t257); hero_array_push_owned(&t652, &t258); hero_array_push_owned(&t652, &t259); hero_array_push_owned(&t652, &t260); hero_array_push_owned(&t652, &t261); hero_array_push_owned(&t652, &t262); hero_array_push_owned(&t652, &t263); hero_array_push_owned(&t652, &t264); hero_array_push_owned(&t652, &t265); hero_array_push_owned(&t652, &t266); hero_array_push_owned(&t652, &t267); hero_array_push_owned(&t652, &t268); hero_array_push_owned(&t652, &t269); hero_array_push_owned(&t652, &t270); hero_array_push_owned(&t652, &t271); hero_array_push_owned(&t652, &t272); hero_array_push_owned(&t652, &t273); hero_array_push_owned(&t652, &t274); hero_array_push_owned(&t652, &t275); hero_array_push_owned(&t652, &t276); hero_array_push_owned(&t652, &t277); hero_array_push_owned(&t652, &t278); hero_array_push_owned(&t652, &t279); hero_array_push_owned(&t652, &t280); hero_array_push_owned(&t652, &t281); hero_array_push_owned(&t652, &t282); hero_array_push_owned(&t652, &t283); hero_array_push_owned(&t652, &t284); hero_array_push_owned(&t652, &t285); hero_array_push_owned(&t652, &t286); hero_array_push_owned(&t652, &t287); hero_array_push_owned(&t652, &t288); hero_array_push_owned(&t652, &t289); hero_array_push_owned(&t652, &t290); hero_array_push_owned(&t652, &t291); hero_array_push_owned(&t652, &t292); hero_array_push_owned(&t652, &t293); hero_array_push_owned(&t652, &t294); hero_array_push_owned(&t652, &t295); hero_array_push_owned(&t652, &t296); hero_array_push_owned(&t652, &t297); hero_array_push_owned(&t652, &t298); hero_array_push_owned(&t652, &t299); hero_array_push_owned(&t652, &t300); hero_array_push_owned(&t652, &t301); hero_array_push_owned(&t652, &t302); hero_array_push_owned(&t652, &t303); hero_array_push_owned(&t652, &t304); hero_array_push_owned(&t652, &t305); hero_array_push_owned(&t652, &t306); hero_array_push_owned(&t652, &t307); hero_array_push_owned(&t652, &t308); hero_array_push_owned(&t652, &t309); hero_array_push_owned(&t652, &t310); hero_array_push_owned(&t652, &t311); hero_array_push_owned(&t652, &t312); hero_array_push_owned(&t652, &t313); hero_array_push_owned(&t652, &t314); hero_array_push_owned(&t652, &t315); hero_array_push_owned(&t652, &t316); hero_array_push_owned(&t652, &t317); hero_array_push_owned(&t652, &t318); hero_array_push_owned(&t652, &t319); hero_array_push_owned(&t652, &t320); hero_array_push_owned(&t652, &t321); hero_array_push_owned(&t652, &t322); hero_array_push_owned(&t652, &t323); hero_array_push_owned(&t652, &t324); hero_array_push_owned(&t652, &t325); hero_array_push_owned(&t652, &t326); hero_array_push_owned(&t652, &t327); hero_array_push_owned(&t652, &t328); hero_array_push_owned(&t652, &t329); hero_array_push_owned(&t652, &t330); hero_array_push_owned(&t652, &t331); hero_array_push_owned(&t652, &t332); hero_array_push_owned(&t652, &t333); hero_array_push_owned(&t652, &t334); hero_array_push_owned(&t652, &t335); hero_array_push_owned(&t652, &t336); hero_array_push_owned(&t652, &t337); hero_array_push_owned(&t652, &t338); hero_array_push_owned(&t652, &t339); hero_array_push_owned(&t652, &t340); hero_array_push_owned(&t652, &t341); hero_array_push_owned(&t652, &t342); hero_array_push_owned(&t652, &t343); hero_array_push_owned(&t652, &t344); hero_array_push_owned(&t652, &t345); hero_array_push_owned(&t652, &t346); hero_array_push_owned(&t652, &t347); hero_array_push_owned(&t652, &t348); hero_array_push_owned(&t652, &t349); hero_array_push_owned(&t652, &t350); hero_array_push_owned(&t652, &t351); hero_array_push_owned(&t652, &t352); hero_array_push_owned(&t652, &t353); hero_array_push_owned(&t652, &t354); hero_array_push_owned(&t652, &t355); hero_array_push_owned(&t652, &t356); hero_array_push_owned(&t652, &t357); hero_array_push_owned(&t652, &t358); hero_array_push_owned(&t652, &t359); hero_array_push_owned(&t652, &t360); hero_array_push_owned(&t652, &t361); hero_array_push_owned(&t652, &t362); hero_array_push_owned(&t652, &t363); hero_array_push_owned(&t652, &t364); hero_array_push_owned(&t652, &t365); hero_array_push_owned(&t652, &t366); hero_array_push_owned(&t652, &t367); hero_array_push_owned(&t652, &t368); hero_array_push_owned(&t652, &t369); hero_array_push_owned(&t652, &t370); hero_array_push_owned(&t652, &t371); hero_array_push_owned(&t652, &t372); hero_array_push_owned(&t652, &t373); hero_array_push_owned(&t652, &t374); hero_array_push_owned(&t652, &t375); hero_array_push_owned(&t652, &t376); hero_array_push_owned(&t652, &t377); hero_array_push_owned(&t652, &t378); hero_array_push_owned(&t652, &t379); hero_array_push_owned(&t652, &t380); hero_array_push_owned(&t652, &t381); hero_array_push_owned(&t652, &t382); hero_array_push_owned(&t652, &t383); hero_array_push_owned(&t652, &t384); hero_array_push_owned(&t652, &t385); hero_array_push_owned(&t652, &t386); hero_array_push_owned(&t652, &t387); hero_array_push_owned(&t652, &t388); hero_array_push_owned(&t652, &t389); hero_array_push_owned(&t652, &t390); hero_array_push_owned(&t652, &t391); hero_array_push_owned(&t652, &t392); hero_array_push_owned(&t652, &t393); hero_array_push_owned(&t652, &t394); hero_array_push_owned(&t652, &t395); hero_array_push_owned(&t652, &t396); hero_array_push_owned(&t652, &t397); hero_array_push_owned(&t652, &t398); hero_array_push_owned(&t652, &t399); hero_array_push_owned(&t652, &t400); hero_array_push_owned(&t652, &t401); hero_array_push_owned(&t652, &t402); hero_array_push_owned(&t652, &t403); hero_array_push_owned(&t652, &t404); hero_array_push_owned(&t652, &t405); hero_array_push_owned(&t652, &t406); hero_array_push_owned(&t652, &t407); hero_array_push_owned(&t652, &t408); hero_array_push_owned(&t652, &t409); hero_array_push_owned(&t652, &t410); hero_array_push_owned(&t652, &t411); hero_array_push_owned(&t652, &t412); hero_array_push_owned(&t652, &t413); hero_array_push_owned(&t652, &t414); hero_array_push_owned(&t652, &t415); hero_array_push_owned(&t652, &t416); hero_array_push_owned(&t652, &t417); hero_array_push_owned(&t652, &t418); hero_array_push_owned(&t652, &t419); hero_array_push_owned(&t652, &t420); hero_array_push_owned(&t652, &t421); hero_array_push_owned(&t652, &t422); hero_array_push_owned(&t652, &t423); hero_array_push_owned(&t652, &t424); hero_array_push_owned(&t652, &t425); hero_array_push_owned(&t652, &t426); hero_array_push_owned(&t652, &t427); hero_array_push_owned(&t652, &t428); hero_array_push_owned(&t652, &t429); hero_array_push_owned(&t652, &t430); hero_array_push_owned(&t652, &t431); hero_array_push_owned(&t652, &t432); hero_array_push_owned(&t652, &t433); hero_array_push_owned(&t652, &t434); hero_array_push_owned(&t652, &t435); hero_array_push_owned(&t652, &t436); hero_array_push_owned(&t652, &t437); hero_array_push_owned(&t652, &t438); hero_array_push_owned(&t652, &t439); hero_array_push_owned(&t652, &t440); hero_array_push_owned(&t652, &t441); hero_array_push_owned(&t652, &t442); hero_array_push_owned(&t652, &t443); hero_array_push_owned(&t652, &t444); hero_array_push_owned(&t652, &t445); hero_array_push_owned(&t652, &t446); hero_array_push_owned(&t652, &t447); hero_array_push_owned(&t652, &t448); hero_array_push_owned(&t652, &t449); hero_array_push_owned(&t652, &t450); hero_array_push_owned(&t652, &t451); hero_array_push_owned(&t652, &t452); hero_array_push_owned(&t652, &t453); hero_array_push_owned(&t652, &t454); hero_array_push_owned(&t652, &t455); hero_array_push_owned(&t652, &t456); hero_array_push_owned(&t652, &t457); hero_array_push_owned(&t652, &t458); hero_array_push_owned(&t652, &t459); hero_array_push_owned(&t652, &t460); hero_array_push_owned(&t652, &t461); hero_array_push_owned(&t652, &t462); hero_array_push_owned(&t652, &t463); hero_array_push_owned(&t652, &t464); hero_array_push_owned(&t652, &t465); hero_array_push_owned(&t652, &t466); hero_array_push_owned(&t652, &t467); hero_array_push_owned(&t652, &t468); hero_array_push_owned(&t652, &t469); hero_array_push_owned(&t652, &t470); hero_array_push_owned(&t652, &t471); hero_array_push_owned(&t652, &t472); hero_array_push_owned(&t652, &t473); hero_array_push_owned(&t652, &t474); hero_array_push_owned(&t652, &t475); hero_array_push_owned(&t652, &t476); hero_array_push_owned(&t652, &t477); hero_array_push_owned(&t652, &t478); hero_array_push_owned(&t652, &t479); hero_array_push_owned(&t652, &t480); hero_array_push_owned(&t652, &t481); hero_array_push_owned(&t652, &t482); hero_array_push_owned(&t652, &t483); hero_array_push_owned(&t652, &t484); hero_array_push_owned(&t652, &t485); hero_array_push_owned(&t652, &t486); hero_array_push_owned(&t652, &t487); hero_array_push_owned(&t652, &t488); hero_array_push_owned(&t652, &t489); hero_array_push_owned(&t652, &t490); hero_array_push_owned(&t652, &t491); hero_array_push_owned(&t652, &t492); hero_array_push_owned(&t652, &t493); hero_array_push_owned(&t652, &t494); hero_array_push_owned(&t652, &t495); hero_array_push_owned(&t652, &t496); hero_array_push_owned(&t652, &t497); hero_array_push_owned(&t652, &t498); hero_array_push_owned(&t652, &t499); hero_array_push_owned(&t652, &t500); hero_array_push_owned(&t652, &t501); hero_array_push_owned(&t652, &t502); hero_array_push_owned(&t652, &t503); hero_array_push_owned(&t652, &t504); hero_array_push_owned(&t652, &t505); hero_array_push_owned(&t652, &t506); hero_array_push_owned(&t652, &t507); hero_array_push_owned(&t652, &t508); hero_array_push_owned(&t652, &t509); hero_array_push_owned(&t652, &t510); hero_array_push_owned(&t652, &t511); hero_array_push_owned(&t652, &t512); hero_array_push_owned(&t652, &t513); hero_array_push_owned(&t652, &t514); hero_array_push_owned(&t652, &t515); hero_array_push_owned(&t652, &t516); hero_array_push_owned(&t652, &t517); hero_array_push_owned(&t652, &t518); hero_array_push_owned(&t652, &t519); hero_array_push_owned(&t652, &t520); hero_array_push_owned(&t652, &t521); hero_array_push_owned(&t652, &t522); hero_array_push_owned(&t652, &t523); hero_array_push_owned(&t652, &t524); hero_array_push_owned(&t652, &t525); hero_array_push_owned(&t652, &t526); hero_array_push_owned(&t652, &t527); hero_array_push_owned(&t652, &t528); hero_array_push_owned(&t652, &t529); hero_array_push_owned(&t652, &t530); hero_array_push_owned(&t652, &t531); hero_array_push_owned(&t652, &t532); hero_array_push_owned(&t652, &t533); hero_array_push_owned(&t652, &t534); hero_array_push_owned(&t652, &t535); hero_array_push_owned(&t652, &t536); hero_array_push_owned(&t652, &t537); hero_array_push_owned(&t652, &t538); hero_array_push_owned(&t652, &t539); hero_array_push_owned(&t652, &t540); hero_array_push_owned(&t652, &t541); hero_array_push_owned(&t652, &t542); hero_array_push_owned(&t652, &t543); hero_array_push_owned(&t652, &t544); hero_array_push_owned(&t652, &t545); hero_array_push_owned(&t652, &t546); hero_array_push_owned(&t652, &t547); hero_array_push_owned(&t652, &t548); hero_array_push_owned(&t652, &t549); hero_array_push_owned(&t652, &t550); hero_array_push_owned(&t652, &t551); hero_array_push_owned(&t652, &t552); hero_array_push_owned(&t652, &t553); hero_array_push_owned(&t652, &t554); hero_array_push_owned(&t652, &t555); hero_array_push_owned(&t652, &t556); hero_array_push_owned(&t652, &t557); hero_array_push_owned(&t652, &t558); hero_array_push_owned(&t652, &t559); hero_array_push_owned(&t652, &t560); hero_array_push_owned(&t652, &t561); hero_array_push_owned(&t652, &t562); hero_array_push_owned(&t652, &t563); hero_array_push_owned(&t652, &t564); hero_array_push_owned(&t652, &t565); hero_array_push_owned(&t652, &t566); hero_array_push_owned(&t652, &t567); hero_array_push_owned(&t652, &t568); hero_array_push_owned(&t652, &t569); hero_array_push_owned(&t652, &t570); hero_array_push_owned(&t652, &t571); hero_array_push_owned(&t652, &t572); hero_array_push_owned(&t652, &t573); hero_array_push_owned(&t652, &t574); hero_array_push_owned(&t652, &t575); hero_array_push_owned(&t652, &t576); hero_array_push_owned(&t652, &t577); hero_array_push_owned(&t652, &t578); hero_array_push_owned(&t652, &t579); hero_array_push_owned(&t652, &t580); hero_array_push_owned(&t652, &t581); hero_array_push_owned(&t652, &t582); hero_array_push_owned(&t652, &t583); hero_array_push_owned(&t652, &t584); hero_array_push_owned(&t652, &t585); hero_array_push_owned(&t652, &t586); hero_array_push_owned(&t652, &t587); hero_array_push_owned(&t652, &t588); hero_array_push_owned(&t652, &t589); hero_array_push_owned(&t652, &t590); hero_array_push_owned(&t652, &t591); hero_array_push_owned(&t652, &t592); hero_array_push_owned(&t652, &t593); hero_array_push_owned(&t652, &t594); hero_array_push_owned(&t652, &t595); hero_array_push_owned(&t652, &t596); hero_array_push_owned(&t652, &t597); hero_array_push_owned(&t652, &t598); hero_array_push_owned(&t652, &t599); hero_array_push_owned(&t652, &t600); hero_array_push_owned(&t652, &t601); hero_array_push_owned(&t652, &t602); hero_array_push_owned(&t652, &t603); hero_array_push_owned(&t652, &t604); hero_array_push_owned(&t652, &t605); hero_array_push_owned(&t652, &t606); hero_array_push_owned(&t652, &t607); hero_array_push_owned(&t652, &t608); hero_array_push_owned(&t652, &t609); hero_array_push_owned(&t652, &t610); hero_array_push_owned(&t652, &t611); hero_array_push_owned(&t652, &t612); hero_array_push_owned(&t652, &t613); hero_array_push_owned(&t652, &t614); hero_array_push_owned(&t652, &t615); hero_array_push_owned(&t652, &t616); hero_array_push_owned(&t652, &t617); hero_array_push_owned(&t652, &t618); hero_array_push_owned(&t652, &t619); hero_array_push_owned(&t652, &t620); hero_array_push_owned(&t652, &t621); hero_array_push_owned(&t652, &t622); hero_array_push_owned(&t652, &t623); hero_array_push_owned(&t652, &t624); hero_array_push_owned(&t652, &t625); hero_array_push_owned(&t652, &t626); hero_array_push_owned(&t652, &t627); hero_array_push_owned(&t652, &t628); hero_array_push_owned(&t652, &t629); hero_array_push_owned(&t652, &t630); hero_array_push_owned(&t652, &t631); hero_array_push_owned(&t652, &t632); hero_array_push_owned(&t652, &t633); hero_array_push_owned(&t652, &t634); hero_array_push_owned(&t652, &t635); hero_array_push_owned(&t652, &t636); hero_array_push_owned(&t652, &t637); hero_array_push_owned(&t652, &t638); hero_array_push_owned(&t652, &t639); hero_array_push_owned(&t652, &t640); hero_array_push_owned(&t652, &t641); hero_array_push_owned(&t652, &t642); hero_array_push_owned(&t652, &t643); hero_array_push_owned(&t652, &t644); hero_array_push_owned(&t652, &t645); hero_array_push_owned(&t652, &t646); hero_array_push_owned(&t652, &t647); hero_array_push_owned(&t652, &t648); hero_array_push_owned(&t652, &t649); hero_array_push_owned(&t652, &t650); hero_array_push_owned(&t652, &t651); t653 = h0_own0; h0_own0 = t652; hero_array_decref(t653);
+#line 3900 "main.c"
+    hero_array_incref(t652);
+    hero_array_release_at(&h0_own0);
+    return t652;
+}
+#endif
+
+#line 17 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at; HERO_NODEBUG bool h3_ret0, t5, t6, t11, t18, t19, t23, t24; HERO_NODEBUG HeroStr t1, t3, t9, t12, t15; HERO_NODEBUG int64_t t2, t4, t7, t8, t10, t13, t16, t20, t21, t22; HERO_NODEBUG uint8_t t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_prefix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 20
@@ -867,12 +3919,12 @@ bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at;
     t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_prefix", 25, 14); h2_at = t22; goto bb4; bb8:
 #line 24
     t19 = false; h3_ret0 = t19; goto bb10; bb9: goto bb7; bb10:
-#line 871 "main.c"
+#line 3923 "main.c"
     t24 = h3_ret0;
     return t24;
 }
 
-#line 30 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 30 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_offset; int64_t h3_at; HERO_NODEBUG bool h4_ret0, t5, t6, t16, t25, t26, t30, t31; HERO_NODEBUG HeroStr t1, t3, t7, t9, t14, t17, t22; HERO_NODEBUG int64_t t2, t4, t8, t10, t11, t12, t13, t15, t18, t19, t20, t23, t27, t28, t29; HERO_NODEBUG uint8_t t21, t24; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_suffix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 33
@@ -889,21 +3941,21 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
     t27 = h3_at; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_suffix", 39, 14); h3_at = t29; goto bb4; bb8:
 #line 38
     t26 = false; h4_ret0 = t26; goto bb10; bb9: goto bb7; bb10:
-#line 893 "main.c"
+#line 3945 "main.c"
     t31 = h4_ret0;
     return t31;
 }
 
-#line 44 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 44 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_substr; t3 = h_1corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
-#line 901 "main.c"
+#line 3953 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t8;
 }
 
-#line 50 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 50 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_width; int64_t h3_to; int64_t h4_width; HERO_NODEBUG HeroStr h5_own5 = {0}, t3, t6, t15, t20, t29, t32, t33; HERO_NODEBUG int64_t t1, t2, t4, t7, t8, t9, t10, t12, t13, t14, t16, t17, t18, t21, t22, t23, t24, t26, t27, t28, t30, t31; HERO_NODEBUG bool t5, t11, t19, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_from = t1; goto bb1; bb1:
 #line 53
@@ -922,17 +3974,17 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_wi
     t23 = h4_width; t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb9:
 #line 69
     t29 = h0_s; t30 = h1_from; t31 = h3_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.trim_space", 69, 12}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t33 = h5_own5; h5_own5 = t32; hero_str_decref(t33);
-#line 926 "main.c"
+#line 3978 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
 bb10:
-#line 67 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 67 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
     t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
-#line 933 "main.c"
+#line 3985 "main.c"
 }
 
-#line 74 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 74 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; bool h3_inside; int64_t h4_at; int64_t h5_width; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t41, *t42, *t43; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t6, t9, t17, t20, t35, t37, t39, t44, t45; HERO_NODEBUG int64_t t2, t4, t5, t7, t10, t11, t12, t13, t18, t19, t23, t24, t25, t28, t30, t31, t32, t36, t38; HERO_NODEBUG bool t3, t8, t14, t15, t22, t26, t27, t29, t33; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t42 = h6_own6; h6_own6 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
     t2 = INT64_C(0); h2_start = t2;
@@ -961,7 +4013,7 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     t29 = true; h3_inside = t29; goto bb10; bb12: goto bb10; bb13:
 #line 96
     t41 = h1_out;
-#line 965 "main.c"
+#line 4017 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -969,12 +4021,12 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     hero_str_release_at(&h8_own8);
     return t41;
 bb14:
-#line 95 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 95 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
     t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
-#line 975 "main.c"
+#line 4027 "main.c"
 }
 
-#line 101 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 101 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; int64_t h4_end; HERO_NODEBUG bool h5_b0, t7, t12, t16, t23, t24, t43; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t51, *t52, *t53; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t5, t8, t17, t29, t32, t41, t45, t47, t49, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t9, t13, t14, t15, t18, t19, t20, t25, t26, t27, t30, t31, t34, t35, t36, t37, t38, t39, t40, t42, t46, t48; HERO_NODEBUG uint8_t t10, t11, t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t52 = h6_own6; h6_own6 = t1; hero_array_decref(t52); t53 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t53);
     t2 = INT64_C(0); h2_start = t2;
@@ -998,7 +4050,7 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     t25 = h4_end; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strings.hero", "strings.split_lines", 111, 23); h4_end = t27; goto bb7; bb11: goto bb7; bb12:
 #line 118
     t51 = h1_out;
-#line 1002 "main.c"
+#line 4054 "main.c"
     hero_array_incref(t51);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -1006,12 +4058,12 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     hero_str_release_at(&h8_own8);
     return t51;
 bb13:
-#line 117 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 117 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
     t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
-#line 1012 "main.c"
+#line 4064 "main.c"
 }
 
-#line 124 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings.hero"
+#line 124 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t11, t30, t31; int64_t h3_at; HeroStr h4_before = {0}; HeroStr h5_after = {0}; HERO_NODEBUG h_0opt_48a26f25 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t10, t28, t29, t37, t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t2, t13, t16, t17, t19, t22, t24, t25, t26, t32, t33, t34, t35; HERO_NODEBUG h_1corestrings_Halves h10_own10 = {0}, t27, t36; HERO_NODEBUG int64_t t5, t6, t12, t14, t15, t18, t20, t21, t23; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_sep; t3 = h_1corestringsinternalscan_first_at(t1, t2); t30 = h7_own7; h7_own7 = t3; h_0opt_e201354_release(&t30); t31 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t31); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_at = t12;
     t13 = h0_s; t14 = INT64_C(0); t15 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_once", 126, 14}; t16 = hero_str_slice_at(t13, t14, t15, &hero_here); } t32 = h8_own8; h8_own8 = t16; hero_str_decref(t32); t33 = h4_before; hero_str_incref(t16); h4_before = t16; hero_str_decref(t33);
@@ -1019,7 +4071,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     t25 = h4_before; t26 = h5_after; hero_str_incref(t25); hero_str_incref(t26); t27 = (h_1corestrings_Halves){.f_before = t25, .f_after = t26}; t36 = h10_own10; h10_own10 = t27; h_1corestrings_0Halves_release(&t36); h_1corestrings_0Halves_retain(&t27); t28 = (h_0opt_48a26f25){.tag = INT64_C(0), .as.ok = t27}; t37 = h11_own11; h11_own11 = t28; h_0opt_48a26f25_release(&t37); h6_ret0 = t28; goto bb3; bb2:
 #line 125
     t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_48a26f25){.tag = INT64_C(1), .as.err = t9}; t38 = h12_own12; h12_own12 = t10; h_0opt_48a26f25_release(&t38); h6_ret0 = t10; goto bb3; bb3:
-#line 1023 "main.c"
+#line 4075 "main.c"
     t29 = h6_ret0;
     h_0opt_48a26f25_retain(&t29);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -1034,7 +4086,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     return t29;
 }
 
-#line 17 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
+#line 17 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) { uint8_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, h10_b5, h11_b6, h12_b7, h13_b8, h14_b9, h15_b10, h16_b11, h17_b12, h18_b13, h19_b14, t6, t9, t12, t13, t14, t18, t24, t31, t38, t39, t40, t48, t62, t65, t66, t69, t70, t74, t77, t78, t81, t84, t85, t88, t89, t92, t93, t94, t98, t101, t102, t105, t106, t110, t113, t114, t117, t118; uint8_t h7_second; uint8_t h8_third; HERO_NODEBUG int64_t h20_ret0, t2, t15, t19, t20, t21, t23, t26, t27, t28, t33, t34, t35, t41, t42, t43, t44, t45, t47, t49, t51, t52, t53, t56, t57, t58, t71, t95, t107, t119, t120, t121; HERO_NODEBUG HeroStr t1, t22, t25, t32, t46, t50, t55; HERO_NODEBUG uint8_t t3, t4, t5, t7, t8, t10, t11, t16, t17, t29, t30, t36, t37, t54, t59, t60, t61, t63, t64, t67, t68, t72, t73, t75, t76, t79, t80, t82, t83, t86, t87, t90, t91, t96, t97, t99, t100, t103, t104, t108, t109, t111, t112, t115, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "<core>/strings/internal/scan.hero", "scan.space_width_at", 18, 13) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); h2_first = t3;
 #line 20
@@ -1080,12 +4132,12 @@ int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) {
 #line 42
     t111 = h7_second; t112 = UINT64_C(128); t113 = t111 == t112; h19_b14 = t113; goto bb50; bb50: t114 = h19_b14; h18_b13 = t114; if (t114) goto bb51; else goto bb52; bb51: t115 = h8_third; t116 = UINT64_C(128); t117 = t115 == t116; h18_b13 = t117; goto bb52; bb52: t118 = h18_b13; if (t118) goto bb53; else goto bb54; bb53:
     t119 = INT64_C(3); h20_ret0 = t119; goto bb55; bb54: goto bb48; bb55:
-#line 1084 "main.c"
+#line 4136 "main.c"
     t121 = h20_ret0;
     return t121;
 }
 
-#line 48 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
+#line 48 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t4, *t7, *t10, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_ret0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t14, t15, t16, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30, t31; int64_t h4_width; HERO_NODEBUG bool h5_b0, t9, t17, t24, t25; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t32 = h7_own7; h7_own7 = t4; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t33); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/strings/internal/scan.hero", "scan.space_width_before", 49, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_width = t12;
     t13 = h1_end; t14 = h4_width; if (__builtin_sub_overflow(t13, t14, &t15)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 12); t16 = INT64_C(0); t17 = t15 >= t16; h5_b0 = t17; if (t17) goto bb6; else goto bb7; bb3:
@@ -1096,14 +4148,14 @@ int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_e
 #line 50
     t18 = h0_s; t19 = h1_end; t20 = h4_width; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 50); t22 = h_1corestringsinternalscan_space_width_at(t18, t21); t23 = h4_width; t24 = t22 == t23; h5_b0 = t24; goto bb7; bb7: t25 = h5_b0; if (t25) goto bb8; else goto bb9; bb8:
     t26 = h4_width; h6_ret0 = t26; goto bb10; bb9: goto bb5; bb10:
-#line 1100 "main.c"
+#line 4152 "main.c"
     t31 = h6_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h7_own7);
     return t31;
 }
 
-#line 57 "examples/todo/heroes.packages/core@0.5.0-f58b55a0517ed0eb/strings/internal/scan.hero"
+#line 57 "examples/todo/heroes.packages/core@0.6.0-34be99cd584b202d/strings/internal/scan.hero"
 h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep) { int64_t h2_last; int64_t h3_at; int64_t h4_matched; HERO_NODEBUG bool h5_b0, t9, t14, t23, t24, t31, t40; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h18_own18 = {0}, t33, t53, t64, t65, t66, t71, t77; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t1, t3, t12, t15, t20, t29, t37, t41, t42, t43, t45, t46, t47, t48, t49, t50, t51, t52, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t67, t68, t69, t70, t72, t73, t74, t75, t76; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t11, t13, t16, t17, t18, t21, t25, t26, t27, t28, t30, t32, t34, t35, t36, t38, t39, t44; HERO_NODEBUG uint8_t t19, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = h1_sep; t4 = hero_str_len(t3); if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.first_at", 58, 12); h2_last = t5;
     t6 = INT64_C(0); h3_at = t6; goto bb1; bb1:
@@ -1127,7 +4179,7 @@ h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep)
     t54 = HERO_STR_LIT(hero_str_59e06249); t55 = h1_sep; t56 = h0_s; t57 = HERO_STR_LIT(hero_str_eda7a03); t58 = HERO_STR_LIT(hero_str_277784c0); t59 = HERO_STR_LIT(hero_str_22); t60 = hero_str_concat(t57, t55); t67 = h8_own8; h8_own8 = t60; hero_str_decref(t67); t61 = hero_str_concat(t60, t58); t68 = h9_own9; h9_own9 = t61; hero_str_decref(t68); t62 = hero_str_concat(t61, t56); t69 = h10_own10; h10_own10 = t62; hero_str_decref(t69); t63 = hero_str_concat(t62, t59); t70 = h11_own11; h11_own11 = t63; hero_str_decref(t70); hero_str_incref(t54); hero_str_incref(t63); t64 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t63}}; t71 = h12_own12; h12_own12 = t64; h_0opt_e201354_release(&t71); h6_ret0 = t64; goto bb15; bb13:
 #line 72
     t41 = HERO_STR_LIT(hero_str_59e06249); t42 = h1_sep; t43 = h0_s; t44 = hero_str_len(t43); t45 = HERO_STR_LIT(hero_str_eda7a03); t46 = HERO_STR_LIT(hero_str_2cee3aa3); t47 = hero_int_to_str(t44); t72 = h13_own13; h13_own13 = t47; hero_str_decref(t72); t48 = HERO_STR_LIT(hero_str_391e7e27); t49 = hero_str_concat(t45, t42); t73 = h14_own14; h14_own14 = t49; hero_str_decref(t73); t50 = hero_str_concat(t49, t46); t74 = h15_own15; h15_own15 = t50; hero_str_decref(t74); t51 = hero_str_concat(t50, t47); t75 = h16_own16; h16_own16 = t51; hero_str_decref(t75); t52 = hero_str_concat(t51, t48); t76 = h17_own17; h17_own17 = t52; hero_str_decref(t76); hero_str_incref(t41); hero_str_incref(t52); t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t41, .msg = t52}}; t77 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t77); h6_ret0 = t53; goto bb15; bb14: goto bb12; bb15:
-#line 1131 "main.c"
+#line 4183 "main.c"
     t65 = h6_ret0;
     h_0opt_e201354_retain(&t65);
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -1153,7 +4205,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 1157 "main.c"
+#line 4209 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -1166,27 +4218,27 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 1170 "main.c"
+#line 4222 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 1175 "main.c"
+#line 4227 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 1180 "main.c"
+#line 4232 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 1185 "main.c"
+#line 4237 "main.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 1190 "main.c"
+#line 4242 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -1206,7 +4258,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 1210 "main.c"
+#line 4262 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -1248,7 +4300,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 181
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 1252 "main.c"
+#line 4304 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1283,7 +4335,7 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 190
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 1287 "main.c"
+#line 4339 "main.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1306,7 +4358,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 1310 "main.c"
+#line 4362 "main.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -1331,13 +4383,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 1335 "main.c"
+#line 4387 "main.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 1341 "main.c"
+#line 4393 "main.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -1351,7 +4403,7 @@ void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBU
     t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
 #line 235
     t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 1355 "main.c"
+#line 4407 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
@@ -1363,7 +4415,7 @@ bb2:
     t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
     t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 1367 "main.c"
+#line 4419 "main.c"
     hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -1390,6 +4442,96 @@ HERO_TU_LOCAL uint64_t h_list_0Task_hash(const void *elem) {
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_bool)->hash(&v->f_done)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL bool h_1corestrconvinternalfloat_0Special_eq(const h_1corestrconvinternalfloat_Special *a, const h_1corestrconvinternalfloat_Special *b) {
+    if (!(a->f_length == b->f_length)) return false;
+    if (!(a->f_value == b->f_value)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1corestrconvinternalfloat_0Special_hash(const void *elem) {
+    const h_1corestrconvinternalfloat_Special *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_length)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_f64)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1corestrconvinternalfloat_0Grammar_retain(const h_1corestrconvinternalfloat_Grammar *v) {
+    hero_str_incref(v->f_whole);
+    hero_str_incref(v->f_fraction);
+}
+
+HERO_TU_LOCAL void h_1corestrconvinternalfloat_0Grammar_release(h_1corestrconvinternalfloat_Grammar *v) {
+    hero_str_decref(v->f_whole);
+    hero_str_decref(v->f_fraction);
+}
+
+HERO_TU_LOCAL bool h_1corestrconvinternalfloat_0Grammar_eq(const h_1corestrconvinternalfloat_Grammar *a, const h_1corestrconvinternalfloat_Grammar *b) {
+    if (!(a->f_length == b->f_length)) return false;
+    if (!(a->f_negative == b->f_negative)) return false;
+    if (!(a->f_hex == b->f_hex)) return false;
+    if (!(hero_str_eq(a->f_whole, b->f_whole))) return false;
+    if (!(hero_str_eq(a->f_fraction, b->f_fraction))) return false;
+    if (!(a->f_exponent == b->f_exponent)) return false;
+    if (!(a->f_mantissa == b->f_mantissa)) return false;
+    if (!(a->f_dropped == b->f_dropped)) return false;
+    if (!(a->f_power == b->f_power)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1corestrconvinternalfloat_0Grammar_hash(const void *elem) {
+    const h_1corestrconvinternalfloat_Grammar *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_length)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_negative)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_hex)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_whole)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_fraction)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_exponent)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_u64)->hash(&v->f_mantissa)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_dropped)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_power)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL bool h_1corestrconvinternalscaling_0Wide_eq(const h_1corestrconvinternalscaling_Wide *a, const h_1corestrconvinternalscaling_Wide *b) {
+    if (!(a->f_high == b->f_high)) return false;
+    if (!(a->f_low == b->f_low)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1corestrconvinternalscaling_0Wide_hash(const void *elem) {
+    const h_1corestrconvinternalscaling_Wide *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_u64)->hash(&v->f_high)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_u64)->hash(&v->f_low)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_1corestrconvinternaldecimal_0Decimal_retain(const h_1corestrconvinternaldecimal_Decimal *v) {
+    hero_array_incref(v->f_digits);
+}
+
+HERO_TU_LOCAL void h_1corestrconvinternaldecimal_0Decimal_release(h_1corestrconvinternaldecimal_Decimal *v) {
+    hero_array_decref(v->f_digits);
+}
+
+HERO_TU_LOCAL bool h_1corestrconvinternaldecimal_0Decimal_eq(const h_1corestrconvinternaldecimal_Decimal *a, const h_1corestrconvinternaldecimal_Decimal *b) {
+    if (!(hero_array_eq(a->f_digits, b->f_digits))) return false;
+    if (!(a->f_point == b->f_point)) return false;
+    if (!(a->f_truncated == b->f_truncated)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_1corestrconvinternaldecimal_0Decimal_hash(const void *elem) {
+    const h_1corestrconvinternaldecimal_Decimal *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_array)->hash(&v->f_digits)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_point)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_bool)->hash(&v->f_truncated)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -1545,6 +4687,102 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *a, const h_0opt_db92a83 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_f64)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *elem) {
+    const h_0opt_db92a83 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_f64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_u64)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem) {
+    const h_0opt_fbbb698 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_u64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
+    const h_0opt_1ec004 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
 HERO_TU_LOCAL void h_0opt_48a26f25_retain(const h_0opt_48a26f25 *v) {
     if (v->tag == INT64_C(0)) {
         h_1corestrings_0Halves_retain(&v->as.ok);
@@ -1578,10 +4816,10 @@ HERO_TU_LOCAL uint64_t h_0opt_48a26f25_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("77334b7f6028fce8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5fe07764596fcf29", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
-    hero_stack_spell("1corestrconv\tstrconv\n1corestrconvinternalshown\tshown\n1corestrings\tstrings\n1corestringsinternalscan\tscan\n");
+    hero_stack_spell("1corestrconv\tstrconv\n1corestrconvinternalfloat\tfloat\n1corestrconvinternalshown\tshown\n1corestrconvinternalnearest\tnearest\n1corestrconvinternalscaling\tscaling\n1corestrconvinternaldecimal\tdecimal\n1corestrconvinternalpowers\tpowers\n1corestrings\tstrings\n1corestringsinternalscan\tscan\n");
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

@@ -270,7 +270,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("392e40a303ca9468", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("25c091f71e0b0c9c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs584adeprecatedfunctioncalledbuildssilent\tfixedbugs-584-a-deprecated-function-called-builds-silent\n");

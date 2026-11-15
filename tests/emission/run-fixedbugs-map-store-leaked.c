@@ -226,7 +226,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("34248f4e350779d7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("20b6e0a24f47f20b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsmapstoreleaked\tfixedbugs-map-store-leaked\n");

@@ -333,7 +333,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e65ce9c050b8fe9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6af81ff01f4c081d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerendsatasecondinterruptaftertheprogramaskeditsstop\tthe-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop\n");

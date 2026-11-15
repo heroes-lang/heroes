@@ -331,7 +331,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("45d0921421c5ca67", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3262e3683c06429b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494ahandlerthatallocatesinsidetheallocatorstopsitsprogrambyname\tfixedbugs-2494-a-handler-that-allocates-inside-the-allocator-stops-its-program-by-name\n");

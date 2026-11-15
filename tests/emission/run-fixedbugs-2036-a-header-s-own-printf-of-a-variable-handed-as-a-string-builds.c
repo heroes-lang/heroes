@@ -268,7 +268,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("25791ddc70ab54f8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("120b6f300aebcd2d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2036aheadersownprintfofavariablehandedasastringbuilds\tfixedbugs-2036-a-header-s-own-printf-of-a-variable-handed-as-a-string-builds\n");

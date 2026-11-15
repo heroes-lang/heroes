@@ -256,7 +256,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0138aea46c94e8da", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6dcafff706d5610f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel\tfixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level\n");

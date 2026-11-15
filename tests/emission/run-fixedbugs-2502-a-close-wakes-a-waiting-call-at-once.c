@@ -275,7 +275,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0a9a0b75237bedc1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("772c5cc83dbc65f5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2502aclosewakesawaitingcallatonce\tfixedbugs-2502-a-close-wakes-a-waiting-call-at-once\n");

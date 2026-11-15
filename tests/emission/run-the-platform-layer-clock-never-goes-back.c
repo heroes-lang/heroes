@@ -317,7 +317,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("282da4b23ff5c414", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14bff6065a363c48", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerclocknevergoesback\tthe-platform-layer-clock-never-goes-back\n");

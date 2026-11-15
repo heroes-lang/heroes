@@ -315,7 +315,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("277e59990a8440d4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1410aaed24c4b908", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2519aboundfunctionisavalueoftheprogramsowntype\tfixedbugs-2519-a-bound-function-is-a-value-of-the-programs-own-type\n");

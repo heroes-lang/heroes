@@ -427,7 +427,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12668049542bc75f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ef8d19c6e6c3f93", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsaborrowedhandleiswrittenintoafixedarray\tfixedbugs-a-borrowed-handle-is-written-into-a-fixed-array\n");

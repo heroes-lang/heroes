@@ -381,7 +381,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1cf980c55c50c147", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("098bd2197691397b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs156recordsbesidebitfieldsbuild\tfixedbugs-156-records-beside-bit-fields-build\n");

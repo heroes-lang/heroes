@@ -299,7 +299,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d3d58b7220ef225", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("69cfaa0b3c4f6a59", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlealiveafteranendinonearm\thandle-alive-after-an-end-in-one-arm\n");

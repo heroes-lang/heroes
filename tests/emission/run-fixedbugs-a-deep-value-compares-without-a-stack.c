@@ -302,7 +302,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("272e9e6e0595cde0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("13c0efc21fd64614", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadeepvaluecompareswithoutastack\tfixedbugs-a-deep-value-compares-without-a-stack\n");

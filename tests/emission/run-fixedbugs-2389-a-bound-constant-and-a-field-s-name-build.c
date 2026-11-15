@@ -325,7 +325,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("014e54cf7b06f73b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6de0a62215476f70", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2389aboundconstantandafieldsnamebuild\tfixedbugs-2389-a-bound-constant-and-a-field-s-name-build\n");

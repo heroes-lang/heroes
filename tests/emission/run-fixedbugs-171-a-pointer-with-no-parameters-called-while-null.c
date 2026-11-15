@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b49d382103798b5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("67dc24d62a7810e9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs171apointerwithnoparameterscalledwhilenull\tfixedbugs-171-a-pointer-with-no-parameters-called-while-null\n");

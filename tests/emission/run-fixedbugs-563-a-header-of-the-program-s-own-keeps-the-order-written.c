@@ -277,7 +277,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("20de9b2227eacd85", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d70ec76422b45b9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs563aheaderoftheprogramsownkeepstheorderwritten\tfixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written\n");

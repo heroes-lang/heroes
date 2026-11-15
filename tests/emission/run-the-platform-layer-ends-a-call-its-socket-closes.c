@@ -288,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("64bc7cac6ca431c8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("514ece0006e4a9fd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("theplatformlayerendsacallitssocketcloses\tthe-platform-layer-ends-a-call-its-socket-closes\n");

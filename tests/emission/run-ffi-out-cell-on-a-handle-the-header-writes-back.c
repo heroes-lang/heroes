@@ -306,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f4814dd38d4db2e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bda663153155362", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffioutcellonahandletheheaderwritesback\tffi-out-cell-on-a-handle-the-header-writes-back\n");
