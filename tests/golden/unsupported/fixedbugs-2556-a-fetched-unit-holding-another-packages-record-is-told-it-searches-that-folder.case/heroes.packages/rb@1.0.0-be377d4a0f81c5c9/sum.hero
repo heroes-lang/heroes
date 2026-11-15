@@ -1,0 +1,12 @@
+# The package `rb` of the case two folders up, as `heroes fetch` places it:
+# its own group's header asks `qt.h` for a file `qt` does not ship, and it
+# holds `qt`'s record by value, so its unit searches `qt`'s folder after its
+# own route (defect 2556).
+use <qt>/qt
+
+extern "rb.h"
+    constant RB_V: i64  #~ ffi_missing_header
+
+function sum() -> i64
+    p: qt.Point = qt.make(x: 1, y: 2)
+    return p.x + p.y + RB_V

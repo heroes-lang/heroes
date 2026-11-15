@@ -1,0 +1,5 @@
+# The catalogue of the package `rb`: the package `qt`, as the program lists it.
+
+[dependencies.qt]
+version = "1.0.0"
+sum = "sha256-685b6e556914f262e8571ffa3e368e89cbdc754e0f61cc96194a910e8920fe21"

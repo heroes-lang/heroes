@@ -1,0 +1,11 @@
+# The package `qt` of the case two folders up, as `heroes fetch` places it:
+# a group record whose header reads one more file where the unit including
+# it asked first (defect 2556).
+extern "qt.h"
+    record Point tag qt_point
+        x: i64
+        y: i64
+    function qt_make(x: i64, y: i64) -> Point
+
+function make(x: i64, y: i64) -> Point
+    return qt_make(x: x, y: y)

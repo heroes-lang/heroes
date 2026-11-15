@@ -1,0 +1,9 @@
+# The packages of defect 2556's case, placed in `heroes.packages/`.
+
+[dependencies.qt]
+version = "1.0.0"
+sum = "sha256-685b6e556914f262e8571ffa3e368e89cbdc754e0f61cc96194a910e8920fe21"
+
+[dependencies.rb]
+version = "1.0.0"
+sum = "sha256-c789c8f1c68621241e55c4cac6fcf9501d645c10e923098e1e4ecaeef2d653c5"

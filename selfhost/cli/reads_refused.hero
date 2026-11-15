@@ -1,0 +1,152 @@
+# How C2's refusal is told (panel 235's R9, its C1 and C2, ratified
+# 2026-11-07; defect 2351, 2026-11-08; design.md §4.19, §4.17): a fetched
+# package's unit whose headers read outside where a package may read, or
+# could not be listed from its own places, refused on the first binding of
+# its modules a group names a header for, before anything of it compiles.
+# The verdict is `cli/reads_within.hero`'s, the unit's search
+# `package_units.unit_under`'s; `probing.outside` asks this.
+#
+# **A unit holding another package's group record searches that package's
+# folder too, and its refusal says so** (defect 2556). Defect 2357 made such
+# a unit search, after its own route, the folder of each package whose
+# record it spells, since it includes that package's header; the refusal's
+# words were older and kept saying the unit reads *never another package's
+# files*, and a header it could not find was told as not found where it
+# looks, naming every place but that folder. Measured 2026-11-15 on this
+# Mac: the package `rb` holding `qt`'s record by value, its own header
+# asking `qt.h` for a file `qt` does not ship, was told so, while the same
+# `rb` beside a `qt` that ships it built, its unit reading `qt.h` and the
+# file from `qt`'s folder. So a refusal of a unit holding no other
+# package's record says what it said, and one of a unit that holds some
+# names their folders among the places it looks and in its note.
+
+use ast
+use cli/package_units
+use cli/strings
+use diag
+use source
+use token
+
+# The refusal C2's verdict `failed` is, for the fetched package at `root`
+# whose modules' unit is `modules` and reads `reached` through other
+# packages' group records: told on the first binding of theirs a group names
+# a header for, which is where the build tells a header it could not open
+# (`ffi_missing_header`). Never absent: a refusal nobody tells would let the
+# unit compile and read what was refused.
+function refusal(s: source.Source, decls: [ast.Decl], modules: [str], root: str, reached: [package_units.Reach], failed: ()?) -> diag.Diagnostic
+    at = first_binding(s, decls, modules: modules)
+    code = code_of(failed)
+    said = message_of(failed)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "package_reads_outside", message: said, span: at)
+
+    if code == "unread" && said.len() > 0
+        d @ diag.new_diagnostic(
+            code: "ffi_missing_header",
+            message: "`" + said + "` is not found where a unit of the fetched package at `" + root + "` looks for a header: the package's own root, the runtime's directory, the toolchain's own and the folders its `pkgconfig` groups' answer names" + held(reached),
+            span: at
+        )
+    else if code == "unread"
+        d @ diag.new_diagnostic(
+            code: "package_reads_outside",
+            message: "the headers a unit of the fetched package at `" + root + "` names do not preprocess from its own places, so nothing vouches for the files they read, and no compile of it runs",
+            span: at
+        )
+    else if code != "package_reads_outside"
+        # The toolchain's own folders could not be asked of clang, so the
+        # listing could not be judged: still a refusal, never a pass.
+        d @ diag.new_diagnostic(
+            code: "package_reads_outside",
+            message: "the files a unit of the fetched package at `" + root + "` reads cannot be judged, since " + said + ", and no compile of it runs",
+            span: at
+        )
+    d.notes @ d.notes.push(note(reached))
+    return d
+
+# The folders a unit searches after its own route for the group records of
+# other packages it holds, each once with its package's alias, as the
+# clause a list of its places ends with; "" where it holds none.
+function held(reached: [package_units.Reach]) -> str
+    named: [str] @= []
+
+    for one in reached
+        each = "`" + one.place.alias + "`'s, `" + one.place.folder + "`"
+
+        if !package_units.strings_hold(named, one: each)
+            named @ named.push(each)
+
+    if named.len() == 0
+        return ""
+    return ", then the folder of each package whose group record it holds: " + named.join("; ")
+
+# What every refusal of C2's says under it: the search of a unit holding no
+# other package's group record, or of one that holds some (defect 2357).
+function note(reached: [package_units.Reach]) -> str
+    if reached.len() == 0
+        return ALONE
+    return HOLDING
+
+constant ALONE: str
+    "a fetched package's unit searches the runtime's directory, the folders its own `pkgconfig` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `pkgconfig` group names, installed with its development files"
+
+constant HOLDING: str
+    "a fetched package's unit searches the runtime's directory, the folders its own `pkgconfig` groups' answer names and its own root, then the folder of each package whose group record it holds, which it includes that group's header from (panel 235's R9, its C1 and C2; defect 2357), and reads nothing else: never the program's folders, an `--include` directory or a file of a package whose record it does not hold. A header it needs ships inside the package whose header names or includes it, or is a library's that a `pkgconfig` group names, installed with its development files"
+
+# The span of the first declaration of `modules` a group names a header for;
+# of their first declaration where none is one, a unit reading a header of
+# another module's group record alone; and of the program's first where they
+# declare nothing.
+function first_binding(s: source.Source, decls: [ast.Decl], modules: [str]) -> token.Span
+    first: token.Span? @= fail(code: "none", msg: "no declaration of these modules")
+
+    for decl in decls
+        named: token.Span? @= fail(code: "none", msg: "no header")
+
+        match decl.kind
+            .function_decl fd          => named @ fd.value.header
+            .constant_decl k           => named @ k.header
+            .record_decl rec           => named @ rec.header
+            .variant_decl | .test_decl => continue
+
+        component = source.component_at(s, decl.span.start)
+
+        for module in modules
+            if module == component
+                if !named.is_err()
+                    return decl.span
+
+                if first.is_err()
+                    first @ ok(decl.span)
+
+    if first.is_err() && decls.len() > 0
+        return decls[0].span
+    return first.default(token.Span(start: 0, end: 0))
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
+
+function message_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+## Tests
+
+# Defect 2556: a unit holding no other package's record is told as before,
+# word for word; one holding `qt`'s is told it searches `qt`'s folder, once
+# however many of `qt`'s headers it reads, and its note no longer says it
+# reads no other package's files.
+test "a refusal of a unit holding another package's record names that folder where it looks and in its note (defect 2556)"
+    assert held([]) == ""
+    assert note([]) == ALONE
+    assert strings.holds(text: ALONE, needle: "or another package's files")
+    qt = package_units.Reach(
+        place: package_units.Place(folder: "heroes.packages/qt@1.0.0-0123456789abcdef", alias: "qt", fetched: true),
+        header: "qt.h"
+    )
+    more = package_units.Reach(place: qt.place, header: "qt_more.h")
+    assert held([qt, more]) == ", then the folder of each package whose group record it holds: `qt`'s, `heroes.packages/qt@1.0.0-0123456789abcdef`"
+    assert note([qt]) == HOLDING
+    assert !strings.holds(text: HOLDING, needle: "or another package's files")
+    assert strings.holds(text: HOLDING, needle: "then the folder of each package whose group record it holds")

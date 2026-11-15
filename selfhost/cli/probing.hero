@@ -33,6 +33,7 @@ use cli/package_units
 use cli/pointee
 use cli/pointee_ask
 use cli/pointee_wants
+use cli/reads_refused
 use cli/strings
 use cli/toolchain
 use diag
@@ -272,7 +273,7 @@ function outside(probings: [Probing], s: source.Source, decls: [ast.Decl]) -> [d
     for one in probings
         if one.reach.is_err()
             out @ out.push(
-                package_units.refusal(s, decls, modules: one.modules, root: one.own.folder, failed: one.reach)
+                reads_refused.refusal(s, decls, modules: one.modules, root: one.own.folder, reached: one.reached, failed: one.reach)
             )
 
     return out
