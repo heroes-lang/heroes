@@ -41,20 +41,54 @@ use <core>/strings as core_strings
 
 use absence
 use cases
+use floors
 use gallery
 use platform_skips
 use report
 use shell
 use strings
 
-constant GOLDEN_DIRS: [str]
-    [
-        "tests/golden/run"
-        "tests/golden/emit"
-    ]
+constant RUN_DIR: str
+    "tests/golden/run"
+
+constant EMIT_DIR: str
+    "tests/golden/emit"
 
 constant EXAMPLES: str
     "examples"
+
+# **The floors of what the suite walks, since defect 2534** (2026-11-15):
+# until then it held none, so a walk broken to find nothing read `0 passed, 0
+# failed` and passed the gate (measured that day from a folder holding the
+# golden directories and the gallery empty). Each is the count its list held
+# at 0f924302a by the walk's own rule: in `run/` 800 `.hero` cases and 25
+# `.case` folders, in `emit/` 13 cases (`cases.collect`), and 56 of the
+# folders of `examples/` holding a `main.hero`, the count `corpus` floors. The
+# gallery's floor is its module's, `gallery.LEAST`, as `corpus` asks it.
+# Raised as `floors.check` tells, never lowered.
+constant LEAST_RUN: i64
+    825
+
+constant LEAST_EMIT: i64
+    13
+
+constant LEAST_EXAMPLES: i64
+    56
+
+# What the suite walks, each list with its floor: the golden directories, the
+# folders of the examples, and the gallery.
+record Walks
+    golden: [floors.Walked]
+    examples: floors.Walked
+    gallery: floors.Walked
+
+# The tree's lists, as `run_all` walks them.
+function walks() -> Walks
+    return Walks(
+        golden: [floors.Walked(dir: RUN_DIR, least: LEAST_RUN), floors.Walked(dir: EMIT_DIR, least: LEAST_EMIT)],
+        examples: floors.Walked(dir: EXAMPLES, least: LEAST_EXAMPLES),
+        gallery: floors.Walked(dir: gallery.DIR, least: gallery.LEAST)
+    )
 
 # `only` narrows the walk to the programs whose name holds it, the name each
 # one's label gives after `warnings/` (defect 2529): a golden case's, an
@@ -62,21 +96,41 @@ constant EXAMPLES: str
 # no word, and `main` told the person narrowing a repair to its cases that it
 # walked none, while it built every case of `run/` and `emit/`, every example
 # and every gallery program at two levels. The skip ratio is asked of the
-# programs walked, as `run` asks it of a filter's cases.
+# programs walked, as `run` asks it of a filter's cases. A filter's programs
+# are not the tree, so it asks no floor (`cases.asks_floor`).
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    return walk(scratch: scratch, compiler: compiler, lists: walks(), only: only)
+
+# The suite over the lists it is handed: what `run_all` asks of the tree, with
+# the lists and their floors as parameters so a test asks it of a tree of its
+# own (defect 2534). Each list's whole count is held to its floor before its
+# programs are judged.
+function walk(scratch: str, compiler: str, lists: Walks, only: str) -> report.Report?
     r: report.Report @= report.empty()
     judged: i64 @= 0
     skipped: i64 @= 0
 
-    for dir in GOLDEN_DIRS
-        for item in cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
+    for walked in lists.golden
+        whole = cases.collect(scratch: scratch, dir: walked.dir)?
+        floored(@r, walked: walked, found: whole.len(), what: "cases in " + walked.dir, only: only)
+
+        for item in cases.matching(found: whole, only: only)
             judge(@r, @skipped, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
             judged @ judged + 1
 
-    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+    examples = example_programs(scratch: scratch, dir: lists.examples.dir)?
+    floored(
+        @r,
+        walked: lists.examples,
+        found: examples.len(),
+        what: "folders holding a main.hero in " + lists.examples.dir,
+        only: only
+    )
+
+    for dir in examples
         main = dir + "/main.hero"
 
-        if read_file(main).is_err() || !kept_by_word(name: strings.base_name(path: dir), only: only)
+        if !kept_by_word(name: strings.base_name(path: dir), only: only)
             continue
         judge(
             @r,
@@ -94,7 +148,10 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     # One with holes produces no C (spec § 12), which `check`'s answer says
     # (`gallery.unfinished`); a check that cannot run leaves the build to say
     # why, as a failure.
-    for path in gallery.programs(scratch)?
+    lessons = gallery.programs_in(scratch: scratch, dir: lists.gallery.dir)?
+    floored(@r, walked: lists.gallery, found: lessons.len(), what: "programs in " + lists.gallery.dir, only: only)
+
+    for path in lessons
         if !kept_by_word(name: gallery.name_of(path), only: only)
             continue
         said = gallery.checked(scratch: scratch, compiler: compiler, path: path)
@@ -122,6 +179,24 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
             detail: "  " + skipped.to_str() + " of " + judged.to_str() + " programs were skipped for a missing library: this machine is not testing the warnings"
         )
     return ok(r)
+
+# One list's whole count held to its floor, where the run asks one: the whole
+# suite, never a filter, whose programs are not the tree.
+function floored(@r: report.Report, walked: floors.Walked, found: i64, what: str, only: str)
+    if cases.asks_floor(only)
+        floors.check(@r, label: "warnings", found: found, floor: walked.least, what: what)
+
+# The folders of the examples' directory `dir` holding a `main.hero`, each a
+# program the suite builds; a folder with none, the gallery's among them, is
+# not one.
+function example_programs(scratch: str, dir: str) -> [str]?
+    out: [str] @= []
+
+    for folder in shell.list_directories(scratch: scratch, dir: dir)?
+        if !read_file(folder + "/main.hero").is_err()
+            out @ out.push(folder)
+
+    return ok(out)
 
 # Whether the third word keeps the program whose label names it `name`: every
 # program where the word is empty, else the ones whose name holds it, as
@@ -432,11 +507,11 @@ test "fixedbugs: the third word narrows the walk to the programs whose name hold
     if compiler.is_err()
         return
     scratch = shell.own_scratch()
-    word = cases.collect(scratch: scratch, dir: GOLDEN_DIRS[0]).must()[0].name
+    word = cases.collect(scratch: scratch, dir: RUN_DIR).must()[0].name
     named: i64 @= 0
 
-    for dir in GOLDEN_DIRS
-        named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: dir).must(), only: word).len()
+    for walked in walks().golden
+        named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: walked.dir).must(), only: word).len()
 
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES).must()
         assert !kept_by_word(name: strings.base_name(path: dir), only: word)
@@ -454,4 +529,51 @@ test "fixedbugs: the third word narrows the walk to the programs whose name hold
     assert kept_by_word(name: "anything", only: "")
     assert kept_by_word(name: "gallery/hello", only: "gallery/")
     assert !kept_by_word(name: "curl", only: "gallery/")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2534, held as a test (2026-11-15): the suite held no floor, so run
+# from a folder holding the golden directories and the gallery empty it read
+# `0 passed, 0 failed`, exit 0. Handed empty lists of a test's own, each floored
+# at one, it fails once per list, naming it, a folder of the examples with no
+# `main.hero` counting for none; a filter asks no floor of them; and a floor
+# its list meets is a pass. No program is built, so the compiler named is a
+# file nobody wrote.
+test "fixedbugs: a walk that finds nothing in a list fails by that list's floor, and a filter asks none (defect 2534)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/warnings-2534"
+    assert !shell.remove_tree(tree).is_err()
+
+    for dir in ["run", "emit", "examples/gallery", "gallery"]
+        assert !shell.mkdir_all(tree + "/" + dir).is_err()
+
+    compiler = scratch + "/no-compiler-here"
+    empty = Walks(
+        golden: [floors.Walked(dir: tree + "/run", least: 1), floors.Walked(dir: tree + "/emit", least: 1)],
+        examples: floors.Walked(dir: tree + "/examples", least: 1),
+        gallery: floors.Walked(dir: tree + "/gallery", least: 1)
+    )
+    got = walk(scratch: scratch, compiler: compiler, lists: empty, only: "").must()
+    assert got.passed == 0
+    assert got.failed == 4
+    head = "FAIL warnings\n  the walk found 0 "
+    assert core_strings.has_prefix(s: got.failures[0], prefix: head + "cases in " + tree + "/run and had 1 — ")
+    assert core_strings.has_prefix(s: got.failures[1], prefix: head + "cases in " + tree + "/emit and had 1 — ")
+    assert core_strings.has_prefix(
+        s: got.failures[2],
+        prefix: head + "folders holding a main.hero in " + tree + "/examples and had 1 — "
+    )
+    assert core_strings.has_prefix(s: got.failures[3], prefix: head + "programs in " + tree + "/gallery and had 1 — ")
+    filtered = walk(scratch: scratch, compiler: compiler, lists: empty, only: "fixedbugs-2534").must()
+    assert filtered.passed == 0
+    assert filtered.failed == 0
+    unset = floors.Walked(dir: tree + "/run", least: 0)
+    none: [floors.Walked] = []
+    met = walk(
+        scratch: scratch,
+        compiler: compiler,
+        lists: Walks(golden: none, examples: unset, gallery: unset),
+        only: ""
+    ).must()
+    assert met.passed == 2
+    assert met.failed == 0
     assert !shell.remove_tree(scratch).is_err()
