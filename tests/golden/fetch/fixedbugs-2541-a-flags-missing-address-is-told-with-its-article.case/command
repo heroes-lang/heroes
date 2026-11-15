@@ -1,0 +1,4 @@
+add json --index -C <work>/app
+add json -C <work>/app --index
+add json --tag -C <work>/app
+fetch -C

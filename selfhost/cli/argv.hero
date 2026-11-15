@@ -170,19 +170,13 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
 
             if wanted.value
                 if at + 1 >= given.len() || starts_with_dash(given[at + 1])
-                    return fail(
-                        code: "bad_usage",
-                        msg: "`" + arg + "` needs a " + wanted.placeholder + ": `heroes " + command.name + argv_told.operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
-                    )
+                    return fail(code: "bad_usage", msg: argv_told.value_missing(command, flag: wanted))
 
                 # An empty value names nothing, and is refused as a missing one
                 # is (defect 349): `-o ""` reached the writer, which told it as
                 # a link that cannot be followed.
                 if given[at + 1].len() == 0
-                    return fail(
-                        code: "bad_usage",
-                        msg: "`" + arg + "` needs a " + wanted.placeholder + ", and was given an empty one: `heroes " + command.name + argv_told.operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
-                    )
+                    return fail(code: "bad_usage", msg: argv_told.value_empty(command, flag: wanted))
                 value @ ok(given[at + 1])
                 at @ at + 1
 
@@ -444,7 +438,14 @@ test "an empty value for a flag that takes one is refused, naming the flag (defe
 
                 match parse(given, dir_probe: yes_dir)
                     .ok _  => assert false
-                    .err e => assert e.msg == "`" + f.spelling + "` needs a " + f.placeholder + ", and was given an empty one: `heroes " + c.name + argv_told.operand_said(c) + " " + f.spelling + " <" + f.placeholder + ">`"
+                    .err e => assert e.msg == "`" + f.spelling + "` needs " + argv_told.with_article(f.placeholder) + ", and was given an empty one: `heroes " + c.name + argv_told.operand_said(c) + " " + f.spelling + " <" + f.placeholder + ">`"
+
+    # A placeholder that opens with a vowel takes `an` (defect 2541), missing
+    # or empty alike.
+    for given in [["add", "json", "--index"], ["add", "json", "--index", "-C", "app"]]
+        match parse(given, dir_probe: yes_dir)
+            .ok _  => assert false
+            .err e => assert e.msg == "`--index` needs an address: `heroes add [package] --index <address>`"
 
     # A command that takes no file names none in its usage line.
     fetched: [str] = ["fetch", "-C", ""]
