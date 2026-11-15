@@ -1,0 +1,3 @@
+add json@1.4 --index https://127.0.0.1:1/idx -C <work>/app
+add json@01.4.2 --index https://127.0.0.1:1/idx -C <work>/app
+add json@ --index https://127.0.0.1:1/idx -C <work>/app

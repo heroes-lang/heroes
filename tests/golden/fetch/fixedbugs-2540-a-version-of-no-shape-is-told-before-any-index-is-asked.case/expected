@@ -1,0 +1,19 @@
+$ heroes add json@1.4 --index https://127.0.0.1:1/idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `1.4` is no version: a version is exact, three numbers with no leading zero, `1.4.2`
+$ heroes add json@01.4.2 --index https://127.0.0.1:1/idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `01.4.2` is no version: a version is exact, three numbers with no leading zero, `1.4.2`
+$ heroes add json@ --index https://127.0.0.1:1/idx -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `json@` writes no version after its `@`: a version is exact, three numbers with no leading zero, `json@1.4.2`, or no `@` for the highest the index lists
+heroes.toml:
+(none)
+heroes.packages:
+(none)

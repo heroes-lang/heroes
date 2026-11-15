@@ -21,6 +21,7 @@ use module/catalogue
 use module/entry_name
 use module/fingerprint
 use module/placed
+use module/sums
 use module_text
 
 # The entry `inv` asks for, placed where it is fetched and written into the
@@ -138,6 +139,25 @@ function index_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: trans
             code: "bad_usage",
             msg: "`" + name + "` is no package's name: " + entry_name.refused(name)
         )
+
+    # The version's shape is the text's alone, so it is asked before the
+    # index is (defect 2540): `json@1.4` was told by the index, which with no
+    # catalogue is the Heroes index over the network, and so `unreachable`
+    # where the shape says what is wrong.
+    if at_sign < asked.len()
+        version = asked.slice(from: at_sign + 1, to: asked.len())
+
+        if version.len() == 0
+            return fail(
+                code: "bad_usage",
+                msg: "`" + asked + "` writes no version after its `@`: a version is exact, three numbers with no leading zero, `" + name + "@1.4.2`, or no `@` for the highest the index lists"
+            )
+
+        if !sums.version_shape(version)
+            return fail(
+                code: "bad_usage",
+                msg: "`" + version + "` is no version: a version is exact, three numbers with no leading zero, `1.4.2`"
+            )
     index = address.judged(index_source.written_index(c.index), root: root)?
     listed = index_source.versions(tools, index: index, name: name, scratch: ledger.folder)?
     pick = verb_place.version_picked(listed, asked: asked, at: at_sign, index: index.written)?
