@@ -544,3 +544,6 @@ yet filed. A yes settles R1 and R2 as adopted (the census approved; no route ado
 `blocking`), R3's order (R3's first item built before any candidate is adopted; question 3 and the blind
 seat after the reading of route K) and R4's answer as the author gives it. It does not settle the blind
 seat's ceiling until the author names it, nor any route, nor the predictions, on their own clocks.
+
+**Filed 2026-11-15** as decision 2563, which asks the author's reading of R1 to R4 and the blind seat's
+ceiling; the paragraph above is left as written.
