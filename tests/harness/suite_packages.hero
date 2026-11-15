@@ -114,9 +114,12 @@ constant INDEX_LINE: str
 # raised as the suite asked when core 0.3.0 added `net`, its floor
 # `net/hero_net`, `net/http` and their five private modules (M-core-packages
 # step 16, feature 893); 0.2.1's two more private modules of `encoding/json`
-# had stood under the slack.
+# had stood under the slack. **29 on 2026-11-15**, raised as the suite asked
+# at batch 38's gate, core 0.6.0 being the index's one version: `strconv`'s
+# `parse_float` with its six private modules under `strconv/internal/`, and
+# the versions between it and 0.3.0 stood under the slack.
 constant LEAST: i64
-    20
+    29
 
 # The floor of the placed trees: every program under `examples/` that uses the
 # core packages holds one. **14 on 2026-11-08**, the day R15 placed them: the
@@ -630,9 +633,10 @@ test "the floors are under the counts the walk found on the day the source becam
     # 2026-11-08; 10 in core 0.2.0's on 2026-11-10, and 15 placed trees the
     # same day, the net's own catalogue joining `examples/`' fourteen (feature
     # 2425); 20 in core 0.3.0's and 17 placed trees on 2026-11-13, sixteen
-    # programs under `examples/` and the net's (M-core-packages step 16); a
-    # walk reaching no source or no program finds 0.
-    assert LEAST <= 20
+    # programs under `examples/` and the net's (M-core-packages step 16); 29
+    # in core 0.6.0's on 2026-11-15, batch 38's gate; a walk reaching no
+    # source or no program finds 0.
+    assert LEAST <= 29
     assert LEAST > 0
     assert LEAST_PLACED <= 17
     assert LEAST_PLACED > 0
