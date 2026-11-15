@@ -1,0 +1,23 @@
+error[builtin_name_taken]: `print` is a built-in of the language, so the name is taken everywhere, a `use` line's binding too — name the module otherwise in this file, `use x`, and write `x.` where the file writes `print.`
+  at tests/golden/full/fixedbugs-2550-an-alias-the-suggestion-makes-the-path-itself-is-taken-away.case/main.hero:15:10
+     |
+  15 | use x as print  #~ builtin_name_taken
+     |          ^^^^^
+  note: `as` says what THIS file calls the module: its file keeps its name, and a built-in is never named by a module
+  fix (guess): write `use x`
+
+error[module_binding_taken]: this file already calls `ir/state` by the name `state`, so `y` cannot have it too — a file may not bind one name twice
+  at tests/golden/full/fixedbugs-2550-an-alias-the-suggestion-makes-the-path-itself-is-taken-away.case/main.hero:16:10
+     |
+  16 | use y as state  #~ module_binding_taken
+     |          ^^^^^
+  note: the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently
+  fix (guess): write `use y`
+
+error[builtin_name_taken]: `join` is a built-in of the language, so the name is taken everywhere, a `use` line's binding too — name the module otherwise in this file, `use lib/sort as lib_sort`, and write `lib_sort.` where the file writes `join.`
+  at tests/golden/full/fixedbugs-2550-an-alias-the-suggestion-makes-the-path-itself-is-taken-away.case/main.hero:17:17
+     |
+  17 | use lib/sort as join  #~ builtin_name_taken
+     |                 ^^^^
+  note: `as` says what THIS file calls the module: its file keeps its name, and a built-in is never named by a module
+  fix (guess): write `use lib/sort as lib_sort`

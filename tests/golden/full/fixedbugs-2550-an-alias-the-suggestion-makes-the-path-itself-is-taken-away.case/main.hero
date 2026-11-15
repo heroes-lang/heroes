@@ -1,0 +1,20 @@
+# Fixed defect 2550, 2026-11-15, lane b38-module: an alias a taken binding is
+# offered that is the line's own path.
+#
+# SYMPTOM: `use x as print` was offered `use x as x`, in the message and in
+# its guess, and `use y as state` beside `use ir/state` the same: each
+# compiles and says the path twice, `use x` meaning the same.
+#
+# CAUSE: the alias offered is the path closed up, which for a path of one
+# part is the path itself, and the fix wrote it after `as`.
+#
+# FIX: where the line has an `as` and the suggestion is its path, the fix
+# takes the `as` clause away and the message names `use x`; a path of two
+# parts keeps an alias of its own, `use lib/sort as lib_sort`.
+use ir/state
+use x as print  #~ builtin_name_taken
+use y as state  #~ module_binding_taken
+use lib/sort as join  #~ builtin_name_taken
+
+function main()
+    print(print.v() + state.s() + join.u())

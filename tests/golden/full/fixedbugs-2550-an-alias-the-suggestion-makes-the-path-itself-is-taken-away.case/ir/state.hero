@@ -1,0 +1,3 @@
+# Three.
+function s() -> i64
+    return 3
