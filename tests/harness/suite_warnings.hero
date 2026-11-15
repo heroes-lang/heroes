@@ -176,7 +176,7 @@ function walk(scratch: str, compiler: str, lists: Walks, only: str) -> report.Re
         report.keep_failure(
             @r,
             label: "warnings",
-            detail: "  " + skipped.to_str() + " of " + judged.to_str() + " programs were skipped for a missing library: this machine is not testing the warnings"
+            detail: cases.starved_words(skipped: skipped, count: judged, noun: "programs", only: only, whole: "testing the warnings")
         )
     return ok(r)
 

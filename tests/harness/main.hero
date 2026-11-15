@@ -740,7 +740,7 @@ function reason(got: str?) -> str
 # asked of the whole directory (defect 537; until task 2505 it said the floor
 # and the skip ratio were left to the whole suite, which nothing asked). A
 # suite that holds a skip ratio asks it of the shard's own cases, and its
-# failure names the shard (`cases.walked`); `control` and `lldb` hold none,
+# failure names the shard (`cases.starved_words`); `control` and `lldb` hold none,
 # so the line names the floor alone, which every suite that shards holds.
 function shown(name: str, pick: str) -> str
     if pick == ""

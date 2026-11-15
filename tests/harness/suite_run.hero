@@ -138,12 +138,14 @@ function run_dir(scratch: str, compiler: str, dir: str, least: i64, only: str) -
     # is a red where the skips crowd into one shard, which the cases dealt
     # round by their sorted index make rare. From defect 537 to task 2505 a
     # shard asked none, its skips left to a sum nobody made, and the CI ran the
-    # suite whole for that reason.
+    # suite whole for that reason. The words say what is true of the cases
+    # walked: the machine's verdict of the whole suite, and of a filter's or a
+    # shard's cases that a third or more were not judged (defect 2559).
     if skipped > 0 && skipped * 3 >= found.len()
         report.keep_failure(
             @r,
             label: "run",
-            detail: "  " + skipped.to_str() + " of " + cases.walked(count: found.len(), only: only) + " were skipped for a missing library — this machine is not running the corpus"
+            detail: cases.starved_words(skipped: skipped, count: found.len(), noun: "cases", only: only, whole: "running the corpus")
         )
     return ok(r)
 
@@ -774,17 +776,50 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
 
     floor = "FAIL run\n  " + tree + " has 2 cases and had 3 — a golden that stopped running is not a golden"
     tail = " were skipped for a missing library — this machine is not running the corpus"
+    part = " were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
     shard = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.skips.len() == 1
-    assert own_failures(shard) == [floor, "FAIL run\n  1 of 1 cases of shard 1 of 2" + tail]
+    assert own_failures(shard) == [floor, "FAIL run\n  1 of 1 cases of shard 1 of 2" + part]
 
     # The floor counts the directory, two, and never the shard's one case.
     met = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "2/2").must()
-    assert own_failures(met) == ["FAIL run\n  1 of 1 cases of shard 2 of 2" + tail]
+    assert own_failures(met) == ["FAIL run\n  1 of 1 cases of shard 2 of 2" + part]
     filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "lacks-a").must()
-    assert own_failures(filtered) == ["FAIL run\n  1 of 1 cases" + tail]
+    assert own_failures(filtered) == ["FAIL run\n  1 of 1 cases selected by `lacks-a`" + part]
     whole = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "").must()
     assert own_failures(whole) == [floor, "FAIL run\n  2 of 2 cases" + tail]
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2559, held as a test (2026-11-15), in the shape the Windows box met:
+# a filter of two cases, one skipped for a header the machine lacks and one
+# judged, read `1 of 2 cases were skipped for a missing library — this machine
+# is not running the corpus`. The verdict stays red, a skip never counting as a
+# pass; the words name the filter and say its cases were not judged here. The
+# judged case binds `stdio.h`, which `said_stub` calls missing and every
+# machine has, so it fails as its own case and is never a skip.
+test "fixedbugs: a filter of two cases, one skipped, is red and told its cases were not judged, never that the machine is not running the corpus (defect 2559)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-2559"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch).must()
+    lacks = absence.planted_case(
+        dir: tree,
+        name: "fixedbugs-2559-lacks",
+        bound: absence.NOWHERE,
+        missing: absence.NOWHERE
+    )
+    has = absence.planted_case(dir: tree, name: "fixedbugs-2559-has", bound: "stdio.h", missing: "stdio.h")
+    assert !lacks.is_err() && !has.is_err()
+
+    for name in ["fixedbugs-2559-lacks", "fixedbugs-2559-has"]
+        assert !write_file(path: tree + "/" + name + ".expected", text: "7\n").is_err()
+
+    got = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "fixedbugs-2559").must()
+    assert got.skips.len() == 1
+    assert own_failures(got) == ["FAIL run\n  1 of 2 cases selected by `fixedbugs-2559` were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"]
     assert !shell.remove_tree(scratch).is_err()
 
 # The failures labelled `run` alone, the suite's own questions, its floor and

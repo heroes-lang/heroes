@@ -502,7 +502,7 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         report.keep_failure(
             @r,
             label: "emission",
-            detail: "  " + skipped.to_str() + " of " + walked.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions"
+            detail: cases.starved_words(skipped: skipped, count: walked.len(), noun: "programs", only: only, whole: "comparing emissions")
         )
     return ok(r)
 
