@@ -357,21 +357,31 @@ static void hero_lease_say_count(long long v) {
     hero_stack_say(buf + at);
 }
 
-/* Who raised the signal, from `siginfo_t` and nothing else. `si_code <= 0` is a
- * signal sent by a process — `abort`, `raise` and `kill` all land here — and
- * then `si_pid` says which; `si_code > 0` is the kernel's, a trap instruction,
- * and `si_pid` then overlays `si_addr` and means nothing, which panel 175's
- * ffi seat measured reading -1118630236 on Linux. */
+/* Who raised the signal, from `siginfo_t` and nothing else, and only where it
+ * shows it. `si_code <= 0` with a `si_pid` is a signal a process sent, `abort`,
+ * `raise` and `kill` alike, and `si_pid` says which: Linux writes `SI_TKILL`
+ * or `SI_USER` and the sender, Darwin 0 and the sender. Anything else names
+ * no sender, and then nothing is said of the origin: a `si_code` above 0 is
+ * the kernel's, but `si_pid` overlays `si_addr` there and means nothing (panel
+ * 175's ffi seat read -1118630236 on Linux).
+ *
+ * NOR IS A TRAP INSTRUCTION NAMED (defect 2584, 2026-11-15). This said *at a
+ * trap instruction* for every `si_code` above 0, and nothing in `siginfo_t`
+ * shows one on every platform: Darwin delivers `raise(SIGILL)` with `si_code`
+ * 2 and `si_pid` 0, exactly as it delivers a `udf`, and the line named a trap
+ * the program never ran, 3 of 3 on this Mac; the Linux x86-64 image, under
+ * Rosetta, delivers a raised SIGTRAP and SIGILL with `si_code` 1; and Darwin's
+ * `brk` arrives with `si_code` 0 and `si_pid` 0, so the clause was never said
+ * for a real trap there. A sender is told where one is shown, and silence
+ * stands for the rest. */
 static void hero_lease_say_origin(int signum, const siginfo_t *si) {
     hero_stack_say(hero_lease_signal_name(signum));
-    if (si == NULL) return;
-    if (si->si_code <= 0 && si->si_pid == getpid()) {
+    if (si == NULL || si->si_code > 0 || si->si_pid == 0) return;
+    if (si->si_pid == getpid()) {
         hero_stack_say(", raised by this process");
-    } else if (si->si_code <= 0 && si->si_pid != 0) {
+    } else {
         hero_stack_say(", sent by process ");
         hero_lease_say_count((long long)si->si_pid);
-    } else if (si->si_code > 0) {
-        hero_stack_say(", at a trap instruction");
     }
 }
 
