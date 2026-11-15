@@ -1,0 +1,5 @@
+add --path ../local/yaml --path ../local/other -C <work>/app
+add json --index file://../idx --index file://../elsewhere -C <work>/app
+add file://../git/yaml --tag v1 --tag v2 -C <work>/app
+add --path ../local/yaml --as one --as two -C <work>/app
+fetch -C <work>/app -C <work>/app

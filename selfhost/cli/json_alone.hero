@@ -13,6 +13,7 @@
 # tomorrow fails that test until its author says which kind its `--json` is.
 
 use cli/argv
+use cli/argv_told
 use cli/io
 use cli/table as cli_table
 
@@ -56,7 +57,7 @@ function told(inv: argv.Invocation) -> bool
 function said(n: Needs) -> str
     for c in cli_table.commands()
         if c.tag == n.tag
-            return "`--json` prints " + n.prints + " as JSON, and `" + n.flag + "` was not given: `heroes " + c.name + argv.operand_said(c) + " " + n.flag + " --json`"
+            return "`--json` prints " + n.prints + " as JSON, and `" + n.flag + "` was not given: `heroes " + c.name + argv_told.operand_said(c) + " " + n.flag + " --json`"
 
     return "`--json` prints " + n.prints + " as JSON, and `" + n.flag + "` was not given"
 
@@ -113,7 +114,7 @@ test "every command that takes --json formats something alone or names what it f
         assert alone + needs.len() == 1
         given: [str] @= [c.name, "x.hero", "--json"]
 
-        if argv.operand_said(c).len() == 0
+        if argv_told.operand_said(c).len() == 0
             given @ [c.name, "--json"]
 
         if alone == 1
