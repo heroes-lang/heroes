@@ -5041,6 +5041,13 @@ lookup under a new spelling — and the `err` payload (`e.code`, `e.msg`) is a
 built-in shape (§4.6), not a user-declared record — the spec states its two fields and nothing
 more.
 
+**Flagged 2026-11-15, defect 2548:** `read_number` below multiplies before it checks, so a literal
+past `i64`'s range aborts the program at exit 134; the example under `examples/calculator/`
+returns `i64?` from it since that repair, checks each digit before multiplying and fails
+`does_not_fit` naming the whole number and its position, `tokenize` passing the failure on with
+`?`. The code below keeps the older shape until it is rewritten whole and validated, as this
+appendix's own rule asks; the example's headers name this difference.
+
 ```
 ## Calculator
 #
