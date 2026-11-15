@@ -1287,7 +1287,9 @@ function unstartable(scratch: str, path: str) -> str
 # The name a compiler is checked by and started by: one string for both
 # (defect 331). `exists` asks for a name with no separator in the working
 # directory, as it asks for every path here, and the start of a program so
-# named searches the PATH (`execvp`), so with `HEROES_COMPILER=heroes` or
+# named searches the PATH in `execvp`'s order: the child called `execvp`
+# until defect 2531, and since then the runtime makes the same search itself,
+# before the fork (`runtime/parts/run.c`), so with `HEROES_COMPILER=heroes` or
 # `-- heroes` the file checked was `./heroes` and the program judged was the
 # PATH's `heroes`, measured 2026-10-04 with a stub on the PATH. `./` makes the
 # name a path, which no start searches. A `\` and a drive's `:` part a path

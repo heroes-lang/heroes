@@ -24,6 +24,7 @@ use <core>/strings as core_strings
 
 use cases
 use expectation
+use floors
 use freed_bytes
 use mark_readers
 use platform_skips
@@ -55,12 +56,11 @@ function run_dir(scratch: str, compiler: str, dir: str, least: i64, only: str) -
     found = cases.selected(found: whole, only: only)
     r: report.Report @= report.empty()
 
-    if cases.asks_floor(only) && whole.len() < least
-        report.keep_failure(
-            @r,
-            label: "control",
-            detail: "  " + dir + " has " + whole.len().to_str() + " cases and had " + least.to_str() + " — a golden that stopped running is not a golden"
-        )
+    # Both sides of the floor, `floors.check`'s, since defect 2535, as `run`
+    # asks its own: until then a plain comparison held the directory to 26 and
+    # would have told no slack however far the tree outgrew it.
+    if cases.asks_floor(only)
+        floors.check(@r, label: "control", found: whole.len(), floor: least, what: "cases in " + dir)
     binaries = scratch + "/control-binaries"
     shell.mkdir_all(binaries)?
 
@@ -235,10 +235,10 @@ test "a shard of the control form asks the floor of the whole directory, and a f
         assert !write_file(path: tree + "/" + name + ".expected", text: "1\n").is_err()
 
     compiler = scratch + "/no-compiler-here"
-    floor = "FAIL control\n  " + tree + " has 2 cases and had 3 — a golden that stopped running is not a golden"
+    floor = "FAIL control\n  the walk found 2 cases in " + tree + " and had 3 — "
     shard = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.failed == 2
-    assert shard.failures[0] == floor
+    assert core_strings.has_prefix(s: shard.failures[0], prefix: floor)
     assert core_strings.has_prefix(s: shard.failures[1], prefix: "FAIL control/a\n")
 
     # The floor counts the directory, two, and never the shard's one case.
@@ -248,4 +248,36 @@ test "a shard of the control form asks the floor of the whole directory, and a f
     filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "b").must()
     assert filtered.failed == 1
     assert core_strings.has_prefix(s: filtered.failures[0], prefix: "FAIL control/b\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2535's shape in this form, held as a test (2026-11-15): the floor was
+# a plain comparison, so a tree past it by any margin told nothing. It is
+# `floors.check`'s now: a directory of two cases held to one is told `FLOOR`
+# with the number to write, a pass and never a failure; a filter tells
+# nothing. The compiler named is a file nobody wrote, so the case fails as
+# one that could not be started, labelled by its name.
+test "fixedbugs: a floor the control directory has outgrown is told with the number to write, never failed (defect 2535)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/control-2535"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+
+    for name in ["a", "b"]
+        assert !write_file(path: tree + "/" + name + ".hero", text: "function main()\n    print(1)\n").is_err()
+        assert !write_file(path: tree + "/" + name + ".expected", text: "1\n").is_err()
+
+    compiler = scratch + "/no-compiler-here"
+    told = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "1/2").must()
+    assert told.outgrown.len() == 1
+    assert core_strings.has_prefix(
+        s: told.outgrown[0],
+        prefix: "FLOOR control\n  cases in " + tree + ": 2 against a floor of 1"
+    )
+    assert core_strings.contains(s: told.outgrown[0], substr: "RAISE the floor to 2")
+    assert told.passed == 1
+    assert told.failed == 1
+    assert core_strings.has_prefix(s: told.failures[0], prefix: "FAIL control/a\n")
+    filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "a").must()
+    assert filtered.outgrown.len() == 0
+    assert filtered.passed == 0
     assert !shell.remove_tree(scratch).is_err()

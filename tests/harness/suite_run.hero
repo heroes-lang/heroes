@@ -53,6 +53,7 @@ use absence
 use case_setting
 use cases
 use expectation
+use floors
 use freed_bytes
 use platform_skips
 use report
@@ -65,8 +66,13 @@ constant RUN_DIR: str
 
 # Measured 2026-08-18: 87 cases. golden.rs floors at 10, which is a
 # number from when there were ten.
+#
+# **825 on 2026-11-15** (defect 2535), told by `floors.check` on a shard of
+# this suite, `run 1/413`, the first run that asked it: 800 `.hero` cases and
+# 25 `.case` folders, against 87 held by a plain comparison that told no
+# slack, so a walk missing 738 of them passed.
 constant LEAST: i64
-    87
+    825
 
 # `only` narrows the suite to the cases whose name holds it, or to a shard of
 # them, `<i>/<n>` (cases.selected, defect 537). A filter's cases are not the
@@ -84,12 +90,11 @@ function run_dir(scratch: str, compiler: str, dir: str, least: i64, only: str) -
     found = cases.selected(found: whole, only: only)
     r: report.Report @= report.empty()
 
-    if cases.asks_floor(only) && whole.len() < least
-        report.keep_failure(
-            @r,
-            label: "run",
-            detail: "  " + dir + " has " + whole.len().to_str() + " cases and had " + least.to_str() + " — a golden that stopped running is not a golden"
-        )
+    # Both sides of the floor, `floors.check`'s, since defect 2535: until then
+    # a plain comparison held 825 cases to 87, so a walk reaching a tenth of
+    # the tree passed and the slack was never told.
+    if cases.asks_floor(only)
+        floors.check(@r, label: "run", found: whole.len(), floor: least, what: "cases in " + dir)
     binaries = scratch + "/binaries"
     shell.mkdir_all(binaries)?
 
@@ -774,12 +779,14 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
         assert !absence.planted_case(dir: tree, name: name, bound: absence.NOWHERE, missing: absence.NOWHERE).is_err()
         assert !write_file(path: tree + "/" + name + ".expected", text: "7\n").is_err()
 
-    floor = "FAIL run\n  " + tree + " has 2 cases and had 3 — a golden that stopped running is not a golden"
+    floor = "FAIL run\n  the walk found 2 cases in " + tree + " and had 3 — "
     tail = " were skipped for a missing library — this machine is not running the corpus"
     part = " were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
     shard = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.skips.len() == 1
-    assert own_failures(shard) == [floor, "FAIL run\n  1 of 1 cases of shard 1 of 2" + part]
+    assert own_failures(shard).len() == 2
+    assert core_strings.has_prefix(s: own_failures(shard)[0], prefix: floor)
+    assert own_failures(shard)[1] == "FAIL run\n  1 of 1 cases of shard 1 of 2" + part
 
     # The floor counts the directory, two, and never the shard's one case.
     met = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "2/2").must()
@@ -787,7 +794,43 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
     filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "lacks-a").must()
     assert own_failures(filtered) == ["FAIL run\n  1 of 1 cases selected by `lacks-a`" + part]
     whole = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "").must()
-    assert own_failures(whole) == [floor, "FAIL run\n  2 of 2 cases" + tail]
+    assert own_failures(whole).len() == 2
+    assert core_strings.has_prefix(s: own_failures(whole)[0], prefix: floor)
+    assert own_failures(whole)[1] == "FAIL run\n  2 of 2 cases" + tail
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2535, held as a test (2026-11-15): the floor was a plain comparison,
+# 87 against 825 cases, so its slack was never told and a walk reaching a
+# tenth of the tree passed. It is `floors.check`'s now: a directory of two
+# cases held to one is told `FLOOR` with the number to write, a pass and never
+# a failure of the suite's own; one held to three still fails; a filter tells
+# nothing. The compiler named is a file nobody wrote, so each case fails as
+# its own, labelled by its name.
+test "fixedbugs: a floor the run directory has outgrown is told with the number to write, never failed (defect 2535)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-2535"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+
+    for name in ["a", "b"]
+        assert !write_file(path: tree + "/" + name + ".hero", text: "function main()\n    print(1)\n").is_err()
+        assert !write_file(path: tree + "/" + name + ".expected", text: "1\n").is_err()
+
+    compiler = scratch + "/no-compiler-here"
+    told = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "1/2").must()
+    assert told.outgrown.len() == 1
+    assert core_strings.has_prefix(
+        s: told.outgrown[0],
+        prefix: "FLOOR run\n  cases in " + tree + ": 2 against a floor of 1"
+    )
+    assert core_strings.contains(s: told.outgrown[0], substr: "RAISE the floor to 2")
+    assert own_failures(told).len() == 0
+    short = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
+    assert short.outgrown.len() == 0
+    assert own_failures(short).len() == 1
+    filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "a").must()
+    assert filtered.outgrown.len() == 0
+    assert own_failures(filtered).len() == 0
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2559, held as a test (2026-11-15), in the shape the Windows box met:
