@@ -89,82 +89,100 @@ function int_of(text: str, line: i64) -> i64?
         .ok n  => return ok(n)
         .err e => return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": " + e.msg)
 
-# An `f64`, read as ONE integer divided ONCE — which is not a style but a
-# repair, and the round trip is what forced it.
+# An `f64`, read back from the text `to_str` wrote for it and rounded ONCE,
+# to the nearest `f64`, by `strconv.parse_float` (Go's `ParseFloat`). Which
+# is not a style but a repair, and the round trip is what forced it, twice.
+#
+# `to_str` writes the digits that make a float read back as the same value
+# (spec § Built-ins): up to seventeen significant ones, `1835852425.7146974`,
+# or an exponent, `1e-05`. One rounding from those digits lands on the value
+# written, for every `f64`; two roundings may not, because two roundings do
+# not compose into one.
 #
 # The first draft read the two halves separately and added them: `1` plus
-# `64 / 100`. That is three operations where the writer performed one, and
-# three roundings do not compose into one: the generator makes this rate as
-# `to_f64(164) / 100.0`, which is `1.64` exactly, and `1.0 + 0.64` is
-# `1.6400000000000001`. Row 127 of the table found it — `back == made`
-# failed on a value that had been written and read by the same program.
+# `64 / 100`, three roundings where the writer performed one. The generator
+# makes this rate as `to_f64(164) / 100.0`, which is `1.64` exactly, and
+# `1.0 + 0.64` is `1.6400000000000001`. Row 127 of the table found it —
+# `back == made` failed on a value written and read by the same program.
 #
-# So this reads every digit on both sides of the point into one whole
-# number and divides by the power of ten the point implies, which is the
-# writer's own arithmetic performed backwards, bit for bit. A number with
-# more digits than an `i64` can hold is a refusal rather than a wrap: an
-# overflow here would abort (spec § Types), and a table full of aborts
-# tells a reader less than one line saying which field was too long.
-constant MOST_DIGITS: i64
-    18
-
+# The second read every digit into one `i64` and divided once by the power
+# of ten the point implies: exact while the digits fit the 53 bits an `f64`
+# holds, which every rate the generator makes does, and two roundings past
+# them, so `1835852425.7146973` read as `1835852425.7146971` where the
+# nearest `f64` is `1835852425.7146974` (defect 2570). It also refused what
+# `to_str` writes past eighteen digits, `0.012345678901234567`, and every
+# exponent and `inf`, which the writer's own comment says this reader takes
+# back.
 function float_of(text: str, line: i64) -> f64?
-    halves = split(text: text, at: '.')
+    float_shape(text, line)?
 
-    if halves.len() > 2
-        return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` has two points")
-    negative = text.len() > 0 && text[0] == '-'
-    whole_digits = digits_of(halves[0], line: line, negative: negative)?
-    fraction_digits: str @= ""
+    # `parse_float`'s message quotes the text, `"1e+309" lies past the
+    # largest f64`, so the line is all this adds, as in `int_of`.
+    match strconv.parse_float(text)
+        .ok value => return ok(value)
+        .err e    => return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": " + e.msg)
 
-    if halves.len() == 2
-        fraction_digits @ halves[1]
+# Nothing, where `text` is written as `to_str` writes an `f64`, and else a
+# refusal naming the line and what was found. **The shape is still the
+# table's**, so `parse_float`'s wider reading does not leak into it: an
+# optional `-`, digits, then optionally a point and digits, then optionally
+# `e`, a sign and digits; or `inf`, `-inf` or `nan`. `1_000`, `0x1p3`, `.5`,
+# `5.`, `+2` and `Infinity` are numbers to `parse_float` and refusals here,
+# because the writer never makes them and a reader that guesses is how a
+# broken file becomes a wrong answer. The exponent's count of digits is not
+# held to the two C's `%g` writes on this Mac, since a C library may write
+# three.
+function float_shape(text: str, line: i64) -> ()?
+    if text == "inf" || text == "-inf" || text == "nan"
+        return ok()
 
-        if fraction_digits.len() == 0
-            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` ends at its point")
-    all_digits = whole_digits + fraction_digits
-
-    if all_digits.len() > MOST_DIGITS
-        return fail(
-            code: ERR_NUMBER,
-            msg: "line " + line.to_str() + ": `" + text + "` has " + all_digits.len().to_str() + " digits and an i64 holds " + MOST_DIGITS.to_str()
-        )
-    scaled: i64 @= 0
-    at: i64 @= 0
-
-    while at < all_digits.len()
-        digit = all_digits[at]
-
-        if digit < '0' || digit > '9'
-            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` is not a number")
-        scaled @ scaled * 10 + to_i64(digit - '0').must()
-        at @ at + 1
-
-    scale: f64 @= 1.0
-    left: i64 @= fraction_digits.len()
-
-    while left > 0
-        scale @ scale * 10.0
-        left @ left - 1
-
-    value = to_f64(scaled) / scale
-
-    if negative
-        return ok(-value)
-    return ok(value)
-
-# The digits of a whole part, with its sign taken off — and a refusal for a
-# sign with nothing after it, which is the one shape `text[0] == \'-\'` alone
-# would let through.
-function digits_of(text: str, line: i64, negative: bool) -> str?
     if text.len() == 0
         return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": a number field is empty")
+    said = "line " + line.to_str() + ": `" + text + "` "
+    at: i64 @= 0
 
-    if negative
-        if text.len() == 1
-            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `-` is not a number")
-        return ok(text.slice(from: 1, to: text.len()))
-    return ok(text)
+    if text[0] == '-'
+        at @ 1
+    whole_end = digits_end(text, from: at)
+
+    if whole_end == at
+        return fail(code: ERR_NUMBER, msg: said + "is not a number: no digit opens it")
+    at @ whole_end
+
+    if at < text.len() && text[at] == '.'
+        fraction_end = digits_end(text, from: at + 1)
+
+        if fraction_end == at + 1
+            return fail(code: ERR_NUMBER, msg: said + "ends its point with no digit after it")
+        at @ fraction_end
+
+    if at < text.len() && text[at] == 'e'
+        if at + 1 == text.len() || text[at + 1] != '+' && text[at + 1] != '-'
+            return fail(code: ERR_NUMBER, msg: said + "has no sign after its `e`")
+        exponent_end = digits_end(text, from: at + 2)
+
+        if exponent_end == at + 2
+            return fail(code: ERR_NUMBER, msg: said + "has no digit in its exponent")
+        at @ exponent_end
+
+    # Every byte before `at` is ASCII, a sign, a digit, the point or the
+    # exponent's, so both slices below cut between two characters.
+    if at < text.len()
+        return fail(
+            code: ERR_NUMBER,
+            msg: said + "is not a number: `" + text.slice(from: at, to: text.len()) + "` follows `" + text.slice(from: 0, to: at) + "`"
+        )
+    return ok()
+
+# The first index at or after `from` that holds no decimal digit, or the
+# text's length where digits run to its end.
+function digits_end(text: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < text.len() && text[at] >= '0' && text[at] <= '9'
+        at @ at + 1
+
+    return at
 
 # The whole table. The header is checked against the one this program
 # writes, because a file whose columns moved is a file this reader would
@@ -239,6 +257,101 @@ test "the pieces answer what they are asked, and refuse what they are not"
     assert split(text: "a,b,,c", at: ',') == ["a", "b", "", "c"]
     assert lines_of("a\nb\n") == ["a", "b"]
     assert lines_of("a\nb") == ["a", "b"]
+
+# The reader that divided one `i64` by a power of ten rounded twice once the
+# digits passed 53 bits, and answered the `...971` below.
+test "defect 2570: a decimal past 53 bits of digits is rounded once, to the nearest f64"
+    assert float_of("1835852425.7146973", 1).must().to_str() == "1835852425.7146974"
+    assert float_of("-1835852425.7146973", 1).must().to_str() == "-1835852425.7146974"
+    assert float_of("123456789012345678", 1).must() == 123456789012345678.0
+    text = row.HEADER + "\n1,argo,p1,true,10,1835852425.7146973\n"
+    assert read(text).must()[0].rate.to_str() == "1835852425.7146974"
+
+# Each text below is one `to_str` writes, and reading it gives the value whose
+# text it is. Compared as text, because `to_str` reads back exact, so one text
+# is one value, and the text tells `-0.0` from `0.0` and finds `nan`, which
+# `==` cannot. More than eighteen digits, an exponent and `inf` were refused.
+test "defect 2570: every text `to_str` writes reads back as the value it was written from"
+    written = [
+        "1835852425.7146974"
+        "0.30000000000000004"
+        "1.64"
+        "0.012345678901234567"
+        "0.00012345678901234567"
+        "1e-05"
+        "1e+21"
+        "1.2345678901234568e+17"
+        "5e-324"
+        "2.2250738585072014e-308"
+        "1.7976931348623157e+308"
+        "-0.0"
+        "inf"
+        "-inf"
+        "nan"
+    ]
+
+    for text in written
+        assert float_of(text, 1).must().to_str() == text
+
+    # And the values the other way, written by `to_str` and read through the
+    # table, which is the route `main` takes. `nan` stays out of the table:
+    # it equals nothing, so a table holding one never equals itself.
+    values = [1835852425.7146974, 0.1 + 0.2, to_f64(164) / 100.0, 1.0 / 0.0, 0.0, -0.0]
+    rows: [row.Row] @= []
+
+    for v in values
+        assert float_of(v.to_str(), 1).must().to_str() == v.to_str()
+        rows @ rows.push(row.Row(id: rows.len() + 1, team: "argo", name: "p1", active: true, score: 0, rate: v))
+
+    assert read(row.written(rows)).must() == rows
+    assert float_of((0.0 / 0.0).to_str(), 1).must().to_str() == "nan"
+
+# `parse_float` reads more than the table's writer writes; the reader keeps
+# the table's shape, and each refusal names its line and what it found.
+test "defect 2570: a text `to_str` never writes is refused, naming its line, though `parse_float` reads most of them"
+    never = [
+        "1_000"
+        "0x1p3"
+        ".5"
+        "5."
+        "+2"
+        "Infinity"
+        "INF"
+        "1e5"
+        "1E+05"
+        "1e+"
+        "1e+05x"
+        " 1"
+        "1 "
+        "2.5.5"
+        "-"
+        "--1"
+        ""
+    ]
+
+    for text in never
+        match float_of(text, 7)
+            .ok _  => assert false
+            .err e => assert e.code == ERR_NUMBER && strings.contains(s: e.msg, substr: "line 7: ")
+
+    match float_of("2.5.5", 7)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 7: `2.5.5` is not a number: `.5` follows `2.5`"
+
+    match float_of("5.", 7)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 7: `5.` ends its point with no digit after it"
+
+    match float_of("1e5", 7)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 7: `1e5` has no sign after its `e`"
+
+# A number past the largest `f64` has the table's shape and no value; it is
+# refused by `parse_float`, never read as `inf`.
+test "defect 2570: a number past the largest f64 is refused, naming its line"
+    match float_of("1e+309", 3)
+        .ok _  => assert false
+        .err e => assert e.code == ERR_NUMBER && e.msg == "line 3: \"1e+309\" lies past the largest f64, about 1.8 times ten to the 308"
 
 # The error of a failed read, for the tests above. `.must()` on the error
 # side is not a thing, so this is the shape a test uses to look at one.
