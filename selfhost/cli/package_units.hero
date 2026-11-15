@@ -24,7 +24,8 @@
 # nothing and stops the build too: a header not found from the package's
 # own places is told `ffi_missing_header`, naming where it was looked for,
 # and clang's own words are never printed, since a header may have read a
-# file of the machine's before it stopped.
+# file of the machine's before it stopped. How each refusal is told is
+# `cli/reads_refused.hero`'s.
 #
 # **A `path` entry is the author's own code** (panel 235's R6, *the author's
 # own source while a package is developed*; its C1, C2 and C5 *tell a
@@ -43,6 +44,8 @@
 # unit's own folders standing in for that header, found first, is refused
 # before anything compiles (`cli/package_stand_in.hero`), as is a file of a
 # package's folder standing in for a header of the C library or the runtime.
+# A refusal of such a unit names that folder among the places it looks, and
+# its note says the unit reads it (defect 2556).
 
 use ast
 use bytes
@@ -55,7 +58,6 @@ use cli/publish
 use cli/read_back
 use cli/response_file
 use cli/strings
-use diag
 use emit/externs as emit_externs
 use emit/unit_plan
 use module/placed
@@ -259,88 +261,10 @@ function not_found(said: str) -> str
 
     return ""
 
-# The refusal C2's verdict `failed` is, for the fetched package at `root`
-# whose modules' unit is `modules`: told on the first binding of theirs a
-# group names a header for, which is where the build tells a header it could
-# not open (`ffi_missing_header`). Never absent: a refusal nobody tells would
-# let the unit compile and read what was refused.
-function refusal(s: source.Source, decls: [ast.Decl], modules: [str], root: str, failed: ()?) -> diag.Diagnostic
-    at = first_binding(s, decls, modules: modules)
-    code = code_of(failed)
-    said = message_of(failed)
-    d: diag.Diagnostic @= diag.new_diagnostic(code: "package_reads_outside", message: said, span: at)
-
-    if code == "unread" && said.len() > 0
-        d @ diag.new_diagnostic(
-            code: "ffi_missing_header",
-            message: "`" + said + "` is not found where a unit of the fetched package at `" + root + "` looks for a header: the package's own root, the runtime's directory, the toolchain's own and the folders its `pkgconfig` groups' answer names",
-            span: at
-        )
-    else if code == "unread"
-        d @ diag.new_diagnostic(
-            code: "package_reads_outside",
-            message: "the headers a unit of the fetched package at `" + root + "` names do not preprocess from its own places, so nothing vouches for the files they read, and no compile of it runs",
-            span: at
-        )
-    else if code != "package_reads_outside"
-        # The toolchain's own folders could not be asked of clang, so the
-        # listing could not be judged: still a refusal, never a pass.
-        d @ diag.new_diagnostic(
-            code: "package_reads_outside",
-            message: "the files a unit of the fetched package at `" + root + "` reads cannot be judged, since " + said + ", and no compile of it runs",
-            span: at
-        )
-    d.notes @ d.notes.push(NOTE)
-    return d
-
-# What every refusal of C2's says under it.
-constant NOTE: str
-    "a fetched package's unit searches the runtime's directory, the folders its own `pkgconfig` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `pkgconfig` group names, installed with its development files"
-
-# The span of the first declaration of `modules` a group names a header for;
-# of their first declaration where none is one, a unit reading a header of
-# another module's group record alone; and of the program's first where they
-# declare nothing.
-function first_binding(s: source.Source, decls: [ast.Decl], modules: [str]) -> token.Span
-    first: token.Span? @= fail(code: "none", msg: "no declaration of these modules")
-
-    for decl in decls
-        named: token.Span? @= fail(code: "none", msg: "no header")
-
-        match decl.kind
-            .function_decl fd          => named @ fd.value.header
-            .constant_decl k           => named @ k.header
-            .record_decl rec           => named @ rec.header
-            .variant_decl | .test_decl => continue
-
-        component = source.component_at(s, decl.span.start)
-
-        for module in modules
-            if module == component
-                if !named.is_err()
-                    return decl.span
-
-                if first.is_err()
-                    first @ ok(decl.span)
-
-    if first.is_err() && decls.len() > 0
-        return decls[0].span
-    return first.default(token.Span(start: 0, end: 0))
-
 function without_slash(path: str) -> str
     if path.len() > 1 && path[path.len() - 1] == '/'
         return path.slice(from: 0, to: path.len() - 1)
     return path
-
-function code_of(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.code
-
-function message_of(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.msg
 
 ## Tests
 

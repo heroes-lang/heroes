@@ -1,0 +1,13 @@
+# fixedbugs, defect 2556, lane b38-module, 2026-11-15.
+#
+# The package `rb` holds the package `qt`'s record by value, so its unit
+# includes `qt.h` and searches `qt`'s folder after its own route (defect
+# 2357); its own header asks `qt.h` for a file `qt` does not ship. The
+# refusal named every place the unit looks but `qt`'s folder, and its note
+# said such a unit never reads another package's files, while this one reads
+# `qt.h` from there. Now the folder is named where the unit looks, and the
+# note says it reads that package's files and where a header it needs ships.
+use <rb>/sum
+
+function main()
+    print(sum.sum())
