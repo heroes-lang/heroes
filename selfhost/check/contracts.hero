@@ -204,47 +204,19 @@ function result_key(s: source.Source, fd: ast.FunctionDecl) -> str
         parts @ parts.push("when " + source.span_text(s, fd.when_result.must()))
     return parts.join(" ")
 
-# `word a | b` with the names sorted, or "" where the mark is absent.
+# `word a | b` with the names in their bytes' order, which the built-in `sort`
+# gives a `str` (spec § 11), or "" where the mark is absent. A C identifier
+# needs no other order; until defect 2547 this sorted the names by an
+# insertion sort of its own, quadratic in them, in the same order.
 function set_key(s: source.Source, mark: token.Span?, word: str) -> str
     if mark.is_err()
         return ""
-    return word + " " + sorted(handles.releasers(source.span_text(s, mark.must()))).join(" | ")
+    return word + " " + sort(handles.releasers(source.span_text(s, mark.must()))).join(" | ")
 
 function with_set(parts: [str], key: str) -> [str]
     if key == ""
         return parts
     return parts.push(key)
-
-function sorted(names: [str]) -> [str]
-    out: [str] @= []
-
-    for name in names
-        placed: bool @= false
-        next: [str] @= []
-
-        for have in out
-            if !placed && before(a: name, b: have)
-                next @ next.push(name)
-                placed @ true
-            next @ next.push(have)
-
-        if !placed
-            next @ next.push(name)
-        out @ next
-
-    return out
-
-# Byte order, which is all a C identifier needs: the language orders
-# integers and floats with `<` and leaves strings to the program.
-function before(a: str, b: str) -> bool
-    i: i64 @= 0
-
-    while i < a.len() && i < b.len()
-        if a[i] != b[i]
-            return a[i] < b[i]
-        i @ i + 1
-
-    return a.len() < b.len()
 
 function sibling_index(s: source.Source, fd: ast.FunctionDecl, named: str) -> i64
     index: i64 @= 0
@@ -374,10 +346,12 @@ test "a declaration that says what the library says is not a disagreement"
     ]
     assert agreed(files).len() == 0
 
+# By bytes, as `before` ordered them until defect 2547: a capital before
+# every small letter, a name before the longer names it begins.
 test "a set is one key whatever its order, and a name sorts by its bytes"
-    assert sorted(["b", "a", "c"]) == ["a", "b", "c"]
-    assert sorted([]) == []
-    assert sorted(["x"]) == ["x"]
+    bytes_order = "acquires b | ab | a | B"
+    t = source.new_source(name: "t.hero", text: bytes_order)
+    assert set_key(t, ok(token.Span(start: 9, end: bytes_order.len())), word: "acquires") == "acquires B | a | ab | b"
     text = "transfers b | a"
     s = source.new_source(name: "t.hero", text: text)
     assert set_key(s, ok(token.Span(start: 10, end: 15)), word: "transfers") == "transfers a | b"
