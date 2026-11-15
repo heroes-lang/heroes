@@ -1,0 +1,28 @@
+# DEFECT 2554: on Windows a connect reached a listener's port after the
+# platform layer closed it (the CI's Windows leg at `-O2` on 722ae76bf and at
+# `-O0` on adea08993; the box, 16 runs of 80, 2026-11-15).
+#
+# The layer's one poller on Windows holds every socket it watches in its
+# `WSAPoll` as one of the socket's users, since Winsock forbids a
+# `closesocket` concurrent with another call on the socket, and the last user
+# out closes it. A close nudged the waiting `accept`, which left first and
+# answered `HERO_NET_NOT_OPEN`, while the listener went on listening until the
+# poller's round ended; a `shutdown` does nothing to a listener. On POSIX the
+# poller holds nothing, so the `accept` is the last user and closes the socket
+# before it answers. Now on Windows a close waits for the poller's round to
+# let the socket go, and so does a call leaving a closed socket only the
+# poller holds, and the poller takes no closed socket into a later round.
+#
+# Two shapes, fifty rounds each, the port asked after every one: a listener
+# closed under an `accept` another thread waits in, and one closed after its
+# `accept` timed out, which left the poller holding it with nobody waiting
+# (`fixedbugs-2554-a-closed-listener-lets-its-port-go.h`). On POSIX both
+# held before the repair; they are Windows' falsifiers.
+
+extern "fixedbugs-2554-a-closed-listener-lets-its-port-go.h"
+    function port_after_waiting_accept(rounds: i64) -> i64
+    function port_after_timed_out_accept(rounds: i64) -> i64
+
+function main()
+    print(f"a listener closed under a waiting accept lets its port go: {port_after_waiting_accept(rounds: 50)}")
+    print(f"a listener closed after its accept timed out lets its port go: {port_after_timed_out_accept(rounds: 50)}")

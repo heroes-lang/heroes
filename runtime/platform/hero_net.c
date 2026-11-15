@@ -247,6 +247,9 @@ typedef struct {
     /* Calls in flight on its descriptor; on Windows the poller counts as one
      * while its `WSAPoll` holds the socket. */
     uint32_t busy;
+    /* Windows' alone: the poller's round holds it, one of `busy` (defect
+     * 2554). */
+    bool polled;
     /* The index plus one of the next slot given back, 0 for none. */
     uint32_t next;
     /* The calls waiting on it: [0] to read or accept, [1] to send or connect. */
@@ -513,6 +516,7 @@ static hero_net_socket *hero_net_keep(hero_net_fd fd) {
         slot->life += 1;
         slot->fd = fd;
         slot->busy = 0;
+        slot->polled = false;
         slot->next = 0;
         slot->waiting[0] = NULL;
         slot->waiting[1] = NULL;
@@ -566,13 +570,26 @@ static hero_net_fd hero_net_let_go(hero_net_slot *slot) {
     return last;
 }
 
+/* Where the Windows poller's round holds a slot the program closed, that
+ * round ended and the slot let go; nothing on POSIX. Under the lock, which
+ * the wait gives up while it sleeps; the slot is not read after it, since
+ * whoever let it go last may have given it a new life. */
+static void hero_net_unpolled(hero_net_slot *slot);
+
 /* A call done with the slot it took, answering whether the program closed it
  * meanwhile; the last user of a slot closed meanwhile closes its
- * descriptor. */
+ * descriptor. A call that leaves a closed slot only the Windows poller still
+ * holds waits for the poller's round to let it go, which closes it, so the
+ * call returns with the socket closed, as it does on POSIX, where the poller
+ * holds no slot and the call is the last user (defect 2554). */
 static bool hero_net_done(hero_net_slot *slot) {
     hero_net_enter();
     bool closed = slot->closing;
     hero_net_fd last = hero_net_let_go(slot);
+
+    if (closed && last == HERO_NET_NO_FD && slot->busy == 1) {
+        hero_net_unpolled(slot);
+    }
     hero_net_leave();
 
     if (last != HERO_NET_NO_FD) {
@@ -797,6 +814,12 @@ static _Atomic int hero_net_wake_sent;
  * poller's thread alone. */
 static WSAPOLLFD hero_net_polled[HERO_NET_SLOTS + 1];
 static uint32_t hero_net_polled_slot[HERO_NET_SLOTS + 1];
+/* The rounds the poller has ended, each counted once it has let go of every
+ * slot it held and closed every socket it was the last user of; and the
+ * condition a close waits on for the round holding its socket to end. Under
+ * the lock. */
+static uint64_t hero_net_rounds;
+static CONDITION_VARIABLE hero_net_round_ended = CONDITION_VARIABLE_INIT;
 
 /* The poller woken to read the table again, once until it has. Under the
  * lock. */
@@ -806,6 +829,37 @@ static void hero_net_poke(void) {
     }
     atomic_store(&hero_net_wake_sent, 1);
     (void)send(atomic_load(&hero_net_wake_out), "\1", 1, 0);
+}
+
+/* THE ROUND THAT HOLDS A CLOSED SOCKET, WAITED OUT (defect 2554). The poller
+ * holds every socket it watches, one of the slot's users, since Winsock's
+ * `closesocket` "must never" be issued "concurrently with another Winsock
+ * function call" on the socket and its number "may immediately be reused"
+ * (Microsoft's page for `closesocket`): so the last user out closes the
+ * socket, and the poller can be that user. A close nudged a waiting `accept`,
+ * which left first and answered `HERO_NET_NOT_OPEN`, and the listener went
+ * on listening until the poller's round ended, a moment the scheduler picks,
+ * a `shutdown` doing nothing to a listener ("does not close the socket",
+ * `WSAENOTCONN` on one not connected, Microsoft's page for `shutdown`): a
+ * connect made after the `accept` ended reached the port 16 times in 80 on
+ * the box, at `-O0` and `-O2` alike. On POSIX the poller holds nothing, so
+ * the call that leaves is the last user and the socket is closed before it
+ * answers. So here the close, and a call leaving a closed slot only the
+ * poller still holds, wake the poller and wait for its round to end; it
+ * takes no closed slot into a later round. A byte that never reached it is
+ * sent again each slice of the wait. */
+static void hero_net_unpolled(hero_net_slot *slot) {
+    if (!slot->polled) {
+        return;
+    }
+    uint64_t round = hero_net_rounds;
+
+    hero_net_poke();
+    while (hero_net_rounds == round) {
+        if (!SleepConditionVariableSRW(&hero_net_round_ended, &hero_net_lock, HERO_NET_SLICE_MS, 0)) {
+            (void)send(atomic_load(&hero_net_wake_out), "\1", 1, 0);
+        }
+    }
 }
 
 /* A loopback pair of sockets in `pair`, both non-blocking and never inherited,
@@ -860,12 +914,14 @@ static bool hero_net_pair(SOCKET pair[2]) {
 }
 
 /* THE POLLER'S THREAD, on Windows. Each round it reads the table under the
- * lock: every slot with a call waiting that the poller has not woken goes
- * into the `WSAPoll`, the poller holding it busy, so no close can close the
- * socket under the system's call; then it waits, with no bound, until a
- * socket is ready or a byte comes down the pair; then, under the lock, it
- * wakes the calls of each ready socket, lets each socket go, and closes those
- * the program closed meanwhile whose last user it was. */
+ * lock: every slot the program has not closed with a call waiting that the
+ * poller has not woken goes into the `WSAPoll`, the poller holding it busy,
+ * so no close can close the socket under the system's call; then it waits,
+ * with no bound, until a socket is ready or a byte comes down the pair; then,
+ * under the lock, it wakes the calls of each ready socket, lets each socket
+ * go, and closes those the program closed meanwhile whose last user it was;
+ * and then it counts the round ended, which a close waits for
+ * (`hero_net_unpolled`). */
 static DWORD WINAPI hero_net_poll_loop(LPVOID unused) {
     (void)unused;
     SOCKET wake = atomic_load(&hero_net_wake_in);
@@ -889,8 +945,9 @@ static DWORD WINAPI hero_net_poll_loop(LPVOID unused) {
                     }
                 }
             }
-            if (events != 0 && slot->held) {
+            if (events != 0 && slot->held && !slot->closing) {
                 slot->busy += 1;
+                slot->polled = true;
                 hero_net_polled[count].fd = slot->fd;
                 hero_net_polled[count].events = events;
                 hero_net_polled[count].revents = 0;
@@ -917,6 +974,7 @@ static DWORD WINAPI hero_net_poll_loop(LPVOID unused) {
             if (ready < 0 || hero_net_polled[k].revents != 0) {
                 hero_net_wake_ready(slot);
             }
+            slot->polled = false;
             hero_net_polled[k].fd = hero_net_let_go(slot);
         }
         hero_net_leave();
@@ -925,6 +983,10 @@ static DWORD WINAPI hero_net_poll_loop(LPVOID unused) {
                 (void)closesocket(hero_net_polled[k].fd);
             }
         }
+        hero_net_enter();
+        hero_net_rounds += 1;
+        WakeAllConditionVariable(&hero_net_round_ended);
+        hero_net_leave();
         if (ready < 0) {
             Sleep(HERO_NET_SLICE_MS);
         }
@@ -1206,6 +1268,15 @@ static void hero_net_disarm(hero_net_slot *slot, unsigned way) {
 static bool hero_net_poller_hears_stop(int stop) {
     (void)stop;
     return true;
+}
+#endif
+
+#if !defined(_WIN32)
+/* No poller on POSIX holds a slot: a `kqueue` or an `epoll` forgets a
+ * descriptor when it closes, and its events carry the slot's life, so the
+ * call that leaves a closed slot is its last user and closes it. */
+static void hero_net_unpolled(hero_net_slot *slot) {
+    (void)slot;
 }
 #endif
 
@@ -2067,10 +2138,11 @@ int64_t hero_net_close(hero_net_socket *s) {
             slot->closing = true;
             hero_net_nudge(slot);
             hero_net_shut(slot->fd);
-#if defined(_WIN32)
-            /* The poller may hold it in its `WSAPoll`: asked to let go. */
-            hero_net_poke();
-#endif
+            /* On Windows the poller may hold it in its `WSAPoll`: the close
+             * waits for that round to let it go, so the poller's hold never
+             * outlives the close, and with no call left in flight the socket
+             * is closed when this returns, as on POSIX (defect 2554). */
+            hero_net_unpolled(slot);
         }
     }
     hero_net_leave();
