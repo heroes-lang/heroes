@@ -1,0 +1,136 @@
+# The words of one command, as Python's `shlex.split` reads them in POSIX
+# mode with no comments, the reading the Python guard's `words` makes of a
+# segment: white space is the ASCII four, a single quote keeps everything to
+# the next, a double quote keeps everything but a backslash before `"` or
+# `\`, a backslash outside quotes keeps the character after it, and a word may
+# be made of quoted and unquoted parts, `''` being a word of its own though
+# empty. An unclosed quote, or a backslash ending the text, is no reading at
+# all, and the guard then splits at white space instead.
+#
+# The text is walked a character at a time, so a character past ASCII is kept
+# whole, and what a word keeps is gathered in runs of the text, each closed
+# where a quote or a backslash is left out.
+
+use pystr
+
+# Where the walk stands: between words, in a word, in single or double
+# quotes, or after a backslash.
+variant State
+    between
+    word
+    single
+    double
+    escaped
+
+# The words of `s`. It fails `unbalanced` where a quote is never closed or a
+# backslash ends the text, which `shlex` refuses.
+function split(s: str) -> [str]?
+    out: [str] @= []
+    state: State @= .between
+
+    # Where a backslash was met: in a word, or in double quotes.
+    before: State @= .between
+    token: str @= ""
+    quoted: bool @= false
+    run: i64 @= -1
+    at: i64 @= 0
+
+    while at <= s.len()
+        if at == s.len()
+            match state
+                .between => return ok(out)
+                .word =>
+                    if run >= 0
+                        token @ token + s.slice(from: run, to: at)
+
+                    if token.len() > 0 || quoted
+                        out @ out.push(token)
+                    return ok(out)
+                .single | .double => return fail(code: "unbalanced", msg: "no closing quotation")
+                .escaped          => return fail(code: "unbalanced", msg: "no escaped character")
+        c = s[at]
+        width = pystr.width_at(s, at)
+
+        match state
+            .between =>
+                if c == '\\'
+                    before @ .word
+                    state @ .escaped
+                else if c == '\'' || c == '"'
+                    state @ quote_state(c)
+                else if !blank(c)
+                    run @ at
+                    state @ .word
+            .word =>
+                if blank(c) || c == '\'' || c == '"' || c == '\\'
+                    if run >= 0
+                        token @ token + s.slice(from: run, to: at)
+                        run @ -1
+
+                if blank(c)
+                    if token.len() > 0 || quoted
+                        out @ out.push(token)
+                    token @ ""
+                    quoted @ false
+                    state @ .between
+                else if c == '\'' || c == '"'
+                    state @ quote_state(c)
+                else if c == '\\'
+                    before @ .word
+                    state @ .escaped
+                else if run < 0
+                    run @ at
+            .single | .double =>
+                quoted @ true
+                closing = c == '\'' && state == .single || c == '"' && state == .double
+
+                if closing || c == '\\' && state == .double
+                    if run >= 0
+                        token @ token + s.slice(from: run, to: at)
+                        run @ -1
+
+                    if closing
+                        state @ .word
+                    else
+                        before @ .double
+                        state @ .escaped
+                else if run < 0
+                    run @ at
+            .escaped =>
+                # In double quotes a backslash is kept unless it stands before
+                # `"` or `\`, as a POSIX shell keeps it.
+                if before == .double && c != '\\' && c != '"'
+                    token @ token + "\\"
+                run @ at
+                state @ before
+
+        at @ at + width
+
+    return ok(out)
+
+# The state a quote opens.
+function quote_state(c: u8) -> State
+    if c == '\''
+        return .single
+    return .double
+
+# Whether `c` is `shlex`'s white space: space, tab, carriage return, new line.
+function blank(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n'
+
+## Tests
+
+test "shlex: words, quotes and backslashes, as POSIX shlex reads them"
+    assert split("git commit -m 'a b' -- x").must() == ["git", "commit", "-m", "a b", "--", "x"]
+    assert split("a\"b c\"d e").must() == ["ab cd", "e"]
+    assert split("x '' y").must() == ["x", "", "y"]
+    assert split("a\\ b").must() == ["a b"]
+    assert split("\"a\\\"b\\\\c\\d\"").must() == ["a\"b\\c\\d"]
+    assert split("'a\\'").must() == ["a\\"]
+    assert split("  ").must() == [] && split("").must() == []
+    assert split("é 'ü'").must() == ["é", "ü"]
+    assert split("a\tb\nc").must() == ["a", "b", "c"]
+
+test "shlex: an unclosed quote or a trailing backslash is no reading"
+    assert split("echo 'a").is_err() && split("echo \"a").is_err() && split("a\\").is_err()
+    assert quote_state('"') == .double && blank('\r') && !blank('x')

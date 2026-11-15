@@ -1,0 +1,262 @@
+# What may run ahead of a commit on its command line: nothing that writes a
+# file or an index (defect 2380). The commit guard judges what a commit
+# carries by the files and the index as they stand when the hook runs,
+# before the shell has run any part of the line, so a command ahead of the
+# commit that stages or writes a file would have it committed unjudged. The
+# guard does not simulate the line; it refuses a commit behind anything not
+# known to write neither, and says to run that command apart. The Python
+# guard's `ahead.py`.
+#
+# Inert: the moves the guard already follows (`cd`, `pushd`, `popd`), the
+# commands that print or read, and git's verbs that read, `--output` aside;
+# any of them with an output redirection to a file is a writer, one to
+# `/dev/null` or to a descriptor is not.
+
+use pypath
+use pystr
+use runs
+
+# The commands that change neither a file nor an index whatever their words.
+constant INERT: [str]
+    [
+        "cd"
+        "pushd"
+        "popd"
+        "true"
+        ":"
+        "pwd"
+        "echo"
+        "printf"
+        "test"
+        "["
+        "[["
+        "ls"
+        "cat"
+        "head"
+        "tail"
+        "wc"
+        "grep"
+    ]
+
+# git's verbs that read the repository and write neither the tree nor the
+# index.
+constant READS: [str]
+    [
+        "status"
+        "diff"
+        "log"
+        "show"
+        "rev-parse"
+        "ls-files"
+        "ls-tree"
+        "cat-file"
+        "describe"
+        "rev-list"
+        "merge-base"
+        "for-each-ref"
+        "check-ignore"
+        "blame"
+    ]
+
+# Whether `b` ends a redirection's target outside quotes.
+function ends(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == ';' || b == '&' || b == '|' || b == '<' || b == '>' || b == '(' || b == ')'
+
+# The word of `text` from `at`, its quotes read as the shell reads them, to
+# the first blank or operator outside them.
+function word_at(text: str, from: i64) -> str
+    out: str @= ""
+    quote: u8 @= 0
+    at: i64 @= from
+    run: i64 @= from
+
+    while at < text.len()
+        c = text[at]
+
+        if quote != 0
+            if c == quote || c == '\\' && quote == '"' && at + 1 < text.len()
+                out @ out + text.slice(from: run, to: at)
+
+                if c == quote
+                    quote @ 0
+                    run @ at + 1
+                else
+                    run @ at + 1
+                    at @ at + pystr.width_at(text, at + 1)
+            at @ at + 1
+            continue
+
+        if ends(c)
+            break
+
+        if c == '\'' || c == '"' || c == '\\' && at + 1 < text.len()
+            out @ out + text.slice(from: run, to: at)
+
+            if c == '\\'
+                run @ at + 1
+                at @ at + pystr.width_at(text, at + 1)
+            else
+                quote @ c
+                run @ at + 1
+        at @ at + 1
+
+    return out + text.slice(from: run, to: at)
+
+# Whether `s` is one or more ASCII digits.
+function digits(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for at in range(from: 0, to: s.len())
+        if s[at] < '0' || s[at] > '9'
+            return false
+
+    return true
+
+# The file an output redirection of `segment` writes, outside quotes, or ""
+# where every one points at `/dev/null` or at a descriptor, or there is
+# none; `>(` for a process substitution, `>` for a redirection with no
+# target. `$(( ... ))` is arithmetic and is skipped.
+function redirected(segment: str) -> str
+    at: i64 @= 0
+    quote: u8 @= 0
+
+    while at < segment.len()
+        c = segment[at]
+
+        if quote == '\''
+            if c == '\''
+                quote @ 0
+            at @ at + 1
+            continue
+
+        if c == '\\'
+            at @ at + 2
+            continue
+
+        if c == '"'
+            if quote == '"'
+                quote @ 0
+            else
+                quote @ '"'
+            at @ at + 1
+            continue
+
+        if quote == 0 && c == '\''
+            quote @ '\''
+            at @ at + 1
+            continue
+
+        if quote == 0 && pystr.same_at(s: segment, piece: "$((", at: at)
+            end = pystr.index_from(s: segment, piece: "))", from: at + 3)
+
+            if end < 0
+                at @ segment.len()
+            else
+                at @ end + 2
+            continue
+
+        if quote == 0 && c == '>'
+            j: i64 @= at + 1
+
+            if j < segment.len() && (segment[j] == '>' || segment[j] == '|')
+                j @ j + 1
+
+            if j < segment.len() && segment[j] == '('
+                return ">("
+            duplicated = j < segment.len() && segment[j] == '&'
+
+            if duplicated
+                j @ j + 1
+
+            while j < segment.len() && (segment[j] == ' ' || segment[j] == '\t')
+                j @ j + 1
+
+            target = word_at(text: segment, from: j)
+
+            if duplicated && (digits(target) || target == "-")
+                at @ j + target.len()
+                continue
+
+            if target != "/dev/null"
+                if target.len() == 0
+                    return ">"
+                return target
+            at @ j + target.len()
+            continue
+        at @ at + 1
+
+    return ""
+
+# Whether the command `w`, its wrappers left out, inside `segment`, writes
+# neither a file nor an index.
+function inert(w: [str], segment: str) -> bool
+    if redirected(segment).len() > 0
+        return false
+
+    if w.len() == 0
+        return true
+    base = pypath.basename(w[0])
+
+    if runs.has(list: INERT, word: base)
+        return true
+
+    if base != "git"
+        return false
+    verb = runs.verb_of(w)
+
+    if !verb.found || !runs.has(list: READS, word: verb.name)
+        return false
+
+    for word in w.slice(from: verb.at + 1, to: w.len())
+        if word == "--output" || pystr.opens(s: word, prefix: "--output=")
+            return false
+
+    return true
+
+# `segment` on one line, cut at `limit` characters.
+function shown(segment: str, limit: i64) -> str
+    flat = join(pystr.split_spaces(segment), " ")
+    at: i64 @= 0
+    count: i64 @= 0
+
+    while at < flat.len() && count < limit - 3
+        at @ at + pystr.width_at(flat, at)
+        count @ count + 1
+
+    rest: i64 @= at
+    more: i64 @= 0
+
+    while rest < flat.len() && more < 4
+        rest @ rest + pystr.width_at(flat, rest)
+        more @ more + 1
+
+    if more <= 3
+        return flat
+    return flat.slice(from: 0, to: at) + "..."
+
+# The refusal of a commit, `committer`, behind a command, `writer`, not known
+# to leave the tree and the index alone.
+function refusal(writer: str, committer: str) -> str
+    return "refused: `" + shown(segment: writer, limit: 80) + "` runs before `" + shown(segment: committer, limit: 80) + "` on one command line, and the guard judges what a commit carries by the files and the index as they stand before the line runs, so a file that command stages or writes would be committed unjudged (defect 2380, `.claude/hooks/ahead.py`). Run it as a command of its own, then the commit. "
+
+## Tests
+
+test "ahead: a redirection's target, and those that write nothing"
+    assert redirected("echo x > f") == "f" && redirected("ls >>'a b'") == "a b" && redirected("x 2>&1") == ""
+    assert redirected("x >/dev/null") == "" && redirected("x >&2") == "" && redirected("tee >(cat)") == ">("
+    assert redirected("echo '>' \">\" \\>") == "" && redirected("echo $(( 1 > 2 ))") == "" && redirected("x >") == ">"
+    assert redirected("x &> out") == "out" && redirected("x >| f") == "f"
+    assert word_at(text: "\"a b\"c d", from: 0) == "a bc" && word_at(text: "a\\ b;c", from: 0) == "a b"
+    assert ends(';') && !ends('a') && digits("12") && !digits("1x")
+
+test "ahead: what is inert, and what writes"
+    assert inert(w: ["git", "status"], segment: "git status") && inert(w: ["cd", "x"], segment: "cd x")
+    assert !inert(w: ["git", "add", "x"], segment: "git add x") && !inert(w: ["git", "diff", "--output=f"], segment: "git diff --output=f")
+    assert !inert(w: ["echo", "x"], segment: "echo x > f") && inert(w: [], segment: "A=1") && !inert(w: ["cp", "a", "b"], segment: "cp a b")
+
+test "ahead: a segment shown on one line, cut at its limit"
+    assert shown(segment: "a  b\nc", limit: 80) == "a b c"
+    assert shown(segment: repeat("x", 81), limit: 80) == repeat("x", 77) + "..."
+    assert shown(segment: repeat("x", 80), limit: 80) == repeat("x", 80)
+    assert refusal(writer: "git add x", committer: "git commit -- x").len() > 100

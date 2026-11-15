@@ -1,0 +1,306 @@
+# One command read as the guard reads it before judging it: its words, the
+# program it runs once the shell's reserved words, a function's header, a
+# `case` arm's pattern, the assignments and the wrappers before it are left
+# out (`GIT_EDITOR=true git ...`, `caffeinate -i git ...`, defect 403), the
+# command line a shell's `-c` or `eval` runs, git's verb and the directory a
+# `-C` moves it to, and the directory each segment of a line runs in after a
+# `cd` (defect 348). The Python guard's `command_words`, `script_of`,
+# `words`, `git_dir`, `git_args`, `bare`, `moved_to` and `placed`.
+
+use pypath
+use pystr
+use shlex
+
+# The assignment that may stand before a command: a name, then `=`.
+function assignment(word: str) -> bool
+    if word.len() == 0 || !name_start(word[0])
+        return false
+    at: i64 @= 1
+
+    while at < word.len() && (name_start(word[at]) || word[at] >= '0' && word[at] <= '9')
+        at @ at + 1
+
+    return at < word.len() && word[at] == '='
+
+# Whether `b` may open a shell name: an ASCII letter or `_`.
+function name_start(b: u8) -> bool
+    return b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b == '_'
+
+# The options of a wrapper that take the next word as their value; the
+# wrapper's name is known where this answers, and `[]` is a wrapper with none.
+function wrapper_values(name: str) -> [str]?
+    none: [str] = []
+
+    return match name
+        "env"                                    => ok(["-u", "--unset", "-C", "--chdir"])
+        "command" | "builtin" | "nohup" | "time" => ok(none)
+        "exec"                                   => ok(["-a"])
+        "nice"                                   => ok(["-n"])
+        "caffeinate"                             => ok(["-w", "-t"])
+        "timeout"                                => ok(["-s", "--signal", "-k", "--kill-after"])
+        "xargs" => ok(
+            ["-P", "-n", "-I", "-L", "-s", "-E", "-d", "-a", "-J", "-R", "-S", "--max-procs", "--max-args", "--max-chars", "--arg-file", "--delimiter", "--process-slot-var"]
+        )
+        _ => fail(code: "not_found", msg: name + " is no wrapper")
+
+# Whether `word` is a shell reserved word a command may follow in its
+# segment: `if git ...`, `then git ...`, `{ git ...` run that git.
+function reserved(word: str) -> bool
+    return match word
+        "if" | "then" | "else" | "elif" | "do" | "while" | "until" | "!" | "{" => true
+        _                                                                      => false
+
+# The words of `w` from the command it runs: the Python guard's
+# `command_words`.
+function command_words(w: [str]) -> [str]
+    at: i64 @= 0
+
+    if w.len() > 0 && w[0] == "case" && has_word(list: w, word: "in")
+        at @ index_of(list: w, word: "in") + 1
+
+    while at < w.len()
+        word = w[at]
+
+        if reserved(word)
+            at @ at + 1
+            continue
+
+        if pystr.closes(s: word, suffix: "()") && word.len() > 2
+            at @ at + 1
+            continue
+
+        if at + 1 < w.len() && w[at + 1] == "()"
+            at @ at + 2
+            continue
+
+        if word == "function" && at + 1 < w.len()
+            at @ at + 2
+            continue
+
+        if case_pattern(w: w, at: at)
+            at @ at + 1
+            continue
+
+        if assignment(word)
+            at @ at + 1
+            continue
+        base = pypath.basename(word)
+
+        takes = match wrapper_values(base)
+            .ok values => values
+            .err _     => break
+
+        at @ at + 1
+
+        while at < w.len() && pystr.opens(s: w[at], prefix: "-") && w[at] != "-"
+            if w[at] == "--"
+                at @ at + 1
+                break
+
+            if has_word(list: takes, word: w[at])
+                at @ at + 2
+            else
+                at @ at + 1
+
+        if base == "timeout" && at < w.len()
+            at @ at + 1
+
+    if at >= w.len()
+        return []
+    return w.slice(from: at, to: w.len())
+
+# Whether the word at `at` is a `case` arm's pattern, `a)` or `(a)`, before
+# the command the arm runs.
+function case_pattern(w: [str], at: i64) -> bool
+    word = w[at]
+
+    if !pystr.closes(s: word, suffix: ")") || pystr.closes(s: word, suffix: "()") || at + 1 >= w.len()
+        return false
+    inner: str @= word.slice(from: 0, to: word.len() - 1)
+
+    while inner.len() > 0 && inner[0] == '('
+        inner @ inner.slice(from: 1, to: inner.len())
+
+    return !pystr.holds(s: inner, piece: "(")
+
+# Whether `list` holds `word`.
+function has_word(list: [str], word: str) -> bool
+    for each in list
+        if each == word
+            return true
+
+    return false
+
+# The first place of `word` in `list`, which holds it.
+function index_of(list: [str], word: str) -> i64
+    for at in range(from: 0, to: list.len())
+        if list[at] == word
+            return at
+
+    return list.len()
+
+# Whether `word` names a shell whose `-c` runs a command line of its own.
+function shell(word: str) -> bool
+    return match word
+        "bash" | "sh" | "zsh" | "dash" | "ksh" => true
+        _                                      => false
+
+# The command line a shell's `-c` or `eval` runs, or "" with `found` false:
+# the Python guard's `script_of`.
+record Script
+    found: bool
+    line: str
+
+# The command line `w` runs through a shell's `-c` or `eval`.
+function script_of(w: [str]) -> Script
+    none = Script(found: false, line: "")
+
+    if w.len() == 0
+        return none
+    base = pypath.basename(w[0])
+
+    if base == "eval"
+        return Script(found: true, line: join(w.slice(from: 1, to: w.len()), " "))
+
+    if !shell(base)
+        return none
+    at: i64 @= 1
+
+    while at < w.len() && (pystr.opens(s: w[at], prefix: "-") || pystr.opens(s: w[at], prefix: "+")) && w[at] != "--"
+        word = w[at]
+
+        if word == "-o" || word == "+o" || word == "-O" || word == "+O"
+            at @ at + 2
+            continue
+
+        if !pystr.opens(s: word, prefix: "--") && pystr.holds(s: word.slice(from: 1, to: word.len()), piece: "c")
+            if at + 1 < w.len()
+                return Script(found: true, line: w[at + 1])
+            return none
+        at @ at + 1
+
+    return none
+
+# The words of `segment`, as POSIX `shlex` reads them, or split at white
+# space where it cannot: an unbalanced quote is not the guard's to mend, and
+# a coarse split still sees every verb.
+function words(segment: str) -> [str]
+    return match shlex.split(segment)
+        .ok w  => w
+        .err _ => pystr.split_spaces(segment)
+
+# `w` without the brackets of a subshell around it, `(cd x` read as `cd x`.
+function bare(w: [str]) -> [str]
+    out: [str] @= w
+
+    if out.len() > 0 && pystr.opens(s: out[0], prefix: "(")
+        first = out[0].slice(from: 1, to: out[0].len())
+
+        if first.len() == 0
+            out @ out.slice(from: 1, to: out.len())
+        else
+            out[0] @ first
+
+    if out.len() > 0 && pystr.closes(s: out[out.len() - 1], suffix: ")")
+        last = out[out.len() - 1].slice(from: 0, to: out[out.len() - 1].len() - 1)
+
+        if last.len() == 0
+            out @ out.slice(from: 0, to: out.len() - 1)
+        else
+            out[out.len() - 1] @ last
+    return out
+
+# git's own options before its verb that take the next word as their value,
+# as the guard's `git_args` and `git_dir` read them.
+function git_valued(word: str) -> bool
+    return word == "-C" || word == "-c" || word == "--git-dir" || word == "--work-tree" || word == "--namespace"
+
+# The words after `git <verb>` where `w` is that git command, one of `verbs`:
+# the Python guard's `git_args`. It fails `not_found` where it is not, so a
+# git command with no word after its verb answers `[]`.
+function git_args(w: [str], verbs: [str]) -> [str]?
+    if w.len() == 0 || pypath.basename(w[0]) != "git"
+        return fail(code: "not_found", msg: "no git command")
+    at: i64 @= 1
+
+    while at < w.len() && pystr.opens(s: w[at], prefix: "-")
+        if git_valued(w[at])
+            at @ at + 2
+        else
+            at @ at + 1
+
+    if at < w.len() && has_word(list: verbs, word: w[at])
+        return ok(w.slice(from: at + 1, to: w.len()))
+    return fail(code: "not_found", msg: "another git command")
+
+# The directory a git command runs in: `here`, moved by each `-C` in turn,
+# "" where the text cannot tell (a variable, or `here` itself unknown).
+function git_dir(w: [str], here: str) -> str
+    if w.len() == 0 || pypath.basename(w[0]) != "git"
+        return here
+    out: str @= here
+    known: bool @= here.len() > 0
+    at: i64 @= 1
+
+    while at < w.len() && pystr.opens(s: w[at], prefix: "-")
+        if w[at] == "-C" && at + 1 < w.len()
+            target = w[at + 1]
+
+            if pystr.holds(s: target, piece: "$") || pystr.holds(s: target, piece: "`")
+                known @ false
+            else if pypath.isabs(target)
+                out @ pypath.normpath(target)
+                known @ true
+            else if target.len() > 0 && known
+                out @ pypath.normpath(pypath.join_two(a: out, b: target))
+            at @ at + 2
+        else if git_valued(w[at])
+            at @ at + 2
+        else
+            at @ at + 1
+
+    if !known
+        return ""
+    return out
+
+# Every letter of every clustered short flag in `w`, so `-am` gives a and m.
+function short_letters(w: [str]) -> str
+    out: str @= ""
+
+    for word in w
+        if pystr.opens(s: word, prefix: "-") && !pystr.opens(s: word, prefix: "--")
+            out @ out + word.slice(from: 1, to: word.len())
+
+    return out
+
+## Tests
+
+test "command_line: assignments, wrappers and reserved words before the program"
+    assert assignment("GIT_EDITOR=true") && !assignment("=x") && !assignment("a-b=c") && name_start('_')
+    assert command_words(["GIT_EDITOR=true", "git", "merge"]) == ["git", "merge"]
+    assert command_words(["caffeinate", "-i", "git", "add", "-A"]) == ["git", "add", "-A"]
+    assert command_words(["timeout", "-s", "KILL", "60", "git", "push"]) == ["git", "push"]
+    assert command_words(["xargs", "-J", "%", "git", "rm", "-f", "%"]) == ["git", "rm", "-f", "%"]
+    assert command_words(["if", "true;", "then", "git"]) == ["true;", "then", "git"]
+    assert command_words(["case", "x", "in", "a)", "git", "add"]) == ["git", "add"]
+    assert command_words(["f()", "{", "git"]) == ["git"] && command_words(["function", "f", "git"]) == ["git"]
+    assert command_words(["env"]) == [] && command_words([]) == []
+    assert wrapper_values("nohup").must().len() == 0 && wrapper_values("ls").is_err() && reserved("{")
+    assert case_pattern(w: ["(a)", "x"], at: 0) && !case_pattern(w: ["f()", "x"], at: 0)
+    assert index_of(list: ["a", "in"], word: "in") == 1 && has_word(list: ["a"], word: "a") && !has_word(list: [], word: "a")
+
+test "command_line: a shell's -c, eval, and words read by shlex"
+    assert script_of(["bash", "-c", "git add -A"]) == Script(found: true, line: "git add -A")
+    assert script_of(["sh", "-ec", "x"]).line == "x" && script_of(["eval", "git", "add"]).line == "git add"
+    assert !script_of(["bash", "script.sh"]).found && !script_of(["zsh", "-c"]).found && shell("ksh")
+    assert words("git commit -m 'a b'") == ["git", "commit", "-m", "a b"] && words("echo 'x y") == ["echo", "'x", "y"]
+    assert bare(["(cd", "x)"]) == ["cd", "x"] && bare(["(", "ls", ")"]) == ["ls"]
+
+test "command_line: git's verb, its arguments and its directory"
+    assert git_args(w: ["git", "-C", ".", "add", "x"], verbs: ["add"]).must() == ["x"]
+    assert git_args(w: ["/usr/bin/git", "commit"], verbs: ["commit"]).must() == []
+    assert git_args(w: ["git", "status"], verbs: ["add"]).is_err() && git_args(w: ["ls"], verbs: ["add"]).is_err()
+    assert git_dir(w: ["git", "-C", "lane", "commit"], here: "/t") == "/t/lane"
+    assert git_dir(w: ["git", "-C", "/x/../y", "commit"], here: "") == "/y"
+    assert git_dir(w: ["git", "-C", "$L", "commit"], here: "/t") == "" && git_dir(w: ["ls"], here: "/t") == "/t"
+    assert git_valued("--work-tree") && short_letters(["-am", "--x", "-q"]) == "amq"

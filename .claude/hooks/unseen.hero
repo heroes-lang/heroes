@@ -1,0 +1,281 @@
+# A commit's message read for the characters its reader cannot see (defect
+# 378): the message a `git commit`, `git merge` or `git tag` is given, `-m`
+# and `-F` in each spelling, `-F -` and a `$(cat <<EOF ...)` read through the
+# command's heredocs, refused where it holds a character the `unseen` suite
+# refuses in a document, by code point, line and column. THE LIST IS THE
+# SUITE'S, `REFUSED` in `tests/harness/suite_unseen.hero` read from the tree
+# the command stands in, so a message and a document are refused the same
+# characters; a tree whose suite holds no such list gives no opinion. The
+# Python guard's `unseen.py`, answer for answer.
+#
+# What it cannot see, as the Python guard cannot: a message an editor writes,
+# the text of `-t`, a message reused with `-C` or `-c`, and an ANSI-C `$'...'`
+# quote. And one thing the Python guard reads and this does not yet: a message
+# file that is not UTF-8, which Python reads with each bad byte a U+FFFD; this
+# answers it as unread, and the guard refuses rather than pass it unread.
+
+use answer
+use pypath
+use pystr
+
+# The suite the list is read from, below a tree's root.
+constant SUITE: str
+    "tests/harness/suite_unseen.hero"
+
+# The verbs whose message is read.
+constant VERBS: [str]
+    ["commit", "merge", "tag"]
+
+# A run of refused code points, from `first` to `last`.
+record Span
+    first: i64
+    last: i64
+
+# `REFUSED`'s runs in the suite of `tree`, or `[]` where the tree, the suite
+# or the list is not there.
+function runs(tree: str) -> [Span]
+    none: [Span] = []
+
+    if tree.len() == 0
+        return none
+
+    text = match read_file(pypath.join_two(a: tree, b: SUITE))
+        .ok t  => t
+        .err _ => return none
+
+    out: [Span] @= []
+    inside: bool @= false
+
+    for row in pystr.split_at(text, '\n')
+        if pystr.opens(s: row, prefix: "constant REFUSED:")
+            inside @ true
+        else if inside
+            if pystr.strip(row) == "]"
+                return out
+            found = span_of(row)
+
+            if !found.is_err()
+                out @ out.push(found.must())
+
+    return none
+
+# The run a row of the list writes, `"<first> <last>"` with white space
+# around it, or a failure where the row is no such line.
+function span_of(row: str) -> Span?
+    inner = pystr.strip(row)
+
+    if inner.len() < 5 || inner[0] != '"' || inner[inner.len() - 1] != '"'
+        return fail(code: "not_found", msg: "no run")
+    halves = pystr.split_at(inner.slice(from: 1, to: inner.len() - 1), ' ')
+
+    if halves.len() != 2 || !digits(halves[0]) || !digits(halves[1])
+        return fail(code: "not_found", msg: "no run")
+    return ok(Span(first: number(halves[0]), last: number(halves[1])))
+
+# Whether `s` is one or more ASCII digits.
+function digits(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for at in range(from: 0, to: s.len())
+        if s[at] < '0' || s[at] > '9'
+            return false
+
+    return true
+
+# The number the digits `s` write, stopping before an `i64` would overflow.
+function number(s: str) -> i64
+    n: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if n < 100_000_000_000_000_000
+            n @ n * 10 + to_i64(s[at] - '0').must()
+
+    return n
+
+# One refused character: its line and column, counted in characters from 1,
+# and its code point.
+record Found
+    line: i64
+    column: i64
+    code: i64
+
+# Each character of `text` the runs refuse.
+function found_in(text: str, spans: [Span]) -> [Found]
+    out: [Found] @= []
+    line: i64 @= 1
+
+    for row in pystr.split_at(text, '\n')
+        column: i64 @= 1
+        at: i64 @= 0
+
+        while at < row.len()
+            code = pystr.code_at(row, at)
+
+            if refused(code: code, spans: spans)
+                out @ out.push(Found(line: line, column: column, code: code))
+            at @ at + pystr.width_at(row, at)
+            column @ column + 1
+
+        line @ line + 1
+
+    return out
+
+# Whether `code` lies in one of the runs.
+function refused(code: i64, spans: [Span]) -> bool
+    for span in spans
+        if span.first <= code && code <= span.last
+            return true
+
+    return false
+
+# `U+` and the code point in upper-case hexadecimal, at least four digits.
+function named(code: i64) -> str
+    hex = "0123456789ABCDEF"
+    out: str @= ""
+    n: i64 @= code
+
+    while n > 0 || out.len() < 4
+        out @ hex.slice(from: n % 16, to: n % 16 + 1) + out
+        n @ n / 16
+
+    return "U+" + out
+
+# A message a command gives: where it came from, and its text; `stdin` where
+# it is read from standard input, and `unread` where its file is not UTF-8.
+record Message
+    source: str
+    text: str
+    stdin: bool
+    unread: bool
+
+# The messages the words after `git <verb>` give: the Python guard's
+# `messages`, a file named relative to `where`, one that cannot be read
+# passed over.
+function messages(rest: [str], where: str) -> [Message]
+    out: [Message] @= []
+    at: i64 @= 0
+
+    while at < rest.len()
+        word = rest[at]
+
+        if word == "--"
+            break
+        flag: str @= ""
+        value: str @= ""
+        has_value: bool @= false
+
+        if word == "-m" || word == "--message" || word == "-F" || word == "--file"
+            flag @ word
+
+            if at + 1 < rest.len()
+                value @ rest[at + 1]
+                has_value @ true
+            at @ at + 1
+        else if pystr.opens(s: word, prefix: "--message=") || pystr.opens(s: word, prefix: "--file=")
+            cut = pystr.index_from(s: word, piece: "=", from: 0)
+            flag @ word.slice(from: 0, to: cut)
+            value @ word.slice(from: cut + 1, to: word.len())
+            has_value @ true
+        else if word.len() > 2 && (pystr.opens(s: word, prefix: "-m") || pystr.opens(s: word, prefix: "-F")) && !pystr.opens(s: word, prefix: "--")
+            flag @ word.slice(from: 0, to: 2)
+            value @ word.slice(from: 2, to: word.len())
+            has_value @ true
+        at @ at + 1
+
+        if !has_value
+            continue
+
+        if flag == "-m" || flag == "--message"
+            out @ out.push(Message(source: "the `-m` message", text: value, stdin: false, unread: false))
+        else if value == "-"
+            out @ out.push(Message(source: "the message read from stdin", text: "", stdin: true, unread: false))
+        else
+            path = if pypath.isabs(value) || where.len() == 0
+                value
+            else
+                pypath.join_two(a: where, b: value)
+
+            match read_file(path)
+                .ok text => out @ out.push(Message(source: "`" + value + "`", text: text, stdin: false, unread: false))
+                .err e =>
+                    if e.code == "not_text"
+                        out @ out.push(Message(source: "`" + value + "`", text: "", stdin: false, unread: true))
+
+    return out
+
+# The refusal of the message `git <verb>` is given in `rest`, run in
+# `where`, against the runs `spans`, or `none`: `bodies` are the command's
+# heredoc bodies, which `-F -` and a `$(...)` in a `-m` read. A message file
+# that is not UTF-8 is `unwritten`.
+function verdict(rest: [str], verb: str, where: str, bodies: [str], spans: [Span]) -> answer.Answer
+    if spans.len() == 0
+        return .none
+    told: [str] @= []
+
+    for m in messages(rest: rest, where: where)
+        if m.unread
+            return .unwritten(rule: "a message file that is not UTF-8, " + m.source)
+
+        texts: [str] @= []
+
+        if m.stdin
+            texts @ bodies
+        else
+            texts @ [m.text]
+
+            if pystr.holds(s: m.text, piece: "$(") || pystr.holds(s: m.text, piece: "`")
+                for body in bodies
+                    texts @ texts.push(body)
+
+        for one in texts
+            for f in found_in(text: one, spans: spans)
+                told @ told.push(
+                    named(f.code) + " at line " + f.line.to_str() + ", column " + f.column.to_str() + " of " + m.source
+                )
+
+    if told.len() == 0
+        return .none
+
+    shown = if told.len() > 8
+        told.slice(from: 0, to: 8)
+    else
+        told
+
+    more = if told.len() <= 8
+        ""
+    else
+        "; and " + (told.len() - 8).to_str() + " more"
+    return .refused(
+        reason: "refused: the " + verb + "'s message holds a character its reader cannot see, written as itself: " + join(shown, "; ") + more + ". A message is outward-facing and never rewritten: write the character as the text means, its name, `U+200B`, or the escape a quoted program spells it with. A tool that decodes a written escape is how they arrive (defects 356 and 378; the list is `REFUSED` in " + SUITE + ")."
+    )
+
+## Tests
+
+test "unseen: the suite's runs, and a row that is none"
+    assert span_of("        \"11 31\"").must() == Span(first: 11, last: 31)
+    assert span_of("# a comment").is_err() && span_of("\"1\"").is_err() && span_of("\"a b\"").is_err()
+    assert digits("123") && !digits("") && !digits("1a") && number("8203") == 8203
+    assert runs("").len() == 0 && runs("/heroes-hooks-never-there").len() == 0
+
+test "unseen: a refused character found by line and column, and named"
+    spans = [Span(first: 8203, last: 8203), Span(first: 0, last: 8)]
+    zero_width: [u8] = [0xe2, 0x80, 0x8b]
+    text = "ok\nab" + zero_width.validated_bytes().must() + "c"
+    assert found_in(text: text, spans: spans) == [Found(line: 2, column: 3, code: 8203)]
+    assert refused(code: 5, spans: spans) && !refused(code: 9, spans: spans)
+    assert named(8203) == "U+200B" && named(13) == "U+000D" && named(65279) == "U+FEFF"
+
+test "unseen: the messages a commit's words give"
+    got = messages(rest: ["-m", "a", "--message=b", "-mc", "-F", "-", "--", "-m", "x"], where: "")
+    assert got.len() == 4 && got[0].text == "a" && got[1].text == "b" && got[2].text == "c" && got[3].stdin
+    assert messages(rest: ["-F", "/heroes-hooks-never-there"], where: "").len() == 0
+    assert messages(rest: ["-m"], where: "").len() == 0
+
+test "unseen: a message refused by its character, and one passed"
+    spans = [Span(first: 13, last: 13)]
+    said = verdict(rest: ["-m", "a\rb"], verb: "commit", where: "", bodies: [], spans: spans)
+    assert answer.reason_of(said) == "refused: the commit's message holds a character its reader cannot see, written as itself: U+000D at line 1, column 2 of the `-m` message. A message is outward-facing and never rewritten: write the character as the text means, its name, `U+200B`, or the escape a quoted program spells it with. A tool that decodes a written escape is how they arrive (defects 356 and 378; the list is `REFUSED` in tests/harness/suite_unseen.hero)."
+    assert verdict(rest: ["-m", "ab"], verb: "tag", where: "", bodies: [], spans: spans) == .none
+    assert verdict(rest: ["-F", "-"], verb: "merge", where: "", bodies: ["x\ry"], spans: spans) != .none
+    assert verdict(rest: ["-m", "a\rb"], verb: "commit", where: "", bodies: [], spans: []) == .none

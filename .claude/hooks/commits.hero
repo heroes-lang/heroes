@@ -1,0 +1,224 @@
+# What limits a commit: its pathspec, or, where git takes none, its index
+# (CL-070, defects 403 and 487). The text half of the Python guard's
+# `commits.py`: a `--` naming no path, paths that are all expansions, a path
+# naming the whole tree, and every spelling git reads as `--continue`. The
+# other half asks git what an operation standing brought and what the index
+# holds; where the Python guard would ask, this answers `unwritten`, at the
+# same point (`answer.hero`), and only where git could answer: a folder that
+# is no folder is asked nothing by either guard.
+
+use answer
+use pystr
+use runs
+use trees
+
+# The rule a refusal here cites.
+constant CONTRACT: str
+    "CLAUDE.md § Hard stops"
+
+# Every verb whose `--continue` concludes with the whole index.
+constant CONCLUDED_BY: [str]
+    ["merge", "cherry-pick", "revert", "rebase", "am"]
+
+# The pathspecs that name the whole tree.
+constant WHOLE: [str]
+    [".", "./", ":", ":/", ":/*", "*", ":(top)", ":(top)*", ":(top)."]
+
+# Whether the Python guard asks git for the root of the worktree `where`
+# stands in: `where` names a folder that is there.
+function asks_git(where: str) -> bool
+    return where.len() > 0 && trees.is_dir(where)
+
+# Whether `word` holds an expansion the shell makes after the guard reads it.
+function expansion(word: str) -> bool
+    return pystr.holds(s: word, piece: "$") || pystr.holds(s: word, piece: "`")
+
+# How many times `piece` stands in `text`, not overlapping.
+function count_of(text: str, piece: str) -> i64
+    n: i64 @= 0
+    at: i64 @= pystr.index_from(s: text, piece: piece, from: 0)
+
+    while at >= 0
+        n @ n + 1
+        at @ pystr.index_from(s: text, piece: piece, from: at + piece.len())
+
+    return n
+
+# The words of `paths` that are certainly a path as written: outside every
+# expansion, `$x`, `"${xs[@]}"`, and the words a `$( ... )` or a backquoted
+# command splits into once the quotes are read.
+function literal(paths: [str]) -> [str]
+    out: [str] @= []
+    depth: i64 @= 0
+    quoted: bool @= false
+
+    for word in paths
+        inside = depth > 0 || quoted || expansion(word)
+
+        if depth > 0 || pystr.holds(s: word, piece: "$(")
+            depth @ depth + count_of(text: word, piece: "$(") - count_of(text: word, piece: ")")
+
+            if depth < 0
+                depth @ 0
+        else
+            depth @ 0
+
+        if count_of(text: word, piece: "`") % 2 == 1
+            quoted @ !quoted
+
+        if !inside
+            out @ out.push(word)
+
+    return out
+
+# The paths the words after `git commit` name after their `--`, as written,
+# an expansion left out; `[]` where they hold no `--`.
+function paths_of(rest: [str]) -> [str]
+    for at in range(from: 0, to: rest.len())
+        if rest[at] == "--"
+            return literal(rest.slice(from: at + 1, to: rest.len()))
+
+    none: [str] = []
+    return none
+
+# The refusal of the words after `git commit`, `rest`, by what follows its
+# `--`, or `none`; a commit with no `--` is the caller's to judge.
+function pathspec(rest: [str], where: str) -> answer.Answer
+    if !runs.has(list: rest, word: "--")
+        return .none
+    at: i64 @= 0
+
+    while rest[at] != "--"
+        at @ at + 1
+
+    options = rest.slice(from: 0, to: at)
+    paths = rest.slice(from: at + 1, to: rest.len())
+
+    if paths.len() == 0
+        short = short_of(options)
+
+        if runs.has(list: options, word: "--amend") && (runs.has(list: options, word: "--only") || pystr.holds(s: short, piece: "o"))
+            return .none
+        return .refused(
+            reason: "refused: `git commit` whose `--` names no path takes the WHOLE index, as a commit with no `--` does: an empty path list is how one commit carried 35 files and missed 22 it meant (defect 403). Name the paths after `--`. " + CONTRACT + " (CL-070)"
+        )
+    written = literal(paths)
+
+    if written.len() == 0
+        return .refused(
+            reason: "refused: every path after `--` is an expansion, " + join(paths, " ") + ", and one that comes out empty leaves `git commit --`, which takes the whole index (defect 403: a bash 3.2 array with no `mapfile`). Name the paths as words. " + CONTRACT + " (CL-070)"
+        )
+
+    # The Python guard asks git where a path not named whole could reach the
+    # root, `where` being a folder; the first path named whole decides alone
+    # only where it comes before any such path.
+    for p in written
+        if runs.has(list: WHOLE, word: p)
+            return .refused(
+                reason: "refused: `" + p + "` after `--` names the whole tree, so the commit takes every tracked change in it, staged or not, as `git commit -a` does. Name each path. " + CONTRACT + " (CL-070)"
+            )
+
+        if !expansion(p) && !pystr.opens(s: p, prefix: ":") && asks_git(where)
+            return .unwritten(
+                rule: "whether a path after `--` names the worktree's root, which the Python guard asks of `git rev-parse --show-toplevel`"
+            )
+
+    return .none
+
+# Every letter of every clustered short flag of `words`.
+function short_of(words: [str]) -> str
+    out: str @= ""
+
+    for word in words
+        if pystr.opens(s: word, prefix: "-") && !pystr.opens(s: word, prefix: "--")
+            out @ out + word.slice(from: 1, to: word.len())
+
+    return out
+
+# Whether the words after `git <verb>` conclude it: any spelling git reads as
+# `--continue`, a prefix of it from `--c`, and for an am `--resolved` and
+# `-r`, alone or in a cluster of flags, an `r` after `C`, `p` or `S` being
+# that option's value.
+function continues(verb: str, words: [str]) -> bool
+    for word in words
+        if word == "--"
+            return false
+
+        if word.len() >= 3 && pystr.opens(s: "--continue", prefix: word)
+            return true
+
+        if verb != "am"
+            continue
+
+        if word.len() >= 3 && pystr.opens(s: "--resolved", prefix: word)
+            return true
+
+        if pystr.opens(s: word, prefix: "-") && !pystr.opens(s: word, prefix: "--")
+            for at in range(from: 1, to: word.len())
+                letter = word[at]
+
+                if letter == 'r'
+                    return true
+
+                if letter == 'C' || letter == 'p' || letter == 'S'
+                    break
+
+    return false
+
+# The answer to a commit with no `--` in `where`: the refusal where git is
+# asked nothing, a folder that is no folder; `unwritten` where the Python
+# guard asks whether a merge, a pick or a revert stands, whose conclusion
+# takes the whole index.
+function bare_commit(where: str) -> answer.Answer
+    if asks_git(where)
+        return .unwritten(
+            rule: "a commit with no `--`, which the Python guard allows where a merge, a pick or a revert stands and the index holds only what it brought, asked of git"
+        )
+    return .refused(
+        reason: "refused: `git commit` with no `--` takes the WHOLE index, including whatever a parallel session has staged in this shared checkout. Naming the paths to `git add` does not limit the commit; only the pathspec does. Write `git commit -- <paths>`. " + CONTRACT + " (CL-070)"
+    )
+
+# The answer to concluding an operation in `where`: `unwritten` where the
+# Python guard asks git what stands and what the index holds, `none` where
+# it asks nothing.
+function concluded(where: str) -> answer.Answer
+    if asks_git(where)
+        return .unwritten(
+            rule: "concluding a merge, a pick, a revert, a rebase or an am, whose index the Python guard asks of git"
+        )
+    return .none
+
+# The answer to what a commit carries in `where`: `unwritten` where the
+# Python guard asks git for the staged and named `.hero` files and the
+# compiler for each one's form, `none` where it asks nothing.
+function offences(where: str) -> answer.Answer
+    if asks_git(where)
+        return .unwritten(
+            rule: "the `.hero` files a commit carries, which the Python guard asks of git and of the tree's compiler"
+        )
+    return .none
+
+## Tests
+
+test "commits: what follows the `--`"
+    assert answer.stops(pathspec(rest: ["-F", "m", "--"], where: "")) && pathspec(rest: ["--amend", "-o", "--"], where: "") == .none
+    assert answer.stops(pathspec(rest: ["--", "\"${xs[@]}\""], where: "")) && answer.stops(pathspec(rest: ["--", ":/"], where: ""))
+    assert pathspec(rest: ["--", "a.hero"], where: "") == .none && pathspec(rest: ["-m", "x"], where: "") == .none
+    assert pathspec(rest: ["--", "a"], where: "/") == .unwritten(rule: "whether a path after `--` names the worktree's root, which the Python guard asks of `git rev-parse --show-toplevel`")
+    assert answer.stops(pathspec(rest: ["--", ".", "a"], where: "/")) && answer.reason_of(pathspec(rest: ["--", ".", "a"], where: "/")).len() > 40
+
+test "commits: what is literal, counted, and short"
+    assert literal(["a", "$(ls", "b)", "c", "`x", "y`", "z"]) == ["a", "c", "z"]
+    assert count_of(text: "$($(", piece: "$(") == 2 && count_of(text: "aaa", piece: "aa") == 1
+    assert paths_of(["-m", "x", "--", "a", "$b"]) == ["a"] && paths_of(["-m"]).len() == 0
+    assert short_of(["-am", "--x", "-q"]) == "amq" && expansion("$x") && !expansion("x")
+
+test "commits: every spelling of --continue, and an am's -r"
+    assert continues(verb: "rebase", words: ["--cont"]) && continues(verb: "merge", words: ["--continue"])
+    assert continues(verb: "merge", words: ["--c"]) && !continues(verb: "merge", words: ["-r"]) && !continues(verb: "merge", words: ["--"])
+    assert continues(verb: "am", words: ["-3r"]) && !continues(verb: "am", words: ["-Cr"]) && continues(verb: "am", words: ["--res"])
+    assert !continues(verb: "rebase", words: ["--", "--continue"])
+
+test "commits: where git is asked, and where it is not"
+    assert answer.stops(bare_commit("")) && bare_commit("/") != .none && !asks_git("/heroes-hooks-never-there")
+    assert concluded("") == .none && answer.stops(concluded("/")) && offences("") == .none && answer.stops(offences("/"))

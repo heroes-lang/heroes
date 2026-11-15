@@ -1,0 +1,292 @@
+# What a command runs that its first word does not say (defect 534): the
+# commands a `find` runs for its files, `-exec`, `-execdir`, `-ok` and
+# `-okdir`, a `{}` in a word standing for a path the text does not hold; git's
+# verb past its own options; the command lines the shell runs inside `$(...)`
+# and backquotes; and whether a git verb may be an alias, which only git
+# itself can answer. The Python guard's `runs.py`, but for asking git: an
+# alias is read by `git config` and `git --list-cmds` there, and here it is a
+# rule not written yet (`answer.hero`), asked only where the Python guard asks.
+
+use pypath
+use pystr
+use trees
+
+# What stands for the paths `find` gives a command it runs.
+constant FOUND: str
+    "the words `find` puts for `{}`"
+
+# git's builtins the guard reads or sessions here run most: an alias of one
+# of these names is never used, so none is asked about (held to `git
+# --list-cmds=builtins` by the Python hooks' own tests).
+constant BUILTIN: [str]
+    [
+        "add"
+        "am"
+        "branch"
+        "cat-file"
+        "check-ignore"
+        "checkout"
+        "cherry-pick"
+        "commit"
+        "config"
+        "describe"
+        "diff"
+        "fetch"
+        "for-each-ref"
+        "grep"
+        "log"
+        "ls-files"
+        "ls-tree"
+        "merge"
+        "merge-base"
+        "mv"
+        "pull"
+        "push"
+        "read-tree"
+        "rebase"
+        "remote"
+        "reset"
+        "restore"
+        "rev-list"
+        "rev-parse"
+        "revert"
+        "rm"
+        "show"
+        "stash"
+        "status"
+        "switch"
+        "symbolic-ref"
+        "tag"
+        "update-index"
+        "worktree"
+    ]
+
+# A command `find` runs: its words, and the folder it runs in, "" where the
+# text cannot tell.
+record Ran
+    words: [str]
+    there: str
+
+# Whether `list` holds `word`.
+function has(list: [str], word: str) -> bool
+    for each in list
+        if each == word
+            return true
+
+    return false
+
+# The folder a `find <w[1:]>` starts from: its first path, where the text
+# holds it and it is a folder, else `here`.
+function starts(w: [str], here: str) -> str
+    at: i64 @= 1
+
+    while at < w.len() && (find_option(w[at]) || find_valued(w[at]) || pystr.opens(s: w[at], prefix: "-O"))
+        if find_valued(w[at])
+            at @ at + 2
+        else
+            at @ at + 1
+
+    if at >= w.len() || pystr.opens(s: w[at], prefix: "-") || w[at] == "(" || w[at] == "!" || here.len() == 0
+        return here
+    first = w[at]
+
+    if pystr.holds(s: first, piece: "$") || pystr.holds(s: first, piece: "`")
+        return here
+
+    path = if pypath.isabs(first)
+        first
+    else
+        pypath.join_two(a: here, b: first)
+
+    if trees.is_dir(path)
+        return pypath.normpath(path)
+    return here
+
+# `find`'s options before its paths, BSD's and GNU's, that take no value.
+function find_option(word: str) -> bool
+    return has(list: ["-H", "-L", "-P", "-E", "-X", "-d", "-s", "-x"], word: word)
+
+# `find`'s options before its paths that take a value.
+function find_valued(word: str) -> bool
+    return word == "-f" || word == "-D"
+
+# The commands `find <w[1:]>`, run in `here`, runs: a command ends at a `;`
+# or at a `+` after a `{}`, and one the words never end is read to their end.
+function executed(w: [str], here: str) -> [Ran]
+    out: [Ran] @= []
+    at: i64 @= 1
+
+    while at < w.len()
+        action = w[at]
+
+        if action != "-exec" && action != "-execdir" && action != "-ok" && action != "-okdir"
+            at @ at + 1
+            continue
+        inner: [str] @= []
+        j: i64 @= at + 1
+
+        while j < w.len() && w[j] != ";" && !(w[j] == "+" && inner.len() > 0 && inner[inner.len() - 1] == "{}")
+            inner @ inner.push(w[j])
+            j @ j + 1
+
+        shown: [str] @= []
+
+        for word in inner
+            if pystr.holds(s: word, piece: "{}")
+                shown @ shown.push(FOUND)
+            else
+                shown @ shown.push(word)
+
+        there = if action == "-execdir" || action == "-okdir"
+            starts(w: w, here: here)
+        else
+            here
+
+        if inner.len() > 0
+            out @ out.push(Ran(words: shown, there: there))
+        at @ j + 1
+
+    return out
+
+# git's verb in `w` and where it stands, `found` false where there is none.
+record Verb
+    found: bool
+    name: str
+    at: i64
+
+# git's verb in the git command `w`, past git's own options.
+function verb_of(w: [str]) -> Verb
+    at: i64 @= 1
+
+    while at < w.len() && pystr.opens(s: w[at], prefix: "-")
+        if has(list: ["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix"], word: w[at])
+            at @ at + 2
+        else
+            at @ at + 1
+
+    if at < w.len()
+        return Verb(found: true, name: w[at], at: at)
+    return Verb(found: false, name: "", at: 0)
+
+# Whether the Python guard asks git whether the verb of `w`, run in `where`,
+# is an alias: a verb that is none of `BUILTIN`, in a folder that is there.
+function asks_alias(w: [str], where: str) -> bool
+    verb = verb_of(w)
+    return verb.found && !has(list: BUILTIN, word: verb.name) && where.len() > 0 && trees.is_dir(where)
+
+# The command lines the shell runs inside `$( ... )` and backquotes in
+# `text`, each to be judged as one: outside single quotes a backslash's
+# character is left alone, `$(( ... ))` is arithmetic, and one never closed
+# is read to the end; one of white space alone is dropped.
+function substitutions(text: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+    quote: u8 @= 0
+
+    while at < text.len()
+        c = text[at]
+
+        if quote == '\''
+            if c == '\''
+                quote @ 0
+            at @ at + 1
+        else if c == '\\'
+            at @ at + 2
+        else if c == '\'' && quote == 0
+            quote @ '\''
+            at @ at + 1
+        else if c == '"'
+            if quote == '"'
+                quote @ 0
+            else
+                quote @ '"'
+            at @ at + 1
+        else if pystr.same_at(s: text, piece: "$((", at: at)
+            at @ at + 3
+        else if pystr.same_at(s: text, piece: "$(", at: at)
+            end = closing(text: text, from: at + 2)
+
+            if end < 0
+                out @ out.push(text.slice(from: at + 2, to: text.len()))
+                at @ text.len()
+            else
+                out @ out.push(text.slice(from: at + 2, to: end))
+                at @ end + 1
+        else if c == '`'
+            j: i64 @= at + 1
+
+            while j < text.len() && text[j] != '`'
+                if text[j] == '\\'
+                    j @ j + 2
+                else
+                    j @ j + 1
+
+            stop = if j > text.len()
+                text.len()
+            else
+                j
+            out @ out.push(text.slice(from: at + 1, to: stop))
+            at @ j + 1
+        else
+            at @ at + 1
+
+    kept: [str] @= []
+
+    for one in out
+        if pystr.strip(one).len() > 0
+            kept @ kept.push(one)
+
+    return kept
+
+# Where the `)` closing a `$(` whose text starts at `from` stands, quotes and
+# nested brackets read, or -1 where it is never closed.
+function closing(text: str, from: i64) -> i64
+    depth: i64 @= 1
+    j: i64 @= from
+    inner: u8 @= 0
+
+    while j < text.len()
+        d = text[j]
+
+        if d == '\\' && inner != '\''
+            j @ j + 2
+            continue
+
+        if inner != 0
+            if d == inner
+                inner @ 0
+        else if d == '\'' || d == '"'
+            inner @ d
+        else if d == '('
+            depth @ depth + 1
+        else if d == ')'
+            depth @ depth - 1
+
+            if depth == 0
+                return j
+        j @ j + 1
+
+    return -1
+
+## Tests
+
+test "runs: what a find runs, and in which folder"
+    got = executed(w: ["find", ".", "-exec", "git", "rm", "{}", ";", "-ok", "ls", "x{}y", "+"], here: "/t")
+    assert got == [Ran(words: ["git", "rm", FOUND], there: "/t"), Ran(words: ["ls", FOUND, "+"], there: "/t")]
+    assert executed(w: ["find", "-exec", "git", "add", "{}", "+", "-print"], here: "") == [Ran(words: ["git", "add", FOUND], there: "")]
+    assert executed(w: ["find", ".", "-name", "x"], here: "/t").len() == 0
+    assert starts(w: ["find", "-L", "/", "-name"], here: "/t") == "/" && starts(w: ["find", "$D"], here: "/t") == "/t"
+    assert starts(w: ["find", "/heroes-hooks-never-there"], here: "/t") == "/t" && find_option("-x") && find_valued("-f")
+
+test "runs: git's verb, and when an alias would be asked"
+    assert verb_of(["git", "-C", "x", "-c", "a=b", "lol", "y"]) == Verb(found: true, name: "lol", at: 5)
+    assert !verb_of(["git", "-p"]).found && has(list: BUILTIN, word: "commit")
+    assert !asks_alias(w: ["git", "commit"], where: "/") && asks_alias(w: ["git", "lol"], where: "/")
+    assert !asks_alias(w: ["git", "lol"], where: "") && !asks_alias(w: ["git", "lol"], where: "/heroes-hooks-never-there")
+
+test "runs: the command lines a substitution runs"
+    assert substitutions("echo $(git add -A)") == ["git add -A"]
+    assert substitutions("a `b` '$(c)' \"$(d)\"") == ["b", "d"]
+    assert substitutions("$(( 1 + 2 )) $(x $(y)) $(open") == ["x $(y)", "open"]
+    assert substitutions("$( ) \\$(z)") == [] && substitutions("`unclosed") == ["unclosed"]
+    assert closing(text: "a ')' (b)) c", from: 0) == 9 && closing(text: "(", from: 0) == -1

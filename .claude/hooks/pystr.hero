@@ -1,0 +1,210 @@
+# Text read the way Python reads it, where the Python hooks read it so: what
+# `str.isspace` counts as white space, `strip()`, `split()` with no separator,
+# and the place of one text in another. The Heroes hooks stand beside the
+# Python ones until the author switches them, and a differential test holds
+# their answers identical (feature 2082, the author's answer `4a` of
+# 2026-11-12), so a line the Python guard strips of a no-break space is
+# stripped of it here too.
+#
+# Python's white space is Unicode's: the ASCII six, the four separators
+# 0x1C to 0x1F, NEL, the no-break space, and the spaces and separators above
+# them (`str.isspace`, which `re`'s `\s` asks for a `str` pattern). A text
+# here is UTF-8, so a character is read whole before it is asked.
+
+# Whether the code point `c` is white space to Python's `str.isspace`.
+function is_space(c: i64) -> bool
+    if c >= 0x09 && c <= 0x0d || c >= 0x1c && c <= 0x20
+        return true
+
+    if c == 0x85 || c == 0xa0 || c == 0x1680 || c >= 0x2000 && c <= 0x200a
+        return true
+    return c == 0x2028 || c == 0x2029 || c == 0x202f || c == 0x205f || c == 0x3000
+
+# How many bytes the character starting at `at` takes, `s` being UTF-8.
+function width_at(s: str, at: i64) -> i64
+    b = s[at]
+
+    if b < 0x80
+        return 1
+
+    if b < 0xe0
+        return 2
+
+    if b < 0xf0
+        return 3
+    return 4
+
+# The code point of the character starting at `at`.
+function code_at(s: str, at: i64) -> i64
+    width = width_at(s, at)
+    first = to_i64(s[at]).must()
+
+    if width == 1
+        return first
+    lead: i64 @= first & 0x1f
+
+    if width == 3
+        lead @ first & 0x0f
+    else if width == 4
+        lead @ first & 0x07
+    out: i64 @= lead
+
+    for k in range(from: 1, to: width)
+        out @ out << 6 | to_i64(s[at + k]).must() & 0x3f
+
+    return out
+
+# Whether the character starting at `at` is white space.
+function space_at(s: str, at: i64) -> bool
+    return is_space(code_at(s, at))
+
+# How many bytes of white space end `s` at `end`: the start of the run of
+# white space characters that finishes there.
+function trailing_start(s: str, end: i64) -> i64
+    at: i64 @= 0
+    last_kept: i64 @= 0
+
+    while at < end
+        width = width_at(s, at)
+
+        if !space_at(s, at)
+            last_kept @ at + width
+        at @ at + width
+
+    return last_kept
+
+# `s` without the white space at either end: Python's `s.strip()`.
+function strip(s: str) -> str
+    at: i64 @= 0
+
+    while at < s.len() && space_at(s, at)
+        at @ at + width_at(s, at)
+
+    if at == s.len()
+        return ""
+    return s.slice(from: at, to: trailing_start(s, s.len()))
+
+# The pieces of `s` between runs of white space, none empty: Python's
+# `s.split()`.
+function split_spaces(s: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+    start: i64 @= -1
+
+    while at < s.len()
+        width = width_at(s, at)
+
+        if space_at(s, at)
+            if start >= 0
+                out @ out.push(s.slice(from: start, to: at))
+                start @ -1
+        else if start < 0
+            start @ at
+        at @ at + width
+
+    if start >= 0
+        out @ out.push(s.slice(from: start, to: s.len()))
+    return out
+
+# Whether `s` holds a white space character anywhere.
+function has_space(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if space_at(s, at)
+            return true
+        at @ at + width_at(s, at)
+
+    return false
+
+# The first place of `piece` in `s` at or after `from`, or -1: Python's
+# `s.find(piece, from)`, where -1 is the contract this module copies. Bytes
+# are compared one by one, never sliced, since a place inside a character is
+# one no slice may cut at.
+function index_from(s: str, piece: str, from: i64) -> i64
+    if piece.len() == 0
+        return from
+    at: i64 @= from
+
+    while at + piece.len() <= s.len()
+        if same_at(s: s, piece: piece, at: at)
+            return at
+        at @ at + 1
+
+    return -1
+
+# Whether `s` holds the bytes of `piece` from `at` on.
+function same_at(s: str, piece: str, at: i64) -> bool
+    if at < 0 || at + piece.len() > s.len()
+        return false
+
+    for k in range(from: 0, to: piece.len())
+        if s[at + k] != piece[k]
+            return false
+
+    return true
+
+# Whether `piece` occurs in `s`.
+function holds(s: str, piece: str) -> bool
+    return index_from(s: s, piece: piece, from: 0) >= 0
+
+# The last place of the byte `b` in `s`, or -1: Python's `s.rfind(b)`.
+function last_byte(s: str, b: u8) -> i64
+    at: i64 @= s.len() - 1
+
+    while at >= 0
+        if s[at] == b
+            return at
+        at @ at - 1
+
+    return -1
+
+# `s` cut at every byte `sep`, empty pieces kept: Python's `s.split(sep)`.
+function split_at(s: str, sep: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == sep
+            out @ out.push(s.slice(from: start, to: at))
+            start @ at + 1
+
+    return out.push(s.slice(from: start, to: s.len()))
+
+# Whether `s` begins with `prefix`.
+function opens(s: str, prefix: str) -> bool
+    return same_at(s: s, piece: prefix, at: 0)
+
+# Whether `s` ends with `suffix`.
+function closes(s: str, suffix: str) -> bool
+    return same_at(s: s, piece: suffix, at: s.len() - suffix.len())
+
+## Tests
+
+# The character the UTF-8 `bytes` write, so a test names an invisible one by
+# its bytes rather than holding it unseen in its source.
+function written(bytes: [u8]) -> str
+    return bytes.validated_bytes().must()
+
+test "pystr: white space is Python's, a no-break space and 0x1c among it"
+    assert is_space(0x20) && is_space(0x09) && is_space(0x0b) && is_space(0x1c) && is_space(0xa0)
+    assert is_space(0x3000) && is_space(0x2028) && !is_space(0x41) && !is_space(0x180e) && !is_space(0x200b)
+    assert width_at("é", 0) == 2 && code_at("é", 0) == 0xe9 && code_at(written([0xe3, 0x80, 0x80]), 0) == 0x3000
+    assert space_at("a b", 1) && !space_at("a b", 0)
+    assert trailing_start("ab  ", 4) == 2
+
+test "pystr: strip and split as Python does"
+    nbsp = written([0xc2, 0xa0])
+    ideographic = written([0xe3, 0x80, 0x80])
+    assert strip("  a b \n") == "a b" && strip(nbsp + "x" + ideographic) == "x" && strip(" \t ") == ""
+    assert split_spaces(" a  b" + nbsp + "c ") == ["a", "b", "c"] && split_spaces("") == []
+    assert has_space("a" + written([0xe2, 0x80, 0x89]) + "b") && !has_space("ab")
+
+test "pystr: find, rfind and split by a byte"
+    assert index_from(s: "abcabc", piece: "c", from: 3) == 5 && index_from(s: "abc", piece: "x", from: 0) == -1
+    assert index_from(s: "abc", piece: "", from: 2) == 2
+    assert holds(s: "a&&b", piece: "&&") && !holds(s: "ab", piece: "&&")
+    assert last_byte("a/b/c", '/') == 3 && last_byte("abc", '/') == -1
+    assert split_at("a=b:c", '=') == ["a", "b:c"] && split_at("", ',') == [""]
+    assert opens(s: "git add", prefix: "git") && closes(s: "f()", suffix: "()") && !closes(s: ")", suffix: "()")
+    assert closes(s: "aé", suffix: ")") == false && index_from(s: "é)", piece: ")", from: 0) == 2 && same_at(s: "ab", piece: "b", at: 1)

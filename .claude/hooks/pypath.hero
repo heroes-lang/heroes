@@ -1,0 +1,212 @@
+# Paths read the way Python's `posixpath` reads them, where the Python hooks
+# read them so: the differential test holds the two hooks' answers identical
+# (feature 2082, the author's answer `4a` of 2026-11-12), and Python and Go
+# part on a few texts. Python's `basename("git/")` is "" where Go's `Base`
+# is `git`, so `git/ add -A` is no git command to the Python guard; Python's
+# `normpath` keeps a path's two leading slashes, `//a`, where Go's `Clean`
+# folds them, POSIX leaving their meaning to the system; and Python's `join`
+# cleans nothing. Where the two agree the work is `<core>/path/filepath`'s.
+#
+# What this cannot read, said so a pass is not read as more: `~name`, another
+# user's home, which Python reads from the user database and the runtime
+# holds no door to; `expanduser` answers it as unread, and the guard refuses
+# rather than guess the folder (`verdict.hero`).
+
+use <core>/os
+use <core>/path/filepath
+
+use pystr
+
+# The last part of `p`, everything after its last `/`: Python's `basename`,
+# "" where `p` ends with `/`.
+function basename(p: str) -> str
+    return p.slice(from: pystr.last_byte(p, '/') + 1, to: p.len())
+
+# All of `p` before its last `/`, the slashes ending it taken off unless it
+# is slashes alone: Python's `dirname`.
+function dirname(p: str) -> str
+    head = p.slice(from: 0, to: pystr.last_byte(p, '/') + 1)
+
+    if head.len() == 0 || all_slashes(head)
+        return head
+    end: i64 @= head.len()
+
+    while end > 0 && head[end - 1] == '/'
+        end @ end - 1
+
+    return head.slice(from: 0, to: end)
+
+# Whether `s` is `/` repeated.
+function all_slashes(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] != '/'
+            return false
+
+    return true
+
+# Whether `p` is absolute: Python's `isabs`, a path opening with `/`.
+function isabs(p: str) -> bool
+    return pystr.opens(s: p, prefix: "/")
+
+# `p` cleaned by text alone: Python's `normpath`, which is Go's `Clean` but
+# for exactly two leading slashes, which it keeps.
+function normpath(p: str) -> str
+    if pystr.opens(s: p, prefix: "//") && !pystr.opens(s: p, prefix: "///")
+        return "/" + filepath.clean(p)
+    return filepath.clean(p)
+
+# `b` after `a`: Python's `join` of two, `b` whole where it is absolute, a `/`
+# between them where `a` is not empty and does not end with one.
+function join_two(a: str, b: str) -> str
+    if isabs(b)
+        return b
+
+    if a.len() == 0 || pystr.closes(s: a, suffix: "/")
+        return a + b
+    return a + "/" + b
+
+# `p` made absolute against the working folder and cleaned: Python's
+# `abspath`. It fails as `os.getwd` fails.
+function abspath(p: str) -> str?
+    if isabs(p)
+        return ok(normpath(p))
+    return ok(normpath(join_two(a: os.getwd()?, b: p)))
+
+# What `expanduser` makes of a path: the path, or one whose `~name` this
+# cannot read.
+variant Expanded
+    path
+        text: str
+    unread
+        name: str
+
+# `p` with a leading `~` read as the home folder, `$HOME`: Python's
+# `expanduser`. A `~name` is `unread`; with `HOME` unset, Python asks the user
+# database for the process's own home, and so is that.
+function expanduser(p: str) -> Expanded
+    if !pystr.opens(s: p, prefix: "~")
+        return .path(text: p)
+    slash = pystr.index_from(s: p, piece: "/", from: 1)
+
+    end = if slash < 0
+        p.len()
+    else
+        slash
+
+    if end > 1
+        return .unread(name: p.slice(from: 1, to: end))
+
+    home = match os.env("HOME")
+        .ok h  => h
+        .err _ => return .unread(name: "")
+
+    trimmed: str @= home
+
+    while trimmed.len() > 0 && trimmed[trimmed.len() - 1] == '/'
+        trimmed @ trimmed.slice(from: 0, to: trimmed.len() - 1)
+
+    out = trimmed + p.slice(from: end, to: p.len())
+
+    if out.len() == 0
+        return .path(text: "/")
+    return .path(text: out)
+
+# `p` with each `$name` and `${name}` of a variable that is set replaced by
+# its value, a name being ASCII letters, digits and `_`: Python's
+# `expandvars`. An unset one, and a `$` before anything else, are left as
+# written.
+function expandvars(p: str) -> str
+    if !pystr.holds(s: p, piece: "$")
+        return p
+    out: str @= ""
+    at: i64 @= 0
+    start: i64 @= 0
+
+    while at < p.len()
+        if p[at] != '$'
+            at @ at + 1
+            continue
+        name_end = name_after(text: p, at: at)
+
+        if name_end < 0
+            at @ at + 1
+            continue
+        braced = p[at + 1] == '{'
+
+        name = if braced
+            p.slice(from: at + 2, to: name_end - 1)
+        else
+            p.slice(from: at + 1, to: name_end)
+        value = variable(name)
+
+        if value.is_err()
+            at @ name_end
+        else
+            out @ out + p.slice(from: start, to: at) + value.must()
+            at @ name_end
+            start @ name_end
+
+    return out + p.slice(from: start, to: p.len())
+
+# The value of the variable `name`, as Python's `os.environ[name]` answers
+# it: a name holding `=` or a zero byte names none, where the C library would
+# read up to the `=`, and a zero byte could not reach C at all.
+function variable(name: str) -> str?
+    for at in range(from: 0, to: name.len())
+        if name[at] == '=' || name[at] == 0
+            return fail(code: "not_found", msg: "no variable is named by a text holding = or a zero byte")
+
+    return os.env(name)
+
+# Where the name after the `$` at `at` ends, past a closing `}`, or -1 where
+# no name follows: Python's `\$(\w+|\{[^}]*\})` with ASCII words.
+function name_after(text: str, at: i64) -> i64
+    if at + 1 >= text.len()
+        return -1
+
+    if text[at + 1] == '{'
+        close = pystr.index_from(s: text, piece: "}", from: at + 2)
+
+        if close < 0
+            return -1
+        return close + 1
+    end: i64 @= at + 1
+
+    while end < text.len() && word_byte(text[end])
+        end @ end + 1
+
+    if end == at + 1
+        return -1
+    return end
+
+# Whether `b` is a byte of an ASCII word: a letter, a digit or `_`.
+function word_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+## Tests
+
+test "pypath: basename and dirname are Python's, not Go's"
+    assert basename("/usr/bin/git") == "git" && basename("git/") == "" && basename("") == ""
+    assert dirname("/a/b") == "/a" && dirname("a") == "" && dirname("/a") == "/" && dirname("//") == "//"
+    assert dirname("a//b") == "a" && all_slashes("//") && !all_slashes("/a")
+
+test "pypath: isabs, normpath and join as Python reads them"
+    assert isabs("/x") && !isabs("x")
+    assert normpath("//a/./b/..") == "//a" && normpath("///a") == "/a" && normpath("") == "." && normpath("a/..") == "."
+    assert join_two(a: "/a", b: "b") == "/a/b" && join_two(a: "/a/", b: "b") == "/a/b"
+    assert join_two(a: "/a", b: "/b") == "/b" && join_two(a: "", b: "b") == "b"
+    assert abspath("/x/../y").must() == "/y"
+    assert abspath("q").must() == normpath(join_two(a: os.getwd().must(), b: "q"))
+
+test "pypath: expanduser reads $HOME, and a ~name is unread"
+    home = os.env("HOME").must()
+    assert expanduser("~/x") == .path(text: home + "/x") && expanduser("x~") == .path(text: "x~")
+    assert expanduser("~joseph/x") == .unread(name: "joseph")
+
+test "pypath: expandvars replaces a set variable and leaves the rest"
+    home = os.env("HOME").must()
+    assert expandvars("$HOME/x") == home + "/x" && expandvars("${HOME}") == home
+    assert expandvars("$HEROES_HOOKS_NEVER_SET/x") == "$HEROES_HOOKS_NEVER_SET/x"
+    assert expandvars("a$") == "a$" && expandvars("${x") == "${x" && expandvars("${}") == "${}" && expandvars("$-") == "$-"
+    assert expandvars("${HOME=x}") == "${HOME=x}" && variable("A=B").is_err()
+    assert name_after(text: "$ab/", at: 0) == 3 && name_after(text: "${a}", at: 0) == 4 && word_byte('_')
