@@ -1,19 +1,20 @@
 # The calculator — design.md's appendix program, and M-generics-library's acceptance criterion:
 # it compiles, it runs, its tests pass.
 #
-# Two differences from the appendix. There the `simplify` function is a `???`
+# Three differences from the appendix. There the `simplify` function is a `???`
 # under a "## To do" heading, because §4.16's hole is a form the document has to
 # demonstrate somewhere; here it is written, because a program with a hole
-# produces no binary by design and this one has to run. And `read_number`
-# refuses a number past an `i64` by name, where the appendix's copy aborts,
-# `integer overflow` (defect 2548). Everything else is the appendix verbatim;
-# `resolve/tests/acceptance.rs` and `types/tests/acceptance.rs` still read
-# design.md's copy, so the two are checked by different things and neither is a
-# copy nobody looks at.
+# produces no binary by design and this one has to run. And a literal, a sum or a
+# product past an `i64` is told by name, `does_not_fit`, where the appendix's copy
+# aborts, `integer overflow`: `read_number` (defect 2548), `sum_of` and
+# `product_of` (defect 2567). Everything else is the appendix verbatim. The
+# net's `special` suite asks that this file and `main.hero`'s four modules print
+# the same; design.md's copy was resolved and typed by the Rust bootstrap's
+# `acceptance.rs` tests until the tag `m-bootstrap-archive`, and by none since.
 #
 # What it exercises: a recursive variant through `[Expr]`, a hand-written
 # tokeniser and recursive-descent parser, `T?` with `?` propagation, a map as an
-# environment, a user-declared generic, and eight `test` blocks.
+# environment, a user-declared generic, and nine `test` blocks.
 
 ## Calculator
 #
@@ -56,6 +57,12 @@ constant ERR_DOES_NOT_FIT: str
 # The largest number a literal may write.
 constant LARGEST: i64
     9223372036854775807
+
+# The lowest `i64`, the other end of the type whose top is `LARGEST`. No
+# literal writes it, the grammar having no minus, but a variable of the
+# environment may hold it, so a sum or a product is asked against both ends.
+constant SMALLEST: i64
+    -9223372036854775807 - 1
 
 ## Generic library
 
@@ -309,21 +316,67 @@ function lookup(env: {str: i64}, name: str) -> i64?
         return fail(code: ERR_UNKNOWN_NAME, msg: "undefined variable: " + name)
     return ok(env[name].must())
 
+# The sum of the children, left to right, or `does_not_fit` naming the step
+# whose total would pass an end of `i64`. Each step asks before it adds, so
+# none can overflow: the loop that added first aborted the program, `integer
+# overflow`, on `9223372036854775807 + 1` (defect 2567), where a result too
+# large is the input's mistake and can be told, as `read_number` tells a
+# literal too large. Left to right as the language adds `a + b + c`, so a
+# total that passes an end on the way is refused though a later term would
+# have brought it back.
 function sum_of(children: [Expr], env: {str: i64}) -> i64?
     tot: i64 @= 0
 
     for c in children
-        tot @ tot + evaluate(c, env)?
+        addend = evaluate(c, env)?
+
+        if sum_passes(total: tot, addend: addend)
+            return fail(code: ERR_DOES_NOT_FIT, msg: tot.to_str() + " + " + addend.to_str() + " does not fit an i64")
+        tot @ tot + addend
 
     return ok(tot)
 
+# The product of the children, asked at each step as `sum_of` asks.
 function product_of(children: [Expr], env: {str: i64}) -> i64?
     tot: i64 @= 1
 
     for c in children
-        tot @ tot * evaluate(c, env)?
+        multiplier = evaluate(c, env)?
+
+        if product_passes(total: tot, multiplier: multiplier)
+            return fail(
+                code: ERR_DOES_NOT_FIT,
+                msg: tot.to_str() + " * " + multiplier.to_str() + " does not fit an i64"
+            )
+        tot @ tot * multiplier
 
     return ok(tot)
+
+# Whether `total + addend` passes an end of `i64`. Each subtraction is asked
+# only where its sign keeps it inside the type: `LARGEST - addend` for a
+# positive `addend`, `SMALLEST - addend` for a negative one.
+function sum_passes(total: i64, addend: i64) -> bool
+    return addend > 0 && total > LARGEST - addend || addend < 0 && total < SMALLEST - addend
+
+# Whether `total * multiplier` passes an end of `i64`, asked by a division that
+# cannot itself overflow, one for each pair of signs. `/` truncates toward
+# zero (spec § Operators), so `LARGEST / multiplier` is the largest `total` a
+# positive `multiplier` may meet, and the negative quotients bound the same way
+# from below; the one division that could overflow, `SMALLEST / -1`, is never
+# asked, its numerator being `LARGEST` wherever the divisor may be negative.
+function product_passes(total: i64, multiplier: i64) -> bool
+    if total == 0 || multiplier == 0
+        return false
+
+    if total > 0 && multiplier > 0
+        return total > LARGEST / multiplier
+
+    if total > 0
+        return multiplier < SMALLEST / total
+
+    if multiplier > 0
+        return total < SMALLEST / multiplier
+    return multiplier < LARGEST / total
 
 # The value of the tree. Fails on the first unknown name.
 function evaluate(e: Expr, env: {str: i64}) -> i64?
@@ -386,6 +439,37 @@ test "errors reach the top"
     match calculate("(2 + 3", empty)
         .ok _  => assert false
         .err e => assert e.code == ERR_UNCLOSED_PAREN
+
+# Each refusal below aborted the program, `integer overflow`, before.
+test "defect 2567: a sum or a product past either end of an i64 is told, and one that fits is kept"
+    empty: {str: i64} = {}
+
+    match calculate("9223372036854775807 + 1", empty)
+        .ok _  => assert false
+        .err e => assert e.code == ERR_DOES_NOT_FIT && e.msg == "9223372036854775807 + 1 does not fit an i64"
+
+    match calculate("3037000500 * 3037000500", empty)
+        .ok _  => assert false
+        .err e => assert e.code == ERR_DOES_NOT_FIT && e.msg == "3037000500 * 3037000500 does not fit an i64"
+
+    assert calculate("9223372036854775806 + 1", empty).must() == 9223372036854775807
+    assert calculate("3037000499 * 3037000499", empty).must() == 9223372030926249001
+    assert calculate("0 * 9223372036854775807 * 9223372036854775807", empty).must() == 0
+
+    # The grammar writes no minus, so the environment carries the lower end.
+    low = {"m": SMALLEST, "n": -1, "h": -4611686018427387904}
+
+    match calculate("m + n", low)
+        .ok _  => assert false
+        .err e => assert e.code == ERR_DOES_NOT_FIT && e.msg == "-9223372036854775808 + -1 does not fit an i64"
+
+    assert calculate("m * n", low).is_err()
+    assert calculate("n * m", low).is_err()
+    assert calculate("h * 2 + n", low).is_err()
+    assert calculate("h * 3", low).is_err()
+    assert calculate("n * h * 2", low).is_err()
+    assert calculate("h * 2", low).must() == SMALLEST
+    assert calculate("m + 9223372036854775807", low).must() == -1
 
 test "values are always copies"
     a = [1, 2, 3]
