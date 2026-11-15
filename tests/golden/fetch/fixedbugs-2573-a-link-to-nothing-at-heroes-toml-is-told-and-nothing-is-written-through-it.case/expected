@@ -1,0 +1,23 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `<work>/app/heroes.toml` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `use <yaml>/load` reaches a package through the catalogue, and it does not read: `<work>/app/heroes.toml` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one — a catalogue that does not read names no package, the lines above that one included
+  at <work>/app/main.hero:1:5
+    |
+  1 | use <yaml>/load
+    |     ^^^^^^^^^^^
+$ heroes add --path ../local --as yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `<work>/app/heroes.toml` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one
+heroes.toml:
+(none)
+heroes.packages:
+(none)

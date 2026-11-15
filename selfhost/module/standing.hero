@@ -97,6 +97,12 @@ function unread_said(path: str, named: str, code: str) -> str
     if stands == .tree || stands == .linked_tree || stands == .other && files.entry(path) == .other
         return "`" + named + "` is " + said(stands) + ", where a catalogue is a file: rename it to keep it, or remove it"
 
+    # A link to nothing (defect 2573): told as the link it is. Until then
+    # every reader took it for no catalogue, and `heroes add` wrote the
+    # catalogue at the place the link names, at exit 0.
+    if stands == .dangling
+        return "`" + named + "` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one"
+
     # A link to a FIFO, a device or a socket (defect 2572): what it names is
     # asked, since the link itself reads as one to a file.
     if stands == .linked_file && named_kind(path) == .other
@@ -119,7 +125,8 @@ function named_kind(path: str) -> files.Entry
 # (`module/reading.hero`), which opens a regular file alone and never waits
 # to open one (defect 2572: a FIFO at `heroes.toml` hung every verb and
 # every build reading it, `read_file` waiting for a writer); a failure is
-# `file_not_found` where nothing stands there, else `unread_said`'s words.
+# `file_not_found` where nothing stands there, else `unread_said`'s words,
+# a link to nothing among them (defect 2573).
 function catalogue_text(path: str, named: str) -> str?
     match reading.source_text(path)
         .ok got =>
@@ -127,9 +134,9 @@ function catalogue_text(path: str, named: str) -> str?
                 return ok(got.text)
             return fail(code: "not_text", msg: unread_said(path: path, named: named, code: "not_text"))
         .err e =>
-            if e.code == "file_not_found"
+            if e.code == "file_not_found" && at(path) != .dangling
                 return fail(code: e.code, msg: e.msg)
-            return fail(code: e.code, msg: unread_said(path: path, named: named, code: e.code))
+            return fail(code: "unread", msg: unread_said(path: path, named: named, code: e.code))
 
 # A placed tree's path as a build holds it, `heroes.packages/<key>/`, with its
 # last `/` taken off for `at`.
@@ -224,4 +231,23 @@ test "a FIFO at the catalogue's name is told what it is, and no reader waits on 
         .ok _  => assert false
         .err e => assert e.code == "file_not_found"
 
+    assert !process.remove_tree(dir).is_err()
+
+# Defect 2573: a link to nothing at the catalogue's name is told as what it
+# is, never as no catalogue, and nothing reads or writes through it; a link
+# to a file is read through, the author's own. Where this machine makes links.
+test "a link to nothing at the catalogue's name is told so, and a link to a file is read (defect 2573)"
+    dir = SCRATCH + "-2573"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+
+    if !files.symbolic_link(target: "nowhere", name: dir + "/heroes.toml").is_err()
+        match catalogue_text(path: dir + "/heroes.toml", named: "app/heroes.toml")
+            .ok _  => assert false
+            .err e => assert e.code != "file_not_found" && e.msg == "`app/heroes.toml` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one"
+
+        assert !process.path_exists(dir + "/nowhere")
+        assert !write_file(path: dir + "/real.toml", text: "index = \"file://../idx\"\n").is_err()
+        assert !files.symbolic_link(target: "real.toml", name: dir + "/linked.toml").is_err()
+        assert catalogue_text(path: dir + "/linked.toml", named: "linked.toml").must() == "index = \"file://../idx\"\n"
     assert !process.remove_tree(dir).is_err()
