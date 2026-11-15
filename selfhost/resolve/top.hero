@@ -183,7 +183,7 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
     if !taken.is_err()
         state.push_diagnostic(
             @r,
-            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: written, has_alias: used.binding.end != used.name.end, library: r.library, span: used.binding)
+            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: written, has_alias: used.binding.end != used.name.end, library: r.library, path: used.name, span: used.binding)
         )
         return
     already = resolved.top_in(r.out, module: from, name: binding)
@@ -205,7 +205,7 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
     if builtin_names.taken(r.library, binding)
         state.push_diagnostic(
             @r,
-            binding_taken.builtin_binding(binding: binding, written: written, has_alias: used.binding.end != used.name.end, library: r.library, span: used.binding)
+            binding_taken.builtin_binding(binding: binding, written: written, has_alias: used.binding.end != used.name.end, library: r.library, path: used.name, span: used.binding)
         )
     resolved.declare_use(@r.out, from: from, binding: binding, module: named)
 
