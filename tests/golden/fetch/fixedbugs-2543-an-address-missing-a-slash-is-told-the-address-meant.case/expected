@@ -1,0 +1,34 @@
+$ heroes add https:/github.com/acme/json --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https:/github.com/acme/json` writes one slash after `https:`, where an address writes two: write `https://github.com/acme/json`
+$ heroes add https:github.com/acme/json --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https:github.com/acme/json` writes no slash after `https:`, where an address writes two: write `https://github.com/acme/json`
+$ heroes add http:/github.com/acme/json --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `http:/github.com/acme/json` writes one slash after `http:`, where an address writes two, and `http://` is read in clear, so anything between could change what is fetched: write `https://github.com/acme/json`
+$ heroes add file:/srv/json --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file:/srv/json` writes one slash after `file:`, where an address writes two, and an absolute path a third: write `file:///srv/json`
+$ heroes add file:../git/json --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file:../git/json` writes no slash after `file:`, where an address writes two: a path from the program's folder is `file://../git/json`
+$ heroes add json --index https:/index.example.org -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `https:/index.example.org` writes one slash after `https:`, where an address writes two: write `https://index.example.org`
+heroes.toml:
+(none)
+heroes.packages:
+(none)
