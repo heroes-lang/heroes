@@ -189,8 +189,10 @@ record Shard
     index: i64
     count: i64
 
-# The six digits a side: a count past a million shards is no gate's, and the
-# bound keeps `strings.to_number` from an overflow the harness would abort on.
+# The six digits a side: a count past a million shards is no gate's. Until
+# defect 2545 the bound also kept `strings.to_number` from an overflow the
+# harness aborted on; that function refuses a number past an `i64` by name now,
+# and the bound stays for the first reason.
 constant SHARD_DIGITS: i64
     6
 

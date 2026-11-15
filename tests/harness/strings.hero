@@ -31,6 +31,7 @@
 # harness. Indexing gives a `u8` for any in-range index and cannot abort,
 # so every predicate here walks bytes.
 
+use <core>/strconv
 use <core>/strings as core_strings
 
 # `text` with `suffix` removed.
@@ -142,30 +143,26 @@ function without_prefix(text: str, prefix: str) -> str
 # The failure is a value rather than an abort because the text comes from
 # a file somebody edits: `!exit: three` is a broken case, and a broken
 # case must be reported by name, not by killing the harness.
+#
+# **The digits are `core`'s `strconv.atoi` since defect 2545** (2026-11-15).
+# The loop this file held multiplied before it asked, so a number past an
+# `i64`, `99999999999999999999` or `9223372036854775808`, killed the harness
+# `integer overflow` at exit 134, the abort the paragraph above refuses, and
+# so did the lowest `i64`, its digits read as one past the largest before the
+# sign was laid on. `atoi` asks each step whether it would leave the type, so
+# it fails `does_not_fit` naming the text, and reads the lowest `i64`. What
+# stays here is the one clause of this function's contract `atoi` does not
+# hold: a leading `+` is no number, as it always was, since callers read the
+# failure as a refusal: `cases.shard_shaped` as no shard and `issue_args` as no
+# issue's number, so `+1/+2` or `+7` read as numbers would be a shard or an
+# issue nobody wrote.
 function to_number(text: str) -> i64?
-    body: str @= text
-    negative: bool @= false
-
-    if core_strings.has_prefix(s: text, prefix: "-")
-        negative @ true
-        body @ without_prefix(text: text, prefix: "-")
-
-    if body.len() == 0
-        return fail(code: "not_a_number", msg: "`" + text + "` has no digits")
-    value: i64 @= 0
-    i: i64 @= 0
-
-    while i < body.len()
-        digit = body[i]
-
-        if digit < 48 || digit > 57
-            return fail(code: "not_a_number", msg: "`" + text + "` is not a decimal integer")
-        value @ value * 10 + (digit - 48).to_i64().must()
-        i @ i + 1
-
-    if negative
-        return ok(0 - value)
-    return ok(value)
+    if core_strings.has_prefix(s: text, prefix: "+")
+        return fail(
+            code: strconv.NOT_A_NUMBER,
+            msg: "`" + text + "` is not a decimal integer: its sign may be a leading `-` alone"
+        )
+    return strconv.atoi(text)
 
 # Where `needle` first occurs in `text`, or an error if it does not.
 function index_of(text: str, needle: str) -> i64?
@@ -263,6 +260,27 @@ test "to_number reads what a case can hold, and names what it cannot"
     assert to_number("-").is_err()
     assert to_number("3x").is_err()
     assert to_number("three").is_err()
+
+# DEFECT 2545, held as a test (2026-11-15): a number past an `i64` killed the
+# harness, `integer overflow` at exit 134, where the doc above `to_number` says
+# a broken case is reported by name, and the lowest `i64` aborted with it, its
+# digits read as one past the largest before the sign was laid on. Each is read
+# or refused by name now, and a leading `+` stays refused, as it always was.
+test "fixedbugs: a number past an i64 is refused by name, never an abort, and the lowest i64 is read (defect 2545)"
+    assert to_number("9223372036854775807").must() == 9223372036854775807
+    assert to_number("-9223372036854775808").must() == -9223372036854775807 - 1
+    assert to_number("007").must() == 7
+    assert to_number("-0").must() == 0
+
+    for past in ["9223372036854775808", "-9223372036854775809", "99999999999999999999", "-99999999999999999999"]
+        match to_number(past)
+            .ok _  => assert false
+            .err e => assert e.code == "does_not_fit" && core_strings.contains(s: e.msg, substr: past)
+
+    for word in ["+", "+5", "+-5", "-+5", "--5", " 5", "5 "]
+        match to_number(word)
+            .ok _  => assert false
+            .err e => assert e.code == "not_a_number" && core_strings.contains(s: e.msg, substr: word)
 
 test "ends_with and without_suffix agree on the harness's own suffixes"
     assert core_strings.has_suffix(s: "a/b/foo.hero", suffix: ".hero")
