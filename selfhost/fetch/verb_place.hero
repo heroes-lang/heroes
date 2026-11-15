@@ -12,7 +12,6 @@ use cli/placed_files
 use cli/process
 use fetch/index_source
 use fetch/versions
-use module/sums
 
 # The program's folder as a prefix of its files' paths: "" for the current
 # folder, else `-C`'s folder with a `/` after it; refused where `-C` names no
@@ -58,20 +57,15 @@ function at_of(asked: str) -> i64
 
     return asked.len()
 
-# The version of `asked` an index lists: the one written after its `@`, or,
-# with none written, the highest it lists.
+# The version of `asked` an index lists: the one written after its `@`, its
+# shape asked before the index was (`fetch/add_wanted.hero`, defect 2540),
+# or, with none written, the highest it lists.
 function version_picked(listed: [index_source.Listed], asked: str, at: i64, index: str) -> index_source.Listed?
     if listed.len() == 0
         return fail(code: "absent", msg: "the index `" + index + "` lists no version of `" + asked + "`")
 
     if at < asked.len()
         version = asked.slice(from: at + 1, to: asked.len())
-
-        if !sums.version_shape(version)
-            return fail(
-                code: "bad_usage",
-                msg: "`" + version + "` is no version: a version is exact, three numbers with no leading zero, `1.4.2`"
-            )
 
         for one in listed
             if one.version == version

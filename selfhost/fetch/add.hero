@@ -368,6 +368,12 @@ test "a refusal the machine causes is the tool's at exit 2, and the catalogue is
         assert told.exit_of(got) == 2
 
     assert !process.path_exists(SCRATCH + "/app/heroes.toml")
+
+    # A version of no shape is told by its text before any index is asked
+    # (defect 2540): over a closed port it was `unreachable` at exit 2.
+    for version in ["json@1.4", "json@01.4.2", "json@"]
+        assert refused_code(["add", version, "-C", SCRATCH + "/app", "--index", "https://127.0.0.1:1/idx"], tools: transport.path_tools()) == "bad_usage"
+
     s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
     match git_source.own(transport.path_tools(), words: ["--git-dir=" + s.folder + "/git", "rev-parse", "--verify", "-q", "refs/heroes/fetched^{commit}"], out: process.discard(), s: s)
