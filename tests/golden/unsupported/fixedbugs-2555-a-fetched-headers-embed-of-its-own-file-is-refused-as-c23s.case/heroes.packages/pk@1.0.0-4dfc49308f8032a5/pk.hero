@@ -1,0 +1,8 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places
+# it: a module binding the header it ships, which embeds its own data file
+# (defect 2555).
+extern "pk.h"  #~ ffi_header_refused
+    function pk_first() -> i64
+
+function first() -> i64
+    return pk_first()

@@ -49,6 +49,7 @@ use cli/order_trial
 use cli/package_reads
 use cli/process
 use cli/publish
+use cli/reads_within
 use cli/response_file
 use cli/strings
 use emit/c_text
@@ -141,7 +142,7 @@ function of_package(under: Compiling, root: str) -> Compiling
     )
 
 # **What a fetched package's unit read lies where a package may read** (panel
-# 235's R9, its C2; `cli/package_reads.hero`): `listing` is a `-M` listing
+# 235's R9, its C2; `cli/reads_within.hero`): `listing` is a `-M` listing
 # its words made, a probe's (`reads`) or its opening's (`unit_reach`), judged
 # before anything compiles; `under` is the unit's own (`of_package`) and
 # `root` the package's, which `under` searches as its own folder or, where
@@ -151,7 +152,7 @@ function of_package(under: Compiling, root: str) -> Compiling
 # under the unit's flags and no search word.
 function within_root(build: str, under: Compiling, root: str, listing: str?) -> ()?
     own = package_reads.toolchain_own(build: build, words: flags.level_words(level: under.level, sanitize: under.sanitize))?
-    return package_reads.judged(
+    return reads_within.judged(
         own: own,
         root: root,
         runtime: under.runtime,

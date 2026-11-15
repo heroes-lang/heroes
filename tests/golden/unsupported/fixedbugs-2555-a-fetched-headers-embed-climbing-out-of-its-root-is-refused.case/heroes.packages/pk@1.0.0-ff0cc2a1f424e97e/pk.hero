@@ -1,0 +1,8 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places
+# it: a module binding the header it ships, which embeds a file of the
+# program's by a climb out of its root (defect 2555).
+extern "pk.h"
+    function pk_first() -> i64  #~ package_reads_outside
+
+function first() -> i64
+    return pk_first()
