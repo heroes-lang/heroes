@@ -109,6 +109,44 @@ A task's digest is the sha256 of `task.md` and its cases in order; its prose dig
   the construct the task aims at and not the reference, says what the prose leaves open; what they
   find is pinned or covered.
 
+## A package task: the paired run's suite (task 2300)
+
+Panel 234's R14 measures what the core packages buy a model by a paired run at M-core-packages'
+close: one compiler, one specification, one sealed suite of package tasks the author writes, twenty
+and ten in reserve, and two arms that differ in the packages alone, `--context spec` against
+`--context tests/thesis/contexts/spec-and-cards.md`, whose first line places the package tree
+beside every answer of that context and of no other (`tests/thesis/contexts/README.md`). A package
+task keeps every rule above, its prose naming no package, so one `task.md` serves both arms (the
+spec-warden's § 8); its natural program uses a core package, and it carries one file more:
+
+- **`reference-packages.hero`**, the task solved over the packages, beside `reference.hero`, which
+  stays its solution without them and the one the size rule reads; the rule *no `use`* is the bare
+  reference's, and this one names its packages by `use <core>/...`. `dry <folder> --packages
+  <tree>` grades it with the tree beside it, and every mutant with the tree beside it too, red where
+  it is missing, where it names no package by a `use <...>` line (a task the packages do not touch is
+  replaced from the reserve before the freeze, the spec-warden's condition) or where a case fails;
+  `dry <folder>` without the tree grades `reference.hero`. Both, in the strict and the control arm,
+  are green before the freeze.
+- **The tree** is a folder holding `heroes.toml` and `heroes.packages/` as `heroes add` leaves
+  them, every entry pinned by a `sum` (`tests/harness/thesis_packages.hero`): the grader copies the
+  two beside `answer.hero`, and `binds_c` stays on the answer's own text, so a package's `extern`
+  builds and an answer's is `refused_extern`. A tree beside a program that names no package changes
+  nothing, since such a program reads no catalogue.
+- **The keys**: the package suite and its reserve are sealed under keys of their own,
+  `HEROES_PACKAGES_KEY` and `HEROES_PACKAGES_RESERVE_KEY`, which the grader refuses to run beside as
+  it refuses the held-out suite's: that suite's key is committed when it opens, and a suite sealed
+  under it would open with it.
+- **The report** sets each context against the first the run lists, the cards' minus `spec`, by green
+  at the first turn, the primary as the spec-warden registered it, by green by turn 3 and by silent
+  by turn 3, each with the bootstrap's interval over tasks and McNemar's p
+  (`tests/harness/thesis_contexts.hero`); `--primary` names the pre-registered row.
+
+What the instrument cannot give a package task, said here so no task asks it: the sandbox denies the
+network and a fork (panel 226's R11), so a package that opens a socket has no task; core 0.5.0's HTTP
+client reads no `file://` address, which the spec-warden's § 8 expected for its case; and a package
+carrying a file that is not text is refused by the tree's digest, which reads every placed file as
+text.
+
 ## The canary
 
 A suite GUID in `LABEL`'s second line and a per-task GUID in the fixed comment of every `task.md`.
