@@ -1,0 +1,5 @@
+a trap answered: 5
+an illegal instruction stepped over: 7
+the trap again: 5
+the illegal instruction again: 7
+both on a thread of its own: 12

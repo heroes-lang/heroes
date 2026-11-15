@@ -531,7 +531,9 @@ static void hero_stack_regs(void *ctx, uintptr_t *pc, uintptr_t *fp, uintptr_t *
  * pointer, the pc and the flags are kept, and an edit to any of them is seen
  * by comparing two copies. 0 where this platform's record is not known here,
  * and the guard below then cannot tell a recovery and claims the fault, as it
- * did before. Unused under the sanitizer, where the guard is not compiled. */
+ * did before. Unused by the guard under the sanitizer, where the guard is not
+ * compiled; `parts/os.c`'s lease handler, which stays there, reads it the same
+ * way for a trap a library recovers (defect 2571). */
 typedef struct HeroStackRegfile {
 #if defined(__APPLE__) && (defined(__aarch64__) || defined(__x86_64__))
     __typeof__(((ucontext_t *)0)->uc_mcontext->__ss) ss;

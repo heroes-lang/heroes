@@ -1,0 +1,31 @@
+# DEFECT 2571: the lease handler killed a trap a library's own handler
+# recovers (batch 38's lane b38-runtime, beside defect 2558, 2026-11-15).
+#
+# A library that installs its SIGTRAP and SIGILL handler from its
+# constructor, before `main`, may make a trap on purpose and take it back by
+# editing the interrupted context and returning, as a wasm runtime or a
+# managed runtime embedded in C does. The runtime's lease handler, installed
+# in `main`, found that handler, called it first, and then spoke and
+# re-raised the signal whatever the handler had done: the program died at
+# 133 with `the process is dying of SIGTRAP, under ...main, and this runtime
+# did not raise it`, three runs of three on this Mac. Now the register file
+# is read before the call and after it, and a handler that edited it has
+# recovered: nothing is said and the thread goes on where it was sent.
+#
+# The library answers a trap by writing 5 into the result register (on
+# x86-64 an `int3`, whose pc is already past it, so only the register
+# moves), steps over an illegal instruction, does both again with its
+# handler still in place, and then on a thread of its own
+# (`fixedbugs-2571-library.h`).
+
+extern "fixedbugs-2571-library.h"
+    function lib_trap_answered() -> i64
+    function lib_illegal_stepped() -> i64
+    function lib_on_own_thread(task: i64) -> i64
+
+function main()
+    print("a trap answered: ", lib_trap_answered())
+    print("an illegal instruction stepped over: ", lib_illegal_stepped())
+    print("the trap again: ", lib_trap_answered())
+    print("the illegal instruction again: ", lib_illegal_stepped())
+    print("both on a thread of its own: ", lib_on_own_thread(task: 0) + lib_on_own_thread(task: 1))
