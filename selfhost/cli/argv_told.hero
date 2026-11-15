@@ -42,6 +42,25 @@ function second_operand(command: cli_table.Command, first: str, second: str) -> 
         .package_operand => return "`" + command.name + "` adds one package at a time, and was given two, `" + first + "` and `" + second + "`: run `heroes " + command.name + "` once for each"
         .file_operand | .optional_operand | .no_operand => return "`" + command.name + "` takes one file, and two were given"
 
+# A word given to a command that takes none (defect 2542), told as the word it
+# is and never as a file: `heroes fetch json` was told *`fetch` takes no
+# file*, naming the wrong kind of operand. `fetch`, whose word is most often a
+# package meant for `add`, is told what it places and the verb that adds one.
+function no_operand(command: cli_table.Command, given: str) -> str
+    word: str @= "`" + given + "`"
+
+    if given.len() == 0
+        word @ "an empty word"
+    takes: str @= "takes nothing after its name"
+
+    if command.flags.len() > 0
+        takes @ "takes nothing but its flags"
+    opening = "`" + command.name + "` " + takes + ", and was given " + word
+
+    if command.tag == .fetch_cmd
+        return opening + ": `heroes fetch` places every package the program's `heroes.toml` names, and `heroes add <package>` adds one"
+    return opening + ": `heroes " + command.name + "`"
+
 # The enumerating error the llm-ergonomist asked for: every wrong flag
 # is one round trip, because the message carries the list.
 function unknown_flag(command: cli_table.Command, arg: str) -> str
@@ -148,3 +167,18 @@ test "a placeholder takes the article its sound does, and a missing address is t
                 assert value_empty(c, flag: f) == "`--index` needs an address, and was given an empty one: `heroes add [package] --index <address>`"
 
     assert asked > 20
+
+test "a word given to a command that takes none is named as the word it is (defect 2542)"
+    asked: i64 @= 0
+
+    for c in cli_table.commands()
+        if c.name == "fetch"
+            assert no_operand(c, given: "json") == "`fetch` takes nothing but its flags, and was given `json`: `heroes fetch` places every package the program's `heroes.toml` names, and `heroes add <package>` adds one"
+            asked @ asked + 1
+
+        if c.name == "doctor"
+            assert no_operand(c, given: "x.hero") == "`doctor` takes nothing after its name, and was given `x.hero`: `heroes doctor`"
+            assert no_operand(c, given: "") == "`doctor` takes nothing after its name, and was given an empty word: `heroes doctor`"
+            asked @ asked + 1
+
+    assert asked == 2

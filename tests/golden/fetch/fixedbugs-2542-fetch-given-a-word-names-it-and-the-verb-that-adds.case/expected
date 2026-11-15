@@ -1,0 +1,14 @@
+$ heroes fetch json -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `fetch` takes nothing but its flags, and was given `json`: `heroes fetch` places every package the program's `heroes.toml` names, and `heroes add <package>` adds one
+$ heroes fetch main.hero -C <work>/app
+exit 2
+stdout:
+stderr:
+error: `fetch` takes nothing but its flags, and was given `main.hero`: `heroes fetch` places every package the program's `heroes.toml` names, and `heroes add <package>` adds one
+heroes.toml:
+(none)
+heroes.packages:
+(none)

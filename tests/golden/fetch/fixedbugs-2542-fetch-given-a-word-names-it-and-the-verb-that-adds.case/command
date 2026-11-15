@@ -1,0 +1,2 @@
+fetch json -C <work>/app
+fetch main.hero -C <work>/app

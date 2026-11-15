@@ -217,7 +217,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             .file_operand | .optional_operand | .package_operand | .name_operand => no_operand @ no_operand
 
         if no_operand
-            return fail(code: "bad_usage", msg: "`" + command.name + "` takes no file")
+            return fail(code: "bad_usage", msg: argv_told.no_operand(command, given: arg))
 
         # An empty word names no file, and is refused as an empty value is
         # (defect 347, as defect 349 for `-o ""`): it reached the reader, which
@@ -547,6 +547,8 @@ test "the folder new makes and the package add adds are named as what they are (
         [["new", "my", "app"], ["`new` makes one folder, and was given two names, `my` and `app`: `heroes new <name>`"]]
         [["add", "json", "yaml"], ["`add` adds one package at a time, and was given two, `json` and `yaml`: run `heroes add` once for each"]]
         [["check", "a.hero", "b.hero"], ["`check` takes one file, and two were given"]]
+        [["fetch", "json"], ["`fetch` takes nothing but its flags, and was given `json`: `heroes fetch` places every package the program's `heroes.toml` names, and `heroes add <package>` adds one"]]
+        [["grammar", "x.hero"], ["`grammar` takes nothing after its name, and was given `x.hero`: `heroes grammar`"]]
         [["new", "x", "--", "y"], ["`--` passes arguments to the program, and `new` does not run one — only `heroes run` does"]]
     ]
 
