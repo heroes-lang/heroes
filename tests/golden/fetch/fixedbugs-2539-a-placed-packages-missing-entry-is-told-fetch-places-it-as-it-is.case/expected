@@ -1,0 +1,22 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed json 1.0.0 <work>/app/heroes.packages/json@1.0.0-e35a1301648cd60e
+stderr:
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[unknown_entry]: `<strings>` is no entry of the catalogue of the package `json`, `<work>/app/heroes.packages/json@1.0.0-e35a1301648cd60e/heroes.toml`: the package names a package its catalogue does not hold, and its tree is the one its `sum` names, as it was published, so `heroes fetch` would place it as it is — the package's catalogue is its author's to repair, and `heroes add` with another version or tag of `json`, one whose catalogue holds the entry, is the program's way round
+  at <work>/app/heroes.packages/json@1.0.0-e35a1301648cd60e/parse.hero:1:5
+    |
+  1 | use <strings>/cut
+    |     ^^^^^^^^^^^^^
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2539-a-placed-packages-missing-entry-is-told-fetch-places-it-as-it-is.case/idx"
+
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-110ad1801f391bf5bb7cba980f7f2f36a67a8a0ead5b8bcd586d5d2ad9cfd414"
+heroes.packages:
+json@1.0.0-e35a1301648cd60e

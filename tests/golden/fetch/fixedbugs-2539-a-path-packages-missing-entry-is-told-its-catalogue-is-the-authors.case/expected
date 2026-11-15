@@ -1,0 +1,15 @@
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+note: the package `yaml` is read from the folder `<work>/app/../local/yaml/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[unknown_entry]: `<strings>` is no entry of the catalogue of the package `yaml`, `<work>/app/../local/yaml/heroes.toml`: the package names a package its catalogue does not hold, and the package is the folder its `path` names, read where it stands and never fetched, so that catalogue is yours to write — `heroes add` with `-C <work>/app/../local/yaml/` writes the entry there, and the program's catalogue, which holds every package of the build, must hold it too
+  at <work>/app/../local/yaml/load.hero:1:5
+    |
+  1 | use <strings>/cut
+    |     ^^^^^^^^^^^^^
+heroes.toml:
+[dependencies.yaml]
+path = "../local/yaml"
+heroes.packages:
+(none)

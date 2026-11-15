@@ -1,0 +1,4 @@
+use <yaml>/load
+
+function main()
+    print(load.size().to_str())
