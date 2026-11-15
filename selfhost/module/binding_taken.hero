@@ -6,7 +6,9 @@
 # diagnostic already had: it is the one module diagnostic whose repair is
 # built from the line's own path, and that repair grew a rule of its own, the
 # alias of a package's module, past the ceiling of the file it lived in
-# (CLAUDE.md §11). `resolve/top.hero` asks it three times: `repair_pass`, to
+# (CLAUDE.md §11). The alias itself is `module/use_alias.hero`'s since
+# defect 2549, so the parse stage can offer it. `resolve/top.hero` asks this
+# three times: `repair_pass`, to
 # read first a line no fix could repair (defect 2367), `module_binding_taken`,
 # to tell the line read later, and `builtin_binding`, to tell a line binding a
 # built-in's name.
@@ -20,10 +22,8 @@
 
 use ast
 use diag
-use keywords
-use module/placed
-use module_text
-use resolve/builtin_names
+use module/use_alias
+use resolve/library_declared
 use source
 use token
 
@@ -46,7 +46,7 @@ function module_binding_taken(binding: str, first: str, second: str, written: st
         message: "this file already calls `" + first + "` by the name `" + binding + "`, so `" + second + "` cannot have it too — a file may not bind one name twice",
         span: span
     )
-    suggested = alias_for(written: written, binding: binding, library: library)
+    suggested = use_alias.alias_for(written: written, binding: binding, library: library)
 
     if suggested != ""
         d.fixes @ d.fixes.push(
@@ -70,7 +70,7 @@ function module_binding_taken(binding: str, first: str, second: str, written: st
 # qualifiers of the file written with the new name, which no one-span fix can
 # write, so the fix is a `guess` and the message says the rest.
 function builtin_binding(binding: str, written: str, has_alias: bool, library: {str: bool}, span: token.Span) -> diag.Diagnostic
-    suggested = alias_for(written: written, binding: binding, library: library)
+    suggested = use_alias.alias_for(written: written, binding: binding, library: library)
     alias: str @= "<another name>"
 
     if suggested != ""
@@ -126,111 +126,41 @@ function repair_pass(s: source.Source, used: ast.Use, library: {str: bool}) -> i
     if used.binding.end != used.name.end
         return 2
 
-    if alias_for(written: source.span_text(s, used.name), binding: source.span_text(s, used.binding), library: library) != ""
+    if use_alias.alias_for(written: source.span_text(s, used.name), binding: source.span_text(s, used.binding), library: library) != ""
         return 1
     return 0
-
-# The alias `module_binding_taken`'s fix gives the line whose path is
-# `written` and whose binding is `binding`, or "" where it offers none.
-#
-# **A fix is offered only where it would CHANGE something.** The suggestion
-# closes up a path's separators, so for a path with none — a root module
-# colliding with a nested one's last part — it is the taken name again and
-# `use scale as scale` repairs nothing. Found by the corpus:
-# `examples/shapes/` provoked exactly that while it was being written. The
-# rule is `use_wants_a_name`'s, one department over — a fix that leaves the
-# program where it was is worse than a message with no fix, because the
-# author reads it as the answer.
-#
-# **And only where the alias is a name the parser reads after `as`** (defect
-# 2368): the suggestion kept a package's `<` and `>`, so `use <core>/strings`
-# was offered `as <core>_strings`, which does not parse. The suggestion no
-# longer writes a mark, and this asks the alias itself rather than trusting
-# that: a fix that does not parse is the one thing a fix may never be.
-#
-# **Nor a built-in's name** (feature 2299): a line binding one is refused, so
-# `use to/str` offered `as to_str`, or `use map as m` renamed to `map`, would
-# be a fix whose line is told again. `library` is what the library declares.
-function alias_for(written: str, binding: str, library: {str: bool}) -> str
-    suggested = suggestion(written)
-
-    if suggested == binding || !module_text.is_one_part(suggested) || !keywords.keyword(suggested).is_err()
-        return ""
-
-    if builtin_names.taken(library, suggested)
-        return ""
-    return suggested
-
-# A name for the module a `use` line writes as `written` that is unlikely to
-# be taken: its path with the separators closed up, which is the same shape
-# its C component already has, and for a package's module the entry's name
-# before its path, the mark left out (defect 2368): `ir/state` is `ir_state`
-# and `<json>/text/strs` is `json_text_strs`. A GUESS rather than a certain
-# fix — the author knows a better word than the compiler does, and §4.17
-# says a certain fix must be the one repair, not the first one that parses.
-#
-# Whether the path is a package's is `placed.hero`'s to say, which every
-# reader of a module name asks.
-function suggestion(written: str) -> str
-    entry = placed.entry_of(written)
-
-    if entry.len() > 0
-        return entry + "_" + closed_up(placed.inside_of(written))
-    return closed_up(written)
-
-# `path` with each `/` written `_`.
-#
-# The path is cut only beside its `/`, one byte that is never inside another
-# character, and never a byte at a time: a module path is identifier text
-# and ASCII today, and the byte-at-a-time spelling is the one that aborted
-# `build` on `f"é {x}"` (defect 110), so it is not kept where nothing but
-# today's lexer stands between it and a character above ASCII.
-function closed_up(path: str) -> str
-    parts: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
-
-    while i < path.len()
-        if path[i] == '/'
-            parts @ parts.push(path.slice(from: start, to: i))
-            parts @ parts.push("_")
-            start @ i + 1
-        i @ i + 1
-
-    parts @ parts.push(path.slice(from: start, to: path.len()))
-    return parts.join("")
 
 ## Tests
 
 # What the library declares, as every compilation reads it.
 function library_names() -> {str: bool}
-    return builtin_names.of_library_text()
+    return library_declared.of_library_text()
 
 test "a suggested name closes up the path's separators, and keeps every character whole"
-    assert suggestion("ir/state") == "ir_state"
-    assert suggestion("a/b/c") == "a_b_c"
-    assert suggestion("state") == "state"
-    assert suggestion("") == ""
-    assert suggestion("/x/") == "_x_"
-    assert suggestion("café/é€😀") == "café_é€😀"
+    assert use_alias.suggestion("ir/state") == "ir_state"
+    assert use_alias.suggestion("a/b/c") == "a_b_c"
+    assert use_alias.suggestion("state") == "state"
+    assert use_alias.suggestion("") == ""
+    assert use_alias.suggestion("/x/") == "_x_"
+    assert use_alias.suggestion("café/é€😀") == "café_é€😀"
 
 test "a package's module is named by its entry and its path, the mark left out"
     # Defect 2368: `<core>_strings` was offered, which is no name.
-    assert suggestion("<core>/strings") == "core_strings"
-    assert suggestion("<json>/text/strs") == "json_text_strs"
+    assert use_alias.suggestion("<core>/strings") == "core_strings"
+    assert use_alias.suggestion("<json>/text/strs") == "json_text_strs"
 
     # A mark that never closes, or closes on no path, is no package's module,
     # and no name either: no reader hands one here, and none is offered.
-    assert alias_for(written: "<core", binding: "core", library: library_names()) == ""
-    assert alias_for(written: "<core>", binding: "core", library: library_names()) == ""
+    assert use_alias.alias_for(written: "<core", binding: "core", library: library_names()) == ""
+    assert use_alias.alias_for(written: "<core>", binding: "core", library: library_names()) == ""
 
 test "a fix is offered only where its alias is a name and changes something"
-    assert alias_for(written: "other/strings", binding: "strings", library: library_names()) == "other_strings"
-    assert alias_for(written: "<core>/strings", binding: "strings", library: library_names()) == "core_strings"
-    assert alias_for(written: "<core>/strings", binding: "words", library: library_names()) == "core_strings"
-    assert alias_for(written: "zeta", binding: "zeta", library: library_names()) == ""
-    assert alias_for(written: "lib/beta", binding: "lib_beta", library: library_names()) == ""
-    assert alias_for(written: "café/é", binding: "é", library: library_names()) == ""
+    assert use_alias.alias_for(written: "other/strings", binding: "strings", library: library_names()) == "other_strings"
+    assert use_alias.alias_for(written: "<core>/strings", binding: "strings", library: library_names()) == "core_strings"
+    assert use_alias.alias_for(written: "<core>/strings", binding: "words", library: library_names()) == "core_strings"
+    assert use_alias.alias_for(written: "zeta", binding: "zeta", library: library_names()) == ""
+    assert use_alias.alias_for(written: "lib/beta", binding: "lib_beta", library: library_names()) == ""
+    assert use_alias.alias_for(written: "café/é", binding: "é", library: library_names()) == ""
 
 test "the fix names the line as written, and renames its alias where it has one"
     span = token.Span(start: 4, end: 11)
@@ -326,8 +256,8 @@ test "a use binding a built-in's name is told, its fix an alias that is no built
 
     # An alias that is a built-in's is never offered, the inventory's or
     # the library's own: the line it wrote would be told again.
-    assert alias_for(written: "to/str", binding: "str", library: library_names()) == ""
-    assert alias_for(written: "map", binding: "m", library: library_names()) == ""
-    assert alias_for(written: "validated", binding: "v", library: library_names()) == ""
-    assert alias_for(written: "args/checked", binding: "checked", library: library_names()) == ""
+    assert use_alias.alias_for(written: "to/str", binding: "str", library: library_names()) == ""
+    assert use_alias.alias_for(written: "map", binding: "m", library: library_names()) == ""
+    assert use_alias.alias_for(written: "validated", binding: "v", library: library_names()) == ""
+    assert use_alias.alias_for(written: "args/checked", binding: "checked", library: library_names()) == ""
     assert builtin_binding(binding: "len", written: "to/str", has_alias: true, library: library_names(), span: span).fixes.len() == 0

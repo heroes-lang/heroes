@@ -35,6 +35,7 @@ use module/placed
 use module/private
 use module/reached
 use module/spelling
+use resolve/library_declared
 use source
 use token
 
@@ -247,7 +248,11 @@ function whole_entry(s: source.Source, used: ast.Use, plain: diag.Diagnostic, en
     offered: str @= "`use <" + entry.written + ">/parse`, `parse` standing for one of its modules"
 
     if found.len() > 0
-        offered @ offered_modules.phrase(written: entry.written, found: found)
+        offered @ offered_modules.phrase(
+            written: entry.written,
+            found: found,
+            library: library_declared.of_library_text()
+        )
     d.message @ d.message + "; `" + entry.written + "` is an entry of the catalogue `" + entry.file + "`, and a package is reached through one of its modules, written in angle brackets — " + offered
     return d
 

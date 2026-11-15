@@ -148,8 +148,8 @@ function parse_source(s: source.Source) -> ParseOutput
         decls: decls,
         uses: uses,
         comments: comments,
-        diagnostics: offered_modules.wants_a_module(s, said: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: s.text)),
-        control: offered_modules.wants_a_module(s, said: wrap_break.offer(control, tokens: lexed.tokens, a: a, text: s.text)),
+        diagnostics: offered_modules.wants_a_module(s, said: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: s.text), decls: decls),
+        control: offered_modules.wants_a_module(s, said: wrap_break.offer(control, tokens: lexed.tokens, a: a, text: s.text), decls: decls),
         tree: a,
         tokens: lexed.tokens
     )

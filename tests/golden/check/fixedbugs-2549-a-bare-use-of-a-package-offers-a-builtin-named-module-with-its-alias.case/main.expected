@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2549-a-bare-use-of-a-package-offers-a-builtin-named-module-with-its-alias.case/main.hero:15:5: error[package_wants_a_module]: a package is reached through one of its modules, written after its mark — `use <tools>/sort as tools_sort`, `use <tools>/twice` or `use <tools>/validated as tools_validated`, the modules at its root

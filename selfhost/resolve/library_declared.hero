@@ -1,0 +1,54 @@
+# What the library declares, read from its own text, for a reader that asks
+# where no compilation's declarations are in hand (design.md §4.4, §1.11;
+# defect 455): `heroes new`'s advice (feature 2299), a whole entry's offer of
+# modules (`module/package_told.hero`), and the tests of every rule that
+# takes the library's names.
+#
+# **Apart from `resolve/builtin_names.hero` since defect 2549**: reading the
+# text needs the parser, and the parse stage itself asks which names are
+# taken, to offer a package's module by a line the built-in rule accepts
+# (`module/offered_modules.hero`). So the rule lives where no parser is
+# reached, and this, which parses, beside it.
+
+use library_source
+use parse
+use resolve/builtin_names
+use source
+
+# Every name the library declares, but an extern's, read from its own text.
+function of_library_text() -> {str: bool}
+    s = source.with_library(name: "main.hero", user: "", library: library_source.text())
+    return builtin_names.of_library(s, parse.parse_source(s).decls)
+
+## Tests
+
+# The library as every program reads it, beside a file of one function.
+function with_library() -> parse.ParseOutput
+    return parse.parse_source(library_beside())
+
+function library_beside() -> source.Source
+    return source.with_library(
+        name: "main.hero",
+        user: "function main()\n    print(1)\n",
+        library: library_source.text()
+    )
+
+test "what the library declares is taken, `validated` with it, but its externs"
+    s = library_beside()
+    names = builtin_names.of_library(s, with_library().decls)
+    assert builtin_names.taken(names, "args_checked")
+    assert builtin_names.taken(names, "args")
+    assert builtin_names.taken(names, "range")
+    assert builtin_names.taken(names, "print")
+
+    # Defect 501: the one name left free until 2026-10-09.
+    assert builtin_names.taken(names, "validated")
+    assert !builtin_names.taken(names, "hero_exit")
+    assert !builtin_names.taken(names, "HERO_OS_OK")
+    assert !builtin_names.taken(names, "main")
+
+    # Read with no program beside it, the library names the same.
+    alone = of_library_text()
+    assert alone.keys().len() == names.keys().len()
+    assert builtin_names.taken(alone, "args_checked")
+    assert builtin_names.taken(alone, "validated")

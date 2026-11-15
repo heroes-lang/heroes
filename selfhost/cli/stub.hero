@@ -53,11 +53,12 @@ use cli/io
 use cli/process
 use cli/table as cli_table
 use fetch/verb_place
-use module/binding_taken
 use module/entry_name
 use module/private
+use module/use_alias
 use placed_use
 use resolve/builtin_names
+use resolve/library_declared
 
 # One file the verb writes: its path inside the new folder, and its text.
 record Written
@@ -243,11 +244,11 @@ function next_line(made: Made) -> str
 # refusal's `guess` offers.
 function face_use(name: str) -> str
     line = "use <" + name + ">/" + name
-    library = builtin_names.of_library_text()
+    library = library_declared.of_library_text()
 
     if !builtin_names.taken(library, name)
         return line
-    return line + " as " + binding_taken.alias_for(written: "<" + name + ">/" + name, binding: name, library: library)
+    return line + " as " + use_alias.alias_for(written: "<" + name + ">/" + name, binding: name, library: library)
 
 ## What it writes
 
