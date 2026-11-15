@@ -9,11 +9,11 @@
 # nothing, every question of theirs needing a worktree.
 #
 # The overwrite rules read each verb's options by tables of git's own before
-# they ask git, so `git rm x` without `-f` asks nothing there; those tables are
-# not written here yet, and such a command in a folder is `unwritten` too.
+# they ask git, so `git rm x` without `-f` asks nothing (`overwrites.hero`).
 
 use answer
 use commits
+use overwrites
 use pystr
 use runs
 
@@ -64,18 +64,30 @@ function ends(verb: str, words: [str]) -> bool
 
     return false
 
-# Whether a `git switch <words>` puts back every tracked file: `-f`,
-# `--force` or `--discard-changes` by their abbreviations, a patch aside.
-function switch_forced(words: [str]) -> bool
+# A checkout's or a switch's words read for force: its long options, the
+# letters of its clusters up to one that takes a value, its plain words and
+# the words after its `--`, the Python guard's `forced`.
+record Forced
+    options: [str]
+    short: str
+    plain: [str]
+    after: [str]
+
+# `words` read as `forced` reads them.
+function forced_words(words: [str]) -> Forced
     options: [str] @= []
     short: str @= ""
+    plain: [str] @= []
+    after: [str] @= []
+    dashed: bool @= false
     skip: bool @= false
 
     for word in words
-        if word == "--"
-            break
-
-        if skip
+        if dashed
+            after @ after.push(word)
+        else if word == "--"
+            dashed @ true
+        else if skip
             skip @ false
         else if pystr.opens(s: word, prefix: "--")
             options @ options.push(word)
@@ -84,43 +96,96 @@ function switch_forced(words: [str]) -> bool
                 word: word
             )
         else if pystr.opens(s: word, prefix: "-") && word != "-"
-            for at in range(from: 1, to: word.len())
+            at: i64 @= 1
+
+            while at < word.len()
+                width = pystr.width_at(word, at)
                 letter = word[at]
-                short @ short + word.slice(from: at, to: at + 1)
+                short @ short + word.slice(from: at, to: at + width)
 
                 if letter == 'b' || letter == 'B' || letter == 'c' || letter == 'C'
-                    skip @ at == word.len() - 1
+                    skip @ at + width == word.len()
                     break
+                at @ at + width
+        else
+            plain @ plain.push(word)
 
-    for option in options
-        if pystr.opens(s: option, prefix: "--pathspec-from-file") || prefix_of(word: option, option: "--patch", shortest: 4)
-            return false
+    return Forced(options: options, short: short, plain: plain, after: after)
 
-    if pystr.holds(s: short, piece: "p")
-        return false
-
-    if pystr.holds(s: short, piece: "f")
+# Whether a patch or a pathspec file keeps the words from forcing anything.
+function patched(f: Forced) -> bool
+    if pystr.holds(s: f.short, piece: "p")
         return true
 
-    for option in options
+    for option in f.options
+        if pystr.opens(s: option, prefix: "--pathspec-from-file") || prefix_of(word: option, option: "--patch", shortest: 4)
+            return true
+
+    return false
+
+# Whether a `git switch <words>` puts back every tracked file: `-f`,
+# `--force` or `--discard-changes` by their abbreviations, a patch aside.
+function switch_forced(words: [str]) -> bool
+    f = forced_words(words)
+
+    if patched(f)
+        return false
+
+    if pystr.holds(s: f.short, piece: "f")
+        return true
+
+    for option in f.options
         if prefix_of(word: option, option: "--force", shortest: 5) || prefix_of(word: option, option: "--discard-changes", shortest: 4)
             return true
 
     return false
 
-# The answer to `git <verb> <words>` run in `where`.
-function verdict(verb: str, words: [str], where: str) -> answer.Answer
+# Whether the Python guard reads a `git checkout <words>` as forced over the
+# whole tree, or asks git whether its one word names a commit: `-f` or
+# `--force` from `--f`, no patch, no path after `--`, at most one word.
+function checkout_forced(words: [str]) -> bool
+    f = forced_words(words)
+
+    if patched(f)
+        return false
+    forced: bool @= pystr.holds(s: f.short, piece: "f")
+
+    for option in f.options
+        if prefix_of(word: option, option: "--force", shortest: 3)
+            forced @ true
+
+    return forced && f.after.len() == 0 && f.plain.len() <= 1
+
+# The mode of `git reset <words>`, the last one named, as git reads it:
+# `--h` and longer for `--hard`, `--me` and longer for `--merge`.
+function reset_mode(words: [str]) -> str
+    mode: str @= ""
+
+    for word in options_of(words)
+        if prefix_of(word: word, option: "--hard", shortest: 3)
+            mode @ "--hard"
+        else if prefix_of(word: word, option: "--merge", shortest: 4)
+            mode @ "--merge"
+        else if prefix_of(word: word, option: "--keep", shortest: 3) || prefix_of(word: word, option: "--soft", shortest: 4) || prefix_of(word: word, option: "--mixed", shortest: 4)
+            mode @ word
+
+    return mode
+
+# The answer to `git <verb> <words>` run in `where`, `appended` where
+# `xargs` runs it and adds words the text does not hold.
+function verdict(verb: str, words: [str], where: str, appended: bool) -> answer.Answer
     if !commits.asks_git(where)
         return .none
+    thrown: answer.Answer = .unwritten(rule: "`git " + verb + "`, which throws away what the tree holds, asked of git")
 
     if verb == "cherry-pick" || verb == "revert" || verb == "am"
         if ends(verb: verb, words: words)
-            return .unwritten(rule: "a `--abort` or `--skip` that throws away what the tree holds, asked of git")
+            return thrown
         return .none
 
     if verb == "merge" || verb == "rebase"
         if ends(verb: verb, words: words)
-            return .unwritten(rule: "a `--abort` or `--skip` that throws away what the tree holds, asked of git")
+            return thrown
 
         stops = if verb == "merge"
             ["--continue", "--abort", "--quit"]
@@ -136,18 +201,39 @@ function verdict(verb: str, words: [str], where: str) -> answer.Answer
 
     if verb == "switch"
         if switch_forced(words)
-            return .unwritten(rule: "a forced switch, which throws away what the tree holds, asked of git")
+            return thrown
         return .none
-    return .unwritten(rule: "`git " + verb + "`, which may write over the paths it names, asked of git")
+
+    if verb == "reset"
+        mode = reset_mode(words)
+
+        if mode == "--hard" || mode == "--merge"
+            return thrown
+        return overwrites.verdict(verb: verb, words: words, appended: appended)
+
+    if verb == "checkout"
+        if checkout_forced(words)
+            return thrown
+        return overwrites.verdict(verb: verb, words: words, appended: appended)
+
+    if verb == "restore" || verb == "rm" || verb == "mv"
+        return overwrites.verdict(verb: verb, words: words, appended: appended)
+    return .unwritten(rule: "`git " + verb + "`, the plumbing that writes over the paths it names, asked of git")
 
 test "discards: the text half, and where git is asked"
-    assert verdict(verb: "reset", words: ["--hard"], where: "") == .none
-    assert verdict(verb: "reset", words: ["--hard"], where: "/heroes-hooks-never-there") == .none
-    assert answer.stops(verdict(verb: "reset", words: [], where: "/")) && answer.stops(verdict(verb: "pull", words: [], where: "/"))
-    assert verdict(verb: "cherry-pick", words: ["x"], where: "/") == .none && answer.stops(verdict(verb: "am", words: ["--sk"], where: "/"))
-    assert verdict(verb: "rebase", words: ["--cont"], where: "/") == .none && answer.stops(verdict(verb: "rebase", words: ["main"], where: "/"))
-    assert answer.stops(verdict(verb: "merge", words: ["--ab"], where: "/")) && verdict(verb: "merge", words: ["--quit"], where: "/") == .none
-    assert verdict(verb: "switch", words: ["main"], where: "/") == .none && answer.stops(verdict(verb: "switch", words: ["-f", "main"], where: "/"))
+    assert verdict(verb: "reset", words: ["--hard"], where: "", appended: false) == .none
+    assert verdict(verb: "reset", words: ["--hard"], where: "/heroes-hooks-never-there", appended: false) == .none
+    assert answer.stops(verdict(verb: "reset", words: ["--h"], where: "/", appended: false)) && answer.stops(verdict(verb: "pull", words: [], where: "/", appended: false))
+    assert verdict(verb: "reset", words: ["--soft", "--", "x"], where: "/", appended: false) == .none
+    assert verdict(verb: "cherry-pick", words: ["x"], where: "/", appended: false) == .none && answer.stops(verdict(verb: "am", words: ["--sk"], where: "/", appended: false))
+    assert verdict(verb: "rebase", words: ["--cont"], where: "/", appended: false) == .none && answer.stops(verdict(verb: "rebase", words: ["main"], where: "/", appended: false))
+    assert answer.stops(verdict(verb: "merge", words: ["--ab"], where: "/", appended: false)) && verdict(verb: "merge", words: ["--quit"], where: "/", appended: false) == .none
+    assert verdict(verb: "switch", words: ["main"], where: "/", appended: false) == .none && answer.stops(verdict(verb: "switch", words: ["-f", "main"], where: "/", appended: false))
+    assert verdict(verb: "checkout", words: ["main"], where: "/", appended: false) == .none && answer.stops(verdict(verb: "checkout", words: ["-f"], where: "/", appended: false))
+    assert verdict(verb: "rm", words: ["x"], where: "/", appended: false) == .none && answer.stops(verdict(verb: "update-index", words: [], where: "/", appended: false))
     assert !switch_forced(["-bf"]) && switch_forced(["--disc"]) && !switch_forced(["-fp"]) && !switch_forced(["--", "-f"])
+    assert checkout_forced(["--f", "main"]) && !checkout_forced(["-f", "a", "b"]) && !checkout_forced(["-f", "--", "x"]) && !checkout_forced(["main"])
+    assert reset_mode(["--soft", "--me"]) == "--merge" && reset_mode(["--", "--hard"]) == ""
+    assert forced_words(["-bx", "y", "--", "z"]) == Forced(options: [], short: "b", plain: ["y"], after: ["z"]) && patched(forced_words(["-p"]))
     assert prefix_of(word: "--ab", option: "--abort", shortest: 3) && options_of(["a", "--", "b"]) == ["a"]
     assert ends(verb: "rebase", words: ["--skip"]) && !ends(verb: "merge", words: ["--skip"])

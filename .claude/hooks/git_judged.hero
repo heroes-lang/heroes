@@ -30,8 +30,8 @@ function any_of(list: [str], words: [str]) -> bool
     return false
 
 # The answer of the git rules to the git command `w`, run in `where`, inside
-# the command line `command` given in `cwd`.
-function judged(w: [str], where: str, command: str, cwd: str) -> answer.Answer
+# the command line `command` given in `cwd`, `appended` where `xargs` runs it.
+function judged(w: [str], where: str, command: str, cwd: str, appended: bool) -> answer.Answer
     for verb in unseen.VERBS
         more = command_line.git_args(w: w, verbs: [verb])
 
@@ -112,7 +112,7 @@ function judged(w: [str], where: str, command: str, cwd: str) -> answer.Answer
         more = command_line.git_args(w: w, verbs: [verb])
 
         if !more.is_err()
-            said = discards.verdict(verb: verb, words: more.must(), where: where)
+            said = discards.verdict(verb: verb, words: more.must(), where: where, appended: appended)
 
             if answer.stops(said)
                 return said
@@ -148,19 +148,20 @@ function is_git(w: [str]) -> bool
 ## Tests
 
 test "git_judged: add, stage, commit -a, stash and a force push, on text"
-    assert answer.reason_of(judged(w: ["git", "stage", "-A"], where: "", command: "", cwd: "")) == "refused: `git stage` with -A, --all or -u stages every session's work in this shared checkout. Name each file this conversation touched. CLAUDE.md § Hard stops"
-    assert answer.stops(judged(w: ["git", "add", "."], where: "", command: "", cwd: ""))
-    assert judged(w: ["git", "add", "a.hero"], where: "", command: "", cwd: "") == .none
-    assert answer.stops(judged(w: ["git", "commit", "-am", "x"], where: "", command: "", cwd: ""))
-    assert answer.stops(judged(w: ["git", "commit", "-m", "x"], where: "", command: "", cwd: ""))
-    assert judged(w: ["git", "commit", "-m", "x", "--", "a"], where: "", command: "", cwd: "") == .none
-    assert answer.stops(judged(w: ["git", "stash"], where: "", command: "", cwd: "")) && judged(w: ["git", "stash", "list"], where: "", command: "", cwd: "") == .none
-    assert answer.stops(judged(w: ["git", "push", "-f"], where: "", command: "", cwd: "")) && judged(w: ["git", "push"], where: "", command: "", cwd: "") == .none
-    assert judged(w: ["git", "status"], where: "/", command: "", cwd: "/") == .none
+    assert answer.reason_of(judged(w: ["git", "stage", "-A"], where: "", command: "", cwd: "", appended: false)) == "refused: `git stage` with -A, --all or -u stages every session's work in this shared checkout. Name each file this conversation touched. CLAUDE.md § Hard stops"
+    assert answer.stops(judged(w: ["git", "add", "."], where: "", command: "", cwd: "", appended: false))
+    assert judged(w: ["git", "add", "a.hero"], where: "", command: "", cwd: "", appended: false) == .none
+    assert answer.stops(judged(w: ["git", "commit", "-am", "x"], where: "", command: "", cwd: "", appended: false))
+    assert answer.stops(judged(w: ["git", "commit", "-m", "x"], where: "", command: "", cwd: "", appended: false))
+    assert judged(w: ["git", "commit", "-m", "x", "--", "a"], where: "", command: "", cwd: "", appended: false) == .none
+    assert answer.stops(judged(w: ["git", "stash"], where: "", command: "", cwd: "", appended: false)) && judged(w: ["git", "stash", "list"], where: "", command: "", cwd: "", appended: false) == .none
+    assert answer.stops(judged(w: ["git", "push", "-f"], where: "", command: "", cwd: "", appended: false)) && judged(w: ["git", "push"], where: "", command: "", cwd: "", appended: false) == .none
+    assert judged(w: ["git", "status"], where: "/", command: "", cwd: "/", appended: false) == .none
 
 test "git_judged: where git is asked, the answer is unwritten"
-    assert judged(w: ["git", "commit", "-m", "x", "--", "a"], where: "/", command: "", cwd: "/") != .none
-    assert judged(w: ["git", "rebase", "--continue"], where: "/", command: "", cwd: "/") != .none
-    assert judged(w: ["git", "rm", "x"], where: "/", command: "", cwd: "/") != .none
+    assert judged(w: ["git", "commit", "-m", "x", "--", "a"], where: "/", command: "", cwd: "/", appended: false) != .none
+    assert judged(w: ["git", "rebase", "--continue"], where: "/", command: "", cwd: "/", appended: false) != .none
+    assert judged(w: ["git", "rm", "-f", "x"], where: "/", command: "", cwd: "/", appended: false) != .none
+    assert judged(w: ["git", "rm", "x"], where: "/", command: "", cwd: "/", appended: false) == .none
     assert any_of(list: ["a", "b"], words: ["x", "b"]) && !any_of(list: [], words: ["a"])
     assert pystr_letters(["-am"]) == ["a", "m"] && is_git(["/usr/bin/git"]) && !is_git(["gitx"])

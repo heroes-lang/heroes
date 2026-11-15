@@ -1,0 +1,346 @@
+# What names its paths and would leave a staged change nowhere (defects 529
+# and 535): a restore of the index, a checkout from a commit, a forced
+# removal or move, a reset of the index alone. The Python guard's
+# `overwrites.py` reads each verb's options as git's parse-options reads them,
+# by tables of `git <verb> -h` on git 2.56.0, and answers nothing where the
+# words ask no such thing; where they do, it asks git which staged paths
+# would be lost. This holds the reading and that first answer, and answers
+# `unwritten` where the Python guard asks git (`answer.hero`), at its `lost`
+# and at its `tree_ish`. `git read-tree` and `git update-index` are asked of
+# git in more shapes than this reads, and stay `unwritten` in a folder.
+
+use answer
+use commits
+use option_tables
+use pystr
+use runs
+
+# What stands for the words `xargs` adds, and for the paths a `find` gives.
+constant XARGS: str
+    "the words `xargs` adds"
+
+# What the words set an option to: on, off, or a value.
+variant Setting
+    on
+    off
+    text
+        value: str
+
+# The words after `git <verb>` as git reads them: the options set, by long
+# name or letter; the other words before a `--`; and the words after it,
+# `dashed` false where there is no `--`.
+record Read
+    got: {str: Setting}
+    plain: [str]
+    after: [str]
+    dashed: bool
+
+# A row a long option names, and whether it negates it.
+record Found
+    row: option_tables.Row
+    unset: bool
+
+# The row `--<arg>` names, as git's parse-options reads it: an exact name
+# first, `no-` and the name, or the one name it abbreviates; it fails where
+# git refuses it, unknown or ambiguous.
+function long_row(rows: [option_tables.Row], arg: str) -> Found?
+    cut = pystr.index_from(s: arg, piece: "=", from: 0)
+
+    name = if cut < 0
+        arg
+    else
+        arg.slice(from: 0, to: cut)
+    found: [Found] @= []
+
+    for row in rows
+        if row.long.len() == 0
+            continue
+        long_name: str @= row.long
+        unset: bool @= false
+
+        if !pystr.opens(s: name, prefix: "no-") && row.negatable && pystr.opens(s: long_name, prefix: "no-")
+            long_name @ long_name.slice(from: 3, to: long_name.len())
+            unset @ true
+
+        if name == long_name
+            return ok(Found(row: row, unset: unset))
+
+        if pystr.opens(s: long_name, prefix: name)
+            found @ found.push(Found(row: row, unset: unset))
+            continue
+
+        if !row.negatable
+            continue
+
+        if pystr.opens(s: "no-", prefix: name)
+            found @ found.push(Found(row: row, unset: !unset))
+            continue
+
+        if !pystr.opens(s: name, prefix: "no-")
+            continue
+        bare_name = name.slice(from: 3, to: name.len())
+
+        if bare_name == long_name
+            return ok(Found(row: row, unset: !unset))
+
+        if pystr.opens(s: long_name, prefix: bare_name)
+            found @ found.push(Found(row: row, unset: !unset))
+
+    if found.len() == 1
+        return ok(found[0])
+    return fail(code: "not_found", msg: "git refuses --" + arg)
+
+# The key an option is set under: its long name, or its letter.
+function key_of(row: option_tables.Row) -> str
+    if row.long.len() > 0
+        return row.long
+    return row.letter
+
+# `words` read as git reads them by `rows`; it fails where git refuses them.
+function options(rows: [option_tables.Row], words: [str]) -> Read?
+    got: {str: Setting} @= {}
+    plain: [str] @= []
+    at: i64 @= 0
+
+    while at < words.len()
+        word = words[at]
+
+        if word == "--"
+            return ok(Read(got: got, plain: plain, after: words.slice(from: at + 1, to: words.len()), dashed: true))
+
+        if pystr.opens(s: word, prefix: "--")
+            found = long_row(rows: rows, arg: word.slice(from: 2, to: word.len()))?
+            cut = pystr.index_from(s: word, piece: "=", from: 0)
+            key = key_of(found.row)
+
+            if found.unset || found.row.value == ""
+                if cut >= 0
+                    return fail(code: "refused", msg: "git refuses a value for " + word)
+
+                if found.unset
+                    got[key] @ .off
+                else
+                    got[key] @ .on
+            else if found.row.value == "?"
+                if cut >= 0
+                    got[key] @ .text(value: word.slice(from: cut + 1, to: word.len()))
+                else
+                    got[key] @ .on
+            else if cut >= 0
+                got[key] @ .text(value: word.slice(from: cut + 1, to: word.len()))
+            else if at + 1 < words.len()
+                at @ at + 1
+                got[key] @ .text(value: words[at])
+            else
+                return fail(code: "refused", msg: "git wants a value for " + word)
+        else if pystr.opens(s: word, prefix: "-") && word != "-"
+            k: i64 @= 1
+
+            while k < word.len()
+                row = letter_row(rows: rows, letter: word.slice(from: k, to: k + pystr.width_at(word, k)))?
+                rest = word.slice(from: k + pystr.width_at(word, k), to: word.len())
+
+                if row.value == "="
+                    if rest.len() > 0
+                        got[key_of(row)] @ .text(value: rest)
+                    else if at + 1 < words.len()
+                        at @ at + 1
+                        got[key_of(row)] @ .text(value: words[at])
+                    else
+                        return fail(code: "refused", msg: "git wants a value for -" + row.letter)
+                    break
+
+                if row.value == "?"
+                    if rest.len() > 0
+                        got[key_of(row)] @ .text(value: rest)
+                    else
+                        got[key_of(row)] @ .on
+                    break
+                got[key_of(row)] @ .on
+                k @ k + pystr.width_at(word, k)
+        else
+            plain @ plain.push(word)
+        at @ at + 1
+
+    no_after: [str] = []
+    return ok(Read(got: got, plain: plain, after: no_after, dashed: false))
+
+# The row whose letter is `letter`; it fails where none is.
+function letter_row(rows: [option_tables.Row], letter: str) -> option_tables.Row?
+    for row in rows
+        if row.letter.len() > 0 && row.letter == letter
+            return ok(row)
+
+    return fail(code: "not_found", msg: "git refuses -" + letter)
+
+# Whether the option `key` is set on.
+function on(got: {str: Setting}, key: str) -> bool
+    return got[key].default(.off) == .on
+
+# Whether the option `key` holds a value.
+function valued(got: {str: Setting}, key: str) -> bool
+    return match got[key].default(.off)
+        .text _    => true
+        .on | .off => false
+
+# The value of the option `key`, "" where it holds none.
+function value_of(got: {str: Setting}, key: str) -> str
+    return match got[key].default(.off)
+        .text t    => t.value
+        .on | .off => ""
+
+# Whether the shell makes `word` into something else before git reads it:
+# an expansion, a brace expansion, a home folder; or `xargs` or a `find`
+# gives it.
+function unreadable(word: str) -> bool
+    if commits.expansion(word) || braces(word) || pystr.opens(s: word, prefix: "~")
+        return true
+    return pystr.holds(s: word, piece: XARGS) || pystr.holds(s: word, piece: runs.FOUND)
+
+# Whether `word` holds a brace expansion: `{`, no brace, a `,` or `..`, no
+# brace, `}`.
+function braces(word: str) -> bool
+    at: i64 @= 0
+
+    while at < word.len()
+        if word[at] == '{'
+            j: i64 @= at + 1
+            sep: bool @= false
+
+            while j < word.len() && word[j] != '{' && word[j] != '}'
+                if word[j] == ',' || word[j] == '.' && j + 1 < word.len() && word[j + 1] == '.'
+                    sep @ true
+                j @ j + 1
+
+            if j < word.len() && word[j] == '}' && sep
+                return true
+        at @ at + 1
+
+    return false
+
+# The answer to `git <verb> <words>`, one of restore, rm, mv, checkout not
+# forced and reset not hard, run in a folder: `none` where the words ask git
+# for no staged path, `unwritten` where the Python guard asks.
+function verdict(verb: str, words: [str], appended: bool) -> answer.Answer
+    given: [str] @= words
+
+    if appended
+        given @ given.push(XARGS)
+
+    read = match options(rows: option_tables.table(verb), words: given)
+        .ok r  => r
+        .err _ => return .none
+
+    got = read.got
+
+    if on(got: got, key: "patch") || on(got: got, key: "dry-run")
+        return .none
+    named: [str] @= read.plain
+
+    for word in read.after
+        named @ named.push(word)
+
+    asked: answer.Answer = .unwritten(
+        rule: "`git " + verb + "`, whose staged paths left nowhere the Python guard asks of git"
+    )
+
+    if verb == "restore" || verb == "rm"
+        wanted = if verb == "restore"
+            "staged"
+        else
+            "force"
+
+        if !on(got: got, key: wanted)
+            return .none
+
+        if !valued(got: got, key: "pathspec-from-file") && named.len() == 0
+            return .none
+        return asked
+
+    if verb == "mv"
+        if !on(got: got, key: "force") || named.len() < 2
+            return .none
+        return asked
+    return checkout_or_reset(verb: verb, read: read, asked: asked)
+
+# `verdict` for a checkout or a reset, by the commit it writes from and its
+# paths, the Python guard's `tree_and_paths`; a word git must be asked about,
+# whether it names a commit, is `unwritten`.
+function checkout_or_reset(verb: str, read: Read, asked: answer.Answer) -> answer.Answer
+    got = read.got
+    plain = read.plain
+    tree_asked: answer.Answer = .unwritten(
+        rule: "whether a word of `git " + verb + "` names a commit, which the Python guard asks of git"
+    )
+
+    if verb == "checkout" && (valued(got: got, key: "b") || valued(got: got, key: "B") || valued(got: got, key: "orphan"))
+        return .none
+    listing = valued(got: got, key: "pathspec-from-file")
+    head: str @= ""
+    paths: [str] @= []
+
+    if read.dashed
+        if plain.len() > 1
+            return .none
+
+        if plain.len() == 1
+            head @ plain[0]
+        paths @ read.after
+    else if plain.len() > 0 && (plain.len() > 1 || listing)
+        if !unreadable(plain[0])
+            return tree_asked
+        head @ plain[0]
+        paths @ plain.slice(from: 1, to: plain.len())
+    else if plain.len() > 0 && (plain[0] == XARGS || plain[0] == runs.FOUND)
+        head @ plain[0]
+        paths @ plain
+    else if verb == "reset" && plain.len() > 0
+        return tree_asked
+    else
+        paths @ plain
+
+    if verb == "checkout"
+        if paths.len() == 0 && !listing || head.len() == 0
+            return .none
+        return asked
+    last: str @= ""
+
+    for mode in ["mixed", "soft", "hard", "merge", "keep"]
+        if on(got: got, key: mode)
+            last @ mode
+
+    if last == "soft" || last == "hard" || last == "merge"
+        return .none
+    return asked
+
+## Tests
+
+test "overwrites: options read as git's parse-options reads them"
+    rows = option_tables.table("restore")
+    assert long_row(rows: rows, arg: "sta").must().row.long == "staged" && long_row(rows: rows, arg: "s").is_err()
+    assert long_row(rows: rows, arg: "no-overl").must().unset && long_row(rows: rows, arg: "nope").is_err()
+    assert long_row(rows: option_tables.table("reset"), arg: "no-refresh").must().row.long == "no-refresh"
+    got = options(rows: rows, words: ["-SW", "--source=HEAD", "x", "--", "y"]).must()
+    assert on(got: got.got, key: "staged") && on(got: got.got, key: "worktree") && value_of(got: got.got, key: "source") == "HEAD"
+    assert got.plain == ["x"] && got.after == ["y"] && got.dashed
+    assert options(rows: rows, words: ["-sHEAD"]).must().got["source"].must() == .text(value: "HEAD")
+    assert options(rows: rows, words: ["--staged=x"]).is_err() && options(rows: rows, words: ["-Z"]).is_err() && options(rows: rows, words: ["-s"]).is_err()
+    assert key_of(option_tables.Row(long: "", letter: "b", value: "=", negatable: false)) == "b" && letter_row(rows: rows, letter: "W").must().long == "worktree"
+    assert !valued(got: got.got, key: "staged") && valued(got: got.got, key: "source")
+
+test "overwrites: what the shell or xargs makes of a word"
+    assert unreadable("$x") && unreadable("{a,b}.txt") && unreadable("x{1..3}") && unreadable("~/x") && unreadable(XARGS)
+    assert !unreadable("a.txt") && !braces("{a}") && braces("{a,b}") && !braces("{a,{b}")
+
+test "overwrites: where git is asked nothing, and where it is"
+    assert verdict(verb: "restore", words: ["x"], appended: false) == .none
+    assert answer.stops(verdict(verb: "restore", words: ["--staged", "x"], appended: false))
+    assert verdict(verb: "restore", words: ["--staged"], appended: false) == .none
+    assert verdict(verb: "rm", words: ["x"], appended: false) == .none && answer.stops(verdict(verb: "rm", words: ["-rf", "x"], appended: false))
+    assert verdict(verb: "rm", words: ["-f", "-n", "x"], appended: false) == .none
+    assert verdict(verb: "mv", words: ["a", "b"], appended: false) == .none && answer.stops(verdict(verb: "mv", words: ["-f", "a", "b"], appended: false))
+    assert verdict(verb: "checkout", words: ["main"], appended: false) == .none && verdict(verb: "checkout", words: ["-b", "x"], appended: false) == .none
+    assert verdict(verb: "checkout", words: ["--", "f"], appended: false) == .none && answer.stops(verdict(verb: "checkout", words: ["HEAD", "--", "f"], appended: false))
+    assert answer.stops(verdict(verb: "checkout", words: ["main", "f"], appended: false)) && answer.stops(verdict(verb: "reset", words: ["HEAD~1"], appended: false))
+    assert verdict(verb: "reset", words: ["--soft", "--", "x"], appended: false) == .none && answer.stops(verdict(verb: "reset", words: [], appended: false))
+    assert answer.stops(verdict(verb: "rm", words: ["-f"], appended: true)) && verdict(verb: "checkout", words: ["--bogus"], appended: false) == .none
