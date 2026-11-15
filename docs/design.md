@@ -3977,6 +3977,12 @@ are *on* the closure list.
    today, and panel 132's own landed price for a new member node was +388/−95 across 28 files. It is
    recorded and not adopted, because no seat measured it and a sitting does not escape a measured
    refusal into an unmeasured route.
+
+   **Corrected 2026-11-15** (batch 39, read by lane b39-examples): the pair stands at
+   `examples/calculator/whole.hero:286` (`term`) and `:299` (`expression`) since batch 38's
+   repair of defect 2548 moved the whole form's lines; `parse.hero:84-107` still holds it
+   (`grep -n '^function term\|^function expression' examples/calculator/*.hero`). The citation
+   above was true when it was written.
 10. **Sized integers** (`i8 u8 i32 u64`) — the highest-risk addition in the language, because
     conversion rules are the most expensive spec item that exists and the number-one error source
     in C. Design with care, never in v1. **The reason was mis-filed and is corrected here**
@@ -5047,6 +5053,12 @@ returns `i64?` from it since that repair, checks each digit before multiplying a
 `does_not_fit` naming the whole number and its position, `tokenize` passing the failure on with
 `?`. The code below keeps the older shape until it is rewritten whole and validated, as this
 appendix's own rule asks; the example's headers name this difference.
+
+**Flagged 2026-11-15, defect 2567:** `sum_of` and `product_of` below add and multiply before
+they check, so a sum or a product past either end of `i64` aborts the program at exit 134; the
+example under `examples/calculator/` asks before each step since that repair whether the result
+would pass either end, and fails `does_not_fit` naming the step, in both of its forms. The code
+below keeps the older shape for the same reason as the flag above.
 
 ```
 ## Calculator
