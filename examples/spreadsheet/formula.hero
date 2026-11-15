@@ -12,6 +12,8 @@
 # say: `visiting.push(name)` hands the callee a **copy**, so there is nothing to
 # pop on the way back and no way to forget to.
 
+use <core>/strconv
+
 use sheet
 
 ## Error codes
@@ -150,30 +152,30 @@ function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
         return ok(-factor(@p, s, visiting)?)
 
     if sheet.is_digit(c)
-        return ok(number(@p))
+        return number(@p)
 
     if sheet.is_letter(c)
         return named(@p, s, visiting)
     return fail(code: ERR_UNEXPECTED_CHARACTER, msg: "no value starts at " + p.pos.to_str())
 
-# A literal, built digit by digit: the language offers no conversion from `str`
-# to a number, on purpose, because parsing can fail and a conversion may not.
-function number(@p: Parse) -> f64
-    whole: f64 @= 0.0
+# A literal: its digits and an optional point and more digits, read as one
+# text and rounded once by `strconv.parse_float`, so `0.3` is the `f64` that
+# `0.3` is. Built digit by digit with a running tenth it read as
+# `0.30000000000000004` (defect 2546). It fails `does_not_fit` where the
+# literal lies past the largest `f64`, which it read as `inf` before.
+function number(@p: Parse) -> f64?
+    start = p.pos
 
     while !at_end(p) && sheet.is_digit(here(p))
-        whole @ whole * 10.0 + to_f64(to_i64(here(p) - '0').must())
         advance(@p)
 
     if !at_end(p) && here(p) == '.'
         advance(@p)
-        scale: f64 @= 1.0
 
         while !at_end(p) && sheet.is_digit(here(p))
-            scale @ scale / 10.0
-            whole @ whole + to_f64(to_i64(here(p) - '0').must()) * scale
             advance(@p)
-    return whole
+
+    return strconv.parse_float(p.text.slice(from: start, to: p.pos))
 
 # A name: either `SUM(` and a range, or a cell.
 function named(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
@@ -262,6 +264,22 @@ test "every other failure says what and where"
     assert code_of(sheet.read("A1 = SUM(A1\n").must(), "A1") == ERR_UNCLOSED_PAREN
     assert code_of(sheet.read("A1 = SUM(B1)\n").must(), "A1") == sheet.ERR_BAD_RANGE
     assert code_of(sheet.read("A1 = $\n").must(), "A1") == ERR_UNEXPECTED_CHARACTER
+
+# Defect 2546: each literal the defect named read as the `f64` it writes, a
+# point with no digits after it kept as before, and a sum of two literals as
+# IEEE adds them, `0.1 + 0.2` being `0.30000000000000004` in every language.
+test "a literal is rounded once, to the nearest f64"
+    s = sheet.read("A1 = 0.3\nA2 = 1.15\nA3 = 0.7\nA4 = 2.\nA5 = 0.1 + 0.2\n").must()
+    assert value_of(s, "A1", []).must() == 0.3 && value_of(s, "A1", []).must().to_str() == "0.3"
+    assert value_of(s, "A2", []).must().to_str() == "1.15"
+    assert value_of(s, "A3", []).must().to_str() == "0.7"
+    assert value_of(s, "A4", []).must() == 2.0
+    assert value_of(s, "A5", []).must().to_str() == "0.30000000000000004"
+
+test "a literal past the largest f64 is told, where it read as inf"
+    huge = "1" + repeat("0", 400)
+    assert code_of(sheet.read("A1 = " + huge + "\n").must(), "A1") == "does_not_fit"
+    assert value_of(sheet.read("A1 = 179769313486231570" + repeat("0", 291) + "\n").must(), "A1", []).must() > 0.0
 
 # The code a cell fails with — or `no_error`, which no arm above can produce, so
 # a test asserting a failure cannot pass by the cell turning out to be fine.
