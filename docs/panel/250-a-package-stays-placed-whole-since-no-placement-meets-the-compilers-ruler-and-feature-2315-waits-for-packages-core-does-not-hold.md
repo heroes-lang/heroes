@@ -625,3 +625,6 @@ yet filed. A yes settles R1 (W stays), R2 (R2 stands with rU's unit), R4 (p0 sta
 R3's reading of what 2315 waits for; **R3's choice among (*b*), (*c*), rM2, rS and the defect branch is the
 author's answer**, (*b*) recommended and (*c*) running until it is given. It does not settle a reopening of
 subset placement, nor the predictions, on their own clocks.
+
+**Filed 2026-11-15** as decision 2564, which asks the author's reading of R1 to R4 and R3's choice; the
+paragraph above is left as written. R2's unit landed in design.md §1.11 at a1109217a, provisional.
