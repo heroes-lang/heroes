@@ -1,0 +1,3 @@
+add file:// --tag v1 -C <work>/app
+add file://?x --tag v1 -C <work>/app
+add json --index file:// -C <work>/app
