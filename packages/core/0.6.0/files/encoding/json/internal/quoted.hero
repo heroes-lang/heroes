@@ -1,0 +1,305 @@
+# JSON's strings: a string literal read from the text with its escapes
+# decoded, and a `str` written as one. A Heroes `str` is UTF-8 text, so a
+# `\u` escape that names half of a character, a surrogate with no partner, is
+# refused rather than replaced: a program could not tell a replaced character
+# from one the document held.
+#
+# The codes are written here as literals, `not_json` and `not_text`, and the
+# face names them as constants: the face uses this module, and a module the
+# face uses cannot use the face, which would be a cycle (spec § 1). The face's
+# tests hold each literal to its constant.
+
+use encoding/json/internal/cursor
+
+# The hexadecimal digits of a `\u` escape this module writes, lower case as
+# Go's `encoding/json` writes them.
+constant HEX: str
+    "0123456789abcdef"
+
+# The string literal at the cursor, which stands at its opening quote, read to
+# its closing quote with every escape decoded, the cursor moved past it. It
+# fails `not_json` where the literal is not one, and `not_text` where a `\u`
+# escape names a surrogate with no partner.
+function read(@c: cursor.Cursor) -> str?
+    opened = c.at
+    cursor.advance(@c)
+    pieces: [str] @= []
+    run: i64 @= c.at
+
+    while true
+        if cursor.at_end(c)
+            start = cursor.Cursor(text: c.text, at: opened)
+            return fail(code: "not_json", msg: "the text ends inside the string that opens at " + cursor.place(start))
+        b = cursor.byte_at(c)
+
+        if b == '"'
+            last = c.text.slice(from: run, to: c.at)
+            cursor.advance(@c)
+
+            if pieces.len() == 0
+                return ok(last)
+            return ok(pieces.push(last).join(""))
+
+        if b == '\\'
+            pieces @ pieces.push(c.text.slice(from: run, to: c.at))
+            pieces @ pieces.push(escaped(@c)?)
+            run @ c.at
+        else if b < 32
+            return fail(
+                code: "not_json",
+                msg: "a string holds " + cursor.found(c) + " at " + cursor.place(c) + ", which JSON writes escaped, as `\\n` for a line feed"
+            )
+        else
+            cursor.advance(@c)
+
+# The character the escape at the cursor stands for, the cursor standing at
+# its backslash and moved past it. It fails `not_json` where JSON has no such
+# escape, and `not_text` where a `\u` escape names half of a surrogate pair
+# alone.
+function escaped(@c: cursor.Cursor) -> str?
+    backslash = c.at
+    cursor.advance(@c)
+
+    if cursor.at_end(c)
+        return fail(code: "not_json", msg: cursor.wanted(c, "an escape after `\\`"))
+    b = cursor.byte_at(c)
+    cursor.advance(@c)
+
+    if b == '"'
+        return ok("\"")
+    else if b == '\\'
+        return ok("\\")
+    else if b == '/'
+        return ok("/")
+    else if b == 'b'
+        return ok("\u{8}")
+    else if b == 'f'
+        return ok("\u{c}")
+    else if b == 'n'
+        return ok("\n")
+    else if b == 'r'
+        return ok("\r")
+    else if b == 't'
+        return ok("\t")
+    else if b == 'u'
+        return unicode(@c, backslash: backslash)
+    c.at @ c.at - 1
+    return fail(
+        code: "not_json",
+        msg: cursor.wanted(c, "one of JSON's escapes, `\\\"` `\\\\` `\\/` `\\b` `\\f` `\\n` `\\r` `\\t` or `\\u`, after `\\`")
+    )
+
+# The character a `\u` escape names, the cursor standing past its `u`, and the
+# second escape of a surrogate pair read with it; `backslash` is where the
+# escape began, for a message. It fails `not_text` where a surrogate stands
+# without its partner.
+function unicode(@c: cursor.Cursor, backslash: i64) -> str?
+    first = code_unit(@c)?
+    at = cursor.Cursor(text: c.text, at: backslash)
+
+    if first >= 0xdc00 && first <= 0xdfff
+        return fail(
+            code: "not_text",
+            msg: "the escape at " + cursor.place(at) + " names the second half of a surrogate pair with no first half before it, and a string holds whole characters"
+        )
+
+    if first < 0xd800 || first > 0xdbff
+        return character(first)
+
+    if !cursor.accept(@c, "\\u")
+        return fail(
+            code: "not_text",
+            msg: "the escape at " + cursor.place(at) + " names the first half of a surrogate pair with no `\\u` escape of its second half after it, and a string holds whole characters"
+        )
+    second = code_unit(@c)?
+
+    if second < 0xdc00 || second > 0xdfff
+        return fail(
+            code: "not_text",
+            msg: "the escape at " + cursor.place(at) + " names the first half of a surrogate pair, and the escape after it is no second half"
+        )
+    return character(0x10000 + (first - 0xd800) * 0x400 + (second - 0xdc00))
+
+# The number the four hexadecimal digits at the cursor write, either case, the
+# cursor moved past them. It fails `not_json` where four such digits do not
+# stand there.
+function code_unit(@c: cursor.Cursor) -> i64?
+    n: i64 @= 0
+    count: i64 @= 0
+
+    while count < 4
+        if cursor.at_end(c)
+            return fail(code: "not_json", msg: cursor.wanted(c, "four hexadecimal digits after `\\u`"))
+        b = cursor.byte_at(c)
+        digit: i64 @= 0
+
+        if b >= '0' && b <= '9'
+            digit @ to_i64(b - '0').must()
+        else if b >= 'a' && b <= 'f'
+            digit @ to_i64(b - 'a').must() + 10
+        else if b >= 'A' && b <= 'F'
+            digit @ to_i64(b - 'A').must() + 10
+        else
+            return fail(code: "not_json", msg: cursor.wanted(c, "four hexadecimal digits after `\\u`"))
+        n @ n * 16 + digit
+        cursor.advance(@c)
+        count @ count + 1
+
+    return ok(n)
+
+# The character of the code point `n` as a `str`, its UTF-8 bytes. It fails
+# `not_text` where `n` is a surrogate or past U+10FFFF, which no text holds.
+function character(n: i64) -> str?
+    bytes: [u8] @= []
+
+    if n < 0 || n > 0x10ffff
+        return fail(code: "not_text", msg: f"{n} is no code point, which runs from 0 to 0x10ffff")
+
+    if n < 0x80
+        bytes @ [to_u8(n).must()]
+    else if n < 0x800
+        bytes @ [to_u8(0xc0 | n >> 6).must(), to_u8(0x80 | n & 0x3f).must()]
+    else if n < 0x10000
+        bytes @ [to_u8(0xe0 | n >> 12).must(), to_u8(0x80 | n >> 6 & 0x3f).must(), to_u8(0x80 | n & 0x3f).must()]
+    else
+        bytes @ [
+            to_u8(0xf0 | n >> 18).must()
+            to_u8(0x80 | n >> 12 & 0x3f).must()
+            to_u8(0x80 | n >> 6 & 0x3f).must()
+            to_u8(0x80 | n & 0x3f).must()
+        ]
+    return bytes.validated_bytes()
+
+# `s` as a JSON string literal: in double quotes, `"` and `\` escaped, and
+# each control character below U+0020 escaped, `\n` `\r` `\t` `\b` `\f` by
+# name and the others as `\u00XX`; every other character, past ASCII too, as
+# it stands, which RFC 8259 allows.
+function written(s: str) -> str
+    pieces: [str] @= ["\""]
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        if b == '"' || b == '\\' || b < 32
+            pieces @ pieces.push(s.slice(from: run, to: i))
+            pieces @ pieces.push(escape_of(b))
+            run @ i + 1
+        i @ i + 1
+
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# The escape `written` writes for the byte `b`: a quote, a backslash, or a
+# control character below U+0020.
+function escape_of(b: u8) -> str
+    if b == '"'
+        return "\\\""
+    else if b == '\\'
+        return "\\\\"
+    else if b == '\n'
+        return "\\n"
+    else if b == '\r'
+        return "\\r"
+    else if b == '\t'
+        return "\\t"
+    else if b == 8
+        return "\\b"
+    else if b == 12
+        return "\\f"
+    n = to_i64(b).must()
+    return "\\u00" + HEX.slice(from: n / 16, to: n / 16 + 1) + HEX.slice(from: n % 16, to: n % 16 + 1)
+
+## Tests
+
+# The string literal `text` holds, read from its first byte.
+function read_all(text: str) -> str?
+    c: cursor.Cursor @= cursor.start(text)
+    return read(@c)
+
+# The code `got` fails with, or "no failure".
+function code_of(got: str?) -> str
+    return match got
+        .ok _  => "no failure"
+        .err e => e.code
+
+test "quoted: a plain literal is read, the cursor moved past it"
+    c: cursor.Cursor @= cursor.start("\"caffè\",")
+    assert read(@c).must() == "caffè"
+    assert c.at == 8
+    assert read_all("\"\"").must() == ""
+
+test "quoted: each of JSON's eight short escapes"
+    assert read_all("\"\\\" \\\\ \\/ \\n \\r \\t\"").must() == "\" \\ / \n \r \t"
+    assert read_all("\"\\b\\f\"").must() == "\u{8}\u{c}"
+
+test "quoted: a \\u escape names a character, a pair of them a character past U+FFFF"
+    assert read_all("\"\\u00e9\\u00E9\"").must() == "éé"
+    assert read_all("\"\\u0041\"").must() == "A"
+    assert read_all("\"\\ud83d\\ude00\"").must() == "😀"
+    nul: [u8] = [0]
+    assert read_all("\"\\u0000\"").must() == nul.validated_bytes().must()
+
+test "quoted: a surrogate with no partner is no text, and is refused"
+    assert code_of(read_all("\"\\ud83d\"")) == "not_text"
+    assert code_of(read_all("\"\\ude00\"")) == "not_text"
+    assert code_of(read_all("\"\\ud83d\\u0041\"")) == "not_text"
+    assert code_of(read_all("\"\\ud83dx\"")) == "not_text"
+
+test "quoted: what is no literal fails `not_json`, saying where"
+    assert code_of(read_all("\"open")) == "not_json"
+    assert code_of(read_all("\"a\\q\"")) == "not_json"
+    assert code_of(read_all("\"\\u12g4\"")) == "not_json"
+    assert code_of(read_all("\"\\u12")) == "not_json"
+    assert code_of(read_all("\"\\")) == "not_json"
+
+    match read_all("\"a\nb\"")
+        .ok _  => assert false
+        .err e => assert e.msg == "a string holds the control character U+000A at line 1, column 3, which JSON writes escaped, as `\\n` for a line feed"
+
+    match read_all("\"a\\é\"")
+        .ok _  => assert false
+        .err e => assert e.msg == "expected one of JSON's escapes, `\\\"` `\\\\` `\\/` `\\b` `\\f` `\\n` `\\r` `\\t` or `\\u`, after `\\`, found `é` at line 1, column 4"
+
+test "quoted: a message names where an unclosed string opens"
+    c: cursor.Cursor @= cursor.start("[\n \"ab")
+    c.at @ 3
+
+    match read(@c)
+        .ok _  => assert false
+        .err e => assert e.msg == "the text ends inside the string that opens at line 2, column 2"
+
+test "quoted: escaped reads one escape, unicode and code_unit the \\u form"
+    c: cursor.Cursor @= cursor.start("\\tx")
+    assert escaped(@c).must() == "\t"
+    assert c.at == 2
+    u: cursor.Cursor @= cursor.start("\\u00e9")
+    u.at @ 2
+    assert unicode(@u, backslash: 0).must() == "é"
+    hex: cursor.Cursor @= cursor.start("FfA0")
+    assert code_unit(@hex).must() == 0xffa0
+
+test "quoted: a character is its UTF-8 bytes, and a surrogate is none"
+    assert character(0x41).must() == "A"
+    assert character(0xe9).must() == "é"
+    assert character(0x20ac).must() == "€"
+    assert character(0x1f600).must() == "😀"
+    assert character(0xd800).is_err()
+    assert character(0x110000).is_err()
+    assert character(0 - 1).is_err()
+
+test "quoted: a written literal escapes what JSON needs and nothing else"
+    assert written("") == "\"\""
+    assert written("caffè €") == "\"caffè €\""
+    assert written("a\"b\\c") == "\"a\\\"b\\\\c\""
+    assert written("\n\r\t\u{8}\u{c}\u{1}\u{1f}\u{7f}") == "\"\\n\\r\\t\\b\\f\\u0001\\u001f\u{7f}\""
+    assert escape_of(1) == "\\u0001"
+    assert escape_of('"') == "\\\""
+
+test "quoted: what is written reads back as it was"
+    nul: [u8] = [0, 'a']
+
+    for s in ["", "plain", "a\"b\\c", "line\nnext", "😀 é", nul.validated_bytes().must()]
+        assert read_all(written(s)).must() == s

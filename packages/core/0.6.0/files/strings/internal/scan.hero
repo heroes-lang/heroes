@@ -1,0 +1,110 @@
+# What `strings` reads byte by byte, kept out of its face because no program
+# calls it: where a white space character begins or ends, and where a text
+# first holds another.
+#
+# A `str` is UTF-8, and a slice that splits a character aborts (spec § 10), so
+# every position this module answers is a character's first byte: a white
+# space character is matched whole, and a match of a text that is not empty
+# begins where its first character begins, since no byte that continues a
+# character equals one that begins one.
+
+# The width in bytes of the white space character that begins at `at` in `s`,
+# or 0 where the character there is not white space. White space is Unicode's
+# White_Space property, the set Go's `unicode.IsSpace` reads: tab, line feed,
+# vertical tab, form feed, carriage return and space; U+0085 and U+00A0, two
+# bytes each; and U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F and
+# U+3000, three bytes each.
+function space_width_at(s: str, at: i64) -> i64
+    first = s[at]
+
+    if first == ' ' || first >= 9 && first <= 13
+        return 1
+
+    if first == 0xc2
+        if at + 1 < s.len() && (s[at + 1] == 0x85 || s[at + 1] == 0xa0)
+            return 2
+        return 0
+
+    if at + 2 >= s.len()
+        return 0
+    second = s[at + 1]
+    third = s[at + 2]
+
+    if first == 0xe1 && second == 0x9a && third == 0x80
+        return 3
+
+    if first == 0xe2 && second == 0x80 && (third <= 0x8a || third == 0xa8 || third == 0xa9 || third == 0xaf)
+        return 3
+
+    if first == 0xe2 && second == 0x81 && third == 0x9f
+        return 3
+
+    if first == 0xe3 && second == 0x80 && third == 0x80
+        return 3
+    return 0
+
+# The width in bytes of the white space character that ends just before `end`
+# in `s`, or 0 where the character there is not white space.
+function space_width_before(s: str, end: i64) -> i64
+    for width in [1, 2, 3]
+        if end - width >= 0 && space_width_at(s, end - width) == width
+            return width
+
+    return 0
+
+# Where `sep` first begins in `s`, failing `not_found` where `s` holds none. An
+# empty `sep` is found at 0.
+function first_at(s: str, sep: str) -> i64?
+    last = s.len() - sep.len()
+    at: i64 @= 0
+
+    while at <= last
+        matched: i64 @= 0
+
+        while matched < sep.len() && s[at + matched] == sep[matched]
+            matched @ matched + 1
+
+        if matched == sep.len()
+            return ok(at)
+        at @ at + 1
+
+    if s.len() > 40
+        return fail(code: "not_found", msg: f"no \"{sep}\" in a text of {s.len()} bytes")
+    return fail(code: "not_found", msg: f"no \"{sep}\" in \"{s}\"")
+
+## Tests
+
+# U+3000, the ideographic space, and U+00A0, the non-breaking one, built from
+# their bytes: a source may not hold an invisible character as itself, and no
+# escape writes one.
+test "space_width_at: one byte, two, three, and what is not white space"
+    ideographic: [u8] = [0xe3, 0x80, 0x80]
+    no_break: [u8] = [0xc2, 0xa0]
+    assert space_width_at(" ", 0) == 1
+    assert space_width_at("\t", 0) == 1
+    assert space_width_at("\r", 0) == 1
+    assert space_width_at("\u{85}", 0) == 2
+    assert space_width_at(no_break.validated_bytes().must(), 0) == 2
+    assert space_width_at(ideographic.validated_bytes().must(), 0) == 3
+    assert space_width_at("\u{2029}", 0) == 3
+    assert space_width_at("a", 0) == 0
+    assert space_width_at("é", 0) == 0
+    assert space_width_at("é", 1) == 0
+
+test "space_width_before reads the character that ends where it is asked"
+    assert space_width_before("a ", 2) == 1
+    assert space_width_before("a\u{85}", 3) == 2
+    assert space_width_before("a\u{2028}", 4) == 3
+    assert space_width_before("aé", 3) == 0
+    assert space_width_before("", 0) == 0
+
+test "first_at: at the start, further in, nowhere, and an empty text sought"
+    assert first_at(s: "abc", sep: "a").must() == 0
+    assert first_at(s: "abcbc", sep: "bc").must() == 1
+    assert first_at(s: "abc", sep: "").must() == 0
+    assert first_at(s: "", sep: "").must() == 0
+    assert first_at(s: "ab", sep: "abc").is_err()
+
+    match first_at(s: "abc", sep: ";")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no \";\" in \"abc\""
