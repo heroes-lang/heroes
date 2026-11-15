@@ -1,0 +1,12 @@
+# fixedbugs, defect 2555, lane b38-module, 2026-11-15.
+#
+# A fetched package's header embedding a file of the program's by a climb
+# out of its root, `#embed "../../outside.bin"`. clang's `-M` writes the
+# target whole, its climb kept, and the filesystem places it outside the
+# root too, so C2 refuses it before anything compiles, the file named as
+# clang wrote it: the repair that places a whole row by the filesystem lets
+# no climb through. Needs clang 19 or later, which knows `#embed`.
+use <pk>/pk
+
+function main()
+    print(pk.first())

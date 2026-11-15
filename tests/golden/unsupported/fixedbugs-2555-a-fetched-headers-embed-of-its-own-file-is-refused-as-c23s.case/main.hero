@@ -1,0 +1,14 @@
+# fixedbugs, defect 2555, lane b38-module, 2026-11-15.
+#
+# A fetched package's header embedding its own data file, `#embed
+# "data.bin"`. clang's `-M` writes an `#embed` target whole beside the
+# package's root written relative, and C2 compared the two spellings, so the
+# header was refused `package_reads_outside`, a false message: the file lies
+# inside the root. The refusal stands for its true reason, told now: `#embed`
+# is C23's, and every warning clang gives in a header's own code but
+# `-Wall`'s is an error (panel 245's R1). Needs clang 19 or later, which
+# knows `#embed`; at the floor, clang 18, the line is no directive at all.
+use <pk>/pk
+
+function main()
+    print(pk.first())

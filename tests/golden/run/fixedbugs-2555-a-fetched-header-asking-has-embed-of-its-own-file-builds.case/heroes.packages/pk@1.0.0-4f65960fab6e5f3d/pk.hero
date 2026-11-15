@@ -1,0 +1,12 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places
+# it: a module binding the header it ships, which asks after its own data
+# file with `__has_embed` (defect 2555).
+extern "pk.h"
+    constant PK_FOUND: i64
+    constant PK_MISSING: i64
+
+function found() -> i64
+    return PK_FOUND
+
+function missing() -> i64
+    return PK_MISSING

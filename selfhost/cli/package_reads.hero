@@ -1,8 +1,11 @@
-# Every file a fetched package's unit reads lies under the package's root,
-# the runtime, the toolchain's own directories or a folder its own `pkgconfig`
-# groups' answer names (panel 235's R9, its C2, ratified 2026-11-07, and the
-# coordinator's ruling of that day; design.md §4.19, §1.12), judged on
-# clang's `-M` listing of what the unit's headers open, before any compile.
+# What C2 judges a fetched package's listing with (panel 235's R9, its C2,
+# ratified 2026-11-07, and the coordinator's ruling of that day; design.md
+# §4.19, §1.12): the toolchain's own directories and files, the folders its
+# own `pkgconfig` groups' answer names, and a path read a part at a time.
+# The verdict, every file the unit's headers open lying under the package's
+# root, the runtime, the toolchain's own directories or one of those
+# folders, judged on clang's `-M` listing before any compile, is
+# `cli/reads_within.hero`'s, which `compiling.within_root` asks.
 #
 # **Why a listing and not the search.** C1 puts the runtime's directory first
 # on a package's unit and its own root after it (`compiling.of_package`), so
@@ -28,26 +31,24 @@
 # the machine's (the coordinator's ruling). Nothing else: not the program's
 # root, not an `--include` directory, not another package.
 #
-# **Paths are judged as written, a component at a time.** clang writes a path
+# **Paths are read as written, a component at a time.** clang writes a path
 # as the `-I` word and the include spelling made it, `heroes.packages/vec/../x.h`
 # among them, so each is read lexically: separators made `/`, `.` dropped, a
 # `..` taking off the part before it, and a relative path that climbs past
 # its first part keeping its `..`, which no allowed directory holds. A
 # directory holds a path when its parts are the path's first parts, so
-# `heroes.packages/vec` does not hold `heroes.packages/vec2/x.h`. What this
-# cannot see, said: a symbolic link inside the root names a file the listing
-# does not, which the fetch refuses before anything is placed (C3).
+# `heroes.packages/vec` does not hold `heroes.packages/vec2/x.h`. Where the
+# spelling cannot say, clang writing an `#embed` target whole beside a root
+# written relative, the verdict asks the filesystem where both lie
+# (`cli/reads_within.hero`, defect 2555). What this cannot see, said: a
+# symbolic link inside the root names a file the listing does not, which the
+# fetch refuses before anything is placed (C3).
 #
 # **Every build asks it since defect 2351** (`package_units.reached`, through
 # `compiling.within_root`): two listings of each fetched package's header
 # list, the lines its probes open with and its unit's opening, judged before
 # any probe or unit of the build compiles and told on the package's first
 # binding (`cli/rounds.hero`). Until then no build called it.
-#
-# **A path is told as written, `/` between its parts** (defect 2382): the
-# Windows box's listing writes `\`, and the refusal named the file so beside
-# the root written with `/`. Its `..` kept, its separators are made `/` by
-# `clang_place.slashed`, the rule every message telling clang's paths follows.
 
 use bytes
 use cli/deps
@@ -64,9 +65,6 @@ use emit/clang_place
 record Own
     dirs: [str]
     files: [str]
-
-constant CODE: str
-    "package_reads_outside"
 
 constant STARTS: str
     "#include <...> search starts here:"
@@ -273,65 +271,6 @@ function holds(dir: str, path: str) -> bool
         return path.len() > 0 && path[0] != '/' && path != "." && !strings.starts_with(text: path, prefix: "../") && path != ".."
     return path.len() > dir.len() && strings.starts_with(text: path, prefix: dir) && (path[dir.len()] == '/' || dir == "/")
 
-# The paths of a listing's rows (`<digest> <path>`, after the digest of them
-# all) that no directory of `dirs` holds and that are none of `files`, as the
-# listing wrote them, every separator `/` (defect 2382).
-function outside(listing: str, dirs: [str], files: [str]) -> [str]
-    out: [str] @= []
-    first: bool @= true
-
-    for row in deps.lines(listing)
-        if first
-            first @ false
-            continue
-        space: i64 @= 0
-
-        while space < row.len() && row[space] != ' '
-            space @ space + 1
-
-        if space >= row.len()
-            continue
-        written = row.slice(from: space + 1, to: row.len())
-        path = lexical(written)
-        allowed: bool @= false
-
-        for one in files
-            if one == path
-                allowed @ true
-
-        for dir in dirs
-            if holds(dir: dir, path: path)
-                allowed @ true
-
-        if !allowed
-            out @ out.push(clang_place.slashed(written))
-
-    return out
-
-# C2's verdict on one listing of a fetched package's unit: ok where every
-# file it names lies where a package may read, the paths outside named
-# otherwise. `root` is the package's root, `runtime` the runtime's
-# directory, `pkgconfig_flags` its own groups' compile words, `own` the
-# toolchain's own under its words; a listing clang could not make is no
-# verdict, told, since nothing vouches for what that compile would read.
-function judged(own: Own, root: str, runtime: str, pkgconfig_flags: [str], listing: str?) -> ()?
-    if listing.is_err()
-        return fail(
-            code: "unread",
-            msg: "the files the package's headers read could not be listed, so nothing vouches for them"
-        )
-    dirs: [str] @= [lexical(root), lexical(runtime)]
-    dirs @ strings.with_all(list: dirs, more: own.dirs)
-    dirs @ strings.with_all(list: dirs, more: answered(pkgconfig_flags))
-    far = outside(listing.must(), dirs: dirs, files: own.files)
-
-    if far.len() == 0
-        return ok()
-    return fail(
-        code: CODE,
-        msg: "a unit of the package at `" + root + "` reads `" + far.join("`, `") + "`, outside its root, the runtime, the toolchain's own directories and the folders its `pkgconfig` groups' answer names: a fetched package's headers read only the package's own files"
-    )
-
 ## Tests
 
 test "a path is read a part at a time, `..` taking off the part before it and never climbing past a root"
@@ -398,57 +337,3 @@ test "what clang -E -v says is read into the toolchain's own directories and fil
 
 test "a package's own pkg-config folders are read from its compile words, joined or the next word"
     assert answered(["-DX=1", "-I/opt/ray/include", "-I", "/opt/b", "-F/opt/f", "-lz"]) == ["/opt/ray/include", "/opt/b", "/opt/f"]
-
-test "a listing is judged row by row: the root, the runtime, the toolchain's own and a package's folders pass, a climb out of the root does not"
-    own = Own(dirs: ["/usr/include"], files: ["/SDK/SDKSettings.json"])
-    listing = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h\ndddd /SDK/SDKSettings.json\neeee /opt/ray/include/raylib.h\nffff heroes.packages/vec/../../main.h\ngggg heroes.packages/vec2/x.h"
-    said = judged(
-        own: own,
-        root: "heroes.packages/vec",
-        runtime: "runtime",
-        pkgconfig_flags: ["-I/opt/ray/include"],
-        listing: ok(listing)
-    )
-    assert said.is_err()
-
-    msg = match said
-        .ok _  => ""
-        .err e => e.code + " " + e.msg
-
-    assert strings.starts_with(text: msg, prefix: CODE + " ")
-    assert strings.holds(text: msg, needle: "`heroes.packages/vec/../../main.h`")
-    assert strings.holds(text: msg, needle: "`heroes.packages/vec2/x.h`")
-    assert !strings.holds(text: msg, needle: "raylib.h")
-    assert !strings.holds(text: msg, needle: "stdint.h")
-    clean = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h"
-    assert !judged(own: own, root: "heroes.packages/vec", runtime: "runtime", pkgconfig_flags: [], listing: ok(clean)).is_err()
-    assert judged(
-        own: own,
-        root: "heroes.packages/vec",
-        runtime: "runtime",
-        pkgconfig_flags: [],
-        listing: fail(code: "unread", msg: "x")
-    ).is_err()
-
-# The Windows box's listing writes `\` between a path's parts (defect 2382):
-# the file outside the root is told as written, its climb kept, `/` between
-# its parts as the root's are, and a path the root holds passes either way.
-test "a path a Windows listing names outside the root is told with `/`, its climb kept (defect 2382)"
-    own = Own(dirs: ["C:/LLVM/lib/clang/23/include"], files: [])
-    listing = "0123456789abcdef\naaaa heroes.packages\\vec\\vecmath.h\nbbbb runtime\\heroes_unit.h\ncccc C:\\LLVM\\lib\\clang\\23\\include\\stdint.h\ndddd heroes.packages\\vec\\..\\..\\outside.h"
-    said = judged(
-        own: own,
-        root: "heroes.packages/vec",
-        runtime: "runtime",
-        pkgconfig_flags: [],
-        listing: ok(listing)
-    )
-
-    msg = match said
-        .ok _  => ""
-        .err e => e.msg
-
-    assert strings.holds(text: msg, needle: "reads `heroes.packages/vec/../../outside.h`, outside its root")
-    assert !strings.holds(text: msg, needle: "\\")
-    assert !strings.holds(text: msg, needle: "stdint.h") && !strings.holds(text: msg, needle: "vecmath.h")
-    assert outside("0\nx C:\\pkg\\..\\x.h", dirs: ["C:/pkg"], files: []) == ["C:/pkg/../x.h"]

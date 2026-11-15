@@ -1,0 +1,15 @@
+# fixedbugs, defect 2555, lane b38-module, 2026-11-15.
+#
+# A fetched package's header asking after its own data file with
+# `__has_embed`, which clang reads without a word. clang's `-M` writes that
+# file whole, from the folder it ran in, beside the package's root written
+# relative, and C2 compared the two spellings, so the correct program was
+# refused `package_reads_outside`, naming a file inside the root as outside
+# it. Now a row its spelling cannot place is asked where the filesystem
+# places it (`cli/reads_within.hero`): the file lies in the root and the
+# program builds. A file `__has_embed` does not find is no row.
+use <pk>/pk
+
+function main()
+    print(pk.found())
+    print(pk.missing())

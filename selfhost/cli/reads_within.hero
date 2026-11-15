@@ -1,0 +1,235 @@
+# C2's verdict on one listing of a fetched package's unit, a row at a time
+# (panel 235's R9, its C2, ratified 2026-11-07; design.md §4.19, §1.12):
+# every file the listing names lies under the package's root, the runtime,
+# the toolchain's own directories or a folder its own `pkgconfig` groups'
+# answer names. What it judges with, the toolchain's own and a path read
+# lexically, is `cli/package_reads.hero`'s; `compiling.within_root` asks it.
+#
+# **A row is held as written first, and where its spelling cannot say, where
+# the filesystem places it** (defect 2555). clang writes an `#include` or a
+# `__has_include` target as the `-I` word made it, relative where the root
+# is, but an `#embed` or a `__has_embed` target whole, from the folder clang
+# ran in: `/…/app/heroes.packages/embed@1.0.0-…/data.bin` beside the root
+# `heroes.packages/embed@1.0.0-…`, two spellings no lexical reading can
+# compare. Until then such a row was told `package_reads_outside`, naming a
+# file inside the root as outside it: a header asking `__has_embed` of its
+# own file, which clang reads without a word, was refused, and an `#embed`
+# of one, which the header region refuses as C23's (panel 245's R1), was
+# refused for that false reason. Measured 2026-11-15 with this Mac's clang
+# 21: the whole path is the folder clang ran in as the system names it,
+# links resolved whatever `$PWD` says, joined to the found path with its
+# `..` kept (panel 250's ffi-pragmatist read the same whole paths from
+# Debian's clang 22, `docs/panel/250-reports/ffi-pragmatist.md` § Shape 4).
+#
+# So a row no allowed directory holds as written is asked again: the place
+# the filesystem resolves it to, every link followed (`files.resolved`),
+# against the place each allowed directory resolves to, both read lexically.
+# Held there, the file it names lies where a package may read. A row or a
+# directory the filesystem cannot resolve is not held, so a question it
+# cannot answer stays a refusal and never a pass; and no symbolic link inside
+# a fetched root can carry a row out of it, since the fetch refuses one before
+# anything is placed (C3). A listing every row of which is held as written
+# asks the filesystem nothing.
+#
+# **A path is told as written, `/` between its parts** (defect 2382): the
+# Windows box's listing writes `\`, and the refusal named the file so beside
+# the root written with `/`. Its `..` kept, its separators are made `/` by
+# `clang_place.slashed`, the rule every message telling clang's paths follows.
+
+use cli/deps
+use cli/files
+use cli/package_reads
+use cli/process
+use cli/publish
+use cli/strings
+use emit/clang_place
+
+constant CODE: str
+    "package_reads_outside"
+
+# C2's verdict on one listing of a fetched package's unit: ok where every
+# file it names lies where a package may read, the paths outside named
+# otherwise. `root` is the package's root, `runtime` the runtime's
+# directory, `pkgconfig_flags` its own groups' compile words, `own` the
+# toolchain's own under its words; a listing clang could not make is no
+# verdict, told, since nothing vouches for what that compile would read.
+function judged(own: package_reads.Own, root: str, runtime: str, pkgconfig_flags: [str], listing: str?) -> ()?
+    if listing.is_err()
+        return fail(
+            code: "unread",
+            msg: "the files the package's headers read could not be listed, so nothing vouches for them"
+        )
+    dirs: [str] @= [package_reads.lexical(root), package_reads.lexical(runtime)]
+    dirs @ strings.with_all(list: dirs, more: own.dirs)
+    dirs @ strings.with_all(list: dirs, more: package_reads.answered(pkgconfig_flags))
+    far = outside(listing.must(), dirs: dirs, own_files: own.files)
+
+    if far.len() == 0
+        return ok()
+    return fail(
+        code: CODE,
+        msg: "a unit of the package at `" + root + "` reads `" + far.join("`, `") + "`, outside its root, the runtime, the toolchain's own directories and the folders its `pkgconfig` groups' answer names: a fetched package's headers read only the package's own files"
+    )
+
+# The paths of a listing's rows (`<digest> <path>`, after the digest of them
+# all) that are none of `own_files` and that no directory of `dirs` holds,
+# as written or where the filesystem places both (`unplaced`), told as the
+# listing wrote them, every separator `/` (defect 2382).
+function outside(listing: str, dirs: [str], own_files: [str]) -> [str]
+    far: [str] @= []
+    first: bool @= true
+
+    for row in deps.lines(listing)
+        if first
+            first @ false
+            continue
+        space: i64 @= 0
+
+        while space < row.len() && row[space] != ' '
+            space @ space + 1
+
+        if space >= row.len()
+            continue
+        written = row.slice(from: space + 1, to: row.len())
+        path = package_reads.lexical(written)
+        allowed: bool @= false
+
+        for one in own_files
+            if one == path
+                allowed @ true
+
+        for dir in dirs
+            if package_reads.holds(dir: dir, path: path)
+                allowed @ true
+
+        if !allowed
+            far @ far.push(written)
+
+    out: [str] @= []
+
+    for written in unplaced(written: far, dirs: dirs)
+        out @ out.push(clang_place.slashed(written))
+
+    return out
+
+# The paths of `written`, rows no directory of `dirs` holds as written, that
+# no directory holds where the filesystem places both either: each
+# directory resolved once, and only where a row is left to ask about.
+function unplaced(written: [str], dirs: [str]) -> [str]
+    if written.len() == 0
+        return written
+    places: [str] @= []
+
+    for dir in dirs
+        place = files.resolved(dir)
+
+        if !place.is_err()
+            places @ places.push(package_reads.lexical(place.must()))
+
+    out: [str] @= []
+
+    for path in written
+        if !placed_within(places, place: files.resolved(path))
+            out @ out.push(path)
+
+    return out
+
+# Whether a directory's place of `places` holds `place`, a row's place; a
+# row the filesystem could not place is held by none.
+function placed_within(places: [str], place: str?) -> bool
+    if place.is_err()
+        return false
+    path = package_reads.lexical(place.must())
+
+    for dir in places
+        if package_reads.holds(dir: dir, path: path)
+            return true
+
+    return false
+
+## Tests
+
+test "a listing is judged row by row: the root, the runtime, the toolchain's own and a package's folders pass, a climb out of the root does not"
+    own = package_reads.Own(dirs: ["/usr/include"], files: ["/SDK/SDKSettings.json"])
+    listing = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h\ndddd /SDK/SDKSettings.json\neeee /opt/ray/include/raylib.h\nffff heroes.packages/vec/../../main.h\ngggg heroes.packages/vec2/x.h"
+    said = judged(
+        own: own,
+        root: "heroes.packages/vec",
+        runtime: "runtime",
+        pkgconfig_flags: ["-I/opt/ray/include"],
+        listing: ok(listing)
+    )
+    assert said.is_err()
+
+    msg = match said
+        .ok _  => ""
+        .err e => e.code + " " + e.msg
+
+    assert strings.starts_with(text: msg, prefix: CODE + " ")
+    assert strings.holds(text: msg, needle: "`heroes.packages/vec/../../main.h`")
+    assert strings.holds(text: msg, needle: "`heroes.packages/vec2/x.h`")
+    assert !strings.holds(text: msg, needle: "raylib.h")
+    assert !strings.holds(text: msg, needle: "stdint.h")
+    clean = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h"
+    assert !judged(own: own, root: "heroes.packages/vec", runtime: "runtime", pkgconfig_flags: [], listing: ok(clean)).is_err()
+    assert judged(
+        own: own,
+        root: "heroes.packages/vec",
+        runtime: "runtime",
+        pkgconfig_flags: [],
+        listing: fail(code: "unread", msg: "x")
+    ).is_err()
+
+# The Windows box's listing writes `\` between a path's parts (defect 2382):
+# the file outside the root is told as written, its climb kept, `/` between
+# its parts as the root's are, and a path the root holds passes either way.
+test "a path a Windows listing names outside the root is told with `/`, its climb kept (defect 2382)"
+    own = package_reads.Own(dirs: ["C:/LLVM/lib/clang/23/include"], files: [])
+    listing = "0123456789abcdef\naaaa heroes.packages\\vec\\vecmath.h\nbbbb runtime\\heroes_unit.h\ncccc C:\\LLVM\\lib\\clang\\23\\include\\stdint.h\ndddd heroes.packages\\vec\\..\\..\\outside.h"
+    said = judged(
+        own: own,
+        root: "heroes.packages/vec",
+        runtime: "runtime",
+        pkgconfig_flags: [],
+        listing: ok(listing)
+    )
+
+    msg = match said
+        .ok _  => ""
+        .err e => e.msg
+
+    assert strings.holds(text: msg, needle: "reads `heroes.packages/vec/../../outside.h`, outside its root")
+    assert !strings.holds(text: msg, needle: "\\")
+    assert !strings.holds(text: msg, needle: "stdint.h") && !strings.holds(text: msg, needle: "vecmath.h")
+    assert outside("0\nx C:\\pkg\\..\\x.h", dirs: ["C:/pkg"], own_files: []) == ["C:/pkg/../x.h"]
+
+# Defect 2555: clang writes an `#embed` or `__has_embed` target whole beside
+# a root written relative. A whole row naming a file inside the root is held
+# where the filesystem places both, its `..` among them; a whole row climbing
+# out of it, or naming a file the root does not hold, is told as written; a
+# root the filesystem cannot place holds no whole row.
+test "a whole row the listing writes beside a relative root is judged where the filesystem places both (defect 2555)"
+    dir = "build/selftest-reads-within"
+    root = dir + "/heroes.packages/embed@1.0.0-0123456789abcdef"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(root + "/sub").is_err()
+    assert !publish.write_whole(path: root + "/data.bin", text: "Z", keyed: true).is_err()
+    assert !publish.write_whole(path: dir + "/secret.bin", text: "S", keyed: true).is_err()
+    whole = files.resolved(dir).must()
+    inside = whole + "/heroes.packages/embed@1.0.0-0123456789abcdef/data.bin"
+    climbed = whole + "/heroes.packages/embed@1.0.0-0123456789abcdef/sub/../data.bin"
+    out = whole + "/heroes.packages/embed@1.0.0-0123456789abcdef/../../secret.bin"
+    own = package_reads.Own(dirs: ["/usr/include"], files: [])
+    listing = "0123456789abcdef\naaaa " + root + "/a.h\nbbbb " + inside + "\ncccc " + climbed
+    assert !judged(own: own, root: root, runtime: "runtime", pkgconfig_flags: [], listing: ok(listing)).is_err()
+    said = judged(own: own, root: root, runtime: "runtime", pkgconfig_flags: [], listing: ok(listing + "\ndddd " + out))
+
+    msg = match said
+        .ok _  => ""
+        .err e => e.code + " " + e.msg
+
+    assert strings.starts_with(text: msg, prefix: CODE + " ")
+    assert strings.holds(text: msg, needle: "reads `" + clang_place.slashed(out) + "`, outside its root")
+    assert !strings.holds(text: msg, needle: "data.bin")
+    assert outside("0\nx " + inside, dirs: [dir + "/nowhere"], own_files: []) == [clang_place.slashed(inside)]
+    assert !process.remove_tree(dir).is_err()
