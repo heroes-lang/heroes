@@ -78,6 +78,7 @@ record Staging
 # with none, and no later run undoes it.
 function opened(program: str) -> Staging?
     home = program + PLACED
+    placeable(home)?
     written(process.mkdir_all(home))?
     tried: i64 @= 0
 
@@ -117,6 +118,22 @@ function opened(program: str) -> Staging?
     return fail(
         code: "cannot_place",
         msg: "no staging folder could be made under `" + home + "`: " + TRIES.to_str() + " names were each held by another run or stood already"
+    )
+
+# Whether a tree can be placed under `home`, the program's `heroes.packages`:
+# a name of the author's standing there, a file or a link to one or to
+# nothing, refuses the run at exit 1 with what stands named, as a name at a
+# tree's key does (defect 2506's words and code, `fetch/edited.hero`), and
+# nothing is placed (defect 2538). Until then `mkdir` failed on it and the
+# run was the tool's, `cannot_place` at exit 2 with the system's number 17.
+function placeable(home: str) -> ()?
+    blocked = standing.home_blocked(home)
+
+    if blocked == .nothing
+        return ok()
+    return fail(
+        code: "sum_mismatch",
+        msg: "the program's packages would be placed in `" + home + "`, where " + standing.said(blocked) + " stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed"
     )
 
 # The staged tree held to `sum` and moved into place under `key` in the
@@ -445,4 +462,31 @@ test "a staging name that stands is passed over and never removed (defect 2453)"
     assert read_file(folder_only + "/replaced-0/a.hero").must() == "the only copy\n"
     assert !process.path_exists(folder_only + run_lock.SUFFIX)
     dropped(@s)
+    assert !process.remove_tree(program).is_err()
+
+# Defect 2538: a name of the author's where the placed trees go refuses the
+# run at exit 1, what stands named, and is left as it was; a link to nothing
+# too, where this machine makes links.
+test "a file or a link to nothing where heroes.packages goes refuses the run and stays (defect 2538)"
+    program = "build/selftest-fetch-home/"
+    assert !process.remove_tree(program).is_err()
+    assert !process.mkdir_all(program).is_err()
+    assert !write_file(path: program + PLACED, text: "mine\n").is_err()
+
+    match begun(program)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "sum_mismatch"
+            assert e.msg == "the program's packages would be placed in `" + program + PLACED + "`, where a file stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed"
+
+    assert read_file(program + PLACED).must() == "mine\n"
+    assert !process.remove_file(program + PLACED).is_err()
+
+    if !files.symbolic_link(target: "nowhere", name: program + PLACED).is_err()
+        match opened(program)
+            .ok _  => assert false
+            .err e => assert e.code == "sum_mismatch" && strings.holds(text: e.msg, needle: "`, where a link to nothing stands;")
+
+        assert files.entry(program + PLACED) == .link
+
     assert !process.remove_tree(program).is_err()
