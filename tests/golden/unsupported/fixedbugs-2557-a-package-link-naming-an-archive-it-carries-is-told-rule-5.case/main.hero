@@ -1,0 +1,12 @@
+# fixedbugs, defect 2557, lane b38-module, 2026-11-15.
+#
+# The package `lnk` carries `libpkl.a` beside its header, and its group
+# writes `link "pkl"`. No linker searches a package's tree, so the build is
+# refused `ffi_missing_library`, a true message about the search, which said
+# nothing of why the file beside the header does not count. Now its note
+# names the file and the rule that keeps it off the link: a package ships no
+# platform C of its own (examples/packages/README.md § 4, rule 5).
+use <lnk>/pkl
+
+function main()
+    print(pkl.answer())
