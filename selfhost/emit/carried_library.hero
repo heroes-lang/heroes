@@ -1,0 +1,86 @@
+# A package's `link` group naming a library the package carries in its own
+# tree (defect 2557; examples/packages/README.md § 4, rule 5; design.md
+# §4.19): `ffi_build.missing_library` tells it `ffi_missing_library`, and this
+# adds the rule that decides it.
+#
+# **The linker never searches a package's tree.** It reads the machine's
+# folders and those the build names, `--library` and a `pkgconfig` answer's
+# `-L`, so a group `extern "pkl.h" link "pkl"` beside a `libpkl.a` the
+# package ships is told that this machine has no library called `pkl`: true
+# of the search, and silent on why the file beside the header does not
+# count. A package ships no platform C of its own, and a compiled library is
+# platform C, built for one machine. Measured 2026-11-15 on this Mac with
+# panel 250's probe package `lnk`: refused at exit 1 naming the machine
+# alone, and the seat's run with `--library` naming the placed tree built and
+# printed `42`, the package's own archive linked. So where the group's
+# package carries a file a linker takes for the name, the refusal names that
+# file and the rule, and says the library is the machine's. The refusal and
+# its code are unchanged: who is refused, and why, stand where they stood.
+
+use cli/files
+use cli/package_units
+use cli/process
+use cli/publish
+use cli/strings
+use diag
+use emit/externs as emit_externs
+use source
+
+# The file names a linker takes for `link "<name>"`: ld64's four and GNU
+# ld's and `ld.lld`'s two (`cli/library_held.searched`), and lld-link's and
+# link.exe's `<name>.lib`.
+function bases(name: str) -> [str]
+    return ["lib" + name + ".tbd", "lib" + name + ".dylib", "lib" + name + ".so", "lib" + name + ".a", name + ".lib"]
+
+# `d`, an `ffi_missing_library` told at a group's `link` string, with a note
+# naming the file the group's package carries for that name and the rule
+# that keeps it off the link; `d` as it was for a group of the program's own
+# or of the library, or a package that carries none.
+function noted(s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
+    place = package_units.place_of(s, source.component_at(s, d.span.start))
+
+    if place.folder.len() == 0
+        return d
+    carried = carried_file(folder: place.folder, name: emit_externs.unquoted(s, span: d.span))
+
+    if carried.len() == 0
+        return d
+    out: diag.Diagnostic @= d
+    out.notes @ out.notes.push(
+        "the package `" + place.alias + "` carries `" + carried + "` in its tree, and no linker searches a package's tree: a package ships no platform C of its own (examples/packages/README.md § 4, rule 5), and a compiled library is C built for one platform, so the library its `link` names is the machine's, installed with its development files"
+    )
+    return out
+
+# The first file of `folder`'s tree in byte order, below the folder as the
+# tree spells it, whose name a linker takes for `name`; "" where none. A
+# link is never entered (`files.own_files_under`).
+function carried_file(folder: str, name: str) -> str
+    wanted = bases(name)
+
+    for path in sort(files.own_files_under(folder))
+        for base in wanted
+            if strings.ends_with(text: path, suffix: "/" + base)
+                return path.slice(from: folder.len() + 1, to: path.len())
+
+    return ""
+
+## Tests
+
+# Defect 2557: a tree holding `libpkl.a` at its root, or a `pkl.lib` below
+# it, carries the library `pkl`, named below the tree; a tree holding only
+# `libpkl2.a` or `pkl.h` carries none, a name being the file's whole base.
+test "a package's tree carries a library where a file of it is one a linker takes for the name (defect 2557)"
+    dir = "build/selftest-carried-library"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/lib").is_err()
+    assert !publish.write_whole(path: dir + "/pkl.h", text: "int x;\n", keyed: true).is_err()
+    assert !publish.write_whole(path: dir + "/libpkl2.a", text: "!<arch>\n", keyed: true).is_err()
+    assert carried_file(folder: dir, name: "pkl") == ""
+    assert !publish.write_whole(path: dir + "/lib/pkl.lib", text: "!<arch>\n", keyed: true).is_err()
+    assert carried_file(folder: dir, name: "pkl") == "lib/pkl.lib"
+    assert !publish.write_whole(path: dir + "/libpkl.a", text: "!<arch>\n", keyed: true).is_err()
+
+    # Byte order: `lib/` before `libp`, a `/` below every letter.
+    assert carried_file(folder: dir, name: "pkl") == "lib/pkl.lib"
+    assert carried_file(folder: dir, name: "pkl2") == "libpkl2.a"
+    assert !process.remove_tree(dir).is_err()

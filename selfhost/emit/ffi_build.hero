@@ -79,6 +79,10 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # library the machine lacks was *internal error: linking failed* at exit 2
 # under it where lld-link told `ffi_missing_library` (found beside defect
 # 2398).
+#
+# **A library a package's tree carries is named with the rule that keeps it
+# off the link** (defect 2557, `emit/carried_library.hero`, asked by
+# `emit/ffi.hero` with this refusal in hand).
 function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l") && !ffi_lookup.has(text: line, needle: "could not open '") && !ffi_lookup.has(text: line, needle: MSVC_NO_FILE)
         return fail(code: "none", msg: "not a missing-library line")

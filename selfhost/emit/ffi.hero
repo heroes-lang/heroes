@@ -20,6 +20,7 @@ use check/state
 use checker
 use cli/pointee_ask
 use diag
+use emit/carried_library
 use emit/ctype
 use emit/ffi_asked
 use emit/ffi_build
@@ -273,7 +274,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         m_lib = ffi_build.missing_library(s, decls, line: line)
 
         if !m_lib.is_err()
-            found @ ffi_lookup.add_once(found, d: m_lib.must())
+            found @ ffi_lookup.add_once(found, d: carried_library.noted(s, d: m_lib.must()))
         m_hdr = ffi_build.missing_header(s, decls, line: line, stderr: text)
 
         if !m_hdr.is_err()

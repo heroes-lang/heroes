@@ -1,0 +1,8 @@
+# The package `lnk` of the case two folders up, as `heroes fetch` places
+# it: a group whose `link` names a library the package carries beside its
+# header, `libpkl.a`, which no linker searches (defect 2557).
+extern "pkl.h" link "pkl"  #~ ffi_missing_library
+    function pkl_answer() -> i64
+
+function answer() -> i64
+    return pkl_answer()

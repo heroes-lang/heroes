@@ -1,0 +1,7 @@
+error[ffi_missing_library]: this machine has no library called `pkl` — the group names it, and the linker looked
+  at tests/golden/unsupported/fixedbugs-2557-a-package-link-naming-an-archive-it-carries-is-told-rule-5.case/heroes.packages/lnk@1.0.0-4c9a9c55f81d9cc2/pkl.hero:4:21
+    |
+  4 | extern "pkl.h" link "pkl"  #~ ffi_missing_library
+    |                     ^^^^^
+  note: install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `pkgconfig "pkl"` asks the machine for both its headers and its libraries
+  note: the package `lnk` carries `libpkl.a` in its tree, and no linker searches a package's tree: a package ships no platform C of its own (examples/packages/README.md § 4, rule 5), and a compiled library is C built for one platform, so the library its `link` names is the machine's, installed with its development files
