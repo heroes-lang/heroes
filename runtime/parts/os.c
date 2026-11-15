@@ -171,7 +171,10 @@ static char **hero_argv = NULL;
  * - DROP THE DISPOSITION IT FOUND. A handler that was there before us is called
  *   first, as `hero_stack_pass_on` does for SIGSEGV; then the default is
  *   restored and the signal re-raised, so the process dies with the status it
- *   always had rather than one this file chose.
+ *   always had rather than one this file chose. Unless that handler came back
+ *   having edited the register file the thread resumes from, which is a
+ *   recovery and not a death: then nothing is said and the thread goes on
+ *   where it was sent (defect 2571, `hero_lease_prior_recovered` below).
  *
  * WHAT IT CAN AND CANNOT NAME. The Heroes function comes from stack.c's frame
  * walk over the interrupted context — intact, since this runs on the alternate
@@ -354,22 +357,90 @@ static void hero_lease_say_count(long long v) {
     hero_stack_say(buf + at);
 }
 
-/* Who raised the signal, from `siginfo_t` and nothing else. `si_code <= 0` is a
- * signal sent by a process — `abort`, `raise` and `kill` all land here — and
- * then `si_pid` says which; `si_code > 0` is the kernel's, a trap instruction,
- * and `si_pid` then overlays `si_addr` and means nothing, which panel 175's
- * ffi seat measured reading -1118630236 on Linux. */
+/* Who raised the signal, from `siginfo_t` and nothing else, and only where it
+ * shows it. `si_code <= 0` with a `si_pid` is a signal a process sent, `abort`,
+ * `raise` and `kill` alike, and `si_pid` says which: Linux writes `SI_TKILL`
+ * or `SI_USER` and the sender, Darwin 0 and the sender. Anything else names
+ * no sender, and then nothing is said of the origin: a `si_code` above 0 is
+ * the kernel's, but `si_pid` overlays `si_addr` there and means nothing (panel
+ * 175's ffi seat read -1118630236 on Linux).
+ *
+ * NOR IS A TRAP INSTRUCTION NAMED (defect 2584, 2026-11-15). This said *at a
+ * trap instruction* for every `si_code` above 0, and nothing in `siginfo_t`
+ * shows one on every platform: Darwin delivers `raise(SIGILL)` with `si_code`
+ * 2 and `si_pid` 0, exactly as it delivers a `udf`, and the line named a trap
+ * the program never ran, 3 of 3 on this Mac; the Linux x86-64 image, under
+ * Rosetta, delivers a raised SIGTRAP and SIGILL with `si_code` 1; and Darwin's
+ * `brk` arrives with `si_code` 0 and `si_pid` 0, so the clause was never said
+ * for a real trap there. A sender is told where one is shown, and silence
+ * stands for the rest. */
 static void hero_lease_say_origin(int signum, const siginfo_t *si) {
     hero_stack_say(hero_lease_signal_name(signum));
-    if (si == NULL) return;
-    if (si->si_code <= 0 && si->si_pid == getpid()) {
+    if (si == NULL || si->si_code > 0 || si->si_pid == 0) return;
+    if (si->si_pid == getpid()) {
         hero_stack_say(", raised by this process");
-    } else if (si->si_code <= 0 && si->si_pid != 0) {
+    } else {
         hero_stack_say(", sent by process ");
         hero_lease_say_count((long long)si->si_pid);
-    } else if (si->si_code > 0) {
-        hero_stack_say(", at a trap instruction");
     }
+}
+
+/* The handler found before us, called with what the kernel gave us: 1 where it
+ * is a function and was called, and it returned; 0 where the saved disposition
+ * is the default and there is nobody to call (one found ignored was never
+ * taken, `hero_lease_take` below). */
+static int hero_lease_call_prior(int signum, siginfo_t *si, void *ctx) {
+    struct sigaction *prev = hero_lease_prev_for(signum);
+    if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
+        prev->sa_sigaction(signum, si, ctx);
+        return 1;
+    }
+    if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
+        prev->sa_handler(signum);
+        return 1;
+    }
+    return 0;
+}
+
+/* WHETHER THE HANDLER BEFORE US TOOK THE SIGNAL BACK (defect 2571, 2026-11-15),
+ * defect 2558's rule one handler over (`parts/stack.c`,
+ * `hero_stack_prior_recovered`). A library that installs its SIGTRAP or SIGILL
+ * handler before `main` may make a trap on purpose and recover it the way every
+ * recovery is written: by editing the register file the kernel resumes the
+ * thread from and returning. Stepping over its own `brk` moves the pc; an
+ * answer written into the result register after an x86-64 `int3`, whose pc
+ * the kernel already reports past it, moves that register alone, which is why
+ * the whole file is read and not the pc. The handler below called it, then
+ * spoke and re-raised whatever it had done: a correct program died at 133 with
+ * *the process is dying of SIGTRAP ... and this runtime did not raise it*,
+ * three runs of three on this Mac, a line false of it.
+ *
+ * So the register file is read before the call and after it, and an edit to
+ * any register is the library's recovery: we return, and the thread goes on
+ * where it was sent, with nothing said. A file that comes back as it was is a
+ * decline, and the claim stands: the pc of a `brk`, a `udf` or a `ud2` is the
+ * trap's own, so resuming runs the trap again and nothing the library did
+ * makes it succeed the second time (a library that declines as Go's archive
+ * declines a fault, defect 2558's, has put the default back and returned for
+ * exactly that).
+ *
+ * The handler is called whatever this platform's register file is, as panel
+ * 175 ordered; where `hero_stack_regfile` does not know the file, a return is
+ * read as a decline, as it was before this function.
+ *
+ * What that leaves, said, each as it was before this function: a file that
+ * comes back as it was from a signal whose pc is already past it, one a
+ * process sent with `raise` or `kill` or an x86-64 `int3`, where the thread
+ * would go on, is still claimed; and so is the one that `abort` raises, which
+ * `abort` itself ends by the default once the handler returns, so claiming it
+ * is what keeps its line. */
+static int hero_lease_prior_recovered(int signum, siginfo_t *si, void *ctx) {
+    HeroStackRegfile before;
+    int known = hero_stack_regfile(ctx, &before);
+    if (!hero_lease_call_prior(signum, si, ctx) || !known) return 0;
+    HeroStackRegfile after;
+    hero_stack_regfile(ctx, &after);
+    return memcmp(&before, &after, sizeof before) != 0;
 }
 
 /* PANEL 175 CHANGED THE ORDER AND THE WORD, and each change is a defect that
@@ -380,9 +451,10 @@ static void hero_lease_say_origin(int signum, const siginfo_t *si) {
  *   `siglongjmp` out of `abort` — left *the process died* above a process that
  *   went on and exited 0, measured on all three POSIX legs. Now the line is
  *   written only once that handler has RETURNED, and a handler that recovers
- *   never comes back here. What this gives up is a handler that ends the
- *   process itself with `_exit`: then nothing is said, which is silence and not
- *   a falsehood.
+ *   by jumping out never comes back here. One that recovers by returning, the
+ *   register file edited, comes back and is let go (defect 2571, above). What
+ *   this gives up is a handler that ends the process itself with `_exit`: then
+ *   nothing is said, which is silence and not a falsehood.
  * - IT SAYS *UNDER*, NEVER *IN* (defect 080). The frame walk names the nearest
  *   Heroes frame on the stack, and a noreturn call inside an optimised C library
  *   saves no return address, so the walk skips the direct caller: the line said
@@ -395,12 +467,7 @@ static void hero_lease_say_origin(int signum, const siginfo_t *si) {
  *   names C's usual reasons as usual. It never names a cause, and it never
  *   repeats E2's third sentence, which F1 and F3 measured false. */
 static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
-    struct sigaction *prev = hero_lease_prev_for(signum);
-    if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
-        prev->sa_sigaction(signum, si, ctx);
-    } else if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
-        prev->sa_handler(signum);
-    }
+    if (hero_lease_prior_recovered(signum, si, ctx)) return;
     if (!hero_runtime_spoke) {
         int64_t held = hero_live_held;
         uintptr_t pc, fp, sp, lr;

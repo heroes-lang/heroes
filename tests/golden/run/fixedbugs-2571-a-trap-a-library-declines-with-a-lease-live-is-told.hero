@@ -1,0 +1,18 @@
+# DEFECT 2571, beside it: a trap the library before the runtime declines,
+# with a lease live, is told by the lease line (2026-11-15).
+#
+# The same decline as `fixedbugs-2571-a-trap-a-library-declines-is-told`,
+# while the program holds a lease: the register file comes back as it was,
+# so the handler claims the death, and with a lease live its line names the
+# count, as it does for a trap no library takes (`fixedbugs-2571-library.h`).
+
+extern "fixedbugs-2571-library.h"
+    function lib_trap_declined()
+
+function main()
+    word = repeat("ab", 4)
+    held: cstr @= word.lease()
+    print("before")
+    lib_trap_declined()
+    end_lease(@held)
+    print("not reached")

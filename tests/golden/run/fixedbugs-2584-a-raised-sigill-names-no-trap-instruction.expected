@@ -1,0 +1,4 @@
+the child started: true
+the child stopped: true
+its line says this runtime did not raise it: true
+its line names a trap instruction: false

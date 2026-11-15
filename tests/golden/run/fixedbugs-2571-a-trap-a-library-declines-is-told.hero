@@ -1,0 +1,19 @@
+# DEFECT 2571, beside it: a trap the library before the runtime declines is
+# still told (2026-11-15).
+#
+# The lease handler now lets a signal go where the handler it found comes
+# back having edited the register file. A library declining a trap it did
+# not make, as Go's archive declines a fault, puts back the default it found
+# and returns with the register file as it was, so the trap would run again
+# and the process die of it in silence. The handler reads the file before
+# and after the call, finds it as it was, and tells the death as it always
+# did. The trap is `__builtin_trap()`: SIGTRAP on arm64 and SIGILL on x86-64
+# (`fixedbugs-2571-library.h`).
+
+extern "fixedbugs-2571-library.h"
+    function lib_trap_declined()
+
+function main()
+    print("before")
+    lib_trap_declined()
+    print("not reached")

@@ -1,0 +1,20 @@
+# DEFECT 2571, beside it: a trap a library recovers while the program holds a
+# lease goes on, and the lease is ended as written (2026-11-15).
+#
+# The lease handler's first arm is the count of live leases: with one live,
+# the base runtime's line for the library's recovered trap was `the process
+# died with 1 lease(s) still live`, above a program that would have gone on
+# to end its lease. A handler that edited the register file has recovered,
+# whatever is live, and nothing is said (`fixedbugs-2571-library.h`).
+
+extern "fixedbugs-2571-library.h"
+    function lib_trap_answered() -> i64
+    function lib_illegal_stepped() -> i64
+
+function main()
+    word = repeat("ab", 4)
+    held: cstr @= word.lease()
+    print("a trap answered: ", lib_trap_answered())
+    print("an illegal instruction stepped over: ", lib_illegal_stepped())
+    end_lease(@held)
+    print("the lease ended")
