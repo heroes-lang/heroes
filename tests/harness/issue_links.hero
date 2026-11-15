@@ -271,6 +271,12 @@ function url_of(t: Targets, kind: str, number: i64, own: i64) -> str
 # Each sitting's number to its file's name, read from the tree's paths: the
 # files of `docs/panel/` itself whose name opens with the number and `-`, its
 # reports' folders apart; a number two files open with answers none.
+#
+# **A run of digits past an `i64` names no sitting** (defect 2565,
+# 2026-11-15): no `panel NNN` reaches it, since `linked_prose` reads six
+# digits at most, so its file is passed by. Until then the run was read by
+# `.must()`, and since defect 2545 made `to_number` refuse such a run by name,
+# `docs/panel/99999999999999999999-x.md` stopped `link` at exit 134.
 function sittings_of(paths: [str]) -> {i64: str}
     found: {i64: [str]} @= {}
     none: [str] = []
@@ -288,8 +294,9 @@ function sittings_of(paths: [str]) -> {i64: str}
             continue
 
         # Digits are ASCII, so the cut stands between characters.
-        n = strings.to_number(name.slice(from: 0, to: digits)).must()
-        found[n] @ found[n].default(none).push(name)
+        match strings.to_number(name.slice(from: 0, to: digits))
+            .err _ => continue
+            .ok n  => found[n] @ found[n].default(none).push(name)
 
     out: {i64: str} @= {}
 
@@ -578,6 +585,19 @@ test "each name is answered by its one issue, and a name two issues answer by no
     assert sittings[178].must() == "178-b.md"
     assert sittings[99].is_err()
     assert keys(sittings).len() == 2
+
+# DEFECT 2565, held as a test (2026-11-15): a sitting's file whose name opens
+# with a run of digits past an `i64` stopped `link` at exit 134, `.must()` on
+# the `does_not_fit` that `to_number` answers since defect 2545. No `panel NNN`
+# reaches such a run, so its file is passed by, and every other file is read
+# as before, the largest `i64` among them.
+test "fixedbugs: a sitting's file whose number is past an i64 is passed by, never an abort (defect 2565)"
+    sittings = sittings_of(
+        ["docs/panel/99999999999999999999-x.md", "docs/panel/9223372036854775808-y.md", "docs/panel/9223372036854775807-z.md", "docs/panel/212-a.md"]
+    )
+    assert keys(sittings).len() == 2
+    assert sittings[9223372036854775807].must() == "9223372036854775807-z.md"
+    assert sittings[212].must() == "212-a.md"
 
 test "a defect and a panel named in prose become links, and nothing else moves"
     t = some_targets()
