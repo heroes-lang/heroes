@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2538-a-link-to-nothing-where-heroes-packages-goes-is-refused-by-the-verbs-and-told-by-the-build.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-88ed723d8c92c5d15dcbbbc763a54a2efcfcc333452c3f4e1d065235780499b8"

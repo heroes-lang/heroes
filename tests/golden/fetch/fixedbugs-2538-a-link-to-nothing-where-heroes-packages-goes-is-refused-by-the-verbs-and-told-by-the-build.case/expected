@@ -1,0 +1,27 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: the program's packages would be placed in `<work>/app/heroes.packages`, where a link to nothing stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed
+$ heroes add json -C <work>/app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: the program's packages would be placed in `<work>/app/heroes.packages`, where a link to nothing stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[package_unread]: `<json>` cannot be read: a link to nothing stands at `<work>/app/heroes.packages`, where the program's packages are placed, and `heroes fetch` places nothing there — move it out of the program's folder to keep it, or remove it, and `heroes fetch` places the packages
+  at <work>/app/main.hero:1:5
+    |
+  1 | use <json>/parse
+    |     ^^^^^^^^^^^^
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2538-a-link-to-nothing-where-heroes-packages-goes-is-refused-by-the-verbs-and-told-by-the-build.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-88ed723d8c92c5d15dcbbbc763a54a2efcfcc333452c3f4e1d065235780499b8"
+heroes.packages:
+(none)

@@ -171,6 +171,10 @@ function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue
         if !process.is_directory(path: package.opened)
             return "the folder `" + package.root + "` its `path` names is not there"
     else
+        home = home_said(opened: b.opened, named: b.named)
+
+        if home.len() > 0
+            return home
         placed_wrong = placed_said(package, e: e, index: b.program.index)
 
         if placed_wrong.len() > 0
@@ -232,6 +236,19 @@ function placed_said(package: reached.Package, e: catalogue.Entry, index: str) -
     if stands == .linked_tree
         return "a link to a folder stands at `" + place + "`, where the package's tree is placed, and that folder is `" + tree.must() + "`, where the catalogue's `sum` for the tree is `" + e.sum + "`, and `heroes fetch` places nothing over it — " + STANDING_ADVICE
     return changed_said(package, e: e, now: tree.must())
+
+# What stands at the program's `heroes.packages` that no tree can be placed
+# under, told before any key under it is asked (defect 2538), "" where a tree
+# can be: through a file every key read as a name of no kind, and through a
+# link to nothing as a tree not placed, which `heroes fetch` then refused to
+# place. The verbs refuse the same name in their own words
+# (`fetch/staging.hero`).
+function home_said(opened: str, named: str) -> str
+    blocked = standing.home_blocked(opened + PLACED)
+
+    if blocked == .nothing
+        return ""
+    return standing.said(blocked) + " stands at `" + named + PLACED + "`, where the program's packages are placed, and `heroes fetch` places nothing there — move it out of the program's folder to keep it, or remove it, and `heroes fetch` places the packages"
 
 # What to do with a name that stands where a package's tree is placed and is
 # not that tree, in `heroes fetch`'s own words (`fetch/edited.hero`).

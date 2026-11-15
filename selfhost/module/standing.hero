@@ -12,6 +12,11 @@
 # A link that names a folder is read through, as every reader of the tree
 # reads it: where that folder sums to the entry's `sum` it is the tree, and
 # where it does not it is told as the link it is.
+#
+# **And `heroes.packages` itself is asked the same way** (defect 2538), by
+# the verbs before they make it and by a build before it asks a key under
+# it: a file there was told as the system's number 17 at exit 2 by both
+# verbs, and through it every key read as a name of no kind to the build.
 
 use cli/files
 use cli/process
@@ -63,6 +68,18 @@ function said(s: Standing) -> str
         .file        => return "a file"
         .other       => return "a name that is neither a folder, a file nor a link"
 
+# What stands at `heroes.packages` that no tree can be placed under (defect
+# 2538): a file, a link to a file or to nothing, or a name the system says is
+# none of a folder, a file or a link; `.nothing` where a folder or a link to
+# one stands, where nothing does, which a verb makes a folder, and where the
+# system cannot answer for the name, whose own failure is then the one told.
+function home_blocked(path: str) -> Standing
+    stands = at(path)
+
+    if read_through(stands) || stands == .other && files.entry(path) == .unknown
+        return .nothing
+    return stands
+
 # A placed tree's path as a build holds it, `heroes.packages/<key>/`, with its
 # last `/` taken off for `at`.
 function unslashed(path: str) -> str
@@ -101,5 +118,13 @@ test "what stands at a key is asked of its own name, a link's kind told apart (d
         assert at(SCRATCH + "/to-file") == .linked_file
         assert read_through(at(SCRATCH + "/to-tree")) && !read_through(at(SCRATCH + "/to-nothing"))
         assert said(at(SCRATCH + "/to-nothing")) == "a link to nothing"
+        assert home_blocked(SCRATCH + "/to-nothing") == .dangling
+        assert home_blocked(SCRATCH + "/to-file") == .linked_file
+        assert home_blocked(SCRATCH + "/to-tree") == .nothing
 
+    # Defect 2538: where the placed trees go, only a folder, a link to one or
+    # nothing lets a tree be placed.
+    assert home_blocked(SCRATCH + "/afile") == .file
+    assert home_blocked(SCRATCH + "/tree") == .nothing
+    assert home_blocked(SCRATCH + "/none") == .nothing
     assert !process.remove_tree(SCRATCH).is_err()
