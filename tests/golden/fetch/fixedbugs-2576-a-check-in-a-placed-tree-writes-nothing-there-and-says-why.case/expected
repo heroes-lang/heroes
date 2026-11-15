@@ -1,0 +1,42 @@
+$ heroes add json -C <work>/app
+exit 0
+stdout:
+added json 1.0.0
+added strings 1.0.0 for json
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes check <work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e/parse.hero
+exit 1
+stdout:
+stderr:
+error[package_unread]: `<strings>` cannot be read: the package `strings` is not placed at `<work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e/heroes.packages/strings@1.0.0-14b3e38486cae6b3/`, and `heroes fetch` places nothing there: the folder of the file you compile, `<work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e/`, names a place under `heroes.packages/`, in the placed packages' trees, and a placed package's modules are compiled by the program that placed them, whose catalogue holds every package of the build — check that program instead
+  at <work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e/parse.hero:3:5
+    |
+  3 | use <strings>/cut
+    |     ^^^^^^^^^^^^^
+$ cd <work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e && heroes check parse.hero
+exit 1
+stdout:
+stderr:
+error[package_unread]: `<strings>` cannot be read: the package `strings` is not placed at `heroes.packages/strings@1.0.0-14b3e38486cae6b3/`, and `heroes fetch` places nothing there: the folder of the file you compile, `./`, names a place under `heroes.packages/` as the filesystem resolves it, `<work>/app/heroes.packages/json@1.0.0-3d4a445349d2866e/`, in the placed packages' trees, and a placed package's modules are compiled by the program that placed them, whose catalogue holds every package of the build — check that program instead
+  at parse.hero:3:5
+    |
+  3 | use <strings>/cut
+    |     ^^^^^^^^^^^^^
+$ heroes check <work>/app/main.hero
+exit 0
+stdout:
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2576-a-check-in-a-placed-tree-writes-nothing-there-and-says-why.case/idx"
+
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-1f2a7b602fa3cd87f4a17786125f02f313251adc15c1c8bf233f802cf3fd2bfc"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06"
+heroes.packages:
+json@1.0.0-3d4a445349d2866e
+strings@1.0.0-14b3e38486cae6b3

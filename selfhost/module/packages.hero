@@ -128,7 +128,7 @@ function reach(@b: Book, alias: str) -> i64
 
     # A tree not placed whose address the verb refuses is told as the verb
     # tells it, never as a tree `heroes fetch` would place (step 5b).
-    refused = unplaced.refusal(package, e: e, index: b.program.index, program: b.opened)
+    refused = unplaced.refusal(package, e: e, index: b.program.index, program: b.opened, named: b.named)
 
     if refused.is_err()
         package.problem @ unplaced.said(refused)

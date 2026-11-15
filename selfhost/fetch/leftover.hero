@@ -56,6 +56,12 @@ function recovered(program: str)
 
     if !process.is_directory(home)
         return
+
+    # Never inside a placed package's tree (defect 2576): no writer writes
+    # one, so what stands there is that tree's change, which the build of
+    # the program that placed it tells, and nothing is undone here.
+    if staging.in_tree(program)
+        return
     made: bool @= false
 
     for name in names(home)
@@ -298,4 +304,20 @@ test "a refused run's taking back left half done is finished by the next run (de
     assert !process.path_exists(home + "/one@1.0.0-k")
     assert names(home).len() == 0
     assert process.is_directory(home)
+    assert !process.remove_tree(program).is_err()
+
+# Defect 2576: a placed package's tree is written by no writer, so a dead
+# run's folder found in one, which a compiler before this repair could leave
+# there, stays as it is: it is the tree's change, which the build of the
+# program that placed the tree tells.
+test "nothing is undone inside a placed package's tree (defect 2576)"
+    program = SCRATCH + "in-tree/"
+    tree = program + staging.PLACED + "/json@1.0.0-k/"
+    dead = tree + staging.PLACED + "/.fetching-1-1"
+    assert !process.remove_tree(program).is_err()
+    planted(folder: dead, ledger: "found 0\n")
+    recovered(tree)
+    assert process.is_directory(dead)
+    assert process.path_exists(dead + run_lock.SUFFIX)
+    assert read_file(dead + "/" + staging.LEDGER).must() == "found 0\n"
     assert !process.remove_tree(program).is_err()

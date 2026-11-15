@@ -18,7 +18,15 @@
 # where this question made it and nothing else stands in it (defect 2434: an
 # author's own empty one stays). What a killed run left there was undone
 # before discovery asked any tree (`module/packages.hero`), never here.
+#
+# **Never for a folder in a placed package's tree** (defect 2576): `heroes
+# fetch` refuses such a folder whatever the source (defects 2462 and 2479),
+# so a build compiling a file there tells that, for every source, and asks
+# no git. Until then the question's staging folder stood inside the tree for
+# an instant, and a build of the program that placed the tree, reading it
+# then, refused that program by its sum with advice to remove a whole tree.
 
+use cli/placed_files
 use cli/process
 use cli/strings
 use fetch/address
@@ -28,16 +36,25 @@ use fetch/transport
 use fetch/verb_place
 use module/catalogue
 use module/reached
+use placed_use
 
 # The refusal `heroes fetch` would give the entry `e`, whose tree `package`
 # names, for the program read under `program` (the directory of the file you
-# compile as files are opened) with the catalogue's `index` line; ok where
-# the tree is placed, the source needs no repository, or the verb would
-# fetch it. Where no staging folder can be made, git cannot be asked, and the
-# graph's own words stand.
-function refusal(package: reached.Package, e: catalogue.Entry, index: str, program: str) -> ()?
+# compile as files are opened, `named` as the author spelt it) with the
+# catalogue's `index` line; ok where the tree is placed, the source needs no
+# repository, or the verb would fetch it. Where no staging folder can be
+# made, git cannot be asked, and the graph's own words stand.
+function refusal(package: reached.Package, e: catalogue.Entry, index: str, program: str, named: str) -> ()?
     if package.unverified || process.is_directory(path: package.opened)
         return ok()
+
+    # Defect 2576: a program's folder in a placed package's tree is one
+    # `heroes fetch` refuses whatever the source (defects 2462 and 2479), so
+    # that is told, and git is never asked: its staging folder stood in the
+    # tree, and a build of the program that placed the tree, reading it at
+    # that moment, refused that program by its sum.
+    if staging.in_tree(program)
+        return fail(code: "", msg: in_tree_said(package, e: e, program: program, named: named))
     written: str @= e.git
 
     if e.version.len() > 0
@@ -59,6 +76,23 @@ function refusal(package: reached.Package, e: catalogue.Entry, index: str, progr
             match address.judged(written, root: at)
                 .err judged => return fail(code: judged.code, msg: judged.msg)
                 .ok _       => return ok()
+
+# What a package not placed is told where the folder of the file you compile
+# stands in a placed package's tree (defect 2576), told with the graph's
+# own code. `heroes fetch` places nothing for such a folder, and the tree's
+# own packages are placed beside it by the program that placed it, so its
+# modules compile there; until then the build promised that `heroes fetch`
+# placed the package inside the tree, where the verb refuses to write.
+function in_tree_said(package: reached.Package, e: catalogue.Entry, program: str, named: str) -> str
+    folder: str @= named
+    opened: str @= program
+
+    if folder.len() == 0
+        folder @ "./"
+
+    if opened.len() == 0
+        opened @ "./"
+    return "the package `" + e.name + "` is not placed at `" + package.root + "`, and `heroes fetch` places nothing there: the folder of the file you compile, `" + folder + "`, names a place under `" + placed_use.FOLDER + "/`" + placed_files.shown(opened) + " in the placed packages' trees, and a placed package's modules are compiled by the program that placed them, whose catalogue holds every package of the build — check that program instead"
 
 # A refusal's words and its code, "" where there is none.
 function said(refused: ()?) -> str
@@ -104,8 +138,45 @@ test "a tree placed, a folder, or an address on the network asks no git"
         code: "",
         unverified: true
     )
-    assert !refusal(missing, e: git, index: "", program: "build/selftest-unplaced/").is_err()
-    assert !refusal(missing, e: index, index: "", program: "build/selftest-unplaced/").is_err()
-    assert !refusal(missing, e: index, index: "https://index.example.org/heroes", program: "build/selftest-unplaced/").is_err()
-    assert !refusal(folder, e: git, index: "", program: "build/selftest-unplaced/").is_err()
+    assert !refusal(missing, e: git, index: "", program: "build/selftest-unplaced/", named: "build/selftest-unplaced/").is_err()
+    assert !refusal(missing, e: index, index: "", program: "build/selftest-unplaced/", named: "build/selftest-unplaced/").is_err()
+    assert !refusal(missing, e: index, index: "https://index.example.org/heroes", program: "build/selftest-unplaced/", named: "build/selftest-unplaced/").is_err()
+    assert !refusal(folder, e: git, index: "", program: "build/selftest-unplaced/", named: "build/selftest-unplaced/").is_err()
     assert !process.is_directory(path: "build/selftest-unplaced/heroes.packages")
+
+# Defect 2576: the folder of the file you compile in a placed package's tree
+# is told what is true there, whatever the package's source, and nothing is
+# written into the tree. Until then a `file://` source staged git inside it,
+# and every source was told `heroes fetch` would place it there.
+test "a package not placed for a folder in a placed tree is told so, and nothing is written there (defect 2576)"
+    program = "build/selftest-unplaced-tree/"
+    tree = program + "heroes.packages/json@1.0.0-k/"
+    assert !process.remove_tree(program).is_err()
+    assert !process.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    sum = "sha256-" + "a".repeat(64.to_u64().must())
+    indexed = catalogue.Entry(name: "text", version: "2.0.0", git: "", tag: "", commit: "", path: "", sum: sum)
+    git = catalogue.Entry(
+        name: "text",
+        version: "",
+        git: "file://../text",
+        tag: "v1",
+        commit: "b".repeat(40.to_u64().must()),
+        path: "",
+        sum: sum
+    )
+    missing = reached.Package(
+        alias: "text",
+        root: tree + "heroes.packages/text@2.0.0-k/",
+        opened: tree + "heroes.packages/text@2.0.0-k/",
+        problem: "",
+        code: "",
+        unverified: false
+    )
+    told = "the package `text` is not placed at `" + tree + "heroes.packages/text@2.0.0-k/`, and `heroes fetch` places nothing there: the folder of the file you compile, `" + tree + "`, names a place under `heroes.packages/`, in the placed packages' trees, and a placed package's modules are compiled by the program that placed them, whose catalogue holds every package of the build — check that program instead"
+
+    for one in [refusal(missing, e: indexed, index: "file://../idx", program: tree, named: tree), refusal(missing, e: git, index: "", program: tree, named: tree), refusal(missing, e: indexed, index: "https://index.example.org/heroes", program: tree, named: tree)]
+        assert said(one) == told && code(one) == ""
+
+    assert process.walk(program + "heroes.packages").must().files == [tree + "parse.hero"]
+    assert !process.remove_tree(program).is_err()

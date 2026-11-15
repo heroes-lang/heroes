@@ -10,7 +10,10 @@
 # one volume; under `heroes.packages/`, which no `use` can spell (R7); with a
 # leading `.` and no `@`, so no key a placed tree is read under
 # (`<name>@<version>-<key>`, `module/placed.hero`) is ever its name, and a
-# fetch cut short leaves a folder no build reads.
+# fetch cut short leaves a folder no build reads. **Never in a placed
+# package's tree** (defect 2576): a folder there, made and removed in an
+# instant, was in the tree when a build of the program that placed it
+# fingerprinted it, and that build refused a correct program.
 #
 # **Each folder has a lock beside it** (defect 2453; panel 246's R1, ratified
 # 2026-11-12): `<folder>.lock`, taken before the folder is made and given back
@@ -38,6 +41,7 @@
 # before it ended is undone from the disk by the next.
 
 use cli/files
+use cli/placed_files
 use cli/process
 use cli/strings
 use fetch/edited
@@ -78,6 +82,7 @@ record Staging
 # with none, and no later run undoes it.
 function opened(program: str) -> Staging?
     home = program + PLACED
+    out_of_trees(program)?
     placeable(home)?
     written(process.mkdir_all(home))?
     tried: i64 @= 0
@@ -119,6 +124,36 @@ function opened(program: str) -> Staging?
         code: "cannot_place",
         msg: "no staging folder could be made under `" + home + "`: " + TRIES.to_str() + " names were each held by another run or stood already"
     )
+
+# Whether the program's folder `program` ("" for the current one, or a path
+# ending with `/`) stands in a placed package's tree, by its letters or as
+# the filesystem resolves it (`cli/placed_files.hero`): there no run stages,
+# nothing is undone, and git is never asked (defect 2576).
+function in_tree(program: str) -> bool
+    if program.len() == 0
+        return placed_files.folder_within("./")
+    return placed_files.folder_within(program)
+
+# No staging folder is made in a placed package's tree (defect 2576), which
+# no writer writes: a folder made there, even for an instant, is in the tree
+# when a build of the program that placed it fingerprints it, and that build
+# refused a correct program with `package_unread`. The verbs refuse such a
+# folder before a run begins (`fetch/verb_place.hero`), and a build asks no
+# git there (`module/unplaced.hero`); this is the door every staging folder
+# passes, so none is made there whoever asks.
+function out_of_trees(program: str) -> ()?
+    if !in_tree(program)
+        return ok()
+    return fail(
+        code: "bad_usage",
+        msg: placed_files.here_refused(writes: "a run's staging folder, under `" + program + PLACED + "/`,", place: folder_shown(program), instead: "a package is placed for a program outside them")
+    )
+
+# The program's folder as a place a refusal shows: `./` for the current one.
+function folder_shown(program: str) -> str
+    if program.len() == 0
+        return "./"
+    return program
 
 # Whether a tree can be placed under `home`, the program's `heroes.packages`:
 # a name of the author's standing there, a file or a link to one or to
@@ -489,4 +524,29 @@ test "a file or a link to nothing where heroes.packages goes refuses the run and
 
         assert files.entry(program + PLACED) == .link
 
+    assert !process.remove_tree(program).is_err()
+
+# Defect 2576: a program's folder in a placed package's tree is no place to
+# stage, and nothing is made there, a folder, a lock or `heroes.packages/`;
+# the program that placed the tree stages beside it as before.
+test "no staging folder is made in a placed package's tree (defect 2576)"
+    program = "build/selftest-fetch-in-tree/"
+    tree = program + PLACED + "/json@1.0.0-k/"
+    assert !process.remove_tree(program).is_err()
+    assert !process.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    assert in_tree(tree) && in_tree(tree + "deeper/") && !in_tree(program)
+
+    match opened(tree)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "bad_usage"
+            assert e.msg == "a run's staging folder, under `" + tree + "heroes.packages/`, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: a package is placed for a program outside them; nothing was written"
+
+    assert begun(tree).is_err()
+    assert process.walk(program + PLACED).must().files == [tree + "parse.hero"]
+    beside: Staging @= opened(program).must()
+    assert strings.starts_with(text: beside.folder, prefix: program + PLACED + "/.fetching-")
+    dropped(@beside)
+    assert process.walk(program + PLACED).must().files == [tree + "parse.hero"]
     assert !process.remove_tree(program).is_err()
