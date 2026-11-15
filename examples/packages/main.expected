@@ -4,7 +4,7 @@ one
 two
 -17
 0.3
-core/strconv
+core
 net slices strconv strings net/http encoding/json path/filepath
 {"core":["strings","strconv","encoding/json"],"since":0.1}
 404

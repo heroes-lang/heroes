@@ -33,8 +33,9 @@ function main()
         .err e => print(e.msg)
 
     # `path/filepath` reaches `os` and its floor `os/hero_os`; the one call
-    # below is the text work alone, the same answer on every system.
-    print(filepath.clean("core/./strings/../strconv"))
+    # below is text work whose answer is the same on every system, where a
+    # cleaned path would be written with `\` on Windows.
+    print(filepath.dir("core/strings.hero"))
 
     # The packages by the length of their names, a tie kept as written.
     names = ["strconv", "strings", "net/http", "slices", "net", "encoding/json", "path/filepath"]
