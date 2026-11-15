@@ -1,17 +1,19 @@
 # The calculator — design.md's appendix program, and M-generics-library's acceptance criterion:
 # it compiles, it runs, its tests pass.
 #
-# One difference from the appendix, and it is deliberate on both sides. There the
-# `simplify` function is a `???` under a "## To do" heading, because §4.16's hole
-# is a form the document has to demonstrate somewhere. Here it is written, because
-# a program with a hole produces no binary by design and this one has to run.
-# Everything else is the appendix verbatim; `resolve/tests/acceptance.rs` and
-# `types/tests/acceptance.rs` still read design.md's copy, so the two are checked
-# by different things and neither is a copy nobody looks at.
+# Two differences from the appendix. There the `simplify` function is a `???`
+# under a "## To do" heading, because §4.16's hole is a form the document has to
+# demonstrate somewhere; here it is written, because a program with a hole
+# produces no binary by design and this one has to run. And `read_number`
+# refuses a number past an `i64` by name, where the appendix's copy aborts,
+# `integer overflow` (defect 2548). Everything else is the appendix verbatim;
+# `resolve/tests/acceptance.rs` and `types/tests/acceptance.rs` still read
+# design.md's copy, so the two are checked by different things and neither is a
+# copy nobody looks at.
 #
 # What it exercises: a recursive variant through `[Expr]`, a hand-written
 # tokeniser and recursive-descent parser, `T?` with `?` propagation, a map as an
-# environment, a user-declared generic, and seven `test` blocks.
+# environment, a user-declared generic, and eight `test` blocks.
 
 ## Calculator
 #
@@ -46,6 +48,14 @@ constant ERR_UNKNOWN_CHAR: str
 
 constant ERR_UNKNOWN_NAME: str
     "unknown_name"
+
+# A number written past what an `i64` holds: the built-ins' own code.
+constant ERR_DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The largest number a literal may write.
+constant LARGEST: i64
+    9223372036854775807
 
 ## Generic library
 
@@ -112,15 +122,32 @@ function is_digit(c: u8) -> bool
 function is_letter(c: u8) -> bool
     return c >= 'a' && c <= 'z'
 
-# Reads an integer, consuming it.
-function read_number(@l: Lex) -> i64
+# Reads an integer, consuming it, or fails naming a number past an `i64`.
+#
+# Each digit asks first whether it would carry the number past `LARGEST`, so
+# no step can overflow: the loop that multiplied before it asked aborted the
+# program, `integer overflow`, on `99999999999999999999` (defect 2548), where
+# a number too large is the text's mistake and can be told. The rest of the
+# digits are still consumed, so the failure names the whole number.
+function read_number(@l: Lex) -> i64?
+    start = l.pos
     v: i64 @= 0
+    past: bool @= false
 
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + to_i64(l.here() - '0').must()
+        digit = to_i64(l.here() - '0').must()
+        past @ past || v > (LARGEST - digit) / 10
+
+        if !past
+            v @ v * 10 + digit
         advance(@l)
 
-    return v
+    if past
+        return fail(
+            code: ERR_DOES_NOT_FIT,
+            msg: "`" + l.text.slice(from: start, to: l.pos) + "` at position " + start.to_str() + " does not fit an i64"
+        )
+    return ok(v)
 
 # Reads an identifier, consuming it.
 function read_name(@l: Lex) -> str
@@ -142,7 +169,7 @@ function tokenize(text: str) -> [Token]?
         if c == ' '
             advance(@l)
         else if c.is_digit()
-            out @ out.push(.num(v: read_number(@l)))
+            out @ out.push(.num(v: read_number(@l)?))
         else if c.is_letter()
             out @ out.push(.name(s: read_name(@l)))
         else if c == '+'
@@ -173,6 +200,20 @@ test "tokenize rejects the unknown"
     match tokenize("2 $ 3")
         .ok _  => assert false
         .err e => assert e.code == ERR_UNKNOWN_CHAR
+
+# DEFECT 2548, held as a test (2026-11-15): a literal past an `i64` aborted the
+# program, `integer overflow`; it is refused by name now, and the largest `i64`
+# is read.
+test "tokenize refuses a number past an i64 by name, and reads the largest"
+    assert tokenize("9223372036854775807").must()[0] == .num(v: 9223372036854775807)
+
+    match tokenize("1 + 99999999999999999999")
+        .ok _  => assert false
+        .err e => assert e.code == ERR_DOES_NOT_FIT && e.msg == "`99999999999999999999` at position 4 does not fit an i64"
+
+    match tokenize("9223372036854775808")
+        .ok _  => assert false
+        .err e => assert e.code == ERR_DOES_NOT_FIT
 
 ## Syntax tree
 
