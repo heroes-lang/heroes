@@ -169,6 +169,15 @@ function machine_path(written: str) -> MachinePath?
     rest = written.slice(from: 7, to: written.len())
     relative = rest == "." || rest == ".." || strings.starts_with(text: rest, prefix: "./") || strings.starts_with(text: rest, prefix: "../")
 
+    # Nothing after the scheme, or a query or a fragment at once, names no
+    # host and no path (defect 2537): `file://` was told it *names a host*,
+    # and offered `file://./`, the program's own folder, as what it meant.
+    if rest.len() == 0 || rest[0] == '?' || rest[0] == '#'
+        return fail(
+            code: REFUSED,
+            msg: "`" + written + "` names no path after `file://`: a path from the program's folder is `file://./` and the path, and an absolute one `file:///` and the path"
+        )
+
     if !relative && !strings.starts_with(text: rest, prefix: "/")
         return fail(
             code: REFUSED,
@@ -303,6 +312,12 @@ test "a file address is a path from the program's folder or an absolute one insi
         .ok _  => assert false
         .err e => assert e.msg == "`file://localhost/nowhere/repo/x` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./localhost/nowhere/repo/x`, and an absolute one `file:///` and the path"
 
+    # Defect 2537: nothing after the scheme names no host, and no path.
+    for empty in ["file://", "file://?x", "file://#x"]
+        match judged(empty, root: nowhere())
+            .ok _  => assert false
+            .err e => assert e.msg == "`" + empty + "` names no path after `file://`: a path from the program's folder is `file://./` and the path, and an absolute one `file:///` and the path"
+
     # A catalogue's reader admits any text after the scheme; a relative path
     # is told the form that names it.
     match judged("file://packages/yaml", root: nowhere())
@@ -330,7 +345,7 @@ test "a file address is a path from the program's folder or an absolute one insi
 # reader asks it with no repository, and its refusal is `judged`'s word for
 # word; what only the repository answers, `shaped` admits.
 test "an address's shape is asked of its text alone, and refused in judged's words"
-    for written in ["file://packages/yaml", "file:///../../..", "https://user@h/x", "http://h/x", "", "file:///a/%0A"]
+    for written in ["file://packages/yaml", "file:///../../..", "https://user@h/x", "http://h/x", "", "file:///a/%0A", "file://"]
         shape = shaped(written)
         assert shape.is_err()
         assert unit_reason(shape) == reason_of(judged(written, root: nowhere()))

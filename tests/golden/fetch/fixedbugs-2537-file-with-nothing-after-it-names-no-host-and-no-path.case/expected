@@ -1,0 +1,19 @@
+$ heroes add file:// --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://` names no path after `file://`: a path from the program's folder is `file://./` and the path, and an absolute one `file:///` and the path
+$ heroes add file://?x --tag v1 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://?x` names no path after `file://`: a path from the program's folder is `file://./` and the path, and an absolute one `file:///` and the path
+$ heroes add json --index file:// -C <work>/app
+exit 1
+stdout:
+stderr:
+error[source_refused]: `file://` names no path after `file://`: a path from the program's folder is `file://./` and the path, and an absolute one `file:///` and the path
+heroes.toml:
+(none)
+heroes.packages:
+(none)
