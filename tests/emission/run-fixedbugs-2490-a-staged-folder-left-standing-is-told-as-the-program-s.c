@@ -216,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("75e859171b3797be", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d14c9401c8da94d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2490astagedfolderleftstandingistoldastheprograms\tfixedbugs-2490-a-staged-folder-left-standing-is-told-as-the-program-s\n");

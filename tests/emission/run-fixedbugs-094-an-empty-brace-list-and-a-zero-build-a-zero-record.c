@@ -369,7 +369,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("39544a225fe21584", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1080ba4b61382713", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094anemptybracelistandazerobuildazerorecord\tfixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record\n");

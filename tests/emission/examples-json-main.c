@@ -6446,7 +6446,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c2ee04e751f359e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("635b50767675472d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1coreencodingjson\tjson\n1coreencodingjsoninternalnumeral\tnumeral\n1coreencodingjsoninternalquoted\tquoted\n1coreencodingjsoninternaltokens\ttokens\n1coreencodingjsoninternalcursor\tcursor\n1corestrconv\tstrconv\n1corestrconvinternalfloat\tfloat\n1corestrconvinternalshown\tshown\n1corestrconvinternalnearest\tnearest\n1corestrconvinternalscaling\tscaling\n1corestrconvinternaldecimal\tdecimal\n1corestrconvinternalpowers\tpowers\n");

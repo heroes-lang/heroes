@@ -324,7 +324,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("434c54c73b117e79", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a78c4f03c679008", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread\tfixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read\n");

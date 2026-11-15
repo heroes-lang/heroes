@@ -98,16 +98,20 @@ HERO_STR_STATIC(hero_str_75f7c07a, "line ");
 HERO_STR_STATIC(hero_str_f40ca, ": `");
 HERO_STR_STATIC(hero_str_14a6b874, "` is neither `true` nor `false`");
 HERO_STR_STATIC(hero_str_a784397, ": a number field is empty");
-HERO_STR_STATIC(hero_str_2620088b, "` has two points");
-HERO_STR_STATIC(hero_str_7c99e7ad, "` ends at its point");
-HERO_STR_STATIC(hero_str_115c445b, "` has ");
-HERO_STR_STATIC(hero_str_43ee78de, " digits and an i64 holds ");
-HERO_STR_STATIC(hero_str_7597be40, "` is not a number");
-HERO_STR_STATIC(hero_str_7d0ce380, ": `-` is not a number");
+HERO_STR_STATIC(hero_str_1bb761, "inf");
+HERO_STR_STATIC(hero_str_6235ba0, "-inf");
+HERO_STR_STATIC(hero_str_1cffef, "nan");
+HERO_STR_STATIC(hero_str_3140, "` ");
+HERO_STR_STATIC(hero_str_6383c514, "is not a number: no digit opens it");
+HERO_STR_STATIC(hero_str_4075db4b, "ends its point with no digit after it");
+HERO_STR_STATIC(hero_str_9cc189b, "has no sign after its `e`");
+HERO_STR_STATIC(hero_str_6a800db8, "has no digit in its exponent");
+HERO_STR_STATIC(hero_str_4d903659, "is not a number: `");
+HERO_STR_STATIC(hero_str_3c0c07e7, "` follows `");
+HERO_STR_STATIC(hero_str_60, "`");
 HERO_STR_STATIC(hero_str_4f6a402f, "the table is empty: not even a header");
 HERO_STR_STATIC(hero_str_62d45ee9, "the header reads `");
 HERO_STR_STATIC(hero_str_119d1bed, "` and this program writes `");
-HERO_STR_STATIC(hero_str_60, "`");
 HERO_STR_STATIC(hero_str_5413f4d4, " fields where the header has ");
 HERO_STR_STATIC(hero_str_30, "0");
 HERO_STR_STATIC(hero_str_2d, "-");
@@ -130,7 +134,6 @@ HERO_STR_STATIC(hero_str_71877a9b, "not_a_number");
 HERO_STR_STATIC(hero_str_2df6a0c8, " is not a number");
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_34adc7ac, " does not fit an i64");
-HERO_STR_STATIC(hero_str_1cffef, "nan");
 HERO_STR_STATIC(hero_str_59e06249, "not_found");
 HERO_STR_STATIC(hero_str_24a05cd4, " lies past the largest f64, about 1.8 times ten to the 308");
 HERO_STR_STATIC(hero_str_181b9248, "infinity");
@@ -162,7 +165,7 @@ HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 166 "main.c"
+#line 169 "main.c"
 typedef struct h_datarow_Row {
     int64_t f_id;
     HeroStr f_team;
@@ -428,7 +431,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 432 "main.c"
+#line 435 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_datarow_0Row_retain(const h_datarow_Row *v);
@@ -737,9 +740,9 @@ HeroArrayHeader * h_datatable_split(HeroStr h0_text, uint8_t h1_at);
 HeroArrayHeader * h_datatable_lines_of(HeroStr h0_text);
 h_0opt_473cb9ae h_datatable_bool_of(HeroStr h0_text, int64_t h1_line);
 h_0opt_e201354 h_datatable_int_of(HeroStr h0_text, int64_t h1_line);
-int64_t h_datatable_MOST_DIGITS(void);
 h_0opt_db92a83 h_datatable_float_of(HeroStr h0_text, int64_t h1_line);
-h_0opt_f87774a h_datatable_digits_of(HeroStr h0_text, int64_t h1_line, bool h2_negative);
+h_0opt_a8ea2 h_datatable_float_shape(HeroStr h0_text, int64_t h1_line);
+int64_t h_datatable_digits_end(HeroStr h0_text, int64_t h1_from);
 h_0opt_40ab612a h_datatable_read(HeroStr h0_text);
 h_datatable_Trouble h_datatable_why(h_0opt_40ab612a h0_got);
 HeroStr h_fmtreport_padded(HeroArrayHeader * h0_cells, HeroArrayHeader * h1_widths);
@@ -895,7 +898,7 @@ HERO_TU_LOCAL h_1coreslicesinternalmerge_Runs h_1coreslicesinternalmerge_0paired
 #line 45 "examples/query/main.hero"
 HeroStr h_main_DEFAULT_PATH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_302728d8);
-#line 899 "main.c"
+#line 902 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -929,7 +932,7 @@ void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HeroStr h1_path = {0}
     t50 = h8_rows; t96 = h9_f2; h_0opt_40ab612a_retain(&t50); h9_f2 = t50; h_0opt_40ab612a_release(&t96); t51 = h9_f2; t52 = t51.tag; t53 = INT64_C(1); t54 = t52 == t53; if (t54) goto bb13; else goto bb14; bb11:
 #line 65
     t45 = h7_f1; t46 = t45.as.err;
-#line 933 "main.c"
+#line 936 "main.c"
     hero_panic_must_at(t46, "main.hero", "main.main", 65, 23);
     hero_unreachable();
 bb12:
@@ -944,14 +947,14 @@ bb12:
     t71 = h11_back; t72 = h2_made; t73 = !hero_array_eq(t71, t72); if (t73) goto bb18; else goto bb19; bb16:
 #line 70
     t62 = h10_f3; t63 = t62.as.err;
-#line 948 "main.c"
+#line 951 "main.c"
     hero_panic_must_at(t63, "main.hero", "main.main", 70, 12);
     hero_unreachable();
 bb17:
 #line 79 "examples/query/main.hero"
     t76 = HERO_STR_LIT(hero_str_0); hero_print_str(t76); hero_print_end();
     t77 = h11_back; h_main_report_of(t77);
-#line 955 "main.c"
+#line 958 "main.c"
     hero_array_release_at(&h0_given);
     hero_str_release_at(&h1_path);
     hero_array_release_at(&h2_made);
@@ -978,7 +981,7 @@ bb18:
 #line 77 "examples/query/main.hero"
     t74 = HERO_STR_LIT(hero_str_5644974e); hero_print_str(t74); hero_print_end();
     t75 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 78, 9}; h_library_exit(t75, &hero_here); } hero_unreachable(); goto bb17; bb19: goto bb17;
-#line 982 "main.c"
+#line 985 "main.c"
 }
 
 #line 85 "examples/query/main.hero"
@@ -1019,7 +1022,7 @@ void h_main_report_of(HeroArrayHeader * h0_rows) { HeroArrayHeader * h1_top = {0
     t89 = h0_rows; t151 = h13_xs1; hero_array_incref(t89); h13_xs1 = t89; hero_array_decref(t151); t90 = INT64_C(0); h14_i1 = t90; goto bb7; bb5:
 #line 107
     t64 = h10_f0; t65 = t64.as.ok; t66 = h_fmtreport_group_line(t54, t65); t152 = h39_own39; h39_own39 = t66; hero_str_decref(t152); hero_print_str(t66); hero_print_end(); goto bb3; bb6: t62 = h10_f0; t63 = t62.as.err;
-#line 1023 "main.c"
+#line 1026 "main.c"
     hero_panic_must_at(t63, "main.hero", "main.report_of", 107, 38);
     hero_unreachable();
 bb7:
@@ -1034,7 +1037,7 @@ bb7:
     t108 = h11_counted; t109 = h0_rows; t110 = (h_queryplan_Aggregate){.tag = h_queryplan_0Aggregate_tag_how_many}; t111 = h_runengine_aggregate(t109, t110); t112 = t108 == t111; h16_b0 = t112; if (t112) goto bb11; else goto bb12; bb11: t113 = h12_summed; t114 = h0_rows; t115 = (h_queryplan_Aggregate){.tag = h_queryplan_0Aggregate_tag_total_score}; t116 = h_runengine_aggregate(t114, t115); t117 = t113 == t116; h16_b0 = t117; goto bb12; bb12: t118 = h16_b0; t119 = h_main_agreement(t118); t154 = h40_own40; h40_own40 = t119; hero_str_decref(t154);
 #line 125
     hero_print_str(t107); hero_print_str(t119); hero_print_end();
-#line 1038 "main.c"
+#line 1041 "main.c"
     hero_array_release_at(&h1_top);
     hero_array_release_at(&h2_columns);
     hero_array_release_at(&h3_both);
@@ -1080,7 +1083,7 @@ HeroStr h_main_agreement(bool h0_holds) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t2
     t3 = HERO_STR_LIT(hero_str_38b9); h1_ret0 = t3; goto bb4; bb2:
 #line 134
     t2 = HERO_STR_LIT(hero_str_1fe363); h1_ret0 = t2; goto bb4; bb3: goto bb1; bb4:
-#line 1084 "main.c"
+#line 1087 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -1089,37 +1092,37 @@ HeroStr h_main_agreement(bool h0_holds) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t2
 #line 25 "examples/query/data/row.hero"
 int64_t h_datarow_MULTIPLIER(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1103515245); return t1;
-#line 1093 "main.c"
+#line 1096 "main.c"
 }
 
 #line 28 "examples/query/data/row.hero"
 int64_t h_datarow_INCREMENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(12345); return t1;
-#line 1099 "main.c"
+#line 1102 "main.c"
 }
 
 #line 31 "examples/query/data/row.hero"
 int64_t h_datarow_MODULUS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2147483648); return t1;
-#line 1105 "main.c"
+#line 1108 "main.c"
 }
 
 #line 36 "examples/query/data/row.hero"
 int64_t h_datarow_SEED(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(20260903); return t1;
-#line 1111 "main.c"
+#line 1114 "main.c"
 }
 
 #line 42 "examples/query/data/row.hero"
 int64_t h_datarow_ROWS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(5000); return t1;
-#line 1117 "main.c"
+#line 1120 "main.c"
 }
 
 #if HERO_STATIC_CONSTANTS
 #line 60 "examples/query/data/row.hero"
 HERO_ARRAY_STATIC(hero_constant_h_datarow_TEAMS_9, HeroStr, &hero_desc_str, 8, HERO_STR_LIT(hero_str_d1d76e1), HERO_STR_LIT(hero_str_473d7f56), HERO_STR_LIT(hero_str_5774ba52), HERO_STR_LIT(hero_str_69005961), HERO_STR_LIT(hero_str_7be5121f), HERO_STR_LIT(hero_str_b94e7e5), HERO_STR_LIT(hero_str_1dab0563), HERO_STR_LIT(hero_str_e092514)); HeroArrayHeader * h_datarow_TEAMS(void) { return HERO_ARRAY_LIT(hero_constant_h_datarow_TEAMS_9);
-#line 1123 "main.c"
+#line 1126 "main.c"
 }
 #else
 
@@ -1136,7 +1139,7 @@ HeroArrayHeader * h_datarow_TEAMS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 
     t8 = HERO_STR_LIT(hero_str_e092514);
 #line 61
     t9 = hero_array_new(&hero_desc_str, 8); hero_array_push_owned(&t9, &t1); hero_array_push_owned(&t9, &t2); hero_array_push_owned(&t9, &t3); hero_array_push_owned(&t9, &t4); hero_array_push_owned(&t9, &t5); hero_array_push_owned(&t9, &t6); hero_array_push_owned(&t9, &t7); hero_array_push_owned(&t9, &t8); t10 = h0_own0; h0_own0 = t9; hero_array_decref(t10);
-#line 1140 "main.c"
+#line 1143 "main.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     return t9;
@@ -1146,7 +1149,7 @@ HeroArrayHeader * h_datarow_TEAMS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 
 #if HERO_STATIC_CONSTANTS
 #line 72 "examples/query/data/row.hero"
 HERO_ARRAY_STATIC(hero_constant_h_datarow_REGIONS_9, HeroStr, &hero_desc_str, 8, HERO_STR_LIT(hero_str_19e212d8), HERO_STR_LIT(hero_str_19e212d8), HERO_STR_LIT(hero_str_71a76b88), HERO_STR_LIT(hero_str_71a76b88), HERO_STR_LIT(hero_str_da23fdd), HERO_STR_LIT(hero_str_da23fdd), HERO_STR_LIT(hero_str_100cc0e7), HERO_STR_LIT(hero_str_100cc0e7)); HeroArrayHeader * h_datarow_REGIONS(void) { return HERO_ARRAY_LIT(hero_constant_h_datarow_REGIONS_9);
-#line 1150 "main.c"
+#line 1153 "main.c"
 }
 #else
 
@@ -1163,7 +1166,7 @@ HeroArrayHeader * h_datarow_REGIONS(void) { HERO_NODEBUG HeroArrayHeader *h0_own
     t8 = HERO_STR_LIT(hero_str_100cc0e7);
 #line 73
     t9 = hero_array_new(&hero_desc_str, 8); hero_array_push_owned(&t9, &t1); hero_array_push_owned(&t9, &t2); hero_array_push_owned(&t9, &t3); hero_array_push_owned(&t9, &t4); hero_array_push_owned(&t9, &t5); hero_array_push_owned(&t9, &t6); hero_array_push_owned(&t9, &t7); hero_array_push_owned(&t9, &t8); t10 = h0_own0; h0_own0 = t9; hero_array_decref(t10);
-#line 1167 "main.c"
+#line 1170 "main.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     return t9;
@@ -1180,7 +1183,7 @@ HeroArrayHeader * h_datarow_teams(void) { HeroArrayHeader * h0_out = {0}; int64_
     t16 = h1_at; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("data/row.hero", "row.teams", 92, 14); h1_at = t18; goto bb1; bb3:
 #line 94
     t19 = h0_out;
-#line 1184 "main.c"
+#line 1187 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -1194,13 +1197,13 @@ HeroArrayHeader * h_datarow_teams(void) { HeroArrayHeader * h0_out = {0}; int64_
 #line 99 "examples/query/data/row.hero"
 int64_t h_datarow_stepped(int64_t h0_seed) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_datarow_MULTIPLIER(); t2 = h0_seed; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("data/row.hero", "row.stepped", 100, 13); t4 = h_datarow_INCREMENT(); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("data/row.hero", "row.stepped", 100, 13); t6 = h_datarow_MODULUS(); if (t6 == 0) hero_panic_at("division by zero", "data/row.hero", "row.stepped", 100, 12); if (t5 == INT64_MIN && t6 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "data/row.hero", "row.stepped", 100, 12); t7 = t5 % t6; return t7;
-#line 1198 "main.c"
+#line 1201 "main.c"
 }
 
 #line 111 "examples/query/data/row.hero"
 int64_t h_datarow_spread(int64_t h0_seed) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_seed; t2 = INT64_C(16); if (t2 < 0 || t2 > 63) hero_panic_at("shift count outside 0..63", "data/row.hero", "row.spread", 112, 12); t3 = (t1 < 0) ? ~(int64_t)((~(uint64_t)t1) >> (uint64_t)t2) : (int64_t)((uint64_t)t1 >> (uint64_t)t2); return t3;
-#line 1204 "main.c"
+#line 1207 "main.c"
 }
 
 #line 118 "examples/query/data/row.hero"
@@ -1226,7 +1229,7 @@ HeroArrayHeader * h_datarow_generated(int64_t h0_rows) { HeroArrayHeader * h1_ou
     t51 = h3_id; t52 = INT64_C(1); if (__builtin_add_overflow(t51, t52, &t53)) hero_panic_overflow_at("data/row.hero", "row.generated", 135, 14); h3_id = t53; goto bb1; bb3:
 #line 137
     t54 = h1_out;
-#line 1230 "main.c"
+#line 1233 "main.c"
     hero_array_incref(t54);
     hero_array_release_at(&h1_out);
     hero_str_release_at(&h4_team);
@@ -1252,7 +1255,7 @@ HeroStr h_datarow_line_of(h_datarow_Row h0_r) { HeroArrayHeader * h1_fields = {0
     t11 = hero_array_new(&hero_desc_str, 6); hero_array_push_owned(&t11, &t2); hero_array_push_owned(&t11, &t3); hero_array_push_owned(&t11, &t4); hero_array_push_owned(&t11, &t6); hero_array_push_owned(&t11, &t8); hero_array_push_owned(&t11, &t10); t19 = h6_own6; h6_own6 = t11; hero_array_decref(t19); t20 = h1_fields; hero_array_incref(t11); h1_fields = t11; hero_array_decref(t20);
 #line 153
     t12 = h1_fields; t13 = HERO_STR_LIT(hero_str_2c); t14 = hero_str_join(t12, t13); t21 = h7_own7; h7_own7 = t14; hero_str_decref(t21);
-#line 1256 "main.c"
+#line 1259 "main.c"
     hero_str_incref(t14);
     hero_array_release_at(&h1_fields);
     hero_str_release_at(&h2_own2);
@@ -1271,7 +1274,7 @@ HeroStr h_datarow_bool_text(bool h0_b) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t2,
     t3 = HERO_STR_LIT(hero_str_b928f19); h1_ret0 = t3; goto bb4; bb2:
 #line 159
     t2 = HERO_STR_LIT(hero_str_fa94082); h1_ret0 = t2; goto bb4; bb3: goto bb1; bb4:
-#line 1275 "main.c"
+#line 1278 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -1280,7 +1283,7 @@ HeroStr h_datarow_bool_text(bool h0_b) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t2,
 #line 162 "examples/query/data/row.hero"
 HeroStr h_datarow_HEADER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_58ed5d19);
-#line 1284 "main.c"
+#line 1287 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1295,7 +1298,7 @@ HeroStr h_datarow_written(HeroArrayHeader * h0_rows) { HeroArrayHeader * h1_line
     t16 = h3_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("data/row.hero", "row.written", 171, 9); h3_i0 = t18; goto bb1; bb4:
 #line 174
     t19 = h1_lines; t20 = HERO_STR_LIT(hero_str_a); t21 = hero_str_join(t19, t20); t30 = h8_own8; h8_own8 = t21; hero_str_decref(t30); t22 = HERO_STR_LIT(hero_str_a); t23 = hero_str_concat(t21, t22); t31 = h9_own9; h9_own9 = t23; hero_str_decref(t31);
-#line 1299 "main.c"
+#line 1302 "main.c"
     hero_str_incref(t23);
     hero_array_release_at(&h1_lines);
     hero_array_release_at(&h2_xs0);
@@ -1311,7 +1314,7 @@ HeroStr h_datarow_written(HeroArrayHeader * h0_rows) { HeroArrayHeader * h1_line
 #line 24 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_HEADER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1513c20b);
-#line 1315 "main.c"
+#line 1318 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1319,7 +1322,7 @@ HeroStr h_datatable_ERR_HEADER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
 #line 27 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_FIELDS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_671efbdd);
-#line 1323 "main.c"
+#line 1326 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1327,7 +1330,7 @@ HeroStr h_datatable_ERR_FIELDS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
 #line 30 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_14a4096d);
-#line 1331 "main.c"
+#line 1334 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1335,7 +1338,7 @@ HeroStr h_datatable_ERR_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
 #line 33 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_BOOL(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7ef43895);
-#line 1339 "main.c"
+#line 1342 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1343,7 +1346,7 @@ HeroStr h_datatable_ERR_BOOL(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; g
 #line 36 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_EMPTY(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4d710d48);
-#line 1347 "main.c"
+#line 1350 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1351,7 +1354,7 @@ HeroStr h_datatable_ERR_EMPTY(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; 
 #line 41 "examples/query/data/table.hero"
 int64_t h_datatable_columns(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t5; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t3, *t6; HERO_NODEBUG uint8_t t2; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_datarow_HEADER(); t5 = h0_own0; h0_own0 = t1; hero_str_decref(t5); t2 = UINT64_C(44); t3 = h_datatable_split(t1, t2); t6 = h1_own1; h1_own1 = t3; hero_array_decref(t6); t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 1355 "main.c"
+#line 1358 "main.c"
     hero_str_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return t4;
@@ -1368,7 +1371,7 @@ HeroArrayHeader * h_datatable_split(HeroStr h0_text, uint8_t h1_at) { HeroArrayH
 #line 58
     t26 = h0_text; t27 = h3_start; t28 = h0_text; t29 = hero_str_len(t28); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.split", 58, 20}; t30 = hero_str_slice_at(t26, t27, t29, &hero_here); } t35 = h6_own6; h6_own6 = t30; hero_str_decref(t35); hero_array_push_owned(&h2_out, &t30);
     t32 = h2_out;
-#line 1372 "main.c"
+#line 1375 "main.c"
     hero_array_incref(t32);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h5_own5);
@@ -1381,7 +1384,7 @@ bb4:
 #line 54
     t14 = h0_text; t15 = h3_start; t16 = h4_index; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.split", 54, 28}; t17 = hero_str_slice_at(t14, t15, t16, &hero_here); } t36 = h7_own7; h7_own7 = t17; hero_str_decref(t36); hero_array_push_owned(&h2_out, &t17);
     t19 = h4_index; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("data/table.hero", "table.split", 55, 21); h3_start = t21; goto bb4; bb6: goto bb4;
-#line 1385 "main.c"
+#line 1388 "main.c"
 }
 
 #line 62 "examples/query/data/table.hero"
@@ -1394,7 +1397,7 @@ HeroArrayHeader * h_datatable_lines_of(HeroStr h0_text) { HeroArrayHeader * h1_a
 #line 65
     t8 = h1_all_lines; t9 = h1_all_lines; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(1); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow_at("data/table.hero", "table.lines_of", 65, 41); t13 = ((void)((t8 == NULL || t12 < 0 || t12 >= t8->len) ? hero_panic_index_at(t8, t12, "data/table.hero", "table.lines_of", 65, 31) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t12]); t14 = HERO_STR_LIT(hero_str_0); t15 = hero_str_eq(t13, t14); h2_b0 = t15; goto bb3; bb3: t16 = h2_b0; if (t16) goto bb4; else goto bb5; bb4:
     t17 = h1_all_lines; t18 = INT64_C(0); t19 = h1_all_lines; t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len); t21 = INT64_C(1); if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow_at("data/table.hero", "table.lines_of", 66, 45); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.lines_of", 66, 16}; t23 = hero_array_slice_at(t17, t18, t22, &hero_here); } t28 = h5_own5; h5_own5 = t23; hero_array_decref(t28); h3_ret0 = t23; goto bb6; bb5: goto bb1; bb6:
-#line 1398 "main.c"
+#line 1401 "main.c"
     t25 = h3_ret0;
     hero_array_incref(t25);
     hero_array_release_at(&h1_all_lines);
@@ -1414,7 +1417,7 @@ h_0opt_473cb9ae h_datatable_bool_of(HeroStr h0_text, int64_t h1_line) { HERO_NOD
     t11 = h_datatable_ERR_BOOL(); t25 = h4_own4; h4_own4 = t11; hero_str_decref(t25); t12 = HERO_STR_LIT(hero_str_75f7c07a); t13 = h1_line; t14 = hero_int_to_str(t13); t26 = h5_own5; h5_own5 = t14; hero_str_decref(t26); t15 = hero_str_concat(t12, t14); t27 = h6_own6; h6_own6 = t15; hero_str_decref(t27); t16 = HERO_STR_LIT(hero_str_f40ca); t17 = hero_str_concat(t15, t16); t28 = h7_own7; h7_own7 = t17; hero_str_decref(t28); t18 = h0_text; t19 = hero_str_concat(t17, t18); t29 = h8_own8; h8_own8 = t19; hero_str_decref(t29); t20 = HERO_STR_LIT(hero_str_14a6b874); t21 = hero_str_concat(t19, t20); t30 = h9_own9; h9_own9 = t21; hero_str_decref(t30); hero_str_incref(t11); hero_str_incref(t21); t22 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t21}}; t31 = h10_own10; h10_own10 = t22; h_0opt_473cb9ae_release(&t31); h2_ret0 = t22; goto bb7; bb5:
 #line 77
     t9 = false; t10 = (h_0opt_473cb9ae){.tag = INT64_C(0), .as.ok = t9}; t32 = h11_own11; h11_own11 = t10; h_0opt_473cb9ae_release(&t32); h2_ret0 = t10; goto bb7; bb6: goto bb4; bb7:
-#line 1418 "main.c"
+#line 1421 "main.c"
     t23 = h2_ret0;
     h_0opt_473cb9ae_retain(&t23);
     h_0opt_473cb9ae_release(hero_slot_escape(&h3_own3));
@@ -1439,7 +1442,7 @@ h_0opt_e201354 h_datatable_int_of(HeroStr h0_text, int64_t h1_line) { HERO_NODEB
 #line 89
     t17 = h2_s0; t18 = t17.as.ok; h3_n = t18; t19 = h3_n; t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t19}; t41 = h12_own12; h12_own12 = t20; h_0opt_e201354_release(&t41); h5_ret0 = t20; goto bb7; bb6:
     t21 = h2_s0; t22 = t21.as.err; t42 = h4_e; hero_failure_retain(&t22); h4_e = t22; hero_failure_release(&t42); t23 = h_datatable_ERR_NUMBER(); t43 = h13_own13; h13_own13 = t23; hero_str_decref(t43); t24 = HERO_STR_LIT(hero_str_75f7c07a); t25 = h1_line; t26 = hero_int_to_str(t25); t44 = h14_own14; h14_own14 = t26; hero_str_decref(t44); t27 = hero_str_concat(t24, t26); t45 = h15_own15; h15_own15 = t27; hero_str_decref(t45); t28 = HERO_STR_LIT(hero_str_1dce); t29 = hero_str_concat(t27, t28); t46 = h16_own16; h16_own16 = t29; hero_str_decref(t46); t30 = h4_e.msg; t31 = hero_str_concat(t29, t30); t47 = h17_own17; h17_own17 = t31; hero_str_decref(t47); hero_str_incref(t23); hero_str_incref(t31); t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t31}}; t48 = h18_own18; h18_own18 = t32; h_0opt_e201354_release(&t48); h5_ret0 = t32; goto bb7; bb7:
-#line 1443 "main.c"
+#line 1446 "main.c"
     t33 = h5_ret0;
     h_0opt_e201354_retain(&t33);
     h_0opt_e201354_release(hero_slot_escape(&h2_s0));
@@ -1460,107 +1463,124 @@ h_0opt_e201354 h_datatable_int_of(HeroStr h0_text, int64_t h1_line) { HERO_NODEB
     return t33;
 }
 
-#line 108 "examples/query/data/table.hero"
-int64_t h_datatable_MOST_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(18); return t1;
-#line 1467 "main.c"
+#line 116 "examples/query/data/table.hero"
+h_0opt_db92a83 h_datatable_float_of(HeroStr h0_text, int64_t h1_line) { HERO_NODEBUG h_0opt_a8ea2 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t34, t35; HERO_NODEBUG h_0opt_db92a83 h3_s0 = {0}, h6_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h16_own16 = {0}, t10, t14, t15, t17, t20, t21, t32, t33, t36, t37, t38, t39, t46; double h4_value; HeroFailure h5_e = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t1, t13, t23, t24, t26, t27, t28, t29, t30, t31, t41, t42, t43, t44, t45; HERO_NODEBUG int64_t t2, t5, t6, t16, t25; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9, t22, t40; HERO_NODEBUG double t18, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h1_line; t3 = h_datatable_float_shape(t1, t2); t34 = h7_own7; h7_own7 = t3; h_0opt_a8ea2_release(&t34); t35 = h2_f0; h_0opt_a8ea2_retain(&t3); h2_f0 = t3; h_0opt_a8ea2_release(&t35); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
+#line 121
+    t13 = h0_text; t14 = h_1corestrconv_parse_float(t13); t36 = h8_own8; h8_own8 = t14; h_0opt_db92a83_release(&t36); t37 = h3_s0; h_0opt_db92a83_retain(&t14); h3_s0 = t14; h_0opt_db92a83_release(&t37); t15 = h3_s0; t16 = t15.tag; switch (t16) { case 0: goto bb4; case 1: goto bb5; default: hero_unreachable(); } bb2:
+#line 117
+    t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t9}; t38 = h9_own9; h9_own9 = t10; h_0opt_db92a83_release(&t38); h6_ret0 = t10; goto bb6; bb4:
+#line 122
+    t17 = h3_s0; t18 = t17.as.ok; h4_value = t18; t19 = h4_value; t20 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t19}; t39 = h10_own10; h10_own10 = t20; h_0opt_db92a83_release(&t39); h6_ret0 = t20; goto bb6; bb5:
+    t21 = h3_s0; t22 = t21.as.err; t40 = h5_e; hero_failure_retain(&t22); h5_e = t22; hero_failure_release(&t40); t23 = h_datatable_ERR_NUMBER(); t41 = h11_own11; h11_own11 = t23; hero_str_decref(t41); t24 = HERO_STR_LIT(hero_str_75f7c07a); t25 = h1_line; t26 = hero_int_to_str(t25); t42 = h12_own12; h12_own12 = t26; hero_str_decref(t42); t27 = hero_str_concat(t24, t26); t43 = h13_own13; h13_own13 = t27; hero_str_decref(t43); t28 = HERO_STR_LIT(hero_str_1dce); t29 = hero_str_concat(t27, t28); t44 = h14_own14; h14_own14 = t29; hero_str_decref(t44); t30 = h5_e.msg; t31 = hero_str_concat(t29, t30); t45 = h15_own15; h15_own15 = t31; hero_str_decref(t45); hero_str_incref(t23); hero_str_incref(t31); t32 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t31}}; t46 = h16_own16; h16_own16 = t32; h_0opt_db92a83_release(&t46); h6_ret0 = t32; goto bb6; bb6:
+#line 1477 "main.c"
+    t33 = h6_ret0;
+    h_0opt_db92a83_retain(&t33);
+    h_0opt_a8ea2_release(hero_slot_escape(&h2_f0));
+    h_0opt_db92a83_release(hero_slot_escape(&h3_s0));
+    hero_failure_release(&h5_e);
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
+    h_0opt_db92a83_release(hero_slot_escape(&h8_own8));
+    h_0opt_db92a83_release(hero_slot_escape(&h9_own9));
+    h_0opt_db92a83_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_db92a83_release(hero_slot_escape(&h16_own16));
+    return t33;
 }
 
-#line 111 "examples/query/data/table.hero"
-h_0opt_db92a83 h_datatable_float_of(HeroStr h0_text, int64_t h1_line) { HeroArrayHeader * h2_halves = {0}; HERO_NODEBUG bool h3_b0, h12_b1, t7, t23, t28, t29, t34, t39, t49, t56, t75, t102, t108, t111, t112, t135, t149, t160; bool h4_negative; HERO_NODEBUG h_0opt_f87774a h5_f0 = {0}, h26_own26 = {0}, t35, t36, t40, t43, t176, t177; HeroStr h6_whole_digits = {0}; HeroStr h7_fraction_digits = {0}; HeroStr h8_all_digits = {0}; int64_t h9_scaled; int64_t h10_at; uint8_t h11_digit; HERO_NODEBUG h_0opt_e201354 h13_f1 = {0}, h48_own48 = {0}, t131, t132, t136, t138, t203, t204; double h14_scale; int64_t h15_left; double h16_value; HERO_NODEBUG h_0opt_db92a83 h17_ret0 = {0}, h25_own25 = {0}, h27_own27 = {0}, h35_own35 = {0}, h47_own47 = {0}, h55_own55 = {0}, h56_own56 = {0}, h57_own57 = {0}, t19, t42, t68, t96, t124, t163, t165, t166, t175, t180, t190, t202, t211, t212, t213; HERO_NODEBUG HeroArrayHeader *h18_own18 = {0}, *t3, *t4, *t30, *t46, *t50, *t167, *t168; HERO_NODEBUG HeroStr h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h28_own28 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h36_own36 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h42_own42 = {0}, h43_own43 = {0}, h44_own44 = {0}, h45_own45 = {0}, h46_own46 = {0}, h49_own49 = {0}, h50_own50 = {0}, h51_own51 = {0}, h52_own52 = {0}, h53_own53 = {0}, h54_own54 = {0}, t1, t8, t9, t11, t12, t13, t14, t15, t16, t17, t18, t20, t24, t32, t44, t45, t52, t53, t57, t58, t60, t61, t62, t63, t64, t65, t66, t67, t69, t70, t71, t72, t76, t77, t79, t80, t81, t82, t83, t84, t85, t86, t87, t89, t90, t91, t92, t94, t95, t100, t103, t113, t114, t116, t117, t118, t119, t120, t121, t122, t123, t145, t169, t170, t171, t172, t173, t174, t178, t179, t181, t182, t183, t184, t185, t186, t187, t188, t189, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t205, t206, t207, t208, t209, t210; HERO_NODEBUG uint8_t t2, t26, t27, t105, t106, t107, t109, t110, t128, t129, t130; HERO_NODEBUG int64_t t5, t6, t10, t21, t22, t25, t31, t33, t37, t38, t47, t48, t51, t54, t55, t59, t73, t74, t78, t88, t93, t97, t98, t99, t101, t104, t115, t125, t126, t127, t133, t134, t139, t140, t141, t142, t143, t146, t147, t148, t153, t154, t155, t156; HERO_NODEBUG HeroFailure t41, t137; HERO_NODEBUG double t144, t150, t151, t152, t157, t158, t159, t161, t162, t164; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_text; t2 = UINT64_C(46); t3 = h_datatable_split(t1, t2); t167 = h18_own18; h18_own18 = t3; hero_array_decref(t167); t168 = h2_halves; hero_array_incref(t3); h2_halves = t3; hero_array_decref(t168);
-#line 114
-    t4 = h2_halves; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(2); t7 = t5 > t6; if (t7) goto bb2; else goto bb3; bb1:
-#line 116
-    t20 = h0_text; t21 = hero_str_len(t20); t22 = INT64_C(0); t23 = t21 > t22; h3_b0 = t23; if (t23) goto bb4; else goto bb5; bb2:
-#line 115
-    t8 = h_datatable_ERR_NUMBER(); t169 = h19_own19; h19_own19 = t8; hero_str_decref(t169); t9 = HERO_STR_LIT(hero_str_75f7c07a); t10 = h1_line; t11 = hero_int_to_str(t10); t170 = h20_own20; h20_own20 = t11; hero_str_decref(t170); t12 = hero_str_concat(t9, t11); t171 = h21_own21; h21_own21 = t12; hero_str_decref(t171); t13 = HERO_STR_LIT(hero_str_f40ca); t14 = hero_str_concat(t12, t13); t172 = h22_own22; h22_own22 = t14; hero_str_decref(t172); t15 = h0_text; t16 = hero_str_concat(t14, t15); t173 = h23_own23; h23_own23 = t16; hero_str_decref(t173); t17 = HERO_STR_LIT(hero_str_2620088b); t18 = hero_str_concat(t16, t17); t174 = h24_own24; h24_own24 = t18; hero_str_decref(t174); hero_str_incref(t8); hero_str_incref(t18); t19 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t18}}; t175 = h25_own25; h25_own25 = t19; h_0opt_db92a83_release(&t175); h17_ret0 = t19; goto bb33; bb3: goto bb1; bb4:
-    t24 = h0_text; t25 = INT64_C(0); t26 = ((void)((t24.ptr == NULL || t25 < 0 || t25 >= t24.len) ? hero_panic_byte_at(t24, t25, "data/table.hero", "table.float_of", 116, 34) : (void)0), (int64_t)(unsigned char)t24.ptr[t25]); t27 = UINT64_C(45); t28 = t26 == t27; h3_b0 = t28; goto bb5; bb5: t29 = h3_b0; h4_negative = t29;
-    t30 = h2_halves; t31 = INT64_C(0); t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? hero_panic_index_at(t30, t31, "data/table.hero", "table.float_of", 117, 30) : (void)0), (void)(t30->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t30 + 1))[t31]); t33 = h1_line; t34 = h4_negative; t35 = h_datatable_digits_of(t32, t33, t34); t176 = h26_own26; h26_own26 = t35; h_0opt_f87774a_release(&t176); t177 = h5_f0; h_0opt_f87774a_retain(&t35); h5_f0 = t35; h_0opt_f87774a_release(&t177); t36 = h5_f0; t37 = t36.tag; t38 = INT64_C(0); t39 = t37 == t38; if (t39) goto bb6; else goto bb7; bb6: t43 = h5_f0; t44 = t43.as.ok; t178 = h6_whole_digits; hero_str_incref(t44); h6_whole_digits = t44; hero_str_decref(t178);
-    t45 = HERO_STR_LIT(hero_str_0); t179 = h7_fraction_digits; hero_str_incref(t45); h7_fraction_digits = t45; hero_str_decref(t179);
-#line 120
-    t46 = h2_halves; t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len); t48 = INT64_C(2); t49 = t47 == t48; if (t49) goto bb9; else goto bb10; bb7:
-#line 117
-    t40 = h5_f0; t41 = t40.as.err; hero_failure_retain(&t41); t42 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t41}; t180 = h27_own27; h27_own27 = t42; h_0opt_db92a83_release(&t180); h17_ret0 = t42; goto bb33; bb8:
-#line 125
-    t69 = h6_whole_digits; t70 = h7_fraction_digits; t71 = hero_str_concat(t69, t70); t181 = h28_own28; h28_own28 = t71; hero_str_decref(t181); t182 = h8_all_digits; hero_str_incref(t71); h8_all_digits = t71; hero_str_decref(t182);
-#line 127
-    t72 = h8_all_digits; t73 = hero_str_len(t72); t74 = h_datatable_MOST_DIGITS(); t75 = t73 > t74; if (t75) goto bb15; else goto bb16; bb9:
-#line 121
-    t50 = h2_halves; t51 = INT64_C(1); t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? hero_panic_index_at(t50, t51, "data/table.hero", "table.float_of", 121, 27) : (void)0), (void)(t50->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t50 + 1))[t51]); t183 = h7_fraction_digits; hero_str_incref(t52); h7_fraction_digits = t52; hero_str_decref(t183);
-#line 123
-    t53 = h7_fraction_digits; t54 = hero_str_len(t53); t55 = INT64_C(0); t56 = t54 == t55; if (t56) goto bb12; else goto bb13; bb10: goto bb8; bb11: goto bb8; bb12:
-    t57 = h_datatable_ERR_NUMBER(); t184 = h29_own29; h29_own29 = t57; hero_str_decref(t184); t58 = HERO_STR_LIT(hero_str_75f7c07a); t59 = h1_line; t60 = hero_int_to_str(t59); t185 = h30_own30; h30_own30 = t60; hero_str_decref(t185); t61 = hero_str_concat(t58, t60); t186 = h31_own31; h31_own31 = t61; hero_str_decref(t186); t62 = HERO_STR_LIT(hero_str_f40ca); t63 = hero_str_concat(t61, t62); t187 = h32_own32; h32_own32 = t63; hero_str_decref(t187); t64 = h0_text; t65 = hero_str_concat(t63, t64); t188 = h33_own33; h33_own33 = t65; hero_str_decref(t188); t66 = HERO_STR_LIT(hero_str_7c99e7ad); t67 = hero_str_concat(t65, t66); t189 = h34_own34; h34_own34 = t67; hero_str_decref(t189); hero_str_incref(t57); hero_str_incref(t67); t68 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t57, .msg = t67}}; t190 = h35_own35; h35_own35 = t68; h_0opt_db92a83_release(&t190); h17_ret0 = t68; goto bb33; bb13: goto bb11; bb14:
-#line 132
-    t97 = INT64_C(0); h9_scaled = t97;
-    t98 = INT64_C(0); h10_at = t98; goto bb17; bb15:
-#line 129
-    t76 = h_datatable_ERR_NUMBER(); t191 = h36_own36; h36_own36 = t76; hero_str_decref(t191);
-    t77 = HERO_STR_LIT(hero_str_75f7c07a); t78 = h1_line; t79 = hero_int_to_str(t78); t192 = h37_own37; h37_own37 = t79; hero_str_decref(t192); t80 = hero_str_concat(t77, t79); t193 = h38_own38; h38_own38 = t80; hero_str_decref(t193); t81 = HERO_STR_LIT(hero_str_f40ca); t82 = hero_str_concat(t80, t81); t194 = h39_own39; h39_own39 = t82; hero_str_decref(t194); t83 = h0_text; t84 = hero_str_concat(t82, t83); t195 = h40_own40; h40_own40 = t84; hero_str_decref(t195); t85 = HERO_STR_LIT(hero_str_115c445b); t86 = hero_str_concat(t84, t85); t196 = h41_own41; h41_own41 = t86; hero_str_decref(t196); t87 = h8_all_digits; t88 = hero_str_len(t87); t89 = hero_int_to_str(t88); t197 = h42_own42; h42_own42 = t89; hero_str_decref(t197); t90 = hero_str_concat(t86, t89); t198 = h43_own43; h43_own43 = t90; hero_str_decref(t198); t91 = HERO_STR_LIT(hero_str_43ee78de); t92 = hero_str_concat(t90, t91); t199 = h44_own44; h44_own44 = t92; hero_str_decref(t199); t93 = h_datatable_MOST_DIGITS(); t94 = hero_int_to_str(t93); t200 = h45_own45; h45_own45 = t94; hero_str_decref(t200); t95 = hero_str_concat(t92, t94); t201 = h46_own46; h46_own46 = t95; hero_str_decref(t201);
-#line 128
-    hero_str_incref(t76); hero_str_incref(t95); t96 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t76, .msg = t95}}; t202 = h47_own47; h47_own47 = t96; h_0opt_db92a83_release(&t202); h17_ret0 = t96; goto bb33; bb16: goto bb14; bb17:
-#line 135
-    t99 = h10_at; t100 = h8_all_digits; t101 = hero_str_len(t100); t102 = t99 < t101; if (t102) goto bb18; else goto bb19; bb18:
-    t103 = h8_all_digits; t104 = h10_at; t105 = ((void)((t103.ptr == NULL || t104 < 0 || t104 >= t103.len) ? hero_panic_byte_at(t103, t104, "data/table.hero", "table.float_of", 136, 17) : (void)0), (int64_t)(unsigned char)t103.ptr[t104]); h11_digit = t105;
-#line 138
-    t106 = h11_digit; t107 = UINT64_C(48); t108 = t106 < t107; h12_b1 = t108; if (t108) goto bb22; else goto bb21; bb19:
-#line 143
-    t144 = 0x1p+0; h14_scale = t144;
-    t145 = h7_fraction_digits; t146 = hero_str_len(t145); h15_left = t146; goto bb27; bb20:
+#line 135 "examples/query/data/table.hero"
+h_0opt_a8ea2 h_datatable_float_shape(HeroStr h0_text, int64_t h1_line) { HERO_NODEBUG bool h2_b0, h3_b1, h7_b2, h9_b3, h10_b4, h11_b5, t3, t6, t7, t10, t11, t16, t40, t47, t57, t62, t63, t73, t83, t88, t89, t95, t102, t109, t110, t111, t126, t136; HeroStr h4_said = {0}; int64_t h5_at; int64_t h6_whole_end; int64_t h8_fraction_end; int64_t h12_exponent_end; HERO_NODEBUG h_0opt_a8ea2 h13_ret0 = {0}, h14_own14 = {0}, h24_own24 = {0}, h27_own27 = {0}, h30_own30 = {0}, h33_own33 = {0}, h36_own36 = {0}, h37_own37 = {0}, h46_own46 = {0}, t12, t24, t52, t78, t116, t131, t156, t157, t158, t159, t170, t173, t176, t179, t182, t183, t192; HERO_NODEBUG HeroStr h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h25_own25 = {0}, h26_own26 = {0}, h28_own28 = {0}, h29_own29 = {0}, h31_own31 = {0}, h32_own32 = {0}, h34_own34 = {0}, h35_own35 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h42_own42 = {0}, h43_own43 = {0}, h44_own44 = {0}, h45_own45 = {0}, t1, t2, t4, t5, t8, t9, t13, t17, t18, t20, t21, t22, t23, t25, t27, t28, t29, t30, t31, t32, t33, t34, t36, t42, t48, t49, t50, t51, t55, t58, t64, t74, t75, t76, t77, t81, t84, t93, t96, t103, t112, t113, t114, t115, t117, t127, t128, t129, t130, t134, t137, t138, t139, t140, t141, t143, t145, t146, t147, t148, t149, t152, t153, t154, t155, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t171, t172, t174, t175, t177, t178, t180, t181, t184, t185, t186, t187, t188, t189, t190, t191; HERO_NODEBUG int64_t t14, t15, t19, t26, t35, t37, t41, t43, t44, t45, t46, t53, t54, t56, t59, t65, t66, t67, t68, t69, t70, t71, t72, t79, t80, t82, t85, t90, t91, t92, t94, t97, t98, t99, t104, t105, t106, t118, t119, t120, t121, t122, t123, t124, t125, t132, t133, t135, t142, t144, t150, t151; HERO_NODEBUG uint8_t t38, t39, t60, t61, t86, t87, t100, t101, t107, t108; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = HERO_STR_LIT(hero_str_1bb761); t3 = hero_str_eq(t1, t2); h3_b1 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 139
+    t13 = h0_text; t14 = hero_str_len(t13); t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb9; else goto bb10; bb2:
+#line 136
+    t4 = h0_text; t5 = HERO_STR_LIT(hero_str_6235ba0); t6 = hero_str_eq(t4, t5); h3_b1 = t6; goto bb3; bb3: t7 = h3_b1; h2_b0 = t7; if (t7) goto bb5; else goto bb4; bb4: t8 = h0_text; t9 = HERO_STR_LIT(hero_str_1cffef); t10 = hero_str_eq(t8, t9); h2_b0 = t10; goto bb5; bb5: t11 = h2_b0; if (t11) goto bb6; else goto bb7; bb6:
+    t12 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t159 = h14_own14; h14_own14 = t12; h_0opt_a8ea2_release(&t159); h13_ret0 = t12; goto bb43; bb7: goto bb1; bb8:
+#line 141
+    t25 = HERO_STR_LIT(hero_str_75f7c07a); t26 = h1_line; t27 = hero_int_to_str(t26); t160 = h15_own15; h15_own15 = t27; hero_str_decref(t160); t28 = hero_str_concat(t25, t27); t161 = h16_own16; h16_own16 = t28; hero_str_decref(t161); t29 = HERO_STR_LIT(hero_str_f40ca); t30 = hero_str_concat(t28, t29); t162 = h17_own17; h17_own17 = t30; hero_str_decref(t162); t31 = h0_text; t32 = hero_str_concat(t30, t31); t163 = h18_own18; h18_own18 = t32; hero_str_decref(t163); t33 = HERO_STR_LIT(hero_str_3140); t34 = hero_str_concat(t32, t33); t164 = h19_own19; h19_own19 = t34; hero_str_decref(t164); t165 = h4_said; hero_str_incref(t34); h4_said = t34; hero_str_decref(t165);
+    t35 = INT64_C(0); h5_at = t35;
+#line 144
+    t36 = h0_text; t37 = INT64_C(0); t38 = ((void)((t36.ptr == NULL || t37 < 0 || t37 >= t36.len) ? hero_panic_byte_at(t36, t37, "data/table.hero", "table.float_shape", 144, 8) : (void)0), (int64_t)(unsigned char)t36.ptr[t37]); t39 = UINT64_C(45); t40 = t38 == t39; if (t40) goto bb12; else goto bb13; bb9:
 #line 140
-    t125 = h9_scaled; t126 = INT64_C(10); if (__builtin_mul_overflow(t125, t126, &t127)) hero_panic_overflow_at("data/table.hero", "table.float_of", 140, 18); t128 = h11_digit; t129 = UINT64_C(48); if (__builtin_sub_overflow(t128, t129, &t130)) hero_panic_overflow_at("data/table.hero", "table.float_of", 140, 39); t131 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t130}; t203 = h48_own48; h48_own48 = t131; h_0opt_e201354_release(&t203); t204 = h13_f1; h_0opt_e201354_retain(&t131); h13_f1 = t131; h_0opt_e201354_release(&t204); t132 = h13_f1; t133 = t132.tag; t134 = INT64_C(0); t135 = t133 == t134; if (t135) goto bb25; else goto bb26; bb21:
-#line 138
-    t109 = h11_digit; t110 = UINT64_C(57); t111 = t109 > t110; h12_b1 = t111; goto bb22; bb22: t112 = h12_b1; if (t112) goto bb23; else goto bb24; bb23:
-    t113 = h_datatable_ERR_NUMBER(); t205 = h49_own49; h49_own49 = t113; hero_str_decref(t205); t114 = HERO_STR_LIT(hero_str_75f7c07a); t115 = h1_line; t116 = hero_int_to_str(t115); t206 = h50_own50; h50_own50 = t116; hero_str_decref(t206); t117 = hero_str_concat(t114, t116); t207 = h51_own51; h51_own51 = t117; hero_str_decref(t207); t118 = HERO_STR_LIT(hero_str_f40ca); t119 = hero_str_concat(t117, t118); t208 = h52_own52; h52_own52 = t119; hero_str_decref(t208); t120 = h0_text; t121 = hero_str_concat(t119, t120); t209 = h53_own53; h53_own53 = t121; hero_str_decref(t209); t122 = HERO_STR_LIT(hero_str_7597be40); t123 = hero_str_concat(t121, t122); t210 = h54_own54; h54_own54 = t123; hero_str_decref(t210); hero_str_incref(t113); hero_str_incref(t123); t124 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t113, .msg = t123}}; t211 = h55_own55; h55_own55 = t124; h_0opt_db92a83_release(&t211); h17_ret0 = t124; goto bb33; bb24: goto bb20; bb25:
-    t138 = h13_f1; t139 = t138.as.ok; if (__builtin_add_overflow(t127, t139, &t140)) hero_panic_overflow_at("data/table.hero", "table.float_of", 140, 18); h9_scaled = t140;
-    t141 = h10_at; t142 = INT64_C(1); if (__builtin_add_overflow(t141, t142, &t143)) hero_panic_overflow_at("data/table.hero", "table.float_of", 141, 14); h10_at = t143; goto bb17; bb26:
-#line 140
-    t136 = h13_f1; t137 = t136.as.err;
-#line 1520 "main.c"
-    hero_panic_must_at(t137, "data/table.hero", "table.float_of", 140, 32);
-    hero_unreachable();
-bb27:
-#line 146 "examples/query/data/table.hero"
-    t147 = h15_left; t148 = INT64_C(0); t149 = t147 > t148; if (t149) goto bb28; else goto bb29; bb28:
-    t150 = h14_scale; t151 = 0x1.4p+3; t152 = t150 * t151; h14_scale = t152;
-    t153 = h15_left; t154 = INT64_C(1); if (__builtin_sub_overflow(t153, t154, &t155)) hero_panic_overflow_at("data/table.hero", "table.float_of", 148, 16); h15_left = t155; goto bb27; bb29:
+    t17 = h_datatable_ERR_NUMBER(); t166 = h20_own20; h20_own20 = t17; hero_str_decref(t166); t18 = HERO_STR_LIT(hero_str_75f7c07a); t19 = h1_line; t20 = hero_int_to_str(t19); t167 = h21_own21; h21_own21 = t20; hero_str_decref(t167); t21 = hero_str_concat(t18, t20); t168 = h22_own22; h22_own22 = t21; hero_str_decref(t168); t22 = HERO_STR_LIT(hero_str_a784397); t23 = hero_str_concat(t21, t22); t169 = h23_own23; h23_own23 = t23; hero_str_decref(t169); hero_str_incref(t17); hero_str_incref(t23); t24 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t23}}; t170 = h24_own24; h24_own24 = t24; h_0opt_a8ea2_release(&t170); h13_ret0 = t24; goto bb43; bb10: goto bb8; bb11:
+#line 146
+    t42 = h0_text; t43 = h5_at; t44 = h_datatable_digits_end(t42, t43); h6_whole_end = t44;
+#line 148
+    t45 = h6_whole_end; t46 = h5_at; t47 = t45 == t46; if (t47) goto bb15; else goto bb16; bb12:
+#line 145
+    t41 = INT64_C(1); h5_at = t41; goto bb11; bb13: goto bb11; bb14:
 #line 150
-    t156 = h9_scaled; t157 = hero_int_to_f64(t156); t158 = h14_scale; t159 = t157 / t158; h16_value = t159;
+    t53 = h6_whole_end; h5_at = t53;
 #line 152
-    t160 = h4_negative; if (t160) goto bb31; else goto bb32; bb30:
-#line 154
-    t164 = h16_value; t165 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t164}; t212 = h56_own56; h56_own56 = t165; h_0opt_db92a83_release(&t212); h17_ret0 = t165; goto bb33; bb31:
-#line 153
-    t161 = h16_value; t162 = -t161; t163 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t162}; t213 = h57_own57; h57_own57 = t163; h_0opt_db92a83_release(&t213); h17_ret0 = t163; goto bb33; bb32: goto bb30; bb33:
-#line 1536 "main.c"
-    t166 = h17_ret0;
-    h_0opt_db92a83_retain(&t166);
-    hero_array_release_at(&h2_halves);
-    h_0opt_f87774a_release(hero_slot_escape(&h5_f0));
-    hero_str_release_at(&h6_whole_digits);
-    hero_str_release_at(&h7_fraction_digits);
-    hero_str_release_at(&h8_all_digits);
-    h_0opt_e201354_release(hero_slot_escape(&h13_f1));
-    hero_array_release_at(&h18_own18);
+    t54 = h5_at; t55 = h0_text; t56 = hero_str_len(t55); t57 = t54 < t56; h7_b2 = t57; if (t57) goto bb18; else goto bb19; bb15:
+#line 149
+    t48 = h_datatable_ERR_NUMBER(); t171 = h25_own25; h25_own25 = t48; hero_str_decref(t171); t49 = h4_said; t50 = HERO_STR_LIT(hero_str_6383c514); t51 = hero_str_concat(t49, t50); t172 = h26_own26; h26_own26 = t51; hero_str_decref(t172); hero_str_incref(t48); hero_str_incref(t51); t52 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t48, .msg = t51}}; t173 = h27_own27; h27_own27 = t52; h_0opt_a8ea2_release(&t173); h13_ret0 = t52; goto bb43; bb16: goto bb14; bb17:
+#line 159
+    t80 = h5_at; t81 = h0_text; t82 = hero_str_len(t81); t83 = t80 < t82; h9_b3 = t83; if (t83) goto bb26; else goto bb27; bb18:
+#line 152
+    t58 = h0_text; t59 = h5_at; t60 = ((void)((t58.ptr == NULL || t59 < 0 || t59 >= t58.len) ? hero_panic_byte_at(t58, t59, "data/table.hero", "table.float_shape", 152, 27) : (void)0), (int64_t)(unsigned char)t58.ptr[t59]); t61 = UINT64_C(46); t62 = t60 == t61; h7_b2 = t62; goto bb19; bb19: t63 = h7_b2; if (t63) goto bb20; else goto bb21; bb20:
+    t64 = h0_text; t65 = h5_at; t66 = INT64_C(1); if (__builtin_add_overflow(t65, t66, &t67)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 153, 47); t68 = h_datatable_digits_end(t64, t67); h8_fraction_end = t68;
+#line 155
+    t69 = h8_fraction_end; t70 = h5_at; t71 = INT64_C(1); if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 155, 28); t73 = t69 == t72; if (t73) goto bb23; else goto bb24; bb21: goto bb17; bb22:
+#line 157
+    t79 = h8_fraction_end; h5_at = t79; goto bb17; bb23:
+#line 156
+    t74 = h_datatable_ERR_NUMBER(); t174 = h28_own28; h28_own28 = t74; hero_str_decref(t174); t75 = h4_said; t76 = HERO_STR_LIT(hero_str_4075db4b); t77 = hero_str_concat(t75, t76); t175 = h29_own29; h29_own29 = t77; hero_str_decref(t175); hero_str_incref(t74); hero_str_incref(t77); t78 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t74, .msg = t77}}; t176 = h30_own30; h30_own30 = t78; h_0opt_a8ea2_release(&t176); h13_ret0 = t78; goto bb43; bb24: goto bb22; bb25:
+#line 170
+    t133 = h5_at; t134 = h0_text; t135 = hero_str_len(t134); t136 = t133 < t135; if (t136) goto bb41; else goto bb42; bb26:
+#line 159
+    t84 = h0_text; t85 = h5_at; t86 = ((void)((t84.ptr == NULL || t85 < 0 || t85 >= t84.len) ? hero_panic_byte_at(t84, t85, "data/table.hero", "table.float_shape", 159, 27) : (void)0), (int64_t)(unsigned char)t84.ptr[t85]); t87 = UINT64_C(101); t88 = t86 == t87; h9_b3 = t88; goto bb27; bb27: t89 = h9_b3; if (t89) goto bb28; else goto bb29; bb28:
+    t90 = h5_at; t91 = INT64_C(1); if (__builtin_add_overflow(t90, t91, &t92)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 160, 12); t93 = h0_text; t94 = hero_str_len(t93); t95 = t92 == t94; h10_b4 = t95; if (t95) goto bb32; else goto bb31; bb29: goto bb25; bb30:
+#line 162
+    t117 = h0_text; t118 = h5_at; t119 = INT64_C(2); if (__builtin_add_overflow(t118, t119, &t120)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 162, 47); t121 = h_datatable_digits_end(t117, t120); h12_exponent_end = t121;
+#line 164
+    t122 = h12_exponent_end; t123 = h5_at; t124 = INT64_C(2); if (__builtin_add_overflow(t123, t124, &t125)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 164, 28); t126 = t122 == t125; if (t126) goto bb38; else goto bb39; bb31:
+#line 160
+    t96 = h0_text; t97 = h5_at; t98 = INT64_C(1); if (__builtin_add_overflow(t97, t98, &t99)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 160, 41); t100 = ((void)((t96.ptr == NULL || t99 < 0 || t99 >= t96.len) ? hero_panic_byte_at(t96, t99, "data/table.hero", "table.float_shape", 160, 36) : (void)0), (int64_t)(unsigned char)t96.ptr[t99]); t101 = UINT64_C(43); t102 = t100 != t101; h11_b5 = t102; if (t102) goto bb33; else goto bb34; bb32: t111 = h10_b4; if (t111) goto bb35; else goto bb36; bb33: t103 = h0_text; t104 = h5_at; t105 = INT64_C(1); if (__builtin_add_overflow(t104, t105, &t106)) hero_panic_overflow_at("data/table.hero", "table.float_shape", 160, 64); t107 = ((void)((t103.ptr == NULL || t106 < 0 || t106 >= t103.len) ? hero_panic_byte_at(t103, t106, "data/table.hero", "table.float_shape", 160, 59) : (void)0), (int64_t)(unsigned char)t103.ptr[t106]); t108 = UINT64_C(45); t109 = t107 != t108; h11_b5 = t109; goto bb34; bb34: t110 = h11_b5; h10_b4 = t110; goto bb32; bb35:
+    t112 = h_datatable_ERR_NUMBER(); t177 = h31_own31; h31_own31 = t112; hero_str_decref(t177); t113 = h4_said; t114 = HERO_STR_LIT(hero_str_9cc189b); t115 = hero_str_concat(t113, t114); t178 = h32_own32; h32_own32 = t115; hero_str_decref(t178); hero_str_incref(t112); hero_str_incref(t115); t116 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t112, .msg = t115}}; t179 = h33_own33; h33_own33 = t116; h_0opt_a8ea2_release(&t179); h13_ret0 = t116; goto bb43; bb36: goto bb30; bb37:
+#line 166
+    t132 = h12_exponent_end; h5_at = t132; goto bb25; bb38:
+#line 165
+    t127 = h_datatable_ERR_NUMBER(); t180 = h34_own34; h34_own34 = t127; hero_str_decref(t180); t128 = h4_said; t129 = HERO_STR_LIT(hero_str_6a800db8); t130 = hero_str_concat(t128, t129); t181 = h35_own35; h35_own35 = t130; hero_str_decref(t181); hero_str_incref(t127); hero_str_incref(t130); t131 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t127, .msg = t130}}; t182 = h36_own36; h36_own36 = t131; h_0opt_a8ea2_release(&t182); h13_ret0 = t131; goto bb43; bb39: goto bb37; bb40:
+#line 175
+    t157 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t183 = h37_own37; h37_own37 = t157; h_0opt_a8ea2_release(&t183); h13_ret0 = t157; goto bb43; bb41:
+#line 172
+    t137 = h_datatable_ERR_NUMBER(); t184 = h38_own38; h38_own38 = t137; hero_str_decref(t184);
+    t138 = h4_said; t139 = HERO_STR_LIT(hero_str_4d903659); t140 = hero_str_concat(t138, t139); t185 = h39_own39; h39_own39 = t140; hero_str_decref(t185); t141 = h0_text; t142 = h5_at; t143 = h0_text; t144 = hero_str_len(t143); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.float_shape", 173, 48}; t145 = hero_str_slice_at(t141, t142, t144, &hero_here); } t186 = h40_own40; h40_own40 = t145; hero_str_decref(t186); t146 = hero_str_concat(t140, t145); t187 = h41_own41; h41_own41 = t146; hero_str_decref(t187); t147 = HERO_STR_LIT(hero_str_3c0c07e7); t148 = hero_str_concat(t146, t147); t188 = h42_own42; h42_own42 = t148; hero_str_decref(t188); t149 = h0_text; t150 = INT64_C(0); t151 = h5_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.float_shape", 173, 103}; t152 = hero_str_slice_at(t149, t150, t151, &hero_here); } t189 = h43_own43; h43_own43 = t152; hero_str_decref(t189); t153 = hero_str_concat(t148, t152); t190 = h44_own44; h44_own44 = t153; hero_str_decref(t190); t154 = HERO_STR_LIT(hero_str_60); t155 = hero_str_concat(t153, t154); t191 = h45_own45; h45_own45 = t155; hero_str_decref(t191);
+#line 171
+    hero_str_incref(t137); hero_str_incref(t155); t156 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t137, .msg = t155}}; t192 = h46_own46; h46_own46 = t156; h_0opt_a8ea2_release(&t192); h13_ret0 = t156; goto bb43; bb42: goto bb40; bb43:
+#line 1557 "main.c"
+    t158 = h13_ret0;
+    h_0opt_a8ea2_retain(&t158);
+    hero_str_release_at(&h4_said);
+    h_0opt_a8ea2_release(hero_slot_escape(&h14_own14));
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
     hero_str_release_at(&h19_own19);
     hero_str_release_at(&h20_own20);
     hero_str_release_at(&h21_own21);
     hero_str_release_at(&h22_own22);
     hero_str_release_at(&h23_own23);
-    hero_str_release_at(&h24_own24);
-    h_0opt_db92a83_release(hero_slot_escape(&h25_own25));
-    h_0opt_f87774a_release(hero_slot_escape(&h26_own26));
-    h_0opt_db92a83_release(hero_slot_escape(&h27_own27));
+    h_0opt_a8ea2_release(hero_slot_escape(&h24_own24));
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    h_0opt_a8ea2_release(hero_slot_escape(&h27_own27));
     hero_str_release_at(&h28_own28);
     hero_str_release_at(&h29_own29);
-    hero_str_release_at(&h30_own30);
+    h_0opt_a8ea2_release(hero_slot_escape(&h30_own30));
     hero_str_release_at(&h31_own31);
     hero_str_release_at(&h32_own32);
-    hero_str_release_at(&h33_own33);
+    h_0opt_a8ea2_release(hero_slot_escape(&h33_own33));
     hero_str_release_at(&h34_own34);
-    h_0opt_db92a83_release(hero_slot_escape(&h35_own35));
-    hero_str_release_at(&h36_own36);
-    hero_str_release_at(&h37_own37);
+    hero_str_release_at(&h35_own35);
+    h_0opt_a8ea2_release(hero_slot_escape(&h36_own36));
+    h_0opt_a8ea2_release(hero_slot_escape(&h37_own37));
     hero_str_release_at(&h38_own38);
     hero_str_release_at(&h39_own39);
     hero_str_release_at(&h40_own40);
@@ -1569,98 +1589,66 @@ bb27:
     hero_str_release_at(&h43_own43);
     hero_str_release_at(&h44_own44);
     hero_str_release_at(&h45_own45);
-    hero_str_release_at(&h46_own46);
-    h_0opt_db92a83_release(hero_slot_escape(&h47_own47));
-    h_0opt_e201354_release(hero_slot_escape(&h48_own48));
-    hero_str_release_at(&h49_own49);
-    hero_str_release_at(&h50_own50);
-    hero_str_release_at(&h51_own51);
-    hero_str_release_at(&h52_own52);
-    hero_str_release_at(&h53_own53);
-    hero_str_release_at(&h54_own54);
-    h_0opt_db92a83_release(hero_slot_escape(&h55_own55));
-    h_0opt_db92a83_release(hero_slot_escape(&h56_own56));
-    h_0opt_db92a83_release(hero_slot_escape(&h57_own57));
-    return t166;
+    h_0opt_a8ea2_release(hero_slot_escape(&h46_own46));
+    return t158;
 }
 
-#line 159 "examples/query/data/table.hero"
-h_0opt_f87774a h_datatable_digits_of(HeroStr h0_text, int64_t h1_line, bool h2_negative) { HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h11_own11 = {0}, h16_own16 = {0}, t12, t25, t31, t33, t34, t39, t40, t42, t47; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t1, t5, t6, t8, t9, t10, t11, t14, t18, t19, t21, t22, t23, t24, t26, t28, t30, t32, t35, t36, t37, t38, t41, t43, t44, t45, t46; HERO_NODEBUG int64_t t2, t3, t7, t15, t16, t20, t27, t29; HERO_NODEBUG bool t4, t13, t17; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_text; t2 = hero_str_len(t1); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
-#line 163
-    t13 = h2_negative; if (t13) goto bb5; else goto bb6; bb2:
-#line 161
-    t5 = h_datatable_ERR_NUMBER(); t35 = h4_own4; h4_own4 = t5; hero_str_decref(t35); t6 = HERO_STR_LIT(hero_str_75f7c07a); t7 = h1_line; t8 = hero_int_to_str(t7); t36 = h5_own5; h5_own5 = t8; hero_str_decref(t36); t9 = hero_str_concat(t6, t8); t37 = h6_own6; h6_own6 = t9; hero_str_decref(t37); t10 = HERO_STR_LIT(hero_str_a784397); t11 = hero_str_concat(t9, t10); t38 = h7_own7; h7_own7 = t11; hero_str_decref(t38); hero_str_incref(t5); hero_str_incref(t11); t12 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t11}}; t39 = h8_own8; h8_own8 = t12; h_0opt_f87774a_release(&t39); h3_ret0 = t12; goto bb10; bb3: goto bb1; bb4:
-#line 167
-    t32 = h0_text; hero_str_incref(t32); t33 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t32}; t40 = h9_own9; h9_own9 = t33; h_0opt_f87774a_release(&t40); h3_ret0 = t33; goto bb10; bb5:
-#line 164
-    t14 = h0_text; t15 = hero_str_len(t14); t16 = INT64_C(1); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb6: goto bb4; bb7:
-#line 166
-    t26 = h0_text; t27 = INT64_C(1); t28 = h0_text; t29 = hero_str_len(t28); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.digits_of", 166, 19}; t30 = hero_str_slice_at(t26, t27, t29, &hero_here); } t41 = h10_own10; h10_own10 = t30; hero_str_decref(t41); hero_str_incref(t30); t31 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t30}; t42 = h11_own11; h11_own11 = t31; h_0opt_f87774a_release(&t42); h3_ret0 = t31; goto bb10; bb8:
-#line 165
-    t18 = h_datatable_ERR_NUMBER(); t43 = h12_own12; h12_own12 = t18; hero_str_decref(t43); t19 = HERO_STR_LIT(hero_str_75f7c07a); t20 = h1_line; t21 = hero_int_to_str(t20); t44 = h13_own13; h13_own13 = t21; hero_str_decref(t44); t22 = hero_str_concat(t19, t21); t45 = h14_own14; h14_own14 = t22; hero_str_decref(t45); t23 = HERO_STR_LIT(hero_str_7d0ce380); t24 = hero_str_concat(t22, t23); t46 = h15_own15; h15_own15 = t24; hero_str_decref(t46); hero_str_incref(t18); hero_str_incref(t24); t25 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t24}}; t47 = h16_own16; h16_own16 = t25; h_0opt_f87774a_release(&t47); h3_ret0 = t25; goto bb10; bb9: goto bb7; bb10:
-#line 1603 "main.c"
-    t34 = h3_ret0;
-    h_0opt_f87774a_retain(&t34);
-    hero_str_release_at(&h4_own4);
-    hero_str_release_at(&h5_own5);
-    hero_str_release_at(&h6_own6);
-    hero_str_release_at(&h7_own7);
-    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
-    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
-    hero_str_release_at(&h10_own10);
-    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
-    hero_str_release_at(&h12_own12);
-    hero_str_release_at(&h13_own13);
-    hero_str_release_at(&h14_own14);
-    hero_str_release_at(&h15_own15);
-    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
-    return t34;
+#line 179 "examples/query/data/table.hero"
+int64_t h_datatable_digits_end(HeroStr h0_text, int64_t h1_from) { int64_t h2_at; HERO_NODEBUG bool h3_b0, h4_b1, t5, t10, t11, t16, t17; HERO_NODEBUG int64_t t1, t2, t4, t7, t13, t18, t19, t20, t21; HERO_NODEBUG HeroStr t3, t6, t12; HERO_NODEBUG uint8_t t8, t9, t14, t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_from; h2_at = t1; goto bb1; bb1:
+#line 182
+    t2 = h2_at; t3 = h0_text; t4 = hero_str_len(t3); t5 = t2 < t4; h4_b1 = t5; if (t5) goto bb4; else goto bb5; bb2:
+    t18 = h2_at; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("data/table.hero", "table.digits_end", 183, 14); h2_at = t20; goto bb1; bb3:
+#line 185
+    t21 = h2_at; return t21; bb4:
+#line 182
+    t6 = h0_text; t7 = h2_at; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "data/table.hero", "table.digits_end", 182, 30) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = UINT64_C(48); t10 = t8 >= t9; h4_b1 = t10; goto bb5; bb5: t11 = h4_b1; h3_b0 = t11; if (t11) goto bb6; else goto bb7; bb6: t12 = h0_text; t13 = h2_at; t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "data/table.hero", "table.digits_end", 182, 49) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); t15 = UINT64_C(57); t16 = t14 <= t15; h3_b0 = t16; goto bb7; bb7: t17 = h3_b0; if (t17) goto bb2; else goto bb3;
+#line 1607 "main.c"
 }
 
-#line 172 "examples/query/data/table.hero"
+#line 190 "examples/query/data/table.hero"
 h_0opt_40ab612a h_datatable_read(HeroStr h0_text) { HeroArrayHeader * h1_all_lines = {0}; HeroArrayHeader * h2_out = {0}; int64_t h3_number; int64_t h4_wanted; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h14_own14 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h27_own27 = {0}, *t2, *t3, *t10, *t17, *t28, *t31, *t33, *t35, *t38, *t41, *t49, *t50, *t61, *t72, *t86, *t89, *t92, *t106, *t120, *t139, *t142, *t143, *t147, *t148, *t149, *t150, *t159, *t160; HERO_NODEBUG int64_t h6_i0, t4, t5, t11, t18, t29, t30, t32, t34, t36, t37, t39, t42, t44, t45, t46, t51, t52, t56, t62, t67, t73, t75, t78, t79, t85, t87, t90, t93, t95, t98, t99, t107, t109, t112, t113, t119, t121, t123, t126, t127, t136, t137, t138; HeroStr h7_one = {0}; HeroArrayHeader * h8_fields = {0}; HERO_NODEBUG h_0opt_e201354 h9_f0 = {0}, h11_f2 = {0}, h29_own29 = {0}, h42_own42 = {0}, t76, t77, t81, t84, t110, t111, t115, t118, t162, t163, t177, t178; HERO_NODEBUG h_0opt_473cb9ae h10_f1 = {0}, h40_own40 = {0}, t96, t97, t101, t104, t174, t175; HERO_NODEBUG h_0opt_db92a83 h12_f3 = {0}, h44_own44 = {0}, t124, t125, t129, t132, t180, t181; HERO_NODEBUG h_0opt_40ab612a h13_ret0 = {0}, h17_own17 = {0}, h26_own26 = {0}, h28_own28 = {0}, h39_own39 = {0}, h41_own41 = {0}, h43_own43 = {0}, h45_own45 = {0}, h47_own47 = {0}, t9, t27, t70, t83, t103, t117, t131, t140, t141, t146, t157, t161, t173, t176, t179, t182, t184; HERO_NODEBUG HeroStr h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, h38_own38 = {0}, t1, t7, t8, t12, t13, t15, t16, t19, t20, t21, t22, t23, t24, t25, t26, t43, t47, t54, t55, t57, t58, t59, t60, t63, t64, t65, t66, t68, t69, t74, t88, t91, t94, t108, t122, t144, t145, t151, t152, t153, t154, t155, t156, t158, t164, t165, t166, t167, t168, t169, t170, t171, t172; HERO_NODEBUG h_datarow_Row h46_own46 = {0}, t134, t183; HERO_NODEBUG bool t6, t14, t40, t53, t80, t100, t105, t114, t128; HERO_NODEBUG uint8_t t48; HERO_NODEBUG HeroFailure t82, t102, t116, t130; HERO_NODEBUG double t133; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_datatable_lines_of(t1); t142 = h14_own14; h14_own14 = t2; hero_array_decref(t142); t143 = h1_all_lines; hero_array_incref(t2); h1_all_lines = t2; hero_array_decref(t143);
-#line 175
+#line 193
     t3 = h1_all_lines; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 178
-    t10 = h1_all_lines; t11 = INT64_C(0); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "data/table.hero", "table.read", 178, 8) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t13 = h_datarow_HEADER(); t144 = h15_own15; h15_own15 = t13; hero_str_decref(t144); t14 = !hero_str_eq(t12, t13); if (t14) goto bb5; else goto bb6; bb2:
-#line 176
+#line 196
+    t10 = h1_all_lines; t11 = INT64_C(0); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "data/table.hero", "table.read", 196, 8) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t13 = h_datarow_HEADER(); t144 = h15_own15; h15_own15 = t13; hero_str_decref(t144); t14 = !hero_str_eq(t12, t13); if (t14) goto bb5; else goto bb6; bb2:
+#line 194
     t7 = h_datatable_ERR_EMPTY(); t145 = h16_own16; h16_own16 = t7; hero_str_decref(t145); t8 = HERO_STR_LIT(hero_str_4f6a402f); hero_str_incref(t7); hero_str_incref(t8); t9 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}}; t146 = h17_own17; h17_own17 = t9; h_0opt_40ab612a_release(&t146); h13_ret0 = t9; goto bb22; bb3: goto bb1; bb4:
-#line 183
+#line 201
     t28 = hero_array_new(&h_datarow_0Row_desc, 1); t147 = h18_own18; h18_own18 = t28; hero_array_decref(t147); t148 = h2_out; hero_array_incref(t28); h2_out = t28; hero_array_decref(t148);
     t29 = INT64_C(1); h3_number = t29;
     t30 = h_datatable_columns(); h4_wanted = t30;
-#line 187
-    t31 = h1_all_lines; t32 = INT64_C(1); t33 = h1_all_lines; t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.read", 187, 16}; t35 = hero_array_slice_at(t31, t32, t34, &hero_here); } t149 = h19_own19; h19_own19 = t35; hero_array_decref(t149); t150 = h5_xs0; hero_array_incref(t35); h5_xs0 = t35; hero_array_decref(t150); t36 = INT64_C(0); h6_i0 = t36; goto bb7; bb5:
-#line 180
+#line 205
+    t31 = h1_all_lines; t32 = INT64_C(1); t33 = h1_all_lines; t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"data/table.hero", "table.read", 205, 16}; t35 = hero_array_slice_at(t31, t32, t34, &hero_here); } t149 = h19_own19; h19_own19 = t35; hero_array_decref(t149); t150 = h5_xs0; hero_array_incref(t35); h5_xs0 = t35; hero_array_decref(t150); t36 = INT64_C(0); h6_i0 = t36; goto bb7; bb5:
+#line 198
     t15 = h_datatable_ERR_HEADER(); t151 = h20_own20; h20_own20 = t15; hero_str_decref(t151);
-    t16 = HERO_STR_LIT(hero_str_62d45ee9); t17 = h1_all_lines; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "data/table.hero", "table.read", 181, 41) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t152 = h21_own21; h21_own21 = t20; hero_str_decref(t152); t21 = HERO_STR_LIT(hero_str_119d1bed); t22 = hero_str_concat(t20, t21); t153 = h22_own22; h22_own22 = t22; hero_str_decref(t153); t23 = h_datarow_HEADER(); t154 = h23_own23; h23_own23 = t23; hero_str_decref(t154); t24 = hero_str_concat(t22, t23); t155 = h24_own24; h24_own24 = t24; hero_str_decref(t155); t25 = HERO_STR_LIT(hero_str_60); t26 = hero_str_concat(t24, t25); t156 = h25_own25; h25_own25 = t26; hero_str_decref(t156);
-#line 179
-    hero_str_incref(t15); hero_str_incref(t26); t27 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t26}}; t157 = h26_own26; h26_own26 = t27; h_0opt_40ab612a_release(&t157); h13_ret0 = t27; goto bb22; bb6: goto bb4; bb7:
-#line 187
-    t37 = h6_i0; t38 = h5_xs0; t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len); t40 = t37 < t39; if (t40) goto bb8; else goto bb10; bb8: t41 = h5_xs0; t42 = h6_i0; t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "data/table.hero", "table.read", 187, 9) : (void)0), (void)(t41->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t41 + 1))[t42]); t158 = h7_one; hero_str_incref(t43); h7_one = t43; hero_str_decref(t158);
-    t44 = h3_number; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("data/table.hero", "table.read", 188, 18); h3_number = t46;
-    t47 = h7_one; t48 = UINT64_C(44); t49 = h_datatable_split(t47, t48); t159 = h27_own27; h27_own27 = t49; hero_array_decref(t159); t160 = h8_fields; hero_array_incref(t49); h8_fields = t49; hero_array_decref(t160);
-#line 191
-    t50 = h8_fields; t51 = ((void)(t50 == NULL ? ((void)hero_array_len(t50), hero_unreachable()) : (void)0), t50->len); t52 = h4_wanted; t53 = t51 != t52; if (t53) goto bb12; else goto bb13; bb9:
-#line 187
-    t136 = h6_i0; t137 = INT64_C(1); if (__builtin_add_overflow(t136, t137, &t138)) hero_panic_overflow_at("data/table.hero", "table.read", 187, 9); h6_i0 = t138; goto bb7; bb10:
-#line 200
-    t139 = h2_out; hero_array_incref(t139); t140 = (h_0opt_40ab612a){.tag = INT64_C(0), .as.ok = t139}; t161 = h28_own28; h28_own28 = t140; h_0opt_40ab612a_release(&t161); h13_ret0 = t140; goto bb22; bb11:
+    t16 = HERO_STR_LIT(hero_str_62d45ee9); t17 = h1_all_lines; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "data/table.hero", "table.read", 199, 41) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t152 = h21_own21; h21_own21 = t20; hero_str_decref(t152); t21 = HERO_STR_LIT(hero_str_119d1bed); t22 = hero_str_concat(t20, t21); t153 = h22_own22; h22_own22 = t22; hero_str_decref(t153); t23 = h_datarow_HEADER(); t154 = h23_own23; h23_own23 = t23; hero_str_decref(t154); t24 = hero_str_concat(t22, t23); t155 = h24_own24; h24_own24 = t24; hero_str_decref(t155); t25 = HERO_STR_LIT(hero_str_60); t26 = hero_str_concat(t24, t25); t156 = h25_own25; h25_own25 = t26; hero_str_decref(t156);
 #line 197
-    t72 = h8_fields; t73 = INT64_C(0); t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? hero_panic_index_at(t72, t73, "data/table.hero", "table.read", 197, 32) : (void)0), (void)(t72->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t72 + 1))[t73]); t75 = h3_number; t76 = h_datatable_int_of(t74, t75); t162 = h29_own29; h29_own29 = t76; h_0opt_e201354_release(&t162); t163 = h9_f0; h_0opt_e201354_retain(&t76); h9_f0 = t76; h_0opt_e201354_release(&t163); t77 = h9_f0; t78 = t77.tag; t79 = INT64_C(0); t80 = t78 == t79; if (t80) goto bb14; else goto bb15; bb12:
-#line 193
+    hero_str_incref(t15); hero_str_incref(t26); t27 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t26}}; t157 = h26_own26; h26_own26 = t27; h_0opt_40ab612a_release(&t157); h13_ret0 = t27; goto bb22; bb6: goto bb4; bb7:
+#line 205
+    t37 = h6_i0; t38 = h5_xs0; t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len); t40 = t37 < t39; if (t40) goto bb8; else goto bb10; bb8: t41 = h5_xs0; t42 = h6_i0; t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "data/table.hero", "table.read", 205, 9) : (void)0), (void)(t41->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t41 + 1))[t42]); t158 = h7_one; hero_str_incref(t43); h7_one = t43; hero_str_decref(t158);
+    t44 = h3_number; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("data/table.hero", "table.read", 206, 18); h3_number = t46;
+    t47 = h7_one; t48 = UINT64_C(44); t49 = h_datatable_split(t47, t48); t159 = h27_own27; h27_own27 = t49; hero_array_decref(t159); t160 = h8_fields; hero_array_incref(t49); h8_fields = t49; hero_array_decref(t160);
+#line 209
+    t50 = h8_fields; t51 = ((void)(t50 == NULL ? ((void)hero_array_len(t50), hero_unreachable()) : (void)0), t50->len); t52 = h4_wanted; t53 = t51 != t52; if (t53) goto bb12; else goto bb13; bb9:
+#line 205
+    t136 = h6_i0; t137 = INT64_C(1); if (__builtin_add_overflow(t136, t137, &t138)) hero_panic_overflow_at("data/table.hero", "table.read", 205, 9); h6_i0 = t138; goto bb7; bb10:
+#line 218
+    t139 = h2_out; hero_array_incref(t139); t140 = (h_0opt_40ab612a){.tag = INT64_C(0), .as.ok = t139}; t161 = h28_own28; h28_own28 = t140; h_0opt_40ab612a_release(&t161); h13_ret0 = t140; goto bb22; bb11:
+#line 215
+    t72 = h8_fields; t73 = INT64_C(0); t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? hero_panic_index_at(t72, t73, "data/table.hero", "table.read", 215, 32) : (void)0), (void)(t72->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t72 + 1))[t73]); t75 = h3_number; t76 = h_datatable_int_of(t74, t75); t162 = h29_own29; h29_own29 = t76; h_0opt_e201354_release(&t162); t163 = h9_f0; h_0opt_e201354_retain(&t76); h9_f0 = t76; h_0opt_e201354_release(&t163); t77 = h9_f0; t78 = t77.tag; t79 = INT64_C(0); t80 = t78 == t79; if (t80) goto bb14; else goto bb15; bb12:
+#line 211
     t54 = h_datatable_ERR_FIELDS(); t164 = h30_own30; h30_own30 = t54; hero_str_decref(t164);
     t55 = HERO_STR_LIT(hero_str_75f7c07a); t56 = h3_number; t57 = hero_int_to_str(t56); t165 = h31_own31; h31_own31 = t57; hero_str_decref(t165); t58 = hero_str_concat(t55, t57); t166 = h32_own32; h32_own32 = t58; hero_str_decref(t166); t59 = HERO_STR_LIT(hero_str_1dce); t60 = hero_str_concat(t58, t59); t167 = h33_own33; h33_own33 = t60; hero_str_decref(t167); t61 = h8_fields; t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len); t63 = hero_int_to_str(t62); t168 = h34_own34; h34_own34 = t63; hero_str_decref(t168); t64 = hero_str_concat(t60, t63); t169 = h35_own35; h35_own35 = t64; hero_str_decref(t169); t65 = HERO_STR_LIT(hero_str_5413f4d4); t66 = hero_str_concat(t64, t65); t170 = h36_own36; h36_own36 = t66; hero_str_decref(t170); t67 = h4_wanted; t68 = hero_int_to_str(t67); t171 = h37_own37; h37_own37 = t68; hero_str_decref(t171); t69 = hero_str_concat(t66, t68); t172 = h38_own38; h38_own38 = t69; hero_str_decref(t172);
-#line 192
+#line 210
     hero_str_incref(t54); hero_str_incref(t69); t70 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t69}}; t173 = h39_own39; h39_own39 = t70; h_0opt_40ab612a_release(&t173); h13_ret0 = t70; goto bb22; bb13: goto bb11; bb14:
-#line 197
-    t84 = h9_f0; t85 = t84.as.ok; t86 = h8_fields; t87 = INT64_C(1); t88 = ((void)((t86 == NULL || t87 < 0 || t87 >= t86->len) ? hero_panic_index_at(t86, t87, "data/table.hero", "table.read", 197, 59) : (void)0), (void)(t86->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t86 + 1))[t87]); t89 = h8_fields; t90 = INT64_C(2); t91 = ((void)((t89 == NULL || t90 < 0 || t90 >= t89->len) ? hero_panic_index_at(t89, t90, "data/table.hero", "table.read", 197, 76) : (void)0), (void)(t89->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t89 + 1))[t90]); t92 = h8_fields; t93 = INT64_C(3); t94 = ((void)((t92 == NULL || t93 < 0 || t93 >= t92->len) ? hero_panic_index_at(t92, t93, "data/table.hero", "table.read", 197, 103) : (void)0), (void)(t92->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t92 + 1))[t93]); t95 = h3_number; t96 = h_datatable_bool_of(t94, t95); t174 = h40_own40; h40_own40 = t96; h_0opt_473cb9ae_release(&t174); t175 = h10_f1; h_0opt_473cb9ae_retain(&t96); h10_f1 = t96; h_0opt_473cb9ae_release(&t175); t97 = h10_f1; t98 = t97.tag; t99 = INT64_C(0); t100 = t98 == t99; if (t100) goto bb16; else goto bb17; bb15: t81 = h9_f0; t82 = t81.as.err; hero_failure_retain(&t82); t83 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t82}; t176 = h41_own41; h41_own41 = t83; h_0opt_40ab612a_release(&t176); h13_ret0 = t83; goto bb22; bb16: t104 = h10_f1; t105 = t104.as.ok; t106 = h8_fields; t107 = INT64_C(4); t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? hero_panic_index_at(t106, t107, "data/table.hero", "table.read", 197, 138) : (void)0), (void)(t106->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t106 + 1))[t107]); t109 = h3_number; t110 = h_datatable_int_of(t108, t109); t177 = h42_own42; h42_own42 = t110; h_0opt_e201354_release(&t177); t178 = h11_f2; h_0opt_e201354_retain(&t110); h11_f2 = t110; h_0opt_e201354_release(&t178); t111 = h11_f2; t112 = t111.tag; t113 = INT64_C(0); t114 = t112 == t113; if (t114) goto bb18; else goto bb19; bb17: t101 = h10_f1; t102 = t101.as.err; hero_failure_retain(&t102); t103 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t102}; t179 = h43_own43; h43_own43 = t103; h_0opt_40ab612a_release(&t179); h13_ret0 = t103; goto bb22; bb18: t118 = h11_f2; t119 = t118.as.ok; t120 = h8_fields; t121 = INT64_C(5); t122 = ((void)((t120 == NULL || t121 < 0 || t121 >= t120->len) ? hero_panic_index_at(t120, t121, "data/table.hero", "table.read", 197, 174) : (void)0), (void)(t120->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t120 + 1))[t121]); t123 = h3_number; t124 = h_datatable_float_of(t122, t123); t180 = h44_own44; h44_own44 = t124; h_0opt_db92a83_release(&t180); t181 = h12_f3; h_0opt_db92a83_retain(&t124); h12_f3 = t124; h_0opt_db92a83_release(&t181); t125 = h12_f3; t126 = t125.tag; t127 = INT64_C(0); t128 = t126 == t127; if (t128) goto bb20; else goto bb21; bb19: t115 = h11_f2; t116 = t115.as.err; hero_failure_retain(&t116); t117 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t116}; t182 = h45_own45; h45_own45 = t117; h_0opt_40ab612a_release(&t182); h13_ret0 = t117; goto bb22; bb20: t132 = h12_f3; t133 = t132.as.ok; hero_str_incref(t88); hero_str_incref(t91); t134 = (h_datarow_Row){.f_id = t85, .f_team = t88, .f_name = t91, .f_active = t105, .f_score = t119, .f_rate = t133}; t183 = h46_own46; h46_own46 = t134; h_datarow_0Row_release(&t183);
-#line 196
+#line 215
+    t84 = h9_f0; t85 = t84.as.ok; t86 = h8_fields; t87 = INT64_C(1); t88 = ((void)((t86 == NULL || t87 < 0 || t87 >= t86->len) ? hero_panic_index_at(t86, t87, "data/table.hero", "table.read", 215, 59) : (void)0), (void)(t86->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t86 + 1))[t87]); t89 = h8_fields; t90 = INT64_C(2); t91 = ((void)((t89 == NULL || t90 < 0 || t90 >= t89->len) ? hero_panic_index_at(t89, t90, "data/table.hero", "table.read", 215, 76) : (void)0), (void)(t89->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t89 + 1))[t90]); t92 = h8_fields; t93 = INT64_C(3); t94 = ((void)((t92 == NULL || t93 < 0 || t93 >= t92->len) ? hero_panic_index_at(t92, t93, "data/table.hero", "table.read", 215, 103) : (void)0), (void)(t92->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t92 + 1))[t93]); t95 = h3_number; t96 = h_datatable_bool_of(t94, t95); t174 = h40_own40; h40_own40 = t96; h_0opt_473cb9ae_release(&t174); t175 = h10_f1; h_0opt_473cb9ae_retain(&t96); h10_f1 = t96; h_0opt_473cb9ae_release(&t175); t97 = h10_f1; t98 = t97.tag; t99 = INT64_C(0); t100 = t98 == t99; if (t100) goto bb16; else goto bb17; bb15: t81 = h9_f0; t82 = t81.as.err; hero_failure_retain(&t82); t83 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t82}; t176 = h41_own41; h41_own41 = t83; h_0opt_40ab612a_release(&t176); h13_ret0 = t83; goto bb22; bb16: t104 = h10_f1; t105 = t104.as.ok; t106 = h8_fields; t107 = INT64_C(4); t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? hero_panic_index_at(t106, t107, "data/table.hero", "table.read", 215, 138) : (void)0), (void)(t106->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t106 + 1))[t107]); t109 = h3_number; t110 = h_datatable_int_of(t108, t109); t177 = h42_own42; h42_own42 = t110; h_0opt_e201354_release(&t177); t178 = h11_f2; h_0opt_e201354_retain(&t110); h11_f2 = t110; h_0opt_e201354_release(&t178); t111 = h11_f2; t112 = t111.tag; t113 = INT64_C(0); t114 = t112 == t113; if (t114) goto bb18; else goto bb19; bb17: t101 = h10_f1; t102 = t101.as.err; hero_failure_retain(&t102); t103 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t102}; t179 = h43_own43; h43_own43 = t103; h_0opt_40ab612a_release(&t179); h13_ret0 = t103; goto bb22; bb18: t118 = h11_f2; t119 = t118.as.ok; t120 = h8_fields; t121 = INT64_C(5); t122 = ((void)((t120 == NULL || t121 < 0 || t121 >= t120->len) ? hero_panic_index_at(t120, t121, "data/table.hero", "table.read", 215, 174) : (void)0), (void)(t120->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t120 + 1))[t121]); t123 = h3_number; t124 = h_datatable_float_of(t122, t123); t180 = h44_own44; h44_own44 = t124; h_0opt_db92a83_release(&t180); t181 = h12_f3; h_0opt_db92a83_retain(&t124); h12_f3 = t124; h_0opt_db92a83_release(&t181); t125 = h12_f3; t126 = t125.tag; t127 = INT64_C(0); t128 = t126 == t127; if (t128) goto bb20; else goto bb21; bb19: t115 = h11_f2; t116 = t115.as.err; hero_failure_retain(&t116); t117 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t116}; t182 = h45_own45; h45_own45 = t117; h_0opt_40ab612a_release(&t182); h13_ret0 = t117; goto bb22; bb20: t132 = h12_f3; t133 = t132.as.ok; hero_str_incref(t88); hero_str_incref(t91); t134 = (h_datarow_Row){.f_id = t85, .f_team = t88, .f_name = t91, .f_active = t105, .f_score = t119, .f_rate = t133}; t183 = h46_own46; h46_own46 = t134; h_datarow_0Row_release(&t183);
+#line 214
     hero_array_push_owned(&h2_out, &t134); goto bb9; bb21:
     t129 = h12_f3; t130 = t129.as.err; hero_failure_retain(&t130); t131 = (h_0opt_40ab612a){.tag = INT64_C(1), .as.err = t130}; t184 = h47_own47; h47_own47 = t131; h_0opt_40ab612a_release(&t184); h13_ret0 = t131; goto bb22; bb22:
-#line 1664 "main.c"
+#line 1652 "main.c"
     t141 = h13_ret0;
     h_0opt_40ab612a_retain(&t141);
     hero_array_release_at(&h1_all_lines);
@@ -1709,10 +1697,10 @@ h_0opt_40ab612a h_datatable_read(HeroStr h0_text) { HeroArrayHeader * h1_all_lin
     return t141;
 }
 
-#line 245 "examples/query/data/table.hero"
+#line 358 "examples/query/data/table.hero"
 h_datatable_Trouble h_datatable_why(h_0opt_40ab612a h0_got) { HERO_NODEBUG h_0opt_40ab612a h1_s0 = {0}, t1, t2, t7, t13; HERO_NODEBUG h_datatable_Trouble h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t6, t11, t12, t14, t15, t17, t18; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4, t5, t9, t10; HERO_NODEBUG HeroFailure t8, t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_got; t13 = h1_s0; h_0opt_40ab612a_retain(&t1); h1_s0 = t1; h_0opt_40ab612a_release(&t13); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t12 = h2_r0;
-#line 1716 "main.c"
+#line 1704 "main.c"
     h_datatable_0Trouble_retain(&t12);
     h_0opt_40ab612a_release(hero_slot_escape(&h1_s0));
     h_datatable_0Trouble_release(hero_slot_escape(&h2_r0));
@@ -1721,15 +1709,15 @@ h_datatable_Trouble h_datatable_why(h_0opt_40ab612a h0_got) { HERO_NODEBUG h_0op
     h_datatable_0Trouble_release(hero_slot_escape(&h5_own5));
     return t12;
 bb2:
-#line 247 "examples/query/data/table.hero"
+#line 360 "examples/query/data/table.hero"
     t4 = HERO_STR_LIT(hero_str_0); t5 = HERO_STR_LIT(hero_str_0); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_datatable_Trouble){.f_code = t4, .f_msg = t5}; t14 = h4_own4; h4_own4 = t6; h_datatable_0Trouble_release(&t14);
-#line 246
+#line 359
     t15 = h2_r0; h_datatable_0Trouble_retain(&t6); h2_r0 = t6; h_datatable_0Trouble_release(&t15); goto bb1; bb3:
-#line 248
+#line 361
     t7 = h1_s0; t8 = t7.as.err; t16 = h3_e; hero_failure_retain(&t8); h3_e = t8; hero_failure_release(&t16); t9 = h3_e.code; t10 = h3_e.msg; hero_str_incref(t9); hero_str_incref(t10); t11 = (h_datatable_Trouble){.f_code = t9, .f_msg = t10}; t17 = h5_own5; h5_own5 = t11; h_datatable_0Trouble_release(&t17);
-#line 246
+#line 359
     t18 = h2_r0; h_datatable_0Trouble_retain(&t11); h2_r0 = t11; h_datatable_0Trouble_release(&t18); goto bb1;
-#line 1733 "main.c"
+#line 1721 "main.c"
 }
 
 #line 32 "examples/query/fmt/report.hero"
@@ -1741,7 +1729,7 @@ HeroStr h_fmtreport_padded(HeroArrayHeader * h0_cells, HeroArrayHeader * h1_widt
     t7 = h3_at; t8 = INT64_C(0); t9 = t7 > t8; if (t9) goto bb5; else goto bb6; bb3:
 #line 46
     t36 = h2_out;
-#line 1745 "main.c"
+#line 1733 "main.c"
     hero_str_incref(t36);
     hero_str_release_at(&h2_out);
     hero_str_release_at(&h4_own4);
@@ -1760,7 +1748,7 @@ bb4:
     t19 = h2_out; t20 = h0_cells; t21 = h3_at; t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "fmt/report.hero", "report.padded", 41, 25) : (void)0), (void)(t20->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t20 + 1))[t21]); t23 = hero_str_concat(t19, t22); t40 = h5_own5; h5_own5 = t23; hero_str_decref(t40); t41 = h2_out; hero_str_incref(t23); h2_out = t23; hero_str_decref(t41); goto bb7; bb9:
 #line 43
     t24 = h2_out; t25 = h0_cells; t26 = h3_at; t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? hero_panic_index_at(t25, t26, "fmt/report.hero", "report.padded", 43, 36) : (void)0), (void)(t25->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t25 + 1))[t26]); t28 = h1_widths; t29 = h3_at; t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? hero_panic_index_at(t28, t29, "fmt/report.hero", "report.padded", 43, 51) : (void)0), (void)(t28->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t28 + 1))[t29]); t31 = h_fmtreport_wide(t27, t30); t42 = h6_own6; h6_own6 = t31; hero_str_decref(t42); t32 = hero_str_concat(t24, t31); t43 = h7_own7; h7_own7 = t32; hero_str_decref(t43); t44 = h2_out; hero_str_incref(t32); h2_out = t32; hero_str_decref(t44); goto bb7;
-#line 1764 "main.c"
+#line 1752 "main.c"
 }
 
 #line 50 "examples/query/fmt/report.hero"
@@ -1771,7 +1759,7 @@ HeroStr h_fmtreport_wide(HeroStr h0_text, int64_t h1_to) { HERO_NODEBUG h_0opt_f
 #line 52
     t5 = h0_text; h3_ret0 = t5; goto bb6; bb3: goto bb1; bb4:
     t19 = h2_f0; t20 = t19.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fmt/report.hero", "report.wide", 53, 19}; t21 = hero_str_repeat_at(t7, t20, &hero_here); } t26 = h5_own5; h5_own5 = t21; hero_str_decref(t26); t22 = hero_str_concat(t6, t21); t27 = h6_own6; h6_own6 = t22; hero_str_decref(t27); h3_ret0 = t22; goto bb6; bb5: t17 = h2_f0; t18 = t17.as.err;
-#line 1775 "main.c"
+#line 1763 "main.c"
     hero_panic_must_at(t18, "fmt/report.hero", "report.wide", 53, 31);
     hero_unreachable();
 bb6:
@@ -1796,7 +1784,7 @@ HeroArrayHeader * h_fmtreport_widths_for(HeroArrayHeader * h0_columns, HeroArray
     t37 = h4_i0; t38 = INT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow_at("fmt/report.hero", "report.widths_for", 59, 9); h4_i0 = t39; goto bb1; bb4:
 #line 70
     t40 = h2_out;
-#line 1800 "main.c"
+#line 1788 "main.c"
     hero_array_incref(t40);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -1818,7 +1806,7 @@ bb5:
     t35 = h6_widest; hero_array_push_owned(&h2_out, &t35); goto bb3; bb9: goto bb7; bb10:
 #line 66
     t30 = h10_here; h6_widest = t30; goto bb9; bb11: goto bb9;
-#line 1822 "main.c"
+#line 1810 "main.c"
 }
 
 #line 73 "examples/query/fmt/report.hero"
@@ -1841,7 +1829,7 @@ HeroStr h_fmtreport_table(HeroArrayHeader * h0_columns, HeroArrayHeader * h1_row
     t57 = h9_i1; t58 = INT64_C(1); if (__builtin_add_overflow(t57, t58, &t59)) hero_panic_overflow_at("fmt/report.hero", "report.table", 82, 9); h9_i1 = t59; goto bb5; bb8:
 #line 90
     t60 = h7_lines; t61 = HERO_STR_LIT(hero_str_a); t62 = hero_str_join(t60, t61); t77 = h21_own21; h21_own21 = t62; hero_str_decref(t77);
-#line 1845 "main.c"
+#line 1833 "main.c"
     hero_str_incref(t62);
     hero_array_release_at(&h2_widths);
     hero_array_release_at(&h3_headings);
@@ -1869,7 +1857,7 @@ bb9:
     t49 = h13_i2; t50 = INT64_C(1); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("fmt/report.hero", "report.table", 85, 13); h13_i2 = t51; goto bb9; bb12:
 #line 88
     t53 = h11_cells; t54 = h2_widths; t55 = h_fmtreport_padded(t53, t54); t79 = h23_own23; h23_own23 = t55; hero_str_decref(t79); hero_array_push_owned(&h7_lines, &t55); goto bb7;
-#line 1873 "main.c"
+#line 1861 "main.c"
 }
 
 #line 93 "examples/query/fmt/report.hero"
@@ -1901,7 +1889,7 @@ HeroStr h_fmtreport_joined_table(HeroArrayHeader * h0_columns, HeroArrayHeader *
     t82 = h14_i2; t83 = INT64_C(1); if (__builtin_add_overflow(t82, t83, &t84)) hero_panic_overflow_at("fmt/report.hero", "report.joined_table", 109, 9); h14_i2 = t84; goto bb9; bb12:
 #line 118
     t85 = h12_lines; t86 = HERO_STR_LIT(hero_str_a); t87 = hero_str_join(t85, t86); t108 = h28_own28; h28_own28 = t87; hero_str_decref(t108);
-#line 1905 "main.c"
+#line 1893 "main.c"
     hero_str_incref(t87);
     hero_array_release_at(&h2_plain);
     hero_array_release_at(&h3_xs0);
@@ -1936,7 +1924,7 @@ bb13:
 #line 115
     t75 = h15_j.f_region; hero_array_push_owned(&h16_cells, &t75);
     t78 = h16_cells; t79 = h11_with_region; t80 = h_fmtreport_padded(t78, t79); t110 = h30_own30; h30_own30 = t80; hero_str_decref(t110); hero_array_push_owned(&h12_lines, &t80); goto bb11;
-#line 1940 "main.c"
+#line 1928 "main.c"
 }
 
 #line 124 "examples/query/fmt/report.hero"
@@ -1947,7 +1935,7 @@ HeroStr h_fmtreport_group_line(h_queryplan_Group h0_g, h_queryplan_Summary h1_s)
     t4 = h2_mean; t58 = h4_f0; h_0opt_db92a83_retain(&t4); h4_f0 = t4; h_0opt_db92a83_release(&t58); t5 = h4_f0; t6 = t5.tag; t7 = INT64_C(1); t8 = t6 == t7; t9 = !t8; if (t9) goto bb2; else goto bb3; bb1:
 #line 130
     t20 = h0_g.f_team; t21 = INT64_C(6); t22 = h_fmtreport_wide(t20, t21); t59 = h7_own7; h7_own7 = t22; hero_str_decref(t59); t23 = HERO_STR_LIT(hero_str_1080); t24 = hero_str_concat(t22, t23); t60 = h8_own8; h8_own8 = t24; hero_str_decref(t60); t25 = h0_g.f_active; t26 = h_fmtreport_active_text(t25); t61 = h9_own9; h9_own9 = t26; hero_str_decref(t61); t27 = INT64_C(8); t28 = h_fmtreport_wide(t26, t27); t62 = h10_own10; h10_own10 = t28; hero_str_decref(t62); t29 = hero_str_concat(t24, t28); t63 = h11_own11; h11_own11 = t29; hero_str_decref(t63); t30 = HERO_STR_LIT(hero_str_1080); t31 = hero_str_concat(t29, t30); t64 = h12_own12; h12_own12 = t31; hero_str_decref(t64); t32 = h1_s.f_rows; t33 = hero_int_to_str(t32); t65 = h13_own13; h13_own13 = t33; hero_str_decref(t65); t34 = INT64_C(5); t35 = h_fmtreport_wide(t33, t34); t66 = h14_own14; h14_own14 = t35; hero_str_decref(t66); t36 = hero_str_concat(t31, t35); t67 = h15_own15; h15_own15 = t36; hero_str_decref(t67); t37 = HERO_STR_LIT(hero_str_1080); t38 = hero_str_concat(t36, t37); t68 = h16_own16; h16_own16 = t38; hero_str_decref(t68); t39 = h1_s.f_total; t40 = hero_int_to_str(t39); t69 = h17_own17; h17_own17 = t40; hero_str_decref(t69); t41 = INT64_C(7); t42 = h_fmtreport_wide(t40, t41); t70 = h18_own18; h18_own18 = t42; hero_str_decref(t70); t43 = hero_str_concat(t38, t42); t71 = h19_own19; h19_own19 = t43; hero_str_decref(t71); t44 = HERO_STR_LIT(hero_str_1080); t45 = hero_str_concat(t43, t44); t72 = h20_own20; h20_own20 = t45; hero_str_decref(t72); t46 = h1_s.f_best; t47 = hero_int_to_str(t46); t73 = h21_own21; h21_own21 = t47; hero_str_decref(t73); t48 = INT64_C(4); t49 = h_fmtreport_wide(t47, t48); t74 = h22_own22; h22_own22 = t49; hero_str_decref(t74); t50 = hero_str_concat(t45, t49); t75 = h23_own23; h23_own23 = t50; hero_str_decref(t75); t51 = HERO_STR_LIT(hero_str_1080); t52 = hero_str_concat(t50, t51); t76 = h24_own24; h24_own24 = t52; hero_str_decref(t76); t53 = h3_shown; t54 = hero_str_concat(t52, t53); t77 = h25_own25; h25_own25 = t54; hero_str_decref(t77);
-#line 1951 "main.c"
+#line 1939 "main.c"
     hero_str_incref(t54);
     h_0opt_db92a83_release(hero_slot_escape(&h2_mean));
     hero_str_release_at(&h3_shown);
@@ -1978,7 +1966,7 @@ HeroStr h_fmtreport_group_line(h_queryplan_Group h0_g, h_queryplan_Summary h1_s)
 bb2:
 #line 129 "examples/query/fmt/report.hero"
     t10 = h2_mean; t78 = h5_f1; h_0opt_db92a83_retain(&t10); h5_f1 = t10; h_0opt_db92a83_release(&t78); t11 = h5_f1; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb3: goto bb1; bb4: t17 = h5_f1; t18 = t17.as.ok; t19 = h_fmtreport_rounded(t18); t79 = h26_own26; h26_own26 = t19; hero_str_decref(t79); t80 = h3_shown; hero_str_incref(t19); h3_shown = t19; hero_str_decref(t80); goto bb1; bb5: t15 = h5_f1; t16 = t15.as.err;
-#line 1982 "main.c"
+#line 1970 "main.c"
     hero_panic_must_at(t16, "fmt/report.hero", "report.group_line", 129, 25);
     hero_unreachable();
 }
@@ -1990,7 +1978,7 @@ HeroStr h_fmtreport_active_text(bool h0_active) { HERO_NODEBUG HeroStr h1_ret0 =
     t3 = HERO_STR_LIT(hero_str_e2c3bc0); h1_ret0 = t3; goto bb4; bb2:
 #line 134
     t2 = HERO_STR_LIT(hero_str_26950476); h1_ret0 = t2; goto bb4; bb3: goto bb1; bb4:
-#line 1994 "main.c"
+#line 1982 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -2006,13 +1994,13 @@ HeroStr h_fmtreport_rounded(double h0_v) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {
     t23 = h4_rest; t24 = INT64_C(10); t25 = t23 < t24; if (t25) goto bb4; else goto bb5; bb2:
 #line 151
     t11 = h1_f0; t12 = t11.as.err;
-#line 2010 "main.c"
+#line 1998 "main.c"
     hero_panic_must_at(t12, "fmt/report.hero", "report.rounded", 151, 18);
     hero_unreachable();
 bb3:
 #line 158 "examples/query/fmt/report.hero"
     t29 = h3_whole; t30 = hero_int_to_str(t29); t39 = h8_own8; h8_own8 = t30; hero_str_decref(t39); t31 = HERO_STR_LIT(hero_str_2e); t32 = hero_str_concat(t30, t31); t40 = h9_own9; h9_own9 = t32; hero_str_decref(t40); t33 = h5_tail; t34 = hero_str_concat(t32, t33); t41 = h10_own10; h10_own10 = t34; hero_str_decref(t41);
-#line 2016 "main.c"
+#line 2004 "main.c"
     hero_str_incref(t34);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h5_tail);
@@ -2026,13 +2014,13 @@ bb3:
 bb4:
 #line 157 "examples/query/fmt/report.hero"
     t26 = HERO_STR_LIT(hero_str_30); t27 = h5_tail; t28 = hero_str_concat(t26, t27); t42 = h11_own11; h11_own11 = t28; hero_str_decref(t42); t43 = h5_tail; hero_str_incref(t28); h5_tail = t28; hero_str_decref(t43); goto bb3; bb5: goto bb3;
-#line 2030 "main.c"
+#line 2018 "main.c"
 }
 
 #line 160 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_GROUP_HEADING(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_51fe21b);
-#line 2036 "main.c"
+#line 2024 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -2040,7 +2028,7 @@ HeroStr h_fmtreport_GROUP_HEADING(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_ST
 #line 98 "examples/query/query/plan.hero"
 h_queryplan_Summary h_queryplan_nothing_yet(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_NODEBUG double t4; HERO_NODEBUG h_queryplan_Summary t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(-1); t4 = 0x0p+0; t5 = (h_queryplan_Summary){.f_rows = t1, .f_total = t2, .f_best = t3, .f_rate_sum = t4}; return t5;
-#line 2044 "main.c"
+#line 2032 "main.c"
 }
 
 #line 102 "examples/query/query/plan.hero"
@@ -2052,7 +2040,7 @@ h_queryplan_Summary h_queryplan_with_row(h_queryplan_Summary h0_s, h_datarow_Row
     t6 = h0_s.f_rows; t7 = INT64_C(1); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("query/plan.hero", "plan.with_row", 107, 26); t9 = h0_s.f_total; t10 = h1_r.f_score; if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("query/plan.hero", "plan.with_row", 107, 45); t12 = h2_highest; t13 = h0_s.f_rate_sum; t14 = h1_r.f_rate; t15 = t13 + t14; t16 = (h_queryplan_Summary){.f_rows = t8, .f_total = t11, .f_best = t12, .f_rate_sum = t15}; return t16; bb2:
 #line 106
     t5 = h1_r.f_score; h2_highest = t5; goto bb1; bb3: goto bb1;
-#line 2056 "main.c"
+#line 2044 "main.c"
 }
 
 #line 112 "examples/query/query/plan.hero"
@@ -2062,7 +2050,7 @@ h_0opt_db92a83 h_queryplan_mean_of(h_queryplan_Summary h0_s) { HERO_NODEBUG h_0o
     t7 = h0_s.f_rate_sum; t8 = h0_s.f_rows; t9 = hero_int_to_f64(t8); t10 = t7 / t9; t11 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t10}; t13 = h2_own2; h2_own2 = t11; h_0opt_db92a83_release(&t13); h1_ret0 = t11; goto bb4; bb2:
 #line 114
     t4 = HERO_STR_LIT(hero_str_6b895e8f); t5 = HERO_STR_LIT(hero_str_185159c7); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t14 = h3_own3; h3_own3 = t6; h_0opt_db92a83_release(&t14); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 2066 "main.c"
+#line 2054 "main.c"
     t12 = h1_ret0;
     h_0opt_db92a83_retain(&t12);
     h_0opt_db92a83_release(hero_slot_escape(&h2_own2));
@@ -2104,7 +2092,7 @@ bool h_queryplan_kept(h_queryplan_Where h0_w, h_datarow_Row h1_r) { HERO_NODEBUG
     h3_r0 = t44; goto bb1; bb12: goto bb10; bb13:
 #line 131
     t40 = false; h12_ret0 = t40; goto bb15; bb14: goto bb12; bb15:
-#line 2108 "main.c"
+#line 2096 "main.c"
     t46 = h12_ret0;
     h_queryplan_0Where_release(hero_slot_escape(&h2_s0));
     h_queryplan_0Where_c_team_is_release(hero_slot_escape(&h4_t));
@@ -2117,7 +2105,7 @@ bool h_queryplan_kept(h_queryplan_Where h0_w, h_datarow_Row h1_r) { HERO_NODEBUG
 #line 138 "examples/query/query/plan.hero"
 HeroStr h_queryplan_text_at(h_queryplan_Column h0_c, h_datarow_Row h1_r) { HERO_NODEBUG h_queryplan_Column h2_s0, t1, t2; HERO_NODEBUG HeroStr h3_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t5, t6, t7, t9, t11, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24; HERO_NODEBUG int64_t t3, t4, t10; HERO_NODEBUG bool t8; HERO_NODEBUG double t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; h2_s0 = t1; t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t14 = h3_r0;
-#line 2121 "main.c"
+#line 2109 "main.c"
     hero_str_incref(t14);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h4_own4);
@@ -2150,7 +2138,7 @@ bb2:
     t12 = h1_r.f_rate; t13 = hero_f64_to_str(t12); t23 = h7_own7; h7_own7 = t13; hero_str_decref(t23);
 #line 139
     t24 = h3_r0; hero_str_incref(t13); h3_r0 = t13; hero_str_decref(t24); goto bb1;
-#line 2154 "main.c"
+#line 2142 "main.c"
 }
 
 #line 147 "examples/query/query/plan.hero"
@@ -2160,7 +2148,7 @@ HeroStr h_queryplan_bool_text(bool h0_b) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t
     t3 = HERO_STR_LIT(hero_str_b928f19); h1_ret0 = t3; goto bb4; bb2:
 #line 149
     t2 = HERO_STR_LIT(hero_str_fa94082); h1_ret0 = t2; goto bb4; bb3: goto bb1; bb4:
-#line 2164 "main.c"
+#line 2152 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -2169,7 +2157,7 @@ HeroStr h_queryplan_bool_text(bool h0_b) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t
 #line 155 "examples/query/query/plan.hero"
 HeroStr h_queryplan_heading(h_queryplan_Column h0_c) { HERO_NODEBUG h_queryplan_Column h1_s0, t1, t2; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t10 = h2_r0;
-#line 2173 "main.c"
+#line 2161 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h2_r0);
     return t10;
@@ -2198,7 +2186,7 @@ bb2:
     t9 = HERO_STR_LIT(hero_str_f603130);
 #line 156
     t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto bb1;
-#line 2202 "main.c"
+#line 2190 "main.c"
 }
 
 #line 35 "examples/query/run/engine.hero"
@@ -2211,7 +2199,7 @@ HeroArrayHeader * h_runengine_filtered(HeroArrayHeader * h0_rows, h_queryplan_Wh
     t17 = h4_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("run/engine.hero", "engine.filtered", 38, 9); h4_i0 = t19; goto bb1; bb4:
 #line 42
     t20 = h2_out;
-#line 2215 "main.c"
+#line 2203 "main.c"
     hero_array_incref(t20);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -2223,7 +2211,7 @@ bb5:
 bb6:
 #line 40 "examples/query/run/engine.hero"
     t15 = h5_r; hero_array_push_owned(&h2_out, &t15); goto bb5; bb7: goto bb5;
-#line 2227 "main.c"
+#line 2215 "main.c"
 }
 
 #line 47 "examples/query/run/engine.hero"
@@ -2236,7 +2224,7 @@ HeroMapHeader * h_runengine_regions_of(HeroArrayHeader * h0_teams) { HeroMapHead
     t13 = h3_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("run/engine.hero", "engine.regions_of", 50, 9); h3_i0 = t15; goto bb1; bb4:
 #line 53
     t16 = h1_m;
-#line 2240 "main.c"
+#line 2228 "main.c"
     hero_map_incref(t16);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_xs0);
@@ -2258,7 +2246,7 @@ HeroArrayHeader * h_runengine_joined_with(HeroArrayHeader * h0_rows, HeroArrayHe
     t35 = h5_i0; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("run/engine.hero", "engine.joined_with", 62, 9); h5_i0 = t37; goto bb1; bb4:
 #line 68
     t38 = h3_out;
-#line 2262 "main.c"
+#line 2250 "main.c"
     hero_array_incref(t38);
     hero_map_release_at(&h2_lookup);
     hero_array_release_at(&h3_out);
@@ -2277,7 +2265,7 @@ bb5:
 bb6:
 #line 66 "examples/query/run/engine.hero"
     t23 = h6_r; t24 = h7_found; t48 = h9_f1; h_0opt_f87774a_retain(&t24); h9_f1 = t24; h_0opt_f87774a_release(&t48); t25 = h9_f1; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb8; else goto bb9; bb7: goto bb5; bb8: t31 = h9_f1; t32 = t31.as.ok; h_datarow_0Row_retain(&t23); hero_str_incref(t32); t33 = (h_queryplan_Joined){.f_r = t23, .f_region = t32}; t49 = h13_own13; h13_own13 = t33; h_queryplan_0Joined_release(&t49); hero_array_push_owned(&h3_out, &t33); goto bb5; bb9: t29 = h9_f1; t30 = t29.as.err;
-#line 2281 "main.c"
+#line 2269 "main.c"
     hero_panic_must_at(t30, "run/engine.hero", "engine.joined_with", 66, 54);
     hero_unreachable();
 }
@@ -2285,7 +2273,7 @@ bb6:
 #line 75 "examples/query/run/engine.hero"
 bool h_runengine_id_first(h_datarow_Row h0_a, h_datarow_Row h1_b) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a.f_id; t2 = h1_b.f_id; t3 = t1 < t2; return t3;
-#line 2289 "main.c"
+#line 2277 "main.c"
 }
 
 #line 79 "examples/query/run/engine.hero"
@@ -2295,7 +2283,7 @@ bool h_runengine_score_first(h_datarow_Row h0_a, h_datarow_Row h1_b) { HERO_NODE
     t7 = h0_a.f_id; t8 = h1_b.f_id; t9 = t7 < t8; h2_ret0 = t9; goto bb4; bb2:
 #line 81
     t4 = h0_a.f_score; t5 = h1_b.f_score; t6 = t4 > t5; h2_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 2299 "main.c"
+#line 2287 "main.c"
     t10 = h2_ret0;
     return t10;
 }
@@ -2307,7 +2295,7 @@ bool h_runengine_name_first(h_datarow_Row h0_a, h_datarow_Row h1_b) { HERO_NODEB
     t7 = h0_a.f_id; t8 = h1_b.f_id; t9 = t7 < t8; h2_ret0 = t9; goto bb4; bb2:
 #line 87
     t4 = h0_a.f_name; t5 = h1_b.f_name; t6 = h_runengine_text_before(t4, t5); h2_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 2311 "main.c"
+#line 2299 "main.c"
     t10 = h2_ret0;
     return t10;
 }
@@ -2319,7 +2307,7 @@ bool h_runengine_active_first(h_datarow_Row h0_a, h_datarow_Row h1_b) { HERO_NOD
     t5 = h0_a.f_id; t6 = h1_b.f_id; t7 = t5 < t6; h2_ret0 = t7; goto bb4; bb2:
 #line 93
     t4 = h0_a.f_active; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 2323 "main.c"
+#line 2311 "main.c"
     t8 = h2_ret0;
     return t8;
 }
@@ -2342,7 +2330,7 @@ bool h_runengine_text_before(HeroStr h0_a, HeroStr h1_b) { int64_t h2_shortest; 
     t27 = h3_at; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("run/engine.hero", "engine.text_before", 115, 14); h3_at = t29; goto bb4; bb8:
 #line 114
     t20 = h0_a; t21 = h3_at; t22 = ((void)((t20.ptr == NULL || t21 < 0 || t21 >= t20.len) ? hero_panic_byte_at(t20, t21, "run/engine.hero", "engine.text_before", 114, 20) : (void)0), (int64_t)(unsigned char)t20.ptr[t21]); t23 = h1_b; t24 = h3_at; t25 = ((void)((t23.ptr == NULL || t24 < 0 || t24 >= t23.len) ? hero_panic_byte_at(t23, t24, "run/engine.hero", "engine.text_before", 114, 28) : (void)0), (int64_t)(unsigned char)t23.ptr[t24]); t26 = t22 < t25; h4_ret0 = t26; goto bb10; bb9: goto bb7; bb10:
-#line 2346 "main.c"
+#line 2334 "main.c"
     t35 = h4_ret0;
     return t35;
 }
@@ -2350,7 +2338,7 @@ bool h_runengine_text_before(HeroStr h0_a, HeroStr h1_b) { int64_t h2_shortest; 
 #line 120 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_ordered(HeroArrayHeader * h0_rows, h_queryplan_Order h1_o) { HERO_NODEBUG h_queryplan_Order h2_s0, t1, t2; HERO_NODEBUG HeroArrayHeader *h3_r0 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t4, *t6, *t7, *t9, *t10, *t12, *t13, *t15, *t16, *t17, *t18, *t19, *t20, *t21, *t22, *t23, *t24; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0fn_7ce6963b t5, t8, t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_o; h2_s0 = t1; t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb2; case 2: goto bb3; case 3: goto bb4; case 4: goto bb5; default: hero_unreachable(); } bb1: t16 = h3_r0;
-#line 2354 "main.c"
+#line 2342 "main.c"
     hero_array_incref(t16);
     hero_array_release_at(&h3_r0);
     hero_array_release_at(&h4_own4);
@@ -2375,7 +2363,7 @@ bb2:
     t13 = h0_rows; t14 = h_runengine_active_first; t15 = h_1coreslices_0sort_by_213448d8(t13, t14); t23 = h7_own7; h7_own7 = t15; hero_array_decref(t23);
 #line 121
     t24 = h3_r0; hero_array_incref(t15); h3_r0 = t15; hero_array_decref(t24); goto bb1;
-#line 2379 "main.c"
+#line 2367 "main.c"
 }
 
 #line 129 "examples/query/run/engine.hero"
@@ -2386,7 +2374,7 @@ HeroArrayHeader * h_runengine_limited(HeroArrayHeader * h0_rows, int64_t h1_n) {
 #line 130
     t4 = h1_n; t5 = h0_rows; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 >= t6; h2_b0 = t7; goto bb3; bb3: t8 = h2_b0; if (t8) goto bb4; else goto bb5; bb4:
     t9 = h0_rows; h3_ret0 = t9; goto bb6; bb5: goto bb1; bb6:
-#line 2390 "main.c"
+#line 2378 "main.c"
     t14 = h3_ret0;
     hero_array_incref(t14);
     hero_array_release_at(&h4_own4);
@@ -2403,7 +2391,7 @@ int64_t h_runengine_aggregate(HeroArrayHeader * h0_rows, h_queryplan_Aggregate h
     t14 = h4_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("run/engine.hero", "engine.aggregate", 140, 9); h4_i0 = t16; goto bb1; bb4:
 #line 143
     t17 = h1_what; h6_s0 = t17; t18 = h6_s0; t19 = t18.tag; switch (t19) { case 0: goto bb6; case 1: goto bb7; case 2: goto bb8; case 3: goto bb9; default: hero_unreachable(); } bb5: t24 = h7_r0;
-#line 2407 "main.c"
+#line 2395 "main.c"
     hero_array_release_at(&h3_xs0);
     h_datarow_0Row_release(hero_slot_escape(&h5_r));
     return t24;
@@ -2424,7 +2412,7 @@ bb6:
     t23 = h2_s.f_rows;
 #line 143
     h7_r0 = t23; goto bb5;
-#line 2428 "main.c"
+#line 2416 "main.c"
 }
 
 #line 152 "examples/query/run/engine.hero"
@@ -2440,7 +2428,7 @@ HeroMapHeader * h_runengine_grouped(HeroArrayHeader * h0_rows) { HeroMapHeader *
     t38 = h3_i0; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("run/engine.hero", "engine.grouped", 155, 9); h3_i0 = t40; goto bb1; bb4:
 #line 164
     t41 = h1_out;
-#line 2444 "main.c"
+#line 2432 "main.c"
     hero_map_incref(t41);
     hero_map_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -2460,7 +2448,7 @@ bb6:
     t22 = h5_key; t23 = h_queryplan_nothing_yet(); t24 = h4_r; t25 = h_queryplan_with_row(t23, t24); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"run/engine.hero", "engine.grouped", 160, 13}; hero_map_set_at(&(h1_out), &t22, &t25, &hero_here); } goto bb5; bb7:
 #line 162
     t26 = h5_key; t27 = h6_so_far; t51 = h8_f1; h_0opt_79a32868_retain(&t27); h8_f1 = t27; h_0opt_79a32868_release(&t51); t28 = h8_f1; t29 = t28.tag; t30 = INT64_C(0); t31 = t29 == t30; if (t31) goto bb8; else goto bb9; bb8: t34 = h8_f1; t35 = t34.as.ok; t36 = h4_r; t37 = h_queryplan_with_row(t35, t36); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"run/engine.hero", "engine.grouped", 162, 13}; hero_map_set_at(&(h1_out), &t26, &t37, &hero_here); } goto bb5; bb9: t32 = h8_f1; t33 = t32.as.err;
-#line 2464 "main.c"
+#line 2452 "main.c"
     hero_panic_must_at(t33, "run/engine.hero", "engine.grouped", 162, 38);
     hero_unreachable();
 }
@@ -2482,7 +2470,7 @@ HeroArrayHeader * h_runengine_group_order(HeroMapHeader * h0_m) { HeroArrayHeade
     t34 = h7_i1; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("run/engine.hero", "engine.group_order", 181, 9); h7_i1 = t36; goto bb5; bb8:
 #line 184
     t37 = h5_out;
-#line 2486 "main.c"
+#line 2474 "main.c"
     hero_array_incref(t37);
     hero_array_release_at(&h1_labels);
     hero_array_release_at(&h2_xs0);
@@ -2506,7 +2494,7 @@ HeroStr h_runengine_label_of(h_queryplan_Group h0_g) { HERO_NODEBUG HeroStr h1_r
     t5 = h0_g.f_team; t6 = HERO_STR_LIT(hero_str_40aa); t7 = hero_str_concat(t5, t6); t9 = h2_own2; h2_own2 = t7; hero_str_decref(t9); h1_ret0 = t7; goto bb4; bb2:
 #line 192
     t2 = h0_g.f_team; t3 = HERO_STR_LIT(hero_str_40ab); t4 = hero_str_concat(t2, t3); t10 = h3_own3; h3_own3 = t4; hero_str_decref(t10); h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 2510 "main.c"
+#line 2498 "main.c"
     t8 = h1_ret0;
     hero_str_incref(t8);
     hero_str_release_at(&h2_own2);
@@ -2518,7 +2506,7 @@ HeroStr h_runengine_label_of(h_queryplan_Group h0_g) { HERO_NODEBUG HeroStr h1_r
 h_queryplan_Group h_runengine_group_of(HeroStr h0_label) { int64_t h1_cut; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t5, t8, t9, t10, t18; HERO_NODEBUG h_queryplan_Group h3_own3 = {0}, t17, t19; HERO_NODEBUG int64_t t2, t3, t4, t6, t7, t11, t12, t13; HERO_NODEBUG uint8_t t14, t15; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_label; t2 = hero_str_len(t1); t3 = INT64_C(2); if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow_at("run/engine.hero", "engine.group_of", 196, 11); h1_cut = t4;
     t5 = h0_label; t6 = INT64_C(0); t7 = h1_cut; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"run/engine.hero", "engine.group_of", 197, 29}; t8 = hero_str_slice_at(t5, t6, t7, &hero_here); } t18 = h2_own2; h2_own2 = t8; hero_str_decref(t18); t9 = h0_label; t10 = h0_label; t11 = hero_str_len(t10); t12 = INT64_C(1); if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow_at("run/engine.hero", "engine.group_of", 197, 74); t14 = ((void)((t9.ptr == NULL || t13 < 0 || t13 >= t9.len) ? hero_panic_byte_at(t9, t13, "run/engine.hero", "engine.group_of", 197, 68) : (void)0), (int64_t)(unsigned char)t9.ptr[t13]); t15 = UINT64_C(49); t16 = t14 == t15; hero_str_incref(t8); t17 = (h_queryplan_Group){.f_team = t8, .f_active = t16}; t19 = h3_own3; h3_own3 = t17; h_queryplan_0Group_release(&t19);
-#line 2522 "main.c"
+#line 2510 "main.c"
     h_queryplan_0Group_retain(&t17);
     hero_str_release_at(&h2_own2);
     h_queryplan_0Group_release(hero_slot_escape(&h3_own3));
@@ -2528,7 +2516,7 @@ h_queryplan_Group h_runengine_group_of(HeroStr h0_label) { int64_t h1_cut; HERO_
 #line 11 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv.hero"
 HeroStr h_1corestrconv_NOT_A_NUMBER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_71877a9b);
-#line 2532 "main.c"
+#line 2520 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -2567,7 +2555,7 @@ h_0opt_e201354 h_1corestrconv_atoi(HeroStr h0_s) { int64_t h1_at; bool h2_negati
     t71 = h6_total; t72 = h5_lowest; t73 = h10_digit; if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 42, 21); t75 = INT64_C(10); if (t75 == 0) hero_panic_at("division by zero", "<core>/strconv.hero", "strconv.atoi", 42, 20); if (t74 == INT64_MIN && t75 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 42, 20); t76 = t74 / t75; t77 = t71 < t76; if (t77) goto bb22; else goto bb23; bb20:
 #line 40
     t67 = h9_f0; t68 = t67.as.err;
-#line 2571 "main.c"
+#line 2559 "main.c"
     hero_panic_must_at(t68, "<core>/strconv.hero", "strconv.atoi", 40, 17);
     hero_unreachable();
 bb21:
@@ -2584,7 +2572,7 @@ bb21:
     t104 = h6_total; if (__builtin_sub_overflow(INT64_C(0), t104, &t105)) hero_panic_overflow_at("<core>/strconv.hero", "strconv.atoi", 52, 15); t106 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t105}; t122 = h25_own25; h25_own25 = t106; h_0opt_e201354_release(&t122); h11_ret0 = t106; goto bb30; bb28:
 #line 51
     t98 = HERO_STR_LIT(hero_str_2633b9f3); t99 = h0_s; t100 = h_1corestrconvinternalshown_quoted(t99); t123 = h26_own26; h26_own26 = t100; hero_str_decref(t123); t101 = HERO_STR_LIT(hero_str_34adc7ac); t102 = hero_str_concat(t100, t101); t124 = h27_own27; h27_own27 = t102; hero_str_decref(t124); hero_str_incref(t98); hero_str_incref(t102); t103 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t98, .msg = t102}}; t125 = h28_own28; h28_own28 = t103; h_0opt_e201354_release(&t125); h11_ret0 = t103; goto bb30; bb29: goto bb27; bb30:
-#line 2588 "main.c"
+#line 2576 "main.c"
     t107 = h11_ret0;
     h_0opt_e201354_retain(&t107);
     h_0opt_e201354_release(hero_slot_escape(&h9_f0));
@@ -2611,7 +2599,7 @@ bb21:
 #line 63 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv.hero"
 h_0opt_db92a83 h_1corestrconv_parse_float(HeroStr h0_s) { HERO_NODEBUG h_0opt_db92a83 h1_own1 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h_1corestrconvinternalfloat_parsed(t1); t3 = h1_own1; h1_own1 = t2; h_0opt_db92a83_release(&t3);
-#line 2615 "main.c"
+#line 2603 "main.c"
     h_0opt_db92a83_retain(&t2);
     h_0opt_db92a83_release(hero_slot_escape(&h1_own1));
     return t2;
@@ -2633,7 +2621,7 @@ bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at;
     t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_prefix", 25, 14); h2_at = t22; goto bb4; bb8:
 #line 24
     t19 = false; h3_ret0 = t19; goto bb10; bb9: goto bb7; bb10:
-#line 2637 "main.c"
+#line 2625 "main.c"
     t24 = h3_ret0;
     return t24;
 }
@@ -2655,7 +2643,7 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
     t27 = h3_at; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strings.hero", "strings.has_suffix", 39, 14); h3_at = t29; goto bb4; bb8:
 #line 38
     t26 = false; h4_ret0 = t26; goto bb10; bb9: goto bb7; bb10:
-#line 2659 "main.c"
+#line 2647 "main.c"
     t31 = h4_ret0;
     return t31;
 }
@@ -2663,7 +2651,7 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
 #line 44 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_substr; t3 = h_1corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
-#line 2667 "main.c"
+#line 2655 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t8;
@@ -2688,14 +2676,14 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_wi
     t23 = h4_width; t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb9:
 #line 69
     t29 = h0_s; t30 = h1_from; t31 = h3_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.trim_space", 69, 12}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t33 = h5_own5; h5_own5 = t32; hero_str_decref(t33);
-#line 2692 "main.c"
+#line 2680 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
 bb10:
 #line 67 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
     t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
-#line 2699 "main.c"
+#line 2687 "main.c"
 }
 
 #line 74 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
@@ -2727,7 +2715,7 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     t29 = true; h3_inside = t29; goto bb10; bb12: goto bb10; bb13:
 #line 96
     t41 = h1_out;
-#line 2731 "main.c"
+#line 2719 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -2737,7 +2725,7 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
 bb14:
 #line 95 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
     t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
-#line 2741 "main.c"
+#line 2729 "main.c"
 }
 
 #line 101 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
@@ -2764,7 +2752,7 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     t25 = h4_end; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strings.hero", "strings.split_lines", 111, 23); h4_end = t27; goto bb7; bb11: goto bb7; bb12:
 #line 118
     t51 = h1_out;
-#line 2768 "main.c"
+#line 2756 "main.c"
     hero_array_incref(t51);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h6_own6);
@@ -2774,7 +2762,7 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
 bb13:
 #line 117 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
     t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
-#line 2778 "main.c"
+#line 2766 "main.c"
 }
 
 #line 124 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strings.hero"
@@ -2785,7 +2773,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     t25 = h4_before; t26 = h5_after; hero_str_incref(t25); hero_str_incref(t26); t27 = (h_1corestrings_Halves){.f_before = t25, .f_after = t26}; t36 = h10_own10; h10_own10 = t27; h_1corestrings_0Halves_release(&t36); h_1corestrings_0Halves_retain(&t27); t28 = (h_0opt_48a26f25){.tag = INT64_C(0), .as.ok = t27}; t37 = h11_own11; h11_own11 = t28; h_0opt_48a26f25_release(&t37); h6_ret0 = t28; goto bb3; bb2:
 #line 125
     t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_48a26f25){.tag = INT64_C(1), .as.err = t9}; t38 = h12_own12; h12_own12 = t10; h_0opt_48a26f25_release(&t38); h6_ret0 = t10; goto bb3; bb3:
-#line 2789 "main.c"
+#line 2777 "main.c"
     t29 = h6_ret0;
     h_0opt_48a26f25_retain(&t29);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -2803,7 +2791,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
 #line 25 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
 int64_t h_1corestrconvinternalfloat_EXPONENT_CAP(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1000000000000000); return t1;
-#line 2807 "main.c"
+#line 2795 "main.c"
 }
 
 #line 54 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
@@ -2843,7 +2831,7 @@ h_0opt_db92a83 h_1corestrconvinternalfloat_parsed(HeroStr h0_s) { h_1corestrconv
     t52 = h7_magnitude; t53 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t52}; t69 = h21_own21; h21_own21 = t53; h_0opt_db92a83_release(&t69); h8_ret0 = t53; goto bb18; bb16:
 #line 74
     t49 = h7_magnitude; t50 = -t49; t51 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t50}; t70 = h22_own22; h22_own22 = t51; h_0opt_db92a83_release(&t70); h8_ret0 = t51; goto bb18; bb17: goto bb15; bb18:
-#line 2847 "main.c"
+#line 2835 "main.c"
     t54 = h8_ret0;
     h_0opt_db92a83_retain(&t54);
     h_1corestrconvinternalfloat_0Grammar_release(hero_slot_escape(&h2_g));
@@ -2872,7 +2860,7 @@ h_0opt_db92a83 h_1corestrconvinternalfloat_magnitude_of(h_1corestrconvinternalfl
     t6 = h0_g.f_whole; t7 = h0_g.f_fraction; t8 = h0_g.f_exponent; t9 = h_1corestrconvinternalnearest_value_of(t6, t7, t8); t11 = h2_own2; h2_own2 = t9; h_0opt_db92a83_release(&t11); h1_ret0 = t9; goto bb4; bb2:
 #line 80
     t2 = h0_g.f_mantissa; t3 = h0_g.f_power; t4 = h0_g.f_dropped; t5 = h_1corestrconvinternalfloat_hexadecimal(t2, t3, t4); t12 = h3_own3; h3_own3 = t5; h_0opt_db92a83_release(&t12); h1_ret0 = t5; goto bb4; bb3: goto bb1; bb4:
-#line 2876 "main.c"
+#line 2864 "main.c"
     t10 = h1_ret0;
     h_0opt_db92a83_retain(&t10);
     h_0opt_db92a83_release(hero_slot_escape(&h2_own2));
@@ -2928,7 +2916,7 @@ h_1corestrconvinternalfloat_Special h_1corestrconvinternalfloat_special(HeroStr 
 #line 113
     t69 = h0_s; t70 = INT64_C(0); t71 = HERO_STR_LIT(hero_str_1cffef); t72 = h_1corestrconvinternalfloat_same_letters(t69, t70, t71); t73 = INT64_C(3); t74 = t72 == t73; h11_b4 = t74; goto bb29; bb29: t75 = h11_b4; if (t75) goto bb30; else goto bb31; bb30:
     t76 = INT64_C(3); t77 = 0x0p+0; t78 = 0x0p+0; t79 = t77 / t78; t80 = (h_1corestrconvinternalfloat_Special){.f_length = t76, .f_value = t79}; h12_ret0 = t80; goto bb32; bb31: goto bb27; bb32:
-#line 2932 "main.c"
+#line 2920 "main.c"
     t82 = h12_ret0;
     return t82;
 }
@@ -2943,7 +2931,7 @@ int64_t h_1corestrconvinternalfloat_same_letters(HeroStr h0_s, int64_t h1_from, 
     t27 = h3_n; return t27; bb4:
 #line 121
     t8 = h3_n; t9 = h2_word; t10 = hero_str_len(t9); t11 = t8 < t10; h5_b1 = t11; goto bb5; bb5: t12 = h5_b1; h4_b0 = t12; if (t12) goto bb6; else goto bb7; bb6: t13 = h0_s; t14 = h1_from; t15 = h3_n; if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.same_letters", 121, 59); t17 = ((void)((t13.ptr == NULL || t16 < 0 || t16 >= t13.len) ? hero_panic_byte_at(t13, t16, "<core>/strconv/internal/float.hero", "float.same_letters", 121, 57) : (void)0), (int64_t)(unsigned char)t13.ptr[t16]); t18 = h_1corestrconvinternalfloat_lower(t17); t19 = h2_word; t20 = h3_n; t21 = ((void)((t19.ptr == NULL || t20 < 0 || t20 >= t19.len) ? hero_panic_byte_at(t19, t20, "<core>/strconv/internal/float.hero", "float.same_letters", 121, 73) : (void)0), (int64_t)(unsigned char)t19.ptr[t20]); t22 = t18 == t21; h4_b0 = t22; goto bb7; bb7: t23 = h4_b0; if (t23) goto bb2; else goto bb3;
-#line 2947 "main.c"
+#line 2935 "main.c"
 }
 
 #line 127 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
@@ -2954,7 +2942,7 @@ uint8_t h_1corestrconvinternalfloat_lower(uint8_t h0_b) { HERO_NODEBUG bool h1_b
 #line 128
     t4 = h0_b; t5 = UINT64_C(90); t6 = t4 <= t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = h0_b; t9 = UINT64_C(32); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.lower", 129, 16); h2_ret0 = t10; goto bb6; bb5: goto bb1; bb6:
-#line 2958 "main.c"
+#line 2946 "main.c"
     t12 = h2_ret0;
     return t12;
 }
@@ -2962,7 +2950,7 @@ uint8_t h_1corestrconvinternalfloat_lower(uint8_t h0_b) { HERO_NODEBUG bool h1_b
 #line 133 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
 bool h_1corestrconvinternalfloat_digit(uint8_t h0_b) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_b; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
-#line 2966 "main.c"
+#line 2954 "main.c"
 }
 
 #line 137 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/float.hero"
@@ -2974,7 +2962,7 @@ uint64_t h_1corestrconvinternalfloat_hex_value(uint8_t h0_b) { HERO_NODEBUG h_0o
     t17 = h2_low; t18 = UINT64_C(97); t19 = t17 >= t18; h3_b0 = t19; if (t19) goto bb7; else goto bb8; bb2:
 #line 139
     t3 = h0_b; t4 = UINT64_C(48); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hex_value", 139, 23); t6 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t5}; t40 = h6_own6; h6_own6 = t6; h_0opt_fbbb698_release(&t40); t41 = h1_f0; h_0opt_fbbb698_retain(&t6); h1_f0 = t6; h_0opt_fbbb698_release(&t41); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3: goto bb1; bb4: t13 = h1_f0; t14 = t13.as.ok; h5_ret0 = t14; goto bb13; bb5: t11 = h1_f0; t12 = t11.as.err;
-#line 2978 "main.c"
+#line 2966 "main.c"
     hero_panic_must_at(t12, "<core>/strconv/internal/float.hero", "float.hex_value", 139, 16);
     hero_unreachable();
 bb6:
@@ -2983,7 +2971,7 @@ bb6:
 #line 142
     t20 = h2_low; t21 = UINT64_C(102); t22 = t20 <= t21; h3_b0 = t22; goto bb8; bb8: t23 = h3_b0; if (t23) goto bb9; else goto bb10; bb9:
     t24 = h2_low; t25 = UINT64_C(97); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hex_value", 143, 23); t27 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t26}; t42 = h7_own7; h7_own7 = t27; h_0opt_fbbb698_release(&t42); t43 = h4_f1; h_0opt_fbbb698_retain(&t27); h4_f1 = t27; h_0opt_fbbb698_release(&t43); t28 = h4_f1; t29 = t28.tag; t30 = INT64_C(0); t31 = t29 == t30; if (t31) goto bb11; else goto bb12; bb10: goto bb6; bb11: t34 = h4_f1; t35 = t34.as.ok; t36 = UINT64_C(10); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hex_value", 143, 16); h5_ret0 = t37; goto bb13; bb12: t32 = h4_f1; t33 = t32.as.err;
-#line 2987 "main.c"
+#line 2975 "main.c"
     hero_panic_must_at(t33, "<core>/strconv/internal/float.hero", "float.hex_value", 143, 16);
     hero_unreachable();
 bb13:
@@ -3138,7 +3126,7 @@ h_1corestrconvinternalfloat_Grammar h_1corestrconvinternalfloat_grammar(HeroStr 
     t239 = true; h7_underscores = t239; goto bb84; bb86:
     t240 = h24_exponent; t241 = h_1corestrconvinternalfloat_EXPONENT_CAP(); t242 = t240 < t241; if (t242) goto bb87; else goto bb88; bb87:
     t243 = h24_exponent; t244 = INT64_C(10); if (__builtin_mul_overflow(t243, t244, &t245)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 248, 28); t246 = h0_s; t247 = h2_at; t248 = ((void)((t246.ptr == NULL || t247 < 0 || t247 >= t246.len) ? hero_panic_byte_at(t246, t247, "<core>/strconv/internal/float.hero", "float.grammar", 248, 51) : (void)0), (int64_t)(unsigned char)t246.ptr[t247]); t249 = UINT64_C(48); if (__builtin_sub_overflow(t248, t249, &t250)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 248, 51); t251 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t250}; t309 = h41_own41; h41_own41 = t251; h_0opt_e201354_release(&t309); t310 = h32_f0; h_0opt_e201354_retain(&t251); h32_f0 = t251; h_0opt_e201354_release(&t310); t252 = h32_f0; t253 = t252.tag; t254 = INT64_C(0); t255 = t253 == t254; if (t255) goto bb89; else goto bb90; bb88: goto bb84; bb89: t258 = h32_f0; t259 = t258.as.ok; if (__builtin_add_overflow(t245, t259, &t260)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 248, 28); h24_exponent = t260; goto bb84; bb90: t256 = h32_f0; t257 = t256.as.err;
-#line 3142 "main.c"
+#line 3130 "main.c"
     hero_panic_must_at(t257, "<core>/strconv/internal/float.hero", "float.grammar", 248, 44);
     hero_unreachable();
 bb91:
@@ -3163,7 +3151,7 @@ bb92:
 #line 262
     t283 = h1_g.f_mantissa; t284 = UINT64_C(0); t285 = t283 != t284; h34_b16 = t285; goto bb103; bb103: t286 = h34_b16; if (t286) goto bb104; else goto bb105; bb104:
     t287 = h14_place; t288 = INT64_C(4); if (__builtin_mul_overflow(t287, t288, &t289)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 19); t290 = h13_kept; t291 = INT64_C(4); if (__builtin_mul_overflow(t290, t291, &t292)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 31); if (__builtin_sub_overflow(t289, t292, &t293)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 19); t294 = h24_exponent; if (__builtin_add_overflow(t293, t294, &t295)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.grammar", 263, 19); h1_g.f_power = t295; goto bb101; bb105: goto bb101; bb106:
-#line 3167 "main.c"
+#line 3155 "main.c"
     t298 = h35_ret0;
     h_1corestrconvinternalfloat_0Grammar_retain(&t298);
     h_1corestrconvinternalfloat_0Grammar_release(hero_slot_escape(&h1_g));
@@ -3221,7 +3209,7 @@ bool h_1corestrconvinternalfloat_underscores_placed(HeroStr h0_s) { int64_t h1_a
     t74 = false; h11_ret0 = t74; goto bb32; bb31:
 #line 296
     t75 = UINT64_C(33); h7_saw = t75; goto bb18; bb32:
-#line 3225 "main.c"
+#line 3213 "main.c"
     t82 = h11_ret0;
     return t82;
 }
@@ -3276,7 +3264,7 @@ h_0opt_db92a83 h_1corestrconvinternalfloat_hexadecimal(uint64_t h0_mantissa, int
     t111 = h5_e; t112 = INT64_C(1023); t113 = t111 > t112; if (t113) goto bb36; else goto bb37; bb31:
 #line 343
     t96 = h4_m; if (t96 <= 9223372036854775807ULL) { t97 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t96}; } else { t97 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t135 = h14_own14; h14_own14 = t97; h_0opt_e201354_release(&t135); t136 = h11_f0; h_0opt_e201354_retain(&t97); h11_f0 = t97; h_0opt_e201354_release(&t136); t98 = h11_f0; t99 = t98.tag; t100 = INT64_C(0); t101 = t99 == t100; if (t101) goto bb33; else goto bb34; bb32: goto bb30; bb33: t104 = h11_f0; t105 = t104.as.ok; t106 = hero_int_to_f64(t105); t107 = INT64_C(-1074); t108 = h_1corestrconvinternalscaling_two_to(t107); t109 = t106 * t108; t110 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t109}; t137 = h15_own15; h15_own15 = t110; h_0opt_db92a83_release(&t137); h13_ret0 = t110; goto bb40; bb34: t102 = h11_f0; t103 = t102.as.err;
-#line 3280 "main.c"
+#line 3268 "main.c"
     hero_panic_must_at(t103, "<core>/strconv/internal/float.hero", "float.hexadecimal", 343, 26);
     hero_unreachable();
 bb35:
@@ -3285,7 +3273,7 @@ bb35:
 #line 346
     t114 = HERO_STR_LIT(hero_str_2633b9f3); t115 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t114); hero_str_incref(t115); t116 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t114, .msg = t115}}; t140 = h17_own17; h17_own17 = t116; h_0opt_db92a83_release(&t140); h13_ret0 = t116; goto bb40; bb37: goto bb35; bb38:
     t125 = h12_f1; t126 = t125.as.ok; t127 = hero_int_to_f64(t126); t128 = h5_e; t129 = INT64_C(52); if (__builtin_sub_overflow(t128, t129, &t130)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.hexadecimal", 347, 57); t131 = h_1corestrconvinternalscaling_two_to(t130); t132 = t127 * t131; t133 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t132}; t141 = h18_own18; h18_own18 = t133; h_0opt_db92a83_release(&t141); h13_ret0 = t133; goto bb40; bb39: t123 = h12_f1; t124 = t123.as.err;
-#line 3289 "main.c"
+#line 3277 "main.c"
     hero_panic_must_at(t124, "<core>/strconv/internal/float.hero", "float.hexadecimal", 347, 22);
     hero_unreachable();
 bb40:
@@ -3311,7 +3299,7 @@ uint64_t h_1corestrconvinternalfloat_sticky_half(uint64_t h0_m) { uint64_t h1_ha
 #line 353
     t9 = h1_half; t10 = UINT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/float.hero", "float.sticky_half", 353, 22); t11 = t9 % t10; t12 = UINT64_C(0); t13 = t11 == t12; h2_b0 = t13; goto bb3; bb3: t14 = h2_b0; if (t14) goto bb4; else goto bb5; bb4:
     t15 = h1_half; t16 = UINT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/float.hero", "float.sticky_half", 354, 16); h3_ret0 = t17; goto bb6; bb5: goto bb1; bb6:
-#line 3315 "main.c"
+#line 3303 "main.c"
     t19 = h3_ret0;
     return t19;
 }
@@ -3323,7 +3311,7 @@ HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr 
     t12 = h0_s; t13 = HERO_STR_LIT(hero_str_22); t14 = HERO_STR_LIT(hero_str_22); t15 = hero_str_concat(t13, t12); t18 = h2_own2; h2_own2 = t15; hero_str_decref(t18); t16 = hero_str_concat(t15, t14); t19 = h3_own3; h3_own3 = t16; hero_str_decref(t19); h1_ret0 = t16; goto bb4; bb2:
 #line 8
     t5 = h0_s; t6 = hero_str_len(t5); t7 = HERO_STR_LIT(hero_str_75bf279b); t8 = hero_int_to_str(t6); t20 = h4_own4; h4_own4 = t8; hero_str_decref(t20); t9 = HERO_STR_LIT(hero_str_391e7e27); t10 = hero_str_concat(t7, t8); t21 = h5_own5; h5_own5 = t10; hero_str_decref(t21); t11 = hero_str_concat(t10, t9); t22 = h6_own6; h6_own6 = t11; hero_str_decref(t22); h1_ret0 = t11; goto bb4; bb3: goto bb1; bb4:
-#line 3327 "main.c"
+#line 3315 "main.c"
     t17 = h1_ret0;
     hero_str_incref(t17);
     hero_str_release_at(&h2_own2);
@@ -3337,7 +3325,7 @@ HeroStr h_1corestrconvinternalshown_quoted(HeroStr h0_s) { HERO_NODEBUG HeroStr 
 #if HERO_STATIC_CONSTANTS
 #line 28 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalnearest_EXACT_24, double, &hero_desc_f64, 23, 0x1p+0, 0x1.4p+3, 0x1.9p+6, 0x1.f4p+9, 0x1.388p+13, 0x1.86ap+16, 0x1.e848p+19, 0x1.312dp+23, 0x1.7d784p+26, 0x1.dcd65p+29, 0x1.2a05f2p+33, 0x1.74876e8p+36, 0x1.d1a94a2p+39, 0x1.2309ce54p+43, 0x1.6bcc41e9p+46, 0x1.c6bf52634p+49, 0x1.1c37937e08p+53, 0x1.6345785d8ap+56, 0x1.bc16d674ec8p+59, 0x1.158e460913dp+63, 0x1.5af1d78b58c4p+66, 0x1.b1ae4d6e2ef5p+69, 0x1.0f0cf064dd592p+73); HeroArrayHeader * h_1corestrconvinternalnearest_EXACT(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalnearest_EXACT_24);
-#line 3341 "main.c"
+#line 3329 "main.c"
 }
 #else
 
@@ -3369,7 +3357,7 @@ HeroArrayHeader * h_1corestrconvinternalnearest_EXACT(void) { HERO_NODEBUG HeroA
     t23 = 0x1.0f0cf064dd592p+73;
 #line 29
     t24 = hero_array_new(&hero_desc_f64, 23); hero_array_push_owned(&t24, &t1); hero_array_push_owned(&t24, &t2); hero_array_push_owned(&t24, &t3); hero_array_push_owned(&t24, &t4); hero_array_push_owned(&t24, &t5); hero_array_push_owned(&t24, &t6); hero_array_push_owned(&t24, &t7); hero_array_push_owned(&t24, &t8); hero_array_push_owned(&t24, &t9); hero_array_push_owned(&t24, &t10); hero_array_push_owned(&t24, &t11); hero_array_push_owned(&t24, &t12); hero_array_push_owned(&t24, &t13); hero_array_push_owned(&t24, &t14); hero_array_push_owned(&t24, &t15); hero_array_push_owned(&t24, &t16); hero_array_push_owned(&t24, &t17); hero_array_push_owned(&t24, &t18); hero_array_push_owned(&t24, &t19); hero_array_push_owned(&t24, &t20); hero_array_push_owned(&t24, &t21); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t25 = h0_own0; h0_own0 = t24; hero_array_decref(t25);
-#line 3373 "main.c"
+#line 3361 "main.c"
     hero_array_incref(t24);
     hero_array_release_at(&h0_own0);
     return t24;
@@ -3379,7 +3367,7 @@ HeroArrayHeader * h_1corestrconvinternalnearest_EXACT(void) { HERO_NODEBUG HeroA
 #line 57 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
 int64_t h_1corestrconvinternalnearest_EXACT_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(15); return t1;
-#line 3383 "main.c"
+#line 3371 "main.c"
 }
 
 #line 62 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
@@ -3404,7 +3392,7 @@ h_0opt_db92a83 h_1corestrconvinternalnearest_value_of(HeroStr h0_whole, HeroStr 
     t39 = h3_digits; t40 = h4_lead; t41 = h6_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strconv/internal/nearest.hero", "nearest.value_of", 76, 28}; t42 = hero_str_slice_at(t39, t40, t41, &hero_here); } t53 = h10_own10; h10_own10 = t42; hero_str_decref(t53); t43 = h0_whole; t44 = hero_str_len(t43); t45 = h4_lead; if (__builtin_sub_overflow(t44, t45, &t46)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 76, 70); t47 = h2_exponent; if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.value_of", 76, 70); t49 = h_1corestrconvinternalnearest_nearest(t42, t48); t54 = h11_own11; h11_own11 = t49; h_0opt_db92a83_release(&t54); h8_ret0 = t49; goto bb14; bb12:
 #line 75
     t37 = 0x0p+0; t38 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t37}; t55 = h12_own12; h12_own12 = t38; h_0opt_db92a83_release(&t55); h8_ret0 = t38; goto bb14; bb13: goto bb11; bb14:
-#line 3408 "main.c"
+#line 3396 "main.c"
     t50 = h8_ret0;
     h_0opt_db92a83_retain(&t50);
     hero_str_release_at(&h3_digits);
@@ -3436,7 +3424,7 @@ h_0opt_db92a83 h_1corestrconvinternalnearest_nearest(HeroStr h0_digits, int64_t 
     t40 = h3_power; t41 = INT64_C(0); t42 = t40 >= t41; if (t42) goto bb14; else goto bb15; bb12:
 #line 96
     t35 = h6_f0; t36 = t35.as.err;
-#line 3440 "main.c"
+#line 3428 "main.c"
     hero_panic_must_at(t36, "<core>/strconv/internal/nearest.hero", "nearest.nearest", 96, 20);
     hero_unreachable();
 bb13:
@@ -3444,7 +3432,7 @@ bb13:
     t49 = h7_exact; t50 = h_1corestrconvinternalnearest_EXACT(); t62 = h12_own12; h12_own12 = t50; hero_array_decref(t62); t51 = INT64_C(0); t52 = h3_power; if (__builtin_sub_overflow(t51, t52, &t53)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.nearest", 100, 29); t54 = ((void)((t50 == NULL || t53 < 0 || t53 >= t50->len) ? hero_panic_index_at(t50, t53, "<core>/strconv/internal/nearest.hero", "nearest.nearest", 100, 23) : (void)0), (void)(t50->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t50 + 1))[t53]); t55 = t49 / t54; t56 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t55}; t63 = h13_own13; h13_own13 = t56; h_0opt_db92a83_release(&t63); h8_ret0 = t56; goto bb16; bb14:
 #line 99
     t43 = h7_exact; t44 = h_1corestrconvinternalnearest_EXACT(); t64 = h14_own14; h14_own14 = t44; hero_array_decref(t64); t45 = h3_power; t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? hero_panic_index_at(t44, t45, "<core>/strconv/internal/nearest.hero", "nearest.nearest", 99, 27) : (void)0), (void)(t44->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t44 + 1))[t45]); t47 = t43 * t46; t48 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t47}; t65 = h15_own15; h15_own15 = t48; h_0opt_db92a83_release(&t65); h8_ret0 = t48; goto bb16; bb15: goto bb13; bb16:
-#line 3448 "main.c"
+#line 3436 "main.c"
     t57 = h8_ret0;
     h_0opt_db92a83_retain(&t57);
     h_0opt_e201354_release(hero_slot_escape(&h6_f0));
@@ -3469,7 +3457,7 @@ h_0opt_db92a83 h_1corestrconvinternalnearest_truncated(HeroStr h0_digits, int64_
     t18 = h0_digits; t19 = h1_point; t20 = h_1corestrconvinternaldecimal_nearest(t18, t19); t26 = h9_own9; h9_own9 = t20; h_0opt_db92a83_release(&t26); h5_ret0 = t20; goto bb4; bb2:
 #line 115
     t17 = h4_below; h5_ret0 = t17; goto bb4; bb3: goto bb1; bb4:
-#line 3473 "main.c"
+#line 3461 "main.c"
     t21 = h5_ret0;
     h_0opt_db92a83_retain(&t21);
     h_0opt_db92a83_release(hero_slot_escape(&h4_below));
@@ -3487,7 +3475,7 @@ h_0opt_db92a83 h_1corestrconvinternalnearest_one_more(uint64_t h0_head, int64_t 
     t9 = h0_head; t10 = UINT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.one_more", 124, 31); t12 = h1_p; t13 = h_1corestrconvinternalscaling_nearest(t11, t12); t15 = h3_own3; h3_own3 = t13; h_0opt_db92a83_release(&t15); h2_ret0 = t13; goto bb4; bb2:
 #line 123
     t4 = UINT64_C(1); t5 = h1_p; t6 = h_1corestrconvinternalpowers_DIGITS(); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.one_more", 123, 41); t8 = h_1corestrconvinternalscaling_nearest(t4, t7); t16 = h4_own4; h4_own4 = t8; h_0opt_db92a83_release(&t16); h2_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
-#line 3491 "main.c"
+#line 3479 "main.c"
     t14 = h2_ret0;
     h_0opt_db92a83_retain(&t14);
     h_0opt_db92a83_release(hero_slot_escape(&h3_own3));
@@ -3498,7 +3486,7 @@ h_0opt_db92a83 h_1corestrconvinternalnearest_one_more(uint64_t h0_head, int64_t 
 #line 127 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/nearest.hero"
 bool h_1corestrconvinternalnearest_agree(h_0opt_db92a83 h0_below, h_0opt_db92a83 h1_above) { HERO_NODEBUG h_0opt_db92a83 h2_s0 = {0}, h6_f0 = {0}, h7_f1 = {0}, h8_f2 = {0}, t1, t2, t4, t6, t7, t12, t13, t17, t19, t24, t25, t30, t31, t32, t33; HERO_NODEBUG bool h3_r0, h5_b0, t10, t11, t16, t22, t23, t28, t29; double h4_x; HERO_NODEBUG int64_t t3, t8, t9, t14, t15, t26, t27; HERO_NODEBUG double t5, t20, t21; HERO_NODEBUG HeroFailure t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_below; t30 = h2_s0; h_0opt_db92a83_retain(&t1); h2_s0 = t1; h_0opt_db92a83_release(&t30); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t29 = h3_r0;
-#line 3502 "main.c"
+#line 3490 "main.c"
     h_0opt_db92a83_release(hero_slot_escape(&h2_s0));
     h_0opt_db92a83_release(hero_slot_escape(&h6_f0));
     h_0opt_db92a83_release(hero_slot_escape(&h7_f1));
@@ -3514,7 +3502,7 @@ bb2:
 #line 128
     h3_r0 = t23; goto bb1; bb6:
     t19 = h7_f1; t20 = t19.as.ok; t21 = h4_x; t22 = t20 == t21; h5_b0 = t22; goto bb5; bb7: t17 = h7_f1; t18 = t17.as.err;
-#line 3518 "main.c"
+#line 3506 "main.c"
     hero_panic_must_at(t18, "<core>/strconv/internal/nearest.hero", "nearest.agree", 129, 38);
     hero_unreachable();
 }
@@ -3528,7 +3516,7 @@ uint64_t h_1corestrconvinternalnearest_word_of(HeroStr h0_digits) { uint64_t h1_
     t7 = h1_n; t8 = UINT64_C(10); if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 13); t10 = h0_digits; t11 = h2_i; t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? hero_panic_byte_at(t10, t11, "<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 29) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]); t13 = UINT64_C(48); if (__builtin_sub_overflow(t12, t13, &t14)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 29); t15 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t14}; t29 = h4_own4; h4_own4 = t15; h_0opt_fbbb698_release(&t29); t30 = h3_f0; h_0opt_fbbb698_retain(&t15); h3_f0 = t15; h_0opt_fbbb698_release(&t30); t16 = h3_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb4; else goto bb5; bb3:
 #line 142
     t28 = h1_n;
-#line 3532 "main.c"
+#line 3520 "main.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h3_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h4_own4));
     return t28;
@@ -3538,7 +3526,7 @@ bb4:
     t25 = h2_i; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/strconv/internal/nearest.hero", "nearest.word_of", 140, 13); h2_i = t27; goto bb1; bb5:
 #line 139
     t20 = h3_f0; t21 = t20.as.err;
-#line 3542 "main.c"
+#line 3530 "main.c"
     hero_panic_must_at(t21, "<core>/strconv/internal/nearest.hero", "nearest.word_of", 139, 22);
     hero_unreachable();
 }
@@ -3572,7 +3560,7 @@ h_0opt_db92a83 h_1corestrconvinternalscaling_nearest(uint64_t h0_d, int64_t h1_p
 #line 71
     t58 = h6_u; t59 = UINT64_C(2); if (t59 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.nearest", 71, 23); t60 = t58 / t59; t61 = h6_u; t62 = UINT64_C(2); if (t62 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.nearest", 71, 39); t63 = t61 % t62; t64 = UINT64_C(1); t65 = t63 == t64; t66 = h_1corestrconvinternalscaling_marked(t60, t65); h6_u = t66;
     t67 = h4_e; t68 = INT64_C(1); if (__builtin_sub_overflow(t67, t68, &t69)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.nearest", 72, 13); h4_e = t69; goto bb10; bb12: goto bb10; bb13:
-#line 3576 "main.c"
+#line 3564 "main.c"
     t76 = h7_ret0;
     h_0opt_db92a83_retain(&t76);
     h_0opt_db92a83_release(hero_slot_escape(&h8_own8));
@@ -3605,7 +3593,7 @@ uint64_t h_1corestrconvinternalscaling_unrounded(uint64_t h0_x, int64_t h1_at, i
     t33 = h_1corestrconvinternalpowers_ALL_ONES(); t34 = h5_below; if (__builtin_sub_overflow(t33, t34, &t35)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 94, 18); t36 = h4_first.f_low; if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 94, 18); t38 = UINT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 94, 18); h7_middle = t39; goto bb4; bb6:
 #line 96
     t40 = h4_first.f_low; t41 = h5_below; if (__builtin_sub_overflow(t40, t41, &t42)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.unrounded", 96, 18); h7_middle = t42; goto bb4; bb7:
-#line 3609 "main.c"
+#line 3597 "main.c"
     t50 = h8_ret0;
     hero_array_release_at(&h9_own9);
     hero_array_release_at(&h10_own10);
@@ -3621,7 +3609,7 @@ uint64_t h_1corestrconvinternalscaling_marked(uint64_t h0_q, bool h1_inexact) { 
 #line 101
     t2 = h0_q; t3 = UINT64_C(2); if (t3 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.marked", 101, 19); t4 = t2 % t3; t5 = UINT64_C(0); t6 = t4 == t5; h2_b0 = t6; goto bb3; bb3: t7 = h2_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = h0_q; t9 = UINT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.marked", 102, 16); h3_ret0 = t10; goto bb6; bb5: goto bb1; bb6:
-#line 3625 "main.c"
+#line 3613 "main.c"
     t12 = h3_ret0;
     return t12;
 }
@@ -3629,7 +3617,7 @@ uint64_t h_1corestrconvinternalscaling_marked(uint64_t h0_q, bool h1_inexact) { 
 #line 107 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
 uint64_t h_1corestrconvinternalscaling_rounded(uint64_t h0_u) { HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_u; t2 = UINT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 13); t4 = h0_u; t5 = UINT64_C(4); if (t5 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 21); t6 = t4 / t5; t7 = UINT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 21); t8 = t6 % t7; if (__builtin_add_overflow(t3, t8, &t9)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 13); t10 = UINT64_C(4); if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.rounded", 108, 12); t11 = t9 / t10; return t11;
-#line 3633 "main.c"
+#line 3621 "main.c"
 }
 
 #line 117 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
@@ -3637,7 +3625,7 @@ h_0opt_db92a83 h_1corestrconvinternalscaling_packed(uint64_t h0_m, int64_t h1_k)
     t1 = HERO_STR_LIT(hero_str_3bec0c04); t2 = h0_m; t3 = h_1corestrconvinternalpowers_TWO_TO(); t37 = h5_own5; h5_own5 = t3; hero_array_decref(t37); t4 = h_1corestrconvinternalpowers_SIGNIFICAND_BITS(); t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? hero_panic_index_at(t3, t4, "<core>/strconv/internal/scaling.hero", "scaling.packed", 118, 16) : (void)0), (void)(t3->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t3 + 1))[t4]); t6 = t2 < t5; if (t6) goto bb1; else goto bb2; bb1:
 #line 120
     t7 = h0_m; t8 = h_1corestrconvinternalpowers_TWO_TO(); t38 = h6_own6; h6_own6 = t8; hero_array_decref(t38); t9 = h_1corestrconvinternalpowers_SIGNIFICAND_BITS(); t10 = INT64_C(1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.packed", 120, 27); t12 = ((void)((t8 == NULL || t11 < 0 || t11 >= t8->len) ? hero_panic_index_at(t8, t11, "<core>/strconv/internal/scaling.hero", "scaling.packed", 120, 13) : (void)0), (void)(t8->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t8 + 1))[t11]); t13 = t7 >= t12; h2_b0 = t13; if (t13) goto bb4; else goto bb5; bb2:
-#line 3641 "main.c"
+#line 3629 "main.c"
     hero_panic_assert_shown_at(t1, hero_show_u64, &t2, &t5, 0, "<core>/strconv/internal/scaling.hero", "scaling.packed", 118, 12);
     hero_unreachable();
 bb3:
@@ -3647,7 +3635,7 @@ bb3:
     t14 = h1_k; t15 = h_1corestrconvinternalpowers_PAST_EXPONENT(); t16 = t14 >= t15; h2_b0 = t16; goto bb5; bb5: t17 = h2_b0; if (t17) goto bb6; else goto bb7; bb6:
     t18 = HERO_STR_LIT(hero_str_2633b9f3); t19 = HERO_STR_LIT(hero_str_37842519); hero_str_incref(t18); hero_str_incref(t19); t20 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t19}}; t41 = h8_own8; h8_own8 = t20; h_0opt_db92a83_release(&t41); h4_ret0 = t20; goto bb10; bb7: goto bb3; bb8:
     t29 = h3_f0; t30 = t29.as.ok; t31 = hero_int_to_f64(t30); t32 = h1_k; t33 = h_1corestrconvinternalscaling_two_to(t32); t34 = t31 * t33; t35 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t34}; t42 = h9_own9; h9_own9 = t35; h_0opt_db92a83_release(&t42); h4_ret0 = t35; goto bb10; bb9: t27 = h3_f0; t28 = t27.as.err;
-#line 3651 "main.c"
+#line 3639 "main.c"
     hero_panic_must_at(t28, "<core>/strconv/internal/scaling.hero", "scaling.packed", 122, 22);
     hero_unreachable();
 bb10:
@@ -3683,7 +3671,7 @@ double h_1corestrconvinternalscaling_two_to(int64_t h0_k) { double h1_base; int6
     t25 = h2_n; t26 = INT64_C(2); if (t26 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.two_to", 141, 13); if (t25 == INT64_MIN && t26 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.two_to", 141, 13); t27 = t25 / t26; h2_n = t27; goto bb4; bb8:
 #line 139
     t19 = h3_out; t20 = h1_base; t21 = t19 * t20; h3_out = t21; goto bb7; bb9: goto bb7;
-#line 3687 "main.c"
+#line 3675 "main.c"
 }
 
 #line 150 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
@@ -3701,7 +3689,7 @@ h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_product(uint64_
     t48 = h9_middle; t49 = h_1corestrconvinternalpowers_HALF(); if (t49 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 161, 14); t50 = t48 % t49; t51 = h_1corestrconvinternalpowers_HALF(); if (__builtin_mul_overflow(t50, t51, &t52)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 161, 14); t53 = h6_low_low; t54 = h_1corestrconvinternalpowers_HALF(); if (t54 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.product", 161, 51); t55 = t53 % t54; if (__builtin_add_overflow(t52, t55, &t56)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.product", 161, 14);
 #line 159
     t57 = (h_1corestrconvinternalscaling_Wide){.f_high = t47, .f_low = t56}; return t57;
-#line 3705 "main.c"
+#line 3693 "main.c"
 }
 
 #line 167 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
@@ -3715,7 +3703,7 @@ int64_t h_1corestrconvinternalscaling_bits_of(uint64_t h0_d) { int64_t h1_low; i
     t11 = h0_d; t12 = h_1corestrconvinternalpowers_TWO_TO(); t21 = h4_own4; h4_own4 = t12; hero_array_decref(t21); t13 = h3_mid; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "<core>/strconv/internal/scaling.hero", "scaling.bits_of", 174, 16) : (void)0), (void)(t12->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t12 + 1))[t13]); t15 = t11 < t14; if (t15) goto bb5; else goto bb6; bb3:
 #line 179
     t20 = h1_low;
-#line 3719 "main.c"
+#line 3707 "main.c"
     hero_array_release_at(&h4_own4);
     return t20;
 bb4:
@@ -3725,13 +3713,13 @@ bb5:
     t16 = h3_mid; h2_high = t16; goto bb4; bb6:
 #line 177
     t17 = h3_mid; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.bits_of", 177, 19); h1_low = t19; goto bb4;
-#line 3729 "main.c"
+#line 3717 "main.c"
 }
 
 #line 184 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
 int64_t h_1corestrconvinternalscaling_log2_of_ten_to(int64_t h0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p; t2 = h_1corestrconvinternalpowers_LOG_TIMES(); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.log2_of_ten_to", 185, 12); t4 = h_1corestrconvinternalpowers_LOG_SHIFT(); if (t4 < 0 || t4 > 63) hero_panic_at("shift count outside 0..63", "<core>/strconv/internal/scaling.hero", "scaling.log2_of_ten_to", 185, 12); t5 = (t3 < 0) ? ~(int64_t)((~(uint64_t)t3) >> (uint64_t)t4) : (int64_t)((uint64_t)t3 >> (uint64_t)t4); return t5;
-#line 3735 "main.c"
+#line 3723 "main.c"
 }
 
 #line 188 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/scaling.hero"
@@ -3741,7 +3729,7 @@ int64_t h_1corestrconvinternalscaling_min_of(int64_t h0_a, int64_t h1_b) { HERO_
     t5 = h1_b; h2_ret0 = t5; goto bb4; bb2:
 #line 190
     t4 = h0_a; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 3745 "main.c"
+#line 3733 "main.c"
     t6 = h2_ret0;
     return t6;
 }
@@ -3750,7 +3738,7 @@ int64_t h_1corestrconvinternalscaling_min_of(int64_t h0_a, int64_t h1_b) { HERO_
 h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_doubled(h_1corestrconvinternalscaling_Wide h0_w) { uint64_t h1_top; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t19; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint64_t t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_NODEBUG h_1corestrconvinternalscaling_Wide t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1corestrconvinternalpowers_TWO_TO(); t19 = h2_own2; h2_own2 = t1; hero_array_decref(t19); t2 = INT64_C(63); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "<core>/strconv/internal/scaling.hero", "scaling.doubled", 198, 11) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]); h1_top = t3;
     t4 = h0_w.f_high; t5 = h1_top; if (t5 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 23); t6 = t4 % t5; t7 = UINT64_C(2); if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 23); t9 = h0_w.f_low; t10 = h1_top; if (t10 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 42); t11 = t9 / t10; if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 23); t13 = h0_w.f_low; t14 = h1_top; if (t14 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 60); t15 = t13 % t14; t16 = UINT64_C(2); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/scaling.hero", "scaling.doubled", 199, 60); t18 = (h_1corestrconvinternalscaling_Wide){.f_high = t12, .f_low = t17};
-#line 3754 "main.c"
+#line 3742 "main.c"
     hero_array_release_at(&h2_own2);
     return t18;
 }
@@ -3758,26 +3746,26 @@ h_1corestrconvinternalscaling_Wide h_1corestrconvinternalscaling_doubled(h_1core
 #line 29 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
 int64_t h_1corestrconvinternaldecimal_CAPACITY(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(800); return t1;
-#line 3762 "main.c"
+#line 3750 "main.c"
 }
 
 #line 35 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
 int64_t h_1corestrconvinternaldecimal_WIDEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(59); return t1;
-#line 3768 "main.c"
+#line 3756 "main.c"
 }
 
 #if HERO_STATIC_CONSTANTS
 #line 48 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternaldecimal_STEPS_10, int64_t, &hero_desc_int, 9, INT64_C(1), INT64_C(3), INT64_C(6), INT64_C(9), INT64_C(13), INT64_C(16), INT64_C(19), INT64_C(23), INT64_C(26)); HeroArrayHeader * h_1corestrconvinternaldecimal_STEPS(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternaldecimal_STEPS_10);
-#line 3774 "main.c"
+#line 3762 "main.c"
 }
 #else
 
 #line 48 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
 HeroArrayHeader * h_1corestrconvinternaldecimal_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t10, *t11; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(3); t3 = INT64_C(6); t4 = INT64_C(9); t5 = INT64_C(13); t6 = INT64_C(16); t7 = INT64_C(19); t8 = INT64_C(23); t9 = INT64_C(26); t10 = hero_array_new(&hero_desc_int, 9); hero_array_push_owned(&t10, &t1); hero_array_push_owned(&t10, &t2); hero_array_push_owned(&t10, &t3); hero_array_push_owned(&t10, &t4); hero_array_push_owned(&t10, &t5); hero_array_push_owned(&t10, &t6); hero_array_push_owned(&t10, &t7); hero_array_push_owned(&t10, &t8); hero_array_push_owned(&t10, &t9); t11 = h0_own0; h0_own0 = t10; hero_array_decref(t11);
-#line 3781 "main.c"
+#line 3769 "main.c"
     hero_array_incref(t10);
     hero_array_release_at(&h0_own0);
     return t10;
@@ -3787,7 +3775,7 @@ HeroArrayHeader * h_1corestrconvinternaldecimal_STEPS(void) { HERO_NODEBUG HeroA
 #line 63 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
 h_0opt_db92a83 h_1corestrconvinternaldecimal_nearest(HeroStr h0_digits, int64_t h1_point) { HERO_NODEBUG h_1corestrconvinternaldecimal_Decimal h2_own2 = {0}, t3, t5; HERO_NODEBUG h_0opt_db92a83 h3_own3 = {0}, t4, t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_digits; t2 = h1_point; t3 = h_1corestrconvinternaldecimal_decimal_of(t1, t2); t5 = h2_own2; h2_own2 = t3; h_1corestrconvinternaldecimal_0Decimal_release(&t5); t4 = h_1corestrconvinternaldecimal_rounded_to_float(t3); t6 = h3_own3; h3_own3 = t4; h_0opt_db92a83_release(&t6);
-#line 3791 "main.c"
+#line 3779 "main.c"
     h_0opt_db92a83_retain(&t4);
     h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h2_own2));
     h_0opt_db92a83_release(hero_slot_escape(&h3_own3));
@@ -3806,7 +3794,7 @@ h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_decimal_of(H
     t13 = h2_kept; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = h_1corestrconvinternaldecimal_CAPACITY(); t16 = t14 < t15; if (t16) goto bb5; else goto bb6; bb3:
 #line 81
     t27 = h2_kept; t28 = h1_point; t29 = h3_truncated; hero_array_incref(t27); t30 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t27, .f_point = t28, .f_truncated = t29}; t34 = h7_own7; h7_own7 = t30; h_1corestrconvinternaldecimal_0Decimal_release(&t34); t31 = h_1corestrconvinternaldecimal_trimmed(t30); t35 = h8_own8; h8_own8 = t31; h_1corestrconvinternaldecimal_0Decimal_release(&t35);
-#line 3810 "main.c"
+#line 3798 "main.c"
     h_1corestrconvinternaldecimal_0Decimal_retain(&t31);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h6_own6);
@@ -3820,7 +3808,7 @@ bb4:
     t18 = h5_digit; hero_array_push_owned(&h2_kept, &t18); goto bb4; bb6:
     t20 = h5_digit; t21 = UINT64_C(0); t22 = t20 != t21; if (t22) goto bb7; else goto bb8; bb7:
     t23 = true; h3_truncated = t23; goto bb4; bb8: goto bb4;
-#line 3824 "main.c"
+#line 3812 "main.c"
 }
 
 #line 85 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
@@ -3842,7 +3830,7 @@ h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_trimmed(h_1c
 #line 95
     t25 = hero_array_new(&hero_desc_u8, 1); t40 = h7_own7; h7_own7 = t25; hero_array_decref(t40); t41 = h3_nothing; hero_array_incref(t25); h3_nothing = t25; hero_array_decref(t41);
     t26 = h3_nothing; t27 = INT64_C(0); t28 = h0_d.f_truncated; hero_array_incref(t26); t29 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t26, .f_point = t27, .f_truncated = t28}; t42 = h8_own8; h8_own8 = t29; h_1corestrconvinternaldecimal_0Decimal_release(&t42); h4_ret0 = t29; goto bb12; bb11: goto bb9; bb12:
-#line 3846 "main.c"
+#line 3834 "main.c"
     t37 = h4_ret0;
     h_1corestrconvinternaldecimal_0Decimal_retain(&t37);
     hero_array_release_at(&h3_nothing);
@@ -3864,7 +3852,7 @@ h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_shifted(h_1c
     t15 = h0_d; h2_ret0 = t15; goto bb7; bb5:
 #line 106
     t10 = h0_d; t11 = INT64_C(0); t12 = h1_k; if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.shifted", 106, 32); t14 = h_1corestrconvinternaldecimal_halved(t10, t13); t18 = h4_own4; h4_own4 = t14; h_1corestrconvinternaldecimal_0Decimal_release(&t18); h2_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 3868 "main.c"
+#line 3856 "main.c"
     t16 = h2_ret0;
     h_1corestrconvinternaldecimal_0Decimal_retain(&t16);
     h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h3_own3));
@@ -3883,7 +3871,7 @@ h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_doubled(h_1c
     t27 = h3_n; t28 = INT64_C(10); if (t28 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 118, 42); if (t27 == INT64_MIN && t28 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 118, 42); t29 = t27 % t28; if (t29 >= 0LL && t29 <= 255LL) { t30 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t29}; } else { t30 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t108 = h13_own13; h13_own13 = t30; h_0opt_1ec004_release(&t108); t109 = h6_f1; h_0opt_1ec004_retain(&t30); h6_f1 = t30; h_0opt_1ec004_release(&t109); t31 = h6_f1; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb6; else goto bb7; bb5:
 #line 117
     t19 = h5_f0; t20 = t19.as.err;
-#line 3887 "main.c"
+#line 3875 "main.c"
     hero_panic_must_at(t20, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 117, 18);
     hero_unreachable();
 bb6:
@@ -3893,7 +3881,7 @@ bb6:
     t43 = h4_read; t44 = INT64_C(1); if (__builtin_sub_overflow(t43, t44, &t45)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 120, 16); h4_read = t45; goto bb1; bb7:
 #line 118
     t35 = h6_f1; t36 = t35.as.err;
-#line 3897 "main.c"
+#line 3885 "main.c"
     hero_panic_must_at(t36, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 118, 36);
     hero_unreachable();
 bb8:
@@ -3909,7 +3897,7 @@ bb8:
     t63 = h3_n; t64 = INT64_C(10); if (t64 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.doubled", 124, 13); if (t63 == INT64_MIN && t64 == INT64_C(-1)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 124, 13); t65 = t63 / t64; h3_n = t65; goto bb8; bb12:
 #line 123
     t58 = h7_f2; t59 = t58.as.err;
-#line 3913 "main.c"
+#line 3901 "main.c"
     hero_panic_must_at(t59, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 123, 36);
     hero_unreachable();
 bb13:
@@ -3920,7 +3908,7 @@ bb13:
     t93 = h8_digits; t94 = h0_d.f_point; t95 = h2_backwards; t96 = ((void)(t95 == NULL ? ((void)hero_array_len(t95), hero_unreachable()) : (void)0), t95->len); if (__builtin_add_overflow(t94, t96, &t97)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 138, 40); t98 = h0_d.f_digits; t99 = ((void)(t98 == NULL ? ((void)hero_array_len(t98), hero_unreachable()) : (void)0), t98->len); if (__builtin_sub_overflow(t97, t99, &t100)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.doubled", 138, 40); t101 = h9_truncated; hero_array_incref(t93); t102 = (h_1corestrconvinternaldecimal_Decimal){.f_digits = t93, .f_point = t100, .f_truncated = t101}; t114 = h16_own16; h16_own16 = t102; h_1corestrconvinternaldecimal_0Decimal_release(&t114);
 #line 137
     t103 = h_1corestrconvinternaldecimal_trimmed(t102); t115 = h17_own17; h17_own17 = t103; h_1corestrconvinternaldecimal_0Decimal_release(&t115);
-#line 3924 "main.c"
+#line 3912 "main.c"
     h_1corestrconvinternaldecimal_0Decimal_retain(&t103);
     hero_array_release_at(&h2_backwards);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
@@ -3942,7 +3930,7 @@ bb16:
     t80 = h2_backwards; t81 = h10_at; t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? hero_panic_index_at(t80, t81, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 132, 34) : (void)0), (void)(t80->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t80 + 1))[t81]); hero_array_push_owned(&h8_digits, &t82); goto bb16; bb18:
     t84 = h2_backwards; t85 = h10_at; t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "<core>/strconv/internal/decimal.hero", "decimal.doubled", 133, 17) : (void)0), (void)(t84->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t84 + 1))[t85]); t87 = UINT64_C(0); t88 = t86 != t87; if (t88) goto bb19; else goto bb20; bb19:
     t89 = true; h9_truncated = t89; goto bb16; bb20: goto bb16;
-#line 3946 "main.c"
+#line 3934 "main.c"
 }
 
 #line 144 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
@@ -3971,7 +3959,7 @@ h_1corestrconvinternaldecimal_Decimal h_1corestrconvinternaldecimal_halved(h_1co
     t47 = h2_read; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 160, 16); h2_read = t49; goto bb1; bb14:
 #line 159
     t42 = h5_f0; t43 = t42.as.err;
-#line 3975 "main.c"
+#line 3963 "main.c"
     hero_panic_must_at(t43, "<core>/strconv/internal/decimal.hero", "decimal.halved", 159, 22);
     hero_unreachable();
 bb15:
@@ -3985,7 +3973,7 @@ bb15:
     t79 = h3_n; t80 = h7_mask; t81 = t79 & t80; t82 = INT64_C(10); if (__builtin_mul_overflow(t81, t82, &t83)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 13); t84 = h0_d.f_digits; t85 = h2_read; t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 38) : (void)0), (void)(t84->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t84 + 1))[t85]); t87 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t86}; t147 = h20_own20; h20_own20 = t87; h_0opt_e201354_release(&t147); t148 = h10_f2; h_0opt_e201354_retain(&t87); h10_f2 = t87; h_0opt_e201354_release(&t148); t88 = h10_f2; t89 = t88.tag; t90 = INT64_C(0); t91 = t89 == t90; if (t91) goto bb20; else goto bb21; bb19:
 #line 169
     t74 = h9_f1; t75 = t74.as.err;
-#line 3989 "main.c"
+#line 3977 "main.c"
     hero_panic_must_at(t75, "<core>/strconv/internal/decimal.hero", "decimal.halved", 169, 30);
     hero_unreachable();
 bb20:
@@ -3994,7 +3982,7 @@ bb20:
     t97 = h2_read; t98 = INT64_C(1); if (__builtin_add_overflow(t97, t98, &t99)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.halved", 171, 16); h2_read = t99; goto bb15; bb21:
 #line 170
     t92 = h10_f2; t93 = t92.as.err;
-#line 3998 "main.c"
+#line 3986 "main.c"
     hero_panic_must_at(t93, "<core>/strconv/internal/decimal.hero", "decimal.halved", 170, 31);
     hero_unreachable();
 bb22:
@@ -4010,7 +3998,7 @@ bb22:
     t121 = h8_digits; t122 = ((void)(t121 == NULL ? ((void)hero_array_len(t121), hero_unreachable()) : (void)0), t121->len); t123 = h_1corestrconvinternaldecimal_CAPACITY(); t124 = t122 < t123; if (t124) goto bb28; else goto bb29; bb26:
 #line 176
     t112 = h12_f3; t113 = t112.as.err;
-#line 4014 "main.c"
+#line 4002 "main.c"
     hero_panic_must_at(t113, "<core>/strconv/internal/decimal.hero", "decimal.halved", 176, 17);
     hero_unreachable();
 bb27:
@@ -4020,7 +4008,7 @@ bb28:
     t126 = h13_digit; hero_array_push_owned(&h8_digits, &t126); goto bb27; bb29:
     t128 = h13_digit; t129 = UINT64_C(0); t130 = t128 != t129; if (t130) goto bb30; else goto bb31; bb30:
     t131 = true; h11_truncated = t131; goto bb27; bb31: goto bb27; bb32:
-#line 4024 "main.c"
+#line 4012 "main.c"
     t137 = h14_ret0;
     h_1corestrconvinternaldecimal_0Decimal_retain(&t137);
     hero_array_release_at(&h4_nothing);
@@ -4059,7 +4047,7 @@ bool h_1corestrconvinternaldecimal_rounds_up(h_1corestrconvinternaldecimal_Decim
 #line 194
     t23 = true; h5_ret0 = t23; goto bb16; bb13: goto bb11; bb14:
     t27 = h0_d.f_digits; t28 = h1_at; t29 = INT64_C(1); if (__builtin_sub_overflow(t28, t29, &t30)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 195, 35); t31 = ((void)((t27 == NULL || t30 < 0 || t30 >= t27->len) ? hero_panic_index_at(t27, t30, "<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 195, 26) : (void)0), (void)(t27->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t27 + 1))[t30]); t32 = UINT64_C(2); if (t32 == 0) hero_panic_at("division by zero", "<core>/strconv/internal/decimal.hero", "decimal.rounds_up", 195, 26); t33 = t31 % t32; t34 = UINT64_C(1); t35 = t33 == t34; h4_b2 = t35; goto bb15; bb15: t36 = h4_b2; h5_ret0 = t36; goto bb16; bb16:
-#line 4063 "main.c"
+#line 4051 "main.c"
     t42 = h5_ret0;
     return t42;
 }
@@ -4077,7 +4065,7 @@ int64_t h_1corestrconvinternaldecimal_rounded(h_1corestrconvinternaldecimal_Deci
     t27 = h2_i; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 206, 13); h2_i = t29; goto bb1; bb7:
 #line 205
     t22 = h4_f0; t23 = t22.as.err;
-#line 4081 "main.c"
+#line 4069 "main.c"
     hero_panic_must_at(t23, "<core>/strconv/internal/decimal.hero", "decimal.rounded", 205, 22);
     hero_unreachable();
 bb8:
@@ -4091,7 +4079,7 @@ bb8:
     t45 = h1_n; h5_ret0 = t45; goto bb14; bb12:
 #line 213
     t42 = h1_n; t43 = INT64_C(1); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.rounded", 213, 16); h5_ret0 = t44; goto bb14; bb13: goto bb11; bb14:
-#line 4095 "main.c"
+#line 4083 "main.c"
     t46 = h5_ret0;
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
@@ -4109,7 +4097,7 @@ int64_t h_1corestrconvinternaldecimal_step_for(int64_t h0_n) { HERO_NODEBUG int6
     t12 = h_1corestrconvinternaldecimal_WIDEST(); h1_ret0 = t12; goto bb7; bb5:
 #line 222
     t11 = INT64_C(27); h1_ret0 = t11; goto bb7; bb6: goto bb4; bb7:
-#line 4113 "main.c"
+#line 4101 "main.c"
     t13 = h1_ret0;
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
@@ -4172,7 +4160,7 @@ h_0opt_db92a83 h_1corestrconvinternaldecimal_rounded_to_float(h_1corestrconvinte
     t98 = HERO_STR_LIT(hero_str_37842519);
 #line 270
     hero_str_incref(t97); hero_str_incref(t98); t99 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t97, .msg = t98}}; t121 = h19_own19; h19_own19 = t99; h_0opt_db92a83_release(&t121); h9_ret0 = t99; goto bb32; bb31: goto bb29; bb32:
-#line 4176 "main.c"
+#line 4164 "main.c"
     t107 = h9_ret0;
     h_0opt_db92a83_retain(&t107);
     h_1corestrconvinternaldecimal_0Decimal_release(hero_slot_escape(&h1_x));
@@ -4203,7 +4191,7 @@ double h_1corestrconvinternaldecimal_scaled(double h0_x, int64_t h1_k) { double 
     t18 = h3_i; t19 = INT64_C(1); if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.scaled", 289, 13); h3_i = t20; goto bb4; bb6:
 #line 291
     t21 = h2_out; return t21;
-#line 4207 "main.c"
+#line 4195 "main.c"
 }
 
 #line 296 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/decimal.hero"
@@ -4216,7 +4204,7 @@ HeroStr h_1corestrconvinternaldecimal_shown(h_1corestrconvinternaldecimal_Decima
     t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("<core>/strconv/internal/decimal.hero", "decimal.shown", 299, 9); h3_i0 = t17; goto bb1; bb4:
 #line 302
     t18 = h1_out; t19 = HERO_STR_LIT(hero_str_0); t20 = hero_str_join(t18, t19); t30 = h7_own7; h7_own7 = t20; hero_str_decref(t30); t21 = HERO_STR_LIT(hero_str_10c5); t22 = hero_str_concat(t20, t21); t31 = h8_own8; h8_own8 = t22; hero_str_decref(t31); t23 = h0_d.f_point; t24 = hero_int_to_str(t23); t32 = h9_own9; h9_own9 = t24; hero_str_decref(t32); t25 = hero_str_concat(t22, t24); t33 = h10_own10; h10_own10 = t25; hero_str_decref(t33);
-#line 4220 "main.c"
+#line 4208 "main.c"
     hero_str_incref(t25);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -4232,73 +4220,73 @@ HeroStr h_1corestrconvinternaldecimal_shown(h_1corestrconvinternaldecimal_Decima
 #line 23 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_LEAST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-342); return t1;
-#line 4236 "main.c"
+#line 4224 "main.c"
 }
 
 #line 27 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_MOST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(308); return t1;
-#line 4242 "main.c"
+#line 4230 "main.c"
 }
 
 #line 32 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_DIGITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(19); return t1;
-#line 4248 "main.c"
+#line 4236 "main.c"
 }
 
 #line 36 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 uint64_t h_1corestrconvinternalpowers_NINES(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(9999999999999999999); return t1;
-#line 4254 "main.c"
+#line 4242 "main.c"
 }
 
 #line 40 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_SIGNIFICAND_BITS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(53); return t1;
-#line 4260 "main.c"
+#line 4248 "main.c"
 }
 
 #line 45 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_SUBNORMAL_EXPONENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-1074); return t1;
-#line 4266 "main.c"
+#line 4254 "main.c"
 }
 
 #line 51 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_PAST_EXPONENT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(972); return t1;
-#line 4272 "main.c"
+#line 4260 "main.c"
 }
 
 #line 57 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_LOG_TIMES(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(108853); return t1;
-#line 4278 "main.c"
+#line 4266 "main.c"
 }
 
 #line 61 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 int64_t h_1corestrconvinternalpowers_LOG_SHIFT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(15); return t1;
-#line 4284 "main.c"
+#line 4272 "main.c"
 }
 
 #line 66 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 uint64_t h_1corestrconvinternalpowers_HALF(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(4294967296); return t1;
-#line 4290 "main.c"
+#line 4278 "main.c"
 }
 
 #line 70 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 uint64_t h_1corestrconvinternalpowers_ALL_ONES(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(18446744073709551615); return t1;
-#line 4296 "main.c"
+#line 4284 "main.c"
 }
 
 #if HERO_STATIC_CONSTANTS
 #line 74 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalpowers_TWO_TO_65, uint64_t, &hero_desc_u64, 64, UINT64_C(1), UINT64_C(2), UINT64_C(4), UINT64_C(8), UINT64_C(16), UINT64_C(32), UINT64_C(64), UINT64_C(128), UINT64_C(256), UINT64_C(512), UINT64_C(1024), UINT64_C(2048), UINT64_C(4096), UINT64_C(8192), UINT64_C(16384), UINT64_C(32768), UINT64_C(65536), UINT64_C(131072), UINT64_C(262144), UINT64_C(524288), UINT64_C(1048576), UINT64_C(2097152), UINT64_C(4194304), UINT64_C(8388608), UINT64_C(16777216), UINT64_C(33554432), UINT64_C(67108864), UINT64_C(134217728), UINT64_C(268435456), UINT64_C(536870912), UINT64_C(1073741824), UINT64_C(2147483648), UINT64_C(4294967296), UINT64_C(8589934592), UINT64_C(17179869184), UINT64_C(34359738368), UINT64_C(68719476736), UINT64_C(137438953472), UINT64_C(274877906944), UINT64_C(549755813888), UINT64_C(1099511627776), UINT64_C(2199023255552), UINT64_C(4398046511104), UINT64_C(8796093022208), UINT64_C(17592186044416), UINT64_C(35184372088832), UINT64_C(70368744177664), UINT64_C(140737488355328), UINT64_C(281474976710656), UINT64_C(562949953421312), UINT64_C(1125899906842624), UINT64_C(2251799813685248), UINT64_C(4503599627370496), UINT64_C(9007199254740992), UINT64_C(18014398509481984), UINT64_C(36028797018963968), UINT64_C(72057594037927936), UINT64_C(144115188075855872), UINT64_C(288230376151711744), UINT64_C(576460752303423488), UINT64_C(1152921504606846976), UINT64_C(2305843009213693952), UINT64_C(4611686018427387904), UINT64_C(9223372036854775808)); HeroArrayHeader * h_1corestrconvinternalpowers_TWO_TO(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalpowers_TWO_TO_65);
-#line 4302 "main.c"
+#line 4290 "main.c"
 }
 #else
 
@@ -4371,7 +4359,7 @@ HeroArrayHeader * h_1corestrconvinternalpowers_TWO_TO(void) { HERO_NODEBUG HeroA
     t64 = UINT64_C(9223372036854775808);
 #line 75
     t65 = hero_array_new(&hero_desc_u64, 64); hero_array_push_owned(&t65, &t1); hero_array_push_owned(&t65, &t2); hero_array_push_owned(&t65, &t3); hero_array_push_owned(&t65, &t4); hero_array_push_owned(&t65, &t5); hero_array_push_owned(&t65, &t6); hero_array_push_owned(&t65, &t7); hero_array_push_owned(&t65, &t8); hero_array_push_owned(&t65, &t9); hero_array_push_owned(&t65, &t10); hero_array_push_owned(&t65, &t11); hero_array_push_owned(&t65, &t12); hero_array_push_owned(&t65, &t13); hero_array_push_owned(&t65, &t14); hero_array_push_owned(&t65, &t15); hero_array_push_owned(&t65, &t16); hero_array_push_owned(&t65, &t17); hero_array_push_owned(&t65, &t18); hero_array_push_owned(&t65, &t19); hero_array_push_owned(&t65, &t20); hero_array_push_owned(&t65, &t21); hero_array_push_owned(&t65, &t22); hero_array_push_owned(&t65, &t23); hero_array_push_owned(&t65, &t24); hero_array_push_owned(&t65, &t25); hero_array_push_owned(&t65, &t26); hero_array_push_owned(&t65, &t27); hero_array_push_owned(&t65, &t28); hero_array_push_owned(&t65, &t29); hero_array_push_owned(&t65, &t30); hero_array_push_owned(&t65, &t31); hero_array_push_owned(&t65, &t32); hero_array_push_owned(&t65, &t33); hero_array_push_owned(&t65, &t34); hero_array_push_owned(&t65, &t35); hero_array_push_owned(&t65, &t36); hero_array_push_owned(&t65, &t37); hero_array_push_owned(&t65, &t38); hero_array_push_owned(&t65, &t39); hero_array_push_owned(&t65, &t40); hero_array_push_owned(&t65, &t41); hero_array_push_owned(&t65, &t42); hero_array_push_owned(&t65, &t43); hero_array_push_owned(&t65, &t44); hero_array_push_owned(&t65, &t45); hero_array_push_owned(&t65, &t46); hero_array_push_owned(&t65, &t47); hero_array_push_owned(&t65, &t48); hero_array_push_owned(&t65, &t49); hero_array_push_owned(&t65, &t50); hero_array_push_owned(&t65, &t51); hero_array_push_owned(&t65, &t52); hero_array_push_owned(&t65, &t53); hero_array_push_owned(&t65, &t54); hero_array_push_owned(&t65, &t55); hero_array_push_owned(&t65, &t56); hero_array_push_owned(&t65, &t57); hero_array_push_owned(&t65, &t58); hero_array_push_owned(&t65, &t59); hero_array_push_owned(&t65, &t60); hero_array_push_owned(&t65, &t61); hero_array_push_owned(&t65, &t62); hero_array_push_owned(&t65, &t63); hero_array_push_owned(&t65, &t64); t66 = h0_own0; h0_own0 = t65; hero_array_decref(t66);
-#line 4375 "main.c"
+#line 4363 "main.c"
     hero_array_incref(t65);
     hero_array_release_at(&h0_own0);
     return t65;
@@ -4381,7 +4369,7 @@ HeroArrayHeader * h_1corestrconvinternalpowers_TWO_TO(void) { HERO_NODEBUG HeroA
 #if HERO_STATIC_CONSTANTS
 #line 143 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalpowers_HIGH_652, uint64_t, &hero_desc_u64, 651, UINT64_C(17218479456385750619), UINT64_C(10761549660241094137), UINT64_C(13451937075301367671), UINT64_C(16814921344126709588), UINT64_C(10509325840079193493), UINT64_C(13136657300098991866), UINT64_C(16420821625123739832), UINT64_C(10263013515702337395), UINT64_C(12828766894627921744), UINT64_C(16035958618284902180), UINT64_C(10022474136428063863), UINT64_C(12528092670535079828), UINT64_C(15660115838168849785), UINT64_C(9787572398855531116), UINT64_C(12234465498569413895), UINT64_C(15293081873211767369), UINT64_C(9558176170757354606), UINT64_C(11947720213446693257), UINT64_C(14934650266808366571), UINT64_C(9334156416755229107), UINT64_C(11667695520944036384), UINT64_C(14584619401180045479), UINT64_C(18230774251475056849), UINT64_C(11394233907171910531), UINT64_C(14242792383964888163), UINT64_C(17803490479956110204), UINT64_C(11127181549972568878), UINT64_C(13908976937465711097), UINT64_C(17386221171832138871), UINT64_C(10866388232395086795), UINT64_C(13582985290493858493), UINT64_C(16978731613117323116), UINT64_C(10611707258198326948), UINT64_C(13264634072747908685), UINT64_C(16580792590934885856), UINT64_C(10362995369334303660), UINT64_C(12953744211667879575), UINT64_C(16192180264584849469), UINT64_C(10120112665365530918), UINT64_C(12650140831706913648), UINT64_C(15812676039633642059), UINT64_C(9882922524771026287), UINT64_C(12353653155963782859), UINT64_C(15442066444954728574), UINT64_C(9651291528096705359), UINT64_C(12064114410120881698), UINT64_C(15080143012651102123), UINT64_C(9425089382906938827), UINT64_C(11781361728633673533), UINT64_C(14726702160792091917), UINT64_C(18408377700990114896), UINT64_C(11505236063118821810), UINT64_C(14381545078898527262), UINT64_C(17976931348623159078), UINT64_C(11235582092889474424), UINT64_C(14044477616111843030), UINT64_C(17555597020139803787), UINT64_C(10972248137587377367), UINT64_C(13715310171984221709), UINT64_C(17144137714980277136), UINT64_C(10715086071862673210), UINT64_C(13393857589828341512), UINT64_C(16742321987285426890), UINT64_C(10463951242053391807), UINT64_C(13079939052566739758), UINT64_C(16349923815708424698), UINT64_C(10218702384817765436), UINT64_C(12773377981022206795), UINT64_C(15966722476277758494), UINT64_C(9979201547673599059), UINT64_C(12474001934591998823), UINT64_C(15592502418239998529), UINT64_C(9745314011399999081), UINT64_C(12181642514249998851), UINT64_C(15227053142812498564), UINT64_C(9516908214257811602), UINT64_C(11896135267822264503), UINT64_C(14870169084777830628), UINT64_C(9293855677986144143), UINT64_C(11617319597482680179), UINT64_C(14521649496853350223), UINT64_C(18152061871066687779), UINT64_C(11345038669416679862), UINT64_C(14181298336770849827), UINT64_C(17726622920963562284), UINT64_C(11079139325602226428), UINT64_C(13848924157002783034), UINT64_C(17311155196253478793), UINT64_C(10819471997658424246), UINT64_C(13524339997073030307), UINT64_C(16905424996341287884), UINT64_C(10565890622713304928), UINT64_C(13207363278391631159), UINT64_C(16509204097989538949), UINT64_C(10318252561243461843), UINT64_C(12897815701554327304), UINT64_C(16122269626942909130), UINT64_C(10076418516839318206), UINT64_C(12595523146049147758), UINT64_C(15744403932561434697), UINT64_C(9840252457850896686), UINT64_C(12300315572313620857), UINT64_C(15375394465392026071), UINT64_C(9609621540870016295), UINT64_C(12012026926087520368), UINT64_C(15015033657609400460), UINT64_C(9384396036005875288), UINT64_C(11730495045007344110), UINT64_C(14663118806259180137), UINT64_C(18328898507823975171), UINT64_C(11455561567389984482), UINT64_C(14319451959237480603), UINT64_C(17899314949046850753), UINT64_C(11187071843154281721), UINT64_C(13983839803942852151), UINT64_C(17479799754928565189), UINT64_C(10924874846830353243), UINT64_C(13656093558537941554), UINT64_C(17070116948172426942), UINT64_C(10668823092607766839), UINT64_C(13336028865759708549), UINT64_C(16670036082199635686), UINT64_C(10418772551374772304), UINT64_C(13023465689218465380), UINT64_C(16279332111523081724), UINT64_C(10174582569701926078), UINT64_C(12718228212127407597), UINT64_C(15897785265159259496), UINT64_C(9936115790724537185), UINT64_C(12420144738405671482), UINT64_C(15525180923007089352), UINT64_C(9703238076879430845), UINT64_C(12129047596099288556), UINT64_C(15161309495124110695), UINT64_C(9475818434452569185), UINT64_C(11844773043065711481), UINT64_C(14805966303832139351), UINT64_C(9253728939895087095), UINT64_C(11567161174868858868), UINT64_C(14458951468586073585), UINT64_C(18073689335732591981), UINT64_C(11296055834832869988), UINT64_C(14120069793541087485), UINT64_C(17650087241926359356), UINT64_C(11031304526203974598), UINT64_C(13789130657754968247), UINT64_C(17236413322193710309), UINT64_C(10772758326371068943), UINT64_C(13465947907963836179), UINT64_C(16832434884954795224), UINT64_C(10520271803096747015), UINT64_C(13150339753870933769), UINT64_C(16437924692338667211), UINT64_C(10273702932711667007), UINT64_C(12842128665889583758), UINT64_C(16052660832361979698), UINT64_C(10032913020226237311), UINT64_C(12541141275282796639), UINT64_C(15676426594103495799), UINT64_C(9797766621314684874), UINT64_C(12247208276643356093), UINT64_C(15309010345804195116), UINT64_C(9568131466127621948), UINT64_C(11960164332659527434), UINT64_C(14950205415824409293), UINT64_C(9343878384890255808), UINT64_C(11679847981112819760), UINT64_C(14599809976391024700), UINT64_C(18249762470488780875), UINT64_C(11406101544055488047), UINT64_C(14257626930069360059), UINT64_C(17822033662586700073), UINT64_C(11138771039116687546), UINT64_C(13923463798895859432), UINT64_C(17404329748619824290), UINT64_C(10877706092887390182), UINT64_C(13597132616109237727), UINT64_C(16996415770136547159), UINT64_C(10622759856335341974), UINT64_C(13278449820419177468), UINT64_C(16598062275523971835), UINT64_C(10373788922202482397), UINT64_C(12967236152753102996), UINT64_C(16209045190941378745), UINT64_C(10130653244338361716), UINT64_C(12663316555422952144), UINT64_C(15829145694278690180), UINT64_C(9893216058924181363), UINT64_C(12366520073655226704), UINT64_C(15458150092069033379), UINT64_C(9661343807543145862), UINT64_C(12076679759428932328), UINT64_C(15095849699286165409), UINT64_C(9434906062053853381), UINT64_C(11793632577567316726), UINT64_C(14742040721959145908), UINT64_C(18427550902448932384), UINT64_C(11517219314030582740), UINT64_C(14396524142538228425), UINT64_C(17995655178172785532), UINT64_C(11247284486357990958), UINT64_C(14059105607947488697), UINT64_C(17573882009934360871), UINT64_C(10983676256208975544), UINT64_C(13729595320261219430), UINT64_C(17161994150326524288), UINT64_C(10726246343954077680), UINT64_C(13407807929942597100), UINT64_C(16759759912428246375), UINT64_C(10474849945267653985), UINT64_C(13093562431584567481), UINT64_C(16366953039480709351), UINT64_C(10229345649675443344), UINT64_C(12786682062094304180), UINT64_C(15983352577617880225), UINT64_C(9989595361011175141), UINT64_C(12486994201263968926), UINT64_C(15608742751579961157), UINT64_C(9755464219737475724), UINT64_C(12194330274671844654), UINT64_C(15242912843339805818), UINT64_C(9526820527087378636), UINT64_C(11908525658859223295), UINT64_C(14885657073574029119), UINT64_C(9303535670983768200), UINT64_C(11629419588729710249), UINT64_C(14536774485912137811), UINT64_C(18170968107390172264), UINT64_C(11356855067118857665), UINT64_C(14196068833898572082), UINT64_C(17745086042373215102), UINT64_C(11090678776483259439), UINT64_C(13863348470604074298), UINT64_C(17329185588255092873), UINT64_C(10830740992659433046), UINT64_C(13538426240824291307), UINT64_C(16923032801030364134), UINT64_C(10576895500643977584), UINT64_C(13221119375804971980), UINT64_C(16526399219756214974), UINT64_C(10328999512347634359), UINT64_C(12911249390434542949), UINT64_C(16139061738043178686), UINT64_C(10086913586276986679), UINT64_C(12608641982846233348), UINT64_C(15760802478557791685), UINT64_C(9850501549098619804), UINT64_C(12313126936373274754), UINT64_C(15391408670466593443), UINT64_C(9619630419041620902), UINT64_C(12024538023802026127), UINT64_C(15030672529752532659), UINT64_C(9394170331095332912), UINT64_C(11742712913869166140), UINT64_C(14678391142336457675), UINT64_C(18347988927920572093), UINT64_C(11467493079950357559), UINT64_C(14334366349937946948), UINT64_C(17917957937422433685), UINT64_C(11198723710889021053), UINT64_C(13998404638611276316), UINT64_C(17498005798264095395), UINT64_C(10936253623915059622), UINT64_C(13670317029893824528), UINT64_C(17087896287367280660), UINT64_C(10679935179604550412), UINT64_C(13349918974505688015), UINT64_C(16687398718132110019), UINT64_C(10429624198832568762), UINT64_C(13037030248540710953), UINT64_C(16296287810675888691), UINT64_C(10185179881672430432), UINT64_C(12731474852090538040), UINT64_C(15914343565113172549), UINT64_C(9946464728195732844), UINT64_C(12433080910244666054), UINT64_C(15541351137805832568), UINT64_C(9713344461128645355), UINT64_C(12141680576410806694), UINT64_C(15177100720513508367), UINT64_C(9485687950320942730), UINT64_C(11857109937901178412), UINT64_C(14821387422376473015), UINT64_C(9263367138985295634), UINT64_C(11579208923731619543), UINT64_C(14474011154664524428), UINT64_C(18092513943330655535), UINT64_C(11307821214581659710), UINT64_C(14134776518227074637), UINT64_C(17668470647783843296), UINT64_C(11042794154864902060), UINT64_C(13803492693581127575), UINT64_C(17254365866976409469), UINT64_C(10783978666860255918), UINT64_C(13479973333575319898), UINT64_C(16849966666969149872), UINT64_C(10531229166855718670), UINT64_C(13164036458569648338), UINT64_C(16455045573212060422), UINT64_C(10284403483257537764), UINT64_C(12855504354071922205), UINT64_C(16069380442589902756), UINT64_C(10043362776618689223), UINT64_C(12554203470773361528), UINT64_C(15692754338466701910), UINT64_C(9807971461541688694), UINT64_C(12259964326927110867), UINT64_C(15324955408658888584), UINT64_C(9578097130411805365), UINT64_C(11972621413014756706), UINT64_C(14965776766268445883), UINT64_C(9353610478917778677), UINT64_C(11692013098647223346), UINT64_C(14615016373309029183), UINT64_C(18268770466636286478), UINT64_C(11417981541647679049), UINT64_C(14272476927059598811), UINT64_C(17840596158824498514), UINT64_C(11150372599265311571), UINT64_C(13937965749081639464), UINT64_C(17422457186352049330), UINT64_C(10889035741470030831), UINT64_C(13611294676837538539), UINT64_C(17014118346046923174), UINT64_C(10633823966279326984), UINT64_C(13292279957849158730), UINT64_C(16615349947311448412), UINT64_C(10384593717069655258), UINT64_C(12980742146337069072), UINT64_C(16225927682921336340), UINT64_C(10141204801825835212), UINT64_C(12676506002282294015), UINT64_C(15845632502852867519), UINT64_C(9903520314283042200), UINT64_C(12379400392853802749), UINT64_C(15474250491067253437), UINT64_C(9671406556917033398), UINT64_C(12089258196146291748), UINT64_C(15111572745182864684), UINT64_C(9444732965739290428), UINT64_C(11805916207174113035), UINT64_C(14757395258967641293), UINT64_C(9223372036854775808), UINT64_C(11529215046068469760), UINT64_C(14411518807585587200), UINT64_C(18014398509481984000), UINT64_C(11258999068426240000), UINT64_C(14073748835532800000), UINT64_C(17592186044416000000), UINT64_C(10995116277760000000), UINT64_C(13743895347200000000), UINT64_C(17179869184000000000), UINT64_C(10737418240000000000), UINT64_C(13421772800000000000), UINT64_C(16777216000000000000), UINT64_C(10485760000000000000), UINT64_C(13107200000000000000), UINT64_C(16384000000000000000), UINT64_C(10240000000000000000), UINT64_C(12800000000000000000), UINT64_C(16000000000000000000), UINT64_C(10000000000000000000), UINT64_C(12500000000000000000), UINT64_C(15625000000000000000), UINT64_C(9765625000000000000), UINT64_C(12207031250000000000), UINT64_C(15258789062500000000), UINT64_C(9536743164062500000), UINT64_C(11920928955078125000), UINT64_C(14901161193847656250), UINT64_C(9313225746154785157), UINT64_C(11641532182693481446), UINT64_C(14551915228366851807), UINT64_C(18189894035458564759), UINT64_C(11368683772161602974), UINT64_C(14210854715202003718), UINT64_C(17763568394002504647), UINT64_C(11102230246251565405), UINT64_C(13877787807814456756), UINT64_C(17347234759768070945), UINT64_C(10842021724855044341), UINT64_C(13552527156068805426), UINT64_C(16940658945086006782), UINT64_C(10587911840678754239), UINT64_C(13234889800848442798), UINT64_C(16543612251060553498), UINT64_C(10339757656912845936), UINT64_C(12924697071141057420), UINT64_C(16155871338926321775), UINT64_C(10097419586828951110), UINT64_C(12621774483536188887), UINT64_C(15777218104420236109), UINT64_C(9860761315262647568), UINT64_C(12325951644078309460), UINT64_C(15407439555097886825), UINT64_C(9629649721936179266), UINT64_C(12037062152420224082), UINT64_C(15046327690525280102), UINT64_C(9403954806578300064), UINT64_C(11754943508222875080), UINT64_C(14693679385278593850), UINT64_C(18367099231598242313), UINT64_C(11479437019748901446), UINT64_C(14349296274686126807), UINT64_C(17936620343357658508), UINT64_C(11210387714598536568), UINT64_C(14012984643248170710), UINT64_C(17516230804060213387), UINT64_C(10947644252537633367), UINT64_C(13684555315672041709), UINT64_C(17105694144590052136), UINT64_C(10691058840368782585), UINT64_C(13363823550460978231), UINT64_C(16704779438076222789), UINT64_C(10440487148797639243), UINT64_C(13050608935997049054), UINT64_C(16313261169996311317), UINT64_C(10195788231247694573), UINT64_C(12744735289059618217), UINT64_C(15930919111324522771), UINT64_C(9956824444577826732), UINT64_C(12446030555722283415), UINT64_C(15557538194652854268), UINT64_C(9723461371658033918), UINT64_C(12154326714572542397), UINT64_C(15192908393215677996), UINT64_C(9495567745759798748), UINT64_C(11869459682199748435), UINT64_C(14836824602749685543), UINT64_C(9273015376718553465), UINT64_C(11591269220898191831), UINT64_C(14489086526122739789), UINT64_C(18111358157653424736), UINT64_C(11319598848533390460), UINT64_C(14149498560666738075), UINT64_C(17686873200833422593), UINT64_C(11054295750520889121), UINT64_C(13817869688151111401), UINT64_C(17272337110188889251), UINT64_C(10795210693868055782), UINT64_C(13494013367335069728), UINT64_C(16867516709168837159), UINT64_C(10542197943230523225), UINT64_C(13177747429038154031), UINT64_C(16472184286297692539), UINT64_C(10295115178936057837), UINT64_C(12868893973670072296), UINT64_C(16086117467087590370), UINT64_C(10053823416929743981), UINT64_C(12567279271162179976), UINT64_C(15709099088952724970), UINT64_C(9818186930595453107), UINT64_C(12272733663244316383), UINT64_C(15340917079055395479), UINT64_C(9588073174409622175), UINT64_C(11985091468012027718), UINT64_C(14981364335015034647), UINT64_C(9363352709384396655), UINT64_C(11704190886730495818), UINT64_C(14630238608413119773), UINT64_C(18287798260516399716), UINT64_C(11429873912822749823), UINT64_C(14287342391028437278), UINT64_C(17859177988785546598), UINT64_C(11161986242990966624), UINT64_C(13952482803738708280), UINT64_C(17440603504673385349), UINT64_C(10900377190420865843), UINT64_C(13625471488026082304), UINT64_C(17031839360032602880), UINT64_C(10644899600020376800), UINT64_C(13306124500025471000), UINT64_C(16632655625031838750), UINT64_C(10395409765644899219), UINT64_C(12994262207056124024), UINT64_C(16242827758820155029), UINT64_C(10151767349262596894), UINT64_C(12689709186578246117), UINT64_C(15862136483222807646), UINT64_C(9913835302014254779), UINT64_C(12392294127517818474), UINT64_C(15490367659397273092), UINT64_C(9681479787123295683), UINT64_C(12101849733904119603), UINT64_C(15127312167380149504), UINT64_C(9454570104612593440), UINT64_C(11818212630765741800), UINT64_C(14772765788457177250), UINT64_C(9232978617785735781), UINT64_C(11541223272232169726), UINT64_C(14426529090290212158), UINT64_C(18033161362862765197), UINT64_C(11270725851789228248), UINT64_C(14088407314736535310), UINT64_C(17610509143420669138), UINT64_C(11006568214637918211), UINT64_C(13758210268297397764), UINT64_C(17197762835371747205), UINT64_C(10748601772107342003), UINT64_C(13435752215134177504), UINT64_C(16794690268917721880), UINT64_C(10496681418073576175), UINT64_C(13120851772591970219), UINT64_C(16401064715739962773), UINT64_C(10250665447337476734), UINT64_C(12813331809171845917), UINT64_C(16016664761464807396), UINT64_C(10010415475915504623), UINT64_C(12513019344894380778), UINT64_C(15641274181117975973), UINT64_C(9775796363198734983), UINT64_C(12219745453998418729), UINT64_C(15274681817498023411), UINT64_C(9546676135936264632), UINT64_C(11933345169920330790), UINT64_C(14916681462400413487), UINT64_C(9322925914000258430), UINT64_C(11653657392500323037), UINT64_C(14567071740625403796), UINT64_C(18208839675781754745), UINT64_C(11380524797363596716), UINT64_C(14225655996704495895), UINT64_C(17782069995880619868), UINT64_C(11113793747425387418), UINT64_C(13892242184281734272), UINT64_C(17365302730352167840), UINT64_C(10853314206470104900), UINT64_C(13566642758087631125), UINT64_C(16958303447609538906), UINT64_C(10598939654755961817), UINT64_C(13248674568444952271), UINT64_C(16560843210556190338), UINT64_C(10350527006597618961), UINT64_C(12938158758247023702), UINT64_C(16172698447808779627), UINT64_C(10107936529880487267), UINT64_C(12634920662350609084), UINT64_C(15793650827938261355), UINT64_C(9871031767461413347), UINT64_C(12338789709326766683), UINT64_C(15423487136658458354), UINT64_C(9639679460411536471), UINT64_C(12049599325514420589), UINT64_C(15061999156893025736), UINT64_C(9413749473058141085), UINT64_C(11767186841322676357), UINT64_C(14708983551653345446), UINT64_C(18386229439566681807), UINT64_C(11491393399729176130), UINT64_C(14364241749661470162), UINT64_C(17955302187076837702), UINT64_C(11222063866923023564), UINT64_C(14027579833653779455), UINT64_C(17534474792067224319), UINT64_C(10959046745042015199), UINT64_C(13698808431302518999), UINT64_C(17123510539128148749), UINT64_C(10702194086955092968), UINT64_C(13377742608693866210), UINT64_C(16722178260867332762), UINT64_C(10451361413042082977), UINT64_C(13064201766302603721), UINT64_C(16330252207878254651), UINT64_C(10206407629923909157), UINT64_C(12758009537404886446), UINT64_C(15947511921756108057), UINT64_C(9967194951097567536), UINT64_C(12458993688871959420), UINT64_C(15573742111089949275), UINT64_C(9733588819431218297), UINT64_C(12166986024289022871), UINT64_C(15208732530361278589), UINT64_C(9505457831475799118), UINT64_C(11881822289344748897), UINT64_C(14852277861680936122), UINT64_C(9282673663550585076), UINT64_C(11603342079438231345), UINT64_C(14504177599297789181), UINT64_C(18130221999122236477), UINT64_C(11331388749451397798), UINT64_C(14164235936814247247), UINT64_C(17705294921017809059), UINT64_C(11065809325636130662), UINT64_C(13832261657045163328), UINT64_C(17290327071306454159), UINT64_C(10806454419566533850), UINT64_C(13508068024458167312), UINT64_C(16885085030572709140), UINT64_C(10553178144107943213), UINT64_C(13191472680134929016), UINT64_C(16489340850168661270), UINT64_C(10305838031355413294), UINT64_C(12882297539194266617), UINT64_C(16102871923992833271), UINT64_C(10064294952495520795), UINT64_C(12580368690619400993), UINT64_C(15725460863274251241), UINT64_C(9828413039546407026), UINT64_C(12285516299433008782), UINT64_C(15356895374291260978), UINT64_C(9598059608932038111), UINT64_C(11997574511165047639), UINT64_C(14996968138956309549), UINT64_C(9373105086847693468), UINT64_C(11716381358559616835), UINT64_C(14645476698199521044), UINT64_C(18306845872749401304), UINT64_C(11441778670468375815), UINT64_C(14302223338085469769), UINT64_C(17877779172606837211), UINT64_C(11173611982879273257), UINT64_C(13967014978599091571), UINT64_C(17458768723248864464), UINT64_C(10911730452030540290), UINT64_C(13639663065038175363), UINT64_C(17049578831297719203), UINT64_C(10655986769561074502), UINT64_C(13319983461951343128), UINT64_C(16649979327439178910), UINT64_C(10406237079649486819), UINT64_C(13007796349561858523), UINT64_C(16259745436952323154), UINT64_C(10162340898095201971), UINT64_C(12702926122619002464), UINT64_C(15878657653273753080), UINT64_C(9924161033296095675), UINT64_C(12405201291620119594), UINT64_C(15506501614525149492), UINT64_C(9691563509078218433), UINT64_C(12114454386347773041), UINT64_C(15143067982934716301), UINT64_C(9464417489334197688), UINT64_C(11830521861667747110), UINT64_C(14788152327084683888), UINT64_C(9242595204427927430), UINT64_C(11553244005534909287), UINT64_C(14441555006918636609), UINT64_C(18051943758648295761), UINT64_C(11282464849155184851), UINT64_C(14103081061443981064), UINT64_C(17628851326804976329), UINT64_C(11018032079253110206), UINT64_C(13772540099066387757), UINT64_C(17215675123832984697), UINT64_C(10759796952395615436), UINT64_C(13449746190494519294), UINT64_C(16812182738118149118), UINT64_C(10507614211323843199), UINT64_C(13134517764154803998), UINT64_C(16418147205193504998), UINT64_C(10261342003245940624)); HeroArrayHeader * h_1corestrconvinternalpowers_HIGH(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalpowers_HIGH_652);
-#line 4385 "main.c"
+#line 4373 "main.c"
 }
 #else
 
@@ -5041,7 +5029,7 @@ HeroArrayHeader * h_1corestrconvinternalpowers_HIGH(void) { HERO_NODEBUG HeroArr
     t651 = UINT64_C(10261342003245940624);
 #line 144
     t652 = hero_array_new(&hero_desc_u64, 651); hero_array_push_owned(&t652, &t1); hero_array_push_owned(&t652, &t2); hero_array_push_owned(&t652, &t3); hero_array_push_owned(&t652, &t4); hero_array_push_owned(&t652, &t5); hero_array_push_owned(&t652, &t6); hero_array_push_owned(&t652, &t7); hero_array_push_owned(&t652, &t8); hero_array_push_owned(&t652, &t9); hero_array_push_owned(&t652, &t10); hero_array_push_owned(&t652, &t11); hero_array_push_owned(&t652, &t12); hero_array_push_owned(&t652, &t13); hero_array_push_owned(&t652, &t14); hero_array_push_owned(&t652, &t15); hero_array_push_owned(&t652, &t16); hero_array_push_owned(&t652, &t17); hero_array_push_owned(&t652, &t18); hero_array_push_owned(&t652, &t19); hero_array_push_owned(&t652, &t20); hero_array_push_owned(&t652, &t21); hero_array_push_owned(&t652, &t22); hero_array_push_owned(&t652, &t23); hero_array_push_owned(&t652, &t24); hero_array_push_owned(&t652, &t25); hero_array_push_owned(&t652, &t26); hero_array_push_owned(&t652, &t27); hero_array_push_owned(&t652, &t28); hero_array_push_owned(&t652, &t29); hero_array_push_owned(&t652, &t30); hero_array_push_owned(&t652, &t31); hero_array_push_owned(&t652, &t32); hero_array_push_owned(&t652, &t33); hero_array_push_owned(&t652, &t34); hero_array_push_owned(&t652, &t35); hero_array_push_owned(&t652, &t36); hero_array_push_owned(&t652, &t37); hero_array_push_owned(&t652, &t38); hero_array_push_owned(&t652, &t39); hero_array_push_owned(&t652, &t40); hero_array_push_owned(&t652, &t41); hero_array_push_owned(&t652, &t42); hero_array_push_owned(&t652, &t43); hero_array_push_owned(&t652, &t44); hero_array_push_owned(&t652, &t45); hero_array_push_owned(&t652, &t46); hero_array_push_owned(&t652, &t47); hero_array_push_owned(&t652, &t48); hero_array_push_owned(&t652, &t49); hero_array_push_owned(&t652, &t50); hero_array_push_owned(&t652, &t51); hero_array_push_owned(&t652, &t52); hero_array_push_owned(&t652, &t53); hero_array_push_owned(&t652, &t54); hero_array_push_owned(&t652, &t55); hero_array_push_owned(&t652, &t56); hero_array_push_owned(&t652, &t57); hero_array_push_owned(&t652, &t58); hero_array_push_owned(&t652, &t59); hero_array_push_owned(&t652, &t60); hero_array_push_owned(&t652, &t61); hero_array_push_owned(&t652, &t62); hero_array_push_owned(&t652, &t63); hero_array_push_owned(&t652, &t64); hero_array_push_owned(&t652, &t65); hero_array_push_owned(&t652, &t66); hero_array_push_owned(&t652, &t67); hero_array_push_owned(&t652, &t68); hero_array_push_owned(&t652, &t69); hero_array_push_owned(&t652, &t70); hero_array_push_owned(&t652, &t71); hero_array_push_owned(&t652, &t72); hero_array_push_owned(&t652, &t73); hero_array_push_owned(&t652, &t74); hero_array_push_owned(&t652, &t75); hero_array_push_owned(&t652, &t76); hero_array_push_owned(&t652, &t77); hero_array_push_owned(&t652, &t78); hero_array_push_owned(&t652, &t79); hero_array_push_owned(&t652, &t80); hero_array_push_owned(&t652, &t81); hero_array_push_owned(&t652, &t82); hero_array_push_owned(&t652, &t83); hero_array_push_owned(&t652, &t84); hero_array_push_owned(&t652, &t85); hero_array_push_owned(&t652, &t86); hero_array_push_owned(&t652, &t87); hero_array_push_owned(&t652, &t88); hero_array_push_owned(&t652, &t89); hero_array_push_owned(&t652, &t90); hero_array_push_owned(&t652, &t91); hero_array_push_owned(&t652, &t92); hero_array_push_owned(&t652, &t93); hero_array_push_owned(&t652, &t94); hero_array_push_owned(&t652, &t95); hero_array_push_owned(&t652, &t96); hero_array_push_owned(&t652, &t97); hero_array_push_owned(&t652, &t98); hero_array_push_owned(&t652, &t99); hero_array_push_owned(&t652, &t100); hero_array_push_owned(&t652, &t101); hero_array_push_owned(&t652, &t102); hero_array_push_owned(&t652, &t103); hero_array_push_owned(&t652, &t104); hero_array_push_owned(&t652, &t105); hero_array_push_owned(&t652, &t106); hero_array_push_owned(&t652, &t107); hero_array_push_owned(&t652, &t108); hero_array_push_owned(&t652, &t109); hero_array_push_owned(&t652, &t110); hero_array_push_owned(&t652, &t111); hero_array_push_owned(&t652, &t112); hero_array_push_owned(&t652, &t113); hero_array_push_owned(&t652, &t114); hero_array_push_owned(&t652, &t115); hero_array_push_owned(&t652, &t116); hero_array_push_owned(&t652, &t117); hero_array_push_owned(&t652, &t118); hero_array_push_owned(&t652, &t119); hero_array_push_owned(&t652, &t120); hero_array_push_owned(&t652, &t121); hero_array_push_owned(&t652, &t122); hero_array_push_owned(&t652, &t123); hero_array_push_owned(&t652, &t124); hero_array_push_owned(&t652, &t125); hero_array_push_owned(&t652, &t126); hero_array_push_owned(&t652, &t127); hero_array_push_owned(&t652, &t128); hero_array_push_owned(&t652, &t129); hero_array_push_owned(&t652, &t130); hero_array_push_owned(&t652, &t131); hero_array_push_owned(&t652, &t132); hero_array_push_owned(&t652, &t133); hero_array_push_owned(&t652, &t134); hero_array_push_owned(&t652, &t135); hero_array_push_owned(&t652, &t136); hero_array_push_owned(&t652, &t137); hero_array_push_owned(&t652, &t138); hero_array_push_owned(&t652, &t139); hero_array_push_owned(&t652, &t140); hero_array_push_owned(&t652, &t141); hero_array_push_owned(&t652, &t142); hero_array_push_owned(&t652, &t143); hero_array_push_owned(&t652, &t144); hero_array_push_owned(&t652, &t145); hero_array_push_owned(&t652, &t146); hero_array_push_owned(&t652, &t147); hero_array_push_owned(&t652, &t148); hero_array_push_owned(&t652, &t149); hero_array_push_owned(&t652, &t150); hero_array_push_owned(&t652, &t151); hero_array_push_owned(&t652, &t152); hero_array_push_owned(&t652, &t153); hero_array_push_owned(&t652, &t154); hero_array_push_owned(&t652, &t155); hero_array_push_owned(&t652, &t156); hero_array_push_owned(&t652, &t157); hero_array_push_owned(&t652, &t158); hero_array_push_owned(&t652, &t159); hero_array_push_owned(&t652, &t160); hero_array_push_owned(&t652, &t161); hero_array_push_owned(&t652, &t162); hero_array_push_owned(&t652, &t163); hero_array_push_owned(&t652, &t164); hero_array_push_owned(&t652, &t165); hero_array_push_owned(&t652, &t166); hero_array_push_owned(&t652, &t167); hero_array_push_owned(&t652, &t168); hero_array_push_owned(&t652, &t169); hero_array_push_owned(&t652, &t170); hero_array_push_owned(&t652, &t171); hero_array_push_owned(&t652, &t172); hero_array_push_owned(&t652, &t173); hero_array_push_owned(&t652, &t174); hero_array_push_owned(&t652, &t175); hero_array_push_owned(&t652, &t176); hero_array_push_owned(&t652, &t177); hero_array_push_owned(&t652, &t178); hero_array_push_owned(&t652, &t179); hero_array_push_owned(&t652, &t180); hero_array_push_owned(&t652, &t181); hero_array_push_owned(&t652, &t182); hero_array_push_owned(&t652, &t183); hero_array_push_owned(&t652, &t184); hero_array_push_owned(&t652, &t185); hero_array_push_owned(&t652, &t186); hero_array_push_owned(&t652, &t187); hero_array_push_owned(&t652, &t188); hero_array_push_owned(&t652, &t189); hero_array_push_owned(&t652, &t190); hero_array_push_owned(&t652, &t191); hero_array_push_owned(&t652, &t192); hero_array_push_owned(&t652, &t193); hero_array_push_owned(&t652, &t194); hero_array_push_owned(&t652, &t195); hero_array_push_owned(&t652, &t196); hero_array_push_owned(&t652, &t197); hero_array_push_owned(&t652, &t198); hero_array_push_owned(&t652, &t199); hero_array_push_owned(&t652, &t200); hero_array_push_owned(&t652, &t201); hero_array_push_owned(&t652, &t202); hero_array_push_owned(&t652, &t203); hero_array_push_owned(&t652, &t204); hero_array_push_owned(&t652, &t205); hero_array_push_owned(&t652, &t206); hero_array_push_owned(&t652, &t207); hero_array_push_owned(&t652, &t208); hero_array_push_owned(&t652, &t209); hero_array_push_owned(&t652, &t210); hero_array_push_owned(&t652, &t211); hero_array_push_owned(&t652, &t212); hero_array_push_owned(&t652, &t213); hero_array_push_owned(&t652, &t214); hero_array_push_owned(&t652, &t215); hero_array_push_owned(&t652, &t216); hero_array_push_owned(&t652, &t217); hero_array_push_owned(&t652, &t218); hero_array_push_owned(&t652, &t219); hero_array_push_owned(&t652, &t220); hero_array_push_owned(&t652, &t221); hero_array_push_owned(&t652, &t222); hero_array_push_owned(&t652, &t223); hero_array_push_owned(&t652, &t224); hero_array_push_owned(&t652, &t225); hero_array_push_owned(&t652, &t226); hero_array_push_owned(&t652, &t227); hero_array_push_owned(&t652, &t228); hero_array_push_owned(&t652, &t229); hero_array_push_owned(&t652, &t230); hero_array_push_owned(&t652, &t231); hero_array_push_owned(&t652, &t232); hero_array_push_owned(&t652, &t233); hero_array_push_owned(&t652, &t234); hero_array_push_owned(&t652, &t235); hero_array_push_owned(&t652, &t236); hero_array_push_owned(&t652, &t237); hero_array_push_owned(&t652, &t238); hero_array_push_owned(&t652, &t239); hero_array_push_owned(&t652, &t240); hero_array_push_owned(&t652, &t241); hero_array_push_owned(&t652, &t242); hero_array_push_owned(&t652, &t243); hero_array_push_owned(&t652, &t244); hero_array_push_owned(&t652, &t245); hero_array_push_owned(&t652, &t246); hero_array_push_owned(&t652, &t247); hero_array_push_owned(&t652, &t248); hero_array_push_owned(&t652, &t249); hero_array_push_owned(&t652, &t250); hero_array_push_owned(&t652, &t251); hero_array_push_owned(&t652, &t252); hero_array_push_owned(&t652, &t253); hero_array_push_owned(&t652, &t254); hero_array_push_owned(&t652, &t255); hero_array_push_owned(&t652, &t256); hero_array_push_owned(&t652, &t257); hero_array_push_owned(&t652, &t258); hero_array_push_owned(&t652, &t259); hero_array_push_owned(&t652, &t260); hero_array_push_owned(&t652, &t261); hero_array_push_owned(&t652, &t262); hero_array_push_owned(&t652, &t263); hero_array_push_owned(&t652, &t264); hero_array_push_owned(&t652, &t265); hero_array_push_owned(&t652, &t266); hero_array_push_owned(&t652, &t267); hero_array_push_owned(&t652, &t268); hero_array_push_owned(&t652, &t269); hero_array_push_owned(&t652, &t270); hero_array_push_owned(&t652, &t271); hero_array_push_owned(&t652, &t272); hero_array_push_owned(&t652, &t273); hero_array_push_owned(&t652, &t274); hero_array_push_owned(&t652, &t275); hero_array_push_owned(&t652, &t276); hero_array_push_owned(&t652, &t277); hero_array_push_owned(&t652, &t278); hero_array_push_owned(&t652, &t279); hero_array_push_owned(&t652, &t280); hero_array_push_owned(&t652, &t281); hero_array_push_owned(&t652, &t282); hero_array_push_owned(&t652, &t283); hero_array_push_owned(&t652, &t284); hero_array_push_owned(&t652, &t285); hero_array_push_owned(&t652, &t286); hero_array_push_owned(&t652, &t287); hero_array_push_owned(&t652, &t288); hero_array_push_owned(&t652, &t289); hero_array_push_owned(&t652, &t290); hero_array_push_owned(&t652, &t291); hero_array_push_owned(&t652, &t292); hero_array_push_owned(&t652, &t293); hero_array_push_owned(&t652, &t294); hero_array_push_owned(&t652, &t295); hero_array_push_owned(&t652, &t296); hero_array_push_owned(&t652, &t297); hero_array_push_owned(&t652, &t298); hero_array_push_owned(&t652, &t299); hero_array_push_owned(&t652, &t300); hero_array_push_owned(&t652, &t301); hero_array_push_owned(&t652, &t302); hero_array_push_owned(&t652, &t303); hero_array_push_owned(&t652, &t304); hero_array_push_owned(&t652, &t305); hero_array_push_owned(&t652, &t306); hero_array_push_owned(&t652, &t307); hero_array_push_owned(&t652, &t308); hero_array_push_owned(&t652, &t309); hero_array_push_owned(&t652, &t310); hero_array_push_owned(&t652, &t311); hero_array_push_owned(&t652, &t312); hero_array_push_owned(&t652, &t313); hero_array_push_owned(&t652, &t314); hero_array_push_owned(&t652, &t315); hero_array_push_owned(&t652, &t316); hero_array_push_owned(&t652, &t317); hero_array_push_owned(&t652, &t318); hero_array_push_owned(&t652, &t319); hero_array_push_owned(&t652, &t320); hero_array_push_owned(&t652, &t321); hero_array_push_owned(&t652, &t322); hero_array_push_owned(&t652, &t323); hero_array_push_owned(&t652, &t324); hero_array_push_owned(&t652, &t325); hero_array_push_owned(&t652, &t326); hero_array_push_owned(&t652, &t327); hero_array_push_owned(&t652, &t328); hero_array_push_owned(&t652, &t329); hero_array_push_owned(&t652, &t330); hero_array_push_owned(&t652, &t331); hero_array_push_owned(&t652, &t332); hero_array_push_owned(&t652, &t333); hero_array_push_owned(&t652, &t334); hero_array_push_owned(&t652, &t335); hero_array_push_owned(&t652, &t336); hero_array_push_owned(&t652, &t337); hero_array_push_owned(&t652, &t338); hero_array_push_owned(&t652, &t339); hero_array_push_owned(&t652, &t340); hero_array_push_owned(&t652, &t341); hero_array_push_owned(&t652, &t342); hero_array_push_owned(&t652, &t343); hero_array_push_owned(&t652, &t344); hero_array_push_owned(&t652, &t345); hero_array_push_owned(&t652, &t346); hero_array_push_owned(&t652, &t347); hero_array_push_owned(&t652, &t348); hero_array_push_owned(&t652, &t349); hero_array_push_owned(&t652, &t350); hero_array_push_owned(&t652, &t351); hero_array_push_owned(&t652, &t352); hero_array_push_owned(&t652, &t353); hero_array_push_owned(&t652, &t354); hero_array_push_owned(&t652, &t355); hero_array_push_owned(&t652, &t356); hero_array_push_owned(&t652, &t357); hero_array_push_owned(&t652, &t358); hero_array_push_owned(&t652, &t359); hero_array_push_owned(&t652, &t360); hero_array_push_owned(&t652, &t361); hero_array_push_owned(&t652, &t362); hero_array_push_owned(&t652, &t363); hero_array_push_owned(&t652, &t364); hero_array_push_owned(&t652, &t365); hero_array_push_owned(&t652, &t366); hero_array_push_owned(&t652, &t367); hero_array_push_owned(&t652, &t368); hero_array_push_owned(&t652, &t369); hero_array_push_owned(&t652, &t370); hero_array_push_owned(&t652, &t371); hero_array_push_owned(&t652, &t372); hero_array_push_owned(&t652, &t373); hero_array_push_owned(&t652, &t374); hero_array_push_owned(&t652, &t375); hero_array_push_owned(&t652, &t376); hero_array_push_owned(&t652, &t377); hero_array_push_owned(&t652, &t378); hero_array_push_owned(&t652, &t379); hero_array_push_owned(&t652, &t380); hero_array_push_owned(&t652, &t381); hero_array_push_owned(&t652, &t382); hero_array_push_owned(&t652, &t383); hero_array_push_owned(&t652, &t384); hero_array_push_owned(&t652, &t385); hero_array_push_owned(&t652, &t386); hero_array_push_owned(&t652, &t387); hero_array_push_owned(&t652, &t388); hero_array_push_owned(&t652, &t389); hero_array_push_owned(&t652, &t390); hero_array_push_owned(&t652, &t391); hero_array_push_owned(&t652, &t392); hero_array_push_owned(&t652, &t393); hero_array_push_owned(&t652, &t394); hero_array_push_owned(&t652, &t395); hero_array_push_owned(&t652, &t396); hero_array_push_owned(&t652, &t397); hero_array_push_owned(&t652, &t398); hero_array_push_owned(&t652, &t399); hero_array_push_owned(&t652, &t400); hero_array_push_owned(&t652, &t401); hero_array_push_owned(&t652, &t402); hero_array_push_owned(&t652, &t403); hero_array_push_owned(&t652, &t404); hero_array_push_owned(&t652, &t405); hero_array_push_owned(&t652, &t406); hero_array_push_owned(&t652, &t407); hero_array_push_owned(&t652, &t408); hero_array_push_owned(&t652, &t409); hero_array_push_owned(&t652, &t410); hero_array_push_owned(&t652, &t411); hero_array_push_owned(&t652, &t412); hero_array_push_owned(&t652, &t413); hero_array_push_owned(&t652, &t414); hero_array_push_owned(&t652, &t415); hero_array_push_owned(&t652, &t416); hero_array_push_owned(&t652, &t417); hero_array_push_owned(&t652, &t418); hero_array_push_owned(&t652, &t419); hero_array_push_owned(&t652, &t420); hero_array_push_owned(&t652, &t421); hero_array_push_owned(&t652, &t422); hero_array_push_owned(&t652, &t423); hero_array_push_owned(&t652, &t424); hero_array_push_owned(&t652, &t425); hero_array_push_owned(&t652, &t426); hero_array_push_owned(&t652, &t427); hero_array_push_owned(&t652, &t428); hero_array_push_owned(&t652, &t429); hero_array_push_owned(&t652, &t430); hero_array_push_owned(&t652, &t431); hero_array_push_owned(&t652, &t432); hero_array_push_owned(&t652, &t433); hero_array_push_owned(&t652, &t434); hero_array_push_owned(&t652, &t435); hero_array_push_owned(&t652, &t436); hero_array_push_owned(&t652, &t437); hero_array_push_owned(&t652, &t438); hero_array_push_owned(&t652, &t439); hero_array_push_owned(&t652, &t440); hero_array_push_owned(&t652, &t441); hero_array_push_owned(&t652, &t442); hero_array_push_owned(&t652, &t443); hero_array_push_owned(&t652, &t444); hero_array_push_owned(&t652, &t445); hero_array_push_owned(&t652, &t446); hero_array_push_owned(&t652, &t447); hero_array_push_owned(&t652, &t448); hero_array_push_owned(&t652, &t449); hero_array_push_owned(&t652, &t450); hero_array_push_owned(&t652, &t451); hero_array_push_owned(&t652, &t452); hero_array_push_owned(&t652, &t453); hero_array_push_owned(&t652, &t454); hero_array_push_owned(&t652, &t455); hero_array_push_owned(&t652, &t456); hero_array_push_owned(&t652, &t457); hero_array_push_owned(&t652, &t458); hero_array_push_owned(&t652, &t459); hero_array_push_owned(&t652, &t460); hero_array_push_owned(&t652, &t461); hero_array_push_owned(&t652, &t462); hero_array_push_owned(&t652, &t463); hero_array_push_owned(&t652, &t464); hero_array_push_owned(&t652, &t465); hero_array_push_owned(&t652, &t466); hero_array_push_owned(&t652, &t467); hero_array_push_owned(&t652, &t468); hero_array_push_owned(&t652, &t469); hero_array_push_owned(&t652, &t470); hero_array_push_owned(&t652, &t471); hero_array_push_owned(&t652, &t472); hero_array_push_owned(&t652, &t473); hero_array_push_owned(&t652, &t474); hero_array_push_owned(&t652, &t475); hero_array_push_owned(&t652, &t476); hero_array_push_owned(&t652, &t477); hero_array_push_owned(&t652, &t478); hero_array_push_owned(&t652, &t479); hero_array_push_owned(&t652, &t480); hero_array_push_owned(&t652, &t481); hero_array_push_owned(&t652, &t482); hero_array_push_owned(&t652, &t483); hero_array_push_owned(&t652, &t484); hero_array_push_owned(&t652, &t485); hero_array_push_owned(&t652, &t486); hero_array_push_owned(&t652, &t487); hero_array_push_owned(&t652, &t488); hero_array_push_owned(&t652, &t489); hero_array_push_owned(&t652, &t490); hero_array_push_owned(&t652, &t491); hero_array_push_owned(&t652, &t492); hero_array_push_owned(&t652, &t493); hero_array_push_owned(&t652, &t494); hero_array_push_owned(&t652, &t495); hero_array_push_owned(&t652, &t496); hero_array_push_owned(&t652, &t497); hero_array_push_owned(&t652, &t498); hero_array_push_owned(&t652, &t499); hero_array_push_owned(&t652, &t500); hero_array_push_owned(&t652, &t501); hero_array_push_owned(&t652, &t502); hero_array_push_owned(&t652, &t503); hero_array_push_owned(&t652, &t504); hero_array_push_owned(&t652, &t505); hero_array_push_owned(&t652, &t506); hero_array_push_owned(&t652, &t507); hero_array_push_owned(&t652, &t508); hero_array_push_owned(&t652, &t509); hero_array_push_owned(&t652, &t510); hero_array_push_owned(&t652, &t511); hero_array_push_owned(&t652, &t512); hero_array_push_owned(&t652, &t513); hero_array_push_owned(&t652, &t514); hero_array_push_owned(&t652, &t515); hero_array_push_owned(&t652, &t516); hero_array_push_owned(&t652, &t517); hero_array_push_owned(&t652, &t518); hero_array_push_owned(&t652, &t519); hero_array_push_owned(&t652, &t520); hero_array_push_owned(&t652, &t521); hero_array_push_owned(&t652, &t522); hero_array_push_owned(&t652, &t523); hero_array_push_owned(&t652, &t524); hero_array_push_owned(&t652, &t525); hero_array_push_owned(&t652, &t526); hero_array_push_owned(&t652, &t527); hero_array_push_owned(&t652, &t528); hero_array_push_owned(&t652, &t529); hero_array_push_owned(&t652, &t530); hero_array_push_owned(&t652, &t531); hero_array_push_owned(&t652, &t532); hero_array_push_owned(&t652, &t533); hero_array_push_owned(&t652, &t534); hero_array_push_owned(&t652, &t535); hero_array_push_owned(&t652, &t536); hero_array_push_owned(&t652, &t537); hero_array_push_owned(&t652, &t538); hero_array_push_owned(&t652, &t539); hero_array_push_owned(&t652, &t540); hero_array_push_owned(&t652, &t541); hero_array_push_owned(&t652, &t542); hero_array_push_owned(&t652, &t543); hero_array_push_owned(&t652, &t544); hero_array_push_owned(&t652, &t545); hero_array_push_owned(&t652, &t546); hero_array_push_owned(&t652, &t547); hero_array_push_owned(&t652, &t548); hero_array_push_owned(&t652, &t549); hero_array_push_owned(&t652, &t550); hero_array_push_owned(&t652, &t551); hero_array_push_owned(&t652, &t552); hero_array_push_owned(&t652, &t553); hero_array_push_owned(&t652, &t554); hero_array_push_owned(&t652, &t555); hero_array_push_owned(&t652, &t556); hero_array_push_owned(&t652, &t557); hero_array_push_owned(&t652, &t558); hero_array_push_owned(&t652, &t559); hero_array_push_owned(&t652, &t560); hero_array_push_owned(&t652, &t561); hero_array_push_owned(&t652, &t562); hero_array_push_owned(&t652, &t563); hero_array_push_owned(&t652, &t564); hero_array_push_owned(&t652, &t565); hero_array_push_owned(&t652, &t566); hero_array_push_owned(&t652, &t567); hero_array_push_owned(&t652, &t568); hero_array_push_owned(&t652, &t569); hero_array_push_owned(&t652, &t570); hero_array_push_owned(&t652, &t571); hero_array_push_owned(&t652, &t572); hero_array_push_owned(&t652, &t573); hero_array_push_owned(&t652, &t574); hero_array_push_owned(&t652, &t575); hero_array_push_owned(&t652, &t576); hero_array_push_owned(&t652, &t577); hero_array_push_owned(&t652, &t578); hero_array_push_owned(&t652, &t579); hero_array_push_owned(&t652, &t580); hero_array_push_owned(&t652, &t581); hero_array_push_owned(&t652, &t582); hero_array_push_owned(&t652, &t583); hero_array_push_owned(&t652, &t584); hero_array_push_owned(&t652, &t585); hero_array_push_owned(&t652, &t586); hero_array_push_owned(&t652, &t587); hero_array_push_owned(&t652, &t588); hero_array_push_owned(&t652, &t589); hero_array_push_owned(&t652, &t590); hero_array_push_owned(&t652, &t591); hero_array_push_owned(&t652, &t592); hero_array_push_owned(&t652, &t593); hero_array_push_owned(&t652, &t594); hero_array_push_owned(&t652, &t595); hero_array_push_owned(&t652, &t596); hero_array_push_owned(&t652, &t597); hero_array_push_owned(&t652, &t598); hero_array_push_owned(&t652, &t599); hero_array_push_owned(&t652, &t600); hero_array_push_owned(&t652, &t601); hero_array_push_owned(&t652, &t602); hero_array_push_owned(&t652, &t603); hero_array_push_owned(&t652, &t604); hero_array_push_owned(&t652, &t605); hero_array_push_owned(&t652, &t606); hero_array_push_owned(&t652, &t607); hero_array_push_owned(&t652, &t608); hero_array_push_owned(&t652, &t609); hero_array_push_owned(&t652, &t610); hero_array_push_owned(&t652, &t611); hero_array_push_owned(&t652, &t612); hero_array_push_owned(&t652, &t613); hero_array_push_owned(&t652, &t614); hero_array_push_owned(&t652, &t615); hero_array_push_owned(&t652, &t616); hero_array_push_owned(&t652, &t617); hero_array_push_owned(&t652, &t618); hero_array_push_owned(&t652, &t619); hero_array_push_owned(&t652, &t620); hero_array_push_owned(&t652, &t621); hero_array_push_owned(&t652, &t622); hero_array_push_owned(&t652, &t623); hero_array_push_owned(&t652, &t624); hero_array_push_owned(&t652, &t625); hero_array_push_owned(&t652, &t626); hero_array_push_owned(&t652, &t627); hero_array_push_owned(&t652, &t628); hero_array_push_owned(&t652, &t629); hero_array_push_owned(&t652, &t630); hero_array_push_owned(&t652, &t631); hero_array_push_owned(&t652, &t632); hero_array_push_owned(&t652, &t633); hero_array_push_owned(&t652, &t634); hero_array_push_owned(&t652, &t635); hero_array_push_owned(&t652, &t636); hero_array_push_owned(&t652, &t637); hero_array_push_owned(&t652, &t638); hero_array_push_owned(&t652, &t639); hero_array_push_owned(&t652, &t640); hero_array_push_owned(&t652, &t641); hero_array_push_owned(&t652, &t642); hero_array_push_owned(&t652, &t643); hero_array_push_owned(&t652, &t644); hero_array_push_owned(&t652, &t645); hero_array_push_owned(&t652, &t646); hero_array_push_owned(&t652, &t647); hero_array_push_owned(&t652, &t648); hero_array_push_owned(&t652, &t649); hero_array_push_owned(&t652, &t650); hero_array_push_owned(&t652, &t651); t653 = h0_own0; h0_own0 = t652; hero_array_decref(t653);
-#line 5045 "main.c"
+#line 5033 "main.c"
     hero_array_incref(t652);
     hero_array_release_at(&h0_own0);
     return t652;
@@ -5051,7 +5039,7 @@ HeroArrayHeader * h_1corestrconvinternalpowers_HIGH(void) { HERO_NODEBUG HeroArr
 #if HERO_STATIC_CONSTANTS
 #line 799 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/strconv/internal/powers.hero"
 HERO_ARRAY_STATIC(hero_constant_h_1corestrconvinternalpowers_LOW_652, uint64_t, &hero_desc_u64, 651, UINT64_C(17203844958350394560), UINT64_C(13058246108182690552), UINT64_C(11711121616800975286), UINT64_C(803843965719055395), UINT64_C(9725774515429185430), UINT64_C(7545532125859093883), UINT64_C(208543120469091546), UINT64_C(130339450293182216), UINT64_C(4774610331293865674), UINT64_C(5968262914117332093), UINT64_C(12953536358178108366), UINT64_C(2356862392440471746), UINT64_C(2946077990550589682), UINT64_C(8758827771735200407), UINT64_C(10948534714669000509), UINT64_C(18297354411763638541), UINT64_C(18353375534993355944), UINT64_C(13718347381886919122), UINT64_C(12536248208931260998), UINT64_C(10140998139795732076), UINT64_C(17287933693172052999), UINT64_C(3163173042755514633), UINT64_C(8565652321871781195), UINT64_C(12271061728810945103), UINT64_C(1503769105731517666), UINT64_C(6491397400591784987), UINT64_C(13280495412224641425), UINT64_C(7377247228426025973), UINT64_C(4609873017105144562), UINT64_C(14410385681759185111), UINT64_C(4177924046916817677), UINT64_C(610719040218634193), UINT64_C(9605071436991422178), UINT64_C(12006339296239277723), UINT64_C(10396238101871709250), UINT64_C(6497648813669818281), UINT64_C(8122061017087272851), UINT64_C(14764262289786478968), UINT64_C(6921820921902855403), UINT64_C(17875648189233345062), UINT64_C(3897816162832129711), UINT64_C(4741978110983775021), UINT64_C(10539158657157106681), UINT64_C(17785634339873771255), UINT64_C(15727707480848494938), UINT64_C(5824576295778454961), UINT64_C(16504092406577844510), UINT64_C(12620900763324846770), UINT64_C(1941067898873894751), UINT64_C(16261392928874532151), UINT64_C(15715055142665777285), UINT64_C(9821909464166110803), UINT64_C(3054014793352862696), UINT64_C(13040890528545854178), UINT64_C(12762242598768546765), UINT64_C(15952803248460683456), UINT64_C(10717632023721078512), UINT64_C(9004363024039368022), UINT64_C(15867139798476597932), UINT64_C(15222238729668359511), UINT64_C(9513899206042724694), UINT64_C(2669001970698630060), UINT64_C(3336252463373287575), UINT64_C(15920215844890468446), UINT64_C(6065211750830921845), UINT64_C(16804886725393428115), UINT64_C(5891368184943504668), UINT64_C(7364210231179380835), UINT64_C(13816948807401613948), UINT64_C(13247279023053396621), UINT64_C(2724040723534582064), UINT64_C(8016736922845615485), UINT64_C(11927989604419591534), UINT64_C(10298300987097101513), UINT64_C(17484562252298764796), UINT64_C(1704479370831952189), UINT64_C(11353971250394716045), UINT64_C(357406007711231344), UINT64_C(9446750791674295398), UINT64_C(16420124508020257151), UINT64_C(6690097579743157727), UINT64_C(12974307993106335063), UINT64_C(10414785504905153366), UINT64_C(3795109844276665900), UINT64_C(9355573323773220279), UINT64_C(15070605364213038482), UINT64_C(391512631556746487), UINT64_C(9712762826300708917), UINT64_C(12988005794079024929), UINT64_C(7011635205744005353), UINT64_C(13376230025607394595), UINT64_C(17583515802859397430), UINT64_C(3532650679864695172), UINT64_C(9027499368258256869), UINT64_C(3336344095947716591), UINT64_C(8782116138362033642), UINT64_C(10977645172952542053), UINT64_C(2249342214667950879), UINT64_C(12035049805189714407), UINT64_C(5820440219632367201), UINT64_C(10555304164911311356), UINT64_C(3970758169284363388), UINT64_C(351761693178066331), UINT64_C(11749066104304761216), UINT64_C(851274575098787809), UINT64_C(1064093218873484761), UINT64_C(9888430298650703783), UINT64_C(12360537873313379729), UINT64_C(6227300304786948854), UINT64_C(3172439362556298163), UINT64_C(4288617610811380304), UINT64_C(14584144050369001188), UINT64_C(4395122007679087773), UINT64_C(9664480282440511714), UINT64_C(7468914334623251739), UINT64_C(13947828936706452578), UINT64_C(6411550076227838909), UINT64_C(12626123613712186540), UINT64_C(6559282480285457367), UINT64_C(8711237568605798758), UINT64_C(15500732979184636352), UINT64_C(14764230205553407536), UINT64_C(13839329896898267614), UINT64_C(17299162371122834518), UINT64_C(3177208890193991531), UINT64_C(11209127593226020515), UINT64_C(4788037454677749836), UINT64_C(1373360799919799391), UINT64_C(858350499949874619), UINT64_C(14907996180219506986), UINT64_C(9411623188419607924), UINT64_C(5882264492762254952), UINT64_C(2741144597525430787), UINT64_C(3426430746906788484), UINT64_C(13670734262885212562), UINT64_C(12476731810179127799), UINT64_C(10984228744296521844), UINT64_C(18394358011253795913), UINT64_C(9157889458785081179), UINT64_C(11447361823481351474), UINT64_C(9697516260924301438), UINT64_C(3755104653863994447), UINT64_C(4693880817329993059), UINT64_C(1255665003235103419), UINT64_C(10008162663876715445), UINT64_C(3286831292991118498), UINT64_C(8720225134666286027), UINT64_C(3144297699952734815), UINT64_C(8542058143368306422), UINT64_C(15289258697637770932), UINT64_C(9555786686023606832), UINT64_C(16556419375956896445), UINT64_C(16083838201518732652), UINT64_C(12358241885162901859), UINT64_C(1612744301171463612), UINT64_C(11239302413319105323), UINT64_C(2412877989897052923), UINT64_C(7627783505798704058), UINT64_C(14146415400675767976), UINT64_C(1923980597781273129), UINT64_C(11628347784081367219), UINT64_C(9923748711674321120), UINT64_C(15425714981651226508), UINT64_C(835399653354481519), UINT64_C(10267621603547877707), UINT64_C(4111420493003729615), UINT64_C(5139275616254662019), UINT64_C(6424094520318327523), UINT64_C(8030118150397909404), UINT64_C(7324666853212387329), UINT64_C(13767519584942872066), UINT64_C(3374341425896426371), UINT64_C(9026492418826348337), UINT64_C(2059743486678159614), UINT64_C(2574679358347699518), UINT64_C(15444232654249475910), UINT64_C(10081918780957069080), UINT64_C(17214084494623724254), UINT64_C(3841273781498745803), UINT64_C(14024964263728208061), UINT64_C(17531205329660260077), UINT64_C(13262846340251356500), UINT64_C(11966871906886807721), UINT64_C(14958589883608509651), UINT64_C(16266647704896400388), UINT64_C(1886565557410948869), UINT64_C(2358206946763686086), UINT64_C(10697251378582079612), UINT64_C(17983250241654987419), UINT64_C(4032318728359182658), UINT64_C(4826042214438183113), UINT64_C(15255924804902504699), UINT64_C(623161932418579258), UINT64_C(7307005235402693892), UINT64_C(4522070525825979461), UINT64_C(14875960194137250135), UINT64_C(148206168962011053), UINT64_C(92628855601256908), UINT64_C(115786069501571135), UINT64_C(13979790642159127631), UINT64_C(17960741188204230577), UINT64_C(13227554448400512413), UINT64_C(11922757042073252613), UINT64_C(534194123654701027), UINT64_C(667742654568376284), UINT64_C(10058050355065246163), UINT64_C(6286281471915778851), UINT64_C(7857851839894723564), UINT64_C(9822314799868404456), UINT64_C(17668161795986222545), UINT64_C(17473516226555390277), UINT64_C(17230209264766849942), UINT64_C(3851351762838199358), UINT64_C(4814189703547749197), UINT64_C(6017737129434686497), UINT64_C(10678614733537760916), UINT64_C(8736582398494813241), UINT64_C(1697355961263740744), UINT64_C(17201748540285695629), UINT64_C(3055441601647567920), UINT64_C(13042674038914235708), UINT64_C(3539985255894009413), UINT64_C(4424981569867511767), UINT64_C(10142912980761777613), UINT64_C(17868535659044580768), UINT64_C(3888925500096174344), UINT64_C(249470856692830026), UINT64_C(4923524589293425437), UINT64_C(3077202868308390898), UINT64_C(17681561640667652334), UINT64_C(12878580013979789610), UINT64_C(12660798527164756410), UINT64_C(1990940103673781801), UINT64_C(11712047166447003059), UINT64_C(14237558506670458768), UINT64_C(8573576096483297652), UINT64_C(15328656139031509969), UINT64_C(14192096105322081634), UINT64_C(17740120131652602043), UINT64_C(3728406090856200938), UINT64_C(6941939825212513490), UINT64_C(13289110799943029766), UINT64_C(11999702481501399304), UINT64_C(12111500069365762469), UINT64_C(1304317031425039374), UINT64_C(1630396289281299218), UINT64_C(17159898745296669675), UINT64_C(3003129357911285478), UINT64_C(12977283734243882656), UINT64_C(10416645343116120612), UINT64_C(3797434642040374957), UINT64_C(9358479320977856600), UINT64_C(8154892584824854327), UINT64_C(10193615731031067909), UINT64_C(12742019663788834886), UINT64_C(2092466524453879895), UINT64_C(17448692642279532598), UINT64_C(7975807747567252036), UINT64_C(9969759684459065045), UINT64_C(3925256793573221701), UINT64_C(294884973539139223), UINT64_C(368606216923924028), UINT64_C(2536221894791146469), UINT64_C(12393649405343708895), UINT64_C(15492061756679636119), UINT64_C(459166561069996766), UINT64_C(573958201337495958), UINT64_C(5329133770099257851), UINT64_C(5636551615525730109), UINT64_C(16269061556261938444), UINT64_C(15724640926900035151), UINT64_C(12133743588526215921), UINT64_C(15167179485657769902), UINT64_C(512230283362660762), UINT64_C(16461044991597520640), UINT64_C(2129562165787349184), UINT64_C(11885324744088962288), UINT64_C(7428327965055601430), UINT64_C(13897095974746889691), UINT64_C(8147997931578836306), UINT64_C(16621713753305242451), UINT64_C(11553770154776777256), UINT64_C(14442212693470971570), UINT64_C(2108853905778275375), UINT64_C(11859439419077620027), UINT64_C(989241218564861322), UINT64_C(1236551523206076653), UINT64_C(12302059748072267668), UINT64_C(6154202648235558777), UINT64_C(3081067291867060567), UINT64_C(1925667057416912854), UINT64_C(2407083821771141068), UINT64_C(7620540795641314239), UINT64_C(2456994988062127447), UINT64_C(12294615771932435117), UINT64_C(6144897678060768089), UINT64_C(3840561048787980055), UINT64_C(14024073347839750877), UINT64_C(8306719647944912789), UINT64_C(9803385798392958397), UINT64_C(12254232247991197996), UINT64_C(10706104291561609591), UINT64_C(15914687219080781802), UINT64_C(6058300968568813541), UINT64_C(7572876210711016926), UINT64_C(9344733650121773483), UINT64_C(2457545025797441046), UINT64_C(7683617300674189211), UINT64_C(4802260812921368257), UINT64_C(1391139997724322417), UINT64_C(10962297034010178829), UINT64_C(9157278655470055720), UINT64_C(6834912300910181746), UINT64_C(17767012412992502991), UINT64_C(8373707460958465027), UINT64_C(9845253181526428546), UINT64_C(7694880458480647778), UINT64_C(14230286591528197627), UINT64_C(4282243101277735613), UINT64_C(9964489895024557420), UINT64_C(12455612368780696775), UINT64_C(3173071712060547580), UINT64_C(8578025658503072379), UINT64_C(15334218091556228378), UINT64_C(14195572325650030640), UINT64_C(17744465407062538301), UINT64_C(12957209721973397068), UINT64_C(17321628113088148975), UINT64_C(12428663104505410411), UINT64_C(15535828880631763014), UINT64_C(486521013540076076), UINT64_C(608151266925095095), UINT64_C(5371875102083756772), UINT64_C(14886636984870817743), UINT64_C(161552157378970562), UINT64_C(14036998252005876915), UINT64_C(6467280898289979120), UINT64_C(17307473159717249708), UINT64_C(3187597375937010519), UINT64_C(11215620396815407382), UINT64_C(14019525496019259228), UINT64_C(3689348814741910323), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(0), UINT64_C(13835058055282163712), UINT64_C(12682136550675316736), UINT64_C(6629298651489370112), UINT64_C(12898309332789100544), UINT64_C(1143914305352105984), UINT64_C(10653264918544908288), UINT64_C(4093209111326359552), UINT64_C(14087470740647444480), UINT64_C(12997652407381917696), UINT64_C(16247065509227397120), UINT64_C(17071944970908205056), UINT64_C(16728245195207868416), UINT64_C(11686934457155059712), UINT64_C(11916020054149300224), UINT64_C(1059967012404461568), UINT64_C(10548330802360352768), UINT64_C(1981020733047832576), UINT64_C(2476275916309790720), UINT64_C(3095344895387238400), UINT64_C(13463805605685493760), UINT64_C(7606384970252091392), UINT64_C(14119667231242502144), UINT64_C(6518949010312869888), UINT64_C(8148686262891087360), UINT64_C(10185857828613859200), UINT64_C(13283690170524743856), UINT64_C(7381240676301154012), UINT64_C(3178808521666707), UINT64_C(4613672773753429595), UINT64_C(5767090967191786994), UINT64_C(7208863708989733743), UINT64_C(18234451673091942987), UINT64_C(18314061323323546223), UINT64_C(13669204617299656970), UINT64_C(3251447716342407501), UINT64_C(11255526859568780496), UINT64_C(14069408574460975620), UINT64_C(8363388681221443717), UINT64_C(7532960934977096275), UINT64_C(14027887187148758248), UINT64_C(12923172965508559906), UINT64_C(8076983103442849941), UINT64_C(5484542860876174523), UINT64_C(11467364594522606057), UINT64_C(4861259862362934834), UINT64_C(10688260846381056446), UINT64_C(4136954021121544750), UINT64_C(279753253987271517), UINT64_C(14184749622766253108), UINT64_C(13119251010030428481), UINT64_C(10505374890482711752), UINT64_C(13131718613103389691), UINT64_C(2579590211097073401), UINT64_C(10835615918790446684), UINT64_C(4321147861633282547), UINT64_C(789748808614215279), UINT64_C(9716965042238660357), UINT64_C(12146206302798325447), UINT64_C(1347699823215743097), UINT64_C(12371527435578309195), UINT64_C(10852723276045498590), UINT64_C(18177590113484261142), UINT64_C(18110301623427938524), UINT64_C(11318938514642461577), UINT64_C(14148673143303076971), UINT64_C(3850783373846682502), UINT64_C(9324268636295258420), UINT64_C(7043649776941685121), UINT64_C(4192876202749718497), UINT64_C(4926390635932268013), UINT64_C(15381360331770110824), UINT64_C(779956341003086914), UINT64_C(12016687759195399081), UINT64_C(10409173680566860947), UINT64_C(17623153119135964088), UINT64_C(13320313708673671507), UINT64_C(12038706117414701480), UINT64_C(15048382646768376850), UINT64_C(4793553135802847627), UINT64_C(1380255401326171630), UINT64_C(1725319251657714538), UINT64_C(14913382587568235298), UINT64_C(4806670179178130410), UINT64_C(10620023742400050917), UINT64_C(18166729885068501583), UINT64_C(8873354301053463267), UINT64_C(1868320839462053276), UINT64_C(12696915570732253057), UINT64_C(2036086408133152610), UINT64_C(11768480047021216570), UINT64_C(10098914040349132809), UINT64_C(15535193312072983813), UINT64_C(5583933584809066055), UINT64_C(16203289017866108377), UINT64_C(14738741654593705639), UINT64_C(18423427068242132049), UINT64_C(4582539761593113445), UINT64_C(558244341782001951), UINT64_C(5309491445654890343), UINT64_C(6636864307068612929), UINT64_C(4148040191917883080), UINT64_C(5185050239897353851), UINT64_C(6481312799871692314), UINT64_C(8662506518347195600), UINT64_C(15439819166361382404), UINT64_C(853029884242176389), UINT64_C(16674044742147217907), UINT64_C(11619183890829246576), UINT64_C(9912293845109170316), UINT64_C(10806869671620619351), UINT64_C(18120273107953162093), UINT64_C(13426969348086676809), UINT64_C(17615227879408948813), UINT64_C(8183976793979022305), UINT64_C(14841657010901165785), UINT64_C(9276035631813228615), UINT64_C(11595044539766535769), UINT64_C(14493805674708169712), UINT64_C(4446942528265218166), UINT64_C(946992141904134803), UINT64_C(10407112214234944312), UINT64_C(3785518230938904582), UINT64_C(60105885123121412), UINT64_C(75132356403901765), UINT64_C(9317287482359653014), UINT64_C(1211618658047395230), UINT64_C(6126209340986631941), UINT64_C(7657761676233289927), UINT64_C(2480258038432112252), UINT64_C(7712008566467528219), UINT64_C(9640010708084410274), UINT64_C(6025006692552756421), UINT64_C(12142944384118333430), UINT64_C(1343622424865753076), UINT64_C(16980665080036953336), UINT64_C(12002459313191415863), UINT64_C(10391388123061881924), UINT64_C(15717989613768452011), UINT64_C(5812428961928401301), UINT64_C(16488908239265277435), UINT64_C(7999724640327104445), UINT64_C(14611341818836268460), UINT64_C(13652491255117947671), UINT64_C(10838650043662411246), UINT64_C(13548312554578014058), UINT64_C(7712018656367741764), UINT64_C(16349226706298308362), UINT64_C(11213161346018109645), UINT64_C(9404765664095249153), UINT64_C(11755957080119061441), UINT64_C(14265002202715495256), UINT64_C(17831252753394369071), UINT64_C(8454007886460797626), UINT64_C(14507126965892774324), UINT64_C(8910536670511192098), UINT64_C(11138170838138990122), UINT64_C(6961356773836868826), UINT64_C(8701695967296086033), UINT64_C(6265433940692719637), UINT64_C(17750954268215113485), UINT64_C(17577006816841503952), UINT64_C(8136200465769716229), UINT64_C(473439272678684739), UINT64_C(14426857146130519635), UINT64_C(8810199395808373736), UINT64_C(7812217631593927537), UINT64_C(14376958057919797325), UINT64_C(17971197572399746657), UINT64_C(13537841491963535612), UINT64_C(3087243809672255804), UINT64_C(8470740780517707659), UINT64_C(682526969396179382), UINT64_C(5464844730172612132), UINT64_C(2219369894288377261), UINT64_C(1387106183930235788), UINT64_C(15568940785194958447), UINT64_C(14849489963066310155), UINT64_C(9338490416978111886), UINT64_C(17365771556679789689), UINT64_C(12483842408994961303), UINT64_C(6381430974388925821), UINT64_C(8600080377420466542), UINT64_C(10750100471775583178), UINT64_C(18049311608146866876), UINT64_C(4363290727450709941), UINT64_C(10065799427740775331), UINT64_C(17193935303103357068), UINT64_C(8440366555225904215), UINT64_C(10550458194032380269), UINT64_C(3964700705685699528), UINT64_C(16312995996335725917), UINT64_C(15779558976992269492), UINT64_C(15112762702812948962), UINT64_C(11751319698471787053), UINT64_C(10077463604662345912), UINT64_C(3373457468973156582), UINT64_C(9025939945749304720), UINT64_C(11282424932186630900), UINT64_C(14103031165233288625), UINT64_C(11120237487484499342), UINT64_C(9288610840928236274), UINT64_C(16222449569587683247), UINT64_C(7833187971778608077), UINT64_C(568112927868484288), UINT64_C(14545199215117769073), UINT64_C(4479063491021217766), UINT64_C(5598829363776522208), UINT64_C(2386850686293264856), UINT64_C(16818621413148744782), UINT64_C(8205795374004271537), UINT64_C(1033872180650563613), UINT64_C(5904026244240592420), UINT64_C(5995859411864064214), UINT64_C(16718196301684856076), UINT64_C(2451001303396518479), UINT64_C(13061090860691293809), UINT64_C(7102991539009341454), UINT64_C(8878739423761676818), UINT64_C(14772584176705823819), UINT64_C(13854044202454891870), UINT64_C(17317555253068614837), UINT64_C(15435158051595272177), UINT64_C(10070575527639314413), UINT64_C(7976533391121755113), UINT64_C(16514548415519566705), UINT64_C(6808127464117294670), UINT64_C(3898473311719230433), UINT64_C(9354074847465600877), UINT64_C(2469221522477225288), UINT64_C(12309898939951307418), UINT64_C(3082000819042179232), UINT64_C(8464187042230111944), UINT64_C(15191919821215027834), UINT64_C(7189106879045698444), UINT64_C(8986383598807123056), UINT64_C(15844665516936291724), UINT64_C(1359087822460813039), UINT64_C(849429889038008149), UINT64_C(5673473379724898090), UINT64_C(2480155706228734709), UINT64_C(3855940325606653145), UINT64_C(208239388580928527), UINT64_C(4871985254153548563), UINT64_C(3044990783845967852), UINT64_C(13029610516662235623), UINT64_C(2451955090545630817), UINT64_C(3838314940804713212), UINT64_C(14021265712860667324), UINT64_C(17526582141075834155), UINT64_C(15565799856599784250), UINT64_C(5622191765467566601), UINT64_C(11639425725261846156), UINT64_C(2662955059861265943), UINT64_C(7940379843253970333), UINT64_C(9925474804067462916), UINT64_C(6203421752542164322), UINT64_C(12365963209105093307), UINT64_C(6234081974526590826), UINT64_C(13119673270933895074), UINT64_C(11787905570239980939), UINT64_C(10123195944372588270), UINT64_C(4021154456019173716), UINT64_C(5026443070023967146), UINT64_C(15506425874384734740), UINT64_C(9691516171490459212), UINT64_C(2891023177508298208), UINT64_C(8225464990312760664), UINT64_C(5670145219463562926), UINT64_C(10461369789805808684), UINT64_C(17688398255684648759), UINT64_C(3663753745896259333), UINT64_C(9207375118826243939), UINT64_C(2285846861678029116), UINT64_C(16692366632379700107), UINT64_C(17350258172878394423), UINT64_C(3241078642388441413), UINT64_C(13274720339840327574), UINT64_C(12908386230827592638), UINT64_C(2300424733252327085), UINT64_C(12098902953420184665), UINT64_C(12173500364315003319)); HeroArrayHeader * h_1corestrconvinternalpowers_LOW(void) { return HERO_ARRAY_LIT(hero_constant_h_1corestrconvinternalpowers_LOW_652);
-#line 5055 "main.c"
+#line 5043 "main.c"
 }
 #else
 
@@ -5711,7 +5699,7 @@ HeroArrayHeader * h_1corestrconvinternalpowers_LOW(void) { HERO_NODEBUG HeroArra
     t651 = UINT64_C(12173500364315003319);
 #line 800
     t652 = hero_array_new(&hero_desc_u64, 651); hero_array_push_owned(&t652, &t1); hero_array_push_owned(&t652, &t2); hero_array_push_owned(&t652, &t3); hero_array_push_owned(&t652, &t4); hero_array_push_owned(&t652, &t5); hero_array_push_owned(&t652, &t6); hero_array_push_owned(&t652, &t7); hero_array_push_owned(&t652, &t8); hero_array_push_owned(&t652, &t9); hero_array_push_owned(&t652, &t10); hero_array_push_owned(&t652, &t11); hero_array_push_owned(&t652, &t12); hero_array_push_owned(&t652, &t13); hero_array_push_owned(&t652, &t14); hero_array_push_owned(&t652, &t15); hero_array_push_owned(&t652, &t16); hero_array_push_owned(&t652, &t17); hero_array_push_owned(&t652, &t18); hero_array_push_owned(&t652, &t19); hero_array_push_owned(&t652, &t20); hero_array_push_owned(&t652, &t21); hero_array_push_owned(&t652, &t22); hero_array_push_owned(&t652, &t23); hero_array_push_owned(&t652, &t24); hero_array_push_owned(&t652, &t25); hero_array_push_owned(&t652, &t26); hero_array_push_owned(&t652, &t27); hero_array_push_owned(&t652, &t28); hero_array_push_owned(&t652, &t29); hero_array_push_owned(&t652, &t30); hero_array_push_owned(&t652, &t31); hero_array_push_owned(&t652, &t32); hero_array_push_owned(&t652, &t33); hero_array_push_owned(&t652, &t34); hero_array_push_owned(&t652, &t35); hero_array_push_owned(&t652, &t36); hero_array_push_owned(&t652, &t37); hero_array_push_owned(&t652, &t38); hero_array_push_owned(&t652, &t39); hero_array_push_owned(&t652, &t40); hero_array_push_owned(&t652, &t41); hero_array_push_owned(&t652, &t42); hero_array_push_owned(&t652, &t43); hero_array_push_owned(&t652, &t44); hero_array_push_owned(&t652, &t45); hero_array_push_owned(&t652, &t46); hero_array_push_owned(&t652, &t47); hero_array_push_owned(&t652, &t48); hero_array_push_owned(&t652, &t49); hero_array_push_owned(&t652, &t50); hero_array_push_owned(&t652, &t51); hero_array_push_owned(&t652, &t52); hero_array_push_owned(&t652, &t53); hero_array_push_owned(&t652, &t54); hero_array_push_owned(&t652, &t55); hero_array_push_owned(&t652, &t56); hero_array_push_owned(&t652, &t57); hero_array_push_owned(&t652, &t58); hero_array_push_owned(&t652, &t59); hero_array_push_owned(&t652, &t60); hero_array_push_owned(&t652, &t61); hero_array_push_owned(&t652, &t62); hero_array_push_owned(&t652, &t63); hero_array_push_owned(&t652, &t64); hero_array_push_owned(&t652, &t65); hero_array_push_owned(&t652, &t66); hero_array_push_owned(&t652, &t67); hero_array_push_owned(&t652, &t68); hero_array_push_owned(&t652, &t69); hero_array_push_owned(&t652, &t70); hero_array_push_owned(&t652, &t71); hero_array_push_owned(&t652, &t72); hero_array_push_owned(&t652, &t73); hero_array_push_owned(&t652, &t74); hero_array_push_owned(&t652, &t75); hero_array_push_owned(&t652, &t76); hero_array_push_owned(&t652, &t77); hero_array_push_owned(&t652, &t78); hero_array_push_owned(&t652, &t79); hero_array_push_owned(&t652, &t80); hero_array_push_owned(&t652, &t81); hero_array_push_owned(&t652, &t82); hero_array_push_owned(&t652, &t83); hero_array_push_owned(&t652, &t84); hero_array_push_owned(&t652, &t85); hero_array_push_owned(&t652, &t86); hero_array_push_owned(&t652, &t87); hero_array_push_owned(&t652, &t88); hero_array_push_owned(&t652, &t89); hero_array_push_owned(&t652, &t90); hero_array_push_owned(&t652, &t91); hero_array_push_owned(&t652, &t92); hero_array_push_owned(&t652, &t93); hero_array_push_owned(&t652, &t94); hero_array_push_owned(&t652, &t95); hero_array_push_owned(&t652, &t96); hero_array_push_owned(&t652, &t97); hero_array_push_owned(&t652, &t98); hero_array_push_owned(&t652, &t99); hero_array_push_owned(&t652, &t100); hero_array_push_owned(&t652, &t101); hero_array_push_owned(&t652, &t102); hero_array_push_owned(&t652, &t103); hero_array_push_owned(&t652, &t104); hero_array_push_owned(&t652, &t105); hero_array_push_owned(&t652, &t106); hero_array_push_owned(&t652, &t107); hero_array_push_owned(&t652, &t108); hero_array_push_owned(&t652, &t109); hero_array_push_owned(&t652, &t110); hero_array_push_owned(&t652, &t111); hero_array_push_owned(&t652, &t112); hero_array_push_owned(&t652, &t113); hero_array_push_owned(&t652, &t114); hero_array_push_owned(&t652, &t115); hero_array_push_owned(&t652, &t116); hero_array_push_owned(&t652, &t117); hero_array_push_owned(&t652, &t118); hero_array_push_owned(&t652, &t119); hero_array_push_owned(&t652, &t120); hero_array_push_owned(&t652, &t121); hero_array_push_owned(&t652, &t122); hero_array_push_owned(&t652, &t123); hero_array_push_owned(&t652, &t124); hero_array_push_owned(&t652, &t125); hero_array_push_owned(&t652, &t126); hero_array_push_owned(&t652, &t127); hero_array_push_owned(&t652, &t128); hero_array_push_owned(&t652, &t129); hero_array_push_owned(&t652, &t130); hero_array_push_owned(&t652, &t131); hero_array_push_owned(&t652, &t132); hero_array_push_owned(&t652, &t133); hero_array_push_owned(&t652, &t134); hero_array_push_owned(&t652, &t135); hero_array_push_owned(&t652, &t136); hero_array_push_owned(&t652, &t137); hero_array_push_owned(&t652, &t138); hero_array_push_owned(&t652, &t139); hero_array_push_owned(&t652, &t140); hero_array_push_owned(&t652, &t141); hero_array_push_owned(&t652, &t142); hero_array_push_owned(&t652, &t143); hero_array_push_owned(&t652, &t144); hero_array_push_owned(&t652, &t145); hero_array_push_owned(&t652, &t146); hero_array_push_owned(&t652, &t147); hero_array_push_owned(&t652, &t148); hero_array_push_owned(&t652, &t149); hero_array_push_owned(&t652, &t150); hero_array_push_owned(&t652, &t151); hero_array_push_owned(&t652, &t152); hero_array_push_owned(&t652, &t153); hero_array_push_owned(&t652, &t154); hero_array_push_owned(&t652, &t155); hero_array_push_owned(&t652, &t156); hero_array_push_owned(&t652, &t157); hero_array_push_owned(&t652, &t158); hero_array_push_owned(&t652, &t159); hero_array_push_owned(&t652, &t160); hero_array_push_owned(&t652, &t161); hero_array_push_owned(&t652, &t162); hero_array_push_owned(&t652, &t163); hero_array_push_owned(&t652, &t164); hero_array_push_owned(&t652, &t165); hero_array_push_owned(&t652, &t166); hero_array_push_owned(&t652, &t167); hero_array_push_owned(&t652, &t168); hero_array_push_owned(&t652, &t169); hero_array_push_owned(&t652, &t170); hero_array_push_owned(&t652, &t171); hero_array_push_owned(&t652, &t172); hero_array_push_owned(&t652, &t173); hero_array_push_owned(&t652, &t174); hero_array_push_owned(&t652, &t175); hero_array_push_owned(&t652, &t176); hero_array_push_owned(&t652, &t177); hero_array_push_owned(&t652, &t178); hero_array_push_owned(&t652, &t179); hero_array_push_owned(&t652, &t180); hero_array_push_owned(&t652, &t181); hero_array_push_owned(&t652, &t182); hero_array_push_owned(&t652, &t183); hero_array_push_owned(&t652, &t184); hero_array_push_owned(&t652, &t185); hero_array_push_owned(&t652, &t186); hero_array_push_owned(&t652, &t187); hero_array_push_owned(&t652, &t188); hero_array_push_owned(&t652, &t189); hero_array_push_owned(&t652, &t190); hero_array_push_owned(&t652, &t191); hero_array_push_owned(&t652, &t192); hero_array_push_owned(&t652, &t193); hero_array_push_owned(&t652, &t194); hero_array_push_owned(&t652, &t195); hero_array_push_owned(&t652, &t196); hero_array_push_owned(&t652, &t197); hero_array_push_owned(&t652, &t198); hero_array_push_owned(&t652, &t199); hero_array_push_owned(&t652, &t200); hero_array_push_owned(&t652, &t201); hero_array_push_owned(&t652, &t202); hero_array_push_owned(&t652, &t203); hero_array_push_owned(&t652, &t204); hero_array_push_owned(&t652, &t205); hero_array_push_owned(&t652, &t206); hero_array_push_owned(&t652, &t207); hero_array_push_owned(&t652, &t208); hero_array_push_owned(&t652, &t209); hero_array_push_owned(&t652, &t210); hero_array_push_owned(&t652, &t211); hero_array_push_owned(&t652, &t212); hero_array_push_owned(&t652, &t213); hero_array_push_owned(&t652, &t214); hero_array_push_owned(&t652, &t215); hero_array_push_owned(&t652, &t216); hero_array_push_owned(&t652, &t217); hero_array_push_owned(&t652, &t218); hero_array_push_owned(&t652, &t219); hero_array_push_owned(&t652, &t220); hero_array_push_owned(&t652, &t221); hero_array_push_owned(&t652, &t222); hero_array_push_owned(&t652, &t223); hero_array_push_owned(&t652, &t224); hero_array_push_owned(&t652, &t225); hero_array_push_owned(&t652, &t226); hero_array_push_owned(&t652, &t227); hero_array_push_owned(&t652, &t228); hero_array_push_owned(&t652, &t229); hero_array_push_owned(&t652, &t230); hero_array_push_owned(&t652, &t231); hero_array_push_owned(&t652, &t232); hero_array_push_owned(&t652, &t233); hero_array_push_owned(&t652, &t234); hero_array_push_owned(&t652, &t235); hero_array_push_owned(&t652, &t236); hero_array_push_owned(&t652, &t237); hero_array_push_owned(&t652, &t238); hero_array_push_owned(&t652, &t239); hero_array_push_owned(&t652, &t240); hero_array_push_owned(&t652, &t241); hero_array_push_owned(&t652, &t242); hero_array_push_owned(&t652, &t243); hero_array_push_owned(&t652, &t244); hero_array_push_owned(&t652, &t245); hero_array_push_owned(&t652, &t246); hero_array_push_owned(&t652, &t247); hero_array_push_owned(&t652, &t248); hero_array_push_owned(&t652, &t249); hero_array_push_owned(&t652, &t250); hero_array_push_owned(&t652, &t251); hero_array_push_owned(&t652, &t252); hero_array_push_owned(&t652, &t253); hero_array_push_owned(&t652, &t254); hero_array_push_owned(&t652, &t255); hero_array_push_owned(&t652, &t256); hero_array_push_owned(&t652, &t257); hero_array_push_owned(&t652, &t258); hero_array_push_owned(&t652, &t259); hero_array_push_owned(&t652, &t260); hero_array_push_owned(&t652, &t261); hero_array_push_owned(&t652, &t262); hero_array_push_owned(&t652, &t263); hero_array_push_owned(&t652, &t264); hero_array_push_owned(&t652, &t265); hero_array_push_owned(&t652, &t266); hero_array_push_owned(&t652, &t267); hero_array_push_owned(&t652, &t268); hero_array_push_owned(&t652, &t269); hero_array_push_owned(&t652, &t270); hero_array_push_owned(&t652, &t271); hero_array_push_owned(&t652, &t272); hero_array_push_owned(&t652, &t273); hero_array_push_owned(&t652, &t274); hero_array_push_owned(&t652, &t275); hero_array_push_owned(&t652, &t276); hero_array_push_owned(&t652, &t277); hero_array_push_owned(&t652, &t278); hero_array_push_owned(&t652, &t279); hero_array_push_owned(&t652, &t280); hero_array_push_owned(&t652, &t281); hero_array_push_owned(&t652, &t282); hero_array_push_owned(&t652, &t283); hero_array_push_owned(&t652, &t284); hero_array_push_owned(&t652, &t285); hero_array_push_owned(&t652, &t286); hero_array_push_owned(&t652, &t287); hero_array_push_owned(&t652, &t288); hero_array_push_owned(&t652, &t289); hero_array_push_owned(&t652, &t290); hero_array_push_owned(&t652, &t291); hero_array_push_owned(&t652, &t292); hero_array_push_owned(&t652, &t293); hero_array_push_owned(&t652, &t294); hero_array_push_owned(&t652, &t295); hero_array_push_owned(&t652, &t296); hero_array_push_owned(&t652, &t297); hero_array_push_owned(&t652, &t298); hero_array_push_owned(&t652, &t299); hero_array_push_owned(&t652, &t300); hero_array_push_owned(&t652, &t301); hero_array_push_owned(&t652, &t302); hero_array_push_owned(&t652, &t303); hero_array_push_owned(&t652, &t304); hero_array_push_owned(&t652, &t305); hero_array_push_owned(&t652, &t306); hero_array_push_owned(&t652, &t307); hero_array_push_owned(&t652, &t308); hero_array_push_owned(&t652, &t309); hero_array_push_owned(&t652, &t310); hero_array_push_owned(&t652, &t311); hero_array_push_owned(&t652, &t312); hero_array_push_owned(&t652, &t313); hero_array_push_owned(&t652, &t314); hero_array_push_owned(&t652, &t315); hero_array_push_owned(&t652, &t316); hero_array_push_owned(&t652, &t317); hero_array_push_owned(&t652, &t318); hero_array_push_owned(&t652, &t319); hero_array_push_owned(&t652, &t320); hero_array_push_owned(&t652, &t321); hero_array_push_owned(&t652, &t322); hero_array_push_owned(&t652, &t323); hero_array_push_owned(&t652, &t324); hero_array_push_owned(&t652, &t325); hero_array_push_owned(&t652, &t326); hero_array_push_owned(&t652, &t327); hero_array_push_owned(&t652, &t328); hero_array_push_owned(&t652, &t329); hero_array_push_owned(&t652, &t330); hero_array_push_owned(&t652, &t331); hero_array_push_owned(&t652, &t332); hero_array_push_owned(&t652, &t333); hero_array_push_owned(&t652, &t334); hero_array_push_owned(&t652, &t335); hero_array_push_owned(&t652, &t336); hero_array_push_owned(&t652, &t337); hero_array_push_owned(&t652, &t338); hero_array_push_owned(&t652, &t339); hero_array_push_owned(&t652, &t340); hero_array_push_owned(&t652, &t341); hero_array_push_owned(&t652, &t342); hero_array_push_owned(&t652, &t343); hero_array_push_owned(&t652, &t344); hero_array_push_owned(&t652, &t345); hero_array_push_owned(&t652, &t346); hero_array_push_owned(&t652, &t347); hero_array_push_owned(&t652, &t348); hero_array_push_owned(&t652, &t349); hero_array_push_owned(&t652, &t350); hero_array_push_owned(&t652, &t351); hero_array_push_owned(&t652, &t352); hero_array_push_owned(&t652, &t353); hero_array_push_owned(&t652, &t354); hero_array_push_owned(&t652, &t355); hero_array_push_owned(&t652, &t356); hero_array_push_owned(&t652, &t357); hero_array_push_owned(&t652, &t358); hero_array_push_owned(&t652, &t359); hero_array_push_owned(&t652, &t360); hero_array_push_owned(&t652, &t361); hero_array_push_owned(&t652, &t362); hero_array_push_owned(&t652, &t363); hero_array_push_owned(&t652, &t364); hero_array_push_owned(&t652, &t365); hero_array_push_owned(&t652, &t366); hero_array_push_owned(&t652, &t367); hero_array_push_owned(&t652, &t368); hero_array_push_owned(&t652, &t369); hero_array_push_owned(&t652, &t370); hero_array_push_owned(&t652, &t371); hero_array_push_owned(&t652, &t372); hero_array_push_owned(&t652, &t373); hero_array_push_owned(&t652, &t374); hero_array_push_owned(&t652, &t375); hero_array_push_owned(&t652, &t376); hero_array_push_owned(&t652, &t377); hero_array_push_owned(&t652, &t378); hero_array_push_owned(&t652, &t379); hero_array_push_owned(&t652, &t380); hero_array_push_owned(&t652, &t381); hero_array_push_owned(&t652, &t382); hero_array_push_owned(&t652, &t383); hero_array_push_owned(&t652, &t384); hero_array_push_owned(&t652, &t385); hero_array_push_owned(&t652, &t386); hero_array_push_owned(&t652, &t387); hero_array_push_owned(&t652, &t388); hero_array_push_owned(&t652, &t389); hero_array_push_owned(&t652, &t390); hero_array_push_owned(&t652, &t391); hero_array_push_owned(&t652, &t392); hero_array_push_owned(&t652, &t393); hero_array_push_owned(&t652, &t394); hero_array_push_owned(&t652, &t395); hero_array_push_owned(&t652, &t396); hero_array_push_owned(&t652, &t397); hero_array_push_owned(&t652, &t398); hero_array_push_owned(&t652, &t399); hero_array_push_owned(&t652, &t400); hero_array_push_owned(&t652, &t401); hero_array_push_owned(&t652, &t402); hero_array_push_owned(&t652, &t403); hero_array_push_owned(&t652, &t404); hero_array_push_owned(&t652, &t405); hero_array_push_owned(&t652, &t406); hero_array_push_owned(&t652, &t407); hero_array_push_owned(&t652, &t408); hero_array_push_owned(&t652, &t409); hero_array_push_owned(&t652, &t410); hero_array_push_owned(&t652, &t411); hero_array_push_owned(&t652, &t412); hero_array_push_owned(&t652, &t413); hero_array_push_owned(&t652, &t414); hero_array_push_owned(&t652, &t415); hero_array_push_owned(&t652, &t416); hero_array_push_owned(&t652, &t417); hero_array_push_owned(&t652, &t418); hero_array_push_owned(&t652, &t419); hero_array_push_owned(&t652, &t420); hero_array_push_owned(&t652, &t421); hero_array_push_owned(&t652, &t422); hero_array_push_owned(&t652, &t423); hero_array_push_owned(&t652, &t424); hero_array_push_owned(&t652, &t425); hero_array_push_owned(&t652, &t426); hero_array_push_owned(&t652, &t427); hero_array_push_owned(&t652, &t428); hero_array_push_owned(&t652, &t429); hero_array_push_owned(&t652, &t430); hero_array_push_owned(&t652, &t431); hero_array_push_owned(&t652, &t432); hero_array_push_owned(&t652, &t433); hero_array_push_owned(&t652, &t434); hero_array_push_owned(&t652, &t435); hero_array_push_owned(&t652, &t436); hero_array_push_owned(&t652, &t437); hero_array_push_owned(&t652, &t438); hero_array_push_owned(&t652, &t439); hero_array_push_owned(&t652, &t440); hero_array_push_owned(&t652, &t441); hero_array_push_owned(&t652, &t442); hero_array_push_owned(&t652, &t443); hero_array_push_owned(&t652, &t444); hero_array_push_owned(&t652, &t445); hero_array_push_owned(&t652, &t446); hero_array_push_owned(&t652, &t447); hero_array_push_owned(&t652, &t448); hero_array_push_owned(&t652, &t449); hero_array_push_owned(&t652, &t450); hero_array_push_owned(&t652, &t451); hero_array_push_owned(&t652, &t452); hero_array_push_owned(&t652, &t453); hero_array_push_owned(&t652, &t454); hero_array_push_owned(&t652, &t455); hero_array_push_owned(&t652, &t456); hero_array_push_owned(&t652, &t457); hero_array_push_owned(&t652, &t458); hero_array_push_owned(&t652, &t459); hero_array_push_owned(&t652, &t460); hero_array_push_owned(&t652, &t461); hero_array_push_owned(&t652, &t462); hero_array_push_owned(&t652, &t463); hero_array_push_owned(&t652, &t464); hero_array_push_owned(&t652, &t465); hero_array_push_owned(&t652, &t466); hero_array_push_owned(&t652, &t467); hero_array_push_owned(&t652, &t468); hero_array_push_owned(&t652, &t469); hero_array_push_owned(&t652, &t470); hero_array_push_owned(&t652, &t471); hero_array_push_owned(&t652, &t472); hero_array_push_owned(&t652, &t473); hero_array_push_owned(&t652, &t474); hero_array_push_owned(&t652, &t475); hero_array_push_owned(&t652, &t476); hero_array_push_owned(&t652, &t477); hero_array_push_owned(&t652, &t478); hero_array_push_owned(&t652, &t479); hero_array_push_owned(&t652, &t480); hero_array_push_owned(&t652, &t481); hero_array_push_owned(&t652, &t482); hero_array_push_owned(&t652, &t483); hero_array_push_owned(&t652, &t484); hero_array_push_owned(&t652, &t485); hero_array_push_owned(&t652, &t486); hero_array_push_owned(&t652, &t487); hero_array_push_owned(&t652, &t488); hero_array_push_owned(&t652, &t489); hero_array_push_owned(&t652, &t490); hero_array_push_owned(&t652, &t491); hero_array_push_owned(&t652, &t492); hero_array_push_owned(&t652, &t493); hero_array_push_owned(&t652, &t494); hero_array_push_owned(&t652, &t495); hero_array_push_owned(&t652, &t496); hero_array_push_owned(&t652, &t497); hero_array_push_owned(&t652, &t498); hero_array_push_owned(&t652, &t499); hero_array_push_owned(&t652, &t500); hero_array_push_owned(&t652, &t501); hero_array_push_owned(&t652, &t502); hero_array_push_owned(&t652, &t503); hero_array_push_owned(&t652, &t504); hero_array_push_owned(&t652, &t505); hero_array_push_owned(&t652, &t506); hero_array_push_owned(&t652, &t507); hero_array_push_owned(&t652, &t508); hero_array_push_owned(&t652, &t509); hero_array_push_owned(&t652, &t510); hero_array_push_owned(&t652, &t511); hero_array_push_owned(&t652, &t512); hero_array_push_owned(&t652, &t513); hero_array_push_owned(&t652, &t514); hero_array_push_owned(&t652, &t515); hero_array_push_owned(&t652, &t516); hero_array_push_owned(&t652, &t517); hero_array_push_owned(&t652, &t518); hero_array_push_owned(&t652, &t519); hero_array_push_owned(&t652, &t520); hero_array_push_owned(&t652, &t521); hero_array_push_owned(&t652, &t522); hero_array_push_owned(&t652, &t523); hero_array_push_owned(&t652, &t524); hero_array_push_owned(&t652, &t525); hero_array_push_owned(&t652, &t526); hero_array_push_owned(&t652, &t527); hero_array_push_owned(&t652, &t528); hero_array_push_owned(&t652, &t529); hero_array_push_owned(&t652, &t530); hero_array_push_owned(&t652, &t531); hero_array_push_owned(&t652, &t532); hero_array_push_owned(&t652, &t533); hero_array_push_owned(&t652, &t534); hero_array_push_owned(&t652, &t535); hero_array_push_owned(&t652, &t536); hero_array_push_owned(&t652, &t537); hero_array_push_owned(&t652, &t538); hero_array_push_owned(&t652, &t539); hero_array_push_owned(&t652, &t540); hero_array_push_owned(&t652, &t541); hero_array_push_owned(&t652, &t542); hero_array_push_owned(&t652, &t543); hero_array_push_owned(&t652, &t544); hero_array_push_owned(&t652, &t545); hero_array_push_owned(&t652, &t546); hero_array_push_owned(&t652, &t547); hero_array_push_owned(&t652, &t548); hero_array_push_owned(&t652, &t549); hero_array_push_owned(&t652, &t550); hero_array_push_owned(&t652, &t551); hero_array_push_owned(&t652, &t552); hero_array_push_owned(&t652, &t553); hero_array_push_owned(&t652, &t554); hero_array_push_owned(&t652, &t555); hero_array_push_owned(&t652, &t556); hero_array_push_owned(&t652, &t557); hero_array_push_owned(&t652, &t558); hero_array_push_owned(&t652, &t559); hero_array_push_owned(&t652, &t560); hero_array_push_owned(&t652, &t561); hero_array_push_owned(&t652, &t562); hero_array_push_owned(&t652, &t563); hero_array_push_owned(&t652, &t564); hero_array_push_owned(&t652, &t565); hero_array_push_owned(&t652, &t566); hero_array_push_owned(&t652, &t567); hero_array_push_owned(&t652, &t568); hero_array_push_owned(&t652, &t569); hero_array_push_owned(&t652, &t570); hero_array_push_owned(&t652, &t571); hero_array_push_owned(&t652, &t572); hero_array_push_owned(&t652, &t573); hero_array_push_owned(&t652, &t574); hero_array_push_owned(&t652, &t575); hero_array_push_owned(&t652, &t576); hero_array_push_owned(&t652, &t577); hero_array_push_owned(&t652, &t578); hero_array_push_owned(&t652, &t579); hero_array_push_owned(&t652, &t580); hero_array_push_owned(&t652, &t581); hero_array_push_owned(&t652, &t582); hero_array_push_owned(&t652, &t583); hero_array_push_owned(&t652, &t584); hero_array_push_owned(&t652, &t585); hero_array_push_owned(&t652, &t586); hero_array_push_owned(&t652, &t587); hero_array_push_owned(&t652, &t588); hero_array_push_owned(&t652, &t589); hero_array_push_owned(&t652, &t590); hero_array_push_owned(&t652, &t591); hero_array_push_owned(&t652, &t592); hero_array_push_owned(&t652, &t593); hero_array_push_owned(&t652, &t594); hero_array_push_owned(&t652, &t595); hero_array_push_owned(&t652, &t596); hero_array_push_owned(&t652, &t597); hero_array_push_owned(&t652, &t598); hero_array_push_owned(&t652, &t599); hero_array_push_owned(&t652, &t600); hero_array_push_owned(&t652, &t601); hero_array_push_owned(&t652, &t602); hero_array_push_owned(&t652, &t603); hero_array_push_owned(&t652, &t604); hero_array_push_owned(&t652, &t605); hero_array_push_owned(&t652, &t606); hero_array_push_owned(&t652, &t607); hero_array_push_owned(&t652, &t608); hero_array_push_owned(&t652, &t609); hero_array_push_owned(&t652, &t610); hero_array_push_owned(&t652, &t611); hero_array_push_owned(&t652, &t612); hero_array_push_owned(&t652, &t613); hero_array_push_owned(&t652, &t614); hero_array_push_owned(&t652, &t615); hero_array_push_owned(&t652, &t616); hero_array_push_owned(&t652, &t617); hero_array_push_owned(&t652, &t618); hero_array_push_owned(&t652, &t619); hero_array_push_owned(&t652, &t620); hero_array_push_owned(&t652, &t621); hero_array_push_owned(&t652, &t622); hero_array_push_owned(&t652, &t623); hero_array_push_owned(&t652, &t624); hero_array_push_owned(&t652, &t625); hero_array_push_owned(&t652, &t626); hero_array_push_owned(&t652, &t627); hero_array_push_owned(&t652, &t628); hero_array_push_owned(&t652, &t629); hero_array_push_owned(&t652, &t630); hero_array_push_owned(&t652, &t631); hero_array_push_owned(&t652, &t632); hero_array_push_owned(&t652, &t633); hero_array_push_owned(&t652, &t634); hero_array_push_owned(&t652, &t635); hero_array_push_owned(&t652, &t636); hero_array_push_owned(&t652, &t637); hero_array_push_owned(&t652, &t638); hero_array_push_owned(&t652, &t639); hero_array_push_owned(&t652, &t640); hero_array_push_owned(&t652, &t641); hero_array_push_owned(&t652, &t642); hero_array_push_owned(&t652, &t643); hero_array_push_owned(&t652, &t644); hero_array_push_owned(&t652, &t645); hero_array_push_owned(&t652, &t646); hero_array_push_owned(&t652, &t647); hero_array_push_owned(&t652, &t648); hero_array_push_owned(&t652, &t649); hero_array_push_owned(&t652, &t650); hero_array_push_owned(&t652, &t651); t653 = h0_own0; h0_own0 = t652; hero_array_decref(t653);
-#line 5715 "main.c"
+#line 5703 "main.c"
     hero_array_incref(t652);
     hero_array_release_at(&h0_own0);
     return t652;
@@ -5764,7 +5752,7 @@ int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) {
 #line 42
     t111 = h7_second; t112 = UINT64_C(128); t113 = t111 == t112; h19_b14 = t113; goto bb50; bb50: t114 = h19_b14; h18_b13 = t114; if (t114) goto bb51; else goto bb52; bb51: t115 = h8_third; t116 = UINT64_C(128); t117 = t115 == t116; h18_b13 = t117; goto bb52; bb52: t118 = h18_b13; if (t118) goto bb53; else goto bb54; bb53:
     t119 = INT64_C(3); h20_ret0 = t119; goto bb55; bb54: goto bb48; bb55:
-#line 5768 "main.c"
+#line 5756 "main.c"
     t121 = h20_ret0;
     return t121;
 }
@@ -5780,7 +5768,7 @@ int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_e
 #line 50
     t18 = h0_s; t19 = h1_end; t20 = h4_width; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 50); t22 = h_1corestringsinternalscan_space_width_at(t18, t21); t23 = h4_width; t24 = t22 == t23; h5_b0 = t24; goto bb7; bb7: t25 = h5_b0; if (t25) goto bb8; else goto bb9; bb8:
     t26 = h4_width; h6_ret0 = t26; goto bb10; bb9: goto bb5; bb10:
-#line 5784 "main.c"
+#line 5772 "main.c"
     t31 = h6_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h7_own7);
@@ -5811,7 +5799,7 @@ h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep)
     t54 = HERO_STR_LIT(hero_str_59e06249); t55 = h1_sep; t56 = h0_s; t57 = HERO_STR_LIT(hero_str_eda7a03); t58 = HERO_STR_LIT(hero_str_277784c0); t59 = HERO_STR_LIT(hero_str_22); t60 = hero_str_concat(t57, t55); t67 = h8_own8; h8_own8 = t60; hero_str_decref(t67); t61 = hero_str_concat(t60, t58); t68 = h9_own9; h9_own9 = t61; hero_str_decref(t68); t62 = hero_str_concat(t61, t56); t69 = h10_own10; h10_own10 = t62; hero_str_decref(t69); t63 = hero_str_concat(t62, t59); t70 = h11_own11; h11_own11 = t63; hero_str_decref(t70); hero_str_incref(t54); hero_str_incref(t63); t64 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t63}}; t71 = h12_own12; h12_own12 = t64; h_0opt_e201354_release(&t71); h6_ret0 = t64; goto bb15; bb13:
 #line 72
     t41 = HERO_STR_LIT(hero_str_59e06249); t42 = h1_sep; t43 = h0_s; t44 = hero_str_len(t43); t45 = HERO_STR_LIT(hero_str_eda7a03); t46 = HERO_STR_LIT(hero_str_2cee3aa3); t47 = hero_int_to_str(t44); t72 = h13_own13; h13_own13 = t47; hero_str_decref(t72); t48 = HERO_STR_LIT(hero_str_391e7e27); t49 = hero_str_concat(t45, t42); t73 = h14_own14; h14_own14 = t49; hero_str_decref(t73); t50 = hero_str_concat(t49, t46); t74 = h15_own15; h15_own15 = t50; hero_str_decref(t74); t51 = hero_str_concat(t50, t47); t75 = h16_own16; h16_own16 = t51; hero_str_decref(t75); t52 = hero_str_concat(t51, t48); t76 = h17_own17; h17_own17 = t52; hero_str_decref(t76); hero_str_incref(t41); hero_str_incref(t52); t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t41, .msg = t52}}; t77 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t77); h6_ret0 = t53; goto bb15; bb14: goto bb12; bb15:
-#line 5815 "main.c"
+#line 5803 "main.c"
     t65 = h6_ret0;
     h_0opt_e201354_retain(&t65);
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -5840,37 +5828,37 @@ void h_1coreslicesinternalmerge_turned(HeroArrayHeader * *ph0_xs, int64_t h1_fro
     t15 = h4_high; t16 = h5_held; { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*ph0_xs)); if (*hero_slot == NULL || t15 < 0 || t15 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t15, "<core>/slices/internal/merge.hero", "merge.turned", 86, 9); hero_array_set(hero_slot, t15, &t16); }
     t17 = h3_low; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.turned", 87, 15); h3_low = t19;
     t20 = h4_high; t21 = INT64_C(1); if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.turned", 88, 16); h4_high = t22; goto bb1; bb3: return;
-#line 5844 "main.c"
+#line 5832 "main.c"
 }
 
 #line 13 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
 bool h_1coreslicesinternalsample_by_key(h_1coreslicesinternalsample_Entry h0_a, h_1coreslicesinternalsample_Entry h1_b) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a.f_key; t2 = h1_b.f_key; t3 = t1 < t2; return t3;
-#line 5850 "main.c"
+#line 5838 "main.c"
 }
 
 #line 17 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
 bool h_1coreslicesinternalsample_key_down(h_1coreslicesinternalsample_Entry h0_a, h_1coreslicesinternalsample_Entry h1_b) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a.f_key; t2 = h1_b.f_key; t3 = t1 > t2; return t3;
-#line 5856 "main.c"
+#line 5844 "main.c"
 }
 
 #line 21 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
 bool h_1coreslicesinternalsample_up(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = t1 < t2; return t3;
-#line 5862 "main.c"
+#line 5850 "main.c"
 }
 
 #line 25 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
 bool h_1coreslicesinternalsample_never(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h2_b0, t3, t6, t7; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = t1 < t2; h2_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h1_b; t5 = h0_a; t6 = t4 < t5; h2_b0 = t6; goto bb2; bb2: t7 = h2_b0; return t7;
-#line 5868 "main.c"
+#line 5856 "main.c"
 }
 
 #line 29 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
 bool h_1coreslicesinternalsample_always(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h2_b0, t3, t6, t7; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = t1 <= t2; h2_b0 = t3; if (t3) goto bb2; else goto bb1; bb1: t4 = h1_b; t5 = h0_a; t6 = t4 < t5; h2_b0 = t6; goto bb2; bb2: t7 = h2_b0; return t7;
-#line 5874 "main.c"
+#line 5862 "main.c"
 }
 
 #line 34 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
@@ -5884,7 +5872,7 @@ HeroArrayHeader * h_1coreslicesinternalsample_entries(HeroArrayHeader * h0_numbe
     t25 = h3_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.entries", 37, 9); h3_i0 = t27; goto bb1; bb4:
 #line 41
     t28 = h1_out;
-#line 5888 "main.c"
+#line 5876 "main.c"
     hero_array_incref(t28);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -5907,7 +5895,7 @@ int64_t h_1coreslicesinternalsample_place_of(h_1coreslicesinternalsample_Entry h
     t32 = h3_i0; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.place_of", 47, 9); h3_i0 = t34; goto bb1; bb4:
 #line 50
     t35 = h1_total;
-#line 5911 "main.c"
+#line 5899 "main.c"
     hero_array_release_at(&h2_xs0);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     hero_array_release_at(&h6_own6);
@@ -5916,7 +5904,7 @@ int64_t h_1coreslicesinternalsample_place_of(h_1coreslicesinternalsample_Entry h
 bb5:
 #line 48 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
     t29 = h5_f0; t30 = t29.as.ok; if (__builtin_add_overflow(t16, t30, &t31)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.place_of", 48, 17); h1_total = t31; goto bb3; bb6: t27 = h5_f0; t28 = t27.as.err;
-#line 5920 "main.c"
+#line 5908 "main.c"
     hero_panic_must_at(t28, "<core>/slices/internal/sample.hero", "sample.place_of", 48, 30);
     hero_unreachable();
 }
@@ -5945,7 +5933,7 @@ bool h_1coreslicesinternalsample_sorted_stably(HeroArrayHeader * h0_got, HeroArr
 #line 65
     t34 = h5_earlier; t35 = h_1coreslicesinternalsample_place_of(t34); t36 = h6_later; t37 = h_1coreslicesinternalsample_place_of(t36); t38 = t35 > t37; h7_b0 = t38; goto bb13; bb13: t39 = h7_b0; if (t39) goto bb14; else goto bb15; bb14:
     t40 = false; h8_ret0 = t40; goto bb16; bb15: goto bb11; bb16:
-#line 5949 "main.c"
+#line 5937 "main.c"
     t51 = h8_ret0;
     hero_array_release_at(&h2_xs0);
     h_1coreslicesinternalsample_0Entry_release(hero_slot_escape(&h5_earlier));
@@ -5968,7 +5956,7 @@ HeroArrayHeader * h_1coreslicesinternalsample_names_of(HeroArrayHeader * h0_xs) 
     t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.names_of", 74, 9); h3_i0 = t16; goto bb1; bb4:
 #line 77
     t17 = h1_out;
-#line 5972 "main.c"
+#line 5960 "main.c"
     hero_array_incref(t17);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -5989,7 +5977,7 @@ HeroArrayHeader * h_1coreslicesinternalsample_every_list(int64_t h0_values, int6
     t45 = h4_i0; t46 = INT64_C(1); if (__builtin_add_overflow(t45, t46, &t47)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.every_list", 84, 9); h4_i0 = t47; goto bb1; bb4:
 #line 94
     t48 = h2_out;
-#line 5993 "main.c"
+#line 5981 "main.c"
     hero_array_incref(t48);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -6019,7 +6007,7 @@ bb5:
     t36 = h12_grown; hero_array_push_owned(&h5_longer, &t36); goto bb11; bb11:
 #line 88
     t38 = h10_i2; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.every_list", 88, 17); h10_i2 = t40; goto bb9; bb12: goto bb7;
-#line 6023 "main.c"
+#line 6011 "main.c"
 }
 
 #line 98 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
@@ -6035,7 +6023,7 @@ HeroArrayHeader * h_1coreslicesinternalsample_fixed_keys(int64_t h0_count, int64
     t24 = h5_i0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("<core>/slices/internal/sample.hero", "sample.fixed_keys", 102, 9); h5_i0 = t26; goto bb1; bb4:
 #line 107
     t27 = h2_out;
-#line 6039 "main.c"
+#line 6027 "main.c"
     hero_array_incref(t27);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_xs0);
@@ -6047,7 +6035,7 @@ HeroArrayHeader * h_1coreslicesinternalsample_fixed_keys(int64_t h0_count, int64
 #line 142 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/sample.hero"
 bool h_1coreslicesinternalsample_below_seven(int64_t h0_n) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(0); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_n; t5 = INT64_C(7); t6 = t4 < t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
-#line 6051 "main.c"
+#line 6039 "main.c"
 }
 
 #line 26 "<heroes library>"
@@ -6058,7 +6046,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 6062 "main.c"
+#line 6050 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -6071,27 +6059,27 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 6075 "main.c"
+#line 6063 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 6080 "main.c"
+#line 6068 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 6085 "main.c"
+#line 6073 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 6090 "main.c"
+#line 6078 "main.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 6095 "main.c"
+#line 6083 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -6111,7 +6099,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 6115 "main.c"
+#line 6103 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -6153,7 +6141,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 181
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 6157 "main.c"
+#line 6145 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -6188,7 +6176,7 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 190
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 6192 "main.c"
+#line 6180 "main.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -6211,7 +6199,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 6215 "main.c"
+#line 6203 "main.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -6236,13 +6224,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 6240 "main.c"
+#line 6228 "main.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 6246 "main.c"
+#line 6234 "main.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -6256,7 +6244,7 @@ void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBU
     t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
 #line 235
     t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 6260 "main.c"
+#line 6248 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
@@ -6268,7 +6256,7 @@ bb2:
     t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
     t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 6272 "main.c"
+#line 6260 "main.c"
     hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -6288,7 +6276,7 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
     t19 = h4_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/slices.hero", "slices.sort_by", 22, 9); h4_i0 = t21; goto bb1; bb4:
 #line 26
     t22 = h2_out;
-#line 6292 "main.c"
+#line 6280 "main.c"
     hero_array_incref(t22);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -6309,7 +6297,7 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
     t19 = h4_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/slices.hero", "slices.sort_by", 22, 9); h4_i0 = t21; goto bb1; bb4:
 #line 26
     t22 = h2_out;
-#line 6313 "main.c"
+#line 6301 "main.c"
     hero_array_incref(t22);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -6329,7 +6317,7 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
     t19 = h4_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("<core>/slices.hero", "slices.sort_by", 22, 9); h4_i0 = t21; goto bb1; bb4:
 #line 26
     t22 = h2_out;
-#line 6333 "main.c"
+#line 6321 "main.c"
     hero_array_incref(t22);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -6352,7 +6340,7 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
     t15 = h6_stop; t16 = h2_count; t17 = t15 < t16; if (t17) goto bb5; else goto bb6; bb3:
 #line 76
     t73 = h3_sequence; t74 = h4_bounds; hero_array_incref(t73); hero_array_incref(t74); t75 = (h_1coreslicesinternalmerge_Runs){.f_sequence = t73, .f_bounds = t74}; t80 = h11_own11; h11_own11 = t75; h_1coreslicesinternalmerge_0Runs_release(&t80);
-#line 6356 "main.c"
+#line 6344 "main.c"
     h_1coreslicesinternalmerge_0Runs_retain(&t75);
     hero_array_release_at(&h3_sequence);
     hero_array_release_at(&h4_bounds);
@@ -6381,7 +6369,7 @@ bb4:
     t66 = h6_stop; t67 = INT64_C(1); if (__builtin_add_overflow(t66, t67, &t68)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.runs", 71, 28); h6_stop = t68; goto bb15; bb17: goto bb7; bb18:
 #line 70
     t54 = h1_less; t55 = h0_xs; t56 = h6_stop; t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "<core>/slices/internal/merge.hero", "merge.runs", 70, 48) : (void)0), (void)(t55->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t55 + 1))[t56]); t58 = h0_xs; t59 = h6_stop; t60 = INT64_C(1); if (__builtin_sub_overflow(t59, t60, &t61)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.runs", 70, 64); t62 = ((void)((t58 == NULL || t61 < 0 || t61 >= t58->len) ? hero_panic_index_at(t58, t61, "<core>/slices/internal/merge.hero", "merge.runs", 70, 61) : (void)0), (void)(t58->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t58 + 1))[t61]); t63 = t54(t57, t62); t64 = !t63; h8_b1 = t64; goto bb19; bb19: t65 = h8_b1; if (t65) goto bb16; else goto bb17;
-#line 6385 "main.c"
+#line 6373 "main.c"
 }
 
 #line 95 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/merge.hero"
@@ -6400,7 +6388,7 @@ bb4:
     t22 = h7_pair; t23 = INT64_C(2); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.paired", 107, 12); t25 = h4_bounds; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); t27 = t24 < t26; if (t27) goto bb5; else goto bb6; bb3:
 #line 135
     t119 = h5_merged; t120 = h6_joined; hero_array_incref(t119); hero_array_incref(t120); t121 = (h_1coreslicesinternalmerge_Runs){.f_sequence = t119, .f_bounds = t120}; t128 = h20_own20; h20_own20 = t121; h_1coreslicesinternalmerge_0Runs_release(&t128);
-#line 6404 "main.c"
+#line 6392 "main.c"
     h_1coreslicesinternalmerge_0Runs_retain(&t121);
     hero_array_release_at(&h3_sequence);
     hero_array_release_at(&h4_bounds);
@@ -6444,7 +6432,7 @@ bb4:
 #line 132
     t114 = h10_stop; hero_array_push_owned(&h6_joined, &t114);
     t116 = h7_pair; t117 = INT64_C(2); if (__builtin_add_overflow(t116, t117, &t118)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.paired", 133, 16); h7_pair = t118; goto bb1;
-#line 6448 "main.c"
+#line 6436 "main.c"
 }
 
 #line 37 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/merge.hero"
@@ -6455,7 +6443,7 @@ bb4:
     t8 = h0_xs; t9 = h1_less; t10 = h2_held; t11 = h_1coreslicesinternalmerge_0paired_1b9a87(t8, t9, t10); t15 = h4_own4; h4_own4 = t11; h_1coreslicesinternalmerge_0Runs_release(&t15); t16 = h2_held; h_1coreslicesinternalmerge_0Runs_retain(&t11); h2_held = t11; h_1coreslicesinternalmerge_0Runs_release(&t16); goto bb1; bb3:
 #line 43
     t12 = h2_held.f_sequence;
-#line 6459 "main.c"
+#line 6447 "main.c"
     hero_array_incref(t12);
     h_1coreslicesinternalmerge_0Runs_release(hero_slot_escape(&h2_held));
     h_1coreslicesinternalmerge_0Runs_release(hero_slot_escape(&h3_own3));
@@ -6473,7 +6461,7 @@ bb4:
     t18 = true; h5_ret0 = t18; goto bb8; bb5: goto bb3; bb6:
 #line 85
     t14 = false; h5_ret0 = t14; goto bb8; bb7: goto bb5; bb8:
-#line 6477 "main.c"
+#line 6465 "main.c"
     t19 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t19;
@@ -6491,7 +6479,7 @@ HERO_TU_LOCAL __attribute__((unused)) bool hero_value_h_library_0all_1b9a87(Hero
     t8 = h0_xs; t9 = h1_less; t10 = h2_held; t11 = h_1coreslicesinternalmerge_0paired_213448d8(t8, t9, t10); t15 = h4_own4; h4_own4 = t11; h_1coreslicesinternalmerge_0Runs_release(&t15); t16 = h2_held; h_1coreslicesinternalmerge_0Runs_retain(&t11); h2_held = t11; h_1coreslicesinternalmerge_0Runs_release(&t16); goto bb1; bb3:
 #line 43
     t12 = h2_held.f_sequence;
-#line 6495 "main.c"
+#line 6483 "main.c"
     hero_array_incref(t12);
     h_1coreslicesinternalmerge_0Runs_release(hero_slot_escape(&h2_held));
     h_1coreslicesinternalmerge_0Runs_release(hero_slot_escape(&h3_own3));
@@ -6507,7 +6495,7 @@ HERO_TU_LOCAL __attribute__((unused)) bool hero_value_h_library_0all_1b9a87(Hero
     t8 = h0_xs; t9 = h1_less; t10 = h2_held; t11 = h_1coreslicesinternalmerge_0paired_39facbc0(t8, t9, t10); t15 = h4_own4; h4_own4 = t11; h_1coreslicesinternalmerge_0Runs_release(&t15); t16 = h2_held; h_1coreslicesinternalmerge_0Runs_retain(&t11); h2_held = t11; h_1coreslicesinternalmerge_0Runs_release(&t16); goto bb1; bb3:
 #line 43
     t12 = h2_held.f_sequence;
-#line 6511 "main.c"
+#line 6499 "main.c"
     hero_array_incref(t12);
     h_1coreslicesinternalmerge_0Runs_release(hero_slot_escape(&h2_held));
     h_1coreslicesinternalmerge_0Runs_release(hero_slot_escape(&h3_own3));
@@ -6528,7 +6516,7 @@ HERO_TU_LOCAL __attribute__((unused)) bool hero_value_h_library_0all_1b9a87(Hero
     t15 = h6_stop; t16 = h2_count; t17 = t15 < t16; if (t17) goto bb5; else goto bb6; bb3:
 #line 76
     t73 = h3_sequence; t74 = h4_bounds; hero_array_incref(t73); hero_array_incref(t74); t75 = (h_1coreslicesinternalmerge_Runs){.f_sequence = t73, .f_bounds = t74}; t80 = h11_own11; h11_own11 = t75; h_1coreslicesinternalmerge_0Runs_release(&t80);
-#line 6532 "main.c"
+#line 6520 "main.c"
     h_1coreslicesinternalmerge_0Runs_retain(&t75);
     hero_array_release_at(&h3_sequence);
     hero_array_release_at(&h4_bounds);
@@ -6557,7 +6545,7 @@ bb4:
     t66 = h6_stop; t67 = INT64_C(1); if (__builtin_add_overflow(t66, t67, &t68)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.runs", 71, 28); h6_stop = t68; goto bb15; bb17: goto bb7; bb18:
 #line 70
     t54 = h1_less; t55 = h0_xs; t56 = h6_stop; t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "<core>/slices/internal/merge.hero", "merge.runs", 70, 48) : (void)0), (void)(t55->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t55 + 1))[t56]); t58 = h0_xs; t59 = h6_stop; t60 = INT64_C(1); if (__builtin_sub_overflow(t59, t60, &t61)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.runs", 70, 64); t62 = ((void)((t58 == NULL || t61 < 0 || t61 >= t58->len) ? hero_panic_index_at(t58, t61, "<core>/slices/internal/merge.hero", "merge.runs", 70, 61) : (void)0), (void)(t58->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t58 + 1))[t61]); t63 = t54(t57, t62); t64 = !t63; h8_b1 = t64; goto bb19; bb19: t65 = h8_b1; if (t65) goto bb16; else goto bb17;
-#line 6561 "main.c"
+#line 6549 "main.c"
 }
 
 #line 95 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/merge.hero"
@@ -6576,7 +6564,7 @@ bb4:
     t22 = h7_pair; t23 = INT64_C(2); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.paired", 107, 12); t25 = h4_bounds; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); t27 = t24 < t26; if (t27) goto bb5; else goto bb6; bb3:
 #line 135
     t119 = h5_merged; t120 = h6_joined; hero_array_incref(t119); hero_array_incref(t120); t121 = (h_1coreslicesinternalmerge_Runs){.f_sequence = t119, .f_bounds = t120}; t128 = h20_own20; h20_own20 = t121; h_1coreslicesinternalmerge_0Runs_release(&t128);
-#line 6580 "main.c"
+#line 6568 "main.c"
     h_1coreslicesinternalmerge_0Runs_retain(&t121);
     hero_array_release_at(&h3_sequence);
     hero_array_release_at(&h4_bounds);
@@ -6620,7 +6608,7 @@ bb4:
 #line 132
     t114 = h10_stop; hero_array_push_owned(&h6_joined, &t114);
     t116 = h7_pair; t117 = INT64_C(2); if (__builtin_add_overflow(t116, t117, &t118)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.paired", 133, 16); h7_pair = t118; goto bb1;
-#line 6624 "main.c"
+#line 6612 "main.c"
 }
 
 #line 50 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/merge.hero"
@@ -6636,7 +6624,7 @@ bb4:
     t15 = h6_stop; t16 = h2_count; t17 = t15 < t16; if (t17) goto bb5; else goto bb6; bb3:
 #line 76
     t73 = h3_sequence; t74 = h4_bounds; hero_array_incref(t73); hero_array_incref(t74); t75 = (h_1coreslicesinternalmerge_Runs){.f_sequence = t73, .f_bounds = t74}; t80 = h11_own11; h11_own11 = t75; h_1coreslicesinternalmerge_0Runs_release(&t80);
-#line 6640 "main.c"
+#line 6628 "main.c"
     h_1coreslicesinternalmerge_0Runs_retain(&t75);
     hero_array_release_at(&h3_sequence);
     hero_array_release_at(&h4_bounds);
@@ -6665,7 +6653,7 @@ bb4:
     t66 = h6_stop; t67 = INT64_C(1); if (__builtin_add_overflow(t66, t67, &t68)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.runs", 71, 28); h6_stop = t68; goto bb15; bb17: goto bb7; bb18:
 #line 70
     t54 = h1_less; t55 = h0_xs; t56 = h6_stop; t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "<core>/slices/internal/merge.hero", "merge.runs", 70, 48) : (void)0), (void)(t55->elem->size != sizeof(h_1coreslicesinternalsample_Entry) ? hero_unreachable() : (void)0), ((h_1coreslicesinternalsample_Entry const *)(const void *)(t55 + 1))[t56]); t58 = h0_xs; t59 = h6_stop; t60 = INT64_C(1); if (__builtin_sub_overflow(t59, t60, &t61)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.runs", 70, 64); t62 = ((void)((t58 == NULL || t61 < 0 || t61 >= t58->len) ? hero_panic_index_at(t58, t61, "<core>/slices/internal/merge.hero", "merge.runs", 70, 61) : (void)0), (void)(t58->elem->size != sizeof(h_1coreslicesinternalsample_Entry) ? hero_unreachable() : (void)0), ((h_1coreslicesinternalsample_Entry const *)(const void *)(t58 + 1))[t61]); t63 = t54(t57, t62); t64 = !t63; h8_b1 = t64; goto bb19; bb19: t65 = h8_b1; if (t65) goto bb16; else goto bb17;
-#line 6669 "main.c"
+#line 6657 "main.c"
 }
 
 #line 95 "examples/query/heroes.packages/core@0.6.0-34be99cd584b202d/slices/internal/merge.hero"
@@ -6684,7 +6672,7 @@ bb4:
     t22 = h7_pair; t23 = INT64_C(2); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.paired", 107, 12); t25 = h4_bounds; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); t27 = t24 < t26; if (t27) goto bb5; else goto bb6; bb3:
 #line 135
     t119 = h5_merged; t120 = h6_joined; hero_array_incref(t119); hero_array_incref(t120); t121 = (h_1coreslicesinternalmerge_Runs){.f_sequence = t119, .f_bounds = t120}; t128 = h20_own20; h20_own20 = t121; h_1coreslicesinternalmerge_0Runs_release(&t128);
-#line 6688 "main.c"
+#line 6676 "main.c"
     h_1coreslicesinternalmerge_0Runs_retain(&t121);
     hero_array_release_at(&h3_sequence);
     hero_array_release_at(&h4_bounds);
@@ -6728,7 +6716,7 @@ bb4:
 #line 132
     t114 = h10_stop; hero_array_push_owned(&h6_joined, &t114);
     t116 = h7_pair; t117 = INT64_C(2); if (__builtin_add_overflow(t116, t117, &t118)) hero_panic_overflow_at("<core>/slices/internal/merge.hero", "merge.paired", 133, 16); h7_pair = t118; goto bb1;
-#line 6732 "main.c"
+#line 6720 "main.c"
 }
 HERO_TU_LOCAL void h_datarow_0Row_retain(const h_datarow_Row *v) {
     hero_str_incref(v->f_team);
@@ -7593,7 +7581,7 @@ HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e98026542bad684", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0326256a6f7d944b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("datarow\trow\ndatatable\ttable\nfmtreport\treport\nqueryplan\tplan\nrunengine\tengine\n1corestrconv\tstrconv\n1corestrings\tstrings\n1corestrconvinternalfloat\tfloat\n1corestrconvinternalshown\tshown\n1corestrconvinternalnearest\tnearest\n1corestrconvinternalscaling\tscaling\n1corestrconvinternaldecimal\tdecimal\n1corestrconvinternalpowers\tpowers\n1corestringsinternalscan\tscan\n1coreslices\tslices\n1coreslicesinternalmerge\tmerge\n1coreslicesinternalsample\tsample\n");

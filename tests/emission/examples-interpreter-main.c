@@ -10183,7 +10183,7 @@ HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0a3b9e10735c9483", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("61680e3874b2a612", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lexscan\tscan\nlextoken\ttoken\nruneval\teval\nrunexpr\texpr\nrunvalue\tvalue\nsyncursor\tcursor\nsynexpr\texpr\nsynparse\tparse\nsyntree\ttree\nutileach\teach\n1corestrconv\tstrconv\n1corestrconvinternalfloat\tfloat\n1corestrconvinternalshown\tshown\n1corestrconvinternalnearest\tnearest\n1corestrconvinternalscaling\tscaling\n1corestrconvinternaldecimal\tdecimal\n1corestrconvinternalpowers\tpowers\n");

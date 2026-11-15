@@ -854,7 +854,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("397a318a711bc9c8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("10a6a1b37271db57", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2531afilethatisnoprogramishandedtotheshell\tfixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell\n");

@@ -341,7 +341,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("776218f919c0ee08", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e8e89221b16ff97", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494aheroesatexitfunctionachandlerreachesthroughexitisrefused\tfixedbugs-2494-a-heroes-atexit-function-a-c-handler-reaches-through-exit-is-refused\n");

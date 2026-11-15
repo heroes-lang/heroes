@@ -271,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("366f2ecd56ffc94a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d9b9ef65855dad9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2558anullreadalibrarydeclinesistold\tfixedbugs-2558-a-null-read-a-library-declines-is-told\n");

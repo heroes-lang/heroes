@@ -524,7 +524,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e0d9a36164e9e74", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("253a0a5f17a4b003", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs092getsockoptreadsitslengththroughacell\tfixedbugs-092-getsockopt-reads-its-length-through-a-cell\n");

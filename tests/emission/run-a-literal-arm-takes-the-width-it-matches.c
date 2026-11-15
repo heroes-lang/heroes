@@ -421,7 +421,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ec889d34e2cf26e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("25f4f9fc4f8303fd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("aliteralarmtakesthewidthitmatches\ta-literal-arm-takes-the-width-it-matches\n");

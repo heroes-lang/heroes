@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7071bcc56a2fdef8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("479e2cee6b85f087", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs171apointerbehindadereferencingmacrocalledwhilenull\tfixedbugs-171-a-pointer-behind-a-dereferencing-macro-called-while-null\n");

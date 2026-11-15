@@ -13056,7 +13056,7 @@ HERO_TU_LOCAL uint64_t h_0opt_55de1826_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("18f0ea6130e0c4e7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("701d5a893236d676", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1coreencodingjson\tjson\n1corenethttp\thttp\n1corepathfilepath\tfilepath\n1coreslices\tslices\n1corestrconv\tstrconv\n1corestrings\tstrings\n1coreencodingjsoninternalnumeral\tnumeral\n1coreencodingjsoninternalquoted\tquoted\n1coreencodingjsoninternaltokens\ttokens\n1coreencodingjsoninternalcursor\tcursor\n1corenet\tnet\n1corenethttpinternalclient\tclient\n1corenethttpinternalserver\tserver\n1corenetheronet\thero_net\n1corenetinternalfailure\tfailure\n1corenethttpinternallines\tlines\n1corenethttpinternalwire\twire\n1coreos\tos\n1corepathfilepathinternallexical\tlexical\n1coreosheroos\thero_os\n1coreslicesinternalmerge\tmerge\n1coreslicesinternalsample\tsample\n1corestrconvinternalfloat\tfloat\n1corestrconvinternalshown\tshown\n1corestrconvinternalnearest\tnearest\n1corestrconvinternalscaling\tscaling\n1corestrconvinternaldecimal\tdecimal\n1corestrconvinternalpowers\tpowers\n1corestringsinternalscan\tscan\n");

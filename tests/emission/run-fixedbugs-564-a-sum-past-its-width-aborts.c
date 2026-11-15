@@ -217,7 +217,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("72e40e5325d4c7de", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a107e7c272ad96d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs564asumpastitswidthaborts\tfixedbugs-564-a-sum-past-its-width-aborts\n");

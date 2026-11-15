@@ -216,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7698a9e62971ed8b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4dc51a0f2ac7ff1a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2490abortaworkingfolderforachildthatisempty\tfixedbugs-2490-abort-a-working-folder-for-a-child-that-is-empty\n");

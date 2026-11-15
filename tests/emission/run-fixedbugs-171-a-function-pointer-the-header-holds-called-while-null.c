@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ba0655a7347f8f7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("02ccd583749e0a86", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs171afunctionpointertheheaderholdscalledwhilenull\tfixedbugs-171-a-function-pointer-the-header-holds-called-while-null\n");

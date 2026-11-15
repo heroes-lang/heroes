@@ -288,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("242318436d4b5460", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b4f886b6ea165ef", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs584adeprecatedrecordasalocalbuildssilent\tfixedbugs-584-a-deprecated-record-as-a-local-builds-silent\n");

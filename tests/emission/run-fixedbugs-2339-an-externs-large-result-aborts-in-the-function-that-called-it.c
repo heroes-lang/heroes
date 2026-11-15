@@ -317,7 +317,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a514aec7e125b00", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("517dbb157f686c8f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2339anexternslargeresultabortsinthefunctionthatcalledit\tfixedbugs-2339-an-externs-large-result-aborts-in-the-function-that-called-it\n");

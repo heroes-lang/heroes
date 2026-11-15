@@ -368,7 +368,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("73268dde432d173c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a52fe07448328cb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown\tfixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own\n");
