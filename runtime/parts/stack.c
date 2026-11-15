@@ -89,6 +89,23 @@
  * landed in whatever lay below. A Linux target now compiles with
  * `-fstack-clash-protection` (`selfhost/cli/flags.hero`), whose probes move
  * `sp` down a page at a time, the shape `sp_low` already reads.
+ *
+ * WHAT DEFECT 2558 ADDED (2026-11-15, panel 249's ffi-pragmatist and
+ * compiler-engineer, each apart). SAVE AND CHAIN above handed on only a fault
+ * no arm named, and two arms name a fault by its address alone: a call to
+ * address zero and an access under the null window. Neither address is a
+ * mapping of this runtime's, so neither proves the fault is the program's, and
+ * a library that installed its handler first may make it on purpose: Go's
+ * c-archive turns a nil dereference into a recovered panic, and a Heroes
+ * program binding one died at 134 with a line about a null it never read. So
+ * where the fault ran on a stack this runtime did not measure (a goroutine's)
+ * on a thread some runtime made ready for signals (one with an alternate
+ * stack), those two arms ask the handler before them first and claim only a
+ * fault it gives back unchanged; anywhere else the fault is the program's and
+ * is claimed at once, since asking there was measured to let Go's handler end
+ * a program's own null read at 139 in silence, or hang
+ * (`hero_stack_foreign`). The stack, lend and dead-handle arms are
+ * witnessed by mappings this runtime made, and claim at once as before.
  */
 
 #if defined(__has_feature)
@@ -457,9 +474,10 @@ static void hero_stack_say_heroes_name(const char *sym) {
     hero_stack_say(sym);
 }
 
-/* The faulting pc, fp and sp from the interrupted context — the only lines in
- * this file that know a register file. An unknown architecture answers zeros,
- * which fails the second witness and re-raises the fault as before. */
+/* The faulting pc, fp and sp from the interrupted context — with
+ * `hero_stack_regfile` below them, the only lines in this file that know a
+ * register file. An unknown architecture answers zeros, which fails the second
+ * witness and re-raises the fault as before. */
 /* THE LINK REGISTER IS THE FOURTH REGISTER AND ON AArch64 IT IS THE ONLY ONE
  * THAT KNOWS (panel 156 R2, 2026-09-16). On AArch64 a LEAF function saves no
  * frame record: the fixture's `node_value` compiles to `sub sp / str / ldr /
@@ -501,6 +519,55 @@ static void hero_stack_regs(void *ctx, uintptr_t *pc, uintptr_t *fp, uintptr_t *
     *fp = 0;
     *sp = 0;
     *lr = 0;
+#endif
+}
+
+/* THE INTERRUPTED THREAD'S INTEGER REGISTER FILE, WHOLE (defect 2558): the
+ * record the kernel resumes the thread from, which is where a handler that
+ * recovers a fault writes its recovery. Go's turns a nil dereference into a
+ * call of `runtime.sigpanic` by moving the pc and the stack; a handler that
+ * skips the faulting access moves the pc; one that repairs the pointer moves
+ * the register the access read it from. So every general register, the stack
+ * pointer, the pc and the flags are kept, and an edit to any of them is seen
+ * by comparing two copies. 0 where this platform's record is not known here,
+ * and the guard below then cannot tell a recovery and claims the fault, as it
+ * did before. Unused under the sanitizer, where the guard is not compiled. */
+typedef struct HeroStackRegfile {
+#if defined(__APPLE__) && (defined(__aarch64__) || defined(__x86_64__))
+    __typeof__(((ucontext_t *)0)->uc_mcontext->__ss) ss;
+#elif defined(__linux__) && defined(__aarch64__)
+    __typeof__(((ucontext_t *)0)->uc_mcontext.regs) regs;
+    __typeof__(((ucontext_t *)0)->uc_mcontext.sp) sp;
+    __typeof__(((ucontext_t *)0)->uc_mcontext.pc) pc;
+    __typeof__(((ucontext_t *)0)->uc_mcontext.pstate) pstate;
+#elif defined(__linux__) && defined(__x86_64__)
+    gregset_t gregs;
+#else
+    char unknown;
+#endif
+} HeroStackRegfile;
+
+__attribute__((unused)) static int hero_stack_regfile(void *ctx, HeroStackRegfile *out) {
+    ucontext_t *uc = (ucontext_t *)ctx;
+    /* Zeroed first, so two copies compare by their registers and never by
+     * whatever bytes padding held (memset, memcpy and memcmp are
+     * async-signal-safe since POSIX.1-2016). */
+    memset(out, 0, sizeof *out);
+#if defined(__APPLE__) && (defined(__aarch64__) || defined(__x86_64__))
+    memcpy(&out->ss, &uc->uc_mcontext->__ss, sizeof out->ss);
+    return 1;
+#elif defined(__linux__) && defined(__aarch64__)
+    memcpy(out->regs, uc->uc_mcontext.regs, sizeof out->regs);
+    out->sp = uc->uc_mcontext.sp;
+    out->pc = uc->uc_mcontext.pc;
+    out->pstate = uc->uc_mcontext.pstate;
+    return 1;
+#elif defined(__linux__) && defined(__x86_64__)
+    memcpy(out->gregs, uc->uc_mcontext.gregs, sizeof out->gregs);
+    return 1;
+#else
+    (void)uc;
+    return 0;
 #endif
 }
 
@@ -667,19 +734,104 @@ static void hero_stack_say_hex(uintptr_t v) {
     hero_stack_say(buf);
 }
 
+/* The handler that was there before us, called with what the kernel gave us:
+ * 1 where it is a function and was called, and it returned; 0 where the saved
+ * disposition is the default or ignore, and there is nobody to call. The one
+ * door to it, for a fault this file does not own and for one it may (below). */
+static int hero_stack_call_prior(int signum, siginfo_t *si, void *ctx) {
+    struct sigaction *prev = signum == SIGBUS ? &hero_stack_prev_bus : &hero_stack_prev_segv;
+    if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
+        prev->sa_sigaction(signum, si, ctx);
+        return 1;
+    }
+    if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
+        prev->sa_handler(signum);
+        return 1;
+    }
+    return 0;
+}
+
+/* WHETHER A FAULT AT A LOW ADDRESS WAS ANOTHER'S TO RECOVER (defect 2558,
+ * 2026-11-15). The two arms of the handler below whose only witness is the
+ * address, a call to address zero and an access under the null window, name a
+ * cause no mapping of this runtime's proves: a dereference of something null.
+ * A library that installed its own handler before `main` may make that fault
+ * on purpose and recover it: Go's c-archive turns a nil dereference into a
+ * panic its `recover` catches, by editing the faulting context into a call of
+ * `runtime.sigpanic` (1 of 1 from plain C, measured by panel 249's
+ * ffi-pragmatist), and the arms claimed it first: exit 134, three runs of
+ * three on this Mac and in Linux arm64, `a null pointer was read through ...
+ * called from main.GoNilPanic`, a line about a program that read nothing.
+ *
+ * WHOSE FAULT IT IS, TWO FACTS OF THE THREAD SAY. Asking the handler before
+ * us about every such fault was built and measured, and it is wrong for the
+ * program's own: a null read in C on `main` before the program ever called
+ * into Go died at 139 twice and hung until the timeout once, both streams
+ * empty, where it had been told at 134. Go's handler, on a thread it has
+ * never seen or before its own start-up is done, forwards the fault to the
+ * default it found behind it, or waits for a thread of its own.
+ *
+ * So the fault is the program's, and told at once as before, where it ran on
+ * the stack this runtime measured for the thread (`hero_stack_bounds`), which
+ * is where a call the program made into C runs; and it is the program's too on
+ * a thread no runtime made ready for signals of its own, one with no
+ * alternate signal stack, which is every thread a C library starts for itself.
+ * Go runs its code, a callback the program made included, on a goroutine's
+ * stack, which Go allocated, and every thread that runs Go code has an
+ * alternate stack, Go's or this runtime's (Go gives one to a thread of C's at
+ * its first call into Go, panel 249's census). Measured with the stack alone,
+ * a null read on a thread C made, in a program that had not yet called into
+ * Go, died at 139 once and hung twice in three runs, and was told at 134 three
+ * of three once Go had been called; with the alternate stack asked too it is
+ * told at once.
+ *
+ * What that leaves, said, each as it was before this function: a library
+ * whose handler recovers a fault it makes on purpose on the calling thread's
+ * own stack, or on a thread with no alternate stack, is told as a null read
+ * (none is known: Go's faults are on goroutine stacks, and C that Go calls
+ * faults into Go's own crash report); and a fault on a thread of C's that has
+ * an alternate stack, during Go's start-up, is Go's to end as it ends it. */
+static int hero_stack_foreign(uintptr_t sp) {
+    /* `lo` is zero on a thread nobody measured, and `0 - WINDOW` wraps to an
+     * address no stack pointer is above, so such a thread's every fault is off
+     * its stack. The window below `lo` is the thread's own guard. */
+    if (sp >= hero_stack_lo - HERO_STACK_WINDOW && sp < hero_stack_hi) return 0;
+    /* A system call that takes no lock, beside `sigaction`, which this handler
+     * already makes; an answer it cannot give is read as the program's. */
+    stack_t alt;
+    if (sigaltstack(NULL, &alt) != 0) return 0;
+    return (alt.ss_flags & SS_DISABLE) == 0;
+}
+
+/* A fault on a foreign stack goes to the handler before us first, and how it
+ * comes back is the answer. It may not come back at all, jumping out with
+ * `siglongjmp` or ending the process with a report of its own, and then
+ * nothing here runs. It may return having edited the register file the kernel
+ * resumes from, which is how every recovery is written (`hero_stack_regfile`
+ * above): it took the fault, so we return and the thread goes on where it was
+ * sent. Or it may return with the register file as it was, having declined:
+ * Go's, finding the default behind it, puts SIGSEGV back to the default and
+ * returns so the access faults again and the process dies at 139 in silence.
+ * The access cannot succeed the second time, since nothing can be mapped under
+ * the window (it is the platform's own floor, at its head) and nothing moved
+ * the pc, so the fault is still to be told, and the arm tells it as it always
+ * did, the handler before us having had its say. 0 where there is nobody
+ * before us or this platform's register file is not known here: the claim
+ * stands then, as it stood before this function. */
+static int hero_stack_prior_recovered(int signum, siginfo_t *si, void *ctx) {
+    HeroStackRegfile before;
+    if (!hero_stack_regfile(ctx, &before)) return 0;
+    if (!hero_stack_call_prior(signum, si, ctx)) return 0;
+    HeroStackRegfile after;
+    hero_stack_regfile(ctx, &after);
+    return memcmp(&before, &after, sizeof before) != 0;
+}
+
 /* A fault that is not ours goes to whoever was there before us — chained with
  * the saved disposition, so a library's write barrier keeps working — and a
  * saved default is restored so the fault re-executes and dies as it would have. */
 static void hero_stack_pass_on(int signum, siginfo_t *si, void *ctx) {
-    struct sigaction *prev = signum == SIGBUS ? &hero_stack_prev_bus : &hero_stack_prev_segv;
-    if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
-        prev->sa_sigaction(signum, si, ctx);
-        return;
-    }
-    if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
-        prev->sa_handler(signum);
-        return;
-    }
+    if (hero_stack_call_prior(signum, si, ctx)) return;
     struct sigaction dfl;
     memset(&dfl, 0, sizeof dfl);
     dfl.sa_handler = SIG_DFL;
@@ -879,8 +1031,13 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * behind `#define glClear`, set at run time and called as functions, a
      * correct program that builds and runs today; and a macro over `(*p)` is
      * a function to every question C can ask at compile time. So the address
-     * is still the witness, and the sentence says what can reach it. */
+     * is still the witness, and the sentence says what can reach it.
+     *
+     * And the address is the only witness, so on a stack this runtime did not
+     * measure a handler installed before this one is asked first, and may take
+     * the call as its own (defect 2558, `hero_stack_foreign` above). */
     if (pc == 0) {
+        if (hero_stack_foreign(sp) && hero_stack_prior_recovered(signum, si, ctx)) return;
         hero_stack_tell_first();
         hero_stack_say("panic: a null function pointer was called — a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
         hero_abort();
@@ -943,7 +1100,13 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * a fault raised entirely inside C.
      *
      * NOTHING UNDER THE SANITIZER, as the file's head already says: ASan
-     * installs its own handler and reports `SEGV on unknown address` itself. */
+     * installs its own handler and reports `SEGV on unknown address` itself.
+     *
+     * AND NOT BEFORE THE HANDLER THAT WAS THERE FIRST, ON A STACK THAT IS NOT
+     * THE PROGRAM'S (defect 2558): a null read on a goroutine's stack is a
+     * fault Go makes on purpose and recovers, so off the stack this runtime
+     * measured the handler before us is asked before this arm claims
+     * (`hero_stack_foreign` above). */
     /* Before the null arm, because on Darwin arm64 the null window is 4 GiB and
      * the order must not depend on where the kernel mapped the dead region. */
     uintptr_t dead_offset = 0;
@@ -960,6 +1123,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
         hero_abort();
     }
     if ((unsigned long long)addr < HERO_NULL_WINDOW) {
+        if (hero_stack_foreign(sp) && hero_stack_prior_recovered(signum, si, ctx)) return;
         hero_stack_tell_first();
         const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: a null pointer was read through, at offset ");

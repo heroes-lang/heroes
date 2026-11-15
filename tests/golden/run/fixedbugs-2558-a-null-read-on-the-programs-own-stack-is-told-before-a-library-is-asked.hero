@@ -1,0 +1,21 @@
+# DEFECT 2558, beside it: a null read on the program's own stack is told
+# without asking the library before the runtime (2026-11-15).
+#
+# Asking the earlier handler about every fault was built and measured first,
+# and it lost the program's own mistakes: a null read in C on `main`, in a
+# program linking a Go archive it had not yet called, died at 139 twice and
+# hung once in three runs, both streams empty, since Go's handler on a thread
+# it has never seen forwards the fault to the default or waits. A fault on the
+# stack the runtime measured for the thread is the program's, and is told at
+# once. The library here ends the process in silence when it is handed a fault
+# it did not make, as Go does then, so a guard that asked it would leave this
+# case with nothing on stderr (`fixedbugs-2558-library.h`).
+
+extern "fixedbugs-2558-library.h"
+    function lib_ends_in_silence()
+    function lib_read_here() -> i64
+
+function main()
+    lib_ends_in_silence()
+    print("before")
+    print(lib_read_here())

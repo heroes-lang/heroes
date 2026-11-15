@@ -1,0 +1,15 @@
+# DEFECT 2558, beside it: a call to address zero the library before the
+# runtime declines is still told (2026-11-15).
+#
+# The arm for a call through a null function pointer names its fault by the
+# address alone, as the null read's arm does, so it asks the handler before
+# the runtime's first in the same place, and tells the call when that handler
+# gives it back unchanged. Under `--sanitize` AddressSanitizer reports it
+# (`fixedbugs-2558-library.h`).
+
+extern "fixedbugs-2558-library.h"
+    function lib_call_declined() -> i64
+
+function main()
+    print("before")
+    print(lib_call_declined())

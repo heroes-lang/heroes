@@ -1,0 +1,3 @@
+before
+!sanitizer: on unknown address
+!panic: a null pointer was read through, at offset 0x8
