@@ -79,6 +79,16 @@ use report
 constant SLACK: i64
     25
 
+# One directory a suite walks and the floor that directory's count is held to,
+# for a suite that walks more than one (defect 2534): each is floored on its
+# own, so a walk that stopped reaching one directory is told by name while the
+# others still reach theirs, where one sum would let the larger hide it. And a
+# suite handed these rather than reading constants can be handed a tree of a
+# test's own, empty directories among them.
+record Walked
+    dir: str
+    least: i64
+
 # The floor, checked both ways.
 #
 # `found` is what the suite counted, `floor` the number it holds, `what` the

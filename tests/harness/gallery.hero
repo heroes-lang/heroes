@@ -38,9 +38,15 @@ constant LEAST: i64
 # Every program of the gallery, sorted: each `.hero` directly in it. The C
 # header `13-lease.h` and the expectations are its files, not programs.
 function programs(scratch: str) -> [str]?
+    return programs_in(scratch: scratch, dir: DIR)
+
+# The programs of a gallery at `dir`, read as `programs` reads `DIR`: what a
+# suite handed its directories asks, so a test can hand it a gallery of its own
+# (defect 2534).
+function programs_in(scratch: str, dir: str) -> [str]?
     out: [str] @= []
 
-    for entry in shell.list_entries(scratch: scratch, dir: DIR)?
+    for entry in shell.list_entries(scratch: scratch, dir: dir)?
         if core_strings.has_suffix(s: entry, suffix: ".hero")
             out @ out.push(entry)
 
