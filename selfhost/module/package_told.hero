@@ -48,9 +48,8 @@ function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnos
     none: [diag.Diagnostic] = []
 
     if placed.is_package(from) && name.len() == 0
-        owner = placed.entry_of(from)
         return [
-            diag.new_diagnostic(code: "unknown_entry", message: "`<" + placed.entry_of(written) + ">` is no entry of the catalogue of the package `" + owner + "`, `" + root_of(s, alias: owner) + catalogue.FILE + "`: the package names a package its catalogue does not hold, and a package is fetched whole — `heroes fetch` places it again", span: span)
+            diag.new_diagnostic(code: "unknown_entry", message: owner_lacks(s, owner: placed.entry_of(from), entry: placed.entry_of(written)), span: span)
         ]
     entry = placed.entry_of(name)
 
@@ -75,6 +74,21 @@ function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnos
             diag.new_diagnostic(code: listed.code, message: "`use " + written + "` reaches a package through the catalogue, and it does not read: " + listed.problem + " — a catalogue that does not read names no package, the lines above that one included", span: span)
         ]
     return [no_entry(s, listed: listed, entry: entry, inside: placed.inside_of(name), span: span)]
+
+# A package's own file naming `<entry>`, which the package's catalogue does
+# not hold (defect 2539): what repairs it is said by where the package is
+# read from. Both said *`heroes fetch` places it again*, which repairs
+# neither: a `path` entry is a folder of the author's, never placed, whose
+# catalogue the author writes; a placed tree is read only where it sums to
+# its entry's `sum` (R7), so a fetch places the very tree that names it.
+function owner_lacks(s: source.Source, owner: str, entry: str) -> str
+    opening = "`<" + entry + ">` is no entry of the catalogue of the package `" + owner + "`, `" + root_of(s, alias: owner) + catalogue.FILE + "`: the package names a package its catalogue does not hold"
+
+    for p in s.reached.packages
+        if p.alias == owner && p.unverified
+            return opening + ", and the package is the folder its `path` names, read where it stands and never fetched, so that catalogue is yours to write — `heroes add` with `-C " + p.root + "` writes the entry there, and the program's catalogue, which holds every package of the build, must hold it too"
+
+    return opening + ", and its tree is the one its `sum` names, as it was published, so `heroes fetch` would place it as it is — the package's catalogue is its author's to repair, and `heroes add` with another version or tag of `" + owner + "`, one whose catalogue holds the entry, is the program's way round"
 
 # `<json>` is no entry: of no catalogue, there being none, or of the program's.
 # A `guess` takes the brackets off where the program's own module of that

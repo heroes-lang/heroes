@@ -1,0 +1,4 @@
+use <strings>/cut
+
+function size() -> i64
+    return cut.cut()
