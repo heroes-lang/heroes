@@ -1,0 +1,295 @@
+# The writes of an ordered map or set: a key added, and a slot taken out with
+# the last slot moved into it, in the tree and in the program's lists alike.
+# A list's room past the live slots holds copies of live values, so nothing
+# taken out stays alive in it.
+
+use containers/internal/codes
+use containers/internal/samples
+use containers/internal/steps
+use containers/internal/tree
+use containers/internal/walk
+
+# Where `add` left a key: its slot, and whether it was new.
+record Spot
+    # The key's slot.
+    slot: i64
+    # Whether the key was new, its slot just claimed.
+    added: bool
+
+# Writes `value` at slot `at` of `xs`, growing it by one where `at` is its
+# length.
+function store<T>(@xs: [T], at: i64, value: T)
+    if at == xs.len()
+        xs @ xs.push(value)
+    else
+        xs[at] @ value
+
+# Moves the element at `end` into `at`, which was freed, then fills `end` with
+# a copy of a live element so the one freed is let go, and cuts the list back
+# to its `count` live elements where it is empty or three quarters unused.
+function drop_slot<T>(@xs: [T], at: i64, end: i64, count: i64)
+    if at != end
+        xs[at] @ xs[end]
+
+    if count == 0
+        xs @ []
+        return
+    xs[end] @ xs[0]
+
+    if xs.len() >= tree.KEPT && count * 4 <= xs.len()
+        xs @ xs.slice(from: 0, to: count)
+
+# Ends the program where the shape is a set's and a map's write was asked,
+# or the other way, or where a list is shorter than the shape.
+function require_kind(shape: tree.Tree lent, as_map: bool, keys_held: i64, values_held: i64)
+    if shape.holds_values != as_map
+        if as_map
+            codes.abort_with("a set's shape was given to a map's write; make a map with `new_ordered_map`")
+        else
+            codes.abort_with("a map's shape was given to a set's write, which would leave its value list behind")
+    codes.require_storage(held: keys_held, count: shape.count, what: "key list")
+
+    if as_map
+        codes.require_storage(held: values_held, count: shape.count, what: "value list")
+
+# Adds `key` where no equal key is held, answering its slot and whether it
+# was new. One call of the order a level, and one more at the end.
+function add<K>(@shape: tree.Tree, @key_list: [K], key: K, less: (function(a: K, b: K) -> bool)) -> Spot
+    x @= shape.root
+    under @= tree.NONE
+    on_left @= false
+    candidate @= tree.NONE
+
+    while x != tree.NONE
+        under @ x
+
+        if less(a: key, b: key_list[x])
+            on_left @ true
+            x @ shape.left[x]
+        else
+            candidate @ x
+            on_left @ false
+            x @ shape.right[x]
+
+    if candidate != tree.NONE && !less(a: key_list[candidate], b: key)
+        return Spot(slot: candidate, added: false)
+    slot = tree.claim(@shape)
+    store(@key_list, slot, key)
+    tree.hang(@shape, slot: slot, under: under, on_left: on_left)
+    return Spot(slot: slot, added: true)
+
+# Takes the slot `at` out of a set, its last slot moving into it.
+function take_key<K>(@shape: tree.Tree, @key_list: [K], at: i64)
+    end = tree.vacate(@shape, at)
+    drop_slot(@key_list, at: at, end: end, count: shape.count)
+
+# Takes the slot `at` out of a map, its last slot moving into it.
+function take_entry<K, V>(@shape: tree.Tree, @key_list: [K], @value_list: [V], at: i64)
+    end = tree.vacate(@shape, at)
+    drop_slot(@key_list, at: at, end: end, count: shape.count)
+    drop_slot(@value_list, at: at, end: end, count: shape.count)
+
+## Tests
+
+test "store: at the end, inside, and the list's length"
+    xs: [i64] @= [1, 2]
+    store(@xs, 2, 3)
+    store(@xs, 0, 9)
+    assert xs == [9, 2, 3]
+
+test "drop_slot: the last taken, one inside, and the list emptied"
+    xs: [str] @= ["a", "b", "c"]
+    drop_slot(@xs, at: 0, end: 2, count: 2)
+    assert xs.slice(from: 0, to: 2) == ["c", "b"]
+    assert xs[2] == "c"
+    drop_slot(@xs, at: 1, end: 1, count: 1)
+    assert xs[0] == "c"
+    drop_slot(@xs, at: 0, end: 0, count: 0)
+    assert xs == []
+
+test "add: a new key, the same again, and a thousand in random order kept balanced"
+    shape @= tree.empty(holds_values: false)
+    held: [i64] @= []
+    first_spot = add(@shape, @held, key: 5, less: samples.ascending)
+    assert first_spot.added && first_spot.slot == 0
+    again = add(@shape, @held, key: 5, less: samples.ascending)
+    assert !again.added && again.slot == 0
+    dice @= samples.Dice(state: 99)
+
+    for _ in range(from: 0, to: 1000)
+        _ = add(@shape, @held, key: samples.roll(@dice, 5000), less: samples.ascending)
+
+    assert tree.holds(shape)
+    order = steps.in_order(shape)
+
+    for at in range(from: 1, to: order.len())
+        assert held[order[at - 1]] < held[order[at]]
+
+test "take_key: every key taken out in random order, the tree whole after each"
+    shape @= tree.empty(holds_values: false)
+    held: [i64] @= []
+
+    for key in range(from: 0, to: 300)
+        _ = add(@shape, @held, key: key * 7 % 300, less: samples.ascending)
+
+    dice @= samples.Dice(state: 3)
+
+    while shape.count > 0
+        take_key(@shape, @held, samples.roll(@dice, shape.count))
+        assert tree.holds(shape)
+
+    assert held == []
+
+test "require_kind: a map's write on a map's shape, and a set's on a set's"
+    require_kind(tree.empty(holds_values: true), as_map: true, keys_held: 0, values_held: 0)
+    require_kind(tree.empty(holds_values: false), as_map: false, keys_held: 0, values_held: 0)
+
+# The index at which `key` stands in `model`, sorted, or would be put.
+function model_rank(model: [i64] lent, key: i64) -> i64
+    at @= 0
+
+    while at < model.len() && model[at] < key
+        at @ at + 1
+
+    return at
+
+# `xs` with `value` put at `at`.
+function model_insert(xs: [i64] lent, at: i64, value: i64) -> [i64]
+    made: [i64] @= []
+
+    for place in range(from: 0, to: xs.len())
+        if place == at
+            made @ made.push(value)
+        made @ made.push(xs[place])
+
+    if at == xs.len()
+        made @ made.push(value)
+    return made
+
+# `xs` without its element at `at`.
+function model_remove(xs: [i64] lent, at: i64) -> [i64]
+    made: [i64] @= []
+
+    for place in range(from: 0, to: xs.len())
+        if place != at
+            made @ made.push(xs[place])
+
+    return made
+
+# The model's answer to a search: the index of the key found, or -1.
+function model_answer(found: i64, size: i64) -> i64
+    if found < 0 || found >= size
+        return -1
+    return found
+
+# The tree's answer to a search turned into the model's index: the rank of
+# the key at the slot found, or -1 for none.
+function tree_answer(shape: tree.Tree lent, held: [i64] lent, slot: i64) -> i64
+    if slot == tree.NONE
+        return -1
+    return walk.rank_of(shape, held, key: held[slot], less: samples.ascending)
+
+test "add, take_entry and every search: five thousand random operations against a sorted list"
+    shape @= tree.empty(holds_values: true)
+    held: [i64] @= []
+    values: [i64] @= []
+    model: [i64] @= []
+    model_values: [i64] @= []
+    dice @= samples.Dice(state: 2026)
+
+    for step in range(from: 0, to: 5000)
+        key = samples.roll(@dice, 400) - 200
+        choice = samples.roll(@dice, 10)
+        rank = model_rank(model, key)
+        present = rank < model.len() && model[rank] == key
+
+        if choice < 5
+            spot = add(@shape, @held, key: key, less: samples.ascending)
+            assert spot.added == !present
+            store(@values, spot.slot, step)
+
+            if present
+                model_values[rank] @ step
+            else
+                model @ model_insert(model, at: rank, value: key)
+                model_values @ model_insert(model_values, at: rank, value: step)
+        else if choice < 8
+            at = walk.exact_of(shape, held, key: key, less: samples.ascending)
+            assert at != tree.NONE == present
+
+            if present
+                take_entry(@shape, @held, @values, at)
+                model @ model_remove(model, rank)
+                model_values @ model_remove(model_values, rank)
+        else if shape.count > 0
+            at = samples.roll(@dice, shape.count)
+            gone = walk.rank_of(shape, held, key: held[at], less: samples.ascending)
+            take_entry(@shape, @held, @values, at)
+            model @ model_remove(model, gone)
+            model_values @ model_remove(model_values, gone)
+        assert tree.holds(shape)
+        assert shape.count == model.len()
+        order = steps.in_order(shape)
+
+        for place in range(from: 0, to: order.len())
+            assert held[order[place]] == model[place]
+            assert values[order[place]] == model_values[place]
+
+        probe = samples.roll(@dice, 440) - 220
+        below = model_rank(model, probe)
+        on_key = below < model.len() && model[below] == probe
+        assert walk.rank_of(shape, held, key: probe, less: samples.ascending) == below
+        assert tree_answer(shape, held, walk.lower_of(shape, held, key: probe, less: samples.ascending)) == below - 1
+
+        if on_key
+            assert tree_answer(shape, held, walk.floor_of(shape, held, key: probe, less: samples.ascending)) == below
+            assert tree_answer(shape, held, walk.ceiling_of(shape, held, key: probe, less: samples.ascending)) == below
+            assert tree_answer(shape, held, walk.higher_of(shape, held, key: probe, less: samples.ascending)) == model_answer(found: below + 1, size: model.len())
+        else
+            assert tree_answer(shape, held, walk.floor_of(shape, held, key: probe, less: samples.ascending)) == below - 1
+            assert tree_answer(shape, held, walk.ceiling_of(shape, held, key: probe, less: samples.ascending)) == model_answer(found: below, size: model.len())
+            assert tree_answer(shape, held, walk.higher_of(shape, held, key: probe, less: samples.ascending)) == model_answer(found: below, size: model.len())
+
+        if model.len() > 0
+            chosen = samples.roll(@dice, model.len())
+            assert held[steps.at_rank(shape, chosen)] == model[chosen]
+        upper = probe + samples.roll(@dice, 60)
+        expected: [i64] @= []
+
+        for key_held in model
+            if key_held >= probe && key_held < upper
+                expected @ expected.push(key_held)
+
+        found: [i64] @= []
+
+        for slot in walk.between(shape, held, from: probe, to: upper, less: samples.ascending)
+            found @ found.push(held[slot])
+
+        assert found == expected
+
+    assert held.len() < tree.KEPT || shape.count * 4 > held.len()
+
+test "add and take_key: a set of texts by their bytes, two thousand random operations"
+    shape @= tree.empty(holds_values: false)
+    held: [str] @= []
+    dice @= samples.Dice(state: 41)
+    words = ["", "a", "ab", "b", "é", "z", "zz", "\u{1b}", "A", "aa"]
+
+    for _ in range(from: 0, to: 2000)
+        word = words[samples.roll(@dice, words.len())]
+
+        if samples.roll(@dice, 2) == 0
+            _ = add(@shape, @held, key: word, less: samples.by_bytes)
+        else
+            at = walk.exact_of(shape, held, key: word, less: samples.by_bytes)
+
+            if at != tree.NONE
+                take_key(@shape, @held, at)
+        assert tree.holds(shape)
+        order = steps.in_order(shape)
+        texts: [str] @= []
+
+        for at in order
+            texts @ texts.push(held[at])
+
+        assert texts == sort(texts)

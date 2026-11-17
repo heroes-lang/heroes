@@ -1,0 +1,26 @@
+# Reaches Rebel's `containers`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the words of a line in the order
+# of their bytes, each once, kept in an ordered set: "be not or to".
+
+use <rebel>/containers
+
+# Whether `a` goes before `b` by their bytes, the shorter first where one
+# begins the other.
+function before(a: str, b: str) -> bool
+    at @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at]
+            return a[at] < b[at]
+        at @ at + 1
+
+    return a.len() < b.len()
+
+function main()
+    words @= containers.new_ordered_set()
+    held: [str] @= []
+
+    for word in ["to", "be", "or", "not", "to", "be"]
+        _ = containers.ordered_add(ordered: @words, key_list: @held, key: word, less: before)
+
+    print(containers.ordered_to_list(ordered: words, key_list: held).join(" "))

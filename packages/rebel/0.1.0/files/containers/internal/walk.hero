@@ -1,0 +1,154 @@
+# The searches of an ordered map or set by a key: each walks down from the
+# root once, calling the order once a level and keeping the best node met, so
+# it costs the depth of the tree. Every answer is a slot, `tree.NONE` where
+# there is none; the face turns that into `not_found`.
+
+use containers/internal/samples
+use containers/internal/steps
+use containers/internal/tree
+
+# The slot of the largest key at or before `key`.
+function floor_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
+    x @= shape.root
+    found @= tree.NONE
+
+    while x != tree.NONE
+        if less(a: key, b: key_list[x])
+            x @ shape.left[x]
+        else
+            found @ x
+            x @ shape.right[x]
+
+    return found
+
+# The slot of the largest key strictly before `key`.
+function lower_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
+    x @= shape.root
+    found @= tree.NONE
+
+    while x != tree.NONE
+        if less(a: key_list[x], b: key)
+            found @ x
+            x @ shape.right[x]
+        else
+            x @ shape.left[x]
+
+    return found
+
+# The slot of the smallest key at or after `key`.
+function ceiling_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
+    x @= shape.root
+    found @= tree.NONE
+
+    while x != tree.NONE
+        if less(a: key_list[x], b: key)
+            x @ shape.right[x]
+        else
+            found @ x
+            x @ shape.left[x]
+
+    return found
+
+# The slot of the smallest key strictly after `key`.
+function higher_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
+    x @= shape.root
+    found @= tree.NONE
+
+    while x != tree.NONE
+        if less(a: key, b: key_list[x])
+            found @ x
+            x @ shape.left[x]
+        else
+            x @ shape.right[x]
+
+    return found
+
+# The slot of the key equal to `key`: the floor, where it goes not before
+# `key` either.
+function exact_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
+    found = floor_of(shape, key_list, key: key, less: less)
+
+    if found != tree.NONE && !less(a: key_list[found], b: key)
+        return found
+    return tree.NONE
+
+# How many keys go before `key`.
+function rank_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
+    x @= shape.root
+    rank @= 0
+
+    while x != tree.NONE
+        if less(a: key_list[x], b: key)
+            rank @ rank + tree.size_of(shape, shape.left[x]) + 1
+            x @ shape.right[x]
+        else
+            x @ shape.left[x]
+
+    return rank
+
+# The slots of the keys from `from` up to `to`, `to` left out, in order.
+function between<K>(shape: tree.Tree lent, key_list: [K] lent, from: K, to: K, less: (function(a: K, b: K) -> bool)) -> [i64]
+    slots: [i64] @= []
+    x @= ceiling_of(shape, key_list, key: from, less: less)
+
+    while x != tree.NONE && less(a: key_list[x], b: to)
+        slots @ slots.push(x)
+        x @ steps.successor(shape, x)
+
+    return slots
+
+## Tests
+
+# The tree of the keys 10, 20, ... 10 times `n`, each slot holding its key,
+# with the key list beside it.
+function tens(n: i64) -> tree.Tree
+    shape @= tree.empty(holds_values: false)
+
+    for _ in range(from: 0, to: n)
+        under = steps.last(shape)
+        slot = tree.claim(@shape)
+        tree.hang(@shape, slot: slot, under: under, on_left: false)
+
+    return shape
+
+test "floor_of and lower_of: below the first, on a key, between two, past the last, and empty"
+    shape = tens(5)
+    held = [10, 20, 30, 40, 50]
+    assert floor_of(shape, held, key: 5, less: samples.ascending) == tree.NONE
+    assert floor_of(shape, held, key: 30, less: samples.ascending) == 2
+    assert floor_of(shape, held, key: 35, less: samples.ascending) == 2
+    assert floor_of(shape, held, key: 99, less: samples.ascending) == 4
+    assert lower_of(shape, held, key: 10, less: samples.ascending) == tree.NONE
+    assert lower_of(shape, held, key: 30, less: samples.ascending) == 1
+    assert lower_of(shape, held, key: 31, less: samples.ascending) == 2
+    nothing: [i64] = []
+    assert floor_of(tree.empty(holds_values: false), nothing, key: 1, less: samples.ascending) == tree.NONE
+
+test "ceiling_of and higher_of: below the first, on a key, between two, and past the last"
+    shape = tens(5)
+    held = [10, 20, 30, 40, 50]
+    assert ceiling_of(shape, held, key: 5, less: samples.ascending) == 0
+    assert ceiling_of(shape, held, key: 30, less: samples.ascending) == 2
+    assert ceiling_of(shape, held, key: 35, less: samples.ascending) == 3
+    assert ceiling_of(shape, held, key: 51, less: samples.ascending) == tree.NONE
+    assert higher_of(shape, held, key: 30, less: samples.ascending) == 3
+    assert higher_of(shape, held, key: 50, less: samples.ascending) == tree.NONE
+    assert higher_of(shape, held, key: -9_223_372_036_854_775_808, less: samples.ascending) == 0
+
+test "exact_of and rank_of: held, absent between, and at both ends"
+    shape = tens(5)
+    held = [10, 20, 30, 40, 50]
+    assert exact_of(shape, held, key: 40, less: samples.ascending) == 3
+    assert exact_of(shape, held, key: 41, less: samples.ascending) == tree.NONE
+    assert rank_of(shape, held, key: 10, less: samples.ascending) == 0
+    assert rank_of(shape, held, key: 41, less: samples.ascending) == 4
+    assert rank_of(shape, held, key: 9_223_372_036_854_775_807, less: samples.ascending) == 5
+
+test "between: a range inside, one empty, one reversed, and the whole"
+    shape = tens(5)
+    held = [10, 20, 30, 40, 50]
+    none: [i64] = []
+    assert between(shape, held, from: 15, to: 40, less: samples.ascending) == [1, 2]
+    assert between(shape, held, from: 20, to: 20, less: samples.ascending) == none
+    assert between(shape, held, from: 40, to: 20, less: samples.ascending) == none
+    assert between(shape, held, from: 0, to: 99, less: samples.ascending) == [0, 1, 2, 3, 4]

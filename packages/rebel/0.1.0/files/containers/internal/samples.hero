@@ -1,0 +1,59 @@
+# The orders and the dice the package's tests use, written once: no function
+# of the package calls one.
+
+# Whether `a` goes before `b` as numbers.
+function ascending(a: i64, b: i64) -> bool
+    return a < b
+
+# Whether `a` goes after `b` as numbers: the opposite order.
+function descending(a: i64, b: i64) -> bool
+    return a > b
+
+# Whether `a` goes before `b` by their bytes, the shorter first where one
+# begins the other: the order of the built-in `sort` on texts.
+function by_bytes(a: str, b: str) -> bool
+    at @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at]
+            return a[at] < b[at]
+        at @ at + 1
+
+    return a.len() < b.len()
+
+# A generator of the same numbers every run, a xorshift of 64 bits, so a test
+# of thousands of random operations repeats exactly.
+record Dice
+    # The state, never 0.
+    state: i64
+
+# The next number of `dice`, from 0 to `below` less one.
+#
+# - `dice`: the generator; it moves on.
+# - `below`: the bound, from 1.
+function roll(@dice: Dice, below: i64) -> i64
+    x @= dice.state
+    x @ x ^ x << 13
+    x @ x ^ x >> 7 & 0x01ff_ffff_ffff_ffff
+    x @ x ^ x << 17
+    dice.state @ x
+    return (x >> 1 & 0x3fff_ffff_ffff_ffff) % below
+
+## Tests
+
+test "roll: within the bound, and the same numbers from the same seed"
+    first_dice @= Dice(state: 7)
+    second_dice @= Dice(state: 7)
+
+    for _ in range(from: 0, to: 1000)
+        a = roll(@first_dice, 10)
+        assert a >= 0 && a < 10
+        assert roll(@second_dice, 10) == a
+
+test "by_bytes: equal, a prefix, a byte apart, and a character of two bytes"
+    assert !by_bytes(a: "ab", b: "ab")
+    assert by_bytes(a: "ab", b: "abc")
+    assert by_bytes(a: "abc", b: "abd")
+    assert by_bytes(a: "z", b: "é")
+    assert ascending(a: 1, b: 2)
+    assert descending(a: 2, b: 1)

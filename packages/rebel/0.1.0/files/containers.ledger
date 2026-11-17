@@ -1,0 +1,497 @@
+# The ledger of `containers`: what Go 1.27 (`container/list`, `container/ring`),
+# Rust 1.100 (`BTreeMap`, `BTreeSet`, `VecDeque`, `LinkedList` and their
+# cursors and entries) and Python 3.15 (`collections.deque`, `graphlib`,
+# `functools.lru_cache`) offer for the structures the language's list and map
+# do not make, one block per capability, and what Heroes answers to each. The
+# census of Odin's `core:container`, Zig's std, Java's `java.util` and .NET's
+# `System.Collections` that chose the package (the author, 2026-11-17) is named
+# in the notes where it decided something.
+#
+# What other ledgers hold is not repeated: Go's `container/heap`, Rust's
+# `BinaryHeap` and Python's `heapq` are `lists.ledger`'s heap; `HashMap`,
+# `HashSet`, Python's `dict`, `set`, `OrderedDict`, `defaultdict`, `Counter`
+# and `ChainMap` are `maps.ledger`'s and `sets.ledger`'s, and so is the
+# algebra of two `BTreeSet`s. `BTreeMap` and `BTreeSet` stand in those two
+# ledgers read as the language's map and set, which refused a range for want
+# of an order (`map/range-of-keys`, `set/range`, `set/take-one`); they stand
+# here again for the ordered structure that answers them.
+#
+# Three facts of the language shape every answer. A record takes no type
+# parameter, so a structure holding the program's values is a shape of this
+# package beside the program's own lists, lent with `@`. A type parameter has
+# no `==` and no `<`, so an ordered structure takes its order from the caller
+# at each call, and a hashed one finds a key through the program's own
+# `{K: i64}` lookup map, the language's map hashing any key. No list shortens
+# in place, so every structure keeps a count and reuses its lists' room.
+
+## The ordered map and the ordered set
+
+capability ordered/make  an empty ordered map or ordered set
+  heroes  containers.new_ordered_map, containers.new_ordered_set
+  go      -
+  rust    BTreeMap::new, BTreeMap::default, BTreeSet::new, BTreeSet::default
+  python  -
+  note    a binary search tree balanced by the sizes of its branches (weight-balanced, Hirai and Yamamoto's delta 3 and gamma 2), where the task named a B-tree or a treap: the sizes rank and select already need make the balance free, and it is deterministic, where a treap's priorities from a fixed seed can be attacked and from a random one are not reproducible. Java's TreeMap and .NET's SortedDictionary are red-black trees, Zig's treap a treap, Odin's container an AVL and a red-black tree
+
+capability ordered/put  a value put under a key of an ordered map, replacing the one held
+  heroes  containers.ordered_put
+  go      -
+  rust    BTreeMap::insert, BTreeMap::try_insert, BTreeMap::entry, btree_map::Entry::or_insert, btree_map::Entry::or_insert_with, btree_map::Entry::or_insert_with_key, btree_map::Entry::or_default, btree_map::Entry::insert_entry, btree_map::VacantEntry::insert, btree_map::VacantEntry::insert_entry, btree_map::OccupiedEntry::insert, btree_map::Entry::and_modify
+  python  -
+  note    the key held stays and its value is replaced, as Rust's `insert` keeps the old key; Rust's `try_insert` and the entries are `ordered_slot_of` asked first, then this or a write at the slot
+
+capability ordered/add  a key added to an ordered set
+  heroes  containers.ordered_add
+  go      -
+  rust    BTreeSet::insert, BTreeSet::get_or_insert, BTreeSet::get_or_insert_with, BTreeSet::entry, BTreeSet::replace, btree_set::Entry, btree_set::VacantEntry, btree_set::OccupiedEntry
+  python  -
+  note    answers whether the key was new, as Rust's `insert`; `replace` would put a key equal and not the same, which an order calling them equal makes the same here
+
+capability ordered/get  the value under a key of an ordered map
+  heroes  containers.ordered_get
+  go      -
+  rust    BTreeMap::get, BTreeMap::get_mut, BTreeMap::index, BTreeMap::get_key_value, btree_map::OccupiedEntry::get, btree_map::OccupiedEntry::get_mut, btree_map::OccupiedEntry::into_mut, btree_map::OccupiedEntry::key, btree_map::VacantEntry::key, btree_map::VacantEntry::into_key, btree_map::Entry::key
+  python  -
+  note    absent is `not_found`; a value changed in place is written at the slot `ordered_slot_of` answers, the value list being the program's
+
+capability ordered/contains  whether an ordered map or set holds a key, and where
+  heroes  containers.ordered_contains, containers.ordered_slot_of
+  go      -
+  rust    BTreeMap::contains_key, BTreeSet::contains, BTreeSet::get
+  python  -
+  note    -
+
+capability ordered/remove  a key taken out of an ordered map or set
+  heroes  containers.ordered_remove, containers.ordered_discard
+  go      -
+  rust    BTreeMap::remove, BTreeMap::remove_entry, btree_map::OccupiedEntry::remove, btree_map::OccupiedEntry::remove_entry, BTreeSet::remove, BTreeSet::take
+  python  -
+  note    the map's answers the value or `not_found`, the set's whether the key was there, as Rust's two; the last slot moves into the slot freed, so the lists stay dense and nothing taken out stays alive in them
+
+capability ordered/remove-at  the entry at a slot found by a walk taken out
+  heroes  containers.ordered_remove_at, containers.ordered_discard_at
+  go      -
+  rust    btree_map::CursorMut::remove_next, btree_map::CursorMut::remove_prev, btree_set::CursorMut
+  python  -
+  note    a slot is the cursor here: a search answers it, and it stays good until the next call that takes something out
+
+capability ordered/first-last  the smallest and the largest key, and taking either out
+  heroes  containers.ordered_first, containers.ordered_last
+  go      -
+  rust    BTreeMap::first_key_value, BTreeMap::last_key_value, BTreeMap::first_entry, BTreeMap::last_entry, BTreeMap::pop_first, BTreeMap::pop_last, BTreeSet::first, BTreeSet::last, BTreeSet::pop_first, BTreeSet::pop_last
+  python  -
+  note    a pop is `ordered_first` then `ordered_remove_at`, each logarithmic. Both ends in logarithmic time make it Zig's `PriorityDequeue` and Odin's double-ended priority queue too, a min-max heap's work
+
+capability ordered/bounds  the key at or before, at or after, strictly before and strictly after a bound
+  heroes  containers.ordered_floor, containers.ordered_ceiling, containers.ordered_lower, containers.ordered_higher
+  go      -
+  rust    BTreeMap::lower_bound, BTreeMap::upper_bound, BTreeMap::lower_bound_mut, BTreeMap::upper_bound_mut, BTreeSet::lower_bound, BTreeSet::upper_bound, BTreeSet::lower_bound_mut, BTreeSet::upper_bound_mut
+  python  -
+  note    Java's floor, ceiling, lower and higher, by name; Rust's cursors take a `Bound` and stand between two keys, which is one of these four and then a step by `ordered_next` or `ordered_previous`. Every one checked against a sorted list after each of five thousand random operations
+
+capability ordered/step  the key just after or just before a slot
+  heroes  containers.ordered_next, containers.ordered_previous
+  go      -
+  rust    btree_map::Cursor::next, btree_map::Cursor::prev, btree_map::Cursor::peek_next, btree_map::Cursor::peek_prev, btree_map::CursorMut::next, btree_map::CursorMut::prev, btree_map::CursorMut::peek_next, btree_map::CursorMut::peek_prev, btree_map::CursorMut::as_cursor, btree_map::CursorMutKey, btree_set::Cursor, btree_set::CursorMutKey
+  python  -
+  note    a walk from the first slot to the end costs the size in all
+
+capability ordered/range  the keys between two bounds, in order
+  heroes  containers.ordered_slots_between
+  go      -
+  rust    BTreeMap::range, BTreeMap::range_mut, BTreeSet::range, btree_map::Range, btree_map::RangeMut, btree_set::Range
+  python  -
+  note    `from` kept and `to` left out, Rust's `a..b`; a bound of another kind is a walk by `ordered_next` from `ordered_ceiling` or `ordered_higher`, which is how Java's headMap, tailMap and subMap with their flags are read
+
+capability ordered/rank  how many keys go before a key, and the key of a given rank
+  heroes  containers.ordered_rank_of, containers.ordered_at_rank
+  go      -
+  rust    -
+  python  -
+  note    none of the three offers it; each node keeps the size of its subtree, so both are logarithmic. A median or a percentile of a changing set is `ordered_at_rank` of the size times the fraction
+
+capability ordered/walk  every key, or every entry, in order
+  heroes  containers.ordered_slots, containers.ordered_to_list
+  go      -
+  rust    BTreeMap::iter, BTreeMap::iter_mut, BTreeMap::keys, BTreeMap::values, BTreeMap::values_mut, BTreeMap::into_iter, BTreeMap::into_keys, BTreeMap::into_values, BTreeSet::iter, BTreeSet::into_iter, btree_map::Iter, btree_map::IterMut, btree_map::Keys, btree_map::Values, btree_map::ValuesMut, btree_map::IntoIter, btree_map::IntoKeys, btree_map::IntoValues, btree_set::Iter, btree_set::IntoIter
+  python  -
+  note    `for at in ordered_slots(m)` reads `keys[at]` and `values[at]` together; backwards is the list read from its end, or a walk by `ordered_previous`
+
+capability ordered/size  how many keys an ordered map or set holds
+  heroes  containers.ordered_size
+  go      -
+  rust    BTreeMap::len, BTreeMap::is_empty, BTreeSet::len, BTreeSet::is_empty
+  python  -
+  note    -
+
+capability ordered/clear  an ordered map or set emptied
+  heroes  containers.new_ordered_map
+  go      -
+  rust    BTreeMap::clear, BTreeSet::clear
+  python  -
+  note    a new shape and empty lists written over the old, which lets every key go
+
+capability ordered/keep-where  the entries a function accepts kept, or taken out and answered
+  heroes  containers.ordered_remove_at
+  go      -
+  rust    BTreeMap::retain, BTreeMap::extract_if, BTreeSet::retain, BTreeSet::extract_if, btree_map::ExtractIf, btree_set::ExtractIf
+  python  -
+  note    a walk of `ordered_slots` noting the slots refused, then each key taken out by `ordered_remove`, since a slot moves when one is taken out; the size times its logarithm
+
+capability ordered/split-and-append  an ordered map cut in two at a key, or another one's entries added
+  heroes  containers.ordered_slots_between
+  go      -
+  rust    BTreeMap::split_off, BTreeMap::append, BTreeSet::split_off, BTreeSet::append, BTreeMap::extend, BTreeMap::extend_one, BTreeSet::extend, BTreeSet::extend_one, BTreeMap::from, BTreeMap::from_iter, BTreeSet::from, BTreeSet::from_iter
+  python  -
+  note    the keys from the bound on, read by `ordered_slots_between` or a walk, put in a new map by `ordered_put` and taken out of the first: the moved keys times the logarithm, where Rust splits in the logarithm alone. Built from a list is a loop of `ordered_put` or `ordered_add`
+
+capability ordered/insert-beside-cursor  a key put beside a cursor's place without a search
+  heroes  refused: a key put at a place the program names, unchecked, would let the order lie; the search it saves is logarithmic, and Rust marks the unchecked forms unsafe
+  go      -
+  rust    btree_map::CursorMut::insert_after, btree_map::CursorMut::insert_before, btree_map::CursorMut::insert_after_unchecked, btree_map::CursorMut::insert_before_unchecked, btree_map::CursorMut::with_mutable_key
+  python  -
+  note    -
+
+## The double-ended queue
+
+capability deque/make  an empty double-ended queue, or one over a list held
+  heroes  containers.new_deque, containers.deque_over
+  go      ring.New
+  rust    VecDeque::new, VecDeque::default, VecDeque::from, VecDeque::from_iter, VecDeque::try_with_capacity
+  python  collections.deque, deque.copy, deque.__copy__
+  note    a ring over the program's item list that doubles when full and is cut back when three quarters stand empty; Go's `ring.New(n)` makes n links holding nothing, which with no `nil` here is `new_bounded_deque(n)`, the use it is put to. A copy is `=` of the shape and the list
+
+capability deque/bounded  a deque that holds at most a number of items, the oldest dropped
+  heroes  containers.new_bounded_deque, containers.deque_limit
+  go      -
+  rust    -
+  python  deque.maxlen
+  note    Python's: a push at one end of a full deque drops the item at the other, observed (`maxlen=3` after a to e gives c d e, then `appendleft("z")` gives z c d); an insert into a full one is refused `invalid`, as Python raises
+
+capability deque/push  an item added at either end
+  heroes  containers.deque_push_back, containers.deque_push_front
+  go      -
+  rust    VecDeque::push_back, VecDeque::push_front, VecDeque::push_back_mut, VecDeque::push_front_mut, VecDeque::extend, VecDeque::extend_front, VecDeque::extend_one, VecDeque::append, VecDeque::prepend
+  python  deque.append, deque.appendleft, deque.extend, deque.extendleft, deque.__iadd__
+  note    many items are a loop; Python's `extendleft` reverses them, which a loop of `deque_push_front` does too
+
+capability deque/pop  an item taken from either end
+  heroes  containers.deque_pop_back, containers.deque_pop_front
+  go      -
+  rust    VecDeque::pop_back, VecDeque::pop_front, VecDeque::pop_back_if, VecDeque::pop_front_if
+  python  deque.pop, deque.popleft
+  note    an empty deque is `not_found`, where Python raises IndexError and Rust answers None; the slot freed takes a copy of a live item, so the item popped is let go at once. Rust's `pop_if` is `deque_first` asked first
+
+capability deque/ends  the item at either end, left in
+  heroes  containers.deque_first, containers.deque_last
+  go      -
+  rust    VecDeque::front, VecDeque::back, VecDeque::front_mut, VecDeque::back_mut
+  python  -
+  note    Python reads `d[0]` and `d[-1]`, which abort here past the ends where these answer `not_found`
+
+capability deque/index  an item read or written by its place from the front
+  heroes  containers.deque_get, containers.deque_put
+  go      ring.Next, ring.Prev, ring.Move
+  rust    VecDeque::get, VecDeque::get_mut, VecDeque::index, VecDeque::index_mut, VecDeque::swap
+  python  deque.__getitem__, deque.__setitem__
+  note    a place is from 0 and never below it, where Python counts from the end with a negative one; Go's `Move(n)` is a place n further, and a swap two reads and two writes
+
+capability deque/insert-remove  an item put at or taken from a place inside
+  heroes  containers.deque_insert, containers.deque_remove_at
+  go      ring.Link, ring.Unlink
+  rust    VecDeque::insert, VecDeque::insert_mut, VecDeque::remove, VecDeque::swap_remove_back, VecDeque::swap_remove_front
+  python  deque.insert, deque.__delitem__, deque.remove
+  note    each moves the items on the nearer side, at most half; Rust's swap removes are `deque_get` of the end, `deque_put` over the place and a pop. Go's `Link` and `Unlink` splice links of two rings, which is items put in or taken out at a place here. Python's `remove` by value is `lists.index_of` over `deque_to_list`, then this
+
+capability deque/rotate  the items turned round
+  heroes  containers.deque_rotate_left, containers.deque_rotate_right
+  go      ring.Move
+  rust    VecDeque::rotate_left, VecDeque::rotate_right
+  python  deque.rotate
+  note    Python's `rotate(1)` gives [4, 1, 2, 3] of [1, 2, 3, 4], observed, which is `deque_rotate_right` by 1; a full item list turns by moving its head alone
+
+capability deque/to-list  the items front to back as a list
+  heroes  containers.deque_to_list
+  go      ring.Do
+  rust    VecDeque::iter, VecDeque::iter_mut, VecDeque::into_iter, VecDeque::as_slices, VecDeque::as_mut_slices, VecDeque::make_contiguous, VecDeque::range, VecDeque::range_mut, VecDeque::drain, vec_deque::Iter, vec_deque::IterMut, vec_deque::IntoIter, vec_deque::Drain
+  python  deque.__iter__, deque.__reversed__
+  note    a walk is a `for` over this list; Go's `Do` calls a function at each link, which is that walk
+
+capability deque/size  how many items a deque holds
+  heroes  containers.deque_size
+  go      ring.Len
+  rust    VecDeque::len, VecDeque::is_empty
+  python  deque.__len__
+  note    -
+
+capability deque/clear  a deque emptied or cut
+  heroes  containers.deque_clear
+  go      -
+  rust    VecDeque::clear, VecDeque::truncate, VecDeque::truncate_to_range
+  python  deque.clear
+  note    a cut to a length is pops from the back until it is reached
+
+capability deque/search-and-reshape  a deque searched, counted, reversed, sorted, filtered or resized
+  heroes  containers.deque_to_list
+  go      -
+  rust    VecDeque::contains, VecDeque::binary_search, VecDeque::binary_search_by, VecDeque::binary_search_by_key, VecDeque::partition_point, VecDeque::retain, VecDeque::retain_mut, VecDeque::retain_back, VecDeque::extract_if, VecDeque::resize, VecDeque::resize_with, VecDeque::split_off, VecDeque::splice, VecDeque::extend_from_within, VecDeque::prepend_from_within, vec_deque::Splice, vec_deque::ExtractIf
+  python  deque.count, deque.index, deque.reverse, deque.__contains__, deque.__add__, deque.__mul__, deque.__imul__
+  note    the items as a list, worked on by `lists` (`lists.contains`, `lists.binary_search`, `lists.reverse`, `lists.remove_where`, `lists.resize`, `lists.cycle`) and given back by `deque_over`: each is linear in the size in Rust and Python too
+
+## The set of bits
+
+capability bits/make  a set of bits of a size, all clear
+  heroes  containers.new_bits, containers.bits_size
+  go      -
+  rust    -
+  python  -
+  note    none of the three holds one (Python reads an `int` as bits, Go's `math/big.Int` has `Bit` and `SetBit`); Java's BitSet grows as bits are set, .NET's BitArray and Zig's DynamicBitSet hold a size, which is taken here, so two sets of one size and bits are `==`
+
+capability bits/one-bit  one bit read, set, cleared, turned over or written
+  heroes  containers.bits_is_set, containers.bits_set, containers.bits_clear, containers.bits_flip, containers.bits_put
+  go      -
+  rust    -
+  python  -
+  note    a bit outside the set aborts, as an index past a list's end does; Java's `get` past the end answers false
+
+capability bits/range  a run of bits set, cleared or turned over, a word at a time
+  heroes  containers.bits_set_range, containers.bits_clear_range, containers.bits_flip_range
+  go      -
+  rust    -
+  python  -
+  note    Java's `set(from, to)`, `clear(from, to)` and `flip(from, to)`, `to` left out; checked against a list of booleans in three thousand random runs
+
+capability bits/count  how many bits are set, and whether none or all are
+  heroes  containers.bits_count_ones, containers.bits_is_clear, containers.bits_is_full
+  go      -
+  rust    -
+  python  -
+  note    Java's `cardinality` and `isEmpty`, .NET's `HasAllSet` and `HasAnySet`; a word counted by halves with its sign bit apart, since no operator here may overflow
+
+capability bits/algebra  two sets combined: and, or, xor, and not, and a set turned over
+  heroes  containers.bits_and, containers.bits_or, containers.bits_xor, containers.bits_and_not, containers.bits_not
+  go      -
+  rust    -
+  python  -
+  note    each answers a new set of the larger size, the shorter read as clear past its end, where Java's `and` changes the set it is called on
+
+capability bits/compare  whether two sets share a bit, or one lies within the other
+  heroes  containers.bits_is_disjoint, containers.bits_is_subset
+  go      -
+  rust    -
+  python  -
+  note    Java's `intersects` is `!bits_is_disjoint`
+
+capability bits/scan  the next or previous bit set or clear from a place
+  heroes  containers.bits_next_set, containers.bits_next_clear, containers.bits_previous_set, containers.bits_previous_clear
+  go      -
+  rust    -
+  python  -
+  note    Java's four, with `not_found` where Java answers -1; a start outside the set is moved within it rather than refused. Java's `length` is `bits_previous_set` from the end, plus one
+
+capability bits/indices  the set bits as places, and a set from places
+  heroes  containers.bits_to_indices, containers.bits_from_indices
+  go      -
+  rust    -
+  python  -
+  note    Java's `stream`; a word at a time, then one step a set bit
+
+capability bits/bytes-and-words  a set as bytes or as 64-bit words, and back
+  heroes  containers.bits_to_bytes, containers.bits_from_bytes, containers.bits_to_words, containers.bits_from_words
+  go      -
+  rust    -
+  python  -
+  note    Java's `toByteArray`, `valueOf(byte[])`, `toLongArray` and `valueOf(long[])` order, bit 0 the lowest of the first byte, observed through Python as an integer: bits 0, 8 and 9 give `(769).to_bytes(2, "little")`, [1, 3]. Java trims the zero bytes at the end and this keeps the size
+
+capability bits/text  a set written as zeros and ones, and read back
+  heroes  containers.format_bits, containers.parse_bits
+  go      -
+  rust    -
+  python  -
+  note    bit 0 first, as a list of booleans reads; Java writes `{1, 3}`, which is `bits_to_indices` written
+
+capability bits/resize-and-cut  a set made longer or shorter, a part of it, its bits shifted
+  heroes  containers.bits_with_size, containers.bits_between, containers.bits_shift_up, containers.bits_shift_down
+  go      -
+  rust    -
+  python  -
+  note    Java's `get(from, to)` is `bits_between`; .NET's `LeftShift` moves bits up, which is `bits_shift_up`
+
+## The cache that forgets the least recently used
+
+capability cache/make  a cache of a capacity, with a time to live or none
+  heroes  containers.new_cache, containers.new_cache_with_ttl, containers.cache_capacity
+  go      -
+  rust    -
+  python  functools.lru_cache, functools.cache
+  note    time is the program's: every call that can expire takes `now` in the program's own unit and no clock is read, so a test needs none, and the package needs no `time`, whose use adds 2,098,016 bytes to a program (309,368 against 2,407,384, measured 2026-11-17). Python's `lru_cache` wraps a function; the function here is the program's, which asks `cache_get` and on `not_found` computes and calls `cache_put`. Java's LinkedHashMap in access order with `removeEldestEntry` is this
+
+capability cache/put  a value put, the least recently used forgotten where the cache is full
+  heroes  containers.cache_put
+  go      -
+  rust    -
+  python  -
+  note    the expired entries are forgotten first; checked against a list in the order of use in eight thousand random operations, with and without a time to live
+
+capability cache/get  a value read, the entry counted as used, or only looked at
+  heroes  containers.cache_get, containers.cache_peek, containers.cache_contains
+  go      -
+  rust    -
+  python  -
+  note    a read does not lengthen an entry's life, which runs from its last write
+
+capability cache/remove  an entry taken out, every expired one forgotten, or all
+  heroes  containers.cache_remove, containers.cache_expire, containers.cache_clear
+  go      -
+  rust    -
+  python  -
+  note    Python's `lru_cache` offers `cache_clear` alone
+
+capability cache/inspect  the entries by their last use, the next to be forgotten, how many are held
+  heroes  containers.cache_slots, containers.cache_oldest, containers.cache_size
+  go      -
+  rust    -
+  python  -
+  note    Python's `cache_info` counts hits and misses, which the program counts as it asks; `cache_parameters` is `cache_capacity`
+
+## The map that keeps its order
+
+capability indexed/make  an empty map that keeps the order its keys were first put in
+  heroes  containers.new_indexed, containers.indexed_size
+  go      -
+  rust    -
+  python  -
+  note    Rust's indexmap crate, the thirteenth most downloaded, and Python's `dict`, ordered since 3.7; none of the three standard libraries has one apart from Python's `dict`, which `maps.ledger` holds as the language's own map. What this adds to that map: positions, and a key taken out in constant time
+
+capability indexed/put-get  a value put or read by its key, and a key's position
+  heroes  containers.indexed_put, containers.indexed_get, containers.indexed_position_of, containers.indexed_contains
+  go      -
+  rust    -
+  python  -
+  note    a new key goes last and a held one keeps its place, as indexmap's `insert` and Python's `dict` do
+
+capability indexed/by-position  the key and the value at a position
+  heroes  containers.indexed_key_at, containers.indexed_value_at
+  go      -
+  rust    -
+  python  -
+  note    indexmap's `get_index`; positions run 0 to the size less one
+
+capability indexed/remove  a key taken out swapping the last entry in, or shifting the rest forward
+  heroes  containers.indexed_swap_remove, containers.indexed_shift_remove, containers.indexed_swap_remove_at, containers.indexed_shift_remove_at
+  go      -
+  rust    -
+  python  -
+  note    indexmap's `swap_remove` and `shift_remove` and their `_index` forms; Python's `popitem` is `indexed_swap_remove_at` of the last position, and `del d[k]` keeps the order, `indexed_shift_remove`. Checked against lists in order in four thousand random operations
+
+capability indexed/move  an entry moved to another position, or two swapped
+  heroes  containers.indexed_move, containers.indexed_swap
+  go      -
+  rust    -
+  python  -
+  note    Python's `OrderedDict.move_to_end` is `indexed_move` to the last position, or with `last=False` to 0; indexmap's `move_index` and `swap_indices`
+
+capability indexed/sort  the entries put in the order of their keys
+  heroes  containers.indexed_sort_by_key
+  go      -
+  rust    -
+  python  -
+  note    stable, as indexmap's `sort_keys`; a merge sort of its own, since an order cannot close over the key list here
+
+capability indexed/walk  the keys and the values in their order, and the map emptied
+  heroes  containers.indexed_keys, containers.indexed_values, containers.indexed_clear
+  go      -
+  rust    -
+  python  -
+  note    -
+
+## Graphs
+
+capability graph/nodes  every node of a graph, numbered
+  heroes  containers.nodes_of
+  go      -
+  rust    -
+  python  graphlib.TopologicalSorter.add
+  note    a graph is a `{K: [K]}`, each node to the nodes it points to, as Python's `TopologicalSorter(graph)` takes a node's predecessors; the numbering is the order graphlib meets them, each key and then its list
+
+capability graph/topological-order  every node after the nodes it points to
+  heroes  containers.topological_order
+  go      -
+  rust    -
+  python  graphlib.TopologicalSorter, TopologicalSorter.static_order
+  note    Python's order, observed on forty random graphs written into a test with graphlib's answers; a cycle is `invalid`, as graphlib's `prepare` raises before any node
+
+capability graph/cycle  a cycle named
+  heroes  containers.cycle_of
+  go      -
+  rust    -
+  python  graphlib.CycleError
+  note    the cycle graphlib names in `CycleError.args[1]` for the same dictionary, first node again at the end, observed on the twenty-six cyclic graphs of the same test; a node that points to itself is [a, a]
+
+capability graph/stages  a topological order handed out in stages, for work done in parallel
+  heroes  containers.new_sorter, containers.sorter_ready, containers.sorter_done, containers.sorter_is_active
+  go      -
+  rust    -
+  python  TopologicalSorter.prepare, TopologicalSorter.get_ready, TopologicalSorter.done, TopologicalSorter.is_active
+  note    nodes are numbers of `nodes_of`, since a sorter holding the program's own nodes would be a record with a type parameter; a node done that was not handed out is `invalid`, where graphlib raises ValueError
+
+capability graph/components  the strongly connected components
+  heroes  containers.strong_components
+  go      -
+  rust    -
+  python  -
+  note    Tarjan's walk with its stacks in lists, a chain of twenty thousand nodes walked in a test; each component after those it points into, checked against mutual reachability on two hundred random graphs
+
+capability graph/reach  every node one node reaches
+  heroes  containers.reachable_from
+  go      -
+  rust    -
+  python  -
+  note    by breadth, the start first
+
+capability graph/shortest-path  a path of least weight, and the distance to every node, on weights of zero or more
+  heroes  containers.shortest_path, containers.distances_from
+  go      -
+  rust    -
+  python  -
+  note    Dijkstra's walk with a heap of its own, ties by node number; a weight below zero, infinite or not a number is `invalid`, asked before it is ordered, since ordering a NaN aborts. Checked against Bellman and Ford's relaxation on two hundred random graphs
+
+## The list of links
+
+capability links/list  a list of links: an item put or taken at a handle held, or moved to either end, in constant time
+  heroes  pending
+  go      list.New, list.List.Init, list.List.Len, list.List.Front, list.List.Back, list.List.PushFront, list.List.PushBack, list.List.PushFrontList, list.List.PushBackList, list.List.InsertBefore, list.List.InsertAfter, list.List.MoveToFront, list.List.MoveToBack, list.List.MoveBefore, list.List.MoveAfter, list.List.Remove, list.Element.Next, list.Element.Prev
+  rust    LinkedList::new, LinkedList::default, LinkedList::push_front, LinkedList::push_back, LinkedList::push_front_mut, LinkedList::push_back_mut, LinkedList::pop_front, LinkedList::pop_back, LinkedList::front, LinkedList::back, LinkedList::front_mut, LinkedList::back_mut, LinkedList::len, LinkedList::is_empty, LinkedList::clear, LinkedList::contains, LinkedList::append, LinkedList::split_off, LinkedList::remove, LinkedList::retain, LinkedList::extract_if, LinkedList::iter, LinkedList::iter_mut, LinkedList::into_iter, LinkedList::cursor_front, LinkedList::cursor_back, LinkedList::cursor_front_mut, LinkedList::cursor_back_mut, LinkedList::extend, LinkedList::extend_one, LinkedList::from, LinkedList::from_iter, linked_list::Cursor, linked_list::CursorMut, linked_list::Iter, linked_list::IterMut, linked_list::IntoIter, linked_list::ExtractIf
+  python  -
+  note    the cache's two lists of links are this inside; a public one needs handles that outlive a removal, slots kept stable by a free list rather than the dense slots every structure here keeps, and is not written yet. Both ends are the deque's, and a key moved to either end the indexed map's
+
+dropped capacity  room asked ahead of the items: every structure here grows by itself and gives room back when three quarters stand empty
+  go      -
+  rust    VecDeque::with_capacity, VecDeque::with_capacity_in, VecDeque::capacity, VecDeque::reserve, VecDeque::reserve_exact, VecDeque::try_reserve, VecDeque::try_reserve_exact, VecDeque::shrink_to, VecDeque::shrink_to_fit, VecDeque::extend_reserve, BTreeMap::extend_reserve, BTreeSet::extend_reserve
+  python  -
+
+dropped allocators  the language has one allocator and it is not a value
+  go      -
+  rust    VecDeque::new_in, VecDeque::allocator, BTreeMap::new_in, BTreeSet::new_in, LinkedList::new_in
+  python  -
+
+dropped closures  an insertion whose value a closure computes and may fail to compute: the program computes the value and puts it
+  go      -
+  rust    btree_map::Entry::or_try_insert_with, btree_map::Entry::or_try_insert_with_key, VecDeque::resize_with, btree_map::OccupiedError, btree_set::UnorderedKeyError, btree_map::UnorderedKeyError
+  python  -
+
+dropped streams  a deque read and written as a stream of bytes: `io`'s buffers do it
+  go      -
+  rust    VecDeque::read, VecDeque::read_array, VecDeque::read_be, VecDeque::read_le, VecDeque::read_buf, VecDeque::read_buf_exact, VecDeque::read_exact, VecDeque::read_line, VecDeque::read_to_end, VecDeque::read_to_string, VecDeque::read_until, VecDeque::read_vectored, VecDeque::is_read_vectored, VecDeque::fill_buf, VecDeque::consume, VecDeque::has_data_left, VecDeque::skip_until, VecDeque::split, VecDeque::lines, VecDeque::bytes, VecDeque::chain, VecDeque::take, VecDeque::by_ref, VecDeque::write, VecDeque::write_all, VecDeque::write_all_vectored, VecDeque::write_fmt, VecDeque::write_vectored, VecDeque::is_write_vectored, VecDeque::flush
+  python  -
+
+dropped iterator-types  a walk is a `for` over a list of items or slots, so it has no type of its own, and an iterator's adapters are `lists`'s
+  go      -
+  rust    btree_set::Difference, btree_set::Intersection, btree_set::SymmetricDifference, btree_set::Union, and on every iterator type its adapters (`map`, `filter`, `fold`, `zip`, `rev` and the rest of `Iterator` and `DoubleEndedIterator`)
+  python  -
+
+dropped traits  what an interface would have needed: a structure written for a debugger, hashed, ordered against another, dropped, converted
+  go      -
+  rust    VecDeque::fmt, VecDeque::hash, VecDeque::hash_slice, VecDeque::cmp, VecDeque::partial_cmp, VecDeque::eq, VecDeque::ne, VecDeque::lt, VecDeque::le, VecDeque::gt, VecDeque::ge, VecDeque::max, VecDeque::min, VecDeque::clamp, VecDeque::clamp_to, VecDeque::clone, VecDeque::clone_from, VecDeque::drop, VecDeque::pin_drop, BTreeMap::fmt, BTreeMap::hash, BTreeMap::eq, BTreeMap::cmp, BTreeMap::clone, BTreeMap::merge, BTreeSet::fmt, BTreeSet::cmp, BTreeSet::eq, BTreeSet::clone, BTreeSet::bitand, BTreeSet::bitor, BTreeSet::bitxor, BTreeSet::sub, LinkedList::fmt, LinkedList::hash, LinkedList::cmp, LinkedList::eq, LinkedList::clone, LinkedList::drop, and on all `type_id`, `borrow`, `borrow_mut`, `clone_into`, `clone_to_uninit`, `into`, `to_owned`, `try_from`, `try_into`
+  python  functools.cached_property, deque.__class_getitem__, deque.__repr__, deque.__reduce__, deque.__init__, deque.__new__, deque.__sizeof__, deque.__eq__, deque.__lt__, deque.__le__, deque.__gt__, deque.__ge__, deque.__ne__, deque.__hash__, deque.__bool__, graphlib.GenericAlias
+  note    the set algebra of two `BTreeSet`s and `BTreeMap::merge` stand in `sets.ledger` and `maps.ledger`; `cached_property` caches an attribute of an object, which the language has none of

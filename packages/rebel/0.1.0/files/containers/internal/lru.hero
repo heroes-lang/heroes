@@ -1,0 +1,430 @@
+# The links under a cache that forgets the entry used least recently: two
+# lists of links over the slots of the program's lists, one by the order of
+# use and one by the order of writing, the second read only where the cache
+# has a time to live. The slots stay dense: an entry taken out gives its slot
+# to the last one, and the program's lookup map names each key's slot, or -1
+# for a key taken out, until it is rebuilt from the live keys.
+
+use containers/internal/codes
+use containers/internal/edit
+use containers/internal/samples
+
+# The link that names no slot.
+constant NONE: i64
+    -1
+
+# The links of one cache. Slot `i`'s links stand at index `i` of every list.
+record Lru
+    # The most entries the cache holds.
+    capacity: i64
+    # How long an entry lives after it was written, in the program's unit; 0
+    # for a cache whose entries never expire.
+    ttl: i64
+    # How many entries are live: the slots 0 to `count` less one.
+    count: i64
+    # How many keys of the program's lookup map name no entry since one was
+    # taken out; the map is rebuilt when they outnumber the live ones.
+    dead: i64
+    # The slot used last, `NONE` where the cache is empty.
+    newest: i64
+    # The slot used longest ago, the next to forget.
+    oldest: i64
+    # For each slot, the slot used just before it, `NONE` for the oldest.
+    older: [i64]
+    # For each slot, the slot used just after it, `NONE` for the newest.
+    newer: [i64]
+    # The slot written longest ago, the next to expire.
+    first_written: i64
+    # The slot written last.
+    last_written: i64
+    # For each slot, the slot written just after it.
+    written_after: [i64]
+    # For each slot, the slot written just before it.
+    written_before: [i64]
+    # For each slot, the time at which its entry expires, in the program's
+    # unit; unread where `ttl` is 0.
+    expires: [i64]
+
+# The largest time an entry can expire at: one written later than this less
+# its time to live never expires.
+constant NEVER: i64
+    9_223_372_036_854_775_807
+
+# How many keys of the lookup map may name no entry, beyond the live ones,
+# before it is rebuilt.
+constant SPARE_KEYS: i64
+    32
+
+# An empty cache's links.
+function empty(capacity: i64, ttl: i64) -> Lru
+    return Lru(
+        capacity: capacity,
+        ttl: ttl,
+        count: 0,
+        dead: 0,
+        newest: NONE,
+        oldest: NONE,
+        older: [],
+        newer: [],
+        first_written: NONE,
+        last_written: NONE,
+        written_after: [],
+        written_before: [],
+        expires: []
+    )
+
+# Adds `value` at the end of `xs`, in place.
+function grow(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# Ends the program where a list is shorter than the cache.
+function require_lists(cache: Lru lent, keys_held: i64, values_held: i64)
+    codes.require_storage(held: keys_held, count: cache.count, what: "key list")
+    codes.require_storage(held: values_held, count: cache.count, what: "value list")
+
+# The time an entry written at `now` expires at.
+function deadline(cache: Lru lent, now: i64) -> i64
+    if now > 0 && cache.ttl > NEVER - now
+        return NEVER
+    return now + cache.ttl
+
+# Whether the entry at `at` has expired at `now`.
+function is_expired(cache: Lru lent, at: i64, now: i64) -> bool
+    return cache.ttl > 0 && cache.expires[at] <= now
+
+# The slot of `key`, `NONE` where the cache holds none.
+function slot_of<K>(cache: Lru lent, lookup: {K: i64} lent, key: K) -> i64
+    at = lookup[key].default(NONE)
+
+    if at >= cache.count
+        codes.abort_with(f"the lookup map names slot {at} of a cache of {cache.count}: it is not this cache's")
+    return at
+
+## Links
+
+# Takes `at` out of the order of use.
+function unlink_use(@cache: Lru, at: i64)
+    before = cache.older[at]
+    after = cache.newer[at]
+
+    if before == NONE
+        cache.oldest @ after
+    else
+        cache.newer[before] @ after
+
+    if after == NONE
+        cache.newest @ before
+    else
+        cache.older[after] @ before
+
+# Puts `at` last in the order of use, as the one used last.
+function link_newest(@cache: Lru, at: i64)
+    cache.older[at] @ cache.newest
+    cache.newer[at] @ NONE
+
+    if cache.newest == NONE
+        cache.oldest @ at
+    else
+        cache.newer[cache.newest] @ at
+    cache.newest @ at
+
+# Takes `at` out of the order of writing.
+function unlink_write(@cache: Lru, at: i64)
+    before = cache.written_before[at]
+    after = cache.written_after[at]
+
+    if before == NONE
+        cache.first_written @ after
+    else
+        cache.written_after[before] @ after
+
+    if after == NONE
+        cache.last_written @ before
+    else
+        cache.written_before[after] @ before
+
+# Puts `at` last in the order of writing, expiring `ttl` after `now`.
+function link_written(@cache: Lru, at: i64, now: i64)
+    cache.written_before[at] @ cache.last_written
+    cache.written_after[at] @ NONE
+
+    if cache.last_written == NONE
+        cache.first_written @ at
+    else
+        cache.written_after[cache.last_written] @ at
+    cache.last_written @ at
+    cache.expires[at] @ deadline(cache, now)
+
+# A new live slot, `count`, linked to nothing.
+function claim(@cache: Lru) -> i64
+    slot = cache.count
+
+    if slot == cache.older.len()
+        grow(@cache.older, NONE)
+        grow(@cache.newer, NONE)
+        grow(@cache.written_after, NONE)
+        grow(@cache.written_before, NONE)
+        grow(@cache.expires, NEVER)
+    cache.count @ slot + 1
+    return slot
+
+# Moves the links of slot `from` into the free slot `to`, its neighbours and
+# the ends of both orders following it.
+function relocate(@cache: Lru, from: i64, to: i64)
+    cache.older[to] @ cache.older[from]
+    cache.newer[to] @ cache.newer[from]
+    cache.written_before[to] @ cache.written_before[from]
+    cache.written_after[to] @ cache.written_after[from]
+    cache.expires[to] @ cache.expires[from]
+
+    if cache.older[to] == NONE
+        cache.oldest @ to
+    else
+        cache.newer[cache.older[to]] @ to
+
+    if cache.newer[to] == NONE
+        cache.newest @ to
+    else
+        cache.older[cache.newer[to]] @ to
+
+    if cache.written_before[to] == NONE
+        cache.first_written @ to
+    else
+        cache.written_after[cache.written_before[to]] @ to
+
+    if cache.written_after[to] == NONE
+        cache.last_written @ to
+    else
+        cache.written_before[cache.written_after[to]] @ to
+
+# Cuts the link lists back to the live slots where three quarters stand
+# unused, or empties them with the cache.
+function trim(@cache: Lru)
+    held = cache.older.len()
+
+    if cache.count == 0
+        cache.older @ []
+        cache.newer @ []
+        cache.written_after @ []
+        cache.written_before @ []
+        cache.expires @ []
+    else if held >= 32 && cache.count * 4 <= held
+        cache.older @ cache.older.slice(from: 0, to: cache.count)
+        cache.newer @ cache.newer.slice(from: 0, to: cache.count)
+        cache.written_after @ cache.written_after.slice(from: 0, to: cache.count)
+        cache.written_before @ cache.written_before.slice(from: 0, to: cache.count)
+        cache.expires @ cache.expires.slice(from: 0, to: cache.count)
+
+## Entries
+
+# Builds the lookup map again from the live keys alone.
+function rebuild<K>(@cache: Lru, key_list: [K] lent, @lookup: {K: i64})
+    fresh: {K: i64} @= {}
+
+    for at in range(from: 0, to: cache.count)
+        fresh[key_list[at]] @ at
+
+    lookup @ fresh
+    cache.dead @ 0
+
+# Takes the entry at `at` out, the last slot moving into it.
+function take<K, V>(@cache: Lru, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
+    unlink_use(@cache, at)
+    unlink_write(@cache, at)
+    lookup[key_list[at]] @ NONE
+    cache.dead @ cache.dead + 1
+    end = cache.count - 1
+
+    if at != end
+        relocate(@cache, from: end, to: at)
+    cache.count @ end
+    edit.drop_slot(@key_list, at: at, end: end, count: end)
+    edit.drop_slot(@value_list, at: at, end: end, count: end)
+
+    if at != end
+        lookup[key_list[at]] @ at
+    trim(@cache)
+
+    if cache.dead > cache.count + SPARE_KEYS
+        rebuild(@cache, key_list, @lookup)
+
+# Forgets every entry expired at `now`, the one written longest ago first.
+function expire<K, V>(@cache: Lru, @key_list: [K], @value_list: [V], @lookup: {K: i64}, now: i64)
+    if cache.ttl == 0
+        return
+
+    while cache.first_written != NONE && cache.expires[cache.first_written] <= now
+        take(@cache, @key_list, @value_list, @lookup, cache.first_written)
+
+# Puts `value` under `key`, used and written at `now`.
+function put<K, V>(@cache: Lru, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, value: V, now: i64)
+    expire(@cache, @key_list, @value_list, @lookup, now)
+    held = slot_of(cache, lookup, key)
+
+    if held != NONE
+        value_list[held] @ value
+        unlink_use(@cache, held)
+        link_newest(@cache, held)
+        unlink_write(@cache, held)
+        link_written(@cache, at: held, now: now)
+        return
+
+    if cache.count == cache.capacity
+        take(@cache, @key_list, @value_list, @lookup, cache.oldest)
+    slot = claim(@cache)
+    edit.store(@key_list, slot, key)
+    edit.store(@value_list, slot, value)
+
+    if lookup[key].default(0) == NONE
+        cache.dead @ cache.dead - 1
+    lookup[key] @ slot
+    link_newest(@cache, slot)
+    link_written(@cache, at: slot, now: now)
+
+# The slots, the one used last first.
+function by_use(cache: Lru lent) -> [i64]
+    slots: [i64] @= []
+    at @= cache.newest
+
+    while at != NONE
+        slots @ slots.push(at)
+        at @ cache.older[at]
+
+    return slots
+
+## Tests
+
+test "put: past the capacity, the one used longest ago forgotten"
+    cache @= empty(capacity: 2, ttl: 0)
+    held: [str] @= []
+    values: [i64] @= []
+    lookup: {str: i64} @= {}
+    put(@cache, @held, @values, @lookup, key: "a", value: 1, now: 0)
+    put(@cache, @held, @values, @lookup, key: "b", value: 2, now: 0)
+    put(@cache, @held, @values, @lookup, key: "a", value: 3, now: 0)
+    put(@cache, @held, @values, @lookup, key: "c", value: 4, now: 0)
+    assert cache.count == 2
+    assert slot_of(cache, lookup, "b") == NONE
+    assert values[slot_of(cache, lookup, "a")] == 3
+    assert by_use(cache).len() == 2
+    assert held[by_use(cache)[0]] == "c"
+
+test "expire: entries written at or before the time less the ttl forgotten, oldest first"
+    cache @= empty(capacity: 10, ttl: 5)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+
+    for n in range(from: 0, to: 6)
+        put(@cache, @held, @values, @lookup, key: n, value: n * 10, now: n)
+
+    expire(@cache, @held, @values, @lookup, 7)
+    assert cache.count == 3
+    assert slot_of(cache, lookup, 2) == NONE
+    assert slot_of(cache, lookup, 3) != NONE
+    expire(@cache, @held, @values, @lookup, 100)
+    assert cache.count == 0
+    assert held == []
+
+test "deadline: an ordinary one, past the largest time, and below zero"
+    cache = empty(capacity: 1, ttl: 10)
+    assert deadline(cache, 5) == 15
+    assert deadline(cache, NEVER - 3) == NEVER
+    assert deadline(cache, -9_223_372_036_854_775_808) == -9_223_372_036_854_775_798
+
+test "take: thousands of keys through a small cache, the lookup map rebuilt and bounded"
+    cache @= empty(capacity: 8, ttl: 0)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+
+    for n in range(from: 0, to: 5000)
+        put(@cache, @held, @values, @lookup, key: n, value: n, now: 0)
+
+    assert cache.count == 8
+    assert keys(lookup).len() <= 8 + 8 + SPARE_KEYS + 1
+
+    for at in range(from: 0, to: cache.count)
+        assert lookup[held[at]].must() == at
+        assert values[at] == held[at]
+
+    assert held[by_use(cache)[0]] == 4999
+    assert held[cache.oldest] == 4992
+
+# The cache's keys from the one used longest ago to the one used last.
+function oldest_first(cache: Lru lent, key_list: [i64] lent) -> [i64]
+    found: [i64] @= []
+    at @= cache.oldest
+
+    while at != NONE
+        found @ found.push(key_list[at])
+        at @ cache.newer[at]
+
+    return found
+
+# Where `key` stands in `model`, or -1.
+function model_place(model: [i64] lent, key: i64) -> i64
+    for at in range(from: 0, to: model.len())
+        if model[at] == key
+            return at
+
+    return -1
+
+test "put, get, take and expire: four thousand random operations against a list by use"
+    for ttl in [0, 9]
+        cache @= empty(capacity: 6, ttl: ttl)
+        held: [i64] @= []
+        values: [i64] @= []
+        lookup: {i64: i64} @= {}
+        model: [i64] @= []
+        model_values: [i64] @= []
+        model_written: [i64] @= []
+        dice @= samples.Dice(state: 5 + ttl)
+        now @= 0
+
+        for step in range(from: 0, to: 4000)
+            now @ now + samples.roll(@dice, 3)
+            key = samples.roll(@dice, 12)
+            choice = samples.roll(@dice, 4)
+
+            if choice < 3 && ttl > 0
+                at @= 0
+
+                while at < model.len()
+                    if model_written[at] + ttl <= now
+                        model @ edit.model_remove(model, at)
+                        model_values @ edit.model_remove(model_values, at)
+                        model_written @ edit.model_remove(model_written, at)
+                    else
+                        at @ at + 1
+            place = model_place(model, key)
+
+            if choice == 0 || choice == 1
+                put(@cache, @held, @values, @lookup, key: key, value: step, now: now)
+                written = now
+
+                if place >= 0
+                    model @ edit.model_remove(model, place)
+                    model_values @ edit.model_remove(model_values, place)
+                    model_written @ edit.model_remove(model_written, place)
+                else if model.len() == 6
+                    model @ edit.model_remove(model, 0)
+                    model_values @ edit.model_remove(model_values, 0)
+                    model_written @ edit.model_remove(model_written, 0)
+                model @ model.push(key)
+                model_values @ model_values.push(step)
+                model_written @ model_written.push(written)
+            else if choice == 2
+                expire(@cache, @held, @values, @lookup, now)
+            else if place >= 0
+                at = slot_of(cache, lookup, key)
+                assert at != NONE
+                take(@cache, @held, @values, @lookup, at)
+                model @ edit.model_remove(model, place)
+                model_values @ edit.model_remove(model_values, place)
+                model_written @ edit.model_remove(model_written, place)
+            assert cache.count == model.len()
+            assert oldest_first(cache, held) == model
+
+            for at in range(from: 0, to: model.len())
+                assert values[slot_of(cache, lookup, model[at])] == model_values[at]

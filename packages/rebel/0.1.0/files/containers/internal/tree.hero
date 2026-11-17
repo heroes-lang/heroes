@@ -1,0 +1,388 @@
+# The tree under an ordered map or set: a binary search tree balanced by the
+# sizes of its branches, a weight-balanced tree with Hirai and Yamamoto's
+# parameters (delta 3, gamma 2), held in lists of numbers. A node is a slot of
+# the program's lists and a link is a slot, `NONE` where there is none. This
+# module knows the links alone and never reads a key; `walk` and `edit` bring
+# the order.
+#
+# The slots stay dense: the live ones are 0 to `count` less one, and taking a
+# node out moves the last one into its slot. Every walk is a loop: the depth
+# stays under two and a half times the logarithm of the size, and nothing
+# here recurses.
+
+use containers/internal/codes
+
+# The link that names no node.
+constant NONE: i64
+    -1
+
+# How much heavier, by its size plus one, one branch may grow than the other
+# before a rotation: Hirai and Yamamoto's delta.
+constant DELTA: i64
+    3
+
+# Below which ratio of the inner grandchild to the outer one, by size plus
+# one, a single rotation rebalances: Hirai and Yamamoto's gamma.
+constant GAMMA: i64
+    2
+
+# Below this length a list of slots is never cut back when it empties.
+constant KEPT: i64
+    32
+
+# The tree of one ordered map or set. Node `i`'s links stand at index `i` of
+# every list; a list's length past `count` is room kept for reuse.
+record Tree
+    # The node's left child, whose keys go before the node's.
+    left: [i64]
+    # The node's right child, whose keys go after the node's.
+    right: [i64]
+    # The node's parent, `NONE` at the root.
+    parent: [i64]
+    # How many nodes the subtree under the node holds, itself included.
+    size: [i64]
+    # The root, `NONE` where the tree is empty.
+    root: i64
+    # How many nodes are live: the slots 0 to `count` less one.
+    count: i64
+    # Whether it is a map's tree, whose program keeps a value list beside the
+    # keys; a set's has none.
+    holds_values: bool
+
+# An empty tree, a map's where `holds_values` is true and a set's otherwise.
+function empty(holds_values: bool) -> Tree
+    return Tree(left: [], right: [], parent: [], size: [], root: NONE, count: 0, holds_values: holds_values)
+
+# Adds `value` at the end of `xs`, in place.
+function grow(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# The size of the subtree under `at`, 0 for `NONE`.
+function size_of(tree: Tree lent, at: i64) -> i64
+    if at == NONE
+        return 0
+    return tree.size[at]
+
+# Whether `at` names a live slot of the tree.
+function is_live(tree: Tree lent, at: i64) -> bool
+    return at >= 0 && at < tree.count
+
+# Ends the program where `at` names no live slot of the tree.
+function require_live(tree: Tree lent, at: i64)
+    if !is_live(tree, at)
+        codes.abort_with(f"slot {at} names no key of a structure of {tree.count}")
+
+## Links
+
+# Hangs `child` where `old` hung under `parent`, or at the root where
+# `parent` is `NONE`; the child's own parent link is the caller's to set.
+function relink(@tree: Tree, parent: i64, old: i64, child: i64)
+    if parent == NONE
+        tree.root @ child
+    else if tree.left[parent] == old
+        tree.left[parent] @ child
+    else
+        tree.right[parent] @ child
+
+# Sets the size of `at` from its children's.
+function resize(@tree: Tree, at: i64)
+    l = tree.left[at]
+    r = tree.right[at]
+    tree.size[at] @ size_of(tree, l) + size_of(tree, r) + 1
+
+# Turns the tree left at `x`: its right child takes its place, `x` becoming
+# that child's left child. Answers the node now in `x`'s place.
+function rotate_left(@tree: Tree, x: i64) -> i64
+    r = tree.right[x]
+    p = tree.parent[x]
+    inner = tree.left[r]
+    tree.right[x] @ inner
+
+    if inner != NONE
+        tree.parent[inner] @ x
+    tree.left[r] @ x
+    tree.parent[x] @ r
+    tree.parent[r] @ p
+    relink(@tree, parent: p, old: x, child: r)
+    resize(@tree, x)
+    resize(@tree, r)
+    return r
+
+# Turns the tree right at `x`: its left child takes its place, `x` becoming
+# that child's right child. Answers the node now in `x`'s place.
+function rotate_right(@tree: Tree, x: i64) -> i64
+    l = tree.left[x]
+    p = tree.parent[x]
+    inner = tree.right[l]
+    tree.left[x] @ inner
+
+    if inner != NONE
+        tree.parent[inner] @ x
+    tree.right[l] @ x
+    tree.parent[x] @ l
+    tree.parent[l] @ p
+    relink(@tree, parent: p, old: x, child: l)
+    resize(@tree, x)
+    resize(@tree, l)
+    return l
+
+# Rotates at `x` where one branch outweighs the other by more than `DELTA`,
+# once or twice as `GAMMA` decides, and answers the node then in `x`'s place;
+# a balanced `x` stays.
+function balance(@tree: Tree, x: i64) -> i64
+    l = tree.left[x]
+    r = tree.right[x]
+    weight_left = size_of(tree, l) + 1
+    weight_right = size_of(tree, r) + 1
+
+    if weight_right > DELTA * weight_left
+        right_inner = tree.left[r]
+        right_outer = tree.right[r]
+
+        if size_of(tree, right_inner) + 1 >= GAMMA * (size_of(tree, right_outer) + 1)
+            _ = rotate_right(@tree, r)
+        return rotate_left(@tree, x)
+
+    if weight_left > DELTA * weight_right
+        left_inner = tree.right[l]
+        left_outer = tree.left[l]
+
+        if size_of(tree, left_inner) + 1 >= GAMMA * (size_of(tree, left_outer) + 1)
+            _ = rotate_left(@tree, l)
+        return rotate_right(@tree, x)
+    return x
+
+# Sets the sizes from `at` up to the root and balances every node on the
+# way, after a node was hung or unhooked under `at`; `NONE` does nothing.
+function settle(@tree: Tree, at: i64)
+    x @= at
+
+    while x != NONE
+        resize(@tree, x)
+        top = balance(@tree, x)
+        x @ tree.parent[top]
+
+## Slots
+
+# A new live slot, `count`, linked to nothing and of size one: the lists grow
+# by one where they are full, and their room is reused where they are not.
+function claim(@tree: Tree) -> i64
+    slot = tree.count
+
+    if slot == tree.left.len()
+        grow(@tree.left, NONE)
+        grow(@tree.right, NONE)
+        grow(@tree.parent, NONE)
+        grow(@tree.size, 1)
+    else
+        tree.left[slot] @ NONE
+        tree.right[slot] @ NONE
+        tree.parent[slot] @ NONE
+        tree.size[slot] @ 1
+    tree.count @ slot + 1
+    return slot
+
+# Hangs the new leaf `slot` under `under`, on its left where `on_left`, or at
+# the root where `under` is `NONE`, and settles the path to the root.
+function hang(@tree: Tree, slot: i64, under: i64, on_left: bool)
+    tree.parent[slot] @ under
+
+    if under == NONE
+        tree.root @ slot
+    else if on_left
+        tree.left[under] @ slot
+    else
+        tree.right[under] @ slot
+    settle(@tree, under)
+
+# Takes `z` out of the tree, which stays a search tree and balanced, and
+# leaves `z` linked to nothing. A node of two children gives its place to the
+# first node of its right branch.
+function unhook(@tree: Tree, z: i64)
+    l = tree.left[z]
+    r = tree.right[z]
+    p = tree.parent[z]
+
+    if l == NONE || r == NONE
+        child: i64 @= l
+
+        if l == NONE
+            child @ r
+        relink(@tree, parent: p, old: z, child: child)
+
+        if child != NONE
+            tree.parent[child] @ p
+        settle(@tree, p)
+    else
+        y @= r
+
+        while tree.left[y] != NONE
+            y @ tree.left[y]
+
+        start: i64 @= y
+
+        if y != r
+            above = tree.parent[y]
+            below = tree.right[y]
+            tree.left[above] @ below
+
+            if below != NONE
+                tree.parent[below] @ above
+            tree.right[y] @ r
+            tree.parent[r] @ y
+            start @ above
+        tree.left[y] @ l
+        tree.parent[l] @ y
+        tree.parent[y] @ p
+        relink(@tree, parent: p, old: z, child: y)
+        settle(@tree, start)
+    tree.left[z] @ NONE
+    tree.right[z] @ NONE
+    tree.parent[z] @ NONE
+
+# Moves the node at `from` into the free slot `to`, its links and its
+# neighbours' links following it.
+function move_node(@tree: Tree, from: i64, to: i64)
+    l = tree.left[from]
+    r = tree.right[from]
+    p = tree.parent[from]
+    tree.left[to] @ l
+    tree.right[to] @ r
+    tree.parent[to] @ p
+    tree.size[to] @ tree.size[from]
+
+    if l != NONE
+        tree.parent[l] @ to
+
+    if r != NONE
+        tree.parent[r] @ to
+    relink(@tree, parent: p, old: from, child: to)
+
+# Takes the node at `at` out and moves the last live node into its slot, so
+# the slots stay dense; answers the slot that was last, which now lies past
+# `count`. The lists are cut back where three quarters of them stand empty.
+function vacate(@tree: Tree, at: i64) -> i64
+    unhook(@tree, at)
+    end = tree.count - 1
+
+    if at != end
+        move_node(@tree, from: end, to: at)
+    tree.count @ end
+    trim(@tree)
+    return end
+
+# Cuts the lists back to the live slots where they are empty, or where three
+# quarters of a list of at least `KEPT` slots stand unused.
+function trim(@tree: Tree)
+    held = tree.left.len()
+
+    if tree.count == 0
+        tree.left @ []
+        tree.right @ []
+        tree.parent @ []
+        tree.size @ []
+        tree.root @ NONE
+    else if held >= KEPT && tree.count * 4 <= held
+        tree.left @ tree.left.slice(from: 0, to: tree.count)
+        tree.right @ tree.right.slice(from: 0, to: tree.count)
+        tree.parent @ tree.parent.slice(from: 0, to: tree.count)
+        tree.size @ tree.size.slice(from: 0, to: tree.count)
+
+## The witness
+
+# Whether every link, size and balance of the tree holds: the tests' witness
+# that a run of changes left a tree. With every live node's children live and
+# every size true, a root whose size is the count reaches every live slot.
+function holds(tree: Tree lent) -> bool
+    if tree.root == NONE
+        return tree.count == 0
+
+    if tree.parent[tree.root] != NONE || tree.size[tree.root] != tree.count
+        return false
+
+    for at in range(from: 0, to: tree.count)
+        l = tree.left[at]
+        r = tree.right[at]
+
+        if l != NONE && (l >= tree.count || tree.parent[l] != at)
+            return false
+
+        if r != NONE && (r >= tree.count || tree.parent[r] != at)
+            return false
+
+        if tree.size[at] != size_of(tree, l) + size_of(tree, r) + 1
+            return false
+        weight_left = size_of(tree, l) + 1
+        weight_right = size_of(tree, r) + 1
+
+        if weight_left > DELTA * weight_right || weight_right > DELTA * weight_left
+            return false
+
+    return true
+
+## Tests
+
+# A tree of `n` nodes hung in the order of their slots, each one after the
+# last: the shape a run of growing keys makes, the largest key being the slot
+# hung just before.
+function ascending_tree(n: i64) -> Tree
+    tree @= empty(holds_values: false)
+
+    for _ in range(from: 0, to: n)
+        slot = claim(@tree)
+        hang(@tree, slot: slot, under: slot - 1, on_left: false)
+
+    return tree
+
+test "empty: no root, no slot, and a tree"
+    tree = empty(holds_values: true)
+    assert tree.root == NONE
+    assert tree.count == 0
+    assert holds(tree)
+
+test "hang: one node, then a thousand in growing order, balanced at every step"
+    one = ascending_tree(1)
+    assert one.root == 0
+    assert holds(one)
+    tree = ascending_tree(1000)
+    assert holds(tree)
+    assert tree.size[tree.root] == 1000
+
+test "holds: a size that lies, and a child past the live slots"
+    tree @= ascending_tree(10)
+    assert holds(tree)
+    tree.size[tree.root] @ 99
+    assert !holds(tree)
+    bent @= ascending_tree(3)
+    bent.count @ 2
+    assert !holds(bent)
+
+test "vacate: the root, a leaf and the last slot, the slots kept dense"
+    tree @= ascending_tree(100)
+    moved = vacate(@tree, tree.root)
+    assert moved == 99
+    assert tree.count == 99
+    assert holds(tree)
+    _ = vacate(@tree, tree.count - 1)
+    assert holds(tree)
+    _ = vacate(@tree, 0)
+    assert holds(tree)
+    assert tree.count == 97
+
+test "vacate: every node taken out, the lists cut back on the way and emptied"
+    tree @= ascending_tree(200)
+
+    while tree.count > 0
+        _ = vacate(@tree, tree.root)
+        assert holds(tree)
+        assert tree.left.len() < KEPT || tree.count * 4 > tree.left.len()
+
+    assert tree.left == []
+    assert tree.root == NONE
+
+test "is_live: the first and last slot, and one on either side"
+    tree = ascending_tree(3)
+    assert is_live(tree, 0)
+    assert is_live(tree, 2)
+    assert !is_live(tree, 3)
+    assert !is_live(tree, -1)

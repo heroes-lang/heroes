@@ -1,0 +1,322 @@
+# The positions under a map that keeps its keys in the order they were first
+# put: the program's key and value lists hold the entries dense from position
+# 0, and its lookup map names each key's position, or -1 for a key taken out
+# since the map was last rebuilt.
+
+use containers/internal/codes
+use containers/internal/edit
+use containers/internal/samples
+
+# The counts of one such map.
+record Table
+    # How many entries are live: the positions 0 to `count` less one.
+    count: i64
+    # How many keys of the lookup map name no entry; the map is rebuilt when
+    # they outnumber the live ones.
+    dead: i64
+
+# The mark of a key taken out, in the lookup map.
+constant GONE: i64
+    -1
+
+# How many keys of the lookup map may name no entry, beyond the live ones,
+# before it is rebuilt.
+constant SPARE_KEYS: i64
+    32
+
+# Ends the program where a list is shorter than the map.
+function require_lists(table: Table lent, keys_held: i64, values_held: i64)
+    codes.require_storage(held: keys_held, count: table.count, what: "key list")
+    codes.require_storage(held: values_held, count: table.count, what: "value list")
+
+# Ends the program where `at` names no position.
+function require_position(table: Table lent, at: i64)
+    if at < 0 || at >= table.count
+        codes.abort_with(f"position {at} is outside a map of {table.count} entries")
+
+# The position of `key`, `GONE` where the map holds none.
+function position_of<K>(table: Table lent, lookup: {K: i64} lent, key: K) -> i64
+    at = lookup[key].default(GONE)
+
+    if at >= table.count
+        codes.abort_with(f"the lookup map names position {at} of a map of {table.count}: it is not this map's")
+    return at
+
+# Builds the lookup map again from the live keys alone.
+function rebuild<K>(@table: Table, key_list: [K] lent, @lookup: {K: i64})
+    fresh: {K: i64} @= {}
+
+    for at in range(from: 0, to: table.count)
+        fresh[key_list[at]] @ at
+
+    lookup @ fresh
+    table.dead @ 0
+
+# Puts `value` under `key` and answers its position.
+function put<K, V>(@table: Table, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, value: V) -> i64
+    held = position_of(table, lookup, key)
+
+    if held != GONE
+        value_list[held] @ value
+        return held
+    at = table.count
+    edit.store(@key_list, at, key)
+    edit.store(@value_list, at, value)
+
+    if lookup[key].default(0) == GONE
+        table.dead @ table.dead - 1
+    lookup[key] @ at
+    table.count @ at + 1
+    return at
+
+# Marks the key at `at` taken out of the lookup map, which is rebuilt where
+# the marks outnumber the live keys by `SPARE_KEYS`; called once the lists
+# are settled.
+function forget<K>(@table: Table, key_list: [K] lent, @lookup: {K: i64}, key: K)
+    lookup[key] @ GONE
+    table.dead @ table.dead + 1
+
+    if table.dead > table.count + SPARE_KEYS
+        rebuild(@table, key_list, @lookup)
+
+# Takes the entry at `at` out, the last one moving into it.
+function swap_remove_at<K, V>(@table: Table, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
+    key = key_list[at]
+    end = table.count - 1
+    table.count @ end
+    edit.drop_slot(@key_list, at: at, end: end, count: end)
+    edit.drop_slot(@value_list, at: at, end: end, count: end)
+
+    if at != end
+        lookup[key_list[at]] @ at
+    forget(@table, key_list, @lookup, key)
+
+# Takes the entry at `at` out, the ones after it moving one place forward.
+function shift_remove_at<K, V>(@table: Table, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
+    key = key_list[at]
+    end = table.count - 1
+
+    for place in range(from: at, to: end)
+        key_list[place] @ key_list[place + 1]
+        value_list[place] @ value_list[place + 1]
+        lookup[key_list[place]] @ place
+
+    table.count @ end
+    edit.drop_slot(@key_list, at: end, end: end, count: end)
+    edit.drop_slot(@value_list, at: end, end: end, count: end)
+    forget(@table, key_list, @lookup, key)
+
+# Moves the entry at `from` to `to`, the ones between moving a place.
+function move<K, V>(@key_list: [K], @value_list: [V], @lookup: {K: i64}, from: i64, to: i64)
+    key = key_list[from]
+    value = value_list[from]
+    place @= from
+
+    while place < to
+        key_list[place] @ key_list[place + 1]
+        value_list[place] @ value_list[place + 1]
+        lookup[key_list[place]] @ place
+        place @ place + 1
+
+    while place > to
+        key_list[place] @ key_list[place - 1]
+        value_list[place] @ value_list[place - 1]
+        lookup[key_list[place]] @ place
+        place @ place - 1
+
+    key_list[to] @ key
+    value_list[to] @ value
+    lookup[key] @ to
+
+# Swaps the entries at `at` and `with`.
+function swap<K, V>(@key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64, with: i64)
+    key = key_list[at]
+    value = value_list[at]
+    key_list[at] @ key_list[with]
+    value_list[at] @ value_list[with]
+    key_list[with] @ key
+    value_list[with] @ value
+    lookup[key_list[at]] @ at
+    lookup[key] @ with
+
+# The positions 0 to `count` less one in the order of their keys by `less`,
+# positions of equal keys in their order: a merge sort by runs that double,
+# with no recursion.
+function sorted_positions<K>(key_list: [K] lent, count: i64, less: (function(a: K, b: K) -> bool)) -> [i64]
+    order @= range(from: 0, to: count)
+    width @= 1
+
+    while width < count
+        merged: [i64] @= []
+        start @= 0
+
+        while start < count
+            middle @= start + width
+
+            if middle > count
+                middle @ count
+            stop @= middle + width
+
+            if stop > count
+                stop @ count
+            left @= start
+            right @= middle
+
+            while left < middle && right < stop
+                if less(a: key_list[order[right]], b: key_list[order[left]])
+                    merged @ merged.push(order[right])
+                    right @ right + 1
+                else
+                    merged @ merged.push(order[left])
+                    left @ left + 1
+
+            while left < middle
+                merged @ merged.push(order[left])
+                left @ left + 1
+
+            while right < stop
+                merged @ merged.push(order[right])
+                right @ right + 1
+
+            start @ stop
+
+        order @ merged
+        width @ width * 2
+
+    return order
+
+# Puts the entries in the order of their keys by `less`, stably, and
+# rebuilds the lookup map.
+function sort_by_key<K, V>(@table: Table, @key_list: [K], @value_list: [V], @lookup: {K: i64}, less: (function(a: K, b: K) -> bool))
+    order = sorted_positions(key_list, count: table.count, less: less)
+    sorted_keys: [K] @= []
+    sorted_values: [V] @= []
+
+    for at in order
+        sorted_keys @ sorted_keys.push(key_list[at])
+        sorted_values @ sorted_values.push(value_list[at])
+
+    key_list @ sorted_keys
+    value_list @ sorted_values
+    rebuild(@table, key_list, @lookup)
+
+## Tests
+
+test "sorted_positions: empty, one, equal keys kept in their order, and reversed"
+    none: [i64] = []
+    assert sorted_positions(none, count: 0, less: samples.ascending) == none
+    assert sorted_positions([5], count: 1, less: samples.ascending) == [0]
+    assert sorted_positions([2, 1, 2, 1, 0], count: 5, less: samples.ascending) == [4, 1, 3, 0, 2]
+    assert sorted_positions(range(from: 0, to: 9), count: 9, less: samples.descending) == [8, 7, 6, 5, 4, 3, 2, 1, 0]
+
+test "put, swap_remove_at and shift_remove_at: positions kept true in the lookup map"
+    table @= Table(count: 0, dead: 0)
+    held: [str] @= []
+    values: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for word in ["a", "b", "c", "d", "e"]
+        _ = put(@table, @held, @values, @lookup, key: word, value: word.len())
+
+    assert put(@table, @held, @values, @lookup, key: "c", value: 9) == 2
+    swap_remove_at(@table, @held, @values, @lookup, 1)
+    assert held.slice(from: 0, to: table.count).join("") == "aecd"
+    shift_remove_at(@table, @held, @values, @lookup, 0)
+    assert held.slice(from: 0, to: table.count).join("") == "ecd"
+
+    for at in range(from: 0, to: table.count)
+        assert lookup[held[at]].must() == at
+
+    assert position_of(table, lookup, "a") == GONE
+    assert position_of(table, lookup, "b") == GONE
+    assert values[position_of(table, lookup, "c")] == 9
+
+test "move and swap: forward, back, and in place"
+    held: [str] @= ["a", "b", "c", "d"]
+    values: [i64] @= [0, 1, 2, 3]
+    lookup: {str: i64} @= {"a": 0, "b": 1, "c": 2, "d": 3}
+    move(@held, @values, @lookup, from: 0, to: 2)
+    assert held.join("") == "bcad"
+    move(@held, @values, @lookup, from: 3, to: 0)
+    assert held.join("") == "dbca"
+    swap(@held, @values, @lookup, at: 0, with: 3)
+    assert held.join("") == "abcd"
+    assert values == [0, 1, 2, 3]
+    assert lookup["d"].must() == 3
+
+test "forget: many keys taken out, the lookup map rebuilt and kept small"
+    table @= Table(count: 0, dead: 0)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+
+    for n in range(from: 0, to: 1000)
+        _ = put(@table, @held, @values, @lookup, key: n, value: n)
+
+        if table.count > 4
+            swap_remove_at(@table, @held, @values, @lookup, 0)
+
+    assert table.count == 4
+    assert keys(lookup).len() <= 4 + 4 + SPARE_KEYS + 1
+
+test "put and every removal and move: four thousand random operations against lists in order"
+    table @= Table(count: 0, dead: 0)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+    model: [i64] @= []
+    model_values: [i64] @= []
+    dice @= samples.Dice(state: 314)
+
+    for step in range(from: 0, to: 4000)
+        key = samples.roll(@dice, 30)
+        choice = samples.roll(@dice, 6)
+        place @= -1
+
+        for at in range(from: 0, to: model.len())
+            if model[at] == key
+                place @ at
+
+        if choice < 2
+            assert put(@table, @held, @values, @lookup, key: key, value: step) == place || place == -1
+
+            if place >= 0
+                model_values[place] @ step
+            else
+                model @ model.push(key)
+                model_values @ model_values.push(step)
+        else if choice == 2 && place >= 0
+            swap_remove_at(@table, @held, @values, @lookup, place)
+            last = model.len() - 1
+            model[place] @ model[last]
+            model_values[place] @ model_values[last]
+            model @ edit.model_remove(model, last)
+            model_values @ edit.model_remove(model_values, last)
+        else if choice == 3 && place >= 0
+            shift_remove_at(@table, @held, @values, @lookup, place)
+            model @ edit.model_remove(model, place)
+            model_values @ edit.model_remove(model_values, place)
+        else if choice == 4 && model.len() > 0
+            from = samples.roll(@dice, model.len())
+            to = samples.roll(@dice, model.len())
+            move(@held, @values, @lookup, from: from, to: to)
+            moved_key = model[from]
+            moved_value = model_values[from]
+            model @ edit.model_insert(edit.model_remove(model, from), at: to, value: moved_key)
+            model_values @ edit.model_insert(edit.model_remove(model_values, from), at: to, value: moved_value)
+        else if model.len() > 0
+            at = samples.roll(@dice, model.len())
+            with = samples.roll(@dice, model.len())
+            swap(@held, @values, @lookup, at: at, with: with)
+            first_key = model[at]
+            first_value = model_values[at]
+            model[at] @ model[with]
+            model_values[at] @ model_values[with]
+            model[with] @ first_key
+            model_values[with] @ first_value
+        assert table.count == model.len()
+        assert held.slice(from: 0, to: table.count) == model
+        assert values.slice(from: 0, to: table.count) == model_values
+
+        for at in range(from: 0, to: model.len())
+            assert position_of(table, lookup, model[at]) == at

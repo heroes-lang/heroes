@@ -1,0 +1,132 @@
+# The state of a topological order handed out in stages, Python's
+# `graphlib.TopologicalSorter`'s `get_ready` and `done`: the nodes are
+# numbered as `graphs.number` numbers them, and every list is indexed by a
+# node's number.
+
+use containers/internal/codes
+use containers/internal/graphs
+
+# The stages of one graph.
+record Stages
+    # For each node, how many of the nodes it points to are not done yet.
+    waiting_on: [i64]
+    # Where each node's waiters begin in `waiters`; one more entry than nodes.
+    starts: [i64]
+    # For each node, the nodes that point to it, in the order the graph names
+    # them, back to back.
+    waiters: [i64]
+    # For each node, 0 while it waits, 1 once handed out, 2 once done.
+    state: [i64]
+    # The nodes become ready and not handed out yet, in the order they did.
+    ready: [i64]
+    # How many nodes are handed out and not done.
+    out: i64
+    # How many nodes are done.
+    finished: i64
+
+# A node that waits, has been handed out, or is done.
+constant WAITING: i64
+    0
+
+# The state of a node handed out and not done.
+constant HANDED: i64
+    1
+
+# The state of a node done.
+constant DONE: i64
+    2
+
+# Adds `value` at the end of `xs`, in place.
+function grow(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# The stages of a graph that has no cycle, none handed out: the nodes that
+# point to none are ready, in number order.
+function prepare(graph: graphs.Numbered lent) -> Stages
+    waiting_on = graphs.out_degrees(graph)
+    ready: [i64] @= []
+    state: [i64] @= []
+
+    for at in range(from: 0, to: graph.count)
+        state @ state.push(WAITING)
+
+        if waiting_on[at] == 0
+            ready @ ready.push(at)
+
+    return Stages(
+        waiting_on: waiting_on,
+        starts: graph.in_starts,
+        waiters: graph.in_from,
+        state: state,
+        ready: ready,
+        out: 0,
+        finished: 0
+    )
+
+# The nodes become ready, now handed out.
+function hand_out(@stages: Stages) -> [i64]
+    handed = stages.ready
+    stages.ready @ []
+
+    for node in handed
+        stages.state[node] @ HANDED
+
+    stages.out @ stages.out + handed.len()
+    return handed
+
+# Marks `node` done and readies the nodes that waited on it alone.
+function finish(@stages: Stages, node: i64) -> ()?
+    if node < 0 || node >= stages.state.len()
+        return fail(code: codes.NOT_FOUND, msg: f"{node} is no node of a sorter of {stages.state.len()}")
+
+    if stages.state[node] == WAITING
+        return fail(code: codes.INVALID, msg: f"node {node} was not handed out, so it cannot be done")
+
+    if stages.state[node] == DONE
+        return fail(code: codes.INVALID, msg: f"node {node} is done already")
+    stages.state[node] @ DONE
+    stages.out @ stages.out - 1
+    stages.finished @ stages.finished + 1
+
+    for edge in range(from: stages.starts[node], to: stages.starts[node + 1])
+        waiter = stages.waiters[edge]
+        stages.waiting_on[waiter] @ stages.waiting_on[waiter] - 1
+
+        if stages.waiting_on[waiter] == 0
+            grow(@stages.ready, waiter)
+
+    return ok()
+
+# Whether more can be handed out, or nodes handed out wait to be done.
+function is_active(stages: Stages lent) -> bool
+    return stages.out > 0 || stages.ready.len() > 0
+
+## Tests
+
+test "hand_out and finish: Python's stages of a small graph, then nothing active"
+    nodes: [str] @= []
+    stages @= prepare(graphs.numbered({"a": ["b", "c"], "b": [], "c": ["b"]}, @nodes))
+    assert graphs.named(nodes, hand_out(@stages)).join("") == "b"
+    assert hand_out(@stages).len() == 0
+    assert is_active(stages)
+    finish(@stages, 1).must()
+    assert graphs.named(nodes, hand_out(@stages)).join("") == "c"
+    finish(@stages, 2).must()
+    assert graphs.named(nodes, hand_out(@stages)).join("") == "a"
+    finish(@stages, 0).must()
+    assert !is_active(stages)
+
+test "finish: a node not handed out, one done twice, and one that is no node"
+    nodes: [str] @= []
+    stages @= prepare(graphs.numbered({"a": ["b"]}, @nodes))
+    assert finish(@stages, 0).is_err()
+    _ = hand_out(@stages)
+    finish(@stages, 1).must()
+
+    match finish(@stages, 1)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    match finish(@stages, 7)
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_FOUND

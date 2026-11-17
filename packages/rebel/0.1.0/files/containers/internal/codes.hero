@@ -1,0 +1,56 @@
+# The codes `containers` fails with, and the abort every module uses for a
+# broken precondition, kept in one place so that every module fails alike.
+
+# The code of a search that found nothing, which the face names as
+# `containers.NOT_FOUND`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an input the function does not read, which the face names as
+# `containers.INVALID`.
+constant INVALID: str
+    "invalid"
+
+# Ends the program saying `msg`: for a precondition the caller could have
+# checked and did not, never for input from outside.
+#
+# - `msg`: what was broken, in words a reader can act on.
+function abort_with(msg: str)
+    stop: ()? = fail(code: INVALID, msg: msg)
+    stop.must()
+
+# Ends the program where `held`, the length of a list the program lent as a
+# structure's storage, is shorter than the `count` slots the structure says
+# it holds: the list is not the one the structure was built over.
+#
+# - `held`: the list's length.
+# - `count`: the slots the structure holds.
+# - `what`: the list's role, for the message.
+function require_storage(held: i64, count: i64, what: str)
+    if held < count
+        abort_with(
+            f"the {what} holds {held} elements where its structure holds {count}: it is not the list the structure was built over"
+        )
+
+# `at`, a slot, a position or a bit, as an answer: `not_found` saying `msg`
+# where it is below zero, the mark the private modules use for none.
+#
+# - `at`: what was found, or -1.
+# - `msg`: what was asked and not found.
+function answer(at: i64, msg: str) -> i64?
+    if at < 0
+        return fail(code: NOT_FOUND, msg: msg)
+    return ok(at)
+
+## Tests
+
+test "answer: a slot, zero, and none"
+    assert answer(at: 3, msg: "x").must() == 3
+    assert answer(at: 0, msg: "x").must() == 0
+    assert answer(at: -1, msg: "x").is_err()
+
+test "require_storage: a list as long as the structure, and longer"
+    require_storage(held: 3, count: 3, what: "key list")
+    require_storage(held: 5, count: 3, what: "key list")
+    assert NOT_FOUND == "not_found"
+    assert INVALID == "invalid"

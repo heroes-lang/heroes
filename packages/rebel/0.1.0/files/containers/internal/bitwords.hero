@@ -1,0 +1,484 @@
+# The words under a set of bits: bit `i` is bit `i % 64` of word `i / 64`,
+# counted from the least significant, and the bits past the size are clear in
+# every set this module answers, so `==` tells two sets apart by their bits.
+# The words are `i64` since the bitwise operators take nothing else; their
+# sign bit is bit 63 of the word, read and written like the others. No
+# operator here can overflow: the population count and the scans keep the
+# sign bit apart, and a right shift is masked to read as an unsigned one.
+
+use containers/internal/codes
+use containers/internal/samples
+
+# The bits of one set.
+record Words
+    # The words, `(size + 63) / 64` of them.
+    words: [i64]
+    # How many bits the set holds.
+    size: i64
+
+# The bit that names none.
+constant NONE: i64
+    -1
+
+# How many words hold `size` bits.
+function word_count(size: i64) -> i64
+    if size % 64 == 0
+        return size / 64
+    return size / 64 + 1
+
+# The words' bits that lie within `size` in its last word, every bit where the
+# size fills it.
+function tail_mask(size: i64) -> i64
+    rest = size % 64
+
+    if rest == 0
+        return -1
+    return ~(-1 << rest)
+
+# The bits 0 to `n` less one of a word, `n` from 0 to 64.
+function low_mask(n: i64) -> i64
+    if n == 64
+        return -1
+    return ~(-1 << n)
+
+# `x` shifted down `by` places, from 0 to 63, as an unsigned shift: the places
+# freed at the top are clear.
+function shift_right(x: i64, by: i64) -> i64
+    if by == 0
+        return x
+    return x >> by & ~(-1 << 64 - by)
+
+# A set of `size` bits, all clear.
+function clear_set(size: i64) -> Words
+    if size < 0
+        codes.abort_with(f"a set of bits holds from 0 bits, and {size} was asked")
+    words: [i64] @= []
+
+    for _ in range(from: 0, to: word_count(size))
+        words @ words.push(0)
+
+    return Words(words: words, size: size)
+
+# Clears the bits past the size in the last word.
+function clip(@set: Words)
+    n = set.words.len()
+
+    if n > 0
+        set.words[n - 1] @ set.words[n - 1] & tail_mask(set.size)
+
+# Ends the program where `at` is outside the set.
+function require_bit(set: Words lent, at: i64)
+    if at < 0 || at >= set.size
+        codes.abort_with(f"bit {at} is outside a set of {set.size} bits")
+
+# Ends the program where `from` and `to` do not bound a range of the set.
+function require_range(set: Words lent, from: i64, to: i64)
+    if from < 0 || to > set.size || from > to
+        codes.abort_with(f"bits {from} to {to} are not a range of a set of {set.size} bits")
+
+# Whether bit `at` is set; `at` lies within the set.
+function is_set(set: Words lent, at: i64) -> bool
+    return set.words[at / 64] >> at % 64 & 1 == 1
+
+# Sets, clears or turns over, as `how` is 0, 1 or 2, the bits of `mask` in
+# word `at`.
+function change(@set: Words, at: i64, mask: i64, how: i64)
+    word = set.words[at]
+
+    if how == 0
+        set.words[at] @ word | mask
+    else if how == 1
+        set.words[at] @ word & ~mask
+    else
+        set.words[at] @ word ^ mask
+
+# Sets, clears or turns over, as `how` is 0, 1 or 2, the bits from `from` up
+# to `to`, a word at a time; the range lies within the set.
+function change_range(@set: Words, from: i64, to: i64, how: i64)
+    if from == to
+        return
+    first_word = from / 64
+    last_word = (to - 1) / 64
+
+    for at in range(from: first_word, to: last_word + 1)
+        mask @= -1
+
+        if at == first_word
+            mask @ mask & -1 << from % 64
+
+        if at == last_word
+            mask @ mask & low_mask((to - 1) % 64 + 1)
+        change(@set, at: at, mask: mask, how: how)
+
+# How many bits of `word` are set.
+function ones_in(word: i64) -> i64
+    count @= 0
+    x @= word
+
+    if x < 0
+        count @ 1
+        x @ x & 0x7fff_ffff_ffff_ffff
+    x @ x - (x >> 1 & 0x5555_5555_5555_5555)
+    x @ (x & 0x3333_3333_3333_3333) + (x >> 2 & 0x3333_3333_3333_3333)
+    x @ x + (x >> 4) & 0x0f0f_0f0f_0f0f_0f0f
+    x @ x + (x >> 8)
+    x @ x + (x >> 16)
+    x @ x + (x >> 32)
+    return count + (x & 0x7f)
+
+# How many bits of the set are set.
+function count_ones(set: Words lent) -> i64
+    count @= 0
+
+    for word in set.words
+        count @ count + ones_in(word)
+
+    return count
+
+# The place of the lowest set bit of `word`, which is not 0.
+function lowest_one(word: i64) -> i64
+    x @= word
+    n @= 0
+
+    if x & 0xffff_ffff == 0
+        n @ n + 32
+        x @ x >> 32
+
+    if x & 0xffff == 0
+        n @ n + 16
+        x @ x >> 16
+
+    if x & 0xff == 0
+        n @ n + 8
+        x @ x >> 8
+
+    if x & 0xf == 0
+        n @ n + 4
+        x @ x >> 4
+
+    if x & 0x3 == 0
+        n @ n + 2
+        x @ x >> 2
+
+    if x & 0x1 == 0
+        n @ n + 1
+    return n
+
+# The place of the highest set bit of `word`, which is not 0.
+function highest_one(word: i64) -> i64
+    if word < 0
+        return 63
+    x @= word
+    n @= 0
+
+    if x >> 32 != 0
+        n @ n + 32
+        x @ x >> 32
+
+    if x >> 16 != 0
+        n @ n + 16
+        x @ x >> 16
+
+    if x >> 8 != 0
+        n @ n + 8
+        x @ x >> 8
+
+    if x >> 4 != 0
+        n @ n + 4
+        x @ x >> 4
+
+    if x >> 2 != 0
+        n @ n + 2
+        x @ x >> 2
+
+    if x >> 1 != 0
+        n @ n + 1
+    return n
+
+# The first bit at or after `from` that is set, or clear where `clear`, within
+# the size; `NONE` where there is none.
+function next_of(set: Words lent, from: i64, clear: bool) -> i64
+    start @= from
+
+    if start < 0
+        start @ 0
+
+    if start >= set.size
+        return NONE
+    at @= start / 64
+    word @= set.words[at]
+
+    if clear
+        word @ ~word
+    word @ word & -1 << start % 64
+
+    while true
+        if word != 0
+            found = at * 64 + lowest_one(word)
+
+            if found >= set.size
+                return NONE
+            return found
+        at @ at + 1
+
+        if at >= set.words.len()
+            return NONE
+        word @ set.words[at]
+
+        if clear
+            word @ ~word
+
+# The last bit at or before `from` that is set, or clear where `clear`;
+# `NONE` where there is none.
+function previous_of(set: Words lent, from: i64, clear: bool) -> i64
+    if from < 0 || set.size == 0
+        return NONE
+    start @= from
+
+    if start >= set.size
+        start @ set.size - 1
+    at @= start / 64
+    word @= set.words[at]
+
+    if clear
+        word @ ~word
+    word @ word & ~(-2 << start % 64)
+
+    while true
+        if word != 0
+            return at * 64 + highest_one(word)
+
+        if at == 0
+            return NONE
+        at @ at - 1
+        word @ set.words[at]
+
+        if clear
+            word @ ~word
+
+# The set bits, from the smallest.
+function to_indices(set: Words lent) -> [i64]
+    found: [i64] @= []
+
+    for at in range(from: 0, to: set.words.len())
+        word @= set.words[at]
+
+        while word != 0
+            low = lowest_one(word)
+            found @ found.push(at * 64 + low)
+            word @ word & ~(1 << low)
+
+    return found
+
+# Word `at` of the set, 0 past its words.
+function word_at(set: Words lent, at: i64) -> i64
+    if at < 0 || at >= set.words.len()
+        return 0
+    return set.words[at]
+
+# The 64 bits of the set from bit `from`, which may lie below 0 or past the
+# size, the bits outside read as clear.
+function window(set: Words lent, from: i64) -> i64
+    if from <= -64
+        return 0
+
+    if from < 0
+        return window(set, 0) << -from
+    at = from / 64
+    by = from % 64
+    low = shift_right(x: word_at(set, at), by: by)
+
+    if by == 0
+        return low
+    return low | word_at(set, at + 1) << 64 - by
+
+# The set of `size` bits whose word `j` is `window(set, start + 64 * j)`:
+# bits `start` onwards moved to 0, then clipped.
+function moved(set: Words lent, start: i64, size: i64) -> Words
+    result @= clear_set(size)
+
+    for at in range(from: 0, to: result.words.len())
+        result.words[at] @ window(set, start + at * 64)
+
+    clip(@result)
+    return result
+
+# The words of two sets combined by `how`: 0 and, 1 or, 2 xor, 3 and not; of
+# the larger size.
+function combine(left: Words lent, right: Words lent, how: i64) -> Words
+    size @= left.size
+
+    if right.size > size
+        size @ right.size
+    result @= clear_set(size)
+
+    for at in range(from: 0, to: result.words.len())
+        a = word_at(left, at)
+        b = word_at(right, at)
+
+        if how == 0
+            result.words[at] @ a & b
+        else if how == 1
+            result.words[at] @ a | b
+        else if how == 2
+            result.words[at] @ a ^ b
+        else
+            result.words[at] @ a & ~b
+
+    return result
+
+## Tests
+
+test "word_count and tail_mask: zero, one, a full word, and one past it"
+    assert word_count(0) == 0
+    assert word_count(1) == 1
+    assert word_count(64) == 1
+    assert word_count(65) == 2
+    assert tail_mask(64) == -1
+    assert tail_mask(1) == 1
+    assert tail_mask(63) == 0x7fff_ffff_ffff_ffff
+    assert low_mask(0) == 0
+    assert low_mask(64) == -1
+
+test "ones_in: none, all, the sign bit alone, and a pattern"
+    assert ones_in(0) == 0
+    assert ones_in(-1) == 64
+    assert ones_in(-9_223_372_036_854_775_808) == 1
+    assert ones_in(0x7fff_ffff_ffff_ffff) == 63
+    assert ones_in(0x5555) == 8
+
+test "lowest_one and highest_one: the first bit, the sign bit, and one between"
+    assert lowest_one(1) == 0
+    assert lowest_one(-9_223_372_036_854_775_808) == 63
+    assert lowest_one(0x100) == 8
+    assert highest_one(1) == 0
+    assert highest_one(-1) == 63
+    assert highest_one(0x100) == 8
+    assert highest_one(0x7fff_ffff_ffff_ffff) == 62
+
+test "shift_right: by none, by one of the sign bit, and by 63"
+    assert shift_right(x: -1, by: 0) == -1
+    assert shift_right(x: -1, by: 1) == 0x7fff_ffff_ffff_ffff
+    assert shift_right(x: -1, by: 63) == 1
+    assert shift_right(x: -9_223_372_036_854_775_808, by: 63) == 1
+
+test "change_range: inside one word, across words, the sign bit, and empty"
+    set @= clear_set(200)
+    change_range(@set, from: 3, to: 5, how: 0)
+    assert to_indices(set) == [3, 4]
+    change_range(@set, from: 60, to: 130, how: 0)
+    assert count_ones(set) == 72
+    assert is_set(set, 63) && is_set(set, 129) && !is_set(set, 130)
+    change_range(@set, from: 0, to: 200, how: 2)
+    assert count_ones(set) == 200 - 72
+    change_range(@set, from: 7, to: 7, how: 1)
+    assert count_ones(set) == 128
+
+test "next_of and previous_of: set and clear, from either side, across words and at the ends"
+    set @= clear_set(130)
+    change_range(@set, from: 63, to: 65, how: 0)
+    assert next_of(set, from: 0, clear: false) == 63
+    assert next_of(set, from: 64, clear: false) == 64
+    assert next_of(set, from: 65, clear: false) == NONE
+    assert next_of(set, from: -5, clear: true) == 0
+    assert next_of(set, from: 63, clear: true) == 65
+    assert previous_of(set, from: 129, clear: false) == 64
+    assert previous_of(set, from: 62, clear: false) == NONE
+    assert previous_of(set, from: 999, clear: true) == 129
+    assert previous_of(set, from: 64, clear: true) == 62
+    full @= clear_set(70)
+    change_range(@full, from: 0, to: 70, how: 0)
+    assert next_of(full, from: 0, clear: true) == NONE
+    assert previous_of(clear_set(0), from: 0, clear: false) == NONE
+
+test "window and moved: a window across two words, below zero, and past the end"
+    set @= clear_set(128)
+    change_range(@set, from: 60, to: 68, how: 0)
+    assert window(set, 60) == 0xff
+    assert window(set, -4) == 0
+    assert window(set, 200) == 0
+    assert to_indices(moved(set, start: 60, size: 8)) == range(from: 0, to: 8)
+    assert to_indices(moved(set, start: -2, size: 128)) == range(from: 62, to: 70)
+
+test "combine: and, or, xor and and not of sets of two sizes"
+    a @= clear_set(70)
+    change_range(@a, from: 0, to: 4, how: 0)
+    change(@a, at: 1, mask: 1, how: 0)
+    b @= clear_set(3)
+    change_range(@b, from: 1, to: 3, how: 0)
+    assert to_indices(combine(left: a, right: b, how: 0)) == [1, 2]
+    assert to_indices(combine(left: a, right: b, how: 1)) == [0, 1, 2, 3, 64]
+    assert to_indices(combine(left: a, right: b, how: 2)) == [0, 3, 64]
+    assert to_indices(combine(left: a, right: b, how: 3)) == [0, 3, 64]
+    assert combine(left: b, right: a, how: 0).size == 70
+
+# The set bits of `model`.
+function model_indices(model: [bool] lent) -> [i64]
+    found: [i64] @= []
+
+    for at in range(from: 0, to: model.len())
+        if model[at]
+            found @ found.push(at)
+
+    return found
+
+test "every change and search: three thousand random ones against a list of booleans"
+    size = 150
+    set @= clear_set(size)
+    model: [bool] @= []
+
+    for _ in range(from: 0, to: size)
+        model @ model.push(false)
+
+    dice @= samples.Dice(state: 64)
+
+    for _ in range(from: 0, to: 3000)
+        from = samples.roll(@dice, size + 1)
+        to = from + samples.roll(@dice, size + 1 - from)
+        how = samples.roll(@dice, 3)
+        change_range(@set, from: from, to: to, how: how)
+
+        for at in range(from: from, to: to)
+            if how == 0
+                model[at] @ true
+            else if how == 1
+                model[at] @ false
+            else
+                model[at] @ !model[at]
+
+        assert to_indices(set) == model_indices(model)
+        assert count_ones(set) == model_indices(model).len()
+        probe = samples.roll(@dice, size + 20) - 10
+        next_set @= NONE
+        next_clear @= NONE
+        previous_set @= NONE
+        previous_clear @= NONE
+
+        for at in range(from: 0, to: size)
+            if at >= probe && model[at] && next_set == NONE
+                next_set @ at
+
+            if at >= probe && !model[at] && next_clear == NONE
+                next_clear @ at
+
+            if at <= probe && model[at]
+                previous_set @ at
+
+            if at <= probe && !model[at]
+                previous_clear @ at
+
+        assert next_of(set, from: probe, clear: false) == next_set
+        assert next_of(set, from: probe, clear: true) == next_clear
+        assert previous_of(set, from: probe, clear: false) == previous_set
+        assert previous_of(set, from: probe, clear: true) == previous_clear
+        start = samples.roll(@dice, 2 * size) - size
+        shifted = moved(set, start: start, size: size)
+        expected: [i64] @= []
+
+        for at in range(from: 0, to: size)
+            source = at + start
+
+            if source >= 0 && source < size && model[source]
+                expected @ expected.push(at)
+
+        assert to_indices(shifted) == expected

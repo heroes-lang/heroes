@@ -1,0 +1,328 @@
+# The ring under a double-ended queue: the program's item list read as a
+# circle, the front at `head` and the items after it going round, so either
+# end takes and gives without moving the others.
+
+use containers/internal/codes
+use containers/internal/edit
+use containers/internal/samples
+
+# The ring of one deque. The item at position `i` from the front stands at
+# slot `(head + i) % capacity` of the item list, whose length is the
+# capacity; its slots past the items hold copies of live ones, kept as room.
+record Ring
+    # The slot of the front item; 0 where the ring is empty.
+    head: i64
+    # How many items the deque holds.
+    count: i64
+    # The most items a bounded deque holds; 0 for one without a bound.
+    limit: i64
+
+# Below this length an item list is never cut back.
+constant KEPT: i64
+    32
+
+# The smallest item list a deque grows to.
+constant FIRST_ROOM: i64
+    8
+
+# An empty ring, bounded by `limit` where it is above 0.
+function empty(limit: i64) -> Ring
+    return Ring(head: 0, count: 0, limit: limit)
+
+# The slot of the item `index` places from the front.
+function slot_of(ring: Ring lent, capacity: i64, index: i64) -> i64
+    return (ring.head + index) % capacity
+
+# Ends the program where the item list is shorter than the ring says.
+function require_items(ring: Ring lent, held: i64)
+    codes.require_storage(held: held, count: ring.count, what: "item list")
+
+# Lays the items out again from slot 0, in their order, in a list of
+# `capacity` slots whose room holds copies of `pad`; the ring's head goes to 0.
+function relay<T>(@ring: Ring, @items: [T], capacity: i64, pad: T)
+    laid: [T] @= []
+    held = items.len()
+
+    for index in range(from: 0, to: ring.count)
+        laid @ laid.push(items[slot_of(ring, capacity: held, index: index)])
+
+    while laid.len() < capacity
+        laid @ laid.push(pad)
+
+    items @ laid
+    ring.head @ 0
+
+# Makes room for one more item where the list is full, doubling it.
+function make_room<T>(@ring: Ring, @items: [T], pad: T)
+    if ring.count == items.len()
+        room = ring.count * 2
+
+        if room < FIRST_ROOM
+            relay(@ring, @items, capacity: FIRST_ROOM, pad: pad)
+        else
+            relay(@ring, @items, capacity: room, pad: pad)
+
+# After an item left, lets go of what its slot `freed` held: an empty deque
+# empties its list, a slot freed takes a copy of the front item, and a list
+# three quarters unused is laid out again at the items' length.
+function let_go<T>(@ring: Ring, @items: [T], freed: i64)
+    if ring.count == 0
+        items @ []
+        ring.head @ 0
+        return
+    items[freed] @ items[ring.head]
+
+    if items.len() >= KEPT && ring.count * 4 <= items.len()
+        relay(@ring, @items, capacity: ring.count, pad: items[ring.head])
+
+# Adds `value` at the back; a bounded deque that is full drops its front.
+function push_back<T>(@ring: Ring, @items: [T], value: T)
+    if ring.limit > 0 && ring.count == ring.limit
+        if ring.count == items.len()
+            items[ring.head] @ value
+            ring.head @ (ring.head + 1) % items.len()
+            return
+        items[slot_of(ring, capacity: items.len(), index: ring.count)] @ value
+        ring.count @ ring.count + 1
+        _ = pop_front(@ring, @items)
+        return
+    make_room(@ring, @items, pad: value)
+    items[slot_of(ring, capacity: items.len(), index: ring.count)] @ value
+    ring.count @ ring.count + 1
+
+# Adds `value` at the front; a bounded deque that is full drops its back.
+function push_front<T>(@ring: Ring, @items: [T], value: T)
+    if ring.limit > 0 && ring.count == ring.limit
+        _ = pop_back(@ring, @items)
+    make_room(@ring, @items, pad: value)
+    ring.head @ (ring.head + items.len() - 1) % items.len()
+    items[ring.head] @ value
+    ring.count @ ring.count + 1
+
+# Takes the front item out and answers it; the ring is not empty.
+function pop_front<T>(@ring: Ring, @items: [T]) -> T
+    freed = ring.head
+    value = items[freed]
+    ring.head @ (ring.head + 1) % items.len()
+    ring.count @ ring.count - 1
+    let_go(@ring, @items, freed)
+    return value
+
+# Takes the back item out and answers it; the ring is not empty.
+function pop_back<T>(@ring: Ring, @items: [T]) -> T
+    freed = slot_of(ring, capacity: items.len(), index: ring.count - 1)
+    value = items[freed]
+    ring.count @ ring.count - 1
+    let_go(@ring, @items, freed)
+    return value
+
+# Puts `value` at `index`, from 0 to the count, moving the items on the
+# nearer side; the ring has room for one more.
+function insert<T>(@ring: Ring, @items: [T], index: i64, value: T)
+    make_room(@ring, @items, pad: value)
+    capacity = items.len()
+
+    if index < ring.count - index
+        ring.head @ (ring.head + capacity - 1) % capacity
+
+        for at in range(from: 0, to: index)
+            items[slot_of(ring, capacity: capacity, index: at)] @ items[slot_of(ring, capacity: capacity, index: at + 1)]
+    else
+        at @= ring.count
+
+        while at > index
+            items[slot_of(ring, capacity: capacity, index: at)] @ items[slot_of(ring, capacity: capacity, index: at - 1)]
+            at @ at - 1
+    items[slot_of(ring, capacity: capacity, index: index)] @ value
+    ring.count @ ring.count + 1
+
+# Takes out the item at `index`, from 0 to the count less one, moving the
+# items on the nearer side, and answers it.
+function remove_at<T>(@ring: Ring, @items: [T], index: i64) -> T
+    capacity = items.len()
+    value = items[slot_of(ring, capacity: capacity, index: index)]
+
+    if index < ring.count - 1 - index
+        at @= index
+
+        while at > 0
+            items[slot_of(ring, capacity: capacity, index: at)] @ items[slot_of(ring, capacity: capacity, index: at - 1)]
+            at @ at - 1
+
+        freed = ring.head
+        ring.head @ (ring.head + 1) % capacity
+        ring.count @ ring.count - 1
+        let_go(@ring, @items, freed)
+    else
+        for at in range(from: index, to: ring.count - 1)
+            items[slot_of(ring, capacity: capacity, index: at)] @ items[slot_of(ring, capacity: capacity, index: at + 1)]
+
+        freed = slot_of(ring, capacity: capacity, index: ring.count - 1)
+        ring.count @ ring.count - 1
+        let_go(@ring, @items, freed)
+    return value
+
+# Moves the first `by` items to the back, `by` from 0 to the count; in a
+# full list the head moves alone, otherwise the fewer items move.
+function rotate_left<T>(@ring: Ring, @items: [T], by: i64)
+    capacity = items.len()
+
+    if ring.count == capacity
+        ring.head @ (ring.head + by) % capacity
+        return
+
+    if by <= ring.count - by
+        for _ in range(from: 0, to: by)
+            items[slot_of(ring, capacity: capacity, index: ring.count)] @ items[ring.head]
+            ring.head @ (ring.head + 1) % capacity
+    else
+        for _ in range(from: 0, to: ring.count - by)
+            back = items[slot_of(ring, capacity: capacity, index: ring.count - 1)]
+            ring.head @ (ring.head + capacity - 1) % capacity
+            items[ring.head] @ back
+
+# The items, front to back.
+function to_list<T>(ring: Ring lent, items: [T] lent) -> [T]
+    laid: [T] @= []
+
+    for index in range(from: 0, to: ring.count)
+        laid @ laid.push(items[slot_of(ring, capacity: items.len(), index: index)])
+
+    return laid
+
+## Tests
+
+test "push_back and pop_front: a queue through many growths, its list cut back after"
+    ring @= empty(0)
+    items: [i64] @= []
+
+    for n in range(from: 0, to: 1000)
+        push_back(@ring, @items, n)
+
+    assert items.len() == 1024
+    assert to_list(ring, items) == range(from: 0, to: 1000)
+
+    for n in range(from: 0, to: 990)
+        assert pop_front(@ring, @items) == n
+
+    assert ring.count == 10
+    assert items.len() < KEPT || ring.count * 4 > items.len()
+    assert to_list(ring, items) == range(from: 990, to: 1000)
+
+test "push_front and pop_back: a queue the other way, wrapping round the list"
+    ring @= empty(0)
+    items: [str] @= []
+
+    for word in ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+        push_front(@ring, @items, word)
+
+    assert to_list(ring, items).join("") == "ihgfedcba"
+    assert pop_back(@ring, @items) == "a"
+    assert pop_front(@ring, @items) == "i"
+    assert to_list(ring, items).join("") == "hgfedcb"
+
+test "pop_front: the last item empties the list"
+    ring @= empty(0)
+    items: [str] @= []
+    push_back(@ring, @items, "x")
+    assert pop_front(@ring, @items) == "x"
+    assert ring.count == 0
+    assert items == []
+
+test "push_back and push_front: a bounded ring drops the other end, full list or not"
+    ring @= empty(3)
+    items: [i64] @= []
+
+    for n in range(from: 1, to: 6)
+        push_back(@ring, @items, n)
+
+    assert to_list(ring, items) == [3, 4, 5]
+    push_front(@ring, @items, 9)
+    assert to_list(ring, items) == [9, 3, 4]
+    push_back(@ring, @items, 7)
+    assert to_list(ring, items) == [3, 4, 7]
+
+test "insert and remove_at: at the front, the back and inside, nearer side moving"
+    ring @= empty(0)
+    items: [i64] @= []
+
+    for n in [1, 2, 4, 5]
+        push_back(@ring, @items, n)
+
+    insert(@ring, @items, 2, 3)
+    insert(@ring, @items, 0, 0)
+    insert(@ring, @items, 6, 6)
+    assert to_list(ring, items) == [0, 1, 2, 3, 4, 5, 6]
+    assert remove_at(@ring, @items, 1) == 1
+    assert remove_at(@ring, @items, 4) == 5
+    assert remove_at(@ring, @items, 0) == 0
+    assert remove_at(@ring, @items, 3) == 6
+    assert to_list(ring, items) == [2, 3, 4]
+
+test "rotate_left: a full list, a list with room, either side moving"
+    ring @= empty(0)
+    items: [i64] @= []
+
+    for n in range(from: 0, to: 8)
+        push_back(@ring, @items, n)
+
+    rotate_left(@ring, @items, 3)
+    assert to_list(ring, items) == [3, 4, 5, 6, 7, 0, 1, 2]
+    push_back(@ring, @items, 8)
+    rotate_left(@ring, @items, 2)
+    assert to_list(ring, items) == [5, 6, 7, 0, 1, 2, 8, 3, 4]
+    rotate_left(@ring, @items, 7)
+    assert to_list(ring, items) == [3, 4, 5, 6, 7, 0, 1, 2, 8]
+
+# `ring`'s items checked against `model` slot by slot.
+function same_as(ring: Ring lent, items: [i64] lent, model: [i64] lent) -> bool
+    return to_list(ring, items) == model
+
+test "every operation: four thousand random ones against a plain list, bounded and not"
+    for limit in [0, 7]
+        ring @= empty(limit)
+        items: [i64] @= []
+        model: [i64] @= []
+        dice @= samples.Dice(state: 77 + limit)
+
+        for step in range(from: 0, to: 4000)
+            choice = samples.roll(@dice, 7)
+
+            if choice == 0
+                push_back(@ring, @items, step)
+                model @ model.push(step)
+
+                if limit > 0 && model.len() > limit
+                    model @ edit.model_remove(model, 0)
+            else if choice == 1
+                push_front(@ring, @items, step)
+                model @ edit.model_insert(model, at: 0, value: step)
+
+                if limit > 0 && model.len() > limit
+                    model @ edit.model_remove(model, model.len() - 1)
+            else if choice == 2 && model.len() > 0
+                assert pop_front(@ring, @items) == model[0]
+                model @ edit.model_remove(model, 0)
+            else if choice == 3 && model.len() > 0
+                assert pop_back(@ring, @items) == model[model.len() - 1]
+                model @ edit.model_remove(model, model.len() - 1)
+            else if choice == 4 && (limit == 0 || model.len() < limit)
+                index = samples.roll(@dice, model.len() + 1)
+                insert(@ring, @items, index, step)
+                model @ edit.model_insert(model, at: index, value: step)
+            else if choice == 5 && model.len() > 0
+                index = samples.roll(@dice, model.len())
+                assert remove_at(@ring, @items, index) == model[index]
+                model @ edit.model_remove(model, index)
+            else if model.len() > 0
+                by = samples.roll(@dice, model.len() + 1)
+                rotate_left(@ring, @items, by)
+                turned: [i64] @= model.slice(from: by, to: model.len())
+
+                for value in model.slice(from: 0, to: by)
+                    turned @ turned.push(value)
+
+                model @ turned
+            assert ring.count == model.len()
+            assert same_as(ring, items: items, model: model)
+            assert items.len() < KEPT || ring.count * 4 > items.len() || limit > 0

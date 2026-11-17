@@ -1,0 +1,294 @@
+# The weighted graphs of `{K: {K: f64}}`: their nodes numbered as `graphs`
+# numbers them, their edges laid out flat with their weights, and Dijkstra's
+# walk from one node, the nodes settled nearest first, ties by number, with
+# a binary heap of its own that keeps its length in a count, since the
+# language shortens no list in place.
+
+use containers/internal/codes
+use containers/internal/edit
+use containers/internal/graphs
+use containers/internal/samples
+
+# A weighted graph's edges by node number: the edges out of node `n` are
+# `targets[starts[n]]` to `targets[starts[n + 1] - 1]`, each weighing the
+# entry of `weights` at the same index.
+record Weighted
+    # How many nodes.
+    count: i64
+    # Where each node's edges begin; one more entry than nodes.
+    starts: [i64]
+    # The node each edge reaches.
+    targets: [i64]
+    # The weight of each edge, finite and zero or more.
+    weights: [f64]
+
+# A node waiting in the heap, at a distance found for it.
+record Reach
+    # The distance found.
+    distance: f64
+    # The node's number.
+    node: i64
+
+# What Dijkstra's walk found from one node.
+record Settled
+    # For each node, its least distance; read only where `settled` says 1.
+    best: [f64]
+    # For each node, the node before it on a least path; -1 for the start and
+    # the nodes not reached.
+    previous: [i64]
+    # For each node, 1 once its distance is settled.
+    settled: [i64]
+    # The nodes settled, nearest first.
+    order: [i64]
+
+# Numbers every node of `graph`: each key, then the nodes its map names not
+# met before.
+function number<K>(graph: {K: {K: f64}} lent, @nodes: [K], @ids: {K: i64})
+    for key in keys(graph)
+        graphs.name(@nodes, @ids, key)
+
+        for node in keys(graph[key].must())
+            graphs.name(@nodes, @ids, node)
+
+# The edges of `graph` by the numbers `number` gave. Fails `invalid` at the
+# first weight below zero, infinite or not a number: a weight less itself is
+# 0 for a finite one alone, and a NaN is asked first, since ordering one
+# aborts.
+function weigh<K>(graph: {K: {K: f64}} lent, nodes: [K] lent, ids: {K: i64} lent) -> Weighted?
+    starts: [i64] @= [0]
+    targets: [i64] @= []
+    weights: [f64] @= []
+
+    for at in range(from: 0, to: nodes.len())
+        match graph[nodes[at]]
+            .ok edges =>
+                for node in keys(edges)
+                    weight = edges[node].must()
+
+                    if weight != weight || weight - weight != 0.0 || weight < 0.0
+                        return fail(
+                            code: codes.INVALID,
+                            msg: f"an edge weighs {weight}, and a shortest path needs finite weights of zero or more"
+                        )
+                    targets @ targets.push(ids[node].must())
+                    weights @ weights.push(weight)
+            .err _ => _ = 0
+
+        starts @ starts.push(targets.len())
+
+    return ok(Weighted(count: nodes.len(), starts: starts, targets: targets, weights: weights))
+
+# Whether `a` leaves the heap before `b`: the nearer, and of two as near, the
+# smaller number.
+function before(a: Reach, b: Reach) -> bool
+    return a.distance < b.distance || a.distance == b.distance && a.node < b.node
+
+# Adds `item` to the heap of the first `count` entries of `items`.
+function heap_push(@items: [Reach], @count: i64, item: Reach)
+    edit.store(@items, count, item)
+    hole @= count
+    count @ count + 1
+
+    while hole > 0
+        parent = (hole - 1) / 2
+
+        if !before(a: items[hole], b: items[parent])
+            break
+        held = items[parent]
+        items[parent] @ items[hole]
+        items[hole] @ held
+        hole @ parent
+
+# Takes the first entry out of the heap of the first `count` entries of
+# `items`, which is not empty.
+function heap_pop(@items: [Reach], @count: i64) -> Reach
+    top = items[0]
+    count @ count - 1
+
+    if count > 0
+        items[0] @ items[count]
+        hole @= 0
+
+        while true
+            left = hole * 2 + 1
+
+            if left >= count
+                break
+            child @= left
+
+            if left + 1 < count && before(a: items[left + 1], b: items[left])
+                child @ left + 1
+
+            if !before(a: items[child], b: items[hole])
+                break
+            held = items[child]
+            items[child] @ items[hole]
+            items[hole] @ held
+            hole @ child
+    return top
+
+# Dijkstra's walk from `from`, stopping once `goal` is settled; a goal of -1
+# settles every node reached.
+function settle(graph: Weighted lent, from: i64, goal: i64) -> Settled
+    best: [f64] @= []
+    previous: [i64] @= []
+    known: [i64] @= []
+    settled: [i64] @= []
+
+    for _ in range(from: 0, to: graph.count)
+        best @ best.push(0.0)
+        previous @ previous.push(-1)
+        known @ known.push(0)
+        settled @ settled.push(0)
+
+    order: [i64] @= []
+    heap: [Reach] @= []
+    waiting @= 0
+    known[from] @ 1
+    heap_push(@heap, @waiting, Reach(distance: 0.0, node: from))
+
+    while waiting > 0
+        reach = heap_pop(@heap, @waiting)
+        node = reach.node
+
+        if settled[node] == 1
+            continue
+        settled[node] @ 1
+        order @ order.push(node)
+
+        if node == goal
+            break
+
+        for edge in range(from: graph.starts[node], to: graph.starts[node + 1])
+            target = graph.targets[edge]
+            distance = reach.distance + graph.weights[edge]
+
+            if settled[target] == 0 && (known[target] == 0 || distance < best[target])
+                best[target] @ distance
+                known[target] @ 1
+                previous[target] @ node
+                heap_push(@heap, @waiting, Reach(distance: distance, node: target))
+
+    return Settled(best: best, previous: previous, settled: settled, order: order)
+
+# The nodes of the least path to `goal`, settled, from the start.
+function path_to(found: Settled lent, goal: i64) -> [i64]
+    backwards: [i64] @= []
+    at @= goal
+
+    while at != -1
+        backwards @ backwards.push(at)
+        at @ found.previous[at]
+
+    forwards: [i64] @= []
+    place @= backwards.len()
+
+    while place > 0
+        place @ place - 1
+        forwards @ forwards.push(backwards[place])
+
+    return forwards
+
+## Tests
+
+# A weighted graph of four towns, where the road through `b` is shorter than
+# the direct one.
+function towns() -> {str: {str: f64}}
+    return {"a": {"b": 1.0, "d": 10.0}, "b": {"c": 2.0}, "c": {"d": 3.0}, "e": {}}
+
+test "weigh: the edges of each node, and a weight refused below zero, infinite and not a number"
+    nodes: [str] @= []
+    ids: {str: i64} @= {}
+    number(towns(), @nodes, @ids)
+    assert nodes.join("") == "abdce"
+    graph = weigh(towns(), nodes, ids).must()
+    assert graph.starts == [0, 2, 3, 3, 4, 4]
+    negative: {str: {str: f64}} = {"a": {"b": -0.5}}
+    assert weigh(negative, ["a", "b"], {"a": 0, "b": 1}).is_err()
+    infinite: {str: {str: f64}} = {"a": {"b": 1.0 / 0.0}}
+    assert weigh(infinite, ["a", "b"], {"a": 0, "b": 1}).is_err()
+    nan: {str: {str: f64}} = {"a": {"b": 0.0 / 0.0}}
+    assert weigh(nan, ["a", "b"], {"a": 0, "b": 1}).is_err()
+    zero: {str: {str: f64}} = {"a": {"b": -0.0}}
+    assert !weigh(zero, ["a", "b"], {"a": 0, "b": 1}).is_err()
+
+test "heap_push and heap_pop: nearest first, ties by number, through many"
+    heap: [Reach] @= []
+    count @= 0
+
+    for n in range(from: 0, to: 100)
+        heap_push(@heap, @count, Reach(distance: to_f64(n * 37 % 10), node: n))
+
+    last @= heap_pop(@heap, @count)
+
+    while count > 0
+        next = heap_pop(@heap, @count)
+        assert !before(a: next, b: last)
+        last @ next
+
+test "settle and path_to: the shorter road taken, the unreached left, and a goal that stops it"
+    nodes: [str] @= []
+    ids: {str: i64} @= {}
+    number(towns(), @nodes, @ids)
+    graph = weigh(towns(), nodes, ids).must()
+    found = settle(graph, from: 0, goal: -1)
+    assert found.best[ids["d"].must()] == 6.0
+    assert found.settled[ids["e"].must()] == 0
+    assert graphs.named(nodes, path_to(found, ids["d"].must())).join("") == "abcd"
+    assert graphs.named(nodes, found.order).join("") == "abcd"
+    stopped = settle(graph, from: 0, goal: ids["b"].must())
+    assert stopped.order.len() == 2
+
+test "settle: two hundred random graphs, every distance Bellman and Ford's relaxation gives"
+    dice @= samples.Dice(state: 8)
+
+    for _ in range(from: 0, to: 200)
+        count = samples.roll(@dice, 9) + 1
+        graph: {i64: {i64: f64}} @= {}
+
+        for node in range(from: 0, to: count)
+            edges: {i64: f64} @= {}
+
+            for _ in range(from: 0, to: samples.roll(@dice, 4))
+                edges[samples.roll(@dice, count)] @ to_f64(samples.roll(@dice, 10))
+
+            graph[node] @ edges
+
+        nodes: [i64] @= []
+        ids: {i64: i64} @= {}
+        number(graph, @nodes, @ids)
+        weighted = weigh(graph, nodes, ids).must()
+        found = settle(weighted, from: 0, goal: -1)
+        reached: [i64] @= []
+        distance: [f64] @= []
+
+        for _ in range(from: 0, to: weighted.count)
+            reached @ reached.push(0)
+            distance @ distance.push(0.0)
+
+        reached[0] @ 1
+
+        for _ in range(from: 0, to: weighted.count)
+            for source in range(from: 0, to: weighted.count)
+                if reached[source] == 1
+                    for edge in range(from: weighted.starts[source], to: weighted.starts[source + 1])
+                        target = weighted.targets[edge]
+                        through = distance[source] + weighted.weights[edge]
+
+                        if reached[target] == 0 || through < distance[target]
+                            reached[target] @ 1
+                            distance[target] @ through
+
+        for node in range(from: 0, to: weighted.count)
+            assert found.settled[node] == reached[node]
+
+            if reached[node] == 1
+                assert found.best[node] == distance[node]
+                walked = path_to(found, node)
+                total @= 0.0
+
+                for step in range(from: 1, to: walked.len())
+                    total @ total + graph[nodes[walked[step - 1]]].must()[nodes[walked[step]]].must()
+
+                assert walked[0] == 0
+                assert total == distance[node]

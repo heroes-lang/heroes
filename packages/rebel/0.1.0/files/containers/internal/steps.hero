@@ -1,0 +1,142 @@
+# The walks of the tree under an ordered map or set that read no key: its
+# first and last node, the node after or before one, the node of a rank, and
+# every node in order. Each walks the links with a loop, the depth staying
+# under two and a half times the logarithm of the size.
+
+use containers/internal/tree
+
+# The node of the smallest key under `at`, which is not `tree.NONE`.
+function leftmost(shape: tree.Tree lent, at: i64) -> i64
+    x @= at
+
+    while shape.left[x] != tree.NONE
+        x @ shape.left[x]
+
+    return x
+
+# The node of the largest key under `at`, which is not `tree.NONE`.
+function rightmost(shape: tree.Tree lent, at: i64) -> i64
+    x @= at
+
+    while shape.right[x] != tree.NONE
+        x @ shape.right[x]
+
+    return x
+
+# The node of the smallest key, `tree.NONE` where the tree is empty.
+function first(shape: tree.Tree lent) -> i64
+    if shape.root == tree.NONE
+        return tree.NONE
+    return leftmost(shape, shape.root)
+
+# The node of the largest key, `tree.NONE` where the tree is empty.
+function last(shape: tree.Tree lent) -> i64
+    if shape.root == tree.NONE
+        return tree.NONE
+    return rightmost(shape, shape.root)
+
+# The node after `at` in the order of the keys, `tree.NONE` after the last.
+function successor(shape: tree.Tree lent, at: i64) -> i64
+    if shape.right[at] != tree.NONE
+        return leftmost(shape, shape.right[at])
+    x @= at
+    p @= shape.parent[at]
+
+    while p != tree.NONE && shape.right[p] == x
+        x @ p
+        p @ shape.parent[p]
+
+    return p
+
+# The node before `at` in the order of the keys, `tree.NONE` before the first.
+function predecessor(shape: tree.Tree lent, at: i64) -> i64
+    if shape.left[at] != tree.NONE
+        return rightmost(shape, shape.left[at])
+    x @= at
+    p @= shape.parent[at]
+
+    while p != tree.NONE && shape.left[p] == x
+        x @ p
+        p @ shape.parent[p]
+
+    return p
+
+# The node of the key with `rank` keys before it, `tree.NONE` where `rank` is
+# below zero or at or past the size.
+function at_rank(shape: tree.Tree lent, rank: i64) -> i64
+    if rank < 0 || rank >= shape.count
+        return tree.NONE
+    x @= shape.root
+    left_over @= rank
+
+    while x != tree.NONE
+        before = tree.size_of(shape, shape.left[x])
+
+        if left_over < before
+            x @ shape.left[x]
+        else if left_over == before
+            return x
+        else
+            left_over @ left_over - before - 1
+            x @ shape.right[x]
+
+    return tree.NONE
+
+# Every live node in the order of the keys.
+function in_order(shape: tree.Tree lent) -> [i64]
+    slots: [i64] @= []
+    x @= first(shape)
+
+    while x != tree.NONE
+        slots @ slots.push(x)
+        x @ successor(shape, x)
+
+    return slots
+
+## Tests
+
+test "first, last and at_rank: an empty tree"
+    shape = tree.empty(holds_values: true)
+    assert first(shape) == tree.NONE
+    assert last(shape) == tree.NONE
+    assert in_order(shape) == []
+    assert at_rank(shape, 0) == tree.NONE
+
+test "in_order, first and last: a thousand nodes hung in growing order"
+    shape = tree.ascending_tree(1000)
+    assert in_order(shape) == range(from: 0, to: 1000)
+    assert first(shape) == 0
+    assert last(shape) == 999
+
+test "at_rank: the first, the last, and both sides past the ends"
+    shape = tree.ascending_tree(10)
+    assert at_rank(shape, 0) == 0
+    assert at_rank(shape, 9) == 9
+    assert at_rank(shape, 4) == 4
+    assert at_rank(shape, -1) == tree.NONE
+    assert at_rank(shape, 10) == tree.NONE
+
+test "successor and predecessor: through the whole tree, both ways"
+    shape = tree.ascending_tree(50)
+    x @= first(shape)
+    seen @= 0
+
+    while x != tree.NONE
+        assert x == seen
+        seen @ seen + 1
+        x @ successor(shape, x)
+
+    assert seen == 50
+    y @= last(shape)
+
+    while y != tree.NONE
+        seen @ seen - 1
+        assert y == seen
+        y @ predecessor(shape, y)
+
+    assert seen == 0
+
+test "leftmost and rightmost: under the root of a tree of seven"
+    shape = tree.ascending_tree(7)
+    assert leftmost(shape, shape.root) == 0
+    assert rightmost(shape, shape.root) == 6
