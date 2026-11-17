@@ -1,0 +1,706 @@
+# A configurable lexer: a text read into its tokens one after another, as Go's
+# text/scanner reads one, each token with its kind, its text and its place,
+# the byte offset, line and column where it begins and where it ends. The
+# program's `Rules` choose what is read: identifiers, integers and floats in
+# Go's forms, strings, raw strings and character literals between the quotes
+# it names, comments to the end of a line and between delimiters that nest
+# or not, white space and line ends skipped or kept; and what is its own:
+# keywords, operators taken by the longest of a list, and classes of tokens
+# written as regular expressions. A malformed token is a value of the kind
+# `invalid`, with its reason and its place, and the reading goes on after
+# it, so nothing here aborts on what it reads.
+#
+# It parses nothing, a grammar being the program's; it reads a text whole,
+# never a stream, which is `io`'s; and it reads UTF-8 alone, other encodings
+# being `unicode/encodings`'. Python's INDENT and DEDENT are a program's,
+# from the column of each line's first token. The words of a shell line are
+# `strings.split_shell`.
+#
+# It fails with `invalid` (`scan_checked` and the functions of values),
+# `not_found` (`next_char`, `peek_char`), `does_not_fit` (`int_value`) and
+# `not_text` (`text_value`).
+
+use regex
+use scanner/internal/config
+use scanner/internal/cursor
+use scanner/internal/tokens as lexer
+use scanner/internal/values
+use unicode
+
+## Codes
+
+# The code `scan_checked` fails with at the first malformed token, and the
+# functions of values where a token is not of their kind.
+constant INVALID: str
+    "invalid"
+
+# The code `next_char` and `peek_char` fail with at the end of the text.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code `int_value` fails with where the integer is outside `i64`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code `text_value` fails with where the escapes of a literal spell bytes
+# that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+## Tokens
+
+# What a token is.
+variant Kind
+    # A name: a character `Rules.identifier_char` accepts at 0, then every
+    # character it accepts after.
+    identifier
+    # An identifier that `Rules.keywords` lists.
+    keyword
+    # An integer in Go's forms: decimal, hexadecimal after `0x`, octal after
+    # `0o` or a leading `0`, binary after `0b`, a `_` between two digits.
+    integer
+    # A float in Go's forms: a point, an exponent after `e`, or a hexadecimal
+    # mantissa with an exponent after `p`.
+    float
+    # A string between two of `Rules.string_quotes`, with Go's escapes; the
+    # quotes stand in the token's text.
+    string
+    # A string between two of `Rules.raw_quotes`, which reads no escape.
+    raw_string
+    # One character or one escape between two of `Rules.char_quotes`.
+    character
+    # A comment with its delimiters, where `Rules.keep_comments`; it holds no
+    # line end of its own after a line comment.
+    comment
+    # A run of the characters `Rules.whitespace` holds, where
+    # `Rules.keep_whitespace`.
+    whitespace
+    # A line end, "\n" or "\r\n", where `Rules.keep_newlines`.
+    newline
+    # The longest of `Rules.operators` that stands where the token begins.
+    operator
+    # A match of one of `Rules.classes`, the program's own patterns.
+    custom
+        # Which pattern, by its index in `Rules.classes`.
+        index: i64
+    # One character that no rule reads, as Go's text/scanner answers it.
+    other
+    # A token that is not what its first characters began: a literal never
+    # closed, an escape that is no escape, a number with a digit outside its
+    # base. Its text is what was read of it.
+    invalid
+        # Why, in the words Go's text/scanner uses where it says the same:
+        # "literal not terminated", "invalid char escape".
+        reason: str
+    # The end of the text: an empty token after the last, which
+    # `next_token` answers again at every call after it.
+    end
+
+# Where a token begins or ends in its text.
+record Place
+    # The byte offset, from 0.
+    offset: i64
+    # The line, from 1; a line ends after each "\n".
+    line: i64
+    # The column, from 1, counted in characters since the line began, a tab
+    # being one.
+    column: i64
+
+# One token of a text.
+record Token
+    # What it is.
+    kind: Kind
+    # Its text as it stands in the source, quotes and delimiters included.
+    text: str
+    # Where its first byte stands.
+    start: Place
+    # Where the byte after its last stands: `start` for the end of the text.
+    end: Place
+
+## Rules
+
+# What a scanner reads: which kinds, by which characters, and the program's
+# own keywords, operators and classes. `go_rules` gives Go's; a program
+# changes the fields it needs on a copy. Where two rules could read at one
+# place, the order is: the program's `classes`, a line end, white space,
+# comments, identifiers, numbers, quoted literals, `operators`, and one
+# character as `other`.
+record Rules
+    # Whether identifiers are read; where not, each character of one is
+    # `other`.
+    identifiers: bool
+    # Whether a character, given with its index in the identifier from 0, may
+    # stand there; asked of each character in turn. `is_identifier_char` is
+    # Go's rule.
+    identifier_char: (function(str, i64) -> bool)
+    # The identifiers that are keywords; the comparison is of bytes.
+    keywords: [str]
+    # Whether integers are read; where not, each digit is `other`.
+    integers: bool
+    # Whether floats are read, a point or an exponent going on with an
+    # integer; where they are, integers are read too.
+    floats: bool
+    # The characters that open and close a string with escapes, each closing
+    # what it opened: "\"" for Go's, "\"'" for Python's; empty for none.
+    string_quotes: str
+    # The characters that open and close a raw string: "`" for Go's.
+    raw_quotes: str
+    # The characters that open and close a character literal: "'" for Go's.
+    char_quotes: str
+    # Whether a string with escapes may hold a line end, which Go refuses.
+    multiline_strings: bool
+    # The texts that begin a comment running to the end of its line, "//" or
+    # "#"; none for no such comment.
+    line_comments: [str]
+    # The text that opens a block comment, "/*"; empty for no block comment.
+    block_comment_open: str
+    # The text that closes a block comment, "*/".
+    block_comment_close: str
+    # Whether an opening inside a block comment opens one more that must be
+    # closed first, as Rust, Swift and Haskell read theirs.
+    nested_comments: bool
+    # Whether comments are tokens; where not, they are skipped as white space.
+    keep_comments: bool
+    # The characters skipped between tokens, " \t\n\r" for Go's.
+    whitespace: str
+    # Whether a run of white space is a token.
+    keep_whitespace: bool
+    # Whether each line end is a token, "\n" or "\r\n", before white space
+    # is asked.
+    keep_newlines: bool
+    # Operators and punctuation, taken by the longest that stands where a
+    # token begins; an empty one is passed over.
+    operators: [str]
+    # The program's own classes of tokens, tried first at every place: the
+    # longest match that begins there wins, the first of the list where two
+    # are as long, and an empty match counts as none.
+    classes: [regex.Regex]
+
+# The rules of Go's text/scanner as `Init` sets them: identifiers by
+# `is_identifier_char`, integers, floats, strings between double quotes, raw
+# strings between backquotes, character literals between single quotes,
+# comments after "//" and between "/*" and "*/" skipped, and space, tab, line
+# feed and carriage return skipped; no keyword, operator or class.
+#
+# Every other character is `other`. See also `scan`.
+function go_rules() -> Rules
+    return Rules(
+        identifiers: true,
+        identifier_char: is_identifier_char,
+        keywords: [],
+        integers: true,
+        floats: true,
+        string_quotes: "\"",
+        raw_quotes: "`",
+        char_quotes: "'",
+        multiline_strings: false,
+        line_comments: ["//"],
+        block_comment_open: "/*",
+        block_comment_close: "*/",
+        nested_comments: false,
+        keep_comments: false,
+        whitespace: " \t\n\r",
+        keep_whitespace: false,
+        keep_newlines: false,
+        operators: [],
+        classes: []
+    )
+
+# Whether `c` may stand at index `at` of an identifier by Go's rule: a letter
+# or `_` anywhere, a decimal digit anywhere but first.
+#
+# - `c`: one character.
+# - `at`: its index in the identifier, from 0.
+#
+# Letters and digits are Unicode's, `unicode.is_letter` and
+# `unicode.is_digit`. See also `go_rules`.
+function is_identifier_char(c: str, at: i64) -> bool
+    if c == "_" || unicode.is_letter(c)
+        return true
+    return at > 0 && unicode.is_digit(c)
+
+## Scanning
+
+# A text being read into tokens: what `new_scanner` makes and `next_token`
+# reads on from. It is made only by `new_scanner`.
+record Scanner
+    # The text read.
+    source: str
+    # The rules it reads by.
+    rules: Rules
+    # The rules as they were compiled.
+    compiled: config.Config
+    # Where it stands: the place of the next character it reads.
+    cursor: cursor.Cursor
+
+# A scanner at the start of `source`.
+#
+# - `source`: the text to read.
+# - `rules`: what to read; its operators are compiled once, here.
+#
+# See also `next_token` and `scan`.
+function new_scanner(source: str, rules: Rules) -> Scanner
+    start: cursor.Cursor @= cursor.first()
+
+    if source.len() >= 3 && source[0] == 0xef && source[1] == 0xbb && source[2] == 0xbf
+        start @ cursor.moved(c: start, s: source, to: 3)
+    scanner: Scanner @= Scanner(source: source, rules: rules, compiled: config.empty(), cursor: start)
+    set_rules(@scanner, rules)
+    return scanner
+
+# The next token, and the scanner past it.
+#
+# - `scanner`: the scanner read; it stands after the token once it answers.
+#
+# At the end of the text it answers a token of the kind `end`, at every call.
+# A malformed token is of the kind `invalid`, and the next call reads on
+# after it. See also `peek_token`.
+function next_token(@scanner: Scanner) -> Token
+    t = peek_token(scanner)
+    scanner.cursor @ cursor.Cursor(at: t.end.offset, line: t.end.line, column: t.end.column)
+    return t
+
+# The token `next_token` would answer, the scanner left where it stands.
+#
+# - `scanner`: the scanner asked.
+#
+# It reads the token as `next_token` does, so asking twice reads it twice.
+# See also `next_token`.
+function peek_token(scanner: Scanner lent) -> Token
+    l = lexer.next(c: scanner.compiled, s: scanner.source, from: scanner.cursor)
+
+    # The kinds by the codes of `literals`, `IDENTIFIER` 0 to `END` 14.
+    kind: Kind = match l.kind
+        0  => .identifier
+        1  => .keyword
+        2  => .integer
+        3  => .float
+        4  => .string
+        5  => .raw_string
+        6  => .character
+        7  => .comment
+        8  => .whitespace
+        9  => .newline
+        10 => .operator
+        11 => .custom(index: l.index)
+        12 => .other
+        13 => .invalid(reason: l.reason)
+        _  => .end
+
+    return Token(
+        kind: kind,
+        text: scanner.source.slice(from: l.start.at, to: l.end.at),
+        start: Place(offset: l.start.at, line: l.start.line, column: l.start.column),
+        end: Place(offset: l.end.at, line: l.end.line, column: l.end.column)
+    )
+
+# The next character of the text, and the scanner past it, whatever the
+# rules would read there: white space and comments included.
+#
+# - `scanner`: the scanner read.
+#
+# Fails `not_found` at the end of the text. See also `peek_char`.
+function next_char(@scanner: Scanner) -> str?
+    c = peek_char(scanner)?
+    scanner.cursor @ cursor.moved(c: scanner.cursor, s: scanner.source, to: scanner.cursor.at + c.len())
+    return ok(c)
+
+# The character `next_char` would answer, the scanner left where it stands.
+#
+# - `scanner`: the scanner asked.
+#
+# Fails `not_found` at the end of the text. See also `next_char`.
+function peek_char(scanner: Scanner lent) -> str?
+    at = scanner.cursor.at
+
+    if at >= scanner.source.len()
+        return fail(
+            code: NOT_FOUND,
+            msg: f"no character after the end, at {scanner.cursor.line}:{scanner.cursor.column}"
+        )
+    return ok(scanner.source.slice(from: at, to: unicode.ceil_char_boundary(scanner.source, at + 1)))
+
+# Where the scanner stands: the place of the next character it reads.
+#
+# - `scanner`: the scanner asked.
+#
+# See also `next_token`.
+function place_of(scanner: Scanner lent) -> Place
+    return Place(offset: scanner.cursor.at, line: scanner.cursor.line, column: scanner.cursor.column)
+
+# The scanner reading on by `rules` from where it stands, as a lexer that
+# enters another language in the middle of a text.
+#
+# - `scanner`: the scanner changed; its place is kept.
+# - `rules`: the rules it reads by from now on.
+#
+# See also `new_scanner`.
+function set_rules(@scanner: Scanner, rules: Rules)
+    scanner.rules @ rules
+    scanner.compiled @ config.build(
+        identifiers: rules.identifiers,
+        identifier_char: rules.identifier_char,
+        go_identifiers: rules.identifier_char == is_identifier_char,
+        keywords: rules.keywords,
+        integers: rules.integers,
+        floats: rules.floats,
+        string_quotes: rules.string_quotes,
+        raw_quotes: rules.raw_quotes,
+        char_quotes: rules.char_quotes,
+        multiline_strings: rules.multiline_strings,
+        line_comments: rules.line_comments,
+        block_open: rules.block_comment_open,
+        block_close: rules.block_comment_close,
+        nested: rules.nested_comments,
+        keep_comments: rules.keep_comments,
+        whitespace: rules.whitespace,
+        keep_whitespace: rules.keep_whitespace,
+        keep_newlines: rules.keep_newlines,
+        operators: rules.operators,
+        classes: rules.classes
+    )
+
+# Every token of `source`, read by `rules`, the `end` token last.
+#
+# - `source`: the text read.
+# - `rules`: what to read.
+#
+# A malformed token is of the kind `invalid` and the reading goes on after
+# it. See also `scan_checked` and `new_scanner`.
+function scan(source: str, rules: Rules) -> [Token]
+    scanner: Scanner @= new_scanner(source, rules)
+    found: [Token] @= []
+
+    while true
+        t = next_token(@scanner)
+        found @ found.push(t)
+
+        if t.kind == .end
+            return found
+
+# Every token of `source`, read by `rules`, the `end` token last, or the
+# first malformed one.
+#
+# - `source`: the text read.
+# - `rules`: what to read.
+#
+# Fails `invalid` at the first token of the kind `invalid`, the message
+# giving its line, its column and its reason: "3:14: literal not
+# terminated". See also `scan`.
+function scan_checked(source: str, rules: Rules) -> [Token]?
+    found = scan(source, rules)
+
+    for t in found
+        match t.kind
+            .invalid i => return fail(code: INVALID, msg: f"{format_place(t.start)}: {i.reason}")
+            .identifier | .keyword | .integer | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .operator | .custom _ | .other | .end => _ = 0
+
+    return ok(found)
+
+## Names and places
+
+# The name of a kind, for a message: "identifier", "integer", "raw string",
+# "end of text"; a custom class is "custom 2", an invalid token "invalid".
+#
+# - `kind`: the kind named.
+#
+# See also `format_place`.
+function kind_name(kind: Kind) -> str
+    return match kind
+        .identifier => "identifier"
+        .keyword    => "keyword"
+        .integer    => "integer"
+        .float      => "float"
+        .string     => "string"
+        .raw_string => "raw string"
+        .character  => "character"
+        .comment    => "comment"
+        .whitespace => "white space"
+        .newline    => "line end"
+        .operator   => "operator"
+        .custom c   => f"custom {c.index}"
+        .other      => "other"
+        .invalid _  => "invalid"
+        .end        => "end of text"
+
+# `place` written as its line and its column, "3:14", as Go and most
+# compilers write one after a file's name.
+#
+# - `place`: the place written.
+#
+# See also `kind_name`.
+function format_place(place: Place) -> str
+    return f"{place.line}:{place.column}"
+
+## Values
+
+# The text a string, raw string or character literal spells: its quotes
+# taken off, and in a string or character literal Go's escapes read: `\a`,
+# `\b`, `\f`, `\n`, `\r`, `\t`, `\v`, `\\`, the quote itself, three octal
+# digits, `\x` and two hexadecimal digits, `\u` and four, `\U` and eight.
+#
+# - `token`: a token of the kind `string`, `raw_string` or `character`.
+#
+# A raw string's carriage returns are kept, where Go's compiler takes them
+# away. Fails `invalid` where `token` is of another kind, and `not_text`
+# where its escapes spell bytes that are not UTF-8, "\xff" or a surrogate.
+# See also `int_value` and `float_value`.
+function text_value(token: Token) -> str?
+    return match token.kind
+        .string     => values.unquoted(text: token.text, escapes: true, one: false)
+        .character  => values.unquoted(text: token.text, escapes: true, one: true)
+        .raw_string => values.unquoted(text: token.text, escapes: false, one: false)
+        .identifier | .keyword | .integer | .float | .comment | .whitespace | .newline | .operator | .custom _ | .other | .invalid _ | .end =>
+            fail(code: INVALID, msg: f"a {kind_name(token.kind)} at {format_place(token.start)} is no string")
+
+# The integer an integer token spells, in any of Go's forms.
+#
+# - `token`: a token of the kind `integer`.
+#
+# Fails `invalid` where `token` is of another kind, and `does_not_fit` where
+# the integer is outside `i64`. See also `float_value`.
+function int_value(token: Token) -> i64?
+    if token.kind != .integer
+        return fail(code: INVALID, msg: f"a {kind_name(token.kind)} at {format_place(token.start)} is no integer")
+    return values.integer(token.text)
+
+# The float a float or integer token spells, the nearest `f64`, ties going
+# to the even one.
+#
+# - `token`: a token of the kind `float` or `integer`.
+#
+# A number too large is `inf`. Fails `invalid` where `token` is of another
+# kind. See also `int_value`.
+function float_value(token: Token) -> f64?
+    if token.kind != .float && token.kind != .integer
+        return fail(code: INVALID, msg: f"a {kind_name(token.kind)} at {format_place(token.start)} is no number")
+    return values.float(text: token.text, is_integer: token.kind == .integer)
+
+## Tests
+
+# The kinds of a list of tokens, for the tests below.
+function kinds_of(tokens: [Token]) -> [str]
+    names: [str] @= []
+
+    for t in tokens
+        names @ names.push(kind_name(t.kind))
+
+    return names
+
+# The texts of a list of tokens, for the tests below.
+function texts_of(tokens: [Token]) -> [str]
+    texts: [str] @= []
+
+    for t in tokens
+        texts @ texts.push(t.text)
+
+    return texts
+
+test "scan: the empty text, white space alone, and a text of more than one byte"
+    empty = scan("", go_rules())
+    assert empty.len() == 1 && empty[0].kind == .end && empty[0].start == Place(offset: 0, line: 1, column: 1)
+    assert kinds_of(scan(" \t\r\n ", go_rules())) == ["end of text"]
+    accents = scan("città → é", go_rules())
+    assert texts_of(accents) == ["città", "→", "é", ""]
+    assert accents[1].start == Place(offset: 7, line: 1, column: 7) && accents[2].start.column == 9
+
+test "scan: lines and columns across line ends, a carriage return, and the end's place"
+    tokens = scan("a\r\n  bc\n\n d", go_rules())
+    assert tokens[1].start == Place(offset: 5, line: 2, column: 3)
+    assert tokens[1].end == Place(offset: 7, line: 2, column: 5)
+    assert tokens[2].start == Place(offset: 10, line: 4, column: 2)
+    assert tokens[3].start == Place(offset: 11, line: 4, column: 3)
+
+test "scan: comments kept, nested and not, a line comment's end, and one never closed"
+    rules: Rules @= go_rules()
+    rules.keep_comments @ true
+    assert texts_of(scan("a // x\nb /* y */ c", rules)) == ["a", "// x", "b", "/* y */", "c", ""]
+    rules.nested_comments @ true
+    assert texts_of(scan("/* a /* b */ c */ d", rules)) == ["/* a /* b */ c */", "d", ""]
+    rules.keep_comments @ false
+    open = scan("x /* never", rules)
+    assert open[1].kind == .invalid(reason: "comment not terminated") && open[1].text == "/* never"
+    rules.line_comments @ ["#", "--"]
+    assert texts_of(scan("a # b\nc -- d", rules)) == ["a", "c", ""]
+
+test "scan: white space and line ends kept, a carriage return before a line feed, and white space beyond ASCII"
+    rules: Rules @= go_rules()
+    rules.keep_whitespace @ true
+    rules.keep_newlines @ true
+    tokens = scan("a \t\r\n\nb  ", rules)
+    assert kinds_of(tokens) == ["identifier", "white space", "line end", "line end", "identifier", "white space", "end of text"]
+    assert tokens[2].text == "\r\n" && tokens[1].text == " \t"
+    rules.whitespace @ " ·"
+    assert texts_of(scan("a·· b", rules)) == ["a", "·· ", "b", ""]
+
+test "scan: keywords, operators by the longest, an operator beside a comment and a float, and identifiers off"
+    rules: Rules @= go_rules()
+    rules.keywords @ ["if", "else"]
+    rules.operators @ ["=", "==", "=>", ".", "...", "/"]
+    tokens = scan("if a == b ... .5 / c => else", rules)
+    assert kinds_of(tokens) == ["keyword", "identifier", "operator", "identifier", "operator", "float", "operator", "identifier", "operator", "keyword", "end of text"]
+    assert texts_of(tokens)[4] == "..."
+    rules.identifiers @ false
+    assert texts_of(scan("ab", rules)) == ["a", "b", ""]
+
+test "scan: classes of the program's own, the longest and the first of two as long, and an empty match"
+    rules: Rules @= go_rules()
+    rules.classes @ [
+        regex.compile("[0-9]+\\.[0-9]+\\.[0-9]+").must()
+        regex.compile("#[0-9a-f]+").must()
+        regex.compile("x*").must()
+        regex.compile("#[0-9a-f]+").must()
+    ]
+    tokens = scan("1.2.3 #ff00 y 1.2", rules)
+    assert kinds_of(tokens) == ["custom 0", "custom 1", "identifier", "float", "end of text"]
+    assert tokens[0].text == "1.2.3" && tokens[1].kind == .custom(index: 1)
+
+test "scan: strings with other quotes, over lines, a raw string over lines, and characters"
+    rules: Rules @= go_rules()
+    rules.string_quotes @ "\"'"
+    rules.char_quotes @ ""
+    assert kinds_of(scan("'a' \"b\"", rules)) == ["string", "string", "end of text"]
+    assert scan("\"a\nb\"", rules)[0].kind == .invalid(reason: "literal not terminated")
+    rules.multiline_strings @ true
+    assert scan("\"a\nb\"", rules)[0].text == "\"a\nb\""
+    assert scan("`a\nb`", go_rules())[0].kind == .raw_string
+    assert scan("'\\n' 'ab'", go_rules())[1].kind == .invalid(reason: "invalid char literal")
+
+test "scan: a byte order mark at the start, a NUL, and a character no rule reads"
+    mark: [u8] = [0xef, 0xbb, 0xbf, 'x']
+    marked = scan(mark.validated_bytes().must(), go_rules())
+    assert marked[0].text == "x" && marked[0].start == Place(offset: 3, line: 1, column: 2)
+    assert scan("#", go_rules())[0].kind == .other
+    zero: [u8] = [0, 'a']
+    nul = scan(zero.validated_bytes().must(), go_rules())
+    assert nul[0].kind == .invalid(reason: "invalid character NUL") && nul[1].text == "a"
+
+test "next_token, peek_token, next_char and place_of: the end answered again, a peek that moves nothing, and characters between tokens"
+    scanner: Scanner @= new_scanner("a+é", go_rules())
+    assert peek_token(scanner).text == "a" && peek_token(scanner).text == "a"
+    assert next_token(@scanner).text == "a"
+    assert next_char(@scanner).must() == "+"
+    assert peek_char(scanner).must() == "é" && place_of(scanner) == Place(offset: 2, line: 1, column: 3)
+    assert next_token(@scanner).text == "é"
+    assert next_token(@scanner).kind == .end && next_token(@scanner).kind == .end
+    assert next_char(@scanner).is_err()
+
+test "set_rules: comments read again from the middle of a text, the place kept"
+    scanner: Scanner @= new_scanner("a # b\n# c", go_rules())
+    assert next_token(@scanner).text == "a"
+    rules: Rules @= go_rules()
+    rules.line_comments @ ["#"]
+    set_rules(@scanner, rules)
+    t = next_token(@scanner)
+    assert t.kind == .end && t.start.line == 2
+
+test "scan_checked: no malformed token, and the first of two"
+    assert scan_checked("a 1", go_rules()).must().len() == 3
+
+    match scan_checked("a\n  \"open\n'xy'", go_rules())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "2:3: literal not terminated"
+
+test "text_value, int_value and float_value: each kind refused by the others, and every escape"
+    tokens = scan("\"a\\tb\\\\\\\"\" '\\xff' `a\\n` 017 0X_1f 1.5 x", go_rules())
+    assert text_value(tokens[0]).must() == "a\tb\\\""
+    assert text_value(tokens[1]).must() == "ÿ"
+    assert text_value(tokens[2]).must() == "a\\n"
+    assert int_value(tokens[3]).must() == 15 && int_value(tokens[4]).must() == 31
+    assert float_value(tokens[3]).must() == 15.0 && float_value(tokens[5]).must() == 1.5
+    assert text_value(tokens[3]).is_err() && int_value(tokens[5]).is_err() && float_value(tokens[6]).is_err()
+
+    match int_value(scan("9223372036854775808", go_rules())[0])
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    match text_value(scan("\"\\xff\"", go_rules())[0])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+## Examples
+
+# The rules of Go, read from a line of Go.
+test "go_rules: a line of Go"
+    texts = texts_of(scan("x := 0x1F // hex", go_rules()))
+    assert texts == ["x", ":", "=", "0x1F", ""]
+
+# Go's rule of identifiers: a digit may follow a letter but not begin.
+test "is_identifier_char: a digit first and after"
+    assert !is_identifier_char("7", 0) && is_identifier_char("7", 1) && is_identifier_char("é", 0)
+
+# A scanner made, and the first token read from it.
+test "new_scanner: a scanner over a line"
+    scanner: Scanner @= new_scanner("let x", go_rules())
+    assert next_token(@scanner).text == "let"
+
+# Tokens read one after another until the end.
+test "next_token: two tokens and the end"
+    scanner: Scanner @= new_scanner("f(1)", go_rules())
+    assert next_token(@scanner).text == "f"
+    assert next_token(@scanner).text == "("
+    assert next_token(@scanner).kind == .integer
+
+# The next token seen before it is taken.
+test "peek_token: a look ahead"
+    scanner: Scanner @= new_scanner("x = 1", go_rules())
+    assert peek_token(scanner).text == "x" && next_token(@scanner).text == "x"
+
+# A character read between tokens, as a here-document is read.
+test "next_char: the character after a token"
+    scanner: Scanner @= new_scanner("a$b", go_rules())
+    _ = next_token(@scanner)
+    assert next_char(@scanner).must() == "$"
+
+# The character after the place, the scanner left there.
+test "peek_char: the next character"
+    scanner = new_scanner("ab", go_rules())
+    assert peek_char(scanner).must() == "a" && place_of(scanner).offset == 0
+
+# Where a scanner stands after a token.
+test "place_of: after the first line"
+    scanner: Scanner @= new_scanner("ab\ncd", go_rules())
+    _ = next_token(@scanner)
+    _ = next_token(@scanner)
+    assert place_of(scanner) == Place(offset: 5, line: 2, column: 3)
+
+# Comments read differently from the middle of a text.
+test "set_rules: comments after a marker"
+    scanner: Scanner @= new_scanner("x ; y", go_rules())
+    _ = next_token(@scanner)
+    rules: Rules @= go_rules()
+    rules.line_comments @ [";"]
+    set_rules(@scanner, rules)
+    assert next_token(@scanner).kind == .end
+
+# Every token of a line of a small language with its own operators.
+test "scan: a line with operators"
+    rules: Rules @= go_rules()
+    rules.operators @ ["+", "+=", "*"]
+    tokens = scan("total += price * 2", rules)
+    assert kinds_of(tokens) == ["identifier", "operator", "identifier", "operator", "integer", "end of text"]
+    assert tokens[1].text == "+=" && tokens[4].start.column == 18
+
+# A text refused at its first malformed token.
+test "scan_checked: a string never closed"
+    assert scan_checked("say \"hello", go_rules()).is_err()
+
+# A kind named in a message.
+test "kind_name: a raw string"
+    assert kind_name(.raw_string) == "raw string"
+
+# A place written before a message.
+test "format_place: line and column"
+    assert format_place(Place(offset: 40, line: 3, column: 14)) == "3:14"
+
+# The text of a string literal.
+test "text_value: a string with an escape"
+    assert text_value(scan("\"a\\tb\"", go_rules())[0]).must() == "a\tb"
+
+# The value of a hexadecimal integer.
+test "int_value: a hexadecimal integer"
+    assert int_value(scan("0xff", go_rules())[0]).must() == 255
+
+# The value of a float with an exponent.
+test "float_value: an exponent"
+    assert float_value(scan("2.5e3", go_rules())[0]).must() == 2500.0

@@ -1,0 +1,76 @@
+# The kinds of what a scanner reads, as numbers the private modules share,
+# and what a reader answers: the kind, where it ended, and why it is
+# malformed. The face turns them into its `Kind`, by these numbers in order.
+
+# The token is an identifier.
+constant IDENTIFIER: i64
+    0
+
+# The token is a keyword.
+constant KEYWORD: i64
+    1
+
+# The token is an integer.
+constant INTEGER: i64
+    2
+
+# The token is a float.
+constant FLOAT: i64
+    3
+
+# The token is a string with escapes.
+constant STRING: i64
+    4
+
+# The token is a raw string.
+constant RAW_STRING: i64
+    5
+
+# The token is a character literal.
+constant CHARACTER: i64
+    6
+
+# The token is a comment kept.
+constant COMMENT: i64
+    7
+
+# The token is a run of white space kept.
+constant WHITESPACE: i64
+    8
+
+# The token is a line end kept.
+constant NEWLINE: i64
+    9
+
+# The token is an operator.
+constant OPERATOR: i64
+    10
+
+# The token is a match of one of the program's classes.
+constant CUSTOM: i64
+    11
+
+# The token is one character no rule reads.
+constant OTHER: i64
+    12
+
+# The token is malformed.
+constant INVALID: i64
+    13
+
+# The token is the end of the text.
+constant END: i64
+    14
+
+# What was read is skipped: white space or a comment not kept.
+constant SKIPPED: i64
+    15
+
+# What a reader read: the kind, where it ended, and why it is malformed.
+record Read
+    # The kind, one of the constants above; `INVALID` where `reason` says why.
+    kind: i64
+    # The byte after the last byte read.
+    end: i64
+    # The first thing wrong with it, empty where nothing is.
+    reason: str

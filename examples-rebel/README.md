@@ -72,7 +72,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `keyring` | secrets kept in the system's own keyring | `bytes`, `strings` | `hero_keyring.h` |
 | 2 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes` | `hero_crypto.h` |
-| 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `strings`, `unicode`, `numbers` |  |
+| 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `numbers`, `regex`, `strings`, `unicode` |  |
 | 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `random`, `lists` |  |
 | 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `random` |  |
 | 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in a subpackage | `regex`, `bytes`, `unicode`, `strings` |  |

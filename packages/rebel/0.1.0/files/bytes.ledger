@@ -635,6 +635,20 @@ capability binary/floats  a float written as its bytes and read back
   python  struct (its formats `e`, `f` and `d`)
   note    the language has no door from a float to its bits yet, which `math`'s float/bits awaits; the bytes follow from those bits
 
+capability bytes/many-patterns  many patterns of bytes compiled once into one automaton, and bytes searched for all of them in one pass: the first match, from an index, anchored at an index, all one after another, all overlapping, whether any is there, by each of three kinds, ASCII letters in either case as an option
+  heroes  bytes.compile_patterns, bytes.compile_patterns_ignoring_case_ascii, bytes.MatchKind, bytes.Patterns, bytes.PatternMatch, bytes.has_match, bytes.search_patterns, bytes.search_patterns_from, bytes.match_patterns_at, bytes.search_patterns_all, bytes.search_patterns_overlapping
+  go      -
+  rust    aho_corasick::AhoCorasick::find, AhoCorasick::find_iter, AhoCorasick::find_overlapping_iter, AhoCorasick::is_match (over `&[u8]`)
+  python  ahocorasick.Automaton (its keys as sequences of integers)
+  note    the twin of `strings`' search of many patterns, whose blocks name the rest of Rust's crate aho-corasick and of pyahocorasick; it is written apart because `strings` and `bytes` stand on one layer and neither may use the other. An empty pattern matches at every index, as Rust's does; its answers held to Rust's crate aho-corasick 1.1.5 over 10,091 generated cases with no empty pattern, every one alike (bytes 0 and 255 and bytes that are not UTF-8 among them), and to a naive search of the definitions over 12,000 with empty patterns, on 2026-11-17; where a pattern is empty Rust's crate departs from its own definition, as `strings`' note says
+
+capability bytes/many-patterns-replace  every match of many patterns of bytes replaced at once, each by its pattern's replacement or by what a function answers
+  heroes  bytes.replace_patterns_all, bytes.replace_patterns_all_by
+  go      -
+  rust    AhoCorasick::replace_all_bytes, AhoCorasick::try_replace_all_bytes, AhoCorasick::replace_all_with_bytes, AhoCorasick::try_replace_all_with_bytes
+  python  -
+  note    Rust panics where the replacements and the patterns are not as many, and so does this, an abort its doc comment names
+
 dropped capacity  a `[u8]` grows by `push` and has no capacity to ask, hint or reserve; a result is a new list, never a buffer the caller sized
   go      bytes.MinRead, bytes.ErrTooLarge, bytes.Buffer, bytes.Buffer.Available, bytes.Buffer.AvailableBuffer, bytes.Buffer.Cap, bytes.Buffer.Grow, hex.EncodedLen, hex.DecodedLen, base64.Encoding.EncodedLen, base64.Encoding.DecodedLen
   rust    -

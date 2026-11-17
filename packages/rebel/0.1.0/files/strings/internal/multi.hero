@@ -1,0 +1,255 @@
+# The searches of many patterns at once over a text, on the machine
+# `automaton` builds: the leftmost match by either rule, the match that ends
+# first, the match anchored at a byte, every match one after another, every
+# match overlapping, and the text with its matches replaced. A match of the
+# empty pattern is reported only where a character begins, so no index here
+# splits one.
+
+use strings/internal/automaton
+use strings/internal/scan
+
+# One match of a pattern in a text, or none where `pattern` is -1.
+record Found
+    # The pattern's index in the list the machine was built from, -1 where
+    # nothing matched.
+    pattern: i64
+    # Where the match begins, as a byte index.
+    start: i64
+    # Where it ends: the byte index just after its last byte.
+    end: i64
+
+# `s` as a message names it: quoted where it is short, by its length where
+# it is long, so a failed search in a loop never copies a long text.
+function shown(s: str) -> str
+    if s.len() <= 32
+        return "\"" + s + "\""
+    return f"a text of {s.len()} bytes"
+
+# The value that says nothing matched.
+function nothing() -> Found
+    return Found(pattern: -1, start: 0, end: 0)
+
+# Whether byte index `at` of `s` stands where a character begins, or at the
+# end; `at` is between 0 and `s.len()`.
+function on_boundary(s: str, at: i64) -> bool
+    return at == s.len() || s[at] < 128 || s[at] >= 192
+
+# The longest pattern that ends at the state `state` reaches, as the first
+# pattern of its text; -1 where none does, or where only the empty pattern
+# does and `end` stands inside a character.
+function head(m: automaton.Machine lent, s: str, state: i64, end: i64) -> i64
+    o = m.out[state]
+
+    if o == -1
+        return -1
+    p = m.own[o]
+
+    if m.lengths[p] == 0 && !on_boundary(s: s, at: end)
+        return -1
+    return p
+
+# The match that ends first at or after `from`, the longest of those that
+# end there and the first by index among patterns of one text.
+function earliest(m: automaton.Machine lent, s: str, from: i64) -> Found
+    state: i64 @= 0
+    at: i64 @= from
+    p0 = head(m: m, s: s, state: 0, end: from)
+
+    if p0 != -1
+        return Found(pattern: p0, start: from, end: from)
+
+    while at < s.len()
+        state @ automaton.step(m: m, state: state, b: automaton.byte_of(c: s[at], caseless: m.caseless))
+        at @ at + 1
+        p = head(m: m, s: s, state: state, end: at)
+
+        if p != -1
+            return Found(pattern: p, start: at - m.lengths[p], end: at)
+
+    return nothing()
+
+# Whether pattern `p`, beginning where the best match so far, `best`, begins,
+# wins over it by the machine's rule.
+function wins(m: automaton.Machine lent, p: i64, best: i64) -> bool
+    if m.kind == automaton.LEFTMOST_LONGEST
+        length = m.lengths[p]
+        best_length = m.lengths[best]
+        return length > best_length || length == best_length && p < best
+    return p < best
+
+# The leftmost match at or after `from`, and among those that begin there
+# the first pattern by index or the longest, by the machine's kind. The
+# search reads on past a match only while the state it stands in could still
+# reach one that begins at or before it.
+function leftmost(m: automaton.Machine lent, s: str, from: i64) -> Found
+    best: i64 @= head(m: m, s: s, state: 0, end: from)
+    best_start: i64 @= from
+    best_end: i64 @= from
+    state: i64 @= 0
+    at: i64 @= from
+
+    while at < s.len() && (best == -1 || at - m.depth[state] <= best_start)
+        state @ automaton.step(m: m, state: state, b: automaton.byte_of(c: s[at], caseless: m.caseless))
+        at @ at + 1
+        p = head(m: m, s: s, state: state, end: at)
+
+        if p != -1
+            start = at - m.lengths[p]
+
+            if best == -1 || start < best_start || start == best_start && wins(m: m, p: p, best: best)
+                best @ p
+                best_start @ start
+                best_end @ at
+
+    if best == -1
+        return nothing()
+    return Found(pattern: best, start: best_start, end: best_end)
+
+# The match at or after `from` by the machine's kind; `from` is a boundary
+# between 0 and `s.len()`.
+function search_from(m: automaton.Machine lent, s: str, from: i64) -> Found
+    if m.kind == automaton.STANDARD
+        return earliest(m: m, s: s, from: from)
+    return leftmost(m: m, s: s, from: from)
+
+# The match that begins at byte `at` by the machine's kind: the shortest for
+# the standard kind, the first by index for leftmost-first, the longest for
+# leftmost-longest; the first by index among patterns of one text.
+function anchored(m: automaton.Machine lent, s: str, at: i64) -> Found
+    if at < 0 || at > s.len() || !on_boundary(s: s, at: at)
+        return nothing()
+    state: i64 @= 0
+    best: i64 @= m.own[0]
+    k: i64 @= at
+
+    while k < s.len() && (best == -1 || m.kind != automaton.STANDARD)
+        state @ automaton.child(m: m, state: state, b: automaton.byte_of(c: s[k], caseless: m.caseless))
+
+        if state == -1
+            break
+        k @ k + 1
+        p = m.own[state]
+
+        if p != -1 && (best == -1 || m.kind == automaton.LEFTMOST_LONGEST || p < best)
+            best @ p
+
+    if best == -1
+        return nothing()
+    return Found(pattern: best, start: at, end: at + m.lengths[best])
+
+# Every match one after another from the start, none overlapping the one
+# before, as `search_from` finds them; an empty match where the one before
+# ended is passed over, and the search goes on a character later.
+function one_by_one(m: automaton.Machine lent, s: str) -> [Found]
+    found: [Found] @= []
+    from: i64 @= 0
+    last_end: i64 @= -1
+
+    while from <= s.len()
+        f = search_from(m: m, s: s, from: from)
+
+        if f.pattern == -1
+            break
+
+        if f.start < f.end
+            found @ found.push(f)
+            last_end @ f.end
+            from @ f.end
+        else
+            if f.end != last_end
+                found @ found.push(f)
+                last_end @ f.end
+
+            if f.end == s.len()
+                break
+            from @ scan.next_at(s, f.end)
+
+    return found
+
+# Every match of every pattern, overlapping or not, in the order of their
+# ends, and at one end the longest first and the patterns of one text by
+# index.
+function overlapping(m: automaton.Machine lent, s: str) -> [Found]
+    found: [Found] @= []
+    state: i64 @= 0
+    at: i64 @= 0
+
+    while true
+        o: i64 @= m.out[state]
+
+        while o != -1
+            p: i64 @= m.own[o]
+
+            if m.lengths[p] > 0 || on_boundary(s: s, at: at)
+                while p != -1
+                    found @ found.push(Found(pattern: p, start: at - m.lengths[p], end: at))
+                    p @ m.same_next[p]
+
+            if o == 0
+                o @ -1
+            else
+                o @ m.out[m.link[o]]
+
+        if at == s.len()
+            return found
+        state @ automaton.step(m: m, state: state, b: automaton.byte_of(c: s[at], caseless: m.caseless))
+        at @ at + 1
+
+## Tests
+
+test "shown: a short text quoted and a long one by its length"
+    assert shown("abc") == "\"abc\""
+    assert shown(repeat("é", 20)) == "a text of 40 bytes"
+
+test "earliest: the first end, the longest at one end, a pattern given twice, the empty pattern, and none"
+    m = automaton.build(patterns: ["b", "abc", "abcd"], kind: automaton.STANDARD, caseless: false)
+    assert earliest(m: m, s: "abcd", from: 0) == Found(pattern: 0, start: 1, end: 2)
+    assert earliest(m: m, s: "abcd", from: 2) == nothing()
+    longest = automaton.build(patterns: ["bc", "abc"], kind: automaton.STANDARD, caseless: false)
+    assert earliest(m: longest, s: "abc", from: 0) == Found(pattern: 1, start: 0, end: 3)
+    twice = automaton.build(patterns: ["a", "a"], kind: automaton.STANDARD, caseless: false)
+    assert earliest(m: twice, s: "xa", from: 0) == Found(pattern: 0, start: 1, end: 2)
+    empty = automaton.build(patterns: ["", "a"], kind: automaton.STANDARD, caseless: false)
+    assert earliest(m: empty, s: "a", from: 1) == Found(pattern: 0, start: 1, end: 1)
+
+test "leftmost: the first pattern and the longest, a later match that begins earlier, a pattern given twice, and none"
+    first = automaton.build(patterns: ["Sam", "Samwise"], kind: automaton.LEFTMOST_FIRST, caseless: false)
+    assert leftmost(m: first, s: "Samwise", from: 0) == Found(pattern: 0, start: 0, end: 3)
+    longest = automaton.build(patterns: ["Sam", "Samwise"], kind: automaton.LEFTMOST_LONGEST, caseless: false)
+    assert leftmost(m: longest, s: "Samwise", from: 0) == Found(pattern: 1, start: 0, end: 7)
+    later = automaton.build(patterns: ["bc", "abcd"], kind: automaton.LEFTMOST_FIRST, caseless: false)
+    assert leftmost(m: later, s: "abcd", from: 0) == Found(pattern: 1, start: 0, end: 4)
+    assert leftmost(m: later, s: "abce", from: 0) == Found(pattern: 0, start: 1, end: 3)
+    twice = automaton.build(patterns: ["ab", "ab"], kind: automaton.LEFTMOST_LONGEST, caseless: false)
+    assert leftmost(m: twice, s: "xab", from: 0) == Found(pattern: 0, start: 1, end: 3)
+    assert leftmost(m: twice, s: "xa", from: 0) == nothing()
+
+test "anchored: each kind's choice, a byte past the end, inside a character, and a capital folded"
+    pats = ["a", "abc", "ab"]
+    standard = automaton.build(patterns: pats, kind: automaton.STANDARD, caseless: false)
+    assert anchored(m: standard, s: "abcd", at: 0) == Found(pattern: 0, start: 0, end: 1)
+    first = automaton.build(patterns: ["abc", "a", "ab"], kind: automaton.LEFTMOST_FIRST, caseless: false)
+    assert anchored(m: first, s: "abd", at: 0) == Found(pattern: 1, start: 0, end: 1)
+    longest = automaton.build(patterns: pats, kind: automaton.LEFTMOST_LONGEST, caseless: true)
+    assert anchored(m: longest, s: "xABCd", at: 1) == Found(pattern: 1, start: 1, end: 4)
+    assert anchored(m: longest, s: "abc", at: 4) == nothing()
+    assert anchored(m: longest, s: "abc", at: -1) == nothing()
+    empty = automaton.build(patterns: [""], kind: automaton.STANDARD, caseless: false)
+    assert anchored(m: empty, s: "è", at: 1) == nothing()
+    assert anchored(m: empty, s: "è", at: 2) == Found(pattern: 0, start: 2, end: 2)
+
+test "one_by_one: matches one after another, an empty match after a match, the empty pattern in a text of more than one byte"
+    m = automaton.build(patterns: ["", "a"], kind: automaton.LEFTMOST_LONGEST, caseless: false)
+    assert one_by_one(m: m, s: "aa") == [Found(pattern: 1, start: 0, end: 1), Found(pattern: 1, start: 1, end: 2)]
+    first = automaton.build(patterns: ["", "a"], kind: automaton.LEFTMOST_FIRST, caseless: false)
+    assert one_by_one(m: first, s: "ab") == [Found(pattern: 0, start: 0, end: 0), Found(pattern: 0, start: 1, end: 1), Found(pattern: 0, start: 2, end: 2)]
+    assert one_by_one(m: first, s: "é") == [Found(pattern: 0, start: 0, end: 0), Found(pattern: 0, start: 2, end: 2)]
+    none = automaton.build(patterns: [], kind: automaton.STANDARD, caseless: false)
+    assert one_by_one(m: none, s: "abc") == []
+
+test "overlapping: every match by its end, the longest first, a pattern given twice, and the empty pattern"
+    m = automaton.build(patterns: ["b", "abc", "abcd"], kind: automaton.LEFTMOST_FIRST, caseless: false)
+    assert overlapping(m: m, s: "abcd") == [Found(pattern: 0, start: 1, end: 2), Found(pattern: 1, start: 0, end: 3), Found(pattern: 2, start: 0, end: 4)]
+    empty = automaton.build(patterns: ["", "a", "a"], kind: automaton.STANDARD, caseless: false)
+    assert overlapping(m: empty, s: "a") == [Found(pattern: 0, start: 0, end: 0), Found(pattern: 1, start: 0, end: 1), Found(pattern: 2, start: 0, end: 1), Found(pattern: 0, start: 1, end: 1)]
+    assert overlapping(m: empty, s: "é").len() == 2

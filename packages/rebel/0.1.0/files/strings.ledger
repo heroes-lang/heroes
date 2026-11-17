@@ -709,6 +709,88 @@ capability text/read-as-stream  a text read like a file
   rust    -
   python  -
 
+capability text/many-patterns-compile  many patterns compiled once into one automaton that a text is searched for all of them by
+  heroes  strings.compile_patterns, strings.Patterns
+  go      -
+  rust    aho_corasick::AhoCorasick::new, AhoCorasick::builder, AhoCorasickBuilder::new, AhoCorasickBuilder::default, AhoCorasickBuilder::build, AhoCorasick::patterns_len, AhoCorasick::max_pattern_len, AhoCorasick::min_pattern_len, BuildError
+  python  ahocorasick.Automaton, Automaton.add_word, Automaton.make_automaton, ahocorasick.KEY_STRING, ahocorasick.KEY_SEQUENCE
+  note    the automaton of Aho and Corasick, written from its definition, its answers held to Rust's crate aho-corasick 1.1.5 (built from the registry on this Mac, 2026-11-17) over 11,000 generated cases with no empty pattern, every one alike, and to a naive search of the definitions over all 11,000; the patterns' count and lengths are `Patterns.texts`, read with the built-in `len`; building never fails, where Rust's fails past its own limits on states and patterns. Go's standard library has no such search, and its `strings.NewReplacer` is `replace_pairs`, now on this automaton
+
+capability text/many-patterns-kind  how a search for many patterns chooses among matches that overlap or begin at one place: the first to end, the leftmost first by the list's order, the leftmost longest
+  heroes  strings.MatchKind
+  go      -
+  rust    aho_corasick::MatchKind, MatchKind::Standard, MatchKind::LeftmostFirst, MatchKind::LeftmostLongest, AhoCorasickBuilder::match_kind, AhoCorasick::match_kind
+  python  Automaton.iter_long
+  note    Rust's three kinds by their documented meaning; pyahocorasick's `iter_long` is the leftmost-longest kind and its `iter` the overlapping search. Where a pattern is empty Rust's crate departs from its own definition, observed 2026-11-17: with "" and "ab", leftmost-longest over "aab" answers "ab" at 1 alone, though its anchored search finds "" at 0, and the overlapping search reports the empty match at 3 twice; here the leftmost match is the one that begins first, every match is reported once, and an empty match stands only where a character begins, where Rust's, over bytes, stands at every byte
+
+capability text/many-patterns-ignore-case-ascii  many patterns matched with the case of their ASCII letters set aside
+  heroes  strings.compile_patterns_ignoring_case_ascii
+  go      -
+  rust    AhoCorasickBuilder::ascii_case_insensitive
+  python  -
+  note    "A" to "Z" match "a" to "z" and every other byte only itself, as Rust's crate reads it; matched alike over the generated cases
+
+capability text/many-patterns-is-match  whether a text holds any of many patterns
+  heroes  strings.has_match
+  go      -
+  rust    AhoCorasick::is_match, Input::earliest, Input::get_earliest, Input::set_earliest
+  python  -
+  note    it stops at the first match's end, which is Rust's `earliest`; that option has no other use here, the standard kind being the search that stops there
+
+capability text/many-patterns-first  the first match of many patterns in a text, or from a byte on
+  heroes  strings.search_patterns, strings.search_patterns_from
+  go      -
+  rust    AhoCorasick::find, AhoCorasick::try_find, aho_corasick::Input, Input::new, Input::range, Input::span, Input::start, Input::end, Input::haystack, Input::get_range, Input::get_span, Input::set_range, Input::set_span, Input::set_start, Input::set_end, Input::is_done
+  python  Automaton.iter (its `start` and `end`)
+  note    a search ends at the text's end; one that must stop before it searches a slice, which is a copy here, where Rust's `Input::range` sets both ends
+
+capability text/many-patterns-anchored  the match of many patterns that begins at one byte, as a lexer reads its next token
+  heroes  strings.match_patterns_at
+  go      -
+  rust    Input::anchored, Input::get_anchored, Input::set_anchored, aho_corasick::Anchored, Anchored::Yes, Anchored::No, Anchored::is_anchored, aho_corasick::StartKind, AhoCorasickBuilder::start_kind, AhoCorasick::start_kind
+  python  -
+  note    every automaton searches both ways here, so Rust's `StartKind` has nothing to choose; the shortest for the standard kind, as Rust's crate answers
+
+capability text/many-patterns-all  every match of many patterns in a text, one after another, none overlapping
+  heroes  strings.search_patterns_all
+  go      -
+  rust    AhoCorasick::find_iter, AhoCorasick::try_find_iter, aho_corasick::FindIter, automaton::FindIter
+  python  Automaton.iter_long
+  note    an empty match where the match before ended is passed over and the search goes on a character later, as Rust's iterator goes on a byte later
+
+capability text/many-patterns-overlapping  every match of every one of many patterns in a text, overlapping or not
+  heroes  strings.search_patterns_overlapping
+  go      -
+  rust    AhoCorasick::find_overlapping, AhoCorasick::find_overlapping_iter, AhoCorasick::try_find_overlapping, AhoCorasick::try_find_overlapping_iter, aho_corasick::FindOverlappingIter, automaton::FindOverlappingIter, automaton::OverlappingState
+  python  Automaton.iter, Automaton.find_all
+  note    whatever the kind, where Rust's crate refuses an overlapping search on a leftmost automaton: the kind only chooses among matches, and here every automaton is built alike; the matches by their ends, at one end the longest first, as Rust and pyahocorasick order them
+
+capability text/many-patterns-match  one match of many patterns: which pattern, where, and the text matched
+  heroes  strings.PatternMatch
+  go      -
+  rust    aho_corasick::Match, Match::new, Match::must, Match::pattern, Match::start, Match::end, Match::span, Match::range, Match::len, Match::is_empty, Match::offset, aho_corasick::PatternID, PatternIDError, aho_corasick::Span, Span::contains, Span::is_empty, Span::len, Span::offset, Span::range
+  python  -
+  note    pyahocorasick yields the end's index and the value stored with the word; a match here also carries its text, as `regex.Match` does
+
+capability text/many-patterns-replace  every match of many patterns replaced at once, each by its pattern's replacement or by what a function answers
+  heroes  strings.replace_patterns_all, strings.replace_patterns_all_by
+  go      strings.NewReplacer
+  rust    AhoCorasick::replace_all, AhoCorasick::try_replace_all, AhoCorasick::replace_all_with, AhoCorasick::try_replace_all_with
+  python  -
+  note    Rust panics where the replacements and the patterns are not as many, and so does this, an abort its doc comment names; Rust's function is given the text built so far to push into, which has no place here, so it answers the replacement
+
+capability text/many-patterns-stream  many patterns searched or replaced through a stream
+  heroes  refused: a stream is `io`'s, which stands above `strings`; a program reads the text and searches it
+  go      -
+  rust    AhoCorasick::stream_find_iter, AhoCorasick::try_stream_find_iter, AhoCorasick::try_stream_replace_all, AhoCorasick::try_stream_replace_all_with, aho_corasick::StreamFindIter, automaton::StreamFindIter
+  python  -
+
+capability text/many-patterns-dictionary  a trie of texts to values, asked whether a key is there and its value
+  heroes  refused: a prefix tree of texts to values is `containers/trie`'s
+  go      -
+  rust    -
+  python  Automaton.get, Automaton.exists, Automaton.match, Automaton.longest_prefix, Automaton.keys, Automaton.values, Automaton.items, Automaton.pop, Automaton.remove_word, Automaton.clear, Automaton.store, Automaton.kind, ahocorasick.STORE_ANY, ahocorasick.STORE_INTS, ahocorasick.STORE_LENGTH, ahocorasick.EMPTY, ahocorasick.TRIE, ahocorasick.AHOCORASICK, ahocorasick.MATCH_EXACT_LENGTH, ahocorasick.MATCH_AT_MOST_PREFIX, ahocorasick.MATCH_AT_LEAST_PREFIX
+
 dropped  every value is a copy already, and owns what it holds
   go      strings.Clone
   rust    str::clone, str::clone_from, str::clone_to_uninit, str::clone_into, str::to_owned, str::to_string, str::into_string, str::into_boxed_bytes, str::as_str, String::as_str, String::into_boxed_str, String::leak, String::clear, String::new, str::default, str::from, str::try_from, String::into, String::try_into, String::from_str
@@ -733,3 +815,8 @@ dropped  what an interface or a trait would have needed: Heroes has neither
   go      strings.Replacer.WriteString
   rust    str::parse, str::as_ascii, str::fmt, str::hash, String::hash_slice, str::as_ref, str::borrow, String::deref, str::type_id, str::to_socket_addrs, str::is_prefix_of, str::is_contained_in, str::strip_prefix_of, str::is_suffix_of, str::strip_suffix_of, str::into_searcher, str::as_utf8_pattern
   python  -
+
+dropped  how an automaton of many patterns is laid out in memory, and its statistics: an implementation's choice that changes no answer
+  go      -
+  rust    AhoCorasickBuilder::kind, AhoCorasickBuilder::dense_depth, AhoCorasickBuilder::byte_classes, AhoCorasickBuilder::prefilter, aho_corasick::AhoCorasickKind, AhoCorasick::kind, AhoCorasick::memory_usage, aho_corasick::nfa, aho_corasick::dfa, aho_corasick::packed, automaton::Automaton, automaton::Candidate, automaton::Prefilter, automaton::StateID, automaton::StateIDError, aho_corasick::MatchError, aho_corasick::MatchErrorKind
+  python  Automaton.get_stats, Automaton.dump, Automaton.save, ahocorasick.load, ahocorasick.unicode

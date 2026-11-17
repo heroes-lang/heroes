@@ -1,0 +1,212 @@
+capability scan/tokens  a text read into its tokens, one after another, the end last
+  heroes  scanner.scan, scanner.new_scanner, scanner.next_token, scanner.Scanner, scanner.Token, scanner.Kind
+  go      text/scanner.Scanner, Scanner.Init, Scanner.Scan, text/scanner.GoTokens, go/scanner.Scanner, go/scanner.Scanner.Init, go/scanner.Scanner.Scan
+  rust    logos::Logos (derive and trait), Logos::lexer, Logos::lexer_with_extras, logos::Lexer, Lexer::new, Lexer::with_extras, Lexer::next
+  python  tokenize.tokenize, tokenize.generate_tokens, shlex.shlex, shlex.shlex.get_token, shlex.shlex.read_token, shlex.shlex.posix
+  note    a text is read whole, where Go's `Init` takes an `io.Reader` and Python's `tokenize` bytes with their encoding; every kind Go's text/scanner reads, and what Go reads, matched over 20,000 generated texts and every combination of its modes against Go 1.27's text/scanner on 2026-11-18: each token's kind, text, offset, line and column and the first error of a malformed one alike, but for the two departures written in `scan/place` and `scan/strings`
+
+capability scan/peek  the next token known before it is taken
+  heroes  scanner.peek_token
+  go      -
+  rust    Lexer::clone (a copy read ahead)
+  python  shlex.shlex.push_token
+  note    Python's `push_token` gives back a token already taken; here the next one is seen before it is taken, which is the use of pushing back one
+
+capability scan/characters  the characters between tokens read one at a time, or the next one looked at
+  heroes  scanner.next_char, scanner.peek_char
+  go      text/scanner.Scanner.Next, text/scanner.Scanner.Peek
+  rust    Lexer::bump, Lexer::remainder
+  python  -
+  note    the end is `not_found`, where Go's `Peek` and `Next` answer EOF; Rust's `bump` lengthens the token, here a program reads the characters with `next_char` and makes its token of them
+
+capability scan/rules-changed  the rules changed in the middle of a text, the place kept
+  heroes  scanner.set_rules
+  go      text/scanner.Scanner.Mode (set between calls), Scanner.Whitespace (set between calls), Scanner.IsIdentRune (set between calls)
+  rust    Lexer::morph
+  python  shlex.shlex.wordchars, shlex.shlex.whitespace, shlex.shlex.commenters (set between calls)
+
+capability scan/place  where a token stands: its byte offset, line and column, at its start and at its end
+  heroes  scanner.Place, scanner.Token, scanner.place_of, scanner.format_place
+  go      text/scanner.Position, Position.Offset, Position.Line, Position.Column, Position.IsValid, Position.String, Scanner.Pos, Scanner.Position, go/token.Position, go/token.Pos, go/token.Pos.IsValid, go/token.NoPos, go/scanner.Scanner.End
+  rust    Lexer::span, logos::Span, Lexer::spanned, logos::SpannedIter
+  python  tokenize.TokenInfo, TokenInfo.start, TokenInfo.end, TokenInfo.line, shlex.shlex.lineno, shlex.shlex.error_leader
+  note    lines from 1 and columns from 1 counted in characters, as Go's; Python counts its columns from 0. A place names no file, Go's `Filename`: the program that read the file names it. A byte order mark that begins the text is passed over and counted as a column, as Go does; the end of an empty text is at 1:1, where Go answers line 0 and column 0, a place it calls invalid
+
+capability scan/token-text  the text of a token as it stands in the source
+  heroes  scanner.Token
+  go      text/scanner.Scanner.TokenText
+  rust    Lexer::slice, Lexer::source
+  python  TokenInfo.string, shlex.shlex.token
+  note    its field `text`
+
+capability scan/identifiers  names read by the program's rule of which characters begin one and which follow
+  heroes  scanner.Rules, scanner.is_identifier_char
+  go      text/scanner.ScanIdents, text/scanner.Ident, Scanner.IsIdentRune
+  rust    #[regex] on a token (logos's derive)
+  python  tokenize.NAME, shlex.shlex.wordchars
+  note    the fields `identifiers` and `identifier_char`, which is Go's `IsIdentRune` and asked as Go asks it; a character that could begin an identifier is `other` where identifiers are not read, as Go answers it
+
+capability scan/keywords  the identifiers a program reserves told apart from the others
+  heroes  scanner.Rules, scanner.Kind
+  go      go/token.Lookup, go/token.IsKeyword, go/token.Token.IsKeyword
+  rust    #[token] on a token (logos's derive)
+  python  tokenize.SOFT_KEYWORD
+  note    the field `keywords` and the kind `keyword`; Go's and Python's lists are their own language's, and a program writes its own
+
+capability scan/integers  integers in decimal, hexadecimal, octal and binary, digits grouped by `_`
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.ScanInts, text/scanner.Int
+  rust    #[regex] on a token
+  python  tokenize.NUMBER
+  note    the field `integers` and the kind `integer`, in Go's forms and with its messages: "invalid digit '8' in octal literal", "'_' must separate successive digits"
+
+capability scan/floats  floats with a point, an exponent, or a hexadecimal mantissa
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.ScanFloats, text/scanner.Float
+  rust    #[regex] on a token
+  python  tokenize.NUMBER
+  note    the field `floats` and the kind `float`; where floats are read integers are too, as Go's `ScanFloats` holds `ScanInts`; no imaginary `i`, which Go's text/scanner does not read either
+
+capability scan/strings  strings between quotes, with escapes
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.ScanStrings, text/scanner.String
+  rust    #[regex] on a token
+  python  tokenize.STRING, shlex.shlex.quotes, shlex.shlex.escape, shlex.shlex.escapedquotes
+  note    the fields `string_quotes` and `multiline_strings` and the kind `string`; Go's escapes, `\` before the quote that opened the string and no other; Go's text/scanner takes the line end into a literal that a line end leaves unclosed, here the line end stays out of it, so that `keep_newlines` loses no line
+
+capability scan/raw-strings  strings between quotes that read no escape and may span lines
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.ScanRawStrings, text/scanner.RawString
+  rust    #[regex] on a token
+  python  -
+  note    the field `raw_quotes` and the kind `raw_string`
+
+capability scan/character-literals  one character, or one escape, between quotes
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.ScanChars, text/scanner.Char
+  rust    #[regex] on a token
+  python  -
+  note    the field `char_quotes` and the kind `character`
+
+capability scan/comments  comments to the end of a line and between delimiters, skipped or kept as tokens
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.ScanComments, text/scanner.SkipComments, text/scanner.Comment, go/scanner.Mode, go/scanner.ScanComments
+  rust    #[logos(skip)] with a comment's pattern
+  python  tokenize.COMMENT, shlex.shlex.commenters
+  note    the fields `line_comments`, `block_comment_open`, `block_comment_close` and `keep_comments`, and the kind `comment`; a block comment never closed is a token of the kind `invalid` even where comments are skipped, where Go reports it with the end
+
+capability scan/nested-comments  block comments that nest, each opening closed by its own closing
+  heroes  scanner.Rules
+  go      -
+  rust    -
+  python  -
+  note    the field `nested_comments`, as Rust, Swift and Haskell nest theirs
+
+capability scan/whitespace  the characters that separate tokens, skipped or kept as tokens
+  heroes  scanner.Rules, scanner.Kind
+  go      text/scanner.Scanner.Whitespace, text/scanner.GoWhitespace
+  rust    #[logos(skip)], logos::skip, logos::Skip
+  python  shlex.shlex.whitespace, shlex.shlex.whitespace_split
+  note    the fields `whitespace` and `keep_whitespace` and the kind `whitespace`; any character may be white space, where Go's mask holds the first 64 code points alone
+
+capability scan/newlines  line ends as tokens of their own
+  heroes  scanner.Rules, scanner.Kind
+  go      -
+  rust    -
+  python  tokenize.NEWLINE, tokenize.NL
+  note    the field `keep_newlines` and the kind `newline`; Python's NEWLINE and NL differ by whether the line held code, which a program reads from the token before
+
+capability scan/operators  operators and punctuation from the program's list, the longest that stands there
+  heroes  scanner.Rules, scanner.Kind
+  go      -
+  rust    #[token] on a token
+  python  tokenize.OP, tokenize.EXACT_TOKEN_TYPES, TokenInfo.exact_type, shlex.shlex.punctuation_chars
+  note    the field `operators` and the kind `operator`: the longest that begins at the place, by `strings.match_patterns_at` over an automaton compiled once by `new_scanner`
+
+capability scan/classes  token classes of the program's own, each a pattern
+  heroes  scanner.Rules, scanner.Kind
+  go      -
+  rust    #[regex] on a token, #[logos(subpattern)], logos::Filter, logos::FilterResult
+  python  -
+  note    the field `classes`, each a `regex.Regex`, and the kind `custom`: tried first, the longest match wins and the first of the list where two are as long, as logos takes the longest; a program decides what logos's `Filter` decides from the token it gets
+
+capability scan/other  a character no rule reads, given as a token of its own
+  heroes  scanner.Kind
+  go      text/scanner.Scanner.Scan (a character answered as itself)
+  rust    -
+  python  tokenize.ERRORTOKEN
+  note    the kind `other`; a NUL is a token of the kind `invalid`, "invalid character NUL", where Go reports that error on the token before it, which its look-ahead was reading
+
+capability scan/errors  a malformed token as a value, with its reason and its place, the scan going on after it
+  heroes  scanner.Kind, scanner.scan_checked
+  go      text/scanner.Scanner.Error, Scanner.ErrorCount, go/scanner.Error, go/scanner.Error.Error, go/scanner.ErrorHandler, go/scanner.ErrorList, ErrorList.Add, ErrorList.Err, ErrorList.Error, ErrorList.Len, ErrorList.Reset, ErrorList.Sort, ErrorList.Less, ErrorList.Swap, ErrorList.RemoveMultiples, go/scanner.PrintError, go/scanner.Scanner.ErrorCount
+  rust    #[logos(error)], Lexer::next (a `Result`)
+  python  tokenize.TokenError, tokenize.ERRORTOKEN
+  note    the kind `invalid` with its reason, the token's place being the error's; one reason a token, the first, where Go's text/scanner can report two
+
+capability scan/kind-names  the name of a token's kind, for a message
+  heroes  scanner.kind_name
+  go      text/scanner.TokenString, go/token.Token.String
+  rust    -
+  python  tokenize.tok_name, token.tok_name
+
+capability scan/end  the end of the text as a token
+  heroes  scanner.Kind
+  go      text/scanner.EOF
+  rust    -
+  python  tokenize.ENDMARKER
+  note    the kind `end`, answered again at every call after it, as Go's EOF
+
+capability scan/values  the value a literal token spells: a string unquoted, an integer, a float
+  heroes  scanner.text_value, scanner.int_value, scanner.float_value
+  go      strconv.Unquote, strconv.ParseInt, strconv.ParseFloat (beside the census, asked as oracles)
+  rust    -
+  python  -
+  note    what Go's `strconv.Unquote`, `strconv.ParseInt` with base 0 and `strconv.ParseFloat` answer for the same literals, asked on 2026-11-18; a character literal's `\x` and octal escapes are its code point, as Go's compiler reads `'\xff'`, where `strconv.Unquote` answers the byte, which no `str` holds; an escape that spells no character or bytes that are not UTF-8 fail `not_text`
+
+capability scan/indentation  the indentation of lines as tokens, Python's INDENT and DEDENT
+  heroes  refused: the indentation of one language, which a program reads as the column of the first token after a line end, `keep_newlines` given
+  go      -
+  rust    -
+  python  tokenize.INDENT, tokenize.DEDENT, tokenize.tabsize
+
+capability scan/encodings  a source's encoding found and decoded before it is read
+  heroes  refused: a scanner reads a `str`, which is UTF-8; bytes of another encoding are read by `unicode/encodings` first, and a byte order mark that begins the text is passed over
+  go      -
+  rust    -
+  python  tokenize.detect_encoding, tokenize.open, tokenize.ENCODING, tokenize.BOM_UTF8, tokenize.cookie_re, tokenize.blank_re
+
+capability scan/untokenize  tokens written back as a text
+  heroes  built-in join
+  go      -
+  rust    -
+  python  tokenize.untokenize, tokenize.Untokenizer
+  note    the texts of the tokens joined with "" are the text again where white space, line ends and comments are kept
+
+capability scan/sources  a text read from a stream, or several sources stacked, as an include reads another file
+  heroes  refused: a scanner reads a text whole; a stream is `io`'s, on the same layer as `scanner`, so a program reads it first, and it stacks scanners itself for a file that includes another
+  go      text/scanner.Scanner.Init (an `io.Reader`), text/scanner.Position.Filename
+  rust    logos::source::Source, logos::source::Chunk
+  python  shlex.shlex.push_source, shlex.shlex.pop_source, shlex.shlex.sourcehook, shlex.shlex.infile, shlex.shlex.instream, shlex.shlex.source
+
+capability scan/shell-words  a line read as the words a POSIX shell gives, and words quoted for one
+  heroes  strings.split_shell
+  go      -
+  rust    -
+  python  shlex.split, shlex.quote, shlex.join
+  note    the words of a shell line are `strings`'; a word quoted for a shell, Python's `shlex.quote` and `shlex.join`, is `process.quote`'s
+
+dropped  one language's own tokens and their tables, which a program names by its own `keywords` and `operators`
+  go      go/token.Token, go/token constants (ILLEGAL to TILDE), Token.IsLiteral, Token.IsOperator, Token.Precedence, go/token.IsExported, go/token.IsIdentifier, go/token.LowestPrec, go/token.UnaryPrec, go/token.HighestPrec
+  rust    -
+  python  tokenize's and token's constants of Python's operators (AMPER to VBAREQUAL), FSTRING_START, FSTRING_MIDDLE, FSTRING_END, TSTRING_START, TSTRING_MIDDLE, TSTRING_END, TYPE_COMMENT, TYPE_IGNORE, ISTERMINAL, ISNONTERMINAL, ISEOF, NT_OFFSET, N_TOKENS
+
+dropped  a table of files and of the offsets their lines begin at, where a program compiles many files into one space of positions: a token here carries its own line and column
+  go      go/token.File (AddLine, AddLineColumnInfo, AddLineInfo, Base, End, Line, LineCount, LineStart, Lines, MergeLine, Name, Offset, Pos, Position, PositionFor, SetLines, SetLinesForContent, Size, String), go/token.FileSet (NewFileSet, AddExistingFiles, AddFile, Base, File, Iterate, Position, PositionFor, Read, RemoveFile, Write)
+  rust    -
+  python  -
+
+dropped  the regular expressions a module is built of, and its debugging: plumbing
+  go      -
+  rust    Lexer::extras, logos::Logos::Extras
+  python  tokenize.Name, Number, String, Comment, Whitespace, Funny, Special, PlainToken, PseudoToken, PseudoExtras, Intnumber, Decnumber, Hexnumber, Octnumber, Binnumber, Floatnumber, Pointfloat, Expfloat, Exponent, Imagnumber, ContStr, Double, Double3, Single, Single3, Triple, StringPrefix, Ignore, endpats, single_quoted, triple_quoted, group, any, maybe, tokenize.TextIOWrapper, tokenize.lookup, shlex.shlex.debug, shlex.shlex.state, shlex.shlex.eof, shlex.shlex.pushback, shlex.shlex.filestack

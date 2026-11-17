@@ -10,9 +10,11 @@
 # the shell it runs; a text read as the words a shell or a Windows command
 # line gives is here.
 
+use strings/internal/automaton
 use strings/internal/bounds
 use strings/internal/bytewise
 use strings/internal/casing
+use strings/internal/multi
 use strings/internal/padding
 use strings/internal/pieces
 use strings/internal/replacing
@@ -694,6 +696,253 @@ function ceil_boundary(s: str, at: i64) -> i64
 function slice_checked(s: str, from: i64, to: i64) -> str?
     return bounds.slice_checked(s: s, from: from, to: to)
 
+## Many patterns at once
+
+# How a search for many patterns at once chooses among the matches that
+# overlap or begin at one place, the three kinds of Rust's crate aho-corasick.
+variant MatchKind
+    # The match whose end is read first, and among the matches that end there
+    # the longest: the kind of Aho and Corasick's own automaton. With "b" and
+    # "abcd", the text "abcd" matches "b".
+    standard
+    # The match that begins first, and among the matches that begin there the
+    # pattern that stands first in the list, as a regular expression `a|b`
+    # takes its first branch. With "Sam" before "Samwise", the text "Samwise"
+    # matches "Sam".
+    leftmost_first
+    # The match that begins first, and among the matches that begin there the
+    # longest. With "Sam" and "Samwise" in either order, the text "Samwise"
+    # matches "Samwise".
+    leftmost_longest
+
+# Many patterns made into one automaton, the one of Aho and Corasick, so that
+# a text is searched for all of them in one pass. It is made only by
+# `compile_patterns` or `compile_patterns_ignoring_case_ascii`; one built
+# directly searches for nothing it says.
+record Patterns
+    # The patterns, in the order they were given; a match names its pattern
+    # by its index here.
+    texts: [str]
+    # How a search chooses among the matches.
+    kind: MatchKind
+    # Whether an ASCII letter matches its other case: "A" to "Z" and "a" to
+    # "z" alike, every other byte only itself.
+    ignores_case_ascii: bool
+    # The automaton the patterns compiled to, which the functions below run.
+    compiled: automaton.Machine
+
+# One match of one of many patterns in a text.
+record PatternMatch
+    # The pattern that matched, by its index in the list it was compiled from.
+    pattern: i64
+    # Where the match begins in the text searched, as a byte index.
+    start: i64
+    # Where it ends: the byte index just after its last byte.
+    end: i64
+    # The text matched, which is the pattern itself but where ASCII letters
+    # were matched without their case.
+    text: str
+
+# `patterns` compiled into one automaton, searched by `kind`, every byte
+# matching only itself.
+#
+# - `patterns`: the texts sought, their order being their priority for
+#   `leftmost_first`; none matches nothing, the empty text matches where
+#   every character begins and at the end, and a text given twice is
+#   reported as the first of the two, but by `search_patterns_overlapping`,
+#   which reports both.
+# - `kind`: how a search chooses among matches that overlap or begin at one
+#   place.
+#
+# It costs time and memory linear in the patterns' total length, once. See
+# also `compile_patterns_ignoring_case_ascii` and `search_patterns_all`.
+function compile_patterns(patterns: [str], kind: MatchKind) -> Patterns
+    code = match kind
+        .standard         => automaton.STANDARD
+        .leftmost_first   => automaton.LEFTMOST_FIRST
+        .leftmost_longest => automaton.LEFTMOST_LONGEST
+
+    return Patterns(
+        texts: patterns,
+        kind: kind,
+        ignores_case_ascii: false,
+        compiled: automaton.build(patterns: patterns, kind: code, caseless: false)
+    )
+
+# `patterns` compiled into one automaton, searched by `kind`, each ASCII
+# letter matching itself in either case, so "Rebel" matches "REBEL" and
+# "rebel".
+#
+# - `patterns`: the texts sought, read as `compile_patterns` reads them; a
+#   letter outside ASCII, "É" or "é", matches only itself.
+# - `kind`: how a search chooses among matches.
+#
+# See also `compile_patterns` and `equals_ignoring_case_ascii`.
+function compile_patterns_ignoring_case_ascii(patterns: [str], kind: MatchKind) -> Patterns
+    code = match kind
+        .standard         => automaton.STANDARD
+        .leftmost_first   => automaton.LEFTMOST_FIRST
+        .leftmost_longest => automaton.LEFTMOST_LONGEST
+
+    return Patterns(
+        texts: patterns,
+        kind: kind,
+        ignores_case_ascii: true,
+        compiled: automaton.build(patterns: patterns, kind: code, caseless: true)
+    )
+
+# Whether `s` holds any of the patterns.
+#
+# - `s`: the text searched.
+# - `patterns`: the compiled patterns; whatever their kind, any match
+#   answers true, and an empty pattern makes every text hold one.
+#
+# It stops at the first match's end. See also `search_patterns`.
+function has_match(s: str, patterns: Patterns lent) -> bool
+    return multi.earliest(m: patterns.compiled, s: s, from: 0).pattern != -1
+
+# The first match of the patterns in `s`, chosen by their kind.
+#
+# - `s`: the text searched.
+# - `patterns`: the compiled patterns.
+#
+# Fails `not_found` where `s` holds none of them. It reads `s` once, but
+# where the kind is leftmost it may read on past the match by up to the
+# length of the longest pattern. See also `search_patterns_from` and
+# `search_patterns_all`.
+function search_patterns(s: str, patterns: Patterns lent) -> PatternMatch?
+    return search_patterns_from(s: s, patterns: patterns, from: 0)
+
+# The first match of the patterns that begins in `s` at or after byte `from`,
+# chosen by their kind.
+#
+# - `s`: the text searched.
+# - `patterns`: the compiled patterns.
+# - `from`: the byte where the search begins; below 0 the search begins at
+#   0, inside a character at the next character, and past the end it finds
+#   nothing.
+#
+# Fails `not_found` where that part of `s` holds none of them. It copies
+# nothing, where `search_patterns` on a slice copies the slice. See also
+# `match_patterns_at`.
+function search_patterns_from(s: str, patterns: Patterns lent, from: i64) -> PatternMatch?
+    if from > s.len()
+        return fail(code: NOT_FOUND, msg: f"no pattern in {multi.shown(s)} from byte {from}")
+    begin = unicode.ceil_char_boundary(s, from)
+    f = multi.search_from(m: patterns.compiled, s: s, from: begin)
+
+    if f.pattern == -1
+        return fail(code: NOT_FOUND, msg: f"no pattern in {multi.shown(s)} from byte {from}")
+    return ok(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
+
+# The match of the patterns that begins at byte `at` of `s`, as a lexer reads
+# a token where the last one ended: the shortest for `standard`, the first in
+# the list for `leftmost_first`, the longest for `leftmost_longest`.
+#
+# - `s`: the text read.
+# - `patterns`: the compiled patterns.
+# - `at`: the byte where the match must begin; below 0, past the end or
+#   inside a character, nothing begins there.
+#
+# Fails `not_found` where no pattern begins at `at`. It reads no further than
+# the longest pattern. See also `search_patterns_from`.
+function match_patterns_at(s: str, patterns: Patterns lent, at: i64) -> PatternMatch?
+    f = multi.anchored(m: patterns.compiled, s: s, at: at)
+
+    if f.pattern == -1
+        return fail(code: NOT_FOUND, msg: f"no pattern at byte {at} of {multi.shown(s)}")
+    return ok(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
+
+# Every match of the patterns in `s`, one after another from the start, each
+# chosen by their kind where the one before ended, none overlapping another.
+#
+# - `s`: the text searched.
+# - `patterns`: the compiled patterns.
+#
+# The matches stand in the order of the text. An empty match is not reported
+# where the match before it ended, and the search then goes on a character
+# later, so a text of n characters has at most n + 1 matches of the empty
+# pattern. See also `search_patterns_overlapping` and `replace_patterns_all`.
+function search_patterns_all(s: str, patterns: Patterns lent) -> [PatternMatch]
+    found = multi.one_by_one(m: patterns.compiled, s: s)
+    all_found: [PatternMatch] @= []
+
+    for f in found
+        all_found @ all_found.push(
+            PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end))
+        )
+
+    return all_found
+
+# Every match of every pattern in `s`, overlapping or not, whatever the
+# patterns' kind: "abcd" holds "b", "abc" and "abcd" at once.
+#
+# - `s`: the text searched.
+# - `patterns`: the compiled patterns; a text given twice is reported twice.
+#
+# The matches stand in the order of their ends, and at one end the longest
+# first, the patterns of one text in the order they were given. Their number
+# can be the length of `s` times the number of patterns. See also
+# `search_patterns_all`.
+function search_patterns_overlapping(s: str, patterns: Patterns lent) -> [PatternMatch]
+    found = multi.overlapping(m: patterns.compiled, s: s)
+    all_found: [PatternMatch] @= []
+
+    for f in found
+        all_found @ all_found.push(
+            PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end))
+        )
+
+    return all_found
+
+# `s` with every match of the patterns replaced, each by the replacement of
+# its pattern, in one pass: what a replacement wrote is never searched again,
+# so two patterns can swap two texts.
+#
+# - `s`: the text read.
+# - `patterns`: the compiled patterns; the matches are those of
+#   `search_patterns_all`.
+# - `replacements`: the text written for each pattern, by its index.
+#
+# Aborts where `replacements` and the patterns are not as many. See also
+# `replace_patterns_all_by` and `replace_pairs`.
+function replace_patterns_all(s: str, patterns: Patterns lent, replacements: [str]) -> str
+    assert replacements.len() == patterns.texts.len()
+    parts: [str] @= []
+    done: i64 @= 0
+
+    for f in multi.one_by_one(m: patterns.compiled, s: s)
+        parts @ parts.push(s.slice(from: done, to: f.start))
+        parts @ parts.push(replacements[f.pattern])
+        done @ f.end
+
+    parts @ parts.push(s.slice(from: done, to: s.len()))
+    return parts.join("")
+
+# `s` with every match of the patterns replaced by what `by` answers for it,
+# in one pass.
+#
+# - `s`: the text read.
+# - `patterns`: the compiled patterns; the matches are those of
+#   `search_patterns_all`.
+# - `by`: asked once for each match, in the order of the text; what it
+#   answers is written in the match's place and never searched again.
+#
+# See also `replace_patterns_all`.
+function replace_patterns_all_by(s: str, patterns: Patterns lent, by: (function(PatternMatch) -> str)) -> str
+    parts: [str] @= []
+    done: i64 @= 0
+
+    for f in multi.one_by_one(m: patterns.compiled, s: s)
+        parts @ parts.push(s.slice(from: done, to: f.start))
+        parts @ parts.push(
+            by(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
+        )
+        done @ f.end
+
+    parts @ parts.push(s.slice(from: done, to: s.len()))
+    return parts.join("")
+
 ## Tests
 
 test "split_once: the first separator, one at the end, a missing one, an empty one, and characters of more than one byte"
@@ -718,6 +967,51 @@ test "split_once_last: the last separator, an empty one, a missing one, and char
     accents = split_once_last(s: "città→è→à", sep: "→").must()
     assert accents.before == "città→è" && accents.after == "à"
     assert split_once_last(s: "abc", sep: ";").is_err()
+
+test "search_patterns_from: a start below 0, inside a character, at the end, past it, and the message"
+    p = compile_patterns(["é", "x"], .leftmost_first)
+    assert search_patterns_from(s: "aéx", patterns: p, from: -5).must().start == 1
+    assert search_patterns_from(s: "aéx", patterns: p, from: 2).must() == PatternMatch(pattern: 1, start: 3, end: 4, text: "x")
+    assert search_patterns_from(s: "aéx", patterns: p, from: 4).is_err()
+
+    match search_patterns_from(s: "aéx", patterns: p, from: 9)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no pattern in \"aéx\" from byte 9"
+
+test "match_patterns_at: each kind at one place, nothing there, past the end, and no pattern at all"
+    pats = ["a", "abc", "ab"]
+    assert match_patterns_at(s: "abcd", patterns: compile_patterns(pats, .standard), at: 0).must().text == "a"
+    assert match_patterns_at(s: "abcd", patterns: compile_patterns(pats, .leftmost_first), at: 0).must().text == "a"
+    assert match_patterns_at(s: "abcd", patterns: compile_patterns(pats, .leftmost_longest), at: 0).must().text == "abc"
+    assert match_patterns_at(s: "abcd", patterns: compile_patterns(pats, .leftmost_longest), at: 1).is_err()
+    assert match_patterns_at(s: "abcd", patterns: compile_patterns(pats, .leftmost_longest), at: 5).is_err()
+    assert match_patterns_at(s: "abcd", patterns: compile_patterns([], .leftmost_longest), at: 0).is_err()
+
+test "search_patterns_all: the empty pattern beside another, a text of more than one byte, the case of ASCII letters, and no match"
+    longest = search_patterns_all(s: "aèa", patterns: compile_patterns(["", "a"], .leftmost_longest))
+    assert longest.len() == 2 && longest[0].end == 1 && longest[1].start == 3 && longest[1].text == "a"
+    first = search_patterns_all(s: "aè", patterns: compile_patterns(["", "a"], .leftmost_first))
+    assert first.len() == 3 && first[1].start == 1 && first[2].start == 3 && first[2].text == ""
+    caseless = compile_patterns_ignoring_case_ascii(["Rebel", "É"], .leftmost_first)
+    texts: [str] @= []
+
+    for m in search_patterns_all(s: "REBEL rebel é É", patterns: caseless)
+        texts @ texts.push(m.text)
+
+    assert texts == ["REBEL", "rebel", "É"]
+    assert search_patterns_all(s: "", patterns: caseless) == []
+
+test "replace_patterns_all: no match, an empty text, a replacement holding a pattern, and characters of more than one byte"
+    p = compile_patterns(["à", "a"], .leftmost_first)
+    assert replace_patterns_all(s: "xyz", patterns: p, replacements: ["1", "2"]) == "xyz"
+    assert replace_patterns_all(s: "", patterns: p, replacements: ["1", "2"]) == ""
+    assert replace_patterns_all(s: "città a", patterns: p, replacements: ["a", "à"]) == "citta à"
+
+test "has_match: the kinds alike, the empty pattern, and no pattern"
+    assert has_match(s: "xabcd", patterns: compile_patterns(["abcd", "c"], .leftmost_longest))
+    assert !has_match(s: "xabd", patterns: compile_patterns(["abcd", "c"], .standard))
+    assert has_match(s: "", patterns: compile_patterns([""], .standard))
+    assert !has_match(s: "abc", patterns: compile_patterns([], .leftmost_first))
 
 ## Examples
 
@@ -778,3 +1072,62 @@ test "quote_windows_args: a program and two arguments"
     line = quote_windows_args(["C:\\Tools\\run.exe", "a b", "c"]).must()
     assert line == "C:\\Tools\\run.exe \"a b\" c"
     assert split_windows_args(line) == ["C:\\Tools\\run.exe", "a b", "c"]
+
+# A list of words found in one pass, each with the pattern that matched.
+test "compile_patterns: fruit in a sentence"
+    fruit = compile_patterns(["apple", "maple", "Snapple"], .leftmost_first)
+    found = search_patterns_all(s: "Nobody likes maple in their apple flavored Snapple.", patterns: fruit)
+    assert found.len() == 3
+    assert found[0] == PatternMatch(pattern: 1, start: 13, end: 18, text: "maple")
+    assert found[2] == PatternMatch(pattern: 2, start: 43, end: 50, text: "Snapple")
+
+# A name found in any case of its ASCII letters.
+test "compile_patterns_ignoring_case_ascii: a name shouted"
+    names = compile_patterns_ignoring_case_ascii(["rebel"], .standard)
+    assert search_patterns(s: "REBEL yell", patterns: names).must().text == "REBEL"
+
+# Whether a line holds any word of a list.
+test "has_match: a word of a list in a line"
+    banned = compile_patterns(["spam", "scam"], .standard)
+    assert has_match(s: "this is no scam", patterns: banned)
+
+# The first match, the longest of those that begin first.
+test "search_patterns: the longest name at the start"
+    names = compile_patterns(["Sam", "Samwise"], .leftmost_longest)
+    assert search_patterns(s: "Samwise Gamgee", patterns: names).must() == PatternMatch(pattern: 1, start: 0, end: 7, text: "Samwise")
+
+# The next match after the one already read.
+test "search_patterns_from: the second marker"
+    markers = compile_patterns(["TODO", "FIXME"], .leftmost_first)
+    assert search_patterns_from(s: "TODO: x; FIXME: y; TODO", patterns: markers, from: 4).must() == PatternMatch(pattern: 1, start: 9, end: 14, text: "FIXME")
+
+# The operator a lexer reads where a token begins, the longest of a list.
+test "match_patterns_at: the longest operator"
+    operators = compile_patterns(["=", "==", "=>", "!="], .leftmost_longest)
+    assert match_patterns_at(s: "a == b", patterns: operators, at: 2).must() == PatternMatch(pattern: 1, start: 2, end: 4, text: "==")
+
+# Every marker in a line, one after another.
+test "search_patterns_all: two words of a list in a line"
+    markers = compile_patterns(["TODO", "FIXME"], .leftmost_first)
+    found = search_patterns_all(s: "TODO: x; FIXME: y; TODO", patterns: markers)
+    assert found.len() == 3 && found[1].text == "FIXME" && found[2].start == 19
+
+# Every pattern that ends in a text, nested ones included.
+test "search_patterns_overlapping: three patterns nested"
+    p = compile_patterns(["b", "abc", "abcd"], .standard)
+    found = search_patterns_overlapping(s: "abcd", patterns: p)
+    assert found == [PatternMatch(pattern: 0, start: 1, end: 2, text: "b"), PatternMatch(pattern: 1, start: 0, end: 3, text: "abc"), PatternMatch(pattern: 2, start: 0, end: 4, text: "abcd")]
+
+# Two words swapped in one pass.
+test "replace_patterns_all: two words swapped"
+    pets = compile_patterns(["cat", "dog"], .leftmost_first)
+    assert replace_patterns_all(s: "cat chases dog", patterns: pets, replacements: ["dog", "cat"]) == "dog chases cat"
+
+# The answer of `replace_patterns_all_by`'s example: a match between brackets.
+function bracketed(m: PatternMatch) -> str
+    return "[" + m.text + "]"
+
+# Each match written between brackets by a function.
+test "replace_patterns_all_by: matches between brackets"
+    markers = compile_patterns_ignoring_case_ascii(["todo", "fixme"], .leftmost_first)
+    assert replace_patterns_all_by(s: "todo: x; Fixme: y", patterns: markers, by: bracketed) == "[todo]: x; [Fixme]: y"

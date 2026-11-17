@@ -1,0 +1,361 @@
+# One token read at a place, by the rules of a config, in the order the
+# face's `Rules` names: the program's classes, a line end, white space,
+# comments, identifiers, numbers, quoted literals, operators, and one
+# character. What is skipped is read the same way and passed over by `next`,
+# every pass moving past at least one byte.
+
+use regex
+use scanner/internal/config
+use scanner/internal/cursor
+use scanner/internal/kinds
+use scanner/internal/literals
+use strings
+use unicode
+
+# What `read` read at a place.
+record Piece
+    # The kind, one of `kinds`' constants.
+    kind: i64
+    # The byte after the last byte read.
+    end: i64
+    # Why it is malformed, empty where it is not.
+    reason: str
+    # For a match of a class, the class's index; -1 otherwise.
+    index: i64
+
+# A token read: its kind, why it is malformed, and where it begins and ends.
+record Lexed
+    # The kind, one of `kinds`' constants, never `SKIPPED`.
+    kind: i64
+    # For a match of a class, the class's index; -1 otherwise.
+    index: i64
+    # Why it is malformed, empty where it is not.
+    reason: str
+    # Where it begins.
+    start: cursor.Cursor
+    # Where the byte after it stands.
+    end: cursor.Cursor
+
+# The byte after the character of `s` that begins at `at`.
+function char_end(s: str, at: i64) -> i64
+    return unicode.ceil_char_boundary(s, at + 1)
+
+# A piece of `kind` that ends at `end`, well formed.
+function piece(kind: i64, end: i64) -> Piece
+    return Piece(kind: kind, end: end, reason: "", index: -1)
+
+# What a literal reader read, as a piece.
+function piece_of(r: kinds.Read) -> Piece
+    return Piece(kind: r.kind, end: r.end, reason: r.reason, index: -1)
+
+# The length of the line end of `s` at `at`: 1 for "\n", 2 for "\r\n", 0
+# where none stands there.
+function line_end_at(s: str, at: i64) -> i64
+    if s[at] == '\n'
+        return 1
+
+    if s[at] == '\r' && at + 1 < s.len() && s[at + 1] == '\n'
+        return 2
+    return 0
+
+# Whether the character of `s` at `at` is one of `c.whitespace`.
+function is_space_at(c: config.Config lent, s: str, at: i64) -> bool
+    b = s[at]
+
+    if b < 128
+        return c.space_table[to_i64(b).must()]
+
+    if !c.space_beyond_ascii
+        return false
+    return strings.contains(s: c.whitespace, substr: s.slice(from: at, to: char_end(s: s, at: at)))
+
+# Whether the character of `s` at `at` is one of `set`.
+function in_set(set: str, s: str, at: i64) -> bool
+    if set.len() == 0
+        return false
+    return strings.contains(s: set, substr: s.slice(from: at, to: char_end(s: s, at: at)))
+
+# Whether ASCII byte `b` may stand at index `k` of an identifier by Go's
+# rule.
+function go_ascii(b: u8, k: i64) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+        return true
+    return k > 0 && b >= '0' && b <= '9'
+
+# Whether the character of `s` at `at`, which ends at `end`, may stand at
+# index `k` of an identifier.
+function identifier_char_at(c: config.Config lent, s: str, at: i64, end: i64, k: i64) -> bool
+    if c.go_identifiers && s[at] < 128
+        return go_ascii(b: s[at], k: k)
+    accepts = c.identifier_char
+    return accepts(s.slice(from: at, to: end), k)
+
+# The byte after the identifier of `s` that begins at `at`, or `at` where
+# none begins there.
+function identifier_end(c: config.Config lent, s: str, at: i64) -> i64
+    i: i64 @= at
+    k: i64 @= 0
+
+    while i < s.len()
+        e = char_end(s: s, at: i)
+
+        if !identifier_char_at(c: c, s: s, at: i, end: e, k: k)
+            break
+        i @ e
+        k @ k + 1
+
+    return i
+
+# The longest match of the config's classes that begins at `at`, the first
+# of the list where two are as long; a piece ending at `at` where none
+# matches or every match is empty.
+function class_at(c: config.Config lent, s: str, at: i64) -> Piece
+    best: i64 @= -1
+    best_end: i64 @= at
+    j: i64 @= 0
+
+    for re in c.classes
+        match regex.match_at(s: s, re: re, at: at)
+            .ok m =>
+                if m.end > best_end
+                    best @ j
+                    best_end @ m.end
+            .err _ => _ = 0
+
+        j @ j + 1
+
+    return Piece(kind: kinds.CUSTOM, end: best_end, reason: "", index: best)
+
+# The block comment of `s` that begins at `at` with the config's opening:
+# to its closing, or to the closing of each opening inside it where comments
+# nest; malformed where the text ends first.
+function block_comment(c: config.Config lent, s: str, at: i64) -> Piece
+    i: i64 @= at + c.block_open.len()
+    depth: i64 @= 1
+    kind: i64 @= kinds.SKIPPED
+
+    if c.keep_comments
+        kind @ kinds.COMMENT
+
+    while true
+        if i >= s.len()
+            return Piece(kind: kinds.INVALID, end: s.len(), reason: "comment not terminated", index: -1)
+
+        if c.nested && strings.has_prefix_at(s: s, prefix: c.block_open, at: i)
+            depth @ depth + 1
+            i @ i + c.block_open.len()
+        else if strings.has_prefix_at(s: s, prefix: c.block_close, at: i)
+            depth @ depth - 1
+            i @ i + c.block_close.len()
+
+            if depth == 0
+                return piece(kind: kind, end: i)
+        else
+            i @ char_end(s: s, at: i)
+
+# The comment of `s` that begins at `at`, a piece ending at `at` where none
+# begins there.
+function comment_at(c: config.Config lent, s: str, at: i64) -> Piece
+    kind: i64 @= kinds.SKIPPED
+
+    if c.keep_comments
+        kind @ kinds.COMMENT
+
+    for opening in c.line_comments
+        if strings.has_prefix_at(s: s, prefix: opening, at: at)
+            return piece(
+                kind: kind,
+                end: strings.index_of_from(s: s, substr: "\n", from: at + opening.len()).default(s.len())
+            )
+
+    if c.block_open.len() > 0 && strings.has_prefix_at(s: s, prefix: c.block_open, at: at)
+        return block_comment(c: c, s: s, at: at)
+    return piece(kind: kind, end: at)
+
+# The piece of `s` that begins at `at`: a token, or what is skipped.
+function read(c: config.Config lent, s: str, at: i64) -> Piece
+    if at >= s.len()
+        return piece(kind: kinds.END, end: at)
+
+    if c.classes.len() > 0
+        found = class_at(c: c, s: s, at: at)
+
+        if found.end > at
+            return found
+
+    if c.keep_newlines
+        l = line_end_at(s: s, at: at)
+
+        if l > 0
+            return piece(kind: kinds.NEWLINE, end: at + l)
+
+    if is_space_at(c: c, s: s, at: at)
+        i: i64 @= char_end(s: s, at: at)
+
+        while i < s.len() && is_space_at(c: c, s: s, at: i) && !(c.keep_newlines && line_end_at(s: s, at: i) > 0)
+            i @ char_end(s: s, at: i)
+
+        if c.keep_whitespace
+            return piece(kind: kinds.WHITESPACE, end: i)
+        return piece(kind: kinds.SKIPPED, end: i)
+    comment = comment_at(c: c, s: s, at: at)
+
+    if comment.end > at
+        return comment
+    end = char_end(s: s, at: at)
+
+    if identifier_char_at(c: c, s: s, at: at, end: end, k: 0)
+        if !c.identifiers
+            return piece(kind: kinds.OTHER, end: end)
+        stop = identifier_end(c: c, s: s, at: at)
+
+        if c.keywords[s.slice(from: at, to: stop)].default(false)
+            return piece(kind: kinds.KEYWORD, end: stop)
+        return piece(kind: kinds.IDENTIFIER, end: stop)
+    b = to_i64(s[at]).must()
+
+    if literals.is_decimal(b)
+        if !c.integers
+            return piece(kind: kinds.OTHER, end: end)
+        return piece_of(literals.number(s: s, start: at, dot: false, floats: c.floats))
+
+    if b == '.' && c.floats && at + 1 < s.len() && literals.is_decimal(to_i64(s[at + 1]).must())
+        return piece_of(literals.number(s: s, start: at, dot: true, floats: true))
+    quote = s.slice(from: at, to: end)
+
+    if in_set(set: c.string_quotes, s: s, at: at)
+        return piece_of(
+            literals.quoted(s: s, start: at, quote: quote, escapes: true, lines: c.multiline_strings, one: false, kind: kinds.STRING)
+        )
+
+    if in_set(set: c.raw_quotes, s: s, at: at)
+        return piece_of(
+            literals.quoted(s: s, start: at, quote: quote, escapes: false, lines: true, one: false, kind: kinds.RAW_STRING)
+        )
+
+    if in_set(set: c.char_quotes, s: s, at: at)
+        return piece_of(
+            literals.quoted(s: s, start: at, quote: quote, escapes: true, lines: false, one: true, kind: kinds.CHARACTER)
+        )
+
+    if c.has_operators
+        match strings.match_patterns_at(s: s, patterns: c.operators, at: at)
+            .ok m =>
+                if m.end > at
+                    return piece(kind: kinds.OPERATOR, end: m.end)
+            .err _ => _ = 0
+
+    if b == 0
+        return Piece(kind: kinds.INVALID, end: end, reason: "invalid character NUL", index: -1)
+    return piece(kind: kinds.OTHER, end: end)
+
+# The next token of `s` from `from`, what is skipped passed over.
+function next(c: config.Config lent, s: str, from: cursor.Cursor) -> Lexed
+    here: cursor.Cursor @= from
+
+    while true
+        p = read(c: c, s: s, at: here.at)
+        stop = cursor.moved(c: here, s: s, to: p.end)
+
+        if p.kind != kinds.SKIPPED
+            return Lexed(kind: p.kind, index: p.index, reason: p.reason, start: here, end: stop)
+        here @ stop
+
+## Tests
+
+# Go's rule of identifiers, the face's `is_identifier_char`, for the tests
+# below.
+function go_char(c: str, at: i64) -> bool
+    return c == "_" || unicode.is_letter(c) || at > 0 && unicode.is_digit(c)
+
+# A config of Go's rules with the program's operators, keywords and classes
+# given, for the tests below.
+function go_config(operators: [str], keywords: [str], classes: [regex.Regex]) -> config.Config
+    return config.build(
+        identifiers: true,
+        identifier_char: go_char,
+        go_identifiers: true,
+        keywords: keywords,
+        integers: true,
+        floats: true,
+        string_quotes: "\"",
+        raw_quotes: "`",
+        char_quotes: "'",
+        multiline_strings: false,
+        line_comments: ["//"],
+        block_open: "/*",
+        block_close: "*/",
+        nested: false,
+        keep_comments: false,
+        whitespace: " \t\n\r",
+        keep_whitespace: false,
+        keep_newlines: false,
+        operators: operators,
+        classes: classes
+    )
+
+test "line_end_at: a line feed, a carriage return before one, one alone, and none"
+    assert line_end_at(s: "a\nb", at: 1) == 1
+    assert line_end_at(s: "\r\n", at: 0) == 2
+    assert line_end_at(s: "\r", at: 0) == 0 && line_end_at(s: "ab", at: 0) == 0
+
+test "identifier_end: ASCII by Go's rule, a digit first, letters beyond ASCII, and none"
+    c = go_config(operators: [], keywords: [], classes: [])
+    assert identifier_end(c: c, s: "ab1 c", at: 0) == 3
+    assert identifier_end(c: c, s: "1ab", at: 0) == 0
+    assert identifier_end(c: c, s: "x+città", at: 2) == 8
+
+test "comment_at and block_comment: a line comment to its line end, a block closed, one never closed, and none"
+    c = go_config(operators: [], keywords: [], classes: [])
+    assert comment_at(c: c, s: "a // b\nc", at: 2) == piece(kind: kinds.SKIPPED, end: 6)
+    assert comment_at(c: c, s: "/**/x", at: 0).end == 4
+    assert comment_at(c: c, s: "/*/", at: 0) == Piece(kind: kinds.INVALID, end: 3, reason: "comment not terminated", index: -1)
+    assert comment_at(c: c, s: "/ /", at: 0).end == 0
+    odd = config.build(
+        identifiers: false,
+        identifier_char: go_char,
+        go_identifiers: true,
+        keywords: [],
+        integers: false,
+        floats: false,
+        string_quotes: "",
+        raw_quotes: "",
+        char_quotes: "",
+        multiline_strings: false,
+        line_comments: ["\n"],
+        block_open: "",
+        block_close: "",
+        nested: false,
+        keep_comments: true,
+        whitespace: "",
+        keep_whitespace: false,
+        keep_newlines: false,
+        operators: [],
+        classes: []
+    )
+    assert comment_at(c: odd, s: "a\nb\nc", at: 1) == piece(kind: kinds.COMMENT, end: 3)
+
+test "class_at: the longest of two, the first of two as long, and an empty match"
+    c = go_config(
+        operators: [],
+        keywords: [],
+        classes: [regex.compile("a+").must(), regex.compile("a+b").must(), regex.compile("a+b").must(), regex.compile("z*").must()]
+    )
+    assert class_at(c: c, s: "aab", at: 0) == Piece(kind: kinds.CUSTOM, end: 3, reason: "", index: 1)
+    assert class_at(c: c, s: "aac", at: 0).index == 0
+    assert class_at(c: c, s: "q", at: 0).end == 0
+
+test "read: each kind at its place, a keyword, an operator, a point before a digit, and the end"
+    c = go_config(operators: ["==", "="], keywords: ["if"], classes: [])
+    assert read(c: c, s: "if x", at: 0).kind == kinds.KEYWORD
+    assert read(c: c, s: "if x", at: 2) == piece(kind: kinds.SKIPPED, end: 3)
+    assert read(c: c, s: "a==b", at: 1) == piece(kind: kinds.OPERATOR, end: 3)
+    assert read(c: c, s: ".5", at: 0) == piece(kind: kinds.FLOAT, end: 2)
+    assert read(c: c, s: ". 5", at: 0) == piece(kind: kinds.OTHER, end: 1)
+    assert read(c: c, s: "x", at: 1).kind == kinds.END
+
+test "next: what is skipped passed over, its places carried, and a malformed token"
+    c = go_config(operators: [], keywords: [], classes: [])
+    l = next(c: c, s: "  // c\n  \"x", from: cursor.first())
+    assert l.kind == kinds.INVALID && l.reason == "literal not terminated"
+    assert l.start == cursor.Cursor(at: 9, line: 2, column: 3) && l.end.at == 11

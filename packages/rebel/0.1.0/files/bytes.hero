@@ -12,6 +12,7 @@
 # list it was made from.
 
 use bytes/internal/ascii
+use bytes/internal/automaton
 use bytes/internal/base64
 use bytes/internal/base64_read
 use bytes/internal/binary
@@ -19,6 +20,7 @@ use bytes/internal/build
 use bytes/internal/codes
 use bytes/internal/cut
 use bytes/internal/hex
+use bytes/internal/multi
 use bytes/internal/raw
 use bytes/internal/search
 use bytes/internal/text
@@ -897,6 +899,246 @@ function decode_varint(s: [u8], at: i64) -> DecodedVarint?
     read = varint.decoded(s, at: at)?
     return ok(DecodedVarint(value: varint.unzig_zag(read.bits), width: read.width))
 
+## Many patterns at once
+
+# How a search for many patterns at once chooses among the matches that
+# overlap or begin at one place, the three kinds of Rust's crate aho-corasick,
+# as `strings.MatchKind` chooses for text.
+variant MatchKind
+    # The match whose end is read first, and among the matches that end there
+    # the longest: the kind of Aho and Corasick's own automaton.
+    standard
+    # The match that begins first, and among the matches that begin there the
+    # pattern that stands first in the list.
+    leftmost_first
+    # The match that begins first, and among the matches that begin there the
+    # longest.
+    leftmost_longest
+
+# Many patterns of bytes made into one automaton, the one of Aho and
+# Corasick, so that bytes are searched for all of them in one pass. It is
+# made only by `compile_patterns` or `compile_patterns_ignoring_case_ascii`;
+# one built directly searches for nothing it says.
+record Patterns
+    # The patterns, in the order they were given; a match names its pattern
+    # by its index here.
+    texts: [[u8]]
+    # How a search chooses among the matches.
+    kind: MatchKind
+    # Whether an ASCII letter matches its other case: "A" to "Z" and "a" to
+    # "z" alike, every other byte only itself.
+    ignores_case_ascii: bool
+    # The automaton the patterns compiled to, which the functions below run.
+    compiled: automaton.Machine
+
+# One match of one of many patterns in bytes.
+record PatternMatch
+    # The pattern that matched, by its index in the list it was compiled from.
+    pattern: i64
+    # Where the match begins in the bytes searched, as an index.
+    start: i64
+    # Where it ends: the index just after its last byte.
+    end: i64
+    # The bytes matched, which are the pattern itself but where ASCII letters
+    # were matched without their case.
+    text: [u8]
+
+# `patterns` compiled into one automaton, searched by `kind`, every byte
+# matching only itself.
+#
+# - `patterns`: the bytes sought, their order being their priority for
+#   `leftmost_first`; none matches nothing, an empty pattern matches at every
+#   index, and a pattern given twice is reported as the first of the two,
+#   but by `search_patterns_overlapping`, which reports both.
+# - `kind`: how a search chooses among matches that overlap or begin at one
+#   place.
+#
+# It costs time and memory linear in the patterns' total length, once. See
+# also `compile_patterns_ignoring_case_ascii` and `strings.compile_patterns`.
+function compile_patterns(patterns: [[u8]], kind: MatchKind) -> Patterns
+    code = match kind
+        .standard         => automaton.STANDARD
+        .leftmost_first   => automaton.LEFTMOST_FIRST
+        .leftmost_longest => automaton.LEFTMOST_LONGEST
+
+    return Patterns(
+        texts: patterns,
+        kind: kind,
+        ignores_case_ascii: false,
+        compiled: automaton.build(patterns: patterns, kind: code, caseless: false)
+    )
+
+# `patterns` compiled into one automaton, searched by `kind`, each ASCII
+# letter matching itself in either case.
+#
+# - `patterns`: the bytes sought, read as `compile_patterns` reads them; a
+#   byte that is no ASCII letter matches only itself.
+# - `kind`: how a search chooses among matches.
+#
+# See also `compile_patterns` and `equals_ignoring_case_ascii`.
+function compile_patterns_ignoring_case_ascii(patterns: [[u8]], kind: MatchKind) -> Patterns
+    code = match kind
+        .standard         => automaton.STANDARD
+        .leftmost_first   => automaton.LEFTMOST_FIRST
+        .leftmost_longest => automaton.LEFTMOST_LONGEST
+
+    return Patterns(
+        texts: patterns,
+        kind: kind,
+        ignores_case_ascii: true,
+        compiled: automaton.build(patterns: patterns, kind: code, caseless: true)
+    )
+
+# Whether `s` holds any of the patterns.
+#
+# - `s`: the bytes searched.
+# - `patterns`: the compiled patterns; whatever their kind, any match
+#   answers true, and an empty pattern makes all bytes hold one.
+#
+# It stops at the first match's end. See also `search_patterns`.
+function has_match(s: [u8], patterns: Patterns lent) -> bool
+    return multi.earliest(m: patterns.compiled, s: s, from: 0).pattern != -1
+
+# The first match of the patterns in `s`, chosen by their kind.
+#
+# - `s`: the bytes searched.
+# - `patterns`: the compiled patterns.
+#
+# Fails `not_found` where `s` holds none of them. Where the kind is leftmost
+# the search may read on past the match by up to the length of the longest
+# pattern. See also `search_patterns_from` and `search_patterns_all`.
+function search_patterns(s: [u8], patterns: Patterns lent) -> PatternMatch?
+    return search_patterns_from(s: s, patterns: patterns, from: 0)
+
+# The first match of the patterns that begins in `s` at or after index
+# `from`, chosen by their kind.
+#
+# - `s`: the bytes searched.
+# - `patterns`: the compiled patterns.
+# - `from`: the index where the search begins; below 0 the search begins at
+#   0, and past the end it finds nothing.
+#
+# Fails `not_found` where that part of `s` holds none of them. See also
+# `match_patterns_at`.
+function search_patterns_from(s: [u8], patterns: Patterns lent, from: i64) -> PatternMatch?
+    if from > s.len()
+        return fail(code: NOT_FOUND, msg: f"no pattern in {raw.quoted(s)} at or after index {from}")
+
+    begin = if from < 0
+        0
+    else
+        from
+    f = multi.search_from(m: patterns.compiled, s: s, from: begin)
+
+    if f.pattern == -1
+        return fail(code: NOT_FOUND, msg: f"no pattern in {raw.quoted(s)} at or after index {from}")
+    return ok(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
+
+# The match of the patterns that begins at index `at` of `s`: the shortest
+# for `standard`, the first in the list for `leftmost_first`, the longest for
+# `leftmost_longest`.
+#
+# - `s`: the bytes read.
+# - `patterns`: the compiled patterns.
+# - `at`: the index where the match must begin; below 0 or past the end,
+#   nothing begins there.
+#
+# Fails `not_found` where no pattern begins at `at`. It reads no further than
+# the longest pattern. See also `search_patterns_from`.
+function match_patterns_at(s: [u8], patterns: Patterns lent, at: i64) -> PatternMatch?
+    f = multi.anchored(m: patterns.compiled, s: s, at: at)
+
+    if f.pattern == -1
+        return fail(code: NOT_FOUND, msg: f"no pattern at index {at} of {raw.quoted(s)}")
+    return ok(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
+
+# Every match of the patterns in `s`, one after another from the start, each
+# chosen by their kind where the one before ended, none overlapping another.
+#
+# - `s`: the bytes searched.
+# - `patterns`: the compiled patterns.
+#
+# The matches stand in the order of the bytes. An empty match is not reported
+# where the match before it ended, and the search then goes on a byte later.
+# See also `search_patterns_overlapping` and `replace_patterns_all`.
+function search_patterns_all(s: [u8], patterns: Patterns lent) -> [PatternMatch]
+    all_found: [PatternMatch] @= []
+
+    for f in multi.one_by_one(m: patterns.compiled, s: s)
+        all_found @ all_found.push(
+            PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end))
+        )
+
+    return all_found
+
+# Every match of every pattern in `s`, overlapping or not, whatever the
+# patterns' kind.
+#
+# - `s`: the bytes searched.
+# - `patterns`: the compiled patterns; a pattern given twice is reported
+#   twice.
+#
+# The matches stand in the order of their ends, and at one end the longest
+# first, the patterns of the same bytes in the order they were given. See
+# also `search_patterns_all`.
+function search_patterns_overlapping(s: [u8], patterns: Patterns lent) -> [PatternMatch]
+    all_found: [PatternMatch] @= []
+
+    for f in multi.overlapping(m: patterns.compiled, s: s)
+        all_found @ all_found.push(
+            PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end))
+        )
+
+    return all_found
+
+# `s` with every match of the patterns replaced, each by the replacement of
+# its pattern, in one pass: what a replacement wrote is never searched again.
+#
+# - `s`: the bytes read.
+# - `patterns`: the compiled patterns; the matches are those of
+#   `search_patterns_all`.
+# - `replacements`: the bytes written for each pattern, by its index.
+#
+# Aborts where `replacements` and the patterns are not as many. See also
+# `replace_patterns_all_by`.
+function replace_patterns_all(s: [u8], patterns: Patterns lent, replacements: [[u8]]) -> [u8]
+    assert replacements.len() == patterns.texts.len()
+    out: [u8] @= []
+    done: i64 @= 0
+
+    for f in multi.one_by_one(m: patterns.compiled, s: s)
+        raw.push_range(out: @out, s: s, from: done, to: f.start)
+        raw.push_all(to: @out, from: replacements[f.pattern])
+        done @ f.end
+
+    raw.push_range(out: @out, s: s, from: done, to: s.len())
+    return out
+
+# `s` with every match of the patterns replaced by what `by` answers for it,
+# in one pass.
+#
+# - `s`: the bytes read.
+# - `patterns`: the compiled patterns; the matches are those of
+#   `search_patterns_all`.
+# - `by`: asked once for each match, in the order of the bytes; what it
+#   answers is written in the match's place and never searched again.
+#
+# See also `replace_patterns_all`.
+function replace_patterns_all_by(s: [u8], patterns: Patterns lent, by: (function(PatternMatch) -> [u8])) -> [u8]
+    out: [u8] @= []
+    done: i64 @= 0
+
+    for f in multi.one_by_one(m: patterns.compiled, s: s)
+        raw.push_range(out: @out, s: s, from: done, to: f.start)
+        replacement = by(
+            PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end))
+        )
+        raw.push_all(to: @out, from: replacement)
+        done @ f.end
+
+    raw.push_range(out: @out, s: s, from: done, to: s.len())
+    return out
+
 ## Tests
 
 # Python's `partition` and `rpartition` answered the first two on
@@ -924,6 +1166,24 @@ test "the codes are the vocabulary's words"
     assert NOT_FOUND == "not_found"
     assert INVALID == "invalid"
     assert NOT_TEXT == "not_text"
+
+test "search_patterns_from: a start below 0, at the end, past it, and the message"
+    p = compile_patterns([[0xff], [0x00]], .leftmost_first)
+    assert search_patterns_from(s: [1, 0xff, 0], patterns: p, from: -5).must().start == 1
+    assert search_patterns_from(s: [1, 0xff, 0], patterns: p, from: 2).must() == PatternMatch(pattern: 1, start: 2, end: 3, text: [0])
+    assert search_patterns_from(s: [1, 0xff, 0], patterns: p, from: 3).is_err()
+
+    match search_patterns_from(s: [1, 0xff, 0], patterns: p, from: 9)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no pattern in \"\\x01\\xff\\x00\" at or after index 9"
+
+test "search_patterns_all and replace_patterns_all: the empty pattern at every index, a byte that is not UTF-8, and no match"
+    empty = compile_patterns([[], [0xc3]], .leftmost_first)
+    assert search_patterns_all(s: [0xc3, 0xa9], patterns: empty).len() == 3
+    p = compile_patterns_ignoring_case_ascii([[0xff], ['a']], .leftmost_longest)
+    assert replace_patterns_all(s: [0xff, 'A', 'b'], patterns: p, replacements: [['1'], ['2', '2']]) == ['1', '2', '2', 'b']
+    assert replace_patterns_all(s: [], patterns: p, replacements: [[], []]) == []
+    assert !has_match(s: ['b', 'c'], patterns: p)
 
 ## Examples
 
@@ -1054,3 +1314,57 @@ test "encode_varint: minus one and one"
 test "decode_varint: 150 from the bytes of 300"
     read = decode_varint([0xac, 0x02], at: 0).must()
     assert read.value == 150 && read.width == 2
+
+# Two signatures of files sought in one pass over a header.
+test "compile_patterns: signatures in a header"
+    signatures = compile_patterns([[0x89, 'P', 'N', 'G'], ['%', 'P', 'D', 'F']], .leftmost_first)
+    assert search_patterns([0, 0x89, 'P', 'N', 'G', 13, 10], signatures).must().start == 1
+
+# A word sought in any case of its ASCII letters.
+test "compile_patterns_ignoring_case_ascii: a header's name"
+    names = compile_patterns_ignoring_case_ascii([from_text("host")], .standard)
+    assert has_match(from_text("HOST: example.org"), names)
+
+# Whether bytes hold a zero or a line feed.
+test "has_match: a zero byte"
+    controls = compile_patterns([[0], [10]], .standard)
+    assert has_match([1, 2, 0, 3], controls)
+
+# The first match, the longest of those that begin first.
+test "search_patterns: the longest of two"
+    p = compile_patterns([['a'], ['a', 'b']], .leftmost_longest)
+    assert search_patterns(['x', 'a', 'b'], p).must() == PatternMatch(pattern: 1, start: 1, end: 3, text: ['a', 'b'])
+
+# The next match after the one already read.
+test "search_patterns_from: the second line end"
+    ends = compile_patterns([[13, 10], [10]], .leftmost_first)
+    assert search_patterns_from(['a', 10, 'b', 13, 10], ends, 2).must().start == 3
+
+# The token a reader takes where it stands, the longest of a list.
+test "match_patterns_at: the longest token"
+    tokens = compile_patterns([['<'], ['<', '<'], ['<', '=']], .leftmost_longest)
+    assert match_patterns_at(['a', '<', '<', 'b'], tokens, 1).must().end == 3
+
+# Every line end in a buffer, one after another.
+test "search_patterns_all: line ends of two kinds"
+    ends = compile_patterns([[13, 10], [10]], .leftmost_first)
+    assert search_patterns_all(['a', 13, 10, 'b', 10], ends).len() == 2
+
+# Every pattern that ends in some bytes, nested ones included.
+test "search_patterns_overlapping: two patterns nested"
+    p = compile_patterns([['b'], ['a', 'b']], .standard)
+    assert search_patterns_overlapping(['a', 'b'], p).len() == 2
+
+# Line ends of two kinds written as one.
+test "replace_patterns_all: line ends made one kind"
+    ends = compile_patterns([[13, 10], [13]], .leftmost_first)
+    assert replace_patterns_all(['a', 13, 10, 'b', 13], ends, [[10], [10]]) == ['a', 10, 'b', 10]
+
+# The answer of `replace_patterns_all_by`'s example: a match doubled.
+function doubled(m: PatternMatch) -> [u8]
+    return concat([m.text, m.text])
+
+# Each match written twice by a function.
+test "replace_patterns_all_by: matches doubled"
+    p = compile_patterns([['x']], .leftmost_first)
+    assert replace_patterns_all_by(['a', 'x', 'b'], p, doubled) == ['a', 'x', 'x', 'b']

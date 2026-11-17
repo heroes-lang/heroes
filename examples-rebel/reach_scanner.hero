@@ -1,0 +1,9 @@
+# Reaches Rebel's `scanner`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the kinds of the tokens of a
+# line of Go.
+
+use <rebel>/scanner
+
+function main()
+    for t in scanner.scan("x := 0x1F // hex", scanner.go_rules())
+        print(scanner.kind_name(t.kind), " ", t.text)

@@ -1,0 +1,45 @@
+# Where a scanner stands in its text: the byte offset, the line and the
+# column, carried forward over the bytes it passes, so every place is found
+# in time linear in the text.
+
+# A place in a text: what the face calls a `Place`, kept here.
+record Cursor
+    # The byte offset, from 0.
+    at: i64
+    # The line, from 1.
+    line: i64
+    # The column, from 1, in characters.
+    column: i64
+
+# The cursor at the start of a text.
+function first() -> Cursor
+    return Cursor(at: 0, line: 1, column: 1)
+
+# `c` carried over the bytes of `s` from where it stands to byte `to`: a line
+# feed begins a line, and every byte that begins a character moves the column
+# by one. `to` is at or after `c.at` and at most `s.len()`.
+function moved(c: Cursor, s: str, to: i64) -> Cursor
+    line: i64 @= c.line
+    column: i64 @= c.column
+    at: i64 @= c.at
+
+    while at < to
+        b = s[at]
+
+        if b == '\n'
+            line @ line + 1
+            column @ 1
+        else if b < 128 || b >= 192
+            column @ column + 1
+        at @ at + 1
+
+    return Cursor(at: to, line: line, column: column)
+
+## Tests
+
+test "moved: nothing, a line, a line feed, characters of more than one byte, and a tab"
+    start = first()
+    assert moved(c: start, s: "", to: 0) == start
+    assert moved(c: start, s: "ab\ncd", to: 2) == Cursor(at: 2, line: 1, column: 3)
+    assert moved(c: start, s: "ab\ncd", to: 3) == Cursor(at: 3, line: 2, column: 1)
+    assert moved(c: moved(c: start, s: "é\tx", to: 2), s: "é\tx", to: 4) == Cursor(at: 4, line: 1, column: 4)

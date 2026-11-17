@@ -1,0 +1,195 @@
+# The values literal tokens spell: a quoted literal with its quotes taken
+# off and Go's escapes read, an integer in any of Go's forms, a float. Each
+# reads a token the scanner found well formed, so what is left to fail is
+# what Go's scanner does not ask: a value too large, an escape that spells
+# no character.
+
+use numbers
+use scanner/internal/literals
+use unicode
+
+# Adds the bytes of `s` to `out`.
+function push_text(@out: [u8], s: str)
+    k: i64 @= 0
+
+    while k < s.len()
+        out @ out.push(s[k])
+        k @ k + 1
+
+# The number the `count` digits of `s` in `base` from `at` spell.
+function digits_value(s: str, at: i64, count: i64, base: i64) -> i64
+    n: i64 @= 0
+    k: i64 @= 0
+
+    while k < count
+        n @ n * base + literals.digit_value(literals.byte_at(s: s, at: at + k))
+        k @ k + 1
+
+    return n
+
+# Adds the character of code point `n` to `out` in UTF-8. Fails `not_text`
+# where `n` is a surrogate or past the last code point.
+function push_code_point(@out: [u8], n: i64) -> ()?
+    match unicode.from_code_point(n)
+        .ok c =>
+            push_text(@out, c)
+            return ok()
+        .err _ => return fail(
+            code: "not_text",
+            msg: f"the escape spells U+{numbers.format_int(n: n, base: 16)}, which is no character"
+        )
+
+# The text the well-formed literal `text` spells, its first character being
+# its quote, which also closes it: where `escapes`, Go's escapes are read,
+# `\x` and three octal digits being a byte in a string and a code point in a
+# character literal, `one`. Fails `invalid` where an octal escape is above
+# 255, and `not_text` where the bytes are not UTF-8 or an escape spells no
+# character.
+function unquoted(text: str, escapes: bool, one: bool) -> str?
+    open = unicode.ceil_char_boundary(text, 1)
+    close = text.len() - open
+
+    if !escapes
+        return ok(text.slice(from: open, to: close))
+    quote = text.slice(from: 0, to: open)
+    out: [u8] @= []
+    i: i64 @= open
+
+    while i < close
+        if text[i] != '\\'
+            out @ out.push(text[i])
+            i @ i + 1
+            continue
+        e = literals.byte_at(s: text, at: i + 1)
+
+        simple = match e
+            'a'  => 7
+            'b'  => 8
+            'f'  => 12
+            'n'  => 10
+            'r'  => 13
+            't'  => 9
+            'v'  => 11
+            '\\' => 92
+            _    => -1
+
+        if simple != -1
+            out @ out.push(to_u8(simple).must())
+            i @ i + 2
+        else if e == 'u' || e == 'U'
+            count: i64 @= 4
+
+            if e == 'U'
+                count @ 8
+            push_code_point(@out, digits_value(s: text, at: i + 2, count: count, base: 16))?
+            i @ i + 2 + count
+        else if e == 'x' || e >= '0' && e <= '7'
+            n: i64 @= 0
+
+            if e == 'x'
+                n @ digits_value(s: text, at: i + 2, count: 2, base: 16)
+                i @ i + 4
+            else
+                n @ digits_value(s: text, at: i + 1, count: 3, base: 8)
+                i @ i + 4
+
+                if n > 255
+                    return fail(code: "invalid", msg: f"the octal escape {text.slice(from: i - 4, to: i)} is above 255")
+
+            if one
+                push_code_point(@out, n)?
+            else
+                out @ out.push(to_u8(n).must())
+        else
+            push_text(@out, quote)
+            i @ i + 1 + quote.len()
+
+    return out.validated_bytes()
+
+# `text` without its `_`, and its base's prefix in lower case, a leading
+# zero before more digits written `0o`: the form `numbers` reads.
+function plain_integer(text: str) -> str
+    kept: [str] @= []
+
+    for c in text.chars()
+        if c != "_"
+            kept @ kept.push(c)
+
+    t = kept.join("")
+
+    if t.len() < 2 || t[0] != '0'
+        return t
+    p = literals.lower(literals.byte_at(s: t, at: 1))
+
+    if p == 'x' || p == 'o' || p == 'b'
+        return "0" + "xob".slice(from: index_in_prefixes(p), to: index_in_prefixes(p) + 1) + t.slice(from: 2, to: t.len())
+    return "0o" + t.slice(from: 1, to: t.len())
+
+# The index of the prefix letter `p` in "xob".
+function index_in_prefixes(p: i64) -> i64
+    if p == 'x'
+        return 0
+
+    if p == 'o'
+        return 1
+    return 2
+
+# The integer a well-formed integer token's text spells. Fails
+# `does_not_fit` where it is outside `i64`.
+function integer(text: str) -> i64?
+    return numbers.parse_int_literal(plain_integer(text))
+
+# The float a well-formed float or integer token's text spells, the nearest
+# `f64`: an integer in another base than ten by its value, a decimal one by
+# its digits, so one too large for `i64` is still read.
+function float(text: str, is_integer: bool) -> f64?
+    kept: [str] @= []
+
+    for c in text.chars()
+        if c != "_"
+            kept @ kept.push(c)
+
+    t = kept.join("")
+
+    if t.len() > 1 && t[0] == '0' && (t[1] == 'x' || t[1] == 'X')
+        return numbers.parse_float_hex(t)
+
+    if is_integer && t.len() > 1 && t[0] == '0'
+        return ok(to_f64(integer(text)?))
+    return numbers.parse_float(t)
+
+## Tests
+
+test "unquoted: a raw string, Go's escapes, the quote itself, a byte and a code point, and a string beyond ASCII"
+    assert unquoted(text: "`a\\nb`", escapes: false, one: false).must() == "a\\nb"
+    assert unquoted(text: "\"a\\tb\\\\\\\"\"", escapes: true, one: false).must() == "a\tb\\\""
+    assert unquoted(text: "\"\\x41\\101\\u00e9\\U0001F600\"", escapes: true, one: false).must() == "AAé😀"
+    assert unquoted(text: "'\\xff'", escapes: true, one: true).must() == "ÿ"
+    assert unquoted(text: "'\\''", escapes: true, one: true).must() == "'"
+    assert unquoted(text: "\"città\"", escapes: true, one: false).must() == "città"
+
+test "unquoted: a byte that is not UTF-8, a surrogate, and an octal escape above 255"
+    assert unquoted(text: "\"\\xff\"", escapes: true, one: false).is_err()
+    assert unquoted(text: "\"\\ud800\"", escapes: true, one: false).is_err()
+
+    match unquoted(text: "\"\\777\"", escapes: true, one: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "integer: every base, a leading zero, separators, a capital prefix, and the largest"
+    assert integer("0x1F").must() == 31 && integer("0X_1f").must() == 31
+    assert integer("0o17").must() == 15 && integer("017").must() == 15
+    assert integer("0b1_01").must() == 5 && integer("1_000").must() == 1000
+    assert integer("0").must() == 0
+    assert integer("9223372036854775807").must() == 9223372036854775807
+    assert integer("9223372036854775808").is_err()
+
+test "float: a point at either end, an exponent, a hexadecimal mantissa, and an integer in octal"
+    assert float(text: "1.", is_integer: false).must() == 1.0
+    assert float(text: ".5", is_integer: false).must() == 0.5
+    assert float(text: "1_0.5e1", is_integer: false).must() == 105.0
+    assert float(text: "0x1.8p1", is_integer: false).must() == 3.0
+    assert float(text: "017", is_integer: true).must() == 15.0
+    assert float(text: "089.5", is_integer: false).must() == 89.5
+    assert float(text: "0X1P-2", is_integer: false).must() == 0.25
+    assert float(text: "100000000000000000000", is_integer: true).must() == 100000000000000000000.0

@@ -2,6 +2,8 @@
 # n, the last, or several texts each by its own in one pass. The pieces are
 # collected in a list and joined once, so no replacement is quadratic.
 
+use strings/internal/automaton
+use strings/internal/multi
 use strings/internal/scan
 use strings/internal/search
 
@@ -56,33 +58,26 @@ function replace_last(s: str, old: str, new: str) -> str
         .err _ => return s
 
 # `s` with each key of `pairs` replaced by its value in one pass, the first
-# key in the map's order that stands at a position winning there.
+# key in the map's order that stands at a position winning there: the
+# leftmost-first search of `multi` over the keys that are not empty, so the
+# pass is linear in `s` however many pairs there are.
 function replace_pairs(s: str, pairs: {str: str}) -> str
-    olds = keys(pairs)
+    olds: [str] @= []
     news: [str] @= []
 
-    for old in olds
-        news @ news.push(pairs[old].must())
+    for old in keys(pairs)
+        if old.len() > 0
+            olds @ olds.push(old)
+            news @ news.push(pairs[old].must())
 
+    m = automaton.build(patterns: olds, kind: automaton.LEFTMOST_FIRST, caseless: false)
     out: [str] @= []
     from: i64 @= 0
-    at: i64 @= 0
 
-    while at < s.len()
-        replaced: bool @= false
-        i: i64 @= 0
-
-        while i < olds.len() && !replaced
-            if olds[i].len() > 0 && search.has_prefix_at(s: s, prefix: olds[i], at: at)
-                out @ out.push(s.slice(from: from, to: at))
-                out @ out.push(news[i])
-                at @ at + olds[i].len()
-                from @ at
-                replaced @ true
-            i @ i + 1
-
-        if !replaced
-            at @ scan.next_at(s, at)
+    for f in multi.one_by_one(m: m, s: s)
+        out @ out.push(s.slice(from: from, to: f.start))
+        out @ out.push(news[f.pattern])
+        from @ f.end
 
     out @ out.push(s.slice(from: from, to: s.len()))
     return out.join("")

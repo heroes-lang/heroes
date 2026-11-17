@@ -1,0 +1,183 @@
+# The rules a scanner reads by, as the private modules read them: the face's
+# `Rules` with its keywords made a map and its operators compiled, built once
+# by `new_scanner` and `set_rules`.
+
+use regex
+use strings
+
+# The rules, ready to read by.
+record Config
+    # Whether identifiers are read.
+    identifiers: bool
+    # Whether a character may stand at an index of an identifier.
+    identifier_char: (function(str, i64) -> bool)
+    # Whether `identifier_char` is Go's own rule, which ASCII is read by
+    # without a call.
+    go_identifiers: bool
+    # The keywords, each mapped to true.
+    keywords: {str: bool}
+    # Whether integers are read.
+    integers: bool
+    # Whether floats are read.
+    floats: bool
+    # The quotes of strings with escapes.
+    string_quotes: str
+    # The quotes of raw strings.
+    raw_quotes: str
+    # The quotes of character literals.
+    char_quotes: str
+    # Whether a string with escapes may hold a line end.
+    multiline_strings: bool
+    # The texts that begin a line comment.
+    line_comments: [str]
+    # The opening of a block comment, empty for none.
+    block_open: str
+    # The closing of a block comment.
+    block_close: str
+    # Whether block comments nest.
+    nested: bool
+    # Whether comments are tokens.
+    keep_comments: bool
+    # The characters skipped between tokens.
+    whitespace: str
+    # Per ASCII byte, 128 entries: whether `whitespace` holds it.
+    space_table: [bool]
+    # Whether `whitespace` holds a character outside ASCII.
+    space_beyond_ascii: bool
+    # Whether a run of white space is a token.
+    keep_whitespace: bool
+    # Whether each line end is a token.
+    keep_newlines: bool
+    # The operators, compiled for the longest match at a place.
+    operators: strings.Patterns
+    # Whether any operator is not empty.
+    has_operators: bool
+    # The program's own classes of tokens.
+    classes: [regex.Regex]
+
+# The rules ready to read by, from the face's `Rules` field by field: the
+# empty texts of `line_comments` dropped, block comments off where either
+# delimiter is empty, the keywords made a map, the operators compiled for
+# the longest match, and the ASCII characters of `whitespace` made a table.
+function build(identifiers: bool, identifier_char: (function(str, i64) -> bool), go_identifiers: bool, keywords: [str], integers: bool, floats: bool, string_quotes: str, raw_quotes: str, char_quotes: str, multiline_strings: bool, line_comments: [str], block_open: str, block_close: str, nested: bool, keep_comments: bool, whitespace: str, keep_whitespace: bool, keep_newlines: bool, operators: [str], classes: [regex.Regex]) -> Config
+    words: {str: bool} @= {}
+
+    for k in keywords
+        words[k] @ true
+
+    starts: [str] @= []
+
+    for c in line_comments
+        if c.len() > 0
+            starts @ starts.push(c)
+
+    table: [bool] @= []
+
+    while table.len() < 128
+        table @ table.push(false)
+
+    beyond: bool @= false
+
+    for c in whitespace.chars()
+        if c.len() == 1
+            table[to_i64(c[0]).must()] @ true
+        else
+            beyond @ true
+
+    open: str @= block_open
+
+    if block_close.len() == 0
+        open @ ""
+    has_operators: bool @= false
+
+    for o in operators
+        if o.len() > 0
+            has_operators @ true
+
+    return Config(
+        identifiers: identifiers,
+        identifier_char: identifier_char,
+        go_identifiers: go_identifiers,
+        keywords: words,
+        integers: integers || floats,
+        floats: floats,
+        string_quotes: string_quotes,
+        raw_quotes: raw_quotes,
+        char_quotes: char_quotes,
+        multiline_strings: multiline_strings,
+        line_comments: starts,
+        block_open: open,
+        block_close: block_close,
+        nested: nested,
+        keep_comments: keep_comments,
+        whitespace: whitespace,
+        space_table: table,
+        space_beyond_ascii: beyond,
+        keep_whitespace: keep_whitespace,
+        keep_newlines: keep_newlines,
+        operators: strings.compile_patterns(operators, .leftmost_longest),
+        has_operators: has_operators,
+        classes: classes
+    )
+
+# Whether `c` is never an identifier's character: the rule of a config that
+# reads nothing yet.
+function never(c: str, at: i64) -> bool
+    return c.len() < 0 && at < 0
+
+# A config that reads no kind and skips nothing, every character `other`:
+# what a scanner holds until its rules are compiled.
+function empty() -> Config
+    return build(
+        identifiers: false,
+        identifier_char: never,
+        go_identifiers: false,
+        keywords: [],
+        integers: false,
+        floats: false,
+        string_quotes: "",
+        raw_quotes: "",
+        char_quotes: "",
+        multiline_strings: false,
+        line_comments: [],
+        block_open: "",
+        block_close: "",
+        nested: false,
+        keep_comments: false,
+        whitespace: "",
+        keep_whitespace: false,
+        keep_newlines: false,
+        operators: [],
+        classes: []
+    )
+
+## Tests
+
+test "build: empty comment starts dropped, a block comment with no close, keywords, white space beyond ASCII, and operators"
+    c = build(
+        identifiers: true,
+        identifier_char: never,
+        go_identifiers: false,
+        keywords: ["if", "else"],
+        integers: false,
+        floats: true,
+        string_quotes: "\"",
+        raw_quotes: "",
+        char_quotes: "",
+        multiline_strings: false,
+        line_comments: ["", "#"],
+        block_open: "/*",
+        block_close: "",
+        nested: false,
+        keep_comments: false,
+        whitespace: " \t·",
+        keep_whitespace: false,
+        keep_newlines: false,
+        operators: [""],
+        classes: []
+    )
+    assert c.line_comments == ["#"] && c.block_open == ""
+    assert c.keywords["else"].must() && c.keywords["then"].is_err()
+    assert c.integers && c.space_table[32] && c.space_table[9] && !c.space_table[10] && c.space_beyond_ascii
+    assert !c.has_operators
+    assert !empty().identifiers && empty().line_comments == []

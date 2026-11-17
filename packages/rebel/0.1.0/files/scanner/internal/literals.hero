@@ -1,0 +1,331 @@
+# The literals a scanner reads by Go's rules: numbers in every base with `_`
+# between digits, points and exponents, and quoted literals with Go's
+# escapes. Each reader starts where its literal begins, never stops before
+# the byte after it, and says where it ended and, for a malformed one, the
+# first thing wrong with it, in the words of Go's text/scanner.
+
+use scanner/internal/kinds
+use strings
+use unicode
+
+# The value of byte `at` of `s`, 0 to 255.
+function byte_at(s: str, at: i64) -> i64
+    return to_i64(s[at]).must()
+
+# Whether `b` is an ASCII decimal digit.
+function is_decimal(b: i64) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `b` is an ASCII hexadecimal digit, of either case.
+function is_hex(b: i64) -> bool
+    return is_decimal(b) || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# `b` in lower case where it is an ASCII capital.
+function lower(b: i64) -> i64
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# What `digits` read: where the run ended, what it held, and the first digit
+# outside its base.
+record Digits
+    # The byte after the run.
+    end: i64
+    # 1 where it held a digit, 2 where it held a `_`, both where both.
+    seen: i64
+    # The first digit outside the base, as its byte, -1 where none was.
+    invalid: i64
+
+# The run of digits and `_` of `s` from `at`: decimal digits for a base up to
+# ten, the first one at or above the base kept as `invalid` where it is
+# still -1; hexadecimal digits for base sixteen.
+function digits(s: str, at: i64, base: i64, invalid: i64) -> Digits
+    i: i64 @= at
+    seen: i64 @= 0
+    bad: i64 @= invalid
+
+    while i < s.len()
+        b = byte_at(s: s, at: i)
+
+        if b == '_'
+            seen @ seen | 2
+        else if base <= 10 && is_decimal(b) || base == 16 && is_hex(b)
+            seen @ seen | 1
+
+            if base < 10 && b >= 48 + base && bad == -1
+                bad @ b
+        else
+            break
+        i @ i + 1
+
+    return Digits(end: i, seen: seen, invalid: bad)
+
+# The name Go's messages give a literal of `prefix`: 'x', 'o', '0', 'b' or 0.
+function literal_name(prefix: i64) -> str
+    if prefix == 'x'
+        return "hexadecimal literal"
+
+    if prefix == 'o' || prefix == '0'
+        return "octal literal"
+
+    if prefix == 'b'
+        return "binary literal"
+    return "decimal literal"
+
+# The index in `x`, a number's text, of the first `_` that does not stand
+# between two digits, a base's prefix counting as a digit; -1 where every one
+# does.
+function separator_misplaced(x: str) -> i64
+    hex: bool @= false
+    previous: i64 @= '.'
+    i: i64 @= 0
+
+    if x.len() >= 2 && x[0] == '0'
+        p = lower(byte_at(s: x, at: 1))
+        hex @ p == 'x'
+
+        if p == 'x' || p == 'o' || p == 'b'
+            previous @ '0'
+            i @ 2
+
+    while i < x.len()
+        b = byte_at(s: x, at: i)
+
+        if b == '_'
+            if previous != '0'
+                return i
+            previous @ '_'
+        else if is_decimal(b) || hex && is_hex(b)
+            previous @ '0'
+        else
+            if previous == '_'
+                return i - 1
+            previous @ '.'
+        i @ i + 1
+
+    if previous == '_'
+        return x.len() - 1
+    return -1
+
+# The number of `s` that begins at `start`, by Go's rules: a digit there, or
+# a point and a digit where `floats` and `dot` say the point began it. Where
+# `floats` is false, no point and no exponent goes on with it.
+function number(s: str, start: i64, dot: bool, floats: bool) -> kinds.Read
+    i: i64 @= start
+    base: i64 @= 10
+    prefix: i64 @= 0
+    seen: i64 @= 0
+    invalid: i64 @= -1
+    kind: i64 @= kinds.INTEGER
+    reason: str @= ""
+    fraction: bool @= dot
+
+    if dot
+        i @ start + 1
+    else
+        if s[i] == '0'
+            i @ i + 1
+            p: i64 @= 0
+
+            if i < s.len()
+                p @ lower(byte_at(s: s, at: i))
+
+            if p == 'x' || p == 'o' || p == 'b'
+                i @ i + 1
+                prefix @ p
+                base @ 16
+
+                if p == 'o'
+                    base @ 8
+                else if p == 'b'
+                    base @ 2
+            else
+                prefix @ '0'
+                base @ 8
+                seen @ 1
+        d = digits(s: s, at: i, base: base, invalid: invalid)
+        i @ d.end
+        seen @ seen | d.seen
+        invalid @ d.invalid
+
+        if floats && i < s.len() && s[i] == '.'
+            i @ i + 1
+            fraction @ true
+
+    if fraction
+        kind @ kinds.FLOAT
+
+        if prefix == 'o' || prefix == 'b'
+            reason @ "invalid radix point in " + literal_name(prefix)
+        d = digits(s: s, at: i, base: base, invalid: invalid)
+        i @ d.end
+        seen @ seen | d.seen
+        invalid @ d.invalid
+
+    if seen & 1 == 0 && reason == ""
+        reason @ literal_name(prefix) + " has no digits"
+    e: i64 @= 0
+
+    if floats && i < s.len()
+        e @ lower(byte_at(s: s, at: i))
+
+    if e == 'e' || e == 'p'
+        if reason == ""
+            if e == 'e' && prefix != 0 && prefix != '0'
+                reason @ "'" + s.slice(from: i, to: i + 1) + "' exponent requires decimal mantissa"
+            else if e == 'p' && prefix != 'x'
+                reason @ "'" + s.slice(from: i, to: i + 1) + "' exponent requires hexadecimal mantissa"
+        i @ i + 1
+        kind @ kinds.FLOAT
+
+        if i < s.len() && (s[i] == '+' || s[i] == '-')
+            i @ i + 1
+        d = digits(s: s, at: i, base: 10, invalid: -1)
+        i @ d.end
+        seen @ seen | d.seen
+
+        if d.seen & 1 == 0 && reason == ""
+            reason @ "exponent has no digits"
+    else if prefix == 'x' && kind == kinds.FLOAT && reason == ""
+        reason @ "hexadecimal mantissa requires a 'p' exponent"
+
+    if kind == kinds.INTEGER && invalid >= 0 && reason == ""
+        reason @ "invalid digit '" + "0123456789".slice(from: invalid - 48, to: invalid - 47) + "' in " + literal_name(prefix)
+
+    if seen & 2 != 0 && reason == "" && separator_misplaced(s.slice(from: start, to: i)) >= 0
+        reason @ "'_' must separate successive digits"
+
+    if reason != ""
+        return kinds.Read(kind: kinds.INVALID, end: i, reason: reason)
+    return kinds.Read(kind: kind, end: i, reason: "")
+
+# The value of `b` as a digit of base 16, 16 where it is none.
+function digit_value(b: i64) -> i64
+    if is_decimal(b)
+        return b - '0'
+    l = lower(b)
+
+    if l >= 'a' && l <= 'f'
+        return l - 'a' + 10
+    return 16
+
+# Where the escape whose backslash stands just before `at` ends, and whether
+# it is one: a letter of Go's, a backslash, the literal's own `quote`, three
+# octal digits, or `x`, `u` or `U` and two, four or eight hexadecimal ones.
+# A bad escape ends before the byte that made it bad, which is read again.
+function escape_end(s: str, at: i64, quote: str) -> Digits
+    if at >= s.len()
+        return Digits(end: at, seen: 0, invalid: 0)
+    b = byte_at(s: s, at: at)
+
+    if b == 'a' || b == 'b' || b == 'f' || b == 'n' || b == 'r' || b == 't' || b == 'v' || b == '\\'
+        return Digits(end: at + 1, seen: 1, invalid: -1)
+
+    if strings.has_prefix_at(s: s, prefix: quote, at: at)
+        return Digits(end: at + quote.len(), seen: 1, invalid: -1)
+    base: i64 @= 8
+    count: i64 @= 3
+    i: i64 @= at
+
+    if b == 'x' || b == 'u' || b == 'U'
+        base @ 16
+        i @ at + 1
+        count @ 2
+
+        if b == 'u'
+            count @ 4
+        else if b == 'U'
+            count @ 8
+    else if b < '0' || b > '7'
+        return Digits(end: at, seen: 0, invalid: 0)
+
+    while count > 0 && i < s.len() && digit_value(byte_at(s: s, at: i)) < base
+        i @ i + 1
+        count @ count - 1
+
+    if count > 0
+        return Digits(end: i, seen: 0, invalid: 0)
+    return Digits(end: i, seen: 1, invalid: -1)
+
+# The quoted literal of `s` that begins with `quote` at `start`, with Go's
+# escapes where `escapes`, ending at the next `quote`: a string, or a
+# character literal where `one`, which must hold one character or escape. A
+# line end ends it unclosed where `lines` is false, and stays out of it.
+function quoted(s: str, start: i64, quote: str, escapes: bool, lines: bool, one: bool, kind: i64) -> kinds.Read
+    i: i64 @= start + quote.len()
+    count: i64 @= 0
+    reason: str @= ""
+
+    while true
+        if i >= s.len()
+            if reason == ""
+                reason @ "literal not terminated"
+            break
+
+        if strings.has_prefix_at(s: s, prefix: quote, at: i)
+            i @ i + quote.len()
+            break
+
+        if s[i] == '\n' && !lines
+            if reason == ""
+                reason @ "literal not terminated"
+            break
+
+        if s[i] == '\\' && escapes
+            e = escape_end(s: s, at: i + 1, quote: quote)
+
+            if e.invalid != -1 && reason == ""
+                reason @ "invalid char escape"
+            i @ e.end
+        else
+            i @ unicode.ceil_char_boundary(s, i + 1)
+        count @ count + 1
+
+    if one && count != 1 && reason == ""
+        reason @ "invalid char literal"
+
+    if reason != ""
+        return kinds.Read(kind: kinds.INVALID, end: i, reason: reason)
+    return kinds.Read(kind: kind, end: i, reason: "")
+
+## Tests
+
+test "number: each base, a point, an exponent, a hexadecimal float, and the forms with no point read"
+    assert number(s: "123 ", start: 0, dot: false, floats: true) == kinds.Read(kind: kinds.INTEGER, end: 3, reason: "")
+    assert number(s: "0x1F", start: 0, dot: false, floats: true).end == 4
+    assert number(s: "0o17 0b101", start: 5, dot: false, floats: true) == kinds.Read(kind: kinds.INTEGER, end: 10, reason: "")
+    assert number(s: "1.5e-3x", start: 0, dot: false, floats: true) == kinds.Read(kind: kinds.FLOAT, end: 6, reason: "")
+    assert number(s: ".5", start: 0, dot: true, floats: true) == kinds.Read(kind: kinds.FLOAT, end: 2, reason: "")
+    assert number(s: "0x1.8p-2", start: 0, dot: false, floats: true) == kinds.Read(kind: kinds.FLOAT, end: 8, reason: "")
+    assert number(s: "1.5", start: 0, dot: false, floats: false) == kinds.Read(kind: kinds.INTEGER, end: 1, reason: "")
+    assert number(s: "089.5", start: 0, dot: false, floats: true) == kinds.Read(kind: kinds.FLOAT, end: 5, reason: "")
+    assert number(s: "0", start: 0, dot: false, floats: true) == kinds.Read(kind: kinds.INTEGER, end: 1, reason: "")
+
+test "number: Go's words for each malformed number"
+    assert number(s: "089", start: 0, dot: false, floats: true).reason == "invalid digit '8' in octal literal"
+    assert number(s: "0x", start: 0, dot: false, floats: true).reason == "hexadecimal literal has no digits"
+    assert number(s: "1__0", start: 0, dot: false, floats: true).reason == "'_' must separate successive digits"
+    assert number(s: "0x1.8", start: 0, dot: false, floats: true).reason == "hexadecimal mantissa requires a 'p' exponent"
+    assert number(s: "1e", start: 0, dot: false, floats: true).reason == "exponent has no digits"
+    assert number(s: "0b1.0", start: 0, dot: false, floats: true).reason == "invalid radix point in binary literal"
+    assert number(s: "0_", start: 0, dot: false, floats: true) == kinds.Read(kind: kinds.INVALID, end: 2, reason: "'_' must separate successive digits")
+    assert number(s: "1p5", start: 0, dot: false, floats: true).reason == "'p' exponent requires hexadecimal mantissa"
+
+test "separator_misplaced: between digits, after a prefix, at either end, and two side by side"
+    assert separator_misplaced("1_000") == -1
+    assert separator_misplaced("0x_1f") == -1
+    assert separator_misplaced("_1") == 0
+    assert separator_misplaced("1_") == 1
+    assert separator_misplaced("1__0") == 2
+    assert separator_misplaced("1_.5") == 1
+
+test "quoted: closed, unclosed at the end and at a line end, escapes good and bad, and a character literal of two"
+    assert quoted(s: "\"ab\" x", start: 0, quote: "\"", escapes: true, lines: false, one: false, kind: kinds.STRING) == kinds.Read(kind: kinds.STRING, end: 4, reason: "")
+    assert quoted(s: "\"ab", start: 0, quote: "\"", escapes: true, lines: false, one: false, kind: kinds.STRING) == kinds.Read(kind: kinds.INVALID, end: 3, reason: "literal not terminated")
+    assert quoted(s: "\"a\nb\"", start: 0, quote: "\"", escapes: true, lines: false, one: false, kind: kinds.STRING).end == 2
+    assert quoted(s: "\"a\nb\"", start: 0, quote: "\"", escapes: true, lines: true, one: false, kind: kinds.STRING).end == 5
+    assert quoted(s: "\"\\n\\x41\\u00e9\\101\\\"\"", start: 0, quote: "\"", escapes: true, lines: false, one: false, kind: kinds.STRING).reason == ""
+    assert quoted(s: "\"\\q\\x4\"", start: 0, quote: "\"", escapes: true, lines: false, one: false, kind: kinds.STRING) == kinds.Read(kind: kinds.INVALID, end: 7, reason: "invalid char escape")
+    assert quoted(s: "'ab'", start: 0, quote: "'", escapes: true, lines: false, one: true, kind: kinds.CHARACTER).reason == "invalid char literal"
+    assert quoted(s: "'é'", start: 0, quote: "'", escapes: true, lines: false, one: true, kind: kinds.CHARACTER) == kinds.Read(kind: kinds.CHARACTER, end: 4, reason: "")
+    assert quoted(s: "`a\\`", start: 0, quote: "`", escapes: false, lines: true, one: false, kind: kinds.RAW_STRING) == kinds.Read(kind: kinds.RAW_STRING, end: 4, reason: "")

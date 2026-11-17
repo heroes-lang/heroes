@@ -1,0 +1,282 @@
+# The automaton of Aho and Corasick over many patterns of bytes at once,
+# built once and read by `multi`, the twin of the one `strings` keeps for
+# text: a trie of the patterns' bytes, from each state a failure link to the
+# state of the longest proper suffix of its bytes, and for each state the
+# nearest state along those links that a pattern ends in.
+# Every list is filled in a local cell and the machine is made at the end, so
+# nothing is pushed through a record's field.
+
+# The kind that reports each match as soon as its end is read.
+constant STANDARD: i64
+    0
+
+# The kind that takes the leftmost match, and the first pattern among those
+# that begin there.
+constant LEFTMOST_FIRST: i64
+    1
+
+# The kind that takes the leftmost match, and the longest among those that
+# begin there.
+constant LEFTMOST_LONGEST: i64
+    2
+
+# The automaton of a list of patterns. State 0 is the root, the empty text;
+# a state's text is the bytes the trie reads from the root to it.
+record Machine
+    # How a search chooses among matches: `STANDARD`, `LEFTMOST_FIRST` or
+    # `LEFTMOST_LONGEST`.
+    kind: i64
+    # Whether the ASCII letters of the patterns and of the text were read in
+    # lower case.
+    caseless: bool
+    # The state the root reaches by each byte, 256 entries, -1 where none.
+    root_next: [i64]
+    # Per state: the first of its edges, -1 where it has none.
+    first_edge: [i64]
+    # Per edge: the byte it reads, 0 to 255.
+    edge_byte: [i64]
+    # Per edge: the state it reaches.
+    edge_target: [i64]
+    # Per edge: the next edge of the same state, -1 after the last.
+    edge_next: [i64]
+    # Per state: the state of the longest proper suffix of its text that the
+    # trie holds, 0 for the root itself.
+    link: [i64]
+    # Per state: the length of its text, in bytes.
+    depth: [i64]
+    # Per state: the first pattern, by index, whose text is the state's, -1
+    # where none is.
+    own: [i64]
+    # Per state: the nearest state that a pattern ends in, the state itself
+    # or one reached along `link`, -1 where none is.
+    out: [i64]
+    # Per pattern: the next pattern of the same text, -1 after the last.
+    same_next: [i64]
+    # Per pattern: its length in bytes.
+    lengths: [i64]
+
+# The byte `c` as the machine reads it: an ASCII capital in lower case where
+# `caseless` asks it.
+function byte_of(c: u8, caseless: bool) -> i64
+    b = to_i64(c).must()
+
+    if caseless && b >= 65 && b <= 90
+        return b + 32
+    return b
+
+# The state that `state`'s edge of byte `b` reaches, -1 where it has none.
+function child(m: Machine lent, state: i64, b: i64) -> i64
+    if state == 0
+        return m.root_next[b]
+    e: i64 @= m.first_edge[state]
+
+    while e != -1
+        if m.edge_byte[e] == b
+            return m.edge_target[e]
+        e @ m.edge_next[e]
+
+    return -1
+
+# The state the search reaches from `state` on byte `b`: the edge of `state`
+# or of the first state along its failure links that has one, else the root.
+function step(m: Machine lent, state: i64, b: i64) -> i64
+    at: i64 @= state
+
+    while true
+        if at == 0
+            r = m.root_next[b]
+
+            if r == -1
+                return 0
+            return r
+        e: i64 @= m.first_edge[at]
+
+        while e != -1
+            if m.edge_byte[e] == b
+                return m.edge_target[e]
+            e @ m.edge_next[e]
+
+        at @ m.link[at]
+
+# The edge of `state` for byte `b` while the trie is built, -1 where none.
+function edge_of(first_edge: [i64] lent, edge_byte: [i64] lent, edge_target: [i64] lent, edge_next: [i64] lent, state: i64, b: i64) -> i64
+    e: i64 @= first_edge[state]
+
+    while e != -1
+        if edge_byte[e] == b
+            return edge_target[e]
+        e @ edge_next[e]
+
+    return -1
+
+# The machine of `patterns`, searched by `kind`, the ASCII letters read in
+# lower case where `caseless` asks it. It costs time and memory linear in the
+# patterns' total length.
+function build(patterns: [[u8]], kind: i64, caseless: bool) -> Machine
+    root_next: [i64] @= []
+
+    while root_next.len() < 256
+        root_next @ root_next.push(-1)
+
+    first_edge: [i64] @= [-1]
+    depth: [i64] @= [0]
+    own: [i64] @= [-1]
+    last_same: [i64] @= [-1]
+    edge_byte: [i64] @= []
+    edge_target: [i64] @= []
+    edge_next: [i64] @= []
+    same_next: [i64] @= []
+    lengths: [i64] @= []
+    id: i64 @= 0
+
+    while id < patterns.len()
+        p = patterns[id]
+        state: i64 @= 0
+        k: i64 @= 0
+
+        while k < p.len()
+            b = byte_of(c: p[k], caseless: caseless)
+            next: i64 @= -1
+
+            if state == 0
+                next @ root_next[b]
+            else
+                next @ edge_of(
+                    first_edge: first_edge,
+                    edge_byte: edge_byte,
+                    edge_target: edge_target,
+                    edge_next: edge_next,
+                    state: state,
+                    b: b
+                )
+
+            if next == -1
+                next @ first_edge.len()
+                first_edge @ first_edge.push(-1)
+                depth @ depth.push(k + 1)
+                own @ own.push(-1)
+                last_same @ last_same.push(-1)
+
+                if state == 0
+                    root_next[b] @ next
+                else
+                    edge_byte @ edge_byte.push(b)
+                    edge_target @ edge_target.push(next)
+                    edge_next @ edge_next.push(first_edge[state])
+                    first_edge[state] @ edge_byte.len() - 1
+
+            state @ next
+            k @ k + 1
+
+        same_next @ same_next.push(-1)
+        lengths @ lengths.push(p.len())
+
+        if own[state] == -1
+            own[state] @ id
+        else
+            same_next[last_same[state]] @ id
+        last_same[state] @ id
+        id @ id + 1
+
+    link: [i64] @= []
+    out: [i64] @= []
+
+    while link.len() < first_edge.len()
+        link @ link.push(0)
+        out @ out.push(-1)
+
+    if own[0] != -1
+        out[0] @ 0
+    queue: [i64] @= []
+
+    for b in range(from: 0, to: 256)
+        c = root_next[b]
+
+        if c != -1
+            out[c] @ out[0]
+
+            if own[c] != -1
+                out[c] @ c
+            queue @ queue.push(c)
+
+    head: i64 @= 0
+
+    while head < queue.len()
+        u = queue[head]
+        head @ head + 1
+        e: i64 @= first_edge[u]
+
+        while e != -1
+            b = edge_byte[e]
+            v = edge_target[e]
+            f: i64 @= link[u]
+            target: i64 @= -1
+
+            while target == -1
+                if f == 0
+                    target @ root_next[b]
+
+                    if target == -1
+                        target @ 0
+                else
+                    target @ edge_of(
+                        first_edge: first_edge,
+                        edge_byte: edge_byte,
+                        edge_target: edge_target,
+                        edge_next: edge_next,
+                        state: f,
+                        b: b
+                    )
+
+                    if target == -1
+                        f @ link[f]
+
+            link[v] @ target
+            out[v] @ out[target]
+
+            if own[v] != -1
+                out[v] @ v
+            queue @ queue.push(v)
+            e @ edge_next[e]
+
+    return Machine(
+        kind: kind,
+        caseless: caseless,
+        root_next: root_next,
+        first_edge: first_edge,
+        edge_byte: edge_byte,
+        edge_target: edge_target,
+        edge_next: edge_next,
+        link: link,
+        depth: depth,
+        own: own,
+        out: out,
+        same_next: same_next,
+        lengths: lengths
+    )
+
+## Tests
+
+test "build: no pattern, the empty pattern, a shared prefix, a failure link, and a pattern given twice"
+    none = build(patterns: [], kind: STANDARD, caseless: false)
+    assert none.first_edge.len() == 1 && none.out == [-1]
+    empty = build(patterns: [[]], kind: STANDARD, caseless: false)
+    assert empty.own == [0] && empty.out == [0]
+    shared = build(patterns: [['a', 'b'], ['a', 'c'], ['b']], kind: STANDARD, caseless: false)
+    assert shared.depth == [0, 1, 2, 2, 1]
+    assert shared.own == [-1, -1, 0, 1, 2]
+    assert shared.link == [0, 0, 4, 0, 0]
+    assert shared.out == [-1, -1, 2, 3, 4]
+    twice = build(patterns: [['x'], ['y'], ['x']], kind: STANDARD, caseless: false)
+    assert twice.own == [-1, 0, 1] && twice.same_next == [2, -1, -1]
+
+test "step: an edge, a failure link followed, the root's own byte, and a capital folded"
+    m = build(patterns: [['a', 'b', 'c'], ['b', 'd']], kind: STANDARD, caseless: true)
+    abc = step(m: m, state: step(m: m, state: step(m: m, state: 0, b: byte_of(c: 'a', caseless: true)), b: 'b'), b: 'c')
+    assert m.depth[abc] == 3 && m.own[abc] == 0
+    ab = step(m: m, state: step(m: m, state: 0, b: 'a'), b: 'b')
+    bd = step(m: m, state: ab, b: 'd')
+    assert m.own[bd] == 1
+    assert step(m: m, state: ab, b: 'z') == 0
+    assert byte_of(c: 'Q', caseless: true) == 'q' && byte_of(c: 'Q', caseless: false) == 'Q'
+    assert child(m: m, state: 0, b: 'c') == -1
