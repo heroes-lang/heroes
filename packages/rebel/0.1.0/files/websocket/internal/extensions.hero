@@ -1,0 +1,189 @@
+# The `Sec-WebSocket-Extensions` field (RFC 6455 § 9.1) read and written:
+# extensions with their parameters, tokens and quoted values. What
+# permessage-deflate makes of it is `negotiating`'s.
+
+# The code of a field or a parameter the RFCs refuse.
+constant INVALID: str
+    "invalid"
+
+# One parameter of an extension: `client_max_window_bits=10`.
+record Param
+    # Its name, a token.
+    name: str
+    # Its value, unquoted, "" where it has none.
+    value: str
+    # Whether it has a value.
+    valued: bool
+
+# One extension of a field, with its parameters in their order.
+record Offer
+    # Its name, a token.
+    name: str
+    # Its parameters.
+    params: [Param]
+
+## Reading and writing the field
+
+# The extensions `values`, the values of every `Sec-WebSocket-Extensions`
+# field in their order, hold, in their order.
+#
+# - `values`: the fields' values.
+#
+# Empty elements between commas are skipped, as RFC 9110 § 5.6.1 asks.
+# Fails `invalid` where a name is no token, a quoted value is not closed, or
+# a `=` has no value.
+function parse(values: [str]) -> [Offer]?
+    out: [Offer] @= []
+
+    for v in values
+        read_into(@out, s: v)?
+
+    return ok(out)
+
+# Adds the extensions of the one field value `s` to `out`.
+function read_into(@out: [Offer], s: str) -> ()?
+    at: i64 @= 0
+    n = s.len()
+
+    while at < n
+        at @ skip_space(s, at: at)
+
+        if at < n && s[at] == ','
+            at @ at + 1
+        else if at < n
+            name_end = token_end(s, at: at)
+
+            if name_end == at
+                return fail(code: INVALID, msg: f"an extension's name expected at index {at} of \"{s}\"")
+            name = s.slice(from: at, to: name_end)
+            at @ skip_space(s, at: name_end)
+            params: [Param] @= []
+
+            while at < n && s[at] == ';'
+                at @ skip_space(s, at: at + 1)
+                p_end = token_end(s, at: at)
+
+                if p_end == at
+                    return fail(code: INVALID, msg: f"a parameter's name expected at index {at} of \"{s}\"")
+                p_name = s.slice(from: at, to: p_end)
+                at @ skip_space(s, at: p_end)
+
+                if at < n && s[at] == '='
+                    at @ skip_space(s, at: at + 1)
+                    v = value_at(s, at: at)?
+                    params @ params.push(Param(name: p_name, value: v.value, valued: true))
+                    at @ skip_space(s, at: v.next)
+                else
+                    params @ params.push(Param(name: p_name, value: "", valued: false))
+
+            if at < n && s[at] != ','
+                return fail(code: INVALID, msg: f"a `,` or a `;` expected at index {at} of \"{s}\"")
+            out @ out.push(Offer(name: name, params: params))
+
+    return ok()
+
+# A parameter's value and where reading goes on.
+record Value
+    # The value, unquoted.
+    value: str
+    # The index after it.
+    next: i64
+
+# The token or quoted string at `at` of `s`.
+function value_at(s: str, at: i64) -> Value?
+    n = s.len()
+
+    if at < n && s[at] == '"'
+        pieces: [str] @= []
+        i: i64 @= at + 1
+        from: i64 @= i
+
+        while i < n && s[i] != '"'
+            if s[i] == '\\'
+                if i + 1 >= n
+                    return fail(code: INVALID, msg: f"a quoted value ends on a `\\` in \"{s}\"")
+                pieces @ pieces.push(s.slice(from: from, to: i))
+                from @ i + 1
+                i @ i + 2
+            else
+                i @ i + 1
+
+        if i >= n
+            return fail(code: INVALID, msg: f"a quoted value not closed in \"{s}\"")
+        pieces @ pieces.push(s.slice(from: from, to: i))
+        return ok(Value(value: pieces.join(""), next: i + 1))
+    end = token_end(s, at: at)
+
+    if end == at
+        return fail(code: INVALID, msg: f"a parameter's value expected at index {at} of \"{s}\"")
+    return ok(Value(value: s.slice(from: at, to: end), next: end))
+
+# The index after the token that begins at `at` of `s`: `at` where none does.
+function token_end(s: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < s.len() && is_token_byte(s[i])
+        i @ i + 1
+
+    return i
+
+# The index of the first byte at or after `at` of `s` that is no space or tab.
+function skip_space(s: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < s.len() && (s[i] == ' ' || s[i] == '\t')
+        i @ i + 1
+
+    return i
+
+# Whether `b` may stand in a token of RFC 9110: a letter, a digit or one of
+# ``!#$%&'*+-.^_`|~``.
+function is_token_byte(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    table = "!#$%&'*+-.^_`|~"
+
+    for i in range(from: 0, to: table.len())
+        if table[i] == b
+            return true
+
+    return false
+
+# `offers` as one field value: `name; a; b=1, other`.
+function format(offers: [Offer]) -> str
+    parts: [str] @= []
+
+    for o in offers
+        pieces: [str] @= [o.name]
+
+        for p in o.params
+            if p.valued
+                pieces @ pieces.push(p.name + "=" + p.value)
+            else
+                pieces @ pieces.push(p.name)
+
+        parts @ parts.push(pieces.join("; "))
+
+    return parts.join(", ")
+
+test "parse: names, parameters with and without values, quoted values, empty elements"
+    got = parse(
+        ["permessage-deflate; client_max_window_bits, x-other", " , permessage-deflate;server_max_window_bits=\"10\" ;a=b"]
+    ).must()
+    assert got.len() == 3
+    assert got[0].name == "permessage-deflate" && got[0].params[0].name == "client_max_window_bits" && !got[0].params[0].valued
+    assert got[1].name == "x-other" && got[1].params.len() == 0
+    assert got[2].params[0].value == "10" && got[2].params[0].valued && got[2].params[1].value == "b"
+    assert parse([]).must().len() == 0
+    assert parse([""]).must().len() == 0
+
+test "parse: a name missing, a quote not closed, a value missing, a stray byte"
+    assert parse(["; a"]).is_err()
+    assert parse(["permessage-deflate; a=\"10"]).is_err()
+    assert parse(["permessage-deflate; a="]).is_err()
+    assert parse(["permessage-deflate x"]).is_err()
+    assert parse(["permessage-deflate; a=\"1\\\"0\""]).must()[0].params[0].value == "1\"0"
+
+test "format: an offer read back"
+    text = "permessage-deflate; server_no_context_takeover; client_max_window_bits=10, x"
+    assert format(parse([text]).must()) == text

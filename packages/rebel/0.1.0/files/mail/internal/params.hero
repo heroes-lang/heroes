@@ -1,0 +1,471 @@
+# MIME header values with parameters, `Content-Type` and
+# `Content-Disposition`, read and written: a token or `type/subtype`, then
+# `; name=value` pieces, values quoted or not, comments skipped, and RFC
+# 2231's charsets and continuations joined on reading and written for text
+# above ASCII. A value in a charset this package does not read is kept as
+# written under its name with `*`, so nothing is lost.
+
+use bytes
+use mail/internal/charsets
+use mail/internal/lex
+use strings
+
+# The code of a text that is not such a value.
+constant INVALID: str
+    "invalid"
+
+# A value read: its token or media type, and its parameters.
+record Value
+    # The token or `type/subtype`, lower case.
+    head: str
+    # The parameters by lower-case name, in their order.
+    params: {str: str}
+
+# One parameter as written, before RFC 2231 joins it.
+record Raw
+    # The name, lower case, with its `*` and number if any.
+    name: str
+    # The value, unquoted.
+    value: str
+
+# Whether `b` may stand in a MIME token: printable ASCII but the specials
+# `()<>@,;:\"/[]?=` and space.
+function is_token_byte(b: u8) -> bool
+    if b <= 0x20 || b >= 0x7f
+        return false
+    return b != '(' && b != ')' && b != '<' && b != '>' && b != '@' && b != ',' && b != ';' && b != ':' && b != '\\' && b != '"' && b != '/' && b != '[' && b != ']' && b != '?' && b != '='
+
+# Whether `s` is a MIME token of at least one byte.
+function is_token(s: str) -> bool
+    if s.len() == 0
+        return false
+    at: i64 @= 0
+
+    while at < s.len()
+        if !is_token_byte(s[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# The token `c` stands at; with `lenient`, bytes above ASCII count, as an
+# unquoted value written carelessly holds them.
+function token_at(@c: lex.Cursor, lenient: bool) -> str
+    start = c.at
+
+    while c.at < c.s.len() && (is_token_byte(c.s[c.at]) || lenient && c.s[c.at] >= 0x80)
+        c.at @ c.at + 1
+
+    return c.s.slice(from: start, to: c.at)
+
+# The value `s` writes, `type/subtype` where `typed`, a token otherwise.
+# Fails `invalid` where it is not one.
+function parse(s: str, typed: bool) -> Value?
+    c @= lex.cursor(s)
+    _ = lex.skip_cfws(@c)?
+    first = token_at(@c, lenient: false)
+
+    if first == ""
+        return fail(code: INVALID, msg: f"{lex.shown(s)} does not begin with a token")
+    head: str @= strings.to_lower_ascii(first)
+
+    if typed
+        _ = lex.skip_cfws(@c)?
+
+        if lex.peek(c) != '/'
+            return fail(code: INVALID, msg: f"{lex.shown(s)} has no \"/\" after its type")
+        c.at @ c.at + 1
+        _ = lex.skip_cfws(@c)?
+        second = token_at(@c, lenient: false)
+
+        if second == ""
+            return fail(code: INVALID, msg: f"{lex.shown(s)} has no subtype after \"/\"")
+        head @ head + "/" + strings.to_lower_ascii(second)
+    raw: [Raw] @= []
+    seen: {str: bool} @= {}
+
+    while true
+        _ = lex.skip_cfws(@c)?
+
+        if lex.at_end(c)
+            break
+
+        if lex.peek(c) != ';'
+            return fail(
+                code: INVALID,
+                msg: f"{lex.shown(s)} holds \"{lex.char_at(s, at: c.at)}\" at byte {c.at} where \";\" was expected"
+            )
+        c.at @ c.at + 1
+        _ = lex.skip_cfws(@c)?
+
+        if lex.at_end(c)
+            break
+
+        if lex.peek(c) == ';'
+            continue
+        name = strings.to_lower_ascii(token_at(@c, lenient: false))
+
+        if name == ""
+            return fail(code: INVALID, msg: f"{lex.shown(s)} has a parameter with no name at byte {c.at}")
+        _ = lex.skip_cfws(@c)?
+
+        if lex.peek(c) != '='
+            return fail(code: INVALID, msg: f"the parameter \"{name}\" of {lex.shown(s)} has no \"=\"")
+        c.at @ c.at + 1
+        _ = lex.skip_cfws(@c)?
+        value: str @= ""
+
+        if lex.peek(c) == '"'
+            value @ lex.quoted(@c)?
+        else
+            value @ token_at(@c, lenient: true)
+
+            if value == ""
+                return fail(code: INVALID, msg: f"the parameter \"{name}\" of {lex.shown(s)} has no value")
+
+        if seen[name].default(false)
+            return fail(code: INVALID, msg: f"the parameter \"{name}\" stands twice in {lex.shown(s)}")
+        seen[name] @ true
+        raw @ raw.push(Raw(name: name, value: value))
+
+    return ok(Value(head: head, params: joined(raw)))
+
+# The parameters of `raw`, RFC 2231's pieces joined and decoded, by base
+# name in the order each first stands. An extended value takes the place of
+# a plain one of the same name; one in a charset not read stays under its
+# name with `*`.
+function joined(raw: [Raw]) -> {str: str}
+    order: [str] @= []
+    plain: {str: str} @= {}
+    sections: [Section] @= []
+    extended: {str: str} @= {}
+
+    for r in raw
+        star = strings.index_of(s: r.name, substr: "*").default(-1)
+
+        base = if star < 0
+            r.name
+        else
+            r.name.slice(from: 0, to: star)
+
+        if !order.contains_text(base)
+            order @ order.push(base)
+
+        if star < 0
+            plain[base] @ r.value
+        else if star == r.name.len() - 1
+            extended[base] @ r.value
+        else
+            rest = r.name.slice(from: star + 1, to: r.name.len())
+
+            match section_number(strings.trim_suffix(s: rest, suffix: "*"))
+                .ok n  => sections @ sections.push(Section(base: base, n: n, raw: r))
+                .err _ => plain[r.name] @ r.value
+
+    out: {str: str} @= {}
+
+    for base in order
+        held: {i64: Raw} @= {}
+
+        for p in sections
+            if p.base == base
+                held[p.n] @ p.raw
+
+        if held.len() > 0
+            put(@out, base: base, outcome: from_pieces(held))
+        else if !extended[base].is_err()
+            put(@out, base: base, outcome: from_extended(extended[base].must()))
+
+        if out[base].is_err() && out[base + "*"].is_err() && !plain[base].is_err()
+            out[base] @ plain[base].must()
+        else if !out[base + "*"].is_err() && !plain[base].is_err()
+            out[base] @ plain[base].must()
+
+    for k in keys(plain)
+        if out[k].is_err()
+            out[k] @ plain[k].must()
+
+    return out
+
+# Whether `xs` holds `s`.
+function contains_text(xs: [str], s: str) -> bool
+    for x in xs
+        if x == s
+            return true
+
+    return false
+
+# One numbered piece of an RFC 2231 continuation.
+record Section
+    # The parameter's name without its `*`.
+    base: str
+    # The piece's number, from 0.
+    n: i64
+    # The piece as written.
+    raw: Raw
+
+# What decoding an extended value gave: its text, or its raw form where the
+# charset is not read.
+record Outcome
+    # Whether `text` is decoded.
+    decoded: bool
+    # The text, or the value as written.
+    text: str
+
+# Puts `outcome` in `out` under `base`, or under `base*` where it stays as
+# written.
+function put(@out: {str: str}, base: str, outcome: Outcome)
+    if outcome.decoded
+        out[base] @ outcome.text
+    else
+        out[base + "*"] @ outcome.text
+
+# The value of RFC 2231's pieces `held`, 0 first and on while each is there.
+function from_pieces(held: {i64: Raw}) -> Outcome
+    data: [u8] @= []
+    written: [str] @= []
+    charset: str @= ""
+    n: i64 @= 0
+
+    while !held[n].is_err()
+        r = held[n].must()
+        written @ written.push(r.value)
+
+        if strings.has_suffix(s: r.name, suffix: "*")
+            text: str @= r.value
+
+            if n == 0
+                parts = strings.split_n(s: r.value, sep: "'", n: 3)
+
+                if parts.len() == 3
+                    charset @ parts[0]
+                    text @ parts[2]
+            bytes.push_all(to: @data, from: percent_decoded(text))
+        else
+            bytes.push_text(@data, s: r.value)
+        n @ n + 1
+
+    name = if charset == ""
+        "utf-8"
+    else
+        charset
+
+    return match charsets.decode(data, name: name)
+        .ok text => Outcome(decoded: true, text: text)
+        .err _   => Outcome(decoded: false, text: written.join(""))
+
+# The value of one extended parameter, `charset'language'%XX...`.
+function from_extended(value: str) -> Outcome
+    parts = strings.split_n(s: value, sep: "'", n: 3)
+
+    if parts.len() != 3
+        return Outcome(decoded: false, text: value)
+
+    return match charsets.decode(percent_decoded(parts[2]), name: parts[0])
+        .ok text => Outcome(decoded: true, text: text)
+        .err _   => Outcome(decoded: false, text: value)
+
+# The bytes of `s` with each `%XX` read as a byte; a `%` that two
+# hexadecimal digits do not follow is kept.
+function percent_decoded(s: str) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '%' && at + 2 < s.len()
+            high = hex_value(s[at + 1])
+            low = hex_value(s[at + 2])
+
+            if high >= 0 && low >= 0
+                out @ out.push(to_u8(high * 16 + low).must())
+                at @ at + 3
+                continue
+        out @ out.push(b)
+        at @ at + 1
+
+    return out
+
+# The value of the hexadecimal digit `b`, either case, or -1.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b).must() - 48
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b).must() - 87
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b).must() - 55
+    return -1
+
+# The number `s` writes, digits only, no leading zero but 0 itself.
+function section_number(s: str) -> i64?
+    if s.len() == 0 || s.len() > 4 || s.len() > 1 && s[0] == '0'
+        return fail(code: INVALID, msg: "no section number")
+    n: i64 @= 0
+
+    for ch in s.chars()
+        if ch[0] < '0' || ch[0] > '9'
+            return fail(code: INVALID, msg: "no section number")
+        n @ n * 10 + to_i64(ch[0]).must() - 48
+
+    return ok(n)
+
+## Writing
+
+# `head` and `params` written as a header's value. Fails `invalid` where
+# `head` is not `type/subtype` (with `typed`) or a token, or a name is not a
+# token.
+function format(head: str, params: {str: str}, typed: bool) -> str?
+    lowered = strings.to_lower_ascii(head)
+
+    if typed
+        halves = strings.split_once(s: lowered, sep: "/")
+
+        match halves
+            .err _ => return fail(code: INVALID, msg: f"the media type \"{head}\" has no \"/\"")
+            .ok h =>
+                if !is_token(h.before) || !is_token(h.after)
+                    return fail(code: INVALID, msg: f"the media type \"{head}\" is not two tokens around \"/\"")
+    else if !is_token(lowered)
+        return fail(code: INVALID, msg: f"\"{head}\" is not a token")
+    out: [str] @= [lowered]
+
+    for name in keys(params)
+        value = params[name].must()
+        lower_name = strings.to_lower_ascii(name)
+
+        if !is_token(lower_name) || strings.contains(s: lower_name, substr: "*")
+            return fail(code: INVALID, msg: f"the parameter name \"{name}\" is not a token")
+        out @ out.push("; ")
+        out @ out.push(parameter(name: lower_name, value: value))
+
+    return ok(out.join(""))
+
+# One parameter written: `name=value`, quoted where the value is no token,
+# or by RFC 2231 in UTF-8 where it is above ASCII or holds a control,
+# continued over pieces where it is long.
+function parameter(name: str, value: str) -> str
+    if is_token(value)
+        return name + "=" + value
+
+    if is_printable(value)
+        return name + "=" + lex.quote(value)
+    encoded = percent_encoded(value)
+
+    if encoded.len() + name.len() <= 70
+        return name + "*=utf-8''" + encoded
+    pieces: [str] @= []
+    current: [str] @= ["utf-8''"]
+    size: i64 @= 7
+    at: i64 @= 0
+
+    while at < encoded.len()
+        width = if encoded[at] == '%'
+            3
+        else
+            1
+
+        if size + width > 60
+            pieces @ pieces.push(current.join(""))
+            current @ []
+            size @ 0
+        current @ current.push(encoded.slice(from: at, to: at + width))
+        size @ size + width
+        at @ at + width
+
+    pieces @ pieces.push(current.join(""))
+    written: [str] @= []
+
+    for k in range(from: 0, to: pieces.len())
+        written @ written.push(f"{name}*{k}*={pieces[k]}")
+
+    return written.join("; ")
+
+# Whether every byte of `s` is printable ASCII or a space.
+function is_printable(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] < 0x20 || s[at] > 0x7e
+            return false
+        at @ at + 1
+
+    return true
+
+# `s` with every byte that is not an attribute character written `%XX`.
+function percent_encoded(s: str) -> str
+    out: [u8] @= []
+    digits = "0123456789ABCDEF"
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if is_token_byte(b) && b != '*' && b != '\'' && b != '%'
+            out @ out.push(b)
+        else
+            out @ out.push('%')
+            out @ out.push(digits[to_i64(b / 16).must()])
+            out @ out.push(digits[to_i64(b % 16).must()])
+        at @ at + 1
+
+    return bytes.to_text(out).must()
+
+## Tests
+
+test "parse: a media type, case lowered, quotes, spaces and comments, a trailing semicolon"
+    a = parse("text/plain; charset=utf-8", typed: true).must()
+    assert a.head == "text/plain" && a.params["charset"].must() == "utf-8"
+    b = parse("Text/HTML; Charset=\"UTF-8\"", typed: true).must()
+    assert b.head == "text/html" && b.params["charset"].must() == "UTF-8"
+    assert parse("multipart/mixed; boundary=\"----=_Part_0\"", typed: true).must().params["boundary"].must() == "----=_Part_0"
+    assert parse("text/plain ; charset = \"x\"", typed: true).must().params["charset"].must() == "x"
+    assert parse("text/plain (a comment); charset=x (another)", typed: true).must().params["charset"].must() == "x"
+    assert parse("text/plain;", typed: true).must().params.len() == 0
+    assert parse("text/plain; a=\"b\\\"c\"", typed: true).must().params["a"].must() == "b\"c"
+    assert parse("text/plain; name=\"a;b\"", typed: true).must().params["name"].must() == "a;b"
+
+test "parse: refused as Go refuses them"
+    for s in ["", "text", "text/", "/plain", "text/plain; a", "text/plain; a=", "text/plain; a=b c", "text/plain; charset=utf-8; charset=latin1", "text/plain x"]
+        match parse(s, typed: true)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "parse: a disposition, its token alone"
+    d = parse("attachment; filename=\"a b.txt\"", typed: false).must()
+    assert d.head == "attachment" && d.params["filename"].must() == "a b.txt"
+    assert parse("Inline", typed: false).must().head == "inline"
+
+test "parse: RFC 2231 extended values, continuations, a missing piece, a charset not read"
+    assert parse("attachment; filename*=UTF-8''na%C3%AFve%20file.txt", typed: false).must().params["filename"].must() == "naïve file.txt"
+    assert parse("attachment; filename*0=\"foo.\"; filename*1=\"html\"", typed: false).must().params["filename"].must() == "foo.html"
+    assert parse("attachment; filename*0*=UTF-8''na%C3%AF; filename*1*=ve.txt", typed: false).must().params["filename"].must() == "naïve.txt"
+    assert parse("attachment; filename*=iso-8859-1'en'%A3%20rates", typed: false).must().params["filename"].must() == "£ rates"
+    assert parse("attachment; filename*0=a; filename*2=c", typed: false).must().params["filename"].must() == "a"
+    kept = parse("attachment; filename*=koi8-r''%F0%D2", typed: false).must().params
+    assert kept["filename"].is_err() && kept["filename*"].must() == "koi8-r''%F0%D2"
+    both = parse("attachment; filename=\"plain.txt\"; filename*=utf-8''%C3%A9.txt", typed: false).must().params
+    assert both["filename"].must() == "é.txt" && both.len() == 1
+    assert parse("text/plain; name=naïve.txt", typed: true).must().params["name"].must() == "naïve.txt"
+
+test "format: as Go writes them, names and types lowered, quoting, RFC 2231"
+    assert format(head: "text/plain", params: {"charset": "utf-8"}, typed: true).must() == "text/plain; charset=utf-8"
+    assert format(head: "attachment", params: {"filename": "naïve file.txt"}, typed: false).must() == "attachment; filename*=utf-8''na%C3%AFve%20file.txt"
+    assert format(head: "attachment", params: {"filename": "a b.txt"}, typed: false).must() == "attachment; filename=\"a b.txt\""
+    assert format(head: "attachment", params: {"filename": "a\"b.txt"}, typed: false).must() == "attachment; filename=\"a\\\"b.txt\""
+    assert format(head: "Text/Plain", params: {"Charset": "UTF-8"}, typed: true).must() == "text/plain; charset=UTF-8"
+    assert format(head: "text plain", params: {}, typed: true).is_err() && format(head: "text", params: {}, typed: true).is_err()
+    assert format(head: "attachment", params: {"a b": "x"}, typed: false).is_err()
+
+test "format: a long value above ASCII continued over pieces, read back whole"
+    name = repeat("é", 40) + ".txt"
+    written = format(head: "attachment", params: {"filename": name}, typed: false).must()
+    assert strings.has_prefix(s: written, prefix: "attachment; filename*0*=utf-8''%C3%A9")
+    assert strings.contains(s: written, substr: "; filename*1*=")
+    assert parse(written, typed: false).must().params["filename"].must() == name
+
+test "percent_decoded: escapes, a broken one kept, empty"
+    assert percent_decoded("a%20b") == [97, 32, 98] && percent_decoded("%zz") == [37, 122, 122] && percent_decoded("%4") == [37, 52]
+    assert percent_decoded("") == []

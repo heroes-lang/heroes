@@ -1,0 +1,163 @@
+# The other end of a connection run on a thread of its own, a server or
+# three clients, through this package's modules: a thread runs a function of
+# one `str`, and the face's records do not cross.
+
+use bytes
+use http
+use io
+use net
+use strings
+use tls
+use websocket/internal/engine
+use websocket/internal/handmade
+use websocket/internal/negotiating
+use websocket/internal/opening
+use websocket/internal/reading
+use websocket/internal/writing
+
+# The TCP port a server on a thread told on the datagram socket `u`.
+function port_told(u: net.UdpSocket) -> i64
+    net.set_udp_deadline(u, ms: 10_000).must()
+    return net.parse_port(handmade.text_of(net.receive(u).must().data)).must()
+
+# What a test's compression asks: off, or on with the usual parameters.
+function wanted(on: bool) -> negotiating.Wanted
+    return negotiating.Wanted(
+        enabled: on,
+        level: 6,
+        min_bytes: 0,
+        server_no_context_takeover: false,
+        client_no_context_takeover: false,
+        server_max_window_bits: 15,
+        client_max_window_bits: 15
+    )
+
+# A server on a thread: it listens on the loopback, tells its port to the
+# datagram socket whose port `arg` begins with, accepts one connection,
+# upgrades it as the rest of `arg` says (`plain`, `deflate`, `chat` with
+# the subprotocol `chat`, `tls`, which listens for TLS with the test
+# certificate of `localhost`, or `moved`, which first sends one request to
+# `/again` with a 302), echoes every message until the connection ends, and
+# answers how many it echoed and the path it upgraded: `echoed 2 /chat`.
+function echo_server(arg: str) -> str
+    words = strings.split(s: arg, sep: " ")
+
+    if words[1] == "tls"
+        match accepted_tls(told: words[0])
+            .ok stream => return echoed_on(stream, mode: words[1])
+            .err _     => return "refused"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(told: words[0], port: l.address.port)
+
+    if words[1] == "moved"
+        first = net.accept(l, deadline_ms: 10_000).must()
+        sent_away @= io.reader(first.stream)
+        asked = http.next_request(@sent_away, limits: http.default_limits()).must()
+        http.write_answer(sent_away.stream, r: asked, response: http.respond_redirect(302, location: "/again")).must()
+        io.close(@sent_away.stream).must()
+    conn = net.accept(l, deadline_ms: 10_000).must()
+    net.close_listener(@l).must()
+    return echoed_on(conn.stream, mode: words[1])
+
+# Sends `port` to the datagram socket at the port `told` on the loopback.
+function tell(told: str, port: i64)
+    u @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    to = net.parse_address_port("127.0.0.1:" + told).must()
+    net.send_to(u, data: bytes.from_text(to_str(port)), to: to).must()
+    net.close_udp(@u).must()
+
+# One TLS connection accepted on the loopback with the test certificate of
+# `localhost`, its port told first. Fails as `tls.accept` does, a client
+# that refuses the certificate among them.
+function accepted_tls(told: str) -> io.Stream?
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    ).must()
+    tell(told: told, port: l.port)
+    stream = tls.accept(l, deadline_ms: 10_000)
+    tls.close_listener(@l).must()
+    return stream
+
+# The echo of `echo_server` on the accepted `given`.
+function echoed_on(given: io.Stream, mode: str) -> str
+    stream @= given
+    reader @= io.reader(stream)
+
+    r = match http.next_request(@reader, limits: http.default_limits())
+        .ok got => got
+        .err _ =>
+            io.close(@stream).must()
+            return "refused"
+
+    protocols: [str] @= []
+
+    if mode == "chat"
+        protocols @ ["chat"]
+    j = opening.judge(
+        r,
+        a: opening.Accepting(protocols: protocols, origins: [], every_origin: false, wanted: wanted(mode == "deflate"))
+    )
+    http.write_response(reader.stream, response: opening.switching(j, extra: []), method: r.method).must()
+    state @= engine.start(client: false, agreed: j.agreed, level: 6, min_bytes: 0, held: io.buffered(reader))
+    echoed: i64 @= 0
+
+    while true
+        match reading.next(@stream, @state, b: handmade.bounds(), parts: false)
+            .ok got =>
+                writing.message(@stream, @state, b: handmade.bounds(), text: got.text, data: got.data).must()
+                echoed @ echoed + 1
+            .err _ => break
+
+    if !state.ended
+        engine.end_stream(@stream, @state)
+    return f"echoed {echoed} {r.url.path}"
+
+# Three clients on a thread, each connected to the server at the port `arg`
+# names, each writing `hello` and its number and reading its echo, then
+# ending by the closing handshake: what a test of one thread serving many
+# connections runs. It answers the echoes joined: `hello 0, hello 1, hello 2`.
+function three_clients(arg: str) -> str
+    port = net.parse_port(arg).must()
+    u = opening.target_of(f"ws://127.0.0.1:{port}/").must()
+    asking = opening.Asking(
+        protocols: [],
+        origin: "",
+        headers: [],
+        wanted: wanted(false),
+        head_bytes: 65_536,
+        field_count: 100
+    )
+    streams: [io.Stream] @= []
+    states: [engine.State] @= []
+
+    for _ in range(from: 0, to: 3)
+        conn = net.connect(host: "127.0.0.1", port: port, deadline_ms: 10_000).must()
+
+        match opening.handshake(conn.stream, u: u, a: asking).must()
+            .opened o =>
+                streams @ streams.push(conn.stream)
+                states @ states.push(
+                    engine.start(client: true, agreed: o.o.agreed, level: 6, min_bytes: 0, held: o.o.held)
+                )
+            .moved _ => return "moved"
+
+    heard: [str] @= []
+
+    for i in range(from: 0, to: 3)
+        writing.message(
+            @streams[i],
+            @states[i],
+            b: handmade.bounds(),
+            text: true,
+            data: bytes.from_text(f"hello {i}")
+        ).must()
+
+    for i in range(from: 0, to: 3)
+        heard @ heard.push(
+            handmade.text_of(reading.next(@streams[i], @states[i], b: handmade.bounds(), parts: false).must().data)
+        )
+        writing.close_all(@streams[i], @states[i], b: handmade.bounds(), code: 1000, reason: "").must()
+
+    return heard.join(", ")

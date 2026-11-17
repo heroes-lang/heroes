@@ -1,0 +1,503 @@
+# The exchanges of an SMTP session over its connection: the connection made
+# and greeted, EHLO with its fallback to HELO, each command under a
+# deadline, the four logins, and a transaction of MAIL, RCPT and DATA,
+# pipelined where the server offers it. A failure after the connection is
+# made closes it before it is answered, so no handle is left open.
+
+use bytes
+use io
+use mail/smtp/internal/protocol
+use mail/smtp/internal/wire
+use net
+use strings
+use tls
+
+# The code of an argument refused, and of a reply that is not SMTP.
+constant INVALID: str
+    "invalid"
+
+# How the connection is protected: STARTTLS.
+constant STARTTLS: i64
+    1
+
+# TLS from the first byte.
+constant IMPLICIT: i64
+    2
+
+# Plain text.
+constant PLAIN: i64
+    3
+
+# The bytes of the message written under one deadline.
+constant CHUNK: i64
+    65536
+
+# A session with `host` at `port`, protected as `security` says, greeted and
+# answered EHLO. Fails as the connection, the greeting or EHLO fail; the
+# connection is closed where one of the last two fails.
+function open(host: str, port: i64, security: i64, roots: str, local_name: str, deadline_ms: i64) -> wire.Session?
+    if host == "" || strings.contains_any(s: host, set: " \r\n\t")
+        return fail(
+            code: INVALID,
+            msg: f"the host \"{protocol.escaped(host)}\" is empty or holds a space or a line break"
+        )
+
+    if port < 1 || port > 65535 || deadline_ms < 0
+        return fail(
+            code: INVALID,
+            msg: f"the port {port} is outside 1 to 65535, or the deadline {deadline_ms} is below 0"
+        )
+
+    if local_name == "" || strings.contains_any(s: local_name, set: " \r\n\t") || !protocol.is_ascii(local_name)
+        return fail(
+            code: INVALID,
+            msg: f"the client's name \"{protocol.escaped(local_name)}\" is empty, above ASCII, or holds a space or a line break"
+        )
+    client = tls.Client(roots: roots, protocols: [])
+
+    s @= if security == PLAIN
+        wire.over_plain(
+            net.connect(host: host, port: port, deadline_ms: deadline_ms)?,
+            deadline_ms: deadline_ms,
+            local_name: local_name
+        )
+    else if security == IMPLICIT
+        wire.over_tls(
+            tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: client)?,
+            deadline_ms: deadline_ms,
+            local_name: local_name
+        )
+    else
+        wire.over_tls(
+            starttls(host: host, port: port, deadline_ms: deadline_ms, client: client, local_name: local_name)?,
+            deadline_ms: deadline_ms,
+            local_name: local_name
+        )
+
+    if security == STARTTLS
+        s.greeting @ wire.Answer(code: 220, enhanced: "", lines: [""])
+
+    match greeted(@s, security: security)
+        .ok _ => return ok(s)
+        .err e =>
+            match wire.close(@s)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# A TLS stream to `host` begun by STARTTLS, `tls` reading the greeting and
+# the first EHLO's reply in plain text.
+function starttls(host: str, port: i64, deadline_ms: i64, client: tls.Client, local_name: str) -> io.Stream?
+    steps: [tls.Step] = [
+        .expect_line(prefix: "220")
+        .send(data: bytes.from_text("EHLO " + local_name + "\r\n"))
+        .expect_line(prefix: "250")
+        .send(data: bytes.from_text("STARTTLS\r\n"))
+        .expect_line(prefix: "220")
+    ]
+
+    return match tls.connect_after(host: host, port: port, deadline_ms: deadline_ms, client: client, steps: steps)
+        .ok stream => ok(stream)
+        .err e     => fail(code: e.code, msg: "STARTTLS with " + host + ": " + e.msg)
+
+# Reads the greeting where `tls` did not, and says EHLO.
+function greeted(@s: wire.Session, security: i64) -> ()?
+    if security != STARTTLS
+        wire.set_deadline(s, ms: s.deadline_ms)?
+        greeting = wire.read_reply(@s)?
+        s.greeting @ greeting
+        protocol.expect(greeting, want: [220], asked: "this client: its greeting")?
+    return hello(@s, may_helo: security == PLAIN)
+
+# Says EHLO and keeps the extensions it names; where `may_helo` and the
+# server refuses EHLO as unknown, says HELO and keeps none.
+function hello(@s: wire.Session, may_helo: bool) -> ()?
+    a = step(@s, line: "EHLO " + s.local_name)?
+
+    if a.code == 250
+        s.extensions @ protocol.extensions_of(a.lines)
+        return ok()
+
+    if may_helo && (a.code == 500 || a.code == 502)
+        b = step(@s, line: "HELO " + s.local_name)?
+        protocol.expect(b, want: [250], asked: "HELO")?
+        s.extensions @ {}
+        return ok()
+    return protocol.expect(a, want: [250], asked: "EHLO")
+
+# Sends `line` under the session's deadline and answers the reply, whatever
+# its code.
+function step(@s: wire.Session, line: str) -> wire.Answer?
+    wire.set_deadline(s, ms: s.deadline_ms)?
+    wire.write_line(s, line: line)?
+    return wire.read_reply(@s)
+
+# Sends `line`, and fails with the code its reply means unless it is one of
+# `want`; `shown_as` names the command in the message, where `line` holds a
+# secret.
+function expect(@s: wire.Session, line: str, want: [i64], shown_as: str) -> wire.Answer?
+    a = step(@s, line: line)?
+    protocol.expect(a, want: want, asked: shown_as)?
+    return ok(a)
+
+# Says QUIT and closes the connection, whatever the reply.
+function quit(@s: wire.Session) -> ()?
+    said = step(@s, line: "QUIT")
+    closed = wire.close(@s)
+
+    match said
+        .err e => return fail(code: e.code, msg: e.msg)
+        .ok _  => _ = 0
+
+    return closed
+
+## Logging in
+
+# Fails `invalid` where a password would cross a plain connection to a host
+# that is not this machine.
+function check_protected(s: wire.Session lent, host: str) -> ()?
+    match s.link
+        .secure => return ok()
+        .plain _ =>
+            if protocol.is_loopback(host)
+                return ok()
+            return fail(
+                code: INVALID,
+                msg: f"a password is never sent in plain text to {host}, which is not this machine: connect with STARTTLS or TLS"
+            )
+
+# The mechanisms the server offers, upper case.
+function mechanisms(s: wire.Session lent) -> [str]
+    offered = s.extensions["AUTH"].default("")
+    out: [str] @= []
+
+    for m in strings.words(offered)
+        out @ out.push(strings.to_upper_ascii(m))
+
+    return out
+
+# Whether the server offers `mechanism`.
+function offers(s: wire.Session lent, mechanism: str) -> bool
+    for m in mechanisms(s)
+        if m == mechanism
+            return true
+
+    return false
+
+# Logs in with the best of PLAIN, LOGIN and CRAM-MD5 the server offers.
+function login(@s: wire.Session, host: str, user: str, password: str) -> ()?
+    check_protected(s, host: host)?
+
+    if offers(s, mechanism: "PLAIN")
+        return auth_plain(@s, host: host, identity: "", user: user, password: password)
+
+    if offers(s, mechanism: "LOGIN")
+        return auth_login(@s, host: host, user: user, password: password)
+
+    if offers(s, mechanism: "CRAM-MD5")
+        return auth_cram_md5(@s, host: host, user: user, secret: password)
+    return fail(
+        code: "unsupported",
+        msg: f"the server offers the logins \"{s.extensions["AUTH"].default("")}\", none of PLAIN, LOGIN and CRAM-MD5"
+    )
+
+# AUTH PLAIN, the credentials with the command, or after a 334 where the
+# server asks for them apart.
+function auth_plain(@s: wire.Session, host: str, identity: str, user: str, password: str) -> ()?
+    check_protected(s, host: host)?
+    payload = protocol.plain_payload(identity: identity, user: user, password: password)?
+    a = step(@s, line: "AUTH PLAIN " + payload)?
+
+    if a.code == 334
+        b = step(@s, line: payload)?
+        return protocol.expect(b, want: [235], asked: "the login AUTH PLAIN of " + user)
+    return protocol.expect(a, want: [235], asked: "the login AUTH PLAIN of " + user)
+
+# AUTH LOGIN: the name, then the password, each after a 334.
+function auth_login(@s: wire.Session, host: str, user: str, password: str) -> ()?
+    check_protected(s, host: host)?
+    _ = expect(@s, line: "AUTH LOGIN", want: [334], shown_as: "AUTH LOGIN")?
+    _ = expect(@s, line: bytes.format_base64(bytes.from_text(user)), want: [334], shown_as: "the name " + user + " of AUTH LOGIN")?
+    _ = expect(@s, line: bytes.format_base64(bytes.from_text(password)), want: [235], shown_as: "the password of " + user + " by AUTH LOGIN")?
+    return ok()
+
+# AUTH CRAM-MD5: the HMAC of the server's challenge.
+function auth_cram_md5(@s: wire.Session, host: str, user: str, secret: str) -> ()?
+    check_protected(s, host: host)?
+    challenge = expect(@s, line: "AUTH CRAM-MD5", want: [334], shown_as: "AUTH CRAM-MD5")?
+
+    text = if challenge.lines.len() > 0
+        challenge.lines[0]
+    else
+        ""
+
+    answer = match protocol.cram_md5_answer(user: user, secret: secret, challenge: text)
+        .ok a => a
+        .err e =>
+            _ = step(@s, line: "*").is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    _ = expect(@s, line: answer, want: [235], shown_as: "the login AUTH CRAM-MD5 of " + user)?
+    return ok()
+
+# AUTH XOAUTH2 with an access token; where the server answers 334 with its
+# explanation, an empty line, then its refusal, the explanation in the
+# message.
+function auth_xoauth2(@s: wire.Session, host: str, user: str, token: str) -> ()?
+    check_protected(s, host: host)?
+    a = step(@s, line: "AUTH XOAUTH2 " + protocol.xoauth2_payload(user: user, token: token))?
+
+    if a.code != 334
+        return protocol.expect(a, want: [235], asked: "the login AUTH XOAUTH2 of " + user)
+
+    said = if a.lines.len() > 0
+        a.lines[0]
+    else
+        ""
+
+    why = match bytes.parse_base64(strings.trim(said))
+        .ok raw => bytes.to_text_lossy(raw)
+        .err _  => said
+
+    final = step(@s, line: "")?
+    return fail(
+        code: protocol.refusal_code(final.code),
+        msg: f"{protocol.shown(final)}: the server refused the token of {user} by AUTH XOAUTH2, saying {protocol.escaped(why)}"
+    )
+
+## The transaction
+
+# A recipient refused, and its reply.
+record Refused
+    # The address.
+    address: str
+    # The reply.
+    answer: wire.Answer
+
+# What a transaction answers.
+record Done
+    # The reply to the message.
+    answer: wire.Answer
+    # The recipients refused while others were taken.
+    refused: [Refused]
+
+# MAIL FROM, RCPT TO for each of `to`, DATA and the message: pipelined where
+# the server offers PIPELINING. Fails before a byte is sent where an
+# extension the message needs is missing or it is too large; fails with the
+# first refusal's code where every recipient is refused, the transaction
+# reset.
+function send(@s: wire.Session, from: str, to: [str], message: [u8]) -> Done?
+    if to.len() == 0
+        return fail(code: INVALID, msg: "a message sent to no recipient")
+    protocol.check_address(address: from, asked: "MAIL FROM")?
+
+    for t in to
+        protocol.check_address(address: t, asked: "RCPT TO")?
+
+        if t == ""
+            return fail(code: INVALID, msg: "an empty recipient")
+
+    params = mail_params(s, from: from, to: to, message: message)?
+    mail_line = "MAIL FROM:<" + from + ">" + params
+    pipelined = !s.extensions["PIPELINING"].is_err()
+    answers: [wire.Answer] @= []
+
+    if pipelined
+        lines: [str] @= [mail_line]
+
+        for t in to
+            lines @ lines.push(rcpt_line(t))
+
+        lines @ lines.push("DATA")
+        wire.set_deadline(s, ms: s.deadline_ms)?
+        wire.write(s, data: bytes.from_text(lines.join("\r\n") + "\r\n"))?
+
+        while answers.len() < to.len() + 2
+            answers @ answers.push(wire.read_reply(@s)?)
+    else
+        first = step(@s, line: mail_line)?
+        answers @ answers.push(first)
+
+        if first.code == 250
+            for t in to
+                answers @ answers.push(step(@s, line: rcpt_line(t))?)
+
+    mail_reply = answers[0]
+
+    if mail_reply.code != 250
+        if pipelined && answers[answers.len() - 1].code == 354
+            wire.write(s, data: bytes.from_text(".\r\n"))?
+            _ = wire.read_reply(@s)?
+        _ = step(@s, line: "RSET").is_err()
+        s.last @ mail_reply
+        return fail(
+            code: protocol.refusal_code(mail_reply.code),
+            msg: f"{protocol.shown(mail_reply)}: the server refused the sender <{from}>"
+        )
+    refused: [Refused] @= []
+    first_refusal: i64 @= -1
+
+    for k in range(from: 0, to: to.len())
+        a = answers[k + 1]
+
+        if a.code != 250 && a.code != 251
+            if first_refusal < 0
+                first_refusal @ k
+            refused @ refused.push(Refused(address: to[k], answer: a))
+
+    if refused.len() == to.len()
+        if pipelined && answers[answers.len() - 1].code == 354
+            wire.write(s, data: bytes.from_text(".\r\n"))?
+            _ = wire.read_reply(@s)?
+        _ = step(@s, line: "RSET").is_err()
+        worst = answers[first_refusal + 1]
+        s.last @ worst
+        return fail(
+            code: protocol.refusal_code(worst.code),
+            msg: f"{protocol.shown(worst)}: the server refused every recipient, the first <{to[0]}>"
+        )
+
+    go_ahead = if pipelined
+        answers[answers.len() - 1]
+    else
+        step(@s, line: "DATA")?
+
+    if go_ahead.code != 354
+        s.last @ go_ahead
+        return fail(
+            code: protocol.refusal_code(go_ahead.code),
+            msg: f"{protocol.shown(go_ahead)}: the server refused DATA"
+        )
+    answer = body(@s, message: message)?
+    return ok(Done(answer: answer, refused: refused))
+
+# The message sent after a 354, and the server's reply to it, which must be
+# 250.
+function body(@s: wire.Session, message: [u8]) -> wire.Answer?
+    stuffed = protocol.dot_stuff(message)
+    at: i64 @= 0
+
+    while at < stuffed.len()
+        end = if at + CHUNK < stuffed.len()
+            at + CHUNK
+        else
+            stuffed.len()
+        wire.set_deadline(s, ms: s.deadline_ms)?
+        wire.write(s, data: stuffed.slice(from: at, to: end))?
+        at @ end
+
+    wire.set_deadline(s, ms: s.deadline_ms)?
+    wire.write(s, data: bytes.from_text(".\r\n"))?
+    answer = wire.read_reply(@s)?
+    protocol.expect(answer, want: [250], asked: "the message")?
+    return ok(answer)
+
+# The parameters of MAIL FROM, each after a space: SIZE where the server
+# names it, BODY=8BITMIME for bytes above 127, SMTPUTF8 for UTF-8 in an
+# address or the header. Fails `limit` or `unsupported` before anything is
+# sent.
+function mail_params(s: wire.Session lent, from: str, to: [str], message: [u8]) -> str?
+    out: [str] @= []
+
+    match s.extensions["SIZE"]
+        .err _ => _ = 0
+        .ok written =>
+            limit = to_i64_or_zero(strings.trim(written))
+
+            if limit > 0 && message.len() > limit
+                return fail(
+                    code: "limit",
+                    msg: f"the message of {message.len()} bytes is larger than the {limit} the server takes (SIZE)"
+                )
+            out @ out.push(f" SIZE={message.len()}")
+
+    head_end = protocol.header_end(message)
+
+    if protocol.has_high_byte(message, from: head_end, to: message.len())
+        if s.extensions["8BITMIME"].is_err()
+            return fail(
+                code: "unsupported",
+                msg: "the message's body holds bytes above 127 and the server offers no 8BITMIME: write it with quoted-printable or base 64"
+            )
+        out @ out.push(" BODY=8BITMIME")
+    utf8_envelope: bool @= !protocol.is_ascii(from)
+
+    for t in to
+        if !protocol.is_ascii(t)
+            utf8_envelope @ true
+
+    if utf8_envelope || protocol.has_high_byte(message, from: 0, to: head_end)
+        if s.extensions["SMTPUTF8"].is_err()
+            return fail(
+                code: "unsupported",
+                msg: "an address or the message's header is above ASCII and the server offers no SMTPUTF8"
+            )
+        out @ out.push(" SMTPUTF8")
+    return ok(out.join(""))
+
+# The number `s` writes, 0 where it writes none.
+function to_i64_or_zero(s: str) -> i64
+    n: i64 @= 0
+
+    for ch in s.chars()
+        if ch[0] < '0' || ch[0] > '9' || n > 100000000000
+            return 0
+        n @ n * 10 + to_i64(ch[0]).must() - 48
+
+    return n
+
+# The line RCPT TO says for `to`.
+function rcpt_line(to: str) -> str
+    return "RCPT TO:<" + to + ">"
+
+## Tests
+
+test "to_i64_or_zero: a number, none, letters"
+    assert to_i64_or_zero("35882577") == 35882577 && to_i64_or_zero("") == 0 && to_i64_or_zero("1k") == 0
+
+test "mail_params: SIZE, 8BITMIME, SMTPUTF8 asked and refused"
+    s @= wire.over_tls(io.stdin(), deadline_ms: 0, local_name: "x")
+    s.extensions @ {"SIZE": "100", "8BITMIME": "", "SMTPUTF8": ""}
+    assert mail_params(s, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbody")).must() == " SIZE=12"
+    assert mail_params(s, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbodé")).must() == " SIZE=13 BODY=8BITMIME"
+    assert mail_params(s, from: "jö@x", to: ["b@y"], message: []).must() == " SIZE=0 SMTPUTF8"
+
+    match mail_params(s, from: "a@x", to: ["b@y"], message: bytes.from_text(repeat("x", 101)))
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    bare = wire.over_tls(io.stdin(), deadline_ms: 0, local_name: "x")
+
+    match mail_params(bare, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbodé"))
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert mail_params(bare, from: "a@x", to: ["jö@y"], message: []).is_err()
+    assert mail_params(bare, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbody")).must() == ""
+
+test "check_protected: a plain connection to another host refused, to this machine taken"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= wire.over_plain(two.first, deadline_ms: 5000, local_name: "x")
+    server @= two.second.stream
+
+    match check_protected(s, host: "smtp.example.org")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert !check_protected(s, host: "localhost").is_err() && !check_protected(s, host: "127.0.0.1").is_err()
+    s.extensions @ {"AUTH": "PLAIN"}
+
+    match login(@s, host: "smtp.example.org", user: "ana", password: "secret")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    wire.close(@s).must()
+    io.close(@server).must()
+
+test "open: arguments refused before any connection"
+    assert open(host: "", port: 25, security: PLAIN, roots: "", local_name: "x", deadline_ms: 0).is_err()
+    assert open(host: "a b", port: 25, security: PLAIN, roots: "", local_name: "x", deadline_ms: 0).is_err()
+    assert open(host: "x", port: 0, security: PLAIN, roots: "", local_name: "x", deadline_ms: 0).is_err()
+    assert open(host: "x", port: 25, security: PLAIN, roots: "", local_name: "a\r\nb", deadline_ms: 0).is_err()
+    assert open(host: "x", port: 25, security: PLAIN, roots: "", local_name: "x", deadline_ms: -1).is_err()

@@ -1,0 +1,98 @@
+# What the tests stand on: frames made by hand, as a peer that breaks the
+# RFC writes them, and read back raw, as such a peer reads them.
+
+use bytes
+use io
+use websocket/internal/engine
+use websocket/internal/frames
+use websocket/internal/negotiating
+
+# The bounds of a test's connections: 1 MiB frames and messages, every
+# message in one frame, a second's wait for a close.
+function bounds() -> engine.Bounds
+    return engine.Bounds(frame_bytes: 1_048_576, message_bytes: 1_048_576, fragment_bytes: 0, close_wait_ms: 1_000)
+
+# A frame of any shape: `rsv` its three reserved bits, 4 for RSV1, masked
+# with a fixed key where `masked` says.
+function frame(opcode: i64, fin: bool, rsv: i64, payload: [u8], masked: bool) -> [u8]
+    key: [u8] @= []
+
+    if masked
+        key @ [1, 2, 3, 4]
+    plain = frames.encode(opcode: opcode, fin: fin, rsv1: false, payload: payload, key: key)
+    out @= plain
+    out[0] @ to_u8(to_i64(plain[0]).must() | rsv << 4).must()
+    return out
+
+# A frame as a test reads it back, unmasked.
+record Raw
+    # Its opcode.
+    opcode: i64
+    # Whether it ends its message.
+    fin: bool
+    # Its reserved bits.
+    rsv: i64
+    # Its payload, unmasked.
+    payload: [u8]
+
+# The next frame `s` holds, read whole, waiting for it.
+#
+# Fails `closed` where the stream ends first.
+function read_frame(s: io.Stream) -> Raw?
+    held = io.read_exact(s, count: 2)?
+    second = to_i64(held[1]).must() & 127
+    more: i64 @= 0
+
+    if second == 126
+        more @ 2
+    else if second == 127
+        more @ 8
+
+    if to_i64(held[1]).must() & 128 != 0
+        more @ more + 4
+    head = bytes.concat([held, io.read_exact(s, count: more)?])
+
+    match frames.head_at(head, at: 0)
+        .head f =>
+            data = io.read_exact(s, count: f.h.length)?
+            return ok(
+                Raw(opcode: f.h.opcode, fin: f.h.fin, rsv: f.h.rsv, payload: frames.unmasked(data: data, key: f.h.key))
+            )
+        .more | .wrong _ => return fail(code: engine.INVALID, msg: "a frame's head that does not read")
+
+# The text of `s`, whose bytes are UTF-8.
+function text_of(s: [u8]) -> str
+    return bytes.to_text(s).must()
+
+# `n` bytes of `byte`.
+function filled(n: i64, byte: u8) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(byte)
+
+    return out
+
+# The code and reason of the close frame `raw`, as `frames.parse_close`
+# reads them: 1005 for none.
+function close_code_of(raw: Raw) -> i64
+    return frames.parse_close(raw.payload).must().code
+
+# A server's state with nothing agreed.
+function server() -> engine.State
+    return engine.start(client: false, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+
+# A client's state with nothing agreed.
+function client() -> engine.State
+    return engine.start(client: true, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+
+# A state with permessage-deflate agreed, each end keeping its window.
+function compressing(as_client: bool) -> engine.State
+    agreed = negotiating.Agreed(
+        on: true,
+        our_takeover: true,
+        their_takeover: true,
+        our_window_bits: 15,
+        header: "permessage-deflate"
+    )
+    return engine.start(client: as_client, agreed: agreed, level: 6, min_bytes: 0, held: [])

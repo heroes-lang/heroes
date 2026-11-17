@@ -1,0 +1,383 @@
+# The reads a program makes: the next message or part, waiting for it, and
+# the messages a stream told ready completes without waiting. Each pass of
+# their loops takes a frame or reads a byte, or returns.
+
+use bytes
+use io
+use net
+use websocket/internal/engine
+use websocket/internal/handmade
+use websocket/internal/stepping
+
+# What a read hands out: a message whole, or a part of one.
+record Got
+    # Whether it is a text's.
+    text: bool
+    # Its bytes, decompressed.
+    data: [u8]
+    # Whether it ends its message.
+    last: bool
+
+# The next message, or the next part where `parts` says, waiting for it.
+#
+# - `stream`, `s`: the connection.
+# - `b`: its bounds.
+# - `parts`: whether a part is answered, else a whole message.
+#
+# Fails as `stepping.step` and `engine.fill` fail, and `closed` once the
+# connection is closed.
+function next(@stream: io.Stream, @s: engine.State, b: engine.Bounds, parts: bool) -> Got?
+    while true
+        if !engine.can_read(s)
+            return engine.refused(s)
+        st = stepping.step(@stream, @s, b: b, parts: parts, waits: true)?
+
+        match st
+            .data d  => return ok(Got(text: d.text, data: d.data, last: d.last))
+            .nothing => _ = 0
+            .ended   => return engine.refused(s)
+            .more    => engine.fill(@stream, @s)?
+
+# The whole messages what `s` holds completes, reading `stream` once where
+# it completes none.
+#
+# - `stream`, `s`: the connection.
+# - `b`: its bounds.
+#
+# Where the connection ends or fails after some messages, they are answered
+# and the next call fails. Fails as `next` does where no message came first.
+function ready(@stream: io.Stream, @s: engine.State, b: engine.Bounds) -> [Got]?
+    out: [Got] @= []
+    read: bool @= false
+
+    while true
+        if !engine.can_read(s)
+            if out.len() > 0
+                return ok(out)
+            return engine.refused(s)
+
+        st = match stepping.step(@stream, @s, b: b, parts: false, waits: false)
+            .ok got => got
+            .err e =>
+                if out.len() == 0
+                    return fail(code: e.code, msg: e.msg)
+
+                if s.ended
+                    s.kept_code @ e.code
+                    s.kept_msg @ e.msg
+                return ok(out)
+
+        match st
+            .data d  => out @ out.push(Got(text: d.text, data: d.data, last: true))
+            .nothing => _ = 0
+            .ended =>
+                if out.len() > 0
+                    return ok(out)
+                return engine.refused(s)
+            .more =>
+                if read || out.len() > 0
+                    return ok(out)
+                read @ true
+                engine.fill(@stream, @s)?
+
+# Writes `data` to the client's end of `two`, as a peer writes it.
+function sent(two: net.Pair lent, data: [u8])
+    io.write(two.first.stream, data: data).must()
+
+# The text frame of `payload` a client writes, masked.
+function texted(payload: [u8], fin: bool) -> [u8]
+    return handmade.frame(opcode: 1, fin: fin, rsv: 0, payload: payload, masked: true)
+
+# The failure of reading `two`'s server end once, and the close code the
+# server wrote back for it.
+record Failed
+    # The failure's code.
+    code: str
+    # The close code the server wrote.
+    close: i64
+
+# Reads the server's end `stream` with `s` until it fails, and reads the
+# close the server wrote from the client's end `peer`.
+function failed(peer: io.Stream, @stream: io.Stream, @s: engine.State) -> Failed
+    match next(@stream, @s, b: handmade.bounds(), parts: false)
+        .ok _ => return Failed(code: "", close: 0)
+        .err e =>
+            raw = handmade.read_frame(peer).must()
+            assert raw.opcode == 8
+            return Failed(code: e.code, close: handmade.close_code_of(raw))
+
+test "next: texts and bytes of 0 to 65535 bytes, masked by the client, read whole (Autobahn 1.1, 1.2)"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+
+    for n in [0, 125, 126, 127, 128, 65535]
+        sent(two, data: texted(handmade.filled(n, byte: '*'), fin: true))
+        got = next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must()
+        assert got.text && got.data.len() == n && got.last
+        sent(
+            two,
+            data: handmade.frame(opcode: 2, fin: true, rsv: 0, payload: handmade.filled(n, byte: 254), masked: true)
+        )
+        bin = next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must()
+        assert !bin.text && bin.data.len() == n
+
+    io.close(@two.first.stream).must()
+
+    match next(@two.second.stream, @s, b: handmade.bounds(), parts: false)
+        .ok _  => assert false
+        .err e => assert e.code == engine.CLOSED && s.ended && s.got_code == 1006
+
+test "next: pings answered with their payload, 125 bytes at most, pongs counted (Autobahn 2)"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    sent(two, data: handmade.frame(opcode: 9, fin: true, rsv: 0, payload: [], masked: true))
+    sent(
+        two,
+        data: handmade.frame(opcode: 9, fin: true, rsv: 0, payload: handmade.filled(125, byte: 254), masked: true)
+    )
+    sent(two, data: handmade.frame(opcode: 10, fin: true, rsv: 0, payload: [1, 2], masked: true))
+    sent(two, data: texted([104, 105], fin: true))
+    assert next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must().data == [104, 105]
+    first = handmade.read_frame(two.first.stream).must()
+    second = handmade.read_frame(two.first.stream).must()
+    assert first.opcode == 10 && first.payload == [] && second.opcode == 10 && second.payload.len() == 125
+    assert s.pongs == 1 && s.last_pong == [1, 2]
+    sent(two, data: handmade.frame(opcode: 9, fin: true, rsv: 0, payload: handmade.filled(126, byte: 1), masked: true))
+    f = failed(peer: two.first.stream, stream: @two.second.stream, @s)
+    assert f.code == engine.INVALID && f.close == 1002
+    io.close(@two.first.stream).must()
+
+test "next: reserved bits with no extension fail with 1002, after the message before them (Autobahn 3)"
+    for rsv in [4, 2, 1, 6, 7]
+        two @= net.pair(deadline_ms: 5_000).must()
+        s @= handmade.server()
+        sent(two, data: texted([104], fin: true))
+        sent(two, data: handmade.frame(opcode: 1, fin: true, rsv: rsv, payload: [105], masked: true))
+        assert next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must().data == [104]
+        f = failed(peer: two.first.stream, stream: @two.second.stream, @s)
+        assert f.code == engine.INVALID && f.close == 1002
+        io.close(@two.first.stream).must()
+
+test "next: the reserved opcodes 3 to 7 and 11 to 15 fail with 1002 (Autobahn 4)"
+    for op in [3, 4, 5, 6, 7, 11, 12, 13, 14, 15]
+        two @= net.pair(deadline_ms: 5_000).must()
+        s @= handmade.server()
+        sent(two, data: handmade.frame(opcode: op, fin: true, rsv: 0, payload: [1], masked: true))
+        f = failed(peer: two.first.stream, stream: @two.second.stream, @s)
+        assert f.code == engine.INVALID && f.close == 1002
+        io.close(@two.first.stream).must()
+
+test "next: fragments joined, a ping between them answered, and the orders refused (Autobahn 5)"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    sent(two, data: texted([102, 114], fin: false))
+    sent(two, data: handmade.frame(opcode: 9, fin: true, rsv: 0, payload: [7], masked: true))
+    sent(two, data: handmade.frame(opcode: 0, fin: false, rsv: 0, payload: [97, 103], masked: true))
+    sent(two, data: handmade.frame(opcode: 0, fin: true, rsv: 0, payload: [], masked: true))
+    got = next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must()
+    assert got.text && got.data == [102, 114, 97, 103]
+    assert handmade.read_frame(two.first.stream).must().payload == [7]
+    io.close(@two.first.stream).must()
+    engine.end_stream(@two.second.stream, @s)
+
+    for shape in ["ping in parts", "pong in parts", "continuation first", "two beginnings"]
+        bad @= net.pair(deadline_ms: 5_000).must()
+        b @= handmade.server()
+
+        match shape
+            "ping in parts" => sent(
+                bad,
+                data: handmade.frame(opcode: 9, fin: false, rsv: 0, payload: [1], masked: true)
+            )
+            "pong in parts" => sent(
+                bad,
+                data: handmade.frame(opcode: 10, fin: false, rsv: 0, payload: [1], masked: true)
+            )
+            "continuation first" => sent(
+                bad,
+                data: handmade.frame(opcode: 0, fin: true, rsv: 0, payload: [1], masked: true)
+            )
+            _ =>
+                sent(bad, data: texted([1], fin: false))
+                sent(bad, data: texted([1], fin: true))
+
+        f = failed(peer: bad.first.stream, stream: @bad.second.stream, @b)
+        assert f.code == engine.INVALID && f.close == 1002
+        io.close(@bad.first.stream).must()
+
+test "next: UTF-8 across fragments, cut inside a character, and wrong bytes failed at their fragment with 1007 (Autobahn 6)"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    sent(two, data: texted([206, 186, 225], fin: false))
+    sent(two, data: handmade.frame(opcode: 0, fin: true, rsv: 0, payload: [189, 185], masked: true))
+    assert next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must().data == [206, 186, 225, 189, 185]
+    io.close(@two.first.stream).must()
+    engine.end_stream(@two.second.stream, @s)
+    wrong: [[u8]] = [[255], [192, 128], [237, 160, 128], [244, 144, 128, 128], [206, 186, 128]]
+
+    for w in wrong
+        bad @= net.pair(deadline_ms: 5_000).must()
+        b @= handmade.server()
+        sent(bad, data: texted(w, fin: false))
+        f = failed(peer: bad.first.stream, stream: @bad.second.stream, @b)
+        assert f.code == engine.NOT_TEXT && f.close == 1007
+        io.close(@bad.first.stream).must()
+
+    cut @= net.pair(deadline_ms: 5_000).must()
+    c @= handmade.server()
+    sent(cut, data: texted([206], fin: true))
+    assert failed(peer: cut.first.stream, stream: @cut.second.stream, @c).close == 1007
+    io.close(@cut.first.stream).must()
+
+test "next: a close echoed with its code, frames after it ignored, and read as closed (Autobahn 7.1, 7.3, 7.7)"
+    for code in [1000, 1001, 1002, 1003, 1007, 1008, 1009, 1010, 1011, 3000, 3999, 4000, 4999]
+        two @= net.pair(deadline_ms: 5_000).must()
+        s @= handmade.server()
+        sent(two, data: texted([104], fin: true))
+        sent(
+            two,
+            data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: [to_u8(code >> 8).must(), to_u8(code & 255).must(), 98, 121, 101], masked: true)
+        )
+        sent(two, data: handmade.frame(opcode: 9, fin: true, rsv: 0, payload: [], masked: true))
+        assert next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must().data == [104]
+
+        match next(@two.second.stream, @s, b: handmade.bounds(), parts: false)
+            .ok _  => assert false
+            .err e => assert e.code == engine.CLOSED && s.got_code == code && s.got_reason == "bye" && s.ended
+
+        echo = handmade.read_frame(two.first.stream).must()
+        assert echo.opcode == 8 && handmade.close_code_of(echo) == code
+
+        # The server closed its end with the ping after the close unread, so
+        # the system may end the client's with a reset: the end of the
+        # stream, or `closed`.
+        match io.read(two.first.stream, most: 16)
+            .ok rest => assert rest.len() == 0
+            .err e   => assert e.code == engine.CLOSED
+
+        io.close(@two.first.stream).must()
+
+    empty @= net.pair(deadline_ms: 5_000).must()
+    e @= handmade.server()
+    sent(empty, data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: [], masked: true))
+    assert next(@empty.second.stream, @e, b: handmade.bounds(), parts: false).is_err() && e.got_code == 1005
+    assert handmade.read_frame(empty.first.stream).must().payload == []
+    io.close(@empty.first.stream).must()
+
+test "next: closes the RFC refuses, of one byte, past 125, a code no close carries, a reason not UTF-8 (Autobahn 7.3, 7.5, 7.9, 7.13)"
+    bad_payloads: [[u8]] = [[3], [3, 232, 255]]
+
+    for code in [0, 999, 1004, 1005, 1006, 1015, 1016, 1100, 2000, 2999, 5000, 65535]
+        two @= net.pair(deadline_ms: 5_000).must()
+        s @= handmade.server()
+        sent(
+            two,
+            data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: [to_u8(code >> 8).must(), to_u8(code & 255).must()], masked: true)
+        )
+        f = failed(peer: two.first.stream, stream: @two.second.stream, @s)
+        assert f.code == engine.INVALID && f.close == 1002
+        io.close(@two.first.stream).must()
+
+    for p in bad_payloads
+        two @= net.pair(deadline_ms: 5_000).must()
+        s @= handmade.server()
+        sent(two, data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: p, masked: true))
+        f = failed(peer: two.first.stream, stream: @two.second.stream, @s)
+        assert f.close == 1002 && f.code == engine.INVALID || f.close == 1007 && f.code == engine.NOT_TEXT
+        io.close(@two.first.stream).must()
+
+    long @= net.pair(deadline_ms: 5_000).must()
+    l @= handmade.server()
+    reason = handmade.filled(124, byte: 'r')
+    sent(
+        long,
+        data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: bytes.concat([[3, 232], reason]), masked: true)
+    )
+    assert failed(peer: long.first.stream, stream: @long.second.stream, @l).close == 1002
+    io.close(@long.first.stream).must()
+
+test "next: a frame past its bound fails with 1009 before its payload comes, and so does a message"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    small = engine.Bounds(frame_bytes: 10, message_bytes: 15, fragment_bytes: 0, close_wait_ms: 1_000)
+    sent(two, data: texted(handmade.filled(11, byte: 'a'), fin: true).slice(from: 0, to: 6))
+
+    match next(@two.second.stream, @s, b: small, parts: false)
+        .ok _  => assert false
+        .err e => assert e.code == engine.LIMIT
+
+    assert handmade.close_code_of(handmade.read_frame(two.first.stream).must()) == 1009
+    io.close(@two.first.stream).must()
+    joined @= net.pair(deadline_ms: 5_000).must()
+    j @= handmade.server()
+    sent(joined, data: texted(handmade.filled(10, byte: 'a'), fin: false))
+    sent(
+        joined,
+        data: handmade.frame(opcode: 0, fin: true, rsv: 0, payload: handmade.filled(6, byte: 'a'), masked: true)
+    )
+
+    match next(@joined.second.stream, @j, b: small, parts: false)
+        .ok _  => assert false
+        .err e => assert e.code == engine.LIMIT
+
+    io.close(@joined.first.stream).must()
+
+test "next: a server refuses a frame unmasked, a client one masked, both with 1002"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    sent(two, data: handmade.frame(opcode: 1, fin: true, rsv: 0, payload: [104], masked: false))
+    assert failed(peer: two.first.stream, stream: @two.second.stream, @s).close == 1002
+    io.close(@two.first.stream).must()
+    other @= net.pair(deadline_ms: 5_000).must()
+    c @= handmade.client()
+    io.write(
+        other.first.stream,
+        data: handmade.frame(opcode: 1, fin: true, rsv: 0, payload: [104], masked: true)
+    ).must()
+
+    match next(@other.second.stream, @c, b: handmade.bounds(), parts: false)
+        .ok _  => assert false
+        .err e => assert e.code == engine.INVALID
+
+    raw = handmade.read_frame(other.first.stream).must()
+    assert raw.opcode == 8 && handmade.close_code_of(raw) == 1002
+    io.close(@other.first.stream).must()
+
+# RFC 7692 § 7.2.3.1's frame of "Hello", compressed, as a client masks it,
+# and in two fragments; and RSV1 on a continuation refused.
+test "next: compressed messages read whole and by parts, RSV1 on a continuation refused (RFC 7692, Autobahn 12, 13)"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.compressing(as_client: false)
+    sent(two, data: handmade.frame(opcode: 1, fin: true, rsv: 4, payload: [242, 72, 205, 201, 201, 7, 0], masked: true))
+    assert next(@two.second.stream, @s, b: handmade.bounds(), parts: false).must().data == bytes.from_text("Hello")
+    sent(two, data: handmade.frame(opcode: 1, fin: false, rsv: 4, payload: [242, 0], masked: true))
+    sent(two, data: handmade.frame(opcode: 0, fin: true, rsv: 0, payload: [17, 0, 0], masked: true))
+    head = next(@two.second.stream, @s, b: handmade.bounds(), parts: true).must()
+    tail = next(@two.second.stream, @s, b: handmade.bounds(), parts: true).must()
+    assert !head.last && tail.last && bytes.concat([head.data, tail.data]) == bytes.from_text("Hello")
+    sent(two, data: handmade.frame(opcode: 1, fin: false, rsv: 4, payload: [242], masked: true))
+    sent(two, data: handmade.frame(opcode: 0, fin: true, rsv: 4, payload: [0], masked: true))
+    assert failed(peer: two.first.stream, stream: @two.second.stream, @s).close == 1002
+    io.close(@two.first.stream).must()
+
+test "ready: a frame cut in pieces read as they come, two messages from one read, and a close after a message"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    whole = texted([104, 105], fin: true)
+    sent(two, data: whole.slice(from: 0, to: 3))
+    assert ready(@two.second.stream, @s, b: handmade.bounds()).must().len() == 0
+    sent(two, data: bytes.concat([whole.slice(from: 3, to: whole.len()), texted([33], fin: true)]))
+    got = ready(@two.second.stream, @s, b: handmade.bounds()).must()
+    assert got.len() == 2 && got[0].data == [104, 105] && got[1].data == [33]
+    sent(
+        two,
+        data: bytes.concat([texted([1], fin: true), handmade.frame(opcode: 8, fin: true, rsv: 0, payload: [3, 232], masked: true)])
+    )
+    last = ready(@two.second.stream, @s, b: handmade.bounds()).must()
+    assert last.len() == 1 && s.ended && s.got_code == 1000
+
+    match ready(@two.second.stream, @s, b: handmade.bounds())
+        .ok _  => assert false
+        .err e => assert e.code == engine.CLOSED
+
+    io.close(@two.first.stream).must()

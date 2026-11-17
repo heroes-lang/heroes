@@ -1,0 +1,307 @@
+# The words of RFC 5322's structured header fields read from a text: space
+# and comments (nested, to any depth, counted and never recursed into),
+# atoms, quoted strings and domain literals, and the test of what may stand
+# in an atom. A byte above ASCII is atom text (RFC 6532), and every position
+# this module stops at is an ASCII byte, so no slice it makes splits a
+# character.
+
+use bytes
+use strings
+
+# The code of a text that is not what is read.
+constant INVALID: str
+    "invalid"
+
+# A reader over a header's text: the text, and where it stands.
+record Cursor
+    # The text read.
+    s: str
+    # The byte the reader stands at, from 0 to the text's length.
+    at: i64
+
+# A cursor at the start of `s`.
+function cursor(s: str) -> Cursor
+    return Cursor(s: s, at: 0)
+
+# Whether `c` stands at the end of its text.
+function at_end(c: Cursor lent) -> bool
+    return c.at >= c.s.len()
+
+# The byte `c` stands at; 0 at the end.
+function peek(c: Cursor lent) -> u8
+    if c.at >= c.s.len()
+        return 0
+    return c.s[c.at]
+
+# Whether `b` may stand in an atom: a letter, a digit, one of
+# ``!#$%&'*+-/=?^_`{|}~``, or a byte above ASCII.
+function is_atext(b: u8) -> bool
+    if b >= 0x80
+        return true
+
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    return b == '!' || b == '#' || b == '$' || b == '%' || b == '&' || b == '\'' || b == '*' || b == '+' || b == '-' || b == '/' || b == '=' || b == '?' || b == '^' || b == '_' || b == '`' || b == '{' || b == '|' || b == '}' || b == '~'
+
+# Whether `b` is a space, a tab, or a line break left in a value.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\r' || b == '\n'
+
+# Skips space and comments, and answers the text of the comments skipped,
+# joined by one space: "" where there was none. A comment nests, and a
+# backslash quotes the byte after it. Fails `invalid` where a comment is not
+# closed.
+function skip_cfws(@c: Cursor) -> str?
+    said: [str] @= []
+
+    while c.at < c.s.len()
+        b = c.s[c.at]
+
+        if is_space(b)
+            c.at @ c.at + 1
+        else if b == '('
+            said @ said.push(comment(@c)?)
+        else
+            break
+
+    return ok(said.join(" "))
+
+# Reads the comment `c` stands at, its `(` first, and answers its text with
+# its quoting undone and the comments inside it as they are written.
+function comment(@c: Cursor) -> str?
+    start = c.at
+    depth: i64 @= 0
+    out: [u8] @= []
+
+    while c.at < c.s.len()
+        b = c.s[c.at]
+
+        if b == '\\' && c.at + 1 < c.s.len()
+            out @ out.push(c.s[c.at + 1])
+            c.at @ c.at + 2
+        else if b == '('
+            if depth > 0
+                out @ out.push(b)
+            depth @ depth + 1
+            c.at @ c.at + 1
+        else if b == ')'
+            depth @ depth - 1
+            c.at @ c.at + 1
+
+            if depth == 0
+                return ok(strings.trim(text_of(out)))
+            out @ out.push(b)
+        else
+            out @ out.push(b)
+            c.at @ c.at + 1
+
+    return fail(code: INVALID, msg: f"the comment opened at byte {start} of {shown(c.s)} is not closed")
+
+# The atom `c` stands at, its bytes of atom text: "" where it stands at none.
+function atom(@c: Cursor) -> str
+    start = c.at
+
+    while c.at < c.s.len() && is_atext(c.s[c.at])
+        c.at @ c.at + 1
+
+    return c.s.slice(from: start, to: c.at)
+
+# Reads the quoted string `c` stands at, its `"` first, and answers its text
+# with the quotes and the backslashes that quote taken off. Fails `invalid`
+# where it is not closed.
+function quoted(@c: Cursor) -> str?
+    start = c.at
+    c.at @ c.at + 1
+    out: [u8] @= []
+
+    while c.at < c.s.len()
+        b = c.s[c.at]
+
+        if b == '\\' && c.at + 1 < c.s.len()
+            out @ out.push(c.s[c.at + 1])
+            c.at @ c.at + 2
+        else if b == '"'
+            c.at @ c.at + 1
+            return ok(text_of(out))
+        else if b == '\r' || b == '\n'
+            c.at @ c.at + 1
+        else
+            out @ out.push(b)
+            c.at @ c.at + 1
+
+    return fail(code: INVALID, msg: f"the quoted string opened at byte {start} of {shown(c.s)} is not closed")
+
+# Reads the domain literal `c` stands at, `[` first, and answers it with its
+# brackets and without its spaces. Fails `invalid` where it is not closed or
+# holds `[` or a backslash.
+function domain_literal(@c: Cursor) -> str?
+    start = c.at
+    c.at @ c.at + 1
+    out: [u8] @= ['[']
+
+    while c.at < c.s.len()
+        b = c.s[c.at]
+
+        if b == ']'
+            c.at @ c.at + 1
+            out @ out.push(b)
+            return ok(text_of(out))
+
+        if b == '[' || b == '\\'
+            return fail(
+                code: INVALID,
+                msg: f"the domain literal at byte {start} of {shown(c.s)} holds a \"[\" or a backslash"
+            )
+
+        if !is_space(b)
+            out @ out.push(b)
+        c.at @ c.at + 1
+
+    return fail(code: INVALID, msg: f"the domain literal opened at byte {start} of {shown(c.s)} is not closed")
+
+# Whether `s` is a dot-atom: atoms of at least one byte, one dot between two.
+function is_dot_atom(s: str) -> bool
+    if s.len() == 0
+        return false
+    after_dot: bool @= true
+
+    for b in s.chars()
+        if b == "."
+            if after_dot
+                return false
+            after_dot @ true
+        else if is_atext(b[0])
+            after_dot @ false
+        else
+            return false
+
+    return !after_dot
+
+# Whether `s` is one or more atoms with one space between two: a phrase that
+# needs no quotes.
+function is_atom_phrase(s: str) -> bool
+    if s.len() == 0
+        return false
+    after_space: bool @= true
+
+    for b in s.chars()
+        if b == " "
+            if after_space
+                return false
+            after_space @ true
+        else if is_atext(b[0])
+            after_space @ false
+        else
+            return false
+
+    return !after_space
+
+# `s` as a quoted string: in `"`, a `"` and a backslash in it each after a
+# backslash.
+function quote(s: str) -> str
+    out: [str] @= ["\""]
+
+    for ch in s.chars()
+        if ch == "\"" || ch == "\\"
+            out @ out.push("\\")
+        out @ out.push(ch)
+
+    out @ out.push("\"")
+    return out.join("")
+
+# `out`, bytes that came from a text cut at ASCII bytes, as text.
+function text_of(out: [u8]) -> str
+    return match bytes.to_text(out)
+        .ok s  => s
+        .err _ => ""
+
+# The whole character of `s` that holds the byte `at`, for a message.
+function char_at(s: str, at: i64) -> str
+    start: i64 @= at
+
+    while start > 0 && s[start] >= 0x80 && s[start] < 0xc0
+        start @ start - 1
+
+    end: i64 @= start + 1
+
+    while end < s.len() && s[end] >= 0x80 && s[end] < 0xc0
+        end @ end + 1
+
+    return s.slice(from: start, to: end)
+
+# `s` in quotes for a message, cut after 60 bytes at a character's start.
+function shown(s: str) -> str
+    if s.len() <= 60
+        return "\"" + s + "\""
+    cut: i64 @= 60
+
+    while cut > 0 && s[cut] >= 0x80 && s[cut] < 0xc0
+        cut @ cut - 1
+
+    return "\"" + s.slice(from: 0, to: cut) + "...\""
+
+## Tests
+
+test "is_atext: letters, digits, the signs, UTF-8, and the specials refused"
+    assert is_atext('a') && is_atext('Z') && is_atext('7') && is_atext('!') && is_atext('~') && is_atext(0xc3)
+    assert !is_atext('(') && !is_atext('<') && !is_atext('@') && !is_atext(',') && !is_atext('.') && !is_atext(' ') && !is_atext('"')
+
+test "skip_cfws: nothing, spaces, a comment, nested comments, a quoted parenthesis, one not closed"
+    c @= cursor("")
+    assert skip_cfws(@c).must() == "" && c.at == 0
+    d @= cursor("  \t a")
+    assert skip_cfws(@d).must() == "" && d.at == 4
+    named @= cursor(" (Ana Lima) x")
+    assert skip_cfws(@named).must() == "Ana Lima" && named.at == 12
+    f @= cursor("(a (b) c)(d)x")
+    assert skip_cfws(@f).must() == "a (b) c d" && f.at == 12
+    g @= cursor("(a \\) b)")
+    assert skip_cfws(@g).must() == "a ) b"
+    h @= cursor("(open (still")
+
+    match skip_cfws(@h)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the comment opened at byte 0 of \"(open (still\" is not closed"
+
+test "atom: a run of atom text, none, UTF-8"
+    c @= cursor("ana@x")
+    assert atom(@c) == "ana" && c.at == 3
+    d @= cursor("@x")
+    assert atom(@d) == "" && d.at == 0
+    wide @= cursor("jörg.x")
+    assert atom(@wide) == "jörg" && wide.at == 5
+
+test "quoted: plain, escapes, empty, not closed"
+    c @= cursor("\"a b\"@x")
+    assert quoted(@c).must() == "a b" && c.at == 5
+    d @= cursor("\"a\\\"b\\\\\"")
+    assert quoted(@d).must() == "a\"b\\"
+    empty @= cursor("\"\"")
+    assert quoted(@empty).must() == ""
+    f @= cursor("\"open")
+    assert quoted(@f).is_err()
+
+test "domain_literal: an address, spaces dropped, not closed, a bracket inside"
+    c @= cursor("[127.0.0.1]>")
+    assert domain_literal(@c).must() == "[127.0.0.1]" && c.at == 11
+    d @= cursor("[ 1.2 ]")
+    assert domain_literal(@d).must() == "[1.2]"
+    open @= cursor("[1.2")
+    assert domain_literal(@open).is_err()
+    f @= cursor("[a[b]")
+    assert domain_literal(@f).is_err()
+
+test "is_dot_atom and is_atom_phrase: well formed, dots and spaces at the edges or doubled, empty"
+    assert is_dot_atom("a.b") && is_dot_atom("jörg") && !is_dot_atom("") && !is_dot_atom(".a") && !is_dot_atom("a.")
+    assert !is_dot_atom("a..b") && !is_dot_atom("a b")
+    assert is_atom_phrase("Ana Lima") && !is_atom_phrase("Ana  Lima") && !is_atom_phrase("a.b") && !is_atom_phrase(" a")
+    assert !is_atom_phrase("") && is_atom_phrase("Jörg")
+
+test "char_at: one byte, a character of two bytes from its first or second byte"
+    assert char_at("aé", at: 0) == "a" && char_at("aé", at: 1) == "é" && char_at("aé", at: 2) == "é"
+
+test "quote and shown: quotes and backslashes, a long text cut at a character"
+    assert quote("a\"b\\c") == "\"a\\\"b\\\\c\"" && quote("") == "\"\""
+    assert shown("abc") == "\"abc\""
+    long = repeat("é", 40)
+    assert shown(long) == "\"" + repeat("é", 30) + "...\""

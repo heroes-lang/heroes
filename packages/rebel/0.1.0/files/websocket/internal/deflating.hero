@@ -1,0 +1,271 @@
+# Messages compressed and decompressed by permessage-deflate (RFC 7692
+# § 7.2): raw DEFLATE through `compress`, each message flushed to a byte and
+# its last four bytes, 00 00 ff ff, taken off; the window kept from one
+# message to the next where the two ends agreed it, and a decompressed
+# message bounded as it grows, never after.
+
+use bytes
+use compress
+use websocket/internal/negotiating
+
+# The code of a message past its bound.
+constant LIMIT: str
+    "limit"
+
+# The code of compressed bytes that are not DEFLATE.
+constant INVALID: str
+    "invalid"
+
+# The bytes of the widest window, 2^15: the most a DEFLATE stream reaches
+# back.
+constant WINDOW: i64
+    32768
+
+# The most bytes taken from the decompressor at once.
+constant CHUNK: i64
+    65536
+
+# The most a decompressor produces in all: no stream of a connection's life
+# reaches it, so the bound that counts is each message's.
+constant UNBOUNDED: i64
+    4611686018427387904
+
+# A connection's compression between two messages.
+record Deflating
+    # What the two ends agreed.
+    agreed: negotiating.Agreed
+    # The level this end compresses with, 0 to 9.
+    level: i64
+    # The fewest bytes of a message this end compresses.
+    min_bytes: i64
+    # The compressor of this end's messages, none before the first or where
+    # nothing was agreed.
+    writers: [compress.Compressor]
+    # The decompressor of the peer's messages, none before the first.
+    readers: [compress.Decompressor]
+    # The last bytes decompressed, at most `WINDOW`: the window a new
+    # decompressor takes as its dictionary where the peer's stream ended a
+    # block with BFINAL and goes on, as RFC 7692 § 7.2.3.4 allows.
+    ring: [u8]
+    # Where the oldest byte of `ring` stands once it is full, else 0.
+    ring_at: i64
+
+# The compression of a connection that agreed `agreed`.
+function start(agreed: negotiating.Agreed, level: i64, min_bytes: i64) -> Deflating
+    return Deflating(agreed: agreed, level: level, min_bytes: min_bytes, writers: [], readers: [], ring: [], ring_at: 0)
+
+# Whether a message of `size` bytes is written compressed.
+function compressing(d: Deflating lent, size: i64) -> bool
+    return d.agreed.on && size >= d.min_bytes
+
+# A compressor as `d` agreed: its level, and its window, where 8 bits, which
+# DEFLATE's compressors do not write, is honoured by looking for no repeat
+# at all.
+function new_writer(d: Deflating lent) -> compress.Compressor
+    options @= compress.defaults(.raw)
+    options.level @ d.level
+
+    if d.agreed.our_window_bits < compress.MIN_WINDOW_BITS
+        options.strategy @ .huffman_only
+        options.window_bits @ compress.MIN_WINDOW_BITS
+    else
+        options.window_bits @ d.agreed.our_window_bits
+    return compress.compressor(options).must()
+
+# The compressed bytes of the next piece of a message written: all of it at
+# once, or a part.
+#
+# - `d`: the compression, whose compressor goes on.
+# - `data`: the piece.
+# - `first`: whether it begins the message, where a compressor that keeps
+#   no window is made anew.
+# - `last`: whether it ends it: flushed to a byte, its tail taken off.
+function deflated(@d: Deflating, data: [u8] lent, first: bool, last: bool) -> [u8]
+    if first && (d.writers.len() == 0 || !d.agreed.our_takeover)
+        d.writers @ [new_writer(d)]
+    out = compress.compress_part(@d.writers[0], data: data)
+
+    if !last
+        return out
+    tail = compress.compress_flush(@d.writers[0], how: .sync)
+    whole = bytes.concat([out, tail])
+    return whole.slice(from: 0, to: whole.len() - 4)
+
+# The bytes the next piece of a compressed message decompresses to, at most
+# `most`.
+#
+# - `d`: the compression, whose decompressor and window go on.
+# - `data`: the piece, a frame's payload as it came.
+# - `first`: whether it begins the message, where a decompressor that keeps
+#   no window is made anew.
+# - `last`: whether it ends the message, which adds the tail RFC 7692 took
+#   off.
+# - `most`: the most bytes the piece may decompress to.
+#
+# A stream ended by a block with BFINAL goes on in a new decompressor whose
+# dictionary is the window so far. Fails `limit` past `most`, `invalid`
+# where the bytes are not DEFLATE.
+function inflated(@d: Deflating, data: [u8] lent, first: bool, last: bool, most: i64) -> [u8]?
+    if first && (d.readers.len() == 0 || !d.agreed.their_takeover)
+        if !d.agreed.their_takeover
+            d.ring @ []
+            d.ring_at @ 0
+        d.readers @ [compress.decompressor(.raw, limit: UNBOUNDED)]
+    feed: [u8] @= data
+
+    if last
+        feed @ bytes.concat([data, [0, 0, 255, 255]])
+    out: [u8] @= []
+
+    while true
+        piece = match compress.decompress_part(@d.readers[0], data: feed, most: CHUNK)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: "a compressed message that is not DEFLATE: " + e.msg)
+
+        feed @ []
+
+        if piece.len() == 0
+            if !compress.is_done(d.readers[0])
+                break
+            rest = compress.unused(d.readers[0])
+            d.readers @ [renewed(d)]
+
+            if rest.len() == 0
+                break
+            feed @ rest
+        else
+            if out.len() + piece.len() > most
+                return fail(code: LIMIT, msg: f"a compressed message that decompresses past {most} bytes")
+            add_onto(out: @out, data: piece)
+            d.ring_at @ remember(ring: @d.ring, at: d.ring_at, data: piece)
+
+    return ok(out)
+
+# A decompressor whose dictionary is the window `d` holds, to go on where a
+# stream ended with BFINAL.
+function renewed(d: Deflating lent) -> compress.Decompressor
+    fresh = compress.decompressor(.raw, limit: UNBOUNDED)
+    window = bytes.concat([d.ring.slice(from: d.ring_at, to: d.ring.len()), d.ring.slice(from: 0, to: d.ring_at)])
+    return compress.with_dictionary(fresh, dictionary: window).must()
+
+# Adds `data` to `ring`, the last `WINDOW` bytes decompressed, and answers
+# where its oldest byte stands after.
+#
+# - `ring`: the window, which the caller owns.
+# - `at`: where its oldest byte stands now.
+# - `data`: the bytes decompressed.
+function remember(@ring: [u8], at: i64, data: [u8] lent) -> i64
+    i: i64 @= at
+
+    for b in data
+        if ring.len() < WINDOW
+            ring @ ring.push(b)
+        else
+            ring[i] @ b
+            i @ i + 1
+
+            if i == WINDOW
+                i @ 0
+
+    return i
+
+# Adds `data` to `out`, which the caller owns.
+function add_onto(@out: [u8], data: [u8] lent)
+    for b in data
+        out @ out.push(b)
+
+test "deflated and inflated: a message there and back, the window kept, and the next message shorter for it"
+    agreed = negotiating.Agreed(
+        on: true,
+        our_takeover: true,
+        their_takeover: true,
+        our_window_bits: 15,
+        header: "permessage-deflate"
+    )
+    w @= start(agreed, level: 6, min_bytes: 0)
+    r @= start(agreed, level: 6, min_bytes: 0)
+    text = bytes.from_text("Hello, Hello, Hello, Hello")
+    first = deflated(@w, data: text, first: true, last: true)
+    assert inflated(@r, data: first, first: true, last: true, most: 100).must() == text
+    second = deflated(@w, data: text, first: true, last: true)
+    assert second.len() < first.len()
+    assert inflated(@r, data: second, first: true, last: true, most: 100).must() == text
+
+# RFC 7692 § 7.2.3's examples: "Hello" compressed to f2 48 cd c9 c9 07 00,
+# and the same again with the window kept, 2 bytes shorter.
+test "inflated: the RFC's own Hello, twice with the window kept, and in two parts"
+    agreed = negotiating.Agreed(
+        on: true,
+        our_takeover: true,
+        their_takeover: true,
+        our_window_bits: 15,
+        header: "permessage-deflate"
+    )
+    r @= start(agreed, level: 6, min_bytes: 0)
+    hello = bytes.from_text("Hello")
+    assert inflated(@r, data: [242, 72, 205, 201, 201, 7, 0], first: true, last: true, most: 5).must() == hello
+    assert inflated(@r, data: [242, 0, 17, 0, 0], first: true, last: true, most: 5).must() == hello
+    parts @= start(agreed, level: 6, min_bytes: 0)
+    head = inflated(@parts, data: [242, 72, 205], first: true, last: false, most: 5).must()
+    rest = inflated(@parts, data: [201, 201, 7, 0], first: false, last: true, most: 5).must()
+    assert bytes.concat([head, rest]) == hello
+
+# RFC 7692 § 7.2.3.4: "Hello" in a block with BFINAL set, then an empty
+# stored block; and § 7.2.3.3, the same in a stored block.
+test "inflated: a block with BFINAL, a stored block, and a message past its bound"
+    agreed = negotiating.Agreed(
+        on: true,
+        our_takeover: true,
+        their_takeover: true,
+        our_window_bits: 15,
+        header: "permessage-deflate"
+    )
+    r @= start(agreed, level: 6, min_bytes: 0)
+    hello = bytes.from_text("Hello")
+    assert inflated(@r, data: [243, 72, 205, 201, 201, 7, 0, 0], first: true, last: true, most: 5).must() == hello
+    assert inflated(@r, data: [242, 0, 17, 0, 0], first: true, last: true, most: 5).must() == hello
+    stored @= start(agreed, level: 6, min_bytes: 0)
+    assert inflated(@stored, data: [0, 5, 0, 250, 255, 72, 101, 108, 108, 111, 0], first: true, last: true, most: 5).must() == hello
+    small @= start(agreed, level: 6, min_bytes: 0)
+
+    match inflated(@small, data: [242, 72, 205, 201, 201, 7, 0], first: true, last: true, most: 4)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    bad @= start(agreed, level: 6, min_bytes: 0)
+
+    match inflated(@bad, data: [255, 255, 255], first: true, last: true, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "deflated: no window kept, eight bits honoured, and compressing asked by size"
+    fresh = negotiating.Agreed(
+        on: true,
+        our_takeover: false,
+        their_takeover: false,
+        our_window_bits: 8,
+        header: "permessage-deflate"
+    )
+    w @= start(fresh, level: 9, min_bytes: 10)
+    r @= start(fresh, level: 9, min_bytes: 10)
+    text = bytes.from_text("abcabcabcabcabcabcabc")
+    one = deflated(@w, data: text, first: true, last: true)
+    two = deflated(@w, data: text, first: true, last: true)
+    assert one == two
+    assert inflated(@r, data: one, first: true, last: true, most: 100).must() == text
+    assert inflated(@r, data: two, first: true, last: true, most: 100).must() == text
+    assert compressing(w, size: 10) && !compressing(w, size: 9)
+    off = start(negotiating.none(), level: 6, min_bytes: 0)
+    assert !compressing(off, size: 100)
+
+test "remember: the ring fills, then wraps"
+    ring: [u8] @= []
+    at: i64 @= remember(ring: @ring, at: 0, data: [1, 2, 3])
+    assert at == 0 && ring == [1, 2, 3]
+    big: [u8] @= []
+
+    for _ in range(from: 0, to: WINDOW)
+        big @ big.push(9)
+
+    at @ remember(ring: @ring, at: at, data: big)
+    assert ring.len() == WINDOW && at == 3 && ring[0] == 9 && ring[3] == 9

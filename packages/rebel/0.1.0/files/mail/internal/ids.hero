@@ -1,0 +1,114 @@
+# Message identifiers (RFC 5322 § 3.6.4) read from a `Message-ID`,
+# `In-Reply-To` or `References` value, and the domain a new one is made on.
+
+use mail/internal/lex
+
+# The code of a value that holds no identifiers.
+constant INVALID: str
+    "invalid"
+
+# The identifiers of `s`, without their angle brackets. Fails `invalid`
+# where one is not closed, holds no `@`, or something else stands between
+# two.
+function parse(s: str) -> [str]?
+    c @= lex.cursor(s)
+    out: [str] @= []
+
+    while true
+        _ = lex.skip_cfws(@c)?
+
+        if lex.at_end(c)
+            break
+
+        if lex.peek(c) == ','
+            c.at @ c.at + 1
+            continue
+
+        if lex.peek(c) != '<'
+            return fail(
+                code: INVALID,
+                msg: f"{lex.shown(s)} holds \"{lex.char_at(s, at: c.at)}\" at byte {c.at} where an identifier's \"<\" was expected"
+            )
+        start = c.at
+        c.at @ c.at + 1
+
+        while !lex.at_end(c) && lex.peek(c) != '>' && lex.peek(c) != '<'
+            c.at @ c.at + 1
+
+        if lex.peek(c) != '>'
+            return fail(
+                code: INVALID,
+                msg: f"the identifier at byte {start} of {lex.shown(s)} has no \">\" to close it"
+            )
+        inside = s.slice(from: start + 1, to: c.at)
+        c.at @ c.at + 1
+
+        if !has_at(inside)
+            return fail(
+                code: INVALID,
+                msg: f"the identifier \"{inside}\" at byte {start} of {lex.shown(s)} holds no \"@\""
+            )
+        out @ out.push(strip_spaces(inside))
+
+    return ok(out)
+
+# Whether `s` holds an `@`.
+function has_at(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '@'
+            return true
+        at @ at + 1
+
+    return false
+
+# `s` without its spaces, tabs and line breaks, which an obsolete identifier
+# holds between its words.
+function strip_spaces(s: str) -> str
+    kept: [str] @= []
+
+    for ch in s.chars()
+        if !lex.is_space(ch[0])
+            kept @ kept.push(ch)
+
+    return kept.join("")
+
+# Whether `s` may stand right of `@` in a new identifier: a dot-atom of
+# printable ASCII, or a literal in brackets.
+function is_domain(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] >= 0x80
+            return false
+        at @ at + 1
+
+    if s.len() >= 2 && s[0] == '[' && s[s.len() - 1] == ']'
+        inner = s.slice(from: 1, to: s.len() - 1)
+
+        for ch in inner.chars()
+            if ch == "[" || ch == "]" || ch == "\\" || lex.is_space(ch[0])
+                return false
+
+        return true
+    return lex.is_dot_atom(s)
+
+## Tests
+
+test "parse: one, several with spaces and comments, empty, an obsolete space inside, commas"
+    assert parse("<a@x.org>").must() == ["a@x.org"]
+    assert parse(" <a@x.org>\r\n <b@y.org> (old) <c@z>").must() == ["a@x.org", "b@y.org", "c@z"]
+    assert parse("").must().len() == 0
+    assert parse("<a @x.org>").must() == ["a@x.org"]
+    assert parse("<a@x>, <b@y>").must() == ["a@x", "b@y"]
+
+test "parse: not closed, no @, text between, no brackets"
+    for s in ["<a@x", "<ax>", "<a@x> junk", "a@x", "<a<b@x>"]
+        match parse(s)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "is_domain: names, a literal, empty, above ASCII, a space"
+    assert is_domain("example.org") && is_domain("[192.0.2.1]") && !is_domain("") && !is_domain("exämple.org")
+    assert !is_domain("a b") && !is_domain("a..b") && !is_domain("[a b]")

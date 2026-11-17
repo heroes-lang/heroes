@@ -1,0 +1,409 @@
+# A message written from its parts, given flat in a reader's order: every
+# part after the parts under it, so a multipart chooses its boundary once its
+# parts' bytes are known and takes one none of them holds. A header's text
+# above ASCII is written as UTF-8 or as encoded words, as the options ask.
+
+use bytes
+use hash
+use mail/internal/address
+use mail/internal/fields
+use mail/internal/params
+use mail/internal/tree
+use mail/internal/words
+use numbers
+use strings
+
+# The code of a message that cannot be written as it stands.
+constant INVALID: str
+    "invalid"
+
+# The code of a header that needs UTF-8 where the options forbid it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# How a message is written.
+record Style
+    # Whether header text above ASCII is written as UTF-8.
+    utf8: bool
+    # The longest header line, 0 for no fold.
+    line_length: i64
+    # The end of every line.
+    line_end: str
+
+# The bytes of the message `nodes` hold, the message first and every part
+# before its own parts.
+function message(nodes: [tree.Node], style: Style) -> [u8]?
+    count = nodes.len()
+    sizes: [i64] @= []
+    results: [[u8]] @= []
+
+    filled: i64 @= 0
+
+    while filled < count
+        sizes @ sizes.push(1)
+        results @ results.push([])
+        filled @ filled + 1
+
+    i: i64 @= count - 1
+
+    while i >= 0
+        node = nodes[i]
+        kids: [[u8]] @= []
+        child: i64 @= i + 1
+
+        taken: i64 @= 0
+
+        while taken < node.parts
+            kids @ kids.push(results[child])
+            results[child] @ []
+            child @ child + sizes[child]
+            taken @ taken + 1
+
+        sizes[i] @ child - i
+        results[i] @ part(node: node, kids: kids, style: style, is_top: i == 0)?
+        i @ i - 1
+
+    if count == 0
+        return ok([])
+    return ok(results[0])
+
+# One part's bytes: its header, then its body or its parts around a
+# boundary.
+function part(node: tree.Node, kids: [[u8]], style: Style, is_top: bool) -> [u8]?
+    header: [fields.Field] @= node.fields
+    content_type = fields.first(node.fields, name: "Content-Type").default("")
+    is_multi = strings.has_prefix(s: strings.to_lower_ascii(strings.trim(content_type)), prefix: "multipart/")
+
+    if node.parts > 0 && !is_multi
+        return fail(
+            code: INVALID,
+            msg: f"a part holding {node.parts} parts has the content type \"{content_type}\", where a multipart is needed"
+        )
+
+    if is_top && fields.first(node.fields, name: "MIME-Version").is_err() && (content_type != "" || !fields.first(node.fields, name: "Content-Transfer-Encoding").is_err())
+        header @ with_version(header)
+    out: [u8] @= []
+
+    if is_multi && (node.parts > 0 || node.body.len() == 0)
+        boundary = boundary_for(content_type: content_type, kids: kids, node: node)?
+
+        if boundary.changed
+            header @ fields.set(header, name: "Content-Type", value: boundary.content_type)
+        write_header(@out, header: header, style: style)?
+
+        if node.preamble.len() > 0
+            bytes.push_all(to: @out, from: node.preamble)
+            bytes.push_text(@out, s: style.line_end)
+
+        for kid in kids
+            bytes.push_text(@out, s: "--" + boundary.text + style.line_end)
+            bytes.push_all(to: @out, from: kid)
+            bytes.push_text(@out, s: style.line_end)
+
+        bytes.push_text(@out, s: "--" + boundary.text + "--" + style.line_end)
+        bytes.push_all(to: @out, from: node.epilogue)
+        return ok(out)
+    write_header(@out, header: header, style: style)?
+    encoding = strings.to_lower_ascii(
+        strings.trim(fields.first(node.fields, name: "Content-Transfer-Encoding").default(""))
+    )
+
+    if encoding == "binary"
+        bytes.push_all(to: @out, from: node.body)
+    else
+        push_lines(out: @out, data: node.body, line_end: style.line_end)
+    return ok(out)
+
+# `header` with `MIME-Version: 1.0` before its first `Content-` field.
+function with_version(header: [fields.Field]) -> [fields.Field]
+    out: [fields.Field] @= []
+    placed: bool @= false
+
+    for f in header
+        if !placed && strings.has_prefix(s: strings.to_lower_ascii(f.name), prefix: "content-")
+            out @ out.push(fields.Field(name: "MIME-Version", value: "1.0"))
+            placed @ true
+        out @ out.push(f)
+
+    if !placed
+        out @ out.push(fields.Field(name: "MIME-Version", value: "1.0"))
+    return out
+
+# Adds every field of `header`, folded, then the empty line, to `out`.
+function write_header(@out: [u8], header: [fields.Field], style: Style) -> ()?
+    for f in header
+        value = prepared(name: f.name, value: f.value, utf8: style.utf8)?
+        bytes.push_text(
+            @out,
+            s: fields.folded(name: f.name, value: value, limit: style.line_length, line_end: style.line_end)?
+        )
+
+    bytes.push_text(@out, s: style.line_end)
+    return ok()
+
+# Adds `data` to `out`, every line break, `\r\n` or `\n` or `\r` alone, as
+# `line_end`.
+function push_lines(@out: [u8], data: [u8], line_end: str)
+    at: i64 @= 0
+
+    while at < data.len()
+        b = data[at]
+
+        if b == '\r'
+            bytes.push_text(@out, s: line_end)
+
+            if at + 1 < data.len() && data[at + 1] == '\n'
+                at @ at + 2
+            else
+                at @ at + 1
+        else if b == '\n'
+            bytes.push_text(@out, s: line_end)
+            at @ at + 1
+        else
+            out @ out.push(b)
+            at @ at + 1
+
+# The boundary a multipart is written with.
+record Boundary
+    # The boundary.
+    text: str
+    # Whether the content type was given a new one.
+    changed: bool
+    # The content type naming it.
+    content_type: str
+
+# The boundary its content type names where none of `kids` holds it, or a
+# new one made from their bytes. Fails `invalid` where the content type does
+# not read.
+function boundary_for(content_type: str, kids: [[u8]], node: tree.Node) -> Boundary?
+    read = match params.parse(content_type, typed: true)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: "a multipart's content type does not read: " + e.msg)
+
+    given = read.params["boundary"].default("")
+
+    if is_boundary(given) && is_free(boundary: given, kids: kids, node: node)
+        return ok(Boundary(text: given, changed: false, content_type: content_type))
+    seed = numbers.format_u64(hash.fnv1a_64(bytes.concat(kids)), base: 16)
+    n: i64 @= 0
+
+    while true
+        candidate = f"=_{seed}_{n}"
+
+        if is_free(boundary: candidate, kids: kids, node: node)
+            changed_params: {str: str} @= read.params
+            changed_params["boundary"] @ candidate
+            written = params.format(head: read.head, params: changed_params, typed: true)?
+            return ok(Boundary(text: candidate, changed: true, content_type: written))
+        n @ n + 1
+
+# Whether `b` may be a boundary: 1 to 70 of RFC 2046's characters, not
+# ending with a space.
+function is_boundary(b: str) -> bool
+    if b.len() == 0 || b.len() > 70 || b[b.len() - 1] == ' '
+        return false
+    at: i64 @= 0
+
+    while at < b.len()
+        c = b[at]
+        ok_byte = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '\'' || c == '(' || c == ')' || c == '+' || c == '_' || c == ',' || c == '-' || c == '.' || c == '/' || c == ':' || c == '=' || c == '?' || c == ' '
+
+        if !ok_byte
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether no part of `kids`, nor the preamble or the epilogue, holds
+# `--boundary`.
+function is_free(boundary: str, kids: [[u8]], node: tree.Node) -> bool
+    mark = bytes.from_text("--" + boundary)
+
+    if bytes.contains(s: node.preamble, substr: mark) || bytes.contains(s: node.epilogue, substr: mark)
+        return false
+
+    for kid in kids
+        if bytes.contains(s: kid, substr: mark)
+            return false
+
+    return true
+
+## A header's text above ASCII
+
+# The value of the field `name` as it is written: itself where it is ASCII or
+# `utf8` is asked; otherwise an address field's names as encoded words, a
+# MIME field's parameters by RFC 2231, any other field's words above ASCII as
+# encoded words. Fails `unsupported` for a mailbox above ASCII, `invalid`
+# where an address or a MIME field does not read.
+function prepared(name: str, value: str, utf8: bool) -> str?
+    if utf8 || is_ascii(value)
+        return ok(value)
+    lowered = strings.to_lower_ascii(name)
+
+    if is_address_field(lowered)
+        entries = match address.parse_list(value)
+            .ok e  => e
+            .err e => return fail(code: INVALID, msg: f"the field \"{name}\" is no address list: {e.msg}")
+
+        for m in address.flatten(entries)
+            if !address.is_ascii(m)
+                return fail(
+                    code: UNSUPPORTED,
+                    msg: f"the address \"{address.spec_of(m)}\" of the field \"{name}\" is above ASCII, which only a server that took SMTPUTF8 accepts: write it with UTF-8 allowed"
+                )
+
+        return ok(address.format_entries(entries))
+
+    if lowered == "content-type" || lowered == "content-disposition"
+        v = match params.parse(value, typed: lowered == "content-type")
+            .ok v  => v
+            .err e => return fail(code: INVALID, msg: f"the field \"{name}\" does not read: {e.msg}")
+
+        return params.format(head: v.head, params: v.params, typed: lowered == "content-type")
+    return ok(encode_unstructured(value))
+
+# Whether a field of the lower-case `name` holds addresses.
+function is_address_field(name: str) -> bool
+    for known in ["from", "to", "cc", "bcc", "reply-to", "sender", "resent-from", "resent-to", "resent-cc", "resent-bcc", "resent-sender", "disposition-notification-to"]
+        if name == known
+            return true
+
+    return false
+
+# Whether every byte of `s` is ASCII.
+function is_ascii(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] >= 0x80
+            return false
+        at @ at + 1
+
+    return true
+
+# `value` with the words from its first above ASCII to its last written as
+# encoded words, Q unless B is shorter by five bytes, and the words before
+# and after as they are: Python's choice, so `a ü b ö c` is `a`, one
+# encoded run, `c`.
+function encode_unstructured(value: str) -> str
+    pieces = strings.split(s: value, sep: " ")
+    first: i64 @= -1
+    last: i64 @= -1
+
+    for k in range(from: 0, to: pieces.len())
+        if !is_ascii(pieces[k]) || strings.contains(s: pieces[k], substr: "=?")
+            if first < 0
+                first @ k
+            last @ k
+
+    if first < 0
+        return value
+    out: [str] @= []
+
+    for k in range(from: 0, to: first)
+        out @ out.push(pieces[k])
+
+    out @ out.push(shorter(pieces.slice(from: first, to: last + 1).join(" ")))
+
+    for k in range(from: last + 1, to: pieces.len())
+        out @ out.push(pieces[k])
+
+    return out.join(" ")
+
+# `text` as encoded words in Q, which a person can read, unless B is
+# shorter by five bytes or more: Python's choice.
+function shorter(text: str) -> str
+    q = words.encode(text, base64: false, phrase: false)
+    b = words.encode(text, base64: true, phrase: false)
+
+    if q.len() - b.len() >= 5
+        return b
+    return q
+
+## Tests
+
+test "message: one part, its header folded, its line ends made the options'"
+    style = Style(utf8: false, line_length: 78, line_end: "\r\n")
+    node = tree.Node(
+        fields: [fields.Field(name: "Subject", value: "hi")],
+        body: bytes.from_text("a\nb"),
+        preamble: [],
+        epilogue: [],
+        defects: [],
+        parts: 0
+    )
+    assert message(nodes: [node], style: style).must() == bytes.from_text("Subject: hi\r\n\r\na\r\nb")
+    lf = Style(utf8: false, line_length: 78, line_end: "\n")
+    assert message(nodes: [node], style: lf).must() == bytes.from_text("Subject: hi\n\na\nb")
+    assert message(nodes: [], style: style).must() == []
+
+test "message: a multipart keeps a free boundary, takes a new one where a part holds it, the same bytes twice"
+    style = Style(utf8: false, line_length: 78, line_end: "\r\n")
+    top = tree.Node(
+        fields: [fields.Field(name: "Content-Type", value: "multipart/mixed; boundary=XX")],
+        body: [],
+        preamble: [],
+        epilogue: [],
+        defects: [],
+        parts: 2
+    )
+    one = tree.Node(fields: [], body: bytes.from_text("one"), preamble: [], epilogue: [], defects: [], parts: 0)
+    two = tree.Node(fields: [], body: bytes.from_text("two"), preamble: [], epilogue: [], defects: [], parts: 0)
+    written = message(nodes: [top, one, two], style: style).must()
+    assert written == bytes.from_text("MIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=XX\r\n\r\n--XX\r\n\r\none\r\n--XX\r\n\r\ntwo\r\n--XX--\r\n")
+    clash = tree.Node(
+        fields: [],
+        body: bytes.from_text("--XX inside"),
+        preamble: [],
+        epilogue: [],
+        defects: [],
+        parts: 0
+    )
+    renamed = message(nodes: [top, clash, two], style: style).must()
+    assert !bytes.contains(s: renamed, substr: bytes.from_text("boundary=XX"))
+    assert message(nodes: [top, clash, two], style: style).must() == renamed
+    back = tree.read(data: renamed, max_depth: 64)
+    assert back.len() == 3 && back[1].body == bytes.from_text("--XX inside")
+
+test "message: parts under no multipart refused, a value above ASCII encoded, an address above ASCII refused"
+    style = Style(utf8: false, line_length: 78, line_end: "\r\n")
+    plain = tree.Node(
+        fields: [fields.Field(name: "Content-Type", value: "text/plain")],
+        body: [],
+        preamble: [],
+        epilogue: [],
+        defects: [],
+        parts: 1
+    )
+    leaf = tree.Node(fields: [], body: [], preamble: [], epilogue: [], defects: [], parts: 0)
+    assert message(nodes: [plain, leaf], style: style).is_err()
+    bad = tree.Node(
+        fields: [fields.Field(name: "To", value: "jörg@example.org")],
+        body: [],
+        preamble: [],
+        epilogue: [],
+        defects: [],
+        parts: 0
+    )
+
+    match message(nodes: [bad], style: style)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    utf8 = Style(utf8: true, line_length: 78, line_end: "\r\n")
+    assert message(nodes: [bad], style: utf8).must() == bytes.from_text("To: jörg@example.org\r\n\r\n")
+
+test "prepared: ASCII as it is, a subject's words above ASCII, a name, a filename, UTF-8 asked"
+    assert prepared(name: "Subject", value: "plain", utf8: false).must() == "plain"
+    assert prepared(name: "Subject", value: "Re: Grüße", utf8: false).must() == "Re: =?utf-8?q?Gr=C3=BC=C3=9Fe?="
+    assert prepared(name: "Subject", value: "Grüße aus München", utf8: false).must() == "=?utf-8?q?Gr=C3=BC=C3=9Fe_aus_M=C3=BCnchen?="
+    assert prepared(name: "Subject", value: "a ü b ö c", utf8: false).must() == "a =?utf-8?q?=C3=BC_b_=C3=B6?= c"
+    assert prepared(name: "From", value: "Jörg <j@example.org>", utf8: false).must() == "=?utf-8?q?J=C3=B6rg?= <j@example.org>"
+    assert prepared(name: "Content-Disposition", value: "attachment; filename=\"é.txt\"", utf8: false).must() == "attachment; filename*=utf-8''%C3%A9.txt"
+    assert prepared(name: "Subject", value: "Grüße", utf8: true).must() == "Grüße"
+    assert prepared(name: "To", value: "Jörg <bad", utf8: false).is_err()
+    assert prepared(name: "Subject", value: "日本語のテキスト", utf8: false).must() == "=?utf-8?b?5pel5pys6Kqe44Gu44OG44Kt44K544OI?="
+
+test "is_boundary: RFC 2046's characters, lengths, a space at the end"
+    assert is_boundary("a") && is_boundary("=_abc_0") && is_boundary("a b") && !is_boundary("") && !is_boundary("a ")
+    assert !is_boundary(repeat("a", 71)) && !is_boundary("a\"b")

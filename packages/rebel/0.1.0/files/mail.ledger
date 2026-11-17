@@ -1,0 +1,416 @@
+# The ledger of `mail`: what Go's `net/mail`, `mime`, `mime/multipart` and
+# `mime/quotedprintable` (Go 1.27), Python's `email` with its `message`,
+# `policy`, `headerregistry`, `utils`, `parser`, `generator`, `header`,
+# `charset`, `encoders`, `errors`, `iterators`, `contentmanager`,
+# `quoprimime`, `base64mime` and `mime` modules, `quopri` and `mimetypes`
+# (3.15), and Rust's `lettre` (its message side) and `mail-parser` let a
+# program do, one block per capability, and what Rebel answers. Sending is
+# `mail/smtp`'s ledger. The lists are this machine's, 2026-11-17: `go doc
+# -all` of the four Go packages, `dir()` of each Python module and of
+# `EmailMessage`, `EmailPolicy`, `Address`, `Group`, `BaseHeader`, `Header`
+# and `Charset`; Rust's standard library has no mail, so its line names the
+# two crates the brief gives as the yardstick, their items read from
+# docs.rs's `all.html` the same day (neither crate is on this machine). Every
+# expected value of the package's tests that Go or Python answers was
+# observed from them the same day.
+
+capability message/read  a message read from bytes: its header fields in order, its body
+  heroes  mail.parse_message
+  go      net/mail.ReadMessage, Message, Message.Header, Message.Body
+  rust    mail_parser::MessageParser, mail_parser::Message, mail_parser::MessageRef
+  python  email.message_from_bytes, email.message_from_string, email.parser.BytesParser, email.parser.Parser, email.parser.FeedParser, email.parser.BytesFeedParser, email.message.EmailMessage, email.message.Message, email.message.MIMEPart
+  note    never fails, as Python reads: a line that is no field ends the header (Python's MissingHeaderBodySeparatorDefect), and what was repaired is told in `defects`; Go fails on such a line. A header byte that is not UTF-8 is read as ISO-8859-1, where Python keeps it with surrogate escapes and Go keeps the bytes
+
+capability message/read-stream  a message read from a stream or a file
+  heroes  mail.read_message
+  go      net/mail.ReadMessage
+  rust    -
+  python  email.message_from_binary_file, email.message_from_file, email.parser.BytesParser.parse, email.parser.Parser.parse
+  note    the stream is read to its end and parsed whole
+
+capability message/defects  what was wrong in a message read, told and not raised
+  heroes  mail.Message.defects
+  go      -
+  rust    mail_parser::DecodeProblems
+  python  email.message.EmailMessage.defects, email.headerregistry.BaseHeader.defects, email.policy.EmailPolicy.handle_defect, email.policy.EmailPolicy.register_defect, email.policy.EmailPolicy.raise_on_defect, email.policy.strict, email.errors.MessageDefect, email.errors.NoBoundaryInMultipartDefect, email.errors.StartBoundaryNotFoundDefect, email.errors.CloseBoundaryNotFoundDefect, email.errors.FirstHeaderLineIsContinuationDefect, email.errors.MisplacedEnvelopeHeaderDefect, email.errors.MissingHeaderBodySeparatorDefect, email.errors.MultipartInvariantViolationDefect, email.errors.InvalidMultipartContentTransferEncodingDefect, email.errors.UndecodableBytesDefect, email.errors.InvalidBase64PaddingDefect, email.errors.InvalidBase64CharactersDefect, email.errors.InvalidBase64LengthDefect, email.errors.HeaderDefect, email.errors.InvalidHeaderDefect, email.errors.HeaderMissingRequiredValue, email.errors.NonPrintableDefect, email.errors.ObsoleteHeaderDefect, email.errors.NonASCIILocalPartDefect, email.errors.InvalidDateDefect
+  note    a sentence each; a strict reader is a program that refuses a message whose `defects` is not empty, where Python's `raise_on_defect` raises
+
+capability message/write  a message written as bytes, its header folded, its parts with boundaries
+  heroes  mail.format_message, mail.write_message
+  go      -
+  rust    lettre::Message, lettre::message::Message
+  python  email.message.EmailMessage.as_bytes, email.message.EmailMessage.as_string, email.generator.BytesGenerator, email.generator.Generator, email.policy.EmailPolicy.linesep, email.policy.EmailPolicy.max_line_length, email.policy.EmailPolicy.verify_generated_headers, email.errors.HeaderWriteError
+  note    a value holding a line break is refused `invalid`, as Python's `verify_generated_headers` refuses one, against header injection; a body's line breaks are written as the options' line end but under `binary`, as Python's generator writes them
+
+capability message/write-options  the line end, the fold length and UTF-8 in the header chosen
+  heroes  mail.WriteOptions, mail.standard_options, mail.utf8_options
+  go      -
+  rust    -
+  python  email.policy.SMTP, email.policy.SMTPUTF8, email.policy.HTTP, email.policy.default, email.policy.EmailPolicy, email.policy.EmailPolicy.clone, email.policy.EmailPolicy.utf8, email.policy.EmailPolicy.linesep, email.policy.EmailPolicy.max_line_length, email.policy.EmailPolicy.cte_type, email.policy.compat32
+  note    Python's `HTTP` policy is `line_length: 0`; `cte_type` is the builders' choice, always 7-bit (below); Python's compat32 behaviour, the old API kept for old programs, has no counterpart
+
+capability header/read  the header fields alone, unfolded
+  heroes  mail.parse_header
+  go      -
+  rust    mail_parser::Headers, mail_parser::Header, mail_parser::HeaderIter, mail_parser::HeaderForm, mail_parser::HeaderName, mail_parser::HeaderKey, mail_parser::NamedHeaders
+  python  email.parser.BytesHeaderParser, email.parser.HeaderParser, email.message.EmailMessage.raw_items, email.policy.EmailPolicy.header_source_parse
+  note    a value is kept as written, unfolded, and never decoded: decoding is asked (`decode_header`, `parse_address_list`, `parse_date`), where Python's default policy decodes on reading
+
+capability header/write  a header field folded to a line length, the header written
+  heroes  mail.format_field, mail.format_header
+  go      -
+  rust    lettre::message::header::Headers, lettre::message::header::HeaderName, lettre::message::header::HeaderValue, lettre::message::header::InvalidHeaderName
+  python  email.policy.EmailPolicy.fold, email.policy.EmailPolicy.fold_binary, email.headerregistry.BaseHeader.fold, email.policy.EmailPolicy.refold_source
+  note    folded before a space; a word longer than the line stays whole, as Python leaves it
+
+capability header/unfold  a folded value made one line
+  heroes  mail.unfold
+  go      -
+  rust    -
+  python  email.policy.EmailPolicy.header_fetch_parse
+  note    every line break before a space or a tab is removed, the space kept (RFC 5322 § 2.2.3)
+
+capability header/lookup  a field's value by its name in any case, every value of a name, whether one is there
+  heroes  mail.value_of, mail.values_of, mail.has_field
+  go      net/mail.Header, net/mail.Header.Get, net/mail.ErrHeaderNotPresent
+  rust    mail_parser::Message
+  python  email.message.EmailMessage.get, email.message.EmailMessage.get_all, email.message.EmailMessage.keys, email.message.EmailMessage.values, email.message.EmailMessage.items
+  note    absent is `not_found`, where Go answers "" and Python None; the fields themselves are `Message.fields`, in order
+
+capability header/change  a field set, added, removed
+  heroes  mail.with_field, mail.with_field_added, mail.without_field
+  go      -
+  rust    lettre::message::MessageBuilder, lettre::message::header::Headers
+  python  email.message.EmailMessage.add_header, email.message.EmailMessage.replace_header, email.message.EmailMessage.set_raw, email.message.EmailMessage.clear, email.policy.EmailPolicy.header_store_parse, email.policy.EmailPolicy.header_max_count
+  note    `with_field` keeps one field of the name, so a second `Subject` is never written by mistake (Python's `header_max_count`); `with_field_added` adds one beside the others, `Received` and `Comments`
+
+capability header/typed  a field read as what it holds: addresses, a date, a content type, a disposition, a transfer encoding, identifiers
+  heroes  mail.addresses_of, mail.date_of, mail.content_type_of, mail.disposition_of, mail.transfer_encoding_of, mail.parse_message_ids
+  go      net/mail.Header.AddressList, net/mail.Header.Date
+  rust    mail_parser::HeaderValue, mail_parser::Message, mail_parser::ParsedValue, mail_parser::TextList
+  python  email.headerregistry.HeaderRegistry, email.headerregistry.AddressHeader, email.headerregistry.SingleAddressHeader, email.headerregistry.UniqueAddressHeader, email.headerregistry.UniqueSingleAddressHeader, email.headerregistry.DateHeader, email.headerregistry.UniqueDateHeader, email.headerregistry.UnstructuredHeader, email.headerregistry.UniqueUnstructuredHeader, email.headerregistry.ContentTypeHeader, email.headerregistry.ContentDispositionHeader, email.headerregistry.ContentTransferEncodingHeader, email.headerregistry.ParameterizedMIMEHeader, email.headerregistry.MIMEVersionHeader, email.headerregistry.MessageIDHeader, email.headerregistry.ReferencesHeader, email.headerregistry.BaseHeader, email.headerregistry.BaseHeader.name, email.headerregistry.BaseHeader.init, email.policy.EmailPolicy.header_factory
+  note    a function per kind of field, where Python's registry makes each header an object; `MIME-Version` is read with `value_of`
+
+capability address/parse  one mailbox read: a name, a quoted local part, a domain literal, comments, encoded words in the name
+  heroes  mail.parse_address, mail.Address
+  go      net/mail.ParseAddress, net/mail.Address, net/mail.Address.Name, net/mail.Address.Address, net/mail.AddressParser, net/mail.AddressParser.Parse, net/mail.AddressParser.WordDecoder
+  rust    lettre::message::Mailbox, lettre::Address, lettre::address::Address, lettre::address::AddressError, mail_parser::Mailbox, mail_parser::parse_address_local_part, mail_parser::parse_address_domain
+  python  email.headerregistry.Address, email.headerregistry.Address.display_name, email.headerregistry.Address.username, email.headerregistry.Address.domain, email.headerregistry.Address.addr_spec, email.utils.parseaddr
+  note    refused as Go refuses them: no `@`, a dot at an end of a local part or two together (Python reads those with a defect); a comment between the local part and `@` is skipped as RFC 5322 allows (Go refuses it); a comment after a bare address is taken as its name where none is written, as Go and `parseaddr` do; an encoded word holding a comma is read whole, as Python reads it
+
+capability address/list  an address list read, groups flattened or kept
+  heroes  mail.parse_address_list, mail.parse_recipients, mail.Recipient
+  go      net/mail.ParseAddressList, net/mail.AddressParser.ParseList
+  rust    lettre::message::Mailboxes, lettre::message::header::MailboxesHeader, mail_parser::Address, mail_parser::AddressList, mail_parser::AddressRun, mail_parser::Group
+  python  email.utils.getaddresses, email.headerregistry.Group, email.headerregistry.Group.addresses, email.headerregistry.Group.display_name, email.headerregistry.AddressHeader.addresses, email.headerregistry.AddressHeader.groups
+  note    empty entries between commas are skipped (RFC 5322's obs-addr-list); an entry that is no mailbox fails the whole list `invalid`, as Go fails it, where `getaddresses` answers ('', '')
+
+capability address/write  a mailbox and a list written, names quoted or encoded where they must be
+  heroes  mail.format_address, mail.format_address_list, mail.format_recipients, mail.format_addr_spec
+  go      net/mail.Address.String
+  rust    lettre::message::Mailbox, lettre::message::Mailboxes
+  python  email.utils.formataddr, email.headerregistry.Address.__str__, email.utils.quote, email.utils.unquote, email.utils.COMMASPACE, email.utils.specialsre, email.utils.escapesre
+  note    a name that is atoms is written bare, as Python writes it (Go quotes every name); a name above ASCII as Q-encoded words limited to the bytes RFC 2047 § 5 lets a phrase hold, where Go also leaves `,` and `.` unencoded; an address with no name is written bare, as Python writes it, where Go writes it in angle brackets
+
+capability address/utf8  an address above ASCII (RFC 6532), read, written, and told apart for SMTPUTF8
+  heroes  mail.is_ascii_address, mail.utf8_options
+  go      net/mail.ParseAddress
+  rust    -
+  python  email.policy.SMTPUTF8, email.errors.NonASCIILocalPartDefect
+  note    a local part or a domain above ASCII is read and written as UTF-8; writing it with `standard_options` fails `unsupported`, where Python writes it raw and only the server refuses
+
+capability address/idna  a domain above ASCII written in ASCII (IDNA's A-labels)
+  heroes  pending
+  go      -
+  rust    lettre::Address
+  python  -
+  note    IDNA 2008 needs `unicode/normalize` and the IDNA mapping tables, which no package of Rebel holds yet; RFC 6532's UTF-8 is written meanwhile
+
+capability address/subaddress  the detail after `+` in a local part
+  heroes  refused: a convention of some servers (RFC 5233 names it for Sieve), not of a message; `strings.split_once(s: a.local, sep: "+")` answers it
+  go      -
+  rust    mail_parser::parse_address_detail_part, mail_parser::parse_address_user_part
+  python  -
+
+capability words/decode  encoded words (RFC 2047) decoded, B and Q, a charset this package reads
+  heroes  mail.decode_header
+  go      mime.WordDecoder, mime.WordDecoder.Decode, mime.WordDecoder.DecodeHeader
+  rust    mail_parser::Encoding
+  python  email.header.decode_header, email.header.make_header, email.header.ecre, email.header.fcre
+  note    space between two words is dropped, a word not well formed stays text (as Go reads it; Python decodes broken base 64 to nothing), base 64 missing its padding is read (Python), an RFC 2231 language after `*` in the charset is read (Python; Go fails); a UTF-8 word whose bytes are not UTF-8 fails `not_text`, where Go keeps the bytes and Python writes U+FFFD
+
+capability words/keep-bytes  encoded words in a charset not read kept as bytes, and said so
+  heroes  mail.decode_words, mail.Word
+  go      mime.WordDecoder.CharsetReader
+  rust    mail_parser::decoders::charsets::DecoderFnc
+  python  email.header.decode_header
+  note    adjacent words of one charset are joined before their bytes are decoded, so a character split across two is read whole, as Python joins them; Go decodes each alone and fails there. A program brings its own decoder by reading `data` and `charset`, where Go takes a function
+
+capability words/encode  text written as encoded words that never split a character, each at most 75 bytes
+  heroes  mail.encode_words, mail.WordEncoding
+  go      mime.WordEncoder, mime.WordEncoder.Encode, mime.BEncoding, mime.QEncoding
+  rust    -
+  python  email.header.Header, email.header.Header.encode, email.header.Header.append, email.header.MAXLINELEN, email.header.USASCII, email.header.UTF8, email.header.SPACE, email.header.SPACE8, email.header.FWS, email.header.BSPACE, email.header.NL, email.header.EMPTYSTRING
+  note    UTF-8 only, as Go writes; the words are Go's byte for byte (observed). Writing a header with `standard_options` encodes the words from the first above ASCII to the last as one run, Q unless B is five bytes shorter, as Python's policy does (observed)
+
+capability charsets/read  the charsets of words, parameters and parts decoded
+  heroes  mail.text_of, mail.decode_header
+  go      -
+  rust    mail_parser::decoders::charsets::Charset, mail_parser::decoders::charsets::charset_decoder, mail_parser::decoders::charsets::decode, mail_parser::decoders::charsets::decode_append
+  python  email.charset.Charset, email.charset.Charset.get_output_charset, email.charset.ALIASES, email.charset.CHARSETS, email.charset.CODEC_MAP, email.charset.DEFAULT_CHARSET, email.charset.UNKNOWN8BIT, email.message.EmailMessage.get_charsets, email.message.EmailMessage.get_content_charset
+  note    UTF-8, US-ASCII and ISO-8859-1 by their names and aliases; the WHATWG legacy encodings (Windows-1252, the ISO-8859 family, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR, KOI8) wait for `unicode/encodings`, queued and not written: they fail `unsupported` and `decode_words` keeps their bytes. The charset of a part is `content_type_of(m).params["charset"]`
+
+capability charsets/legacy  the WHATWG legacy encodings read in mail
+  heroes  pending
+  go      -
+  rust    mail_parser::decoders::charsets::Charset
+  python  email.charset.Charset, email.charset.CODEC_MAP
+  note    waits for `unicode/encodings` (README § A1, layer 2), queued and not written on 2026-11-17
+
+capability charsets/register  a program's own charset or alias registered
+  heroes  refused: a registry is a mutable global, which Heroes has not; `decode_words` hands a program the bytes and the charset's name to decode itself
+  go      mime.WordDecoder.CharsetReader
+  rust    -
+  python  email.charset.add_alias, email.charset.add_charset, email.charset.add_codec
+
+capability mime/content-type  a content type read and written with its parameters
+  heroes  mail.parse_content_type, mail.format_content_type, mail.ContentType, mail.content_type_of
+  go      mime.ParseMediaType, mime.FormatMediaType, mime.ErrInvalidMediaParameter
+  rust    lettre::message::header::ContentType, lettre::message::header::ContentTypeErr, mail_parser::ContentType
+  python  email.message.EmailMessage.get_content_type, email.message.EmailMessage.get_content_maintype, email.message.EmailMessage.get_content_subtype, email.message.EmailMessage.get_param, email.message.EmailMessage.get_params, email.message.EmailMessage.set_param, email.message.EmailMessage.del_param, email.message.EmailMessage.set_type, email.message.EmailMessage.get_boundary, email.message.EmailMessage.set_boundary, email.message.EmailMessage.set_charset, email.message.EmailMessage.get_charset, email.message.SEMISPACE, email.message.tspecials
+  note    a parameter twice is refused, as Go refuses it; an unquoted value above ASCII is read, as Python reads it (Go refuses); a part with no valid content type is `text/plain; charset=us-ascii`, RFC 2045's, as Python answers. A parameter is changed by changing `params` and writing the field with `with_field`
+
+capability mime/default-type  the content type a part of a `multipart/digest` has when it names none
+  heroes  pending
+  go      -
+  rust    -
+  python  email.message.EmailMessage.get_default_type, email.message.EmailMessage.set_default_type
+  note    the default is the parent's to give, and a `Message` holds no parent; `content_type_of` answers `text/plain` for such a part, which its doc says
+
+capability mime/rfc2231  parameters by RFC 2231: charsets, languages and continuations, read and written
+  heroes  mail.parse_content_type, mail.parse_disposition, mail.format_content_type, mail.format_disposition
+  go      mime.ParseMediaType, mime.FormatMediaType
+  rust    -
+  python  email.utils.decode_rfc2231, email.utils.encode_rfc2231, email.utils.collapse_rfc2231_value, email.utils.decode_params, email.utils.rfc2231_continuation, email.utils.TICK
+  note    continuations are joined while each number is there, as Go stops at a gap; a value in a charset not read is kept as written under its name with `*`, where Go drops it and Python keeps it raw; a long value above ASCII is written in continuations, as Python writes it, where Go writes one long piece
+
+capability mime/disposition  a disposition read and written, a part's file name, whether it is an attachment
+  heroes  mail.parse_disposition, mail.format_disposition, mail.Disposition, mail.disposition_of, mail.filename_of, mail.is_attachment
+  go      mime/multipart.Part.FileName
+  rust    lettre::message::header::ContentDisposition, mail_parser::MessagePart, mail_parser::PartFlags
+  python  email.message.EmailMessage.get_content_disposition, email.message.EmailMessage.get_filename, email.message.EmailMessage.is_attachment
+  note    the file name is the disposition's `filename`, else the content type's `name`, as Python looks; encoded words in it are decoded, as mail readers do for the many writers that put them there against RFC 2047
+
+capability mime/tree  a multipart read as a tree, its preamble and epilogue kept
+  heroes  mail.parse_message, mail.Message.parts, mail.Message.preamble, mail.Message.epilogue, mail.is_multipart, mail.MAX_DEPTH
+  go      mime/multipart.NewReader, mime/multipart.Reader, mime/multipart.Reader.NextPart, mime/multipart.Reader.NextRawPart, mime/multipart.Part, mime/multipart.Part.Header, mime/multipart.Part.Read, mime/multipart.Part.Close
+  rust    mail_parser::MessagePart, mail_parser::PartKind, mail_parser::PartId, mail_parser::Message
+  python  email.message.EmailMessage.is_multipart, email.message.EmailMessage.iter_parts, email.message.EmailMessage.get_payload, email.message.EmailMessage.preamble, email.message.EmailMessage.epilogue, email.message.EmailMessage.attach, email.message.EmailMessage.set_payload
+  note    read with an explicit stack, never recursion, and 64 levels deep at most, a deeper multipart kept as one part with a defect; a boundary line may carry spaces after it (RFC 2046's transport padding), and a missing closing boundary ends the last part at the end, with a defect, as Python reads it. Go reads one level as a stream; a program reading a part's bytes asks `content_of`
+
+capability mime/walk  every part of a tree in a reader's order
+  heroes  mail.walk
+  go      -
+  rust    mail_parser::Message
+  python  email.message.EmailMessage.walk, email.iterators.walk, email.iterators.typed_subpart_iterator, email.iterators.body_line_iterator
+  note    a list of the parts, each with its own, where Python yields them; a typed walk is `walk` and `content_type_of`, the lines of a body `text_of` and `strings.lines`
+
+capability mime/body  the part a reader shows as the message's text
+  heroes  mail.body_of
+  go      -
+  rust    mail_parser::Message, mail_parser::PartRole
+  python  email.message.EmailMessage.get_body
+  note    Python's search, read from its documentation and its answers: every part of a multipart but in `related` its start, never an attachment, the subtype first in `preferring` won
+
+capability mime/attachments  the parts a reader shows as files
+  heroes  mail.attachments_of
+  go      -
+  rust    mail_parser::Message
+  python  email.message.EmailMessage.iter_attachments
+  note    over the whole tree, where Python's `iter_attachments` looks at the top part's children only; a part named by a `Content-ID` or marked `inline` is the HTML's and is left out
+
+capability mime/content  a part's content with its transfer encoding undone, as bytes or as text
+  heroes  mail.content_of, mail.text_of
+  go      -
+  rust    mail_parser::MessagePart
+  python  email.message.EmailMessage.get_content, email.message.EmailMessage.get_payload, email.contentmanager.ContentManager, email.contentmanager.raw_data_manager, email.contentmanager.get_text_content, email.contentmanager.get_non_text_content, email.contentmanager.get_message_content, email.contentmanager.get_and_fixup_unknown_message_content, email.policy.EmailPolicy.content_manager, email.policy.raw_data_manager
+  note    a text part naming no charset is read as UTF-8, which holds US-ASCII, where Python reads US-ASCII with replacement characters; the line breaks are kept as the content holds them, as Python keeps them
+
+capability mime/build-text  a text part made, its charset and transfer encoding chosen
+  heroes  mail.text_part
+  go      -
+  rust    lettre::message::SinglePart, lettre::message::SinglePartBuilder, lettre::message::Body, lettre::message::IntoBody, lettre::message::MaybeString, lettre::message::header::ContentTransferEncoding
+  python  email.message.EmailMessage.set_content, email.contentmanager.set_text_content, email.mime.text.MIMEText, email.mime.nonmultipart.MIMENonMultipart, email.mime.base.MIMEBase, email.encoders.encode_7or8bit, email.encoders.encode_quopri, email.encoders.encode_noop
+  note    UTF-8 always, as Python says it; `7bit` where the text is ASCII in lines of 78 bytes at most, otherwise the shorter of quoted-printable and base 64, Python's rule for a policy of seven bits. Never `8bit`, which a server without 8BITMIME refuses; the text is kept as given, where Python adds a line break at its end
+
+capability mime/build-file  a part of bytes, a file attached, a file shown inline
+  heroes  mail.data_part, mail.attachment_part, mail.inline_part, mail.Attachment
+  go      -
+  rust    lettre::message::Attachment, lettre::message::header::ContentId, lettre::message::header::ContentLocation
+  python  email.message.EmailMessage.add_attachment, email.message.EmailMessage.add_related, email.contentmanager.set_bytes_content, email.mime.application.MIMEApplication, email.mime.image.MIMEImage, email.mime.image.rule, email.mime.audio.MIMEAudio, email.mime.audio.rule, email.encoders.encode_base64
+  note    base 64 always; the media type is the program's to name, where Python's MIMEImage and MIMEAudio guess it from the bytes (their `rule` tables): the guess is `pending` below with the extension's
+
+capability mime/build-multipart  parts put together as a multipart, its boundary one none of them holds
+  heroes  mail.multipart
+  go      mime/multipart.NewWriter, mime/multipart.Writer, mime/multipart.Writer.CreatePart, mime/multipart.Writer.Boundary, mime/multipart.Writer.SetBoundary, mime/multipart.Writer.Close
+  rust    lettre::message::MultiPart, lettre::message::MultiPartBuilder, lettre::message::MultiPartKind
+  python  email.mime.multipart.MIMEMultipart, email.message.EmailMessage.make_mixed, email.message.EmailMessage.make_alternative, email.message.EmailMessage.make_related, email.message.EmailMessage.add_alternative, email.errors.MultipartConversionError, email.errors.BoundaryError
+  note    the boundary is chosen when the message is written: the one its content type names where no part holds it, otherwise `=_` and a hash of the parts' bytes, which quoted-printable and base 64 never write, numbered until no part holds it; so the same message writes the same bytes, where Go and Python draw a random one
+
+capability mime/forward  a message put whole inside another
+  heroes  mail.message_part
+  go      -
+  rust    -
+  python  email.mime.message.MIMEMessage, email.contentmanager.set_message_content
+  note    its body is the message's bytes, read again with `parse_message`
+
+capability mime/compose  a message of text, HTML and files in the structure readers expect
+  heroes  mail.compose
+  go      -
+  rust    lettre::message::MessageBuilder
+  python  email.message.EmailMessage.set_content, email.message.EmailMessage.add_alternative, email.message.EmailMessage.add_related, email.message.EmailMessage.add_attachment, email.message.EmailMessage.clear_content
+  note    mixed around alternative around related, each only where needed; the envelope fields are the program's, through `with_field`, as lettre's builder sets them
+
+capability mime/types-by-extension  a media type guessed from a file's extension, and the extensions of a type
+  heroes  pending
+  go      mime.TypeByExtension, mime.ExtensionsByType, mime.AddExtensionType
+  rust    -
+  python  mimetypes.guess_type, mimetypes.guess_file_type, mimetypes.guess_extension, mimetypes.guess_all_extensions, mimetypes.add_type, mimetypes.init, mimetypes.inited, mimetypes.knownfiles, mimetypes.read_mime_types, mimetypes.types_map, mimetypes.common_types, mimetypes.encodings_map, mimetypes.suffix_map, mimetypes.MimeTypes
+  note    needs a table of its own (Go's built-in one and the system's `mime.types`, which `fs`, of `mail`'s own layer, would read); not written in this round
+
+capability transfer/quoted-printable  quoted-printable written and read
+  heroes  mail.format_quoted_printable, mail.parse_quoted_printable
+  go      mime/quotedprintable.NewWriter, mime/quotedprintable.Writer, mime/quotedprintable.Writer.Binary, mime/quotedprintable.Writer.Write, mime/quotedprintable.Writer.Close, mime/quotedprintable.NewReader, mime/quotedprintable.Reader, mime/quotedprintable.Reader.Read
+  rust    -
+  python  quopri.encodestring, quopri.decodestring, quopri.encode, quopri.decode, quopri.a2b_qp, quopri.b2a_qp, quopri.needsquoting, quopri.quote, quopri.unhex, quopri.ishex, quopri.ESCAPE, quopri.HEX, quopri.MAXLINESIZE, quopri.EMPTYSTRING, email.quoprimime.body_encode, email.quoprimime.body_decode, email.quoprimime.body_check, email.quoprimime.body_length, email.quoprimime.decode, email.quoprimime.decodestring, email.quoprimime.quote, email.quoprimime.unquote
+  note    written as Go writes it, byte for byte (observed): 75 bytes and `=` at most, a line of 76 broken, where Python keeps it whole; read leniently as both read it, a broken escape kept, and the spaces before a line's end dropped as RFC 2045 asks and Go does (Python keeps them)
+
+capability transfer/base64  base 64 in lines of 76 written and read
+  heroes  mail.format_base64_lines, mail.parse_base64_lines
+  go      -
+  rust    -
+  python  email.base64mime.body_encode, email.base64mime.body_decode, email.base64mime.decode, email.base64mime.decodestring, email.base64mime.b2a_base64, email.base64mime.a2b_base64, email.base64mime.MISC_LEN
+  note    a byte of no base 64 alphabet fails `invalid`, where Python skips it with a defect; spaces and line breaks anywhere are skipped and padding may be missing
+
+capability transfer/header-q  the Q and B encodings of a header's words, alone
+  heroes  mail.encode_words, mail.decode_header
+  go      mime.QEncoding, mime.BEncoding
+  rust    -
+  python  email.quoprimime.header_encode, email.quoprimime.header_decode, email.quoprimime.header_check, email.quoprimime.header_length, email.base64mime.header_encode, email.base64mime.header_length, email.charset.Charset.header_encode, email.charset.Charset.header_encode_lines, email.charset.Charset.body_encode, email.charset.Charset.get_body_encoding, email.charset.QP, email.charset.BASE64, email.charset.SHORTEST, email.charset.RFC2047_CHROME_LEN
+  note    a word's encoding is reached through the words it makes; the lengths Python's helpers compute are the writer's own affair
+
+capability transfer/encoding-name  the transfer encoding a part names
+  heroes  mail.transfer_encoding_of
+  go      -
+  rust    mail_parser::MessagePart
+  python  email.headerregistry.ContentTransferEncodingHeader.cte
+  note    `7bit` where none is named; an encoding RFC 2045 does not name fails `unsupported` in `content_of` (uuencode included, which Python reads under `x-uuencode`)
+
+capability date/read  a message's date read with its offset, the obsolete forms too
+  heroes  mail.parse_date, mail.date_of, mail.Date
+  go      net/mail.ParseDate, net/mail.Header.Date
+  rust    mail_parser::DateTime, mail_parser::DOW, mail_parser::MONTH
+  python  email.utils.parsedate_to_datetime, email.utils.parsedate, email.utils.parsedate_tz, email.utils.mktime_tz
+  note    the zones of North America read as RFC 5322 § 4.3 says, as Python reads them (Go reads `EST` as UTC); `-0000`, a military letter and a missing zone mean an offset unknown, as Python's naive answer says (Go refuses a missing zone); `Z` is UTC, as Python reads it; an hour of 24, a second of 60 and an offset of 24 hours are refused, as Python refuses them; a weekday that is not the date's is read, as both read it
+
+capability date/write  a date written in its offset, now or at an instant in a zone
+  heroes  mail.format_date, mail.date_at
+  go      -
+  rust    lettre::message::header::Date
+  python  email.utils.format_datetime, email.utils.formatdate, email.utils.localtime
+  note    `date_at(t: now, zone: time.local_zone())` is Python's `formatdate(localtime=True)`; the offset is cut to the minute
+
+capability ids/make  a new Message-ID
+  heroes  mail.make_message_id
+  go      -
+  rust    lettre::message::header::MessageId
+  python  email.utils.make_msgid
+  note    128 random bits from the system in hexadecimal, where Python joins the time, the process and a random number; the domain is the program's, where Python asks the machine's name
+
+capability ids/read  the identifiers of Message-ID, In-Reply-To and References
+  heroes  mail.parse_message_ids
+  go      -
+  rust    lettre::message::header::InReplyTo, lettre::message::header::References, mail_parser::MessageId, mail_parser::Message
+  python  email.headerregistry.MessageIDHeader, email.headerregistry.ReferencesHeader
+  note    without their angle brackets, as mail-parser answers them
+
+capability fields/known  the well-known fields set by name
+  heroes  mail.with_field, mail.format_address_list, mail.format_date
+  go      -
+  rust    lettre::message::header::From, lettre::message::header::To, lettre::message::header::Cc, lettre::message::header::Bcc, lettre::message::header::ReplyTo, lettre::message::header::Sender, lettre::message::header::Subject, lettre::message::header::Comments, lettre::message::header::Keywords, lettre::message::header::UserAgent, lettre::message::header::MimeVersion, lettre::message::header::MIME_VERSION_1_0, lettre::message::header::Header
+  python  -
+  note    a field is a name and a value: one function sets any, and a value is made by the function of its kind; `MIME-Version: 1.0` is written by `format_message` and `compose` where it is owed
+
+capability utf8/header  header text above ASCII written as UTF-8 (RFC 6532) or as encoded words
+  heroes  mail.WriteOptions.utf8, mail.format_message
+  go      -
+  rust    -
+  python  email.policy.SMTPUTF8, email.policy.EmailPolicy.utf8
+  note    with `standard_options` an address field's names are encoded and its mailboxes must be ASCII, a MIME field's parameters are written by RFC 2231, any other field's words above ASCII are encoded; with `utf8_options` every value is written as it is
+
+capability mbox/split  the messages of an mbox file
+  heroes  mail.split_mbox
+  go      -
+  rust    mail_parser::mailbox::mbox::MessageIterator, mail_parser::mailbox::mbox::Message
+  python  -
+  note    RFC 4155: a `From ` line first or after an empty line begins a message; mboxrd's `>From ` quoting undone, which reads mboxo's as well
+
+capability mbox/envelope  the `From ` envelope line of an mbox message kept on the message
+  heroes  refused: the envelope line is the mailbox's, not the message's (RFC 4155); `split_mbox` leaves it out and a program that needs it reads the line itself
+  go      -
+  rust    -
+  python  email.message.EmailMessage.get_unixfrom, email.message.EmailMessage.set_unixfrom, email.policy.EmailPolicy.mangle_from_, email.errors.MisplacedEnvelopeHeaderDefect
+
+capability maildir  the messages of a maildir folder, and their flags
+  heroes  refused: walking a folder is `fs`'s, of `mail`'s own layer, which `mail` may not use (README § A1); `fs` reads each file and `parse_message` reads it, and a flag is the file name's own text after `:2,`
+  go      -
+  rust    mail_parser::mailbox::maildir::FolderIterator, mail_parser::mailbox::maildir::MessageIterator, mail_parser::mailbox::maildir::Message, mail_parser::mailbox::maildir::Flag
+  python  -
+
+capability trace/received  a `Received` field read into its parts: from, by, with, id, for, date
+  heroes  pending
+  go      -
+  rust    mail_parser::Received, mail_parser::Greeting, mail_parser::Host, mail_parser::Protocol, mail_parser::TlsVersion
+  python  -
+  note    RFC 5321 § 4.4's grammar and the many forms servers write are not written in this round; the field is read whole with `values_of`, and its date after its last `;` with `parse_date`
+
+capability thread/subject  a subject reduced to its thread's base (RFC 5256)
+  heroes  pending
+  go      -
+  rust    mail_parser::thread_name
+  python  -
+  note    RFC 5256 § 2.1's base subject (Re:, Fwd:, [blob] taken off in its order) is not written in this round
+
+capability html/text  an HTML body turned into text, a text into HTML, a preview cut
+  heroes  refused: HTML is `html`'s to read; `mail` answers the HTML part, `text_of(body_of(m, preferring: ["html"]))`, and `html` reads it
+  go      -
+  rust    mail_parser::decoders::html::html_to_text, mail_parser::decoders::html::text_to_html, mail_parser::decoders::html::add_html_token, mail_parser::decoders::html::strip_charset_meta, mail_parser::decoders::preview::preview_html, mail_parser::decoders::preview::preview_text, mail_parser::decoders::preview::truncate_html, mail_parser::decoders::preview::truncate_text
+  python  -
+
+capability dkim  a message signed by DKIM (RFC 6376)
+  heroes  pending
+  go      -
+  rust    lettre::message::dkim::dkim_sign, lettre::message::dkim::DkimConfig, lettre::message::dkim::DkimSigningKey, lettre::message::dkim::DkimSigningKeyError, lettre::message::dkim::DkimCanonicalization, lettre::message::dkim::DkimCanonicalizationType, lettre::message::dkim::DkimSigningAlgorithm
+  python  -
+  note    the canonicalizations and the signature over `crypto/keys` are not written in this round
+
+capability decoded-generator  a message written with its parts that are no text replaced by a line saying what they were
+  heroes  refused: a display choice of one program; `walk` and `content_type_of` make it in a few lines
+  go      -
+  rust    -
+  python  email.generator.DecodedGenerator
+
+dropped  an error type, an interface or a constant of plumbing: Heroes fails with a code and a message (README § A4), and the line ends and lengths are the writer's own
+  go      mime/multipart.ErrMessageTooLarge
+  rust    lettre::error::Error, mail_parser::MessageBuffers, mail_parser::Source
+  python  email.errors.MessageError, email.errors.MessageParseError, email.errors.HeaderParseError, email.errors.CharsetError, email.utils.CRLF, email.utils.EMPTYSTRING, email.utils.UEMPTYSTRING, email.utils.supports_strict_parsing, email.generator.NL, email.generator.NLCRE, email.generator.UNDERSCORE, email.generator.fcre, email.generator.NEWLINE_WITHOUT_FWSP, email.generator.NEWLINE_WITHOUT_FWSP_BYTES, email.charset.EMPTYSTRING, email.quoprimime.CRLF, email.quoprimime.NL, email.quoprimime.EMPTYSTRING, email.quoprimime.ascii_letters, email.quoprimime.digits, email.quoprimime.hexdigits, email.base64mime.CRLF, email.base64mime.NL, email.base64mime.EMPTYSTRING, email.policy.linesep_splitter, email.policy.EmailPolicy.message_factory, email.message.compat32, email.parser.compat32, quopri.main
+
+dropped  multipart/form-data, HTTP's form and its files: `http` reads and writes it
+  go      mime/multipart.FileContentDisposition, mime/multipart.File, mime/multipart.FileHeader, mime/multipart.FileHeader.Open, mime/multipart.Form, mime/multipart.Form.RemoveAll, mime/multipart.Reader.ReadForm, mime/multipart.Part.FormName, mime/multipart.Writer.CreateFormField, mime/multipart.Writer.CreateFormFile, mime/multipart.Writer.FormDataContentType, mime/multipart.Writer.WriteField
+  rust    -
+  python  -
+
+dropped  sending, the transports and their envelope: `mail/smtp`'s ledger
+  go      net/smtp
+  rust    lettre::Transport, lettre::AsyncTransport, lettre::FileTransport, lettre::SendmailTransport, lettre::AsyncFileTransport, lettre::AsyncSendmailTransport, lettre::Executor, lettre::Tokio1Executor, lettre::AsyncStd1Executor, lettre::transport, lettre::address::Envelope
+  python  smtplib

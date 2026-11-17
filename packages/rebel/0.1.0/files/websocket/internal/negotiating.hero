@@ -1,0 +1,365 @@
+# permessage-deflate (RFC 7692 § 7.1) negotiated from the
+# `Sec-WebSocket-Extensions` field `extensions` reads: what a client offers,
+# what a server accepts of an offer, and what a client accepts of the
+# server's answer.
+
+use websocket/internal/extensions
+
+# The code of a parameter or an answer RFC 7692 refuses.
+constant INVALID: str
+    "invalid"
+
+# The name of the one extension spoken.
+constant DEFLATE: str
+    "permessage-deflate"
+
+# What the program asks of permessage-deflate, the face's `Compression`.
+record Wanted
+    # Whether it is offered or accepted.
+    enabled: bool
+    # The level this end compresses with, 0 to 9.
+    level: i64
+    # The fewest bytes of a message compressed.
+    min_bytes: i64
+    # The server compresses each message alone.
+    server_no_context_takeover: bool
+    # The client compresses each message alone.
+    client_no_context_takeover: bool
+    # The server's most window bits, 8 to 15.
+    server_max_window_bits: i64
+    # The client's most window bits, 8 to 15.
+    client_max_window_bits: i64
+
+# What the two ends agreed for this end's connection.
+record Agreed
+    # Whether messages may be compressed.
+    on: bool
+    # Whether this end keeps its window from a message to the next.
+    our_takeover: bool
+    # Whether the peer keeps its window from a message to the next.
+    their_takeover: bool
+    # The most window bits this end compresses with, 8 to 15.
+    our_window_bits: i64
+    # The field's value as the server answered it, "" where nothing was
+    # agreed.
+    header: str
+
+# Nothing agreed: no compression.
+function none() -> Agreed
+    return Agreed(on: false, our_takeover: true, their_takeover: true, our_window_bits: 15, header: "")
+
+# Whether `w`'s numbers are in their ranges.
+#
+# - `w`: what the program asks.
+#
+# Fails `invalid` for a level outside 0 to 9, window bits outside 8 to 15,
+# or a `min_bytes` below 0.
+function checked(w: Wanted) -> ()?
+    if w.level < 0 || w.level > 9
+        return fail(code: INVALID, msg: f"a compression level of {w.level}, where it is 0 to 9")
+
+    if w.min_bytes < 0
+        return fail(code: INVALID, msg: f"a compression's `min_bytes` of {w.min_bytes}, where it is 0 or more")
+
+    if w.server_max_window_bits < 8 || w.server_max_window_bits > 15
+        return fail(code: INVALID, msg: f"`server_max_window_bits` of {w.server_max_window_bits}, where it is 8 to 15")
+
+    if w.client_max_window_bits < 8 || w.client_max_window_bits > 15
+        return fail(code: INVALID, msg: f"`client_max_window_bits` of {w.client_max_window_bits}, where it is 8 to 15")
+    return ok()
+
+# The window bits a parameter's value writes: 8 to 15 in decimal with no
+# leading zero, as RFC 7692 § 7.1.2 asks.
+function bits_of(p: extensions.Param) -> i64?
+    if !p.valued
+        return fail(code: INVALID, msg: f"`{p.name}` with no value")
+
+    match p.value
+        "8"  => return ok(8)
+        "9"  => return ok(9)
+        "10" => return ok(10)
+        "11" => return ok(11)
+        "12" => return ok(12)
+        "13" => return ok(13)
+        "14" => return ok(14)
+        "15" => return ok(15)
+        _    => return fail(code: INVALID, msg: f"`{p.name}={p.value}`, where its value is 8 to 15")
+
+# What one permessage-deflate offer or answer says, each parameter at most
+# once.
+record Said
+    # `server_no_context_takeover` stands.
+    server_no_context_takeover: bool
+    # `client_no_context_takeover` stands.
+    client_no_context_takeover: bool
+    # `server_max_window_bits`'s value, 0 where it does not stand.
+    server_max_window_bits: i64
+    # `client_max_window_bits` stands.
+    client_bits_named: bool
+    # `client_max_window_bits`'s value, 0 where it stands with none or not
+    # at all.
+    client_max_window_bits: i64
+
+# What the parameters `params` of permessage-deflate say.
+#
+# - `params`: the parameters, as read.
+# - `answer`: whether they are a server's answer, where
+#   `client_max_window_bits` takes a value.
+#
+# Fails `invalid` for a parameter unknown, named twice, with a value it
+# takes not, or without one it takes.
+function said_of(params: [extensions.Param], answer: bool) -> Said?
+    out @= Said(
+        server_no_context_takeover: false,
+        client_no_context_takeover: false,
+        server_max_window_bits: 0,
+        client_bits_named: false,
+        client_max_window_bits: 0
+    )
+    seen: {str: bool} @= {}
+
+    for p in params
+        if seen[p.name].default(false)
+            return fail(code: INVALID, msg: f"permessage-deflate's `{p.name}` named twice")
+        seen[p.name] @ true
+
+        match p.name
+            "server_no_context_takeover" =>
+                if p.valued
+                    return fail(code: INVALID, msg: "`server_no_context_takeover` with a value")
+                out.server_no_context_takeover @ true
+            "client_no_context_takeover" =>
+                if p.valued
+                    return fail(code: INVALID, msg: "`client_no_context_takeover` with a value")
+                out.client_no_context_takeover @ true
+            "server_max_window_bits" => out.server_max_window_bits @ bits_of(p)?
+            "client_max_window_bits" =>
+                out.client_bits_named @ true
+
+                if p.valued || answer
+                    out.client_max_window_bits @ bits_of(p)?
+            _ => return fail(code: INVALID, msg: f"permessage-deflate's parameter `{p.name}`, which RFC 7692 names not")
+
+    return ok(out)
+
+# The field value a client offers permessage-deflate with, as `w` asks:
+# `client_max_window_bits` always, so a server may limit it.
+#
+# - `w`: what the program asks.
+function client_offer(w: Wanted) -> str
+    params: [extensions.Param] @= []
+
+    if w.server_no_context_takeover
+        params @ params.push(extensions.Param(name: "server_no_context_takeover", value: "", valued: false))
+
+    if w.client_no_context_takeover
+        params @ params.push(extensions.Param(name: "client_no_context_takeover", value: "", valued: false))
+
+    if w.server_max_window_bits < 15
+        params @ params.push(
+            extensions.Param(name: "server_max_window_bits", value: to_str(w.server_max_window_bits), valued: true)
+        )
+
+    if w.client_max_window_bits < 15
+        params @ params.push(
+            extensions.Param(name: "client_max_window_bits", value: to_str(w.client_max_window_bits), valued: true)
+        )
+    else
+        params @ params.push(extensions.Param(name: "client_max_window_bits", value: "", valued: false))
+    return extensions.format([extensions.Offer(name: DEFLATE, params: params)])
+
+# What a server agrees for itself from the offers `values` hold, as `w`
+# asks: the first permessage-deflate offer it can take, none where it takes
+# none.
+#
+# - `w`: what the program accepts.
+# - `values`: the request's `Sec-WebSocket-Extensions` values.
+#
+# An offer it cannot take, a parameter unknown or a client that will not
+# limit a window `w` limits, is declined and the next tried; a field that
+# does not read declines them all.
+function server_agrees(w: Wanted, values: [str]) -> Agreed
+    if !w.enabled
+        return none()
+
+    offers = match extensions.parse(values)
+        .ok got => got
+        .err _  => return none()
+
+    for o in offers
+        if o.name == DEFLATE
+            match said_of(o.params, answer: false)
+                .err _ => _ = 0
+                .ok s =>
+                    if w.client_max_window_bits == 15 || s.client_bits_named
+                        return server_answer(w, s)
+
+    return none()
+
+# What a server answers the offer `s` with, as `w` asks.
+function server_answer(w: Wanted, s: Said) -> Agreed
+    params: [extensions.Param] @= []
+    ours_fresh = s.server_no_context_takeover || w.server_no_context_takeover
+    theirs_fresh = s.client_no_context_takeover || w.client_no_context_takeover
+
+    if ours_fresh
+        params @ params.push(extensions.Param(name: "server_no_context_takeover", value: "", valued: false))
+
+    if theirs_fresh
+        params @ params.push(extensions.Param(name: "client_no_context_takeover", value: "", valued: false))
+    ours: i64 @= w.server_max_window_bits
+
+    if s.server_max_window_bits > 0 && s.server_max_window_bits < ours
+        ours @ s.server_max_window_bits
+
+    if ours < 15 || s.server_max_window_bits > 0
+        params @ params.push(extensions.Param(name: "server_max_window_bits", value: to_str(ours), valued: true))
+
+    if w.client_max_window_bits < 15
+        theirs: i64 @= w.client_max_window_bits
+
+        if s.client_max_window_bits > 0 && s.client_max_window_bits < theirs
+            theirs @ s.client_max_window_bits
+        params @ params.push(extensions.Param(name: "client_max_window_bits", value: to_str(theirs), valued: true))
+    return Agreed(
+        on: true,
+        our_takeover: !ours_fresh,
+        their_takeover: !theirs_fresh,
+        our_window_bits: ours,
+        header: extensions.format([extensions.Offer(name: DEFLATE, params: params)])
+    )
+
+# What a client agrees for itself from the server's answer `values`, having
+# offered as `w` asks.
+#
+# - `w`: what the client offered.
+# - `values`: the answer's `Sec-WebSocket-Extensions` values; none agrees no
+#   compression.
+#
+# Fails `invalid` where the answer names an extension not offered or more
+# than one, a parameter unknown, twice or out of range, a window wider than
+# the one offered, or leaves out what the client asked: the server's own
+# window limited, or its context dropped.
+function client_agrees(w: Wanted, values: [str]) -> Agreed?
+    offers = extensions.parse(values)?
+
+    if offers.len() == 0
+        return ok(none())
+
+    if !w.enabled || offers.len() > 1 || offers[0].name != DEFLATE
+        return fail(
+            code: INVALID,
+            msg: f"the server agreed the extensions \"{values.join(", ")}\", which were not offered"
+        )
+    s = said_of(offers[0].params, answer: true)?
+
+    if w.server_no_context_takeover && !s.server_no_context_takeover
+        return fail(code: INVALID, msg: "the server left out `server_no_context_takeover`, which was asked")
+
+    if w.server_max_window_bits < 15 && (s.server_max_window_bits == 0 || s.server_max_window_bits > w.server_max_window_bits)
+        return fail(
+            code: INVALID,
+            msg: f"the server did not limit its window to the {w.server_max_window_bits} bits asked"
+        )
+    ours: i64 @= w.client_max_window_bits
+
+    if s.client_max_window_bits > 0
+        if s.client_max_window_bits > w.client_max_window_bits
+            return fail(
+                code: INVALID,
+                msg: f"the server answered `client_max_window_bits={s.client_max_window_bits}`, past the {w.client_max_window_bits} offered"
+            )
+        ours @ s.client_max_window_bits
+    return ok(
+        Agreed(on: true, our_takeover: !(s.client_no_context_takeover || w.client_no_context_takeover), their_takeover: !s.server_no_context_takeover, our_window_bits: ours, header: values.join(", "))
+    )
+
+test "said_of: each parameter, a duplicate, a value out of range, a leading zero, an unknown name"
+    s = said_of(
+        extensions.parse(["d; server_no_context_takeover; server_max_window_bits=9; client_max_window_bits"]).must()[0].params,
+        answer: false
+    ).must()
+    assert s.server_no_context_takeover && s.server_max_window_bits == 9 && s.client_bits_named && s.client_max_window_bits == 0
+    assert said_of(extensions.parse(["d; client_max_window_bits"]).must()[0].params, answer: true).is_err()
+    assert said_of(
+        extensions.parse(["d; server_no_context_takeover; server_no_context_takeover"]).must()[0].params,
+        answer: false
+    ).is_err()
+    assert said_of(extensions.parse(["d; server_max_window_bits=16"]).must()[0].params, answer: false).is_err()
+    assert said_of(extensions.parse(["d; server_max_window_bits=7"]).must()[0].params, answer: false).is_err()
+    assert said_of(extensions.parse(["d; server_max_window_bits=08"]).must()[0].params, answer: false).is_err()
+    assert said_of(extensions.parse(["d; x_bits=1"]).must()[0].params, answer: false).is_err()
+    assert said_of(extensions.parse(["d; client_no_context_takeover=1"]).must()[0].params, answer: false).is_err()
+
+test "client_offer: the usual offer, and every parameter asked"
+    w @= Wanted(
+        enabled: true,
+        level: 6,
+        min_bytes: 0,
+        server_no_context_takeover: false,
+        client_no_context_takeover: false,
+        server_max_window_bits: 15,
+        client_max_window_bits: 15
+    )
+    assert client_offer(w) == "permessage-deflate; client_max_window_bits"
+    w.server_no_context_takeover @ true
+    w.client_no_context_takeover @ true
+    w.server_max_window_bits @ 10
+    w.client_max_window_bits @ 9
+    assert client_offer(w) == "permessage-deflate; server_no_context_takeover; client_no_context_takeover; server_max_window_bits=10; client_max_window_bits=9"
+
+# The answers of Python's websockets 17.4 server to the same offers, as
+# its `ServerPerMessageDeflateFactory` writes them (observed).
+test "server_agrees: the usual offer, a window asked, context dropped, a bad offer declined for the next, a limit the client cannot take"
+    w @= Wanted(
+        enabled: true,
+        level: 6,
+        min_bytes: 0,
+        server_no_context_takeover: false,
+        client_no_context_takeover: false,
+        server_max_window_bits: 15,
+        client_max_window_bits: 15
+    )
+    plain = server_agrees(w, values: ["permessage-deflate; client_max_window_bits"])
+    assert plain.on && plain.header == "permessage-deflate" && plain.our_takeover && plain.their_takeover && plain.our_window_bits == 15
+    asked = server_agrees(w, values: ["permessage-deflate; server_no_context_takeover; server_max_window_bits=10"])
+    assert asked.header == "permessage-deflate; server_no_context_takeover; server_max_window_bits=10" && !asked.our_takeover && asked.our_window_bits == 10
+    second = server_agrees(w, values: ["permessage-deflate; foo, permessage-deflate; client_no_context_takeover"])
+    assert second.header == "permessage-deflate; client_no_context_takeover" && !second.their_takeover
+    assert !server_agrees(w, values: ["x-webkit-deflate-frame"]).on
+    w.client_max_window_bits @ 10
+    assert !server_agrees(w, values: ["permessage-deflate"]).on
+    limited = server_agrees(w, values: ["permessage-deflate; client_max_window_bits"])
+    assert limited.header == "permessage-deflate; client_max_window_bits=10"
+    w.enabled @ false
+    assert !server_agrees(w, values: ["permessage-deflate"]).on
+
+test "client_agrees: nothing agreed, the usual answer, a window limited, and answers refused"
+    w @= Wanted(
+        enabled: true,
+        level: 6,
+        min_bytes: 0,
+        server_no_context_takeover: false,
+        client_no_context_takeover: false,
+        server_max_window_bits: 15,
+        client_max_window_bits: 15
+    )
+    assert !client_agrees(w, values: []).must().on
+    plain = client_agrees(w, values: ["permessage-deflate"]).must()
+    assert plain.on && plain.our_takeover && plain.their_takeover && plain.our_window_bits == 15
+    limited = client_agrees(
+        w,
+        values: ["permessage-deflate; client_max_window_bits=9; server_no_context_takeover"]
+    ).must()
+    assert limited.our_window_bits == 9 && !limited.their_takeover
+    assert client_agrees(w, values: ["x-other"]).is_err()
+    assert client_agrees(w, values: ["permessage-deflate, permessage-deflate"]).is_err()
+    assert client_agrees(w, values: ["permessage-deflate; client_max_window_bits"]).is_err()
+    w.server_max_window_bits @ 10
+    assert client_agrees(w, values: ["permessage-deflate"]).is_err()
+    assert client_agrees(w, values: ["permessage-deflate; server_max_window_bits=11"]).is_err()
+    assert client_agrees(w, values: ["permessage-deflate; server_max_window_bits=9"]).must().on
+    w.server_no_context_takeover @ true
+    assert client_agrees(w, values: ["permessage-deflate; server_max_window_bits=9"]).is_err()
+    w.enabled @ false
+    assert client_agrees(w, values: ["permessage-deflate"]).is_err()

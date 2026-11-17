@@ -1,0 +1,287 @@
+# What SMTP's text holds, apart from any connection: the code a refusal
+# fails with, the extensions an EHLO reply names, the bytes DATA sends, the
+# credentials each login mechanism sends, and the arguments refused before
+# they reach a server.
+
+use bytes
+use crypto
+use mail/smtp/internal/wire
+use net
+use strings
+
+# The code of an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code a refusal of the server with `code` fails with: README § A4's
+# vocabulary, the reply itself in the message.
+function refusal_code(code: i64) -> str
+    return match code
+        421                   => "closed"
+        452 | 552             => "limit"
+        530 | 534 | 535 | 538 => "permission"
+        502 | 504             => "unsupported"
+        _                     => "failed"
+
+# `a` as one line for a person: its code, its enhanced code and its lines,
+# every byte outside printable ASCII escaped.
+function shown(a: wire.Answer) -> str
+    pieces: [str] @= [to_str(a.code)]
+
+    if a.enhanced != ""
+        pieces @ pieces.push(a.enhanced)
+
+    for line in a.lines
+        if line != ""
+            pieces @ pieces.push(escaped(line))
+
+    return pieces.join(" ")
+
+# `s` with every byte outside printable ASCII escaped, cut at 200 bytes.
+function escaped(s: str) -> str
+    data = bytes.from_text(s)
+
+    cut = if data.len() > 200
+        data.slice(from: 0, to: 200)
+    else
+        data
+    inner = bytes.format_escaped(cut)
+
+    if data.len() > 200
+        return inner + "..."
+    return inner
+
+# Fails with the code `a` means where its code is none of `want`.
+function expect(a: wire.Answer, want: [i64], asked: str) -> ()?
+    for w in want
+        if a.code == w
+            return ok()
+
+    return fail(code: refusal_code(a.code), msg: f"{shown(a)}: the server refused {asked}")
+
+# The extensions of an EHLO reply's lines: each line after the first a
+# keyword, upper case, and its parameters; `AUTH=` of old servers read as
+# `AUTH`.
+function extensions_of(lines: [str]) -> {str: str}
+    out: {str: str} @= {}
+
+    for k in range(from: 1, to: lines.len())
+        line = strings.trim(lines[k])
+
+        if line == ""
+            continue
+        cut = strings.split_once(s: line, sep: " ").default(strings.Halves(before: line, after: ""))
+        keyword: str @= strings.to_upper_ascii(cut.before)
+        value: str @= strings.trim(cut.after)
+
+        if strings.has_prefix(s: keyword, prefix: "AUTH=")
+            value @ strings.trim(strings.to_upper_ascii(cut.before.slice(from: 5, to: cut.before.len())) + " " + value)
+            keyword @ "AUTH"
+
+            if !out["AUTH"].is_err()
+                value @ strings.trim(out["AUTH"].must() + " " + value)
+        out[keyword] @ value
+
+    return out
+
+# `message` as DATA sends it: line breaks `\r\n`, a dot doubled at a line's
+# start, a last line break where it lacks one.
+function dot_stuff(message: [u8]) -> [u8]
+    out: [u8] @= []
+    at_line_start: bool @= true
+    at: i64 @= 0
+
+    while at < message.len()
+        b = message[at]
+
+        if b == '\r' || b == '\n'
+            out @ out.push('\r')
+            out @ out.push('\n')
+            at_line_start @ true
+
+            if b == '\r' && at + 1 < message.len() && message[at + 1] == '\n'
+                at @ at + 2
+            else
+                at @ at + 1
+            continue
+
+        if at_line_start && b == '.'
+            out @ out.push('.')
+        out @ out.push(b)
+        at_line_start @ false
+        at @ at + 1
+
+    if out.len() > 0 && !at_line_start
+        out @ out.push('\r')
+        out @ out.push('\n')
+    return out
+
+# Fails `invalid` where `address` may not stand in angle brackets on a
+# command line: a line break, a zero byte, a space, `<` or `>`.
+function check_address(address: str, asked: str) -> ()?
+    if strings.contains_any(s: address, set: "\r\n <>\t") || bytes.contains(s: bytes.from_text(address), substr: [0])
+        return fail(
+            code: INVALID,
+            msg: f"the address \"{escaped(address)}\" of {asked} holds a space, a line break, a zero byte or an angle bracket"
+        )
+    return ok()
+
+# Fails `invalid` where `text` would end a command line or begin another.
+function check_line(text: str, asked: str) -> ()?
+    if strings.contains_any(s: text, set: "\r\n") || bytes.contains(s: bytes.from_text(text), substr: [0])
+        return fail(
+            code: INVALID,
+            msg: f"{asked} holds a line break or a zero byte, which would begin a command of its own"
+        )
+    return ok()
+
+# `params` as they follow an address on a command line: each after a space;
+# "" for none.
+function joined_params(params: [str]) -> str
+    if params.len() == 0
+        return ""
+    return " " + params.join(" ")
+
+# Whether every byte of `s` is ASCII.
+function is_ascii(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] >= 0x80
+            return false
+        at @ at + 1
+
+    return true
+
+# Where the header of `message` ends: the first byte of its empty line, or
+# its end.
+function header_end(message: [u8]) -> i64
+    at: i64 @= 0
+
+    while at < message.len()
+        if message[at] == '\n' && at + 1 < message.len()
+            next = message[at + 1]
+
+            if next == '\n' || next == '\r' && at + 2 < message.len() && message[at + 2] == '\n'
+                return at + 1
+        at @ at + 1
+
+    return message.len()
+
+# Whether a byte of `message` from `from` to `to` is above 127.
+function has_high_byte(message: [u8], from: i64, to: i64) -> bool
+    at: i64 @= from
+
+    while at < to
+        if message[at] >= 0x80
+            return true
+        at @ at + 1
+
+    return false
+
+# Whether `host` is this machine: `localhost`, or a loopback address.
+function is_loopback(host: str) -> bool
+    lowered = strings.to_lower_ascii(host)
+
+    if lowered == "localhost" || strings.has_suffix(s: lowered, suffix: ".localhost")
+        return true
+
+    return match net.parse_address(strings.trim_suffix(s: strings.trim_prefix(s: host, prefix: "["), suffix: "]"))
+        .ok a  => net.is_loopback(a)
+        .err _ => false
+
+# The credentials AUTH PLAIN sends, in base 64. Fails `invalid` where a value
+# holds a zero byte.
+function plain_payload(identity: str, user: str, password: str) -> str?
+    for value in [identity, user, password]
+        if bytes.contains(s: bytes.from_text(value), substr: [0])
+            return fail(
+                code: INVALID,
+                msg: "a name or a password for AUTH PLAIN holds a zero byte, which separates them"
+            )
+
+    joined: [u8] @= bytes.from_text(identity)
+    joined @ joined.push(0)
+    bytes.push_text(to: @joined, s: user)
+    joined @ joined.push(0)
+    bytes.push_text(to: @joined, s: password)
+    return ok(bytes.format_base64(joined))
+
+# The credentials AUTH XOAUTH2 sends, in base 64.
+function xoauth2_payload(user: str, token: str) -> str
+    joined: [u8] @= bytes.from_text("user=" + user)
+    joined @ joined.push(1)
+    bytes.push_text(to: @joined, s: "auth=Bearer " + token)
+    joined @ joined.push(1)
+    joined @ joined.push(1)
+    return bytes.format_base64(joined)
+
+# The answer AUTH CRAM-MD5 sends to the base 64 `challenge`: the user, a
+# space and the HMAC-MD5 of the challenge under `secret` in hexadecimal, in
+# base 64. Fails `invalid` where the challenge is not base 64.
+function cram_md5_answer(user: str, secret: str, challenge: str) -> str?
+    raw = match bytes.parse_base64(strings.trim(challenge))
+        .ok r  => r
+        .err _ => return fail(code: INVALID, msg: f"the CRAM-MD5 challenge \"{escaped(challenge)}\" is not base 64")
+
+    digest = crypto.hmac(algorithm: .md5, key: bytes.from_text(secret), data: raw)
+    return ok(bytes.format_base64(bytes.from_text(user + " " + bytes.format_hex(digest))))
+
+## Tests
+
+test "refusal_code: each class of refusal"
+    assert refusal_code(421) == "closed" && refusal_code(552) == "limit" && refusal_code(452) == "limit"
+    assert refusal_code(535) == "permission" && refusal_code(530) == "permission" && refusal_code(502) == "unsupported"
+    assert refusal_code(550) == "failed" && refusal_code(451) == "failed" && refusal_code(554) == "failed"
+
+test "shown and expect: a reply with an enhanced code, a byte escaped, a refusal's message"
+    a = wire.Answer(code: 550, enhanced: "5.1.1", lines: ["no such user"])
+    assert shown(a) == "550 5.1.1 no such user"
+    assert shown(wire.Answer(code: 250, enhanced: "", lines: ["a\tb"])) == "250 a\\tb"
+    assert expect(wire.Answer(code: 250, enhanced: "", lines: ["ok"]), want: [250, 251], asked: "x").is_err() == false
+
+    match expect(a, want: [250], asked: "RCPT TO:<x@y>")
+        .ok _  => assert false
+        .err e => assert e.code == "failed" && e.msg == "550 5.1.1 no such user: the server refused RCPT TO:<x@y>"
+
+test "extensions_of: keywords upper case, parameters, the greeting line skipped, old AUTH=, none"
+    ext = extensions_of(
+        ["mx.example.org greets you", "size 35882577", "8BITMIME", "AUTH PLAIN LOGIN", "AUTH=XOAUTH2", "PIPELINING"]
+    )
+    assert ext["SIZE"].must() == "35882577" && ext["8BITMIME"].must() == "" && ext["PIPELINING"].must() == ""
+    assert ext["AUTH"].must() == "PLAIN LOGIN XOAUTH2" && ext.len() == 4
+    assert extensions_of(["only a greeting"]).len() == 0 && extensions_of([]).len() == 0
+
+test "dot_stuff: as Python's quotedata writes it, with the last line break DATA adds"
+    assert dot_stuff(bytes.from_text("a\n.b\r\n..c\rd")) == bytes.from_text("a\r\n..b\r\n...c\r\nd\r\n")
+    assert dot_stuff(bytes.from_text(".x")) == bytes.from_text("..x\r\n")
+    assert dot_stuff([]) == []
+    assert dot_stuff(bytes.from_text("end\r\n")) == bytes.from_text("end\r\n")
+    assert dot_stuff(bytes.from_text(".\r\n")) == bytes.from_text("..\r\n")
+
+test "check_address and check_line: what would break a command line"
+    assert !check_address(address: "ana@example.org", asked: "x").is_err() && !check_address(address: "", asked: "x").is_err()
+
+    for bad in ["a b@x", "a@x\r\nRCPT TO:<y>", "<a@x>", "a\t@x"]
+        assert check_address(address: bad, asked: "MAIL FROM").is_err()
+
+    assert check_line(text: "RCPT TO:<a@x>\r\nDATA", asked: "a parameter").is_err() && !check_line(text: "SIZE=10", asked: "a parameter").is_err()
+
+test "joined_params: none, two"
+    assert joined_params([]) == "" && joined_params(["SIZE=10", "BODY=8BITMIME"]) == " SIZE=10 BODY=8BITMIME"
+
+test "header_end and has_high_byte: CR LF, LF, no empty line, a high byte in the body alone"
+    m = bytes.from_text("A: 1\r\n\r\nbody é")
+    assert header_end(m) == 6 && !has_high_byte(m, from: 0, to: header_end(m)) && has_high_byte(m, from: 6, to: m.len())
+    assert header_end(bytes.from_text("A: 1\n\nb")) == 5 && header_end(bytes.from_text("A: 1")) == 4
+
+test "is_loopback: names and addresses"
+    assert is_loopback("localhost") && is_loopback("127.0.0.1") && is_loopback("::1") && is_loopback("[::1]") && is_loopback("LOCALHOST")
+    assert !is_loopback("smtp.example.org") && !is_loopback("192.0.2.1")
+
+test "plain_payload, xoauth2_payload, cram_md5_answer: as Python's base64 and hmac answer"
+    assert plain_payload(identity: "", user: "ana", password: "secret").must() == "AGFuYQBzZWNyZXQ="
+    assert plain_payload(identity: "admin", user: "ana", password: "secret").must() == "YWRtaW4AYW5hAHNlY3JldA=="
+    assert xoauth2_payload(user: "ana@example.org", token: "ya29.token") == "dXNlcj1hbmFAZXhhbXBsZS5vcmcBYXV0aD1CZWFyZXIgeWEyOS50b2tlbgEB"
+    assert cram_md5_answer(user: "tim", secret: "tanstaaftanstaaf", challenge: "PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2UuZXhhbXBsZS5uZXQ+").must() == "dGltIDNkYmM4OGYwNjI0Nzc2YTczN2IzOTA5M2Y2ZWI2NDI3"
+    assert cram_md5_answer(user: "tim", secret: "x", challenge: "***").is_err()

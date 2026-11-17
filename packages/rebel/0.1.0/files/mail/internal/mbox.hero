@@ -1,0 +1,80 @@
+# The messages of an mbox file cut apart: a message begins at a line opening
+# `From ` that stands first or after an empty line (RFC 4155), and a line of
+# `>` signs before `From ` loses one, mboxrd's quoting, which reads mboxo's.
+
+use bytes
+
+# The messages of `data`, each without its `From ` line and without the
+# empty line that stands before the next one.
+function split(data: [u8]) -> [[u8]]
+    out: [[u8]] @= []
+    marker = bytes.from_text("From ")
+
+    if !bytes.has_prefix(s: data, prefix: marker)
+        return out
+    current: [u8] @= []
+    at: i64 @= 0
+    started: bool @= false
+    previous_empty: bool @= true
+
+    while at < data.len()
+        end: i64 @= at
+
+        while end < data.len() && data[end] != '\n'
+            end @ end + 1
+
+        next = if end < data.len()
+            end + 1
+        else
+            end
+        content_end: i64 @= end
+
+        if content_end > at && data[content_end - 1] == '\r'
+            content_end @ content_end - 1
+
+        if previous_empty && bytes.has_prefix_at(s: data, prefix: marker, at: at)
+            if started
+                out @ out.push(without_last_break(current))
+            current @ []
+            started @ true
+        else
+            quotes: i64 @= 0
+
+            while at + quotes < content_end && data[at + quotes] == '>'
+                quotes @ quotes + 1
+
+            if quotes > 0 && bytes.has_prefix_at(s: data, prefix: marker, at: at + quotes)
+                bytes.push_all(to: @current, from: data.slice(from: at + 1, to: next))
+            else
+                bytes.push_all(to: @current, from: data.slice(from: at, to: next))
+        previous_empty @ content_end == at
+        at @ next
+
+    if started
+        out @ out.push(without_last_break(current))
+    return out
+
+# `message` without the one empty line that stood before the next `From `.
+function without_last_break(message: [u8]) -> [u8]
+    n = message.len()
+
+    if n >= 2 && message[n - 1] == '\n' && message[n - 2] == '\n'
+        return message.slice(from: 0, to: n - 1)
+
+    if n >= 4 && message[n - 1] == '\n' && message[n - 2] == '\r' && message[n - 3] == '\n' && message[n - 4] == '\r'
+        return message.slice(from: 0, to: n - 2)
+    return message
+
+## Tests
+
+test "split: two messages, a quoted From line, CR LF, none, a From inside a paragraph kept"
+    data = bytes.from_text(
+        "From a@x Mon Jan  1 00:00:00 2024\nA: 1\n\nhello\n>From me\n>>From you\n\nFrom b@x Tue Jan  2 00:00:00 2024\nB: 2\n\nbye\nFrom inside\n"
+    )
+    parts = split(data)
+    assert parts.len() == 2
+    assert parts[0] == bytes.from_text("A: 1\n\nhello\nFrom me\n>From you\n")
+    assert parts[1] == bytes.from_text("B: 2\n\nbye\nFrom inside\n")
+    crlf = split(bytes.from_text("From a\r\nA: 1\r\n\r\nx\r\n\r\nFrom b\r\n\r\ny\r\n"))
+    assert crlf.len() == 2 && crlf[0] == bytes.from_text("A: 1\r\n\r\nx\r\n") && crlf[1] == bytes.from_text("\r\ny\r\n")
+    assert split([]).len() == 0 && split(bytes.from_text("A: 1\n\nno envelope\n")).len() == 0

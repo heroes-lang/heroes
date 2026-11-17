@@ -1,0 +1,54 @@
+# A text checked as UTF-8 piece by piece, as its fragments come: what is held
+# between two pieces is the start of a last character not yet whole, at most
+# three bytes, so no piece is held twice and a wrong byte is told in the
+# piece that brings it.
+
+use bytes
+use unicode
+
+# The code of bytes that are not UTF-8, the language's own.
+constant NOT_TEXT: str
+    "not_text"
+
+# The bytes held after `more` is checked behind `carry`: the start of a last
+# character `more` leaves unfinished, none where it ends on a whole one.
+#
+# - `carry`: what the pieces before left unfinished, 0 to 3 bytes.
+# - `more`: the next piece.
+#
+# Fails `not_text` where the bytes so far cannot begin UTF-8.
+function carried_after(carry: [u8] lent, more: [u8] lent) -> [u8]?
+    if carry.len() == 0
+        return rest_of(more)
+    return rest_of(bytes.concat([carry, more]))
+
+# The unfinished last character of `data`, none where `data` is UTF-8 whole.
+#
+# - `data`: the bytes checked.
+#
+# Fails `not_text` where a byte of `data` cannot begin or go on a character.
+function rest_of(data: [u8] lent) -> [u8]?
+    valid = unicode.utf8_prefix_len(data)
+
+    if valid == data.len()
+        return ok([])
+    rest = data.slice(from: valid, to: data.len())
+
+    if unicode.is_utf8_prefix(rest)
+        return ok(rest)
+    return fail(
+        code: NOT_TEXT,
+        msg: f"bytes that are not UTF-8, the first wrong one at index {valid} of a piece of {data.len()}"
+    )
+
+test "carried_after: whole text, a character cut across two pieces, a wrong byte, and an empty piece"
+    assert carried_after(carry: [], more: [104, 105]).must() == []
+    assert carried_after(carry: [], more: [206]).must() == [206]
+    assert carried_after(carry: [206], more: [187, 33]).must() == []
+    assert carried_after(carry: [240, 159], more: [152]).must() == [240, 159, 152]
+    assert carried_after(carry: [240, 159, 152], more: [128]).must() == []
+    assert carried_after(carry: [], more: []).must() == []
+    assert carried_after(carry: [], more: [255]).is_err()
+    assert carried_after(carry: [206], more: [65]).is_err()
+    assert carried_after(carry: [], more: [237, 160]).is_err()
+    assert carried_after(carry: [], more: [104, 192]).is_err()

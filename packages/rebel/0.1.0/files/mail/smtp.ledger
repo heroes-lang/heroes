@@ -1,0 +1,257 @@
+# The ledger of `mail/smtp`: what Go's `net/smtp` (Go 1.27), Python's
+# `smtplib` (3.15) and Rust's `lettre` (its transport side; Rust's standard
+# library has no mail) let a program do, one block per capability, and what
+# Rebel answers. Building the message is `mail`'s ledger. The lists are this
+# machine's, 2026-11-17: `go doc -all net/smtp`, `dir(smtplib)` and
+# `dir(smtplib.SMTP)`; lettre's items were read from docs.rs's `all.html` the
+# same day, the crate not being on this machine. The credentials each login
+# sends, the dot-stuffing and the CRAM-MD5 answer of the tests were observed
+# from Python's `base64`, `hmac` and `smtplib.quotedata` the same day.
+
+capability connect/plain  a session over plain TCP, its greeting read and EHLO said
+  heroes  smtp.connect, smtp.Security.plain, smtp.PORT_SMTP
+  go      net/smtp.Dial, net/smtp.NewClient, net/smtp.Client.Hello, net/smtp.Client.Text
+  rust    lettre::transport::smtp::SmtpTransport, lettre::transport::smtp::SmtpTransportBuilder, lettre::transport::smtp::client::SmtpConnection, lettre::transport::smtp::SMTP_PORT
+  python  smtplib.SMTP, smtplib.SMTP.connect, smtplib.SMTP.ehlo, smtplib.SMTP.helo, smtplib.SMTP.ehlo_or_helo_if_needed, smtplib.SMTP.ehlo_msg, smtplib.SMTP.does_esmtp, smtplib.SMTP.default_port, smtplib.SMTP.sock, smtplib.SMTP.file, smtplib.SMTP_PORT, smtplib.SMTPConnectError, smtplib.SMTPHeloError
+  note    EHLO first, HELO where a plain server refuses EHLO with 500 or 502, as Python falls back; the client's name is `localhost` unless given, as Go's, where Python asks the machine's name
+
+capability connect/starttls  a plain connection made secure by STARTTLS, EHLO said again after
+  heroes  smtp.connect, smtp.Security.starttls, smtp.PORT_SUBMISSION
+  go      net/smtp.Client.StartTLS
+  rust    lettre::transport::smtp::client::Tls, lettre::transport::smtp::commands::Starttls, lettre::transport::smtp::SUBMISSION_PORT
+  python  smtplib.SMTP.starttls
+  note    through `tls.connect_after` on every platform, macOS included where `tls` cannot begin TLS over a stream the program holds: the greeting, the first EHLO and STARTTLS are `tls`'s plain steps, so their text is not kept, only that they succeeded; STARTTLS refused is the step's failure with what the server said. Extensions are read from the EHLO after TLS alone, as RFC 3207 asks
+
+capability connect/implicit-tls  a session over TLS from the first byte (RFC 8314)
+  heroes  smtp.connect, smtp.Security.implicit, smtp.PORT_SUBMISSIONS
+  go      net/smtp.NewClient
+  rust    lettre::transport::smtp::client::Tls, lettre::transport::smtp::SUBMISSIONS_PORT
+  python  smtplib.SMTP_SSL, smtplib.SMTP_SSL_PORT
+  note    Go asks the program to make the TLS connection and hand it over; here `connect` makes it through `tls.connect`
+
+capability connect/certificate  the server's certificate checked, against the system's store or roots the program names
+  heroes  smtp.Options.roots
+  go      net/smtp.Client.StartTLS
+  rust    lettre::transport::smtp::client::TlsParameters, lettre::transport::smtp::client::TlsParametersBuilder, lettre::transport::smtp::client::Certificate, lettre::transport::smtp::client::CertificateStore
+  python  smtplib.SMTP.starttls, smtplib.SMTP_SSL
+  note    always checked, for its authority, its dates and the host, by `tls`; roots are PEM text, as `tls.Client` takes them
+
+capability connect/no-verification  the server's certificate not checked
+  heroes  refused: verification is never turned off, as `http` refuses it; a test trusts `tls.TEST_ROOT` through `Options.roots`
+  go      -
+  rust    lettre::transport::smtp::client::TlsParametersBuilder
+  python  smtplib.SMTP.starttls
+
+capability connect/client-certificate  a certificate of the client presented to the server
+  heroes  pending
+  go      -
+  rust    lettre::transport::smtp::client::Identity
+  python  smtplib.SMTP_SSL, smtplib.SMTP.starttls
+  note    `tls.Client` takes no certificate of the client yet
+
+capability connect/tls-version  the TLS versions allowed chosen
+  heroes  refused: `tls` allows TLS 1.2 and 1.3 and nothing weaker, and takes no version, so no program weakens it
+  go      -
+  rust    lettre::transport::smtp::client::TlsVersion
+  python  -
+
+capability connect/opportunistic  STARTTLS where the server offers it, plain text otherwise
+  heroes  refused: an attacker between the two strips the offer and reads the password and the message; a program chooses `.starttls` or `.plain`, as RFC 8314 asks of submission
+  go      -
+  rust    lettre::transport::smtp::client::Tls
+  python  -
+
+capability connect/state  whether TLS protects the session, and its version and peer
+  heroes  smtp.Client.is_tls
+  go      net/smtp.Client.TLSConnectionState
+  rust    -
+  python  -
+  note    the version and the peer's certificate are not handed out: the stream is the session's own; `tls.version_of` reads them of a stream a program holds
+
+capability connect/deadline  a time limit on every step
+  heroes  smtp.Options.deadline_ms
+  go      -
+  rust    lettre::transport::smtp::SmtpTransportBuilder
+  python  smtplib.SMTP
+  note    each step its own deadline: the connection and its handshake, each command and its reply, each 65,536 bytes of the message (RFC 5321 § 4.5.3.2 times each block); Go has no deadline of its own, Python one timeout per socket operation, lettre one per command
+
+capability connect/name  the name the client gives itself in EHLO
+  heroes  smtp.Options.local_name
+  go      net/smtp.Client.Hello
+  rust    lettre::transport::smtp::extension::ClientId
+  python  smtplib.SMTP.local_hostname
+  note    refused `invalid` where it holds a space or a line break, or is above ASCII
+
+capability ehlo/extensions  the extensions EHLO names, asked by keyword
+  heroes  smtp.extensions_of, smtp.has_extension, smtp.extension_of, smtp.max_size_of, smtp.auth_mechanisms_of, smtp.hello
+  go      net/smtp.Client.Extension, net/smtp.ServerInfo
+  rust    lettre::transport::smtp::extension::ServerInfo, lettre::transport::smtp::extension::Extension
+  python  smtplib.SMTP.has_extn, smtplib.SMTP.esmtp_features, smtplib.SMTP.ehlo_resp, smtplib.SMTP.helo_resp, smtplib.OLDSTYLE_AUTH
+  note    keywords upper case, their parameters one text; an old server's `AUTH=` joined to `AUTH`, as Python's OLDSTYLE_AUTH reads it
+
+capability auth/password  a login by the best mechanism offered
+  heroes  smtp.login
+  go      net/smtp.Client.Auth, net/smtp.SendMail
+  rust    lettre::transport::smtp::authentication::Credentials, lettre::transport::smtp::authentication::DEFAULT_MECHANISMS, lettre::transport::smtp::commands::Auth
+  python  smtplib.SMTP.login, smtplib.SMTP.auth, smtplib.SMTPAuthenticationError
+  note    PLAIN, then LOGIN, then CRAM-MD5, where Python tries CRAM-MD5 first: with TLS always under a password PLAIN is RFC 8314's ordinary login and CRAM-MD5 obliges a server to keep the password itself. Never over plain text to another host, as Go refuses it; Python sends it
+
+capability auth/plain  AUTH PLAIN (RFC 4616), an identity apart from the user
+  heroes  smtp.auth_plain
+  go      net/smtp.PlainAuth
+  rust    lettre::transport::smtp::authentication::Mechanism
+  python  smtplib.SMTP.auth_plain
+  note    the credentials sent with the command, as Python and Go send them; after a 334 where the server asks for them apart
+
+capability auth/login  AUTH LOGIN
+  heroes  smtp.auth_login
+  go      -
+  rust    lettre::transport::smtp::authentication::Mechanism
+  python  smtplib.SMTP.auth_login
+  note    the name sent after the server's first 334, not with the command, as lettre sends it; Python sends it with the command, which some servers refuse
+
+capability auth/cram-md5  AUTH CRAM-MD5 (RFC 2195)
+  heroes  smtp.auth_cram_md5
+  go      net/smtp.CRAMMD5Auth
+  rust    -
+  python  smtplib.SMTP.auth_cram_md5
+  note    the HMAC-MD5 of `crypto`
+
+capability auth/xoauth2  AUTH XOAUTH2 with an OAuth 2.0 access token
+  heroes  smtp.auth_xoauth2
+  go      -
+  rust    lettre::transport::smtp::authentication::Mechanism
+  python  -
+  note    a refused token's 334 is answered with an empty line, as Google documents, and its JSON explanation decoded into the message
+
+capability auth/custom  a login mechanism the program writes
+  heroes  refused: a mechanism given as an object needs an interface, which Heroes has not; `command` lets a program run any exchange of AUTH line by line
+  go      net/smtp.Auth, net/smtp.Auth.Start, net/smtp.Auth.Next
+  rust    -
+  python  smtplib.SMTP.auth
+
+capability transaction/commands  MAIL FROM, RCPT TO and DATA, one at a time, with their parameters
+  heroes  smtp.mail_from, smtp.rcpt_to, smtp.data
+  go      net/smtp.Client.Mail, net/smtp.Client.Rcpt, net/smtp.Client.Data
+  rust    lettre::transport::smtp::commands::Mail, lettre::transport::smtp::commands::Rcpt, lettre::transport::smtp::commands::Data, lettre::transport::smtp::extension::MailParameter, lettre::transport::smtp::extension::MailBodyParameter, lettre::transport::smtp::extension::RcptParameter
+  python  smtplib.SMTP.mail, smtplib.SMTP.rcpt, smtplib.SMTP.data, smtplib.SMTPSenderRefused, smtplib.SMTPDataError
+  note    parameters are the program's, `SIZE=`, `BODY=`, DSN's `NOTIFY=` and `RET=`; Go adds BODY=8BITMIME and SMTPUTF8 to every MAIL where offered, here `send` adds what the message needs. An address with a space, a line break or an angle bracket is refused before it is sent, against command injection
+
+capability transaction/send  a message sent to recipients in one call, refusals of some told
+  heroes  smtp.send, smtp.Sent, smtp.Refusal
+  go      net/smtp.SendMail
+  rust    lettre::Transport, lettre::address::Envelope
+  python  smtplib.SMTP.sendmail, smtplib.SMTPRecipientsRefused
+  note    the recipients refused while others were taken are answered, as Python's `sendmail` does (Go fails the whole call); every one refused fails, the transaction reset
+
+capability transaction/send-message  a message of `mail` sent to its own recipients, its Bcc left out
+  heroes  smtp.send_message
+  go      -
+  rust    lettre::Transport
+  python  smtplib.SMTP.send_message
+  note    the envelope from `Sender`, else `From`, and every `To`, `Cc` and `Bcc`, as Python reads them; `Resent-` fields are not looked at, where Python prefers the last block of them (an edge kept for later)
+
+capability transaction/one-call  connect, log in, send and quit in one call
+  heroes  smtp.send_mail, smtp.Auth
+  go      net/smtp.SendMail
+  rust    lettre::transport::smtp::SmtpTransport
+  python  -
+  note    the connection is closed whatever happens
+
+capability transaction/pipelining  MAIL, RCPT and DATA sent in one round trip (RFC 2920)
+  heroes  smtp.send
+  go      -
+  rust    -
+  python  -
+  note    where the server offers PIPELINING; a 354 that comes though every recipient was refused is answered with `.` alone, as RFC 2920 asks
+
+capability transaction/size  the message's size announced, and refused before sending where the server takes less (RFC 1870)
+  heroes  smtp.send, smtp.max_size_of
+  go      -
+  rust    lettre::transport::smtp::extension::MailParameter
+  python  smtplib.SMTP.send_message
+  note    fails `limit` before a byte of the message is sent
+
+capability transaction/8bitmime  8-bit bodies announced (RFC 6152), refused where the server lacks it
+  heroes  smtp.send
+  go      net/smtp.Client.Mail
+  rust    lettre::transport::smtp::extension::MailBodyParameter
+  python  smtplib.SMTP.send_message
+  note    Go announces it on every message; here only for a body holding bytes above 127, and such a body fails `unsupported` where the server offers no 8BITMIME rather than reaching it
+
+capability transaction/smtputf8  UTF-8 in addresses and the header (RFC 6531)
+  heroes  smtp.send, smtp.send_message
+  go      net/smtp.Client.Mail
+  rust    lettre::transport::smtp::extension::MailParameter
+  python  smtplib.SMTP.send_message, smtplib.SMTPNotSupportedError
+  note    asked where an address or the header is above ASCII, refused `unsupported` where the server lacks it, as Python refuses it
+
+capability transaction/dot-stuffing  the message's lines ended by CR LF and a leading dot doubled
+  heroes  smtp.dot_stuff
+  go      net/smtp.Client.Data
+  rust    -
+  python  smtplib.quotedata, smtplib.CRLF, smtplib.bCRLF
+  note    a bare CR or LF becomes CR LF, as Python's `quotedata` writes it, so no bare line feed reaches a server (SMTP smuggling)
+
+capability replies/values  every reply a value: its code, its enhanced code, its lines; the codes named
+  heroes  smtp.Reply, smtp.last_reply_of, smtp.greeting_of, smtp.is_positive, smtp.is_transient, smtp.is_permanent, smtp.format_reply, smtp.OK, smtp.SERVICE_READY, smtp.SERVICE_CLOSING, smtp.AUTH_SUCCEEDED, smtp.WILL_FORWARD, smtp.CANNOT_VERIFY, smtp.AUTH_CONTINUE, smtp.START_MAIL_INPUT, smtp.SYSTEM_STATUS, smtp.HELP_MESSAGE, smtp.SERVICE_UNAVAILABLE, smtp.MAILBOX_BUSY, smtp.LOCAL_ERROR, smtp.INSUFFICIENT_STORAGE, smtp.TEMPORARY_FAILURE, smtp.SYNTAX_ERROR, smtp.PARAMETER_ERROR, smtp.NOT_IMPLEMENTED, smtp.BAD_SEQUENCE, smtp.PARAMETER_NOT_IMPLEMENTED, smtp.AUTH_REQUIRED, smtp.AUTH_FAILED, smtp.MAILBOX_UNAVAILABLE, smtp.USER_NOT_LOCAL, smtp.EXCEEDED_STORAGE, smtp.MAILBOX_NAME_NOT_ALLOWED, smtp.TRANSACTION_FAILED, smtp.PARAMETERS_NOT_RECOGNIZED
+  go      net/smtp.Client.Text
+  rust    lettre::transport::smtp::response::Response, lettre::transport::smtp::response::Code, lettre::transport::smtp::response::Category, lettre::transport::smtp::response::Detail, lettre::transport::smtp::response::Severity
+  python  smtplib.SMTPResponseException, smtplib.SMTP.getreply
+  note    a refusal fails with README § A4's code it means (421 `closed`, 452 and 552 `limit`, 530 to 538 `permission`, 502 and 504 `unsupported`, any other `failed`), its message opening with the reply, and the reply itself stays `last_reply_of`; a reply whose lines name two codes is refused `invalid`, as Go refuses it; a line is read up to 4,096 bytes and a reply up to 512 lines
+
+capability commands/other  RSET, NOOP, VRFY, EXPN, HELP and QUIT
+  heroes  smtp.reset, smtp.noop, smtp.verify, smtp.expand, smtp.help, smtp.quit, smtp.close
+  go      net/smtp.Client.Reset, net/smtp.Client.Noop, net/smtp.Client.Verify, net/smtp.Client.Quit, net/smtp.Client.Close
+  rust    lettre::transport::smtp::commands::Rset, lettre::transport::smtp::commands::Noop, lettre::transport::smtp::commands::Vrfy, lettre::transport::smtp::commands::Expn, lettre::transport::smtp::commands::Help, lettre::transport::smtp::commands::Quit, lettre::transport::smtp::commands::Ehlo
+  python  smtplib.SMTP.rset, smtplib.SMTP.noop, smtplib.SMTP.verify, smtplib.SMTP.vrfy, smtplib.SMTP.expn, smtplib.SMTP.help, smtplib.SMTP.quit, smtplib.SMTP.close
+  note    `quit` closes the connection whatever the reply, as Python's does
+
+capability commands/raw  any command line sent and its reply answered
+  heroes  smtp.command
+  go      -
+  rust    -
+  python  smtplib.SMTP.docmd, smtplib.SMTP.putcmd, smtplib.SMTP.send, smtplib.SMTP.getreply
+  note    a line holding a line break is refused, against injection
+
+capability address/quote  an address put in angle brackets for the envelope
+  heroes  mail.format_addr_spec
+  go      -
+  rust    lettre::address::Envelope
+  python  smtplib.quoteaddr
+  note    `mail` reads the address (`mail.parse_address`) and writes it alone; the commands add the brackets
+
+capability lmtp  LMTP (RFC 2033): LHLO and a reply per recipient after DATA
+  heroes  pending
+  go      -
+  rust    -
+  python  smtplib.LMTP, smtplib.LMTP_PORT
+  note    a reply per recipient after the message is a transaction of its own, not written in this round
+
+capability pool  connections kept and reused across messages
+  heroes  refused: a connection is the program's own, a `Client` it keeps and sends through again; a pool needs threads sharing handles, which Heroes keeps apart
+  go      -
+  rust    lettre::transport::smtp::PoolConfig
+  python  -
+
+capability transports/other  a message written to a file, handed to `sendmail`, or kept in memory for tests
+  heroes  refused: not SMTP; `fs` writes a file, `process` runs `sendmail` with the message on its input, and a test reads `mail.format_message`'s bytes
+  go      -
+  rust    lettre::FileTransport, lettre::SendmailTransport, lettre::AsyncFileTransport, lettre::AsyncSendmailTransport, lettre::transport::file::FileTransport, lettre::transport::file::AsyncFileTransport, lettre::transport::file::Error, lettre::transport::sendmail::SendmailTransport, lettre::transport::sendmail::AsyncSendmailTransport, lettre::transport::sendmail::Error, lettre::transport::stub::StubTransport, lettre::transport::stub::AsyncStubTransport, lettre::transport::stub::Error
+  python  -
+
+capability debug  the conversation printed as it goes
+  heroes  refused: it prints the credentials' base 64; a program logs `last_reply_of` and its own commands
+  go      -
+  rust    -
+  python  smtplib.SMTP.set_debuglevel, smtplib.SMTP.debuglevel
+
+dropped  asynchronous transports and their executors: Heroes runs a call to its end, and a thread of `threads` runs one apart
+  go      -
+  rust    lettre::AsyncTransport, lettre::transport::AsyncTransport, lettre::Executor, lettre::Tokio1Executor, lettre::AsyncStd1Executor, lettre::transport::smtp::AsyncSmtpTransport, lettre::transport::smtp::AsyncSmtpTransportBuilder, lettre::transport::smtp::client::AsyncSmtpConnection, lettre::transport::smtp::client::AsyncNetworkStream, lettre::transport::smtp::client::AsyncTokioStream
+  python  -
+
+dropped  an error type or a trait: Heroes fails with a code and a message (README § A4)
+  go      -
+  rust    lettre::transport::smtp::Error, lettre::transport::Transport
+  python  smtplib.SMTPException, smtplib.SMTPServerDisconnected

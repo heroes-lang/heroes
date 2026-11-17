@@ -1,0 +1,1354 @@
+# Mail sent by SMTP (RFC 5321): a client that connects in plain text, by
+# STARTTLS (RFC 3207) or by TLS from the first byte (RFC 8314, port 465),
+# reads the extensions EHLO names, logs in by AUTH PLAIN, LOGIN, CRAM-MD5 or
+# XOAUTH2, and sends a message to its recipients with SIZE, 8BITMIME,
+# SMTPUTF8 and PIPELINING where the server offers them; each step bounded by
+# a deadline, every reply a value with its code.
+#
+# **The server's certificate is always checked**, by `tls`, against the
+# system's store or the roots a program names: nothing here turns the check
+# off. A password is never sent in plain text but to the loopback host. A
+# connection that falls back to plain text where STARTTLS is not offered is
+# refused, as an attacker in between would strip the offer.
+#
+# It does not build or read a message (`mail`), resolve a domain's MX
+# records (`dns`), or receive mail: it is a client. STARTTLS runs through
+# `tls.connect_after` on every platform, so the greeting and the first EHLO
+# are `tls`'s to read and only their success is known.
+#
+# A step fails with the code of what went wrong: `closed`, `timeout`,
+# `stopped`, `not_found` and `failed` from the connection, `invalid` for an
+# argument refused or a reply that is not SMTP, and for a server's refusal
+# the code its reply means: `permission` (530, 534, 535, 538), `limit` (452,
+# 552), `closed` (421), `unsupported` (502, 504, and an extension the message
+# needs and the server lacks), and `failed` for any other; the message then
+# opens with the reply, its code first, and `last_reply_of` answers it whole.
+
+use bytes
+use mail
+use mail/smtp/internal/fake
+use mail/smtp/internal/flow
+use mail/smtp/internal/protocol
+use mail/smtp/internal/wire
+use strings
+use threads
+use tls
+
+## Codes
+
+# An argument refused, a reply that is not SMTP, or a certificate `tls`
+# refused: every function.
+constant INVALID: str
+    "invalid"
+
+# The connection closed, or the server answered 421: every function.
+constant CLOSED: str
+    "closed"
+
+# The host's name has no address: `connect`, `send_mail`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A step took longer than its deadline: every function that talks.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while a step waited (`net.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# The server refused a login or a sender: 530, 534, 535, 538.
+constant PERMISSION: str
+    "permission"
+
+# The message is larger than the server takes, or the server has no room:
+# 452, 552, and `SIZE` exceeded before sending.
+constant LIMIT: str
+    "limit"
+
+# The server lacks a command, a mechanism or an extension the message needs:
+# 502, 504, no AUTH mechanism in common, 8-bit bytes without 8BITMIME, UTF-8
+# without SMTPUTF8.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# Any other refusal of the server, or a failure of the connection the other
+# codes do not name; the message carries the reply or the system's words.
+constant FAILED: str
+    "failed"
+
+## Ports
+
+# SMTP between servers, in plain text or with STARTTLS: 25.
+constant PORT_SMTP: i64
+    25
+
+# Message submission with STARTTLS (RFC 6409): 587.
+constant PORT_SUBMISSION: i64
+    587
+
+# Message submission over TLS from the first byte (RFC 8314): 465.
+constant PORT_SUBMISSIONS: i64
+    465
+
+## Reply codes
+
+# 211: a system status or a help reply.
+constant SYSTEM_STATUS: i64
+    211
+
+# 214: a help message.
+constant HELP_MESSAGE: i64
+    214
+
+# 220: the service is ready; the greeting, and the answer to STARTTLS.
+constant SERVICE_READY: i64
+    220
+
+# 221: the service closes the connection, the answer to QUIT.
+constant SERVICE_CLOSING: i64
+    221
+
+# 235: the login succeeded (RFC 4954).
+constant AUTH_SUCCEEDED: i64
+    235
+
+# 250: the command was done.
+constant OK: i64
+    250
+
+# 251: the recipient is not local and will be forwarded.
+constant WILL_FORWARD: i64
+    251
+
+# 252: the server cannot verify the user but will take the message.
+constant CANNOT_VERIFY: i64
+    252
+
+# 334: a login's challenge, the server waiting for the next line (RFC 4954).
+constant AUTH_CONTINUE: i64
+    334
+
+# 354: the server waits for the message, ended by a line holding `.`.
+constant START_MAIL_INPUT: i64
+    354
+
+# 421: the service is not available and closes the connection.
+constant SERVICE_UNAVAILABLE: i64
+    421
+
+# 450: the mailbox is busy or unavailable for now.
+constant MAILBOX_BUSY: i64
+    450
+
+# 451: a local error in processing; try later.
+constant LOCAL_ERROR: i64
+    451
+
+# 452: the server has no room now.
+constant INSUFFICIENT_STORAGE: i64
+    452
+
+# 454: TLS or a login is not available for now.
+constant TEMPORARY_FAILURE: i64
+    454
+
+# 500: a command the server cannot read.
+constant SYNTAX_ERROR: i64
+    500
+
+# 501: a parameter the server cannot read.
+constant PARAMETER_ERROR: i64
+    501
+
+# 502: a command the server does not have.
+constant NOT_IMPLEMENTED: i64
+    502
+
+# 503: a command out of its order.
+constant BAD_SEQUENCE: i64
+    503
+
+# 504: a parameter, or a login mechanism, the server does not have.
+constant PARAMETER_NOT_IMPLEMENTED: i64
+    504
+
+# 530: a login is required first (RFC 4954).
+constant AUTH_REQUIRED: i64
+    530
+
+# 535: the credentials were refused (RFC 4954).
+constant AUTH_FAILED: i64
+    535
+
+# 550: the mailbox is unavailable, or the server will not take the message
+# for it.
+constant MAILBOX_UNAVAILABLE: i64
+    550
+
+# 551: the user is not local.
+constant USER_NOT_LOCAL: i64
+    551
+
+# 552: the message is larger than the server takes.
+constant EXCEEDED_STORAGE: i64
+    552
+
+# 553: the mailbox's name is not allowed.
+constant MAILBOX_NAME_NOT_ALLOWED: i64
+    553
+
+# 554: the transaction failed, or the server will not serve this client.
+constant TRANSACTION_FAILED: i64
+    554
+
+# 555: a parameter of MAIL or RCPT the server does not know.
+constant PARAMETERS_NOT_RECOGNIZED: i64
+    555
+
+## Replies
+
+# A reply of the server: its code, and the text of its lines.
+record Reply
+    # The three-digit code, from 200 to 599: 250.
+    code: i64
+    # The enhanced status code (RFC 3463) the server put first on its lines,
+    # `2.1.0`; "" where it put none.
+    enhanced: str
+    # The text of each line after the code and the enhanced code, in order;
+    # [""] for a reply with no text.
+    lines: [str]
+
+# Whether `r` says the command was done or is going on: a code of 2xx or
+# 3xx.
+#
+# - `r`: the reply.
+#
+# See also `is_transient`, `is_permanent`.
+function is_positive(r: Reply) -> bool
+    return r.code >= 200 && r.code < 400
+
+# Whether `r` refuses for now, so the same command may succeed later: a code
+# of 4xx.
+#
+# - `r`: the reply.
+#
+# See also `is_permanent`.
+function is_transient(r: Reply) -> bool
+    return r.code >= 400 && r.code < 500
+
+# Whether `r` refuses for good: a code of 5xx.
+#
+# - `r`: the reply.
+#
+# See also `is_transient`.
+function is_permanent(r: Reply) -> bool
+    return r.code >= 500 && r.code < 600
+
+# `r` as one line for a person: its code, its enhanced code, and its lines
+# joined by a space; any byte outside printable ASCII escaped.
+#
+# - `r`: the reply.
+#
+# See also `Reply`.
+function format_reply(r: Reply) -> str
+    return protocol.shown(wire.Answer(code: r.code, enhanced: r.enhanced, lines: r.lines))
+
+## Connecting
+
+# How a connection is protected.
+variant Security
+    # Plain text first, then STARTTLS, which must succeed: port 587, or 25.
+    starttls
+    # TLS from the first byte: port 465.
+    implicit
+    # Plain text throughout, with no TLS: a relay on the machine itself, or
+    # port 25 between servers that offer no TLS. A password is never sent
+    # over it but to the loopback host.
+    plain
+
+# How a client connects. `options` builds one; a program changes the fields
+# it needs.
+record Options
+    # The server's name, which its certificate must name: `smtp.example.org`.
+    host: str
+    # The port, 1 to 65535.
+    port: i64
+    # How the connection is protected.
+    security: Security
+    # The PEM of the only authorities trusted, "" for the system's store, as
+    # `tls.Client` takes it.
+    roots: str
+    # The name this client gives itself in EHLO: a domain, or an address
+    # literal such as `[192.0.2.1]`; `localhost` by default, as Go names
+    # itself.
+    local_name: str
+    # The milliseconds each step may take, the connection and its handshake
+    # one step, each command and its reply another, the message's every
+    # 65,536 bytes another; 0 for no limit.
+    deadline_ms: i64
+
+# The options of a connection to `host` protected by `security`, on the port
+# it is used on: 587 for `.starttls`, 465 for `.implicit`, 25 for `.plain`;
+# the system's authorities, `localhost` as the client's name, 60 seconds a
+# step.
+#
+# - `host`: the server's name.
+# - `security`: how the connection is protected.
+#
+# See also `connect`.
+function options(host: str, security: Security) -> Options
+    port = match security
+        .starttls => PORT_SUBMISSION
+        .implicit => PORT_SUBMISSIONS
+        .plain    => PORT_SMTP
+
+    return Options(host: host, port: port, security: security, roots: "", local_name: "localhost", deadline_ms: 60000)
+
+# An SMTP session with a server, made by `connect`. It holds a connection:
+# `quit` or `close` ends it, and one nobody ends is told when `main` returns.
+# What the server said is asked of it: `greeting_of`, `extensions_of`,
+# `last_reply_of`.
+record Client
+    # The connection and what the session knows of the server; the
+    # package's own, read through the functions of this module.
+    session: wire.Session
+    # The server's name, as `Options.host` gave it.
+    host: str
+    # Whether TLS protects the connection.
+    is_tls: bool
+
+# A session with the server `o` names: connected, protected as `o` says, its
+# greeting read and its EHLO answered.
+#
+# - `o`: the options.
+#
+# The client is the caller's to end with `quit` or `close`. EHLO is sent
+# after TLS begins, as RFC 3207 asks; where the server refuses EHLO on a
+# plain connection, HELO is sent and no extension is known. Fails `invalid`
+# where an option is refused or the server's certificate is (`tls`'s
+# reason), or the greeting is not 220; as `net` and `tls` fail to connect;
+# and with the code a refusal of EHLO means. See also `options`, `quit`.
+function connect(o: Options) -> Client?
+    kind = match o.security
+        .starttls => flow.STARTTLS
+        .implicit => flow.IMPLICIT
+        .plain    => flow.PLAIN
+
+    s = flow.open(host: o.host, port: o.port, security: kind, roots: o.roots, local_name: o.local_name, deadline_ms: o.deadline_ms)?
+    return ok(Client(session: s, host: o.host, is_tls: kind != flow.PLAIN))
+
+# Says EHLO again and reads the extensions anew, as after a change of the
+# server's state.
+#
+# - `c`: the client; its extensions are replaced.
+#
+# Fails as a command fails. See also `extensions_of`.
+function hello(@c: Client) -> ()?
+    return flow.hello(@c.session, may_helo: !c.is_tls)
+
+# Says QUIT, reads the reply, and closes the connection, whatever the reply.
+#
+# - `c`: the client, ended by this call.
+#
+# Fails where the connection fails; it is closed either way. See also
+# `close`.
+function quit(@c: Client) -> ()?
+    return flow.quit(@c.session)
+
+# Closes the connection without a word to the server.
+#
+# - `c`: the client, ended by this call.
+#
+# Fails `closed` where it is closed already. See also `quit`.
+function close(@c: Client) -> ()?
+    return wire.close(@c.session)
+
+## What the server said
+
+# The server's greeting, 220; with STARTTLS `tls` read it, and this holds its
+# code alone.
+#
+# - `c`: the client.
+#
+# See also `last_reply_of`.
+function greeting_of(c: Client) -> Reply
+    return Reply(code: c.session.greeting.code, enhanced: c.session.greeting.enhanced, lines: c.session.greeting.lines)
+
+# The last reply the server gave: the one a failure of the last call names,
+# whole.
+#
+# - `c`: the client.
+#
+# See also `command`.
+function last_reply_of(c: Client) -> Reply
+    return Reply(code: c.session.last.code, enhanced: c.session.last.enhanced, lines: c.session.last.lines)
+
+# The extensions the server named in its last EHLO reply: each keyword in
+# upper case, and its parameters as one text, "" for none: `SIZE` holding
+# `35882577`, `AUTH` holding `PLAIN LOGIN`; empty after HELO.
+#
+# - `c`: the client.
+#
+# See also `has_extension`.
+function extensions_of(c: Client) -> {str: str}
+    return c.session.extensions
+
+## Extensions
+
+# Whether the server named the extension `keyword` in its EHLO reply.
+#
+# - `c`: the client.
+# - `keyword`: the extension, its case ignored: `"pipelining"`.
+#
+# See also `extension_of`.
+function has_extension(c: Client, keyword: str) -> bool
+    return !c.session.extensions[strings.to_upper_ascii(keyword)].is_err()
+
+# The parameters the server gave the extension `keyword`, as one text: `SIZE`
+# answers `35882577`.
+#
+# - `c`: the client.
+# - `keyword`: the extension, its case ignored.
+#
+# Fails `not_found` where the server did not name it. See also
+# `has_extension`.
+function extension_of(c: Client, keyword: str) -> str?
+    return match c.session.extensions[strings.to_upper_ascii(keyword)]
+        .ok v => ok(v)
+        .err _ => fail(
+            code: NOT_FOUND,
+            msg: f"the server named no extension {strings.to_upper_ascii(keyword)} in its EHLO reply"
+        )
+
+# The largest message the server takes, in bytes, as its SIZE names it.
+#
+# - `c`: the client.
+#
+# Fails `not_found` where the server names no SIZE or a SIZE of 0, which
+# means no limit. See also `send`.
+function max_size_of(c: Client) -> i64?
+    n = flow.to_i64_or_zero(strings.trim(extension_of(c, keyword: "SIZE")?))
+
+    if n <= 0
+        return fail(code: NOT_FOUND, msg: "the server's SIZE names no limit")
+    return ok(n)
+
+# The login mechanisms the server offers, in upper case, in its order:
+# `["PLAIN", "LOGIN"]`; [] where it offers none.
+#
+# - `c`: the client.
+#
+# See also `login`.
+function auth_mechanisms_of(c: Client) -> [str]
+    return flow.mechanisms(c.session)
+
+## Logging in
+
+# Logs in with `user` and `password` by the best mechanism the server
+# offers: PLAIN, then LOGIN, then CRAM-MD5.
+#
+# - `c`: the client.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails `invalid` where the connection is plain text to a host that is not
+# the loopback, so no password crosses a network unprotected; `unsupported`
+# where the server offers none of the three; `permission` where it refuses
+# the credentials. See also `auth_plain`, `auth_xoauth2`.
+function login(@c: Client, user: str, password: str) -> ()?
+    return flow.login(@c.session, host: c.host, user: user, password: password)
+
+# Logs in by AUTH PLAIN (RFC 4616), the credentials sent with the command.
+#
+# - `c`: the client.
+# - `identity`: the user to act as, "" to act as `user` itself.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails as `login` does, and `invalid` where a value holds a zero byte. See
+# also `login`.
+function auth_plain(@c: Client, identity: str, user: str, password: str) -> ()?
+    return flow.auth_plain(@c.session, host: c.host, identity: identity, user: user, password: password)
+
+# Logs in by AUTH LOGIN, the name and the password each sent when the
+# server asks for it.
+#
+# - `c`: the client.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails as `login` does. See also `login`.
+function auth_login(@c: Client, user: str, password: str) -> ()?
+    return flow.auth_login(@c.session, host: c.host, user: user, password: password)
+
+# Logs in by AUTH CRAM-MD5 (RFC 2195): the password never sent, an HMAC of
+# the server's challenge sent instead.
+#
+# - `c`: the client.
+# - `user`: the user's name.
+# - `secret`: the shared secret, the password.
+#
+# Fails as `login` does, and `invalid` where the challenge is not base 64.
+# MD5 is broken for signatures and kept here for servers that ask for it.
+# See also `login`.
+function auth_cram_md5(@c: Client, user: str, secret: str) -> ()?
+    return flow.auth_cram_md5(@c.session, host: c.host, user: user, secret: secret)
+
+# Logs in by AUTH XOAUTH2 with an OAuth 2.0 access token, as Gmail and
+# Outlook ask.
+#
+# - `c`: the client.
+# - `user`: the account's address.
+# - `token`: the access token, which an OAuth 2.0 client obtained.
+#
+# Where the server refuses the token, its explanation (a JSON text in base
+# 64) is decoded into the message. Fails as `login` does. See also `login`.
+function auth_xoauth2(@c: Client, user: str, token: str) -> ()?
+    return flow.auth_xoauth2(@c.session, host: c.host, user: user, token: token)
+
+## One command at a time
+
+# Says MAIL FROM, beginning a transaction.
+#
+# - `c`: the client.
+# - `from`: the sender's address alone, `ana@example.org`, or "" for the
+#   null sender of a bounce.
+# - `params`: the parameters after it, each `NAME=value` or `NAME`:
+#   `["SIZE=1024", "BODY=8BITMIME"]`; [] for none.
+#
+# Fails `invalid` where an argument holds a line break, angle brackets or a
+# space in the address; with the code a refusal means. See also `rcpt_to`,
+# `send`.
+function mail_from(@c: Client, from: str, params: [str]) -> ()?
+    protocol.check_address(address: from, asked: "MAIL FROM")?
+
+    for p in params
+        protocol.check_line(text: p, asked: "a parameter of MAIL FROM")?
+
+    line = "MAIL FROM:<" + from + ">" + protocol.joined_params(params)
+    _ = flow.expect(@c.session, line: line, want: [OK], shown_as: line)?
+    return ok()
+
+# Says RCPT TO, adding a recipient to the transaction.
+#
+# - `c`: the client.
+# - `to`: the recipient's address alone.
+# - `params`: the parameters after it, `["NOTIFY=FAILURE"]`; [] for none.
+#
+# A reply of 251 is a success. Fails as `mail_from` does. See also `data`.
+function rcpt_to(@c: Client, to: str, params: [str]) -> ()?
+    protocol.check_address(address: to, asked: "RCPT TO")?
+
+    if to == ""
+        return fail(code: INVALID, msg: "RCPT TO names no recipient")
+
+    for p in params
+        protocol.check_line(text: p, asked: "a parameter of RCPT TO")?
+
+    line = "RCPT TO:<" + to + ">" + protocol.joined_params(params)
+    _ = flow.expect(@c.session, line: line, want: [OK, WILL_FORWARD], shown_as: line)?
+    return ok()
+
+# Says DATA and sends `message`, its lines ended by `\r\n` and its dots
+# doubled where a line begins with one, then the line holding `.`.
+#
+# - `c`: the client.
+# - `message`: the message's bytes, as `mail.format_message` writes them.
+#
+# The reply of 250 is answered: its text holds the server's identifier of
+# the message. Fails with the code a refusal means. See also `dot_stuff`,
+# `send`.
+function data(@c: Client, message: [u8]) -> Reply?
+    _ = flow.expect(@c.session, line: "DATA", want: [START_MAIL_INPUT], shown_as: "DATA")?
+    a = flow.body(@c.session, message: message)?
+    return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
+
+# Says RSET, ending the transaction under way without sending.
+#
+# - `c`: the client.
+#
+# Fails with the code a refusal means. See also `send`.
+function reset(@c: Client) -> ()?
+    _ = flow.expect(@c.session, line: "RSET", want: [OK], shown_as: "RSET")?
+    return ok()
+
+# Says NOOP, which keeps the connection alive and asks that the server
+# answers.
+#
+# - `c`: the client.
+#
+# Fails with the code a refusal means. See also `command`.
+function noop(@c: Client) -> ()?
+    _ = flow.expect(@c.session, line: "NOOP", want: [OK], shown_as: "NOOP")?
+    return ok()
+
+# Says VRFY, asking whether the server knows the mailbox `address`.
+#
+# - `c`: the client.
+# - `address`: the name or address asked about.
+#
+# Answers the reply, 250, 251 or 252. Most servers refuse it (502, or 252
+# saying nothing). Fails with the code a refusal means. See also `expand`.
+function verify(@c: Client, address: str) -> Reply?
+    protocol.check_line(text: address, asked: "the address VRFY asks about")?
+    a = flow.expect(@c.session, line: "VRFY " + address, want: [OK, WILL_FORWARD, CANNOT_VERIFY], shown_as: "VRFY " + address)?
+    return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
+
+# Says EXPN, asking the server for the members of the mailing list `list`.
+#
+# - `c`: the client.
+# - `list`: the list's name.
+#
+# Answers the reply, one member a line. Fails with the code a refusal means.
+# See also `verify`.
+function expand(@c: Client, list: str) -> Reply?
+    protocol.check_line(text: list, asked: "the list EXPN asks about")?
+    a = flow.expect(@c.session, line: "EXPN " + list, want: [OK], shown_as: "EXPN " + list)?
+    return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
+
+# Says HELP, about `topic` or about the server.
+#
+# - `c`: the client.
+# - `topic`: a command's name, or "" for the server's own help.
+#
+# Answers the reply, 211 or 214. Fails with the code a refusal means.
+function help(@c: Client, topic: str) -> Reply?
+    protocol.check_line(text: topic, asked: "the topic of HELP")?
+
+    line = if topic == ""
+        "HELP"
+    else
+        "HELP " + topic
+    a = flow.expect(@c.session, line: line, want: [SYSTEM_STATUS, HELP_MESSAGE], shown_as: line)?
+    return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
+
+# Sends `line` and answers the server's reply, whatever its code.
+#
+# - `c`: the client.
+# - `line`: the command without its line end: `"NOOP"`.
+#
+# A refusal is a reply here, never a failure. Fails `invalid` where `line`
+# holds a line break; where the connection fails; `invalid` where the reply
+# is not SMTP. See also `noop`.
+function command(@c: Client, line: str) -> Reply?
+    protocol.check_line(text: line, asked: "the command")?
+    a = flow.step(@c.session, line: line)?
+    return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
+
+## Sending
+
+# One recipient the server refused, and its reply.
+record Refusal
+    # The recipient's address, as given.
+    address: str
+    # The server's reply to RCPT TO.
+    reply: Reply
+
+# What `send` answers: the server's reply to the message, and the
+# recipients it refused while taking the message for the others.
+record Sent
+    # The reply of 250 to the message.
+    reply: Reply
+    # The recipients refused, in order; [] where every one was taken.
+    refused: [Refusal]
+
+# Sends `message` from `from` to `to`: MAIL FROM, RCPT TO for each, DATA, in
+# one round trip where the server offers PIPELINING.
+#
+# - `c`: the client.
+# - `from`: the sender's address alone, or "" for the null sender.
+# - `to`: the recipients' addresses; at least one.
+# - `message`: the message's bytes.
+#
+# SIZE is announced where the server names it, and a message larger than it
+# fails `limit` before a byte is sent; BODY=8BITMIME is announced for bytes
+# above 127, which fail `unsupported` where the server offers no 8BITMIME;
+# SMTPUTF8 is asked for an address or a header above ASCII, which fail
+# `unsupported` where the server offers none. Answers the recipients refused
+# while the others were taken, as Python's `sendmail` does; where every one
+# is refused the transaction is reset and it fails with the first
+# refusal's code. Fails `invalid` where `to` is empty or an address holds a
+# line break, angle brackets or a space. See also `send_message`.
+function send(@c: Client, from: str, to: [str], message: [u8]) -> Sent?
+    done = flow.send(@c.session, from: from, to: to, message: message)?
+    refused: [Refusal] @= []
+
+    for r in done.refused
+        refused @ refused.push(
+            Refusal(address: r.address, reply: Reply(code: r.answer.code, enhanced: r.answer.enhanced, lines: r.answer.lines))
+        )
+
+    return ok(
+        Sent(reply: Reply(code: done.answer.code, enhanced: done.answer.enhanced, lines: done.answer.lines), refused: refused)
+    )
+
+# Sends `m` to every address of its `To`, `Cc` and `Bcc`, from the address
+# of its `Sender`, else of its first `From`, without its `Bcc`.
+#
+# - `c`: the client.
+# - `m`: the message.
+#
+# It is written with `mail.standard_options`, or with `mail.utf8_options`
+# where its header needs UTF-8 and the server offers SMTPUTF8. Fails
+# `invalid` where `m` names no sender or no recipient, and as
+# `mail.format_message` and `send` fail. See also `send`.
+function send_message(@c: Client, m: mail.Message) -> Sent?
+    senders = mail.addresses_of(m, name: "Sender")?
+    authors = mail.addresses_of(m, name: "From")?
+
+    from = if senders.len() > 0
+        mail.format_addr_spec(senders[0])
+    else if authors.len() > 0
+        mail.format_addr_spec(authors[0])
+    else
+        ""
+
+    if from == ""
+        return fail(code: INVALID, msg: "the message names no sender: no Sender and no From")
+    to: [str] @= []
+
+    for name in ["To", "Cc", "Bcc"]
+        for a in mail.addresses_of(m, name: name)?
+            to @ to.push(mail.format_addr_spec(a))
+
+    if to.len() == 0
+        return fail(code: INVALID, msg: "the message names no recipient: no To, Cc or Bcc")
+    shown = mail.without_field(m, name: "Bcc")
+    written: [u8] @= []
+
+    match mail.format_message(shown, mail.standard_options())
+        .ok d => written @ d
+        .err e =>
+            if e.code != mail.UNSUPPORTED || !has_extension(c, keyword: "SMTPUTF8")
+                return fail(code: e.code, msg: e.msg)
+            written @ mail.format_message(shown, mail.utf8_options())?
+
+    return send(@c, from: from, to: to, message: written)
+
+# How `send_mail` logs in.
+variant Auth
+    # No login.
+    none
+    # A user's name and password, by the best mechanism offered.
+    password
+        # The user's name.
+        user: str
+        # The password.
+        password: str
+    # An OAuth 2.0 access token, by XOAUTH2.
+    oauth2
+        # The account's address.
+        user: str
+        # The access token.
+        token: str
+
+# Sends `message` in one call: connects as `o` says, logs in as `auth` says,
+# sends, and says QUIT.
+#
+# - `o`: the connection's options.
+# - `auth`: the login, `.none` for none.
+# - `from`: the sender's address alone.
+# - `to`: the recipients' addresses.
+# - `message`: the message's bytes.
+#
+# The connection is closed whatever happens. Fails as `connect`, `login`,
+# `auth_xoauth2` and `send` fail. See also `send`.
+function send_mail(o: Options, auth: Auth, from: str, to: [str], message: [u8]) -> Sent?
+    c @= connect(o)?
+
+    match auth
+        .none => _ = 0
+        .password p =>
+            match login(@c, user: p.user, password: p.password)
+                .ok _ => _ = 0
+                .err e =>
+                    match quit(@c)
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
+
+                    return fail(code: e.code, msg: e.msg)
+        .oauth2 t =>
+            match auth_xoauth2(@c, user: t.user, token: t.token)
+                .ok _ => _ = 0
+                .err e =>
+                    match quit(@c)
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
+
+                    return fail(code: e.code, msg: e.msg)
+
+    sent = send(@c, from: from, to: to, message: message)
+
+    match quit(@c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    return sent
+
+# `message` as DATA sends it: every line break made `\r\n`, a dot doubled
+# where a line begins with one, and a last line break added where it lacks
+# one; the line holding `.` is not added.
+#
+# - `message`: the bytes; [] answers [].
+#
+# See also `data`.
+function dot_stuff(message: [u8]) -> [u8]
+    return protocol.dot_stuff(message)
+
+## Tests
+
+test "connect: a greeting of 554 refused, its reply in the message"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} refused-greeting")
+    fake.until_listening(port)
+
+    match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000))
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && e.msg == "554 5.7.1 go away: the server refused this client: its greeting"
+
+    assert threads.wait_text(@server) == ""
+
+test "connect: EHLO refused on a plain connection, then HELO, and no extension"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} helo")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert extensions_of(c).len() == 0 && !c.is_tls
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|HELO client.test|QUIT"
+
+test "connect: a server that never answers EHLO ends by the deadline"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} silent")
+    fake.until_listening(port)
+
+    match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 300))
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT || e.code == CLOSED
+
+    assert threads.wait_text(@server) == "EHLO client.test|closed by the script"
+
+test "connect: TLS refused where the server's certificate is no authority's the client trusts"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"implicit {port} handshake")
+    fake.until_listening(port)
+
+    match connect(Options(host: "localhost", port: port, security: .implicit, roots: "", local_name: "client.test", deadline_ms: 10000))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID || e.code == FAILED || e.code == CLOSED
+
+    _ = threads.wait_text(@server)
+
+test "send: every recipient refused, the transaction reset, the reply kept as the last"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} all-refused")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+
+    match send(@c, from: "ana@example.org", to: ["x@example.org", "y@example.org"], message: bytes.from_text("Subject: x\r\n\r\nx"))
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && e.msg == "550 5.1.1 no x: the server refused every recipient, the first <x@example.org>"
+
+    assert last_reply_of(c).code == MAILBOX_UNAVAILABLE
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|MAIL FROM:<ana@example.org> SIZE=15|RCPT TO:<x@example.org>|RCPT TO:<y@example.org>|RSET|QUIT"
+
+test "send: larger than SIZE refused before a byte, 8-bit and UTF-8 asked of the server"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+
+    match send(@c, from: "ana@example.org", to: ["bob@example.org"], message: bytes.from_text(repeat("x", 1001)))
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    sent = send(
+        @c,
+        from: "jörg@example.org",
+        to: ["bob@example.org"],
+        message: bytes.from_text("Subject: é\r\n\r\nbodé")
+    ).must()
+    assert sent.refused.len() == 0 && sent.reply.code == OK
+    assert send(@c, from: "a@x", to: [], message: []).is_err() && send(@c, from: "a@x", to: ["b@y>"], message: []).is_err()
+    quit(@c).must()
+    heard = threads.wait_text(@server)
+    assert strings.has_prefix(
+        s: heard,
+        prefix: "EHLO client.test|MAIL FROM:<jörg@example.org> SIZE=20 BODY=8BITMIME SMTPUTF8|RCPT TO:<bob@example.org>|DATA|DATA "
+    )
+
+test "mail_from: a server closing with 421, told closed"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} closing")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+
+    match mail_from(@c, from: "ana@example.org", params: [])
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@c).must()
+    _ = threads.wait_text(@server)
+
+test "login: credentials refused, told permission"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} wrong-password")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+
+    match login(@c, user: "ana", password: "wrong")
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && e.msg == "535 5.7.8 credentials refused: the server refused the login AUTH PLAIN of ana"
+
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN AGFuYQB3cm9uZw==|QUIT"
+
+test "auth_xoauth2: a token refused, the server's explanation in the message"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} token-refused")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert c.is_tls
+
+    match auth_xoauth2(@c, user: "ana@example.org", token: "stale")
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && strings.contains(s: e.msg, substr: "{\\\"status\\\":\\\"401\\\"}")
+
+    quit(@c).must()
+    assert strings.has_suffix(s: threads.wait_text(@server), suffix: "||QUIT")
+
+test "connect: a plain session with the responder, every extension read"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert keys(extensions_of(c)) == ["SIZE", "8BITMIME", "SMTPUTF8", "PIPELINING", "AUTH", "HELP"]
+    assert extension_of(c, keyword: "nope").is_err() && !has_extension(c, keyword: "STARTTLS")
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+## Examples
+
+# A reply of 250 says the command was done.
+test "is_positive: 250 and 354, not 550"
+    assert is_positive(Reply(code: 250, enhanced: "", lines: ["ok"])) && is_positive(Reply(code: 354, enhanced: "", lines: [""]))
+    assert !is_positive(Reply(code: 550, enhanced: "5.1.1", lines: ["no"]))
+
+# A reply of 4xx asks to try again later.
+test "is_transient: 451"
+    assert is_transient(Reply(code: 451, enhanced: "4.3.0", lines: ["later"])) && !is_transient(Reply(code: 550, enhanced: "", lines: [""]))
+
+# A reply of 5xx refuses for good.
+test "is_permanent: 550"
+    assert is_permanent(Reply(code: 550, enhanced: "5.1.1", lines: ["no such user"]))
+
+# A reply as one line for a log.
+test "format_reply: an enhanced code and two lines"
+    assert format_reply(Reply(code: 250, enhanced: "2.0.0", lines: ["queued", "as X1"])) == "250 2.0.0 queued as X1"
+
+# The options of a submission server with STARTTLS.
+test "options: port 587 for STARTTLS"
+    o = options(host: "smtp.example.org", security: .starttls)
+    assert o.port == PORT_SUBMISSION && o.roots == "" && o.local_name == "localhost" && o.deadline_ms == 60000
+    assert options(host: "smtp.example.org", security: .implicit).port == 465 && options(host: "x", security: .plain).port == 25
+
+# A session with a server on this machine, its greeting read and EHLO said.
+test "connect: a plain server on the loopback address"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert has_extension(c, keyword: "pipelining")
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|QUIT"
+
+# The greeting a server opened with.
+test "greeting_of: 220"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert greeting_of(c) == Reply(code: 220, enhanced: "", lines: ["mx.test ESMTP ready"])
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The reply a command the server does not know was given.
+test "last_reply_of: a command refused"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    _ = command(@c, line: "XYZZY").must()
+    assert last_reply_of(c) == Reply(code: 500, enhanced: "5.5.2", lines: ["what?"])
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The extensions a server named.
+test "extensions_of: SIZE and its limit"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert extensions_of(c)["SIZE"].must() == "1000"
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# EHLO said again.
+test "hello: the extensions read anew"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    hello(@c).must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|EHLO client.test|QUIT"
+
+# A session ended politely.
+test "quit: QUIT, then closed"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    quit(@c).must()
+    assert noop(@c).is_err()
+    assert threads.wait_text(@server) == "EHLO client.test|QUIT"
+
+# A session ended without a word.
+test "close: the server sees the connection end"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    close(@c).must()
+    assert close(@c).is_err()
+    assert threads.wait_text(@server) == "EHLO client.test|closed by the client"
+
+# Whether the server offers PIPELINING.
+test "has_extension: PIPELINING, in any case"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert has_extension(c, keyword: "Pipelining") && !has_extension(c, keyword: "CHUNKING")
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The parameters of AUTH.
+test "extension_of: AUTH's mechanisms"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert extension_of(c, keyword: "auth").must() == "PLAIN LOGIN"
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The largest message the server takes.
+test "max_size_of: 1000 bytes"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert max_size_of(c).must() == 1000
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The login mechanisms offered.
+test "auth_mechanisms_of: PLAIN and LOGIN"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert auth_mechanisms_of(c) == ["PLAIN", "LOGIN"]
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# A login by the best mechanism offered, PLAIN here.
+test "login: PLAIN on the loopback host"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    login(@c, user: "ana", password: "secret").must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN AGFuYQBzZWNyZXQ=|QUIT"
+
+# A login acting as another user.
+test "auth_plain: an identity apart from the user"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    auth_plain(@c, identity: "admin", user: "ana", password: "secret").must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN YWRtaW4AYW5hAHNlY3JldA==|QUIT"
+
+# A login by AUTH LOGIN over TLS from the first byte.
+test "auth_login: over implicit TLS"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"implicit {port} implicit")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "localhost", port: port, security: .implicit, roots: tls.TEST_ROOT, local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    auth_login(@c, user: "ana", password: "secret").must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH LOGIN|YW5h|c2VjcmV0|QUIT"
+
+# A login by CRAM-MD5, RFC 2195's challenge answered.
+test "auth_cram_md5: a challenge answered"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} cram")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    auth_cram_md5(@c, user: "tim", secret: "tanstaaftanstaaf").must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH CRAM-MD5|dGltIDNkYmM4OGYwNjI0Nzc2YTczN2IzOTA5M2Y2ZWI2NDI3|QUIT"
+
+# A token logged in after STARTTLS, and a message sent.
+test "auth_xoauth2: after STARTTLS, then a message"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} starttls")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert c.is_tls && !has_extension(c, keyword: "PIPELINING")
+    auth_xoauth2(@c, user: "ana@example.org", token: "ya29.token").must()
+    sent = send(
+        @c,
+        from: "ana@example.org",
+        to: ["bob@example.org"],
+        message: bytes.from_text("Subject: hi\r\n\r\nhello")
+    ).must()
+    assert sent.reply.lines == ["queued as X1"]
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH XOAUTH2 dXNlcj1hbmFAZXhhbXBsZS5vcmcBYXV0aD1CZWFyZXIgeWEyOS50b2tlbgEB|MAIL FROM:<ana@example.org> SIZE=20|RCPT TO:<bob@example.org>|DATA|DATA Subject: hi\\r\\n\\r\\nhello\\r\\n|QUIT"
+
+# A transaction begun.
+test "mail_from: with a parameter"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    mail_from(@c, from: "ana@example.org", params: ["BODY=8BITMIME"]).must()
+    assert mail_from(@c, from: "a@x>\r\nRCPT TO:<b@y", params: []).is_err()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|MAIL FROM:<ana@example.org> BODY=8BITMIME|QUIT"
+
+# A recipient added, and one refused.
+test "rcpt_to: one taken, one refused"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    mail_from(@c, from: "ana@example.org", params: []).must()
+    rcpt_to(@c, to: "bob@example.org", params: []).must()
+
+    match rcpt_to(@c, to: "nobody@example.org", params: [])
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && last_reply_of(c).enhanced == "5.1.1"
+
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# A message sent after MAIL and RCPT, its dot doubled.
+test "data: a line beginning with a dot"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    mail_from(@c, from: "ana@example.org", params: []).must()
+    rcpt_to(@c, to: "bob@example.org", params: []).must()
+    assert data(@c, message: bytes.from_text("Subject: x\n\n.hidden\n")).must().code == OK
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|MAIL FROM:<ana@example.org>|RCPT TO:<bob@example.org>|DATA|DATA Subject: x\\r\\n\\r\\n..hidden\\r\\n|QUIT"
+
+# A transaction abandoned.
+test "reset: RSET"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    reset(@c).must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|RSET|QUIT"
+
+# The connection kept alive.
+test "noop: NOOP"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    noop(@c).must()
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|NOOP|QUIT"
+
+# A mailbox asked about, the server unwilling to say.
+test "verify: 252"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert verify(@c, address: "ana").must().code == CANNOT_VERIFY
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The members of a list.
+test "expand: two members"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert expand(@c, list: "staff").must().lines == ["ana@example.org", "bob@example.org"]
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# The server's help.
+test "help: 214"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert help(@c, topic: "").must().code == HELP_MESSAGE
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|HELP|QUIT"
+
+# Any command, its refusal a reply rather than a failure.
+test "command: a command the server does not know"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    assert command(@c, line: "XYZZY").must().code == SYNTAX_ERROR && command(@c, line: "NOOP\r\nQUIT").is_err()
+    quit(@c).must()
+    _ = threads.wait_text(@server)
+
+# A message to two recipients, one refused, the other taken.
+test "send: one recipient refused, one taken"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} basic")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    login(@c, user: "ana", password: "secret").must()
+    message = bytes.from_text("Subject: hi\r\n\r\n.dot line\r\nbye\r\n")
+    sent = send(@c, from: "ana@example.org", to: ["bob@example.org", "nobody@example.org"], message: message).must()
+    assert sent.reply == Reply(code: 250, enhanced: "2.0.0", lines: ["queued as X1"])
+    assert sent.refused == [Refusal(address: "nobody@example.org", reply: Reply(code: 550, enhanced: "5.1.1", lines: ["no such user"]))]
+    quit(@c).must()
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN AGFuYQBzZWNyZXQ=|MAIL FROM:<ana@example.org> SIZE=31|RCPT TO:<bob@example.org>|RCPT TO:<nobody@example.org>|DATA|DATA Subject: hi\\r\\n\\r\\n..dot line\\r\\nbye\\r\\n|QUIT"
+
+# A message of `mail` sent to its To, Cc and Bcc, its Bcc left out of it.
+test "send_message: To, Cc and Bcc"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    c @= connect(
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
+    ).must()
+    body = mail.text_part(text: "Hello", subtype: "plain").must()
+    m = mail.with_field(
+        mail.with_field(mail.with_field(mail.with_field(body, name: "From", value: "Ana <ana@example.org>"), name: "To", value: "bob@example.org"), name: "Cc", value: "Carl <carl@example.org>"),
+        name: "Bcc",
+        value: "dan@example.org"
+    )
+    sent = send_message(@c, m: m).must()
+    assert sent.refused.len() == 0
+    quit(@c).must()
+    heard = threads.wait_text(@server)
+    assert strings.contains(
+        s: heard,
+        substr: "RCPT TO:<bob@example.org>|RCPT TO:<carl@example.org>|RCPT TO:<dan@example.org>|DATA|DATA "
+    )
+    assert !strings.contains(s: heard, substr: "Bcc") && strings.contains(s: heard, substr: "MAIL FROM:<ana@example.org>")
+
+# A message sent in one call, logged in by password.
+test "send_mail: connect, log in, send, quit"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder")
+    fake.until_listening(port)
+    o = Options(
+        host: "127.0.0.1",
+        port: port,
+        security: .plain,
+        roots: "",
+        local_name: "client.test",
+        deadline_ms: 10000
+    )
+    sent = send_mail(
+        o,
+        auth: .password(user: "ana", password: "secret"),
+        from: "ana@example.org",
+        to: ["bob@example.org"],
+        message: bytes.from_text("Subject: x\r\n\r\ny")
+    ).must()
+    assert sent.reply.code == OK
+    assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN AGFuYQBzZWNyZXQ=|MAIL FROM:<ana@example.org> SIZE=15|RCPT TO:<bob@example.org>|DATA|DATA Subject: x\\r\\n\\r\\ny\\r\\n|QUIT"
+
+# A message as DATA sends it.
+test "dot_stuff: line ends and a leading dot"
+    assert dot_stuff(bytes.from_text("a\n.b")) == bytes.from_text("a\r\n..b\r\n")

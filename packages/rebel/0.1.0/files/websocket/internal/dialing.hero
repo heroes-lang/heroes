@@ -1,0 +1,93 @@
+# The stream a client's connection travels on, made for a `ws://` or
+# `wss://` URL: a TCP connection or TLS, its opening handshake given what is
+# left of the time allowed.
+
+use io
+use net
+use time
+use tls
+use url
+
+# The code of a time allowed run out.
+constant TIMEOUT: str
+    "timeout"
+
+# A stream to `u`'s host and port, TLS for `wss`, its reads and writes ending
+# by `deadline_ms` from now, which the connection's making counts in.
+#
+# - `u`: a `ws://` or `wss://` URL.
+# - `deadline_ms`: the milliseconds allowed, 0 for no limit.
+# - `secure`: what a TLS client trusts and offers.
+#
+# Fails `timeout` where the time runs out, and as `url.port_of`,
+# `net.connect_timeout` and `tls.connect` fail.
+function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
+    port = url.port_of(u)?
+    began = time.mark()?
+
+    if u.scheme == "wss"
+        stream @= tls.connect(host: u.host, port: port, deadline_ms: deadline_ms, client: secure)?
+
+        if deadline_ms > 0
+            match left_of(began, deadline_ms: deadline_ms)
+                .ok left => tls.set_deadline(stream, ms: left).must()
+                .err e =>
+                    ended(@stream)
+                    return fail(code: e.code, msg: e.msg)
+        return ok(stream)
+    conn @= net.connect_timeout(host: u.host, port: port, timeout_ms: deadline_ms, deadline_ms: 0)?
+
+    if deadline_ms > 0
+        match left_of(began, deadline_ms: deadline_ms)
+            .ok left => net.set_deadline(conn, ms: left).must()
+            .err e =>
+                ended(@conn.stream)
+                return fail(code: e.code, msg: e.msg)
+    return ok(conn.stream)
+
+# The milliseconds left of `deadline_ms` since `began`, 1 at least.
+#
+# Fails `timeout` where none are left.
+function left_of(began: time.Mark, deadline_ms: i64) -> i64?
+    spent = time.elapsed(began)?.nanoseconds / 1_000_000
+    left = deadline_ms - spent
+
+    if left <= 0
+        return fail(code: TIMEOUT, msg: f"the connection took {spent} ms of the {deadline_ms} allowed")
+    return ok(left)
+
+# Closes `stream`, whatever the system answers: a stream given up.
+function ended(@stream: io.Stream)
+    if !io.is_closed(stream)
+        match io.close(@stream)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+test "opened: a TCP connection to a ws URL, the time left of a deadline, and nothing listening"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    stream @= opened(
+        url.parse(f"ws://127.0.0.1:{l.address.port}/").must(),
+        deadline_ms: 5_000,
+        secure: tls.Client(roots: "", protocols: [])
+    ).must()
+    accepted = net.accept(l, deadline_ms: 5_000).must()
+    io.write(accepted.stream, data: [7]).must()
+    assert io.read(stream, most: 1).must() == [7]
+    ended(@stream)
+    ended(@stream)
+    other @= accepted.stream
+    io.close(@other).must()
+    net.close_listener(@l).must()
+    assert opened(
+        url.parse("ws://127.0.0.1:1/").must(),
+        deadline_ms: 1_000,
+        secure: tls.Client(roots: "", protocols: [])
+    ).is_err()
+
+test "left_of: what is left of the time, and none"
+    began = time.mark().must()
+    assert left_of(began, deadline_ms: 60_000).must() > 59_000
+
+    match left_of(began, deadline_ms: -1)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT

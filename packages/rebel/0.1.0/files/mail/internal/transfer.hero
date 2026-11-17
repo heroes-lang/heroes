@@ -1,0 +1,228 @@
+# The transfer encodings of RFC 2045 a part's body is sent in:
+# quoted-printable, written in lines of at most 76 bytes and read leniently
+# as Go and Python read it, and base 64 in lines of 76 characters.
+
+use bytes
+
+# The code of base 64 that does not read.
+constant INVALID: str
+    "invalid"
+
+# `data` in quoted-printable: text where `binary` is false, its line breaks
+# written `\r\n`; every byte escaped but printable ASCII where `binary` is
+# true.
+function encode_qp(data: [u8], binary: bool) -> str
+    out: [u8] @= []
+    column: i64 @= 0
+    at: i64 @= 0
+
+    while at < data.len()
+        b = data[at]
+
+        if !binary && (b == '\n' || b == '\r' && at + 1 < data.len() && data[at + 1] == '\n')
+            out @ out.push('\r')
+            out @ out.push('\n')
+            column @ 0
+
+            if b == '\r'
+                at @ at + 2
+            else
+                at @ at + 1
+            continue
+        at_line_end = at + 1 == data.len() || !binary && (data[at + 1] == '\n' || data[at + 1] == '\r' && at + 2 < data.len() && data[at + 2] == '\n')
+        literal = b >= 33 && b <= 126 && b != '=' || (b == ' ' || b == '\t') && !at_line_end
+
+        width = if literal
+            1
+        else
+            3
+
+        if column + width > 75
+            out @ out.push('=')
+            out @ out.push('\r')
+            out @ out.push('\n')
+            column @ 0
+
+        if literal
+            out @ out.push(b)
+        else
+            push_escape(@out, b: b)
+        column @ column + width
+        at @ at + 1
+
+    return bytes.to_text(out).must()
+
+# Adds `=XX` for `b` to `out`, the digits upper case.
+function push_escape(@out: [u8], b: u8)
+    digits = "0123456789ABCDEF"
+    out @ out.push('=')
+    out @ out.push(digits[to_i64(b / 16).must()])
+    out @ out.push(digits[to_i64(b % 16).must()])
+
+# The bytes the quoted-printable `data` writes: soft breaks and the spaces
+# before a line's end taken out, escapes read, a broken escape kept.
+function decode_qp(data: [u8]) -> [u8]
+    out: [u8] @= []
+    start: i64 @= 0
+
+    while start < data.len()
+        end: i64 @= start
+
+        while end < data.len() && data[end] != '\n'
+            end @ end + 1
+
+        has_newline = end < data.len()
+        content_end: i64 @= end
+
+        if has_newline && content_end > start && data[content_end - 1] == '\r'
+            content_end @ content_end - 1
+
+        break_end = if has_newline
+            end + 1
+        else
+            end
+        line_break = data.slice(from: content_end, to: break_end)
+
+        while content_end > start && (data[content_end - 1] == ' ' || data[content_end - 1] == '\t')
+            content_end @ content_end - 1
+
+        soft = content_end > start && data[content_end - 1] == '='
+
+        if soft
+            content_end @ content_end - 1
+        at: i64 @= start
+
+        while at < content_end
+            b = data[at]
+
+            if b == '=' && at + 2 < content_end
+                high = hex_value(data[at + 1])
+                low = hex_value(data[at + 2])
+
+                if high >= 0 && low >= 0
+                    out @ out.push(to_u8(high * 16 + low).must())
+                    at @ at + 3
+                    continue
+            out @ out.push(b)
+            at @ at + 1
+
+        if !soft
+            bytes.push_all(to: @out, from: line_break)
+        start @ end + 1
+
+    return out
+
+# The value of the hexadecimal digit `b`, either case, or -1.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b).must() - 48
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b).must() - 87
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b).must() - 55
+    return -1
+
+# `data` in base 64, in lines of 76 characters each ended by `\r\n`; "" for
+# none.
+function encode_base64_lines(data: [u8]) -> str
+    text = bytes.format_base64(data)
+    lines: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        end = if at + 76 < text.len()
+            at + 76
+        else
+            text.len()
+        lines @ lines.push(text.slice(from: at, to: end))
+        lines @ lines.push("\r\n")
+        at @ end
+
+    return lines.join("")
+
+# The bytes of base 64 `data` across lines: space, tabs and line breaks
+# skipped, padding optional. Fails `invalid` at a byte of no alphabet.
+function decode_base64_lines(data: [u8]) -> [u8]?
+    kept: [u8] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        b = data[at]
+
+        if b == ' ' || b == '\t' || b == '\r' || b == '\n'
+            at @ at + 1
+            continue
+
+        if !(b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '+' || b == '/' || b == '=')
+            return fail(code: INVALID, msg: f"base 64 holds the byte {b} at {at}, of no base 64 alphabet")
+        kept @ kept.push(b)
+        at @ at + 1
+
+    while kept.len() % 4 != 0
+        kept @ kept.push('=')
+
+    return match bytes.parse_base64(bytes.to_text(kept).must())
+        .ok out => ok(out)
+        .err e  => fail(code: INVALID, msg: "base 64 that does not read: " + e.msg)
+
+## Tests
+
+test "encode_qp: as Go writes it, escapes, a space before a line's end, a long line, binary"
+    assert encode_qp(bytes.from_text("hello"), binary: false) == "hello"
+    assert encode_qp(bytes.from_text("café"), binary: false) == "caf=C3=A9"
+    assert encode_qp(bytes.from_text("a=b"), binary: false) == "a=3Db"
+    assert encode_qp(bytes.from_text("line\r\nnext"), binary: false) == "line\r\nnext"
+    assert encode_qp(bytes.from_text("trailing space \r\nx"), binary: false) == "trailing space=20\r\nx"
+    assert encode_qp(bytes.from_text("tab\t\r\n"), binary: false) == "tab=09\r\n"
+    assert encode_qp(bytes.from_text("a\nb"), binary: false) == "a\r\nb"
+    assert encode_qp([0, 255], binary: false) == "=00=FF"
+    assert encode_qp([], binary: false) == ""
+    digits = repeat("0123456789", 10)
+    assert encode_qp(bytes.from_text(digits), binary: false) == digits.slice(from: 0, to: 75) + "=\r\n" + digits.slice(from: 75, to: 100)
+    assert encode_qp(bytes.from_text("é" + digits), binary: false) == "=C3=A9" + digits.slice(from: 0, to: 69) + "=\r\n" + digits.slice(from: 69, to: 100)
+    assert encode_qp(bytes.from_text("a\r\nb"), binary: true) == "a=0D=0Ab"
+    assert encode_qp(bytes.from_text(repeat("a", 75)), binary: false) == repeat("a", 75)
+    assert encode_qp(bytes.from_text(repeat("a", 76)), binary: false) == repeat("a", 75) + "=\r\na"
+    assert encode_qp(bytes.from_text(repeat("a", 75) + " "), binary: false) == repeat("a", 75) + "=\r\n=20"
+    assert encode_qp(bytes.from_text(repeat("a", 74) + " \r\n"), binary: false) == repeat("a", 74) + "=\r\n=20\r\n"
+
+test "decode_qp: as Go reads it, soft breaks, a broken escape kept, spaces before a line's end"
+    assert decode_qp(bytes.from_text("caf=C3=A9")) == bytes.from_text("café")
+    assert decode_qp(bytes.from_text("a=\r\nb")) == bytes.from_text("ab")
+    assert decode_qp(bytes.from_text("a=\nb")) == bytes.from_text("ab")
+    assert decode_qp(bytes.from_text("a=ZZ")) == bytes.from_text("a=ZZ")
+    assert decode_qp(bytes.from_text("a=c3=a9")) == bytes.from_text("aé")
+    assert decode_qp(bytes.from_text("a=")) == bytes.from_text("a")
+    assert decode_qp(bytes.from_text("a =\r\n")) == bytes.from_text("a ")
+    assert decode_qp(bytes.from_text("trail  \r\nx")) == bytes.from_text("trail\r\nx")
+    assert decode_qp(bytes.from_text("=41=4")) == bytes.from_text("A=4")
+    assert decode_qp([]) == []
+
+test "encode_qp and decode_qp: every byte read back the same"
+    every: [u8] @= []
+
+    for n in range(from: 0, to: 256)
+        every @ every.push(to_u8(n).must())
+
+    assert decode_qp(bytes.from_text(encode_qp(every, binary: true))) == every
+    text = bytes.from_text("one \r\ntwo\t\r\n" + repeat("=é ", 50) + "\r\n")
+    assert decode_qp(bytes.from_text(encode_qp(text, binary: false))) == text
+
+test "encode_base64_lines and decode_base64_lines: lines of 76, empty, missing padding, a bad byte"
+    assert encode_base64_lines([]) == ""
+    assert encode_base64_lines(bytes.from_text("hi")) == "aGk=\r\n"
+    long: [u8] @= []
+
+    for n in range(from: 0, to: 100)
+        long @ long.push(to_u8(n).must())
+
+    written = encode_base64_lines(long)
+    assert written.len() == 76 + 2 + 60 + 2 && written[76] == '\r'
+    assert decode_base64_lines(bytes.from_text(written)).must() == long
+    assert decode_base64_lines(bytes.from_text(" aG\r\n k ")).must() == bytes.from_text("hi")
+
+    match decode_base64_lines(bytes.from_text("aGk*"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "base 64 holds the byte 42 at 3, of no base 64 alphabet"

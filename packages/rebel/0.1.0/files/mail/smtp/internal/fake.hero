@@ -1,0 +1,424 @@
+# The loopback SMTP server of `mail/smtp`'s tests, written here in Heroes: a
+# thread of its own listens on 127.0.0.1, in plain text, by TLS from the
+# first byte or with STARTTLS through `tls.listen_after` and its test
+# certificates, and plays a script, each line the client says checked
+# against what the script expects and answered with the script's reply. A
+# thread runs a function of one `str` and answers one (spec § 13), so the
+# script crosses by name and the server answers what it heard as text, the
+# message's bytes escaped.
+
+use bytes
+use io
+use net
+use numbers
+use strings
+use time
+use tls
+
+# One turn of a script: the line the client must say, the server's reply,
+# and whether a message follows.
+record Turn
+    # The first bytes of the client's line; "" for the greeting, which the
+    # server says first.
+    expect: str
+    # What the server answers, its lines each ended by `\r\n`; "" to close
+    # the connection without a word.
+    reply: str
+    # Whether, after the reply, the server reads a message up to the line
+    # holding `.` and answers `250 2.0.0 queued as X1`.
+    takes_data: bool
+
+# A turn that answers `reply` to a line beginning with `expect`.
+function turn(expect: str, reply: str) -> Turn
+    return Turn(expect: expect, reply: reply, takes_data: false)
+
+# The extensions of an ordinary server.
+function ehlo_reply(extra: str) -> str
+    return "250-mx.test greets you\r\n250-SIZE 1000\r\n250-8BITMIME\r\n250-SMTPUTF8\r\n" + extra
+
+# The script named `name`.
+function script(name: str) -> [Turn]
+    greeting = turn(expect: "", reply: "220 mx.test ESMTP ready\r\n")
+    quit = turn(expect: "QUIT", reply: "221 2.0.0 bye\r\n")
+    data = Turn(expect: "DATA", reply: "354 go ahead\r\n", takes_data: true)
+
+    return match name
+        "basic" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 AUTH PLAIN LOGIN\r\n"))
+            turn(expect: "AUTH PLAIN AGFuYQBzZWNyZXQ=", reply: "235 2.7.0 ok\r\n")
+            turn(expect: "MAIL FROM:<ana@example.org> SIZE=", reply: "250 2.1.0 ok\r\n")
+            turn(expect: "RCPT TO:<bob@example.org>", reply: "250 2.1.5 ok\r\n")
+            turn(expect: "RCPT TO:<nobody@example.org>", reply: "550 5.1.1 no such user\r\n")
+            data
+            quit
+        ]
+        "pipelining" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 PIPELINING\r\n"))
+            turn(expect: "MAIL FROM:<ana@example.org> SIZE=", reply: "250 ok\r\n")
+            turn(expect: "RCPT TO:<bob@example.org>", reply: "250 ok\r\n")
+            data
+            quit
+        ]
+        "starttls" => [
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 AUTH XOAUTH2 PLAIN\r\n"))
+            turn(expect: "AUTH XOAUTH2 dXNlcj1hbmFAZXhhbXBsZS5vcmcBYXV0aD1CZWFyZXIgeWEyOS50b2tlbgEB", reply: "235 ok\r\n")
+            turn(expect: "MAIL FROM:<ana@example.org>", reply: "250 ok\r\n")
+            turn(expect: "RCPT TO:<bob@example.org>", reply: "250 ok\r\n")
+            data
+            quit
+        ]
+        "implicit" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 AUTH LOGIN\r\n"))
+            turn(expect: "AUTH LOGIN", reply: "334 VXNlcm5hbWU6\r\n")
+            turn(expect: "YW5h", reply: "334 UGFzc3dvcmQ6\r\n")
+            turn(expect: "c2VjcmV0", reply: "235 ok\r\n")
+            quit
+        ]
+        "cram" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 AUTH CRAM-MD5\r\n"))
+            turn(expect: "AUTH CRAM-MD5", reply: "334 PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2UuZXhhbXBsZS5uZXQ+\r\n")
+            turn(expect: "dGltIDNkYmM4OGYwNjI0Nzc2YTczN2IzOTA5M2Y2ZWI2NDI3", reply: "235 ok\r\n")
+            quit
+        ]
+        "token-refused" => [
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 AUTH XOAUTH2\r\n"))
+            turn(expect: "AUTH XOAUTH2 ", reply: "334 eyJzdGF0dXMiOiI0MDEifQ==\r\n")
+            turn(expect: "", reply: "535 5.7.8 bad token\r\n")
+            quit
+        ]
+        "wrong-password" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 AUTH PLAIN\r\n"))
+            turn(expect: "AUTH PLAIN ", reply: "535 5.7.8 credentials refused\r\n")
+            quit
+        ]
+        "refused-greeting" => [turn(expect: "", reply: "554 5.7.1 go away\r\n")]
+        "helo" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: "502 5.5.1 no EHLO here\r\n")
+            turn(expect: "HELO client.test", reply: "250 mx.test\r\n")
+            quit
+        ]
+        "silent" => [greeting, turn(expect: "EHLO", reply: "")]
+        "all-refused" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 HELP\r\n"))
+            turn(expect: "MAIL FROM:<ana@example.org>", reply: "250 ok\r\n")
+            turn(expect: "RCPT TO:<x@example.org>", reply: "550 5.1.1 no x\r\n")
+            turn(expect: "RCPT TO:<y@example.org>", reply: "553 5.1.3 bad y\r\n")
+            turn(expect: "RSET", reply: "250 ok\r\n")
+            quit
+        ]
+        "commands" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 HELP\r\n"))
+            turn(expect: "NOOP", reply: "250 2.0.0 ok\r\n")
+            turn(expect: "RSET", reply: "250 2.0.0 ok\r\n")
+            turn(expect: "VRFY ana", reply: "252 2.1.5 cannot verify\r\n")
+            turn(expect: "EXPN staff", reply: "250-ana@example.org\r\n250 bob@example.org\r\n")
+            turn(expect: "HELP", reply: "214 see the manual\r\n")
+            turn(expect: "XYZZY", reply: "500 5.5.2 what?\r\n")
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 HELP\r\n"))
+            quit
+        ]
+        "closing" => [
+            greeting
+            turn(expect: "EHLO client.test", reply: ehlo_reply("250 HELP\r\n"))
+            turn(expect: "MAIL FROM:", reply: "421 4.3.2 shutting down\r\n")
+        ]
+        _ => []
+
+# A port of the loopback address nothing listens on now.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# Waits until something listens on `port` of the loopback address, for
+# about ten seconds at most, by trying to listen there itself: `exists` says
+# the server is up, and no connection is spent on asking. A listener this
+# makes while the server is not yet up is closed at once, and the server
+# tries again (`listening`).
+function until_listening(port: i64)
+    tries @= 0
+
+    while tries < 500
+        tries @ tries + 1
+
+        match net.listen(host: "127.0.0.1", port: port)
+            .ok taken =>
+                l @= taken
+                net.close_listener(@l).must()
+                time.sleep(time.Duration(nanoseconds: 20000000))
+            .err e =>
+                if e.code == net.EXISTS
+                    return
+                time.sleep(time.Duration(nanoseconds: 20000000))
+
+# A plain listener on `port` of the loopback address, tried again for about
+# two seconds while `until_listening` holds the port for a moment.
+function listening(port: i64) -> net.Listener?
+    tries @= 0
+
+    while true
+        tries @ tries + 1
+
+        match net.listen(host: "127.0.0.1", port: port)
+            .ok l => return ok(l)
+            .err e =>
+                if tries >= 100
+                    return fail(code: e.code, msg: e.msg)
+                time.sleep(time.Duration(nanoseconds: 20000000))
+
+# A TLS listener on `port`, with the exchange of STARTTLS before TLS where
+# `starttls`, tried again as `listening` tries.
+function listening_tls(port: i64, starttls: bool) -> tls.Listener?
+    server = tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    tries @= 0
+
+    while true
+        tries @ tries + 1
+
+        made = if starttls
+            tls.listen_after(host: "127.0.0.1", port: port, server: server, steps: starttls_steps())
+        else
+            tls.listen(host: "127.0.0.1", port: port, server: server)
+
+        match made
+            .ok l => return ok(l)
+            .err e =>
+                if tries >= 100
+                    return fail(code: e.code, msg: e.msg)
+                time.sleep(time.Duration(nanoseconds: 20000000))
+
+# The server on a thread of its own: `arg` is `"<mode> <port> <script>"`,
+# the mode `plain`, `implicit` or `starttls`. It accepts until one
+# connection says its first line (five tries at most), plays the script on
+# it, and answers what it heard: each line, then `DATA` and the message
+# escaped, joined by `|`.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: " ")
+
+    if parts.len() != 3
+        return "invalid: not \"<mode> <port> <script>\": " + arg
+    port = numbers.parse_int(parts[1]).default(0)
+    turns = script(parts[2])
+
+    if parts[0] == "plain"
+        l @= match listening(port)
+            .ok made => made
+            .err e   => return "listen failed: " + e.code + ": " + e.msg
+
+        net.set_accept_deadline(l, ms: 15000).must()
+        heard: str @= "closed: no client said its first line"
+        tries @= 0
+
+        while tries < 5
+            tries @ tries + 1
+
+            match net.accept(l, deadline_ms: 10000)
+                .err e =>
+                    heard @ e.code + ": " + e.msg
+                    break
+                .ok c =>
+                    s @= c.stream
+
+                    played = if parts[2] == "responder"
+                        respond(s)
+                    else
+                        play(stream: s, turns: turns)
+
+                    if !io.is_closed(s)
+                        io.close(@s).must()
+
+                    if played != "probe"
+                        heard @ played
+                        break
+
+        net.close_listener(@l).must()
+        return heard
+
+    l @= match listening_tls(port, starttls: parts[0] == "starttls")
+        .ok made => made
+        .err e   => return "listen failed: " + e.code + ": " + e.msg
+
+    tls.set_accept_deadline(l, ms: 15000).must()
+    heard: str @= "closed: no client finished its handshake"
+    tries @= 0
+
+    while tries < 5
+        tries @ tries + 1
+
+        match tls.accept(l, deadline_ms: 10000)
+            .err e =>
+                heard @ e.code + ": " + e.msg
+
+                if e.code == "timeout" || parts[2] == "handshake"
+                    break
+            .ok taken =>
+                s @= taken
+
+                played = if parts[2] == "responder"
+                    respond(s)
+                else
+                    play(stream: s, turns: turns)
+
+                if !io.is_closed(s)
+                    io.close(@s).must()
+
+                if played != "probe"
+                    heard @ played
+                    break
+
+    tls.close_listener(@l).must()
+    return heard
+
+# The exchange a server with STARTTLS runs before TLS.
+function starttls_steps() -> [tls.Step]
+    return [
+        .send(data: bytes.from_text("220 mx.test ESMTP ready\r\n"))
+        .expect_line(prefix: "EHLO")
+        .send(data: bytes.from_text("250-mx.test\r\n250-PIPELINING\r\n250 STARTTLS\r\n"))
+        .expect(answer: bytes.from_text("STARTTLS\r\n"))
+        .send(data: bytes.from_text("220 2.0.0 go ahead\r\n"))
+    ]
+
+# Plays `turns` on `stream`: "probe" where the client said nothing at all,
+# what it heard otherwise. A turn reads the client's line first, but the
+# first turn of a script whose `expect` is "", the greeting.
+function play(stream: io.Stream, turns: [Turn]) -> str
+    r @= io.reader(stream)
+    heard: [str] @= []
+
+    for k in range(from: 0, to: turns.len())
+        t = turns[k]
+
+        if k > 0 || t.expect != ""
+            line = match io.read_line(@r)
+                .ok l  => l
+                .err e => return finished(heard: heard, last: "read failed: " + e.code)
+
+            if line == "" && heard.len() == 0 && io.at_end(@r).default(true)
+                return "probe"
+            heard @ heard.push(line)
+
+            if !strings.has_prefix(s: line, prefix: t.expect)
+                match io.write_text(stream, text: "500 the script expected " + t.expect + "\r\n")
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                return finished(heard: heard, last: "unexpected")
+
+        if t.reply == ""
+            return finished(heard: heard, last: "closed by the script")
+
+        match io.write_text(stream, text: t.reply)
+            .ok _ => _ = 0
+            .err e =>
+                if heard.len() == 0
+                    return "probe"
+                return finished(heard: heard, last: "write failed: " + e.code)
+
+        if t.takes_data
+            body: [u8] @= []
+
+            while true
+                line = match io.read_line_with_end(@r)
+                    .ok l  => l
+                    .err e => return finished(heard: heard, last: "data failed: " + e.code)
+
+                if line == "" || line == ".\r\n"
+                    break
+                bytes.push_text(to: @body, s: line)
+
+            heard @ heard.push("DATA " + bytes.format_escaped(body))
+
+            match io.write_text(stream, text: "250 2.0.0 queued as X1\r\n")
+                .ok _  => _ = 0
+                .err e => return finished(heard: heard, last: "write failed: " + e.code)
+
+    return finished(heard: heard, last: "")
+
+# The turns a responder takes, in any order and as often as asked: the
+# first whose `expect` begins the client's line answers it.
+function responder() -> [Turn]
+    return [
+        turn(expect: "EHLO", reply: ehlo_reply("250-PIPELINING\r\n250-AUTH PLAIN LOGIN\r\n250 HELP\r\n"))
+        turn(expect: "AUTH PLAIN ", reply: "235 2.7.0 ok\r\n")
+        turn(expect: "NOOP", reply: "250 2.0.0 ok\r\n")
+        turn(expect: "RSET", reply: "250 2.0.0 ok\r\n")
+        turn(expect: "VRFY", reply: "252 2.1.5 cannot verify\r\n")
+        turn(expect: "EXPN", reply: "250-ana@example.org\r\n250 bob@example.org\r\n")
+        turn(expect: "HELP", reply: "214 see the manual\r\n")
+        turn(expect: "MAIL FROM:", reply: "250 2.1.0 ok\r\n")
+        turn(expect: "RCPT TO:<nobody", reply: "550 5.1.1 no such user\r\n")
+        turn(expect: "RCPT TO:", reply: "250 2.1.5 ok\r\n")
+        Turn(expect: "DATA", reply: "354 go ahead\r\n", takes_data: true)
+        turn(expect: "QUIT", reply: "221 2.0.0 bye\r\n")
+    ]
+
+# Answers every line by the first turn of `responder` whose `expect` begins
+# it, `500` where none does, until QUIT: "probe" where the client said
+# nothing, what it heard otherwise.
+function respond(stream: io.Stream) -> str
+    r @= io.reader(stream)
+    heard: [str] @= []
+    turns = responder()
+
+    match io.write_text(stream, text: "220 mx.test ESMTP ready\r\n")
+        .ok _  => _ = 0
+        .err _ => return "probe"
+
+    while true
+        line = match io.read_line(@r)
+            .ok l  => l
+            .err e => return finished(heard: heard, last: "read failed: " + e.code)
+
+        if line == "" && io.at_end(@r).default(true)
+            if heard.len() == 0
+                return "probe"
+            return finished(heard: heard, last: "closed by the client")
+        heard @ heard.push(line)
+        reply: str @= "500 5.5.2 what?\r\n"
+        data: bool @= false
+
+        for t in turns
+            if reply == "500 5.5.2 what?\r\n" && strings.has_prefix(s: line, prefix: t.expect)
+                reply @ t.reply
+                data @ t.takes_data
+
+        match io.write_text(stream, text: reply)
+            .ok _  => _ = 0
+            .err e => return finished(heard: heard, last: "write failed: " + e.code)
+
+        if data
+            body: [u8] @= []
+
+            while true
+                taken = match io.read_line_with_end(@r)
+                    .ok l  => l
+                    .err e => return finished(heard: heard, last: "data failed: " + e.code)
+
+                if taken == "" || taken == ".\r\n"
+                    break
+                bytes.push_text(to: @body, s: taken)
+
+            heard @ heard.push("DATA " + bytes.format_escaped(body))
+
+            match io.write_text(stream, text: "250 2.0.0 queued as X1\r\n")
+                .ok _  => _ = 0
+                .err e => return finished(heard: heard, last: "write failed: " + e.code)
+
+        if strings.has_prefix(s: line, prefix: "QUIT")
+            return finished(heard: heard, last: "")
+
+# What a server heard, as `serve` answers it.
+function finished(heard: [str], last: str) -> str
+    if last == ""
+        return heard.join("|")
+    return heard.join("|") + "|" + last

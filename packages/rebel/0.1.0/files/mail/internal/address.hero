@@ -1,0 +1,467 @@
+# Addresses read and written by RFC 5322 § 3.4 and its obsolete forms: a
+# mailbox with or without a name, an address list with groups, comments
+# skipped, encoded words in a name decoded, UTF-8 in a local part and a
+# domain (RFC 6532). A list is read in one pass, and a comment's depth is
+# counted rather than recursed into, so no input runs the stack out.
+
+use mail/internal/lex
+use mail/internal/words
+
+# The code of a text that is not an address.
+constant INVALID: str
+    "invalid"
+
+# A mailbox: the name shown, the part before `@` and the part after.
+record Mailbox
+    # The name, decoded and unquoted; "" for none.
+    name: str
+    # The local part, unquoted.
+    local: str
+    # The domain, or an address in brackets.
+    domain: str
+
+# One entry of a list: a mailbox, or a group of mailboxes.
+variant Entry
+    # A mailbox.
+    one
+        # The mailbox.
+        box: Mailbox
+    # A group under a name.
+    group
+        # The group's name.
+        name: str
+        # Its members.
+        members: [Mailbox]
+
+# A word read before an address: an atom, a quoted string or a dot.
+record Token
+    # The text, unquoted; `.` for a dot.
+    text: str
+    # Whether it is a dot.
+    is_dot: bool
+    # Whether it was quoted.
+    is_quoted: bool
+    # Whether it was an encoded word, its text decoded.
+    is_encoded: bool
+    # Whether space or a comment stood before it.
+    spaced: bool
+
+# The words `c` stands at, up to the first byte that is no word, dot, space
+# or comment, and the text of the comments skipped after the last one.
+record Words
+    # The words, in order.
+    tokens: [Token]
+    # The comments' text after the last word.
+    trailing: str
+
+# The mailbox `s` writes. Fails `invalid` where `s` is not one mailbox.
+function parse_one(s: str) -> Mailbox?
+    entries = parse_list(s)?
+
+    if entries.len() != 1
+        return fail(code: INVALID, msg: f"{lex.shown(s)} holds {entries.len()} addresses where one was asked")
+
+    return match entries[0]
+        .one o   => ok(o.box)
+        .group g => fail(code: INVALID, msg: f"{lex.shown(s)} is the group \"{g.name}\" where one mailbox was asked")
+
+# The entries of the list `s`. Fails `invalid` where an entry is neither a
+# mailbox nor a group, or two are not separated by a comma.
+function parse_list(s: str) -> [Entry]?
+    c @= lex.cursor(s)
+    out: [Entry] @= []
+
+    while true
+        _ = lex.skip_cfws(@c)?
+
+        if lex.at_end(c)
+            break
+
+        if lex.peek(c) == ','
+            c.at @ c.at + 1
+            continue
+        out @ out.push(entry(@c)?)
+        _ = lex.skip_cfws(@c)?
+
+        if lex.at_end(c)
+            break
+
+        if lex.peek(c) != ','
+            return fail(
+                code: INVALID,
+                msg: f"{lex.shown(s)} holds \"{lex.char_at(s, at: c.at)}\" at byte {c.at} where a comma or the end was expected"
+            )
+        c.at @ c.at + 1
+
+    return ok(out)
+
+# The members of every entry of `entries`, a group's in its place.
+function flatten(entries: [Entry]) -> [Mailbox]
+    out: [Mailbox] @= []
+
+    for e in entries
+        match e
+            .one o => out @ out.push(o.box)
+            .group g =>
+                for m in g.members
+                    out @ out.push(m)
+
+    return out
+
+# The entry `c` stands at: a mailbox, or a group.
+function entry(@c: lex.Cursor) -> Entry?
+    start = c.at
+    before = words_at(@c)?
+
+    if lex.peek(c) == ':'
+        name = phrase_of(before.tokens)?
+        c.at @ c.at + 1
+        members: [Mailbox] @= []
+
+        while true
+            _ = lex.skip_cfws(@c)?
+
+            if lex.at_end(c)
+                return fail(code: INVALID, msg: f"the group \"{name}\" in {lex.shown(c.s)} has no \";\" to close it")
+
+            if lex.peek(c) == ';'
+                c.at @ c.at + 1
+                break
+
+            if lex.peek(c) == ','
+                c.at @ c.at + 1
+                continue
+            members @ members.push(mailbox(@c)?)
+
+        return ok(.group(name: name, members: members))
+    c.at @ start
+    return ok(.one(box: mailbox(@c)?))
+
+# The mailbox `c` stands at.
+function mailbox(@c: lex.Cursor) -> Mailbox?
+    start = c.at
+    before = words_at(@c)?
+    next = lex.peek(c)
+
+    if next == '<'
+        name = phrase_of(before.tokens)?
+        spec = angle(@c)?
+        return ok(Mailbox(name: name, local: spec.local, domain: spec.domain))
+
+    if next == '@'
+        local = local_of(tokens: before.tokens, s: c.s, start: start)?
+        c.at @ c.at + 1
+        domain = domain_at(@c)?
+        said = lex.skip_cfws(@c)?
+        return ok(Mailbox(name: decoded_comment(said), local: local, domain: domain))
+    return fail(
+        code: INVALID,
+        msg: f"the address {lex.shown(c.s.slice(from: start, to: c.s.len()))} has no \"@\" or \"<\" where byte {c.at} stands"
+    )
+
+# A comment taken as a name, its encoded words decoded where they read.
+function decoded_comment(said: str) -> str
+    return match words.joined_text(words.decode(said))
+        .ok text => text
+        .err _   => said
+
+# The address in angle brackets `c` stands at, `<` first, with no name.
+function angle(@c: lex.Cursor) -> Mailbox?
+    open = c.at
+    c.at @ c.at + 1
+    _ = lex.skip_cfws(@c)?
+
+    if lex.peek(c) == '@'
+        while !lex.at_end(c) && lex.peek(c) != ':'
+            c.at @ c.at + 1
+
+        if lex.at_end(c)
+            return fail(code: INVALID, msg: f"the route in the address at byte {open} of {lex.shown(c.s)} has no \":\"")
+        c.at @ c.at + 1
+    start = c.at
+
+    if lex.peek(c) == '>'
+        return fail(code: INVALID, msg: f"the angle brackets at byte {open} of {lex.shown(c.s)} hold no address")
+    local_words = words_at(@c)?
+
+    if lex.peek(c) != '@'
+        return fail(code: INVALID, msg: f"the address at byte {open} of {lex.shown(c.s)} has no \"@\"")
+    local = local_of(tokens: local_words.tokens, s: c.s, start: start)?
+    c.at @ c.at + 1
+    domain = domain_at(@c)?
+    _ = lex.skip_cfws(@c)?
+
+    if lex.peek(c) != '>'
+        return fail(code: INVALID, msg: f"the address at byte {open} of {lex.shown(c.s)} has no \">\" to close it")
+    c.at @ c.at + 1
+    _ = lex.skip_cfws(@c)?
+    return ok(Mailbox(name: "", local: local, domain: domain))
+
+# The words, dots, spaces and comments `c` stands at.
+function words_at(@c: lex.Cursor) -> Words?
+    out: [Token] @= []
+    trailing: str @= ""
+
+    while true
+        said = lex.skip_cfws(@c)?
+        spaced = trailing != "" || said != "" || out.len() > 0 && c.at > 0 && lex.is_space(c.s[c.at - 1])
+        trailing @ said
+        b = lex.peek(c)
+
+        if lex.at_end(c)
+            break
+
+        if b == '"'
+            out @ out.push(
+                Token(text: lex.quoted(@c)?, is_dot: false, is_quoted: true, is_encoded: false, spaced: spaced)
+            )
+        else if b == '.'
+            c.at @ c.at + 1
+            out @ out.push(Token(text: ".", is_dot: true, is_quoted: false, is_encoded: false, spaced: spaced))
+        else if b == '=' && c.at + 1 < c.s.len() && c.s[c.at + 1] == '?'
+            out @ out.push(encoded_or_atom(@c, spaced: spaced))
+        else if lex.is_atext(b)
+            out @ out.push(
+                Token(text: lex.atom(@c), is_dot: false, is_quoted: false, is_encoded: false, spaced: spaced)
+            )
+        else
+            break
+
+    return ok(Words(tokens: out, trailing: trailing))
+
+# The encoded word `c` stands at as one token, specials inside it allowed as
+# careless writers put them; an atom where it is none.
+function encoded_or_atom(@c: lex.Cursor, spaced: bool) -> Token
+    match words.word_at(s: c.s, at: c.at)
+        .ok w =>
+            piece = words.piece_of(charset: w.charset, data: w.data)
+
+            if piece.is_decoded
+                c.at @ w.end
+                return Token(text: piece.text, is_dot: false, is_quoted: false, is_encoded: true, spaced: spaced)
+        .err _ => _ = 0
+
+    return Token(text: lex.atom(@c), is_dot: false, is_quoted: false, is_encoded: false, spaced: spaced)
+
+# The display name `tokens` write: words joined by one space where space
+# stood between them, none between two encoded words.
+function phrase_of(tokens: [Token]) -> str?
+    out: [str] @= []
+    previous_encoded: bool @= false
+
+    for t in tokens
+        if out.len() > 0 && t.spaced && !(previous_encoded && t.is_encoded)
+            out @ out.push(" ")
+        out @ out.push(t.text)
+        previous_encoded @ t.is_encoded
+
+    return ok(out.join(""))
+
+# The local part `tokens` write: words with one dot between two. Fails
+# `invalid` where it is empty or a dot stands at an end or twice.
+function local_of(tokens: [Token], s: str, start: i64) -> str?
+    if tokens.len() == 0
+        return fail(code: INVALID, msg: f"the address at byte {start} of {lex.shown(s)} has nothing before \"@\"")
+    out: [str] @= []
+    want_word: bool @= true
+
+    for t in tokens
+        if t.is_dot == want_word || t.is_encoded
+            return fail(
+                code: INVALID,
+                msg: f"the local part at byte {start} of {lex.shown(s)} has a dot at an end, two dots, or two words with no dot between"
+            )
+        out @ out.push(t.text)
+        want_word @ !want_word
+
+    if want_word
+        return fail(code: INVALID, msg: f"the local part at byte {start} of {lex.shown(s)} ends with a dot")
+    return ok(out.join(""))
+
+# The domain `c` stands at, its `@` behind: a dot-atom, or a literal in
+# brackets.
+function domain_at(@c: lex.Cursor) -> str?
+    _ = lex.skip_cfws(@c)?
+    start = c.at
+
+    if lex.peek(c) == '['
+        return lex.domain_literal(@c)
+    labels: [str] @= []
+    want_label: bool @= true
+
+    while true
+        if !want_label
+            before_space = c.at
+            _ = lex.skip_cfws(@c)?
+
+            if lex.peek(c) != '.'
+                c.at @ before_space
+                break
+            c.at @ c.at + 1
+            _ = lex.skip_cfws(@c)?
+            want_label @ true
+        else
+            label = lex.atom(@c)
+
+            if label == ""
+                return fail(
+                    code: INVALID,
+                    msg: f"the domain at byte {start} of {lex.shown(c.s)} is empty or has an empty label"
+                )
+            labels @ labels.push(label)
+            want_label @ false
+
+    return ok(labels.join("."))
+
+## Writing
+
+# `m` as a mailbox in a header: its name quoted or as encoded words where it
+# must be, then its address in angle brackets; its address alone where it
+# has no name.
+function format(m: Mailbox) -> str
+    if m.name == ""
+        return spec_of(m)
+    return phrase(m.name) + " <" + spec_of(m) + ">"
+
+# `name` as a display name: as it is where it is atoms, quoted where it holds
+# a special, as encoded words where it is above ASCII.
+function phrase(name: str) -> str
+    if !words.is_plain(name)
+        return words.encode(name, base64: false, phrase: true)
+
+    if lex.is_atom_phrase(name) && !has_encoded_look(name)
+        return name
+    return lex.quote(name)
+
+# Whether `s` holds `=?`, which a reader would take for an encoded word.
+function has_encoded_look(s: str) -> bool
+    at: i64 @= 0
+
+    while at + 1 < s.len()
+        if s[at] == '=' && s[at + 1] == '?'
+            return true
+        at @ at + 1
+
+    return false
+
+# The address of `m`, `local@domain`, its local part quoted where it is no
+# dot-atom.
+function spec_of(m: Mailbox) -> str
+    if lex.is_dot_atom(m.local)
+        return m.local + "@" + m.domain
+    return lex.quote(m.local) + "@" + m.domain
+
+# Whether `m`'s local part and domain are ASCII.
+function is_ascii(m: Mailbox) -> bool
+    for b in [m.local, m.domain]
+        at: i64 @= 0
+
+        while at < b.len()
+            if b[at] >= 0x80
+                return false
+            at @ at + 1
+
+    return true
+
+# `entries` as an address list, a group as `Name: a, b;`.
+function format_entries(entries: [Entry]) -> str
+    out: [str] @= []
+
+    for e in entries
+        match e
+            .one o => out @ out.push(format(o.box))
+            .group g =>
+                inner: [str] @= []
+
+                for m in g.members
+                    inner @ inner.push(format(m))
+
+                out @ out.push(phrase(g.name) + ": " + inner.join(", ") + ";")
+
+    return out.join(", ")
+
+## Tests
+
+test "parse_one: a bare address, a name, a quoted name, a quoted local part, a literal"
+    a = parse_one("ana@example.org").must()
+    assert a.name == "" && a.local == "ana" && a.domain == "example.org"
+    b = parse_one("Ana Lima <ana@example.org>").must()
+    assert b.name == "Ana Lima" && b.local == "ana"
+    assert parse_one("\"Lima, Ana\" <ana@example.org>").must().name == "Lima, Ana"
+    c = parse_one("\"a b\"@example.org").must()
+    assert c.local == "a b" && c.domain == "example.org"
+    assert parse_one("ana@[127.0.0.1]").must().domain == "[127.0.0.1]"
+    assert parse_one("<ana@example.org>").must().name == ""
+    assert parse_one("\"a\\\"b\"@c").must().local == "a\"b"
+
+test "parse_one: comments, spaces collapsed, encoded words, UTF-8, a name from a comment"
+    assert parse_one("ana (Ana Lima) @example.org").must().local == "ana"
+    assert parse_one("Ana   Lima   <ana@example.org>").must().name == "Ana Lima"
+    assert parse_one("=?utf-8?q?J=C3=B6rg?= <j@example.org>").must().name == "Jörg"
+    assert parse_one("=?utf-8?q?Lima,_J=C3=B6rg?= <j@example.org>").must().name == "Lima, Jörg"
+    assert parse_one("=?utf-8?q?a?= =?utf-8?q?b?= <j@example.org>").must().name == "ab"
+    assert parse_one("Jörg <j@example.org>").must().name == "Jörg"
+    d = parse_one("jörg@exämple.org").must()
+    assert d.local == "jörg" && d.domain == "exämple.org"
+    assert parse_one("ana@example.org (Ana)").must().name == "Ana"
+    assert parse_one("\"\" <ana@example.org>").must().name == ""
+    assert parse_one("John Q. Public <jqp@example.org>").must().name == "John Q. Public"
+    assert parse_one("<@route.example:ana@example.org>").must().local == "ana"
+
+test "parse_one: refused as Go refuses them"
+    for s in ["ana", "ana@", "@example.org", "\"unterminated <a@b>", "a.@b", "a..b@c", ".a@b", "a@b.c, d@e.f", "a@b..c", "<>", "<a@b", "Ana <a@b> x", ""]
+        match parse_one(s)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "parse_one: the messages say what was found where"
+    match parse_one("ana")
+        .ok _  => assert false
+        .err e => assert e.msg == "the address \"ana\" has no \"@\" or \"<\" where byte 3 stands"
+
+    match parse_one("Undisclosed recipients:;")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"Undisclosed recipients:;\" is the group \"Undisclosed recipients\" where one mailbox was asked"
+
+test "parse_list: two, groups flattened, an empty group, empty entries, empty text"
+    two = flatten(parse_list("a@b.c, d@e.f").must())
+    assert two.len() == 2 && two[1].local == "d"
+    assert flatten(parse_list("group: a@b, \"x\" <c@d>;").must()).len() == 2
+    assert flatten(parse_list("Undisclosed recipients:;").must()).len() == 0
+    assert flatten(parse_list("group: a@b, c@d; , e@f").must()).len() == 3
+    assert flatten(parse_list("a@b,").must()).len() == 1 && flatten(parse_list(" , a@b").must()).len() == 1
+    assert parse_list("").must().len() == 0
+
+test "parse_list: groups kept, a group never closed, a stray byte"
+    entries = parse_list("Team: a@b, c@d;, e@f").must()
+    assert entries.len() == 2
+
+    match entries[0]
+        .one _   => assert false
+        .group g => assert g.name == "Team" && g.members.len() == 2
+
+    assert parse_list("Team: a@b").is_err() && parse_list("a@b; c@d").is_err()
+
+test "format: names bare, quoted and encoded, local parts quoted where they must be"
+    assert format(Mailbox(name: "", local: "ana", domain: "example.org")) == "ana@example.org"
+    assert format(Mailbox(name: "Ana", local: "x", domain: "example.org")) == "Ana <x@example.org>"
+    assert format(Mailbox(name: "Lima, Ana", local: "x", domain: "example.org")) == "\"Lima, Ana\" <x@example.org>"
+    assert format(Mailbox(name: "Jörg", local: "x", domain: "example.org")) == "=?utf-8?q?J=C3=B6rg?= <x@example.org>"
+    assert format(Mailbox(name: "a\"b", local: "x", domain: "example.org")) == "\"a\\\"b\" <x@example.org>"
+    assert format(Mailbox(name: "Ana (x)", local: "x", domain: "example.org")) == "\"Ana (x)\" <x@example.org>"
+    assert format(Mailbox(name: "a.b", local: "x", domain: "example.org")) == "\"a.b\" <x@example.org>"
+    assert format(Mailbox(name: "=?x?=", local: "x", domain: "y")) == "\"=?x?=\" <x@y>"
+    assert spec_of(Mailbox(name: "", local: "a b", domain: "c")) == "\"a b\"@c"
+    assert spec_of(Mailbox(name: "", local: "a..b", domain: "c")) == "\"a..b\"@c"
+    assert spec_of(Mailbox(name: "", local: "jörg", domain: "x.org")) == "jörg@x.org"
+
+test "format: read back the same, for every shape above"
+    for s in ["ana@example.org", "\"Lima, Ana\" <ana@example.org>", "=?utf-8?q?J=C3=B6rg?= <j@example.org>", "\"a b\"@example.org"]
+        m = parse_one(s).must()
+        assert parse_one(format(m)).must() == m
+
+test "is_ascii and format_entries: UTF-8 in a local part, a group written"
+    assert is_ascii(Mailbox(name: "Jörg", local: "j", domain: "x.org")) && !is_ascii(Mailbox(name: "", local: "jörg", domain: "x.org"))
+    entries = parse_list("Team: a@b, c@d;, e@f").must()
+    assert format_entries(entries) == "Team: a@b, c@d;, e@f"
+    assert format_entries([]) == ""

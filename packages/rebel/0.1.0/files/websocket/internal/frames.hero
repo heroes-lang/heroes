@@ -1,0 +1,356 @@
+# The frames of RFC 6455 § 5.2 as bytes: a frame's head read from what a
+# connection holds, a frame written with its mask, and a close frame's code
+# and reason. It knows no connection and no message.
+
+use bytes
+
+# A frame that goes on a message begun.
+constant CONTINUATION: i64
+    0
+
+# A frame that begins a text.
+constant TEXT: i64
+    1
+
+# A frame that begins a message of bytes.
+constant BINARY: i64
+    2
+
+# A close frame.
+constant CLOSE: i64
+    8
+
+# A ping.
+constant PING: i64
+    9
+
+# A pong.
+constant PONG: i64
+    10
+
+# The code of a frame or a close the RFC refuses.
+constant INVALID: str
+    "invalid"
+
+# The code of a close's reason that is not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# What the two to fourteen bytes before a frame's payload say.
+record Head
+    # Whether the frame ends its message.
+    fin: bool
+    # The three reserved bits, RSV1 the highest: 4, 2 and 1.
+    rsv: i64
+    # The opcode, 0 to 15.
+    opcode: i64
+    # Whether a masking key follows the length.
+    masked: bool
+    # The four bytes of the masking key, none where `masked` is false.
+    key: [u8]
+    # The payload's length in bytes, 0 to 2^63 - 1.
+    length: i64
+    # The head's own length in bytes, 2 to 14.
+    size: i64
+
+# What `head_at` found where a frame begins.
+variant Found
+    # The bytes held end before the head does.
+    more
+    # A whole head.
+    head
+        # The head read.
+        h: Head
+    # A head the RFC refuses.
+    wrong
+        # What is wrong with it.
+        why: str
+
+# The head of the frame that begins at `at` of `data`.
+#
+# - `data`: the bytes a connection holds.
+# - `at`: where the frame begins, 0 to `data.len()`.
+function head_at(data: [u8] lent, at: i64) -> Found
+    left = data.len() - at
+
+    if left < 2
+        return .more
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    short = b1 & 127
+    size: i64 @= 2
+    length: i64 @= short
+
+    if short == 126
+        if left < 4
+            return .more
+        length @ to_i64(data[at + 2]).must() << 8 | to_i64(data[at + 3]).must()
+        size @ 4
+    else if short == 127
+        if left < 10
+            return .more
+
+        if data[at + 2] >= 128
+            return .wrong(why: "a payload's length of 64 bits whose highest bit is set")
+        length @ 0
+
+        for i in range(from: 0, to: 8)
+            length @ length << 8 | to_i64(data[at + 2 + i]).must()
+
+        size @ 10
+    masked = b1 & 128 != 0
+    key: [u8] @= []
+
+    if masked
+        if left < size + 4
+            return .more
+        key @ data.slice(from: at + size, to: at + size + 4)
+        size @ size + 4
+    return .head(
+        h: Head(fin: b0 & 128 != 0, rsv: b0 >> 4 & 7, opcode: b0 & 15, masked: masked, key: key, length: length, size: size)
+    )
+
+# The frame of `opcode` holding `payload`, masked with `key` where it holds
+# four bytes, as RFC 6455 § 5.2 lays it out: the head with the shortest
+# length that holds it, then the payload.
+#
+# - `opcode`: 0 to 15.
+# - `fin`: whether the frame ends its message.
+# - `rsv1`: whether the first reserved bit is set, a compressed message's.
+# - `payload`: the bytes.
+# - `key`: the masking key, four bytes, or none for a frame not masked.
+function encode(opcode: i64, fin: bool, rsv1: bool, payload: [u8] lent, key: [u8] lent) -> [u8]
+    out: [u8] @= []
+    first: i64 @= opcode
+
+    if fin
+        first @ first | 128
+
+    if rsv1
+        first @ first | 64
+    out @ out.push(to_u8(first).must())
+    mask_bit: i64 @= 0
+
+    if key.len() == 4
+        mask_bit @ 128
+    n = payload.len()
+
+    if n < 126
+        out @ out.push(to_u8(n | mask_bit).must())
+    else if n < 65536
+        out @ out.push(to_u8(126 | mask_bit).must())
+        out @ out.push(to_u8(n >> 8).must())
+        out @ out.push(to_u8(n & 255).must())
+    else
+        out @ out.push(to_u8(127 | mask_bit).must())
+
+        for i in range(from: 0, to: 8)
+            out @ out.push(to_u8(n >> 8 * (7 - i) & 255).must())
+
+    if key.len() == 4
+        for b in key
+            out @ out.push(b)
+
+        masked_onto(out: @out, data: payload, key: key)
+        return out
+
+    for b in payload
+        out @ out.push(b)
+
+    return out
+
+# Adds `data` masked with `key` to `out`: each byte exclusive-ored with the
+# key's byte of the same index modulo 4, which also unmasks it.
+#
+# - `out`: the bytes added to, which the caller owns.
+# - `data`: the bytes masked.
+# - `key`: four bytes.
+function masked_onto(@out: [u8], data: [u8] lent, key: [u8] lent)
+    k = [to_i64(key[0]).must(), to_i64(key[1]).must(), to_i64(key[2]).must(), to_i64(key[3]).must()]
+    j: i64 @= 0
+
+    for b in data
+        out @ out.push(to_u8(to_i64(b).must() ^ k[j]).must())
+        j @ j + 1
+
+        if j == 4
+            j @ 0
+
+# The bytes of `data` from `from` to `to`, unmasked with `key` where it holds
+# four bytes: a frame's payload taken from what a connection holds.
+#
+# - `data`: the bytes held.
+# - `from`, `to`: the payload's first index and the index past its last.
+# - `key`: the frame's key, four bytes or none.
+function payload_of(data: [u8] lent, from: i64, to: i64, key: [u8] lent) -> [u8]
+    if key.len() != 4
+        return data.slice(from: from, to: to)
+    k = [to_i64(key[0]).must(), to_i64(key[1]).must(), to_i64(key[2]).must(), to_i64(key[3]).must()]
+    out: [u8] @= []
+    i: i64 @= from
+    j: i64 @= 0
+
+    while i < to
+        out @ out.push(to_u8(to_i64(data[i]).must() ^ k[j]).must())
+        i @ i + 1
+        j @ j + 1
+
+        if j == 4
+            j @ 0
+
+    return out
+
+# `data` unmasked with `key`: the same bytes where `key` is empty.
+#
+# - `data`: the payload as it came.
+# - `key`: the frame's key, four bytes or none.
+function unmasked(data: [u8] lent, key: [u8] lent) -> [u8]
+    if key.len() != 4
+        return data
+    out: [u8] @= []
+    masked_onto(out: @out, data: data, key: key)
+    return out
+
+# Whether `code` may stand in a close frame: 1000 to 1003, 1007 to 1014,
+# 3000 to 4999.
+#
+# - `code`: the code asked.
+function is_sendable(code: i64) -> bool
+    if code >= 1000 && code <= 1003
+        return true
+
+    if code >= 1007 && code <= 1014
+        return true
+    return code >= 3000 && code <= 4999
+
+# What a close frame says: its code and its reason.
+record Closed
+    # The code, 1005 where the frame carried none.
+    code: i64
+    # The reason, "" for none.
+    reason: str
+
+# The payload of a close frame of `code` and `reason`: none for 1005, else
+# the code in two bytes, the highest first, then the reason's bytes.
+#
+# - `code`: a code `is_sendable` accepts, or 1005.
+# - `reason`: the reason, "" with 1005.
+function close_payload(code: i64, reason: str) -> [u8]
+    if code == 1005
+        return []
+    out: [u8] @= [to_u8(code >> 8 & 255).must(), to_u8(code & 255).must()]
+
+    for b in bytes.from_text(reason)
+        out @ out.push(b)
+
+    return out
+
+# What the close frame `payload` says.
+#
+# - `payload`: the close frame's payload, 0 to 125 bytes.
+#
+# Fails `invalid` for a payload of one byte or a code `is_sendable` refuses,
+# `not_text` where the reason is not UTF-8.
+function parse_close(payload: [u8] lent) -> Closed?
+    if payload.len() == 0
+        return ok(Closed(code: 1005, reason: ""))
+
+    if payload.len() == 1
+        return fail(code: INVALID, msg: "a close frame of one byte, where a code takes two")
+    code = to_i64(payload[0]).must() << 8 | to_i64(payload[1]).must()
+
+    if !is_sendable(code)
+        return fail(code: INVALID, msg: f"a close frame with the code {code}, which no close may carry")
+
+    match bytes.to_text(payload.slice(from: 2, to: payload.len()))
+        .ok reason => return ok(Closed(code: code, reason: reason))
+        .err _     => return fail(code: NOT_TEXT, msg: f"a close frame with the code {code} whose reason is not UTF-8")
+
+test "head_at: two bytes, a 16-bit and a 64-bit length, a key, and too few bytes"
+    small = head_at([129, 5, 72, 101, 108, 108, 111], at: 0)
+
+    match small
+        .head f          => assert f.h.fin && f.h.opcode == 1 && f.h.length == 5 && f.h.size == 2 && !f.h.masked && f.h.rsv == 0
+        .more | .wrong _ => assert false
+
+    match head_at([2, 126, 1, 0], at: 0)
+        .head f          => assert f.h.length == 256 && f.h.size == 4 && !f.h.fin && f.h.opcode == 2
+        .more | .wrong _ => assert false
+
+    match head_at([130, 127, 0, 0, 0, 0, 0, 1, 0, 0], at: 0)
+        .head f          => assert f.h.length == 65536 && f.h.size == 10
+        .more | .wrong _ => assert false
+
+    match head_at([0, 0, 129, 133, 1, 2, 3, 4], at: 2)
+        .head f          => assert f.h.masked && f.h.key == [1, 2, 3, 4] && f.h.size == 6 && f.h.length == 5
+        .more | .wrong _ => assert false
+
+    match head_at([129, 133, 1, 2], at: 0)
+        .more              => assert true
+        .head _ | .wrong _ => assert false
+
+    match head_at([129], at: 0)
+        .more              => assert true
+        .head _ | .wrong _ => assert false
+
+test "head_at: a 64-bit length with its highest bit set, and reserved bits read"
+    match head_at([130, 127, 128, 0, 0, 0, 0, 0, 0, 0], at: 0)
+        .wrong _        => assert true
+        .more | .head _ => assert false
+
+    match head_at([241, 0], at: 0)
+        .head f          => assert f.h.rsv == 7 && f.h.fin && f.h.opcode == 1
+        .more | .wrong _ => assert false
+
+# RFC 6455 § 5.7's examples: "Hello" unmasked, then masked with the key
+# 37 fa 21 3d.
+test "encode: the RFC's own frames of Hello, masked and not, and the three lengths"
+    hello: [u8] = [72, 101, 108, 108, 111]
+    assert encode(opcode: TEXT, fin: true, rsv1: false, payload: hello, key: []) == [129, 5, 72, 101, 108, 108, 111]
+    assert encode(opcode: TEXT, fin: true, rsv1: false, payload: hello, key: [55, 250, 33, 61]) == [129, 133, 55, 250, 33, 61, 127, 159, 77, 81, 88]
+    assert encode(opcode: PING, fin: true, rsv1: false, payload: hello, key: []) == [137, 5, 72, 101, 108, 108, 111]
+    long = encode(opcode: BINARY, fin: true, rsv1: true, payload: repeat_byte(n: 256), key: [])
+    assert long.slice(from: 0, to: 4) == [194, 126, 1, 0] && long.len() == 260
+    longer = encode(opcode: BINARY, fin: false, rsv1: false, payload: repeat_byte(n: 65536), key: [])
+    assert longer.slice(from: 0, to: 10) == [2, 127, 0, 0, 0, 0, 0, 1, 0, 0]
+    assert encode(opcode: TEXT, fin: true, rsv1: false, payload: [], key: []) == [129, 0]
+
+test "payload_of: a masked payload inside what is held, and one not masked"
+    held: [u8] = [9, 9, 127, 159, 77, 81, 88, 9]
+    assert payload_of(data: held, from: 2, to: 7, key: [55, 250, 33, 61]) == [72, 101, 108, 108, 111]
+    assert payload_of(data: held, from: 0, to: 2, key: []) == [9, 9]
+    assert payload_of(data: held, from: 3, to: 3, key: [1, 2, 3, 4]) == []
+
+test "unmasked: the RFC's masked Hello read back, and no key leaves the bytes"
+    assert unmasked(data: [127, 159, 77, 81, 88], key: [55, 250, 33, 61]) == [72, 101, 108, 108, 111]
+    assert unmasked(data: [1, 2], key: []) == [1, 2]
+
+test "is_sendable: the edges of each range"
+    assert !is_sendable(999) && is_sendable(1000) && is_sendable(1003) && !is_sendable(1004)
+    assert !is_sendable(1005) && !is_sendable(1006) && is_sendable(1007) && is_sendable(1014)
+    assert !is_sendable(1015) && !is_sendable(2999) && is_sendable(3000) && is_sendable(4999)
+    assert !is_sendable(5000) && !is_sendable(0) && !is_sendable(-1)
+
+test "close_payload and parse_close: a code and a reason, none, one byte, a code refused, a reason not UTF-8"
+    assert close_payload(code: 1000, reason: "bye") == [3, 232, 98, 121, 101]
+    assert close_payload(code: 1005, reason: "") == []
+    back = parse_close([3, 232, 98, 121, 101]).must()
+    assert back.code == 1000 && back.reason == "bye"
+    assert parse_close([]).must().code == 1005
+    assert parse_close([3]).is_err()
+    assert parse_close([3, 237]).is_err()
+
+    match parse_close([3, 232, 255])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    assert parse_close([15, 160, 206, 187]).must().reason == "λ"
+
+# `n` bytes of 7, for a test's long payload.
+function repeat_byte(n: i64) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(7)
+
+    return out

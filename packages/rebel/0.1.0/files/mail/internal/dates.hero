@@ -1,0 +1,272 @@
+# Dates of RFC 5322 § 3.3 read and written, with the obsolete forms of § 4.3
+# read: the weekday left out, a two- or three-digit year, seconds left out,
+# the zone names of North America and the military letters, comments. The
+# offset written is kept beside the instant, `-0000` and a missing zone
+# meaning an offset unknown.
+
+use mail/internal/lex
+use strings
+use time
+
+# The code of a text that is no date.
+constant INVALID: str
+    "invalid"
+
+# A date read: the instant and the offset it was written in.
+record When
+    # The moment.
+    instant: time.Instant
+    # Minutes ahead of UTC.
+    offset_minutes: i64
+    # Whether the offset is known.
+    offset_known: bool
+
+# The months' names, as a date writes them.
+function months() -> [str]
+    return ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+
+# The date `s` writes. Fails `invalid` where it is none or a part is out of
+# its range, `does_not_fit` outside an instant.
+function parse(s: str) -> When?
+    c @= lex.cursor(s)
+    _ = lex.skip_cfws(@c)?
+    first = letters(@c)
+
+    if first != ""
+        if !is_weekday(first)
+            return fail(code: INVALID, msg: f"the date {lex.shown(s)} begins with \"{first}\", which is no weekday")
+        _ = lex.skip_cfws(@c)?
+
+        if lex.peek(c) != ','
+            return fail(code: INVALID, msg: f"the date {lex.shown(s)} has no comma after its weekday")
+        c.at @ c.at + 1
+        _ = lex.skip_cfws(@c)?
+    day = number(@c, s: s, what: "day", most: 2)?
+    _ = lex.skip_cfws(@c)?
+    month_name = strings.to_lower_ascii(letters(@c))
+    month: i64 @= 0
+
+    for k in range(from: 0, to: 12)
+        if months()[k] == month_name
+            month @ k + 1
+
+    if month == 0
+        return fail(code: INVALID, msg: f"the date {lex.shown(s)} names no month after its day")
+    _ = lex.skip_cfws(@c)?
+    year_start = c.at
+    written_year = number(@c, s: s, what: "year", most: 9)?
+    digits = c.at - year_start
+    year: i64 @= written_year
+
+    if digits == 2 && written_year < 50
+        year @ written_year + 2000
+    else if digits <= 3
+        year @ written_year + 1900
+    _ = lex.skip_cfws(@c)?
+    hour = number(@c, s: s, what: "hour", most: 2)?
+    colon(@c, s: s)?
+    minute = number(@c, s: s, what: "minute", most: 2)?
+    _ = lex.skip_cfws(@c)?
+    second: i64 @= 0
+
+    if lex.peek(c) == ':'
+        c.at @ c.at + 1
+        _ = lex.skip_cfws(@c)?
+        second @ number(@c, s: s, what: "second", most: 2)?
+    _ = lex.skip_cfws(@c)?
+    zone = zone_at(@c, s: s)?
+    _ = lex.skip_cfws(@c)?
+
+    if !lex.at_end(c)
+        return fail(code: INVALID, msg: f"the date {lex.shown(s)} goes on after its zone at byte {c.at}")
+
+    if hour > 23 || minute > 59 || second > 59
+        return fail(
+            code: INVALID,
+            msg: f"the date {lex.shown(s)} names the time {hour}:{minute}:{second}, outside 00:00:00 to 23:59:59"
+        )
+    local = time.from_date_time(time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: 0))?
+    shift = time.minutes(-zone.offset_minutes)?
+    instant = time.add(t: local, d: shift)?
+    return ok(When(instant: instant, offset_minutes: zone.offset_minutes, offset_known: zone.offset_known))
+
+# Whether `s` names a weekday, in any case, short or whole.
+function is_weekday(s: str) -> bool
+    lowered = strings.to_lower_ascii(s)
+
+    for name in ["mon", "tue", "wed", "thu", "fri", "sat", "sun", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        if lowered == name
+            return true
+
+    return false
+
+# The ASCII letters `c` stands at; "" where none.
+function letters(@c: lex.Cursor) -> str
+    start = c.at
+
+    while c.at < c.s.len() && (c.s[c.at] >= 'a' && c.s[c.at] <= 'z' || c.s[c.at] >= 'A' && c.s[c.at] <= 'Z')
+        c.at @ c.at + 1
+
+    return c.s.slice(from: start, to: c.at)
+
+# The number of one to `most` digits `c` stands at. Fails `invalid` where
+# none or more stand there.
+function number(@c: lex.Cursor, s: str, what: str, most: i64) -> i64?
+    start = c.at
+    n: i64 @= 0
+
+    while c.at < c.s.len() && c.s[c.at] >= '0' && c.s[c.at] <= '9'
+        if c.at - start == most
+            return fail(code: INVALID, msg: f"the date {lex.shown(s)} has a {what} of more than {most} digits")
+        n @ n * 10 + to_i64(c.s[c.at]).must() - 48
+        c.at @ c.at + 1
+
+    if c.at == start
+        return fail(code: INVALID, msg: f"the date {lex.shown(s)} has no {what} at byte {start}")
+    return ok(n)
+
+# Reads the `:` between an hour and its minutes, spaces and comments around
+# it allowed.
+function colon(@c: lex.Cursor, s: str) -> ()?
+    _ = lex.skip_cfws(@c)?
+
+    if lex.peek(c) != ':'
+        return fail(code: INVALID, msg: f"the date {lex.shown(s)} has no \":\" after its hour")
+    c.at @ c.at + 1
+    _ = lex.skip_cfws(@c)?
+    return ok()
+
+# The zone `c` stands at: an offset, a name, a letter, or none.
+function zone_at(@c: lex.Cursor, s: str) -> When?
+    unknown = When(instant: time.epoch(), offset_minutes: 0, offset_known: false)
+
+    if lex.at_end(c)
+        return ok(unknown)
+    sign = lex.peek(c)
+
+    if sign == '+' || sign == '-'
+        c.at @ c.at + 1
+        start = c.at
+        digits = number(@c, s: s, what: "zone", most: 4)?
+
+        if c.at - start != 4
+            return fail(code: INVALID, msg: f"the zone of the date {lex.shown(s)} is not four digits")
+        hours = digits / 100
+        minutes = digits % 100
+
+        if hours > 23 || minutes > 59
+            return fail(code: INVALID, msg: f"the zone of the date {lex.shown(s)} is outside -2359 to +2359")
+        total = hours * 60 + minutes
+
+        if sign == '-' && total == 0
+            return ok(unknown)
+
+        if sign == '-'
+            return ok(When(instant: time.epoch(), offset_minutes: -total, offset_known: true))
+        return ok(When(instant: time.epoch(), offset_minutes: total, offset_known: true))
+    name = strings.to_upper_ascii(letters(@c))
+    hours: i64 @= 0
+
+    match name
+        "UT" | "GMT" | "UTC" | "Z" => hours @ 0
+        "EDT"                      => hours @ -4
+        "EST" | "CDT"              => hours @ -5
+        "CST" | "MDT"              => hours @ -6
+        "MST" | "PDT"              => hours @ -7
+        "PST"                      => hours @ -8
+        _ =>
+            if name.len() == 1 && name != "J"
+                return ok(unknown)
+            return fail(code: INVALID, msg: f"the date {lex.shown(s)} has \"{name}\" where a zone was expected")
+
+    return ok(When(instant: time.epoch(), offset_minutes: hours * 60, offset_known: true))
+
+## Writing
+
+# `w` as a `Date` field writes it, in its own offset.
+function format(w: When) -> str
+    shown_offset = if w.offset_known
+        w.offset_minutes
+    else
+        0
+    local = time.Instant(unix_nanoseconds: w.instant.unix_nanoseconds + shown_offset * 60000000000)
+    dt = time.to_date_time(local)
+    weekday = time.weekday_name(time.weekday_of(local)).slice(from: 0, to: 3)
+    month = time.month_name(dt.month).must().slice(from: 0, to: 3)
+
+    sign = if !w.offset_known || shown_offset < 0
+        "-"
+    else
+        "+"
+
+    magnitude = if shown_offset < 0
+        -shown_offset
+    else
+        shown_offset
+    return f"{weekday}, {two(dt.day)} {month} {padded(n: dt.year, width: 4)} {two(dt.hour)}:{two(dt.minute)}:{two(dt.second)} {sign}{two(magnitude / 60)}{two(magnitude % 60)}"
+
+# `n` in two digits at least.
+function two(n: i64) -> str
+    return padded(n: n, width: 2)
+
+# `n` with zeros before it to `width` digits.
+function padded(n: i64, width: i64) -> str
+    text = to_str(n)
+
+    if text.len() >= width
+        return text
+    return repeat("0", to_u64(width - text.len()).must()) + text
+
+# `t` in `zone`'s offset at that moment, cut to the minute.
+function at(t: time.Instant, zone: time.Zone) -> When
+    offset = time.offset_at(zone: zone, t: t).from_utc.nanoseconds / 60000000000
+    return When(instant: t, offset_minutes: offset, offset_known: true)
+
+## Tests
+
+test "parse: the forms Go and Python read, with the offset kept"
+    a = parse("Mon, 02 Jan 2006 15:04:05 -0700").must()
+    assert time.format(a.instant, layout: .rfc3339) == "2006-01-02T22:04:05Z" && a.offset_minutes == -420 && a.offset_known
+    assert parse("02 Jan 2006 15:04:05 -0700").must() == a
+    assert time.format(parse("Mon, 2 Jan 2006 15:04 -0700").must().instant, layout: .rfc3339) == "2006-01-02T22:04:00Z"
+    assert parse("Mon, 02 Jan 06 15:04:05 -0700").must() == a
+    assert parse("Mon,  2 Jan 2006 15:04:05 -0700").must() == a
+    assert parse("Mon, 02 jan 2006 15:04:05 -0700").must() == a
+    assert parse("Tue, 02 Jan 2006 15:04:05 -0700").must() == a
+    assert parse("Mon, 02 Jan 2006 15:04:05 +0530").must().offset_minutes == 330
+
+test "parse: zone names, comments, -0000 and a missing zone unknown, years of two and three digits"
+    assert parse("Mon, 02 Jan 2006 15:04:05 GMT").must().offset_known
+    assert parse("Mon, 02 Jan 2006 15:04:05 EST").must().offset_minutes == -300
+    assert parse("Mon, 02 Jan 2006 15:04:05 PDT").must().offset_minutes == -420
+    assert parse("Mon, 02 Jan 2006 15:04:05 +0000 (UTC)").must().offset_known
+    assert !parse("Mon, 02 Jan 2006 15:04:05 -0000").must().offset_known
+    assert !parse("Mon, 02 Jan 2006 15:04:05").must().offset_known
+    assert !parse("Mon, 02 Jan 2006 15:04:05 A").must().offset_known
+    assert parse("Mon, 02 Jan 2006 15:04:05 Z").must().offset_known
+    assert time.to_date_time(parse("Mon, 02 Jan 99 15:04:05 +0000").must().instant).year == 1999
+    assert time.to_date_time(parse("Mon, 02 Jan 49 15:04:05 +0000").must().instant).year == 2049
+    assert time.to_date_time(parse("Mon, 02 Jan 104 15:04:05 +0000").must().instant).year == 2004
+    assert time.to_date_time(parse("Fri, 29 Feb 2008 00:00:00 +0000").must().instant).day == 29
+
+test "parse: refused as Go and Python refuse them, and outside an instant"
+    for s in ["Mon, 32 Jan 2006 15:04:05 -0700", "Mon, 02 Jan 2006 15:04:60 -0700", "Mon, 02 Jan 2006 24:00:00 -0700", "Mon, 02 Jan 2006 15:04:05 +2400", "Thu, 29 Feb 2007 00:00:00 +0000", "", "Mon", "Mon, 02 Foo 2006 15:04:05 +0000", "Mon, 02 Jan 2006 15:04:05 +0000 x", "Xyz, 02 Jan 2006 15:04:05 +0000", "Mon, 02 Jan 2006 15:04:05 +00"]
+        match parse(s)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match parse("Mon, 02 Jan 2999 15:04:05 +0000")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+test "format: as Go and Python write it, a positive offset, an unknown one, a day of one digit"
+    a = parse("Mon, 02 Jan 2006 15:04:05 -0700").must()
+    assert format(a) == "Mon, 02 Jan 2006 15:04:05 -0700"
+    assert format(parse("Mon, 2 Jan 2006 15:04:05 +0530").must()) == "Mon, 02 Jan 2006 15:04:05 +0530"
+    assert format(parse("Mon, 02 Jan 2006 15:04:05 -0000").must()) == "Mon, 02 Jan 2006 15:04:05 -0000"
+    assert format(When(instant: time.epoch(), offset_minutes: 0, offset_known: true)) == "Thu, 01 Jan 1970 00:00:00 +0000"
+
+test "at: UTC and a fixed zone"
+    assert at(t: time.epoch(), zone: time.utc_zone()) == When(instant: time.epoch(), offset_minutes: 0, offset_known: true)
+    rome = time.fixed_zone(name: "CET", offset: time.hours(1).must()).must()
+    assert format(at(t: time.epoch(), zone: rome)) == "Thu, 01 Jan 1970 01:00:00 +0100"

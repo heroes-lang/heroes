@@ -1,0 +1,159 @@
+# The parts a program builds: text with the transfer encoding that keeps it
+# within ASCII and short lines, files in base 64 attached or shown inline,
+# and the header a multipart starts from. Each answers its header fields and
+# its body, which the face makes a part.
+
+use bytes
+use mail/internal/fields
+use mail/internal/params
+use mail/internal/transfer
+use strings
+
+# The code of an argument a part may not be built from.
+constant INVALID: str
+    "invalid"
+
+# A part built: its header fields and its body, encoded.
+record Built
+    # The fields.
+    fields: [fields.Field]
+    # The body.
+    body: [u8]
+
+# A part holding `text` as `text/<subtype>` in UTF-8: `7bit` where it is
+# ASCII in lines of at most 78 bytes, else the shorter of quoted-printable
+# and base 64. Fails `invalid` where `subtype` is no token.
+function text_part(text: str, subtype: str) -> Built?
+    if !params.is_token(subtype)
+        return fail(code: INVALID, msg: f"the subtype \"{subtype}\" of a text part is not a token")
+    data = bytes.from_text(text)
+    content_type = "text/" + strings.to_lower_ascii(subtype) + "; charset=utf-8"
+
+    if is_seven_bit(data)
+        return ok(Built(fields: header(content_type: content_type, encoding: "7bit"), body: data))
+    qp = transfer.encode_qp(data, binary: false)
+    b64 = transfer.encode_base64_lines(data)
+
+    if b64.len() < qp.len()
+        return ok(Built(fields: header(content_type: content_type, encoding: "base64"), body: bytes.from_text(b64)))
+    return ok(
+        Built(fields: header(content_type: content_type, encoding: "quoted-printable"), body: bytes.from_text(qp))
+    )
+
+# The two fields every built part opens with.
+function header(content_type: str, encoding: str) -> [fields.Field]
+    return [
+        fields.Field(name: "Content-Type", value: content_type)
+        fields.Field(name: "Content-Transfer-Encoding", value: encoding)
+    ]
+
+# Whether `data` is ASCII with no zero byte and no carriage return alone, in
+# lines of at most 78 bytes.
+function is_seven_bit(data: [u8]) -> bool
+    column: i64 @= 0
+    at: i64 @= 0
+
+    while at < data.len()
+        b = data[at]
+
+        if b == '\n'
+            column @ 0
+        else if b == '\r' && at + 1 < data.len() && data[at + 1] == '\n'
+            _ = 0
+        else if b >= 0x80 || b == 0 || b == '\r'
+            return false
+        else
+            column @ column + 1
+
+            if column > 78
+                return false
+        at @ at + 1
+
+    return true
+
+# A part holding `data` as `media_type`, in base 64. Fails `invalid` where
+# `media_type` is no content type.
+function file_part(data: [u8], media_type: str) -> Built?
+    v = match params.parse(media_type, typed: true)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: "the media type of a part does not read: " + e.msg)
+
+    content_type = params.format(head: v.head, params: v.params, typed: true)?
+    return ok(
+        Built(fields: header(content_type: content_type, encoding: "base64"), body: bytes.from_text(transfer.encode_base64_lines(data)))
+    )
+
+# A part holding a file attached, named `filename` where it is not "".
+function attachment_part(data: [u8], media_type: str, filename: str) -> Built?
+    base = file_part(data, media_type: media_type)?
+    disposition_params: {str: str} @= {}
+
+    if filename != ""
+        disposition_params["filename"] @ filename
+    disposition = params.format(head: "attachment", params: disposition_params, typed: false)?
+    with_disposition: [fields.Field] @= base.fields
+    with_disposition @ with_disposition.push(fields.Field(name: "Content-Disposition", value: disposition))
+    return ok(Built(fields: with_disposition, body: base.body))
+
+# A part holding a file an HTML body shows by `cid:<content_id>`. Fails
+# `invalid` where `content_id` is empty or holds a space, an angle bracket,
+# or a byte outside printable ASCII.
+function inline_part(data: [u8], media_type: str, content_id: str) -> Built?
+    if content_id == "" || !is_id_text(content_id)
+        return fail(
+            code: INVALID,
+            msg: f"the content identifier \"{content_id}\" is empty or holds a space, an angle bracket or a byte outside printable ASCII"
+        )
+    base = file_part(data, media_type: media_type)?
+    out: [fields.Field] @= base.fields
+    out @ out.push(fields.Field(name: "Content-ID", value: "<" + content_id + ">"))
+    out @ out.push(fields.Field(name: "Content-Disposition", value: "inline"))
+    return ok(Built(fields: out, body: base.body))
+
+# Whether `s` is printable ASCII with no space and no angle bracket.
+function is_id_text(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b <= 0x20 || b >= 0x7f || b == '<' || b == '>'
+            return false
+        at @ at + 1
+
+    return true
+
+# The header of a multipart of `subtype`, its boundary left to the writer.
+# Fails `invalid` where `subtype` is no token.
+function multipart_header(subtype: str) -> [fields.Field]?
+    if !params.is_token(subtype)
+        return fail(code: INVALID, msg: f"the subtype \"{subtype}\" of a multipart is not a token")
+    return ok([fields.Field(name: "Content-Type", value: "multipart/" + strings.to_lower_ascii(subtype))])
+
+## Tests
+
+test "text: ASCII in 7bit, text above ASCII in quoted-printable, mostly above ASCII in base 64, a long line"
+    a = text_part(text: "hello\nworld", subtype: "plain").must()
+    assert a.fields[0].value == "text/plain; charset=utf-8" && a.fields[1].value == "7bit" && a.body == bytes.from_text("hello\nworld")
+    b = text_part(text: "héllo", subtype: "html").must()
+    assert b.fields[0].value == "text/html; charset=utf-8" && b.fields[1].value == "quoted-printable" && b.body == bytes.from_text("h=C3=A9llo")
+    c = text_part(text: "日本語のテキスト", subtype: "plain").must()
+    assert c.fields[1].value == "base64" && c.body == bytes.from_text("5pel5pys6Kqe44Gu44OG44Kt44K544OI\r\n")
+    assert text_part(text: repeat("a", 79), subtype: "plain").must().fields[1].value == "quoted-printable"
+    assert text_part(text: "", subtype: "plain").must().body == []
+    assert text_part(text: "x", subtype: "pl ain").is_err()
+
+test "data, attachment and inline: base 64, a filename by RFC 2231, a content identifier"
+    d = file_part([1, 2, 3], media_type: "Application/Octet-Stream").must()
+    assert d.fields[0].value == "application/octet-stream" && d.body == bytes.from_text("AQID\r\n")
+    assert file_part([], media_type: "nonsense").is_err()
+    a = attachment_part([1], media_type: "application/pdf", filename: "été.pdf").must()
+    assert a.fields[2] == fields.Field(name: "Content-Disposition", value: "attachment; filename*=utf-8''%C3%A9t%C3%A9.pdf")
+    assert attachment_part([1], media_type: "application/pdf", filename: "").must().fields[2].value == "attachment"
+    i = inline_part([1], media_type: "image/png", content_id: "logo@x.org").must()
+    assert i.fields[2].value == "<logo@x.org>" && i.fields[3].value == "inline"
+    assert inline_part([1], media_type: "image/png", content_id: "a b").is_err() && inline_part([1], media_type: "image/png", content_id: "").is_err()
+
+test "multipart: the header, a subtype refused"
+    assert multipart_header("Alternative").must() == [fields.Field(name: "Content-Type", value: "multipart/alternative")]
+    assert multipart_header("").is_err()

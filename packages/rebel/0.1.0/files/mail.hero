@@ -1,0 +1,1671 @@
+# E-mail messages read and written: a message's header fields (RFC 5322),
+# folded and unfolded with their order kept; addresses, address lists and
+# groups; dates; encoded words (RFC 2047); MIME (RFC 2045 to 2049) with its
+# content types and their parameters (RFC 2231), multipart messages read as a
+# tree and written with a boundary none of their parts holds, quoted-printable
+# and base 64; attachments and inline parts; and UTF-8 in header fields and
+# addresses (RFC 6532).
+#
+# It does not send a message (`mail/smtp`), read a mailbox folder from disk
+# (`fs` reads each file, `parse_message` each message), turn HTML into text
+# (`html`) or sign a message (DKIM is not written). Of the charsets an encoded
+# word, a parameter or a part may name it reads UTF-8, US-ASCII and
+# ISO-8859-1; another fails `unsupported`, its bytes kept where a function
+# answers them.
+#
+# A message is read without failing, as Python's `email` reads one: what was
+# wrong and repaired is told in its `defects`. It fails `invalid` where a text
+# given to read is not what the function reads, the message saying where;
+# `not_text` where bytes that should be UTF-8 are not; `unsupported` for a
+# charset or a transfer encoding it does not read, and for a header that
+# needs UTF-8 where the options forbid it; `not_found` where a field, a part or
+# a parameter asked for is not there; `does_not_fit` for a date outside an
+# `Instant`; `failed` where the system gives no random bytes.
+
+use bytes
+use io
+use mail/internal/address
+use mail/internal/build
+use mail/internal/charsets
+use mail/internal/dates
+use mail/internal/fields as field_lines
+use mail/internal/ids
+use mail/internal/mbox
+use mail/internal/params
+use mail/internal/transfer
+use mail/internal/tree
+use mail/internal/words
+use mail/internal/write
+use os
+use strings
+use time
+
+## Codes and limits
+
+# A text, a field or a value that is not what the function reads, the message
+# saying where: every `parse_` function, and the writers for a name or a value
+# a message may not hold.
+constant INVALID: str
+    "invalid"
+
+# A field, a part or a parameter asked for is not there: `value_of`,
+# `disposition_of`, `filename_of`, `body_of`, `date_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+# Bytes that are not UTF-8 where text is asked: `text_of`, `decode_header`.
+constant NOT_TEXT: str
+    "not_text"
+
+# A charset or a transfer encoding this package does not read, or a header
+# that needs UTF-8 written where the options forbid it: `text_of`,
+# `content_of`, `decode_header`, `format_message`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A date outside what a `time.Instant` holds: `parse_date`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The system gave no random bytes for a new identifier: `make_message_id`.
+constant FAILED: str
+    "failed"
+
+# How deep multiparts are read as a tree: 64 levels. A multipart deeper
+# than this is kept as one part, its body unread, and `defects` says so.
+constant MAX_DEPTH: i64
+    64
+
+## Messages
+
+# A header field: a name and its value, as one line of a message's header
+# holds it once unfolded.
+record Field
+    # The name as written, its case kept: `Subject`, `X-Mailer`. Compared
+    # without regard to case by every function that looks one up.
+    name: str
+    # The value after the colon, its first spaces and its line breaks taken
+    # out (unfolded) and nothing decoded: encoded words stay as written. Bytes
+    # read that are not UTF-8 are taken as ISO-8859-1, one character a byte.
+    value: str
+
+# A message, or one part of a MIME message, which has the same shape: header
+# fields, then a body, or parts where it is a multipart. Built directly, or by
+# `parse_message` and the functions under `## Building`.
+record Message
+    # The header fields in the order they stand.
+    fields: [Field]
+    # The body as it is sent, still in its transfer encoding (`content_of`
+    # decodes it); empty for a multipart read as a tree.
+    body: [u8]
+    # The parts of a multipart, in order; [] for any other part.
+    parts: [Message]
+    # The bytes of a multipart before its first boundary, which readers do
+    # not show; [] for any other part.
+    preamble: [u8]
+    # The bytes of a multipart after its closing boundary; [] for any other
+    # part.
+    epilogue: [u8]
+    # What `parse_message` found wrong and read anyway, one sentence each, in
+    # the order found: a line that is no field, a closing boundary missing.
+    # Writing ignores it.
+    defects: [str]
+
+# How a message is written. `standard_options` and `utf8_options` answer the
+# two a program needs; a program changes the fields it needs.
+record WriteOptions
+    # Whether text above ASCII is written in a header as UTF-8 (RFC 6532), for
+    # a server that took SMTPUTF8, rather than as encoded words (RFC 2047).
+    utf8: bool
+    # The longest line a header field is folded to, in bytes without the line
+    # end: 78 as RFC 5322 asks; 0 never folds. A line with no space to fold
+    # at stays longer.
+    line_length: i64
+    # The end of every line written, `"\r\n"` as a message is sent or `"\n"`
+    # as a file on Unix holds it.
+    line_end: str
+
+# The options a message is sent with: header text above ASCII as encoded
+# words, lines folded at 78 bytes, every line ending `"\r\n"`.
+#
+# See also `utf8_options`, `format_message`.
+function standard_options() -> WriteOptions
+    return WriteOptions(utf8: false, line_length: 78, line_end: "\r\n")
+
+# The options of a message sent to a server that took SMTPUTF8: header text
+# written as UTF-8, lines folded at 78 bytes, every line ending `"\r\n"`.
+#
+# See also `standard_options`.
+function utf8_options() -> WriteOptions
+    return WriteOptions(utf8: true, line_length: 78, line_end: "\r\n")
+
+# The message `data` holds, read whole: its header fields, then its body, a
+# multipart read as a tree of parts.
+#
+# - `data`: the bytes of a message, its lines ended by `"\r\n"` or `"\n"`;
+#   empty is a message with no field and no body.
+#
+# It never fails, as a reader of real mail must not: the header ends at the
+# first empty line, or at the first line that is no field (a defect); a
+# multipart whose boundary is missing or never closed keeps what was read and
+# says so in `defects`, and one nested deeper than `MAX_DEPTH` is kept as one
+# part. A `message/rfc822` part keeps its message as its body, read by a
+# second call. See also `read_message`, `format_message`.
+function parse_message(data: [u8]) -> Message
+    nodes = tree.read(data: data, max_depth: MAX_DEPTH)
+    empty = Message(fields: [], body: [], parts: [], preamble: [], epilogue: [], defects: [])
+    sizes: [i64] @= []
+    built: [Message] @= []
+
+    while built.len() < nodes.len()
+        sizes @ sizes.push(1)
+        built @ built.push(empty)
+
+    i: i64 @= nodes.len() - 1
+
+    while i >= 0
+        node = nodes[i]
+        kids: [Message] @= []
+        child: i64 @= i + 1
+
+        while kids.len() < node.parts
+            kids @ kids.push(built[child])
+            built[child] @ empty
+            child @ child + sizes[child]
+
+        converted: [Field] @= []
+
+        for f in node.fields
+            converted @ converted.push(Field(name: f.name, value: f.value))
+
+        sizes[i] @ child - i
+        built[i] @ Message(
+            fields: converted,
+            body: node.body,
+            parts: kids,
+            preamble: node.preamble,
+            epilogue: node.epilogue,
+            defects: node.defects
+        )
+        i @ i - 1
+
+    return built[0]
+
+# The message `s` holds from where it stands to its end, read as
+# `parse_message` reads it.
+#
+# - `s`: the stream, read to its end and left open: its owner closes it.
+#
+# Fails where `s` fails, with its code. See also `parse_message`.
+function read_message(s: io.Stream) -> Message?
+    return ok(parse_message(io.read_all(s)?))
+
+# The bytes of `m`, its header fields folded and its parts written with a
+# boundary none of them holds.
+#
+# - `m`: the message; a field's value is written as given, but where it holds
+#   text above ASCII and `options` asks no UTF-8, an address field is written
+#   with its names as encoded words and any other with its whole value so.
+# - `options`: the line ends, the fold and whether UTF-8 is written.
+#
+# A multipart keeps the boundary its `Content-Type` names where no part
+# holds it, and takes a new one otherwise, made from the parts' own bytes, so
+# the same message writes the same bytes. A top part with a `Content-Type`
+# and no `MIME-Version` gains `MIME-Version: 1.0`.
+#
+# Fails `invalid` where a field's name is empty or holds a byte other than
+# printable ASCII but `:`, or a value holds a line break, which would make a
+# field of its own; `unsupported` where an address's mailbox is above ASCII
+# and `options` asks no UTF-8. See also `parse_message`, `write_message`.
+function format_message(m: Message, options: WriteOptions) -> [u8]?
+    nodes: [tree.Node] @= []
+    pending: [Message] @= [m]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        current = pending[top]
+        converted: [field_lines.Field] @= []
+
+        for f in current.fields
+            converted @ converted.push(field_lines.Field(name: f.name, value: f.value))
+
+        nodes @ nodes.push(
+            tree.Node(fields: converted, body: current.body, preamble: current.preamble, epilogue: current.epilogue, defects: [], parts: current.parts.len())
+        )
+        k: i64 @= current.parts.len() - 1
+
+        while k >= 0
+            if top < pending.len()
+                pending[top] @ current.parts[k]
+            else
+                pending @ pending.push(current.parts[k])
+            top @ top + 1
+            k @ k - 1
+
+    style = write.Style(utf8: options.utf8, line_length: options.line_length, line_end: options.line_end)
+    return write.message(nodes: nodes, style: style)
+
+# Writes `m` to `s`, as `format_message` writes it.
+#
+# - `s`: the stream, left open.
+# - `m`: the message.
+# - `options`: the line ends, the fold and whether UTF-8 is written.
+#
+# Fails as `format_message` fails, and where `s` fails, with its code. See
+# also `format_message`.
+function write_message(s: io.Stream, m: Message, options: WriteOptions) -> ()?
+    return io.write(s, data: format_message(m, options)?)
+
+# The messages of an mbox file, each as bytes `parse_message` reads.
+#
+# - `data`: the file; a message begins at a line opening `From ` that
+#   stands first or after an empty line.
+#
+# The `From ` line of each is left out, and one `>` is taken off a line of
+# `>` signs followed by `From ` (mboxrd's quoting, which reads mboxo's as
+# well); [] where `data` holds no `From ` line at its start. See also
+# `parse_message`.
+function split_mbox(data: [u8]) -> [[u8]]
+    return mbox.split(data)
+
+## Header fields
+
+# The header fields at the start of `data`, up to the first empty line, each
+# unfolded.
+#
+# - `data`: a message or its header alone; empty answers [].
+#
+# It reads as `parse_message` reads a header, and never fails. See also
+# `format_header`, `parse_message`.
+function parse_header(data: [u8]) -> [Field]
+    head = field_lines.read(data: data, from: 0, to: data.len())
+    out: [Field] @= []
+
+    for f in head.fields
+        out @ out.push(Field(name: f.name, value: f.value))
+
+    return out
+
+# `fields` written as a message's header, each folded, without the empty
+# line that ends it.
+#
+# - `fields`: the fields, in order.
+# - `options`: the line ends, the fold and whether UTF-8 is written.
+#
+# Fails as `format_message` fails for a field. See also `format_field`.
+function format_header(fields: [Field], options: WriteOptions) -> [u8]?
+    out: [str] @= []
+
+    for f in fields
+        out @ out.push(format_field(f, options)?)
+
+    return ok(bytes.from_text(out.join("")))
+
+# `field` written as one header field, folded, with its line end.
+#
+# - `field`: the field.
+# - `options`: the line ends, the fold and whether UTF-8 is written.
+#
+# A fold goes before a space, so a line is broken only where it has one:
+# `Subject: a very long` and ` subject`. Fails `invalid` where the name is
+# empty or holds a byte other than printable ASCII but `:`, or the value
+# holds a line break; `unsupported` where an address field's mailbox is above
+# ASCII and `options` asks no UTF-8. See also `format_header`, `unfold`.
+function format_field(field: Field, options: WriteOptions) -> str?
+    value = write.prepared(name: field.name, value: field.value, utf8: options.utf8)?
+    return field_lines.folded(name: field.name, value: value, limit: options.line_length, line_end: options.line_end)
+
+# `value` with its line breaks taken out: every `"\r\n"` or `"\n"` that a
+# space or a tab follows is removed, the space kept.
+#
+# - `value`: a field's value as it stands across lines.
+#
+# See also `format_field`.
+function unfold(value: str) -> str
+    return field_lines.unfold(value)
+
+# The value of the first field of `m` named `name`, unfolded and not decoded.
+#
+# - `m`: the message or part.
+# - `name`: the field's name, its case ignored: `"subject"` finds
+#   `Subject`.
+#
+# Fails `not_found` where `m` has no such field. See also `values_of`,
+# `decoded_value_of`.
+function value_of(m: Message, name: str) -> str?
+    for f in m.fields
+        if strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            return ok(f.value)
+
+    return fail(code: NOT_FOUND, msg: f"no field named \"{name}\" among the {m.fields.len()} of the header")
+
+# The values of every field of `m` named `name`, in order: [] where there is
+# none.
+#
+# - `m`: the message or part.
+# - `name`: the field's name, its case ignored.
+#
+# See also `value_of`.
+function values_of(m: Message, name: str) -> [str]
+    out: [str] @= []
+
+    for f in m.fields
+        if strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            out @ out.push(f.value)
+
+    return out
+
+# The value of the first field of `m` named `name`, its encoded words
+# decoded.
+#
+# - `m`: the message or part.
+# - `name`: the field's name, its case ignored.
+#
+# Fails `not_found` where `m` has no such field, and as `decode_header` fails.
+# See also `value_of`, `decode_header`.
+function decoded_value_of(m: Message, name: str) -> str?
+    return decode_header(value_of(m, name: name)?)
+
+# Whether `m` has a field named `name`.
+#
+# - `m`: the message or part.
+# - `name`: the field's name, its case ignored.
+#
+# See also `value_of`.
+function has_field(m: Message, name: str) -> bool
+    return !value_of(m, name: name).is_err()
+
+# A copy of `m` whose field `name` holds `value`: the first field of that
+# name takes it and any other of that name is removed, or one is added at
+# the end where there is none.
+#
+# - `m`: the message or part.
+# - `name`: the field's name, its case ignored to find it and kept as given
+#   where it is added.
+# - `value`: the value, written as given.
+#
+# See also `with_field_added`, `without_field`.
+function with_field(m: Message, name: str, value: str) -> Message
+    out: [Field] @= []
+    done: bool @= false
+
+    for f in m.fields
+        if strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            if !done
+                out @ out.push(Field(name: f.name, value: value))
+                done @ true
+        else
+            out @ out.push(f)
+
+    if !done
+        out @ out.push(Field(name: name, value: value))
+    changed: Message @= m
+    changed.fields @ out
+    return changed
+
+# A copy of `m` with one more field at the end of its header, whatever
+# fields of that name it has: `Received`, `Comments`.
+#
+# - `m`: the message or part.
+# - `name`: the field's name.
+# - `value`: the value, written as given.
+#
+# See also `with_field`.
+function with_field_added(m: Message, name: str, value: str) -> Message
+    out: [Field] @= m.fields
+    out @ out.push(Field(name: name, value: value))
+    changed: Message @= m
+    changed.fields @ out
+    return changed
+
+# A copy of `m` with no field named `name`.
+#
+# - `m`: the message or part.
+# - `name`: the field's name, its case ignored.
+#
+# See also `with_field`.
+function without_field(m: Message, name: str) -> Message
+    out: [Field] @= []
+
+    for f in m.fields
+        if !strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            out @ out.push(f)
+
+    changed: Message @= m
+    changed.fields @ out
+    return changed
+
+## MIME parts
+
+# The media type of a part's content and its parameters, as `Content-Type`
+# writes them: `text/plain; charset=utf-8`.
+record ContentType
+    # The type and subtype in lower case: `text/plain`, `multipart/mixed`.
+    media_type: str
+    # The parameters by name, the names in lower case and in the order
+    # written; a value joined from RFC 2231's continuations and decoded from
+    # its charset. A value in a charset this package does not read stays as
+    # written under its name with `*`: `title*` holding `koi8-r''%F0%D2`.
+    params: {str: str}
+
+# How a part is shown, as `Content-Disposition` writes it: `attachment;
+# filename="a.pdf"`.
+record Disposition
+    # The disposition in lower case: `inline`, `attachment`, `form-data`.
+    kind: str
+    # The parameters, read as `ContentType`'s are.
+    params: {str: str}
+
+# The content type of `m`: its `Content-Type`, or the one RFC 2045 gives a
+# part without a valid one, `text/plain; charset=us-ascii`.
+#
+# - `m`: the message or part.
+#
+# A part of a `multipart/digest` with no `Content-Type` holds a message by
+# RFC 2046, which only its parent tells: this answers `text/plain` for it, as
+# its own fields say. See also `parse_content_type`, `disposition_of`.
+function content_type_of(m: Message) -> ContentType
+    plain = ContentType(media_type: "text/plain", params: {"charset": "us-ascii"})
+
+    return match value_of(m, name: "Content-Type")
+        .err _ => plain
+        .ok value =>
+            match params.parse(value, typed: true)
+                .ok v  => ContentType(media_type: v.head, params: v.params)
+                .err _ => plain
+
+# The disposition of `m`, from its `Content-Disposition`.
+#
+# - `m`: the message or part.
+#
+# Fails `not_found` where `m` has none, `invalid` where its value is not a
+# disposition. See also `is_attachment`, `filename_of`.
+function disposition_of(m: Message) -> Disposition?
+    v = params.parse(value_of(m, name: "Content-Disposition")?, typed: false)?
+    return ok(Disposition(kind: v.head, params: v.params))
+
+# The transfer encoding of `m`'s body in lower case: `7bit` where it names
+# none.
+#
+# - `m`: the message or part.
+#
+# See also `content_of`.
+function transfer_encoding_of(m: Message) -> str
+    written = strings.to_lower_ascii(strings.trim(value_of(m, name: "Content-Transfer-Encoding").default("")))
+
+    if written == ""
+        return "7bit"
+    return written
+
+# The name of the file `m` carries: its disposition's `filename`, else its
+# content type's `name`, encoded words in it decoded.
+#
+# - `m`: the message or part.
+#
+# Fails `not_found` where it names none. See also `attachments_of`.
+function filename_of(m: Message) -> str?
+    name: str @= ""
+
+    match disposition_of(m)
+        .ok d  => name @ d.params["filename"].default("")
+        .err _ => _ = 0
+
+    if name == ""
+        name @ content_type_of(m).params["name"].default("")
+
+    if name == ""
+        return fail(
+            code: NOT_FOUND,
+            msg: "the part names no file: no `filename` in its disposition and no `name` in its content type"
+        )
+    return ok(words.joined_text(words.decode(name)).default(name))
+
+# Whether `m` is a multipart: its content type's is `multipart/`.
+#
+# - `m`: the message or part.
+#
+# See also `walk`.
+function is_multipart(m: Message) -> bool
+    return strings.has_prefix(s: content_type_of(m).media_type, prefix: "multipart/")
+
+# Whether `m` is an attachment: its disposition is `attachment`.
+#
+# - `m`: the message or part.
+#
+# See also `attachments_of`.
+function is_attachment(m: Message) -> bool
+    return match disposition_of(m)
+        .ok d  => d.kind == "attachment"
+        .err _ => false
+
+# The content of `m`: its body with its transfer encoding undone.
+#
+# - `m`: a part that is not a multipart; a multipart's is its body, empty
+#   once read as a tree.
+#
+# `7bit`, `8bit` and `binary` answer the body as it is. Fails `invalid` where
+# base 64 holds a byte that is none of its alphabet, `unsupported` for a
+# transfer encoding RFC 2045 does not name. See also `text_of`.
+function content_of(m: Message) -> [u8]?
+    return match transfer_encoding_of(m)
+        "7bit" | "8bit" | "binary" => ok(m.body)
+        "quoted-printable"         => ok(transfer.decode_qp(m.body))
+        "base64"                   => transfer.decode_base64_lines(m.body)
+        _ => fail(
+            code: UNSUPPORTED,
+            msg: f"the transfer encoding \"{transfer_encoding_of(m)}\" is none of RFC 2045's: 7bit, 8bit, binary, quoted-printable, base64"
+        )
+
+# The content of `m` as text, decoded from the charset its content type
+# names, and from UTF-8, which holds US-ASCII, where it names none.
+#
+# - `m`: a part whose content is text.
+#
+# Its line breaks are the ones the content holds, `"\r\n"` in a message
+# read from the wire, as Python's `get_content` answers them. Fails as
+# `content_of` fails; `unsupported` for a charset other than UTF-8, US-ASCII
+# and ISO-8859-1; `not_text` where the bytes are not text in it. See also
+# `content_of`.
+function text_of(m: Message) -> str?
+    data = content_of(m)?
+
+    match value_of(m, name: "Content-Type")
+        .err _ => _ = 0
+        .ok _ =>
+            charset = content_type_of(m).params["charset"].default("")
+
+            if charset != ""
+                return charsets.decode(data, name: charset)
+
+    return charsets.decode(data, name: "utf-8")
+
+# Every part of `m`, `m` first, then each part before its own parts: the
+# order Python's `walk` and a reader's tree give.
+#
+# - `m`: the message.
+#
+# It holds an explicit stack, so a deep tree never runs out of stack. See
+# also `attachments_of`.
+function walk(m: Message) -> [Message]
+    out: [Message] @= []
+    pending: [Message] @= [m]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        current = pending[top]
+        out @ out.push(current)
+        k: i64 @= current.parts.len() - 1
+
+        while k >= 0
+            if top < pending.len()
+                pending[top] @ current.parts[k]
+            else
+                pending @ pending.push(current.parts[k])
+            top @ top + 1
+            k @ k - 1
+
+    return out
+
+# The parts of `m` a reader shows as files, in order: every part whose
+# disposition is `attachment`, and every other part under `m` that is no
+# multipart, is not `inline`, has no `Content-ID` (an HTML body shows it),
+# and is no text or names a file.
+#
+# - `m`: the message.
+#
+# See also `body_of`, `filename_of`.
+function attachments_of(m: Message) -> [Message]
+    out: [Message] @= []
+    every = walk(m)
+
+    for k in range(from: 0, to: every.len())
+        p = every[k]
+
+        if is_attachment(p)
+            out @ out.push(p)
+        else if k > 0 && p.parts.len() == 0 && !is_multipart(p) && !has_field(p, name: "Content-ID")
+            kind = disposition_of(p).default(Disposition(kind: "", params: {})).kind
+            is_text = strings.has_prefix(s: content_type_of(p).media_type, prefix: "text/")
+
+            if kind != "inline" && (!is_text || !filename_of(p).is_err())
+                out @ out.push(p)
+
+    return out
+
+# The part of `m` a reader shows as its text, as Python's `get_body` finds
+# it: the text part whose subtype stands first in `preferring`, looked for in
+# every part of a multipart, but in a `multipart/related` only in its start
+# part, and never in an attachment.
+#
+# - `m`: the message.
+# - `preferring`: the subtypes in order of preference, of `"related"`,
+#   `"html"` and `"plain"`, as Python's `get_body` takes them.
+#
+# Where two parts are as preferred, the first a reader meets is answered;
+# a `multipart/related` itself is answered where `"related"` is asked. Fails
+# `not_found` where none is found. See also `attachments_of`.
+function body_of(m: Message, preferring: [str]) -> Message?
+    best: i64 @= preferring.len()
+    found: Message @= m
+    pending: [Message] @= [m]
+    top: i64 @= 1
+
+    while top > 0 && best > 0
+        top @ top - 1
+        current = pending[top]
+
+        if is_attachment(current)
+            continue
+        halves = strings.split_once(s: content_type_of(current).media_type, sep: "/").default(
+            strings.Halves(before: "", after: "")
+        )
+        rank: i64 @= preferring.len()
+
+        for k in range(from: 0, to: preferring.len())
+            if rank == preferring.len() && preferring[k] == halves.after
+                rank @ k
+
+        if halves.before == "text"
+            if rank < best
+                best @ rank
+                found @ current
+            continue
+
+        if halves.before != "multipart" || current.parts.len() == 0
+            continue
+        next: [Message] @= []
+
+        if halves.after != "related"
+            next @ current.parts
+        else
+            if rank < best
+                best @ rank
+                found @ current
+            start = content_type_of(current).params["start"].default("")
+            chosen: i64 @= 0
+
+            for k in range(from: 0, to: current.parts.len())
+                if start != "" && value_of(current.parts[k], name: "Content-ID").default("") == start
+                    chosen @ k
+
+            next @ [current.parts[chosen]]
+        k: i64 @= next.len() - 1
+
+        while k >= 0
+            if top < pending.len()
+                pending[top] @ next[k]
+            else
+                pending @ pending.push(next[k])
+            top @ top + 1
+            k @ k - 1
+
+    if best == preferring.len()
+        return fail(
+            code: NOT_FOUND,
+            msg: f"no part of the message is a body of {preferring.len()} kinds asked: {preferring.join(", ")}"
+        )
+    return ok(found)
+
+## Building
+
+# A file attached to a message `compose` builds.
+record Attachment
+    # The file's name as the reader shows it, any text; "" for none.
+    filename: str
+    # Its media type: `application/pdf`, `image/png`.
+    media_type: str
+    # The file's bytes.
+    data: [u8]
+    # The identifier an HTML body names it by, `cid:` and this, for an image
+    # shown inside the HTML; "" for a file attached apart.
+    content_id: str
+
+# A part holding `text`, of type `text/<subtype>`: charset US-ASCII where
+# the text is ASCII and UTF-8 otherwise, and the transfer encoding that keeps
+# it within ASCII and lines of 76 bytes, `7bit`, quoted-printable or base 64,
+# the shorter of the last two.
+#
+# - `text`: the text, its lines ended by `"\n"` or `"\r\n"`.
+# - `subtype`: `"plain"` or `"html"`, or any other token.
+#
+# Fails `invalid` where `subtype` is not a token. See also `compose`.
+function text_part(text: str, subtype: str) -> Message?
+    b = build.text_part(text: text, subtype: subtype)?
+    converted: [Field] @= []
+
+    for f in b.fields
+        converted @ converted.push(Field(name: f.name, value: f.value))
+
+    return ok(Message(fields: converted, body: b.body, parts: [], preamble: [], epilogue: [], defects: []))
+
+# A part holding `data`, of type `media_type`, in base 64.
+#
+# - `data`: the bytes.
+# - `media_type`: `type/subtype`, with parameters or none.
+#
+# Fails `invalid` where `media_type` is not a content type. See also
+# `attachment_part`.
+function data_part(data: [u8], media_type: str) -> Message?
+    b = build.file_part(data, media_type: media_type)?
+    converted: [Field] @= []
+
+    for f in b.fields
+        converted @ converted.push(Field(name: f.name, value: f.value))
+
+    return ok(Message(fields: converted, body: b.body, parts: [], preamble: [], epilogue: [], defects: []))
+
+# A part holding a file attached, in base 64, named `filename`.
+#
+# - `data`: the file's bytes.
+# - `media_type`: `type/subtype`: `application/pdf`.
+# - `filename`: its name; text above ASCII is written by RFC 2231.
+#
+# Fails `invalid` where `media_type` is not a content type. See also
+# `inline_part`, `compose`.
+function attachment_part(data: [u8], media_type: str, filename: str) -> Message?
+    b = build.attachment_part(data, media_type: media_type, filename: filename)?
+    converted: [Field] @= []
+
+    for f in b.fields
+        converted @ converted.push(Field(name: f.name, value: f.value))
+
+    return ok(Message(fields: converted, body: b.body, parts: [], preamble: [], epilogue: [], defects: []))
+
+# A part holding a file shown inside an HTML body that names it
+# `cid:<content_id>`, in base 64.
+#
+# - `data`: the file's bytes.
+# - `media_type`: `type/subtype`: `image/png`.
+# - `content_id`: the identifier, without angle brackets: `logo@example.org`.
+#
+# Fails `invalid` where `media_type` is not a content type or `content_id`
+# holds a space, an angle bracket or a line break. See also `compose`.
+function inline_part(data: [u8], media_type: str, content_id: str) -> Message?
+    b = build.inline_part(data, media_type: media_type, content_id: content_id)?
+    converted: [Field] @= []
+
+    for f in b.fields
+        converted @ converted.push(Field(name: f.name, value: f.value))
+
+    return ok(Message(fields: converted, body: b.body, parts: [], preamble: [], epilogue: [], defects: []))
+
+# A multipart of `parts`, of type `multipart/<subtype>`. Its boundary is
+# chosen when it is written.
+#
+# - `subtype`: `"mixed"`, `"alternative"`, `"related"`, or any other token.
+# - `parts`: the parts, in order.
+#
+# Fails `invalid` where `subtype` is not a token. See also `compose`.
+function multipart(subtype: str, parts: [Message]) -> Message?
+    header = build.multipart_header(subtype)?
+    converted: [Field] @= []
+
+    for f in header
+        converted @ converted.push(Field(name: f.name, value: f.value))
+
+    return ok(Message(fields: converted, body: [], parts: parts, preamble: [], epilogue: [], defects: []))
+
+# A part of type `message/rfc822` holding `m`, as a message forwarded whole.
+#
+# - `m`: the message, written with `standard_options`.
+#
+# Fails as `format_message` fails. See also `multipart`.
+function message_part(m: Message) -> Message?
+    data = format_message(m, standard_options())?
+    header: [Field] @= [Field(name: "Content-Type", value: "message/rfc822")]
+
+    if !bytes.is_ascii(data)
+        header @ header.push(Field(name: "Content-Transfer-Encoding", value: "8bit"))
+    return ok(Message(fields: header, body: data, parts: [], preamble: [], epilogue: [], defects: []))
+
+# A message with a text body, an HTML body, or both, and files: the
+# structure every mail reader expects.
+#
+# - `text`: the plain text body; "" for none.
+# - `html`: the HTML body; "" for none.
+# - `attachments`: the files: one with a `content_id` is shown inside the
+#   HTML, any other is attached apart, and every one where `html` is "".
+#
+# The two bodies are a `multipart/alternative`, plain first; the HTML and its
+# inline files a `multipart/related`; the files attached a `multipart/mixed`
+# around the rest. It has `MIME-Version` and no other field: the program adds
+# `From`, `To`, `Subject` and `Date` with `with_field`. Fails `invalid` where
+# both bodies are "" and there is no file, or a file's media type or content
+# identifier is refused. See also `text_part`, `attachment_part`.
+function compose(text: str, html: str, attachments: [Attachment]) -> Message?
+    if text == "" && html == "" && attachments.len() == 0
+        return fail(code: INVALID, msg: "a message composed of no text, no HTML and no file")
+    shown: [Message] @= []
+    attached: [Message] @= []
+
+    for a in attachments
+        if a.content_id != "" && html != ""
+            shown @ shown.push(inline_part(a.data, media_type: a.media_type, content_id: a.content_id)?)
+        else
+            attached @ attached.push(attachment_part(a.data, media_type: a.media_type, filename: a.filename)?)
+
+    bodies: [Message] @= []
+
+    if text != ""
+        bodies @ bodies.push(text_part(text: text, subtype: "plain")?)
+
+    if html != ""
+        page = text_part(text: html, subtype: "html")?
+
+        if shown.len() > 0
+            related: [Message] @= [page]
+
+            for p in shown
+                related @ related.push(p)
+
+            bodies @ bodies.push(multipart(subtype: "related", parts: related)?)
+        else
+            bodies @ bodies.push(page)
+
+    top: Message @= if bodies.len() == 2
+        multipart(subtype: "alternative", parts: bodies)?
+    else if bodies.len() == 1
+        bodies[0]
+    else
+        Message(fields: [], body: [], parts: [], preamble: [], epilogue: [], defects: [])
+
+    if attached.len() > 0
+        mixed: [Message] @= []
+
+        if bodies.len() > 0
+            mixed @ mixed.push(top)
+
+        for p in attached
+            mixed @ mixed.push(p)
+
+        top @ multipart(subtype: "mixed", parts: mixed)?
+    versioned: [Field] @= [Field(name: "MIME-Version", value: "1.0")]
+
+    for f in top.fields
+        versioned @ versioned.push(f)
+
+    top.fields @ versioned
+    return ok(top)
+
+## Addresses
+
+# A mailbox: an address and the name shown with it.
+record Address
+    # The name shown, decoded and unquoted: `Ana Lima`; "" for none.
+    name: str
+    # The part before `@`, unquoted: `ana`, `a b` for `"a b"`. UTF-8 is
+    # allowed (RFC 6532).
+    local: str
+    # The part after `@`: `example.org`, or an address in brackets,
+    # `[192.0.2.1]`.
+    domain: str
+
+# One entry of an address list: a mailbox, or a group of them under a name.
+variant Recipient
+    # A mailbox.
+    one
+        # The mailbox.
+        address: Address
+    # A group: `Team: a@x.org, b@x.org;`, or one with no member,
+    # `undisclosed-recipients:;`.
+    group
+        # The group's name, decoded.
+        name: str
+        # The members, in order; [] for an empty group.
+        members: [Address]
+
+# The mailbox `s` writes: `Ana Lima <ana@example.org>`, `ana@example.org`,
+# `"Lima, Ana" <ana@example.org>`.
+#
+# - `s`: one mailbox; comments are skipped, and a comment after an address
+#   with no name before it is taken as its name, as old mail writes
+#   `ana@example.org (Ana Lima)`.
+#
+# Fails `invalid` where `s` is not one mailbox (a list, a group, a missing
+# `@`, a dot at the end of a local part), the message saying where. See also
+# `parse_address_list`, `format_address`.
+function parse_address(s: str) -> Address?
+    b = address.parse_one(s)?
+    return ok(Address(name: b.name, local: b.local, domain: b.domain))
+
+# The mailboxes of the address list `s`, a group's members in its place.
+#
+# - `s`: the list, as `To` and `Cc` hold it; empty entries between commas are
+#   skipped, and "" answers [].
+#
+# Fails `invalid` where an entry is not a mailbox or a group. See also
+# `parse_recipients`, `addresses_of`.
+function parse_address_list(s: str) -> [Address]?
+    out: [Address] @= []
+
+    for b in address.flatten(address.parse_list(s)?)
+        out @ out.push(Address(name: b.name, local: b.local, domain: b.domain))
+
+    return ok(out)
+
+# The entries of the address list `s`, each group kept as one.
+#
+# - `s`: the list; "" answers [].
+#
+# Fails as `parse_address_list` fails. See also `parse_address_list`.
+function parse_recipients(s: str) -> [Recipient]?
+    out: [Recipient] @= []
+
+    for e in address.parse_list(s)?
+        match e
+            .one o => out @ out.push(.one(address: Address(name: o.box.name, local: o.box.local, domain: o.box.domain)))
+            .group g =>
+                members: [Address] @= []
+
+                for b in g.members
+                    members @ members.push(Address(name: b.name, local: b.local, domain: b.domain))
+
+                out @ out.push(.group(name: g.name, members: members))
+
+    return ok(out)
+
+# `a` as a mailbox in a header: its name quoted where it must be and as
+# encoded words where it is above ASCII, then its address in angle brackets;
+# its address alone where it has no name.
+#
+# - `a`: the mailbox; a local part that is no dot-atom is quoted.
+#
+# A local part or a domain above ASCII is written as UTF-8, which only a
+# server that took SMTPUTF8 accepts. See also `parse_address`,
+# `format_addr_spec`.
+function format_address(a: Address) -> str
+    return address.format(address.Mailbox(name: a.name, local: a.local, domain: a.domain))
+
+# `addresses` as an address list: each as `format_address` writes it, a comma
+# and a space between them.
+#
+# - `addresses`: the mailboxes; [] answers "".
+#
+# See also `format_recipients`.
+function format_address_list(addresses: [Address]) -> str
+    out: [str] @= []
+
+    for a in addresses
+        out @ out.push(format_address(a))
+
+    return out.join(", ")
+
+# `recipients` as an address list, a group as `Name: a, b;`.
+#
+# - `recipients`: the entries; [] answers "".
+#
+# See also `parse_recipients`.
+function format_recipients(recipients: [Recipient]) -> str
+    entries: [address.Entry] @= []
+
+    for r in recipients
+        match r
+            .one o => entries @ entries.push(
+                .one(box: address.Mailbox(name: o.address.name, local: o.address.local, domain: o.address.domain))
+            )
+            .group g =>
+                members: [address.Mailbox] @= []
+
+                for a in g.members
+                    members @ members.push(address.Mailbox(name: a.name, local: a.local, domain: a.domain))
+
+                entries @ entries.push(.group(name: g.name, members: members))
+
+    return address.format_entries(entries)
+
+# The address of `a` alone, `local@domain`, its local part quoted where it is
+# no dot-atom: what SMTP's envelope names.
+#
+# - `a`: the mailbox; its name is left out.
+#
+# See also `format_address`.
+function format_addr_spec(a: Address) -> str
+    return address.spec_of(address.Mailbox(name: a.name, local: a.local, domain: a.domain))
+
+# The mailboxes of every field of `m` named `name`, in order.
+#
+# - `m`: the message.
+# - `name`: the field's name, its case ignored: `"To"`, `"Cc"`.
+#
+# [] where there is no such field. Fails as `parse_address_list` fails. See
+# also `parse_address_list`.
+function addresses_of(m: Message, name: str) -> [Address]?
+    out: [Address] @= []
+
+    for value in values_of(m, name: name)
+        for a in parse_address_list(value)?
+            out @ out.push(a)
+
+    return ok(out)
+
+# Whether `a`'s address is ASCII, so a server that did not take SMTPUTF8
+# accepts it; its name does not count, being written as encoded words.
+#
+# - `a`: the mailbox.
+#
+# See also `format_address`.
+function is_ascii_address(a: Address) -> bool
+    return address.is_ascii(address.Mailbox(name: a.name, local: a.local, domain: a.domain))
+
+## Encoded words
+
+# One piece of a header's text as `decode_words` reads it: plain text, or the
+# content of encoded words of one charset.
+record Word
+    # The text: the piece itself, or its bytes decoded; "" where they could
+    # not be.
+    text: str
+    # The charset an encoded word names, in lower case: `utf-8`; "" for
+    # plain text.
+    charset: str
+    # The bytes the encoded words held, before any charset: kept so a charset
+    # this package does not read loses nothing; [] for plain text.
+    data: [u8]
+    # Whether `text` holds the piece: false for bytes in a charset this
+    # package does not read, or not text in their own.
+    is_decoded: bool
+
+# How an encoded word writes its bytes.
+variant WordEncoding
+    # Base 64: `=?utf-8?b?Y2Fmw6k=?=`, shorter for text mostly above ASCII.
+    b
+    # Quoted-printable's form for headers: `=?utf-8?q?caf=C3=A9?=`, readable
+    # for text mostly in ASCII.
+    q
+
+# `s` with its encoded words decoded: `=?utf-8?q?caf=C3=A9?=` is `café`.
+#
+# - `s`: a header's text, unfolded; space between two encoded words is
+#   dropped, and a word that is not well formed stays as written.
+#
+# Fails `unsupported` where a word names a charset other than UTF-8,
+# US-ASCII and ISO-8859-1, the message naming it; `not_text` where its bytes
+# are not text in it. See also `decode_words`, `encode_words`.
+function decode_header(s: str) -> str?
+    return words.joined_text(words.decode(s))
+
+# The pieces of `s`: its plain text, and its encoded words decoded where
+# their charset is read and kept as bytes where it is not, so nothing is
+# lost.
+#
+# - `s`: a header's text; "" answers [].
+#
+# Adjacent encoded words of one charset are one piece, their bytes joined
+# before they are decoded, so a character split across two words is read
+# whole. See also `decode_header`.
+function decode_words(s: str) -> [Word]
+    out: [Word] @= []
+
+    for p in words.decode(s)
+        out @ out.push(Word(text: p.text, charset: p.charset, data: p.data, is_decoded: p.is_decoded))
+
+    return out
+
+# `text` as encoded words of UTF-8 where it needs them, each at most 75
+# bytes, a space between two; `text` itself where it is printable ASCII.
+#
+# - `text`: the text.
+# - `encoding`: `.b` or `.q`.
+#
+# A word never splits a character. See also `decode_header`.
+function encode_words(text: str, encoding: WordEncoding) -> str
+    if words.is_plain(text)
+        return text
+
+    base64 = match encoding
+        .b => true
+        .q => false
+
+    return words.encode(text, base64: base64, phrase: false)
+
+## Parameters
+
+# The content type `s` writes, as `Content-Type` holds it.
+#
+# - `s`: `type/subtype`, then `; name=value` pieces, values quoted or not,
+#   RFC 2231's `name*=charset''%XX` and continuations `name*0=`, `name*1=`;
+#   comments skipped.
+#
+# Fails `invalid` where `s` holds no `type/subtype`, a parameter has no `=`
+# or no value, or a name is given twice. See also `format_content_type`,
+# `content_type_of`.
+function parse_content_type(s: str) -> ContentType?
+    v = params.parse(s, typed: true)?
+    return ok(ContentType(media_type: v.head, params: v.params))
+
+# `ct` written as a `Content-Type` value: its parameters in their order, a
+# value quoted where it must be, and written by RFC 2231 in UTF-8 where it is
+# above ASCII, in continuations where it is long.
+#
+# - `ct`: the content type.
+#
+# Fails `invalid` where its media type is not `type/subtype` of tokens or a
+# parameter's name is not a token. See also `parse_content_type`.
+function format_content_type(ct: ContentType) -> str?
+    return params.format(head: ct.media_type, params: ct.params, typed: true)
+
+# The disposition `s` writes, as `Content-Disposition` holds it.
+#
+# - `s`: a token, then parameters as `parse_content_type` reads them.
+#
+# Fails `invalid` as `parse_content_type` fails, for a token in place of
+# `type/subtype`. See also `disposition_of`.
+function parse_disposition(s: str) -> Disposition?
+    v = params.parse(s, typed: false)?
+    return ok(Disposition(kind: v.head, params: v.params))
+
+# `d` written as a `Content-Disposition` value, its parameters as
+# `format_content_type` writes them.
+#
+# - `d`: the disposition.
+#
+# Fails `invalid` where its kind or a parameter's name is not a token. See
+# also `parse_disposition`.
+function format_disposition(d: Disposition) -> str?
+    return params.format(head: d.kind, params: d.params, typed: false)
+
+## Transfer encodings
+
+# `data` in quoted-printable (RFC 2045): a byte outside printable ASCII, and
+# `=`, written `=XX`; lines at most 76 bytes, a longer one broken by `=` at
+# its end.
+#
+# - `data`: the bytes.
+# - `binary`: false for text, its line breaks written as `"\r\n"`; true for
+#   bytes, `"\r"` and `"\n"` written `=0D` and `=0A`.
+#
+# A space or a tab at a line's end is written `=20` or `=09`. See also
+# `parse_quoted_printable`.
+function format_quoted_printable(data: [u8], binary: bool) -> str
+    return transfer.encode_qp(data, binary: binary)
+
+# The bytes the quoted-printable `s` writes.
+#
+# - `s`: the text; a soft break, `=` at a line's end, is removed, and the
+#   spaces and tabs at a line's end with it.
+#
+# A `=` that two hexadecimal digits do not follow is kept as written, as Go
+# and Python read it, so it never fails. See also `format_quoted_printable`.
+function parse_quoted_printable(s: str) -> [u8]
+    return transfer.decode_qp(bytes.from_text(s))
+
+# `data` in base 64, in lines of 76 characters each ended by `"\r\n"`, as a
+# part's body holds it.
+#
+# - `data`: the bytes; [] answers "".
+#
+# See also `parse_base64_lines`.
+function format_base64_lines(data: [u8]) -> str
+    return transfer.encode_base64_lines(data)
+
+# The bytes the base 64 `s` writes, across lines.
+#
+# - `s`: the text; spaces, tabs and line breaks anywhere are skipped, and
+#   padding may be missing at its end.
+#
+# Fails `invalid` where it holds a byte of no base 64 alphabet, the message
+# saying where. See also `format_base64_lines`.
+function parse_base64_lines(s: str) -> [u8]?
+    return transfer.decode_base64_lines(bytes.from_text(s))
+
+## Dates
+
+# A moment as a message's `Date` writes it: the instant, and the offset from
+# UTC its writer's clock kept.
+record Date
+    # The moment.
+    instant: time.Instant
+    # How far the writer's clock stood ahead of UTC, in minutes, from -1439
+    # to 1439; 0 where it is unknown.
+    offset_minutes: i64
+    # Whether the offset is known: false for `-0000`, a military zone or
+    # none, where RFC 5322 says the date is in UTC and the local offset
+    # unknown.
+    offset_known: bool
+
+# The date `s` writes: `Mon, 02 Jan 2006 15:04:05 -0700`.
+#
+# - `s`: RFC 5322's date, read with its obsolete forms: the weekday left
+#   out, one-digit days, seconds left out, two- and three-digit years (2000
+#   added below 50, 1900 otherwise), month names in any case, the zones `UT`,
+#   `GMT`, `EST` to `PDT` and the military letters, and comments.
+#
+# A weekday that is not the date's is read, as Go and Python read it. Fails
+# `invalid` where `s` is no such date or names a day, an hour or an offset
+# outside its range; `does_not_fit` outside an `Instant`. See also
+# `format_date`, `date_of`.
+function parse_date(s: str) -> Date?
+    w = dates.parse(s)?
+    return ok(Date(instant: w.instant, offset_minutes: w.offset_minutes, offset_known: w.offset_known))
+
+# `d` as a `Date` field writes it: `Mon, 02 Jan 2006 15:04:05 -0700`, in
+# its own offset, `-0000` where it is unknown.
+#
+# - `d`: the date; its seconds' fraction is dropped.
+#
+# See also `parse_date`, `date_at`.
+function format_date(d: Date) -> str
+    return dates.format(dates.When(instant: d.instant, offset_minutes: d.offset_minutes, offset_known: d.offset_known))
+
+# `t` as a date in `zone`'s offset at that moment.
+#
+# - `t`: the moment.
+# - `zone`: the zone, `time.local_zone()` for the machine's own or
+#   `time.utc_zone()`.
+#
+# An offset that is not whole minutes is cut to the minute. See also
+# `format_date`.
+function date_at(t: time.Instant, zone: time.Zone) -> Date
+    w = dates.at(t: t, zone: zone)
+    return Date(instant: w.instant, offset_minutes: w.offset_minutes, offset_known: w.offset_known)
+
+# The date of `m`'s `Date` field.
+#
+# - `m`: the message.
+#
+# Fails `not_found` where it has none, and as `parse_date` fails. See also
+# `parse_date`.
+function date_of(m: Message) -> Date?
+    return parse_date(value_of(m, name: "Date")?)
+
+## Identifiers
+
+# A new `Message-ID`, `<...@domain>` with angle brackets, unique by 128
+# random bits from the system.
+#
+# - `domain`: the domain on its right, the sender's: `example.org`.
+#
+# Fails `invalid` where `domain` is "" or is neither a dot-atom of ASCII nor a
+# literal in brackets; `failed` where the system gives no random bytes. See
+# also `parse_message_ids`.
+function make_message_id(domain: str) -> str?
+    if !ids.is_domain(domain)
+        return fail(
+            code: INVALID,
+            msg: f"\"{domain}\" may not stand right of \"@\" in a Message-ID: a dot-atom of ASCII or a literal in brackets"
+        )
+
+    return match os.random_bytes(16)
+        .ok r  => ok("<" + bytes.format_hex(r) + "@" + domain + ">")
+        .err e => fail(code: FAILED, msg: "a Message-ID needs random bytes, and the system gave none: " + e.msg)
+
+# The identifiers of a `Message-ID`, `In-Reply-To` or `References` value, in
+# order and without their angle brackets.
+#
+# - `s`: the value: `<a@x.org> <b@x.org>`; comments and space between are
+#   skipped, "" answers [].
+#
+# Fails `invalid` where an identifier is not closed or holds no `@`. See
+# also `make_message_id`.
+function parse_message_ids(s: str) -> [str]?
+    return ids.parse(s)
+
+## Tests
+
+test "parse_message: a message Python's email wrote, read as Python reads it, and written back the same tree"
+    data = bytes.from_text(
+        "From: Ana <ana@example.org>\r\nTo: =?utf-8?q?J=C3=B6rg?= <j@example.org>, b@example.org\r\nSubject: =?utf-8?q?Gr=C3=BC=C3=9Fe?=\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"=====B1=\"\r\n\r\n--=====B1=\r\nContent-Type: multipart/alternative;\r\n boundary=\"=====B2=\"\r\n\r\n--=====B2=\r\nContent-Type: text/plain; charset=\"utf-8\"\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nHallo J=C3=B6rg\r\n\r\n--=====B2=\r\nContent-Type: text/html; charset=\"utf-8\"\r\nContent-Transfer-Encoding: 7bit\r\nMIME-Version: 1.0\r\n\r\n<p>Hallo</p>\r\n\r\n--=====B2=--\r\n\r\n--=====B1=\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename*=utf-8''na%C3%AFve.bin\r\nMIME-Version: 1.0\r\n\r\nAAEC\r\n\r\n--=====B1=--\r\n"
+    )
+    m = parse_message(data)
+    kinds: [str] @= []
+
+    for p in walk(m)
+        kinds @ kinds.push(content_type_of(p).media_type)
+
+    assert kinds == ["multipart/mixed", "multipart/alternative", "text/plain", "text/html", "application/octet-stream"]
+    files = attachments_of(m)
+    assert files.len() == 1 && filename_of(files[0]).must() == "naïve.bin" && content_of(files[0]).must() == [0, 1, 2]
+    assert text_of(body_of(m, preferring: ["html", "plain"]).must()).must() == "<p>Hallo</p>\r\n"
+    assert text_of(body_of(m, preferring: ["plain"]).must()).must() == "Hallo Jörg\r\n"
+    assert decoded_value_of(m, name: "Subject").must() == "Grüße"
+    to = addresses_of(m, name: "To").must()
+    assert to.len() == 2 && to[0].name == "Jörg" && m.defects.len() == 0
+    assert parse_message(format_message(m, standard_options()).must()) == m
+
+test "parse_message: empty, a header with no body, bytes that are no message"
+    assert parse_message([]) == Message(fields: [], body: [], parts: [], preamble: [], epilogue: [], defects: [])
+    assert parse_message(bytes.from_text("A: 1")).fields == [Field(name: "A", value: "1")]
+    noise = parse_message([0, 255, 10, 13])
+    assert noise.fields.len() == 0 && noise.body == [0, 255, 10, 13] && noise.defects.len() == 1
+
+test "format_message: a message read and written with LF line ends"
+    m = parse_message(bytes.from_text("Subject: x\r\n\r\na\r\nb\r\n"))
+    lf = WriteOptions(utf8: false, line_length: 78, line_end: "\n")
+    assert format_message(m, lf).must() == bytes.from_text("Subject: x\n\na\nb\n")
+
+test "body_of and attachments_of: a related HTML body and its inline image"
+    logo = Attachment(filename: "logo.png", media_type: "image/png", data: [1, 2], content_id: "logo@x")
+    file = Attachment(filename: "", media_type: "application/zip", data: [3], content_id: "")
+    m = compose(text: "", html: "<img src=\"cid:logo@x\">", attachments: [logo, file]).must()
+    assert content_type_of(body_of(m, preferring: ["related", "html"]).must()).media_type == "multipart/related"
+    assert content_type_of(body_of(m, preferring: ["html"]).must()).media_type == "text/html"
+    assert attachments_of(m).len() == 1 && body_of(m, preferring: ["plain"]).is_err()
+    assert compose(text: "", html: "", attachments: []).is_err()
+
+## Examples
+
+# The options a message is sent with.
+test "standard_options: encoded words, 78 bytes, CR LF"
+    assert standard_options() == WriteOptions(utf8: false, line_length: 78, line_end: "\r\n")
+
+# The options for a server that took SMTPUTF8.
+test "utf8_options: UTF-8 in the header"
+    assert utf8_options().utf8 && utf8_options().line_end == "\r\n"
+
+# A message read: two fields and a body.
+test "parse_message: a header and a body"
+    m = parse_message(bytes.from_text("From: ana@example.org\r\nSubject: Hello\r\n\r\nHi there.\r\n"))
+    assert value_of(m, name: "subject").must() == "Hello" && m.body == bytes.from_text("Hi there.\r\n")
+
+# A message read from a stream, here a pipe a test writes into.
+test "read_message: from a pipe"
+    p = io.pipe().must()
+    writer @= p.writer
+    reader @= p.reader
+    io.write_text(writer, text: "Subject: piped\r\n\r\nbody").must()
+    io.close(@writer).must()
+    assert value_of(read_message(reader).must(), name: "Subject").must() == "piped"
+    io.close(@reader).must()
+
+# A message written with a text body and two fields.
+test "format_message: a text part with a subject"
+    m = with_field(text_part(text: "Hi.", subtype: "plain").must(), name: "Subject", value: "Hello")
+    written = bytes.to_text(format_message(m, standard_options()).must()).must()
+    assert written == "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 7bit\r\nSubject: Hello\r\n\r\nHi."
+
+# A message written to a pipe and read back.
+test "write_message: to a pipe"
+    p = io.pipe().must()
+    writer @= p.writer
+    reader @= p.reader
+    m = Message(
+        fields: [Field(name: "Subject", value: "x")],
+        body: bytes.from_text("y"),
+        parts: [],
+        preamble: [],
+        epilogue: [],
+        defects: []
+    )
+    write_message(writer, m: m, options: standard_options()).must()
+    io.close(@writer).must()
+    assert io.read_all(reader).must() == bytes.from_text("Subject: x\r\n\r\ny")
+    io.close(@reader).must()
+
+# The two messages of an mbox file.
+test "split_mbox: two messages"
+    data = bytes.from_text(
+        "From a@x Mon Jan  1 00:00:00 2024\nSubject: 1\n\none\n\nFrom b@x Tue Jan  2 00:00:00 2024\nSubject: 2\n\ntwo\n"
+    )
+    assert split_mbox(data).len() == 2
+
+# The fields of a header alone.
+test "parse_header: two fields, one folded"
+    assert parse_header(bytes.from_text("To: a@x.org\r\nSubject: a\r\n b\r\n\r\n")) == [Field(name: "To", value: "a@x.org"), Field(name: "Subject", value: "a b")]
+
+# A header written from its fields.
+test "format_header: two fields"
+    assert format_header([Field(name: "To", value: "a@x.org"), Field(name: "Subject", value: "Grüße")], options: standard_options()).must() == bytes.from_text("To: a@x.org\r\nSubject: =?utf-8?q?Gr=C3=BC=C3=9Fe?=\r\n")
+
+# A long subject folded before a space.
+test "format_field: a long value folded"
+    long = "a subject long enough that it has to be folded onto a second line by the writer"
+    assert format_field(Field(name: "Subject", value: long), options: standard_options()).must() == "Subject: a subject long enough that it has to be folded onto a second line by\r\n the writer\r\n"
+
+# A value across two lines made one.
+test "unfold: a folded value"
+    assert unfold("a long\r\n subject") == "a long subject"
+
+# The first field of a name, its case ignored.
+test "value_of: a subject"
+    m = parse_message(bytes.from_text("Subject: Hello\r\n\r\n"))
+    assert value_of(m, name: "SUBJECT").must() == "Hello" && value_of(m, name: "To").is_err()
+
+# Every `Received` field, in order.
+test "values_of: two received fields"
+    m = parse_message(bytes.from_text("Received: one\r\nReceived: two\r\n\r\n"))
+    assert values_of(m, name: "received") == ["one", "two"]
+
+# A subject written as encoded words, read as text.
+test "decoded_value_of: an encoded subject"
+    m = parse_message(bytes.from_text("Subject: =?utf-8?q?caf=C3=A9?=\r\n\r\n"))
+    assert decoded_value_of(m, name: "Subject").must() == "café"
+
+# Whether a message has a date.
+test "has_field: a date there and not"
+    m = parse_message(bytes.from_text("Date: Mon, 02 Jan 2006 15:04:05 -0700\r\n\r\n"))
+    assert has_field(m, name: "date") && !has_field(m, name: "to")
+
+# A subject set, then changed.
+test "with_field: set and replaced"
+    m = with_field(with_field(parse_message([]), name: "Subject", value: "a"), name: "subject", value: "b")
+    assert m.fields == [Field(name: "Subject", value: "b")]
+
+# A second field of a name added.
+test "with_field_added: two comments"
+    m = with_field_added(
+        with_field_added(parse_message([]), name: "Comments", value: "a"),
+        name: "Comments",
+        value: "b"
+    )
+    assert values_of(m, name: "Comments") == ["a", "b"]
+
+# A field taken out.
+test "without_field: Bcc removed"
+    m = without_field(parse_message(bytes.from_text("To: a@x\r\nBcc: b@x\r\n\r\n")), name: "bcc")
+    assert m.fields == [Field(name: "To", value: "a@x")]
+
+# The content type of a part, and the default of one with none.
+test "content_type_of: written and the default"
+    m = parse_message(bytes.from_text("Content-Type: text/HTML; charset=UTF-8\r\n\r\n"))
+    assert content_type_of(m).media_type == "text/html" && content_type_of(m).params["charset"].must() == "UTF-8"
+    assert content_type_of(parse_message([])).media_type == "text/plain"
+
+# The disposition of an attachment.
+test "disposition_of: an attachment"
+    m = parse_message(bytes.from_text("Content-Disposition: attachment; filename=a.pdf\r\n\r\n"))
+    assert disposition_of(m).must() == Disposition(kind: "attachment", params: {"filename": "a.pdf"})
+
+# The transfer encoding of a part.
+test "transfer_encoding_of: base64 and the default"
+    assert transfer_encoding_of(parse_message(bytes.from_text("Content-Transfer-Encoding: Base64\r\n\r\n"))) == "base64"
+    assert transfer_encoding_of(parse_message([])) == "7bit"
+
+# The name of an attached file, by RFC 2231.
+test "filename_of: a name above ASCII"
+    m = attachment_part([1, 2], media_type: "application/pdf", filename: "résumé.pdf").must()
+    assert filename_of(m).must() == "résumé.pdf"
+
+# A multipart and a text part.
+test "is_multipart: a multipart and a part"
+    assert is_multipart(multipart(subtype: "mixed", parts: []).must()) && !is_multipart(text_part(text: "x", subtype: "plain").must())
+
+# An attachment and a body.
+test "is_attachment: an attachment and a body"
+    assert is_attachment(attachment_part([1], media_type: "image/png", filename: "a.png").must())
+    assert !is_attachment(text_part(text: "x", subtype: "plain").must())
+
+# The bytes of a part in base 64.
+test "content_of: base 64 decoded"
+    assert content_of(data_part([0, 1, 2, 255], media_type: "application/octet-stream").must()).must() == [0, 1, 2, 255]
+
+# The text of a part in quoted-printable.
+test "text_of: quoted-printable in UTF-8"
+    assert text_of(text_part(text: "Grüße", subtype: "plain").must()).must() == "Grüße"
+
+# Every part of a multipart, the multipart first.
+test "walk: a multipart of two"
+    m = multipart(
+        subtype: "mixed",
+        parts: [text_part(text: "a", subtype: "plain").must(), text_part(text: "b", subtype: "plain").must()]
+    ).must()
+    assert walk(m).len() == 3
+
+# The files of a composed message.
+test "attachments_of: one file attached"
+    file = Attachment(filename: "a.pdf", media_type: "application/pdf", data: [1, 2, 3], content_id: "")
+    m = compose(text: "Hi", html: "", attachments: [file]).must()
+    assert attachments_of(m).len() == 1 && filename_of(attachments_of(m)[0]).must() == "a.pdf"
+
+# The HTML body of a message holding both bodies.
+test "body_of: HTML preferred to plain"
+    m = compose(text: "plain", html: "<p>html</p>", attachments: []).must()
+    assert text_of(body_of(m, preferring: ["html", "plain"]).must()).must() == "<p>html</p>"
+    assert text_of(body_of(m, preferring: ["plain"]).must()).must() == "plain"
+
+# A text part in UTF-8.
+test "text_part: plain text"
+    assert content_type_of(text_part(text: "Hello", subtype: "plain").must()).media_type == "text/plain"
+
+# A part holding bytes.
+test "data_part: a PDF's bytes"
+    assert transfer_encoding_of(data_part([37, 80, 68, 70], media_type: "application/pdf").must()) == "base64"
+
+# A file attached.
+test "attachment_part: a named PDF"
+    m = attachment_part([37, 80, 68, 70], media_type: "application/pdf", filename: "report.pdf").must()
+    assert value_of(m, name: "Content-Disposition").must() == "attachment; filename=report.pdf"
+
+# An image an HTML body shows.
+test "inline_part: a logo"
+    m = inline_part([137, 80, 78, 71], media_type: "image/png", content_id: "logo@example.org").must()
+    assert value_of(m, name: "Content-ID").must() == "<logo@example.org>"
+
+# Two bodies as alternatives.
+test "multipart: an alternative of two"
+    m = multipart(
+        subtype: "alternative",
+        parts: [text_part(text: "a", subtype: "plain").must(), text_part(text: "<b>a</b>", subtype: "html").must()]
+    ).must()
+    assert content_type_of(m).media_type == "multipart/alternative" && m.parts.len() == 2
+
+# A message forwarded whole.
+test "message_part: a message inside a message"
+    inner = with_field(text_part(text: "inner", subtype: "plain").must(), name: "Subject", value: "forwarded")
+    part = message_part(inner).must()
+    assert content_type_of(part).media_type == "message/rfc822" && value_of(parse_message(part.body), name: "Subject").must() == "forwarded"
+
+# A message of text, HTML and a file, written and read back.
+test "compose: text, HTML and a file"
+    file = Attachment(filename: "a.txt", media_type: "text/plain", data: bytes.from_text("file"), content_id: "")
+    m = compose(text: "Hello", html: "<p>Hello</p>", attachments: [file]).must()
+    back = parse_message(format_message(m, standard_options()).must())
+    assert content_type_of(back).media_type == "multipart/mixed" && content_type_of(back.parts[0]).media_type == "multipart/alternative"
+    assert content_of(back.parts[1]).must() == bytes.from_text("file")
+
+# A mailbox with a name.
+test "parse_address: a name and an address"
+    assert parse_address("Ana Lima <ana@example.org>").must() == Address(name: "Ana Lima", local: "ana", domain: "example.org")
+
+# The mailboxes of a list, a group's in its place.
+test "parse_address_list: two and a group"
+    assert parse_address_list("a@x.org, Team: b@x.org, c@x.org;").must().len() == 3
+
+# A list with its group kept.
+test "parse_recipients: a group kept"
+    entries = parse_recipients("a@x.org, Team: b@x.org;").must()
+    assert entries.len() == 2
+
+    match entries[1]
+        .one _   => assert false
+        .group g => assert g.name == "Team" && g.members.len() == 1
+
+# A mailbox written, its name above ASCII.
+test "format_address: a name as encoded words"
+    assert format_address(Address(name: "Jörg", local: "j", domain: "example.org")) == "=?utf-8?q?J=C3=B6rg?= <j@example.org>"
+
+# Two mailboxes written as a list.
+test "format_address_list: two"
+    assert format_address_list([Address(name: "", local: "a", domain: "x.org"), Address(name: "B", local: "b", domain: "x.org")]) == "a@x.org, B <b@x.org>"
+
+# A group written.
+test "format_recipients: a group with no member"
+    assert format_recipients([.group(name: "undisclosed-recipients", members: [])]) == "undisclosed-recipients: ;"
+
+# The address alone, its local part quoted.
+test "format_addr_spec: a quoted local part"
+    assert format_addr_spec(Address(name: "Ana", local: "a b", domain: "x.org")) == "\"a b\"@x.org"
+
+# The mailboxes of `To`.
+test "addresses_of: the To field"
+    m = parse_message(bytes.from_text("To: a@x.org, B <b@x.org>\r\n\r\n"))
+    assert addresses_of(m, name: "to").must().len() == 2
+
+# An address above ASCII needs SMTPUTF8.
+test "is_ascii_address: ASCII and UTF-8"
+    assert is_ascii_address(Address(name: "Jörg", local: "j", domain: "x.org")) && !is_ascii_address(Address(name: "", local: "jörg", domain: "x.org"))
+
+# A subject's encoded words decoded.
+test "decode_header: two words of Latin-1 and UTF-8"
+    assert decode_header("=?iso-8859-1?q?caf=E9?= and =?utf-8?b?w6k=?=").must() == "café and é"
+
+# The pieces of a header, a charset not read kept as bytes.
+test "decode_words: a word in KOI8-R kept"
+    pieces = decode_words("x =?koi8-r?q?=F0?=")
+    assert pieces.len() == 2 && pieces[1].charset == "koi8-r" && pieces[1].data == [240] && !pieces[1].is_decoded
+
+# Text written as encoded words.
+test "encode_words: Q and B"
+    assert encode_words("café", encoding: .q) == "=?utf-8?q?caf=C3=A9?=" && encode_words("café", encoding: .b) == "=?utf-8?b?Y2Fmw6k=?="
+    assert encode_words("plain", encoding: .q) == "plain"
+
+# A content type with a boundary.
+test "parse_content_type: a multipart's boundary"
+    ct = parse_content_type("multipart/mixed; boundary=\"b1\"").must()
+    assert ct.media_type == "multipart/mixed" && ct.params["boundary"].must() == "b1"
+
+# A content type written.
+test "format_content_type: text in UTF-8"
+    assert format_content_type(ContentType(media_type: "text/plain", params: {"charset": "utf-8"})).must() == "text/plain; charset=utf-8"
+
+# A disposition with a filename by RFC 2231.
+test "parse_disposition: a filename above ASCII"
+    assert parse_disposition("attachment; filename*=UTF-8''na%C3%AFve.txt").must().params["filename"].must() == "naïve.txt"
+
+# A disposition written.
+test "format_disposition: an attachment with a space in its name"
+    assert format_disposition(Disposition(kind: "attachment", params: {"filename": "a b.pdf"})).must() == "attachment; filename=\"a b.pdf\""
+
+# Bytes in quoted-printable.
+test "format_quoted_printable: text above ASCII"
+    assert format_quoted_printable(bytes.from_text("café = 1"), binary: false) == "caf=C3=A9 =3D 1"
+
+# Quoted-printable read.
+test "parse_quoted_printable: a soft break and an escape"
+    assert parse_quoted_printable("caf=\r\n=C3=A9") == bytes.from_text("café")
+
+# Bytes in base 64 lines.
+test "format_base64_lines: one short line"
+    assert format_base64_lines(bytes.from_text("hi")) == "aGk=\r\n"
+
+# Base 64 across lines read.
+test "parse_base64_lines: two lines"
+    assert parse_base64_lines("aGVs\r\nbG8=\r\n").must() == bytes.from_text("hello")
+
+# A date and its offset.
+test "parse_date: a date seven hours west"
+    d = parse_date("Mon, 02 Jan 2006 15:04:05 -0700").must()
+    assert d.offset_minutes == -420 && time.format(d.instant, layout: .rfc3339) == "2006-01-02T22:04:05Z"
+
+# A date written in its own offset.
+test "format_date: seven hours west"
+    assert format_date(parse_date("Mon, 2 Jan 2006 15:04:05 -0700").must()) == "Mon, 02 Jan 2006 15:04:05 -0700"
+
+# The epoch as a date in UTC.
+test "date_at: the epoch in UTC"
+    assert format_date(date_at(t: time.epoch(), zone: time.utc_zone())) == "Thu, 01 Jan 1970 00:00:00 +0000"
+
+# The date of a message.
+test "date_of: a Date field"
+    m = parse_message(bytes.from_text("Date: Thu, 01 Jan 1970 00:00:00 +0000\r\n\r\n"))
+    assert date_of(m).must().instant == time.epoch()
+
+# A new identifier on a domain.
+test "make_message_id: on example.org"
+    id = make_message_id("example.org").must()
+    assert parse_message_ids(id).must()[0].len() == 32 + 1 + 11 && make_message_id("").is_err()
+
+# The identifiers of a `References` field.
+test "parse_message_ids: two"
+    assert parse_message_ids("<a@x.org> <b@x.org>").must() == ["a@x.org", "b@x.org"]

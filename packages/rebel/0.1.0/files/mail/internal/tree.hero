@@ -1,0 +1,222 @@
+# A message read into its parts: the header, then the body, a multipart's
+# body cut at its boundary lines into parts read the same way. The parts are
+# answered flat, in the order a reader meets them, each with its depth and
+# the number of parts under it; the work waits on an explicit stack, so no
+# input runs the program's stack out, and a multipart nested deeper than the
+# limit is kept as one part.
+
+use bytes
+use mail/internal/fields
+use mail/internal/params
+use strings
+
+# A part read, flat: its header, its body or the number of parts under it.
+record Node
+    # The header fields.
+    fields: [fields.Field]
+    # The body, still encoded; [] for a multipart read as one.
+    body: [u8]
+    # A multipart's bytes before its first boundary.
+    preamble: [u8]
+    # A multipart's bytes after its closing boundary.
+    epilogue: [u8]
+    # What was wrong and read anyway.
+    defects: [str]
+    # How many parts follow under it, each with its own; 0 for a leaf.
+    parts: i64
+
+# Bytes of the message waiting to be read as a part.
+record Pending
+    # The part's first byte.
+    from: i64
+    # Just past its last byte.
+    to: i64
+    # How deep it stands, 0 for the message itself.
+    depth: i64
+
+# A multipart's body cut at its boundary lines.
+record Cut
+    # The preamble's bounds.
+    preamble_to: i64
+    # Each part's first byte.
+    starts: [i64]
+    # Just past each part's last byte.
+    ends: [i64]
+    # The epilogue's first byte, or the body's end where it is not closed.
+    epilogue_from: i64
+    # Whether a closing boundary was found.
+    closed: bool
+
+# The parts of `data`, the message first, every part before its own parts.
+function read(data: [u8], max_depth: i64) -> [Node]
+    out: [Node] @= []
+    pending: [Pending] @= [Pending(from: 0, to: data.len(), depth: 0)]
+
+    while pending.len() > 0
+        p = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+        head = fields.read(data: data, from: p.from, to: p.to)
+        defects: [str] @= head.defects
+        boundary = multipart_boundary(head.fields)
+
+        if boundary != "" && p.depth >= max_depth
+            defects @ defects.push(
+                f"a multipart nested deeper than {max_depth} levels is kept as one part, its body unread"
+            )
+
+        if boundary == "" || p.depth >= max_depth
+            out @ out.push(leaf(head: head, defects: defects, body: data.slice(from: head.body_at, to: p.to)))
+            continue
+        cut = cut_at(data: data, from: head.body_at, to: p.to, boundary: boundary)
+
+        if cut.starts.len() == 0
+            defects @ defects.push(
+                f"the multipart's boundary \"{boundary}\" stands on no line of its body, so the body is kept whole"
+            )
+            out @ out.push(leaf(head: head, defects: defects, body: data.slice(from: head.body_at, to: p.to)))
+            continue
+
+        if !cut.closed
+            defects @ defects.push(
+                f"the multipart's closing boundary \"--{boundary}--\" is missing, so its last part runs to the end"
+            )
+        out @ out.push(
+            Node(fields: head.fields, body: [], preamble: data.slice(from: head.body_at, to: cut.preamble_to), epilogue: data.slice(from: cut.epilogue_from, to: p.to), defects: defects, parts: cut.starts.len())
+        )
+        k: i64 @= cut.starts.len() - 1
+
+        while k >= 0
+            pending @ pending.push(Pending(from: cut.starts[k], to: cut.ends[k], depth: p.depth + 1))
+            k @ k - 1
+
+    return out
+
+# A leaf part of `head`, holding `body`.
+function leaf(head: fields.Head, defects: [str], body: [u8]) -> Node
+    return Node(fields: head.fields, body: body, preamble: [], epilogue: [], defects: defects, parts: 0)
+
+# The boundary of a multipart header: its content type's `boundary`, ""
+# where it is no multipart or names none.
+function multipart_boundary(header: [fields.Field]) -> str
+    match fields.first(header, name: "Content-Type")
+        .err _ => return ""
+        .ok value =>
+            match params.parse(value, typed: true)
+                .err _ => return ""
+                .ok v =>
+                    if !strings.has_prefix(s: v.head, prefix: "multipart/")
+                        return ""
+                    return v.params["boundary"].default("")
+
+# The body from `from` to `to` cut at the lines of `boundary`.
+function cut_at(data: [u8], from: i64, to: i64, boundary: str) -> Cut
+    mark = bytes.from_text("--" + boundary)
+    starts: [i64] @= []
+    ends: [i64] @= []
+    preamble_to: i64 @= from
+    at: i64 @= from
+
+    while at < to
+        line_end: i64 @= at
+
+        while line_end < to && data[line_end] != '\n'
+            line_end @ line_end + 1
+
+        next = if line_end < to
+            line_end + 1
+        else
+            line_end
+
+        if line_end - at >= mark.len() && bytes.has_prefix_at(s: data, prefix: mark, at: at)
+            after = at + mark.len()
+            closing = after + 1 < to && data[after] == '-' && data[after + 1] == '-'
+
+            if closing || is_padding(data: data, from: after, to: line_end)
+                before = break_before(data: data, from: from, at: at)
+
+                if starts.len() == 0
+                    preamble_to @ before
+                else
+                    ends @ ends.push(before)
+
+                if closing
+                    if starts.len() == 0
+                        return Cut(preamble_to: preamble_to, starts: [], ends: [], epilogue_from: to, closed: true)
+                    return Cut(preamble_to: preamble_to, starts: starts, ends: ends, epilogue_from: next, closed: true)
+                starts @ starts.push(next)
+        at @ next
+
+    if starts.len() > 0
+        ends @ ends.push(to)
+    return Cut(preamble_to: preamble_to, starts: starts, ends: ends, epilogue_from: to, closed: false)
+
+# Whether the bytes from `from` to `to` are spaces, tabs and a carriage
+# return alone: the padding a boundary line may carry.
+function is_padding(data: [u8], from: i64, to: i64) -> bool
+    at: i64 @= from
+
+    while at < to
+        b = data[at]
+
+        if b != ' ' && b != '\t' && b != '\r'
+            return false
+        at @ at + 1
+
+    return true
+
+# Where the part before a boundary line at `at` ends: before the line break
+# that belongs to the boundary, `\r\n` or `\n`.
+function break_before(data: [u8], from: i64, at: i64) -> i64
+    if at == from
+        return at
+
+    if at - 2 >= from && data[at - 2] == '\r' && data[at - 1] == '\n'
+        return at - 2
+    return at - 1
+
+## Tests
+
+test "read: one part, empty, a header alone"
+    one = read(data: bytes.from_text("A: 1\r\n\r\nbody"), max_depth: 64)
+    assert one.len() == 1 && one[0].body == bytes.from_text("body") && one[0].parts == 0
+    assert read(data: [], max_depth: 64).len() == 1 && read(data: [], max_depth: 64)[0].fields.len() == 0
+
+test "read: a multipart, its preamble, two parts, its epilogue"
+    text = "Content-Type: multipart/mixed; boundary=XX\r\n\r\npre\r\n--XX\r\nA: 1\r\n\r\none\r\n--XX\r\n\r\ntwo\r\n--XX--\r\nepi"
+    nodes = read(data: bytes.from_text(text), max_depth: 64)
+    assert nodes.len() == 3 && nodes[0].parts == 2 && nodes[0].preamble == bytes.from_text("pre")
+    assert nodes[0].epilogue == bytes.from_text("epi") && nodes[0].defects.len() == 0
+    assert nodes[1].fields[0].value == "1" && nodes[1].body == bytes.from_text("one")
+    assert nodes[2].fields.len() == 0 && nodes[2].body == bytes.from_text("two")
+
+test "read: nested multiparts in a reader's order, LF line ends, padding after a boundary"
+    text = "Content-Type: multipart/mixed; boundary=a\n\n--a \nContent-Type: multipart/alternative; boundary=b\n\n--b\n\nx\n--b\n\ny\n--b--\n--a\n\nz\n--a--\n"
+    nodes = read(data: bytes.from_text(text), max_depth: 64)
+    assert nodes.len() == 5 && nodes[0].parts == 2 && nodes[1].parts == 2
+    assert nodes[2].body == bytes.from_text("x") && nodes[3].body == bytes.from_text("y") && nodes[4].body == bytes.from_text("z")
+
+test "read: a boundary never closed, a boundary on no line, a longer line that only begins with it"
+    open = read(
+        data: bytes.from_text("Content-Type: multipart/mixed; boundary=q\r\n\r\n--q\r\n\r\nlast"),
+        max_depth: 64
+    )
+    assert open.len() == 2 && open[0].defects.len() == 1 && open[1].body == bytes.from_text("last")
+    none = read(data: bytes.from_text("Content-Type: multipart/mixed; boundary=q\r\n\r\nno parts"), max_depth: 64)
+    assert none.len() == 1 && none[0].parts == 0 && none[0].body == bytes.from_text("no parts") && none[0].defects.len() == 1
+    longer = read(
+        data: bytes.from_text("Content-Type: multipart/mixed; boundary=q\r\n\r\n--q\r\n\r\n--qq\r\n--q--\r\n"),
+        max_depth: 64
+    )
+    assert longer.len() == 2 && longer[1].body == bytes.from_text("--qq")
+
+test "read: nested past the limit kept as one part, and deep nesting runs no stack out"
+    two_deep = "Content-Type: multipart/mixed; boundary=a\r\n\r\n--a\r\nContent-Type: multipart/mixed; boundary=b\r\n\r\n--b\r\n\r\nx\r\n--b--\r\n--a--\r\n"
+    cut = read(data: bytes.from_text(two_deep), max_depth: 1)
+    assert cut.len() == 2 && cut[1].parts == 0 && cut[1].defects.len() == 1
+    pieces: [str] @= []
+
+    for k in range(from: 0, to: 200)
+        pieces @ pieces.push(f"Content-Type: multipart/mixed; boundary=b{k}\r\n\r\n--b{k}\r\n")
+
+    deep = read(data: bytes.from_text(pieces.join("")), max_depth: 64)
+    assert deep.len() == 65 && deep[64].defects.len() == 1

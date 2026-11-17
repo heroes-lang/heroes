@@ -1,0 +1,172 @@
+# The charsets `mail` reads: UTF-8, US-ASCII and ISO-8859-1, by the names and
+# aliases mail writes them with, and the shared decision of what a byte of a
+# header that is not UTF-8 means. Another charset is `unsupported`, so a
+# caller can keep its bytes; the WHATWG legacy encodings wait for
+# `unicode/encodings`.
+
+use bytes
+use strings
+
+# The code of a charset this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of bytes that are not text in the charset named.
+constant NOT_TEXT: str
+    "not_text"
+
+# `name` as this module compares it: lower case, spaces around it dropped,
+# and an RFC 2231 language after `*` taken off (`utf-8*en` is `utf-8`).
+function normal(name: str) -> str
+    lowered = strings.to_lower_ascii(strings.trim(name))
+
+    return match strings.index_of(s: lowered, substr: "*")
+        .ok at => lowered.slice(from: 0, to: at)
+        .err _ => lowered
+
+# Which of the three charsets `name` names: `utf-8`, `us-ascii` or
+# `iso-8859-1`, or "" for another.
+function canonical(name: str) -> str
+    return match normal(name)
+        "utf-8" | "utf8" | "u8" | "utf" | "cp65001"                          => "utf-8"
+        "us-ascii" | "ascii" | "646" | "us" | "ansi_x3.4-1968" | "iso646-us" => "us-ascii"
+        "iso-8859-1" | "iso8859-1" | "iso_8859-1" | "8859" | "cp819" | "latin" | "latin1" | "latin-1" | "l1" | "iso-ir-100" => "iso-8859-1"
+        _ => ""
+
+# Whether `name` is one of the three charsets this package reads.
+function is_read(name: str) -> bool
+    return canonical(name) != ""
+
+# `data` as text in the charset `name`. Fails `unsupported` for a charset
+# other than the three, `not_text` where the bytes are not text in it.
+function decode(data: [u8], name: str) -> str?
+    return match canonical(name)
+        "utf-8" =>
+            match bytes.to_text(data)
+                .ok text => ok(text)
+                .err _ => fail(
+                    code: NOT_TEXT,
+                    msg: f"{data.len()} bytes said to be UTF-8 are not: {where_not_utf8(data)}"
+                )
+        "us-ascii"   => ascii(data)
+        "iso-8859-1" => ok(latin1(data))
+        _ => fail(
+            code: UNSUPPORTED,
+            msg: f"the charset \"{strings.trim(name)}\" is not UTF-8, US-ASCII or ISO-8859-1, the ones this package reads"
+        )
+
+# Where `data` first stops being UTF-8, as words.
+function where_not_utf8(data: [u8]) -> str
+    at: i64 @= 0
+
+    while at < data.len()
+        width = utf8_width_at(data: data, at: at)
+
+        if width == 0
+            return f"the byte at {at} begins no character"
+        at @ at + width
+
+    return "every byte reads"
+
+# The width of the UTF-8 character that begins at `at` in `data`, 0 where no
+# well-formed one does.
+function utf8_width_at(data: [u8], at: i64) -> i64
+    first = data[at]
+
+    if first < 0x80
+        return 1
+    width: i64 @= 0
+
+    if first >= 0xc2 && first <= 0xdf
+        width @ 2
+    else if first >= 0xe0 && first <= 0xef
+        width @ 3
+    else if first >= 0xf0 && first <= 0xf4
+        width @ 4
+    else
+        return 0
+
+    if at + width > data.len()
+        return 0
+    k: i64 @= 1
+
+    while k < width
+        if data[at + k] < 0x80 || data[at + k] > 0xbf
+            return 0
+        k @ k + 1
+
+    second = data[at + 1]
+
+    if first == 0xe0 && second < 0xa0 || first == 0xed && second > 0x9f
+        return 0
+
+    if first == 0xf0 && second < 0x90 || first == 0xf4 && second > 0x8f
+        return 0
+    return width
+
+# `data` as US-ASCII. Fails `not_text` at the first byte above 127.
+function ascii(data: [u8]) -> str?
+    at: i64 @= 0
+
+    while at < data.len()
+        if data[at] > 127
+            return fail(code: NOT_TEXT, msg: f"bytes said to be US-ASCII hold {data[at]} at {at}, above 127")
+        at @ at + 1
+
+    return ok(bytes.to_text(data).must())
+
+# `data` as ISO-8859-1: each byte the character of its number.
+function latin1(data: [u8]) -> str
+    out: [u8] @= []
+
+    for b in data
+        if b < 128
+            out @ out.push(b)
+        else
+            out @ out.push(192 + b / 64)
+            out @ out.push(128 + b % 64)
+
+    return bytes.to_text(out).must()
+
+# `data`, a header's bytes, as text: UTF-8 where it is (RFC 6532), and
+# ISO-8859-1 otherwise, one character a byte, so nothing is refused and
+# nothing is lost.
+function header_text(data: [u8]) -> str
+    return match bytes.to_text(data)
+        .ok text => text
+        .err _   => latin1(data)
+
+## Tests
+
+test "normal and canonical: case, spaces, a language, the aliases, another charset"
+    assert normal(" UTF-8*en ") == "utf-8" && normal("") == ""
+    assert canonical("UTF8") == "utf-8" && canonical("ASCII") == "us-ascii" && canonical("Latin1") == "iso-8859-1"
+    assert canonical("koi8-r") == "" && canonical("windows-1252") == "" && !is_read("shift_jis") && is_read("us-ascii")
+
+test "decode: UTF-8, ASCII refusing a high byte, Latin-1 every byte, another charset unsupported"
+    assert decode(bytes.from_text("café"), name: "utf-8").must() == "café"
+    assert decode([], name: "utf-8").must() == ""
+    assert decode([104, 105], name: "us-ascii").must() == "hi"
+    assert decode([99, 97, 102, 233], name: "ISO-8859-1").must() == "café"
+
+    match decode([255], name: "utf-8")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT && e.msg == "1 bytes said to be UTF-8 are not: the byte at 0 begins no character"
+
+    match decode([200], name: "ascii")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    match decode([240], name: "koi8-r")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "utf8_width_at: one to four bytes, an overlong form, a surrogate, a cut character"
+    assert utf8_width_at(data: [97], at: 0) == 1 && utf8_width_at(data: bytes.from_text("é"), at: 0) == 2
+    assert utf8_width_at(data: bytes.from_text("€"), at: 0) == 3 && utf8_width_at(data: bytes.from_text("𝄞"), at: 0) == 4
+    assert utf8_width_at(data: [0xc0, 0x80], at: 0) == 0 && utf8_width_at(data: [0xed, 0xa0, 0x80], at: 0) == 0
+    assert utf8_width_at(data: [0xe2, 0x82], at: 0) == 0 && utf8_width_at(data: [0x80], at: 0) == 0
+
+test "latin1 and header_text: high bytes, UTF-8 kept, other bytes read as ISO-8859-1"
+    assert latin1([]) == "" && latin1([0xff, 0x41]) == "ÿA"
+    assert header_text(bytes.from_text("Grüße")) == "Grüße" && header_text([0x47, 0x72, 0xfc, 0xdf, 0x65]) == "Grüße"

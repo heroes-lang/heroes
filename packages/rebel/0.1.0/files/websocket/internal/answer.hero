@@ -1,0 +1,199 @@
+# The server's answer to a client's opening request, read from the stream:
+# its status line and its fields, within stated bounds, and the bytes after
+# its head, which are the first frames' beginning. Only the head is read:
+# the body of an answer that is no upgrade is not. `http` reads no `101`,
+# which ends HTTP on the connection, so the head is read here.
+
+use bytes
+use http
+use io
+use net
+use strings
+
+# The code of an answer that is not HTTP/1.1.
+constant INVALID: str
+    "invalid"
+
+# The code of a head past its bounds.
+constant LIMIT: str
+    "limit"
+
+# The code of a stream that ends before the head does.
+constant CLOSED: str
+    "closed"
+
+# The most bytes read from the stream at once while the head is read.
+constant PIECE: i64
+    4096
+
+# What the server answered.
+record Answer
+    # The status, 100 to 999.
+    status: i64
+    # The reason after it, "" for none.
+    reason: str
+    # The fields, in their order.
+    headers: [http.Header]
+    # The bytes read past the head.
+    held: [u8]
+
+# The answer `stream` holds next.
+#
+# - `stream`: the connection, read until its head ends and no further than
+#   one read past it.
+# - `head_bytes`: the most bytes of the head, its end included.
+# - `field_count`: the most fields.
+#
+# Fails `limit` past either, `closed` where the stream ends first, `invalid`
+# where the head is not an HTTP/1.x answer, and as `io.read` fails.
+function read(stream: io.Stream, head_bytes: i64, field_count: i64) -> Answer?
+    got: [u8] @= []
+    end: i64 @= -1
+
+    while end < 0
+        if got.len() >= head_bytes
+            return fail(code: LIMIT, msg: f"the server's answer has a head past {head_bytes} bytes")
+        more = io.read(stream, most: PIECE)?
+
+        if more.len() == 0
+            return fail(code: CLOSED, msg: f"the server ended the stream {got.len()} bytes into its answer's head")
+        from: i64 @= got.len() - 3
+
+        if from < 0
+            from @ 0
+
+        for b in more
+            got @ got.push(b)
+
+        end @ head_end(got, from: from)
+
+    if end > head_bytes
+        return fail(code: LIMIT, msg: f"the server's answer has a head past {head_bytes} bytes")
+    return parse(got, end: end, field_count: field_count)
+
+# The index past the empty line that ends a head in `data`, searched from
+# `from`: a line feed and a line feed, or a line feed, a carriage return and
+# a line feed. -1 where none is there yet.
+function head_end(data: [u8] lent, from: i64) -> i64
+    i: i64 @= from
+
+    while i < data.len()
+        if data[i] == '\n'
+            if i + 1 < data.len() && data[i + 1] == '\n'
+                return i + 2
+
+            if i + 2 < data.len() && data[i + 1] == '\r' && data[i + 2] == '\n'
+                return i + 3
+        i @ i + 1
+
+    return -1
+
+# The answer whose head is the first `end` bytes of `data`.
+function parse(data: [u8] lent, end: i64, field_count: i64) -> Answer?
+    lines = strings.split(s: bytes.to_text_lossy(data.slice(from: 0, to: end)), sep: "\n")
+    first = strings.trim_end_any(s: lines[0], set: "\r")
+
+    if !strings.has_prefix(s: first, prefix: "HTTP/1.") || first.len() < 12 || first[8] != ' ' || first.len() > 12 && first[12] != ' '
+        return fail(code: INVALID, msg: f"the server answered \"{shown(first)}\", which is no status line of HTTP/1.1")
+    status: i64 @= 0
+
+    for i in range(from: 9, to: 12)
+        if first[i] < '0' || first[i] > '9'
+            return fail(code: INVALID, msg: f"the server answered \"{shown(first)}\", whose status is not three digits")
+        status @ status * 10 + to_i64(first[i] - '0').must()
+
+    reason: str @= ""
+
+    if first.len() > 13
+        reason @ first.slice(from: 13, to: first.len())
+    headers: [http.Header] @= []
+
+    for i in range(from: 1, to: lines.len())
+        line = strings.trim_end_any(s: lines[i], set: "\r")
+
+        if line != ""
+            if line[0] == ' ' || line[0] == '\t'
+                return fail(
+                    code: INVALID,
+                    msg: "the server's answer folds a field over two lines, which RFC 9112 refuses"
+                )
+            colon = strings.index_of(s: line, substr: ":").default(-1)
+
+            if colon <= 0 || line[colon - 1] == ' ' || line[colon - 1] == '\t'
+                return fail(
+                    code: INVALID,
+                    msg: f"the server's answer holds the line \"{shown(line)}\", which is no field"
+                )
+
+            if headers.len() >= field_count
+                return fail(code: LIMIT, msg: f"the server's answer has more than {field_count} fields")
+            value = strings.trim_any(s: line.slice(from: colon + 1, to: line.len()), set: " \t")
+            headers @ headers.push(http.Header(name: line.slice(from: 0, to: colon), value: value))
+
+    return ok(Answer(status: status, reason: reason, headers: headers, held: data.slice(from: end, to: data.len())))
+
+# `s` as a message shows it: whole where it is short, else its first 60
+# bytes' worth of characters and an ellipsis.
+function shown(s: str) -> str
+    if s.len() <= 60
+        return s
+    out: [str] @= []
+    n: i64 @= 0
+
+    for c in s.chars()
+        if n + c.len() > 60
+            break
+        out @ out.push(c)
+        n @ n + c.len()
+
+    return out.join("") + "..."
+
+test "read: a 101 with its fields and the first frame after it, over a pair of sockets"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.second.stream,
+        text: "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection:  Upgrade \r\n\r\n\u{1}"
+    ).must()
+    a = read(two.first.stream, head_bytes: 4096, field_count: 10).must()
+    assert a.status == 101 && a.reason == "Switching Protocols" && a.headers.len() == 2
+    assert a.headers[1].name == "Connection" && a.headers[1].value == "Upgrade" && a.held == [1]
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+test "read: a head past its bytes, past its fields, cut short, and no status line"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.second.stream, text: "HTTP/1.1 101 OK\r\nA: 1\r\nB: 2\r\n\r\n").must()
+
+    match read(two.first.stream, head_bytes: 10, field_count: 10)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    io.write_text(two.second.stream, text: "HTTP/1.1 101 OK\r\nA: 1\r\nB: 2\r\n\r\n").must()
+
+    match read(two.first.stream, head_bytes: 4096, field_count: 1)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    io.write_text(two.second.stream, text: "SSH-2.0\r\n\r\n").must()
+
+    match read(two.first.stream, head_bytes: 4096, field_count: 10)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.write_text(two.second.stream, text: "HTTP/1.1 101").must()
+    io.close(@two.second.stream).must()
+
+    match read(two.first.stream, head_bytes: 4096, field_count: 10)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@two.first.stream).must()
+
+test "parse: a status with no reason, a bare line feed, a folded field, a field with no colon"
+    plain = parse(bytes.from_text("HTTP/1.0 403\n\n"), end: 14, field_count: 10).must()
+    assert plain.status == 403 && plain.reason == ""
+    assert parse(bytes.from_text("HTTP/1.1 101 x\r\nA: 1\r\n b\r\n\r\n"), end: 26, field_count: 10).is_err()
+    assert parse(bytes.from_text("HTTP/1.1 101 x\r\nAb\r\n\r\n"), end: 22, field_count: 10).is_err()
+    assert parse(bytes.from_text("HTTP/1.1 1x1 x\r\n\r\n"), end: 18, field_count: 10).is_err()
+    assert head_end(bytes.from_text("a\r\n\r\nb"), from: 0) == 5 && head_end(bytes.from_text("a\n\nb"), from: 0) == 3
+    assert head_end(bytes.from_text("a\r\n"), from: 0) == -1

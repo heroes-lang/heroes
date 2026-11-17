@@ -1,0 +1,320 @@
+# The writes a program makes: a message, a part of one, a ping or a pong, a
+# close, and the closing handshake whole. Every check is made before the
+# first byte is written, so a refused call writes nothing.
+
+use bytes
+use io
+use net
+use websocket/internal/deflating
+use websocket/internal/engine
+use websocket/internal/frames
+use websocket/internal/handmade
+use websocket/internal/stepping
+use websocket/internal/utf8
+
+# Fails `closed` where `s` sent its close or its stream ended.
+function writable(s: engine.State lent) -> ()?
+    if s.ended || s.close_sent
+        return fail(code: engine.CLOSED, msg: engine.closed_message(s))
+    return ok()
+
+# Writes a message of `data`, a text's where `text` says.
+#
+# - `stream`, `s`: the connection.
+# - `b`: its bounds, whose `fragment_bytes` cuts it in frames.
+#
+# Fails `closed` as `writable` does, `invalid` while a message written by
+# parts is not ended, and as `io.write` fails.
+function message(@stream: io.Stream, @s: engine.State, b: engine.Bounds, text: bool, data: [u8] lent) -> ()?
+    writable(s)?
+
+    if s.writing
+        return fail(code: engine.INVALID, msg: "a message written while one written by parts is not ended")
+    op: i64 @= frames.BINARY
+
+    if text
+        op @ frames.TEXT
+
+    if deflating.compressing(s.deflating, size: data.len())
+        payload = deflating.deflated(@s.deflating, data: data, first: true, last: true)
+        return framed(@stream, @s, b: b, opcode: op, rsv1: true, payload: payload)
+    return framed(@stream, @s, b: b, opcode: op, rsv1: false, payload: data)
+
+# Writes `payload` as one message's frames, at most `b.fragment_bytes` of it
+# a frame, in one write.
+function framed(@stream: io.Stream, @s: engine.State, b: engine.Bounds, opcode: i64, rsv1: bool, payload: [u8] lent) -> ()?
+    n = payload.len()
+
+    if b.fragment_bytes <= 0 || n <= b.fragment_bytes
+        return engine.send(@stream, @s, opcode: opcode, fin: true, rsv1: rsv1, payload: payload)
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < n
+        end: i64 @= at + b.fragment_bytes
+
+        if end > n
+            end @ n
+        op: i64 @= frames.CONTINUATION
+
+        if at == 0
+            op @ opcode
+        key = engine.key_for(s)?
+        frame = frames.encode(
+            opcode: op,
+            fin: end == n,
+            rsv1: rsv1 && at == 0,
+            payload: payload.slice(from: at, to: end),
+            key: key
+        )
+        engine.add_onto(out: @out, data: frame)
+        at @ end
+
+    return engine.put(@stream, @s, data: out)
+
+# Writes the next part of a message written as it is made.
+#
+# - `stream`, `s`: the connection.
+# - `text`: the part's kind, the first part's for every part.
+# - `data`: the part's bytes.
+# - `last`: whether it ends the message.
+#
+# Fails `invalid` for a kind not the first part's, `not_text` where a text's
+# parts are not UTF-8, `closed` as `writable` does, and as `io.write` fails.
+function part(@stream: io.Stream, @s: engine.State, text: bool, data: [u8] lent, last: bool) -> ()?
+    writable(s)?
+    first = !s.writing
+
+    if !first && s.writing_text != text
+        return fail(code: engine.INVALID, msg: "a part of another kind than its message's first")
+    carry: [u8] @= []
+
+    if text
+        carry @ utf8.carried_after(carry: s.write_carry, more: data)?
+
+        if last && carry.len() > 0
+            return fail(code: engine.NOT_TEXT, msg: "a text whose last part ends inside a character")
+    compressed: bool @= s.writing_compressed
+
+    if first
+        compressed @ s.deflating.agreed.on
+    op: i64 @= frames.CONTINUATION
+
+    if first && text
+        op @ frames.TEXT
+    else if first
+        op @ frames.BINARY
+    s.writing @ !last
+    s.writing_text @ text
+    s.writing_compressed @ compressed
+    s.write_carry @ carry
+
+    if compressed
+        payload = deflating.deflated(@s.deflating, data: data, first: first, last: last)
+        return engine.send(@stream, @s, opcode: op, fin: last, rsv1: first, payload: payload)
+    return engine.send(@stream, @s, opcode: op, fin: last, rsv1: false, payload: data)
+
+# Writes a ping or a pong holding `data`.
+#
+# Fails `invalid` past 125 bytes, `closed` as `writable` does, and as
+# `io.write` fails.
+function control(@stream: io.Stream, @s: engine.State, opcode: i64, data: [u8] lent) -> ()?
+    if data.len() > 125
+        return fail(code: engine.INVALID, msg: f"a control frame of {data.len()} bytes, past 125")
+    writable(s)?
+    return engine.send(@stream, @s, opcode: opcode, fin: true, rsv1: false, payload: data)
+
+# Whether a close of `code` and `reason` may be written.
+#
+# Fails `invalid` for a code no close carries, a reason with 1005, or a
+# reason past 123 bytes.
+function checked_close(code: i64, reason: str) -> ()?
+    if code == 1005 && reason != ""
+        return fail(code: engine.INVALID, msg: "a close with no code holds no reason")
+
+    if code != 1005 && !frames.is_sendable(code)
+        return fail(code: engine.INVALID, msg: f"a close of code {code}, which no close may carry")
+
+    if reason.len() > 123
+        return fail(code: engine.INVALID, msg: f"a close's reason of {reason.len()} bytes, past 123")
+    return ok()
+
+# Writes this end's close.
+#
+# Fails as `checked_close` and `writable` do, and as `io.write` fails.
+function close_frame(@stream: io.Stream, @s: engine.State, code: i64, reason: str) -> ()?
+    checked_close(code, reason: reason)?
+    writable(s)?
+    s.close_sent @ true
+    s.sent_code @ code
+    return engine.send(
+        @stream,
+        @s,
+        opcode: frames.CLOSE,
+        fin: true,
+        rsv1: false,
+        payload: frames.close_payload(code: code, reason: reason)
+    )
+
+# Ends the connection by the closing handshake: this end's close written
+# where it was not, the peer's awaited for `b.close_wait_ms`, the frames
+# before it dropped, and the stream closed.
+#
+# Fails as `checked_close` does, nothing changed; `closed` where the stream
+# is closed already; and as `io.write` fails, the stream closed.
+function close_all(@stream: io.Stream, @s: engine.State, b: engine.Bounds, code: i64, reason: str) -> ()?
+    checked_close(code, reason: reason)?
+
+    if s.ended
+        return fail(code: engine.CLOSED, msg: engine.closed_message(s))
+
+    if !s.close_sent
+        s.close_sent @ true
+        s.sent_code @ code
+        sent = engine.send(
+            @stream,
+            @s,
+            opcode: frames.CLOSE,
+            fin: true,
+            rsv1: false,
+            payload: frames.close_payload(code: code, reason: reason)
+        )
+
+        match sent
+            .ok _ => _ = 0
+            .err e =>
+                engine.end_stream(@stream, @s)
+                return fail(code: e.code, msg: e.msg)
+
+    if b.close_wait_ms > 0
+        match engine.deadline(stream, ms: b.close_wait_ms)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+    while !s.ended
+        parts: bool @= true
+
+        if s.reading
+            parts @ s.by_parts
+
+        st = match stepping.step(@stream, @s, b: b, parts: parts, waits: true)
+            .ok got => got
+            .err _  => break
+
+        match st
+            .data _ | .nothing => _ = 0
+            .ended             => break
+            .more =>
+                match engine.fill(@stream, @s)
+                    .ok _  => _ = 0
+                    .err _ => break
+
+    engine.end_stream(@stream, @s)
+    return ok()
+
+# Closes the stream at once, with no closing handshake.
+#
+# Fails `closed` where it is closed already.
+function drop(@stream: io.Stream, @s: engine.State) -> ()?
+    if s.ended
+        return fail(code: engine.CLOSED, msg: engine.closed_message(s))
+    engine.end_stream(@stream, @s)
+    return ok()
+
+test "message: one frame masked by a client, fragments where the bounds say, and RSV1 on a compressed one"
+    two @= net.pair(deadline_ms: 5_000).must()
+    c @= handmade.client()
+    message(@two.first.stream, @c, b: handmade.bounds(), text: true, data: bytes.from_text("hello")).must()
+    raw = io.read_exact(two.second.stream, count: 11).must()
+    assert raw[0] == 129 && raw[1] == 133 && frames.unmasked(data: raw.slice(from: 6, to: 11), key: raw.slice(from: 2, to: 6)) == bytes.from_text("hello")
+    s @= handmade.server()
+    cut = engine.Bounds(frame_bytes: 100, message_bytes: 100, fragment_bytes: 2, close_wait_ms: 1_000)
+    message(@two.second.stream, @s, b: cut, text: false, data: [1, 2, 3, 4, 5]).must()
+    one = handmade.read_frame(two.first.stream).must()
+    two_of = handmade.read_frame(two.first.stream).must()
+    three = handmade.read_frame(two.first.stream).must()
+    assert one.opcode == 2 && !one.fin && one.payload == [1, 2] && two_of.opcode == 0 && !two_of.fin && three.fin && three.payload == [5]
+    z @= handmade.compressing(as_client: false)
+    message(@two.second.stream, @z, b: handmade.bounds(), text: true, data: bytes.from_text("Hello")).must()
+    packed = handmade.read_frame(two.first.stream).must()
+    assert packed.rsv == 4 && packed.fin && packed.opcode == 1
+    back @= handmade.compressing(as_client: true)
+    assert deflating.inflated(@back.deflating, data: packed.payload, first: true, last: true, most: 5).must() == bytes.from_text("Hello")
+    engine.end_stream(@two.first.stream, @c)
+    engine.end_stream(@two.second.stream, @s)
+
+test "part: a text in three parts with a character cut across two, a last part inside a character, another kind"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    part(@two.second.stream, @s, text: true, data: [104, 206], last: false).must()
+
+    match part(@two.second.stream, @s, text: false, data: [186], last: false)
+        .ok _  => assert false
+        .err e => assert e.code == engine.INVALID
+
+    part(@two.second.stream, @s, text: true, data: [186], last: false).must()
+
+    match part(@two.second.stream, @s, text: true, data: [206], last: true)
+        .ok _  => assert false
+        .err e => assert e.code == engine.NOT_TEXT
+
+    part(@two.second.stream, @s, text: true, data: [], last: true).must()
+    first = handmade.read_frame(two.first.stream).must()
+    second = handmade.read_frame(two.first.stream).must()
+    third = handmade.read_frame(two.first.stream).must()
+    assert first.opcode == 1 && !first.fin && second.opcode == 0 && second.payload == [186] && third.fin && third.payload == []
+
+    match message(@two.second.stream, @s, b: handmade.bounds(), text: true, data: [104])
+        .ok _  => _ = 0
+        .err _ => assert false
+
+    engine.end_stream(@two.second.stream, @s)
+    io.close(@two.first.stream).must()
+
+test "control: a ping of 125 bytes written, 126 refused, and nothing after a close"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    control(@two.second.stream, @s, opcode: frames.PING, data: handmade.filled(125, byte: 1)).must()
+    assert handmade.read_frame(two.first.stream).must().payload.len() == 125
+    assert control(@two.second.stream, @s, opcode: frames.PING, data: handmade.filled(126, byte: 1)).is_err()
+    close_frame(@two.second.stream, @s, code: 1000, reason: "").must()
+
+    match control(@two.second.stream, @s, opcode: frames.PONG, data: [])
+        .ok _  => assert false
+        .err e => assert e.code == engine.CLOSED
+
+    assert message(@two.second.stream, @s, b: handmade.bounds(), text: true, data: []).is_err()
+    assert close_frame(@two.second.stream, @s, code: 1000, reason: "").is_err()
+    engine.end_stream(@two.second.stream, @s)
+    io.close(@two.first.stream).must()
+
+test "checked_close: the codes and reasons a close may carry"
+    assert !checked_close(1000, reason: "").is_err() && !checked_close(4999, reason: "x").is_err()
+    assert !checked_close(1005, reason: "").is_err() && checked_close(1005, reason: "x").is_err()
+    assert checked_close(1006, reason: "").is_err() && checked_close(999, reason: "").is_err()
+    long = bytes.to_text(handmade.filled(123, byte: 'r')).must()
+    assert !checked_close(1000, reason: long).is_err() && checked_close(1000, reason: long + "r").is_err()
+
+test "close_all: a server's handshake with the peer's close waiting, a client's wait for the end, and drop"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    io.write(
+        two.first.stream,
+        data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: [3, 232], masked: true)
+    ).must()
+    close_all(@two.second.stream, @s, b: handmade.bounds(), code: 1001, reason: "away").must()
+    ours = handmade.read_frame(two.first.stream).must()
+    assert handmade.close_code_of(ours) == 1001 && s.ended && s.got_code == 1000 && s.sent_code == 1001
+    assert close_all(@two.second.stream, @s, b: handmade.bounds(), code: 1000, reason: "").is_err()
+    io.close(@two.first.stream).must()
+    other @= net.pair(deadline_ms: 5_000).must()
+    c @= handmade.client()
+    io.write(other.second.stream, data: handmade.frame(opcode: 8, fin: true, rsv: 0, payload: [], masked: false)).must()
+    close_all(@other.first.stream, @c, b: handmade.bounds(), code: 1000, reason: "").must()
+    assert c.ended && c.got_code == 1005
+    io.close(@other.second.stream).must()
+    d @= net.pair(deadline_ms: 5_000).must()
+    x @= handmade.server()
+    drop(@d.second.stream, @x).must()
+    assert drop(@d.second.stream, @x).is_err() && x.ended
+    io.close(@d.first.stream).must()

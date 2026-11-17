@@ -1,0 +1,322 @@
+# The connection under an SMTP session: one place for its stream, the
+# reader's, through which every line is written and every reply read and the
+# stream is closed, so no copy of it outlives the close; a deadline set
+# before each step, by `net` on a plain connection and by `tls` on a secure
+# one; and a reply read with bounds on its lines, so a server that never ends
+# a line is told and never followed.
+
+use bytes
+use io
+use net
+use numbers
+use strings
+use tls
+
+# The code of a reply that is not SMTP, and of an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a connection closed.
+constant CLOSED: str
+    "closed"
+
+# The longest line of a reply read, in bytes with its end.
+constant MAX_LINE: i64
+    4096
+
+# The most lines a reply may hold.
+constant MAX_LINES: i64
+    512
+
+# What carries the session: a TCP connection of `net`, whose deadline `net`
+# sets, or a TLS stream, whose deadline `tls` sets.
+variant Link
+    # Plain text.
+    plain
+        # The connection; its stream is the reader's, never used apart.
+        conn: net.Conn
+    # TLS, the stream the reader's.
+    secure
+
+# The connection and what the session knows of the server: its link, the
+# one reader whose stream is the session's only place for it, the greeting,
+# the extensions and the last reply.
+record Session
+    # What carries it.
+    link: Link
+    # The reader, and through `reader.stream` the stream itself.
+    reader: io.Reader
+    # The milliseconds each step may take, 0 for no limit.
+    deadline_ms: i64
+    # The name the client gives itself in EHLO.
+    local_name: str
+    # The server's greeting.
+    greeting: Answer
+    # The extensions of the last EHLO, keywords upper case.
+    extensions: {str: str}
+    # The last reply read.
+    last: Answer
+
+# A reply read: its code, its enhanced code, its lines' text.
+record Answer
+    # The code, 200 to 599.
+    code: i64
+    # The enhanced code of its first line, "" for none.
+    enhanced: str
+    # Each line's text.
+    lines: [str]
+
+# The reply a session holds before the server has said anything.
+function nothing() -> Answer
+    return Answer(code: 0, enhanced: "", lines: [])
+
+# A session over a plain connection.
+function over_plain(conn: net.Conn, deadline_ms: i64, local_name: str) -> Session
+    return Session(
+        link: .plain(conn: conn),
+        reader: io.reader(conn.stream),
+        deadline_ms: deadline_ms,
+        local_name: local_name,
+        greeting: nothing(),
+        extensions: {},
+        last: nothing()
+    )
+
+# A session over a TLS stream.
+function over_tls(stream: io.Stream, deadline_ms: i64, local_name: str) -> Session
+    return Session(
+        link: .secure,
+        reader: io.reader(stream),
+        deadline_ms: deadline_ms,
+        local_name: local_name,
+        greeting: nothing(),
+        extensions: {},
+        last: nothing()
+    )
+
+# Whether the session's stream is closed.
+function is_closed(s: Session lent) -> bool
+    return io.is_closed(s.reader.stream)
+
+# Makes the next steps end by `ms` milliseconds from now, 0 for no limit.
+function set_deadline(s: Session lent, ms: i64) -> ()?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the SMTP connection is closed")
+
+    return match s.link
+        .plain p => net.set_deadline(p.conn, ms: ms)
+        .secure  => tls.set_deadline(s.reader.stream, ms: ms)
+
+# Writes `data` to the server.
+function write(s: Session lent, data: [u8]) -> ()?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the SMTP connection is closed")
+    return io.write(s.reader.stream, data: data)
+
+# Writes `line` and `\r\n`.
+function write_line(s: Session lent, line: str) -> ()?
+    return write(s, data: bytes.from_text(line + "\r\n"))
+
+# Closes the connection through its one place.
+function close(@s: Session) -> ()?
+    return io.close(@s.reader.stream)
+
+# The next line the server sends, without its end. Fails `invalid` past
+# `MAX_LINE`, `closed` where the stream ends first.
+function read_line(@s: Session) -> [u8]?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the SMTP connection is closed")
+    out: [u8] @= []
+
+    while true
+        one = io.read_n(@s.reader, n: 1)?
+
+        if one.len() == 0
+            if out.len() == 0
+                return fail(code: CLOSED, msg: "the server closed the connection where a reply was awaited")
+            return fail(
+                code: CLOSED,
+                msg: f"the server closed the connection in the middle of a reply line: {excerpt(out)}"
+            )
+
+        if one[0] == '\n'
+            break
+        out @ out.push(one[0])
+
+        if out.len() >= MAX_LINE
+            return fail(code: INVALID, msg: f"a reply line of more than {MAX_LINE} bytes, which no SMTP server sends")
+
+    if out.len() > 0 && out[out.len() - 1] == '\r'
+        return ok(out.slice(from: 0, to: out.len() - 1))
+    return ok(out)
+
+# The next reply, kept as the session's last: its lines up to the one whose
+# code a space, or nothing, follows. Fails `invalid` where a line is not `ddd`, `ddd-text` or `ddd text`
+# or two lines name two codes, `closed` where the stream ends first.
+function read_reply(@s: Session) -> Answer?
+    lines: [str] @= []
+    code: i64 @= 0
+    enhanced: str @= ""
+
+    while true
+        raw = read_line(@s)?
+        parsed = parse_line(raw)?
+
+        if lines.len() == 0
+            code @ parsed.code
+        else if parsed.code != code
+            return fail(code: INVALID, msg: f"a reply's lines name the codes {code} and {parsed.code}")
+        cut = split_enhanced(code: code, text: parsed.text)
+
+        if lines.len() == 0
+            enhanced @ cut.enhanced
+        lines @ lines.push(cut.text)
+
+        if parsed.last
+            break
+
+        if lines.len() >= MAX_LINES
+            return fail(code: INVALID, msg: f"a reply of more than {MAX_LINES} lines, which no SMTP server sends")
+
+    answer = Answer(code: code, enhanced: enhanced, lines: lines)
+    s.last @ answer
+    return ok(answer)
+
+# One line of a reply.
+record Line
+    # Its code.
+    code: i64
+    # Whether it ends the reply.
+    last: bool
+    # Its text after the code and the separator.
+    text: str
+
+# The line `raw` read. Fails `invalid` where it is not a reply's line.
+function parse_line(raw: [u8]) -> Line?
+    if raw.len() < 3 || !is_digit(raw[0]) || !is_digit(raw[1]) || !is_digit(raw[2]) || raw[0] < '2' || raw[0] > '5'
+        return fail(code: INVALID, msg: f"the server said {excerpt(raw)}, which is no SMTP reply")
+    code = numbers.parse_int(bytes.to_text(raw.slice(from: 0, to: 3)).must())?
+
+    if raw.len() == 3
+        return ok(Line(code: code, last: true, text: ""))
+    separator = raw[3]
+
+    if separator != ' ' && separator != '-'
+        return fail(code: INVALID, msg: f"the server said {excerpt(raw)}, which is no SMTP reply")
+    return ok(Line(code: code, last: separator == ' ', text: bytes.to_text_lossy(raw.slice(from: 4, to: raw.len()))))
+
+# The first 80 bytes of `raw` escaped, for a message, and `...` where it is
+# longer: a server's bytes are never shown raw.
+function excerpt(raw: [u8]) -> str
+    if raw.len() <= 80
+        return bytes.format_escaped(raw)
+    return bytes.format_escaped(raw.slice(from: 0, to: 80)) + "..."
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# A line's text with its enhanced code apart.
+record Cut
+    # The enhanced code, "" for none.
+    enhanced: str
+    # The text after it.
+    text: str
+
+# `text` with the enhanced code RFC 3463 writes first taken apart: its class
+# the reply's first digit, then two numbers of one to three digits.
+function split_enhanced(code: i64, text: str) -> Cut
+    space = strings.index_of(s: text, substr: " ").default(text.len())
+    head = text.slice(from: 0, to: space)
+    parts = strings.split(s: head, sep: ".")
+
+    if parts.len() != 3 || parts[0] != to_str(code / 100)
+        return Cut(enhanced: "", text: text)
+
+    for p in parts
+        if p.len() == 0 || p.len() > 3
+            return Cut(enhanced: "", text: text)
+
+        for ch in p.chars()
+            if !is_digit(ch[0])
+                return Cut(enhanced: "", text: text)
+
+    rest = if space < text.len()
+        text.slice(from: space + 1, to: text.len())
+    else
+        ""
+    return Cut(enhanced: head, text: rest)
+
+## Tests
+
+test "parse_line: last, continued, bare code, not a reply"
+    assert parse_line(bytes.from_text("250 ok")).must() == Line(code: 250, last: true, text: "ok")
+    assert parse_line(bytes.from_text("250-SIZE 10")).must() == Line(code: 250, last: false, text: "SIZE 10")
+    assert parse_line(bytes.from_text("221")).must() == Line(code: 221, last: true, text: "")
+
+    for bad in ["", "25", "hello", "250x", "650 no", "1xx", "abc def"]
+        match parse_line(bytes.from_text(bad))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "split_enhanced: a code, none, one of another class, a code with no text"
+    assert split_enhanced(code: 250, text: "2.1.0 Sender ok") == Cut(enhanced: "2.1.0", text: "Sender ok")
+    assert split_enhanced(code: 250, text: "Sender ok") == Cut(enhanced: "", text: "Sender ok")
+    assert split_enhanced(code: 550, text: "2.1.0 x") == Cut(enhanced: "", text: "2.1.0 x")
+    assert split_enhanced(code: 550, text: "5.7.1") == Cut(enhanced: "5.7.1", text: "")
+    assert split_enhanced(code: 550, text: "5.7.1000 x") == Cut(enhanced: "", text: "5.7.1000 x")
+
+test "read_reply: one line, several with an enhanced code, kept as the last"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= over_plain(two.first, deadline_ms: 5000, local_name: "x")
+    server @= two.second.stream
+    io.write_text(server, text: "250-mx.test\r\n250-SIZE 10\r\n250 HELP\r\n550 5.1.1 no such user\r\n").must()
+    a = read_reply(@s).must()
+    assert a == Answer(code: 250, enhanced: "", lines: ["mx.test", "SIZE 10", "HELP"])
+    b = read_reply(@s).must()
+    assert b == Answer(code: 550, enhanced: "5.1.1", lines: ["no such user"]) && s.last == b
+    io.close(@server).must()
+    close(@s).must()
+
+test "read_reply: two codes in one reply, a line that is no reply, the end in a line, a line too long"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= over_plain(two.first, deadline_ms: 5000, local_name: "x")
+    server @= two.second.stream
+    io.write_text(server, text: "250-a\r\n251 b\r\nhello\r\n").must()
+
+    match read_reply(@s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a reply's lines name the codes 250 and 251"
+
+    match read_reply(@s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the server said hello, which is no SMTP reply"
+
+    io.write_text(server, text: repeat("x", 5000)).must()
+
+    match read_reply(@s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.write_text(server, text: "250 cut").must()
+    io.close(@server).must()
+
+    match read_reply(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@s).must()
+
+test "set_deadline: a reply that never comes ends by its deadline, then a closed session refuses"
+    two = net.pair(deadline_ms: 0).must()
+    s @= over_plain(two.first, deadline_ms: 200, local_name: "x")
+    server @= two.second.stream
+    set_deadline(s, ms: 200).must()
+
+    match read_reply(@s)
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    close(@s).must()
+    assert set_deadline(s, ms: 10).is_err() && write_line(s, line: "NOOP").is_err() && read_reply(@s).is_err()
+    io.close(@server).must()

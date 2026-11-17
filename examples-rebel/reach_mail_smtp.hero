@@ -1,0 +1,29 @@
+# Reaches Rebel's `mail/smtp`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It asks the mail server of this machine,
+# where one listens on port 25, which extensions it offers, and says why
+# where none answers.
+
+use <rebel>/mail/smtp
+
+function main()
+    o = smtp.options(host: "localhost", security: .plain)
+    quick = smtp.Options(
+        host: o.host,
+        port: o.port,
+        security: o.security,
+        roots: o.roots,
+        local_name: o.local_name,
+        deadline_ms: 2000
+    )
+
+    match smtp.connect(quick)
+        .err e => print("no server: ", e.code, ": ", e.msg)
+        .ok first =>
+            c @= first
+
+            for keyword in keys(smtp.extensions_of(c))
+                print(keyword)
+
+            match smtp.quit(@c)
+                .ok _  => print("bye")
+                .err e => print(e.code, ": ", e.msg)

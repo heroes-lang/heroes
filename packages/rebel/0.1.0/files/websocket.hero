@@ -1,0 +1,1624 @@
+# WebSocket (RFC 6455), client and server: a connection that carries whole
+# messages of text or of bytes both ways, framed and masked as the RFC asks,
+# compressed by permessage-deflate (RFC 7692) where both ends agree, and ended
+# by its closing handshake. A client connects to a `ws://` or `wss://` URL
+# with `connect`; a server reads and routes a request itself, with `http` and
+# `web`, and turns it into a connection with `upgrade`; one thread serves many
+# connections by waiting on them with `poll` and reading each with
+# `read_ready`.
+#
+# **Every read from a peer is bounded** by the connection's `Settings`: a
+# frame past `frame_bytes`, or a message past `message_bytes` once joined and
+# decompressed, fails `limit` and closes the connection with 1009 before its
+# bytes are held. A frame the RFC refuses (a reserved bit, an unknown opcode,
+# a control frame fragmented or past 125 bytes, a client's frame unmasked or a
+# server's masked, a continuation with no message begun) fails `invalid` and
+# closes with 1002; a text message or a close's reason that is not UTF-8
+# fails `not_text` and closes with 1007, checked fragment by fragment as it
+# comes. Nothing a peer sends aborts the program.
+#
+# **Pings are answered with pongs, and a close with the closing handshake**,
+# while messages are read: `read_message` hands out messages of data alone,
+# and `pongs_of` and `closing_of` say what the control frames carried.
+#
+# **What it does not do.** The opening request is read by `http`
+# (`http.next_request`) and routed by the program or by `web`; TLS is
+# `tls`'s, so `wss://` checks the server's certificate as `tls.connect`
+# does; waiting on many connections is `poll`'s, which refuses a TLS stream
+# on macOS (`unsupported`), so a `wss://` server there serves each
+# connection on a thread of its own (`threads`). No extension but permessage-deflate, no proxy, and no
+# keepalive on a clock of its own: a program pings with `write_ping` when its
+# own clock says.
+#
+# The codes it fails with: `invalid`, `limit`, `not_text`, `closed`,
+# `timeout`, `stopped`, `not_found`, `unsupported` and `failed`.
+
+use bytes
+use http
+use io
+use json
+use net
+use poll
+use threads
+use time
+use tls
+use url
+use websocket/internal/answer
+use websocket/internal/deflating
+use websocket/internal/dialing
+use websocket/internal/engine
+use websocket/internal/fixture
+use websocket/internal/frames
+use websocket/internal/negotiating
+use websocket/internal/opening
+use websocket/internal/reading
+use websocket/internal/writing
+
+## Codes
+
+# A frame, a handshake or an argument that is not what RFC 6455 or RFC 7692
+# allows; the message says what was found and where.
+constant INVALID: str
+    "invalid"
+
+# A frame past `Settings.frame_bytes`, a message past
+# `Settings.message_bytes`, a handshake's head past its limits, or more
+# redirects than a `Client` follows.
+constant LIMIT: str
+    "limit"
+
+# A text message, a text part or a close's reason that is not UTF-8, the
+# language's own code.
+constant NOT_TEXT: str
+    "not_text"
+
+# The connection is closed: by its closing handshake, by `drop`, by a
+# failure, or by the peer ending its stream; and, from `net` and `tls`,
+# nothing listening at the address.
+constant CLOSED: str
+    "closed"
+
+# The time allowed ran out: a `Client`'s `deadline_ms`, or a deadline
+# `set_deadline` placed.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while a call waited (`net.catch_stop`,
+# `net.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# A host name with no address, from `net`; a close asked of a connection
+# still open, by `closing_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A scheme other than `ws` and `wss`, and TLS on a machine with no TLS
+# library, as `tls` fails.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system refused for a reason none of the codes above names, from `net`,
+# `tls` and `io`; the message carries the system's own words.
+constant FAILED: str
+    "failed"
+
+## Close codes
+
+# The close code of a purpose fulfilled: the connection ends as it should.
+constant CLOSE_NORMAL: i64
+    1000
+
+# The close code of an end going away: a server going down, a browser
+# leaving a page.
+constant CLOSE_GOING_AWAY: i64
+    1001
+
+# The close code of a frame the RFC refuses, which this package sends with
+# `invalid`.
+constant CLOSE_PROTOCOL_ERROR: i64
+    1002
+
+# The close code of a message of a kind the end does not take, text where it
+# takes bytes alone.
+constant CLOSE_UNSUPPORTED_DATA: i64
+    1003
+
+# The code `closing_of` gives a close frame that carried no code. Never sent
+# in a frame; `close` and `write_close` take it to send a close with no code.
+constant CLOSE_NO_STATUS: i64
+    1005
+
+# The code `closing_of` gives a connection that ended with no close frame
+# received. Never sent in a frame.
+constant CLOSE_ABNORMAL: i64
+    1006
+
+# The close code of a message whose data does not match its kind, text that
+# is not UTF-8, which this package sends with `not_text`.
+constant CLOSE_INVALID_PAYLOAD: i64
+    1007
+
+# The close code of a message that breaks the end's policy, where no other
+# code says more.
+constant CLOSE_POLICY_VIOLATION: i64
+    1008
+
+# The close code of a message too big to take, which this package sends with
+# `limit`.
+constant CLOSE_MESSAGE_TOO_BIG: i64
+    1009
+
+# The close code a client sends where the server did not agree an extension
+# the client needs.
+constant CLOSE_MANDATORY_EXTENSION: i64
+    1010
+
+# The close code of a server that met a condition it could not serve.
+constant CLOSE_INTERNAL_ERROR: i64
+    1011
+
+# The close code of a server restarting: the client may connect again.
+constant CLOSE_SERVICE_RESTART: i64
+    1012
+
+# The close code of a server overloaded for now: the client may connect again
+# later.
+constant CLOSE_TRY_AGAIN_LATER: i64
+    1013
+
+# The close code of a gateway that had a bad answer from the server behind
+# it.
+constant CLOSE_BAD_GATEWAY: i64
+    1014
+
+# The code `closing_of` gives a connection whose TLS handshake failed. Never
+# sent in a frame.
+constant CLOSE_TLS_HANDSHAKE: i64
+    1015
+
+# Whether `code` may stand in a close frame: 1000 to 1003, 1007 to 1014, and
+# 3000 to 4999, the codes registered for libraries and for private use.
+#
+# - `code`: the code asked; 1005, 1006 and 1015 are never sent, and any
+#   other below 3000 is reserved.
+#
+# See also `close`, `close_text`.
+function is_close_code(code: i64) -> bool
+    return frames.is_sendable(code)
+
+# The name of a close code as IANA's registry writes it: `Normal Closure`
+# for 1000.
+#
+# - `code`: a code of 1000 to 1015.
+#
+# Fails `not_found` for a code the registry names not, 1004 and those of
+# 3000 to 4999 among them. See also `is_close_code`.
+function close_text(code: i64) -> str?
+    match code
+        1000 => return ok("Normal Closure")
+        1001 => return ok("Going Away")
+        1002 => return ok("Protocol error")
+        1003 => return ok("Unsupported Data")
+        1004 => return ok("Reserved")
+        1005 => return ok("No Status Rcvd")
+        1006 => return ok("Abnormal Closure")
+        1007 => return ok("Invalid frame payload data")
+        1008 => return ok("Policy Violation")
+        1009 => return ok("Message Too Big")
+        1010 => return ok("Mandatory Ext.")
+        1011 => return ok("Internal Error")
+        1012 => return ok("Service Restart")
+        1013 => return ok("Try Again Later")
+        1014 => return ok("Bad Gateway")
+        1015 => return ok("TLS handshake")
+        _    => return fail(code: NOT_FOUND, msg: f"no close code {code} in IANA's registry of WebSocket close codes")
+
+## Messages
+
+# A message of data: what `read_message` answers and `write_message` writes.
+variant Message
+    # A text, checked as UTF-8 from its first fragment to its last.
+    text
+        # The text the message holds, "" for an empty one.
+        text: str
+    # Bytes, whatever they hold.
+    binary
+        # The bytes the message holds, none for an empty one.
+        data: [u8]
+
+# The two kinds of a message of data, as a `Part` names them.
+variant Kind
+    # A text: its bytes, its parts joined, are UTF-8.
+    text
+    # Bytes.
+    binary
+
+# One fragment of a message, as `read_part` answers it and `write_part`
+# writes it: a message too long to hold whole, or one written as it is made.
+record Part
+    # The message's kind, the same in every part of one message.
+    kind: Kind
+    # The fragment's bytes, decompressed; a text's part may end inside a
+    # character the next part finishes.
+    data: [u8]
+    # Whether it is the message's last part.
+    last: bool
+
+# The bytes `m` holds: a text's UTF-8, or the bytes.
+#
+# - `m`: the message.
+#
+# See also `kind_of`.
+function data_of(m: Message) -> [u8]
+    match m
+        .text t   => return bytes.from_text(t.text)
+        .binary b => return b.data
+
+# The kind of `m`.
+#
+# - `m`: the message.
+#
+# See also `data_of`.
+function kind_of(m: Message) -> Kind
+    match m
+        .text _   => return .text
+        .binary _ => return .binary
+
+## Settings
+
+# How much a connection reads, and how it writes and waits: made by
+# `default_settings`, its fields changed by the program at any time.
+record Settings
+    # The most bytes of one data frame's payload read, 0 or more: past it
+    # the connection fails `limit` and closes with 1009 before the payload
+    # is read. Compressed, it is the compressed bytes. A control frame holds
+    # 125 bytes at most whatever this says.
+    frame_bytes: i64
+    # The most bytes of one message `read_message` joins, its fragments
+    # together and decompressed, 0 or more; and the most one part
+    # `read_part` answers decompresses to. Past it, `limit` and 1009.
+    message_bytes: i64
+    # The most bytes of payload of one frame written: a longer message is
+    # written in fragments of this size, 0 for one frame whatever its size.
+    fragment_bytes: i64
+    # The milliseconds `close` waits for the peer's close, and a client for
+    # the server's end of the stream after it, 0 for no limit.
+    close_wait_ms: i64
+
+# The usual settings, as Python's `websockets` sets them: frames and
+# messages of 1 MiB at most, every message in one frame, and 10 seconds for
+# the peer's close.
+function default_settings() -> Settings
+    return Settings(frame_bytes: 1_048_576, message_bytes: 1_048_576, fragment_bytes: 0, close_wait_ms: 10_000)
+
+# Whether and how messages are compressed, by permessage-deflate (RFC 7692):
+# what a client offers and a server accepts. Made by `default_compression`,
+# which turns it off, its fields changed by the program.
+record Compression
+    # Whether a client offers it and a server accepts an offer of it.
+    enabled: bool
+    # The level this end compresses with, 0 to 9, as `compress.compressor`
+    # takes it.
+    level: i64
+    # The fewest bytes of a message this end compresses: a shorter one is
+    # written as it is, which RFC 7692 allows message by message. 0
+    # compresses every message.
+    min_bytes: i64
+    # Whether the server compresses each message alone, keeping nothing of
+    # the ones before: asked by a client, and agreed by a server where it is
+    # asked or set here.
+    server_no_context_takeover: bool
+    # Whether the client compresses each message alone: offered by a client,
+    # and asked by a server where it is set here.
+    client_no_context_takeover: bool
+    # The most window bits the server compresses with, 8 to 15: a client
+    # below 15 asks for it, a server below 15 says it.
+    server_max_window_bits: i64
+    # The most window bits the client compresses with, 8 to 15: a client
+    # below 15 promises it, a server below 15 asks for it of a client that
+    # offers the parameter, and declines one that does not.
+    client_max_window_bits: i64
+
+# Compression turned off, its other fields at their usual values: level 6,
+# every message compressed, both ends keeping their windows, of 15 bits.
+function default_compression() -> Compression
+    return Compression(
+        enabled: false,
+        level: 6,
+        min_bytes: 0,
+        server_no_context_takeover: false,
+        client_no_context_takeover: false,
+        server_max_window_bits: 15,
+        client_max_window_bits: 15
+    )
+
+# What a client offers and how it connects: made by `default_client`, its
+# fields changed by the program.
+record Client
+    # The settings of the connection made.
+    settings: Settings
+    # The compression offered.
+    compression: Compression
+    # The subprotocols offered, the preferred first, each a token; [] offers
+    # none.
+    protocols: [str]
+    # The `Origin` sent, as a browser writes it, `https://example.com`; ""
+    # sends none.
+    origin: str
+    # More fields of the opening request, `Authorization`, `Cookie` or
+    # `User-Agent`, after this package's own; a `Host` given replaces the
+    # target's.
+    headers: [http.Header]
+    # The authorities a `wss://` server's certificate is checked against, and
+    # the application protocols offered, as `tls.connect` takes them.
+    tls: tls.Client
+    # The milliseconds the connection and its opening handshake may take
+    # together, 0 for no limit; reads and writes after it wait as long as
+    # the peer takes.
+    deadline_ms: i64
+    # The most redirects followed, 0 for none: a 301, 302, 303, 307 or 308
+    # with a `Location` is followed to a `ws://` or `wss://` URL, never from
+    # `wss` to `ws`.
+    redirects: i64
+    # What the server's answer may hold: its head's bytes and fields; the
+    # body of an answer that is no upgrade is not read.
+    head: http.Limits
+
+# The usual client: `default_settings`, no compression, no subprotocol and
+# no origin, the system's own authorities, 10 seconds to connect, and 10
+# redirects at most, as Python's `websockets`.
+function default_client() -> Client
+    return Client(
+        settings: default_settings(),
+        compression: default_compression(),
+        protocols: [],
+        origin: "",
+        headers: [],
+        tls: tls.Client(roots: "", protocols: []),
+        deadline_ms: 10_000,
+        redirects: 10,
+        head: http.default_limits()
+    )
+
+# What a server accepts in an opening request and answers it: made by
+# `default_server`, its fields changed by the program.
+record Server
+    # The settings of each connection upgraded.
+    settings: Settings
+    # The compression accepted.
+    compression: Compression
+    # The subprotocols spoken, the preferred first: the first of them the
+    # client offers is chosen, and none where it offers none of them.
+    protocols: [str]
+    # The origins accepted besides the request's own host, each a whole
+    # origin, `https://example.com:8443`, or a host, `example.com`; a request
+    # with no `Origin`, which no browser sends, is accepted.
+    origins: [str]
+    # Whether every origin is accepted: what a server no browser reaches
+    # sets, since a page of any site can open a connection to it.
+    every_origin: bool
+    # More fields of the `101` answer, `Set-Cookie` among them.
+    headers: [http.Header]
+
+# The usual server: `default_settings`, no compression, no subprotocol, and
+# the request's own origin alone, as Go's gorilla and coder take it.
+function default_server() -> Server
+    return Server(
+        settings: default_settings(),
+        compression: default_compression(),
+        protocols: [],
+        origins: [],
+        every_origin: false,
+        headers: []
+    )
+
+## The connection
+
+# Which end of a connection this is: a client masks every frame it writes and
+# reads none masked; a server the other way.
+variant Role
+    # The end that opened the connection.
+    client
+    # The end that accepted it.
+    server
+
+# A WebSocket connection: made by `connect`, `client_over`, `upgrade` or
+# `conn_of`, read and written by this package's functions. It owns its
+# stream: `close` or `drop` closes it, and so does a failure or the closing
+# handshake, so the program never closes the stream itself; one nobody
+# closes is told when `main` returns.
+record Conn
+    # The stream the frames travel on, owned by the connection; a program
+    # waits on it with `poll.add_stream`.
+    stream: io.Stream
+    # Which end this is.
+    role: Role
+    # The subprotocol the two ends agreed, "" for none.
+    protocol: str
+    # The extensions the two ends agreed, as the server's
+    # `Sec-WebSocket-Extensions` wrote them, "" for none.
+    extensions: str
+    # The fields of the opening handshake from the other end: a client's,
+    # those of the server's `101`, its `Set-Cookie` among them; a server's,
+    # those of the request it upgraded. None for a connection `conn_of`
+    # made.
+    headers: [http.Header]
+    # How much it reads and how it writes and waits.
+    settings: Settings
+    # The work in progress: bytes read and not yet framed, the message being
+    # joined, the compressors, and the close sent and received.
+    state: engine.State
+
+# How a connection ended, as `closing_of` answers it.
+record Closing
+    # The code of the peer's close frame: `CLOSE_NO_STATUS` where it carried
+    # none, `CLOSE_ABNORMAL` where none came.
+    code: i64
+    # The reason of the peer's close frame, "" for none.
+    reason: str
+    # The code this end sent in its close frame, `CLOSE_NO_STATUS` where it
+    # sent one with no code, 0 where it sent none.
+    sent: i64
+
+# Whether `c` is open: no close sent or received, no failure, not dropped.
+#
+# - `c`: the connection.
+#
+# A connection that sent its close is no longer open, though it still reads
+# until the peer's close comes. See also `closing_of`.
+function is_open(c: Conn) -> bool
+    return engine.is_open(c.state)
+
+# The close frames `c` received and sent, once it is no longer open.
+#
+# - `c`: the connection.
+#
+# Fails `not_found` while `c` is open. See also `is_open`.
+function closing_of(c: Conn) -> Closing?
+    if engine.is_open(c.state)
+        return fail(code: NOT_FOUND, msg: "the connection is open: no close was sent or received")
+    return ok(Closing(code: c.state.got_code, reason: c.state.got_reason, sent: c.state.sent_code))
+
+# How many pongs `c` has received, an answer to its `write_ping` or one the
+# peer sent unasked.
+#
+# - `c`: the connection.
+#
+# See also `last_pong_of`, `write_ping`.
+function pongs_of(c: Conn) -> i64
+    return c.state.pongs
+
+# The bytes of the last pong `c` received, none before the first: what a
+# program compares with the ping it wrote.
+#
+# - `c`: the connection.
+#
+# See also `pongs_of`.
+function last_pong_of(c: Conn) -> [u8]
+    return c.state.last_pong
+
+## Opening as a client
+
+# A connection to `target`, opened by the opening handshake: a TCP
+# connection for `ws://`, TLS for `wss://`.
+#
+# - `target`: a `ws://` or `wss://` URL with no fragment,
+#   `ws://example.com/chat?room=1`; the port is the URL's, else 80 or 443.
+# - `client`: what is offered and how long it may take.
+#
+# The connection answered owns its stream. A redirect is followed as
+# `client.redirects` says, each in a new connection. Fails `unsupported` for
+# a scheme other than `ws` and `wss`; `invalid` where `target` is no URL or
+# holds a fragment, where the server answers other than 101 (the message
+# says what it answered) or an answer the RFC refuses (an `Upgrade`, a
+# `Connection` or a `Sec-WebSocket-Accept` that is not the one asked, a
+# subprotocol or an extension not offered), or where `tls.connect` refuses
+# the certificate; `limit` past `client.head` or `client.redirects`; and as
+# `net.connect` and `tls.connect` fail. See also `client_over`, `upgrade`.
+function connect(target: str, client: Client) -> Conn?
+    asking = opening.Asking(
+        protocols: client.protocols,
+        origin: client.origin,
+        headers: client.headers,
+        wanted: negotiating.Wanted(enabled: client.compression.enabled, level: client.compression.level, min_bytes: client.compression.min_bytes, server_no_context_takeover: client.compression.server_no_context_takeover, client_no_context_takeover: client.compression.client_no_context_takeover, server_max_window_bits: client.compression.server_max_window_bits, client_max_window_bits: client.compression.client_max_window_bits),
+        head_bytes: client.head.head_bytes,
+        field_count: client.head.field_count
+    )
+    at: str @= target
+    hops: i64 @= 0
+
+    while true
+        u = opening.target_of(at)?
+        stream @= dialing.opened(u, deadline_ms: client.deadline_ms, secure: client.tls)?
+
+        outcome = match opening.handshake(stream, u: u, a: asking)
+            .ok got => got
+            .err e =>
+                dialing.ended(@stream)
+                return fail(code: e.code, msg: e.msg)
+
+        match outcome
+            .opened o =>
+                match engine.deadline(stream, ms: 0)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                return ok(
+                    Conn(stream: stream, role: .client, protocol: o.o.protocol, extensions: o.o.agreed.header, headers: o.o.headers, settings: client.settings, state: engine.start(client: true, agreed: o.o.agreed, level: client.compression.level, min_bytes: client.compression.min_bytes, held: o.o.held))
+                )
+            .moved m =>
+                dialing.ended(@stream)
+
+                if hops >= client.redirects
+                    return fail(
+                        code: LIMIT,
+                        msg: f"the server of \"{at}\" sent the client elsewhere after {hops} redirects, the most followed"
+                    )
+                hops @ hops + 1
+                next = url.resolve(base: u, reference: url.parse(m.location)?)
+
+                if u.scheme == "wss" && next.scheme == "ws"
+                    return fail(
+                        code: INVALID,
+                        msg: f"the server of \"{at}\" sent the client from `wss` to \"{m.location}\", which is not encrypted"
+                    )
+                at @ url.format(next)
+
+# A connection opened by the opening handshake over `stream`, a stream the
+# program already holds connected to the server of `target`: through a
+# proxy's tunnel, or over a pipe in a test.
+#
+# - `stream`: the stream; from a connection answered, the connection owns it
+#   and this place is emptied. Where none is answered it stays the caller's,
+#   open, to close.
+# - `target`: the URL the request names, `ws://` or `wss://`; nothing is
+#   connected to it, and its host and path go in the request.
+# - `client`: what is offered; its `tls`, `deadline_ms` and `redirects` are
+#   not read.
+#
+# Fails as `connect` does once the connection is made, a redirect included,
+# since nothing is followed here; and as `io.read` and `io.write` fail. See
+# also `connect`.
+function client_over(@stream: io.Stream, target: str, client: Client) -> Conn?
+    u = opening.target_of(target)?
+    outcome = opening.handshake(stream, u: u, a: opening.Asking(protocols: client.protocols, origin: client.origin, headers: client.headers, wanted: negotiating.Wanted(enabled: client.compression.enabled, level: client.compression.level, min_bytes: client.compression.min_bytes, server_no_context_takeover: client.compression.server_no_context_takeover, client_no_context_takeover: client.compression.client_no_context_takeover, server_max_window_bits: client.compression.server_max_window_bits, client_max_window_bits: client.compression.client_max_window_bits), head_bytes: client.head.head_bytes, field_count: client.head.field_count))?
+
+    match outcome
+        .opened o =>
+            owned = stream
+            stream.handle @ nullptr
+            return ok(
+                Conn(stream: owned, role: .client, protocol: o.o.protocol, extensions: o.o.agreed.header, headers: o.o.headers, settings: client.settings, state: engine.start(client: true, agreed: o.o.agreed, level: client.compression.level, min_bytes: client.compression.min_bytes, held: o.o.held))
+            )
+        .moved m => return fail(
+            code: INVALID,
+            msg: f"the server answered {m.status} to \"{m.location}\", and nothing is followed over a stream the program holds"
+        )
+
+# A new `Sec-WebSocket-Key`: sixteen bytes of the system's generator for
+# keys, as base 64.
+#
+# Fails as `os.random_bytes` does. See also `accept_key`.
+function new_key() -> str?
+    return opening.new_key()
+
+# The `Sec-WebSocket-Accept` a server answers the `Sec-WebSocket-Key` `key`
+# with: the base 64 of the SHA-1 of the key and RFC 6455's own GUID.
+#
+# - `key`: the key, as the request writes it.
+#
+# RFC 6455's example: `dGhlIHNhbXBsZSBub25jZQ==` gives
+# `s3pPLMBiTxaQ9kYGzzhZRbK+xOo=`. See also `new_key`.
+function accept_key(key: str) -> str
+    return opening.accept_of(key)
+
+## Opening as a server
+
+# Whether `r` asks to become a WebSocket connection: a `GET` whose
+# `Connection` holds `upgrade` and whose `Upgrade` holds `websocket`, in any
+# case. What a router asks before it calls `upgrade`.
+#
+# - `r`: the request, as `http.next_request` read it.
+#
+# See also `upgrade`.
+function is_upgrade(r: http.Request) -> bool
+    return opening.is_upgrade(r)
+
+# The subprotocols `r` offers, in its order: every value of its
+# `Sec-WebSocket-Protocol` fields, split at their commas.
+#
+# - `r`: the request.
+#
+# Empty where it offers none. See also `Server`.
+function protocols_of(r: http.Request) -> [str]
+    return opening.items_of(http.values_of(r.headers, name: "Sec-WebSocket-Protocol"))
+
+# The connection `r` asks for, its `101` answer written on `reader`'s stream:
+# how a server that read and routed `r` itself turns it into a WebSocket.
+#
+# - `reader`: the reader `r` was read from, as `http.next_request` advanced
+#   it; the bytes it holds past `r` become the connection's, and its stream
+#   the connection's own, this place emptied. The program's other copies of
+#   the stream, a `net.Conn`'s, are then dropped unused, since a close
+#   through one of them would close the connection's.
+# - `r`: the request.
+# - `server`: what is accepted and answered.
+#
+# A request that is no opening handshake is answered on the stream and
+# fails, the stream staying the caller's to close: 405 for a method other
+# than `GET`, 426 with `Sec-WebSocket-Version: 13` for another version, 403
+# for an origin refused, 400 for the rest (no `Upgrade: websocket`, no
+# `Connection: upgrade`, a key that is not 16 bytes in base 64). Fails
+# `invalid` for those, and as `io.write` fails. See also `is_upgrade`,
+# `connect`.
+function upgrade(@reader: io.Reader, r: http.Request, server: Server) -> Conn?
+    wanted = negotiating.Wanted(
+        enabled: server.compression.enabled,
+        level: server.compression.level,
+        min_bytes: server.compression.min_bytes,
+        server_no_context_takeover: server.compression.server_no_context_takeover,
+        client_no_context_takeover: server.compression.client_no_context_takeover,
+        server_max_window_bits: server.compression.server_max_window_bits,
+        client_max_window_bits: server.compression.client_max_window_bits
+    )
+    negotiating.checked(wanted)?
+
+    for h in server.headers
+        if opening.is_own_field(h.name)
+            return fail(code: INVALID, msg: f"the server's field `{h.name}`, which the opening handshake writes itself")
+
+    j = opening.judge(
+        r,
+        a: opening.Accepting(protocols: server.protocols, origins: server.origins, every_origin: server.every_origin, wanted: wanted)
+    )
+
+    if j.status != 101
+        http.write_answer(reader.stream, r: r, response: opening.refusal(j))?
+        return fail(code: INVALID, msg: j.why)
+    http.write_response(reader.stream, response: opening.switching(j, extra: server.headers), method: r.method)?
+    held = io.buffered(reader)
+    _ = io.skip(@reader, n: held.len())?
+    owned = reader.stream
+    reader.stream.handle @ nullptr
+    return ok(
+        Conn(stream: owned, role: .server, protocol: j.protocol, extensions: j.agreed.header, headers: r.headers, settings: server.settings, state: engine.start(client: false, agreed: j.agreed, level: wanted.level, min_bytes: wanted.min_bytes, held: held))
+    )
+
+# A connection over `stream`, whose opening handshake is done already or
+# was never needed: no subprotocol, no extension.
+#
+# - `stream`: the stream; the connection owns it and this place is emptied.
+# - `role`: which end this is, which says how frames are masked.
+# - `settings`: how much it reads.
+#
+# See also `upgrade`, `client_over`.
+function conn_of(@stream: io.Stream, role: Role, settings: Settings) -> Conn
+    owned = stream
+    stream.handle @ nullptr
+    return Conn(
+        stream: owned,
+        role: role,
+        protocol: "",
+        extensions: "",
+        headers: [],
+        settings: settings,
+        state: engine.start(client: role == .client, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+    )
+
+## Reading
+
+# The next message of data `c` receives, waiting for it: its fragments
+# joined, decompressed and checked.
+#
+# - `c`: the connection; it answers each ping with a pong, counts each pong,
+#   and answers a close with its own, then closes its stream.
+#
+# Fails `closed` once the connection is closed: by the peer's close (the
+# message says its code and reason, as `closing_of` does), by the end of the
+# stream with no close, or before; `invalid`, `not_text` and `limit` where
+# the peer breaks the RFC or the settings, after closing with 1002, 1007 or
+# 1009; and as `io.read` fails, `timeout` and `stopped` leaving the
+# connection as it was. See also `read_ready`, `read_part`.
+function read_message(@c: Conn) -> Message?
+    got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms), parts: false)?
+
+    if got.text
+        return ok(.text(text: bytes.to_text(got.data).must()))
+    return ok(.binary(data: got.data))
+
+# The messages of data `c` completes with what it holds and one read of its
+# stream: what a program serving many connections on one thread calls when
+# `poll` tells the stream is readable, so it never waits there.
+#
+# - `c`: the connection; it answers control frames as `read_message` does.
+#
+# Empty where no message is whole yet. The read is skipped where what `c`
+# holds completes a message already; it waits where nothing is ready, as
+# `io.read` does. Where the connection closes or fails after some messages,
+# they are answered, and the next call fails as `read_message` would have.
+# Fails as `read_message` does. See also `read_message`, `poll.wait`.
+function read_ready(@c: Conn) -> [Message]?
+    out: [Message] @= []
+
+    for got in reading.ready(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms))?
+        if got.text
+            out @ out.push(.text(text: bytes.to_text(got.data).must()))
+        else
+            out @ out.push(.binary(data: got.data))
+
+    return ok(out)
+
+# The next fragment of a message of data `c` receives, waiting for it: a
+# message read as it comes, never held whole.
+#
+# - `c`: the connection; it answers control frames as `read_message` does.
+#
+# Each part is one frame's, decompressed, at most `message_bytes`; a text's
+# parts are checked as UTF-8 together, and a part may end inside a character
+# the next completes. A message begun by `read_part` is ended by it before
+# `read_message` is called. Fails as `read_message` does, and `invalid`
+# where `read_message` began the message. See also `write_part`.
+function read_part(@c: Conn) -> Part?
+    got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms), parts: true)?
+
+    if got.text
+        return ok(Part(kind: .text, data: got.data, last: got.last))
+    return ok(Part(kind: .binary, data: got.data, last: got.last))
+
+# The JSON value the next message of data `c` receives holds, text or bytes.
+#
+# - `c`: the connection.
+#
+# Fails as `read_message` does, `not_text` where a message of bytes is not
+# UTF-8, and as `json.parse` fails. See also `write_json`.
+function read_json(@c: Conn) -> json.Value?
+    match read_message(@c)?
+        .text t   => return json.parse(t.text)
+        .binary b => return json.parse(bytes.to_text(b.data)?)
+
+## Writing
+
+# Writes `m` to `c`, compressed where the two ends agreed it and it is long
+# enough, in fragments where `c`'s settings say.
+#
+# - `c`: the connection; a client masks each frame with a key of the
+#   system's generator.
+# - `m`: the message.
+#
+# Fails `closed` where `c` is closed or sent its close; `invalid` while a
+# message written by `write_part` is not ended; and as `io.write` fails. See
+# also `write_text`, `write_binary`, `write_part`.
+function write_message(@c: Conn, m: Message) -> ()?
+    match m
+        .text t => return writing.message(
+            @c.stream,
+            @c.state,
+            b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+            text: true,
+            data: bytes.from_text(t.text)
+        )
+        .binary b => return writing.message(
+            @c.stream,
+            @c.state,
+            b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+            text: false,
+            data: b.data
+        )
+
+# Writes the text `text` to `c` as one message, as `write_message` does.
+#
+# - `c`: the connection.
+# - `text`: the text, "" for an empty message.
+#
+# Fails as `write_message` does. See also `write_binary`.
+function write_text(@c: Conn, text: str) -> ()?
+    return writing.message(
+        @c.stream,
+        @c.state,
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+        text: true,
+        data: bytes.from_text(text)
+    )
+
+# Writes the bytes `data` to `c` as one message, as `write_message` does.
+#
+# - `c`: the connection.
+# - `data`: the bytes, none for an empty message.
+#
+# Fails as `write_message` does. See also `write_text`.
+function write_binary(@c: Conn, data: [u8]) -> ()?
+    return writing.message(
+        @c.stream,
+        @c.state,
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+        text: false,
+        data: data
+    )
+
+# Writes `part` to `c` as the next frame of a message written as it is
+# made: the first part begins it, the one with `last` ends it.
+#
+# - `c`: the connection; between the parts it may write pings, pongs and
+#   its close, and no other message.
+# - `part`: the fragment; its `kind` is the first part's, and a text's parts
+#   are checked as UTF-8 together, so one may end inside a character.
+#
+# Compressed where the two ends agreed it, as one message: each part's
+# frame holds what the compressor gave out so far, which may be nothing.
+# Fails `invalid` where `part.kind` is not the first part's; `not_text`
+# where a text's parts are not UTF-8, checked before the frame is written,
+# the last part also ending its last character; `closed` as
+# `write_message` fails; and as `io.write` fails. See also `read_part`.
+function write_part(@c: Conn, part: Part) -> ()?
+    return writing.part(@c.stream, @c.state, text: part.kind == .text, data: part.data, last: part.last)
+
+# Writes `value` to `c` as a message of text, as `json.format` writes it.
+#
+# - `c`: the connection.
+# - `value`: the value.
+#
+# Fails as `json.format` and `write_message` fail. See also `read_json`.
+function write_json(@c: Conn, value: json.Value) -> ()?
+    return write_text(@c, text: json.format(value)?)
+
+# Writes a ping holding `data` to `c`; the peer answers with a pong holding
+# the same bytes, which a read counts (`pongs_of`).
+#
+# - `c`: the connection.
+# - `data`: 0 to 125 bytes.
+#
+# Fails `invalid` past 125 bytes, `closed` as `write_message` does, and as
+# `io.write` fails. See also `write_pong`, `pongs_of`.
+function write_ping(@c: Conn, data: [u8]) -> ()?
+    return writing.control(@c.stream, @c.state, opcode: frames.PING, data: data)
+
+# Writes a pong holding `data` to `c`, unasked: a heartbeat the peer does
+# not answer.
+#
+# - `c`: the connection.
+# - `data`: 0 to 125 bytes.
+#
+# Fails as `write_ping` does. A ping received is answered by the reads
+# already. See also `write_ping`.
+function write_pong(@c: Conn, data: [u8]) -> ()?
+    return writing.control(@c.stream, @c.state, opcode: frames.PONG, data: data)
+
+# A message framed once, to be written to many connections: what a server
+# sending one message to all its clients prepares.
+record Prepared
+    # The message.
+    message: Message
+    # Its frame as a server writes it with no compression and no fragments.
+    frame: [u8]
+
+# `m` framed once, as `write_prepared` writes it.
+#
+# - `m`: the message.
+#
+# It costs a copy of the message. See also `write_prepared`.
+function prepare(m: Message) -> Prepared
+    opcode: i64 @= frames.BINARY
+
+    if kind_of(m) == .text
+        opcode @ frames.TEXT
+    return Prepared(
+        message: m,
+        frame: frames.encode(opcode: opcode, fin: true, rsv1: false, payload: data_of(m), key: [])
+    )
+
+# Writes the prepared message `p` to `c`: its frame as it is where `c` is a
+# server writing neither compressed nor in fragments, else framed for `c`
+# as `write_message` frames it.
+#
+# - `c`: the connection.
+# - `p`: the message, as `prepare` made it.
+#
+# Fails as `write_message` does. See also `prepare`.
+function write_prepared(@c: Conn, p: Prepared) -> ()?
+    size = match p.message
+        .text t   => t.text.len()
+        .binary b => b.data.len()
+
+    framed_once = c.role == .server && !deflating.compressing(c.state.deflating, size: size)
+
+    if !framed_once || c.settings.fragment_bytes > 0 && size > c.settings.fragment_bytes
+        return write_message(@c, m: p.message)
+    writing.writable(c.state)?
+
+    if c.state.writing
+        return fail(code: INVALID, msg: "a message written while one written by parts is not ended")
+    return engine.put(@c.stream, @c.state, data: p.frame)
+
+## Closing
+
+# Writes `c`'s close frame and goes on: the closing handshake begun, which a
+# read ends when the peer's close comes. What a program serving many
+# connections on one thread calls, since it waits for nothing.
+#
+# - `c`: the connection; it writes no more messages after this.
+# - `code`: a code `is_close_code` accepts, or `CLOSE_NO_STATUS` for a close
+#   with no code.
+# - `reason`: the text after the code, at most 123 bytes; "" with
+#   `CLOSE_NO_STATUS`.
+#
+# Fails `invalid` for a code or a reason refused, `closed` where `c` sent
+# its close already or is closed, and as `io.write` fails. See also `close`.
+function write_close(@c: Conn, code: i64, reason: str) -> ()?
+    return writing.close_frame(@c.stream, @c.state, code: code, reason: reason)
+
+# Ends `c` by the closing handshake: its close written, the peer's awaited
+# for `close_wait_ms` (the messages before it read and dropped), then its
+# stream closed.
+#
+# - `c`: the connection, closed by the call whatever it answers.
+# - `code`: a code `is_close_code` accepts, or `CLOSE_NO_STATUS`.
+# - `reason`: at most 123 bytes; "" with `CLOSE_NO_STATUS`.
+#
+# A client waits as long again for the server to end the stream, as RFC 6455
+# asks. Fails `invalid` for a code or a reason refused, the connection left
+# as it was; `closed` where `c` is closed already; and as `io.write` fails,
+# the stream closed all the same. See also `write_close`, `drop`.
+function close(@c: Conn, code: i64, reason: str) -> ()?
+    return writing.close_all(
+        @c.stream,
+        @c.state,
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+        code: code,
+        reason: reason
+    )
+
+# Closes `c`'s stream at once, with no closing handshake: the peer sees the
+# connection end abnormally (1006).
+#
+# - `c`: the connection, closed by the call.
+#
+# Fails `closed` where `c` is closed already. See also `close`.
+function drop(@c: Conn) -> ()?
+    return writing.drop(@c.stream, @c.state)
+
+## Time
+
+# Makes every later and waiting read and write of `c`'s stream end by `ms`
+# milliseconds from now, failing `timeout`: a read so ended loses nothing,
+# and the next read goes on.
+#
+# - `c`: the connection, over a TCP connection or TLS.
+# - `ms`: milliseconds from now, 0 to take the deadline away.
+#
+# Fails `invalid` where `ms` is below 0, `closed` where `c` is closed, and
+# `unsupported` where its stream is neither a socket nor TLS: a pipe. See
+# also `net.set_deadline`, `tls.set_deadline`.
+function set_deadline(c: Conn, ms: i64) -> ()?
+    if c.state.ended
+        return fail(code: CLOSED, msg: engine.closed_message(c.state))
+    return engine.deadline(c.stream, ms: ms)
+
+## Tests
+
+test "close_text: every code of the registry, and those it names not"
+    assert close_text(1002).must() == "Protocol error" && close_text(1015).must() == "TLS handshake"
+    assert close_text(1004).must() == "Reserved" && close_text(1014).must() == "Bad Gateway"
+
+    match close_text(1016)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert close_text(3000).is_err() && close_text(999).is_err()
+
+test "conn_of: two ends of a pair, each reading what the other writes, and a close handshake begun by the client"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    assert io.is_closed(two.first.stream) && client.protocol == "" && client.extensions == ""
+    write_binary(@server, data: [1, 2, 3]).must()
+    assert data_of(read_message(@client).must()) == [1, 2, 3]
+    write_close(@client, code: CLOSE_GOING_AWAY, reason: "bye").must()
+    assert !is_open(client) && write_text(@client, text: "late").is_err()
+
+    match read_message(@server)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    assert closing_of(server).must().code == CLOSE_GOING_AWAY && closing_of(server).must().reason == "bye"
+    assert closing_of(server).must().sent == CLOSE_GOING_AWAY
+    assert read_message(@client).is_err() && closing_of(client).must().code == CLOSE_GOING_AWAY
+    assert drop(@client).is_err()
+
+test "upgrade: requests refused with 405, 400, 426 and 403, the stream left to the caller"
+    asked = [
+        "POST /chat HTTP/1.1\r\nHost: h\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nContent-Length: 0\r\n\r\n"
+        "GET /chat HTTP/1.1\r\nHost: h\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: c2hvcnQ=\r\nSec-WebSocket-Version: 13\r\n\r\n"
+        "GET /chat HTTP/1.1\r\nHost: h\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 8\r\n\r\n"
+        "GET /chat HTTP/1.1\r\nHost: h\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nOrigin: https://elsewhere.example\r\n\r\n"
+    ]
+    statuses = [405, 400, 426, 403]
+
+    for i in range(from: 0, to: 4)
+        two = net.pair(deadline_ms: 5_000).must()
+        io.write_text(two.first.stream, text: asked[i]).must()
+        reader @= io.reader(two.second.stream)
+        r = http.next_request(@reader, limits: http.default_limits()).must()
+
+        match upgrade(@reader, r: r, server: default_server())
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        answered @= io.reader(two.first.stream)
+        refused = http.read_response(@answered, method: "GET", limits: http.default_limits()).must()
+        assert refused.status == statuses[i] && refused.closing
+        assert statuses[i] != 426 || http.value_of(refused.headers, name: "Sec-WebSocket-Version").must() == "13"
+        io.close(@reader.stream).must()
+        io.close(@answered.stream).must()
+
+test "upgrade: an origin of its own host and one listed accepted, a subprotocol chosen in the server's order, compression agreed"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET / HTTP/1.1\r\nHost: chat.example.com\r\nUpgrade: websocket\r\nConnection: keep-alive, Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nOrigin: https://example.com\r\nSec-WebSocket-Protocol: v1, v2\r\nSec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n\r\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    r = http.next_request(@reader, limits: http.default_limits()).must()
+    s @= default_server()
+    s.origins @ ["example.com"]
+    s.protocols @ ["v2", "v1"]
+    s.compression.enabled @ true
+    s.headers @ [http.Header(name: "Set-Cookie", value: "id=1")]
+    server @= upgrade(@reader, r: r, server: s).must()
+    assert server.protocol == "v2" && server.extensions == "permessage-deflate" && io.is_closed(reader.stream)
+    assert http.value_of(server.headers, name: "Origin").must() == "https://example.com"
+    got = answer.read(two.first.stream, head_bytes: 4096, field_count: 20).must()
+    assert http.value_of(got.headers, name: "Sec-WebSocket-Protocol").must() == "v2"
+    assert http.value_of(got.headers, name: "Set-Cookie").must() == "id=1"
+    drop(@server).must()
+    io.close(@two.first.stream).must()
+
+test "connect: compression agreed with the server, a long text there and back"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} deflate")
+    port = fixture.port_told(told)
+    client @= default_client()
+    client.compression.enabled @ true
+    c @= connect(target: f"ws://127.0.0.1:{port}/z", client: client).must()
+    assert c.extensions == "permessage-deflate"
+    assert http.value_of(c.headers, name: "Sec-WebSocket-Extensions").must() == "permessage-deflate"
+    long = repeat("compress me, ", 1000)
+    write_text(@c, text: long).must()
+    write_text(@c, text: long).must()
+    assert data_of(read_message(@c).must()) == bytes.from_text(long)
+    assert data_of(read_message(@c).must()) == bytes.from_text(long)
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "echoed 2 /z"
+    net.close_udp(@told).must()
+
+test "connect: a redirect followed, then refused past the most allowed; a scheme other than ws and wss; nothing listening"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} moved")
+    port = fixture.port_told(told)
+    c @= connect(target: f"ws://127.0.0.1:{port}/first", client: default_client()).must()
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "echoed 0 /again"
+    again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} moved")
+    next_port = fixture.port_told(told)
+    once @= default_client()
+    once.redirects @ 0
+
+    match connect(target: f"ws://127.0.0.1:{next_port}/first", client: once)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    finish @= connect(target: f"ws://127.0.0.1:{next_port}/second", client: default_client()).must()
+    close(@finish, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@again) == "echoed 0 /second"
+    net.close_udp(@told).must()
+
+    match connect(target: "http://127.0.0.1/", client: default_client())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert connect(target: "ws://127.0.0.1:1/", client: default_client()).is_err()
+
+test "connect: wss, the server's certificate checked against the test authority, and refused by the system's own"
+    if tls.is_available()
+        told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+        server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
+        port = fixture.port_told(told)
+        client @= default_client()
+        client.tls @ tls.Client(roots: tls.TEST_ROOT, protocols: [])
+        c @= connect(target: f"wss://localhost:{port}/secure", client: client).must()
+        write_text(@c, text: "secret").must()
+        assert data_of(read_message(@c).must()) == bytes.from_text("secret")
+        set @= poll.make(1).must()
+
+        # macOS refuses a TLS stream (measured 2026-11-17); another system
+        # that takes one is asked nothing more here.
+        match poll.add_stream(set, s: c.stream, interest: .read)
+            .ok key => poll.remove(set, key: key).must()
+            .err e  => assert e.code == poll.UNSUPPORTED
+
+        poll.close(@set).must()
+        close(@c, code: CLOSE_NORMAL, reason: "").must()
+        assert threads.wait_text(@server) == "echoed 1 /secure"
+        again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
+        refused = connect(target: f"wss://localhost:{fixture.port_told(told)}/", client: default_client())
+
+        match refused
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        _ = threads.wait_text(@again)
+        net.close_udp(@told).must()
+
+test "write_message: 65,536 bytes in fragments of 1,300, and a message of 1 MiB, there and back (Autobahn 9, 10)"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain")
+    client @= default_client()
+    client.settings.fragment_bytes @ 1300
+    c @= connect(target: f"ws://127.0.0.1:{fixture.port_told(told)}/", client: client).must()
+    text = repeat("*", 65536)
+    write_message(@c, m: .text(text: text)).must()
+    assert data_of(read_message(@c).must()) == bytes.from_text(text)
+    big: [u8] @= []
+
+    for i in range(from: 0, to: 1_048_576)
+        big @ big.push(to_u8(i % 251).must())
+
+    write_binary(@c, data: big).must()
+    assert data_of(read_message(@c).must()) == big
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "echoed 2 /"
+    net.close_udp(@told).must()
+
+test "read_part and write_part: a message too long to hold read as it comes, compressed"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_part(@client, part: Part(kind: .binary, data: [1, 2], last: false)).must()
+    write_ping(@client, data: [9]).must()
+    write_part(@client, part: Part(kind: .binary, data: [3], last: true)).must()
+    first = read_part(@server).must()
+    second = read_part(@server).must()
+    assert first.kind == .binary && first.data == [1, 2] && !first.last && second.data == [3] && second.last
+    assert pongs_of(client) == 0
+    write_text(@client, text: "after").must()
+    assert data_of(read_message(@server).must()) == bytes.from_text("after") && pongs_of(client) == 0
+    write_text(@server, text: "pong first").must()
+    assert data_of(read_message(@client).must()) == bytes.from_text("pong first") && pongs_of(client) == 1
+    drop(@client).must()
+    drop(@server).must()
+
+test "set_deadline: a read ended by its deadline goes on after it, and a closed connection refused"
+    two @= net.pair(deadline_ms: 0).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    set_deadline(server, ms: 20).must()
+
+    match read_message(@server)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    assert is_open(server)
+    set_deadline(server, ms: 0).must()
+    write_text(@client, text: "late").must()
+    assert data_of(read_message(@server).must()) == bytes.from_text("late")
+    drop(@server).must()
+
+    match set_deadline(server, ms: 10)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    drop(@client).must()
+
+## Examples
+
+# The codes a close may carry, and those it may not.
+test "is_close_code: a normal close, a private code, and a code never sent"
+    assert is_close_code(CLOSE_NORMAL) && is_close_code(4000)
+    assert !is_close_code(CLOSE_NO_STATUS) && !is_close_code(CLOSE_ABNORMAL) && !is_close_code(2000)
+
+# The registry's name of a code.
+test "close_text: the name of a normal close"
+    assert close_text(CLOSE_NORMAL).must() == "Normal Closure"
+
+# A text message's bytes are its UTF-8.
+test "data_of: the bytes of a text and of a message of bytes"
+    assert data_of(.text(text: "hé")) == [104, 195, 169]
+    assert data_of(.binary(data: [0, 255])) == [0, 255]
+
+# The kind of a message, as a part names it.
+test "kind_of: a text and a message of bytes"
+    assert kind_of(.text(text: "")) == .text && kind_of(.binary(data: [])) == .binary
+
+# The usual settings, and a server that takes larger messages.
+test "default_settings: 1 MiB at most, and a larger message allowed"
+    s @= default_settings()
+    assert s.message_bytes == 1_048_576 && s.frame_bytes == 1_048_576 && s.close_wait_ms == 10_000
+    s.message_bytes @ 16_777_216
+    assert s.message_bytes > s.frame_bytes
+
+# Compression is off until a program turns it on.
+test "default_compression: off, and turned on with a narrower window"
+    z @= default_compression()
+    assert !z.enabled && z.level == 6
+    z.enabled @ true
+    z.client_max_window_bits @ 10
+    assert z.enabled
+
+# A client that offers a subprotocol and an origin.
+test "default_client: ten seconds, ten redirects, and a subprotocol offered"
+    c @= default_client()
+    assert c.deadline_ms == 10_000 && c.redirects == 10 && !c.compression.enabled
+    c.protocols @ ["chat"]
+    c.origin @ "https://example.com"
+    assert c.protocols.len() == 1
+
+# A server that speaks two subprotocols and takes one other origin.
+test "default_server: its own origin alone, then another accepted"
+    s @= default_server()
+    assert !s.every_origin && s.origins.len() == 0
+    s.protocols @ ["v2", "v1"]
+    s.origins @ ["https://example.com"]
+    assert s.protocols[0] == "v2"
+
+# A connection is open until a close is sent or received.
+test "is_open: open, then not once its close is written"
+    two @= net.pair(deadline_ms: 5_000).must()
+    c @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    assert is_open(c)
+    write_close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert !is_open(c)
+    drop(@c).must()
+    io.close(@two.second.stream).must()
+
+# What a connection's closing handshake carried, once it is over.
+test "closing_of: the peer's code and reason, after the handshake"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    assert closing_of(server).is_err()
+    write_close(@client, code: CLOSE_NORMAL, reason: "done").must()
+    assert read_message(@server).is_err()
+    end = closing_of(server).must()
+    assert end.code == CLOSE_NORMAL && end.reason == "done" && end.sent == CLOSE_NORMAL
+    assert read_message(@client).is_err()
+
+# A ping answered by the reads, and its pong counted on the next read.
+test "pongs_of: one pong, after a ping and a read"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_ping(@client, data: [1]).must()
+    write_text(@client, text: "x").must()
+    _ = read_message(@server).must()
+    write_text(@server, text: "y").must()
+    _ = read_message(@client).must()
+    assert pongs_of(client) == 1
+    drop(@client).must()
+    drop(@server).must()
+
+# The bytes of the pong that answered a ping.
+test "last_pong_of: the bytes a ping carried, back"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_ping(@client, data: [4, 2]).must()
+    write_text(@client, text: "x").must()
+    _ = read_message(@server).must()
+    write_text(@server, text: "y").must()
+    _ = read_message(@client).must()
+    assert last_pong_of(client) == [4, 2]
+    drop(@client).must()
+    drop(@server).must()
+
+# A client connected to a server on a thread of this process, a text there
+# and back, and the closing handshake.
+test "connect: a text there and back, then closed"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain")
+    port = fixture.port_told(told)
+    c @= connect(target: f"ws://127.0.0.1:{port}/chat", client: default_client()).must()
+    write_text(@c, text: "hello").must()
+
+    match read_message(@c).must()
+        .text t   => assert t.text == "hello"
+        .binary _ => assert false
+
+    close(@c, code: CLOSE_NORMAL, reason: "done").must()
+    assert threads.wait_text(@server) == "echoed 1 /chat"
+    net.close_udp(@told).must()
+
+# The opening handshake over a TCP connection the program made itself, a
+# subprotocol offered and chosen.
+test "client_over: over a connection of net, the subprotocol chat chosen"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} chat")
+    port = fixture.port_told(told)
+    tcp @= net.connect(host: "127.0.0.1", port: port, deadline_ms: 5_000).must()
+    asking @= default_client()
+    asking.protocols @ ["superchat", "chat"]
+    c @= client_over(@tcp.stream, target: "ws://127.0.0.1/", client: asking).must()
+    assert c.protocol == "chat" && io.is_closed(tcp.stream)
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "echoed 0 /"
+    net.close_udp(@told).must()
+
+# A key is sixteen random bytes, written in base 64.
+test "new_key: twenty-four characters, a new one each time"
+    key = new_key().must()
+    assert key.len() == 24 && key != new_key().must()
+
+# RFC 6455's own example of a key and its accept.
+test "accept_key: the RFC's sample nonce"
+    assert accept_key("dGhlIHNhbXBsZSBub25jZQ==") == "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+
+# A router asks whether a request wants a WebSocket before it upgrades it.
+test "is_upgrade: a GET that asks for websocket, and a plain GET"
+    plain = http.request(method: http.METHOD_GET, target: "/chat").must()
+    asking @= plain
+    asking.headers @ [
+        http.Header(name: "Connection", value: "Upgrade")
+        http.Header(name: "Upgrade", value: "websocket")
+    ]
+    assert is_upgrade(asking) && !is_upgrade(plain)
+
+# The subprotocols a request offers, in its order.
+test "protocols_of: two fields, one holding a list"
+    r @= http.request(method: http.METHOD_GET, target: "/").must()
+    r.headers @ [
+        http.Header(name: "Sec-WebSocket-Protocol", value: "v2, v1")
+        http.Header(name: "Sec-WebSocket-Protocol", value: "json")
+    ]
+    assert protocols_of(r) == ["v2", "v1", "json"]
+
+# A request read and routed by the program, turned into a connection: its
+# 101 written, then a message read from the client.
+test "upgrade: a request read by http, answered 101, then a message read"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /chat HTTP/1.1\r\nHost: example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    r = http.next_request(@reader, limits: http.default_limits()).must()
+    assert is_upgrade(r)
+    server @= upgrade(@reader, r: r, server: default_server()).must()
+    answered = answer.read(two.first.stream, head_bytes: 4096, field_count: 10).must()
+    assert answered.status == 101
+    assert http.value_of(answered.headers, name: "Sec-WebSocket-Accept").must() == "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    write_text(@client, text: "hi").must()
+    assert data_of(read_message(@server).must()) == [104, 105]
+    drop(@client).must()
+    drop(@server).must()
+
+# The two ends of a pair of sockets made two connections, with no handshake.
+test "conn_of: a server and a client over a pair"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_text(@client, text: "ok").must()
+    assert data_of(read_message(@server).must()) == bytes.from_text("ok")
+    drop(@client).must()
+    drop(@server).must()
+
+# The next message, whichever its kind.
+test "read_message: a text and a message of bytes"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_text(@client, text: "hi").must()
+    write_binary(@client, data: [7]).must()
+
+    match read_message(@server).must()
+        .text t   => assert t.text == "hi"
+        .binary _ => assert false
+
+    match read_message(@server).must()
+        .text _   => assert false
+        .binary b => assert b.data == [7]
+
+    drop(@client).must()
+    drop(@server).must()
+
+# One thread serving three clients through `poll`: the listener and each
+# connection waited on together, each request read and upgraded as it
+# comes, each message echoed as `read_ready` completes it, and each
+# connection let go once it closes.
+test "read_ready: one thread serves three clients through poll"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    clients @= threads.spawn_text(body: fixture.three_clients, arg: to_str(l.address.port))
+    set @= poll.make(8).must()
+    listening = poll.add_listener(set, l: l).must()
+    conns: [Conn] @= []
+    which: {i64: i64} @= {}
+    ended: i64 @= 0
+
+    while ended < 3
+        for e in poll.wait(set, limit: time.nanoseconds(10_000_000_000)).must()
+            if e.key == listening
+                tcp = net.accept(l, deadline_ms: 5_000).must()
+                reader @= io.reader(tcp.stream)
+                r = http.next_request(@reader, limits: http.default_limits()).must()
+                c = upgrade(@reader, r: r, server: default_server()).must()
+                net.set_deadline(tcp, ms: 0).must()
+                which[poll.add_stream(set, s: c.stream, interest: .read).must()] @ conns.len()
+                conns @ conns.push(c)
+            else
+                i = which[e.key].must()
+
+                match read_ready(@conns[i])
+                    .ok got =>
+                        for m in got
+                            write_message(@conns[i], m: m).must()
+                    .err _ => _ = 0
+
+                if !is_open(conns[i])
+                    poll.remove(set, key: e.key).must()
+                    ended @ ended + 1
+
+    assert threads.wait_text(@clients) == "hello 0, hello 1, hello 2"
+    poll.close(@set).must()
+    net.close_listener(@l).must()
+
+# A message of bytes read as it comes, part by part.
+test "read_part: a message in two parts"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_part(@client, part: Part(kind: .text, data: [104], last: false)).must()
+    write_part(@client, part: Part(kind: .text, data: [105], last: true)).must()
+    assert !read_part(@server).must().last && read_part(@server).must().data == [105]
+    drop(@client).must()
+    drop(@server).must()
+
+# A JSON value read from a text.
+test "read_json: an object sent as text"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_text(@client, text: "{\"n\": 1}").must()
+    assert json.format(read_json(@server).must()).must() == "{\"n\":1}"
+    drop(@client).must()
+    drop(@server).must()
+
+# A message echoed back as it came, whatever its kind.
+test "write_message: a message read, written back"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_binary(@client, data: [1, 2]).must()
+    write_message(@server, m: read_message(@server).must()).must()
+    assert data_of(read_message(@client).must()) == [1, 2]
+    drop(@client).must()
+    drop(@server).must()
+
+# A text written as one message.
+test "write_text: a greeting"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_text(@server, text: "welcome").must()
+    assert data_of(read_message(@client).must()) == bytes.from_text("welcome")
+    drop(@client).must()
+    drop(@server).must()
+
+# Bytes written as one message.
+test "write_binary: three bytes"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_binary(@client, data: [0, 1, 255]).must()
+    assert data_of(read_message(@server).must()) == [0, 1, 255]
+    drop(@client).must()
+    drop(@server).must()
+
+# A text written in parts as it is made, read whole.
+test "write_part: a text in two parts, read as one message"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_part(@server, part: Part(kind: .text, data: bytes.from_text("hel"), last: false)).must()
+    write_part(@server, part: Part(kind: .text, data: bytes.from_text("lo"), last: true)).must()
+    assert data_of(read_message(@client).must()) == bytes.from_text("hello")
+    drop(@client).must()
+    drop(@server).must()
+
+# A JSON value written as a text.
+test "write_json: an array"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_json(@server, value: json.parse("[1, 2]").must()).must()
+    assert data_of(read_message(@client).must()) == bytes.from_text("[1,2]")
+    drop(@client).must()
+    drop(@server).must()
+
+# A ping, answered by the peer's reads.
+test "write_ping: answered with the same bytes"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_ping(@server, data: [1, 2, 3]).must()
+    write_text(@server, text: "x").must()
+    _ = read_message(@client).must()
+    write_text(@client, text: "y").must()
+    _ = read_message(@server).must()
+    assert last_pong_of(server) == [1, 2, 3]
+    drop(@client).must()
+    drop(@server).must()
+
+# A pong written unasked, counted by the peer.
+test "write_pong: a heartbeat"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_pong(@client, data: []).must()
+    write_text(@client, text: "x").must()
+    _ = read_message(@server).must()
+    assert pongs_of(server) == 1
+    drop(@client).must()
+    drop(@server).must()
+
+# A message framed once, for every client of a server.
+test "prepare: the frame of a short text"
+    p = prepare(.text(text: "hi"))
+    assert p.frame == [129, 2, 104, 105]
+
+# One prepared message written to two clients.
+test "write_prepared: the same frame to two clients"
+    p = prepare(.text(text: "news"))
+    first @= net.pair(deadline_ms: 5_000).must()
+    second @= net.pair(deadline_ms: 5_000).must()
+    a @= conn_of(@first.second.stream, role: .server, settings: default_settings())
+    b @= conn_of(@second.second.stream, role: .server, settings: default_settings())
+    write_prepared(@a, p: p).must()
+    write_prepared(@b, p: p).must()
+    x @= conn_of(@first.first.stream, role: .client, settings: default_settings())
+    y @= conn_of(@second.first.stream, role: .client, settings: default_settings())
+    assert data_of(read_message(@x).must()) == bytes.from_text("news") && data_of(read_message(@y).must()) == bytes.from_text("news")
+    drop(@a).must()
+    drop(@b).must()
+    drop(@x).must()
+    drop(@y).must()
+
+# A close written by a server serving many clients, which goes on reading
+# until the client's close comes.
+test "write_close: the handshake begun, then ended by the next read"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    write_close(@server, code: CLOSE_GOING_AWAY, reason: "restart").must()
+    assert read_message(@client).is_err() && closing_of(client).must().reason == "restart"
+    assert read_message(@server).is_err() && closing_of(server).must().code == CLOSE_GOING_AWAY
+
+# The closing handshake whole: the client's close, the server's answer, the
+# stream closed.
+test "close: a client ends its connection"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain")
+    c @= connect(target: f"ws://127.0.0.1:{fixture.port_told(told)}/", client: default_client()).must()
+    close(@c, code: CLOSE_NORMAL, reason: "bye").must()
+    assert !is_open(c) && closing_of(c).must().code == CLOSE_NORMAL
+    assert threads.wait_text(@server) == "echoed 0 /"
+    net.close_udp(@told).must()
+
+# A connection ended at once, which the peer reads as abnormal.
+test "drop: the stream closed with no handshake"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    drop(@client).must()
+    assert read_message(@server).is_err() && closing_of(server).must().code == CLOSE_ABNORMAL
+
+# A read that waits at most 50 milliseconds.
+test "set_deadline: a read that times out"
+    two @= net.pair(deadline_ms: 0).must()
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    set_deadline(client, ms: 50).must()
+
+    match read_message(@client)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    drop(@client).must()
+    io.close(@two.second.stream).must()

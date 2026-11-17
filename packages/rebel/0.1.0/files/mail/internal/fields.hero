@@ -1,0 +1,325 @@
+# A message's header read and written: the fields up to the first empty
+# line, each unfolded, a line that is no field ending the header as Python
+# reads it; a field looked up by its name in any case; a field folded before
+# a space so its lines keep to a length.
+
+use bytes
+use mail/internal/charsets
+use strings
+
+# The code of a field a message may not hold.
+constant INVALID: str
+    "invalid"
+
+# A header field: its name as written and its value unfolded.
+record Field
+    # The name, its case kept.
+    name: str
+    # The value, unfolded.
+    value: str
+
+# A header read: its fields, where the body begins, and what was repaired.
+record Head
+    # The fields, in order.
+    fields: [Field]
+    # The byte the body begins at.
+    body_at: i64
+    # What was wrong and read anyway.
+    defects: [str]
+
+# The header that begins at `from` in `data` and ends before `to` at the
+# latest.
+function read(data: [u8], from: i64, to: i64) -> Head
+    out: [Field] @= []
+    defects: [str] @= []
+    name: str @= ""
+    value: [u8] @= []
+    open: bool @= false
+    at: i64 @= from
+    line_number: i64 @= 0
+
+    while at < to
+        end: i64 @= at
+
+        while end < to && data[end] != '\n'
+            end @ end + 1
+
+        next = if end < to
+            end + 1
+        else
+            end
+        content_end: i64 @= end
+
+        if content_end > at && data[content_end - 1] == '\r'
+            content_end @ content_end - 1
+        line_number @ line_number + 1
+
+        if content_end == at
+            if open
+                out @ out.push(finished(name: name, value: value))
+            return Head(fields: out, body_at: next, defects: defects)
+        lead = data[at]
+
+        if lead == ' ' || lead == '\t'
+            if open
+                bytes.push_all(to: @value, from: data.slice(from: at, to: content_end))
+            else
+                defects @ defects.push(
+                    f"line {line_number} continues a field where none stands before it, and is dropped"
+                )
+            at @ next
+            continue
+        colon = colon_at(data: data, from: at, to: content_end)
+
+        if colon < 0
+            if line_number == 1 && starts_with_from(data: data, at: at, to: content_end)
+                at @ next
+                continue
+            defects @ defects.push(
+                f"line {line_number} holds no field, so the header ends before it and the body begins there"
+            )
+
+            if open
+                out @ out.push(finished(name: name, value: value))
+            return Head(fields: out, body_at: at, defects: defects)
+
+        if open
+            out @ out.push(finished(name: name, value: value))
+        name_end: i64 @= colon
+
+        while name_end > at && (data[name_end - 1] == ' ' || data[name_end - 1] == '\t')
+            name_end @ name_end - 1
+
+        name @ bytes.to_text(data.slice(from: at, to: name_end)).must()
+        value_start: i64 @= colon + 1
+
+        while value_start < content_end && (data[value_start] == ' ' || data[value_start] == '\t')
+            value_start @ value_start + 1
+
+        value @ data.slice(from: value_start, to: content_end)
+        open @ true
+        at @ next
+
+    if open
+        out @ out.push(finished(name: name, value: value))
+    return Head(fields: out, body_at: to, defects: defects)
+
+# The field of `name` and the bytes of `value`, its spaces at the end taken
+# off and read as text.
+function finished(name: str, value: [u8]) -> Field
+    end: i64 @= value.len()
+
+    while end > 0 && (value[end - 1] == ' ' || value[end - 1] == '\t')
+        end @ end - 1
+
+    return Field(name: name, value: charsets.header_text(value.slice(from: 0, to: end)))
+
+# Where the colon of a field line stands, after a name of printable ASCII and
+# the spaces an obsolete field puts before it; -1 where the line is no field.
+function colon_at(data: [u8], from: i64, to: i64) -> i64
+    at: i64 @= from
+    spaces: bool @= false
+
+    while at < to
+        b = data[at]
+
+        if b == ':'
+            if at == from
+                return -1
+            return at
+
+        if b == ' ' || b == '\t'
+            spaces @ true
+        else if b < 33 || b > 126 || spaces
+            return -1
+        at @ at + 1
+
+    return -1
+
+# Whether the line from `at` to `to` opens with `From `, mbox's envelope
+# line.
+function starts_with_from(data: [u8], at: i64, to: i64) -> bool
+    return to - at >= 5 && bytes.has_prefix_at(s: data, prefix: bytes.from_text("From "), at: at)
+
+# `value` with every line break a space or a tab follows taken out.
+function unfold(value: str) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < value.len()
+        b = value[at]
+
+        if b == '\r' && at + 2 < value.len() && value[at + 1] == '\n' && is_blank(value[at + 2])
+            at @ at + 2
+        else if b == '\n' && at + 1 < value.len() && is_blank(value[at + 1])
+            at @ at + 1
+        else
+            out @ out.push(b)
+            at @ at + 1
+
+    return bytes.to_text(out).must()
+
+# Whether `b` is a space or a tab.
+function is_blank(b: u8) -> bool
+    return b == ' ' || b == '\t'
+
+## Looking up
+
+# The value of the first field of `fields` named `name`, in any case.
+function first(fields: [Field], name: str) -> str?
+    for f in fields
+        if strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            return ok(f.value)
+
+    return fail(code: "not_found", msg: f"no field named \"{name}\" among the {fields.len()} of the header")
+
+# The values of every field of `fields` named `name`.
+function all_named(fields: [Field], name: str) -> [str]
+    out: [str] @= []
+
+    for f in fields
+        if strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            out @ out.push(f.value)
+
+    return out
+
+# `fields` with the first named `name` holding `value` and any other of that
+# name gone, or one added at the end.
+function set(fields: [Field], name: str, value: str) -> [Field]
+    out: [Field] @= []
+    done: bool @= false
+
+    for f in fields
+        if strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            if !done
+                out @ out.push(Field(name: f.name, value: value))
+                done @ true
+        else
+            out @ out.push(f)
+
+    if !done
+        out @ out.push(Field(name: name, value: value))
+    return out
+
+# `fields` without any named `name`.
+function removed(fields: [Field], name: str) -> [Field]
+    out: [Field] @= []
+
+    for f in fields
+        if !strings.equals_ignoring_case_ascii(a: f.name, b: name)
+            out @ out.push(f)
+
+    return out
+
+## Writing
+
+# Whether `name` may name a field: printable ASCII but `:`, one byte or more.
+function is_name(name: str) -> bool
+    if name.len() == 0
+        return false
+    at: i64 @= 0
+
+    while at < name.len()
+        b = name[at]
+
+        if b < 33 || b > 126 || b == ':'
+            return false
+        at @ at + 1
+
+    return true
+
+# `name: value` folded before spaces so a line keeps within `limit` bytes
+# where it can, each line ended by `line_end`; `limit` 0 never folds. Fails
+# `invalid` where the name may name no field or the value holds a line break.
+function folded(name: str, value: str, limit: i64, line_end: str) -> str?
+    if !is_name(name)
+        return fail(code: INVALID, msg: f"\"{name}\" is no field name: one byte or more of printable ASCII but \":\"")
+
+    if strings.contains_any(s: value, set: "\r\n")
+        return fail(
+            code: INVALID,
+            msg: f"the value of the field \"{name}\" holds a line break, which would begin a field of its own"
+        )
+    line = name + ": " + value
+
+    if limit <= 0 || line.len() <= limit
+        return ok(line + line_end)
+    out: [str] @= []
+    current_start: i64 @= 0
+    last_space: i64 @= -1
+    at: i64 @= name.len() + 2
+
+    while at < line.len()
+        b = line[at]
+
+        if (b == ' ' || b == '\t') && at > current_start
+            if at - current_start > limit && last_space > current_start
+                out @ out.push(line.slice(from: current_start, to: last_space))
+                out @ out.push(line_end)
+                current_start @ last_space
+            last_space @ at
+        at @ at + 1
+
+    if line.len() - current_start > limit && last_space > current_start
+        out @ out.push(line.slice(from: current_start, to: last_space))
+        out @ out.push(line_end)
+        current_start @ last_space
+    out @ out.push(line.slice(from: current_start, to: line.len()))
+    out @ out.push(line_end)
+    return ok(out.join(""))
+
+## Tests
+
+test "read: fields in order, folded lines unfolded, the body's first byte, CR LF and LF"
+    data = bytes.from_text("Subject: a\r\n long one\r\nTo: x@y\r\n\r\nbody")
+    head = read(data: data, from: 0, to: data.len())
+    assert head.fields.len() == 2 && head.fields[0].name == "Subject" && head.fields[0].value == "a long one"
+    assert head.fields[1].value == "x@y" && head.body_at == 34 && head.defects.len() == 0
+    lf = bytes.from_text("A: 1\nB:2\n\nrest")
+    head2 = read(data: lf, from: 0, to: lf.len())
+    assert head2.fields[1].value == "2" && head2.body_at == 10
+
+test "read: empty, no body, a value's spaces trimmed, an obsolete space before the colon"
+    assert read(data: [], from: 0, to: 0).fields.len() == 0
+    data = bytes.from_text("A:  x  \r\nB : y")
+    head = read(data: data, from: 0, to: data.len())
+    assert head.fields[0].value == "x" && head.fields[1].name == "B" && head.fields[1].value == "y" && head.body_at == data.len()
+
+test "read: a line that is no field, a first line continuing nothing, mbox's From line, bytes not UTF-8"
+    data = bytes.from_text("A: 1\r\nthis is no field\r\nmore")
+    head = read(data: data, from: 0, to: data.len())
+    assert head.fields.len() == 1 && head.body_at == 6 && head.defects.len() == 1
+    cont = bytes.from_text(" lost\r\nA: 1\r\n\r\n")
+    head2 = read(data: cont, from: 0, to: cont.len())
+    assert head2.fields.len() == 1 && head2.defects.len() == 1
+    mbox = bytes.from_text("From ana@x Mon Jan  2 15:04:05 2006\r\nA: 1\r\n\r\n")
+    assert read(data: mbox, from: 0, to: mbox.len()).fields.len() == 1
+    latin: [u8] = [65, 58, 32, 233]
+    assert read(data: latin, from: 0, to: latin.len()).fields[0].value == "é"
+
+test "unfold: CR LF and LF before a space, a break before no space kept, empty"
+    assert unfold("a\r\n b\n\tc") == "a b\tc" && unfold("a\r\nb") == "a\r\nb" && unfold("") == ""
+
+test "first, all_named, set, removed: case ignored, order kept"
+    fields = [Field(name: "To", value: "a"), Field(name: "Subject", value: "s"), Field(name: "to", value: "b")]
+    assert first(fields, name: "TO").must() == "a" && first(fields, name: "Cc").is_err()
+    assert all_named(fields, name: "to") == ["a", "b"] && all_named(fields, name: "x").len() == 0
+    replaced = set(fields, name: "TO", value: "c")
+    assert replaced.len() == 2 && replaced[0] == Field(name: "To", value: "c") && replaced[1].name == "Subject"
+    assert set(fields, name: "Date", value: "d")[3] == Field(name: "Date", value: "d")
+    assert removed(fields, name: "To") == [Field(name: "Subject", value: "s")]
+
+test "fold: short, at spaces, a word longer than the line, no fold, refusals"
+    assert folded(name: "Subject", value: "hi", limit: 78, line_end: "\r\n").must() == "Subject: hi\r\n"
+    words = repeat("word ", 30)
+    wrapped = folded(name: "Subject", value: strings.trim(words), limit: 78, line_end: "\r\n").must()
+
+    for line in strings.split(s: strings.trim_suffix(s: wrapped, suffix: "\r\n"), sep: "\r\n")
+        assert line.len() <= 78
+
+    assert unfold(strings.trim_suffix(s: wrapped, suffix: "\r\n")) == "Subject: " + strings.trim(words)
+    long = repeat("x", 100)
+    assert folded(name: "X", value: long + " y", limit: 78, line_end: "\n").must() == "X: " + long + "\n y\n"
+    assert folded(name: "X", value: words, limit: 0, line_end: "\n").must() == "X: " + words + "\n"
+    assert folded(name: "", value: "a", limit: 78, line_end: "\n").is_err() && folded(name: "A B", value: "a", limit: 78, line_end: "\n").is_err()
+    assert folded(name: "A", value: "a\r\nB: injected", limit: 78, line_end: "\n").is_err()

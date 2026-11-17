@@ -1,0 +1,391 @@
+# The state of a connection between two calls, and the few moves every
+# other module makes on it: a frame written, more bytes read into it, the
+# stream ended, and the connection failed as RFC 6455 § 7.1.7 fails it.
+# Reading frames is `stepping`'s, the calls a program makes `reading`'s and
+# `writing`'s.
+
+use io
+use net
+use os
+use tls
+use websocket/internal/deflating
+use websocket/internal/frames
+use websocket/internal/negotiating
+
+# What a stream that takes no deadline fails with.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A frame, a handshake or an argument the RFC refuses.
+constant INVALID: str
+    "invalid"
+
+# A frame or a message past its bound.
+constant LIMIT: str
+    "limit"
+
+# Bytes that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The connection is closed.
+constant CLOSED: str
+    "closed"
+
+# A deadline passed.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# The most bytes read from the stream at once.
+constant READ_MOST: i64
+    65536
+
+# The face's `Settings`, as the modules here read them.
+record Bounds
+    # The most bytes of a frame's payload read.
+    frame_bytes: i64
+    # The most bytes of a message joined, or of a part decompressed.
+    message_bytes: i64
+    # The most bytes of payload of a frame written, 0 for no limit.
+    fragment_bytes: i64
+    # The milliseconds a close is awaited, 0 for no limit.
+    close_wait_ms: i64
+
+# What a connection holds between two calls.
+record State
+    # Whether this end is the client, which masks what it writes.
+    client: bool
+    # The bytes read from the stream; those before `at` are framed already.
+    inbox: [u8]
+    # Where the next frame begins in `inbox`.
+    at: i64
+    # Whether a message of data is begun and not ended.
+    reading: bool
+    # Whether that message is a text.
+    reading_text: bool
+    # Whether it is compressed.
+    reading_compressed: bool
+    # Whether `read_part` began it, which hands it out frame by frame.
+    by_parts: bool
+    # Its bytes so far, decompressed, where it is joined.
+    joined: [u8]
+    # The unfinished last character of its text so far.
+    carry: [u8]
+    # Whether a message written by parts is begun and not ended.
+    writing: bool
+    # Whether that message is a text.
+    writing_text: bool
+    # Whether it is compressed.
+    writing_compressed: bool
+    # The unfinished last character of its text so far.
+    write_carry: [u8]
+    # Whether this end wrote its close.
+    close_sent: bool
+    # The code of that close, 1005 for none, 0 before it.
+    sent_code: i64
+    # Whether the peer's close came.
+    close_got: bool
+    # The code of the peer's close, 1005 where it had none, 1006 before it.
+    got_code: i64
+    # The reason of the peer's close.
+    got_reason: str
+    # Whether the stream is closed: by the closing handshake, a drop, a
+    # failure or the peer ending it.
+    ended: bool
+    # The code the next read fails with, "" for none.
+    kept_code: str
+    # Its message.
+    kept_msg: str
+    # How many pongs came.
+    pongs: i64
+    # The bytes of the last pong.
+    last_pong: [u8]
+    # The compression, as agreed.
+    deflating: deflating.Deflating
+
+# A connection's state as its opening handshake left it.
+#
+# - `client`: whether this end is the client.
+# - `agreed`: the compression agreed.
+# - `level`: the level this end compresses with.
+# - `min_bytes`: the fewest bytes of a message it compresses.
+# - `held`: the bytes read past the handshake, the first frames' beginning.
+function start(client: bool, agreed: negotiating.Agreed, level: i64, min_bytes: i64, held: [u8]) -> State
+    return State(
+        client: client,
+        inbox: held,
+        at: 0,
+        reading: false,
+        reading_text: false,
+        reading_compressed: false,
+        by_parts: false,
+        joined: [],
+        carry: [],
+        writing: false,
+        writing_text: false,
+        writing_compressed: false,
+        write_carry: [],
+        close_sent: false,
+        sent_code: 0,
+        close_got: false,
+        got_code: 1006,
+        got_reason: "",
+        ended: false,
+        kept_code: "",
+        kept_msg: "",
+        pongs: 0,
+        last_pong: [],
+        deflating: deflating.start(agreed, level: level, min_bytes: min_bytes)
+    )
+
+# Whether the state is open: no close sent or received, the stream not
+# ended.
+function is_open(s: State lent) -> bool
+    return !s.ended && !s.close_sent && !s.close_got
+
+# What a read says of a connection that is closed: the peer's close, or its
+# absence.
+function closed_message(s: State lent) -> str
+    if s.close_got && s.got_code == 1005
+        return "the connection is closed: the peer's close carried no code"
+
+    if s.close_got
+        return f"the connection is closed: the peer's close carried {s.got_code} \"{s.got_reason}\""
+
+    if s.close_sent
+        return f"the connection is closed: this end sent {s.sent_code} and no close came back"
+    return "the connection is closed: the stream ended with no close frame"
+
+# Writes a frame of `opcode` holding `payload` to `stream`, masked with a
+# new key where this end is the client.
+#
+# - `stream`: the connection's stream.
+# - `s`: the state; a write that fails other than by a deadline or a stop
+#   ends the stream.
+# - `fin`, `rsv1`: the frame's first bits.
+function send(@stream: io.Stream, @s: State, opcode: i64, fin: bool, rsv1: bool, payload: [u8] lent) -> ()?
+    key = key_for(s)?
+    data = frames.encode(opcode: opcode, fin: fin, rsv1: rsv1, payload: payload, key: key)
+    return put(@stream, @s, data: data)
+
+# A masking key for the next frame: four bytes of the system's generator
+# for keys where this end is the client, none where it is the server.
+#
+# Fails as `os.random_bytes` does.
+function key_for(s: State lent) -> [u8]?
+    if s.client
+        return os.random_bytes(4)
+    return ok([])
+
+# Writes `data`, frames already made, to `stream`.
+function put(@stream: io.Stream, @s: State, data: [u8] lent) -> ()?
+    match io.write(stream, data: data)
+        .ok _ => return ok()
+        .err e =>
+            if e.code != TIMEOUT && e.code != STOPPED
+                end_stream(@stream, @s)
+            return fail(code: e.code, msg: e.msg)
+
+# Closes the stream once, whatever the system answers: the connection's
+# last act.
+function end_stream(@stream: io.Stream, @s: State)
+    if !s.ended
+        s.ended @ true
+
+        if !io.is_closed(stream)
+            match io.close(@stream)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+# Fails the connection as RFC 6455 § 7.1.7 asks: a close of `close` written
+# where none was, then the stream closed; and answers the failure.
+#
+# - `stream`, `s`: the connection.
+# - `close`: the close code sent, 1002, 1007 or 1009.
+# - `code`, `msg`: the failure answered, which the reads after it answer as
+#   `closed`.
+function failing<T>(@stream: io.Stream, @s: State, close: i64, code: str, msg: str) -> T?
+    if !s.close_sent && !s.ended
+        s.close_sent @ true
+        s.sent_code @ close
+        data = frames.close_payload(code: close, reason: "")
+        key: [u8] @= []
+
+        if s.client
+            key @ os.random_bytes(4).default([0, 0, 0, 0])
+
+        match io.write(stream, data: frames.encode(opcode: frames.CLOSE, fin: true, rsv1: false, payload: data, key: key))
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+    end_stream(@stream, @s)
+    s.kept_code @ CLOSED
+    s.kept_msg @ "the connection was failed: " + msg
+    return fail(code: code, msg: msg)
+
+# Reads once more from `stream` into the state's inbox, waiting for a byte.
+#
+# - `stream`, `s`: the connection; framed bytes are dropped first.
+#
+# Fails `closed` where the stream ends, which ends the connection with no
+# close (1006); and as `io.read` fails, a deadline or a stop leaving the
+# connection as it was.
+function fill(@stream: io.Stream, @s: State) -> ()?
+    if s.at == s.inbox.len()
+        s.inbox @ []
+        s.at @ 0
+    else if s.at > 0
+        s.inbox @ s.inbox.slice(from: s.at, to: s.inbox.len())
+        s.at @ 0
+
+    got = match io.read(stream, most: READ_MOST)
+        .ok bytes => bytes
+        .err e =>
+            if e.code != TIMEOUT && e.code != STOPPED
+                end_stream(@stream, @s)
+                s.kept_code @ CLOSED
+                s.kept_msg @ "the connection's stream failed: " + e.msg
+            return fail(code: e.code, msg: e.msg)
+
+    if got.len() == 0
+        end_stream(@stream, @s)
+        return fail(code: CLOSED, msg: closed_message(s))
+    add_onto(out: @s.inbox, data: got)
+    return ok()
+
+# The failure a read answers on a connection that cannot read: the one kept,
+# or the close.
+function refused<T>(s: State lent) -> T?
+    if s.kept_code != ""
+        return fail(code: s.kept_code, msg: s.kept_msg)
+    return fail(code: CLOSED, msg: closed_message(s))
+
+# Whether a read can go on.
+function can_read(s: State lent) -> bool
+    return s.kept_code == "" && !s.ended
+
+# Places a deadline `ms` milliseconds from now on every read and write of
+# `stream`, as `tls.set_deadline` places one on a TLS stream and
+# `net.set_deadline` on a socket's.
+#
+# - `stream`: the stream.
+# - `ms`: 0 or more, 0 taking the deadline away.
+#
+# Fails `invalid` where `ms` is below 0, `closed` where `stream` is closed,
+# `unsupported` where it is neither TLS nor a socket.
+function deadline(stream: io.Stream, ms: i64) -> ()?
+    if ms < 0
+        return fail(code: INVALID, msg: f"placing a deadline {ms} ms from now on {stream.name}, where it is 0 or more")
+
+    match tls.set_deadline(stream, ms: ms)
+        .ok _  => return ok()
+        .err _ => _ = 0
+
+    # `net.set_deadline` reads the stream of the connection it is handed,
+    # and nothing else of it.
+    anywhere = net.unspecified_v4()
+
+    match net.set_deadline(net.Conn(stream: stream, local: anywhere, remote: anywhere), ms: ms)
+        .ok _ => return ok()
+        .err e =>
+            if io.is_closed(stream)
+                return fail(code: e.code, msg: e.msg)
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"placing a deadline on {stream.name}, which is neither TLS nor a socket"
+            )
+
+# Adds `data` to `out`, which the caller owns.
+function add_onto(@out: [u8], data: [u8] lent)
+    for b in data
+        out @ out.push(b)
+
+test "start: open, nothing held but what the handshake left"
+    s = start(client: true, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [129])
+    assert is_open(s) && s.inbox == [129] && s.got_code == 1006 && can_read(s)
+    assert closed_message(s) == "the connection is closed: the stream ended with no close frame"
+
+test "send and fill: a frame over a pair of sockets, masked by the client, then the end"
+    two @= net.pair(deadline_ms: 5_000).must()
+    client @= start(client: true, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+    server @= start(client: false, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+    send(@two.first.stream, @client, opcode: frames.TEXT, fin: true, rsv1: false, payload: [104, 105]).must()
+    fill(@two.second.stream, @server).must()
+    assert server.inbox.len() == 8 && server.inbox[1] == 130
+    send(@two.second.stream, @server, opcode: frames.TEXT, fin: true, rsv1: false, payload: [104, 105]).must()
+    fill(@two.first.stream, @client).must()
+    assert client.inbox == [129, 2, 104, 105]
+    end_stream(@two.first.stream, @client)
+
+    match fill(@two.second.stream, @server)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED && server.ended
+
+test "deadline: a socket's, a time below zero, a closed stream's, and a pipe's"
+    two @= net.pair(deadline_ms: 0).must()
+    deadline(two.first.stream, ms: 20).must()
+
+    match io.read(two.first.stream, most: 1)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    deadline(two.first.stream, ms: 0).must()
+
+    match deadline(two.first.stream, ms: -1)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+    match deadline(two.first.stream, ms: 10)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    p @= io.pipe().must()
+
+    match deadline(p.reader, ms: 10)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    io.close(@p.reader).must()
+    io.close(@p.writer).must()
+
+test "failing: a close of the code written once, the stream ended, and the reads after it refused"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= start(client: false, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+    answered: ()? = failing(@two.second.stream, @s, close: 1009, code: LIMIT, msg: "too big")
+
+    match answered
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert io.read_exact(two.first.stream, count: 4).must() == [136, 2, 3, 241]
+    assert s.ended && s.sent_code == 1009 && !can_read(s) && !is_open(s)
+
+    later: i64? = refused(s)
+
+    match later
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED && e.msg == "the connection was failed: too big"
+
+    io.close(@two.first.stream).must()
+
+test "closed_message and key_for: each way a connection ends, and a key a client's alone"
+    s @= start(client: true, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+    assert key_for(s).must().len() == 4
+    s.close_sent @ true
+    s.sent_code @ 1000
+    assert closed_message(s) == "the connection is closed: this end sent 1000 and no close came back"
+    s.close_got @ true
+    s.got_code @ 1005
+    assert closed_message(s) == "the connection is closed: the peer's close carried no code"
+    s.got_code @ 4000
+    s.got_reason @ "x"
+    assert closed_message(s) == "the connection is closed: the peer's close carried 4000 \"x\""
+    server = start(client: false, agreed: negotiating.none(), level: 6, min_bytes: 0, held: [])
+    assert key_for(server).must().len() == 0

@@ -1,0 +1,495 @@
+# The opening handshake of RFC 6455 § 4: a client's request written and the
+# server's answer judged, and a server's judgement of a request and its
+# answer, `101` or a refusal. The connection, the reading of a request and
+# the routing are `http`'s and the program's.
+
+use bytes
+use crypto
+use http
+use io
+use os
+use strings
+use url
+use websocket/internal/answer
+use websocket/internal/extensions
+use websocket/internal/negotiating
+
+# The code of a handshake the RFC refuses, and of an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a scheme other than `ws` and `wss`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# RFC 6455's own GUID, after the key in what the accept digests.
+constant GUID: str
+    "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+# A new key: sixteen bytes of the system's generator, as base 64.
+function new_key() -> str?
+    return ok(bytes.format_base64(os.random_bytes(16)?))
+
+# The accept a server answers `key` with.
+function accept_of(key: str) -> str
+    return bytes.format_base64(crypto.sha1_text(key + GUID))
+
+# Whether `name` is a field the handshake writes itself, in any case.
+function is_own_field(name: str) -> bool
+    for own in ["Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Protocol", "Sec-WebSocket-Accept"]
+        if strings.equals_ignoring_case_ascii(a: name, b: own)
+            return true
+
+    return false
+
+# Whether one of `values`, each a list split at its commas, is `token` in
+# any case.
+function has_token(values: [str], token: str) -> bool
+    for v in values
+        for item in strings.split(s: v, sep: ",")
+            if strings.equals_ignoring_case_ascii(a: strings.trim_any(s: item, set: " \t"), b: token)
+                return true
+
+    return false
+
+# Every item of `values`, each a list split at its commas, trimmed, the
+# empty ones left out.
+function items_of(values: [str]) -> [str]
+    out: [str] @= []
+
+    for v in values
+        for item in strings.split(s: v, sep: ",")
+            trimmed = strings.trim_any(s: item, set: " \t")
+
+            if trimmed != ""
+                out @ out.push(trimmed)
+
+    return out
+
+# Whether `s` is a token of RFC 9110, as a subprotocol is.
+function is_token(s: str) -> bool
+    if s == ""
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if !extensions.is_token_byte(s[i])
+            return false
+
+    return true
+
+## The client
+
+# What a client asks: the face's `Client`, its connection aside.
+record Asking
+    # The subprotocols offered.
+    protocols: [str]
+    # The `Origin` sent, "" for none.
+    origin: str
+    # More fields of the request.
+    headers: [http.Header]
+    # The compression offered.
+    wanted: negotiating.Wanted
+    # The most bytes of the answer's head.
+    head_bytes: i64
+    # The most fields of the answer.
+    field_count: i64
+
+# What a client's handshake opened.
+record Opened
+    # The subprotocol agreed, "" for none.
+    protocol: str
+    # The compression agreed.
+    agreed: negotiating.Agreed
+    # The fields of the server's `101`.
+    headers: [http.Header]
+    # The bytes read past the answer's head.
+    held: [u8]
+
+# How a client's handshake ended.
+variant Outcome
+    # The connection is open.
+    opened
+        # What was agreed.
+        o: Opened
+    # The server sent the client elsewhere.
+    moved
+        # The `Location` it named, as written.
+        location: str
+        # Its status.
+        status: i64
+
+# The URL `target` names, a `ws://` or `wss://` one.
+#
+# Fails `unsupported` for another scheme, `invalid` where it is no URL, has
+# no host or has a fragment.
+function target_of(target: str) -> url.Url?
+    u = url.parse(target)?
+
+    if u.scheme != "ws" && u.scheme != "wss"
+        return fail(code: UNSUPPORTED, msg: f"the URL \"{target}\" is not `ws://` or `wss://`")
+
+    if u.host == ""
+        return fail(code: INVALID, msg: f"the URL \"{target}\" names no host")
+
+    if u.fragment != "" || u.empty_fragment
+        return fail(code: INVALID, msg: f"the URL \"{target}\" has a fragment, which RFC 6455 § 3 refuses")
+    return ok(u)
+
+# The `Host` a request to `u` names: its host and its port, the port left out
+# where it is the scheme's own.
+function host_field(u: url.Url) -> str
+    if u.port == "" || u.scheme == "ws" && u.port == "80" || u.scheme == "wss" && u.port == "443"
+        return url.format_host_port(host: u.host, port: "")
+    return url.format_host_port(host: u.host, port: u.port)
+
+# The opening request to `u` with `key`, as `a` asks.
+#
+# Fails `invalid` for a subprotocol that is no token, or a field of `a`'s
+# that the handshake writes itself.
+function request_of(u: url.Url, key: str, a: Asking) -> http.Request?
+    for p in a.protocols
+        if !is_token(p)
+            return fail(code: INVALID, msg: f"the subprotocol \"{p}\", which is no token")
+
+    for h in a.headers
+        if is_own_field(h.name)
+            return fail(code: INVALID, msg: f"the field `{h.name}`, which the opening handshake writes itself")
+
+    headers: [http.Header] @= [
+        http.Header(name: "Host", value: host_field(u))
+        http.Header(name: "Upgrade", value: "websocket")
+        http.Header(name: "Connection", value: "Upgrade")
+        http.Header(name: "Sec-WebSocket-Key", value: key)
+        http.Header(name: "Sec-WebSocket-Version", value: "13")
+    ]
+
+    if a.origin != ""
+        headers @ headers.push(http.Header(name: "Origin", value: a.origin))
+
+    if a.protocols.len() > 0
+        headers @ headers.push(http.Header(name: "Sec-WebSocket-Protocol", value: a.protocols.join(", ")))
+
+    if a.wanted.enabled
+        headers @ headers.push(http.Header(name: "Sec-WebSocket-Extensions", value: negotiating.client_offer(a.wanted)))
+
+    for h in a.headers
+        if strings.equals_ignoring_case_ascii(a: h.name, b: "Host")
+            headers @ http.with_header(headers, name: "Host", value: h.value)
+        else
+            headers @ headers.push(h)
+
+    target @= u
+
+    if target.path == ""
+        target.path @ "/"
+    return ok(
+        http.Request(method: http.METHOD_GET, url: target, headers: headers, body: [], closing: false, remote: "")
+    )
+
+# The client's opening handshake over `stream`: the request to `u` written,
+# the answer read and judged.
+#
+# Fails as `request_of`, `answer.read` and `judged` fail, and as `io.write`
+# fails.
+function handshake(stream: io.Stream, u: url.Url, a: Asking) -> Outcome?
+    negotiating.checked(a.wanted)?
+    key = new_key()?
+    http.write_request(stream, r: request_of(u, key: key, a: a)?)?
+    return judged(answer.read(stream, head_bytes: a.head_bytes, field_count: a.field_count)?, key: key, a: a)
+
+# What the answer `got` to a request with `key` opened.
+#
+# Fails `invalid` for a status other than 101 and a redirect, and for an
+# answer RFC 6455 § 4.1 refuses: no `Upgrade: websocket`, no `Connection:
+# upgrade`, an accept other than the key's, a subprotocol not offered, an
+# extension not offered or out of its bounds.
+function judged(got: answer.Answer, key: str, a: Asking) -> Outcome?
+    redirect = got.status == 301 || got.status == 302 || got.status == 303 || got.status == 307 || got.status == 308
+
+    if redirect && http.has_header(got.headers, name: "Location")
+        return ok(.moved(location: http.value_of(got.headers, name: "Location").must(), status: got.status))
+
+    if got.status != 101
+        return fail(
+            code: INVALID,
+            msg: f"the server answered {got.status} \"{got.reason}\" where 101, switching protocols, was awaited"
+        )
+
+    if !has_token(http.values_of(got.headers, name: "Upgrade"), token: "websocket")
+        return fail(code: INVALID, msg: "the server's 101 has no `Upgrade: websocket`")
+
+    if !has_token(http.values_of(got.headers, name: "Connection"), token: "upgrade")
+        return fail(code: INVALID, msg: "the server's 101 has no `Connection: upgrade`")
+    accept = http.value_of(got.headers, name: "Sec-WebSocket-Accept").default("")
+
+    if accept != accept_of(key)
+        return fail(
+            code: INVALID,
+            msg: f"the server's `Sec-WebSocket-Accept` is \"{accept}\", not the one its key asks"
+        )
+    chosen = http.values_of(got.headers, name: "Sec-WebSocket-Protocol")
+    protocol: str @= ""
+
+    if chosen.len() > 1
+        return fail(code: INVALID, msg: "the server's 101 names more than one subprotocol")
+
+    if chosen.len() == 1
+        protocol @ chosen[0]
+        offered: bool @= false
+
+        for p in a.protocols
+            if p == protocol
+                offered @ true
+
+        if !offered
+            return fail(code: INVALID, msg: f"the server chose the subprotocol \"{protocol}\", which was not offered")
+    agreed = negotiating.client_agrees(a.wanted, values: http.values_of(got.headers, name: "Sec-WebSocket-Extensions"))?
+    return ok(.opened(o: Opened(protocol: protocol, agreed: agreed, headers: got.headers, held: got.held)))
+
+## The server
+
+# What a server accepts: the face's `Server`, its settings aside.
+record Accepting
+    # The subprotocols spoken, the preferred first.
+    protocols: [str]
+    # The origins accepted besides the request's own host.
+    origins: [str]
+    # Whether every origin is accepted.
+    every_origin: bool
+    # The compression accepted.
+    wanted: negotiating.Wanted
+
+# A server's judgement of an opening request.
+record Judged
+    # 101 where it is accepted, else the status it is refused with.
+    status: i64
+    # Why it is refused, "" where it is not.
+    why: str
+    # The subprotocol chosen, "" for none.
+    protocol: str
+    # The compression agreed.
+    agreed: negotiating.Agreed
+    # The accept answered.
+    accept: str
+
+# The judgement refusing a request with `status`, for `why`.
+function refusing(status: i64, why: str) -> Judged
+    return Judged(status: status, why: why, protocol: "", agreed: negotiating.none(), accept: "")
+
+# Whether `r` asks to become a WebSocket connection.
+function is_upgrade(r: http.Request) -> bool
+    return r.method == http.METHOD_GET && has_token(http.values_of(r.headers, name: "Connection"), token: "upgrade") && has_token(http.values_of(r.headers, name: "Upgrade"), token: "websocket")
+
+# What a server answers `r`, as `a` accepts, by RFC 6455 § 4.2.
+function judge(r: http.Request, a: Accepting) -> Judged
+    if r.method != http.METHOD_GET
+        return refusing(405, why: f"an opening handshake is a GET, and this request is a {r.method}")
+
+    if !has_token(http.values_of(r.headers, name: "Upgrade"), token: "websocket")
+        return refusing(400, why: "the request has no `Upgrade: websocket`")
+
+    if !has_token(http.values_of(r.headers, name: "Connection"), token: "upgrade")
+        return refusing(400, why: "the request has no `Connection: upgrade`")
+    versions = http.values_of(r.headers, name: "Sec-WebSocket-Version")
+
+    if versions.len() == 0
+        return refusing(400, why: "the request has no `Sec-WebSocket-Version`")
+
+    if versions.len() > 1 || strings.trim_any(s: versions[0], set: " \t") != "13"
+        return refusing(
+            426,
+            why: f"the request asks for the version \"{versions.join(", ")}\", and this server speaks 13"
+        )
+    given = http.values_of(r.headers, name: "Sec-WebSocket-Key")
+
+    if given.len() != 1
+        return refusing(400, why: f"the request has {given.len()} `Sec-WebSocket-Key` fields, where it needs one")
+    key = strings.trim_any(s: given[0], set: " \t")
+    decoded = bytes.parse_base64(key).default([])
+
+    if decoded.len() != 16
+        return refusing(400, why: f"the request's `Sec-WebSocket-Key` \"{key}\" is not sixteen bytes in base 64")
+
+    if !origin_accepted(r, a: a)
+        return refusing(
+            403,
+            why: f"the origin \"{http.value_of(r.headers, name: "Origin").default("")}\" is not accepted"
+        )
+    offered = items_of(http.values_of(r.headers, name: "Sec-WebSocket-Protocol"))
+    protocol: str @= ""
+
+    for p in a.protocols
+        if protocol == ""
+            for o in offered
+                if o == p
+                    protocol @ p
+
+    agreed = negotiating.server_agrees(a.wanted, values: http.values_of(r.headers, name: "Sec-WebSocket-Extensions"))
+    return Judged(status: 101, why: "", protocol: protocol, agreed: agreed, accept: accept_of(key))
+
+# Whether `r`'s `Origin` is accepted: none, its own host's, one `a` names,
+# or every one where `a` says.
+function origin_accepted(r: http.Request, a: Accepting) -> bool
+    origins = http.values_of(r.headers, name: "Origin")
+
+    if a.every_origin || origins.len() == 0
+        return true
+    origin = strings.trim_any(s: origins[0], set: " \t")
+    host = http.value_of(r.headers, name: "Host").default("")
+    names: [str] @= [origin]
+
+    match url.parse(origin)
+        .ok u =>
+            authority = url.format_host_port(host: u.host, port: u.port)
+
+            if u.host != "" && strings.equals_ignoring_case_ascii(a: authority, b: host)
+                return true
+            names @ names.push(authority)
+            names @ names.push(u.host)
+        .err _ => _ = 0
+
+    for accepted in a.origins
+        for name in names
+            if name != "" && strings.equals_ignoring_case_ascii(a: accepted, b: name)
+                return true
+
+    return false
+
+# The `101` that accepts as `j` says, `extra` after its own fields.
+function switching(j: Judged, extra: [http.Header]) -> http.Response
+    headers: [http.Header] @= [
+        http.Header(name: "Upgrade", value: "websocket")
+        http.Header(name: "Connection", value: "Upgrade")
+        http.Header(name: "Sec-WebSocket-Accept", value: j.accept)
+    ]
+
+    if j.protocol != ""
+        headers @ headers.push(http.Header(name: "Sec-WebSocket-Protocol", value: j.protocol))
+
+    if j.agreed.on
+        headers @ headers.push(http.Header(name: "Sec-WebSocket-Extensions", value: j.agreed.header))
+
+    for h in extra
+        headers @ headers.push(h)
+
+    return http.Response(status: 101, reason: "Switching Protocols", headers: headers, body: [], closing: false)
+
+# The answer that refuses as `j` says, closing the connection: its reason
+# the body, and `Sec-WebSocket-Version: 13` with 426.
+function refusal(j: Judged) -> http.Response
+    out @= http.respond_text(j.status, text: j.why + "\n")
+    out.closing @ true
+
+    if j.status == 426
+        out.headers @ http.with_header(out.headers, name: "Sec-WebSocket-Version", value: "13")
+    return out
+
+test "accept_of: RFC 6455's own example"
+    assert accept_of("dGhlIHNhbXBsZSBub25jZQ==") == "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+
+test "new_key: sixteen bytes in base 64, two keys apart"
+    a = new_key().must()
+    assert bytes.parse_base64(a).must().len() == 16 && a.len() == 24 && a != new_key().must()
+
+test "target_of: ws and wss, another scheme, no host, a fragment"
+    assert target_of("ws://example.com/chat?x=1").must().path == "/chat"
+    assert target_of("wss://example.com").must().scheme == "wss"
+
+    match target_of("http://example.com/")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert target_of("ws:///path").is_err()
+    assert target_of("ws://example.com/#top").is_err()
+    assert target_of("ws://example.com/#").is_err()
+
+test "host_field: the scheme's own port left out, another kept, an IPv6 address in brackets"
+    assert host_field(target_of("ws://example.com:80/").must()) == "example.com"
+    assert host_field(target_of("wss://example.com:443/").must()) == "example.com"
+    assert host_field(target_of("ws://example.com:443/").must()) == "example.com:443"
+    assert host_field(target_of("ws://[::1]:9001/").must()) == "[::1]:9001"
+
+test "has_token and items_of: a list in any case, spaces around, empty items"
+    assert has_token(["keep-alive, Upgrade"], token: "upgrade") && !has_token(["upgraded"], token: "upgrade")
+    assert items_of(["chat, , superchat", "v2"]) == ["chat", "superchat", "v2"]
+
+test "request_of: the handshake's own fields, an origin, a Host replaced, a field of its own refused, a subprotocol that is no token"
+    a = Asking(
+        protocols: ["chat", "v2"],
+        origin: "https://example.com",
+        headers: [http.Header(name: "Host", value: "other:1"), http.Header(name: "Cookie", value: "a=1")],
+        wanted: negotiating.Wanted(enabled: true, level: 6, min_bytes: 0, server_no_context_takeover: false, client_no_context_takeover: false, server_max_window_bits: 15, client_max_window_bits: 15),
+        head_bytes: 4096,
+        field_count: 10
+    )
+    r = request_of(target_of("ws://example.com").must(), key: "k", a: a).must()
+    assert r.url.path == "/" && http.value_of(r.headers, name: "Host").must() == "other:1"
+    assert http.value_of(r.headers, name: "Sec-WebSocket-Protocol").must() == "chat, v2"
+    assert http.value_of(r.headers, name: "Sec-WebSocket-Extensions").must() == "permessage-deflate; client_max_window_bits"
+    assert http.value_of(r.headers, name: "Origin").must() == "https://example.com" && http.has_header(r.headers, name: "Cookie")
+    own @= a
+    own.headers @ [http.Header(name: "sec-websocket-key", value: "x")]
+    assert request_of(target_of("ws://example.com").must(), key: "k", a: own).is_err()
+    spaced @= a
+    spaced.protocols @ ["a b"]
+    assert request_of(target_of("ws://example.com").must(), key: "k", a: spaced).is_err()
+
+test "judged: a 101 accepted, a redirect, and answers refused: another status, no upgrade, a wrong accept, a subprotocol not offered"
+    a = Asking(
+        protocols: ["chat"],
+        origin: "",
+        headers: [],
+        wanted: negotiating.Wanted(enabled: false, level: 6, min_bytes: 0, server_no_context_takeover: false, client_no_context_takeover: false, server_max_window_bits: 15, client_max_window_bits: 15),
+        head_bytes: 4096,
+        field_count: 10
+    )
+    key = "dGhlIHNhbXBsZSBub25jZQ=="
+    good: [http.Header] = [
+        http.Header(name: "Upgrade", value: "WebSocket")
+        http.Header(name: "Connection", value: "upgrade")
+        http.Header(name: "Sec-WebSocket-Accept", value: "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
+        http.Header(name: "Sec-WebSocket-Protocol", value: "chat")
+    ]
+
+    match judged(answer.Answer(status: 101, reason: "", headers: good, held: [9]), key: key, a: a).must()
+        .opened o => assert o.o.protocol == "chat" && o.o.held == [9] && !o.o.agreed.on
+        .moved _  => assert false
+
+    match judged(answer.Answer(status: 307, reason: "", headers: [http.Header(name: "Location", value: "/x")], held: []), key: key, a: a).must()
+        .moved m  => assert m.location == "/x" && m.status == 307
+        .opened _ => assert false
+
+    assert judged(answer.Answer(status: 403, reason: "Forbidden", headers: good, held: []), key: key, a: a).is_err()
+    assert judged(
+        answer.Answer(status: 101, reason: "", headers: good.slice(from: 1, to: 4), held: []),
+        key: key,
+        a: a
+    ).is_err()
+    assert judged(answer.Answer(status: 101, reason: "", headers: good, held: []), key: "other", a: a).is_err()
+    other = [good[0], good[1], good[2], http.Header(name: "Sec-WebSocket-Protocol", value: "superchat")]
+    assert judged(answer.Answer(status: 101, reason: "", headers: other, held: []), key: key, a: a).is_err()
+    squeezed = [good[0], good[1], good[2], http.Header(name: "Sec-WebSocket-Extensions", value: "permessage-deflate")]
+    assert judged(answer.Answer(status: 101, reason: "", headers: squeezed, held: []), key: key, a: a).is_err()
+
+test "judge and origin_accepted: an origin with a port of the host's own, a listed host, and every origin"
+    r @= http.request(method: http.METHOD_GET, target: "/").must()
+    r.headers @ [
+        http.Header(name: "Host", value: "chat.example:8443")
+        http.Header(name: "Origin", value: "https://chat.example:8443")
+    ]
+    a @= Accepting(
+        protocols: [],
+        origins: [],
+        every_origin: false,
+        wanted: negotiating.Wanted(enabled: false, level: 6, min_bytes: 0, server_no_context_takeover: false, client_no_context_takeover: false, server_max_window_bits: 15, client_max_window_bits: 15)
+    )
+    assert origin_accepted(r, a: a)
+    r.headers @ http.with_header(r.headers, name: "Origin", value: "null")
+    assert !origin_accepted(r, a: a)
+    a.every_origin @ true
+    assert origin_accepted(r, a: a)
+    a.every_origin @ false
+    r.headers @ http.with_header(r.headers, name: "Origin", value: "http://Tools.Example")
+    a.origins @ ["tools.example"]
+    assert origin_accepted(r, a: a)
+    assert judge(r, a: a).status == 400

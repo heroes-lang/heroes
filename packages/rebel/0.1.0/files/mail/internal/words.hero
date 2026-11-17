@@ -1,0 +1,333 @@
+# RFC 2047's encoded words, read and written: `=?charset?b?...?=` and
+# `=?charset?q?...?=` found in a header's text and decoded, adjacent words
+# of one charset joined before their bytes are decoded, and text written as
+# words of UTF-8 that never split a character. A word that is not well formed
+# is text, as Go and Python read it.
+
+use bytes
+use mail/internal/charsets
+use strings
+
+# One piece of a header's text: plain text, or the content of adjacent
+# encoded words of one charset.
+record Piece
+    # The text, or "" where the bytes could not be decoded.
+    text: str
+    # The charset named, lower case; "" for plain text.
+    charset: str
+    # The bytes the words held; [] for plain text.
+    data: [u8]
+    # Whether `text` holds the piece.
+    is_decoded: bool
+
+# One encoded word found: its charset as written and the bytes it holds.
+record Found
+    # The charset as the word names it.
+    charset: str
+    # The bytes it decodes to.
+    data: [u8]
+    # The byte just past the word.
+    end: i64
+
+# The pieces of `s`, plain text and encoded words, in order.
+function decode(s: str) -> [Piece]
+    out: [Piece] @= []
+    plain_from: i64 @= 0
+    at: i64 @= 0
+    joined_charset: str @= ""
+    joined: [u8] @= []
+    open: bool @= false
+
+    while at < s.len()
+        if s[at] == '=' && at + 1 < s.len() && s[at + 1] == '?'
+            match word_at(s: s, at: at)
+                .err _ => at @ at + 1
+                .ok w =>
+                    between = s.slice(from: plain_from, to: at)
+
+                    if open && is_blank(between) && charsets.normal(w.charset) == charsets.normal(joined_charset)
+                        bytes.push_all(to: @joined, from: w.data)
+                    else
+                        if open
+                            out @ out.push(piece_of(charset: joined_charset, data: joined))
+                            open @ false
+
+                        if between.len() > 0 && !(out.len() > 0 && is_blank(between) && out[out.len() - 1].charset != "")
+                            out @ out.push(Piece(text: between, charset: "", data: [], is_decoded: true))
+                        joined_charset @ w.charset
+                        joined @ w.data
+                        open @ true
+                    at @ w.end
+                    plain_from @ w.end
+        else
+            at @ at + 1
+
+    if open
+        out @ out.push(piece_of(charset: joined_charset, data: joined))
+
+    if plain_from < s.len()
+        out @ out.push(Piece(text: s.slice(from: plain_from, to: s.len()), charset: "", data: [], is_decoded: true))
+    return out
+
+# The piece of `data` in `charset`, decoded where it can be.
+function piece_of(charset: str, data: [u8]) -> Piece
+    name = charsets.normal(charset)
+
+    return match charsets.decode(data, name: name)
+        .ok text => Piece(text: text, charset: name, data: data, is_decoded: true)
+        .err _   => Piece(text: "", charset: name, data: data, is_decoded: false)
+
+# Whether `s` holds nothing but spaces, tabs and line breaks.
+function is_blank(s: str) -> bool
+    for ch in s.chars()
+        if ch != " " && ch != "\t" && ch != "\r" && ch != "\n"
+            return false
+
+    return true
+
+# The encoded word that begins at `at` in `s`, its `=?` there. Fails
+# `invalid` where none well formed does.
+function word_at(s: str, at: i64) -> Found?
+    charset_end = next_question(s: s, from: at + 2)?
+
+    if charset_end == at + 2 || charset_end + 2 >= s.len() || s[charset_end + 2] != '?'
+        return fail(code: charsets.NOT_TEXT, msg: "no encoded word")
+    letter = s[charset_end + 1]
+    text_end = next_question(s: s, from: charset_end + 3)?
+
+    if text_end + 1 >= s.len() || s[text_end + 1] != '='
+        return fail(code: charsets.NOT_TEXT, msg: "no encoded word")
+    charset = s.slice(from: at + 2, to: charset_end)
+    encoded = s.slice(from: charset_end + 3, to: text_end)
+
+    if letter == 'b' || letter == 'B'
+        return ok(Found(charset: charset, data: base64_loose(encoded)?, end: text_end + 2))
+
+    if letter == 'q' || letter == 'Q'
+        return ok(Found(charset: charset, data: q_decode(encoded)?, end: text_end + 2))
+    return fail(code: charsets.NOT_TEXT, msg: "no encoded word")
+
+# Where the next `?` stands from `from` in `s`, failing where a space or the
+# end comes first.
+function next_question(s: str, from: i64) -> i64?
+    at: i64 @= from
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '?'
+            return ok(at)
+
+        if b == ' ' || b == '\t' || b == '\r' || b == '\n'
+            break
+        at @ at + 1
+
+    return fail(code: charsets.NOT_TEXT, msg: "no encoded word")
+
+# The bytes of base 64 `s`, its padding optional.
+function base64_loose(s: str) -> [u8]?
+    if s.len() % 4 == 1
+        return fail(code: charsets.NOT_TEXT, msg: "base 64 of a wrong length")
+    padded: str @= s
+
+    while padded.len() % 4 != 0
+        padded @ padded + "="
+
+    return bytes.parse_base64(padded)
+
+# The bytes of the Q encoding `s`: `_` a space, `=XX` a byte.
+function q_decode(s: str) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '_'
+            out @ out.push(' ')
+            at @ at + 1
+        else if b == '='
+            if at + 2 >= s.len()
+                return fail(code: charsets.NOT_TEXT, msg: "a cut escape")
+            high = hex_value(s[at + 1])
+            low = hex_value(s[at + 2])
+
+            if high < 0 || low < 0
+                return fail(code: charsets.NOT_TEXT, msg: "a bad escape")
+            out @ out.push(to_u8(high * 16 + low).must())
+            at @ at + 3
+        else
+            out @ out.push(b)
+            at @ at + 1
+
+    return ok(out)
+
+# The value of the hexadecimal digit `b`, either case, or -1.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b).must() - 48
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b).must() - 87
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b).must() - 55
+    return -1
+
+# The text of `pieces` joined. Fails `unsupported` or `not_text` at the first
+# piece that could not be decoded.
+function joined_text(pieces: [Piece]) -> str?
+    out: [str] @= []
+
+    for p in pieces
+        if !p.is_decoded
+            _ = charsets.decode(p.data, name: p.charset)?
+        out @ out.push(p.text)
+
+    return ok(out.join(""))
+
+## Writing
+
+# Whether `text` is written as it is: printable ASCII and spaces only.
+function is_plain(text: str) -> bool
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b < 0x20 || b > 0x7e
+            return false
+        at @ at + 1
+
+    return true
+
+# `text` as words of UTF-8 in `b` (base 64) or not (Q), each at most 75
+# bytes, a space between two; `phrase` keeps the Q encoding to the bytes a
+# display name may hold.
+function encode(text: str, base64: bool, phrase: bool) -> str
+    words: [str] @= []
+    current: [u8] @= []
+    room = 75 - 12
+
+    for ch in text.chars()
+        piece = bytes.from_text(ch)
+        candidate = bytes.concat([current, piece])
+
+        if current.len() > 0 && encoded_len(data: candidate, base64: base64, phrase: phrase) > room
+            words @ words.push(word_of(data: current, base64: base64, phrase: phrase))
+            current @ piece
+        else
+            current @ candidate
+
+    if current.len() > 0 || words.len() == 0
+        words @ words.push(word_of(data: current, base64: base64, phrase: phrase))
+    return words.join(" ")
+
+# The encoded word of `data`.
+function word_of(data: [u8], base64: bool, phrase: bool) -> str
+    if base64
+        return "=?utf-8?b?" + bytes.format_base64(data) + "?="
+    return "=?utf-8?q?" + q_encode(data: data, phrase: phrase) + "?="
+
+# The length of `data` encoded, without the word's 12 bytes around it.
+function encoded_len(data: [u8], base64: bool, phrase: bool) -> i64
+    if base64
+        return (data.len() + 2) / 3 * 4
+    return q_encode(data: data, phrase: phrase).len()
+
+# `data` in the Q encoding: a space `_`, a byte that may not stand `=XX`.
+function q_encode(data: [u8], phrase: bool) -> str
+    out: [u8] @= []
+    digits = "0123456789ABCDEF"
+
+    for b in data
+        if b == ' '
+            out @ out.push('_')
+        else if q_keeps(b: b, phrase: phrase)
+            out @ out.push(b)
+        else
+            out @ out.push('=')
+            out @ out.push(digits[to_i64(b / 16).must()])
+            out @ out.push(digits[to_i64(b % 16).must()])
+
+    return bytes.to_text(out).must()
+
+# Whether the Q encoding writes `b` as itself: printable ASCII but `=`, `?`
+# and `_`, and in a phrase only letters, digits and `!*+-/`.
+function q_keeps(b: u8, phrase: bool) -> bool
+    if phrase
+        return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '!' || b == '*' || b == '+' || b == '-' || b == '/'
+    return b > 0x20 && b < 0x7f && b != '=' && b != '?' && b != '_'
+
+## Tests
+
+test "decode: plain text, empty, one word in B and in Q, Latin-1"
+    assert decode("").len() == 0
+    plain = decode("plain text")
+    assert plain.len() == 1 && plain[0].text == "plain text" && plain[0].charset == ""
+    assert joined_text(decode("=?utf-8?q?caf=C3=A9?=")).must() == "café"
+    assert joined_text(decode("=?UTF-8?B?Y2Fmw6k=?=")).must() == "café"
+    assert joined_text(decode("=?iso-8859-1?q?caf=E9?=")).must() == "café"
+    assert joined_text(decode("=?us-ascii?q?abc?=")).must() == "abc"
+    assert joined_text(decode("=?utf-8?Q?=e2=82=ac?=")).must() == "€"
+
+test "decode: space between words dropped, text between kept, a word glued to text, in parentheses"
+    assert joined_text(decode("=?utf-8?q?a?= =?utf-8?q?b?=")).must() == "ab"
+    assert joined_text(decode("=?utf-8?q?a?=\r\n =?utf-8?q?b?=")).must() == "ab"
+    assert joined_text(decode("=?utf-8?q?a?=  x  =?utf-8?q?b?=")).must() == "a  x  b"
+    assert joined_text(decode("=?utf-8?q?a_b?=")).must() == "a b"
+    assert joined_text(decode("a=?utf-8?q?b?=")).must() == "ab"
+    assert joined_text(decode("(=?utf-8?q?c?=)")).must() == "(c)"
+    assert joined_text(decode("x =?utf-8?q?a?= y")).must() == "x a y"
+
+test "decode: a character split across two words is read whole"
+    assert joined_text(decode("=?utf-8?q?caf=C3?= =?utf-8?q?=A9?=")).must() == "café"
+    assert joined_text(decode("=?utf-8?b?w6k=?= =?ISO-8859-1?q?=E9?=")).must() == "éé"
+
+test "decode: malformed words are text, base 64 without padding, a language"
+    assert joined_text(decode("=?utf-8?x?abc?=")).must() == "=?utf-8?x?abc?="
+    assert joined_text(decode("=?utf-8?b?!!!?=")).must() == "=?utf-8?b?!!!?="
+    assert joined_text(decode("=?utf-8?q?a=Z1?=")).must() == "=?utf-8?q?a=Z1?="
+    assert joined_text(decode("=?utf-8?q?a b?=")).must() == "=?utf-8?q?a b?="
+    assert joined_text(decode("=??q?a?=")).must() == "=??q?a?="
+    assert joined_text(decode("=?utf-8?q??=")).must() == ""
+    assert joined_text(decode("=?utf-8?b?Y2Fmw6k?=")).must() == "café"
+    assert joined_text(decode("=?utf-8*en?q?hello?=")).must() == "hello"
+    assert joined_text(decode("=?")).must() == "=?"
+
+test "decode: a charset not read keeps its bytes; bytes not UTF-8 are not decoded"
+    pieces = decode("x =?koi8-r?q?=F0?=")
+    assert pieces.len() == 2 && pieces[1].charset == "koi8-r" && pieces[1].data == [240] && !pieces[1].is_decoded
+
+    match joined_text(pieces)
+        .ok _  => assert false
+        .err e => assert e.code == charsets.UNSUPPORTED
+
+    match joined_text(decode("=?utf-8?q?=FF?="))
+        .ok _  => assert false
+        .err e => assert e.code == charsets.NOT_TEXT
+
+test "is_plain: ASCII, a tab, above ASCII, empty"
+    assert is_plain("a b") && is_plain("") && is_plain("=?x?=") && !is_plain("a\tb") && !is_plain("café")
+
+test "encode: Q and B as Go writes them, long text split at a character, empty"
+    assert encode("café", base64: false, phrase: false) == "=?utf-8?q?caf=C3=A9?="
+    assert encode("café", base64: true, phrase: false) == "=?utf-8?b?Y2Fmw6k=?="
+    long = "Grüße aus München, schöne Grüße aus München, schöne Grüße aus München"
+    assert encode(long, base64: false, phrase: false) == "=?utf-8?q?Gr=C3=BC=C3=9Fe_aus_M=C3=BCnchen,_sch=C3=B6ne_Gr=C3=BC=C3=9Fe_a?= =?utf-8?q?us_M=C3=BCnchen,_sch=C3=B6ne_Gr=C3=BC=C3=9Fe_aus_M=C3=BCnchen?="
+    assert encode(long, base64: true, phrase: false) == "=?utf-8?b?R3LDvMOfZSBhdXMgTcO8bmNoZW4sIHNjaMO2bmUgR3LDvMOfZSBhdXMgTcO8?= =?utf-8?b?bmNoZW4sIHNjaMO2bmUgR3LDvMOfZSBhdXMgTcO8bmNoZW4=?="
+    assert encode("", base64: false, phrase: false) == "=?utf-8?q??="
+
+test "encode: a phrase keeps only letters, digits and five signs"
+    assert encode("Lima, Jörg", base64: false, phrase: true) == "=?utf-8?q?Lima=2C_J=C3=B6rg?="
+    assert encode("Jörg", base64: false, phrase: true) == "=?utf-8?q?J=C3=B6rg?="
+
+test "encode: every word at most 75 bytes, and read back the same"
+    text = repeat("€uro ", 40)
+    written = encode(text, base64: false, phrase: false)
+
+    for w in strings.split(s: written, sep: " ")
+        assert w.len() <= 75
+
+    assert joined_text(decode(written)).must() == text
+    assert joined_text(decode(encode(text, base64: true, phrase: false))).must() == text
