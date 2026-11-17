@@ -1,0 +1,105 @@
+# Values put at the places a query selected, each place named by its JSON
+# pointer: the deepest first, so that a place inside another is changed
+# before the outer one is, and each container on a place's way is copied once
+# for that place and no more.
+
+use json
+
+# `doc` with `value` in place of the value at `pointer`, which is there.
+# Aborts where it is not, since only a place a query selected in `doc` is
+# given.
+function put(doc: json.Value, pointer: str, value: json.Value) -> json.Value
+    tokens = json.pointer_tokens(pointer).must()
+    chain: [json.Value] @= [doc]
+
+    for at in range(from: 0, to: tokens.len())
+        chain @ chain.push(child(chain[at], token: tokens[at]))
+
+    made: json.Value @= value
+    at: i64 @= tokens.len()
+
+    while at > 0
+        at @ at - 1
+
+        match chain[at]
+            .object o =>
+                members @= o.members
+                members[tokens[at]] @ made
+                made @ .object(members: members)
+            .list l =>
+                items @= l.items
+                items[index_written(tokens[at])] @ made
+                made @ .list(items: items)
+            .null_value | .boolean _ | .number _ | .text _ => assert false
+
+    return made
+
+# The index a token of digits writes.
+function index_written(token: str) -> i64
+    n: i64 @= 0
+
+    for at in range(from: 0, to: token.len())
+        n @ n * 10 + to_i64(token[at] - '0').must()
+
+    return n
+
+# The child of `v` that `token` names, which is there.
+function child(v: json.Value, token: str) -> json.Value
+    match v
+        .object o => return o.members[token].must()
+        .list l   => return l.items[index_written(token)]
+        .null_value | .boolean _ | .number _ | .text _ =>
+            assert false
+            return v
+
+# How many tokens `pointer` has: how deep the place it names lies.
+function depth_of(pointer: str) -> i64
+    count: i64 @= 0
+
+    for at in range(from: 0, to: pointer.len())
+        if pointer[at] == '/'
+            count @ count + 1
+
+    return count
+
+# The pointers of `pointers` each once, the deepest first and, of one depth,
+# in the order given.
+function deepest_first(pointers: [str]) -> [str]
+    seen: {str: bool} @= {}
+    by_depth: {i64: [str]} @= {}
+    deepest: i64 @= 0
+
+    for pointer in pointers
+        if !seen[pointer].default(false)
+            seen[pointer] @ true
+            d = depth_of(pointer)
+            here @= by_depth[d].default([])
+            here @ here.push(pointer)
+            by_depth[d] @ here
+
+            if d > deepest
+                deepest @ d
+
+    out: [str] @= []
+    d: i64 @= deepest + 1
+
+    while d > 0
+        d @ d - 1
+
+        for pointer in by_depth[d].default([])
+            out @ out.push(pointer)
+
+    return out
+
+## Tests
+
+test "put: a member, an element, deep, and the root"
+    doc = json.parse("{\"a\": [1, {\"b\": 2}], \"c\": 3}").must()
+    assert put(doc: doc, pointer: "/a/1/b", value: .null_value) == json.parse("{\"a\": [1, {\"b\": null}], \"c\": 3}").must()
+    assert put(doc: doc, pointer: "/a/0", value: .text(v: "x")) == json.parse("{\"a\": [\"x\", {\"b\": 2}], \"c\": 3}").must()
+    assert put(doc: doc, pointer: "", value: .boolean(v: true)) == .boolean(v: true)
+    assert keys(json.members_of(put(doc: doc, pointer: "/a", value: .null_value)).must()) == ["a", "c"]
+
+test "deepest_first: once each, deeper before shallower, the order kept within a depth"
+    assert deepest_first(["", "/a", "/a/b", "/c", "/a", "/a/0/x"]) == ["/a/0/x", "/a/b", "/a", "/c", ""]
+    assert deepest_first([]).len() == 0

@@ -1,0 +1,277 @@
+# An I-Regexp, RFC 9485, checked against its grammar and written in the
+# syntax `regex` reads: a `.` becomes `[^\n\r]`, a group `(?:...)`, and a
+# character that is a control character an escape by its code. `^` and `$`
+# are left as the anchors ECMAScript and RE2 read them, as the JSONPath
+# Compliance Test Suite expects of `match` and `search`.
+
+use numbers
+use unicode
+
+# The code of a pattern that is no I-Regexp.
+constant INVALID: str
+    "invalid"
+
+# The character of `pattern` that begins at byte `at`.
+function char_at(pattern: str, at: i64) -> str
+    width = unicode.utf8_width(pattern[at]).default(1)
+    return pattern.slice(from: at, to: at + width)
+
+# `c`, one character, as `regex` reads it as itself, inside a class or out of
+# one: a control character by its code, a character `regex` treats as syntax
+# after a backslash.
+function literal(c: str) -> str
+    b = c[0]
+
+    if b < 0x20 || b == 0x7f
+        return f"\\x{{{numbers.format_int(n: unicode.code_point(c), base: 16)}}}"
+
+    if b == '[' || b == ']' || b == '\\' || b == '^' || b == '-' || b == '$' || b == '.' || b == '|' || b == '(' || b == ')' || b == '*' || b == '+' || b == '?' || b == '{' || b == '}'
+        return "\\" + c
+    return c
+
+# Whether `b` follows a backslash in a single character's escape.
+function is_single_escape(b: u8) -> bool
+    return b == '(' || b == ')' || b == '*' || b == '+' || b == '-' || b == '.' || b == '?' || b == '[' || b == '\\' || b == ']' || b == '^' || b == 'n' || b == 'r' || b == 't' || b == '{' || b == '|' || b == '}'
+
+# The character a single character's escape `\b` writes.
+function escaped(b: u8) -> str
+    if b == 'n'
+        return "\n"
+
+    if b == 'r'
+        return "\r"
+
+    if b == 't'
+        return "\t"
+    return [b].validated_bytes().must()
+
+# Whether `name` is a category I-Regexp names in `\p{...}`.
+function is_category(name: str) -> bool
+    for known in ["L", "Ll", "Lm", "Lo", "Lt", "Lu", "M", "Mc", "Me", "Mn", "N", "Nd", "Nl", "No", "P", "Pc", "Pd", "Pe", "Pf", "Pi", "Po", "Ps", "Z", "Zl", "Zp", "Zs", "S", "Sc", "Sk", "Sm", "So", "C", "Cc", "Cf", "Cn", "Co"]
+        if known == name
+            return true
+
+    return false
+
+# The end of a category's escape `\p{...}` or `\P{...}` beginning at byte
+# `at`, past its `}`. Fails `invalid` where it names no category.
+function category_end(pattern: str, at: i64) -> i64?
+    if at + 3 >= pattern.len() || pattern[at + 2] != '{'
+        return fail(code: INVALID, msg: f"at byte {at}: `\\p` and `\\P` take a category in braces")
+    close: i64 @= at + 3
+
+    while close < pattern.len() && pattern[close] != '}'
+        close @ close + 1
+
+    if close >= pattern.len() || !is_category(pattern.slice(from: at + 3, to: close))
+        return fail(code: INVALID, msg: f"at byte {at}: no category I-Regexp names")
+    return ok(close + 1)
+
+# One character of a class at byte `at`, as itself: its text and the byte
+# past it. Fails `invalid` where a class may not hold it unescaped.
+record ClassChar
+    # The character.
+    c: str
+    # The byte past it.
+    next: i64
+
+# The character of a class at byte `at`. Fails `invalid` where it is `[`,
+# `]` or `-` unescaped, or a backslash before no single character's escape.
+function class_char(pattern: str, at: i64) -> ClassChar?
+    b = pattern[at]
+
+    if b == '\\'
+        if at + 1 >= pattern.len() || !is_single_escape(pattern[at + 1])
+            return fail(code: INVALID, msg: f"at byte {at}: no escape I-Regexp reads")
+        return ok(ClassChar(c: escaped(pattern[at + 1]), next: at + 2))
+
+    if b == '[' || b == ']' || b == '-'
+        return fail(code: INVALID, msg: f"at byte {at}: a class holds `[`, `]` and `-` escaped")
+    c = char_at(pattern, at: at)
+    return ok(ClassChar(c: c, next: at + c.len()))
+
+# The class at byte `at`, the `[` there: its translation and the byte past
+# its `]`.
+record Class
+    # The class as `regex` reads it.
+    text: str
+    # The byte past its `]`.
+    next: i64
+
+# The class that begins with the `[` at byte `at`. Fails `invalid` where it
+# is none by RFC 9485's grammar, `[^]` included.
+function read_class(pattern: str, at: i64) -> Class?
+    pieces: [str] @= ["["]
+    i: i64 @= at + 1
+
+    if i < pattern.len() && pattern[i] == '^'
+        pieces @ pieces.push("^")
+        i @ i + 1
+    items: i64 @= 0
+
+    if i < pattern.len() && pattern[i] == '-'
+        pieces @ pieces.push("\\-")
+        i @ i + 1
+        items @ 1
+
+    while true
+        if i >= pattern.len()
+            return fail(code: INVALID, msg: f"at byte {at}: a class with no `]`")
+
+        if pattern[i] == ']'
+            if items == 0
+                return fail(code: INVALID, msg: f"at byte {at}: an empty class")
+            pieces @ pieces.push("]")
+            return ok(Class(text: pieces.join(""), next: i + 1))
+
+        if pattern[i] == '-'
+            if i + 1 < pattern.len() && pattern[i + 1] == ']' && items > 0
+                pieces @ pieces.push("\\-")
+                i @ i + 1
+            else
+                return fail(
+                    code: INVALID,
+                    msg: f"at byte {i}: a `-` inside a class stands at its start, its end, or between a range's two ends"
+                )
+        else if pattern[i] == '\\' && i + 1 < pattern.len() && (pattern[i + 1] == 'p' || pattern[i + 1] == 'P')
+            end = category_end(pattern, at: i)?
+            pieces @ pieces.push(pattern.slice(from: i, to: end))
+            i @ end
+            items @ items + 1
+        else
+            low = class_char(pattern, at: i)?
+            i @ low.next
+
+            if i + 1 < pattern.len() && pattern[i] == '-' && pattern[i + 1] != ']'
+                high = class_char(pattern, at: i + 1)?
+
+                if unicode.code_point(high.c) < unicode.code_point(low.c)
+                    return fail(code: INVALID, msg: f"at byte {i}: a range whose end comes before its start")
+                pieces @ pieces.push(literal(low.c) + "-" + literal(high.c))
+                i @ high.next
+            else
+                pieces @ pieces.push(literal(low.c))
+            items @ items + 1
+
+    return fail(code: INVALID, msg: "unreachable")
+
+# `pattern`, an I-Regexp, as `regex` reads it, to be matched whole by
+# `regex.full_match` or searched for by `regex.contains`. Fails `invalid`
+# where it is no I-Regexp.
+function translate(pattern: str) -> str?
+    pieces: [str] @= []
+    i: i64 @= 0
+    depth: i64 @= 0
+
+    # Whether the last thing written is an atom a quantifier may follow.
+    quantifiable: bool @= false
+
+    while i < pattern.len()
+        b = pattern[i]
+
+        if b == '('
+            pieces @ pieces.push("(?:")
+            depth @ depth + 1
+            quantifiable @ false
+            i @ i + 1
+        else if b == ')'
+            if depth == 0
+                return fail(code: INVALID, msg: f"at byte {i}: a `)` that closes nothing")
+            pieces @ pieces.push(")")
+            depth @ depth - 1
+            quantifiable @ true
+            i @ i + 1
+        else if b == '|'
+            pieces @ pieces.push("|")
+            quantifiable @ false
+            i @ i + 1
+        else if b == '*' || b == '+' || b == '?'
+            if !quantifiable
+                return fail(code: INVALID, msg: f"at byte {i}: a quantifier with nothing before it to repeat")
+            pieces @ pieces.push(char_at(pattern, at: i))
+            quantifiable @ false
+            i @ i + 1
+        else if b == '{'
+            if !quantifiable
+                return fail(code: INVALID, msg: f"at byte {i}: a quantifier with nothing before it to repeat")
+            close: i64 @= i + 1
+
+            while close < pattern.len() && pattern[close] != '}'
+                close @ close + 1
+
+            if close >= pattern.len()
+                return fail(code: INVALID, msg: f"at byte {i}: a `{{` with no `}}`")
+            inside = pattern.slice(from: i + 1, to: close)
+            commas: i64 @= 0
+            digits: i64 @= 0
+
+            for c in inside.chars()
+                if c == ","
+                    commas @ commas + 1
+
+                    if digits == 0
+                        return fail(code: INVALID, msg: f"at byte {i}: a count with no number before its comma")
+                else if c[0] >= '0' && c[0] <= '9'
+                    digits @ digits + 1
+                else
+                    return fail(code: INVALID, msg: f"at byte {i}: a count holds digits and one comma")
+
+            if commas > 1 || digits == 0
+                return fail(code: INVALID, msg: f"at byte {i}: a count holds digits and one comma")
+            pieces @ pieces.push(pattern.slice(from: i, to: close + 1))
+            quantifiable @ false
+            i @ close + 1
+        else if b == '.'
+            pieces @ pieces.push("[^\\n\\r]")
+            quantifiable @ true
+            i @ i + 1
+        else if b == '['
+            read = read_class(pattern, at: i)?
+            pieces @ pieces.push(read.text)
+            quantifiable @ true
+            i @ read.next
+        else if b == '\\'
+            if i + 1 < pattern.len() && (pattern[i + 1] == 'p' || pattern[i + 1] == 'P')
+                end = category_end(pattern, at: i)?
+                pieces @ pieces.push(pattern.slice(from: i, to: end))
+                i @ end
+            else if i + 1 < pattern.len() && is_single_escape(pattern[i + 1])
+                pieces @ pieces.push(literal(escaped(pattern[i + 1])))
+                i @ i + 2
+            else
+                return fail(code: INVALID, msg: f"at byte {i}: no escape I-Regexp reads")
+            quantifiable @ true
+        else if b == ']' || b == '}'
+            return fail(code: INVALID, msg: f"at byte {i}: a `]` or `}}` that closes nothing")
+        else
+            c = char_at(pattern, at: i)
+
+            written = if b == '^' || b == '$'
+                c
+            else
+                literal(c)
+            pieces @ pieces.push(written)
+            quantifiable @ true
+            i @ i + c.len()
+
+    if depth != 0
+        return fail(code: INVALID, msg: "a `(` with no `)`")
+    return ok(pieces.join(""))
+
+## Tests
+
+test "translate: characters, dots, groups, classes and quantifiers"
+    assert translate("a.b").must() == "a[^\\n\\r]b"
+    assert translate("(ab)+|c{2,3}").must() == "(?:ab)+|c{2,3}"
+    assert translate("[a-z\\]]").must() == "[a-z\\]]"
+    assert translate("[^-a-]").must() == "[^\\-a\\-]"
+    assert translate("\\p{Lu}[\\P{L}x]").must() == "\\p{Lu}[\\P{L}x]"
+    assert translate("^a\\.c$").must() == "^a\\.c$"
+    assert translate("é\\n").must() == "é\\x{a}"
+    assert translate("").must() == ""
+
+test "translate: what no I-Regexp writes"
+    for pattern in ["a**", "*a", "(a", "a)", "[^]", "[]", "[a-b-c]", "\\d", "\\w", "\\p{Greek}", "a{,2}", "a{1,2,3}", "a{x}", "[z-a]", "]", "}", "\\", "(?:a)", "[a[b]"]
+        match translate(pattern)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID

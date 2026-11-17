@@ -1,0 +1,427 @@
+# A patch applied: each operation walks its path down to the container it
+# changes, changes it, and puts each container back into the one above, so
+# only the containers on the path are copied. Every failure leaves the value
+# the caller gave as it was, since that value is never changed.
+
+use json
+use json/patch/internal/ops
+use json/patch/internal/same
+
+# The code of a path that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a test that fails and of a change a value cannot take.
+constant INVALID: str
+    "invalid"
+
+# What RFC 6902 refuses and the caller asked for all the same.
+record Loose
+    # Whether an index below 0 counts from a list's end.
+    negative_indices: bool
+    # Whether a `remove` of a path that names nothing does nothing.
+    missing_remove: bool
+    # Whether an `add` makes the objects its path finds missing.
+    create_parents: bool
+
+# What `put` does at the end of its path.
+constant ADDING: i64
+    0
+
+# `put` replaces the value at the end of its path, which must be there.
+constant REPLACING: i64
+    1
+
+# `put` takes out the value at the end of its path, which must be there.
+constant REMOVING: i64
+    2
+
+# The index `token` names in a list of `count` elements, for a path that
+# reads an element: 0 to `count - 1`. Fails `invalid` where it is no index,
+# `not_found` where it names no element.
+function index_of(token: str, count: i64, loose: Loose) -> i64?
+    if token == "-"
+        return fail(code: NOT_FOUND, msg: f"`-` names the element after the last, of {count}, which is not there")
+    index = parse_index(token, loose: loose)?
+
+    at = if index < 0
+        index + count
+    else
+        index
+
+    if at < 0 || at >= count
+        return fail(code: NOT_FOUND, msg: f"no element at {token} in a list of {count}")
+    return ok(at)
+
+# The number a token that meets a list writes: `0`, or digits with no leading
+# zero, and with `-` before them where `loose` allows it. Fails `invalid`
+# where it is none.
+function parse_index(token: str, loose: Loose) -> i64?
+    start = if loose.negative_indices && token.len() > 1 && token[0] == '-'
+        1
+    else
+        0
+    digits = token.len() - start
+
+    if digits == 0 || digits > 15 || token[start] == '0' && digits > 1
+        return fail(
+            code: INVALID,
+            msg: f"\"{token}\" is no index of a list: an index is 0, or digits with no leading zero"
+        )
+    n: i64 @= 0
+
+    for at in range(from: start, to: token.len())
+        c = token[at]
+
+        if c < '0' || c > '9'
+            return fail(
+                code: INVALID,
+                msg: f"\"{token}\" is no index of a list: an index is 0, or digits with no leading zero"
+            )
+        n @ n * 10 + to_i64(c - '0').must()
+
+    if start == 1
+        return ok(0 - n)
+    return ok(n)
+
+# The child of `v` that `token` names. Fails `not_found` where there is none,
+# `invalid` where `v` holds nothing or `token` is no index of a list.
+function child_of(v: json.Value, token: str, loose: Loose) -> json.Value?
+    match v
+        .object o =>
+            match o.members[token]
+                .ok found => return ok(found)
+                .err _    => return fail(code: NOT_FOUND, msg: f"no member \"{token}\"")
+        .list l => return ok(l.items[index_of(token, count: l.items.len(), loose: loose)?])
+        .null_value | .boolean _ | .number _ | .text _ =>
+            return fail(code: INVALID, msg: f"the path goes on into {json.kind_of(v)}, which holds nothing")
+
+# The value at `pointer` in `doc`. Fails as `child_of` does, the message
+# saying how far the path went.
+function get(doc: json.Value, pointer: str, loose: Loose) -> json.Value?
+    tokens = json.pointer_tokens(pointer)?
+    here: json.Value @= doc
+    went: [str] @= []
+
+    for token in tokens
+        match child_of(here, token: token, loose: loose)
+            .ok found => here @ found
+            .err e    => return fail(code: e.code, msg: f"{e.msg} at \"{json.pointer_of(went)}\"")
+
+        went @ went.push(token)
+
+    return ok(here)
+
+# `members` without the member `name`, the others in their order.
+function without(members: {str: json.Value}, name: str) -> {str: json.Value}
+    kept: {str: json.Value} @= {}
+
+    for key in keys(members)
+        if key != name
+            kept[key] @ members[key].must()
+
+    return kept
+
+# `parent` with `value` added, replacing or taken out at `token`, as `mode`
+# says.
+function change(parent: json.Value, token: str, value: json.Value, mode: i64, loose: Loose) -> json.Value?
+    match parent
+        .object o =>
+            members @= o.members
+            has = !members[token].is_err()
+
+            if mode == REMOVING
+                if !has
+                    return fail(code: NOT_FOUND, msg: f"no member \"{token}\"")
+                return ok(.object(members: without(members, name: token)))
+
+            if mode == REPLACING && !has
+                return fail(code: NOT_FOUND, msg: f"no member \"{token}\"")
+            members[token] @ value
+            return ok(.object(members: members))
+        .list l =>
+            count = l.items.len()
+
+            if mode == ADDING
+                at: i64 @= count
+
+                if token != "-"
+                    index = parse_index(token, loose: loose)?
+                    at @ index
+
+                    if index < 0
+                        at @ index + count
+
+                    if at < 0 || at > count
+                        return fail(
+                            code: NOT_FOUND,
+                            msg: f"no place {token} in a list of {count}, which takes 0 to {count}"
+                        )
+                items: [json.Value] @= []
+
+                for i in range(from: 0, to: count)
+                    if i == at
+                        items @ items.push(value)
+                    items @ items.push(l.items[i])
+
+                if at == count
+                    items @ items.push(value)
+                return ok(.list(items: items))
+            at = index_of(token, count: count, loose: loose)?
+
+            if mode == REPLACING
+                items @= l.items
+                items[at] @ value
+                return ok(.list(items: items))
+            items: [json.Value] @= []
+
+            for i in range(from: 0, to: count)
+                if i != at
+                    items @ items.push(l.items[i])
+
+            return ok(.list(items: items))
+        .null_value | .boolean _ | .number _ | .text _ =>
+            return fail(code: INVALID, msg: f"the path ends inside {json.kind_of(parent)}, which holds nothing")
+
+# `doc` with `value` added, replacing or taken out at `pointer`, as `mode`
+# says. The empty pointer names `doc` itself: adding or replacing there
+# answers `value`, and taking it out is refused.
+function put(doc: json.Value, pointer: str, value: json.Value, mode: i64, loose: Loose) -> json.Value?
+    tokens = json.pointer_tokens(pointer)?
+
+    if tokens.len() == 0
+        if mode == REMOVING
+            return fail(code: INVALID, msg: "the whole value cannot be taken out")
+        return ok(value)
+
+    # `chain[i]` is the value the first `i` tokens reach, and `made_here[i]`
+    # whether it was made because it was missing and the caller asked.
+    chain: [json.Value] @= [doc]
+    made_here: [bool] @= [false]
+    last = tokens.len() - 1
+
+    for at in range(from: 0, to: last)
+        match child_of(chain[at], token: tokens[at], loose: loose)
+            .ok found =>
+                chain @ chain.push(found)
+                made_here @ made_here.push(false)
+            .err e =>
+                if e.code == NOT_FOUND && mode == ADDING && loose.create_parents && can_hold_new(chain[at], token: tokens[at])
+                    # A list where the token after it is an index, as Go's
+                    # library makes one, and an object otherwise.
+                    next = tokens[at + 1]
+
+                    if next == "-" || !parse_index(next, loose: loose).is_err()
+                        chain @ chain.push(.list(items: []))
+                    else
+                        chain @ chain.push(.object(members: {}))
+                    made_here @ made_here.push(true)
+                else
+                    return fail(code: e.code, msg: f"{e.msg} at \"{json.pointer_of(tokens.slice(from: 0, to: at))}\"")
+
+    made: json.Value @= .null_value
+
+    match change(parent: chain[last], token: tokens[last], value: value, mode: mode, loose: loose)
+        .ok done => made @ done
+        .err e   => return fail(code: e.code, msg: f"{e.msg} at \"{json.pointer_of(tokens.slice(from: 0, to: last))}\"")
+
+    at: i64 @= last
+
+    while at > 0
+        at @ at - 1
+
+        # A member is put back by adding it, which replaces it in its place;
+        # an element is put back in its place, or added where it was made.
+        back = if json.kind_of(chain[at]) == "object" || made_here[at + 1]
+            ADDING
+        else
+            REPLACING
+        made @ change(parent: chain[at], token: tokens[at], value: made, mode: back, loose: loose).must()
+
+    return ok(made)
+
+# Whether `parent` can take a new child at `token`: an object always, a list
+# where `token` names the place after its last element.
+function can_hold_new(parent: json.Value, token: str) -> bool
+    match parent
+        .object _                                      => return true
+        .list l                                        => return token == "-" || token == f"{l.items.len()}"
+        .null_value | .boolean _ | .number _ | .text _ => return false
+
+# Whether the tokens of `inner` begin with every token of `outer` and go on
+# past them: `inner` names a place inside `outer`'s value.
+function is_inside(inner: str, outer: str) -> bool
+    return inner.len() > outer.len() && inner.slice(from: 0, to: outer.len()) == outer && inner[outer.len()] == '/'
+
+# `doc` with `op` applied. Fails as the operation does.
+function one(doc: json.Value, op: ops.Op, loose: Loose) -> json.Value?
+    if op.kind == ops.ADD
+        return put(doc: doc, pointer: op.path, value: op.value, mode: ADDING, loose: loose)
+
+    if op.kind == ops.REPLACE
+        return put(doc: doc, pointer: op.path, value: op.value, mode: REPLACING, loose: loose)
+
+    if op.kind == ops.REMOVE
+        match put(doc: doc, pointer: op.path, value: .null_value, mode: REMOVING, loose: loose)
+            .ok done => return ok(done)
+            .err e =>
+                if e.code == NOT_FOUND && loose.missing_remove
+                    return ok(doc)
+                return fail(code: e.code, msg: e.msg)
+
+    if op.kind == ops.TEST
+        found = get(doc, pointer: op.path, loose: loose)?
+
+        if !same.equal(a: found, b: op.value)
+            return fail(
+                code: INVALID,
+                msg: f"the test of \"{op.path}\" expected {json.format(op.value).default("a value")} and found {json.format(found).default("another")}"
+            )
+        return ok(doc)
+    moved = get(doc, pointer: op.from, loose: loose)?
+
+    if op.kind == ops.COPY
+        return put(doc: doc, pointer: op.path, value: moved, mode: ADDING, loose: loose)
+
+    if op.path == op.from
+        return ok(doc)
+
+    if is_inside(inner: op.path, outer: op.from)
+        return fail(code: INVALID, msg: f"\"{op.from}\" cannot move inside itself, to \"{op.path}\"")
+    taken = put(doc: doc, pointer: op.from, value: .null_value, mode: REMOVING, loose: loose)?
+    return put(doc: taken, pointer: op.path, value: moved, mode: ADDING, loose: loose)
+
+# `doc` with every operation of `operations` applied in order. Fails at the
+# first that fails, the message naming it by its index.
+function run(doc: json.Value, operations: [ops.Op], loose: Loose) -> json.Value?
+    now: json.Value @= doc
+
+    for index in range(from: 0, to: operations.len())
+        op = operations[index]
+
+        match one(now, op: op, loose: loose)
+            .ok done => now @ done
+            .err e => return fail(
+                code: e.code,
+                msg: f"operation {index}, {ops.name_of(op.kind)} \"{op.path}\": {e.msg}"
+            )
+
+    return ok(now)
+
+## Tests
+
+# The options of RFC 6902.
+function rfc() -> Loose
+    return Loose(negative_indices: false, missing_remove: false, create_parents: false)
+
+# `text` read, failing the test where it is no JSON.
+function value_of(text: str) -> json.Value
+    return json.parse(text).must()
+
+test "parse_index: 0, digits, a leading zero, a sign, and a number past any list"
+    assert parse_index("0", loose: rfc()).must() == 0
+    assert parse_index("10", loose: rfc()).must() == 10
+
+    for token in ["", "01", "-1", "+1", "1e2", " 1", "1234567890123456", "a"]
+        match parse_index(token, loose: rfc())
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    loose: Loose @= rfc()
+    loose.negative_indices @ true
+    assert parse_index("-1", loose: loose).must() == -1
+    assert parse_index("-", loose: loose).is_err()
+
+test "put: adding at each end of a list and in its middle, and past its end"
+    xs = value_of("[1, 2]")
+    assert put(doc: xs, pointer: "/0", value: .number(v: 0.0), mode: ADDING, loose: rfc()).must() == value_of("[0, 1, 2]")
+    assert put(doc: xs, pointer: "/1", value: .number(v: 9.0), mode: ADDING, loose: rfc()).must() == value_of("[1, 9, 2]")
+    assert put(doc: xs, pointer: "/2", value: .number(v: 3.0), mode: ADDING, loose: rfc()).must() == value_of("[1, 2, 3]")
+    assert put(doc: xs, pointer: "/-", value: .number(v: 3.0), mode: ADDING, loose: rfc()).must() == value_of("[1, 2, 3]")
+
+    match put(doc: xs, pointer: "/3", value: .null_value, mode: ADDING, loose: rfc())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "put: replacing and taking out, in an object and a list, deep and at the root"
+    d = value_of("{\"a\": {\"b\": [1, {\"c\": 2}]}, \"z\": 0}")
+    assert put(doc: d, pointer: "/a/b/1/c", value: .text(v: "x"), mode: REPLACING, loose: rfc()).must() == value_of("{\"a\": {\"b\": [1, {\"c\": \"x\"}]}, \"z\": 0}")
+    assert put(doc: d, pointer: "/a/b/0", value: .null_value, mode: REMOVING, loose: rfc()).must() == value_of("{\"a\": {\"b\": [{\"c\": 2}]}, \"z\": 0}")
+    taken = put(doc: d, pointer: "/a", value: .null_value, mode: REMOVING, loose: rfc()).must()
+    assert keys(json.members_of(taken).must()) == ["z"]
+    assert put(doc: d, pointer: "", value: .boolean(v: true), mode: REPLACING, loose: rfc()).must() == .boolean(v: true)
+    assert put(doc: d, pointer: "", value: .null_value, mode: REMOVING, loose: rfc()).is_err()
+    assert put(doc: d, pointer: "/q", value: .null_value, mode: REPLACING, loose: rfc()).is_err()
+    assert put(doc: d, pointer: "/z/q", value: .null_value, mode: ADDING, loose: rfc()).is_err()
+
+test "put: a replaced member keeps its place, an added one goes last"
+    d = value_of("{\"a\": 1, \"b\": 2}")
+    replaced = put(doc: d, pointer: "/a", value: .number(v: 3.0), mode: REPLACING, loose: rfc()).must()
+    assert keys(json.members_of(replaced).must()) == ["a", "b"]
+    added = put(doc: d, pointer: "/c", value: .number(v: 3.0), mode: ADDING, loose: rfc()).must()
+    assert keys(json.members_of(added).must()) == ["a", "b", "c"]
+
+test "put: missing parents made where asked, and refused otherwise"
+    loose: Loose @= rfc()
+    loose.create_parents @ true
+    assert put(doc: value_of("{}"), pointer: "/a/b/c", value: .number(v: 1.0), mode: ADDING, loose: loose).must() == value_of("{\"a\": {\"b\": {\"c\": 1}}}")
+    assert put(doc: value_of("{}"), pointer: "/a/0/b", value: .number(v: 1.0), mode: ADDING, loose: loose).must() == value_of("{\"a\": [{\"b\": 1}]}")
+    assert put(doc: value_of("{\"a\": []}"), pointer: "/a/0/b", value: .number(v: 1.0), mode: ADDING, loose: loose).must() == value_of("{\"a\": [{\"b\": 1}]}")
+    assert put(doc: value_of("{\"a\": [7]}"), pointer: "/a/-/b", value: .number(v: 1.0), mode: ADDING, loose: loose).must() == value_of("{\"a\": [7, {\"b\": 1}]}")
+    assert put(
+        doc: value_of("{\"a\": 1}"),
+        pointer: "/a/b/c",
+        value: .number(v: 1.0),
+        mode: ADDING,
+        loose: loose
+    ).is_err()
+
+    match put(doc: value_of("{}"), pointer: "/a/b", value: .number(v: 1.0), mode: ADDING, loose: rfc())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no member \"a\" at \"\""
+
+test "is_inside: a child, the place itself, and a sibling whose name begins the same"
+    assert is_inside(inner: "/a/b", outer: "/a")
+    assert is_inside(inner: "/a/b", outer: "")
+    assert !is_inside(inner: "/a", outer: "/a")
+    assert !is_inside(inner: "/ab", outer: "/a")
+
+test "run: move, copy and test, a move into itself refused, and the index of the one that fails"
+    d = value_of("{\"a\": {\"b\": 1}, \"c\": [1]}")
+    moved = run(
+        d,
+        operations: [ops.Op(kind: ops.MOVE, path: "/c/0", from: "/a/b", value: .null_value)],
+        loose: rfc()
+    ).must()
+    assert moved == value_of("{\"a\": {}, \"c\": [1, 1]}")
+    copied = run(
+        d,
+        operations: [ops.Op(kind: ops.COPY, path: "/d", from: "/a", value: .null_value)],
+        loose: rfc()
+    ).must()
+    assert copied == value_of("{\"a\": {\"b\": 1}, \"c\": [1], \"d\": {\"b\": 1}}")
+    assert run(
+        d,
+        operations: [ops.Op(kind: ops.MOVE, path: "/a/x", from: "/a", value: .null_value)],
+        loose: rfc()
+    ).is_err()
+    assert run(d, operations: [ops.Op(kind: ops.MOVE, path: "/a", from: "/a", value: .null_value)], loose: rfc()).must() == d
+    test_op = ops.Op(kind: ops.TEST, path: "/c", from: "", value: value_of("[1.0]"))
+    assert run(d, operations: [test_op], loose: rfc()).must() == d
+    failing = ops.Op(kind: ops.TEST, path: "/c/0", from: "", value: .number(v: 2.0))
+
+    match run(d, operations: [test_op, failing], loose: rfc())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "operation 1, test \"/c/0\": the test of \"/c/0\" expected 2 and found 1"
+
+test "run: a remove of nothing, refused, and done nothing where asked"
+    d = value_of("{\"a\": 1}")
+    gone = ops.Op(kind: ops.REMOVE, path: "/b", from: "", value: .null_value)
+
+    match run(d, operations: [gone], loose: rfc())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    loose: Loose @= rfc()
+    loose.missing_remove @ true
+    assert run(d, operations: [gone], loose: loose).must() == d

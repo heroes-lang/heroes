@@ -1,0 +1,189 @@
+# A patch's operations as the package's modules hold them, one record for the
+# six, and the patch read from a value and written as one. The face turns its
+# `Operation` into an `Op` and back, since a private module cannot read it.
+
+use json
+
+# The code of a patch that is not one.
+constant INVALID: str
+    "invalid"
+
+# The operation `add`.
+constant ADD: i64
+    0
+
+# The operation `remove`.
+constant REMOVE: i64
+    1
+
+# The operation `replace`.
+constant REPLACE: i64
+    2
+
+# The operation `move`.
+constant MOVE: i64
+    3
+
+# The operation `copy`.
+constant COPY: i64
+    4
+
+# The operation `test`.
+constant TEST: i64
+    5
+
+# One operation: its kind, its path, and the `from` or the value its kind
+# reads; the field it does not read is `""` or `null`.
+record Op
+    # `ADD` to `TEST`.
+    kind: i64
+    # The JSON pointer it changes or reads.
+    path: str
+    # The JSON pointer of a `MOVE` or a `COPY`.
+    from: str
+    # The value of an `ADD`, a `REPLACE` or a `TEST`.
+    value: json.Value
+
+# The name RFC 6902 gives the operation `kind`.
+function name_of(kind: i64) -> str
+    names = ["add", "remove", "replace", "move", "copy", "test"]
+    return names[kind]
+
+# The operation an `op` member names. Fails `invalid` where it names none.
+function kind_of(name: str) -> i64?
+    names = ["add", "remove", "replace", "move", "copy", "test"]
+
+    for at in range(from: 0, to: names.len())
+        if names[at] == name
+            return ok(at)
+
+    return fail(
+        code: INVALID,
+        msg: f"\"{name}\" is no operation: one of add, remove, replace, move, copy and test"
+    )
+
+# The text of member `key` of the operation at `index`, read as a JSON
+# pointer. Fails `invalid` where it is missing, is no text, or is no pointer.
+function pointer_member(members: {str: json.Value}, key: str, index: i64) -> str?
+    match members[key]
+        .err _ => return fail(code: INVALID, msg: f"operation {index} has no \"{key}\"")
+        .ok v =>
+            match v
+                .text t =>
+                    match json.pointer_tokens(t.v)
+                        .err e => return fail(code: INVALID, msg: f"operation {index}: {e.msg}")
+                        .ok _  => return ok(t.v)
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: f"operation {index}'s \"{key}\" is {json.kind_of(v)}, not a text")
+
+# The operations the value `v` holds, in order. Fails `invalid` where it is no
+# patch, the message naming the operation by its index.
+function read(v: json.Value) -> [Op]?
+    items = match v
+        .list l => l.items
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return fail(code: INVALID, msg: f"a patch is a list of operations, and this is {json.kind_of(v)}")
+
+    out: [Op] @= []
+
+    for index in range(from: 0, to: items.len())
+        members = match items[index]
+            .object o => o.members
+            .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                return fail(
+                    code: INVALID,
+                    msg: f"operation {index} is {json.kind_of(items[index])}, where an operation is an object"
+                )
+
+        name = match members["op"]
+            .err _ => return fail(code: INVALID, msg: f"operation {index} has no \"op\"")
+            .ok found =>
+                match found
+                    .text t => t.v
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                        return fail(
+                            code: INVALID,
+                            msg: f"operation {index}'s \"op\" is {json.kind_of(found)}, not a text"
+                        )
+
+        kind = match kind_of(name)
+            .ok k  => k
+            .err e => return fail(code: INVALID, msg: f"operation {index}: {e.msg}")
+
+        path = pointer_member(members, key: "path", index: index)?
+        from: str @= ""
+        value: json.Value @= .null_value
+
+        if kind == MOVE || kind == COPY
+            from @ pointer_member(members, key: "from", index: index)?
+        else if kind != REMOVE
+            match members["value"]
+                .err _    => return fail(code: INVALID, msg: f"operation {index}, {name}, has no \"value\"")
+                .ok found => value @ found
+        out @ out.push(Op(kind: kind, path: path, from: from, value: value))
+
+    return ok(out)
+
+# The operations `ops` as a value: a list of objects, each with `op`, `path`
+# and, after it, `value` or `from`. A `move` and a `copy` write `from` first,
+# as RFC 6902's examples do.
+function write(ops: [Op]) -> json.Value
+    items: [json.Value] @= []
+
+    for op in ops
+        members: {str: json.Value} @= {}
+        members["op"] @ .text(v: name_of(op.kind))
+
+        if op.kind == MOVE || op.kind == COPY
+            members["from"] @ .text(v: op.from)
+        members["path"] @ .text(v: op.path)
+
+        if op.kind == ADD || op.kind == REPLACE || op.kind == TEST
+            members["value"] @ op.value
+        items @ items.push(.object(members: members))
+
+    return .list(items: items)
+
+## Tests
+
+test "kind_of and name_of: the six operations and one that is none"
+    for kind in range(from: 0, to: 6)
+        assert kind_of(name_of(kind)).must() == kind
+
+    match kind_of("Add")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "read: every operation, other members not read, and the members each needs"
+    v = json.parse(
+        "[{\"op\":\"add\",\"path\":\"/a\",\"value\":null,\"x\":1},{\"op\":\"remove\",\"path\":\"\"},{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"},{\"op\":\"test\",\"path\":\"/é\",\"value\":[]}]"
+    ).must()
+    got = read(v).must()
+    assert got.len() == 4
+    assert got[0] == Op(kind: ADD, path: "/a", from: "", value: .null_value)
+    assert got[1].kind == REMOVE && got[1].path == ""
+    assert got[2] == Op(kind: MOVE, path: "/b", from: "/a", value: .null_value)
+    assert got[3].path == "/é" && got[3].value == .list(items: [])
+
+test "read: what is not a patch, each with the operation's index"
+    for text in ["{}", "[1]", "[{}]", "[{\"op\":1,\"path\":\"\"}]", "[{\"op\":\"add\",\"path\":\"/a\"}]", "[{\"op\":\"move\",\"path\":\"/a\"}]", "[{\"op\":\"remove\",\"path\":\"a\"}]", "[{\"op\":\"remove\"}]", "[{\"op\":\"copy\",\"from\":7,\"path\":\"/a\"}]", "[{\"op\":\"get\",\"path\":\"\"}]"]
+        match read(json.parse(text).must())
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match read(json.parse("[{\"op\":\"add\",\"path\":\"/a\",\"value\":1},{\"op\":\"add\",\"path\":\"/a\"}]").must())
+        .ok _  => assert false
+        .err e => assert e.msg == "operation 1, add, has no \"value\""
+
+test "read: an empty patch"
+    assert read(.list(items: [])).must().len() == 0
+
+test "write: each operation's members in order, and read back"
+    ops: [Op] = [
+        Op(kind: ADD, path: "/a", from: "", value: .number(v: 1.0))
+        Op(kind: COPY, path: "/b", from: "/a", value: .null_value)
+        Op(kind: REMOVE, path: "/a", from: "", value: .null_value)
+    ]
+    text = json.format(write(ops)).must()
+    assert text == "[{\"op\":\"add\",\"path\":\"/a\",\"value\":1},{\"op\":\"copy\",\"from\":\"/a\",\"path\":\"/b\"},{\"op\":\"remove\",\"path\":\"/a\"}]"
+    assert read(json.parse(text).must()).must() == ops

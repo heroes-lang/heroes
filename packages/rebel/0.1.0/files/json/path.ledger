@@ -1,0 +1,88 @@
+# The ledger of `json/path`: what the JSON query libraries of the three
+# languages let a program do, one block per capability, and what Rebel
+# answers. None of the three standard libraries has one, so the yardstick is
+# the author's of 2026-11-17: Python's `jsonpath-ng` 1.16.0 and `jmespath`
+# 1.1.0, Go's `github.com/tidwall/gjson` v1.20.4, and Rust's `serde_json_path`
+# 0.7.2, the one of the three written to RFC 9535. The lists are this
+# machine's, 2026-11-17: `dir()` of the Python modules installed in the scratch
+# folder, `go doc -all` of the Go module fetched there, and the item list
+# docs.rs prints for the crate. The tests are the JSONPath Compliance Test
+# Suite (github.com/jsonpath-standard/jsonpath-compliance-test-suite, commit
+# 20ebdcce of 2026-10-14), every one of its 715 cases.
+
+capability path/parse  a query read, checked against RFC 9535's grammar and its rules of types
+  heroes  json/path.parse, json/path.is_valid, json/path.Query
+  go      -
+  rust    JsonPath, JsonPath::parse, ParseError
+  python  jsonpath_ng.parse, jsonpath_ng.ext.parse, JSONPath, JSONPathError, jsonpath_ng.lexer, jsonpath_ng.parser, jsonpath_ng.exceptions
+  note    RFC 9535 and nothing wider: the grammar of its Appendix A, its rules of types, I-JSON's range for an index, no blank before `$` or after the end. The Compliance Test Suite's 249 queries to refuse are refused. A query's own nesting is bounded by `MAX_NESTING`, 64, which neither Rust nor the RFC states
+
+capability path/select  the values a query selects in a value, in order
+  heroes  json/path.select
+  go      -
+  rust    JsonPath::query, NodeList, NodeList::all, NodeList::iter, NodeList::len, NodeList::is_empty, NodeList::get, NodeList::first, NodeList::last, Nodes, JsonPathExt, JsonPathExt::json_path
+  python  JSONPath.find, DatumInContext, DatumInContext.value
+  note    the RFC's order: an object's members in the order the object keeps, which is the order they were written, one of the orders the suite allows wherever it leaves the order open; the suite's 466 queries with a result all pass
+
+capability path/locations  each value selected with where it stands, as a normalized path and a JSON pointer
+  heroes  json/path.select_nodes, json/path.Node, json/path.to_pointer
+  go      Result.Path, Result.Paths, Result.Index, Result.Indexes
+  rust    JsonPath::query_located, LocatedNode, LocatedNodeList, Locations, NormalizedPath, NormalizedPath::to_json_pointer, PathElement
+  python  DatumInContext.full_path, DatumInContext.path, DatumInContext.context, DatumInContext.in_context, DatumInContext.id_pseudopath, AutoIdForDatum, auto_id_field
+  note    each node with its normalized path, RFC 9535 § 2.7, and its JSON pointer, as Rust's `to_json_pointer` gives one; `to_pointer` reads only the normalized form back, refusing a path in double quotes or with an escape the form does not write
+
+capability path/one  the one value a query selects, failing where it selects none or several
+  heroes  json/path.select_one
+  go      -
+  rust    NodeList::exactly_one, NodeList::at_most_one, ExactlyOneError, AtMostOneError
+  python  -
+  note    none is `not_found` and several `invalid`, Rust's two errors in the closed vocabulary of codes
+
+capability path/functions  the function extensions of RFC 9535: length, count, match, search and value
+  heroes  json/path.parse (the five functions of RFC 9535 § 2.4)
+  go      -
+  rust    functions, LogicalType, ValueType, NodesType
+  python  jsonpath_ng.ext.string, jsonpath_ng.ext.iterable (`len`)
+  note    `length` counts characters, as the RFC asks; `match` and `search` read an I-Regexp (RFC 9485), translated for `regex`, so they run in time linear in the text, and a pattern that is no I-Regexp makes them false, as the RFC asks; `^` and `$` anchor, as the suite expects, where RFC 9485's grammar reads them as characters
+
+capability path/update  every place a query selects given a new value
+  heroes  json/path.replace_all, json/path.replace_all_by
+  go      -
+  rust    -
+  python  JSONPath.update, JSONPath.update_or_create, JSONPath.find_or_create, JSONPath.filter
+  note    each place selected once, the deepest first, so where a place selected holds another the outer one's new value stands; jsonpath-ng's `update_or_create` and `find_or_create`, which make the places a query names, are not done: a filter or a slice names no place that does not exist
+
+capability path/custom-functions  a function of the program's own called from a filter
+  heroes  refused: a query is text other programs read too, and a function only this program registers makes it mean nothing to them; RFC 9535 leaves new functions to its IANA registry, whose five are here
+  go      AddModifier, ModifierExists, DisableModifiers
+  rust    function (the attribute macro)
+  python  FilterFunction
+  note    gjson's modifiers and Rust's attribute both extend the language one program at a time
+
+capability path/beyond-rfc  the selectors of jsonpath-ng past RFC 9535: the parent, arithmetic, sorting, `this`
+  heroes  refused: past RFC 9535, which is the language this package reads; jsonpath-ng's parent operator, arithmetic and sorting have no standard
+  go      -
+  rust    -
+  python  Parent, This, Where, WhereNot, jsonpath_ng.ext.arithmetic, jsonpath_ng.ext.filter, jsonpath_ng.ext.iterable, Root, Child, Descendants, Fields, Index, Slice, Wildcard, Container, LIST_KEY, NOT_SET
+  note    -
+
+capability path/gjson-syntax  Go gjson's own path syntax, its `#` queries and its `@` modifiers
+  heroes  refused: another query language, gjson's own, with no standard behind it; RFC 9535 is the IETF's
+  go      Get, GetBytes, GetMany, GetManyBytes, Parse, ParseBytes, Result, Result.Get, Result.Exists, Result.Array, Result.Map, Result.ForEach, Result.All, Result.Keys, Result.Values, Result.Value, Result.String, Result.Int, Result.Uint, Result.Float, Result.Bool, Result.Time, Result.IsArray, Result.IsObject, Result.IsBool, Result.Less, Type, Type.String, Null, False, Number, String, True, JSON, Escape
+  rust    -
+  python  -
+  note    gjson reads a text without reading it into a value; here a text is read once by `json.parse` and queried as a value
+
+capability path/jmespath  JMESPath, a query language of projections, pipes and functions
+  heroes  refused: another query language, of projections, pipes and functions, a package of its own and not a part of JSONPath's
+  go      -
+  rust    -
+  python  jmespath.search, jmespath.compile, jmespath.Options, jmespath.functions, jmespath.ast, jmespath.visitor, jmespath.exceptions
+  note    -
+
+dropped
+  go      Valid, ValidBytes: whether a text is JSON, which is `json.is_valid`
+  go      ForEachLine: values one after another in a text, which is `json.parse_next`
+  go      AppendJSONString, SetEscapeHTML, DisableEscapeHTML: a string written as JSON, which is `json.quote` and `json.FormatOptions`
+  python  jsonpath_ng.jsonpath, jsonpath_ng.ext.parser, jmespath.lexer, jmespath.parser, jmespath.compat: the modules behind the functions above
+  rust    serde_json_path's re-export of serde_json: the JSON value, which is `json.Value`

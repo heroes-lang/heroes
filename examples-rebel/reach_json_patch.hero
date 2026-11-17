@@ -1,0 +1,19 @@
+# Reaches Rebel's `json/patch`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), RFC 6902's and RFC 7386's examples among
+# them. It applies a patch to a small document and prints the patch that
+# undoes it.
+
+use <rebel>/json
+use <rebel>/json/patch
+
+function main()
+    doc = json.parse("{\"name\": \"Ziggy\", \"albums\": [1972]}").default(.null_value)
+
+    match patch.parse("[{\"op\": \"add\", \"path\": \"/albums/-\", \"value\": 1973}]")
+        .err e => print(e.code, ": ", e.msg)
+        .ok ops =>
+            match patch.apply(doc, ops)
+                .err e => print(e.code, ": ", e.msg)
+                .ok done =>
+                    print(json.format(done).default("?"))
+                    print(patch.format(patch.diff(from: done, to: doc)).default("?"))

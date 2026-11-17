@@ -1,0 +1,36 @@
+# Which of two errors is worth telling a person first: the one nearer the
+# instance's root, and of two as near, one that is not the summary of an
+# `anyOf`, a `oneOf` or a `not`.
+
+# How many tokens the pointer `location` has.
+function depth_of(location: str) -> i64
+    count: i64 @= 0
+
+    for at in range(from: 0, to: location.len())
+        if location[at] == '/'
+            count @ count + 1
+
+    return count
+
+# Whether an error of `keyword` sums up its subschemas' errors.
+function is_summary(keyword: str) -> bool
+    return keyword == "anyOf" || keyword == "oneOf" || keyword == "not"
+
+# Whether the error at `location` of `keyword` is worth telling before the
+# one at `other_location` of `other_keyword`.
+function is_better(location: str, keyword: str, other_location: str, other_keyword: str) -> bool
+    depth = depth_of(location)
+    other = depth_of(other_location)
+
+    if depth != other
+        return depth < other
+    return is_summary(other_keyword) && !is_summary(keyword)
+
+## Tests
+
+test "is_better: nearer the root, and no summary over a summary"
+    assert is_better(location: "", keyword: "type", other_location: "/a", other_keyword: "type")
+    assert !is_better(location: "/a/b", keyword: "type", other_location: "/a", other_keyword: "anyOf")
+    assert is_better(location: "/a", keyword: "type", other_location: "/b", other_keyword: "anyOf")
+    assert !is_better(location: "/a", keyword: "anyOf", other_location: "/b", other_keyword: "type")
+    assert depth_of("") == 0 && depth_of("/a/0") == 2

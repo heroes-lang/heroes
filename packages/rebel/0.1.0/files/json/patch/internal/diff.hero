@@ -1,0 +1,189 @@
+# The patch that turns one value into another, made on a stack of the pairs
+# of values still to compare: objects member by member, lists by what they
+# share at their start and their end and element by element between, and
+# anything else replaced whole.
+
+use json
+use json/patch/internal/apply
+use json/patch/internal/ops
+use json/patch/internal/same
+use json/patch/internal/stack
+use strings
+
+# `token` as it stands in a JSON pointer: `~` written `~0`, `/` written `~1`.
+function escaped(token: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: token, old: "~", new: "~0"), old: "/", new: "~1")
+
+# Adds to `out` a `test` of `old` at `path` where `tests` asks, then `op`.
+function emit(@out: [ops.Op], op: ops.Op, old: json.Value, tests: bool)
+    if tests && (op.kind == ops.REMOVE || op.kind == ops.REPLACE)
+        out @ out.push(ops.Op(kind: ops.TEST, path: op.path, from: "", value: old))
+    out @ out.push(op)
+
+# The operations that turn `from` into `to`, with a `test` of the old value
+# before each `remove` and `replace` where `tests` asks.
+function make(from: json.Value, to: json.Value, tests: bool) -> [ops.Op]
+    out: [ops.Op] @= []
+    lefts: [json.Value] @= [from]
+    rights: [json.Value] @= [to]
+    paths: [str] @= [""]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        left = lefts[top]
+        right = rights[top]
+        path = paths[top]
+        handled: bool @= false
+
+        match left
+            .object l =>
+                match right
+                    .object r =>
+                        handled @ true
+                        common: [str] @= []
+
+                        for name in keys(l.members)
+                            if r.members[name].is_err()
+                                op = ops.Op(
+                                    kind: ops.REMOVE,
+                                    path: path + "/" + escaped(name),
+                                    from: "",
+                                    value: .null_value
+                                )
+                                emit(out: @out, op: op, old: l.members[name].must(), tests: tests)
+                            else
+                                common @ common.push(name)
+
+                        for name in keys(r.members)
+                            if l.members[name].is_err()
+                                op = ops.Op(
+                                    kind: ops.ADD,
+                                    path: path + "/" + escaped(name),
+                                    from: "",
+                                    value: r.members[name].must()
+                                )
+                                out @ out.push(op)
+
+                        at: i64 @= common.len()
+
+                        while at > 0
+                            at @ at - 1
+                            name = common[at]
+                            stack.put(items: @lefts, top: top, item: l.members[name].must())
+                            stack.put(items: @rights, top: top, item: r.members[name].must())
+                            stack.put(items: @paths, top: top, item: path + "/" + escaped(name))
+                            top @ top + 1
+                    .null_value | .boolean _ | .number _ | .text _ | .list _ => _ = 0
+            .list l =>
+                match right
+                    .list r =>
+                        handled @ true
+                        n = l.items.len()
+                        m = r.items.len()
+
+                        shorter = if n < m
+                            n
+                        else
+                            m
+                        prefix: i64 @= 0
+
+                        while prefix < shorter && same.equal(a: l.items[prefix], b: r.items[prefix])
+                            prefix @ prefix + 1
+
+                        suffix: i64 @= 0
+
+                        while suffix < shorter - prefix && same.equal(a: l.items[n - 1 - suffix], b: r.items[m - 1 - suffix])
+                            suffix @ suffix + 1
+
+                        a = n - prefix - suffix
+                        b = m - prefix - suffix
+
+                        if a > b
+                            at: i64 @= prefix + a
+
+                            while at > prefix + b
+                                at @ at - 1
+                                op = ops.Op(kind: ops.REMOVE, path: f"{path}/{at}", from: "", value: .null_value)
+                                emit(out: @out, op: op, old: l.items[at], tests: tests)
+                        else
+                            for at in range(from: prefix + a, to: prefix + b)
+                                out @ out.push(
+                                    ops.Op(kind: ops.ADD, path: f"{path}/{at}", from: "", value: r.items[at])
+                                )
+
+                        paired = if a < b
+                            a
+                        else
+                            b
+                        at: i64 @= prefix + paired
+
+                        while at > prefix
+                            at @ at - 1
+                            stack.put(items: @lefts, top: top, item: l.items[at])
+                            stack.put(items: @rights, top: top, item: r.items[at])
+                            stack.put(items: @paths, top: top, item: f"{path}/{at}")
+                            top @ top + 1
+                    .null_value | .boolean _ | .number _ | .text _ | .object _ => _ = 0
+            .null_value | .boolean _ | .number _ | .text _ => _ = 0
+
+        if !handled && !same.equal(a: left, b: right)
+            emit(out: @out, op: ops.Op(kind: ops.REPLACE, path: path, from: "", value: right), old: left, tests: tests)
+
+    return out
+
+## Tests
+
+test "make: equal values, a value of another kind, and the root replaced"
+    one = json.parse("{\"a\": [1, {\"b\": null}]}").must()
+    assert make(from: one, to: json.parse("{\"a\": [1.0, {\"b\": null}]}").must(), tests: false).len() == 0
+    assert make(from: .number(v: 1.0), to: .text(v: "1"), tests: false) == [ops.Op(kind: ops.REPLACE, path: "", from: "", value: .text(v: "1"))]
+
+test "make: members removed, added and changed, names escaped"
+    from = json.parse("{\"a\": 1, \"b/c\": 2, \"d\": {\"e\": 3}}").must()
+    to = json.parse("{\"a\": 1, \"d\": {\"e\": 4}, \"~\": 5}").must()
+    got = make(from: from, to: to, tests: false)
+    want: [ops.Op] = [
+        ops.Op(kind: ops.REMOVE, path: "/b~1c", from: "", value: .null_value)
+        ops.Op(kind: ops.ADD, path: "/~0", from: "", value: .number(v: 5.0))
+        ops.Op(kind: ops.REPLACE, path: "/d/e", from: "", value: .number(v: 4.0))
+    ]
+    assert got == want
+
+test "make: an element put in the middle, taken from the start, and a list cut and grown"
+    assert make(from: json.parse("[1, 2, 3]").must(), to: json.parse("[1, 9, 2, 3]").must(), tests: false) == [ops.Op(kind: ops.ADD, path: "/1", from: "", value: .number(v: 9.0))]
+    assert make(from: json.parse("[1, 2, 3]").must(), to: json.parse("[2, 3]").must(), tests: false) == [ops.Op(kind: ops.REMOVE, path: "/0", from: "", value: .null_value)]
+    cut = make(from: json.parse("[1, 2, 3, 4]").must(), to: json.parse("[5]").must(), tests: false)
+    assert cut.len() == 4 && cut[0].path == "/3" && cut[2].path == "/1" && cut[3] == ops.Op(kind: ops.REPLACE, path: "/0", from: "", value: .number(v: 5.0))
+    grown = make(from: json.parse("[]").must(), to: json.parse("[1, 2]").must(), tests: false)
+    assert grown == [ops.Op(kind: ops.ADD, path: "/0", from: "", value: .number(v: 1.0)), ops.Op(kind: ops.ADD, path: "/1", from: "", value: .number(v: 2.0))]
+
+test "make: a test of the old value before each remove and replace"
+    got = make(from: json.parse("{\"a\": 1, \"b\": 2}").must(), to: json.parse("{\"a\": 3}").must(), tests: true)
+    assert got.len() == 4
+    assert got[0] == ops.Op(kind: ops.TEST, path: "/b", from: "", value: .number(v: 2.0))
+    assert got[1].kind == ops.REMOVE && got[2].kind == ops.TEST && got[3].kind == ops.REPLACE
+
+test "make: every patch it makes turns the first value into the second, tested or not"
+    pairs = [
+        ["{\"a\": [1, 2, {\"b\": [3, 4]}], \"c\": \"x\"}", "{\"a\": [2, {\"b\": [4, 3, 5]}, 9], \"d\": null}"]
+        ["[[1, 2], [3], [], {\"k\": [1]}]", "[[2], [3, 3], {\"k\": [1, {\"z\": 1}]}]"]
+        ["{\"x/y\": {\"~\": 1}}", "{\"x/y\": {\"~\": [1]}, \"\": 0}"]
+        ["[1, 2, 3, 4, 5]", "[1, 5]"]
+        ["[]", "{}"]
+        ["\"é\"", "\"è\""]
+    ]
+    loose = apply.Loose(negative_indices: false, missing_remove: false, create_parents: false)
+
+    for pair in pairs
+        from = json.parse(pair[0]).must()
+        to = json.parse(pair[1]).must()
+        assert same.equal(
+            a: apply.run(from, operations: make(from: from, to: to, tests: false), loose: loose).must(),
+            b: to
+        )
+        assert same.equal(
+            a: apply.run(from, operations: make(from: from, to: to, tests: true), loose: loose).must(),
+            b: to
+        )
+        assert make(from: to, to: to, tests: true).len() == 0

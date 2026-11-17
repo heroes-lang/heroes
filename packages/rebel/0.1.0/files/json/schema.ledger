@@ -1,0 +1,196 @@
+# The ledger of `json/schema`: what the JSON Schema validators of the three
+# languages let a program do, one block per capability, and what Rebel
+# answers. None of the three standard libraries has one, so the yardstick is
+# the author's of 2026-11-17: Python's `jsonschema` 4.26.0 (with the
+# `referencing` 0.37.0 it stands on), Go's
+# `github.com/santhosh-tekuri/jsonschema/v6` v6.0.3 and Rust's `jsonschema`
+# 0.61.2. The lists are this machine's, 2026-11-17: `dir()` of the Python
+# modules installed in the scratch folder, `go doc -all` of the Go module
+# fetched there, and the item list docs.rs prints for the crate. The tests are
+# the JSON Schema Test Suite (github.com/json-schema-org/JSON-Schema-Test-Suite,
+# commit e2a68a15 of 2026-11-16), every case its `compatibility` gives to
+# draft 7 or to 2020-12, run under each.
+
+capability schema/compile  a schema read once, its references resolved, and used for many instances
+  heroes  json/schema.compile, json/schema.compile_with, json/schema.Schema, json/schema.Options, json/schema.defaults
+  go      Compiler, NewCompiler, Compiler.Compile, Compiler.MustCompile, Schema, Compiler.DefaultDraft
+  rust    validator_for, options, options_for, ValidationOptions, ValidationOptions::build, Validator, draft7::new, draft7::options, draft202012::new, draft202012::options, attr validator
+  python  Draft7Validator, Draft202012Validator, validators.validator_for, Validator.schema, Validator.evolve
+  note    every reference is resolved and every keyword held to its form when the schema is compiled, as Go and Rust do, where Python finds a wrong reference only when an instance reaches it (observed: a `$ref` to `#/nothing` under a member no instance holds compiles and validates `{}`); a schema with no `$id` stands at `json-schema:///`, Rust's default base
+
+capability schema/is-valid  whether an instance is valid against a schema
+  heroes  json/schema.is_valid
+  go      Schema.Validate (nil)
+  rust    is_valid, Validator::is_valid, draft7::is_valid, draft202012::is_valid
+  python  Validator.is_valid
+  note    -
+
+capability schema/validate  an instance validated, failing with what is wrong and where
+  heroes  json/schema.validate
+  go      Schema.Validate, ValidationError.Error, ValidationError.GoString, ValidationError.LocalizedError, ValidationError.LocalizedGoString
+  rust    validate, Validator::validate, draft7::validate, draft202012::validate
+  python  validate, Validator.validate, ValidationError, ValidationError.message
+  note    fails `invalid` with the first error written by `format_error` and how many there are, Python's `validate` raising its best match
+
+capability schema/errors  every error of an instance, each with its place in the instance and in the schema
+  heroes  json/schema.errors_of, json/schema.Error
+  go      ValidationError, ValidationError.InstanceLocation, ValidationError.SchemaURL, ValidationError.ErrorKind, ValidationError.Causes, ErrorKind, SchemaPath, SchemaPath.String, Position, Prop, Item, AllProp, AllItem, Types, Types.Add, Types.IsEmpty, Types.String, Types.ToStrings, LocalizableError
+  rust    Validator::iter_errors, ValidationError, ValidationErrors, ErrorIterator, ValidationErrorKind, ValidationErrorParts, MaskedValidationError, error::TypeKind, paths::Location, paths::LocationSegment, paths::LazyLocation, JsonType, JsonTypeSet, JsonTypeSetIterator, types::JsonType, types::JsonTypeSet, types::JsonTypeSetIterator
+  python  Validator.iter_errors, ValidationError.path, ValidationError.absolute_path, ValidationError.relative_path, ValidationError.schema_path, ValidationError.absolute_schema_path, ValidationError.relative_schema_path, ValidationError.json_path, ValidationError.validator, ValidationError.validator_value, ValidationError.instance, ValidationError.schema, ValidationError.context, ValidationError.cause, ValidationError.parent, ValidationError.create_from, exceptions.ErrorTree
+  note    each error has its instance location and its keyword location as JSON pointers and its absolute keyword location, the three of 2020-12's output; an `anyOf` or a `oneOf` that fails gives its own error then its branches', where Python nests them in `context` and Go in `Causes`; Python's `ErrorTree`, errors by instance location, is a grouping of this list by `instance_location`. The kind of an error is its `keyword`, where Go and Rust give a type of each
+
+capability schema/best-match  the one error most worth telling a person, of all an instance has
+  heroes  json/schema.best_of
+  go      -
+  rust    -
+  python  exceptions.best_match, exceptions.by_relevance, exceptions.relevance, exceptions.WEAK_MATCHES, exceptions.STRONG_MATCHES
+  note    the error nearest the instance's root, of those the first that is no `anyOf`, `oneOf` or `not` summary; Python ranks by its own weak and strong keywords and answers the `anyOf`'s own error where none of its branches passes (observed on `{"anyOf": [{"type": "string"}, {"minimum": 5}]}` and 1), where this answers the first branch's
+
+capability schema/output  the standard output of JSON Schema: the flag and the basic list
+  heroes  json/schema.to_output, json/schema.is_valid
+  go      ValidationError.FlagOutput, ValidationError.BasicOutput, FlagOutput, OutputUnit, OutputError, OutputError.MarshalJSON, OutputError.String, ValidationError.LocalizedBasicOutput
+  rust    evaluate, Evaluation, FlagOutput, ListOutput, OutputUnit, ErrorEntry, ErrorDescription
+  python  -
+  note    the "flag" output is `is_valid` and the "basic" one `to_output`, as 2020-12 section 12 writes them
+
+capability schema/output-hierarchical  the standard output nested as the schema is: detailed and verbose
+  heroes  pending
+  go      ValidationError.DetailedOutput, ValidationError.LocalizedDetailedOutput
+  rust    HierarchicalOutput, OutputUnitChildren
+  python  -
+  note    the "detailed" and "verbose" outputs nest each error under its keyword location; not done in this round, nothing written badly in their place
+
+capability schema/annotations  the annotations a valid instance collects: titles, defaults, formats, the members evaluated
+  heroes  pending
+  go      -
+  rust    Evaluation, AnnotationEntry, output::Annotations
+  python  -
+  note    the validator collects the annotations `unevaluatedItems` and `unevaluatedProperties` read, and gives none to the program: titles, defaults and formats collected for a valid instance are not done in this round
+
+capability schema/drafts  the dialects read: draft 7 and 2020-12, chosen by `$schema` or by the caller
+  heroes  json/schema.Draft, json/schema.Options, json/schema.DRAFT_7_URI, json/schema.DRAFT_2020_12_URI
+  go      Draft, Draft.String, Draft7, Draft2020
+  rust    Draft, draft7, draft202012
+  python  Draft7Validator, Draft202012Validator, validators.SPECIFICATIONS, Validator.ID_OF
+  note    a schema's `$schema` chooses, at a document's root and at an embedded resource; the caller chooses for one with none. The JSON Schema Test Suite, commit e2a68a15: draft 7's 1,655 required instances, 1,651 as the suite answers, and 2020-12's 2,082, 2,078 as it answers; the four of each answered otherwise are `idn-hostname`'s, below
+
+capability schema/older-drafts  the dialects before draft 7, and 2019-09
+  heroes  refused: the dialects the author named for this package are 2020-12 and draft 7 (2026-11-17); draft 4's and 6's keywords and 2019-09's `$recursiveRef` are the older forms of theirs, and a schema naming one is told `unsupported`
+  go      Draft4, Draft6, Draft2019, UnsupportedDraftError
+  rust    draft4, draft6, draft201909, draft4::new, draft4::options, draft4::is_valid, draft4::validate, draft6::new, draft6::options, draft6::is_valid, draft6::validate, draft201909::new, draft201909::options, draft201909::is_valid, draft201909::validate
+  python  Draft3Validator, Draft4Validator, Draft6Validator, Draft201909Validator
+  note    the suite's two optional cross-draft cases that reference 2019-09 are refused for that reason
+
+capability schema/dialect-of  which dialect a schema declares
+  heroes  json/schema.draft_of
+  go      -
+  rust    Draft (detected from `$schema`), meta::validator_for
+  python  validators.validator_for
+  note    a meta-schema of the program's own is followed to its dialect by the compilation, through its own `$schema`, at most eight times
+
+capability schema/meta  a schema checked against its meta-schema, and the meta-schemas themselves
+  heroes  json/schema.schema_errors_of, json/schema.meta_schema
+  go      SchemaValidationError, InvalidMetaSchemaURLError, MetaSchemaCycleError, MetaSchemaMismatchError
+  rust    meta::is_valid, meta::is_valid_for, meta::validate, meta::validate_for, meta::validator_for, meta::options, meta::MetaSchemaOptions, meta::MetaValidator, draft7::meta::is_valid, draft7::meta::validate, draft7::meta::validator, draft202012::meta::is_valid, draft202012::meta::validate, draft202012::meta::validator
+  python  Validator.check_schema, Validator.META_SCHEMA, SchemaError
+  note    the meta-schemas of the two dialects and 2020-12's seven vocabularies are carried, as json-schema.org served them on 2026-11-17, and read only where a schema or a reference names them; a meta-schema of the program's own is given as a `Resource`
+
+capability schema/resources  the other documents a `$ref` names, given by the program
+  heroes  json/schema.Resource, json/schema.Options
+  go      Compiler.AddResource, ResourceExistsError
+  rust    Registry, RegistryBuilder, Resource, Uri, uri::from_str, uri::resolve_against, uri::Path, uri::EncodedBuffer, uri::EncodedString
+  python  referencing.Registry, referencing.Resource, Validator.resolver
+  note    a document is found at the URI it is given at and at its own `$id`; a URI two documents claim is `invalid`, as Go's `DuplicateIDError`
+
+capability schema/references  `$ref`, `$dynamicRef`, `$id`, `$anchor` and `$dynamicAnchor` resolved, and a reference that names nothing told at once
+  heroes  json/schema.compile_with
+  go      AnchorNotFoundError, JSONPointerNotFoundError, DuplicateAnchorError, DuplicateIDError, InvalidJsonPointerError, ParseAnchorError, ParseIDError, ParseURLError
+  rust    ReferencingError
+  python  referencing.exceptions.Unresolvable
+  note    `$ref` by pointer, by anchor and to another document; `$dynamicRef` to the outermost `$dynamicAnchor` of its name in the dynamic scope, where its first target has one; draft 7's `$id` with a fragment as an anchor, and its `$ref` hiding its siblings. A reference into an unknown keyword is followed. A reference that comes back to a schema already running on the same place in the instance is an error, where Python raises `RecursionError` (observed on `{"$ref": "#"}`)
+
+capability schema/fetching  a document a `$ref` names fetched from a file or the network
+  heroes  refused: nothing is fetched: a schema is read by a program, and a document a reference names is read or fetched by the program, which gives it as a `Resource`; a validator that opens files or the network by what an instance's schema says is a door a schema from outside could open
+  go      URLLoader, FileLoader, FileLoader.Load, FileLoader.ToFile, SchemeURLLoader, SchemeURLLoader.Load, Compiler.UseLoader, LoadURLError, UnsupportedURLSchemeError, UnmarshalJSON
+  rust    HttpRetriever, AsyncHttpRetriever, HttpOptions, Retrieve, AsyncRetrieve, HttpRetrieverError, async_options, async_options_for, async_validator_for, async_validator_map_for
+  python  referencing.Registry(retrieve=)
+  note    -
+
+capability schema/subschema  a schema that a URI and a fragment name inside the documents given, validated against alone
+  heroes  json/schema.compile_at
+  go      Compiler.Compile of "file.json#/$defs/x"
+  rust    validator_map_for, ValidatorMap
+  python  -
+  note    the URI may name a resource and a fragment, a pointer or an anchor's name
+
+capability schema/formats  `format` asserted where the caller asks, for every format the two dialects name
+  heroes  json/schema.Options, json/schema.is_format
+  go      Compiler.AssertFormat
+  rust    ValidationOptions::should_validate_formats, EmailOptions
+  python  FormatChecker, FormatChecker.check, FormatChecker.conforms, FormatChecker.checkers, FormatError, Validator.FORMAT_CHECKER, Validator.format_checker
+  note    every format of the two dialects, each by the grammar of its RFC. A host name's A-labels are held to IDNA2008: Punycode read back to itself, every code point PVALID by RFC 5892's derivation (tables made from Unicode 17.0.0's database), its contextual rules and RFC 5893's Bidi rule. `idn-hostname` reads a name as IDNA2008 (RFC 5891) does, with no mapping of UTS 46 first: the suite's four instances that expect a fullwidth digit, a zero width space or a fullwidth ACE prefix mapped are answered otherwise, in each dialect, and the suite's tests say so; a label is not held to NFC. Python checks nine formats with no other library installed (observed: `FormatChecker.checkers`)
+
+capability schema/custom-formats  a format of the program's own, checked by its function
+  heroes  json/schema.Format, json/schema.Options
+  go      Format, Compiler.RegisterFormat
+  rust    ValidationOptions::with_format, ValidationOptions::should_ignore_unknown_formats
+  python  FormatChecker.checks, FormatChecker.cls_checks
+  note    a format of the program's own is a name and a function, checked before the dialects' own
+
+capability schema/content  `contentEncoding`, `contentMediaType` and `contentSchema` asserted where the caller asks
+  heroes  json/schema.Options
+  go      Compiler.AssertContent, Compiler.RegisterContentEncoding, Compiler.RegisterContentMediaType, Decoder, MediaType
+  rust    ValidationOptions::with_content_media_type, ValidationOptions::with_content_encoding
+  python  -
+  note    asserted where the caller asks, as Go's `AssertContent`: the encoding `base64` and the media type `application/json`; other encodings and media types are annotations
+
+capability schema/vocabularies  the `$vocabulary` of a meta-schema honoured: a keyword of a vocabulary it leaves out is not asserted
+  heroes  json/schema.compile_with
+  go      Compiler.AssertVocabs, UnsupportedVocabularyError
+  rust    -
+  python  -
+  note    a meta-schema's `$vocabulary` is read: a vocabulary it leaves out is not asserted, and one it requires and this package does not know is `unsupported`; the format-assertion vocabulary asserts `format`
+
+capability schema/regex  the regular expressions of `pattern` and `patternProperties`
+  heroes  json/schema.compile_with
+  go      Compiler.UseRegexpEngine, RegexpEngine, Regexp, InvalidRegexError
+  rust    Regex, FancyRegex, PatternOptions, PatternCache
+  python  -
+  note    a pattern is ECMA-262's, translated for `regex`, which matches in time linear in the text: `\\uXXXX`, ECMAScript's `\\s` and `.`, Unicode categories by their long names; a look-around or a back-reference is refused `unsupported` when the schema is compiled. The suite's optional ECMAScript cases pass
+
+capability schema/custom-keywords  a keyword of the program's own, checked by its function
+  heroes  pending
+  go      Compiler.RegisterVocabulary, Vocabulary, SchemaExt, CompilerContext, CompilerContext.Enqueue, CompilerContext.EnqueueRef, ValidatorContext, ValidatorContext.AddErr, ValidatorContext.AddError, ValidatorContext.AddErrors, ValidatorContext.Duplicates, ValidatorContext.Equals, ValidatorContext.EvaluatedItem, ValidatorContext.EvaluatedProp, ValidatorContext.Validate, ValidatorContext.ValueLocation, DynamicRef, Enum
+  rust    Keyword, ValidationOptions::with_keyword, ValidationContext
+  python  validators.create, validators.extend, validators.validates, Validator.VALIDATORS, Validator.descend
+  note    a keyword of the program's own, called with its value and the instance, could be a function value as a custom format is; not done in this round
+
+capability schema/types  the types a schema names, and a type of the program's own
+  heroes  refused: the types are JSON's six and `integer`, which the dialects fix; a type of the program's own is a schema the program writes
+  go      -
+  rust    -
+  python  TypeChecker, TypeChecker.is_type, TypeChecker.redefine, TypeChecker.redefine_many, TypeChecker.remove, Validator.TYPE_CHECKER, Validator.is_type, exceptions.UnknownType, exceptions.UndefinedTypeCheck
+  note    -
+
+capability schema/bundle  a schema and every document it references made one document
+  heroes  pending
+  go      -
+  rust    bundle, dereference, async_bundle, async_dereference
+  python  -
+  note    every document a schema references written into its `$defs`; not done in this round
+
+capability schema/canonical  a schema rewritten into a canonical form and its satisfiability asked
+  heroes  refused: a schema rewritten into a canonical form and its satisfiability asked is a schema compiler's analysis, not validation
+  go      -
+  rust    canonicalize, canonical::options, canonical::CanonicalSchema, canonical::CanonicalizeOptions, canonical::PreparedDocument, canonical::CanonicalKind, canonical::CanonicalView, canonical::CanonicalizationError, canonical::Containment, canonical::Distinctness, canonical::ObjectViolationView, canonical::OperandMismatch, canonical::RawReason, canonical::Satisfiability, canonical::UnsatisfiableReason, canonical::Cause, canonical::ArrayView, canonical::ContainsView, canonical::IntegerView, canonical::NumberView, canonical::ObjectView, canonical::RawView, canonical::StringView, canonical::TypedGroupView, canonical::json::to_string, canonical::json::Error
+  python  -
+  note    -
+
+dropped
+  rust    json::cmp::equal, json::cmp::equal_arrays, json::cmp::equal_objects, json::unique::is_unique: JSON's equality, which is the language's `==` on `json.Value`
+  rust    json::Json, json::Node, json::Array, json::Object, json::JsonNumber, json::SerdeJson, json::Jsonb, json::JsonbNode, json::jsonb, json::inspect, json::NodeIdentity, json::PendingError, json::stock_enum_value, json::conformance::assert_conformance, json::conformance::document: the traits that let the crate read several JSON libraries' values; here there is one, `json.Value`
+  rust    json::Magnus, json::MagnusPendingErrorScope, json::RbNode, json::Pyo3, json::magnus_child, json::magnus_invalidate_members_cache, json::magnus_is_object, json::magnus_probe_root, json::magnus_take_pending_error, meta::magnus, meta::pyo3: the crate's bindings to Ruby and to Python
+  rust    ValidationOptions (the builder's own plumbing past the blocks above): a field of `json/schema.Options` each
+  python  Validator.evolve, validators.define, validators.field, validators.fields: the class machinery of attrs behind the validators
+  python  jsonschema.protocols, jsonschema.warnings, validators.warn, validators.HashTrieMap, validators.lru_cache, validators.urldefrag, validators.urljoin, validators.urlsplit, validators.unquote, validators.deque, validators.methodcaller, validators.contextlib, validators.reprlib, validators.json, validators.Iterable, validators.Mapping, validators.Sequence, validators.TYPE_CHECKING, validators.annotations, exceptions.dedent, exceptions.defaultdict, exceptions.deque, exceptions.define, exceptions.heapq, exceptions.indent, exceptions.pformat, exceptions.re, exceptions.warnings, exceptions.Any, exceptions.ClassVar, exceptions.TYPE_CHECKING, exceptions.annotations: names other modules lend the package, no part of its API
+  go      LocalizableError, ValidationError.LocalizedBasicOutput, ValidationError.LocalizedDetailedOutput, ValidationError.LocalizedError, ValidationError.LocalizedGoString: messages translated through golang.org/x/text; the messages here are English, as every message of Rebel is

@@ -1,0 +1,21 @@
+# The one operation of the package's stacks, which never shrink: a stack is a
+# list and a count of the entries in use, its top, so that taking an entry off
+# costs nothing, where a slice would copy every entry below it.
+
+# Writes `item` at index `top` of `items`, the list growing by one where `top`
+# is its length. Aborts where `top` is past the length.
+function put<T>(@items: [T], top: i64, item: T)
+    if top == items.len()
+        items @ items.push(item)
+    else
+        items[top] @ item
+
+## Tests
+
+test "put: on an empty list, past the entries in use, and over an old entry"
+    xs: [i64] @= []
+    put(items: @xs, top: 0, item: 7)
+    put(items: @xs, top: 1, item: 8)
+    assert xs == [7, 8]
+    put(items: @xs, top: 0, item: 9)
+    assert xs == [9, 8]

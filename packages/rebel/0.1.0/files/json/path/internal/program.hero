@@ -1,0 +1,128 @@
+# A query as `parse` reads it: flat tables a run walks without recursion
+# over the query's text. The main query is `paths[0]`; every query written
+# inside a filter or as a function's argument is another entry of `paths`, and
+# every filter is an entry of `filters` whose code is postfix, so that one
+# stack of operands evaluates it.
+
+use json
+
+# A selector of a name, `['a']` or `.a`.
+constant NAME: i64
+    0
+
+# The wildcard selector, `*`.
+constant WILDCARD: i64
+    1
+
+# An index selector, `[3]` or `[-1]`.
+constant INDEX: i64
+    2
+
+# A slice selector, `[1:5:2]`.
+constant SLICE: i64
+    3
+
+# A filter selector, `[?@.a]`.
+constant FILTER: i64
+    4
+
+# An instruction that pushes a literal value.
+constant PUSH_VALUE: i64
+    10
+
+# An instruction that pushes the nodes a query selects, from `@` or `$`.
+constant PUSH_NODES: i64
+    11
+
+# An instruction that compares the two operands on top: `name` holds the
+# operator.
+constant COMPARE: i64
+    12
+
+# An instruction that makes the top operand a logical one, a list of nodes
+# being true where it is not empty.
+constant TEST: i64
+    13
+
+# An instruction that negates the logical operand on top.
+constant NOT: i64
+    14
+
+# An instruction that joins the two logical operands on top with `&&`.
+constant AND: i64
+    15
+
+# An instruction that joins the two logical operands on top with `||`.
+constant OR: i64
+    16
+
+# An instruction that calls a function of the registry on the `count`
+# operands on top: `name` holds the function's name.
+constant CALL: i64
+    17
+
+# One selector of a segment.
+record Selector
+    # `NAME`, `WILDCARD`, `INDEX`, `SLICE` or `FILTER`.
+    kind: i64
+    # The member's name, its escapes read, for `NAME`.
+    name: str
+    # The index for `INDEX`, and the step for `SLICE`, 1 where none is
+    # written.
+    index: i64
+    # The first index of a `SLICE`, where `has_start` says one is written.
+    start: i64
+    # Whether a `SLICE` writes its start.
+    has_start: bool
+    # The index a `SLICE` stops before, where `has_end` says one is written.
+    end: i64
+    # Whether a `SLICE` writes its end.
+    has_end: bool
+    # The entry of `Program.filters` a `FILTER` runs.
+    filter: i64
+
+# One segment: a child segment, `[...]` or `.name`, or a descendant one,
+# `..[...]` or `..name`.
+record Segment
+    # Whether it is a descendant segment, which applies its selectors to the
+    # value and to every value inside it.
+    descendant: bool
+    # Its selectors, in the order written.
+    selectors: [Selector]
+
+# A query: `$` or `@` and its segments.
+record Path
+    # Whether it begins at `$`, the root, rather than at `@`, the value a
+    # filter is testing.
+    absolute: bool
+    # Its segments, in the order written.
+    segments: [Segment]
+    # Whether it can select at most one value: names and indices alone.
+    singular: bool
+
+# One instruction of a filter's postfix code.
+record Instr
+    # `PUSH_VALUE`, `PUSH_NODES`, `COMPARE`, `TEST`, `NOT`, `AND`, `OR` or
+    # `CALL`.
+    op: i64
+    # The literal of a `PUSH_VALUE`.
+    value: json.Value
+    # The entry of `Program.paths` a `PUSH_NODES` runs.
+    path: i64
+    # The operator of a `COMPARE`, `==`, `!=`, `<`, `<=`, `>` or `>=`, and the
+    # function's name of a `CALL`.
+    name: str
+    # How many operands a `CALL` takes.
+    count: i64
+
+# A filter's code.
+record Filter
+    # Its instructions, in postfix order.
+    code: [Instr]
+
+# A whole query as `parse` read it.
+record Program
+    # The queries, the main one first.
+    paths: [Path]
+    # The filters every query's selectors name.
+    filters: [Filter]

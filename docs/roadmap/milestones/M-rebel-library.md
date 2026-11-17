@@ -290,6 +290,23 @@ notes did not read them from a clock.
     (data science stays out), events inside one process (no closures),
     reflection, arenas and object pools (the language's), mocks (no
     interfaces).
+35. **One umbrella, one version, placed package by package** (2026-11-17, the
+    author: *would it make sense to publish the packages as distinct ones,
+    under one Rebel umbrella?*). Measured that evening: Rebel's 76 packages
+    with a face held 313,990 lines of Heroes (841 files, 14 MB), placed whole
+    in every program that uses one of them; the closure of a program's own
+    packages, each counted by its face, its `internal/` and its floors, is
+    15% of that for a CLI reading JSON (11 packages, 45,537 lines), 16% for a
+    tool like grep, 26% for the package manager (82,716 lines) and 39% for a
+    web service on PostgreSQL (120,906 lines). A first count read 34% for the
+    CLI, wrong: it took a subpackage still without its face as its parent's.
+    The author's choice: Rebel keeps ONE version, tested and published as one,
+    and a program places only the packages it uses with their Rebel
+    dependencies; independent versions per package are refused (the diamond
+    conflicts of crates and npm, and the one vocabulary of codes and one
+    stream the library keeps). How it is spelled (`use`, `heroes add`) and how
+    it meets panel 242's R2 and panel 250's whole placement is sitting C's,
+    with these measurements.
 
 ## Decided on the fly by the coordinator, for the author to turn
 

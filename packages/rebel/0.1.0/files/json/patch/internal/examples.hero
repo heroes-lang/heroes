@@ -1,0 +1,423 @@
+# The examples of RFC 6902 (its Appendix A) and of RFC 7386 (its Appendix
+# A), every one, and the tests of the json-patch-tests suite
+# (github.com/json-patch/json-patch-tests, commit 2a928f90), whose
+# `spec_tests.json` writes RFC 6902's examples as JSON and whose `tests.json`
+# adds its own, as fetched on 2026-11-17. Each is a test; nothing else here
+# is compiled into a program. The suite marks four of its tests disabled: two
+# write an object with a key twice, which `json.parse` refuses before a patch
+# is read, and are kept here as the failures they are; two ask what the RFC
+# leaves open, and are kept with the answer this package gives.
+
+use json
+use json/patch/internal/apply
+use json/patch/internal/merge
+use json/patch/internal/ops
+
+# The suite's version, the commit its tests were taken from.
+constant VERSION: str
+    "2a928f90"
+
+# `text` written as RFC 8785 writes it, so that two texts of one value
+# compare equal.
+function canonical(text: str) -> str
+    return json.format_canonical(json.parse(text).must()).must()
+
+# The patch `patch` applied to `doc`, as canonical text, or `fails` where
+# the patch is not one or does not apply.
+function patched(doc: str, patch: str) -> str
+    loose = apply.Loose(negative_indices: false, missing_remove: false, create_parents: false)
+
+    match json.parse(patch)
+        .err _ => return "fails"
+        .ok p =>
+            match ops.read(p)
+                .err _ => return "fails"
+                .ok read =>
+                    match apply.run(json.parse(doc).must(), operations: read, loose: loose)
+                        .err _   => return "fails"
+                        .ok done => return json.format_canonical(done).must()
+
+# The merge patch `patch` applied to `doc`, as canonical text.
+function merged(doc: str, patch: str) -> str
+    return json.format_canonical(merge.apply(doc: json.parse(doc).must(), changes: json.parse(patch).must())).must()
+
+test "RFC 6902 4.1. add with missing object"
+    assert patched(doc: "{\"q\":{\"bar\":2}}", patch: "[{\"op\":\"add\",\"path\":\"/a/b\",\"value\":1}]") == "fails"
+
+test "RFC 6902 A.1. Adding an Object Member"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"add\",\"path\":\"/baz\",\"value\":\"qux\"}]") == canonical("{\"baz\":\"qux\",\"foo\":\"bar\"}")
+
+test "RFC 6902 A.2. Adding an Array Element"
+    assert patched(doc: "{\"foo\":[\"bar\",\"baz\"]}", patch: "[{\"op\":\"add\",\"path\":\"/foo/1\",\"value\":\"qux\"}]") == canonical("{\"foo\":[\"bar\",\"qux\",\"baz\"]}")
+
+test "RFC 6902 A.3. Removing an Object Member"
+    assert patched(doc: "{\"baz\":\"qux\",\"foo\":\"bar\"}", patch: "[{\"op\":\"remove\",\"path\":\"/baz\"}]") == canonical("{\"foo\":\"bar\"}")
+
+test "RFC 6902 A.4. Removing an Array Element"
+    assert patched(doc: "{\"foo\":[\"bar\",\"qux\",\"baz\"]}", patch: "[{\"op\":\"remove\",\"path\":\"/foo/1\"}]") == canonical("{\"foo\":[\"bar\",\"baz\"]}")
+
+test "RFC 6902 A.5. Replacing a Value"
+    assert patched(doc: "{\"baz\":\"qux\",\"foo\":\"bar\"}", patch: "[{\"op\":\"replace\",\"path\":\"/baz\",\"value\":\"boo\"}]") == canonical("{\"baz\":\"boo\",\"foo\":\"bar\"}")
+
+test "RFC 6902 A.6. Moving a Value"
+    assert patched(doc: "{\"foo\":{\"bar\":\"baz\",\"waldo\":\"fred\"},\"qux\":{\"corge\":\"grault\"}}", patch: "[{\"op\":\"move\",\"from\":\"/foo/waldo\",\"path\":\"/qux/thud\"}]") == canonical("{\"foo\":{\"bar\":\"baz\"},\"qux\":{\"corge\":\"grault\",\"thud\":\"fred\"}}")
+
+test "RFC 6902 A.7. Moving an Array Element"
+    assert patched(doc: "{\"foo\":[\"all\",\"grass\",\"cows\",\"eat\"]}", patch: "[{\"op\":\"move\",\"from\":\"/foo/1\",\"path\":\"/foo/3\"}]") == canonical("{\"foo\":[\"all\",\"cows\",\"eat\",\"grass\"]}")
+
+test "RFC 6902 A.8. Testing a Value: Success"
+    assert patched(doc: "{\"baz\":\"qux\",\"foo\":[\"a\",2,\"c\"]}", patch: "[{\"op\":\"test\",\"path\":\"/baz\",\"value\":\"qux\"},{\"op\":\"test\",\"path\":\"/foo/1\",\"value\":2}]") == canonical("{\"baz\":\"qux\",\"foo\":[\"a\",2,\"c\"]}")
+
+test "RFC 6902 A.9. Testing a Value: Error"
+    assert patched(doc: "{\"baz\":\"qux\"}", patch: "[{\"op\":\"test\",\"path\":\"/baz\",\"value\":\"bar\"}]") == "fails"
+
+test "RFC 6902 A.10. Adding a nested Member Object"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"add\",\"path\":\"/child\",\"value\":{\"grandchild\":{}}}]") == canonical("{\"foo\":\"bar\",\"child\":{\"grandchild\":{}}}")
+
+test "RFC 6902 A.11. Ignoring Unrecognized Elements"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"add\",\"path\":\"/baz\",\"value\":\"qux\",\"xyz\":123}]") == canonical("{\"foo\":\"bar\",\"baz\":\"qux\"}")
+
+test "RFC 6902 A.12. Adding to a Non-existent Target"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"add\",\"path\":\"/baz/bat\",\"value\":\"qux\"}]") == "fails"
+
+test "RFC 6902 A.13 Invalid JSON Patch Document"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\": \"add\", \"path\": \"/baz\", \"value\": \"qux\", \"op\": \"remove\"}]") == "fails"
+
+test "RFC 6902 A.14. ~ Escape Ordering"
+    assert patched(doc: "{\"/\":9,\"~1\":10}", patch: "[{\"op\":\"test\",\"path\":\"/~01\",\"value\":10}]") == canonical("{\"/\":9,\"~1\":10}")
+
+test "RFC 6902 A.15. Comparing Strings and Numbers"
+    assert patched(doc: "{\"/\":9,\"~1\":10}", patch: "[{\"op\":\"test\",\"path\":\"/~01\",\"value\":\"10\"}]") == "fails"
+
+test "RFC 6902 A.16. Adding an Array Value"
+    assert patched(doc: "{\"foo\":[\"bar\"]}", patch: "[{\"op\":\"add\",\"path\":\"/foo/-\",\"value\":[\"abc\",\"def\"]}]") == canonical("{\"foo\":[\"bar\",[\"abc\",\"def\"]]}")
+
+test "json-patch-tests 0: empty list, empty docs"
+    assert patched(doc: "{}", patch: "[]") == canonical("{}")
+
+test "json-patch-tests 1: empty patch list"
+    assert patched(doc: "{\"foo\":1}", patch: "[]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 2: rearrangements OK?"
+    assert patched(doc: "{\"foo\":1,\"bar\":2}", patch: "[]") == canonical("{\"bar\":2,\"foo\":1}")
+
+test "json-patch-tests 3: rearrangements OK? How about one level down ... array"
+    assert patched(doc: "[{\"foo\":1,\"bar\":2}]", patch: "[]") == canonical("[{\"bar\":2,\"foo\":1}]")
+
+test "json-patch-tests 4: rearrangements OK? How about one level down..."
+    assert patched(doc: "{\"foo\":{\"foo\":1,\"bar\":2}}", patch: "[]") == canonical("{\"foo\":{\"bar\":2,\"foo\":1}}")
+
+test "json-patch-tests 5: add replaces any existing field"
+    assert patched(doc: "{\"foo\":null}", patch: "[{\"op\":\"add\",\"path\":\"/foo\",\"value\":1}]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 6: toplevel array"
+    assert patched(doc: "[]", patch: "[{\"op\":\"add\",\"path\":\"/0\",\"value\":\"foo\"}]") == canonical("[\"foo\"]")
+
+test "json-patch-tests 7: toplevel array, no change"
+    assert patched(doc: "[\"foo\"]", patch: "[]") == canonical("[\"foo\"]")
+
+test "json-patch-tests 8: toplevel object, numeric string"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"path\":\"/foo\",\"value\":\"1\"}]") == canonical("{\"foo\":\"1\"}")
+
+test "json-patch-tests 9: toplevel object, integer"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"path\":\"/foo\",\"value\":1}]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 10: Toplevel scalar values OK?"
+    assert patched(doc: "\"foo\"", patch: "[{\"op\":\"replace\",\"path\":\"\",\"value\":\"bar\"}]") == canonical("\"bar\"")
+
+test "json-patch-tests 11: replace object document with array document?"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"path\":\"\",\"value\":[]}]") == canonical("[]")
+
+test "json-patch-tests 12: replace array document with object document?"
+    assert patched(doc: "[]", patch: "[{\"op\":\"add\",\"path\":\"\",\"value\":{}}]") == canonical("{}")
+
+test "json-patch-tests 13: append to root array document?"
+    assert patched(doc: "[]", patch: "[{\"op\":\"add\",\"path\":\"/-\",\"value\":\"hi\"}]") == canonical("[\"hi\"]")
+
+test "json-patch-tests 14: Add, / target"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"path\":\"/\",\"value\":1}]") == canonical("{\"\":1}")
+
+test "json-patch-tests 15: Add, /foo/ deep target (trailing slash)"
+    assert patched(doc: "{\"foo\":{}}", patch: "[{\"op\":\"add\",\"path\":\"/foo/\",\"value\":1}]") == canonical("{\"foo\":{\"\":1}}")
+
+test "json-patch-tests 16: Add composite value at top level"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"add\",\"path\":\"/bar\",\"value\":[1,2]}]") == canonical("{\"foo\":1,\"bar\":[1,2]}")
+
+test "json-patch-tests 17: Add into composite value"
+    assert patched(doc: "{\"foo\":1,\"baz\":[{\"qux\":\"hello\"}]}", patch: "[{\"op\":\"add\",\"path\":\"/baz/0/foo\",\"value\":\"world\"}]") == canonical("{\"foo\":1,\"baz\":[{\"qux\":\"hello\",\"foo\":\"world\"}]}")
+
+test "json-patch-tests 18: no comment"
+    assert patched(doc: "{\"bar\":[1,2]}", patch: "[{\"op\":\"add\",\"path\":\"/bar/8\",\"value\":\"5\"}]") == "fails"
+
+test "json-patch-tests 19: no comment"
+    assert patched(doc: "{\"bar\":[1,2]}", patch: "[{\"op\":\"add\",\"path\":\"/bar/-1\",\"value\":\"5\"}]") == "fails"
+
+test "json-patch-tests 20: no comment"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"add\",\"path\":\"/bar\",\"value\":true}]") == canonical("{\"foo\":1,\"bar\":true}")
+
+test "json-patch-tests 21: no comment"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"add\",\"path\":\"/bar\",\"value\":false}]") == canonical("{\"foo\":1,\"bar\":false}")
+
+test "json-patch-tests 22: no comment"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"add\",\"path\":\"/bar\",\"value\":null}]") == canonical("{\"foo\":1,\"bar\":null}")
+
+test "json-patch-tests 23: 0 can be an array index or object element name"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"add\",\"path\":\"/0\",\"value\":\"bar\"}]") == canonical("{\"foo\":1,\"0\":\"bar\"}")
+
+test "json-patch-tests 24: no comment"
+    assert patched(doc: "[\"foo\"]", patch: "[{\"op\":\"add\",\"path\":\"/1\",\"value\":\"bar\"}]") == canonical("[\"foo\",\"bar\"]")
+
+test "json-patch-tests 25: no comment"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/1\",\"value\":\"bar\"}]") == canonical("[\"foo\",\"bar\",\"sil\"]")
+
+test "json-patch-tests 26: no comment"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/0\",\"value\":\"bar\"}]") == canonical("[\"bar\",\"foo\",\"sil\"]")
+
+test "json-patch-tests 27: push item to array via last index + 1"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/2\",\"value\":\"bar\"}]") == canonical("[\"foo\",\"sil\",\"bar\"]")
+
+test "json-patch-tests 28: add item to array at index > length should fail"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/3\",\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 29: test against implementation-specific numeric parsing"
+    assert patched(doc: "{\"1e0\":\"foo\"}", patch: "[{\"op\":\"test\",\"path\":\"/1e0\",\"value\":\"foo\"}]") == canonical("{\"1e0\":\"foo\"}")
+
+test "json-patch-tests 30: test with bad number should fail"
+    assert patched(doc: "[\"foo\",\"bar\"]", patch: "[{\"op\":\"test\",\"path\":\"/1e0\",\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 31: no comment"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/bar\",\"value\":42}]") == "fails"
+
+test "json-patch-tests 32: value in array add not flattened"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/1\",\"value\":[\"bar\",\"baz\"]}]") == canonical("[\"foo\",[\"bar\",\"baz\"],\"sil\"]")
+
+test "json-patch-tests 33: no comment"
+    assert patched(doc: "{\"foo\":1,\"bar\":[1,2,3,4]}", patch: "[{\"op\":\"remove\",\"path\":\"/bar\"}]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 34: no comment"
+    assert patched(doc: "{\"foo\":1,\"baz\":[{\"qux\":\"hello\"}]}", patch: "[{\"op\":\"remove\",\"path\":\"/baz/0/qux\"}]") == canonical("{\"foo\":1,\"baz\":[{}]}")
+
+test "json-patch-tests 35: no comment"
+    assert patched(doc: "{\"foo\":1,\"baz\":[{\"qux\":\"hello\"}]}", patch: "[{\"op\":\"replace\",\"path\":\"/foo\",\"value\":[1,2,3,4]}]") == canonical("{\"foo\":[1,2,3,4],\"baz\":[{\"qux\":\"hello\"}]}")
+
+test "json-patch-tests 36: no comment"
+    assert patched(doc: "{\"foo\":[1,2,3,4],\"baz\":[{\"qux\":\"hello\"}]}", patch: "[{\"op\":\"replace\",\"path\":\"/baz/0/qux\",\"value\":\"world\"}]") == canonical("{\"foo\":[1,2,3,4],\"baz\":[{\"qux\":\"world\"}]}")
+
+test "json-patch-tests 37: no comment"
+    assert patched(doc: "[\"foo\"]", patch: "[{\"op\":\"replace\",\"path\":\"/0\",\"value\":\"bar\"}]") == canonical("[\"bar\"]")
+
+test "json-patch-tests 38: no comment"
+    assert patched(doc: "[\"\"]", patch: "[{\"op\":\"replace\",\"path\":\"/0\",\"value\":0}]") == canonical("[0]")
+
+test "json-patch-tests 39: no comment"
+    assert patched(doc: "[\"\"]", patch: "[{\"op\":\"replace\",\"path\":\"/0\",\"value\":true}]") == canonical("[true]")
+
+test "json-patch-tests 40: no comment"
+    assert patched(doc: "[\"\"]", patch: "[{\"op\":\"replace\",\"path\":\"/0\",\"value\":false}]") == canonical("[false]")
+
+test "json-patch-tests 41: no comment"
+    assert patched(doc: "[\"\"]", patch: "[{\"op\":\"replace\",\"path\":\"/0\",\"value\":null}]") == canonical("[null]")
+
+test "json-patch-tests 42: value in array replace not flattened"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"replace\",\"path\":\"/1\",\"value\":[\"bar\",\"baz\"]}]") == canonical("[\"foo\",[\"bar\",\"baz\"]]")
+
+test "json-patch-tests 43: replace whole document"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"replace\",\"path\":\"\",\"value\":{\"baz\":\"qux\"}}]") == canonical("{\"baz\":\"qux\"}")
+
+test "json-patch-tests 44: test replace with missing parent key should fail"
+    assert patched(doc: "{\"bar\":\"baz\"}", patch: "[{\"op\":\"replace\",\"path\":\"/foo/bar\",\"value\":false}]") == "fails"
+
+test "json-patch-tests 45: spurious patch properties"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":1,\"spurious\":1}]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 46: null value should be valid obj property"
+    assert patched(doc: "{\"foo\":null}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":null}]") == canonical("{\"foo\":null}")
+
+test "json-patch-tests 47: null value should be valid obj property to be replaced with something truthy"
+    assert patched(doc: "{\"foo\":null}", patch: "[{\"op\":\"replace\",\"path\":\"/foo\",\"value\":\"truthy\"}]") == canonical("{\"foo\":\"truthy\"}")
+
+test "json-patch-tests 48: null value should be valid obj property to be moved"
+    assert patched(doc: "{\"foo\":null}", patch: "[{\"op\":\"move\",\"from\":\"/foo\",\"path\":\"/bar\"}]") == canonical("{\"bar\":null}")
+
+test "json-patch-tests 49: null value should be valid obj property to be copied"
+    assert patched(doc: "{\"foo\":null}", patch: "[{\"op\":\"copy\",\"from\":\"/foo\",\"path\":\"/bar\"}]") == canonical("{\"foo\":null,\"bar\":null}")
+
+test "json-patch-tests 50: null value should be valid obj property to be removed"
+    assert patched(doc: "{\"foo\":null}", patch: "[{\"op\":\"remove\",\"path\":\"/foo\"}]") == canonical("{}")
+
+test "json-patch-tests 51: null value should still be valid obj property replace other value"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"replace\",\"path\":\"/foo\",\"value\":null}]") == canonical("{\"foo\":null}")
+
+test "json-patch-tests 52: test should pass despite rearrangement"
+    assert patched(doc: "{\"foo\":{\"foo\":1,\"bar\":2}}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":{\"bar\":2,\"foo\":1}}]") == canonical("{\"foo\":{\"foo\":1,\"bar\":2}}")
+
+test "json-patch-tests 53: test should pass despite (nested) rearrangement"
+    assert patched(doc: "{\"foo\":[{\"foo\":1,\"bar\":2}]}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":[{\"bar\":2,\"foo\":1}]}]") == canonical("{\"foo\":[{\"foo\":1,\"bar\":2}]}")
+
+test "json-patch-tests 54: test should pass - no error"
+    assert patched(doc: "{\"foo\":{\"bar\":[1,2,5,4]}}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":{\"bar\":[1,2,5,4]}}]") == canonical("{\"foo\":{\"bar\":[1,2,5,4]}}")
+
+test "json-patch-tests 55: no comment"
+    assert patched(doc: "{\"foo\":{\"bar\":[1,2,5,4]}}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":[1,2]}]") == "fails"
+
+test "json-patch-tests 56: Whole document"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"test\",\"path\":\"\",\"value\":{\"foo\":1}}]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 57: Empty-string element"
+    assert patched(doc: "{\"\":1}", patch: "[{\"op\":\"test\",\"path\":\"/\",\"value\":1}]") == canonical("{\"\":1}")
+
+test "json-patch-tests 58: no comment"
+    assert patched(doc: "{\"foo\":[\"bar\",\"baz\"],\"\":0,\"a/b\":1,\"c%d\":2,\"e^f\":3,\"g|h\":4,\"i\\\\j\":5,\"k\\\"l\":6,\" \":7,\"m~n\":8}", patch: "[{\"op\":\"test\",\"path\":\"/foo\",\"value\":[\"bar\",\"baz\"]},{\"op\":\"test\",\"path\":\"/foo/0\",\"value\":\"bar\"},{\"op\":\"test\",\"path\":\"/\",\"value\":0},{\"op\":\"test\",\"path\":\"/a~1b\",\"value\":1},{\"op\":\"test\",\"path\":\"/c%d\",\"value\":2},{\"op\":\"test\",\"path\":\"/e^f\",\"value\":3},{\"op\":\"test\",\"path\":\"/g|h\",\"value\":4},{\"op\":\"test\",\"path\":\"/i\\\\j\",\"value\":5},{\"op\":\"test\",\"path\":\"/k\\\"l\",\"value\":6},{\"op\":\"test\",\"path\":\"/ \",\"value\":7},{\"op\":\"test\",\"path\":\"/m~0n\",\"value\":8}]") == canonical("{\"\":0,\" \":7,\"a/b\":1,\"c%d\":2,\"e^f\":3,\"foo\":[\"bar\",\"baz\"],\"g|h\":4,\"i\\\\j\":5,\"k\\\"l\":6,\"m~n\":8}")
+
+test "json-patch-tests 59: Move to same location has no effect"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"move\",\"from\":\"/foo\",\"path\":\"/foo\"}]") == canonical("{\"foo\":1}")
+
+test "json-patch-tests 60: no comment"
+    assert patched(doc: "{\"foo\":1,\"baz\":[{\"qux\":\"hello\"}]}", patch: "[{\"op\":\"move\",\"from\":\"/foo\",\"path\":\"/bar\"}]") == canonical("{\"baz\":[{\"qux\":\"hello\"}],\"bar\":1}")
+
+test "json-patch-tests 61: no comment"
+    assert patched(doc: "{\"baz\":[{\"qux\":\"hello\"}],\"bar\":1}", patch: "[{\"op\":\"move\",\"from\":\"/baz/0/qux\",\"path\":\"/baz/1\"}]") == canonical("{\"baz\":[{},\"hello\"],\"bar\":1}")
+
+test "json-patch-tests 62: no comment"
+    assert patched(doc: "{\"baz\":[{\"qux\":\"hello\"}],\"bar\":1}", patch: "[{\"op\":\"copy\",\"from\":\"/baz/0\",\"path\":\"/boo\"}]") == canonical("{\"baz\":[{\"qux\":\"hello\"}],\"bar\":1,\"boo\":{\"qux\":\"hello\"}}")
+
+test "json-patch-tests 63: replacing the root of the document is possible with add"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"add\",\"path\":\"\",\"value\":{\"baz\":\"qux\"}}]") == canonical("{\"baz\":\"qux\"}")
+
+test "json-patch-tests 64: Adding to \"/-\" adds to the end of the array"
+    assert patched(doc: "[1,2]", patch: "[{\"op\":\"add\",\"path\":\"/-\",\"value\":{\"foo\":[\"bar\",\"baz\"]}}]") == canonical("[1,2,{\"foo\":[\"bar\",\"baz\"]}]")
+
+test "json-patch-tests 65: Adding to \"/-\" adds to the end of the array, even n levels down"
+    assert patched(doc: "[1,2,[3,[4,5]]]", patch: "[{\"op\":\"add\",\"path\":\"/2/1/-\",\"value\":{\"foo\":[\"bar\",\"baz\"]}}]") == canonical("[1,2,[3,[4,5,{\"foo\":[\"bar\",\"baz\"]}]]]")
+
+test "json-patch-tests 66: test remove with bad number should fail"
+    assert patched(doc: "{\"foo\":1,\"baz\":[{\"qux\":\"hello\"}]}", patch: "[{\"op\":\"remove\",\"path\":\"/baz/1e0/qux\"}]") == "fails"
+
+test "json-patch-tests 67: test remove on array"
+    assert patched(doc: "[1,2,3,4]", patch: "[{\"op\":\"remove\",\"path\":\"/0\"}]") == canonical("[2,3,4]")
+
+test "json-patch-tests 68: test repeated removes"
+    assert patched(doc: "[1,2,3,4]", patch: "[{\"op\":\"remove\",\"path\":\"/1\"},{\"op\":\"remove\",\"path\":\"/2\"}]") == canonical("[1,3]")
+
+test "json-patch-tests 69: test remove with bad index should fail"
+    assert patched(doc: "[1,2,3,4]", patch: "[{\"op\":\"remove\",\"path\":\"/1e0\"}]") == "fails"
+
+test "json-patch-tests 70: test replace with bad number should fail"
+    assert patched(doc: "[\"\"]", patch: "[{\"op\":\"replace\",\"path\":\"/1e0\",\"value\":false}]") == "fails"
+
+test "json-patch-tests 71: test copy with bad number should fail"
+    assert patched(doc: "{\"baz\":[1,2,3],\"bar\":1}", patch: "[{\"op\":\"copy\",\"from\":\"/baz/1e0\",\"path\":\"/boo\"}]") == "fails"
+
+test "json-patch-tests 72: test move with bad number should fail"
+    assert patched(doc: "{\"foo\":1,\"baz\":[1,2,3,4]}", patch: "[{\"op\":\"move\",\"from\":\"/baz/1e0\",\"path\":\"/foo\"}]") == "fails"
+
+test "json-patch-tests 73: test add with bad number should fail"
+    assert patched(doc: "[\"foo\",\"sil\"]", patch: "[{\"op\":\"add\",\"path\":\"/1e0\",\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 74: missing 'path' parameter"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 75: 'path' parameter with null value"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"path\":null,\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 76: invalid JSON Pointer token"
+    assert patched(doc: "{}", patch: "[{\"op\":\"add\",\"path\":\"foo\",\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 77: missing 'value' parameter to add"
+    assert patched(doc: "[1]", patch: "[{\"op\":\"add\",\"path\":\"/-\"}]") == "fails"
+
+test "json-patch-tests 78: missing 'value' parameter to replace"
+    assert patched(doc: "[1]", patch: "[{\"op\":\"replace\",\"path\":\"/0\"}]") == "fails"
+
+test "json-patch-tests 79: missing 'value' parameter to test"
+    assert patched(doc: "[null]", patch: "[{\"op\":\"test\",\"path\":\"/0\"}]") == "fails"
+
+test "json-patch-tests 80: missing value parameter to test - where undef is falsy"
+    assert patched(doc: "[false]", patch: "[{\"op\":\"test\",\"path\":\"/0\"}]") == "fails"
+
+test "json-patch-tests 81: missing from parameter to copy"
+    assert patched(doc: "[1]", patch: "[{\"op\":\"copy\",\"path\":\"/-\"}]") == "fails"
+
+test "json-patch-tests 82: missing from location to copy"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"copy\",\"from\":\"/bar\",\"path\":\"/foo\"}]") == "fails"
+
+test "json-patch-tests 83: missing from parameter to move"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"move\",\"path\":\"\"}]") == "fails"
+
+test "json-patch-tests 84: missing from location to move"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"move\",\"from\":\"/bar\",\"path\":\"/foo\"}]") == "fails"
+
+test "json-patch-tests 85: duplicate ops"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\": \"add\", \"path\": \"/baz\", \"value\": \"qux\", \"op\": \"move\", \"from\": \"/foo\"}]") == "fails"
+
+test "json-patch-tests 86: unrecognized op should fail"
+    assert patched(doc: "{\"foo\":1}", patch: "[{\"op\":\"spam\",\"path\":\"/foo\",\"value\":1}]") == "fails"
+
+test "json-patch-tests 87: test with bad array number that has leading zeros"
+    assert patched(doc: "[\"foo\",\"bar\"]", patch: "[{\"op\":\"test\",\"path\":\"/00\",\"value\":\"foo\"}]") == "fails"
+
+test "json-patch-tests 88: test with bad array number that has leading zeros"
+    assert patched(doc: "[\"foo\",\"bar\"]", patch: "[{\"op\":\"test\",\"path\":\"/01\",\"value\":\"bar\"}]") == "fails"
+
+test "json-patch-tests 89: Removing nonexistent field"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"remove\",\"path\":\"/baz\"}]") == "fails"
+
+test "json-patch-tests 90: Removing deep nonexistent path"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"remove\",\"path\":\"/missing1/missing2\"}]") == "fails"
+
+test "json-patch-tests 91: Removing nonexistent index"
+    assert patched(doc: "[\"foo\",\"bar\"]", patch: "[{\"op\":\"remove\",\"path\":\"/2\"}]") == "fails"
+
+test "json-patch-tests 92: Patch with different capitalisation than doc"
+    assert patched(doc: "{\"foo\":\"bar\"}", patch: "[{\"op\":\"add\",\"path\":\"/FOO\",\"value\":\"BAR\"}]") == canonical("{\"foo\":\"bar\",\"FOO\":\"BAR\"}")
+
+test "json-patch-tests 93: test copy object then change destination"
+    assert patched(doc: "{\"foo\":{\"bar\":{\"baz\":[{\"boo\":\"net\"}]}}}", patch: "[{\"op\":\"copy\",\"from\":\"/foo\",\"path\":\"/bak\"},{\"op\":\"replace\",\"path\":\"/bak/bar/baz/0/boo\",\"value\":\"qux\"}]") == canonical("{\"foo\":{\"bar\":{\"baz\":[{\"boo\":\"net\"}]}},\"bak\":{\"bar\":{\"baz\":[{\"boo\":\"qux\"}]}}}")
+
+test "json-patch-tests 94: test copy object then change source"
+    assert patched(doc: "{\"foo\":{\"bar\":{\"baz\":[{\"boo\":\"net\"}]}}}", patch: "[{\"op\":\"copy\",\"from\":\"/foo\",\"path\":\"/bak\"},{\"op\":\"replace\",\"path\":\"/foo/bar/baz/0/boo\",\"value\":\"qux\"}]") == canonical("{\"foo\":{\"bar\":{\"baz\":[{\"boo\":\"qux\"}]}},\"bak\":{\"bar\":{\"baz\":[{\"boo\":\"net\"}]}}}")
+
+test "RFC 7386 example 1: {\"a\":\"b\"} merged with {\"a\":\"c\"}"
+    assert merged(doc: "{\"a\":\"b\"}", patch: "{\"a\":\"c\"}") == canonical("{\"a\":\"c\"}")
+
+test "RFC 7386 example 2: {\"a\":\"b\"} merged with {\"b\":\"c\"}"
+    assert merged(doc: "{\"a\":\"b\"}", patch: "{\"b\":\"c\"}") == canonical("{\"a\":\"b\",\"b\":\"c\"}")
+
+test "RFC 7386 example 3: {\"a\":\"b\"} merged with {\"a\":null}"
+    assert merged(doc: "{\"a\":\"b\"}", patch: "{\"a\":null}") == canonical("{}")
+
+test "RFC 7386 example 4: {\"a\":\"b\",\"b\":\"c\"} merged with {\"a\":null}"
+    assert merged(doc: "{\"a\":\"b\",\"b\":\"c\"}", patch: "{\"a\":null}") == canonical("{\"b\":\"c\"}")
+
+test "RFC 7386 example 5: {\"a\":[\"b\"]} merged with {\"a\":\"c\"}"
+    assert merged(doc: "{\"a\":[\"b\"]}", patch: "{\"a\":\"c\"}") == canonical("{\"a\":\"c\"}")
+
+test "RFC 7386 example 6: {\"a\":\"c\"} merged with {\"a\":[\"b\"]}"
+    assert merged(doc: "{\"a\":\"c\"}", patch: "{\"a\":[\"b\"]}") == canonical("{\"a\":[\"b\"]}")
+
+test "RFC 7386 example 7: {\"a\":{\"b\":\"c\"}} merged with {\"a\":{\"b\":\"d\",\"c\":null}}"
+    assert merged(doc: "{\"a\":{\"b\":\"c\"}}", patch: "{\"a\":{\"b\":\"d\",\"c\":null}}") == canonical("{\"a\":{\"b\":\"d\"}}")
+
+test "RFC 7386 example 8: {\"a\":[{\"b\":\"c\"}]} merged with {\"a\":[1]}"
+    assert merged(doc: "{\"a\":[{\"b\":\"c\"}]}", patch: "{\"a\":[1]}") == canonical("{\"a\":[1]}")
+
+test "RFC 7386 example 9: [\"a\",\"b\"] merged with [\"c\",\"d\"]"
+    assert merged(doc: "[\"a\",\"b\"]", patch: "[\"c\",\"d\"]") == canonical("[\"c\",\"d\"]")
+
+test "RFC 7386 example 10: {\"a\":\"b\"} merged with [\"c\"]"
+    assert merged(doc: "{\"a\":\"b\"}", patch: "[\"c\"]") == canonical("[\"c\"]")
+
+test "RFC 7386 example 11: {\"a\":\"foo\"} merged with null"
+    assert merged(doc: "{\"a\":\"foo\"}", patch: "null") == canonical("null")
+
+test "RFC 7386 example 12: {\"a\":\"foo\"} merged with \"bar\""
+    assert merged(doc: "{\"a\":\"foo\"}", patch: "\"bar\"") == canonical("\"bar\"")
+
+test "RFC 7386 example 13: {\"e\":null} merged with {\"a\":1}"
+    assert merged(doc: "{\"e\":null}", patch: "{\"a\":1}") == canonical("{\"e\":null,\"a\":1}")
+
+test "RFC 7386 example 14: [1,2] merged with {\"a\":\"b\",\"c\":null}"
+    assert merged(doc: "[1,2]", patch: "{\"a\":\"b\",\"c\":null}") == canonical("{\"a\":\"b\"}")
+
+test "RFC 7386 example 15: {} merged with {\"a\":{\"bb\":{\"ccc\":null}}}"
+    assert merged(doc: "{}", patch: "{\"a\":{\"bb\":{\"ccc\":null}}}") == canonical("{\"a\":{\"bb\":{}}}")

@@ -1,0 +1,551 @@
+# What a schema asks of one instance when the validator meets it: the
+# problems of its assertions, and the tasks of its applicators, each a
+# subschema to run on the instance or on a part of it. A task is run later,
+# by the validator's own stack; this module only says what they are, and
+# which members and elements the schema's own keywords evaluated.
+
+use json
+use json/schema/internal/checks
+use json/schema/internal/model
+use json/schema/internal/table
+use regex
+use strings
+
+# A task of `$ref`.
+constant REF: i64
+    0
+
+# A task of `$dynamicRef`.
+constant DYNAMIC_REF: i64
+    1
+
+# A task of one subschema of `allOf`.
+constant ALL_OF: i64
+    2
+
+# A task of one subschema of `anyOf`.
+constant ANY_OF: i64
+    3
+
+# A task of one subschema of `oneOf`.
+constant ONE_OF: i64
+    4
+
+# The task of `not`.
+constant NOT: i64
+    5
+
+# The task of `if`.
+constant IF: i64
+    6
+
+# The task of `then`.
+constant THEN: i64
+    7
+
+# The task of `else`.
+constant ELSE: i64
+    8
+
+# A task of `dependentSchemas`, or of a schema of draft 7's `dependencies`.
+constant DEPENDENT: i64
+    9
+
+# A task of `properties` on one member.
+constant PROPERTIES: i64
+    10
+
+# A task of `patternProperties` on one member.
+constant PATTERN_PROPERTIES: i64
+    11
+
+# A task of `additionalProperties` on one member.
+constant ADDITIONAL_PROPERTIES: i64
+    12
+
+# A task of `propertyNames` on one member's name.
+constant PROPERTY_NAMES: i64
+    13
+
+# A task of `prefixItems`, or of draft 7's list of `items`, on one element.
+constant PREFIX_ITEMS: i64
+    14
+
+# A task of `items` on one element.
+constant ITEMS: i64
+    15
+
+# A task of draft 7's `additionalItems` on one element.
+constant ADDITIONAL_ITEMS: i64
+    16
+
+# A task of `contains` on one element.
+constant CONTAINS: i64
+    17
+
+# A task of `unevaluatedItems` on one element.
+constant UNEVALUATED_ITEMS: i64
+    18
+
+# A task of `unevaluatedProperties` on one member.
+constant UNEVALUATED_PROPERTIES: i64
+    19
+
+# One subschema to run on one instance.
+record Task
+    # Which keyword asks it, `REF` to `UNEVALUATED_PROPERTIES`.
+    role: i64
+    # The subschema's node.
+    node: i64
+    # The instance it runs on.
+    value: json.Value
+    # The instance's place, an entry of the trails `render` writes.
+    at: i64
+    # The subschema's keyword location, an entry of the trails.
+    via: i64
+    # The element's index for a task on one element, -1 otherwise.
+    index: i64
+    # Whether it runs on the same instance as its schema, so that what it
+    # evaluates counts for the schema's `unevaluated` keywords.
+    inplace: bool
+
+# One schema the validator is running on one instance, with every task it
+# has made and what each answered.
+record Frame
+    # The schema's node.
+    node: i64
+    # The instance.
+    value: json.Value
+    # The instance's place, an entry of the trails.
+    at: i64
+    # The schema's keyword location, an entry of the trails.
+    via: i64
+    # The keyword that asked for it, as a task's role; -1 for the root.
+    role: i64
+    # The key that tells a reference come back to it: the node and the place.
+    key: str
+    # The first of the validator's problems that are this frame's.
+    mark: i64
+    # Its tasks, in the order of its keywords.
+    tasks: [Task]
+    # The task to run next.
+    next: i64
+    # 1 while its first tasks run, 2 once `then` or `else` is added, 3 once
+    # the `unevaluated` keywords are.
+    phase: i64
+    # Whether each task passed.
+    oks: [bool]
+    # Where each task's problems begin among the validator's.
+    starts: [i64]
+    # Where each task's problems end.
+    ends: [i64]
+    # Whether the members and elements it evaluates are wanted, by its own
+    # `unevaluated` keywords or by a schema it runs in place of.
+    want: bool
+    # The names of the members it has evaluated.
+    props: {str: bool}
+    # Whether it has evaluated every member.
+    props_all: bool
+    # How many elements from the first it has evaluated.
+    items_upto: i64
+    # Whether it has evaluated every element.
+    items_all: bool
+    # The other elements it has evaluated, by index.
+    items_set: {i64: bool}
+
+# A frame begun, and the problems of its assertions.
+record Begun
+    # The frame.
+    frame: Frame
+    # Its problems, in the order of its keywords.
+    issues: [model.Issue]
+
+# `token` as it stands in a JSON pointer.
+function escaped(token: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: token, old: "~", new: "~0"), old: "/", new: "~1")
+
+# An issue of the keyword `keyword` of the schema `n`, on the instance at
+# `at`, the schema reached at `via`; `false` names the schema `false`.
+function issue(c: model.Compiled, n: i64, at: str, via: str, keyword: str, message: str) -> model.Issue
+    suffix = if keyword == "false"
+        ""
+    else
+        "/" + escaped(keyword)
+    absolute = c.scan.bases[n] + "#" + c.scan.pointers[n] + suffix
+    return model.Issue(
+        instance_location: at,
+        keyword_location: via + suffix,
+        absolute_location: absolute,
+        keyword: keyword,
+        message: message
+    )
+
+# What the schema `false` says, by the keyword that asked for it.
+function refusal(role: i64) -> str
+    if role == ADDITIONAL_PROPERTIES
+        return "a member that properties and patternProperties do not name, where additionalProperties is false"
+
+    if role == UNEVALUATED_PROPERTIES
+        return "a member no keyword evaluated, where unevaluatedProperties is false"
+
+    if role == ITEMS
+        return "an element past the ones prefixItems names, where items is false"
+
+    if role == ADDITIONAL_ITEMS
+        return "an element past the ones items names, where additionalItems is false"
+
+    if role == UNEVALUATED_ITEMS
+        return "an element no keyword evaluated, where unevaluatedItems is false"
+
+    if role == PROPERTIES
+        return "a member properties refuses: its schema is false"
+
+    if role == PROPERTY_NAMES
+        return "a member's name propertyNames refuses: its schema is false"
+    return "a value the schema false refuses"
+
+# Whether the schema `n` has a keyword of its vocabulary of applicators.
+function applies(c: model.Compiled, n: i64) -> bool
+    return c.scan.dialects[n] == model.DRAFT_7 || c.scan.vocabularies[n] & model.APPLICATOR != 0
+
+# Whether the schema `n` wants what its subschemas evaluate: it has
+# `unevaluatedItems` or `unevaluatedProperties`.
+function has_unevaluated(c: model.Compiled, n: i64) -> bool
+    t = c.table
+
+    if t.kinds[n] != model.OBJECT_KIND || c.scan.dialects[n] != model.DRAFT_2020 || c.scan.vocabularies[n] & model.UNEVALUATED == 0
+        return false
+    return table.has(t, n: n, name: "unevaluatedItems") || table.has(t, n: n, name: "unevaluatedProperties")
+
+# The node `$dynamicRef` of `n` names: the anchor of its name in the
+# outermost resource of `frames` that has one, where its first target is
+# such an anchor, and that first target otherwise.
+function dynamic_target(c: model.Compiled, n: i64, frames: [Frame] lent, depth: i64) -> i64
+    first = c.scan.dynamic_refs[n]
+    name = c.scan.dynamic_names[n]
+
+    if first < 0 || name == ""
+        return first
+
+    for k in range(from: 0, to: depth)
+        resource = c.scan.resources[frames[k].node]
+
+        match c.dynamic_anchors[c.scan.bases[resource] + "#" + name]
+            .ok found => return found
+            .err _    => _ = 0
+
+    return c.dynamic_anchors[c.scan.bases[c.scan.resources[n]] + "#" + name].default(first)
+
+# Adds to the trails the place `suffix` writes past the entry `from`, and
+# answers the new entry. A place is held as its last step and the entry before
+# it, so a place deep in an instance costs one entry and not its whole path.
+function extend(@parents: [i64], @tokens: [str], from: i64, suffix: str) -> i64
+    parents @ parents.push(from)
+    tokens @ tokens.push(suffix)
+    return parents.len() - 1
+
+# The JSON pointer the trails' entry `index` writes; entry 0 is the root,
+# `""`.
+function render(parents: [i64] lent, tokens: [str] lent, index: i64) -> str
+    steps: [str] @= []
+    at: i64 @= index
+
+    while at > 0
+        steps @ steps.push(tokens[at])
+        at @ parents[at]
+
+    pieces: [str] @= []
+    back: i64 @= steps.len()
+
+    while back > 0
+        back @ back - 1
+        pieces @ pieces.push(steps[back])
+
+    return pieces.join("")
+
+# A task of `role` running the node `node` on `value` at `at`.
+function task(role: i64, node: i64, value: json.Value, at: i64, via: i64, index: i64, inplace: bool) -> Task
+    return Task(role: role, node: node, value: value, at: at, via: via, index: index, inplace: inplace)
+
+# The tasks of the members of the object `members`, and what they evaluate,
+# written into `f`.
+function member_tasks(@tasks: [Task], @f: Frame, @parents: [i64], @tokens: [str], c: model.Compiled, members: {str: json.Value})
+    t = c.table
+    n = f.node
+    properties = table.member(t, n: n, name: "properties")
+    by_pattern = table.member(t, n: n, name: "patternProperties")
+    additional = table.member(t, n: n, name: "additionalProperties")
+    names = table.member(t, n: n, name: "propertyNames")
+
+    for name in keys(members)
+        value = members[name].must()
+        at = extend(parents: @parents, tokens: @tokens, from: f.at, suffix: "/" + escaped(name))
+        named: bool @= false
+        p = table.member(t, n: properties, name: name)
+
+        if p >= 0
+            tasks @ tasks.push(
+                task(role: PROPERTIES, node: p, value: value, at: at, via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/properties/" + escaped(name)), index: -1, inplace: false)
+            )
+            named @ true
+
+        if by_pattern >= 0
+            for k in range(from: 0, to: t.counts[by_pattern])
+                schema = table.child(t, n: by_pattern, at: k)
+                pattern = t.keys[schema]
+
+                if regex.contains(name, c.patterns[pattern].must())
+                    tasks @ tasks.push(
+                        task(role: PATTERN_PROPERTIES, node: schema, value: value, at: at, via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/patternProperties/" + escaped(pattern)), index: -1, inplace: false)
+                    )
+                    named @ true
+
+        if !named && additional >= 0
+            tasks @ tasks.push(
+                task(role: ADDITIONAL_PROPERTIES, node: additional, value: value, at: at, via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/additionalProperties"), index: -1, inplace: false)
+            )
+            named @ true
+
+        if named && f.want
+            f.props[name] @ true
+
+        if names >= 0
+            tasks @ tasks.push(
+                task(role: PROPERTY_NAMES, node: names, value: .text(v: name), at: f.at, via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/propertyNames"), index: -1, inplace: false)
+            )
+
+# The tasks of the elements of the list `items`, and what they evaluate,
+# written into `f`.
+function element_tasks(@tasks: [Task], @f: Frame, @parents: [i64], @tokens: [str], c: model.Compiled, items: [json.Value])
+    t = c.table
+    n = f.node
+    count = items.len()
+    each = table.member(t, n: n, name: "items")
+    prefix_count: i64 @= 0
+
+    if c.scan.dialects[n] == model.DRAFT_7
+        if each >= 0 && t.kinds[each] == model.LIST_KIND
+            prefix_count @ t.counts[each]
+
+            for at in range(from: 0, to: count)
+                if at < prefix_count
+                    tasks @ tasks.push(
+                        task(role: PREFIX_ITEMS, node: table.child(t, n: each, at: at), value: items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: f"/items/{at}"), index: at, inplace: false)
+                    )
+                else
+                    more = table.member(t, n: n, name: "additionalItems")
+
+                    if more >= 0
+                        tasks @ tasks.push(
+                            task(role: ADDITIONAL_ITEMS, node: more, value: items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/additionalItems"), index: at, inplace: false)
+                        )
+        else if each >= 0
+            for at in range(from: 0, to: count)
+                tasks @ tasks.push(
+                    task(role: ITEMS, node: each, value: items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/items"), index: at, inplace: false)
+                )
+    else
+        prefix = table.member(t, n: n, name: "prefixItems")
+
+        if prefix >= 0
+            prefix_count @ t.counts[prefix]
+
+            for at in range(from: 0, to: count)
+                if at < prefix_count
+                    tasks @ tasks.push(
+                        task(role: PREFIX_ITEMS, node: table.child(t, n: prefix, at: at), value: items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: f"/prefixItems/{at}"), index: at, inplace: false)
+                    )
+
+            if f.want
+                f.items_upto @ if count < prefix_count
+                    count
+                else
+                    prefix_count
+
+        if each >= 0
+            for at in range(from: prefix_count, to: count)
+                tasks @ tasks.push(
+                    task(role: ITEMS, node: each, value: items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/items"), index: at, inplace: false)
+                )
+
+            if f.want
+                f.items_all @ true
+    contains = table.member(t, n: n, name: "contains")
+
+    if contains >= 0
+        for at in range(from: 0, to: count)
+            tasks @ tasks.push(
+                task(role: CONTAINS, node: contains, value: items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/contains"), index: at, inplace: false)
+            )
+
+# The frame of the schema `n` on `v` at `at`, reached at `via` by a task of
+# `role`, with its first tasks made and its assertions' problems found.
+function begin(c: model.Compiled, n: i64, v: json.Value, at: i64, via: i64, role: i64, want: bool, frames: [Frame] lent, depth: i64, @parents: [i64], @tokens: [str]) -> Begun
+    t = c.table
+    out: [model.Issue] @= []
+    tasks: [Task] @= []
+    f @= Frame(
+        node: n,
+        value: v,
+        at: at,
+        via: via,
+        role: role,
+        key: f"{n}|{at}",
+        mark: 0,
+        tasks: [],
+        next: 0,
+        phase: 1,
+        oks: [],
+        starts: [],
+        ends: [],
+        want: want || has_unevaluated(c, n: n),
+        props: {},
+        props_all: false,
+        items_upto: 0,
+        items_all: false,
+        items_set: {}
+    )
+
+    if t.kinds[n] == model.BOOLEAN_KIND
+        if !json.bool_of(t.values[n]).default(true)
+            out @ out.push(
+                issue(c, n: n, at: render(parents, tokens: tokens, index: at), via: render(parents, tokens: tokens, index: via), keyword: "false", message: refusal(role))
+            )
+        return Begun(frame: f, issues: out)
+    ref = c.scan.refs[n]
+
+    if ref >= 0
+        tasks @ tasks.push(
+            task(role: REF, node: ref, value: v, at: at, via: extend(parents: @parents, tokens: @tokens, from: via, suffix: "/$ref"), index: -1, inplace: true)
+        )
+
+    if c.scan.dialects[n] == model.DRAFT_7 && ref >= 0
+        f.tasks @ tasks
+        return Begun(frame: f, issues: out)
+    dynamic = dynamic_target(c, n: n, frames: frames, depth: depth)
+
+    if dynamic >= 0
+        tasks @ tasks.push(
+            task(role: DYNAMIC_REF, node: dynamic, value: v, at: at, via: extend(parents: @parents, tokens: @tokens, from: via, suffix: "/$dynamicRef"), index: -1, inplace: true)
+        )
+
+    found = checks.problems(c, n: n, v: v)
+
+    if found.len() > 0
+        at_text = render(parents, tokens: tokens, index: at)
+        via_text = render(parents, tokens: tokens, index: via)
+
+        for p in found
+            out @ out.push(issue(c, n: n, at: at_text, via: via_text, keyword: p.keyword, message: p.message))
+
+    if applies(c, n: n)
+        for pair in [[ALL_OF, 0], [ANY_OF, 1], [ONE_OF, 2]]
+            name = ["allOf", "anyOf", "oneOf"][pair[1]]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0
+                for i in range(from: 0, to: t.counts[k])
+                    tasks @ tasks.push(
+                        task(role: pair[0], node: table.child(t, n: k, at: i), value: v, at: at, via: extend(parents: @parents, tokens: @tokens, from: via, suffix: f"/{name}/{i}"), index: -1, inplace: true)
+                    )
+
+        negated = table.member(t, n: n, name: "not")
+
+        if negated >= 0
+            tasks @ tasks.push(
+                task(role: NOT, node: negated, value: v, at: at, via: extend(parents: @parents, tokens: @tokens, from: via, suffix: "/not"), index: -1, inplace: false)
+            )
+        condition = table.member(t, n: n, name: "if")
+
+        if condition >= 0
+            tasks @ tasks.push(
+                task(role: IF, node: condition, value: v, at: at, via: extend(parents: @parents, tokens: @tokens, from: via, suffix: "/if"), index: -1, inplace: true)
+            )
+
+        dependents = if c.scan.dialects[n] == model.DRAFT_7
+            table.member(t, n: n, name: "dependencies")
+        else
+            table.member(t, n: n, name: "dependentSchemas")
+
+        word = if c.scan.dialects[n] == model.DRAFT_7
+            "dependencies"
+        else
+            "dependentSchemas"
+
+        match v
+            .object o =>
+                if dependents >= 0
+                    for i in range(from: 0, to: t.counts[dependents])
+                        k = table.child(t, n: dependents, at: i)
+
+                        if t.kinds[k] != model.LIST_KIND && !o.members[t.keys[k]].is_err()
+                            tasks @ tasks.push(
+                                task(role: DEPENDENT, node: k, value: v, at: at, via: extend(parents: @parents, tokens: @tokens, from: via, suffix: f"/{word}/{escaped(t.keys[k])}"), index: -1, inplace: true)
+                            )
+
+                member_tasks(tasks: @tasks, f: @f, parents: @parents, tokens: @tokens, c: c, members: o.members)
+            .list l => element_tasks(tasks: @tasks, f: @f, parents: @parents, tokens: @tokens, c: c, items: l.items)
+            .null_value | .boolean _ | .number _ | .text _ => _ = 0
+    f.tasks @ tasks
+    return Begun(frame: f, issues: out)
+
+# The tasks the schema of `f` adds once its first tasks have run: `then` or
+# `else` where `if` passed or failed, in phase 1; its `unevaluated` keywords'
+# in phase 2. What they evaluate is written into `f`.
+function later_tasks(@f: Frame, @parents: [i64], @tokens: [str], c: model.Compiled) -> [Task]
+    t = c.table
+    n = f.node
+    out: [Task] @= []
+
+    if t.kinds[n] != model.OBJECT_KIND
+        return out
+
+    if f.phase == 1
+        for i in range(from: 0, to: f.tasks.len())
+            if f.tasks[i].role == IF
+                branch = if f.oks[i]
+                    "then"
+                else
+                    "else"
+                k = table.member(t, n: n, name: branch)
+
+                if k >= 0
+                    role = if f.oks[i]
+                        THEN
+                    else
+                        ELSE
+                    out @ out.push(
+                        task(role: role, node: k, value: f.value, at: f.at, via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/" + branch), index: -1, inplace: true)
+                    )
+
+        return out
+
+    if !has_unevaluated(c, n: n)
+        return out
+
+    match f.value
+        .list l =>
+            k = table.member(t, n: n, name: "unevaluatedItems")
+
+            if k >= 0 && !f.items_all
+                for at in range(from: f.items_upto, to: l.items.len())
+                    if !f.items_set[at].default(false)
+                        out @ out.push(
+                            task(role: UNEVALUATED_ITEMS, node: k, value: l.items[at], at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: f"/{at}"), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/unevaluatedItems"), index: at, inplace: false)
+                        )
+
+                f.items_all @ true
+        .object o =>
+            k = table.member(t, n: n, name: "unevaluatedProperties")
+
+            if k >= 0 && !f.props_all
+                for name in keys(o.members)
+                    if !f.props[name].default(false)
+                        out @ out.push(
+                            task(role: UNEVALUATED_PROPERTIES, node: k, value: o.members[name].must(), at: extend(parents: @parents, tokens: @tokens, from: f.at, suffix: "/" + escaped(name)), via: extend(parents: @parents, tokens: @tokens, from: f.via, suffix: "/unevaluatedProperties"), index: -1, inplace: false)
+                        )
+
+                f.props_all @ true
+        .null_value | .boolean _ | .number _ | .text _ => _ = 0
+
+    return out

@@ -1,0 +1,57 @@
+# What the suite's generated tests call: one case of the JSON Schema Test
+# Suite compiled under each dialect it is given to and run on each of its
+# instances, answering the instances that did not come out as the suite
+# says, so that a test asserts the empty text and a failure names them.
+
+use json
+use json/schema/internal/machine
+use json/schema/internal/model
+use json/schema/internal/scan
+
+# The suite's version, the commit its tests were taken from.
+constant VERSION: str
+    "e2a68a15"
+
+# The instances of the case `tests` that `schema`, compiled with the
+# documents `externals` names under each of `dialects`, does not judge as the
+# suite says, each as its dialect and its description, joined by `; `; `""`
+# where every one comes out right. `asserting` asserts `format`, `content`
+# the `content` keywords.
+function failures(dialects: [i64], asserting: bool, content: bool, schema: str, externals: str, tests: str) -> str
+    out: [str] @= []
+    parsed_tests = json.parse(tests)
+    parsed_schema = json.parse(schema)
+    parsed_externals = json.parse(externals)
+
+    if parsed_tests.is_err() || parsed_schema.is_err() || parsed_externals.is_err()
+        return "the case does not parse"
+    documents = json.members_of(parsed_externals.must()).must()
+    cases = json.items_of(parsed_tests.must()).must()
+
+    for dialect in dialects
+        settings = model.Settings(draft: dialect, formats: asserting, content: content, custom: [])
+        sources: [scan.Source] @= [scan.Source(document: parsed_schema.must(), uri: "")]
+
+        for uri in keys(documents)
+            sources @ sources.push(scan.Source(document: documents[uri].must(), uri: uri))
+
+        match scan.compile(sources, settings: settings, start: "")
+            .err e => out @ out.push(f"{dialect}: the schema does not compile: {e.code}: {e.msg}")
+            .ok compiled =>
+                for one in cases
+                    description = json.text_of(json.member(one, "description").must()).must()
+                    data = json.member(one, "data").must()
+                    wanted = json.bool_of(json.member(one, "valid").must()).must()
+                    got = machine.evaluate(compiled, instance: data).len() == 0
+
+                    if got != wanted
+                        out @ out.push(f"{dialect}: {description}")
+
+    return out.join("; ")
+
+## Tests
+
+test "failures: a case that passes, and one that names what it got wrong"
+    tests = "[{\"description\": \"a number\", \"data\": 1, \"valid\": true}, {\"description\": \"a text\", \"data\": \"x\", \"valid\": true}]"
+    assert failures(dialects: [7, 2020], asserting: false, content: false, schema: "{}", externals: "{}", tests: tests) == ""
+    assert failures(dialects: [2020], asserting: false, content: false, schema: "{\"type\": \"number\"}", externals: "{}", tests: tests) == "2020: a text"

@@ -1,0 +1,390 @@
+# The validator: a stack of frames, one a schema running on one instance,
+# each running its tasks one after another as frames above it. Nothing here
+# follows the instance or a chain of references with recursion, so neither
+# a deep instance nor a long chain can run the machine out of stack; a
+# reference that comes back to a schema already running on the same place
+# of the instance is a problem, not a loop.
+#
+# Every problem goes on one list, each frame's after the ones before it, so
+# that a frame that passes, an `anyOf` one branch of which passes, or a `not`
+# drops its subschemas' problems by cutting the list back, and keeps the
+# ones it keeps by writing them down again in their order.
+
+use json
+use json/schema/internal/model
+use json/schema/internal/scan
+use json/schema/internal/stack
+use json/schema/internal/table
+use json/schema/internal/tasks
+
+# The problems of the tasks of `f` from `i` on that share its role, a run of
+# `anyOf`, `oneOf` or `contains`: how many passed, and where the run ends.
+record Run
+    # How many tasks of the run passed.
+    passed: i64
+    # The index past the run's last task.
+    end: i64
+    # The indices of the tasks that passed, as text, for a message.
+    which: [str]
+
+# The run of tasks of one role beginning at `i`.
+function run_of(f: tasks.Frame lent, i: i64) -> Run
+    role = f.tasks[i].role
+    end: i64 @= i
+    passed: i64 @= 0
+    which: [str] @= []
+
+    while end < f.tasks.len() && f.tasks[end].role == role
+        if f.oks[end]
+            passed @ passed + 1
+            which @ which.push(f"{end - i}")
+        end @ end + 1
+
+    return Run(passed: passed, end: end, which: which)
+
+# The count `name` of the schema `n` writes, or `otherwise` where it writes
+# none or its dialect reads none.
+function count_or(c: model.Compiled, n: i64, name: str, otherwise: i64) -> i64
+    if c.scan.dialects[n] != model.DRAFT_2020
+        return otherwise
+    k = table.member(c.table, n: n, name: name)
+
+    if k < 0
+        return otherwise
+    return table.number_of(c.table, n: k).to_i64().default(otherwise)
+
+# The problems frame `f` keeps once every task has run: its own, then each
+# task's in their order, a passing `anyOf`'s dropped, a failing one's after
+# a problem of its own, and so for `oneOf`, `not`, `if` and `contains`.
+function kept_of(c: model.Compiled, f: tasks.Frame lent, issues: [model.Issue] lent, own_end: i64, parents: [i64] lent, tokens: [str] lent) -> [model.Issue]
+    kept: [model.Issue] @= []
+
+    for at in range(from: f.mark, to: own_end)
+        kept @ kept.push(issues[at])
+
+    i: i64 @= 0
+    contains_seen: bool @= false
+
+    while i < f.tasks.len()
+        role = f.tasks[i].role
+
+        if role == tasks.ANY_OF || role == tasks.ONE_OF
+            r = run_of(f, i: i)
+
+            word = if role == tasks.ANY_OF
+                "anyOf"
+            else
+                "oneOf"
+            count = r.end - i
+
+            if r.passed == 0
+                kept @ kept.push(
+                    tasks.issue(c, n: f.node, at: tasks.render(parents, tokens: tokens, index: f.at), via: tasks.render(parents, tokens: tokens, index: f.via), keyword: word, message: f"valid against none of the {count} schemas of {word}")
+                )
+
+                for at in range(from: f.starts[i], to: f.ends[r.end - 1])
+                    kept @ kept.push(issues[at])
+            else if role == tasks.ONE_OF && r.passed > 1
+                kept @ kept.push(
+                    tasks.issue(c, n: f.node, at: tasks.render(parents, tokens: tokens, index: f.at), via: tasks.render(parents, tokens: tokens, index: f.via), keyword: word, message: f"valid against {r.passed} of the schemas of oneOf, those at {r.which.join(", ")}, where one is asked")
+                )
+            i @ r.end
+        else if role == tasks.CONTAINS
+            contains_seen @ true
+            r = run_of(f, i: i)
+            kept @ kept.push_all_contains(c, f: f, passed: r.passed, parents: parents, tokens: tokens)
+            i @ r.end
+        else
+            if role == tasks.NOT
+                if f.oks[i]
+                    kept @ kept.push(
+                        tasks.issue(c, n: f.node, at: tasks.render(parents, tokens: tokens, index: f.at), via: tasks.render(parents, tokens: tokens, index: f.via), keyword: "not", message: "valid against the schema of not, which it may not be")
+                    )
+            else if role != tasks.IF
+                for at in range(from: f.starts[i], to: f.ends[i])
+                    kept @ kept.push(issues[at])
+            i @ i + 1
+
+    if !contains_seen && c.table.kinds[f.node] == model.OBJECT_KIND && table.has(c.table, n: f.node, name: "contains") && tasks.applies(c, n: f.node)
+        match f.value
+            .list _                                                    => kept @ kept.push_all_contains(
+                c,
+                f: f,
+                passed: 0,
+                parents: parents,
+                tokens: tokens
+            )
+            .null_value | .boolean _ | .number _ | .text _ | .object _ => _ = 0
+    return kept
+
+# `kept` with the problems of `contains`, where `passed` elements matched.
+function push_all_contains(kept: [model.Issue], c: model.Compiled, f: tasks.Frame lent, passed: i64, parents: [i64] lent, tokens: [str] lent) -> [model.Issue]
+    out @= kept
+    least = count_or(c, n: f.node, name: "minContains", otherwise: 1)
+    most = count_or(c, n: f.node, name: "maxContains", otherwise: -1)
+
+    if passed < least
+        word = if table.has(c.table, n: f.node, name: "minContains") && c.scan.dialects[f.node] == model.DRAFT_2020
+            "minContains"
+        else
+            "contains"
+        out @ out.push(
+            tasks.issue(c, n: f.node, at: tasks.render(parents, tokens: tokens, index: f.at), via: tasks.render(parents, tokens: tokens, index: f.via), keyword: word, message: f"{passed} elements match contains, fewer than the {least} asked")
+        )
+
+    if most >= 0 && passed > most
+        out @ out.push(
+            tasks.issue(c, n: f.node, at: tasks.render(parents, tokens: tokens, index: f.at), via: tasks.render(parents, tokens: tokens, index: f.via), keyword: "maxContains", message: f"{passed} elements match contains, more than the {most} allowed")
+        )
+    return out
+
+# Every problem of `instance` against the compiled schema `c`, in the order
+# of the schema's keywords.
+function evaluate(c: model.Compiled, instance: json.Value) -> [model.Issue]
+    issues: [model.Issue] @= []
+    top: i64 @= 0
+    frames: [tasks.Frame] @= []
+    depth: i64 @= 0
+    active: {str: i64} @= {}
+
+    # Where each frame's own problems end, one entry a frame.
+    own_ends: [i64] @= []
+
+    # The trails: every place in the instance and every keyword location
+    # met, each its last step and the entry before it; entry 0 is the root.
+    parents: [i64] @= [-1]
+    tokens: [str] @= [""]
+    first = tasks.begin(
+        c,
+        n: c.root,
+        v: instance,
+        at: 0,
+        via: 0,
+        role: -1,
+        want: false,
+        frames: frames,
+        depth: 0,
+        parents: @parents,
+        tokens: @tokens
+    )
+
+    for i in first.issues
+        stack.put(items: @issues, top: top, item: i)
+        top @ top + 1
+
+    stack.put(items: @frames, top: 0, item: first.frame)
+    stack.put(items: @own_ends, top: 0, item: top)
+    frames[0].oks @ falses(first.frame.tasks.len())
+    frames[0].starts @ zeros(first.frame.tasks.len())
+    frames[0].ends @ zeros(first.frame.tasks.len())
+    depth @ 1
+    active[first.frame.key] @ 1
+
+    while depth > 0
+        f = depth - 1
+        next = frames[f].next
+
+        if next < frames[f].tasks.len()
+            job = frames[f].tasks[next]
+            frames[f].starts[next] @ top
+            key = f"{job.node}|{job.at}"
+
+            if active[key].default(0) > 0
+                message = "a reference comes back to a schema already running on the same place of the instance, which would never end"
+                at_text = tasks.render(parents, tokens: tokens, index: job.at)
+                via_text = tasks.render(parents, tokens: tokens, index: job.via)
+                cycle = tasks.issue(
+                    c,
+                    n: frames[f].node,
+                    at: at_text,
+                    via: via_text,
+                    keyword: "false",
+                    message: message
+                )
+                stack.put(items: @issues, top: top, item: cycle)
+                top @ top + 1
+                frames[f].oks[next] @ false
+                frames[f].ends[next] @ top
+                frames[f].next @ next + 1
+            else
+                wants = job.inplace && frames[f].want
+                begun = tasks.begin(
+                    c,
+                    n: job.node,
+                    v: job.value,
+                    at: job.at,
+                    via: job.via,
+                    role: job.role,
+                    want: wants,
+                    frames: frames,
+                    depth: depth,
+                    parents: @parents,
+                    tokens: @tokens
+                )
+                child: tasks.Frame @= begun.frame
+                child.mark @ top
+
+                for i in begun.issues
+                    stack.put(items: @issues, top: top, item: i)
+                    top @ top + 1
+
+                child.oks @ falses(child.tasks.len())
+                child.starts @ zeros(child.tasks.len())
+                child.ends @ zeros(child.tasks.len())
+                stack.put(items: @frames, top: depth, item: child)
+                stack.put(items: @own_ends, top: depth, item: top)
+                depth @ depth + 1
+                active[child.key] @ active[child.key].default(0) + 1
+        else if frames[f].phase < 3
+            current @= frames[f]
+            frames[f] @ empty_frame()
+            added = tasks.later_tasks(f: @current, parents: @parents, tokens: @tokens, c: c)
+            current.phase @ current.phase + 1
+
+            if added.len() > 0
+                every @= current.tasks
+                oks @= current.oks
+                starts @= current.starts
+                ends @= current.ends
+
+                for t in added
+                    every @ every.push(t)
+                    oks @ oks.push(false)
+                    starts @ starts.push(0)
+                    ends @ ends.push(0)
+
+                current.tasks @ every
+                current.oks @ oks
+                current.starts @ starts
+                current.ends @ ends
+            frames[f] @ current
+        else
+            kept = kept_of(c, f: frames[f], issues: issues, own_end: own_ends[f], parents: parents, tokens: tokens)
+            mark = frames[f].mark
+            top @ mark
+
+            for i in kept
+                stack.put(items: @issues, top: top, item: i)
+                top @ top + 1
+
+            active[frames[f].key] @ active[frames[f].key].default(1) - 1
+            depth @ depth - 1
+
+            if depth > 0
+                p = depth - 1
+                at = frames[p].next
+                valid = kept.len() == 0
+                frames[p].oks[at] @ valid
+                frames[p].ends[at] @ top
+                job = frames[p].tasks[at]
+
+                if valid && frames[p].want
+                    if job.inplace
+                        merge(@frames, into: p, from: f)
+                    else if job.role == tasks.CONTAINS
+                        frames[p].items_set[job.index] @ true
+                frames[p].next @ at + 1
+
+    out: [model.Issue] @= []
+
+    for at in range(from: 0, to: top)
+        out @ out.push(issues[at])
+
+    return out
+
+# What frame `from` evaluated, added to what frame `into` evaluated.
+function merge(@frames: [tasks.Frame], into: i64, from: i64)
+    if frames[from].props_all
+        frames[into].props_all @ true
+    else
+        for name in keys(frames[from].props)
+            frames[into].props[name] @ true
+
+    if frames[from].items_all
+        frames[into].items_all @ true
+
+    if frames[from].items_upto > frames[into].items_upto
+        frames[into].items_upto @ frames[from].items_upto
+
+    for index in keys(frames[from].items_set)
+        frames[into].items_set[index] @ true
+
+# A frame holding nothing, put where a frame is taken out to be changed.
+function empty_frame() -> tasks.Frame
+    return tasks.Frame(
+        node: 0,
+        value: .null_value,
+        at: 0,
+        via: 0,
+        role: -1,
+        key: "",
+        mark: 0,
+        tasks: [],
+        next: 0,
+        phase: 1,
+        oks: [],
+        starts: [],
+        ends: [],
+        want: false,
+        props: {},
+        props_all: false,
+        items_upto: 0,
+        items_all: false,
+        items_set: {}
+    )
+
+# `count` falses.
+function falses(count: i64) -> [bool]
+    out: [bool] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(false)
+
+    return out
+
+# `count` zeros.
+function zeros(count: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(0)
+
+    return out
+
+## Tests
+
+# The schema `text` compiled in 2020-12.
+function compiled_of(text: str) -> model.Compiled
+    sources = [scan.Source(document: json.parse(text).must(), uri: "")]
+    return scan.compile(
+        sources,
+        settings: model.Settings(draft: model.DRAFT_2020, formats: false, content: false, custom: []),
+        start: ""
+    ).must()
+
+test "evaluate: an instance nested twenty thousand deep, through a reference each level"
+    deep: json.Value @= .number(v: 1.0)
+
+    for _ in range(from: 0, to: 20000)
+        deep @ .list(items: [deep])
+
+    assert evaluate(compiled_of("{\"items\": {\"$ref\": \"#\"}}"), instance: deep).len() == 0
+    found = evaluate(compiled_of("{\"type\": \"array\", \"items\": {\"$ref\": \"#\"}}"), instance: deep)
+    assert found.len() == 1 && found[0].instance_location.len() == 40000
+    assert found[0].keyword_location.slice(from: 0, to: 12) == "/items/$ref/"
+
+test "evaluate: references that come back to themselves at the same place end with a problem"
+    for text in ["{\"$ref\": \"#\"}", "{\"$defs\": {\"a\": {\"$ref\": \"#/$defs/b\"}, \"b\": {\"allOf\": [{\"$ref\": \"#/$defs/a\"}]}}, \"$ref\": \"#/$defs/a\"}"]
+        found = evaluate(compiled_of(text), instance: .null_value)
+        assert found.len() == 1 && found[0].keyword == "false"
+
+test "evaluate: anyOf, oneOf and not keep their own problems, and their branches' where none passes"
+    c = compiled_of("{\"anyOf\": [{\"type\": \"string\"}, {\"minimum\": 5}], \"not\": {\"const\": 7}}")
+    assert evaluate(c, instance: .number(v: 6.0)).len() == 0
+    seven = evaluate(c, instance: .number(v: 7.0))
+    assert seven.len() == 1 && seven[0].keyword == "not"
+    low = evaluate(c, instance: .number(v: 1.0))
+    assert low.len() == 3 && low[0].keyword == "anyOf" && low[1].keyword_location == "/anyOf/0/type" && low[2].keyword_location == "/anyOf/1/minimum"
+    one = compiled_of("{\"oneOf\": [{\"type\": \"number\"}, {\"minimum\": 0}]}")
+    both = evaluate(one, instance: .number(v: 1.0))
+    assert both.len() == 1 && both[0].message == "valid against 2 of the schemas of oneOf, those at 0, 1, where one is asked"

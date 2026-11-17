@@ -1,0 +1,826 @@
+# A query read by RFC 9535's grammar (its Appendix A) and checked against its
+# rules of types (§ 2.4.3), into the tables of `program`. It descends one
+# function a level of the query's own nesting, filters inside filters and
+# parentheses, and refuses a query nested deeper than `MAX_NESTING`, so the
+# machine's stack is never what stops it.
+
+use json
+use json/path/internal/program
+use unicode
+
+# The code of a query that is not one.
+constant INVALID: str
+    "invalid"
+
+# The deepest a query nests filters, function calls and parentheses.
+constant MAX_NESTING: i64
+    64
+
+# The largest index or slice number RFC 9535 allows, 2^53 - 1, I-JSON's.
+constant MAX_INDEX: i64
+    9007199254740991
+
+# An operand that is a value, a literal's or a function's answer.
+constant VALUE_TYPE: i64
+    0
+
+# An operand that is true or false, a function's answer.
+constant LOGICAL_TYPE: i64
+    1
+
+# An operand that is the nodes a query selects.
+constant NODES_TYPE: i64
+    2
+
+# Where the reading stands in the query.
+record Cursor
+    # The query's text.
+    text: str
+    # The byte the reading stands at.
+    at: i64
+    # How deep the query's own nesting is at that byte.
+    depth: i64
+
+# What an operand of a filter is, for the rules of types.
+record Typed
+    # `VALUE_TYPE`, `LOGICAL_TYPE` or `NODES_TYPE`.
+    kind: i64
+    # Whether a `NODES_TYPE` operand is a singular query, selecting at most
+    # one node.
+    singular: bool
+    # Whether a `VALUE_TYPE` operand is a literal.
+    literal: bool
+
+# The character at byte `at` of `text`, or the end, as a message names it.
+function found_at(text: str, at: i64) -> str
+    if at >= text.len()
+        return "the end of the query"
+    width = unicode.utf8_width(text[at]).default(1)
+
+    end = if at + width > text.len()
+        text.len()
+    else
+        at + width
+    c = text.slice(from: at, to: end)
+
+    if text[at] < 0x20
+        return "a control character"
+    return f"`{c}`"
+
+# The failure of a query that has not what `what` names at the reading's
+# byte.
+function expected(c: Cursor, what: str) -> str
+    return f"at byte {c.at} of the query: expected {what}, found {found_at(c.text, at: c.at)}"
+
+# Whether the reading stands on byte `b`.
+function at_byte(c: Cursor, b: u8) -> bool
+    return c.at < c.text.len() && c.text[c.at] == b
+
+# Whether the text at the reading begins with `word`.
+function at_word(c: Cursor, word: str) -> bool
+    if c.at + word.len() > c.text.len()
+        return false
+
+    for i in range(from: 0, to: word.len())
+        if c.text[c.at + i] != word[i]
+            return false
+
+    return true
+
+# Moves the reading past any blank: space, tab, line feed, carriage return.
+function skip_blank(@c: Cursor)
+    while c.at < c.text.len() && (c.text[c.at] == ' ' || c.text[c.at] == '\t' || c.text[c.at] == '\n' || c.text[c.at] == '\r')
+        c.at @ c.at + 1
+
+# Whether `b` may begin a member name written after a dot.
+function is_name_first(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_' || b >= 0x80
+
+# Whether `b` may go on a member name written after a dot.
+function is_name_char(b: u8) -> bool
+    return is_name_first(b) || b >= '0' && b <= '9'
+
+# Whether `b` is a digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# One level of nesting entered. Fails `invalid` past `MAX_NESTING`.
+function enter(@c: Cursor) -> ()?
+    if c.depth >= MAX_NESTING
+        return fail(
+            code: INVALID,
+            msg: f"at byte {c.at} of the query: nested deeper than {MAX_NESTING} levels, the most a query may"
+        )
+    c.depth @ c.depth + 1
+    return ok()
+
+# The value of four hexadecimal digits at byte `at`, or -1 where they are
+# not four.
+function hex4(text: str, at: i64) -> i64
+    if at + 4 > text.len()
+        return -1
+    n: i64 @= 0
+
+    for i in range(from: at, to: at + 4)
+        b = text[i]
+
+        digit = if b >= '0' && b <= '9'
+            to_i64(b - '0').must()
+        else if b >= 'a' && b <= 'f'
+            to_i64(b - 'a').must() + 10
+        else if b >= 'A' && b <= 'F'
+            to_i64(b - 'A').must() + 10
+        else
+            -1
+
+        if digit < 0
+            return -1
+        n @ n * 16 + digit
+
+    return n
+
+# The text of a string literal, in single or double quotes, its escapes
+# read, the reading moved past its closing quote.
+function read_string(@c: Cursor) -> str?
+    quote = c.text[c.at]
+    c.at @ c.at + 1
+    pieces: [str] @= []
+    run: i64 @= c.at
+
+    while true
+        if c.at >= c.text.len()
+            return fail(code: INVALID, msg: expected(c, what: "the quote that ends the string"))
+        b = c.text[c.at]
+
+        if b == quote
+            pieces @ pieces.push(c.text.slice(from: run, to: c.at))
+            c.at @ c.at + 1
+            return ok(pieces.join(""))
+
+        if b < 0x20
+            return fail(
+                code: INVALID,
+                msg: expected(c, what: "a character of the string, where a control character is written as an escape")
+            )
+
+        if b != '\\'
+            c.at @ c.at + 1
+        else
+            pieces @ pieces.push(c.text.slice(from: run, to: c.at))
+            c.at @ c.at + 1
+
+            if c.at >= c.text.len()
+                return fail(code: INVALID, msg: expected(c, what: "an escape"))
+            e = c.text[c.at]
+
+            short = if e == 'b'
+                "\u{8}"
+            else if e == 'f'
+                "\u{c}"
+            else if e == 'n'
+                "\n"
+            else if e == 'r'
+                "\r"
+            else if e == 't'
+                "\t"
+            else if e == '/'
+                "/"
+            else if e == '\\'
+                "\\"
+            else if e == quote && e == '\''
+                "'"
+            else if e == quote
+                "\""
+            else
+                ""
+
+            if short != ""
+                pieces @ pieces.push(short)
+                c.at @ c.at + 1
+            else if e != 'u'
+                return fail(
+                    code: INVALID,
+                    msg: expected(c, what: "an escape: b, f, n, r, t, /, \\, u or the string's own quote")
+                )
+            else
+                unit = hex4(c.text, at: c.at + 1)
+
+                if unit < 0
+                    return fail(code: INVALID, msg: expected(c, what: "four hexadecimal digits after \\u"))
+                c.at @ c.at + 5
+                point: i64 @= unit
+
+                if unit >= 0xdc00 && unit <= 0xdfff
+                    return fail(
+                        code: INVALID,
+                        msg: f"at byte {c.at - 6} of the query: \\u{unit} is the second half of a surrogate pair, alone"
+                    )
+
+                if unit >= 0xd800 && unit <= 0xdbff
+                    low = if at_word(c, word: "\\u")
+                        hex4(c.text, at: c.at + 2)
+                    else
+                        -1
+
+                    if low < 0xdc00 || low > 0xdfff
+                        return fail(
+                            code: INVALID,
+                            msg: f"at byte {c.at - 6} of the query: a surrogate's first half with no second half after it"
+                        )
+                    c.at @ c.at + 6
+                    point @ 0x10000 + (unit - 0xd800) * 0x400 + (low - 0xdc00)
+                pieces @ pieces.push(unicode.from_code_point(point).must())
+            run @ c.at
+
+    return fail(code: INVALID, msg: "unreachable")
+
+# The integer at the reading, as RFC 9535's `int` writes it: `0`, or digits
+# with no leading zero after an optional `-`, from -(2^53 - 1) to 2^53 - 1.
+function read_int(@c: Cursor) -> i64?
+    start = c.at
+    negative = at_byte(c, b: '-')
+
+    if negative
+        c.at @ c.at + 1
+
+    if !(c.at < c.text.len() && is_digit(c.text[c.at]))
+        return fail(code: INVALID, msg: expected(c, what: "a digit"))
+
+    if c.text[c.at] == '0'
+        if negative
+            return fail(code: INVALID, msg: f"at byte {start} of the query: -0 is no index; write 0")
+        c.at @ c.at + 1
+        return ok(0)
+    n: i64 @= 0
+
+    while c.at < c.text.len() && is_digit(c.text[c.at])
+        if n > MAX_INDEX / 10
+            return fail(
+                code: INVALID,
+                msg: f"at byte {start} of the query: an index past {MAX_INDEX}, the largest RFC 9535 allows"
+            )
+        n @ n * 10 + to_i64(c.text[c.at] - '0').must()
+        c.at @ c.at + 1
+
+    if n > MAX_INDEX
+        return fail(
+            code: INVALID,
+            msg: f"at byte {start} of the query: an index past {MAX_INDEX}, the largest RFC 9535 allows"
+        )
+
+    if negative
+        return ok(0 - n)
+    return ok(n)
+
+# The number literal at the reading: an `int` or `-0`, then an optional
+# fraction and exponent.
+function read_number(@c: Cursor) -> f64?
+    start = c.at
+
+    if at_word(c, word: "-0")
+        c.at @ c.at + 2
+    else
+        _ = read_int(@c)?
+
+    if at_byte(c, b: '.')
+        c.at @ c.at + 1
+
+        if !(c.at < c.text.len() && is_digit(c.text[c.at]))
+            return fail(code: INVALID, msg: expected(c, what: "a digit of the fraction"))
+
+        while c.at < c.text.len() && is_digit(c.text[c.at])
+            c.at @ c.at + 1
+
+    if at_byte(c, b: 'e') || at_byte(c, b: 'E')
+        c.at @ c.at + 1
+
+        if at_byte(c, b: '+') || at_byte(c, b: '-')
+            c.at @ c.at + 1
+
+        if !(c.at < c.text.len() && is_digit(c.text[c.at]))
+            return fail(code: INVALID, msg: expected(c, what: "a digit of the exponent"))
+
+        while c.at < c.text.len() && is_digit(c.text[c.at])
+            c.at @ c.at + 1
+
+    match json.parse(c.text.slice(from: start, to: c.at))
+        .ok v  => return json.number_of(v)
+        .err _ => return fail(code: INVALID, msg: f"at byte {start} of the query: a number past what an f64 holds")
+
+# A member name written after a dot, the reading moved past it.
+function read_shorthand(@c: Cursor) -> str?
+    if !(c.at < c.text.len() && is_name_first(c.text[c.at]))
+        return fail(code: INVALID, msg: expected(c, what: "a member's name, or `*`"))
+    start = c.at
+
+    while c.at < c.text.len() && is_name_char(c.text[c.at])
+        c.at @ c.at + 1
+
+    return ok(c.text.slice(from: start, to: c.at))
+
+# A selector of one name.
+function name_selector(name: str) -> program.Selector
+    return program.Selector(
+        kind: program.NAME,
+        name: name,
+        index: 0,
+        start: 0,
+        has_start: false,
+        end: 0,
+        has_end: false,
+        filter: -1
+    )
+
+# The wildcard selector.
+function wildcard() -> program.Selector
+    return program.Selector(
+        kind: program.WILDCARD,
+        name: "",
+        index: 0,
+        start: 0,
+        has_start: false,
+        end: 0,
+        has_end: false,
+        filter: -1
+    )
+
+# Whether the reading stands on the first byte of an `int`.
+function at_int(c: Cursor) -> bool
+    return c.at < c.text.len() && (is_digit(c.text[c.at]) || c.text[c.at] == '-')
+
+# One selector inside brackets.
+function read_selector(@c: Cursor, @paths: [program.Path], @filters: [program.Filter]) -> program.Selector?
+    if c.at >= c.text.len()
+        return fail(code: INVALID, msg: expected(c, what: "a selector"))
+    b = c.text[c.at]
+
+    if b == '\'' || b == '"'
+        return ok(name_selector(read_string(@c)?))
+
+    if b == '*'
+        c.at @ c.at + 1
+        return ok(wildcard())
+
+    if b == '?'
+        c.at @ c.at + 1
+        enter(@c)?
+        skip_blank(@c)
+        code: [program.Instr] @= []
+        read_or(@c, paths: @paths, filters: @filters, code: @code)?
+        c.depth @ c.depth - 1
+        filters @ filters.push(program.Filter(code: code))
+        return ok(
+            program.Selector(kind: program.FILTER, name: "", index: 0, start: 0, has_start: false, end: 0, has_end: false, filter: filters.len() - 1)
+        )
+
+    if !at_int(c) && b != ':'
+        return fail(
+            code: INVALID,
+            msg: expected(c, what: "a selector: a name in quotes, `*`, an index, a slice or a filter")
+        )
+    start: i64 @= 0
+    has_start: bool @= false
+
+    if b != ':'
+        start @ read_int(@c)?
+        has_start @ true
+        save = c.at
+        skip_blank(@c)
+
+        if !at_byte(c, b: ':')
+            c.at @ save
+            return ok(
+                program.Selector(kind: program.INDEX, name: "", index: start, start: 0, has_start: false, end: 0, has_end: false, filter: -1)
+            )
+    c.at @ c.at + 1
+    skip_blank(@c)
+    end: i64 @= 0
+    has_end: bool @= false
+
+    if at_int(c)
+        end @ read_int(@c)?
+        has_end @ true
+        skip_blank(@c)
+    step: i64 @= 1
+
+    if at_byte(c, b: ':')
+        c.at @ c.at + 1
+        save = c.at
+        skip_blank(@c)
+
+        if at_int(c)
+            step @ read_int(@c)?
+        else
+            c.at @ save
+
+    return ok(
+        program.Selector(kind: program.SLICE, name: "", index: step, start: start, has_start: has_start, end: end, has_end: has_end, filter: -1)
+    )
+
+# The selectors between brackets, the reading on the `[` and moved past the
+# `]`.
+function read_bracketed(@c: Cursor, @paths: [program.Path], @filters: [program.Filter]) -> [program.Selector]?
+    c.at @ c.at + 1
+    skip_blank(@c)
+    out: [program.Selector] @= []
+
+    while true
+        out @ out.push(read_selector(@c, paths: @paths, filters: @filters)?)
+        skip_blank(@c)
+
+        if at_byte(c, b: ']')
+            c.at @ c.at + 1
+            return ok(out)
+
+        if !at_byte(c, b: ',')
+            return fail(code: INVALID, msg: expected(c, what: "`,` or `]`"))
+        c.at @ c.at + 1
+        skip_blank(@c)
+
+    return ok(out)
+
+# Whether a blank stands just inside the brackets that begin at byte `begin`
+# and end just before byte `end`: a singular query writes none there.
+function holds_blank(text: str, begin: i64, end: i64) -> bool
+    first = text[begin + 1]
+    last = text[end - 2]
+    return first == ' ' || first == '\t' || first == '\n' || first == '\r' || last == ' ' || last == '\t' || last == '\n' || last == '\r'
+
+# The segments after `$` or `@`, as many as follow; the reading is left
+# before the blank that follows the last. `singular` is set false where one
+# is not a name or an index alone.
+function read_segments(@c: Cursor, @paths: [program.Path], @filters: [program.Filter], @singular: bool) -> [program.Segment]?
+    out: [program.Segment] @= []
+
+    while true
+        save = c.at
+        skip_blank(@c)
+
+        if at_byte(c, b: '[')
+            begin = c.at
+            selectors = read_bracketed(@c, paths: @paths, filters: @filters)?
+            kind = selectors[0].kind
+
+            if selectors.len() != 1 || kind != program.NAME && kind != program.INDEX || holds_blank(c.text, begin: begin, end: c.at)
+                singular @ false
+            out @ out.push(program.Segment(descendant: false, selectors: selectors))
+        else if at_word(c, word: "..")
+            c.at @ c.at + 2
+            singular @ false
+
+            if at_byte(c, b: '[')
+                out @ out.push(
+                    program.Segment(descendant: true, selectors: read_bracketed(@c, paths: @paths, filters: @filters)?)
+                )
+            else if at_byte(c, b: '*')
+                c.at @ c.at + 1
+                out @ out.push(program.Segment(descendant: true, selectors: [wildcard()]))
+            else
+                out @ out.push(program.Segment(descendant: true, selectors: [name_selector(read_shorthand(@c)?)]))
+        else if at_byte(c, b: '.')
+            c.at @ c.at + 1
+
+            if at_byte(c, b: '*')
+                c.at @ c.at + 1
+                singular @ false
+                out @ out.push(program.Segment(descendant: false, selectors: [wildcard()]))
+            else
+                out @ out.push(program.Segment(descendant: false, selectors: [name_selector(read_shorthand(@c)?)]))
+        else
+            c.at @ save
+            return ok(out)
+
+    return ok(out)
+
+# Fails where an operand of type `t` cannot stand alone as a test.
+function check_test(c: Cursor, t: Typed) -> ()?
+    if t.kind == VALUE_TYPE && t.literal
+        return fail(code: INVALID, msg: f"at byte {c.at} of the query: a literal alone is no test; compare it")
+
+    if t.kind == VALUE_TYPE
+        return fail(
+            code: INVALID,
+            msg: f"at byte {c.at} of the query: a function answering a value is no test; compare it"
+        )
+    return ok()
+
+# Fails where an operand of type `t` cannot be compared.
+function check_comparable(c: Cursor, t: Typed) -> ()?
+    if t.kind == LOGICAL_TYPE
+        return fail(
+            code: INVALID,
+            msg: f"at byte {c.at} of the query: match and search answer true or false, which is not compared"
+        )
+
+    if t.kind == NODES_TYPE && !t.singular
+        return fail(
+            code: INVALID,
+            msg: f"at byte {c.at} of the query: a query that can select several values is not compared"
+        )
+    return ok()
+
+# The kinds of the parameters of the function `name`, and of its answer
+# last. Fails `invalid` where it is none of RFC 9535's five.
+function signature(name: str, c: Cursor) -> [i64]?
+    if name == "length"
+        return ok([VALUE_TYPE, VALUE_TYPE])
+
+    if name == "count"
+        return ok([NODES_TYPE, VALUE_TYPE])
+
+    if name == "match" || name == "search"
+        return ok([VALUE_TYPE, VALUE_TYPE, LOGICAL_TYPE])
+
+    if name == "value"
+        return ok([NODES_TYPE, VALUE_TYPE])
+    return fail(
+        code: INVALID,
+        msg: f"at byte {c.at} of the query: no function \"{name}\"; RFC 9535 has length, count, match, search and value"
+    )
+
+# A function's call, the reading on its name.
+function read_call(@c: Cursor, @paths: [program.Path], @filters: [program.Filter], @code: [program.Instr]) -> Typed?
+    start = c.at
+
+    while c.at < c.text.len() && (c.text[c.at] >= 'a' && c.text[c.at] <= 'z' || c.text[c.at] == '_' || is_digit(c.text[c.at]))
+        c.at @ c.at + 1
+
+    name = c.text.slice(from: start, to: c.at)
+
+    if !at_byte(c, b: '(')
+        return fail(code: INVALID, msg: expected(c, what: f"`(` after the function's name {name}, or a value"))
+    kinds = signature(name, c: Cursor(text: c.text, at: start, depth: c.depth))?
+    enter(@c)?
+    c.at @ c.at + 1
+    skip_blank(@c)
+    count: i64 @= 0
+    wanted = kinds.len() - 1
+
+    if !at_byte(c, b: ')')
+        while true
+            here = c.at
+            arg = read_operand(@c, paths: @paths, filters: @filters, code: @code)?
+
+            if count >= wanted
+                return fail(
+                    code: INVALID,
+                    msg: f"at byte {here} of the query: {name} takes {wanted} argument(s), and is given more"
+                )
+            param = kinds[count]
+
+            fits = if param == NODES_TYPE
+                arg.kind == NODES_TYPE
+            else
+                arg.kind == VALUE_TYPE || arg.kind == NODES_TYPE && arg.singular
+
+            if !fits
+                what = if param == NODES_TYPE
+                    "a query"
+                else
+                    "a value: a literal, a singular query or a function answering a value"
+                return fail(code: INVALID, msg: f"at byte {here} of the query: {name}'s argument {count + 1} is {what}")
+            count @ count + 1
+            skip_blank(@c)
+
+            if at_byte(c, b: ')')
+                break
+
+            if !at_byte(c, b: ',')
+                return fail(code: INVALID, msg: expected(c, what: "`,` or `)` after a function's argument"))
+            c.at @ c.at + 1
+            skip_blank(@c)
+
+    if count != wanted
+        return fail(
+            code: INVALID,
+            msg: f"at byte {start} of the query: {name} takes {wanted} argument(s), and is given {count}"
+        )
+    c.at @ c.at + 1
+    c.depth @ c.depth - 1
+    code @ code.push(program.Instr(op: program.CALL, value: .null_value, path: -1, name: name, count: count))
+    return ok(Typed(kind: kinds[wanted], singular: false, literal: false))
+
+# A word that is a literal, where it stands at the reading and no name's
+# character follows it.
+function literal_word(c: Cursor, word: str) -> bool
+    end = c.at + word.len()
+    return at_word(c, word: word) && !(end < c.text.len() && is_name_char(c.text[end]))
+
+# One operand of a filter: a literal, a query, or a function's call.
+function read_operand(@c: Cursor, @paths: [program.Path], @filters: [program.Filter], @code: [program.Instr]) -> Typed?
+    if c.at >= c.text.len()
+        return fail(code: INVALID, msg: expected(c, what: "a value, a query or a function"))
+    b = c.text[c.at]
+
+    if b == '@' || b == '$'
+        c.at @ c.at + 1
+        singular: bool @= true
+        segments = read_segments(@c, paths: @paths, filters: @filters, singular: @singular)?
+        paths @ paths.push(program.Path(absolute: b == '$', segments: segments, singular: singular))
+        code @ code.push(
+            program.Instr(op: program.PUSH_NODES, value: .null_value, path: paths.len() - 1, name: "", count: 0)
+        )
+        return ok(Typed(kind: NODES_TYPE, singular: singular, literal: false))
+    value: json.Value @= .null_value
+
+    if b == '\'' || b == '"'
+        value @ .text(v: read_string(@c)?)
+    else if b == '-' || is_digit(b)
+        value @ .number(v: read_number(@c)?)
+    else if literal_word(c, word: "true")
+        c.at @ c.at + 4
+        value @ .boolean(v: true)
+    else if literal_word(c, word: "false")
+        c.at @ c.at + 5
+        value @ .boolean(v: false)
+    else if literal_word(c, word: "null")
+        c.at @ c.at + 4
+    else if b >= 'a' && b <= 'z'
+        return read_call(@c, paths: @paths, filters: @filters, code: @code)
+    else
+        return fail(code: INVALID, msg: expected(c, what: "a value, a query or a function"))
+    code @ code.push(program.Instr(op: program.PUSH_VALUE, value: value, path: -1, name: "", count: 0))
+    return ok(Typed(kind: VALUE_TYPE, singular: false, literal: true))
+
+# The comparison operator at the reading, or `""` where none stands there.
+function comparison_at(c: Cursor) -> str
+    for op in ["==", "!=", "<=", ">=", "<", ">"]
+        if at_word(c, word: op)
+            return op
+
+    return ""
+
+# A basic expression: a parenthesized one, a comparison, or a test, with a
+# `!` before the first and the last.
+function read_basic(@c: Cursor, @paths: [program.Path], @filters: [program.Filter], @code: [program.Instr]) -> ()?
+    negated = at_byte(c, b: '!')
+
+    if negated
+        c.at @ c.at + 1
+        skip_blank(@c)
+
+    if at_byte(c, b: '(')
+        enter(@c)?
+        c.at @ c.at + 1
+        skip_blank(@c)
+        read_or(@c, paths: @paths, filters: @filters, code: @code)?
+        skip_blank(@c)
+
+        if !at_byte(c, b: ')')
+            return fail(code: INVALID, msg: expected(c, what: "`)`"))
+        c.at @ c.at + 1
+        c.depth @ c.depth - 1
+
+        if negated
+            code @ code.push(program.Instr(op: program.NOT, value: .null_value, path: -1, name: "", count: 0))
+        return ok()
+    left = read_operand(@c, paths: @paths, filters: @filters, code: @code)?
+
+    if !negated
+        save = c.at
+        skip_blank(@c)
+        op = comparison_at(c)
+
+        if op != ""
+            check_comparable(c, t: left)?
+            c.at @ c.at + op.len()
+            skip_blank(@c)
+            right = read_operand(@c, paths: @paths, filters: @filters, code: @code)?
+            check_comparable(c, t: right)?
+            code @ code.push(program.Instr(op: program.COMPARE, value: .null_value, path: -1, name: op, count: 2))
+            return ok()
+        c.at @ save
+    check_test(c, t: left)?
+    code @ code.push(program.Instr(op: program.TEST, value: .null_value, path: -1, name: "", count: 1))
+
+    if negated
+        code @ code.push(program.Instr(op: program.NOT, value: .null_value, path: -1, name: "", count: 0))
+    return ok()
+
+# Basic expressions joined by `&&`.
+function read_and(@c: Cursor, @paths: [program.Path], @filters: [program.Filter], @code: [program.Instr]) -> ()?
+    read_basic(@c, paths: @paths, filters: @filters, code: @code)?
+
+    while true
+        save = c.at
+        skip_blank(@c)
+
+        if !at_word(c, word: "&&")
+            c.at @ save
+            return ok()
+        c.at @ c.at + 2
+        skip_blank(@c)
+        read_basic(@c, paths: @paths, filters: @filters, code: @code)?
+        code @ code.push(program.Instr(op: program.AND, value: .null_value, path: -1, name: "", count: 0))
+
+    return ok()
+
+# Conjunctions joined by `||`: a whole logical expression.
+function read_or(@c: Cursor, @paths: [program.Path], @filters: [program.Filter], @code: [program.Instr]) -> ()?
+    read_and(@c, paths: @paths, filters: @filters, code: @code)?
+
+    while true
+        save = c.at
+        skip_blank(@c)
+
+        if !at_word(c, word: "||")
+            c.at @ save
+            return ok()
+        c.at @ c.at + 2
+        skip_blank(@c)
+        read_and(@c, paths: @paths, filters: @filters, code: @code)?
+        code @ code.push(program.Instr(op: program.OR, value: .null_value, path: -1, name: "", count: 0))
+
+    return ok()
+
+# The query `text`, read and checked.
+function read(text: str) -> program.Program?
+    c @= Cursor(text: text, at: 0, depth: 0)
+    paths: [program.Path] @= [program.Path(absolute: true, segments: [], singular: true)]
+    filters: [program.Filter] @= []
+
+    if !at_byte(c, b: '$')
+        return fail(code: INVALID, msg: expected(c, what: "`$`, which begins a query"))
+    c.at @ 1
+    singular: bool @= true
+    segments = read_segments(@c, paths: @paths, filters: @filters, singular: @singular)?
+
+    if c.at != text.len()
+        skip_blank(@c)
+        return fail(code: INVALID, msg: expected(c, what: "a segment, or the end of the query"))
+    paths[0] @ program.Path(absolute: true, segments: segments, singular: singular)
+    return ok(program.Program(paths: paths, filters: filters))
+
+## Tests
+
+test "read: the root, names, wildcards, indices, slices and descendants"
+    p = read("$.a['b'][\"c\"].*[0][-1][1:2][::-1][:]..d..*..[0]").must()
+    segments = p.paths[0].segments
+    assert segments.len() == 12
+    assert segments[0].selectors[0] == name_selector("a") && segments[2].selectors[0].name == "c"
+    assert segments[3].selectors[0].kind == program.WILDCARD
+    assert segments[5].selectors[0].index == -1
+    s = segments[6].selectors[0]
+    assert s.kind == program.SLICE && s.start == 1 && s.has_start && s.end == 2 && s.index == 1
+    back = segments[7].selectors[0]
+    assert back.kind == program.SLICE && !back.has_start && !back.has_end && back.index == -1
+    assert segments[9].descendant && segments[9].selectors[0].name == "d"
+    assert !p.paths[0].singular
+    assert read("$.a[0]['b']").must().paths[0].singular
+    assert read("$['a b']").must().paths[0].singular
+
+test "read: blanks where the grammar allows them, and not before the root or after the end"
+    assert !read("$ .a [ 'b' , 1 ] ..c").is_err()
+    assert !read("$[?@.a == 1 && @.b]").is_err()
+    assert !read("$[ ? @ ]").is_err()
+
+    for text in [" $", "$ ", "$. a", "$.. a", "$[?@.a]\n", "$a", "", "@.a"]
+        match read(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "read: strings, their escapes, and what no string holds"
+    p = read("$['\\u00e9\\'\\\\', \"\\\"\\ud83d\\ude00\\t\"]").must()
+    assert p.paths[0].segments[0].selectors[0].name == "é'\\"
+    assert p.paths[0].segments[0].selectors[1].name == "\"😀\t"
+
+    for text in ["$['\\x']", "$['\\ud800']", "$['\\udc00']", "$['a", "$['\\u12']", "$[\"\\'\"]", "$['\u{1}']"]
+        assert read(text).is_err()
+
+test "read: the indices RFC 9535 allows, and -0, a leading zero and a number past 2^53"
+    assert read("$[9007199254740991]").must().paths[0].segments[0].selectors[0].index == MAX_INDEX
+    assert read("$[-9007199254740991]").must().paths[0].segments[0].selectors[0].index == 0 - MAX_INDEX
+
+    for text in ["$[9007199254740992]", "$[-0]", "$[01]", "$[1:-0]", "$[+1]", "$[1.0]", "$[0x1]"]
+        match read(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "read: the rules of types for comparisons, tests and the five functions"
+    for text in ["$[?@.a == 1]", "$[?length(@.a) > 1]", "$[?count(@.*) == 2]", "$[?match(@.a, 'x')]", "$[?!search(@.a, $.r)]", "$[?value(@..a) == 1]", "$[?@.a]", "$[?$.*]", "$[?(@.a || @.b) && !(@.c)]", "$[?null == @.a]", "$[?-0.5e+3 < @.n]"]
+        assert !read(text).is_err()
+
+    for text in ["$[?@.* == 1]", "$[?match(@.a, 'x') == true]", "$[?length(@.a)]", "$[?1]", "$[?true]", "$[?length(@.*) == 1]", "$[?count(1) == 1]", "$[?foo(@.a)]", "$[?length(@.a, 1) == 1]", "$[?length() == 1]", "$[?!@.a == 1]", "$[?@.a == 1 == 2]", "$[?@[ 'a' ] == 1]", "$[?@..a == 1]", "$[?value(@.a)]"]
+        match read(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "read: nesting allowed to the bound, and one level past it refused"
+    allowed = "$" + repeat("[?@", 63) + repeat("]", 63)
+    assert !read(allowed).is_err()
+    too_deep = "$" + repeat("[?@", 65) + repeat("]", 65)
+
+    match read(too_deep)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert read("$[?" + repeat("(", 70) + "@" + repeat(")", 70) + "]").is_err()
+
+test "read: a message that says where and what was expected"
+    match read("$.a[")
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 4 of the query: expected a selector, found the end of the query"
+
+    match read("$[1 2]")
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 4 of the query: expected `,` or `]`, found `2`"

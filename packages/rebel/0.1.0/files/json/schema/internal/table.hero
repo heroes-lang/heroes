@@ -1,0 +1,156 @@
+# Every document of a compilation flattened into one table of nodes, on a
+# stack this module holds: a node's children stand one after another, so a
+# list's element is found by its index and an object's member through a map
+# by its name, and every schema a document holds is named by one number.
+
+use json
+use json/schema/internal/model
+use json/schema/internal/stack
+
+# The kind of `v`, `model.NULL_KIND` to `model.OBJECT_KIND`.
+function kind_of(v: json.Value) -> u8
+    return match v
+        .null_value => model.NULL_KIND
+        .boolean _  => model.BOOLEAN_KIND
+        .number _   => model.NUMBER_KIND
+        .text _     => model.TEXT_KIND
+        .list _     => model.LIST_KIND
+        .object _   => model.OBJECT_KIND
+
+# The table of `documents`, each one's root at the index `roots` gives.
+function flatten(documents: [json.Value]) -> model.Table
+    kinds: [u8] @= []
+    values: [json.Value] @= []
+    parents: [i64] @= []
+    names: [str] @= []
+    firsts: [i64] @= []
+    counts: [i64] @= []
+    map_of: [i64] @= []
+    member_maps: [{str: i64}] @= []
+
+    for doc in documents
+        # A node is written whole when it is taken off the stack; its
+        # children are given their places then, one after another.
+        pending: [i64] @= [kinds.len()]
+        kinds @ kinds.push(model.NULL_KIND)
+        values @ values.push(doc)
+        parents @ parents.push(-1)
+        names @ names.push("")
+        firsts @ firsts.push(0)
+        counts @ counts.push(0)
+        map_of @ map_of.push(-1)
+        top: i64 @= 1
+
+        while top > 0
+            top @ top - 1
+            n = pending[top]
+            v = values[n]
+            kinds[n] @ kind_of(v)
+            first = kinds.len()
+            firsts[n] @ first
+
+            match v
+                .list l =>
+                    counts[n] @ l.items.len()
+
+                    for at in range(from: 0, to: l.items.len())
+                        kinds @ kinds.push(model.NULL_KIND)
+                        values @ values.push(l.items[at])
+                        parents @ parents.push(n)
+                        names @ names.push(f"{at}")
+                        firsts @ firsts.push(0)
+                        counts @ counts.push(0)
+                        map_of @ map_of.push(-1)
+                        stack.put(items: @pending, top: top, item: first + at)
+                        top @ top + 1
+                .object o =>
+                    members = keys(o.members)
+                    counts[n] @ members.len()
+                    found: {str: i64} @= {}
+
+                    for at in range(from: 0, to: members.len())
+                        kinds @ kinds.push(model.NULL_KIND)
+                        values @ values.push(o.members[members[at]].must())
+                        parents @ parents.push(n)
+                        names @ names.push(members[at])
+                        firsts @ firsts.push(0)
+                        counts @ counts.push(0)
+                        map_of @ map_of.push(-1)
+                        found[members[at]] @ first + at
+                        stack.put(items: @pending, top: top, item: first + at)
+                        top @ top + 1
+
+                    map_of[n] @ member_maps.len()
+                    member_maps @ member_maps.push(found)
+                .null_value | .boolean _ | .number _ | .text _ => _ = 0
+
+    return model.Table(
+        kinds: kinds,
+        values: values,
+        parents: parents,
+        keys: names,
+        firsts: firsts,
+        counts: counts,
+        map_of: map_of,
+        member_maps: member_maps
+    )
+
+# The roots of the documents of a table, in the order they were given.
+function roots_of(t: model.Table) -> [i64]
+    out: [i64] @= []
+
+    for n in range(from: 0, to: t.parents.len())
+        if t.parents[n] < 0
+            out @ out.push(n)
+
+    return out
+
+# The member `name` of the object node `n`, or -1 where `n` is no object or
+# holds no such member.
+function member(t: model.Table, n: i64, name: str) -> i64
+    if n < 0 || t.map_of[n] < 0
+        return -1
+    return t.member_maps[t.map_of[n]][name].default(-1)
+
+# Whether node `n` is an object holding `name`.
+function has(t: model.Table, n: i64, name: str) -> bool
+    return member(t, n: n, name: name) >= 0
+
+# The `at`-th child of node `n`.
+function child(t: model.Table, n: i64, at: i64) -> i64
+    return t.firsts[n] + at
+
+# The text of node `n`, or `""` where it is no text.
+function text_of(t: model.Table, n: i64) -> str
+    match t.values[n]
+        .text s                                                    => return s.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => return ""
+
+# The number of node `n`, or 0 where it is no number.
+function number_of(t: model.Table, n: i64) -> f64
+    match t.values[n]
+        .number x                                                => return x.v
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => return 0.0
+
+## Tests
+
+test "flatten: two documents, children one after another, members by name"
+    t = flatten([json.parse("{\"a\": [1, {\"b\": true}], \"c\": \"x\"}").must(), .null_value])
+    assert roots_of(t) == [0, t.kinds.len() - 1]
+    a = member(t, n: 0, name: "a")
+    assert t.kinds[a] == model.LIST_KIND && t.counts[a] == 2
+    second = child(t, n: a, at: 1)
+    assert t.keys[second] == "1" && t.parents[second] == a
+    assert member(t, n: second, name: "b") >= 0 && !has(t, n: second, name: "c")
+    assert text_of(t, n: member(t, n: 0, name: "c")) == "x"
+    assert number_of(t, n: child(t, n: a, at: 0)) == 1.0
+    assert member(t, n: a, name: "a") == -1
+
+test "flatten: a list nested twenty thousand deep"
+    deep: json.Value @= .null_value
+
+    for _ in range(from: 0, to: 20000)
+        deep @ .list(items: [deep])
+
+    t = flatten([deep])
+    assert t.kinds.len() == 20001

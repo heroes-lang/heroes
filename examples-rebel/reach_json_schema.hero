@@ -1,0 +1,20 @@
+# Reaches Rebel's `json/schema`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), the JSON Schema Test Suite among them. It
+# validates a small document against a schema and prints each error.
+
+use <rebel>/json
+use <rebel>/json/schema
+
+function main()
+    text = "{\"type\": \"object\", \"required\": [\"name\"], \"properties\": {\"year\": {\"type\": \"integer\", \"minimum\": 1947}}}"
+
+    match json.parse(text)
+        .err e => print(e.code, ": ", e.msg)
+        .ok s =>
+            match schema.compile(s)
+                .err e => print(e.code, ": ", e.msg)
+                .ok compiled =>
+                    doc = json.parse("{\"year\": 1900.5}").default(.null_value)
+
+                    for e in schema.errors_of(compiled, doc)
+                        print(schema.format_error(e))

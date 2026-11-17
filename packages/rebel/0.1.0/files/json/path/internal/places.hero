@@ -1,0 +1,180 @@
+# Where a value stands: a normalized path as RFC 9535 § 2.7 writes one, a
+# JSON pointer as RFC 6901 writes one, and a normalized path read back into a
+# pointer.
+
+use numbers
+use strings
+
+# The code of a text that is no normalized path.
+constant INVALID: str
+    "invalid"
+
+# `name` as a normalized path writes a member's name between `['` and `']`:
+# `'` and `\` after a backslash, the five control characters with a short
+# escape by it, and every other control character as `\u00` and two
+# lowercase hexadecimal digits.
+function quoted(name: str) -> str
+    pieces: [str] @= []
+    run: i64 @= 0
+
+    for at in range(from: 0, to: name.len())
+        b = name[at]
+
+        if b < 0x20 || b == '\'' || b == '\\'
+            pieces @ pieces.push(name.slice(from: run, to: at))
+
+            short = if b == 0x08
+                "\\b"
+            else if b == 0x0c
+                "\\f"
+            else if b == '\n'
+                "\\n"
+            else if b == '\r'
+                "\\r"
+            else if b == '\t'
+                "\\t"
+            else if b == '\''
+                "\\'"
+            else if b == '\\'
+                "\\\\"
+            else
+                "\\u00" + strings.pad_zeros(numbers.format_int(n: to_i64(b).must(), base: 16), width: 2)
+            pieces @ pieces.push(short)
+            run @ at + 1
+
+    pieces @ pieces.push(name.slice(from: run, to: name.len()))
+    return pieces.join("")
+
+# The normalized path of member `name` of the value at `location`.
+function member_location(location: str, name: str) -> str
+    return location + "['" + quoted(name) + "']"
+
+# The JSON pointer of member `name` of the value at `pointer`.
+function member_pointer(pointer: str, name: str) -> str
+    return pointer + "/" + strings.replace_all(s: strings.replace_all(s: name, old: "~", new: "~0"), old: "/", new: "~1")
+
+# The JSON pointer of the normalized path `location`. Fails `invalid` where it
+# is none: anything but `$` and segments of a quoted name or an index, a name
+# written otherwise than the normalized form writes it.
+function pointer_of(location: str) -> str?
+    if location.len() == 0 || location[0] != '$'
+        return fail(code: INVALID, msg: f"\"{location}\" is no normalized path: one begins with `$`")
+    pieces: [str] @= []
+    at: i64 @= 1
+
+    while at < location.len()
+        if location[at] != '['
+            return fail(code: INVALID, msg: f"at byte {at} of \"{location}\": expected `[`")
+        at @ at + 1
+
+        if at < location.len() && location[at] == '\''
+            at @ at + 1
+            name: [str] @= []
+            run: i64 @= at
+
+            while true
+                if at >= location.len()
+                    return fail(code: INVALID, msg: f"\"{location}\" ends inside a name")
+                b = location[at]
+
+                if b == '\''
+                    break
+
+                if b < 0x20
+                    return fail(
+                        code: INVALID,
+                        msg: f"at byte {at} of \"{location}\": a control character is written as an escape"
+                    )
+
+                if b != '\\'
+                    at @ at + 1
+                else
+                    name @ name.push(location.slice(from: run, to: at))
+
+                    if at + 1 >= location.len()
+                        return fail(code: INVALID, msg: f"\"{location}\" ends inside an escape")
+                    e = location[at + 1]
+
+                    short = if e == 'b'
+                        "\u{8}"
+                    else if e == 'f'
+                        "\u{c}"
+                    else if e == 'n'
+                        "\n"
+                    else if e == 'r'
+                        "\r"
+                    else if e == 't'
+                        "\t"
+                    else if e == '\''
+                        "'"
+                    else if e == '\\'
+                        "\\"
+                    else
+                        ""
+
+                    if short != ""
+                        name @ name.push(short)
+                        at @ at + 2
+                    else
+                        if e != 'u' || at + 6 > location.len()
+                            return fail(
+                                code: INVALID,
+                                msg: f"at byte {at} of \"{location}\": an escape the normalized form does not write"
+                            )
+                        hex = location.slice(from: at + 2, to: at + 6)
+                        code = numbers.parse_int_base(hex, base: 16).default(-1)
+
+                        if hex.slice(from: 0, to: 2) != "00" || code < 0 || code >= 0x20 || quoted([to_u8(code).must()].validated_bytes().must()) != "\\u" + hex
+                            return fail(
+                                code: INVALID,
+                                msg: f"at byte {at} of \"{location}\": an escape the normalized form does not write"
+                            )
+                        name @ name.push([to_u8(code).must()].validated_bytes().must())
+                        at @ at + 6
+                    run @ at
+
+            name @ name.push(location.slice(from: run, to: at))
+            at @ at + 1
+            pieces @ pieces.push(member_pointer(pointer: "", name: name.join("")))
+        else
+            start = at
+
+            while at < location.len() && location[at] >= '0' && location[at] <= '9'
+                at @ at + 1
+
+            if at == start || location[start] == '0' && at - start > 1
+                return fail(
+                    code: INVALID,
+                    msg: f"at byte {start} of \"{location}\": expected a quoted name or an index with no leading zero"
+                )
+            pieces @ pieces.push("/" + location.slice(from: start, to: at))
+
+        if at >= location.len() || location[at] != ']'
+            return fail(code: INVALID, msg: f"at byte {at} of \"{location}\": expected `]`")
+        at @ at + 1
+
+    return ok(pieces.join(""))
+
+## Tests
+
+test "quoted: plain text, a quote, a backslash, and control characters short and long"
+    assert quoted("") == ""
+    assert quoted("città") == "città"
+    assert quoted("a'b\\c") == "a\\'b\\\\c"
+    assert quoted("\u{8}\u{c}\n\r\t\u{1}\u{1f}") == "\\b\\f\\n\\r\\t\\u0001\\u001f"
+    assert quoted("\"/") == "\"/"
+
+test "member_location and member_pointer: a name escaped each way"
+    assert member_location(location: "$", name: "a'b") == "$['a\\'b']"
+    assert member_pointer(pointer: "/x", name: "a/b~") == "/x/a~1b~0"
+
+test "pointer_of: names, indices, escapes, and what no normalized path writes"
+    assert pointer_of("$").must() == ""
+    assert pointer_of("$['a'][0]['b/c'][10]").must() == "/a/0/b~1c/10"
+    assert pointer_of("$['a\\'\\\\\\u001f\\n']").must() == "/a'\\\u{1f}\n"
+    assert pointer_of("$['']").must() == "/"
+
+    for text in ["", "a", "$[\"a\"]", "$[01]", "$[-1]", "$['a'", "$['\\u000a']", "$['\\u0020']", "$['\\/']", "$[*]", "$.a", "$['a']x"]
+        match pointer_of(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID

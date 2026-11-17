@@ -1,0 +1,178 @@
+# The types the package's modules share: a schema's documents flattened into
+# one table of nodes, what the scan learns of each node, and an error as the
+# validator finds it. The face holds a `Compiled` and converts `Issue` and
+# `Settings` to and from its own records, since a private module cannot read
+# the face.
+
+use json
+use regex
+
+# The kind of a node that is JSON's `null`.
+constant NULL_KIND: u8
+    0
+
+# The kind of a boolean node.
+constant BOOLEAN_KIND: u8
+    1
+
+# The kind of a number node.
+constant NUMBER_KIND: u8
+    2
+
+# The kind of a text node.
+constant TEXT_KIND: u8
+    3
+
+# The kind of a list node.
+constant LIST_KIND: u8
+    4
+
+# The kind of an object node.
+constant OBJECT_KIND: u8
+    5
+
+# The dialect of draft 7.
+constant DRAFT_7: i64
+    7
+
+# The dialect of 2020-12.
+constant DRAFT_2020: i64
+    2020
+
+# The vocabulary of `$ref`, `$id`, `$defs` and the other core keywords.
+constant CORE: i64
+    1
+
+# The vocabulary of the applicators: `allOf`, `properties`, `items` and the
+# rest.
+constant APPLICATOR: i64
+    2
+
+# The vocabulary of `unevaluatedItems` and `unevaluatedProperties`.
+constant UNEVALUATED: i64
+    4
+
+# The vocabulary of the assertions: `type`, `minimum`, `required` and the
+# rest.
+constant VALIDATION: i64
+    8
+
+# The vocabulary of `title`, `default` and the other annotations.
+constant META_DATA: i64
+    16
+
+# The vocabulary of `format` as an annotation.
+constant FORMAT_ANNOTATION: i64
+    32
+
+# The vocabulary of `format` as an assertion.
+constant FORMAT_ASSERTION: i64
+    64
+
+# The vocabulary of `contentEncoding`, `contentMediaType` and
+# `contentSchema`.
+constant CONTENT: i64
+    128
+
+# Every vocabulary of 2020-12's own meta-schema, format as an annotation.
+constant ALL_VOCABULARIES: i64
+    191
+
+# A format of the program's own: its name and the function that checks a
+# text against it.
+record CustomFormat
+    # The format's name, as `format` writes it.
+    name: str
+    # Whether a text is of the format.
+    check: (function(str) -> bool)
+
+# What the caller asked of a compilation, as the face's `Options` say it.
+record Settings
+    # The dialect of a schema that names none: `DRAFT_7` or `DRAFT_2020`.
+    draft: i64
+    # Whether `format` is asserted.
+    formats: bool
+    # Whether `contentEncoding`, `contentMediaType` and `contentSchema` are
+    # asserted.
+    content: bool
+    # The formats of the program's own.
+    custom: [CustomFormat]
+
+# Every document of a compilation flattened into one table of nodes: a node's
+# children stand one after another from `firsts[n]`, `counts[n]` of them, and
+# an object's members are found by name through `maps`.
+record Table
+    # Each node's kind, `NULL_KIND` to `OBJECT_KIND`.
+    kinds: [u8]
+    # Each node's value, shared with the document it was read from.
+    values: [json.Value]
+    # Each node's parent, -1 for a document's root.
+    parents: [i64]
+    # Each node's member name under its parent object, or its index under its
+    # parent list written in digits; `""` for a root.
+    keys: [str]
+    # Each node's first child.
+    firsts: [i64]
+    # How many children each node has.
+    counts: [i64]
+    # For an object node, the entry of `member_maps` that finds its members;
+    # -1 for every other node.
+    map_of: [i64]
+    # Each object node's members by name.
+    member_maps: [{str: i64}]
+
+# What the scan learns of the nodes that are schemas, each list indexed as
+# the table's nodes are.
+record Scan
+    # Whether the node is read as a schema.
+    is_schema: [bool]
+    # The dialect it is read in, `DRAFT_7` or `DRAFT_2020`; 0 where unread.
+    dialects: [i64]
+    # The vocabularies in effect, a sum of `CORE` to `CONTENT`.
+    vocabularies: [i64]
+    # The absolute URI of the schema resource it stands in, without a
+    # fragment.
+    bases: [str]
+    # The node of that resource's root.
+    resources: [i64]
+    # Its JSON pointer from that resource's root.
+    pointers: [str]
+    # The node its `$ref` names, -1 where it has none.
+    refs: [i64]
+    # The node its `$dynamicRef` names before the dynamic scope is asked, -1
+    # where it has none.
+    dynamic_refs: [i64]
+    # The anchor's name a `$dynamicRef` names, `""` where its fragment is no
+    # plain name.
+    dynamic_names: [str]
+
+# A schema compiled: its table, what the scan learnt, and what validating
+# needs ready.
+record Compiled
+    # The nodes of every document.
+    table: Table
+    # What each node is as a schema.
+    scan: Scan
+    # The node an instance is validated against.
+    root: i64
+    # The anchors of `$dynamicAnchor`, by the resource's URI, `#` and the name.
+    dynamic_anchors: {str: i64}
+    # Every pattern of `pattern` and `patternProperties`, compiled, by its
+    # text.
+    patterns: {str: regex.Regex}
+    # What the caller asked.
+    settings: Settings
+
+# An error as the validator finds it.
+record Issue
+    # Where in the instance, as a JSON pointer.
+    instance_location: str
+    # The keyword's path from the root schema, through every reference
+    # followed, as a JSON pointer.
+    keyword_location: str
+    # The keyword's absolute URI in the resource it is written in.
+    absolute_location: str
+    # The keyword.
+    keyword: str
+    # What was asked and what was found.
+    message: str

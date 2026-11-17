@@ -1,0 +1,488 @@
+# The formats of 2020-12 and draft 7 checked, each by the grammar of the
+# RFC that defines it: RFC 3339's dates, times and durations, RFC 5321's and
+# RFC 6531's mailboxes, RFC 1123's and IDNA2008's host names, RFC 2673's and
+# RFC 4291's addresses, RFC 3986's and RFC 3987's URIs and IRIs, RFC 6570's
+# templates, RFC 4122's UUIDs, RFC 6901's pointers and their relative form,
+# and ECMA-262's regular expressions.
+
+use json/schema/internal/hosts
+use json/schema/internal/patterns
+use regex
+use url
+
+# The code of a format that is none of the dialects'.
+constant NOT_FOUND: str
+    "not_found"
+
+# The names of the formats this module checks.
+function names() -> [str]
+    return [
+        "date-time"
+        "date"
+        "time"
+        "duration"
+        "email"
+        "idn-email"
+        "hostname"
+        "idn-hostname"
+        "ipv4"
+        "ipv6"
+        "uri"
+        "uri-reference"
+        "iri"
+        "iri-reference"
+        "uri-template"
+        "uuid"
+        "json-pointer"
+        "relative-json-pointer"
+        "regex"
+    ]
+
+# Whether every byte of `s` from `from` to `to` is an ASCII digit, and there
+# is at least one.
+function digits(s: str, from: i64, to: i64) -> bool
+    if from >= to || to > s.len()
+        return false
+
+    for at in range(from: from, to: to)
+        if s[at] < '0' || s[at] > '9'
+            return false
+
+    return true
+
+# The number the ASCII digits of `s` from `from` to `to` write.
+function number(s: str, from: i64, to: i64) -> i64
+    n: i64 @= 0
+
+    for at in range(from: from, to: to)
+        n @ n * 10 + to_i64(s[at] - '0').must()
+
+    return n
+
+# How many days month `month` of year `year` has.
+function days_in(year: i64, month: i64) -> i64
+    if month == 2
+        leap = year % 4 == 0 && year % 100 != 0 || year % 400 == 0
+
+        return if leap
+            29
+        else
+            28
+
+    if month == 4 || month == 6 || month == 9 || month == 11
+        return 30
+    return 31
+
+# Whether `s` is a date, RFC 3339's full-date: `YYYY-MM-DD`, a day the month
+# has.
+function is_date(s: str) -> bool
+    if s.len() != 10 || s[4] != '-' || s[7] != '-' || !digits(s, from: 0, to: 4) || !digits(s, from: 5, to: 7) || !digits(s, from: 8, to: 10)
+        return false
+    month = number(s, from: 5, to: 7)
+    day = number(s, from: 8, to: 10)
+    return month >= 1 && month <= 12 && day >= 1 && day <= days_in(year: number(s, from: 0, to: 4), month: month)
+
+# Whether `s` is a time, RFC 3339's full-time: `hh:mm:ss`, a fraction, and
+# `Z` or an offset; a leap second only where the time it writes is 23:59:60
+# in UTC.
+function is_time(s: str) -> bool
+    if s.len() < 9 || s[2] != ':' || s[5] != ':' || !digits(s, from: 0, to: 2) || !digits(s, from: 3, to: 5) || !digits(s, from: 6, to: 8)
+        return false
+    hour = number(s, from: 0, to: 2)
+    minute = number(s, from: 3, to: 5)
+    second = number(s, from: 6, to: 8)
+    at: i64 @= 8
+
+    if at < s.len() && s[at] == '.'
+        start = at + 1
+        at @ start
+
+        while at < s.len() && s[at] >= '0' && s[at] <= '9'
+            at @ at + 1
+
+        if at == start
+            return false
+
+    if at >= s.len()
+        return false
+    offset_minutes: i64 @= 0
+
+    if s[at] == 'Z' || s[at] == 'z'
+        if at + 1 != s.len()
+            return false
+    else
+        if s[at] != '+' && s[at] != '-'
+            return false
+
+        if s.len() != at + 6 || s[at + 3] != ':' || !digits(s, from: at + 1, to: at + 3) || !digits(s, from: at + 4, to: at + 6)
+            return false
+        oh = number(s, from: at + 1, to: at + 3)
+        om = number(s, from: at + 4, to: at + 6)
+
+        if oh > 23 || om > 59
+            return false
+        offset_minutes @ oh * 60 + om
+
+        if s[at] == '+'
+            offset_minutes @ 0 - offset_minutes
+
+    if hour > 23 || minute > 59 || second > 60
+        return false
+
+    if second == 60
+        utc = ((hour * 60 + minute + offset_minutes) % 1440 + 1440) % 1440
+        return utc == 23 * 60 + 59
+    return true
+
+# Whether `s` is a date and a time, RFC 3339's date-time: a full-date, `T` or
+# `t`, and a full-time.
+function is_date_time(s: str) -> bool
+    return s.len() > 11 && (s[10] == 'T' || s[10] == 't') && is_date(s.slice(from: 0, to: 10)) && is_time(s.slice(from: 11, to: s.len()))
+
+# Whether `s` is a duration, RFC 3339's Appendix A: `P` and either weeks, or
+# years, months and days each followed only by the next, then `T` and hours,
+# minutes and seconds the same way.
+function is_duration(s: str) -> bool
+    if s.len() < 2 || s[0] != 'P'
+        return false
+
+    # Each designator in its order, and which may follow which.
+    at: i64 @= 1
+    order = "YMDHMS"
+    last: i64 @= -1
+    in_time: bool @= false
+    parts: i64 @= 0
+    weeks: bool @= false
+
+    while at < s.len()
+        if s[at] == 'T'
+            if in_time || at + 1 >= s.len()
+                return false
+            in_time @ true
+            last @ 2
+            at @ at + 1
+        else
+            start = at
+
+            while at < s.len() && s[at] >= '0' && s[at] <= '9'
+                at @ at + 1
+
+            if at == start || at >= s.len()
+                return false
+            d = s[at]
+            at @ at + 1
+            parts @ parts + 1
+
+            if d == 'W'
+                if in_time || parts != 1 || at != s.len()
+                    return false
+                weeks @ true
+            else
+                found: i64 @= -1
+
+                first = if in_time
+                    3
+                else
+                    0
+
+                end = if in_time
+                    6
+                else
+                    3
+
+                for i in range(from: first, to: end)
+                    if order[i] == d
+                        found @ i
+
+                # A part follows only the one just before it in the order,
+                # or opens its half.
+                opens = in_time && last == 2 || !in_time && last == -1
+
+                if found < 0 || !(opens || found == last + 1)
+                    return false
+                last @ found
+
+    return parts > 0 && (weeks || !(in_time && last == 2))
+
+# Whether `s` is a UUID, RFC 4122's text: 8, 4, 4, 4 and 12 hexadecimal
+# digits between hyphens, of any case and version.
+function is_uuid(s: str) -> bool
+    if s.len() != 36
+        return false
+
+    for at in range(from: 0, to: 36)
+        b = s[at]
+
+        if at == 8 || at == 13 || at == 18 || at == 23
+            if b != '-'
+                return false
+        else if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F')
+            return false
+
+    return true
+
+# Whether `s` is a JSON pointer, RFC 6901: empty, or `/` and tokens in which
+# a `~` is followed by `0` or `1`.
+function is_json_pointer(s: str) -> bool
+    if s.len() == 0
+        return true
+
+    if s[0] != '/'
+        return false
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == '~' && !(at + 1 < s.len() && (s[at + 1] == '0' || s[at + 1] == '1'))
+            return false
+
+    return true
+
+# Whether `s` is a relative JSON pointer: a number with no leading zero, then
+# `#` or a JSON pointer.
+function is_relative_pointer(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len() && s[at] >= '0' && s[at] <= '9'
+        at @ at + 1
+
+    if at == 0 || s[0] == '0' && at > 1
+        return false
+    rest = s.slice(from: at, to: s.len())
+    return rest == "#" || is_json_pointer(rest)
+
+# Whether `s` is an ECMA-262 regular expression: one `regex` reads, or one
+# whose syntax is ECMAScript's though `regex` does not match it.
+function is_regex(s: str) -> bool
+    match patterns.translate(s)
+        .ok syntax => return !regex.compile(syntax).is_err()
+        .err e     => return e.code == patterns.UNSUPPORTED
+
+# Whether the bytes of `s` from `at` write a percent escape.
+function is_escape_at(s: str, at: i64) -> bool
+    return at + 2 < s.len() + 0 && is_hex(s[at + 1]) && is_hex(s[at + 2])
+
+# Whether `b` is a hexadecimal digit.
+function is_hex(b: u8) -> bool
+    return b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# Whether `s` is a URI template, RFC 6570: literals and expressions, each
+# expression an optional operator and variables, each with a prefix of 1 to
+# 9999 or `*`.
+function is_uri_template(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '{'
+            close: i64 @= at + 1
+
+            while close < s.len() && s[close] != '}'
+                close @ close + 1
+
+            if close >= s.len() || !is_expression(s.slice(from: at + 1, to: close))
+                return false
+            at @ close + 1
+        else if b == '%'
+            if !is_escape_at(s, at: at)
+                return false
+            at @ at + 3
+        else if b < 0x21 || b == 0x7f || b == '"' || b == '<' || b == '>' || b == '\\' || b == '^' || b == '`' || b == '|' || b == '}'
+            return false
+        else
+            at @ at + 1
+
+    return true
+
+# Whether `e`, the inside of a template's braces, is an expression.
+function is_expression(e: str) -> bool
+    at: i64 @= 0
+
+    if e.len() > 0 && (e[0] == '+' || e[0] == '#' || e[0] == '.' || e[0] == '/' || e[0] == ';' || e[0] == '?' || e[0] == '&')
+        at @ 1
+
+    while true
+        start = at
+        dot_ok: bool @= false
+
+        while at < e.len() && e[at] != ',' && e[at] != ':' && e[at] != '*'
+            b = e[at]
+
+            if b == '%'
+                if !is_escape_at(e, at: at)
+                    return false
+                at @ at + 3
+                dot_ok @ true
+            else if b == '.'
+                if !dot_ok
+                    return false
+                dot_ok @ false
+                at @ at + 1
+            else if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+                dot_ok @ true
+                at @ at + 1
+            else
+                return false
+
+        if at == start || !dot_ok
+            return false
+
+        if at < e.len() && e[at] == ':'
+            from = at + 1
+            at @ from
+
+            while at < e.len() && e[at] >= '0' && e[at] <= '9'
+                at @ at + 1
+
+            if at == from || at - from > 4 || e[from] == '0'
+                return false
+        else if at < e.len() && e[at] == '*'
+            at @ at + 1
+
+        if at == e.len()
+            return true
+
+        if e[at] != ','
+            return false
+        at @ at + 1
+
+    return false
+
+# `s` with every character past ASCII written as the percent escapes of its
+# bytes, so that an IRI reads as the URI it maps to.
+function escaped_iri(s: str) -> str
+    pieces: [str] @= []
+    hex = "0123456789ABCDEF"
+
+    for at in range(from: 0, to: s.len())
+        b = s[at]
+
+        if b >= 0x80
+            n = to_i64(b).must()
+            pieces @ pieces.push(
+                "%" + hex.slice(from: n / 16, to: n / 16 + 1) + hex.slice(from: n % 16, to: n % 16 + 1)
+            )
+        else
+            pieces @ pieces.push(s.slice(from: at, to: at + 1))
+
+    return pieces.join("")
+
+# Whether `s` is a URI reference, absolute where `absolute` asks: RFC 3986 as
+# `url.parse` reads it, an IPv6 host held to RFC 4291.
+function is_uri(s: str, absolute: bool) -> bool
+    match url.parse(s)
+        .err _ => return false
+        .ok u =>
+            if absolute && !url.is_abs(u)
+                return false
+
+            for at in range(from: 0, to: u.host.len())
+                if u.host[at] == ':'
+                    return hosts.is_ipv6(u.host)
+
+            return true
+
+# Whether `text` is of the format `format`. Fails `not_found` where `format`
+# is none of the dialects'.
+function check(text: str, format: str) -> bool?
+    if format == "date-time"
+        return ok(is_date_time(text))
+
+    if format == "date"
+        return ok(is_date(text))
+
+    if format == "time"
+        return ok(is_time(text))
+
+    if format == "duration"
+        return ok(is_duration(text))
+
+    if format == "email"
+        return ok(hosts.is_email(text, international: false))
+
+    if format == "idn-email"
+        return ok(hosts.is_email(text, international: true))
+
+    if format == "hostname"
+        return ok(hosts.is_hostname(text))
+
+    if format == "idn-hostname"
+        return ok(hosts.is_idn_hostname(text))
+
+    if format == "ipv4"
+        return ok(hosts.is_ipv4(text))
+
+    if format == "ipv6"
+        return ok(hosts.is_ipv6(text))
+
+    if format == "uri"
+        return ok(is_uri(text, absolute: true))
+
+    if format == "uri-reference"
+        return ok(is_uri(text, absolute: false))
+
+    if format == "iri"
+        return ok(is_uri(escaped_iri(text), absolute: true))
+
+    if format == "iri-reference"
+        return ok(is_uri(escaped_iri(text), absolute: false))
+
+    if format == "uri-template"
+        return ok(is_uri_template(text))
+
+    if format == "uuid"
+        return ok(is_uuid(text))
+
+    if format == "json-pointer"
+        return ok(is_json_pointer(text))
+
+    if format == "relative-json-pointer"
+        return ok(is_relative_pointer(text))
+
+    if format == "regex"
+        return ok(is_regex(text))
+    return fail(code: NOT_FOUND, msg: f"no format \"{format}\" in draft 7 or 2020-12")
+
+## Tests
+
+test "is_date and is_date_time: days of each month, leap years, and leap seconds in UTC"
+    assert is_date("2020-02-29") && !is_date("2021-02-29") && !is_date("2100-02-29") && is_date("0400-02-29")
+    assert !is_date("2020-04-31") && !is_date("1998-1-20") && !is_date("2020-01-01Z")
+    assert is_date_time("1998-12-31T15:59:60.123-08:00") && is_date_time("1963-06-19t08:30:06.283185z")
+    assert !is_date_time("1998-12-31T23:58:60Z") && !is_date_time("1990-12-31T15:59:59-24:00")
+    assert !is_date_time("1985-04-12T23:20:50.Z") && !is_date_time("1985-04-12T23:20Z")
+
+test "is_time: offsets, fractions, and what RFC 3339 writes otherwise"
+    assert is_time("08:30:06+00:20") && is_time("00:59:59.999999999999999Z")
+
+    for s in ["12:00:00", "24:00:00Z", "01:02:03+24:00", "08:30:06+0130", "08:30:06,5Z", "08:30:06Z "]
+        assert !is_time(s)
+
+test "is_duration: each part in its order, weeks alone, and a T with nothing after it"
+    for s in ["P4DT12H30M5S", "P4Y", "PT0S", "P1M", "PT36H", "P2W", "P1M2D", "PT1M2S", "P01D"]
+        assert is_duration(s)
+
+    for s in ["PT1D", "P", "P1YT", "PT", "P2D1Y", "P1D2H", "P2S", "P1Y2W", "P1Y2D", "PT1H2S", "PT0.5S", "P1WT1H", "-P1D", ""]
+        assert !is_duration(s)
+
+test "is_uuid, is_json_pointer and is_relative_pointer: the suite's edges"
+    assert is_uuid("2EB8AA08-AA98-11EA-B4AA-73B441D16380") && !is_uuid("2eb8aa08aa9811eab4aa73b441d16380")
+    assert is_json_pointer("") && is_json_pointer("/a~1b") && !is_json_pointer("/~2") && !is_json_pointer("#")
+    assert is_relative_pointer("0#") && is_relative_pointer("120/foo/bar") && !is_relative_pointer("01#") && !is_relative_pointer("0##")
+
+test "is_uri_template: expressions, prefixes and literals"
+    for s in ["http://example.com/dictionary/{term:1}/{term}", "", "a%41b", "{+var}", "{x,y}", "{a.b}", "{v:1000}", "a'b", "{%41}"]
+        assert is_uri_template(s)
+
+    for s in ["{term", "{}", "{a,,b}", "{v:0}", "{v:10000}", "foo}bar", "a%", "{var:1*}", "{a.}", "{a..b}", "{v:01}", "a b", "{a,}", "{var=def}"]
+        assert !is_uri_template(s)
+
+test "is_uri and is_regex: absolute, relative, IRIs, and patterns"
+    assert is_uri("http://foo.bar/?baz=qux#quux", absolute: true) && !is_uri("//foo.bar/", absolute: true)
+    assert is_uri("//foo.bar/", absolute: false) && !is_uri("http://example.com/%6G", absolute: false)
+    assert is_uri(escaped_iri("http://ƒøø.ßår/?∂éœ=πîx#πîüx"), absolute: true)
+    assert is_regex("([abc])+\\s+$") && !is_regex("^(abc]") && !is_regex("*a") && is_regex("(?=a)")
+
+test "check: a format none of the dialects names"
+    match check(text: "x", format: "color")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND

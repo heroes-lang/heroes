@@ -1,0 +1,111 @@
+# The ledger of `json/patch`: what the JSON Patch and JSON Merge Patch
+# libraries of the three languages let a program do, one block per capability,
+# and what Rebel answers. None of the three standard libraries has either, so
+# the yardstick is the author's of 2026-11-17: Python's `jsonpatch` 1.47 (with
+# the `jsonpointer` 3.12 it stands on), Go's `github.com/evanphx/json-patch/v5`
+# v5.9.11 and Rust's `json-patch` 5.0.0. The lists are this machine's,
+# 2026-11-17: `dir()` of the two Python modules installed in the scratch
+# folder, `go doc -all` of the Go module fetched there, and the item list
+# docs.rs prints for the crate. The tests are RFC 6902's examples (Appendix A,
+# as the json-patch-tests suite writes them, `spec_tests.json`), that suite's
+# own `tests.json`, and RFC 7386's examples (Appendix A), every one.
+
+capability patch/operations  the six operations of a JSON Patch held as values a program matches on
+  heroes  json/patch.Operation
+  go      Operation, Operation.Kind, Operation.Path, Operation.From, Operation.ValueInterface
+  rust    PatchOperation, AddOperation, RemoveOperation, ReplaceOperation, MoveOperation, CopyOperation, TestOperation, Patch
+  python  PatchOperation, AddOperation, RemoveOperation, ReplaceOperation, MoveOperation, CopyOperation, TestOperation, PatchOperation.path, PatchOperation.key, JsonPatch.operations
+  note    a variant of six cases, so a `match` answers all six; the RFC's `test` is the case `test_value`, `test` being a word the language keeps for itself
+
+capability patch/parse  a patch read from its JSON text or from a value already read
+  heroes  json/patch.parse, json/patch.from_value
+  go      DecodePatch, ErrBadJSONPatch
+  rust    serde_json::from_value::<Patch>
+  python  JsonPatch.from_string, JsonPatch(list), JsonPatch.json_loader, InvalidJsonPatch
+  note    a member an operation does not read is not read, as RFC 6902 § 4 asks; a missing `value` is an error and a `value` of `null` is a value. A text with a key twice in one object fails as `json.parse` fails, so RFC 6902 A.13's patch with two `op` members is refused before it is read, which the RFC asks
+
+capability patch/format  a patch written as JSON
+  heroes  json/patch.to_value, json/patch.format
+  go      json.Marshal of a Patch
+  rust    serde_json::to_value of a Patch
+  python  JsonPatch.to_string, JsonPatch.json_dumper
+  note    `op`, then `from` and `path`, then `value`, the order of RFC 6902's examples
+
+capability patch/apply  a patch applied to a value, every operation or none
+  heroes  json/patch.apply
+  go      Patch.Apply, Patch.ApplyWithOptions, Patch.ApplyIndent, Patch.ApplyIndentWithOptions, ErrMissing, ErrInvalid, ErrInvalidIndex, ErrUnknownType, ErrExpectedObject, ErrBadJSONDoc, ArraySizeError, NewArraySizeError
+  rust    patch, PatchError, PatchErrorKind
+  python  apply_patch, JsonPatch.apply, PatchOperation.apply, JsonPatchException, JsonPatchConflict, JsonPatchPathNotFound
+  note    every operation or none, as RFC 6902 § 5 asks and as Python's `atomic=True` and Rust's `patch` do; Python's default and Rust's `patch_unsafe` leave a half-changed document. A path naming nothing is `not_found`, a token that is no index or a path into a value that holds nothing `invalid`; each message names the operation by its index. An index with a leading zero is refused, as the RFC's grammar writes it, where Go reads `/01` as 1 (observed); taking out the whole value is refused, as Go refuses it (observed). The json-patch-tests suite's 95 tests and 17 of RFC 6902 pass, the four it disables included
+
+capability patch/test  a patch that fails where the value is not what it expects
+  heroes  json/patch.Operation (`test_value`)
+  go      Operation of kind "test", ErrTestFailed
+  rust    TestOperation, PatchErrorKind::TestFailed
+  python  TestOperation, JsonPatchTestFailed
+  note    numbers compared by value and objects whatever their order, on a stack, so a value nested past what `==` follows is compared too; a failing test is `invalid`, the message saying what was expected and what was found
+
+capability patch/apply-loose  what RFC 6902 refuses, applied because the caller asked
+  heroes  json/patch.apply_with, json/patch.ApplyOptions, json/patch.strict
+  go      ApplyOptions, NewApplyOptions, ApplyOptions.SupportNegativeIndices, ApplyOptions.AllowMissingPathOnRemove, ApplyOptions.EnsurePathExistsOnAdd, SupportNegativeIndices
+  rust    -
+  python  -
+  note    Go's three options, each off unless asked, where Go's `SupportNegativeIndices` is on by default; a parent made where asked is a list where the token after it is an index or `-`, and an object otherwise, as Go makes them (observed: `/a/0/b` on `{}` gives `{"a":[{"b":1}]}`)
+
+capability patch/diff  the patch that turns one value into another
+  heroes  json/patch.diff
+  go      -
+  rust    diff
+  python  make_patch, JsonPatch.from_diff, DiffBuilder
+  note    objects member by member; a list keeps what it shares at its start and its end and changes its middle element by element, then grows or cuts it, so an element put in or taken out is one operation. Python's `make_patch` also finds moves, which shortens a patch and never changes what it does; no two of the three agree on the operations, only on the result, which the tests hold
+
+capability patch/diff-tested  the patch made with a test before each change, so it fails on a value that moved since
+  heroes  json/patch.diff_with_tests
+  go      -
+  rust    -
+  python  make_patch(generate_test_ops=True), JsonPatch.from_diff(generate_test_ops=True)
+  note    a `test` before each `remove` and `replace`, as Python's `generate_test_ops` writes them
+
+capability patch/merge  a JSON Merge Patch applied to a value
+  heroes  json/patch.merge
+  go      MergePatch
+  rust    merge
+  python  -
+  note    RFC 7386 § 2, its fifteen examples as tests; a value nested deep is merged on a stack
+
+capability patch/merge-diff  the merge patch that turns one value into another
+  heroes  json/patch.merge_diff
+  go      CreateMergePatch
+  rust    -
+  python  -
+  note    fails `unsupported` where the value made holds a `null` no merge patch can set: Go's `CreateMergePatch` writes `{"a":null}` for `{"a":1}` to `{"a":null}` (observed), which takes the member out instead
+
+capability patch/merge-merge  two merge patches made one
+  heroes  json/patch.compose_merges
+  go      MergeMergePatches
+  rust    -
+  python  -
+  note    fails `unsupported` where no one patch does what the two do: Go's `MergeMergePatches` answers `{"a":{"b":1}}` for `{"a":1}` then `{"a":{"b":1}}` (observed), which merges into an object `a` where the two in turn would have replaced it
+
+capability patch/pointer-set  a value set or taken out at a JSON pointer
+  heroes  json/patch.apply
+  go      -
+  rust    -
+  python  jsonpointer.set_pointer, JsonPointer.set, PatchOperation.set_part, PatchOperation.get_part
+  note    a value set at a pointer is the operation `add` or `replace`, and taken out `remove`; Python's `set_pointer` is one call of `apply`
+
+capability patch/equal  two JSON values compared structurally
+  heroes  built-in ==
+  go      Equal
+  rust    serde_json::Value == Value
+  python  dict == dict
+  note    `==` on two `json.Value`s is JSON's equality: numbers by value, objects whatever their order
+
+dropped
+  rust    patch_unsafe: an application that leaves the value half changed where an operation fails; here every application is whole or nothing
+  python  apply_patch(in_place=), JsonPatch.apply(in_place=, atomic=): every value of the language is a copy, so an application never changes the caller's value and is always atomic
+  python  apply_patch(pointer_cls=), make_patch(pointer_cls=), PatchOperation.pointer_cls: a class of the caller's standing in for JsonPointer, which needs an interface
+  go      AccumulatedCopySizeLimit, ApplyOptions.AccumulatedCopySizeLimit, AccumulatedCopySizeError, NewAccumulatedCopySizeError: a guard against a patch whose copies double the document; a copy here shares the value it copies until one side changes, so a copy costs no memory until it is written
+  python  JsonPatchWithAppend, AppendOperation: an operation outside RFC 6902 that appends to a string, which the RFC's `replace` already does
+  python  JsonPointer, JsonPointerException, EndOfList, jsonpointer.resolve_pointer, jsonpointer.escape, jsonpointer.unescape, JsonPointer.resolve, JsonPointer.get, JsonPointer.path, JsonPointer.from_parts, JsonPointer.get_parts, JsonPointer.contains, JsonPointer.join, JsonPointer.to_last, JsonPointer.walk: RFC 6901's pointers, which are `json`'s (`json.value_at`, `json.pointer_of`, `json.pointer_tokens`)
+  python  DiffBuilder.execute, DiffBuilder.insert, DiffBuilder.remove, DiffBuilder.store_index, DiffBuilder.take_index, jsonpatch.multidict, jsonpatch.path_join, jsonpatch.path_split: the machinery behind make_patch, no part of a program's use

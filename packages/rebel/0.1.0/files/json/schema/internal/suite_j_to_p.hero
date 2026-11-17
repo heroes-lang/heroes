@@ -1,0 +1,214 @@
+# The JSON Schema Test Suite (github.com/json-schema-org/JSON-Schema-Test-Suite,
+# commit e2a68a15 of 2026-11-16, its `validation/tests` as fetched on
+# 2026-11-17): every case its `compatibility` gives to draft 7 or to 2020-12
+# among `maxItems.json`, `maxLength.json`, `maxProperties.json` and the rest of its group,
+# each run under each dialect it is given to. A case tagged
+# `format-assertion` is run with formats asserted. Each is a test; nothing
+# else here is compiled into a program.
+
+use json/schema/internal/suite
+
+# How many of the suite's cases this module holds.
+constant CASES: i64
+    67
+
+test "maxItems 0: maxItems validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxItems\":2}", externals: "{}", tests: "[{\"description\":\"shorter is valid\",\"data\":[1],\"valid\":true},{\"description\":\"exact length is valid\",\"data\":[1,2],\"valid\":true},{\"description\":\"too long is invalid\",\"data\":[1,2,3],\"valid\":false},{\"description\":\"ignores non-arrays\",\"data\":\"foobar\",\"valid\":true}]") == ""
+
+test "maxItems 1: maxItems validation with a decimal"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxItems\":2.0}", externals: "{}", tests: "[{\"description\":\"shorter is valid\",\"data\":[1],\"valid\":true},{\"description\":\"too long is invalid\",\"data\":[1,2,3],\"valid\":false}]") == ""
+
+test "maxLength 0: maxLength validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxLength\":2}", externals: "{}", tests: "[{\"description\":\"shorter is valid\",\"data\":\"f\",\"valid\":true},{\"description\":\"exact length is valid\",\"data\":\"fo\",\"valid\":true},{\"description\":\"too long is invalid\",\"data\":\"foo\",\"valid\":false},{\"description\":\"ignores non-strings\",\"data\":100,\"valid\":true},{\"description\":\"two graphemes is long enough\",\"data\":\"💩💩\",\"valid\":true}]") == ""
+
+test "maxLength 1: maxLength validation with a decimal"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxLength\":2.0}", externals: "{}", tests: "[{\"description\":\"shorter is valid\",\"data\":\"f\",\"valid\":true},{\"description\":\"too long is invalid\",\"data\":\"foo\",\"valid\":false}]") == ""
+
+test "maxProperties 0: maxProperties validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxProperties\":2}", externals: "{}", tests: "[{\"description\":\"shorter is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"exact length is valid\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":true},{\"description\":\"too long is invalid\",\"data\":{\"foo\":1,\"bar\":2,\"baz\":3},\"valid\":false},{\"description\":\"ignores arrays\",\"data\":[1,2,3],\"valid\":true},{\"description\":\"ignores strings\",\"data\":\"foobar\",\"valid\":true},{\"description\":\"ignores other non-objects\",\"data\":12,\"valid\":true}]") == ""
+
+test "maxProperties 1: maxProperties validation with a decimal"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxProperties\":2.0}", externals: "{}", tests: "[{\"description\":\"shorter is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"too long is invalid\",\"data\":{\"foo\":1,\"bar\":2,\"baz\":3},\"valid\":false}]") == ""
+
+test "maxProperties 2: maxProperties = 0 means the object is empty"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maxProperties\":0}", externals: "{}", tests: "[{\"description\":\"no properties is valid\",\"data\":{},\"valid\":true},{\"description\":\"one property is invalid\",\"data\":{\"foo\":1},\"valid\":false}]") == ""
+
+test "maximum 0: maximum validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maximum\":3.0}", externals: "{}", tests: "[{\"description\":\"below the maximum is valid\",\"data\":2.6,\"valid\":true},{\"description\":\"boundary point is valid\",\"data\":3.0,\"valid\":true},{\"description\":\"above the maximum is invalid\",\"data\":3.5,\"valid\":false},{\"description\":\"ignores non-numbers\",\"data\":\"x\",\"valid\":true}]") == ""
+
+test "maximum 1: maximum validation with unsigned integer"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"maximum\":300}", externals: "{}", tests: "[{\"description\":\"below the maximum is valid\",\"data\":299.97,\"valid\":true},{\"description\":\"boundary point integer is valid\",\"data\":300,\"valid\":true},{\"description\":\"boundary point float is valid\",\"data\":300.0,\"valid\":true},{\"description\":\"above the maximum is invalid\",\"data\":300.5,\"valid\":false}]") == ""
+
+test "maximum 4: exclusiveMaximum validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"exclusiveMaximum\":3.0}", externals: "{}", tests: "[{\"description\":\"below the exclusiveMaximum is valid\",\"data\":2.2,\"valid\":true},{\"description\":\"boundary point is invalid\",\"data\":3.0,\"valid\":false},{\"description\":\"above the exclusiveMaximum is invalid\",\"data\":3.5,\"valid\":false},{\"description\":\"ignores non-numbers\",\"data\":\"x\",\"valid\":true}]") == ""
+
+test "minItems 0: minItems validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minItems\":1}", externals: "{}", tests: "[{\"description\":\"longer is valid\",\"data\":[1,2],\"valid\":true},{\"description\":\"exact length is valid\",\"data\":[1],\"valid\":true},{\"description\":\"too short is invalid\",\"data\":[],\"valid\":false},{\"description\":\"ignores non-arrays\",\"data\":\"\",\"valid\":true}]") == ""
+
+test "minItems 1: minItems validation with a decimal"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minItems\":1.0}", externals: "{}", tests: "[{\"description\":\"longer is valid\",\"data\":[1,2],\"valid\":true},{\"description\":\"too short is invalid\",\"data\":[],\"valid\":false}]") == ""
+
+test "minLength 0: minLength validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minLength\":2}", externals: "{}", tests: "[{\"description\":\"longer is valid\",\"data\":\"foo\",\"valid\":true},{\"description\":\"exact length is valid\",\"data\":\"fo\",\"valid\":true},{\"description\":\"too short is invalid\",\"data\":\"f\",\"valid\":false},{\"description\":\"ignores non-strings\",\"data\":1,\"valid\":true},{\"description\":\"one grapheme is not long enough\",\"data\":\"💩\",\"valid\":false}]") == ""
+
+test "minLength 1: minLength validation with a decimal"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minLength\":2.0}", externals: "{}", tests: "[{\"description\":\"longer is valid\",\"data\":\"foo\",\"valid\":true},{\"description\":\"too short is invalid\",\"data\":\"f\",\"valid\":false}]") == ""
+
+test "minProperties 0: minProperties validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minProperties\":1}", externals: "{}", tests: "[{\"description\":\"longer is valid\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":true},{\"description\":\"exact length is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"too short is invalid\",\"data\":{},\"valid\":false},{\"description\":\"ignores arrays\",\"data\":[],\"valid\":true},{\"description\":\"ignores strings\",\"data\":\"\",\"valid\":true},{\"description\":\"ignores other non-objects\",\"data\":12,\"valid\":true},{\"description\":\"ignores null\",\"data\":null,\"valid\":true},{\"description\":\"ignores booleans\",\"data\":true,\"valid\":true}]") == ""
+
+test "minProperties 1: minProperties validation with a decimal"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minProperties\":1.0}", externals: "{}", tests: "[{\"description\":\"longer is valid\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":true},{\"description\":\"too short is invalid\",\"data\":{},\"valid\":false}]") == ""
+
+test "minimum 0: minimum validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minimum\":1.1}", externals: "{}", tests: "[{\"description\":\"above the minimum is valid\",\"data\":2.6,\"valid\":true},{\"description\":\"boundary point is valid\",\"data\":1.1,\"valid\":true},{\"description\":\"below the minimum is invalid\",\"data\":0.6,\"valid\":false},{\"description\":\"ignores non-numbers\",\"data\":\"x\",\"valid\":true}]") == ""
+
+test "minimum 3: minimum validation with signed integer"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"minimum\":-2}", externals: "{}", tests: "[{\"description\":\"negative above the minimum is valid\",\"data\":-1,\"valid\":true},{\"description\":\"positive above the minimum is valid\",\"data\":0,\"valid\":true},{\"description\":\"boundary point is valid\",\"data\":-2,\"valid\":true},{\"description\":\"boundary point with float is valid\",\"data\":-2.0,\"valid\":true},{\"description\":\"float below the minimum is invalid\",\"data\":-2.0001,\"valid\":false},{\"description\":\"int below the minimum is invalid\",\"data\":-3,\"valid\":false},{\"description\":\"ignores non-numbers\",\"data\":\"x\",\"valid\":true}]") == ""
+
+test "minimum 4: exclusiveMinimum validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"exclusiveMinimum\":1.1}", externals: "{}", tests: "[{\"description\":\"above the exclusiveMinimum is valid\",\"data\":1.2,\"valid\":true},{\"description\":\"boundary point is invalid\",\"data\":1.1,\"valid\":false},{\"description\":\"below the exclusiveMinimum is invalid\",\"data\":0.6,\"valid\":false},{\"description\":\"ignores non-numbers\",\"data\":\"x\",\"valid\":true}]") == ""
+
+test "multipleOf 0: multipleOf int"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"multipleOf\":2}", externals: "{}", tests: "[{\"description\":\"int by int\",\"data\":10,\"valid\":true},{\"description\":\"int by int fail\",\"data\":7,\"valid\":false},{\"description\":\"ignores non-numbers\",\"data\":\"foo\",\"valid\":true}]") == ""
+
+test "multipleOf 2: multipleOf number"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"multipleOf\":1.5}", externals: "{}", tests: "[{\"description\":\"zero is multiple of anything\",\"data\":0,\"valid\":true},{\"description\":\"4.5 is multiple of 1.5\",\"data\":4.5,\"valid\":true},{\"description\":\"-4.5 is multiple of 1.5\",\"data\":-4.5,\"valid\":true},{\"description\":\"35 is not multiple of 1.5\",\"data\":35,\"valid\":false}]") == ""
+
+test "multipleOf 4: multipleOf small number"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"multipleOf\":0.0001}", externals: "{}", tests: "[{\"description\":\"0.0075 is multiple of 0.0001\",\"data\":0.0075,\"valid\":true},{\"description\":\"0.00751 is not multiple of 0.0001\",\"data\":0.00751,\"valid\":false}]") == ""
+
+test "multipleOf 6: multipleOf very small number"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"multipleOf\":1e-08}", externals: "{}", tests: "[{\"description\":\"4e-8 is multiple of 1e-8\",\"data\":4e-08,\"valid\":true},{\"description\":\"1.5e-8 is not multiple of 1e-8\",\"data\":1.5e-08,\"valid\":false}]") == ""
+
+test "multipleOf 8: multipleOf when float division = inf"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"type\":\"integer\",\"multipleOf\":0.123456789}", externals: "{}", tests: "[{\"description\":\"invalid, but naive implementations may raise an overflow error\",\"data\":1e+308,\"valid\":false}]") == ""
+
+test "multipleOf 10: small multiple of large integer"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"type\":\"integer\",\"multipleOf\":1e-08}", externals: "{}", tests: "[{\"description\":\"any integer is a multiple of 1e-8\",\"data\":12391239123,\"valid\":true}]") == ""
+
+test "not 0: not"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":{\"type\":\"integer\"}}", externals: "{}", tests: "[{\"description\":\"allowed\",\"data\":\"foo\",\"valid\":true},{\"description\":\"disallowed\",\"data\":1,\"valid\":false}]") == ""
+
+test "not 1: not multiple types"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":{\"type\":[\"integer\",\"boolean\"]}}", externals: "{}", tests: "[{\"description\":\"valid\",\"data\":\"foo\",\"valid\":true},{\"description\":\"mismatch\",\"data\":1,\"valid\":false},{\"description\":\"other mismatch\",\"data\":true,\"valid\":false}]") == ""
+
+test "not 2: not more complex schema"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":{\"type\":\"object\",\"properties\":{\"foo\":{\"type\":\"string\"}}}}", externals: "{}", tests: "[{\"description\":\"match\",\"data\":1,\"valid\":true},{\"description\":\"other match\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"mismatch\",\"data\":{\"foo\":\"bar\"},\"valid\":false}]") == ""
+
+test "not 3: forbidden property"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"foo\":{\"not\":{}}}}", externals: "{}", tests: "[{\"description\":\"property present\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":false},{\"description\":\"property absent\",\"data\":{\"bar\":1,\"baz\":2},\"valid\":true}]") == ""
+
+test "not 4: forbid everything with empty schema"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":{}}", externals: "{}", tests: "[{\"description\":\"number is invalid\",\"data\":1,\"valid\":false},{\"description\":\"string is invalid\",\"data\":\"foo\",\"valid\":false},{\"description\":\"boolean true is invalid\",\"data\":true,\"valid\":false},{\"description\":\"boolean false is invalid\",\"data\":false,\"valid\":false},{\"description\":\"null is invalid\",\"data\":null,\"valid\":false},{\"description\":\"object is invalid\",\"data\":{\"foo\":\"bar\"},\"valid\":false},{\"description\":\"empty object is invalid\",\"data\":{},\"valid\":false},{\"description\":\"array is invalid\",\"data\":[\"foo\"],\"valid\":false},{\"description\":\"empty array is invalid\",\"data\":[],\"valid\":false}]") == ""
+
+test "not 5: forbid everything with boolean schema true"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":true}", externals: "{}", tests: "[{\"description\":\"number is invalid\",\"data\":1,\"valid\":false},{\"description\":\"string is invalid\",\"data\":\"foo\",\"valid\":false},{\"description\":\"boolean true is invalid\",\"data\":true,\"valid\":false},{\"description\":\"boolean false is invalid\",\"data\":false,\"valid\":false},{\"description\":\"null is invalid\",\"data\":null,\"valid\":false},{\"description\":\"object is invalid\",\"data\":{\"foo\":\"bar\"},\"valid\":false},{\"description\":\"empty object is invalid\",\"data\":{},\"valid\":false},{\"description\":\"array is invalid\",\"data\":[\"foo\"],\"valid\":false},{\"description\":\"empty array is invalid\",\"data\":[],\"valid\":false}]") == ""
+
+test "not 6: allow everything with boolean schema false"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":false}", externals: "{}", tests: "[{\"description\":\"number is valid\",\"data\":1,\"valid\":true},{\"description\":\"string is valid\",\"data\":\"foo\",\"valid\":true},{\"description\":\"boolean true is valid\",\"data\":true,\"valid\":true},{\"description\":\"boolean false is valid\",\"data\":false,\"valid\":true},{\"description\":\"null is valid\",\"data\":null,\"valid\":true},{\"description\":\"object is valid\",\"data\":{\"foo\":\"bar\"},\"valid\":true},{\"description\":\"empty object is valid\",\"data\":{},\"valid\":true},{\"description\":\"array is valid\",\"data\":[\"foo\"],\"valid\":true},{\"description\":\"empty array is valid\",\"data\":[],\"valid\":true}]") == ""
+
+test "not 7: double negation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"not\":{\"not\":{}}}", externals: "{}", tests: "[{\"description\":\"any value is valid\",\"data\":\"foo\",\"valid\":true}]") == ""
+
+test "not 8: collect annotations inside a 'not', even if collection is disabled"
+    assert suite.failures(dialects: [2020], asserting: false, content: false, schema: "{\"not\":{\"$comment\":\"this subschema must still produce annotations internally, even though the 'not' will ultimately discard them\",\"anyOf\":[true,{\"properties\":{\"foo\":true}}],\"unevaluatedProperties\":false}}", externals: "{}", tests: "[{\"description\":\"unevaluated property\",\"data\":{\"bar\":1},\"valid\":true},{\"description\":\"annotations are still collected inside a 'not'\",\"data\":{\"foo\":1},\"valid\":false}]") == ""
+
+test "oneOf 0: oneOf"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[{\"type\":\"integer\"},{\"minimum\":2}]}", externals: "{}", tests: "[{\"description\":\"first oneOf valid\",\"data\":1,\"valid\":true},{\"description\":\"second oneOf valid\",\"data\":2.5,\"valid\":true},{\"description\":\"both oneOf valid\",\"data\":3,\"valid\":false},{\"description\":\"neither oneOf valid\",\"data\":1.5,\"valid\":false}]") == ""
+
+test "oneOf 1: oneOf with base schema"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"type\":\"string\",\"oneOf\":[{\"minLength\":2},{\"maxLength\":4}]}", externals: "{}", tests: "[{\"description\":\"mismatch base schema\",\"data\":3,\"valid\":false},{\"description\":\"one oneOf valid\",\"data\":\"foobar\",\"valid\":true},{\"description\":\"both oneOf valid\",\"data\":\"foo\",\"valid\":false}]") == ""
+
+test "oneOf 2: oneOf with boolean schemas, all true"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[true,true,true]}", externals: "{}", tests: "[{\"description\":\"any value is invalid\",\"data\":\"foo\",\"valid\":false}]") == ""
+
+test "oneOf 3: oneOf with boolean schemas, one true"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[true,false,false]}", externals: "{}", tests: "[{\"description\":\"any value is valid\",\"data\":\"foo\",\"valid\":true}]") == ""
+
+test "oneOf 4: oneOf with boolean schemas, more than one true"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[true,true,false]}", externals: "{}", tests: "[{\"description\":\"any value is invalid\",\"data\":\"foo\",\"valid\":false}]") == ""
+
+test "oneOf 5: oneOf with boolean schemas, all false"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[false,false,false]}", externals: "{}", tests: "[{\"description\":\"any value is invalid\",\"data\":\"foo\",\"valid\":false}]") == ""
+
+test "oneOf 6: oneOf complex types"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[{\"properties\":{\"bar\":{\"type\":\"integer\"}},\"required\":[\"bar\"]},{\"properties\":{\"foo\":{\"type\":\"string\"}},\"required\":[\"foo\"]}]}", externals: "{}", tests: "[{\"description\":\"first oneOf valid (complex)\",\"data\":{\"bar\":2},\"valid\":true},{\"description\":\"second oneOf valid (complex)\",\"data\":{\"foo\":\"baz\"},\"valid\":true},{\"description\":\"both oneOf valid (complex)\",\"data\":{\"foo\":\"baz\",\"bar\":2},\"valid\":false},{\"description\":\"neither oneOf valid (complex)\",\"data\":{\"foo\":2,\"bar\":\"quux\"},\"valid\":false}]") == ""
+
+test "oneOf 7: oneOf with empty schema"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[{\"type\":\"number\"},{}]}", externals: "{}", tests: "[{\"description\":\"one valid - valid\",\"data\":\"foo\",\"valid\":true},{\"description\":\"both valid - invalid\",\"data\":123,\"valid\":false}]") == ""
+
+test "oneOf 8: oneOf with required"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"type\":\"object\",\"oneOf\":[{\"required\":[\"foo\",\"bar\"]},{\"required\":[\"foo\",\"baz\"]}]}", externals: "{}", tests: "[{\"description\":\"both invalid - invalid\",\"data\":{\"bar\":2},\"valid\":false},{\"description\":\"first valid - valid\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":true},{\"description\":\"second valid - valid\",\"data\":{\"foo\":1,\"baz\":3},\"valid\":true},{\"description\":\"both valid - invalid\",\"data\":{\"foo\":1,\"bar\":2,\"baz\":3},\"valid\":false}]") == ""
+
+test "oneOf 9: oneOf with missing optional property"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[{\"properties\":{\"bar\":{},\"baz\":{}},\"required\":[\"bar\"]},{\"properties\":{\"foo\":{}},\"required\":[\"foo\"]}]}", externals: "{}", tests: "[{\"description\":\"first oneOf valid\",\"data\":{\"bar\":8},\"valid\":true},{\"description\":\"second oneOf valid\",\"data\":{\"foo\":\"foo\"},\"valid\":true},{\"description\":\"both oneOf valid\",\"data\":{\"foo\":\"foo\",\"bar\":8},\"valid\":false},{\"description\":\"neither oneOf valid\",\"data\":{\"baz\":\"quux\"},\"valid\":false}]") == ""
+
+test "oneOf 10: nested oneOf, to check validation semantics"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"oneOf\":[{\"oneOf\":[{\"type\":\"null\"}]}]}", externals: "{}", tests: "[{\"description\":\"null is valid\",\"data\":null,\"valid\":true},{\"description\":\"anything non-null is invalid\",\"data\":123,\"valid\":false}]") == ""
+
+test "pattern 0: pattern validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"pattern\":\"^a*$\"}", externals: "{}", tests: "[{\"description\":\"a matching pattern is valid\",\"data\":\"aaa\",\"valid\":true},{\"description\":\"a non-matching pattern is invalid\",\"data\":\"abc\",\"valid\":false},{\"description\":\"ignores booleans\",\"data\":true,\"valid\":true},{\"description\":\"ignores integers\",\"data\":123,\"valid\":true},{\"description\":\"ignores floats\",\"data\":1.0,\"valid\":true},{\"description\":\"ignores objects\",\"data\":{},\"valid\":true},{\"description\":\"ignores arrays\",\"data\":[],\"valid\":true},{\"description\":\"ignores null\",\"data\":null,\"valid\":true}]") == ""
+
+test "pattern 1: pattern is not anchored"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"pattern\":\"a+\"}", externals: "{}", tests: "[{\"description\":\"matches a substring\",\"data\":\"xxaayy\",\"valid\":true}]") == ""
+
+test "pattern 2: pattern with Unicode property escape requires unicode mode"
+    assert suite.failures(dialects: [2020], asserting: false, content: false, schema: "{\"type\":\"string\",\"pattern\":\"^\\\\p{Letter}+$\"}", externals: "{}", tests: "[{\"description\":\"ASCII letters match\",\"data\":\"Hello\",\"valid\":true},{\"description\":\"Non-ASCII letters match\",\"data\":\"π\",\"valid\":true},{\"description\":\"Digits do not match\",\"data\":\"123\",\"valid\":false}]") == ""
+
+test "pattern 3: pattern with Unicode property escape"
+    assert suite.failures(dialects: [2020], asserting: false, content: false, schema: "{\"type\":\"string\",\"pattern\":\"^\\\\p{Letter}+$\"}", externals: "{}", tests: "[{\"description\":\"a valid case with a Unicode letter\",\"data\":\"π\",\"valid\":true},{\"description\":\"another valid case with multiple Unicode letters\",\"data\":\"πλ\",\"valid\":true},{\"description\":\"an invalid case where the string contains digits\",\"data\":\"123\",\"valid\":false}]") == ""
+
+test "patternProperties 0: patternProperties validates properties matching a regex"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"patternProperties\":{\"f.*o\":{\"type\":\"integer\"}}}", externals: "{}", tests: "[{\"description\":\"a single valid match is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"multiple valid matches is valid\",\"data\":{\"foo\":1,\"foooooo\":2},\"valid\":true},{\"description\":\"a single invalid match is invalid\",\"data\":{\"foo\":\"bar\",\"fooooo\":2},\"valid\":false},{\"description\":\"multiple invalid matches is invalid\",\"data\":{\"foo\":\"bar\",\"foooooo\":\"baz\"},\"valid\":false},{\"description\":\"ignores arrays\",\"data\":[\"foo\"],\"valid\":true},{\"description\":\"ignores strings\",\"data\":\"foo\",\"valid\":true},{\"description\":\"ignores other non-objects\",\"data\":12,\"valid\":true}]") == ""
+
+test "patternProperties 1: multiple simultaneous patternProperties are validated"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"patternProperties\":{\"a*\":{\"type\":\"integer\"},\"aaa*\":{\"maximum\":20}}}", externals: "{}", tests: "[{\"description\":\"a single valid match is valid\",\"data\":{\"a\":21},\"valid\":true},{\"description\":\"a simultaneous match is valid\",\"data\":{\"aaaa\":18},\"valid\":true},{\"description\":\"multiple matches is valid\",\"data\":{\"a\":21,\"aaaa\":18},\"valid\":true},{\"description\":\"an invalid due to one is invalid\",\"data\":{\"a\":\"bar\"},\"valid\":false},{\"description\":\"an invalid due to the other is invalid\",\"data\":{\"aaaa\":31},\"valid\":false},{\"description\":\"an invalid due to both is invalid\",\"data\":{\"aaa\":\"foo\",\"aaaa\":31},\"valid\":false}]") == ""
+
+test "patternProperties 2: regexes are not anchored by default and are case sensitive"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"patternProperties\":{\"[0-9]{2,}\":{\"type\":\"boolean\"},\"X_\":{\"type\":\"string\"}}}", externals: "{}", tests: "[{\"description\":\"non recognized members are ignored\",\"data\":{\"answer 1\":\"42\"},\"valid\":true},{\"description\":\"recognized members are accounted for\",\"data\":{\"a31b\":null},\"valid\":false},{\"description\":\"regexes are case sensitive\",\"data\":{\"a_x_3\":3},\"valid\":true},{\"description\":\"regexes are case sensitive, 2\",\"data\":{\"a_X_3\":3},\"valid\":false}]") == ""
+
+test "patternProperties 3: patternProperties with boolean schemas"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"patternProperties\":{\"f.*\":true,\"b.*\":false}}", externals: "{}", tests: "[{\"description\":\"object with property matching schema true is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"object with property matching schema false is invalid\",\"data\":{\"bar\":2},\"valid\":false},{\"description\":\"object with both properties is invalid\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":false},{\"description\":\"object with a property matching both true and false is invalid\",\"data\":{\"foobar\":1},\"valid\":false},{\"description\":\"empty object is valid\",\"data\":{},\"valid\":true}]") == ""
+
+test "patternProperties 4: patternProperties with null valued instance properties"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"patternProperties\":{\"^.*bar$\":{\"type\":\"null\"}}}", externals: "{}", tests: "[{\"description\":\"allows null values\",\"data\":{\"foobar\":null},\"valid\":true}]") == ""
+
+test "patternProperties 5: patternProperties with Unicode property escape"
+    assert suite.failures(dialects: [2020], asserting: false, content: false, schema: "{\"type\":\"object\",\"patternProperties\":{\"^\\\\p{Letter}+$\":{\"type\":\"number\"}}}", externals: "{}", tests: "[{\"description\":\"Unicode letter property name matches\",\"data\":{\"π\":1},\"valid\":true},{\"description\":\"Unicode letter property name matches but value type is incorrect\",\"data\":{\"π\":\"1\"},\"valid\":false},{\"description\":\"Non-letter property name does not match pattern\",\"data\":{\"123\":1},\"valid\":true}]") == ""
+
+test "properties 0: object properties validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"foo\":{\"type\":\"integer\"},\"bar\":{\"type\":\"string\"}}}", externals: "{}", tests: "[{\"description\":\"both properties present and valid is valid\",\"data\":{\"foo\":1,\"bar\":\"baz\"},\"valid\":true},{\"description\":\"one property invalid is invalid\",\"data\":{\"foo\":1,\"bar\":{}},\"valid\":false},{\"description\":\"both properties invalid is invalid\",\"data\":{\"foo\":[],\"bar\":{}},\"valid\":false},{\"description\":\"doesn't invalidate other properties\",\"data\":{\"quux\":[]},\"valid\":true},{\"description\":\"ignores arrays\",\"data\":[],\"valid\":true},{\"description\":\"ignores other non-objects\",\"data\":12,\"valid\":true}]") == ""
+
+test "properties 1: properties, patternProperties, additionalProperties interaction"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"foo\":{\"type\":\"array\",\"maxItems\":3},\"bar\":{\"type\":\"array\"}},\"patternProperties\":{\"f.o\":{\"minItems\":2}},\"additionalProperties\":{\"type\":\"integer\"}}", externals: "{}", tests: "[{\"description\":\"property validates property\",\"data\":{\"foo\":[1,2]},\"valid\":true},{\"description\":\"property invalidates property\",\"data\":{\"foo\":[1,2,3,4]},\"valid\":false},{\"description\":\"patternProperty invalidates property\",\"data\":{\"foo\":[]},\"valid\":false},{\"description\":\"patternProperty validates nonproperty\",\"data\":{\"fxo\":[1,2]},\"valid\":true},{\"description\":\"patternProperty invalidates nonproperty\",\"data\":{\"fxo\":[]},\"valid\":false},{\"description\":\"additionalProperty ignores property\",\"data\":{\"bar\":[]},\"valid\":true},{\"description\":\"additionalProperty validates others\",\"data\":{\"quux\":3},\"valid\":true},{\"description\":\"additionalProperty invalidates others\",\"data\":{\"quux\":\"foo\"},\"valid\":false}]") == ""
+
+test "properties 2: properties with boolean schema"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"foo\":true,\"bar\":false}}", externals: "{}", tests: "[{\"description\":\"no property present is valid\",\"data\":{},\"valid\":true},{\"description\":\"only 'true' property present is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"only 'false' property present is invalid\",\"data\":{\"bar\":2},\"valid\":false},{\"description\":\"both properties present is invalid\",\"data\":{\"foo\":1,\"bar\":2},\"valid\":false}]") == ""
+
+test "properties 3: properties with escaped characters"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"foo\\nbar\":{\"type\":\"number\"},\"foo\\\"bar\":{\"type\":\"number\"},\"foo\\\\bar\":{\"type\":\"number\"},\"foo\\rbar\":{\"type\":\"number\"},\"foo\\tbar\":{\"type\":\"number\"},\"foo\\fbar\":{\"type\":\"number\"}}}", externals: "{}", tests: "[{\"description\":\"object with all numbers is valid\",\"data\":{\"foo\\nbar\":1,\"foo\\\"bar\":1,\"foo\\\\bar\":1,\"foo\\rbar\":1,\"foo\\tbar\":1,\"foo\\fbar\":1},\"valid\":true},{\"description\":\"object with strings is invalid\",\"data\":{\"foo\\nbar\":\"1\",\"foo\\\"bar\":\"1\",\"foo\\\\bar\":\"1\",\"foo\\rbar\":\"1\",\"foo\\tbar\":\"1\",\"foo\\fbar\":\"1\"},\"valid\":false}]") == ""
+
+test "properties 4: properties with null valued instance properties"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"foo\":{\"type\":\"null\"}}}", externals: "{}", tests: "[{\"description\":\"allows null values\",\"data\":{\"foo\":null},\"valid\":true}]") == ""
+
+test "properties 5: properties whose names are Javascript object property names"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"properties\":{\"__proto__\":{\"type\":\"number\"},\"toString\":{\"properties\":{\"length\":{\"type\":\"string\"}}},\"constructor\":{\"type\":\"number\"}}}", externals: "{}", tests: "[{\"description\":\"ignores arrays\",\"data\":[],\"valid\":true},{\"description\":\"ignores other non-objects\",\"data\":12,\"valid\":true},{\"description\":\"none of the properties mentioned\",\"data\":{},\"valid\":true},{\"description\":\"__proto__ not valid\",\"data\":{\"__proto__\":\"foo\"},\"valid\":false},{\"description\":\"toString not valid\",\"data\":{\"toString\":{\"length\":37}},\"valid\":false},{\"description\":\"constructor not valid\",\"data\":{\"constructor\":{\"length\":37}},\"valid\":false},{\"description\":\"all present and valid\",\"data\":{\"__proto__\":12,\"toString\":{\"length\":\"foo\"},\"constructor\":37},\"valid\":true}]") == ""
+
+test "propertyNames 0: propertyNames validation"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"propertyNames\":{\"maxLength\":3}}", externals: "{}", tests: "[{\"description\":\"all property names valid\",\"data\":{\"f\":{},\"foo\":{}},\"valid\":true},{\"description\":\"some property names invalid\",\"data\":{\"foo\":{},\"foobar\":{}},\"valid\":false},{\"description\":\"object without properties is valid\",\"data\":{},\"valid\":true},{\"description\":\"ignores arrays\",\"data\":[1,2,3,4],\"valid\":true},{\"description\":\"ignores strings\",\"data\":\"foobar\",\"valid\":true},{\"description\":\"ignores other non-objects\",\"data\":12,\"valid\":true},{\"description\":\"ignores null\",\"data\":null,\"valid\":true},{\"description\":\"ignores booleans\",\"data\":true,\"valid\":true}]") == ""
+
+test "propertyNames 1: propertyNames validation with pattern"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"propertyNames\":{\"pattern\":\"^a+$\"}}", externals: "{}", tests: "[{\"description\":\"matching property names valid\",\"data\":{\"a\":{},\"aa\":{},\"aaa\":{}},\"valid\":true},{\"description\":\"non-matching property name is invalid\",\"data\":{\"aaA\":{}},\"valid\":false},{\"description\":\"object without properties is valid\",\"data\":{},\"valid\":true}]") == ""
+
+test "propertyNames 2: propertyNames with boolean schema true"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"propertyNames\":true}", externals: "{}", tests: "[{\"description\":\"object with any properties is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"empty object is valid\",\"data\":{},\"valid\":true}]") == ""
+
+test "propertyNames 3: propertyNames with boolean schema false"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"propertyNames\":false}", externals: "{}", tests: "[{\"description\":\"object with any properties is invalid\",\"data\":{\"foo\":1},\"valid\":false},{\"description\":\"empty object is valid\",\"data\":{},\"valid\":true}]") == ""
+
+test "propertyNames 4: propertyNames with const"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"propertyNames\":{\"const\":\"foo\"}}", externals: "{}", tests: "[{\"description\":\"object with property foo is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"object with any other property is invalid\",\"data\":{\"bar\":1},\"valid\":false},{\"description\":\"empty object is valid\",\"data\":{},\"valid\":true}]") == ""
+
+test "propertyNames 5: propertyNames with enum"
+    assert suite.failures(dialects: [7, 2020], asserting: false, content: false, schema: "{\"propertyNames\":{\"enum\":[\"foo\",\"bar\"]}}", externals: "{}", tests: "[{\"description\":\"object with property foo is valid\",\"data\":{\"foo\":1},\"valid\":true},{\"description\":\"object with property foo and bar is valid\",\"data\":{\"foo\":1,\"bar\":1},\"valid\":true},{\"description\":\"object with any other property is invalid\",\"data\":{\"baz\":1},\"valid\":false},{\"description\":\"empty object is valid\",\"data\":{},\"valid\":true}]") == ""

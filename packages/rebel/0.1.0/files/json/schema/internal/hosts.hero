@@ -1,0 +1,260 @@
+# Hosts and mailboxes: IPv4 addresses in dotted decimal (RFC 2673), IPv6
+# addresses in RFC 4291's text, host names by RFC 1123 with each A-label
+# held to IDNA2008 (RFC 5891), internationalized host names of U-labels, and
+# mailboxes by RFC 5321, and by RFC 6531 where they are internationalized.
+
+use json/schema/internal/idna
+
+# Whether `s` is an IPv4 address: four numbers from 0 to 255, no leading
+# zero, between dots.
+function is_ipv4(s: str) -> bool
+    parts: i64 @= 0
+    at: i64 @= 0
+
+    while true
+        start = at
+
+        while at < s.len() && s[at] >= '0' && s[at] <= '9'
+            at @ at + 1
+
+        if at == start || at - start > 3 || s[start] == '0' && at - start > 1
+            return false
+        n: i64 @= 0
+
+        for i in range(from: start, to: at)
+            n @ n * 10 + to_i64(s[i] - '0').must()
+
+        if n > 255
+            return false
+        parts @ parts + 1
+
+        if at == s.len()
+            return parts == 4
+
+        if s[at] != '.' || parts == 4
+            return false
+        at @ at + 1
+
+    return false
+
+# Whether `b` is a hexadecimal digit.
+function is_hex(b: u8) -> bool
+    return b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# Whether `s` is an IPv6 address in RFC 4291's text: eight groups of one to
+# four hexadecimal digits, `::` once for a run of zero groups, the last two
+# groups written as an IPv4 address where wanted; no zone, no prefix.
+function is_ipv6(s: str) -> bool
+    groups: i64 @= 0
+    compressed: bool @= false
+    at: i64 @= 0
+
+    if s.len() >= 2 && s[0] == ':' && s[1] == ':'
+        compressed @ true
+        at @ 2
+
+        if s.len() == 2
+            return true
+    else if s.len() > 0 && s[0] == ':'
+        return false
+
+    while at < s.len()
+        start = at
+
+        while at < s.len() && is_hex(s[at])
+            at @ at + 1
+
+        if at < s.len() && s[at] == '.'
+            if !is_ipv4(s.slice(from: start, to: s.len()))
+                return false
+            groups @ groups + 2
+            at @ s.len()
+        else
+            if at == start || at - start > 4
+                return false
+            groups @ groups + 1
+
+            if at < s.len()
+                if s[at] != ':' || at + 1 >= s.len()
+                    return false
+                at @ at + 1
+
+                if s[at] == ':'
+                    if compressed
+                        return false
+                    compressed @ true
+                    at @ at + 1
+
+    if compressed
+        return groups < 8
+    return groups == 8
+
+# Whether `label` is a label of a host name in letters, digits and hyphens:
+# 1 to 63 of them, no hyphen at either end, and an A-label where its third
+# and fourth are hyphens.
+function is_ldh_label(label: str) -> bool
+    if label.len() == 0 || label.len() > 63 || label[0] == '-' || label[label.len() - 1] == '-'
+        return false
+
+    for at in range(from: 0, to: label.len())
+        b = label[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-')
+            return false
+
+    if label.len() >= 4 && label[2] == '-' && label[3] == '-'
+        return idna.is_a_label(label)
+    return true
+
+# Whether `s` is a host name: labels of letters, digits and hyphens between
+# dots, at most 253 characters, no dot at either end; an A-label must decode
+# to a U-label IDNA2008 allows.
+function is_hostname(s: str) -> bool
+    if s.len() == 0 || s.len() > 253
+        return false
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len() + 1)
+        if at == s.len() || s[at] == '.'
+            if !is_ldh_label(s.slice(from: start, to: at))
+                return false
+            start @ at + 1
+
+    return true
+
+# Whether `s` is an internationalized host name: U-labels and A-labels
+# IDNA2008 allows, between dots or the ideographic and fullwidth full stops.
+function is_idn_hostname(s: str) -> bool
+    return idna.is_idn_hostname(s)
+
+# Whether `b` is a character RFC 5321's Atom may hold, or one past ASCII
+# where `international` says RFC 6531 is read.
+function is_atext(b: u8, international: bool) -> bool
+    if b >= 0x80
+        return international
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '!' || b == '#' || b == '$' || b == '%' || b == '&' || b == '\'' || b == '*' || b == '+' || b == '-' || b == '/' || b == '=' || b == '?' || b == '^' || b == '_' || b == '`' || b == '{' || b == '|' || b == '}' || b == '~'
+
+# Whether `local` is a mailbox's local part: atoms between dots, or a quoted
+# string.
+function is_local_part(local: str, international: bool) -> bool
+    if local.len() == 0
+        return false
+
+    if local[0] == '"'
+        if local.len() < 2 || local[local.len() - 1] != '"'
+            return false
+        at: i64 @= 1
+
+        while at < local.len() - 1
+            b = local[at]
+
+            if b == '\\'
+                if at + 1 >= local.len() - 1 || local[at + 1] < 0x20 || local[at + 1] > 0x7e
+                    return false
+                at @ at + 2
+            else if b >= 0x20 && b <= 0x7e && b != '"' || b >= 0x80 && international
+                at @ at + 1
+            else
+                return false
+
+        return true
+    previous_dot: bool @= true
+
+    for at in range(from: 0, to: local.len())
+        b = local[at]
+
+        if b == '.'
+            if previous_dot
+                return false
+            previous_dot @ true
+        else if is_atext(b, international: international)
+            previous_dot @ false
+        else
+            return false
+
+    return !previous_dot
+
+# Whether `literal`, the inside of a mailbox's brackets, is an address: an
+# IPv4 address, `IPv6:` and an IPv6 address, or a tag, `:` and its text.
+function is_address_literal(literal: str) -> bool
+    if is_ipv4(literal)
+        return true
+
+    if literal.len() > 5 && (literal.slice(from: 0, to: 5) == "IPv6:" || literal.slice(from: 0, to: 5) == "ipv6:" || literal.slice(from: 0, to: 5) == "IPV6:")
+        return is_ipv6(literal.slice(from: 5, to: literal.len()))
+    colon: i64 @= -1
+
+    for at in range(from: 0, to: literal.len())
+        if colon < 0 && literal[at] == ':'
+            colon @ at
+
+    if colon <= 0 || colon == literal.len() - 1 || !is_ldh_label(literal.slice(from: 0, to: colon))
+        return false
+
+    for at in range(from: colon + 1, to: literal.len())
+        b = literal[at]
+
+        if b < 33 || b > 126 || b == '[' || b == '\\' || b == ']'
+            return false
+
+    return true
+
+# Whether `s` is a mailbox, RFC 5321's Mailbox, or RFC 6531's where
+# `international` asks: a local part, `@`, and a host name or an address in
+# brackets.
+function is_email(s: str, international: bool) -> bool
+    at: i64 @= -1
+    i: i64 @= s.len()
+
+    while i > 0
+        i @ i - 1
+
+        if s[i] == '@'
+            at @ i
+            i @ 0
+
+    if at <= 0 || at == s.len() - 1
+        return false
+    local = s.slice(from: 0, to: at)
+    domain = s.slice(from: at + 1, to: s.len())
+
+    if !is_local_part(local, international: international)
+        return false
+
+    if domain[0] == '['
+        return domain.len() > 2 && domain[domain.len() - 1] == ']' && is_address_literal(domain.slice(from: 1, to: domain.len() - 1))
+
+    if international
+        return is_idn_hostname(domain)
+    return is_hostname(domain)
+
+## Tests
+
+test "is_ipv4: four numbers, and every way of writing one otherwise"
+    assert is_ipv4("0.0.0.0") && is_ipv4("255.255.255.255")
+
+    for s in ["127.0.0.0.1", "256.256.256.256", "127.0", "0x7f000001", "192.168.0.01", "", "1.2.3.4.", ".1.2.3.4", "1..2.3", "+1.2.3.4"]
+        assert !is_ipv4(s)
+
+test "is_ipv6: compression, an IPv4 tail, and what RFC 4291 does not write"
+    for s in ["::1", "::", "1:2:3:4:5:6:7:8", "1::d6:192.168.0.1", "::ffff:192.168.0.1", "2001:DB8::1", "1::2:3:4:5:6", "::1:2:3:4:5:1.2.3.4", "1000:1000:1000:1000:1000:1000:255.255.255.255"]
+        assert is_ipv6(s)
+
+    for s in ["12345::", ":2:3:4:5:6:7:8", "1:2:3:4:5:6:7:", "1::d6::42", "1:2:3:4:5:::8", "1:2:3:4:5:6:7", "127.0.0.1", "fe80::a%eth1", "::ffff:192.168.0.01", "1:2:3:4:5:6:7:8::", "100:100:100:100:100:100:100:255.255.255.255", ""]
+        assert !is_ipv6(s)
+
+test "is_hostname: labels, their lengths and hyphens"
+    for s in ["www.example.com", "1host", "a--b.com", "xn--9n2bp8q.xn--9t4b11yi5a"]
+        assert is_hostname(s)
+
+    for s in ["", ".", "example.", "-hostname", "hostname-", "host_name", "ex ample.com", repeat("a", 64) + ".com", "ab--cd.example", "xn--X"]
+        assert !is_hostname(s)
+
+test "is_email: RFC 5321's mailboxes, quoted, with addresses, and what it refuses"
+    for s in ["joe.bloggs@example.com", "\"joe bloggs\"@example.com", "joe.bloggs@[127.0.0.1]", "joe.bloggs@[IPv6:::1]", "\"\"@iana.org", "test@io", "\"\\a\"@iana.org"]
+        assert is_email(s, international: false)
+
+    for s in [".test@example.com", "te..st@example.com", "a@b@c.org", "test@[1.2.3.4", "a@[]", "test@[RFC-5322-domain-literal]", "aé@iana.org", "a,b@iana.org", "test(comment)@iana.org", "test@iana-.com", " a@iana.org"]
+        assert !is_email(s, international: false)
+
+    assert is_email("δοκιμή@example.com", international: true) && !is_email("δοκιμή@-example.com", international: true)

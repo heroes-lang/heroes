@@ -1,0 +1,678 @@
+# A schema compiled: its documents flattened, every node that is a schema
+# found from the documents' roots on a work list, each one's dialect,
+# vocabularies, base URI and resource learnt, every `$id`, `$anchor` and
+# `$dynamicAnchor` registered, every pattern compiled, and every `$ref` and
+# `$dynamicRef` resolved to a node. A reference that lands on a node no
+# keyword made a schema, inside an unknown keyword, scans that node then.
+# Where a reference names a meta-schema this package carries and the sources
+# do not hold, the attempt says so, and the caller adds it and starts again.
+
+use json
+use json/schema/internal/forms
+use json/schema/internal/metas
+use json/schema/internal/model
+use json/schema/internal/patterns
+use json/schema/internal/table
+use json/schema/internal/uris
+use regex
+use strings
+
+# The code of a schema that is not one.
+constant INVALID: str
+    "invalid"
+
+# The code of a reference or a meta-schema that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a dialect or a vocabulary this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# One document of a compilation and the URI it is found at.
+record Source
+    # The document.
+    document: json.Value
+    # The absolute URI it was given at, without a fragment; `""` for the
+    # schema compiled where the program gave it at none.
+    uri: str
+
+# What one attempt at a compilation answers.
+record Attempt
+    # The schema compiled, where `missing` is empty.
+    compiled: model.Compiled
+    # The meta-schemas this package carries that a reference names and no
+    # source holds, by URI.
+    missing: [str]
+
+# A dialect and its vocabularies, as a `$schema` names them.
+record Dialect
+    # `model.DRAFT_7` or `model.DRAFT_2020`.
+    dialect: i64
+    # A sum of `model.CORE` to `model.CONTENT`.
+    vocab: i64
+
+# The vocabularies 2020-12 names, by URI.
+function vocabulary_uris() -> [str]
+    base = "https://json-schema.org/draft/2020-12/vocab/"
+    return [
+        base + "core"
+        base + "applicator"
+        base + "unevaluated"
+        base + "validation"
+        base + "meta-data"
+        base + "format-annotation"
+        base + "format-assertion"
+        base + "content"
+    ]
+
+# The vocabularies named by the `$vocabulary` object `v`. Fails
+# `unsupported` where it requires one this package does not know.
+function vocabularies_of(v: json.Value) -> i64?
+    bits = [
+        model.CORE
+        model.APPLICATOR
+        model.UNEVALUATED
+        model.VALIDATION
+        model.META_DATA
+        model.FORMAT_ANNOTATION
+        model.FORMAT_ASSERTION
+        model.CONTENT
+    ]
+    known = vocabulary_uris()
+    sum: i64 @= model.CORE
+    members = json.members_of(v).default({})
+
+    for uri in keys(members)
+        found: i64 @= -1
+
+        for at in range(from: 0, to: known.len())
+            if known[at] == uri
+                found @ at
+
+        required = json.bool_of(members[uri].must()).default(false)
+
+        if found < 0 && required
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"the meta-schema requires the vocabulary \"{uri}\", which this package does not know"
+            )
+
+        if found >= 0
+            sum @ sum | bits[found]
+
+    return ok(sum)
+
+# The text of the member `name` of the object `v`, or `""`.
+function text_member(v: json.Value, name: str) -> str
+    match json.member(v, name)
+        .ok m  => return json.text_of(m).default("")
+        .err _ => return ""
+
+# The dialect and vocabularies the `$schema` `uri` names, following a
+# meta-schema of the program's own through its own `$schema`, at most
+# `hops` more times. Fails `not_found` where no source holds it.
+function dialect_of(uri: str, sources: [Source], hops: i64) -> Dialect?
+    c = uris.cut(uri)
+
+    if c.fragment != ""
+        return fail(code: INVALID, msg: f"the $schema \"{uri}\" has a fragment")
+
+    if c.resource == "http://json-schema.org/draft-07/schema"
+        return ok(Dialect(dialect: model.DRAFT_7, vocab: model.ALL_VOCABULARIES))
+
+    if c.resource == "https://json-schema.org/draft/2020-12/schema"
+        return ok(Dialect(dialect: model.DRAFT_2020, vocab: model.ALL_VOCABULARIES))
+
+    for other in ["http://json-schema.org/draft-03/schema", "http://json-schema.org/draft-04/schema", "http://json-schema.org/draft-06/schema", "https://json-schema.org/draft/2019-09/schema"]
+        if c.resource == other
+            return fail(code: UNSUPPORTED, msg: f"the dialect \"{uri}\": this package reads draft 7 and 2020-12")
+
+    if hops <= 0
+        return fail(code: INVALID, msg: f"the meta-schema \"{uri}\" names meta-schemas in a circle")
+
+    for given in sources
+        id = text_member(given.document, name: "$id")
+
+        named = if id != ""
+            uris.cut(uris.resolve(base: given.uri, reference: id).default(id)).resource
+        else
+            ""
+
+        if given.uri == c.resource || named == c.resource
+            inner = text_member(given.document, name: "$schema")
+
+            if inner == ""
+                return fail(code: INVALID, msg: f"the meta-schema \"{uri}\" names no $schema of its own")
+            d = dialect_of(inner, sources: sources, hops: hops - 1)?
+
+            if d.dialect == model.DRAFT_7
+                return ok(d)
+
+            match json.member(given.document, "$vocabulary")
+                .ok v  => return ok(Dialect(dialect: d.dialect, vocab: vocabularies_of(v)?))
+                .err _ => return ok(d)
+
+    return fail(code: NOT_FOUND, msg: f"the meta-schema \"{uri}\" is not among the documents given")
+
+# `token` as it stands in a JSON pointer.
+function escaped(token: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: token, old: "~", new: "~0"), old: "/", new: "~1")
+
+# Whether `name` is an anchor's name: a letter or `_`, then letters, digits,
+# `-`, `_` and `.`.
+function is_anchor_name(name: str) -> bool
+    if name.len() == 0
+        return false
+
+    for at in range(from: 0, to: name.len())
+        b = name[at]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+        if !letter && (at == 0 || !(b >= '0' && b <= '9' || b == '-' || b == '.'))
+            return false
+
+    return true
+
+# Everything a scan holds while it runs: the work still to do and what it has
+# learnt.
+record State
+    # What each node is as a schema.
+    scan: model.Scan
+    # Each resource's root node by its URI.
+    resources: {str: i64}
+    # Each anchor's node, by its resource's URI, `#` and its name.
+    anchors: {str: i64}
+    # The anchors of `$dynamicAnchor` alone.
+    dynamic_anchors: {str: i64}
+    # Every pattern compiled, by its text.
+    compiled: {str: regex.Regex}
+
+# A node waiting to be scanned, and what it inherits.
+record Work
+    # The node.
+    node: i64
+    # The base URI it stands under.
+    base: str
+    # Its dialect.
+    dialect: i64
+    # Its vocabularies.
+    vocab: i64
+    # The root of the resource it stands in.
+    resource: i64
+    # Its pointer from that root.
+    pointer: str
+
+# A reference waiting to be resolved.
+record Pending
+    # The node that writes it.
+    node: i64
+    # The absolute URI it names.
+    uri: str
+    # Whether it is a `$dynamicRef`.
+    dynamic: bool
+
+# Compiles `text` into `compiled` where it is not there yet. Fails as
+# `patterns.translate` does, or `unsupported` where `regex` refuses what it
+# was given.
+function compile_pattern(@compiled: {str: regex.Regex}, text: str, place: str) -> ()?
+    if !compiled[text].is_err()
+        return ok()
+
+    match patterns.translate(text)
+        .err e => return fail(code: e.code, msg: f"the pattern \"{text}\" at {place}: {e.msg}")
+        .ok syntax =>
+            match regex.compile(syntax)
+                .err e => return fail(code: UNSUPPORTED, msg: f"the pattern \"{text}\" at {place}: {e.msg}")
+                .ok re =>
+                    compiled[text] @ re
+                    return ok()
+
+# Adds to `work` the node `child` under `w`, at `suffix` past `w`'s pointer.
+function enqueue(@work: [Work], w: Work, child: i64, suffix: str)
+    work @ work.push(
+        Work(node: child, base: w.base, dialect: w.dialect, vocab: w.vocab, resource: w.resource, pointer: w.pointer + suffix)
+    )
+
+# Adds to `work` the subschemas the schema `w` names, by its dialect.
+function enqueue_children(@work: [Work], t: model.Table, w: Work)
+    n = w.node
+
+    singles = if w.dialect == model.DRAFT_7
+        ["additionalItems", "additionalProperties", "propertyNames", "not", "if", "then", "else", "contains", "items"]
+    else
+        [
+            "additionalProperties"
+            "propertyNames"
+            "not"
+            "if"
+            "then"
+            "else"
+            "contains"
+            "items"
+            "unevaluatedItems"
+            "unevaluatedProperties"
+            "contentSchema"
+        ]
+
+    lists = if w.dialect == model.DRAFT_7
+        ["allOf", "anyOf", "oneOf", "items"]
+    else
+        ["allOf", "anyOf", "oneOf", "prefixItems"]
+
+    maps = if w.dialect == model.DRAFT_7
+        ["properties", "patternProperties", "definitions", "dependencies"]
+    else
+        ["properties", "patternProperties", "$defs", "dependentSchemas"]
+
+    for name in singles
+        k = table.member(t, n: n, name: name)
+
+        if k >= 0 && (t.kinds[k] == model.OBJECT_KIND || t.kinds[k] == model.BOOLEAN_KIND)
+            enqueue(work: @work, w: w, child: k, suffix: "/" + escaped(name))
+
+    for name in lists
+        k = table.member(t, n: n, name: name)
+
+        if k >= 0 && t.kinds[k] == model.LIST_KIND
+            for at in range(from: 0, to: t.counts[k])
+                enqueue(work: @work, w: w, child: table.child(t, n: k, at: at), suffix: f"/{escaped(name)}/{at}")
+
+    for name in maps
+        k = table.member(t, n: n, name: name)
+
+        if k >= 0 && t.kinds[k] == model.OBJECT_KIND
+            for at in range(from: 0, to: t.counts[k])
+                child = table.child(t, n: k, at: at)
+
+                if t.kinds[child] == model.OBJECT_KIND || t.kinds[child] == model.BOOLEAN_KIND
+                    enqueue(work: @work, w: w, child: child, suffix: f"/{escaped(name)}/{escaped(t.keys[child])}")
+
+# Scans the node `w` names: its dialect, its identity, its forms, its
+# patterns and its references, and adds its subschemas to `work`.
+function scan_one(@s: State, @work: [Work], @pending: [Pending], t: model.Table, w: Work, sources: [Source]) -> ()?
+    n = w.node
+
+    if s.scan.is_schema[n]
+        return ok()
+    here: Work @= w
+    place = f"{w.base}#{w.pointer}"
+
+    if t.kinds[n] == model.OBJECT_KIND
+        id_node = table.member(t, n: n, name: "$id")
+        schema_node = table.member(t, n: n, name: "$schema")
+
+        if schema_node >= 0 && t.kinds[schema_node] == model.TEXT_KIND && (t.parents[n] < 0 || id_node >= 0)
+            d = dialect_of(table.text_of(t, n: schema_node), sources: sources, hops: 8)?
+            here.dialect @ d.dialect
+            here.vocab @ d.vocab
+        ref_hides = here.dialect == model.DRAFT_7 && table.has(t, n: n, name: "$ref")
+
+        if id_node >= 0 && t.kinds[id_node] == model.TEXT_KIND && !ref_hides
+            absolute = uris.resolve(base: here.base, reference: table.text_of(t, n: id_node))?
+            c = uris.cut(absolute)
+
+            if here.dialect == model.DRAFT_2020 && c.fragment != ""
+                return fail(
+                    code: INVALID,
+                    msg: f"the schema at {place}: its $id \"{table.text_of(t, n: id_node)}\" has a fragment"
+                )
+
+            if c.resource != here.base || t.parents[n] < 0
+                had = s.resources[c.resource].default(n)
+
+                if had != n
+                    return fail(code: INVALID, msg: f"two schemas claim the URI \"{c.resource}\", one at {place}")
+                s.resources[c.resource] @ n
+                here.base @ c.resource
+                here.resource @ n
+                here.pointer @ ""
+
+            if here.dialect == model.DRAFT_7 && c.fragment != ""
+                s.anchors[c.resource + "#" + c.fragment] @ n
+
+        if here.dialect == model.DRAFT_2020
+            for name in ["$anchor", "$dynamicAnchor"]
+                a = table.member(t, n: n, name: name)
+
+                if a >= 0 && t.kinds[a] == model.TEXT_KIND
+                    anchor = table.text_of(t, n: a)
+
+                    if !is_anchor_name(anchor)
+                        return fail(code: INVALID, msg: f"the schema at {place}: \"{anchor}\" is no anchor's name")
+                    key = here.base + "#" + anchor
+                    s.anchors[key] @ n
+
+                    if name == "$dynamicAnchor"
+                        s.dynamic_anchors[key] @ n
+    forms.check(t, n: n, dialect: here.dialect, vocab: here.vocab, place: place)?
+    s.scan.is_schema[n] @ true
+    s.scan.dialects[n] @ here.dialect
+    s.scan.vocabularies[n] @ here.vocab
+    s.scan.bases[n] @ here.base
+    s.scan.resources[n] @ here.resource
+    s.scan.pointers[n] @ here.pointer
+
+    if t.kinds[n] != model.OBJECT_KIND
+        return ok()
+
+    for name in ["$ref", "$dynamicRef"]
+        r = table.member(t, n: n, name: name)
+
+        if r >= 0 && (name == "$ref" || here.dialect == model.DRAFT_2020)
+            target = uris.resolve(base: here.base, reference: table.text_of(t, n: r))?
+            pending @ pending.push(Pending(node: n, uri: target, dynamic: name == "$dynamicRef"))
+
+    if here.dialect == model.DRAFT_7 && table.has(t, n: n, name: "$ref")
+        return ok()
+    pattern = table.member(t, n: n, name: "pattern")
+
+    if pattern >= 0 && (here.dialect == model.DRAFT_7 || here.vocab & model.VALIDATION != 0)
+        compile_pattern(compiled: @s.compiled, text: table.text_of(t, n: pattern), place: place)?
+    by_pattern = table.member(t, n: n, name: "patternProperties")
+
+    if by_pattern >= 0 && (here.dialect == model.DRAFT_7 || here.vocab & model.APPLICATOR != 0)
+        for at in range(from: 0, to: t.counts[by_pattern])
+            compile_pattern(compiled: @s.compiled, text: t.keys[table.child(t, n: by_pattern, at: at)], place: place)?
+
+    enqueue_children(work: @work, t: t, w: here)
+    return ok()
+
+# The node `fragment` names in the resource whose root is `root`: the root
+# where it is empty, the node a JSON pointer reaches, or an anchor's node.
+# Fails `not_found` where it names none.
+function target_of(t: model.Table, s: State, root: i64, resource: str, fragment: str, uri: str) -> i64?
+    if fragment == ""
+        return ok(root)
+
+    if fragment[0] != '/'
+        match s.anchors[resource + "#" + fragment]
+            .ok found => return ok(found)
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{uri}\" names no anchor \"{fragment}\" in its resource"
+            )
+    tokens = uris.pointer_tokens(fragment)?
+    here: i64 @= root
+
+    for token in tokens
+        next = if t.kinds[here] == model.OBJECT_KIND
+            table.member(t, n: here, name: token)
+        else if t.kinds[here] == model.LIST_KIND
+            index = forms_index(token)
+
+            if index >= 0 && index < t.counts[here]
+                table.child(t, n: here, at: index)
+            else
+                -1
+        else
+            -1
+
+        if next < 0
+            return fail(code: NOT_FOUND, msg: f"the reference \"{uri}\" names no schema: nothing at \"{token}\"")
+        here @ next
+
+    return ok(here)
+
+# The index a pointer's token writes, or -1 where it writes none.
+function forms_index(token: str) -> i64
+    if token.len() == 0 || token.len() > 15 || token[0] == '0' && token.len() > 1
+        return -1
+    n: i64 @= 0
+
+    for at in range(from: 0, to: token.len())
+        if token[at] < '0' || token[at] > '9'
+            return -1
+        n @ n * 10 + to_i64(token[at] - '0').must()
+
+    return n
+
+# The work that scans `target`, a node no keyword made a schema, from the
+# nearest node above it that is one.
+function lazy_work(t: model.Table, s: State, target: i64) -> Work
+    path: [str] @= []
+    above: i64 @= target
+
+    while !s.scan.is_schema[above]
+        path @ path.push(escaped(t.keys[above]))
+        above @ t.parents[above]
+
+    suffix: [str] @= []
+    at: i64 @= path.len()
+
+    while at > 0
+        at @ at - 1
+        suffix @ suffix.push("/" + path[at])
+
+    return Work(
+        node: target,
+        base: s.scan.bases[above],
+        dialect: s.scan.dialects[above],
+        vocab: s.scan.vocabularies[above],
+        resource: s.scan.resources[above],
+        pointer: s.scan.pointers[above] + suffix.join("")
+    )
+
+# One attempt at compiling `sources` with `settings`, from the schema `start`
+# names, or from the first source's root where it is `""`.
+function attempt(sources: [Source], settings: model.Settings, start: str) -> Attempt?
+    documents: [json.Value] @= []
+
+    for given in sources
+        documents @ documents.push(given.document)
+
+    t = table.flatten(documents)
+    count = t.kinds.len()
+    falses: [bool] @= []
+    zeros: [i64] @= []
+    minus: [i64] @= []
+    empties: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        falses @ falses.push(false)
+        zeros @ zeros.push(0)
+        minus @ minus.push(-1)
+        empties @ empties.push("")
+
+    found = model.Scan(
+        is_schema: falses,
+        dialects: zeros,
+        vocabularies: zeros,
+        bases: empties,
+        resources: minus,
+        pointers: empties,
+        refs: minus,
+        dynamic_refs: minus,
+        dynamic_names: empties
+    )
+    s @= State(scan: found, resources: {}, anchors: {}, dynamic_anchors: {}, compiled: {})
+    work: [Work] @= []
+    pending: [Pending] @= []
+    roots = table.roots_of(t)
+
+    for at in range(from: 0, to: sources.len())
+        base = if sources[at].uri == ""
+            uris.DEFAULT_BASE
+        else
+            sources[at].uri
+        s.resources[base] @ roots[at]
+        work @ work.push(
+            Work(node: roots[at], base: base, dialect: settings.draft, vocab: model.ALL_VOCABULARIES, resource: roots[at], pointer: "")
+        )
+
+    missing: [str] @= []
+    resolved: i64 @= 0
+    done: i64 @= 0
+
+    while done < work.len() || resolved < pending.len()
+        while done < work.len()
+            scan_one(s: @s, work: @work, pending: @pending, t: t, w: work[done], sources: sources)?
+            done @ done + 1
+
+        while resolved < pending.len()
+            p = pending[resolved]
+            resolved @ resolved + 1
+            c = uris.cut(p.uri)
+
+            match s.resources[c.resource]
+                .err _ =>
+                    if !metas.text_of(c.resource).is_err()
+                        if !missing_has(missing, uri: c.resource)
+                            missing @ missing.push(c.resource)
+                    else
+                        return fail(
+                            code: NOT_FOUND,
+                            msg: f"the reference \"{p.uri}\" names no document among the ones given"
+                        )
+                .ok root =>
+                    target = target_of(t, s: s, root: root, resource: c.resource, fragment: c.fragment, uri: p.uri)?
+
+                    if !s.scan.is_schema[target]
+                        work @ work.push(lazy_work(t, s: s, target: target))
+
+                    if p.dynamic
+                        s.scan.dynamic_refs[p.node] @ target
+                        anchor = table.member(t, n: target, name: "$dynamicAnchor")
+
+                        if anchor >= 0 && table.text_of(t, n: anchor) == c.fragment
+                            s.scan.dynamic_names[p.node] @ c.fragment
+                    else
+                        s.scan.refs[p.node] @ target
+
+    root: i64 @= roots[0]
+
+    if start != ""
+        c = uris.cut(start)
+
+        match s.resources[c.resource]
+            .err _ =>
+                if !metas.text_of(c.resource).is_err()
+                    if !missing_has(missing, uri: c.resource)
+                        missing @ missing.push(c.resource)
+                else
+                    return fail(code: NOT_FOUND, msg: f"\"{start}\" names no document among the ones given")
+            .ok found_root =>
+                root @ target_of(t, s: s, root: found_root, resource: c.resource, fragment: c.fragment, uri: start)?
+
+                if !s.scan.is_schema[root]
+                    work @ work.push(lazy_work(t, s: s, target: root))
+
+                    while done < work.len()
+                        scan_one(s: @s, work: @work, pending: @pending, t: t, w: work[done], sources: sources)?
+                        done @ done + 1
+
+                    if resolved < pending.len()
+                        return fail(
+                            code: UNSUPPORTED,
+                            msg: f"\"{start}\" names a schema whose references were not read with the documents"
+                        )
+
+    compiled = model.Compiled(
+        table: t,
+        scan: s.scan,
+        root: root,
+        dynamic_anchors: s.dynamic_anchors,
+        patterns: s.compiled,
+        settings: settings
+    )
+    return ok(Attempt(compiled: compiled, missing: missing))
+
+# Whether `missing` holds `uri`.
+function missing_has(missing: [str], uri: str) -> bool
+    for one in missing
+        if one == uri
+            return true
+
+    return false
+
+# `sources` compiled with `settings`, from the schema `start` names or the
+# first source's root: each meta-schema this package carries is added where a
+# reference names it, and the attempt made again.
+function compile(sources: [Source], settings: model.Settings, start: str) -> model.Compiled?
+    every: [Source] @= sources
+
+    for _ in range(from: 0, to: 4)
+        a = attempt(every, settings: settings, start: start)?
+
+        if a.missing.len() == 0
+            return ok(a.compiled)
+
+        for uri in a.missing
+            every @ every.push(Source(document: json.parse(metas.text_of(uri).must()).must(), uri: uri))
+
+    return fail(code: NOT_FOUND, msg: "the meta-schemas named could not all be read")
+
+## Tests
+
+# The settings of 2020-12 with nothing asserted past the defaults.
+function plain() -> model.Settings
+    return model.Settings(draft: model.DRAFT_2020, formats: false, content: false, custom: [])
+
+# One source of `text` given at `uri`.
+function source(text: str, uri: str) -> Source
+    return Source(document: json.parse(text).must(), uri: uri)
+
+test "compile: $id and $anchor registered, a $ref resolved by pointer, by anchor and to another document"
+    root = source(
+        text: "{\"$id\": \"http://example.com/root.json\", \"$defs\": {\"a\": {\"$anchor\": \"here\", \"type\": \"integer\"}, \"b\": {\"$id\": \"b.json\", \"minimum\": 1}}, \"properties\": {\"x\": {\"$ref\": \"#/$defs/a\"}, \"y\": {\"$ref\": \"#here\"}, \"z\": {\"$ref\": \"b.json\"}, \"w\": {\"$ref\": \"other.json\"}}}",
+        uri: ""
+    )
+    other = source(text: "{\"type\": \"string\"}", uri: "http://example.com/other.json")
+    c = compile([root, other], settings: plain(), start: "").must()
+    t = c.table
+    properties = table.member(t, n: c.root, name: "properties")
+    x = table.member(t, n: properties, name: "x")
+    a = table.member(t, n: table.member(t, n: c.root, name: "$defs"), name: "a")
+    assert c.scan.refs[x] == a
+    assert c.scan.refs[table.member(t, n: properties, name: "y")] == a
+    b = table.member(t, n: table.member(t, n: c.root, name: "$defs"), name: "b")
+    assert c.scan.refs[table.member(t, n: properties, name: "z")] == b
+    assert c.scan.bases[b] == "http://example.com/b.json" && c.scan.pointers[b] == ""
+    assert c.scan.pointers[x] == "/properties/x"
+    assert t.parents[c.scan.refs[table.member(t, n: properties, name: "w")]] < 0
+
+test "compile: a reference into an unknown keyword, and one that names nothing"
+    c = compile(
+        [source(text: "{\"x\": {\"y\": {\"type\": \"null\"}}, \"$ref\": \"#/x/y\"}", uri: "")],
+        settings: plain(),
+        start: ""
+    ).must()
+    assert c.scan.is_schema[c.scan.refs[c.root]]
+
+    for text in ["{\"$ref\": \"#/nothing\"}", "{\"$ref\": \"#nothing\"}", "{\"$ref\": \"http://example.com/none\"}"]
+        match compile([source(text: text, uri: "")], settings: plain(), start: "")
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
+test "compile: draft 7, where $ref hides its siblings, $id included"
+    seven = model.Settings(draft: model.DRAFT_7, formats: false, content: false, custom: [])
+    text = "{\"$id\": \"http://example.com/base/\", \"definitions\": {\"inner\": {\"$id\": \"foo.json\", \"type\": \"number\"}}, \"allOf\": [{\"$id\": \"http://example.com/\", \"$ref\": \"foo.json\"}]}"
+    c = compile([source(text: text, uri: "")], settings: seven, start: "").must()
+    inner = table.member(c.table, n: table.member(c.table, n: c.root, name: "definitions"), name: "inner")
+    first = table.child(c.table, n: table.member(c.table, n: c.root, name: "allOf"), at: 0)
+    assert c.scan.refs[first] == inner
+
+test "compile: the meta-schema a reference names is added, and a dialect not read"
+    c = compile(
+        [source(text: "{\"$ref\": \"https://json-schema.org/draft/2020-12/schema\"}", uri: "")],
+        settings: plain(),
+        start: ""
+    ).must()
+    assert table.roots_of(c.table).len() > 2
+
+    match compile([source(text: "{\"$schema\": \"https://json-schema.org/draft/2019-09/schema\"}", uri: "")], settings: plain(), start: "")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "compile: a pattern ECMAScript writes and regex cannot, and two schemas of one URI"
+    match compile([source(text: "{\"pattern\": \"(?=a)\"}", uri: "")], settings: plain(), start: "")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match compile([source(text: "{\"$defs\": {\"a\": {\"$id\": \"http://x/a\"}, \"b\": {\"$id\": \"http://x/a\"}}}", uri: "")], settings: plain(), start: "")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "is_anchor_name: names and what is none"
+    assert is_anchor_name("foo") && is_anchor_name("_a.b-1")
+    assert !is_anchor_name("") && !is_anchor_name("1a") && !is_anchor_name("a b") && !is_anchor_name("/a")

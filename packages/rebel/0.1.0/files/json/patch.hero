@@ -1,0 +1,350 @@
+# JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386): a list of changes to
+# a `json.Value` held as values, read and written as JSON, applied whole or
+# not at all, and made from two values; and a merge patch, a value shaped like
+# the document it changes, applied and made.
+#
+# A patch names its places by JSON pointers (RFC 6901), which `json` reads and
+# writes: `json.value_at` reads the value at one, `json.pointer_of` writes one.
+# This package reads no text but a patch's and holds no stream; a document is
+# read by `json.parse` and written by `json.format`. Nothing here follows the
+# data with recursion: a value nested as deep as a program builds it is
+# patched, compared and diffed on stacks this package holds itself.
+#
+# Fails `invalid` where a patch is not one, where a `test` finds another
+# value, and where an operation meets a value of a kind it cannot change;
+# `not_found` where a path or a `from` names nothing; `unsupported` where no
+# merge patch can say the change asked for.
+
+use json
+use json/patch/internal/apply as applying
+use json/patch/internal/diff as diffing
+use json/patch/internal/examples
+use json/patch/internal/merge as merging
+use json/patch/internal/ops as kinds
+
+## Codes
+
+# The code of a patch that is not one, of a `test` that finds another value,
+# and of an operation on a value it cannot change: `parse`, `from_value`,
+# `apply` and `apply_with` fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a path or a `from` that names nothing in the value patched:
+# `apply` and `apply_with` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a change no merge patch can say, such as a member set to `null`:
+# `merge_diff` and `compose_merges` fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Operations
+
+# One operation of a JSON Patch, RFC 6902 § 4. Every path and every `from` is
+# a JSON pointer in RFC 6901's text, `""` naming the whole value. A patch is a
+# list of them, applied in order.
+variant Operation
+    # Adds `value` at `path`: a member of an object, made or replaced; an
+    # element of a list, put before the one at that index, or after the last
+    # where the last token is `-` or the list's length; the whole value where
+    # `path` is `""`.
+    add
+        # Where the value goes.
+        path: str
+        # The value added.
+        value: json.Value
+    # Takes out the value at `path`, which must be there.
+    remove
+        # The value taken out.
+        path: str
+    # Puts `value` in place of the value at `path`, which must be there.
+    replace
+        # The value replaced.
+        path: str
+        # The value put in its place.
+        value: json.Value
+    # Takes out the value at `from` and adds it at `path`, which may not lie
+    # inside `from`.
+    move
+        # The value moved.
+        from: str
+        # Where it goes, read after it is taken out.
+        path: str
+    # Adds at `path` a copy of the value at `from`.
+    copy
+        # The value copied.
+        from: str
+        # Where the copy goes.
+        path: str
+    # Fails unless the value at `path` equals `value` as JSON compares: the
+    # RFC's `test`, a word the language keeps for itself.
+    test_value
+        # The value compared.
+        path: str
+        # The value it must equal: numbers by value, objects whatever the
+        # order of their members.
+        value: json.Value
+
+## A patch as JSON
+
+# The patch the JSON text `text` writes: a list of objects, each with its `op`.
+#
+# - `text`: the patch as JSON, read by `json.parse`.
+#
+# Fails `invalid` where `text` is not JSON, with `json.parse`'s message, or
+# is not a patch, as `from_value` says.
+function parse(text: str) -> [Operation]?
+    return from_value(json.parse(text)?)
+
+# The patch the value `v` holds.
+#
+# - `v`: a list of objects, each with an `op` of the six and the members that
+#   operation names: `path`, then `value` or `from`. Other members are not
+#   read, as RFC 6902 § 4 asks.
+#
+# Fails `invalid` where `v` is not a list, an element is not an object, an
+# `op` is missing or names no operation, a member an operation needs is
+# missing or is not a text, or a path is not a JSON pointer; the message names
+# the element by its index.
+function from_value(v: json.Value) -> [Operation]?
+    read = kinds.read(v)?
+    out: [Operation] @= []
+
+    for op in read
+        operation: Operation = if op.kind == kinds.ADD
+            .add(path: op.path, value: op.value)
+        else if op.kind == kinds.REMOVE
+            .remove(path: op.path)
+        else if op.kind == kinds.REPLACE
+            .replace(path: op.path, value: op.value)
+        else if op.kind == kinds.MOVE
+            .move(from: op.from, path: op.path)
+        else if op.kind == kinds.COPY
+            .copy(from: op.from, path: op.path)
+        else
+            .test_value(path: op.path, value: op.value)
+        out @ out.push(operation)
+
+    return ok(out)
+
+# The patch `operations` as a value: a list of objects, each with `op`,
+# `path`, and `value` or `from`, in that order.
+#
+# - `operations`: the patch, in order; none gives an empty list.
+function to_value(operations: [Operation]) -> json.Value
+    out: [kinds.Op] @= []
+
+    for operation in operations
+        op = match operation
+            .add a        => kinds.Op(kind: kinds.ADD, path: a.path, from: "", value: a.value)
+            .remove r     => kinds.Op(kind: kinds.REMOVE, path: r.path, from: "", value: .null_value)
+            .replace r    => kinds.Op(kind: kinds.REPLACE, path: r.path, from: "", value: r.value)
+            .move m       => kinds.Op(kind: kinds.MOVE, path: m.path, from: m.from, value: .null_value)
+            .copy c       => kinds.Op(kind: kinds.COPY, path: c.path, from: c.from, value: .null_value)
+            .test_value t => kinds.Op(kind: kinds.TEST, path: t.path, from: "", value: t.value)
+
+        out @ out.push(op)
+
+    return kinds.write(out)
+
+# The patch `operations` as JSON on one line, as `json.format` writes it.
+#
+# - `operations`: the patch, in order.
+#
+# Fails `invalid` where a value holds a `nan` or an infinity, which no JSON
+# says.
+function format(operations: [Operation]) -> str?
+    return json.format(to_value(operations))
+
+## Applying a patch
+
+# What RFC 6902 refuses, done because the caller asks. `strict` answers the
+# RFC; Go's `evanphx/json-patch` offers the three fields.
+record ApplyOptions
+    # Whether an index below 0 counts from a list's end, `-1` naming the last
+    # element; refused, it fails `invalid`.
+    negative_indices: bool
+    # Whether a `remove` of a path that names nothing does nothing instead of
+    # failing `not_found`.
+    missing_remove: bool
+    # Whether an `add` makes the objects its path names and finds missing,
+    # instead of failing `not_found`.
+    create_parents: bool
+
+# The options of RFC 6902 and nothing wider: every field `false`.
+function strict() -> ApplyOptions
+    return ApplyOptions(negative_indices: false, missing_remove: false, create_parents: false)
+
+# `doc` with every operation of `operations` applied in order, or a failure
+# and no change at all.
+#
+# - `doc`: the value patched; the caller's own is never changed.
+# - `operations`: the patch, in order; none answers `doc`.
+#
+# Fails `not_found` where a path or a `from` names nothing (an index past the
+# end of a list included), `invalid` where a `test` finds another value, where
+# a token that meets a list is not an index, where a path goes on past a
+# value that holds nothing, where a `move` would put a value inside itself, or
+# where an index has a leading zero. Each message names the operation by its
+# index and says what was there.
+#
+# Each operation copies the containers its path walks through, not the whole
+# value, since a value shares what a change leaves alone.
+function apply(doc: json.Value, operations: [Operation]) -> json.Value?
+    return apply_with(doc, operations, strict())
+
+# `doc` with every operation of `operations` applied in order, read as
+# `options` say, or a failure and no change at all.
+#
+# - `doc`: the value patched.
+# - `operations`: the patch, in order.
+# - `options`: what RFC 6902 refuses and is done all the same; `strict()`
+#   reads the RFC.
+#
+# Fails as `apply` does, but where `options` ask otherwise.
+function apply_with(doc: json.Value, operations: [Operation], options: ApplyOptions) -> json.Value?
+    loose = applying.Loose(
+        negative_indices: options.negative_indices,
+        missing_remove: options.missing_remove,
+        create_parents: options.create_parents
+    )
+
+    # The face's operations reach the package's modules as the value they
+    # write, which they read back without fail.
+    return applying.run(doc, operations: kinds.read(to_value(operations)).must(), loose: loose)
+
+## Making a patch
+
+# A patch that turns `from` into `to`: `apply(from, diff(from, to))` equals
+# `to`.
+#
+# - `from`: the value the patch starts from.
+# - `to`: the value it makes.
+#
+# Equal values give no operation. Members are added, removed and changed by
+# name; a list keeps the elements it shares at its start and its end, and its
+# middle is changed element by element, then grown or cut. A value of another
+# kind is replaced whole.
+function diff(from: json.Value, to: json.Value) -> [Operation]
+    return from_value(kinds.write(diffing.make(from: from, to: to, tests: false))).must()
+
+# The patch `diff` makes, with a `test_value` of the old value before each
+# `remove` and `replace`, so that it fails on a value that changed since.
+#
+# - `from`: the value the patch starts from.
+# - `to`: the value it makes.
+function diff_with_tests(from: json.Value, to: json.Value) -> [Operation]
+    return from_value(kinds.write(diffing.make(from: from, to: to, tests: true))).must()
+
+## Merge patches
+
+# `doc` with the merge patch `changes` applied, RFC 7386 § 2.
+#
+# - `doc`: the value changed.
+# - `changes`: an object names the members to change, `null` the ones to take
+#   out, and an object inside it changes the member's object in turn; any
+#   other value replaces `doc` whole.
+#
+# It never fails: every value is a merge patch of some document. An array is
+# replaced, never merged, as the RFC says.
+function merge(doc: json.Value, changes: json.Value) -> json.Value
+    return merging.apply(doc: doc, changes: changes)
+
+# The merge patch that turns `from` into `to`: `merge(from, merge_diff(from,
+# to))` equals `to`.
+#
+# - `from`: the value the patch starts from.
+# - `to`: the value it makes.
+#
+# Fails `unsupported` where `to` holds a `null` that `from` does not hold at
+# the same place, inside objects all the way down, since a `null` in a merge
+# patch takes a member out. Equal values give `{}`.
+function merge_diff(from: json.Value, to: json.Value) -> json.Value?
+    return merging.diff(from: from, to: to)
+
+# One merge patch that does what `first` then `then` do: `merge(merge(doc,
+# first), then)` equals `merge(doc, compose_merges(first, then))` for every
+# `doc`.
+#
+# - `first`: the merge patch applied first.
+# - `then`: the merge patch applied after it.
+#
+# Fails `unsupported` where `then` merges an object into a place `first` sets
+# to `null` or to another kind, since one merge patch cannot say "replace this
+# object whole".
+function compose_merges(first: json.Value, then: json.Value) -> json.Value?
+    return merging.compose(first: first, then: then)
+
+## Tests
+
+test "examples: RFC 6902's and RFC 7386's, and the json-patch-tests suite's, from its commit"
+    assert examples.VERSION == "2a928f90"
+
+## Examples
+
+# A patch read from JSON and applied.
+test "parse: the first example of RFC 6902"
+    ops = parse("[{\"op\": \"add\", \"path\": \"/baz\", \"value\": \"qux\"}]").must()
+    assert ops == [.add(path: "/baz", value: .text(v: "qux"))]
+
+# A patch made of values and read back.
+test "from_value: one remove"
+    v = json.parse("[{\"op\": \"remove\", \"path\": \"/a\"}]").must()
+    assert from_value(v).must() == [.remove(path: "/a")]
+
+# A patch as a value.
+test "to_value: a move"
+    assert json.format(to_value([.move(from: "/a", path: "/b")])).must() == "[{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"}]"
+
+# A patch written as JSON.
+test "format: a test and a replace"
+    ops: [Operation] = [.test_value(path: "/n", value: .number(v: 1.0)), .replace(path: "/n", value: .number(v: 2.0))]
+    assert format(ops).must() == "[{\"op\":\"test\",\"path\":\"/n\",\"value\":1},{\"op\":\"replace\",\"path\":\"/n\",\"value\":2}]"
+
+# The options of the RFC.
+test "strict: nothing loosened"
+    assert !strict().negative_indices && !strict().create_parents
+
+# A member added to an object.
+test "apply: RFC 6902's add of a member"
+    doc = json.parse("{\"foo\": \"bar\"}").must()
+    done = apply(doc, [.add(path: "/baz", value: .text(v: "qux"))]).must()
+    assert json.format(done).must() == "{\"foo\":\"bar\",\"baz\":\"qux\"}"
+
+# The last element taken out by a negative index, as Go's library allows.
+test "apply_with: a negative index"
+    loose: ApplyOptions @= strict()
+    loose.negative_indices @ true
+    done = apply_with(json.parse("[1, 2, 3]").must(), [.remove(path: "/-1")], loose).must()
+    assert json.format(done).must() == "[1,2]"
+
+# The patch between two documents.
+test "diff: one member changed"
+    from = json.parse("{\"a\": 1, \"b\": 2}").must()
+    to = json.parse("{\"a\": 1, \"b\": 3}").must()
+    assert diff(from: from, to: to) == [.replace(path: "/b", value: .number(v: 3.0))]
+
+# A patch that checks the old value first.
+test "diff_with_tests: a test before the replace"
+    ops = diff_with_tests(from: json.parse("[1]").must(), to: json.parse("[2]").must())
+    assert ops == [.test_value(path: "/0", value: .number(v: 1.0)), .replace(path: "/0", value: .number(v: 2.0))]
+
+# A merge patch applied: one member changed, one taken out.
+test "merge: RFC 7386's first example"
+    doc = json.parse("{\"a\": \"b\", \"c\": {\"d\": \"e\", \"f\": \"g\"}}").must()
+    done = merge(doc: doc, changes: json.parse("{\"a\": \"z\", \"c\": {\"f\": null}}").must())
+    assert json.format(done).must() == "{\"a\":\"z\",\"c\":{\"d\":\"e\"}}"
+
+# The merge patch between two documents.
+test "merge_diff: a member changed and one taken out"
+    from = json.parse("{\"a\": 1, \"b\": 2}").must()
+    to = json.parse("{\"a\": 3}").must()
+    assert json.format(merge_diff(from: from, to: to).must()).must() == "{\"a\":3,\"b\":null}"
+
+# Two merge patches made one.
+test "compose_merges: a member set, then another taken out"
+    first = json.parse("{\"a\": 1}").must()
+    then = json.parse("{\"b\": null}").must()
+    assert json.format(compose_merges(first: first, then: then).must()).must() == "{\"a\":1,\"b\":null}"

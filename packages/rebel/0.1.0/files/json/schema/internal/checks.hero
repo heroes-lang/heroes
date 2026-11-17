@@ -1,0 +1,394 @@
+# The assertions of one schema on one instance: every keyword that looks at
+# the instance alone and at no subschema, `type` to `dependentRequired`,
+# `format` where it is asserted and the `content` keywords where they are.
+# Each problem names its keyword and says what was asked and what was found.
+
+use bytes
+use json
+use json/schema/internal/formats
+use json/schema/internal/model
+use json/schema/internal/same
+use json/schema/internal/table
+use numbers
+use regex
+use unicode
+
+# One keyword that fails, and why.
+record Problem
+    # The keyword.
+    keyword: str
+    # What it asks and what the instance holds instead.
+    message: str
+
+# `v` as a message shows it: its JSON, cut to sixty bytes or so.
+function shown(v: json.Value) -> str
+    text = json.format(v).default("a value no JSON writes")
+
+    if text.len() <= 60
+        return text
+    end: i64 @= 57
+
+    while end > 0 && !unicode.is_char_boundary(text, index: end)
+        end @ end - 1
+
+    return text.slice(from: 0, to: end) + "..."
+
+# The name JSON Schema gives the kind of `v`, with its article.
+function kind_named(v: json.Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "a boolean"
+        .number _   => "a number"
+        .text _     => "a string"
+        .list _     => "an array"
+        .object _   => "an object"
+
+# Whether `v` is of the type `name`: an integer is a number with no fraction.
+function is_type(v: json.Value, name: str) -> bool
+    match v
+        .null_value => return name == "null"
+        .boolean _  => return name == "boolean"
+        .number x =>
+            if name == "number"
+                return true
+            return name == "integer" && x.v - x.v == 0.0 && (x.v >= 9007199254740992.0 || x.v <= -9007199254740992.0 || x.v == to_f64(x.v.to_i64().must()))
+        .text _   => return name == "string"
+        .list _   => return name == "array"
+        .object _ => return name == "object"
+
+# A finite number as an integer and a power of ten: its value is
+# `digits * 10^exponent`, `digits` holding no trailing zero.
+record Decimal
+    # The digits, as one integer.
+    digits: i64
+    # The power of ten.
+    exponent: i64
+
+# `x`, finite and not 0, in the fewest digits that read back as it.
+function decimal_of(x: f64) -> Decimal
+    size = if x < 0.0
+        0.0 - x
+    else
+        x
+    text = numbers.format_float_exp_shortest(size)
+    digits: i64 @= 0
+    count: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len() && text[at] != 'e'
+        if text[at] != '.'
+            digits @ digits * 10 + to_i64(text[at] - '0').must()
+            count @ count + 1
+        at @ at + 1
+
+    exponent = numbers.parse_int(text.slice(from: at + 1, to: text.len())).must() - (count - 1)
+    power: i64 @= exponent
+
+    while digits % 10 == 0 && digits != 0
+        digits @ digits / 10
+        power @ power + 1
+
+    return Decimal(digits: digits, exponent: power)
+
+# How many times `factor` divides `n`, and what is left.
+record Factored
+    # The times.
+    times: i64
+    # `n` divided by `factor` that many times.
+    rest: i64
+
+# `n` with every `factor` taken out of it.
+function factored(n: i64, factor: i64) -> Factored
+    times: i64 @= 0
+    rest: i64 @= n
+
+    while rest != 0 && rest % factor == 0
+        rest @ rest / factor
+        times @ times + 1
+
+    return Factored(times: times, rest: rest)
+
+# Whether `x` is a whole multiple of `m`, in decimal arithmetic, so that
+# 0.0075 is one of 0.0001 though the `f64`s say otherwise.
+function is_multiple(x: f64, m: f64) -> bool
+    if x == 0.0
+        return true
+
+    if x - x != 0.0
+        return false
+    a = decimal_of(x)
+    b = decimal_of(m)
+    k = a.exponent - b.exponent
+    a2 = factored(n: a.digits, factor: 2)
+    a5 = factored(n: a2.rest, factor: 5)
+    b2 = factored(n: b.digits, factor: 2)
+    b5 = factored(n: b2.rest, factor: 5)
+    return b2.times <= a2.times + k && b5.times <= a5.times + k && a.digits % b5.rest == 0
+
+# The problems of the keywords of `n` that read numbers, on `x`.
+function numeric(@out: [Problem], t: model.Table, n: i64, x: f64)
+    multiple = table.member(t, n: n, name: "multipleOf")
+
+    if multiple >= 0 && !is_multiple(x: x, m: table.number_of(t, n: multiple))
+        out @ out.push(
+            Problem(keyword: "multipleOf", message: f"{shown(.number(v: x))} is no multiple of {shown(t.values[multiple])}")
+        )
+    bounds = ["maximum", "exclusiveMaximum", "minimum", "exclusiveMinimum"]
+    words = [
+        "above the maximum"
+        "not below the exclusive maximum"
+        "below the minimum"
+        "not above the exclusive minimum"
+    ]
+
+    for at in range(from: 0, to: 4)
+        k = table.member(t, n: n, name: bounds[at])
+
+        if k >= 0
+            limit = table.number_of(t, n: k)
+
+            wrong = if at == 0
+                x > limit
+            else if at == 1
+                x >= limit
+            else if at == 2
+                x < limit
+            else
+                x <= limit
+
+            if wrong
+                out @ out.push(
+                    Problem(keyword: bounds[at], message: f"{shown(.number(v: x))}, {words[at]} {shown(t.values[k])}")
+                )
+
+# The count node `name` of `n` holds, or -1 where it has none.
+function count_of(t: model.Table, n: i64, name: str) -> i64
+    k = table.member(t, n: n, name: name)
+
+    if k < 0
+        return -1
+    x = table.number_of(t, n: k)
+
+    if x > 9000000000000000000.0
+        return 9000000000000000000
+    return x.to_i64().must()
+
+# Adds to `out` the problems of a `max` and a `min` of one count: `found` of
+# `unit`, against the counts `n` writes.
+function counted(@out: [Problem], t: model.Table, n: i64, found: i64, max: str, min: str, unit: str)
+    most = count_of(t, n: n, name: max)
+
+    if most >= 0 && found > most
+        out @ out.push(Problem(keyword: max, message: f"{found} {unit}, more than the {most} allowed"))
+    least = count_of(t, n: n, name: min)
+
+    if least >= 0 && found < least
+        out @ out.push(Problem(keyword: min, message: f"{found} {unit}, fewer than the {least} asked"))
+
+# The problems of `uniqueItems` on `items`.
+function unique(@out: [Problem], items: [json.Value])
+    seen: {str: i64} @= {}
+
+    for at in range(from: 0, to: items.len())
+        match json.format_canonical(items[at])
+            .ok text =>
+                match seen[text]
+                    .ok first =>
+                        out @ out.push(
+                            Problem(keyword: "uniqueItems", message: f"the elements at {first} and {at} are equal")
+                        )
+                        return
+                    .err _ => seen[text] @ at
+            .err _ =>
+                for before in range(from: 0, to: at)
+                    if same.equal(a: items[before], b: items[at])
+                        out @ out.push(
+                            Problem(keyword: "uniqueItems", message: f"the elements at {before} and {at} are equal")
+                        )
+                        return
+
+# The names of the list node `k`, in order.
+function names_of(t: model.Table, k: i64) -> [str]
+    out: [str] @= []
+
+    for at in range(from: 0, to: t.counts[k])
+        out @ out.push(table.text_of(t, n: table.child(t, n: k, at: at)))
+
+    return out
+
+# Whether the format `name` asserts `s`: a format of the program's own first,
+# then the dialects', and an unknown format asserts nothing.
+function formatted(settings: model.Settings, name: str, s: str) -> bool
+    for custom in settings.custom
+        if custom.name == name
+            return custom.check(s)
+
+    return formats.check(text: s, format: name).default(true)
+
+# Every problem of the schema `n` on `v` that needs no subschema.
+function problems(c: model.Compiled, n: i64, v: json.Value) -> [Problem]
+    t = c.table
+    out: [Problem] @= []
+    dialect = c.scan.dialects[n]
+    vocab = c.scan.vocabularies[n]
+
+    if dialect == model.DRAFT_7 || vocab & model.VALIDATION != 0
+        kind = table.member(t, n: n, name: "type")
+
+        if kind >= 0
+            names = if t.kinds[kind] == model.TEXT_KIND
+                [table.text_of(t, n: kind)]
+            else
+                names_of(t, k: kind)
+            fits: bool @= false
+
+            for name in names
+                if is_type(v, name: name)
+                    fits @ true
+
+            if !fits
+                asked = if names.len() == 1
+                    names[0]
+                else
+                    "one of " + names.join(", ")
+                out @ out.push(Problem(keyword: "type", message: f"{kind_named(v)}, where the type is {asked}"))
+        listed = table.member(t, n: n, name: "enum")
+
+        if listed >= 0
+            found: bool @= false
+
+            for at in range(from: 0, to: t.counts[listed])
+                if !found && same.equal(a: v, b: t.values[table.child(t, n: listed, at: at)])
+                    found @ true
+
+            if !found
+                out @ out.push(
+                    Problem(keyword: "enum", message: f"{shown(v)}, which is none of the {t.counts[listed]} values enum allows")
+                )
+        fixed = table.member(t, n: n, name: "const")
+
+        if fixed >= 0 && !same.equal(a: v, b: t.values[fixed])
+            out @ out.push(Problem(keyword: "const", message: f"{shown(v)}, where const asks {shown(t.values[fixed])}"))
+
+        match v
+            .number x => numeric(out: @out, t: t, n: n, x: x.v)
+            .text s =>
+                counted(
+                    out: @out,
+                    t: t,
+                    n: n,
+                    found: unicode.char_count(s.v),
+                    max: "maxLength",
+                    min: "minLength",
+                    unit: "characters"
+                )
+                pattern = table.member(t, n: n, name: "pattern")
+
+                if pattern >= 0
+                    text = table.text_of(t, n: pattern)
+
+                    if !regex.contains(s.v, c.patterns[text].must())
+                        out @ out.push(
+                            Problem(keyword: "pattern", message: f"{shown(v)} does not match the pattern {text}")
+                        )
+            .list l =>
+                counted(out: @out, t: t, n: n, found: l.items.len(), max: "maxItems", min: "minItems", unit: "elements")
+                distinct = table.member(t, n: n, name: "uniqueItems")
+
+                if distinct >= 0 && json.bool_of(t.values[distinct]).default(false)
+                    unique(out: @out, items: l.items)
+            .object o =>
+                counted(
+                    out: @out,
+                    t: t,
+                    n: n,
+                    found: keys(o.members).len(),
+                    max: "maxProperties",
+                    min: "minProperties",
+                    unit: "members"
+                )
+                required = table.member(t, n: n, name: "required")
+
+                if required >= 0
+                    for name in names_of(t, k: required)
+                        if o.members[name].is_err()
+                            out @ out.push(
+                                Problem(keyword: "required", message: f"no member \"{name}\", which is required")
+                            )
+
+                needs = if dialect == model.DRAFT_7
+                    table.member(t, n: n, name: "dependencies")
+                else
+                    table.member(t, n: n, name: "dependentRequired")
+
+                if needs >= 0
+                    for at in range(from: 0, to: t.counts[needs])
+                        k = table.child(t, n: needs, at: at)
+
+                        if t.kinds[k] == model.LIST_KIND && !o.members[t.keys[k]].is_err()
+                            for name in names_of(t, k: k)
+                                if o.members[name].is_err()
+                                    word = if dialect == model.DRAFT_7
+                                        "dependencies"
+                                    else
+                                        "dependentRequired"
+                                    out @ out.push(
+                                        Problem(keyword: word, message: f"no member \"{name}\", which the member \"{t.keys[k]}\" requires")
+                                    )
+            .null_value | .boolean _ => _ = 0
+    format = table.member(t, n: n, name: "format")
+    asserted = c.settings.formats || dialect == model.DRAFT_2020 && vocab & model.FORMAT_ASSERTION != 0
+
+    if format >= 0 && asserted
+        match v
+            .text s =>
+                name = table.text_of(t, n: format)
+
+                if !formatted(c.settings, name: name, s: s.v)
+                    out @ out.push(Problem(keyword: "format", message: f"{shown(v)} is not of the format {name}"))
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+
+    if c.settings.content && (dialect == model.DRAFT_7 || vocab & model.CONTENT != 0)
+        match v
+            .text s =>
+                decoded: str @= s.v
+                encoding = table.member(t, n: n, name: "contentEncoding")
+
+                if encoding >= 0 && table.text_of(t, n: encoding) == "base64"
+                    match bytes.parse_base64(s.v)
+                        .err _ =>
+                            out @ out.push(Problem(keyword: "contentEncoding", message: f"{shown(v)} is not base64"))
+                            decoded @ ""
+                        .ok raw => decoded @ raw.validated_bytes().default("")
+                media = table.member(t, n: n, name: "contentMediaType")
+
+                if media >= 0 && table.text_of(t, n: media) == "application/json" && out.len() == 0 && json.parse(decoded).is_err()
+                    out @ out.push(Problem(keyword: "contentMediaType", message: f"{shown(v)} is not JSON"))
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+    return out
+
+## Tests
+
+# The number `text` writes in JSON, where the language writes no exponent.
+function number_of(text: str) -> f64
+    return json.number_of(json.parse(text).must()).must()
+
+test "is_type: integers with and without a fraction, and every other type"
+    assert is_type(.number(v: 1.0), name: "integer") && !is_type(.number(v: 1.5), name: "integer")
+    assert is_type(.number(v: number_of("1e300")), name: "integer") && is_type(.number(v: 1.5), name: "number")
+    assert is_type(.null_value, name: "null") && !is_type(.null_value, name: "object")
+    assert is_type(.text(v: ""), name: "string") && is_type(.list(items: []), name: "array")
+
+test "is_multiple: decimals as the suite writes them, integers, and past an f64's integers"
+    assert is_multiple(x: 0.0075, m: 0.0001) && !is_multiple(x: 0.00751, m: 0.0001)
+    assert is_multiple(x: 4.5, m: 1.5) && !is_multiple(x: 35.0, m: 1.5)
+    assert is_multiple(x: 10.0, m: 2.0) && !is_multiple(x: 7.0, m: 2.0)
+    assert !is_multiple(x: number_of("1e308"), m: 0.123456789)
+    assert is_multiple(x: 12391239123.0, m: number_of("1e-8"))
+    assert is_multiple(x: -3.0, m: 1.5) && is_multiple(x: 0.0, m: 7.0)
+    assert is_multiple(x: 19.99, m: 0.01)
+
+test "shown: a short value whole, a long one cut at a character"
+    assert shown(.text(v: "a")) == "\"a\""
+    long = shown(.text(v: repeat("é", 50)))
+    assert long.len() <= 60 && long.slice(from: long.len() - 3, to: long.len()) == "..."

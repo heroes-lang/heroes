@@ -1,0 +1,489 @@
+# IDNA2008: Punycode (RFC 3492) read and written, a U-label held to RFC
+# 5891's rules and RFC 5892's code points and contextual rules, an A-label
+# to the U-label it decodes to, and a name of such labels to RFC 5893's Bidi
+# rule. No mapping of UTS 46 is made: a label is taken as it is written, so a
+# fullwidth character or a zero width space is refused, not mapped.
+
+use json/schema/internal/idna_tables as tables
+use unicode
+
+# Whether `cp` stands in `ranges`, pairs of a first and a last code point in
+# ascending order.
+function within(ranges: [i64], cp: i64) -> bool
+    low: i64 @= 0
+    high: i64 @= ranges.len() / 2
+
+    while low < high
+        middle = (low + high) / 2
+
+        if ranges[middle * 2 + 1] < cp
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low < ranges.len() / 2 && ranges[low * 2] <= cp
+
+# The value of a Punycode digit, or -1 where `b` is none.
+function digit_value(b: u8) -> i64
+    if b >= 'a' && b <= 'z'
+        return to_i64(b - 'a').must()
+
+    if b >= 'A' && b <= 'Z'
+        return to_i64(b - 'A').must()
+
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must() + 26
+    return -1
+
+# The bias RFC 3492 § 6.1 adapts after each code point.
+function adapt(delta: i64, count: i64, first: bool) -> i64
+    d: i64 @= if first
+        delta / 700
+    else
+        delta / 2
+    d @ d + d / count
+    k: i64 @= 0
+
+    while d > 455
+        d @ d / 35
+        k @ k + 36
+
+    return k + 36 * d / (d + 38)
+
+# The code points the Punycode `body` decodes to, RFC 3492 § 6.2, or none
+# where it is no Punycode.
+function decode(body: str) -> [i64]?
+    out: [i64] @= []
+    last_dash: i64 @= -1
+
+    for at in range(from: 0, to: body.len())
+        if body[at] == '-'
+            last_dash @ at
+
+    if last_dash > 0
+        for at in range(from: 0, to: last_dash)
+            if body[at] >= 0x80
+                return fail(code: "invalid", msg: "a basic code point past ASCII")
+            out @ out.push(to_i64(body[at]).must())
+
+    at: i64 @= if last_dash > 0
+        last_dash + 1
+    else
+        0
+    n: i64 @= 128
+    i: i64 @= 0
+    bias: i64 @= 72
+
+    while at < body.len()
+        old = i
+        w: i64 @= 1
+        k: i64 @= 36
+
+        while true
+            if at >= body.len()
+                return fail(code: "invalid", msg: "Punycode that ends inside a number")
+            digit = digit_value(body[at])
+            at @ at + 1
+
+            if digit < 0 || digit > (0x7fffffff - i) / w
+                return fail(code: "invalid", msg: "no Punycode digit, or a number past what it writes")
+            i @ i + digit * w
+
+            t = if k <= bias
+                1
+            else if k >= bias + 26
+                26
+            else
+                k - bias
+
+            if digit < t
+                break
+            w @ w * (36 - t)
+            k @ k + 36
+
+        count = out.len() + 1
+        bias @ adapt(delta: i - old, count: count, first: old == 0)
+        n @ n + i / count
+        i @ i % count
+
+        if n > 0x10ffff || n >= 0xd800 && n <= 0xdfff
+            return fail(code: "invalid", msg: "a code point no text holds")
+        inserted: [i64] @= []
+
+        for j in range(from: 0, to: out.len())
+            if j == i
+                inserted @ inserted.push(n)
+            inserted @ inserted.push(out[j])
+
+        if i == out.len()
+            inserted @ inserted.push(n)
+        out @ inserted
+        i @ i + 1
+
+    return ok(out)
+
+# The Punycode digit of value `d`, in lower case.
+function digit_of(d: i64) -> str
+    letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+    return letters.slice(from: d, to: d + 1)
+
+# `points` written in Punycode, RFC 3492 § 6.3, in lower case.
+function encode(points: [i64]) -> str
+    pieces: [str] @= []
+    basic: i64 @= 0
+
+    for p in points
+        if p < 0x80
+            pieces @ pieces.push(unicode.from_code_point(p).must())
+            basic @ basic + 1
+
+    if basic > 0
+        pieces @ pieces.push("-")
+    n: i64 @= 128
+    delta: i64 @= 0
+    bias: i64 @= 72
+    handled: i64 @= basic
+
+    while handled < points.len()
+        m: i64 @= 0x10ffff + 1
+
+        for p in points
+            if p >= n && p < m
+                m @ p
+
+        delta @ delta + (m - n) * (handled + 1)
+        n @ m
+
+        for p in points
+            if p < n
+                delta @ delta + 1
+
+            if p == n
+                q: i64 @= delta
+                k: i64 @= 36
+
+                while true
+                    t = if k <= bias
+                        1
+                    else if k >= bias + 26
+                        26
+                    else
+                        k - bias
+
+                    if q < t
+                        break
+                    pieces @ pieces.push(digit_of(t + (q - t) % (36 - t)))
+                    q @ (q - t) / (36 - t)
+                    k @ k + 36
+
+                pieces @ pieces.push(digit_of(q))
+                bias @ adapt(delta: delta, count: handled + 1, first: handled == basic)
+                delta @ 0
+                handled @ handled + 1
+
+        delta @ delta + 1
+        n @ n + 1
+
+    return pieces.join("")
+
+# Whether `cp` is a combining mark, whose category begins with `M`.
+function is_mark(cp: i64) -> bool
+    c = unicode.from_code_point(cp).default("a")
+    return unicode.category(c)[0] == 'M'
+
+# Whether the contextual rule of RFC 5892's Appendix A allows `points[at]`.
+function context_allows(points: [i64], at: i64) -> bool
+    cp = points[at]
+
+    before = if at > 0
+        points[at - 1]
+    else
+        -1
+
+    after = if at + 1 < points.len()
+        points[at + 1]
+    else
+        -1
+
+    if cp == 0x200d
+        return before >= 0 && within(tables.VIRAMAS, cp: before)
+
+    if cp == 0x200c
+        if before >= 0 && within(tables.VIRAMAS, cp: before)
+            return true
+
+        # (L|D) T* ZWNJ T* (R|D)
+        left: i64 @= at - 1
+
+        while left >= 0 && within(tables.JOINING_TRANSPARENT, cp: points[left])
+            left @ left - 1
+
+        right: i64 @= at + 1
+
+        while right < points.len() && within(tables.JOINING_TRANSPARENT, cp: points[right])
+            right @ right + 1
+
+        joins_left = left >= 0 && (within(tables.JOINING_LEFT, cp: points[left]) || within(tables.JOINING_DUAL, cp: points[left]))
+        joins_right = right < points.len() && (within(tables.JOINING_RIGHT, cp: points[right]) || within(tables.JOINING_DUAL, cp: points[right]))
+        return joins_left && joins_right
+
+    if cp == 0xb7
+        return before == 0x6c && after == 0x6c
+
+    if cp == 0x375
+        return after >= 0 && within(tables.SCRIPT_GREEK, cp: after)
+
+    if cp == 0x5f3 || cp == 0x5f4
+        return before >= 0 && within(tables.SCRIPT_HEBREW, cp: before)
+
+    if cp == 0x30fb
+        for p in points
+            if p != 0x30fb && (within(tables.SCRIPT_HIRAGANA, cp: p) || within(tables.SCRIPT_KATAKANA, cp: p) || within(tables.SCRIPT_HAN, cp: p))
+                return true
+
+        return false
+
+    if cp >= 0x660 && cp <= 0x669
+        for p in points
+            if p >= 0x6f0 && p <= 0x6f9
+                return false
+
+        return true
+
+    if cp >= 0x6f0 && cp <= 0x6f9
+        for p in points
+            if p >= 0x660 && p <= 0x669
+                return false
+
+        return true
+    return false
+
+# Whether `points` is a U-label IDNA2008 allows, its Bidi rule aside: no
+# hyphen at either end or in the third and fourth places, no combining mark
+# first, and every code point PVALID or allowed by its contextual rule.
+function is_u_label(points: [i64]) -> bool
+    if points.len() == 0 || points[0] == '-' || points[points.len() - 1] == '-'
+        return false
+
+    if points.len() >= 4 && points[2] == '-' && points[3] == '-'
+        return false
+
+    if is_mark(points[0])
+        return false
+
+    for at in range(from: 0, to: points.len())
+        cp = points[at]
+        contextual = cp == 0x200c || cp == 0x200d || cp == 0xb7 || cp == 0x375 || cp == 0x5f3 || cp == 0x5f4 || cp == 0x30fb || cp >= 0x660 && cp <= 0x669 || cp >= 0x6f0 && cp <= 0x6f9
+
+        if contextual
+            if !context_allows(points, at: at)
+                return false
+        else if !within(tables.PVALID, cp: cp)
+            return false
+
+    return true
+
+# The bidirectional class of `cp` as the Bidi rule reads it.
+function bidi_of(cp: i64) -> str
+    if within(tables.BIDI_R, cp: cp)
+        return "R"
+
+    if within(tables.BIDI_AL, cp: cp)
+        return "AL"
+
+    if within(tables.BIDI_AN, cp: cp)
+        return "AN"
+
+    if within(tables.BIDI_EN, cp: cp)
+        return "EN"
+
+    if within(tables.BIDI_ES, cp: cp)
+        return "ES"
+
+    if within(tables.BIDI_CS, cp: cp)
+        return "CS"
+
+    if within(tables.BIDI_ET, cp: cp)
+        return "ET"
+
+    if within(tables.BIDI_ON, cp: cp)
+        return "ON"
+
+    if within(tables.BIDI_BN, cp: cp)
+        return "BN"
+
+    if within(tables.BIDI_NSM, cp: cp)
+        return "NSM"
+    return "L"
+
+# Whether a label holds a right-to-left character: R, AL or AN.
+function is_rtl(points: [i64]) -> bool
+    for p in points
+        b = bidi_of(p)
+
+        if b == "R" || b == "AL" || b == "AN"
+            return true
+
+    return false
+
+# Whether `points` keeps RFC 5893's Bidi rule.
+function keeps_bidi(points: [i64]) -> bool
+    if points.len() == 0
+        return false
+    first = bidi_of(points[0])
+
+    if first != "L" && first != "R" && first != "AL"
+        return false
+    rtl = first != "L"
+    end: i64 @= points.len() - 1
+
+    while end > 0 && bidi_of(points[end]) == "NSM"
+        end @ end - 1
+
+    last = bidi_of(points[end])
+    has_en: bool @= false
+    has_an: bool @= false
+
+    for p in points
+        b = bidi_of(p)
+
+        if rtl
+            if b == "L"
+                return false
+            has_en @ has_en || b == "EN"
+            has_an @ has_an || b == "AN"
+        else if b == "R" || b == "AL" || b == "AN"
+            return false
+
+    if rtl
+        return (last == "R" || last == "AL" || last == "EN" || last == "AN") && !(has_en && has_an)
+    return last == "L" || last == "EN"
+
+# The U-label the A-label `label` decodes to, or none where it is no A-label:
+# `xn--` in any case, Punycode that writes something past ASCII and that
+# reads back as itself.
+function decoded(label: str) -> [i64]?
+    if label.len() < 5 || label.len() > 63 || !(label[0] == 'x' || label[0] == 'X') || !(label[1] == 'n' || label[1] == 'N') || label[2] != '-' || label[3] != '-'
+        return fail(code: "invalid", msg: "no A-label")
+    body = label.slice(from: 4, to: label.len())
+    points = decode(body)?
+    past_ascii: bool @= false
+
+    for p in points
+        past_ascii @ past_ascii || p >= 0x80
+
+    if !past_ascii || encode(points) != lower_ascii(body)
+        return fail(code: "invalid", msg: "no A-label")
+    return ok(points)
+
+# `s` with its ASCII letters in lower case.
+function lower_ascii(s: str) -> str
+    pieces: [str] @= []
+
+    for c in s.chars()
+        if c[0] >= 'A' && c[0] <= 'Z'
+            pieces @ pieces.push([c[0] + 32].validated_bytes().must())
+        else
+            pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+# Whether `label` is an A-label IDNA2008 allows, its U-label keeping the Bidi
+# rule where it holds a right-to-left character.
+function is_a_label(label: str) -> bool
+    match decoded(label)
+        .err _     => return false
+        .ok points => return is_u_label(points) && (!is_rtl(points) || keeps_bidi(points))
+
+# Whether `s` is an internationalized host name by IDNA2008: labels between
+# dots or the ideographic, fullwidth and halfwidth full stops, none empty,
+# each an LDH label, an A-label or a U-label, at most 63 octets as an A-label
+# and 253 in all, and every label keeping the Bidi rule where one holds a
+# right-to-left character.
+function is_idn_hostname(s: str) -> bool
+    labels: [[i64]] @= []
+    current: [i64] @= []
+
+    for c in s.chars()
+        cp = unicode.code_point(c)
+
+        if cp == 0x2e || cp == 0x3002 || cp == 0xff0e || cp == 0xff61
+            labels @ labels.push(current)
+            current @ []
+        else
+            current @ current.push(cp)
+
+    labels @ labels.push(current)
+    total: i64 @= labels.len() - 1
+    any_rtl: bool @= false
+    words: [[i64]] @= []
+
+    for points in labels
+        if points.len() == 0
+            return false
+        ascii: bool @= true
+
+        for p in points
+            ascii @ ascii && p < 0x80
+
+        word: [i64] @= points
+
+        if ascii
+            text = unicode.from_code_points(points).must()
+
+            if text.len() >= 4 && text[2] == '-' && text[3] == '-'
+                match decoded(text)
+                    .err _    => return false
+                    .ok inner => word @ inner
+
+                if !is_u_label(word)
+                    return false
+            else
+                for p in points
+                    if !(p >= 'a' && p <= 'z' || p >= 'A' && p <= 'Z' || p >= '0' && p <= '9' || p == '-')
+                        return false
+
+                if points[0] == '-' || points[points.len() - 1] == '-' || points.len() > 63
+                    return false
+            total @ total + points.len()
+        else
+            if !is_u_label(points)
+                return false
+            octets = 4 + encode(points).len()
+
+            if octets > 63
+                return false
+            total @ total + octets
+        any_rtl @ any_rtl || is_rtl(word)
+        words @ words.push(word)
+
+    if total > 253
+        return false
+
+    if any_rtl
+        for word in words
+            if !keeps_bidi(word)
+                return false
+
+    return true
+
+## Tests
+
+test "decode and encode: RFC 3492's examples each way, and what is no Punycode"
+    assert decode("9n2bp8q").must() == [0xc2e4, 0xb840]
+    assert encode([0xc2e4, 0xb840]) == "9n2bp8q"
+    assert encode(unicode.code_points("bücher")) == "bcher-kva"
+    assert decode("bcher-kva").must() == unicode.code_points("bücher")
+    assert decode("X").is_err()
+
+test "is_a_label: the suite's A-labels, valid and not"
+    for label in ["xn--9n2bp8q", "xn--zca29lwxobi7a", "xn--qmbc", "xn--ll-0ea", "xn--wva3je", "xn--4dbc5h", "xn--k8j5u", "xn--ngba1o", "xn--0-gyc", "xn--11b2ezcw70k", "xn--11b2ezcs70k", "xn--ngba5hb2804a"]
+        assert is_a_label(label)
+
+    for label in ["xn--X", "xn--07jt112bpxg", "xn--hello-txk", "xn--hello-zed", "xn--chb89f", "xn--al-0ea", "xn--l-gda", "xn--wva3j", "xn--5db1e", "xn--vek", "xn--defabc-k64e", "xn--ngb6iyr", "xn--02b508i", "XN--aa---o47jg78q"]
+        assert !is_a_label(label)
+
+test "is_idn_hostname: U-labels, separators, and the Bidi rule"
+    assert is_idn_hostname("실례.테스트") && is_idn_hostname("a。b") && is_idn_hostname("hostname")
+    assert !is_idn_hostname("〮실례.테스트") && !is_idn_hostname("a.") && !is_idn_hostname("") && !is_idn_hostname("ex ample")
+    assert !is_idn_hostname("-abc") && !is_idn_hostname("ab--c")

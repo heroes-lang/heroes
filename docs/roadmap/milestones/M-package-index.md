@@ -34,3 +34,13 @@ packages, every golden of its interface unchanged, moved here from M-core-packag
 answer *(b)* on panel 250 (decision 2564), panel 242's R7 *"Feature 2315 waits for that package"*
 holding here: the parts it would replace (`git` and `curl` launched, the index read over HTTP) wait
 for core packages that hold them.
+
+**Decided 2026-11-17, by the author's choice among three** (on the question *after the package
+manager and the web framework, should we make a site that acts as the Heroes package
+repository?*): the index comes after M-rebel-packages-manager and is **written in Heroes with
+Rebel** (`web`, `http`, `sql/postgres`, `s3`, `oauth2`, `jose`, `semver`, `archive`, `crypto`,
+`metrics`, `tracing`), the first large public application the library carries; **its static
+half first**, the indexes as files a site serves, which panel 235 measured as a variant and which
+can be tried from a local folder, **then the service that publishes** (uploads, who holds a name,
+what a withdrawn version does). Rebel is the first package it publishes. Refused: a static index
+alone with publishing left to git and a request by hand, and leaving the row as it stood.

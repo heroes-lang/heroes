@@ -1,0 +1,249 @@
+# Each keyword a schema writes held to the form its dialect gives it, before
+# anything is validated: `"minimum": "1"` is a schema that is not one, told
+# when it is compiled with the keyword's place, never a value read wrong
+# later. A keyword of a vocabulary the schema's meta-schema leaves out is
+# not read, so it is not held to a form.
+
+use json
+use json/schema/internal/model
+use json/schema/internal/table
+
+# The code of a schema that is not one.
+constant INVALID: str
+    "invalid"
+
+# The names of the seven types JSON Schema names.
+function type_names() -> [str]
+    return ["array", "boolean", "integer", "null", "number", "object", "string"]
+
+# Whether node `n` is a number with no fraction, 0 or more.
+function is_count(t: model.Table, n: i64) -> bool
+    if t.kinds[n] != model.NUMBER_KIND
+        return false
+    x = table.number_of(t, n: n)
+    return x >= 0.0 && x - x == 0.0 && (x >= 9007199254740992.0 || x == to_f64(x.to_i64().must()))
+
+# Whether node `n` is a list of texts, each once.
+function is_names(t: model.Table, n: i64) -> bool
+    if t.kinds[n] != model.LIST_KIND
+        return false
+    seen: {str: bool} @= {}
+
+    for at in range(from: 0, to: t.counts[n])
+        item = table.child(t, n: n, at: at)
+
+        if t.kinds[item] != model.TEXT_KIND || seen[table.text_of(t, n: item)].default(false)
+            return false
+        seen[table.text_of(t, n: item)] @ true
+
+    return true
+
+# Whether node `n` is a type's name, or a list of them each once.
+function is_types(t: model.Table, n: i64) -> bool
+    if t.kinds[n] == model.TEXT_KIND
+        name = table.text_of(t, n: n)
+
+        for known in type_names()
+            if known == name
+                return true
+
+        return false
+
+    if !is_names(t, n: n) || t.counts[n] == 0
+        return false
+
+    for at in range(from: 0, to: t.counts[n])
+        if !is_types(t, n: table.child(t, n: n, at: at))
+            return false
+
+    return true
+
+# Whether node `n` is a schema: an object or a boolean.
+function is_schema(t: model.Table, n: i64) -> bool
+    return t.kinds[n] == model.OBJECT_KIND || t.kinds[n] == model.BOOLEAN_KIND
+
+# Whether node `n` is a list of schemas, at least one.
+function is_schemas(t: model.Table, n: i64) -> bool
+    if t.kinds[n] != model.LIST_KIND || t.counts[n] == 0
+        return false
+
+    for at in range(from: 0, to: t.counts[n])
+        if !is_schema(t, n: table.child(t, n: n, at: at))
+            return false
+
+    return true
+
+# Whether node `n` is an object whose every member is a schema.
+function is_schema_map(t: model.Table, n: i64) -> bool
+    if t.kinds[n] != model.OBJECT_KIND
+        return false
+
+    for at in range(from: 0, to: t.counts[n])
+        if !is_schema(t, n: table.child(t, n: n, at: at))
+            return false
+
+    return true
+
+# The failure of keyword `keyword` of the schema at `place`, whose value is
+# not `form`.
+function wrong(place: str, keyword: str, form: str) -> ()?
+    return fail(code: INVALID, msg: f"the schema at {place}: `{keyword}` is {form}")
+
+# Holds the keywords of the schema node `n`, read in `dialect` with the
+# vocabularies `vocab`, to their forms. Fails `invalid` at the first that is
+# not, the message naming the schema by `place`.
+function check(t: model.Table, n: i64, dialect: i64, vocab: i64, place: str) -> ()?
+    if !is_schema(t, n: n)
+        return fail(code: INVALID, msg: f"the schema at {place} is neither an object nor a boolean")
+
+    if t.kinds[n] != model.OBJECT_KIND
+        return ok()
+
+    for name in ["$id", "$schema", "$ref", "$anchor", "$dynamicAnchor", "$dynamicRef", "$comment"]
+        k = table.member(t, n: n, name: name)
+
+        if k >= 0 && t.kinds[k] != model.TEXT_KIND
+            return wrong(place: place, keyword: name, form: "a text")
+
+    if dialect == model.DRAFT_7 && table.has(t, n: n, name: "$ref")
+        return ok()
+    applicator = dialect == model.DRAFT_7 || vocab & model.APPLICATOR != 0
+
+    if applicator
+        for name in ["additionalProperties", "propertyNames", "not", "if", "then", "else", "contains"]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0 && !is_schema(t, n: k)
+                return wrong(place: place, keyword: name, form: "a schema")
+
+        for name in ["allOf", "anyOf", "oneOf"]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0 && !is_schemas(t, n: k)
+                return wrong(place: place, keyword: name, form: "a list of one schema or more")
+
+        for name in ["properties", "patternProperties"]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0 && !is_schema_map(t, n: k)
+                return wrong(place: place, keyword: name, form: "an object of schemas")
+
+        items = table.member(t, n: n, name: "items")
+
+        if dialect == model.DRAFT_7
+            if items >= 0 && !is_schema(t, n: items) && !is_schemas(t, n: items)
+                return wrong(place: place, keyword: "items", form: "a schema or a list of schemas")
+            more = table.member(t, n: n, name: "additionalItems")
+
+            if more >= 0 && !is_schema(t, n: more)
+                return wrong(place: place, keyword: "additionalItems", form: "a schema")
+            depends = table.member(t, n: n, name: "dependencies")
+
+            if depends >= 0
+                if t.kinds[depends] != model.OBJECT_KIND
+                    return wrong(place: place, keyword: "dependencies", form: "an object")
+
+                for at in range(from: 0, to: t.counts[depends])
+                    d = table.child(t, n: depends, at: at)
+
+                    if !is_schema(t, n: d) && !is_names(t, n: d)
+                        return wrong(
+                            place: place,
+                            keyword: "dependencies",
+                            form: "an object of schemas and lists of names"
+                        )
+        else
+            if items >= 0 && !is_schema(t, n: items)
+                return wrong(place: place, keyword: "items", form: "a schema")
+            prefix = table.member(t, n: n, name: "prefixItems")
+
+            if prefix >= 0 && !is_schemas(t, n: prefix)
+                return wrong(place: place, keyword: "prefixItems", form: "a list of one schema or more")
+            depends = table.member(t, n: n, name: "dependentSchemas")
+
+            if depends >= 0 && !is_schema_map(t, n: depends)
+                return wrong(place: place, keyword: "dependentSchemas", form: "an object of schemas")
+
+    if dialect == model.DRAFT_2020 && vocab & model.UNEVALUATED != 0
+        for name in ["unevaluatedItems", "unevaluatedProperties"]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0 && !is_schema(t, n: k)
+                return wrong(place: place, keyword: name, form: "a schema")
+
+    if dialect == model.DRAFT_7 || vocab & model.VALIDATION != 0
+        kind = table.member(t, n: n, name: "type")
+
+        if kind >= 0 && !is_types(t, n: kind)
+            return wrong(place: place, keyword: "type", form: "a type's name or a list of them, each once")
+        listed = table.member(t, n: n, name: "enum")
+
+        if listed >= 0 && t.kinds[listed] != model.LIST_KIND
+            return wrong(place: place, keyword: "enum", form: "a list")
+
+        for name in ["maximum", "exclusiveMaximum", "minimum", "exclusiveMinimum"]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0 && t.kinds[k] != model.NUMBER_KIND
+                return wrong(place: place, keyword: name, form: "a number")
+
+        multiple = table.member(t, n: n, name: "multipleOf")
+
+        if multiple >= 0 && (t.kinds[multiple] != model.NUMBER_KIND || table.number_of(t, n: multiple) <= 0.0)
+            return wrong(place: place, keyword: "multipleOf", form: "a number above 0")
+
+        for name in ["maxLength", "minLength", "maxItems", "minItems", "maxProperties", "minProperties", "maxContains", "minContains"]
+            k = table.member(t, n: n, name: name)
+
+            if k >= 0 && !is_count(t, n: k)
+                return wrong(place: place, keyword: name, form: "a whole number, 0 or more")
+
+        pattern = table.member(t, n: n, name: "pattern")
+
+        if pattern >= 0 && t.kinds[pattern] != model.TEXT_KIND
+            return wrong(place: place, keyword: "pattern", form: "a text")
+        unique = table.member(t, n: n, name: "uniqueItems")
+
+        if unique >= 0 && t.kinds[unique] != model.BOOLEAN_KIND
+            return wrong(place: place, keyword: "uniqueItems", form: "true or false")
+        required = table.member(t, n: n, name: "required")
+
+        if required >= 0 && !is_names(t, n: required)
+            return wrong(place: place, keyword: "required", form: "a list of names, each once")
+        needs = table.member(t, n: n, name: "dependentRequired")
+
+        if needs >= 0 && dialect == model.DRAFT_2020
+            if t.kinds[needs] != model.OBJECT_KIND
+                return wrong(place: place, keyword: "dependentRequired", form: "an object of lists of names")
+
+            for at in range(from: 0, to: t.counts[needs])
+                if !is_names(t, n: table.child(t, n: needs, at: at))
+                    return wrong(place: place, keyword: "dependentRequired", form: "an object of lists of names")
+
+    format = table.member(t, n: n, name: "format")
+
+    if format >= 0 && t.kinds[format] != model.TEXT_KIND
+        return wrong(place: place, keyword: "format", form: "a text")
+    return ok()
+
+## Tests
+
+test "check: schemas in their forms, and one wrong keyword at a time"
+    good = table.flatten(
+        [json_of("{\"type\": [\"string\", \"null\"], \"minLength\": 1, \"required\": [\"a\"], \"items\": {}, \"allOf\": [true]}")]
+    )
+    assert !check(good, n: 0, dialect: model.DRAFT_2020, vocab: model.ALL_VOCABULARIES, place: "#").is_err()
+    assert !check(table.flatten([json_of("true")]), n: 0, dialect: model.DRAFT_2020, vocab: model.ALL_VOCABULARIES, place: "#").is_err()
+
+    for text in ["1", "{\"type\": \"text\"}", "{\"type\": [\"string\", \"string\"]}", "{\"minimum\": \"1\"}", "{\"minLength\": -1}", "{\"minLength\": 1.5}", "{\"multipleOf\": 0}", "{\"required\": [1]}", "{\"allOf\": []}", "{\"properties\": {\"a\": 1}}", "{\"items\": [{}]}", "{\"$ref\": 1}", "{\"enum\": 1}", "{\"uniqueItems\": 1}"]
+        match check(table.flatten([json_of(text)]), n: 0, dialect: model.DRAFT_2020, vocab: model.ALL_VOCABULARIES, place: "#")
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    assert !check(table.flatten([json_of("{\"items\": [{}]}")]), n: 0, dialect: model.DRAFT_7, vocab: model.ALL_VOCABULARIES, place: "#").is_err()
+    assert !check(table.flatten([json_of("{\"$ref\": \"#\", \"minimum\": \"x\"}")]), n: 0, dialect: model.DRAFT_7, vocab: model.ALL_VOCABULARIES, place: "#").is_err()
+    assert !check(table.flatten([json_of("{\"minimum\": \"x\"}")]), n: 0, dialect: model.DRAFT_2020, vocab: model.CORE + model.APPLICATOR, place: "#").is_err()
+
+# `text` read, failing the test where it is no JSON.
+function json_of(text: str) -> json.Value
+    return json.parse(text).must()

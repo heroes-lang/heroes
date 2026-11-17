@@ -1,0 +1,498 @@
+# JSON Schema validation, in the dialects of 2020-12 and of draft 7: a schema
+# compiled once from a `json.Value`, its references resolved, and any number
+# of instances validated against it, each error with its place in the
+# instance and in the schema.
+#
+# Every keyword of the two dialects is read: the applicators, `$ref` and
+# `$dynamicRef` with `$id`, `$anchor` and `$dynamicAnchor`,
+# `unevaluatedItems` and `unevaluatedProperties`, every assertion, and a
+# meta-schema's `$vocabulary`. A reference is resolved only within the
+# documents the program gives and the meta-schemas of the two dialects, which
+# this package carries: nothing is fetched from a file or the network, so a
+# program reads or fetches a document itself and gives it as a `Resource`.
+# `format` is an annotation unless the caller asks it to be asserted, as
+# 2020-12 says, and so are the `content` keywords. A pattern is ECMA-262's, as
+# the dialects say, matched by `regex` in time linear in the text, so a
+# pattern needing a back-reference or a look-around is refused when the
+# schema is compiled.
+#
+# Nothing here follows the data with recursion: an instance nested as deep as
+# a program builds it, and a chain of references as long as a schema writes
+# it, are walked on stacks this package holds itself. A reference that comes
+# back to the same schema at the same place in the instance is an error, not
+# a loop.
+#
+# It does not read the dialects before draft 7, nor 2019-09, nor annotations
+# beyond the ones validation needs; it does not fill defaults in.
+#
+# Fails `invalid` where a schema is not one or an instance is not valid,
+# `not_found` where a reference or a meta-schema names nothing among the
+# documents given and where a format is not one of the dialects', and
+# `unsupported` where a schema names another dialect, needs a vocabulary this
+# package does not know, or writes a pattern `regex` does not read.
+
+use json
+use json/schema/internal/formats
+use json/schema/internal/machine
+use json/schema/internal/metas
+use json/schema/internal/model
+use json/schema/internal/ranking
+use json/schema/internal/scan
+use json/schema/internal/suite
+use json/schema/internal/suite_a_to_i
+use json/schema/internal/suite_formats
+use json/schema/internal/suite_j_to_p
+use json/schema/internal/suite_optional
+use json/schema/internal/suite_q_to_z
+use json/schema/internal/uris
+
+## Codes
+
+# The code of a schema that is not one and of an instance that is not valid:
+# `compile`, `compile_with`, `compile_at` and `validate` fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a reference, a meta-schema or a URI that names nothing among the
+# documents given, of a format that is not one of the dialects', and of an
+# empty list of errors: `compile_with`, `compile_at`, `is_format` and
+# `best_of` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a dialect other than draft 7 and 2020-12, of a vocabulary this
+# package does not know that a meta-schema requires, and of a pattern `regex`
+# does not read: `draft_of` and the three compilations fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Dialects
+
+# The dialect a schema is read in.
+variant Draft
+    # Draft 7, `http://json-schema.org/draft-07/schema#`.
+    draft_7
+    # 2020-12, `https://json-schema.org/draft/2020-12/schema`.
+    draft_2020_12
+
+# The URI of draft 7's meta-schema, as a `$schema` names it.
+constant DRAFT_7_URI: str
+    "http://json-schema.org/draft-07/schema#"
+
+# The URI of 2020-12's meta-schema, as a `$schema` names it.
+constant DRAFT_2020_12_URI: str
+    "https://json-schema.org/draft/2020-12/schema"
+
+# The dialect `schema`'s `$schema` names.
+#
+# - `schema`: a schema; a boolean names no dialect.
+#
+# Fails `not_found` where `schema` is not an object or has no `$schema`, and
+# `unsupported` where its `$schema` is neither meta-schema's URI, with or
+# without an empty fragment. A meta-schema of the program's own, named by a
+# `Resource`, is read by `compile_with`, which follows it to its dialect.
+function draft_of(schema: json.Value) -> Draft?
+    named = match json.member(schema, "$schema")
+        .ok v  => json.text_of(v).default("")
+        .err _ => ""
+
+    if named == ""
+        return fail(code: NOT_FOUND, msg: "the schema names no dialect: it has no $schema")
+    resource = uris.cut(named).resource
+
+    if resource == uris.cut(DRAFT_7_URI).resource
+        return ok(.draft_7)
+
+    if resource == DRAFT_2020_12_URI
+        return ok(.draft_2020_12)
+    return fail(code: UNSUPPORTED, msg: f"the dialect \"{named}\": this package reads draft 7 and 2020-12")
+
+# The meta-schema of `draft`, as this package carries it.
+#
+# - `draft`: the dialect.
+#
+# 2020-12's names its seven vocabularies' meta-schemas by `$ref`, which this
+# package carries too and resolves for any schema that names them.
+function meta_schema(draft: Draft) -> json.Value
+    text = match draft
+        .draft_7       => metas.DRAFT_7
+        .draft_2020_12 => metas.DRAFT_2020
+
+    return json.parse(text).must()
+
+## Options
+
+# A document a reference may name: the program reads or fetches it and gives
+# it with the URI it was found at.
+record Resource
+    # The URI the document is found at, absolute, as a `$ref` names it;
+    # a fragment is not part of it.
+    uri: str
+    # The document. An `$id` in it names it too, and names the schemas inside
+    # it that write one.
+    document: json.Value
+
+# A format of the program's own, asserted like the dialects' own where the
+# caller asks for formats.
+record Format
+    # The name `format` writes, such as `"currency"`; a name the dialects use
+    # is checked by this function instead of by theirs.
+    name: str
+    # Whether a text is of the format; called only on a text, since a format
+    # asserts nothing of any other kind of value.
+    check: (function(str) -> bool)
+
+# How a schema is compiled and its instances validated. `defaults` answers the
+# defaults; a program changes the fields it needs.
+record Options
+    # The dialect of a schema whose `$schema` names none.
+    draft: Draft
+    # Whether `format` is asserted: a text that is not a date where
+    # `format` says `"date"` is then an error, where by default it is not.
+    formats: bool
+    # Whether `contentEncoding`, `contentMediaType` and `contentSchema` are
+    # asserted, for the encoding `base64` and the media type
+    # `application/json`.
+    content: bool
+    # The other documents a reference may name.
+    resources: [Resource]
+    # The formats of the program's own.
+    custom_formats: [Format]
+
+# The default options: 2020-12, `format` and the `content` keywords as
+# annotations, no other document and no format of the program's own.
+function defaults() -> Options
+    return Options(draft: .draft_2020_12, formats: false, content: false, resources: [], custom_formats: [])
+
+## Compiling
+
+# A schema compiled, every reference resolved, ready to validate any number of
+# instances. Only `compile`, `compile_with` and `compile_at` make one.
+record Schema
+    # The schema as compiled, which only this package reads.
+    code: model.Compiled
+
+# `schema` compiled with the default options.
+#
+# - `schema`: the schema, an object or a boolean, in the dialect its
+#   `$schema` names or in 2020-12.
+#
+# Fails as `compile_with` does.
+function compile(schema: json.Value) -> Schema?
+    return compile_with(schema, defaults())
+
+# `schema` compiled with `options`.
+#
+# - `schema`: the schema, an object or a boolean; where it has no `$id`, its
+#   base URI is `json-schema:///`, against which a relative reference is
+#   resolved.
+# - `options`: the dialect of a schema that names none, what is asserted, and
+#   the other documents a reference may name.
+#
+# Fails `invalid` where a keyword's value is not of the form its dialect gives
+# it, such as `"minimum": "1"`, where a `$ref` or an `$id` is not a URI
+# reference, or where two resources claim one URI; `not_found` where a
+# reference names no schema among the documents given, or `$schema` names a
+# meta-schema that is not among them; `unsupported` where `$schema` names a
+# dialect other than the two, a meta-schema requires a vocabulary this package
+# does not know, or a pattern needs what `regex` does not read. Each message
+# names the keyword by its JSON pointer.
+#
+# It reads every document once and compiles every pattern once, so its cost
+# is linear in the documents' size, those patterns' compilation aside.
+function compile_with(schema: json.Value, options: Options) -> Schema?
+    documents: [Resource] @= [Resource(uri: uris.DEFAULT_BASE, document: schema)]
+
+    for r in options.resources
+        documents @ documents.push(r)
+
+    given: Options @= options
+    given.resources @ documents
+    return compile_at(uris.DEFAULT_BASE, given)
+
+# The schema `uri` names among `options.resources`, compiled.
+#
+# - `uri`: an absolute URI, with a fragment that is a JSON pointer or an
+#   anchor's name where it names a schema inside a document, such as
+#   `https://example.com/order.json#/$defs/line`.
+# - `options`: as `compile_with` reads them.
+#
+# Fails `not_found` where `uri` names no schema among the documents given, and
+# as `compile_with` does.
+function compile_at(uri: str, options: Options) -> Schema?
+    sources: [scan.Source] @= []
+
+    for r in options.resources
+        sources @ sources.push(scan.Source(document: r.document, uri: uris.cut(r.uri).resource))
+
+    if sources.len() == 0
+        sources @ sources.push(scan.Source(document: .boolean(v: true), uri: "urn:rebel:none"))
+    custom: [model.CustomFormat] @= []
+
+    for f in options.custom_formats
+        custom @ custom.push(model.CustomFormat(name: f.name, check: f.check))
+
+    draft = match options.draft
+        .draft_7       => model.DRAFT_7
+        .draft_2020_12 => model.DRAFT_2020
+
+    settings = model.Settings(draft: draft, formats: options.formats, content: options.content, custom: custom)
+    return ok(Schema(code: scan.compile(sources, settings: settings, start: uri)?))
+
+## Validating
+
+# One error of an instance: what is wrong, and where in the instance and in
+# the schema.
+record Error
+    # Where in the instance, as a JSON pointer: `""` for the instance itself,
+    # `/items/0` for the first element of its member `items`.
+    instance_location: str
+    # The keyword's path from the root schema, through every reference
+    # followed, as a JSON pointer: `/properties/items/$ref/minItems`.
+    keyword_location: str
+    # The keyword's absolute URI, in the resource it is written in:
+    # `https://example.com/order.json#/$defs/items/minItems`.
+    absolute_location: str
+    # The keyword that failed, such as `minItems`, or `false` for the schema
+    # `false`.
+    keyword: str
+    # What the keyword asks and what the instance holds instead, such as
+    # `2 elements, fewer than the 3 asked`.
+    message: str
+
+# Whether `instance` is valid against `schema`.
+#
+# - `schema`: a compiled schema.
+# - `instance`: the value validated.
+function is_valid(schema: Schema, instance: json.Value) -> bool
+    return machine.evaluate(schema.code, instance: instance).len() == 0
+
+# Nothing where `instance` is valid against `schema`.
+#
+# - `schema`: a compiled schema.
+# - `instance`: the value validated.
+#
+# Fails `invalid` where it is not, with the first error `errors_of` gives
+# written as `format_error` writes it, and after it how many errors there are
+# in all.
+function validate(schema: Schema, instance: json.Value) -> ()?
+    found = errors_of(schema, instance: instance)
+
+    if found.len() == 0
+        return ok()
+
+    more = if found.len() == 1
+        "1 error in all"
+    else
+        f"{found.len()} errors in all"
+    return fail(code: INVALID, msg: f"{format_error(found[0])}; {more}")
+
+# Every error of `instance` against `schema`, in the order of the schema's
+# keywords; none where it is valid.
+#
+# - `schema`: a compiled schema.
+# - `instance`: the value validated.
+#
+# An `anyOf` or `oneOf` that no subschema passes gives its own error, then
+# the errors of each subschema; a `not`, an `if` and a `contains` give their
+# own alone. The errors of a subschema that passes are never given, nor those
+# of a `$ref` that a passing `anyOf` reached.
+function errors_of(schema: Schema, instance: json.Value) -> [Error]
+    out: [Error] @= []
+
+    for i in machine.evaluate(schema.code, instance: instance)
+        out @ out.push(
+            Error(instance_location: i.instance_location, keyword_location: i.keyword_location, absolute_location: i.absolute_location, keyword: i.keyword, message: i.message)
+        )
+
+    return out
+
+# The error of `errors` most worth telling a person: the one nearest the
+# instance's root, and of those the first that is not the summary of an
+# `anyOf`, a `oneOf` or a `not`.
+#
+# - `errors`: the errors `errors_of` gives, in its order.
+#
+# Fails `not_found` where `errors` is empty.
+function best_of(errors: [Error]) -> Error?
+    if errors.len() == 0
+        return fail(code: NOT_FOUND, msg: "no error to choose from: the instance is valid")
+    best: i64 @= 0
+
+    for at in range(from: 1, to: errors.len())
+        e = errors[at]
+        than = errors[best]
+
+        if ranking.is_better(location: e.instance_location, keyword: e.keyword, other_location: than.instance_location, other_keyword: than.keyword)
+            best @ at
+
+    return ok(errors[best])
+
+# `e` as one line a person reads: where in the instance, what is wrong, and
+# which keyword said so.
+#
+# - `e`: an error.
+#
+# The instance itself is `the instance`; any other place is its pointer, as
+# `at /items/0: 2 elements, fewer than the 3 asked (minItems at
+# /properties/items/minItems)`.
+function format_error(e: Error) -> str
+    place = if e.instance_location == ""
+        "the instance"
+    else
+        e.instance_location
+    return f"at {place}: {e.message} ({e.keyword} at {e.keyword_location})"
+
+# The errors of an instance as JSON Schema's "basic" output: an object with
+# `valid` and, where there is an error, `errors`, a list of objects with
+# `keywordLocation`, `absoluteKeywordLocation`, `instanceLocation` and
+# `error`.
+#
+# - `errors`: the errors `errors_of` gives; none writes `{"valid": true}`.
+function to_output(errors: [Error]) -> json.Value
+    if errors.len() == 0
+        return .object(members: {"valid": .boolean(v: true)})
+    units: [json.Value] @= []
+
+    for e in errors
+        unit: {str: json.Value} @= {}
+        unit["keywordLocation"] @ .text(v: e.keyword_location)
+        unit["absoluteKeywordLocation"] @ .text(v: e.absolute_location)
+        unit["instanceLocation"] @ .text(v: e.instance_location)
+        unit["error"] @ .text(v: e.message)
+        units @ units.push(.object(members: unit))
+
+    return .object(members: {"valid": .boolean(v: false), "errors": .list(items: units)})
+
+## A schema checked
+
+# Every error of `schema` against the meta-schema of its dialect: what its
+# `$schema` names, or `options.draft`.
+#
+# - `schema`: the schema checked, an object or a boolean.
+# - `options`: the dialect of a schema that names none, and the documents
+#   among which a meta-schema of the program's own is found.
+#
+# Fails `not_found` where `$schema` names a meta-schema that is not among the
+# documents given, and `unsupported` where it names another dialect.
+function schema_errors_of(schema: json.Value, options: Options) -> [Error]?
+    named = match json.member(schema, "$schema")
+        .ok v  => json.text_of(v).default("")
+        .err _ => ""
+
+    uri = if named != ""
+        uris.cut(named).resource
+    else
+        match options.draft
+            .draft_7       => uris.cut(DRAFT_7_URI).resource
+            .draft_2020_12 => DRAFT_2020_12_URI
+    meta = compile_at(uri, options)?
+    return ok(errors_of(meta, instance: schema))
+
+## Formats
+
+# Whether `text` is of the format `format` names, as an asserted `format`
+# keyword answers.
+#
+# - `text`: the text checked.
+# - `format`: a format of 2020-12 or draft 7: `date-time`, `date`, `time`,
+#   `duration`, `email`, `idn-email`, `hostname`, `idn-hostname`, `ipv4`,
+#   `ipv6`, `uri`, `uri-reference`, `iri`, `iri-reference`, `uri-template`,
+#   `uuid`, `json-pointer`, `relative-json-pointer` or `regex`.
+#
+# A host name's A-labels and an `idn-hostname` are held to IDNA2008 (RFC
+# 5891, RFC 5892's code points of Unicode 17.0.0, RFC 5893's Bidi rule), with
+# no mapping of UTS 46 first: a fullwidth digit or a zero width space is
+# refused, not mapped, and a label is not held to NFC.
+#
+# Fails `not_found` where `format` is none of them.
+function is_format(text: str, format: str) -> bool?
+    return formats.check(text: text, format: format)
+
+## Tests
+
+test "suite: the JSON Schema Test Suite's cases for draft 7 and 2020-12, from its commit"
+    assert suite.VERSION == "e2a68a15"
+    assert suite_a_to_i.CASES + suite_formats.CASES + suite_j_to_p.CASES + suite_q_to_z.CASES + suite_optional.CASES == 566
+
+## Examples
+
+# The dialect a schema names.
+test "draft_of: draft 7"
+    s = json.parse("{\"$schema\": \"http://json-schema.org/draft-07/schema#\"}").must()
+    assert draft_of(s).must() == .draft_7
+
+# The meta-schema of 2020-12, which names itself.
+test "meta_schema: 2020-12's $id"
+    assert json.member(meta_schema(.draft_2020_12), "$id").must() == .text(v: DRAFT_2020_12_URI)
+
+# The default options.
+test "defaults: 2020-12, formats as annotations"
+    assert defaults().draft == .draft_2020_12 && !defaults().formats
+
+# A schema compiled and an instance validated.
+test "compile: a positive integer"
+    s = compile(json.parse("{\"type\": \"integer\", \"minimum\": 1}").must()).must()
+    assert is_valid(s, .number(v: 3.0)) && !is_valid(s, .number(v: 0.0))
+
+# A reference to a document the program gives.
+test "compile_with: a reference to another document"
+    o: Options @= defaults()
+    o.resources @ [
+        Resource(uri: "https://example.com/name.json", document: json.parse("{\"type\": \"string\"}").must())
+    ]
+    s = compile_with(json.parse("{\"$ref\": \"https://example.com/name.json\"}").must(), o).must()
+    assert is_valid(s, .text(v: "Ziggy")) && !is_valid(s, .null_value)
+
+# A schema inside a document, named by its URI and a pointer.
+test "compile_at: a definition inside a document"
+    o: Options @= defaults()
+    o.resources @ [
+        Resource(uri: "https://example.com/defs.json", document: json.parse("{\"$defs\": {\"year\": {\"minimum\": 1947}}}").must())
+    ]
+    s = compile_at("https://example.com/defs.json#/$defs/year", o).must()
+    assert !is_valid(s, .number(v: 1900.0))
+
+# An instance asked whether it is valid.
+test "is_valid: a required member"
+    s = compile(json.parse("{\"required\": [\"name\"]}").must()).must()
+    assert is_valid(s, json.parse("{\"name\": \"Ziggy\"}").must()) && !is_valid(s, json.parse("{}").must())
+
+# An instance validated, failing with its first error.
+test "validate: a text too short"
+    s = compile(json.parse("{\"minLength\": 3}").must()).must()
+
+    match validate(s, .text(v: "ab"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# Every error with its places.
+test "errors_of: an element of the wrong type"
+    s = compile(json.parse("{\"items\": {\"type\": \"number\"}}").must()).must()
+    found = errors_of(s, json.parse("[1, \"x\"]").must())
+    assert found.len() == 1 && found[0].instance_location == "/1" && found[0].keyword_location == "/items/type"
+
+# The error a person is told first.
+test "best_of: the shallowest error"
+    s = compile(json.parse("{\"properties\": {\"a\": {\"type\": \"string\"}}, \"minProperties\": 2}").must()).must()
+    best = best_of(errors_of(s, json.parse("{\"a\": 1}").must())).must()
+    assert best.keyword == "minProperties"
+
+# An error as a line of text.
+test "format_error: a member's type"
+    s = compile(json.parse("{\"properties\": {\"a\": {\"type\": \"string\"}}}").must()).must()
+    line = format_error(errors_of(s, json.parse("{\"a\": 1}").must())[0])
+    assert line == "at /a: a number, where the type is string (type at /properties/a/type)"
+
+# The basic output of a valid instance.
+test "to_output: valid"
+    assert json.format(to_output([])).must() == "{\"valid\":true}"
+
+# A schema checked against its meta-schema.
+test "schema_errors_of: a minimum that is not a number"
+    found = schema_errors_of(json.parse("{\"minimum\": \"1\"}").must(), defaults()).must()
+    assert found.len() > 0
+
+# A text checked against a format.
+test "is_format: a date"
+    assert is_format(text: "1977-01-14", format: "date").must() && !is_format(text: "1977-13-01", format: "date").must()

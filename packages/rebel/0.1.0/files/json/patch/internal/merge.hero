@@ -1,0 +1,352 @@
+# JSON Merge Patch, RFC 7386: a patch applied, the patch between two values
+# made, and two patches made one. Each walks the objects of its patch on a
+# stack of frames, one an object deep, and builds each object's result before
+# it hands it to the object above.
+
+use json
+use json/patch/internal/same
+use json/patch/internal/stack
+
+# The code of a change no merge patch can say.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The members of `v` where it is an object, and none where it is not.
+function members_or_none(v: json.Value) -> {str: json.Value}
+    return match v
+        .object o                                                => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => {}
+
+# Whether `v` is an object.
+function is_object(v: json.Value) -> bool
+    return json.kind_of(v) == "object"
+
+# `doc` with the merge patch `changes` applied, RFC 7386 § 2.
+function apply(doc: json.Value, changes: json.Value) -> json.Value
+    if !is_object(changes)
+        return changes
+
+    # The object being built, the patch's members applied to it, their names,
+    # how many are done, the names to take out, and the name the result goes
+    # under in the object above; the frames above wait on the stacks below.
+    target: {str: json.Value} @= members_or_none(doc)
+    patch: {str: json.Value} @= members_or_none(changes)
+    names: [str] @= keys(patch)
+    done: i64 @= 0
+    gone: {str: bool} @= {}
+    under: str @= ""
+    held_targets: [{str: json.Value}] @= []
+    held_patches: [{str: json.Value}] @= []
+    held_names: [[str]] @= []
+    held_done: [i64] @= []
+    held_gone: [{str: bool}] @= []
+    held_under: [str] @= []
+    depth: i64 @= 0
+
+    while true
+        if done < names.len()
+            name = names[done]
+            done @ done + 1
+            value = patch[name].must()
+
+            if json.is_null(value)
+                gone[name] @ true
+            else if is_object(value)
+                stack.put(items: @held_targets, top: depth, item: target)
+                stack.put(items: @held_patches, top: depth, item: patch)
+                stack.put(items: @held_names, top: depth, item: names)
+                stack.put(items: @held_done, top: depth, item: done)
+                stack.put(items: @held_gone, top: depth, item: gone)
+                stack.put(items: @held_under, top: depth, item: under)
+                depth @ depth + 1
+                target @ members_or_none(target[name].default(.null_value))
+                patch @ members_or_none(value)
+                names @ keys(patch)
+                done @ 0
+                gone @ {}
+                under @ name
+            else
+                target[name] @ value
+        else
+            result: {str: json.Value} @= {}
+
+            for key in keys(target)
+                if !gone[key].default(false)
+                    result[key] @ target[key].must()
+
+            if depth == 0
+                return .object(members: result)
+            depth @ depth - 1
+            name = under
+            target @ held_targets[depth]
+            held_targets[depth] @ {}
+            patch @ held_patches[depth]
+            held_patches[depth] @ {}
+            names @ held_names[depth]
+            held_names[depth] @ []
+            done @ held_done[depth]
+            gone @ held_gone[depth]
+            held_gone[depth] @ {}
+            under @ held_under[depth]
+            target[name] @ .object(members: result)
+
+    return changes
+
+# Whether a `null` stands as a member's value in `v` or in an object inside
+# it, through objects alone: the nulls a merge patch would read as taking a
+# member out. A list ends the search, since a list is replaced whole.
+function holds_null_member(v: json.Value) -> bool
+    left: [json.Value] @= [v]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+
+        for member in maps_values(members_or_none(left[top]))
+            if json.is_null(member)
+                return true
+
+            if is_object(member)
+                stack.put(items: @left, top: top, item: member)
+                top @ top + 1
+
+    return false
+
+# The values of `m`, in the order of its keys.
+function maps_values(m: {str: json.Value}) -> [json.Value]
+    out: [json.Value] @= []
+
+    for key in keys(m)
+        out @ out.push(m[key].must())
+
+    return out
+
+# The value `to` as a merge patch puts it in place of what is there, where
+# the place holds no object or holds none at all. Fails `unsupported` where
+# `to` holds a member `null`, which the patch would take out.
+function whole(to: json.Value, path: str) -> json.Value?
+    if json.is_null(to) || holds_null_member(to)
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"a merge patch cannot set {path} to a value holding null, since null takes a member out"
+        )
+    return ok(to)
+
+# The merge patch that turns `from` into `to`. Fails `unsupported` where `to`
+# sets a `null` a merge patch cannot say.
+function diff(from: json.Value, to: json.Value) -> json.Value?
+    if !is_object(to)
+        return ok(to)
+
+    if !is_object(from)
+        return whole(to, path: "the whole value")
+
+    # The two objects compared, the names of both, how many are done, the
+    # patch built, and the name it goes under above, with the frames above on
+    # the stacks below.
+    left: {str: json.Value} @= members_or_none(from)
+    right: {str: json.Value} @= members_or_none(to)
+    names: [str] @= keys(left)
+    done: i64 @= 0
+    out: {str: json.Value} @= {}
+    under: str @= ""
+    path: str @= ""
+    held_left: [{str: json.Value}] @= []
+    held_right: [{str: json.Value}] @= []
+    held_names: [[str]] @= []
+    held_done: [i64] @= []
+    held_out: [{str: json.Value}] @= []
+    held_under: [str] @= []
+    held_path: [str] @= []
+    depth: i64 @= 0
+
+    for name in keys(right)
+        if left[name].is_err()
+            names @ names.push(name)
+
+    while true
+        if done < names.len()
+            name = names[done]
+            done @ done + 1
+            here = f"{path}/{name}"
+
+            match right[name]
+                .err _ => out[name] @ .null_value
+                .ok wanted =>
+                    match left[name]
+                        .err _ => out[name] @ whole(wanted, path: here)?
+                        .ok had =>
+                            if !same.equal(a: had, b: wanted)
+                                if is_object(had) && is_object(wanted)
+                                    stack.put(items: @held_left, top: depth, item: left)
+                                    stack.put(items: @held_right, top: depth, item: right)
+                                    stack.put(items: @held_names, top: depth, item: names)
+                                    stack.put(items: @held_done, top: depth, item: done)
+                                    stack.put(items: @held_out, top: depth, item: out)
+                                    stack.put(items: @held_under, top: depth, item: under)
+                                    stack.put(items: @held_path, top: depth, item: path)
+                                    depth @ depth + 1
+                                    left @ members_or_none(had)
+                                    right @ members_or_none(wanted)
+                                    names @ keys(left)
+
+                                    for key in keys(right)
+                                        if left[key].is_err()
+                                            names @ names.push(key)
+
+                                    done @ 0
+                                    out @ {}
+                                    under @ name
+                                    path @ here
+                                else
+                                    out[name] @ whole(wanted, path: here)?
+        else
+            if depth == 0
+                return ok(.object(members: out))
+            depth @ depth - 1
+            result = out
+            name = under
+            left @ held_left[depth]
+            held_left[depth] @ {}
+            right @ held_right[depth]
+            held_right[depth] @ {}
+            names @ held_names[depth]
+            held_names[depth] @ []
+            done @ held_done[depth]
+            out @ held_out[depth]
+            held_out[depth] @ {}
+            under @ held_under[depth]
+            path @ held_path[depth]
+            out[name] @ .object(members: result)
+
+    return ok(to)
+
+# One merge patch that does what `first` then `then` do. Fails `unsupported`
+# where `then` merges an object into a place `first` sets to `null` or to a
+# value that is no object.
+function compose(first: json.Value, then: json.Value) -> json.Value?
+    if !is_object(then)
+        return ok(then)
+
+    if !is_object(first)
+        return fail(
+            code: UNSUPPORTED,
+            msg: "the second patch merges an object into the whole value, which the first replaces with no object"
+        )
+
+    # The first patch's members as built so far, the second's, their names,
+    # how many are done, and the name the result goes under above.
+    out: {str: json.Value} @= members_or_none(first)
+    later: {str: json.Value} @= members_or_none(then)
+    names: [str] @= keys(later)
+    done: i64 @= 0
+    under: str @= ""
+    path: str @= ""
+    held_out: [{str: json.Value}] @= []
+    held_later: [{str: json.Value}] @= []
+    held_names: [[str]] @= []
+    held_done: [i64] @= []
+    held_under: [str] @= []
+    held_path: [str] @= []
+    depth: i64 @= 0
+
+    while true
+        if done < names.len()
+            name = names[done]
+            done @ done + 1
+            value = later[name].must()
+
+            if !is_object(value)
+                out[name] @ value
+            else
+                match out[name]
+                    .err _ => out[name] @ value
+                    .ok earlier =>
+                        if !is_object(earlier)
+                            return fail(
+                                code: UNSUPPORTED,
+                                msg: f"the second patch merges an object into {path}/{name}, which the first sets to {json.kind_of(earlier)}"
+                            )
+                        stack.put(items: @held_out, top: depth, item: out)
+                        stack.put(items: @held_later, top: depth, item: later)
+                        stack.put(items: @held_names, top: depth, item: names)
+                        stack.put(items: @held_done, top: depth, item: done)
+                        stack.put(items: @held_under, top: depth, item: under)
+                        stack.put(items: @held_path, top: depth, item: path)
+                        depth @ depth + 1
+                        out @ members_or_none(earlier)
+                        later @ members_or_none(value)
+                        names @ keys(later)
+                        done @ 0
+                        under @ name
+                        path @ f"{path}/{name}"
+        else
+            if depth == 0
+                return ok(.object(members: out))
+            depth @ depth - 1
+            result = out
+            name = under
+            out @ held_out[depth]
+            held_out[depth] @ {}
+            later @ held_later[depth]
+            held_later[depth] @ {}
+            names @ held_names[depth]
+            held_names[depth] @ []
+            done @ held_done[depth]
+            under @ held_under[depth]
+            path @ held_path[depth]
+            out[name] @ .object(members: result)
+
+    return ok(then)
+
+## Tests
+
+# `text` read, failing the test where it is no JSON.
+function value_of(text: str) -> json.Value
+    return json.parse(text).must()
+
+test "apply: members changed, taken out, nested, and a patch that is no object"
+    doc = value_of("{\"a\": 1, \"b\": {\"c\": 2, \"d\": 3}, \"e\": [1]}")
+    done = apply(doc: doc, changes: value_of("{\"a\": null, \"b\": {\"c\": null, \"x\": {\"y\": 1}}, \"e\": [2]}"))
+    assert json.format(done).must() == "{\"b\":{\"d\":3,\"x\":{\"y\":1}},\"e\":[2]}"
+    assert apply(doc: doc, changes: value_of("[1]")) == value_of("[1]")
+    assert apply(doc: doc, changes: .null_value) == .null_value
+    assert apply(doc: value_of("[1]"), changes: value_of("{\"a\": {\"b\": null}}")) == value_of("{\"a\": {}}")
+
+test "apply: an object nested a hundred thousand deep"
+    patch: json.Value @= .number(v: 1.0)
+
+    for _ in range(from: 0, to: 100000)
+        patch @ .object(members: {"k": patch})
+
+    done = apply(doc: .null_value, changes: patch)
+    assert json.format(done).must() == repeat("{\"k\":", 100000) + "1" + repeat("}", 100000)
+
+test "diff: equal, changed, taken out, nested, and made of nothing"
+    assert diff(from: value_of("{\"a\": 1}"), to: value_of("{\"a\": 1.0}")).must() == value_of("{}")
+    got = diff(
+        from: value_of("{\"a\": 1, \"b\": {\"c\": 2, \"d\": 3}}"),
+        to: value_of("{\"b\": {\"c\": 2, \"d\": 4}, \"e\": [null]}")
+    ).must()
+    assert json.format(got).must() == "{\"a\":null,\"b\":{\"d\":4},\"e\":[null]}"
+    assert diff(from: value_of("[1]"), to: value_of("{\"a\": 1}")).must() == value_of("{\"a\": 1}")
+    assert diff(from: value_of("{\"a\": 1}"), to: value_of("[1]")).must() == value_of("[1]")
+
+test "diff: the nulls no merge patch can set"
+    for pair in [["{}", "{\"a\": null}"], ["{\"a\": 1}", "{\"a\": null}"], ["{\"a\": 1}", "{\"a\": {\"b\": null}}"], ["1", "{\"a\": null}"]]
+        match diff(from: value_of(pair[0]), to: value_of(pair[1]))
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+test "compose: members of both, nested, and what one patch cannot say"
+    got = compose(
+        first: value_of("{\"a\": 1, \"b\": {\"c\": 1}}"),
+        then: value_of("{\"b\": {\"d\": null}, \"e\": 2}")
+    ).must()
+    assert json.format(got).must() == "{\"a\":1,\"b\":{\"c\":1,\"d\":null},\"e\":2}"
+    assert compose(first: value_of("{\"a\": 1}"), then: value_of("[]")).must() == value_of("[]")
+
+    for pair in [["[]", "{\"a\": 1}"], ["{\"a\": null}", "{\"a\": {\"b\": 1}}"], ["{\"a\": 1}", "{\"a\": {\"b\": 1}}"]]
+        match compose(first: value_of(pair[0]), then: value_of(pair[1]))
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED

@@ -1,0 +1,84 @@
+# The URIs of a schema's resources: a reference resolved against the base it
+# is written under, RFC 3986 § 5.2, by `url`; a URI cut at its fragment; and
+# a fragment that is a JSON pointer read back into its tokens.
+
+use json
+use url
+
+# The code of a text that is no URI reference.
+constant INVALID: str
+    "invalid"
+
+# The base of a schema that writes no `$id` and is given at no URI, as Rust's
+# `jsonschema` names it.
+constant DEFAULT_BASE: str
+    "json-schema:///"
+
+# A URI cut at its first `#`.
+record Cut
+    # The URI before the `#`, the whole URI where it has none.
+    resource: str
+    # The fragment after the `#`, still escaped; `""` where there is none.
+    fragment: str
+
+# `uri` cut at its first `#`.
+function cut(uri: str) -> Cut
+    for at in range(from: 0, to: uri.len())
+        if uri[at] == '#'
+            return Cut(resource: uri.slice(from: 0, to: at), fragment: uri.slice(from: at + 1, to: uri.len()))
+
+    return Cut(resource: uri, fragment: "")
+
+# `reference` resolved against `base`, as an absolute URI. Fails `invalid`
+# where either is no URI reference.
+function resolve(base: str, reference: str) -> str?
+    target = match url.parse(reference)
+        .ok u  => u
+        .err e => return fail(code: INVALID, msg: f"\"{reference}\" is no URI reference: {e.msg}")
+
+    if base == ""
+        return ok(url.format(target))
+
+    origin = match url.parse(base)
+        .ok u  => u
+        .err e => return fail(code: INVALID, msg: f"\"{base}\" is no URI: {e.msg}")
+
+    return ok(url.format(url.resolve(base: origin, reference: target)))
+
+# The URI `uri` without its fragment, an empty fragment included.
+function without_fragment(uri: str) -> str
+    return cut(uri).resource
+
+# The tokens of the JSON pointer an escaped fragment writes. Fails `invalid`
+# where an escape is broken or it is no pointer.
+function pointer_tokens(fragment: str) -> [str]?
+    text = match url.unescape(fragment)
+        .ok t  => t
+        .err e => return fail(code: INVALID, msg: f"the fragment \"{fragment}\": {e.msg}")
+
+    return json.pointer_tokens(text)
+
+## Tests
+
+test "cut: with a fragment, with an empty one, and with none"
+    assert cut("http://a/b#/c") == Cut(resource: "http://a/b", fragment: "/c")
+    assert cut("http://a/b#") == Cut(resource: "http://a/b", fragment: "")
+    assert cut("http://a/b") == Cut(resource: "http://a/b", fragment: "")
+    assert cut("#foo") == Cut(resource: "", fragment: "foo")
+
+test "resolve: a path, a fragment, an absolute reference, a URN and the default base"
+    assert resolve(base: "http://localhost:1234/tree", reference: "node").must() == "http://localhost:1234/node"
+    assert resolve(base: "http://localhost:1234/a/b.json", reference: "#/$defs/x").must() == "http://localhost:1234/a/b.json#/$defs/x"
+    assert resolve(base: "http://a/b", reference: "https://c/d").must() == "https://c/d"
+    assert resolve(base: "urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed", reference: "#/$defs/bar").must() == "urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed#/$defs/bar"
+    assert resolve(base: DEFAULT_BASE, reference: "item.json").must() == "json-schema:///item.json"
+    assert resolve(base: DEFAULT_BASE, reference: "#/a").must() == "json-schema:///#/a"
+    assert resolve(base: "", reference: "http://x/y").must() == "http://x/y"
+    assert resolve(base: "http://a/b", reference: "a b").is_err()
+
+test "pointer_tokens: escapes read, and what is no pointer"
+    assert pointer_tokens("/definitions/foo%22bar").must() == ["definitions", "foo\"bar"]
+    assert pointer_tokens("/%24defs/a~1b").must() == ["$defs", "a/b"]
+    assert pointer_tokens("").must().len() == 0
+    assert pointer_tokens("foo").is_err()
+    assert pointer_tokens("/%zz").is_err()

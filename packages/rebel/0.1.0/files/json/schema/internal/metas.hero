@@ -1,0 +1,107 @@
+# The meta-schemas of draft 7 and of 2020-12, with 2020-12's seven
+# vocabularies' meta-schemas, as json-schema.org served them on 2026-11-17,
+# written on one line. A compilation reads one only where a reference names
+# its URI, or where a schema is checked against its dialect.
+
+# The code of a URI that names none of them.
+constant NOT_FOUND: str
+    "not_found"
+
+# draft 7's meta-schema, `http://json-schema.org/draft-07/schema`.
+constant DRAFT_7: str
+    "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Core schema meta-schema\",\"definitions\":{\"schemaArray\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"$ref\":\"#\"}},\"nonNegativeInteger\":{\"type\":\"integer\",\"minimum\":0},\"nonNegativeIntegerDefault0\":{\"allOf\":[{\"$ref\":\"#/definitions/nonNegativeInteger\"},{\"default\":0}]},\"simpleTypes\":{\"enum\":[\"array\",\"boolean\",\"integer\",\"null\",\"number\",\"object\",\"string\"]},\"stringArray\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"uniqueItems\":true,\"default\":[]}},\"type\":[\"object\",\"boolean\"],\"properties\":{\"$id\":{\"type\":\"string\",\"format\":\"uri-reference\"},\"$schema\":{\"type\":\"string\",\"format\":\"uri\"},\"$ref\":{\"type\":\"string\",\"format\":\"uri-reference\"},\"$comment\":{\"type\":\"string\"},\"title\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"default\":true,\"readOnly\":{\"type\":\"boolean\",\"default\":false},\"writeOnly\":{\"type\":\"boolean\",\"default\":false},\"examples\":{\"type\":\"array\",\"items\":true},\"multipleOf\":{\"type\":\"number\",\"exclusiveMinimum\":0},\"maximum\":{\"type\":\"number\"},\"exclusiveMaximum\":{\"type\":\"number\"},\"minimum\":{\"type\":\"number\"},\"exclusiveMinimum\":{\"type\":\"number\"},\"maxLength\":{\"$ref\":\"#/definitions/nonNegativeInteger\"},\"minLength\":{\"$ref\":\"#/definitions/nonNegativeIntegerDefault0\"},\"pattern\":{\"type\":\"string\",\"format\":\"regex\"},\"additionalItems\":{\"$ref\":\"#\"},\"items\":{\"anyOf\":[{\"$ref\":\"#\"},{\"$ref\":\"#/definitions/schemaArray\"}],\"default\":true},\"maxItems\":{\"$ref\":\"#/definitions/nonNegativeInteger\"},\"minItems\":{\"$ref\":\"#/definitions/nonNegativeIntegerDefault0\"},\"uniqueItems\":{\"type\":\"boolean\",\"default\":false},\"contains\":{\"$ref\":\"#\"},\"maxProperties\":{\"$ref\":\"#/definitions/nonNegativeInteger\"},\"minProperties\":{\"$ref\":\"#/definitions/nonNegativeIntegerDefault0\"},\"required\":{\"$ref\":\"#/definitions/stringArray\"},\"additionalProperties\":{\"$ref\":\"#\"},\"definitions\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#\"},\"default\":{}},\"properties\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#\"},\"default\":{}},\"patternProperties\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#\"},\"propertyNames\":{\"format\":\"regex\"},\"default\":{}},\"dependencies\":{\"type\":\"object\",\"additionalProperties\":{\"anyOf\":[{\"$ref\":\"#\"},{\"$ref\":\"#/definitions/stringArray\"}]}},\"propertyNames\":{\"$ref\":\"#\"},\"const\":true,\"enum\":{\"type\":\"array\",\"items\":true,\"minItems\":1,\"uniqueItems\":true},\"type\":{\"anyOf\":[{\"$ref\":\"#/definitions/simpleTypes\"},{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/simpleTypes\"},\"minItems\":1,\"uniqueItems\":true}]},\"format\":{\"type\":\"string\"},\"contentMediaType\":{\"type\":\"string\"},\"contentEncoding\":{\"type\":\"string\"},\"if\":{\"$ref\":\"#\"},\"then\":{\"$ref\":\"#\"},\"else\":{\"$ref\":\"#\"},\"allOf\":{\"$ref\":\"#/definitions/schemaArray\"},\"anyOf\":{\"$ref\":\"#/definitions/schemaArray\"},\"oneOf\":{\"$ref\":\"#/definitions/schemaArray\"},\"not\":{\"$ref\":\"#\"}},\"default\":true}"
+
+# 2020-12's meta-schema, which names the seven below, `https://json-schema.org/draft/2020-12/schema`.
+constant DRAFT_2020: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/schema\",\"$vocabulary\":{\"https://json-schema.org/draft/2020-12/vocab/core\":true,\"https://json-schema.org/draft/2020-12/vocab/applicator\":true,\"https://json-schema.org/draft/2020-12/vocab/unevaluated\":true,\"https://json-schema.org/draft/2020-12/vocab/validation\":true,\"https://json-schema.org/draft/2020-12/vocab/meta-data\":true,\"https://json-schema.org/draft/2020-12/vocab/format-annotation\":true,\"https://json-schema.org/draft/2020-12/vocab/content\":true},\"$dynamicAnchor\":\"meta\",\"title\":\"Core and Validation specifications meta-schema\",\"allOf\":[{\"$ref\":\"meta/core\"},{\"$ref\":\"meta/applicator\"},{\"$ref\":\"meta/unevaluated\"},{\"$ref\":\"meta/validation\"},{\"$ref\":\"meta/meta-data\"},{\"$ref\":\"meta/format-annotation\"},{\"$ref\":\"meta/content\"}],\"type\":[\"object\",\"boolean\"],\"$comment\":\"This meta-schema also defines keywords that have appeared in previous drafts in order to prevent incompatible extensions as they remain in common use.\",\"properties\":{\"definitions\":{\"$comment\":\"\\\"definitions\\\" has been replaced by \\\"$defs\\\".\",\"type\":\"object\",\"additionalProperties\":{\"$dynamicRef\":\"#meta\"},\"deprecated\":true,\"default\":{}},\"dependencies\":{\"$comment\":\"\\\"dependencies\\\" has been split and replaced by \\\"dependentSchemas\\\" and \\\"dependentRequired\\\" in order to serve their differing semantics.\",\"type\":\"object\",\"additionalProperties\":{\"anyOf\":[{\"$dynamicRef\":\"#meta\"},{\"$ref\":\"meta/validation#/$defs/stringArray\"}]},\"deprecated\":true,\"default\":{}},\"$recursiveAnchor\":{\"$comment\":\"\\\"$recursiveAnchor\\\" has been replaced by \\\"$dynamicAnchor\\\".\",\"$ref\":\"meta/core#/$defs/anchorString\",\"deprecated\":true},\"$recursiveRef\":{\"$comment\":\"\\\"$recursiveRef\\\" has been replaced by \\\"$dynamicRef\\\".\",\"$ref\":\"meta/core#/$defs/uriReferenceString\",\"deprecated\":true}}}"
+
+# 2020-12's meta-schema of its core vocabulary, `https://json-schema.org/draft/2020-12/meta/core`.
+constant CORE: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/core\",\"$dynamicAnchor\":\"meta\",\"title\":\"Core vocabulary meta-schema\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"$id\":{\"$ref\":\"#/$defs/uriReferenceString\",\"$comment\":\"Non-empty fragments not allowed.\",\"pattern\":\"^[^#]*#?$\"},\"$schema\":{\"$ref\":\"#/$defs/uriString\"},\"$ref\":{\"$ref\":\"#/$defs/uriReferenceString\"},\"$anchor\":{\"$ref\":\"#/$defs/anchorString\"},\"$dynamicRef\":{\"$ref\":\"#/$defs/uriReferenceString\"},\"$dynamicAnchor\":{\"$ref\":\"#/$defs/anchorString\"},\"$vocabulary\":{\"type\":\"object\",\"propertyNames\":{\"$ref\":\"#/$defs/uriString\"},\"additionalProperties\":{\"type\":\"boolean\"}},\"$comment\":{\"type\":\"string\"},\"$defs\":{\"type\":\"object\",\"additionalProperties\":{\"$dynamicRef\":\"#meta\"}}},\"$defs\":{\"anchorString\":{\"type\":\"string\",\"pattern\":\"^[A-Za-z_][-A-Za-z0-9._]*$\"},\"uriString\":{\"type\":\"string\",\"format\":\"uri\"},\"uriReferenceString\":{\"type\":\"string\",\"format\":\"uri-reference\"}}}"
+
+# 2020-12's meta-schema of its applicators, `https://json-schema.org/draft/2020-12/meta/applicator`.
+constant APPLICATOR: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/applicator\",\"$dynamicAnchor\":\"meta\",\"title\":\"Applicator vocabulary meta-schema\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"prefixItems\":{\"$ref\":\"#/$defs/schemaArray\"},\"items\":{\"$dynamicRef\":\"#meta\"},\"contains\":{\"$dynamicRef\":\"#meta\"},\"additionalProperties\":{\"$dynamicRef\":\"#meta\"},\"properties\":{\"type\":\"object\",\"additionalProperties\":{\"$dynamicRef\":\"#meta\"},\"default\":{}},\"patternProperties\":{\"type\":\"object\",\"additionalProperties\":{\"$dynamicRef\":\"#meta\"},\"propertyNames\":{\"format\":\"regex\"},\"default\":{}},\"dependentSchemas\":{\"type\":\"object\",\"additionalProperties\":{\"$dynamicRef\":\"#meta\"},\"default\":{}},\"propertyNames\":{\"$dynamicRef\":\"#meta\"},\"if\":{\"$dynamicRef\":\"#meta\"},\"then\":{\"$dynamicRef\":\"#meta\"},\"else\":{\"$dynamicRef\":\"#meta\"},\"allOf\":{\"$ref\":\"#/$defs/schemaArray\"},\"anyOf\":{\"$ref\":\"#/$defs/schemaArray\"},\"oneOf\":{\"$ref\":\"#/$defs/schemaArray\"},\"not\":{\"$dynamicRef\":\"#meta\"}},\"$defs\":{\"schemaArray\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"$dynamicRef\":\"#meta\"}}}}"
+
+# 2020-12's meta-schema of `unevaluatedItems` and `unevaluatedProperties`, `https://json-schema.org/draft/2020-12/meta/unevaluated`.
+constant UNEVALUATED: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/unevaluated\",\"$dynamicAnchor\":\"meta\",\"title\":\"Unevaluated applicator vocabulary meta-schema\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"unevaluatedItems\":{\"$dynamicRef\":\"#meta\"},\"unevaluatedProperties\":{\"$dynamicRef\":\"#meta\"}}}"
+
+# 2020-12's meta-schema of its assertions, `https://json-schema.org/draft/2020-12/meta/validation`.
+constant VALIDATION: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/validation\",\"$dynamicAnchor\":\"meta\",\"title\":\"Validation vocabulary meta-schema\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"type\":{\"anyOf\":[{\"$ref\":\"#/$defs/simpleTypes\"},{\"type\":\"array\",\"items\":{\"$ref\":\"#/$defs/simpleTypes\"},\"minItems\":1,\"uniqueItems\":true}]},\"const\":true,\"enum\":{\"type\":\"array\",\"items\":true},\"multipleOf\":{\"type\":\"number\",\"exclusiveMinimum\":0},\"maximum\":{\"type\":\"number\"},\"exclusiveMaximum\":{\"type\":\"number\"},\"minimum\":{\"type\":\"number\"},\"exclusiveMinimum\":{\"type\":\"number\"},\"maxLength\":{\"$ref\":\"#/$defs/nonNegativeInteger\"},\"minLength\":{\"$ref\":\"#/$defs/nonNegativeIntegerDefault0\"},\"pattern\":{\"type\":\"string\",\"format\":\"regex\"},\"maxItems\":{\"$ref\":\"#/$defs/nonNegativeInteger\"},\"minItems\":{\"$ref\":\"#/$defs/nonNegativeIntegerDefault0\"},\"uniqueItems\":{\"type\":\"boolean\",\"default\":false},\"maxContains\":{\"$ref\":\"#/$defs/nonNegativeInteger\"},\"minContains\":{\"$ref\":\"#/$defs/nonNegativeInteger\",\"default\":1},\"maxProperties\":{\"$ref\":\"#/$defs/nonNegativeInteger\"},\"minProperties\":{\"$ref\":\"#/$defs/nonNegativeIntegerDefault0\"},\"required\":{\"$ref\":\"#/$defs/stringArray\"},\"dependentRequired\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/$defs/stringArray\"}}},\"$defs\":{\"nonNegativeInteger\":{\"type\":\"integer\",\"minimum\":0},\"nonNegativeIntegerDefault0\":{\"$ref\":\"#/$defs/nonNegativeInteger\",\"default\":0},\"simpleTypes\":{\"enum\":[\"array\",\"boolean\",\"integer\",\"null\",\"number\",\"object\",\"string\"]},\"stringArray\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"uniqueItems\":true,\"default\":[]}}}"
+
+# 2020-12's meta-schema of its annotations, `https://json-schema.org/draft/2020-12/meta/meta-data`.
+constant META_DATA: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/meta-data\",\"$dynamicAnchor\":\"meta\",\"title\":\"Meta-data vocabulary meta-schema\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"title\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"default\":true,\"deprecated\":{\"type\":\"boolean\",\"default\":false},\"readOnly\":{\"type\":\"boolean\",\"default\":false},\"writeOnly\":{\"type\":\"boolean\",\"default\":false},\"examples\":{\"type\":\"array\",\"items\":true}}}"
+
+# 2020-12's meta-schema of `format` as an annotation, `https://json-schema.org/draft/2020-12/meta/format-annotation`.
+constant FORMAT_ANNOTATION: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/format-annotation\",\"$dynamicAnchor\":\"meta\",\"title\":\"Format vocabulary meta-schema for annotation results\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"format\":{\"type\":\"string\"}}}"
+
+# 2020-12's meta-schema of `format` as an assertion, `https://json-schema.org/draft/2020-12/meta/format-assertion`.
+constant FORMAT_ASSERTION: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/format-assertion\",\"$dynamicAnchor\":\"meta\",\"title\":\"Format vocabulary meta-schema for assertion results\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"format\":{\"type\":\"string\"}}}"
+
+# 2020-12's meta-schema of the `content` keywords, `https://json-schema.org/draft/2020-12/meta/content`.
+constant CONTENT: str
+    "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"https://json-schema.org/draft/2020-12/meta/content\",\"$dynamicAnchor\":\"meta\",\"title\":\"Content vocabulary meta-schema\",\"type\":[\"object\",\"boolean\"],\"properties\":{\"contentEncoding\":{\"type\":\"string\"},\"contentMediaType\":{\"type\":\"string\"},\"contentSchema\":{\"$dynamicRef\":\"#meta\"}}}"
+
+# The URIs of the meta-schemas this module holds, each without a fragment.
+function uris() -> [str]
+    return [
+        "http://json-schema.org/draft-07/schema"
+        "https://json-schema.org/draft/2020-12/schema"
+        "https://json-schema.org/draft/2020-12/meta/core"
+        "https://json-schema.org/draft/2020-12/meta/applicator"
+        "https://json-schema.org/draft/2020-12/meta/unevaluated"
+        "https://json-schema.org/draft/2020-12/meta/validation"
+        "https://json-schema.org/draft/2020-12/meta/meta-data"
+        "https://json-schema.org/draft/2020-12/meta/format-annotation"
+        "https://json-schema.org/draft/2020-12/meta/format-assertion"
+        "https://json-schema.org/draft/2020-12/meta/content"
+    ]
+
+# The text of the meta-schema at `uri`, without a fragment. Fails `not_found`
+# where it is none of them.
+function text_of(uri: str) -> str?
+    if uri == "http://json-schema.org/draft-07/schema"
+        return ok(DRAFT_7)
+
+    if uri == "https://json-schema.org/draft/2020-12/schema"
+        return ok(DRAFT_2020)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/core"
+        return ok(CORE)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/applicator"
+        return ok(APPLICATOR)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/unevaluated"
+        return ok(UNEVALUATED)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/validation"
+        return ok(VALIDATION)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/meta-data"
+        return ok(META_DATA)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/format-annotation"
+        return ok(FORMAT_ANNOTATION)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/format-assertion"
+        return ok(FORMAT_ASSERTION)
+
+    if uri == "https://json-schema.org/draft/2020-12/meta/content"
+        return ok(CONTENT)
+
+    return fail(code: NOT_FOUND, msg: f"no meta-schema at \"{uri}\" among the ones this package carries")
+
+## Tests
+
+test "text_of: each meta-schema names itself by its $id, and an unknown URI"
+    for uri in uris()
+        found = text_of(uri).must()
+        assert found.len() > 100
+
+    assert text_of("https://json-schema.org/draft/2019-09/schema").is_err()

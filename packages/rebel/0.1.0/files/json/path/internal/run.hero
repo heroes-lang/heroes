@@ -1,0 +1,618 @@
+# A query run against a value, RFC 9535 § 2: each segment applies its
+# selectors to every node the segments before it selected, a descendant
+# segment to each node and every node inside it, in document order, on a
+# stack this module holds. A filter's postfix code runs on a stack of
+# operands; a query inside it runs this module again, as deep as the query
+# nests and no deeper, since `reader` bounds that nesting.
+
+use json
+use json/path/internal/iregexp
+use json/path/internal/places
+use json/path/internal/program
+use json/path/internal/reader
+use json/path/internal/same
+use json/path/internal/stack
+use regex
+use unicode
+
+# One node a query selects: its value and, where they are asked for, its
+# places.
+record Found
+    # The value.
+    value: json.Value
+    # Its normalized path, `""` where places are not asked for.
+    location: str
+    # Its JSON pointer, `""` where places are not asked for.
+    pointer: str
+
+# The patterns `match` and `search` have compiled during one run, and the
+# ones that are no I-Regexp.
+record Patterns
+    # Each pattern's compiled form, by its text.
+    compiled: {str: regex.Regex}
+    # The texts that are no I-Regexp, or that `regex` refuses.
+    refused: {str: bool}
+
+# An operand on a filter's stack is a value.
+constant VALUE_KIND: i64
+    0
+
+# An operand is no value at all: RFC 9535's Nothing.
+constant NOTHING_KIND: i64
+    1
+
+# An operand is true or false.
+constant LOGICAL_KIND: i64
+    2
+
+# An operand is the nodes a query selects.
+constant NODES_KIND: i64
+    3
+
+# One operand of a filter's code.
+record Operand
+    # `VALUE_KIND`, `NOTHING_KIND`, `LOGICAL_KIND` or `NODES_KIND`.
+    kind: i64
+    # The value of a `VALUE_KIND`.
+    value: json.Value
+    # The truth of a `LOGICAL_KIND`.
+    truth: bool
+    # The values of a `NODES_KIND`.
+    nodes: [json.Value]
+
+# The operand of a value.
+function of_value(v: json.Value) -> Operand
+    return Operand(kind: VALUE_KIND, value: v, truth: false, nodes: [])
+
+# The operand that is Nothing.
+function nothing() -> Operand
+    return Operand(kind: NOTHING_KIND, value: .null_value, truth: false, nodes: [])
+
+# The operand of a truth.
+function of_truth(t: bool) -> Operand
+    return Operand(kind: LOGICAL_KIND, value: .null_value, truth: t, nodes: [])
+
+# `o` as a value, a singular query's nodes becoming the one value they hold or
+# Nothing.
+function as_value(o: Operand) -> Operand
+    if o.kind != NODES_KIND
+        return o
+
+    if o.nodes.len() == 1
+        return of_value(o.nodes[0])
+    return nothing()
+
+# `o` as a truth: a list of nodes is true where it is not empty.
+function as_truth(o: Operand) -> bool
+    if o.kind == NODES_KIND
+        return o.nodes.len() > 0
+    return o.truth
+
+# Whether `a` is less than `b` as RFC 9535 § 2.3.5.2.2 orders them: two
+# numbers by value, two texts by their characters' code points, and nothing
+# else.
+function is_less(a: Operand, b: Operand) -> bool
+    if a.kind != VALUE_KIND || b.kind != VALUE_KIND
+        return false
+
+    match a.value
+        .number x =>
+            match b.value
+                .number y                                                => return x.v < y.v
+                .null_value | .boolean _ | .text _ | .list _ | .object _ => return false
+        .text x =>
+            match b.value
+                .text y =>
+                    # Bytes of UTF-8 order as their code points do.
+                    shorter = if x.v.len() < y.v.len()
+                        x.v.len()
+                    else
+                        y.v.len()
+
+                    for at in range(from: 0, to: shorter)
+                        if x.v[at] != y.v[at]
+                            return x.v[at] < y.v[at]
+
+                    return x.v.len() < y.v.len()
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => return false
+        .null_value | .boolean _ | .list _ | .object _ => return false
+
+# Whether `a` equals `b`: two Nothings do, Nothing and a value do not, and two
+# values compare as JSON compares them.
+function is_equal(a: Operand, b: Operand) -> bool
+    if a.kind == NOTHING_KIND || b.kind == NOTHING_KIND
+        return a.kind == b.kind
+    return same.equal(a: a.value, b: b.value)
+
+# The truth of `left op right` for one of the six comparison operators.
+function compare(left: Operand, op: str, right: Operand) -> bool
+    a = as_value(left)
+    b = as_value(right)
+
+    if op == "=="
+        return is_equal(a: a, b: b)
+
+    if op == "!="
+        return !is_equal(a: a, b: b)
+
+    if op == "<"
+        return is_less(a: a, b: b)
+
+    if op == ">"
+        return is_less(a: b, b: a)
+
+    if op == "<="
+        return is_less(a: a, b: b) || is_equal(a: a, b: b)
+    return is_less(a: b, b: a) || is_equal(a: a, b: b)
+
+# Whether the I-Regexp `pattern` matches `text`, whole where `whole` asks or
+# anywhere otherwise; false where it is no I-Regexp.
+function matches(text: str, pattern: str, whole: bool, @patterns: Patterns) -> bool
+    if patterns.refused[pattern].default(false)
+        return false
+
+    match patterns.compiled[pattern]
+        .ok re =>
+            if whole
+                return !regex.full_match(text, re).is_err()
+            return regex.contains(text, re)
+        .err _ => _ = 0
+
+    written = iregexp.translate(pattern)
+
+    match written
+        .err _ =>
+            patterns.refused[pattern] @ true
+            return false
+        .ok syntax =>
+            match regex.compile(syntax)
+                .err _ =>
+                    patterns.refused[pattern] @ true
+                    return false
+                .ok re =>
+                    patterns.compiled[pattern] @ re
+
+                    if whole
+                        return !regex.full_match(text, re).is_err()
+                    return regex.contains(text, re)
+
+# The answer of the function `name` to `given`, RFC 9535 § 2.4.
+function call(name: str, given: [Operand], @patterns: Patterns) -> Operand
+    if name == "count"
+        return of_value(.number(v: to_f64(given[0].nodes.len())))
+
+    if name == "value"
+        if given[0].nodes.len() == 1
+            return of_value(given[0].nodes[0])
+        return nothing()
+    first = as_value(given[0])
+
+    if name == "length"
+        if first.kind != VALUE_KIND
+            return nothing()
+
+        match first.value
+            .text t                              => return of_value(.number(v: to_f64(unicode.char_count(t.v))))
+            .list l                              => return of_value(.number(v: to_f64(l.items.len())))
+            .object o                            => return of_value(.number(v: to_f64(keys(o.members).len())))
+            .null_value | .boolean _ | .number _ => return nothing()
+    second = as_value(given[1])
+
+    if first.kind != VALUE_KIND || second.kind != VALUE_KIND
+        return of_truth(false)
+
+    match first.value
+        .text t =>
+            match second.value
+                .text p => return of_truth(
+                    matches(text: t.v, pattern: p.v, whole: name == "match", patterns: @patterns)
+                )
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => return of_truth(false)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => return of_truth(false)
+
+# Whether the filter `index` of `code` accepts `current`, `root` being the
+# value the whole query runs against.
+function accepts(code: program.Program, index: i64, root: json.Value, current: json.Value, @patterns: Patterns) -> bool
+    operands: [Operand] @= []
+    top: i64 @= 0
+
+    for ins in code.filters[index].code
+        if ins.op == program.PUSH_VALUE
+            stack.put(items: @operands, top: top, item: of_value(ins.value))
+            top @ top + 1
+        else if ins.op == program.PUSH_NODES
+            start = if code.paths[ins.path].absolute
+                root
+            else
+                current
+            found = run_path(code, index: ins.path, root: root, start: start, with_places: false, patterns: @patterns)
+            values: [json.Value] @= []
+
+            for f in found
+                values @ values.push(f.value)
+
+            stack.put(
+                items: @operands,
+                top: top,
+                item: Operand(kind: NODES_KIND, value: .null_value, truth: false, nodes: values)
+            )
+            top @ top + 1
+        else if ins.op == program.COMPARE
+            top @ top - 1
+            result = compare(left: operands[top - 1], op: ins.name, right: operands[top])
+            operands[top - 1] @ of_truth(result)
+        else if ins.op == program.TEST
+            operands[top - 1] @ of_truth(as_truth(operands[top - 1]))
+        else if ins.op == program.NOT
+            operands[top - 1] @ of_truth(!operands[top - 1].truth)
+        else if ins.op == program.AND || ins.op == program.OR
+            top @ top - 1
+
+            both = if ins.op == program.AND
+                operands[top - 1].truth && operands[top].truth
+            else
+                operands[top - 1].truth || operands[top].truth
+            operands[top - 1] @ of_truth(both)
+        else
+            given: [Operand] @= []
+
+            for at in range(from: top - ins.count, to: top)
+                given @ given.push(operands[at])
+
+            top @ top - ins.count
+            stack.put(items: @operands, top: top, item: call(ins.name, given: given, patterns: @patterns))
+            top @ top + 1
+
+    return operands[0].truth
+
+# The elements a slice selects of a list of `count`, RFC 9535 § 2.3.4.2.2,
+# in the order it selects them.
+function slice_indices(s: program.Selector, count: i64) -> [i64]
+    step = s.index
+    out: [i64] @= []
+
+    if step == 0
+        return out
+
+    # The bounds as RFC 9535 writes them: a default by the step's sign, a
+    # negative bound counted from the end.
+    start: i64 @= if step > 0
+        0
+    else
+        count - 1
+
+    end: i64 @= if step > 0
+        count
+    else
+        0 - count - 1
+
+    if s.has_start
+        start @ if s.start < 0
+            s.start + count
+        else
+            s.start
+
+    if s.has_end
+        end @ if s.end < 0
+            s.end + count
+        else
+            s.end
+
+    if step > 0
+        lower = if start < 0
+            0
+        else if start > count
+            count
+        else
+            start
+
+        upper = if end < 0
+            0
+        else if end > count
+            count
+        else
+            end
+        at: i64 @= lower
+
+        while at < upper
+            out @ out.push(at)
+            at @ at + step
+    else
+        upper = if start < -1
+            -1
+        else if start > count - 1
+            count - 1
+        else
+            start
+
+        lower = if end < -1
+            -1
+        else if end > count - 1
+            count - 1
+        else
+            end
+        at: i64 @= upper
+
+        while lower < at
+            out @ out.push(at)
+            at @ at + step
+
+    return out
+
+# Adds to `out` the node `value` at `location` and `pointer`.
+function add(@out: [Found], value: json.Value, location: str, pointer: str)
+    out @ out.push(Found(value: value, location: location, pointer: pointer))
+
+# Adds to `out` what `selectors` select of `node`, in their order.
+function select_of(@out: [Found], code: program.Program, selectors: [program.Selector], node: Found, root: json.Value, with_places: bool, @patterns: Patterns)
+    for s in selectors
+        match node.value
+            .object o =>
+                if s.kind == program.NAME
+                    match o.members[s.name]
+                        .ok found =>
+                            if with_places
+                                add(
+                                    out: @out,
+                                    value: found,
+                                    location: places.member_location(location: node.location, name: s.name),
+                                    pointer: places.member_pointer(pointer: node.pointer, name: s.name)
+                                )
+                            else
+                                add(out: @out, value: found, location: "", pointer: "")
+                        .err _ => _ = 0
+                else if s.kind == program.WILDCARD || s.kind == program.FILTER
+                    for name in keys(o.members)
+                        member = o.members[name].must()
+
+                        if s.kind == program.WILDCARD || accepts(code, index: s.filter, root: root, current: member, patterns: @patterns)
+                            if with_places
+                                add(
+                                    out: @out,
+                                    value: member,
+                                    location: places.member_location(location: node.location, name: name),
+                                    pointer: places.member_pointer(pointer: node.pointer, name: name)
+                                )
+                            else
+                                add(out: @out, value: member, location: "", pointer: "")
+            .list l =>
+                count = l.items.len()
+                chosen: [i64] @= []
+
+                if s.kind == program.INDEX
+                    at = if s.index < 0
+                        s.index + count
+                    else
+                        s.index
+
+                    if at >= 0 && at < count
+                        chosen @ chosen.push(at)
+                else if s.kind == program.SLICE
+                    chosen @ slice_indices(s, count: count)
+                else if s.kind == program.WILDCARD
+                    chosen @ range(from: 0, to: count)
+                else if s.kind == program.FILTER
+                    for at in range(from: 0, to: count)
+                        if accepts(code, index: s.filter, root: root, current: l.items[at], patterns: @patterns)
+                            chosen @ chosen.push(at)
+
+                for at in chosen
+                    if with_places
+                        add(
+                            out: @out,
+                            value: l.items[at],
+                            location: f"{node.location}[{at}]",
+                            pointer: f"{node.pointer}/{at}"
+                        )
+                    else
+                        add(out: @out, value: l.items[at], location: "", pointer: "")
+            .null_value | .boolean _ | .number _ | .text _ => _ = 0
+
+# The nodes the query `index` of `code` selects from `start`, `root` being
+# the value the whole query runs against.
+function run_path(code: program.Program, index: i64, root: json.Value, start: json.Value, with_places: bool, @patterns: Patterns) -> [Found]
+    nodes: [Found] @= [Found(value: start, location: "$", pointer: "")]
+
+    for segment in code.paths[index].segments
+        next: [Found] @= []
+
+        for node in nodes
+            if !segment.descendant
+                select_of(
+                    out: @next,
+                    code: code,
+                    selectors: segment.selectors,
+                    node: node,
+                    root: root,
+                    with_places: with_places,
+                    patterns: @patterns
+                )
+            else
+                # The node, then every node inside it in document order: a
+                # value before the values it holds, a list's in order and an
+                # object's in the order it keeps.
+                pending: [Found] @= [node]
+                top: i64 @= 1
+
+                while top > 0
+                    top @ top - 1
+                    here = pending[top]
+                    select_of(
+                        out: @next,
+                        code: code,
+                        selectors: segment.selectors,
+                        node: here,
+                        root: root,
+                        with_places: with_places,
+                        patterns: @patterns
+                    )
+
+                    match here.value
+                        .list l =>
+                            at: i64 @= l.items.len()
+
+                            while at > 0
+                                at @ at - 1
+
+                                child = if with_places
+                                    Found(
+                                        value: l.items[at],
+                                        location: f"{here.location}[{at}]",
+                                        pointer: f"{here.pointer}/{at}"
+                                    )
+                                else
+                                    Found(value: l.items[at], location: "", pointer: "")
+                                stack.put(items: @pending, top: top, item: child)
+                                top @ top + 1
+                        .object o =>
+                            names = keys(o.members)
+                            at: i64 @= names.len()
+
+                            while at > 0
+                                at @ at - 1
+                                name = names[at]
+
+                                child = if with_places
+                                    Found(
+                                        value: o.members[name].must(),
+                                        location: places.member_location(location: here.location, name: name),
+                                        pointer: places.member_pointer(pointer: here.pointer, name: name)
+                                    )
+                                else
+                                    Found(value: o.members[name].must(), location: "", pointer: "")
+                                stack.put(items: @pending, top: top, item: child)
+                                top @ top + 1
+                        .null_value | .boolean _ | .number _ | .text _ => _ = 0
+
+        nodes @ next
+
+    return nodes
+
+# The nodes the whole query `code` selects in `doc`, with their places where
+# `with_places` asks.
+function run(code: program.Program, doc: json.Value, with_places: bool) -> [Found]
+    patterns @= Patterns(compiled: {}, refused: {})
+    return run_path(code, index: 0, root: doc, start: doc, with_places: with_places, patterns: @patterns)
+
+## Tests
+
+# The places of what `query` selects in `text`, each as its normalized path.
+function locations_of(query: str, text: str) -> [str]
+    out: [str] @= []
+
+    for f in run(reader.read(query).must(), doc: json.parse(text).must(), with_places: true)
+        out @ out.push(f.location)
+
+    return out
+
+test "slice_indices: RFC 9535's examples, steps either way, and a step of 0"
+    s = program.Selector(
+        kind: program.SLICE,
+        name: "",
+        index: 1,
+        start: 1,
+        has_start: true,
+        end: 3,
+        has_end: true,
+        filter: -1
+    )
+    assert slice_indices(s, count: 7) == [1, 2]
+    every = program.Selector(
+        kind: program.SLICE,
+        name: "",
+        index: 2,
+        start: 0,
+        has_start: false,
+        end: 0,
+        has_end: false,
+        filter: -1
+    )
+    assert slice_indices(every, count: 7) == [0, 2, 4, 6]
+    back = program.Selector(
+        kind: program.SLICE,
+        name: "",
+        index: -1,
+        start: 0,
+        has_start: false,
+        end: 0,
+        has_end: false,
+        filter: -1
+    )
+    assert slice_indices(back, count: 4) == [3, 2, 1, 0]
+    some = program.Selector(
+        kind: program.SLICE,
+        name: "",
+        index: -1,
+        start: 5,
+        has_start: true,
+        end: 1,
+        has_end: true,
+        filter: -1
+    )
+    assert slice_indices(some, count: 7) == [5, 4, 3, 2]
+    zero = program.Selector(
+        kind: program.SLICE,
+        name: "",
+        index: 0,
+        start: 0,
+        has_start: false,
+        end: 0,
+        has_end: false,
+        filter: -1
+    )
+    assert slice_indices(zero, count: 7).len() == 0
+    far = program.Selector(
+        kind: program.SLICE,
+        name: "",
+        index: 1,
+        start: -100,
+        has_start: true,
+        end: 100,
+        has_end: true,
+        filter: -1
+    )
+    assert slice_indices(far, count: 3) == [0, 1, 2]
+    assert slice_indices(back, count: 0).len() == 0
+
+test "run: RFC 9535's bookstore, its first queries"
+    doc = "{\"store\": {\"book\": [{\"category\": \"reference\", \"author\": \"Nigel Rees\", \"price\": 8.95}, {\"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"price\": 12.99}], \"bicycle\": {\"color\": \"red\", \"price\": 399}}}"
+    assert locations_of(query: "$.store.book[*].author", text: doc) == ["$['store']['book'][0]['author']", "$['store']['book'][1]['author']"]
+    assert locations_of(query: "$..price", text: doc) == ["$['store']['book'][0]['price']", "$['store']['book'][1]['price']", "$['store']['bicycle']['price']"]
+    assert locations_of(query: "$..book[?@.price < 10]", text: doc) == ["$['store']['book'][0]"]
+    assert locations_of(query: "$.store.*", text: doc) == ["$['store']['book']", "$['store']['bicycle']"]
+
+test "run: comparisons of Nothing, of kinds that do not order, and of texts by code point"
+    doc = "[{\"a\": 1}, {\"a\": \"b\"}, {}, {\"a\": null}, {\"a\": \"é\"}, {\"a\": \"z\"}]"
+    assert locations_of(query: "$[?@.a == @.b]", text: doc) == ["$[2]"]
+    assert locations_of(query: "$[?@.a < 2]", text: doc) == ["$[0]"]
+    assert locations_of(query: "$[?@.a > 'y']", text: doc) == ["$[4]", "$[5]"]
+    assert locations_of(query: "$[?@.a == null]", text: doc) == ["$[3]"]
+    assert locations_of(query: "$[?@.a <= 1 || @.a >= 'z']", text: doc) == ["$[0]", "$[4]", "$[5]"]
+
+test "run: the five functions, and a pattern that is no I-Regexp matching nothing"
+    doc = "[\"ab\", \"abc\", [1, 2], {\"k\": 1}, 7]"
+    assert locations_of(query: "$[?length(@) == 2]", text: doc) == ["$[0]", "$[2]"]
+    assert locations_of(query: "$[?match(@, 'a.')]", text: doc) == ["$[0]"]
+    assert locations_of(query: "$[?search(@, 'c$')]", text: doc) == ["$[1]"]
+    assert locations_of(query: "$[?match(@, 'a(')]", text: doc).len() == 0
+    assert locations_of(query: "$[?count(@.*) == 1]", text: doc) == ["$[3]"]
+    assert locations_of(query: "$[?value(@.k) == 1]", text: doc) == ["$[3]"]
+
+test "run: a descendant segment over a list nested a hundred thousand deep"
+    deep: json.Value @= .number(v: 1.0)
+
+    for _ in range(from: 0, to: 100000)
+        deep @ .list(items: [deep])
+
+    found = run(reader.read("$..*").must(), doc: deep, with_places: false)
+    assert found.len() == 100000
+
+test "run: a query nested to the bound, run on a value nested deeper"
+    query = "$" + repeat("[?@", 63) + repeat("]", 63)
+    deep: json.Value @= .number(v: 1.0)
+
+    for _ in range(from: 0, to: 70)
+        deep @ .list(items: [deep])
+
+    found = run(reader.read(query).must(), doc: deep, with_places: false)
+    assert found.len() == 1

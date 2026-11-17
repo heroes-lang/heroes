@@ -1,0 +1,2221 @@
+# The JSONPath Compliance Test Suite
+# (github.com/jsonpath-standard/jsonpath-compliance-test-suite, commit 20ebdcce
+# of 2026-10-14, its `cts.json` as fetched on 2026-11-17), every one of its
+# 715 tests: a query that must be refused, or a query, a document, and the
+# values it selects with their normalized paths, in one order or, where the
+# RFC leaves the order of an object's members open, in one of several. Each
+# is a test; nothing else here is compiled into a program.
+
+use json
+use json/path/internal/reader
+use json/path/internal/run
+
+# The suite's version, the commit its tests were taken from.
+constant VERSION: str
+    "20ebdcce"
+
+# The text holding one zero byte, which no literal writes.
+function zero_byte() -> str
+    nul: [u8] = [0]
+    return nul.validated_bytes().must()
+
+# `text` written as RFC 8785 writes it, so that two texts of one value
+# compare equal.
+function canonical(text: str) -> str
+    return json.format_canonical(json.parse(text).must()).must()
+
+# What `selector` selects in `document`: `invalid` where it is no query, and
+# otherwise the values and their normalized paths as one canonical text, the
+# list of values first.
+function answer(selector: str, document: str) -> str
+    match reader.read(selector)
+        .err _ => return "invalid"
+        .ok code =>
+            values: [json.Value] @= []
+            paths: [json.Value] @= []
+
+            for found in run.run(code, doc: json.parse(document).must(), with_places: true)
+                values @ values.push(found.value)
+                paths @ paths.push(.text(v: found.location))
+
+            return json.format_canonical(.list(items: [.list(items: values), .list(items: paths)])).must()
+
+# Whether `got` is one of `allowed`.
+function is_one_of(got: str, allowed: [str]) -> bool
+    for one in allowed
+        if one == got
+            return true
+
+    return false
+
+test "cts 0: basic, root"
+    assert answer(selector: "$", document: "[\"first\",\"second\"]") == canonical("[[[\"first\",\"second\"]],[\"$\"]]")
+
+test "cts 1: basic, no leading whitespace"
+    assert answer(selector: " $", document: "null") == "invalid"
+
+test "cts 2: basic, no trailing whitespace"
+    assert answer(selector: "$ ", document: "null") == "invalid"
+
+test "cts 3: basic, name shorthand"
+    assert answer(selector: "$.a", document: "{\"a\":\"A\",\"b\":\"B\"}") == canonical("[[\"A\"],[\"$['a']\"]]")
+
+test "cts 4: basic, name shorthand, extended unicode"
+    assert answer(selector: "$.☺", document: "{\"☺\":\"A\",\"b\":\"B\"}") == canonical("[[\"A\"],[\"$['☺']\"]]")
+
+test "cts 5: basic, name shorthand, supplementary plane character"
+    assert answer(selector: "$.😀", document: "{\"😀\":\"A\",\"b\":\"B\"}") == canonical("[[\"A\"],[\"$['😀']\"]]")
+
+test "cts 6: basic, name shorthand, underscore"
+    assert answer(selector: "$._", document: "{\"_\":\"A\",\"_foo\":\"B\"}") == canonical("[[\"A\"],[\"$['_']\"]]")
+
+test "cts 7: basic, name shorthand, symbol"
+    assert answer(selector: "$.&", document: "null") == "invalid"
+
+test "cts 8: basic, name shorthand, number"
+    assert answer(selector: "$.1", document: "null") == "invalid"
+
+test "cts 9: basic, name shorthand, hyphen"
+    assert answer(selector: "$.a-b", document: "null") == "invalid"
+
+test "cts 10: basic, name shorthand, absent data"
+    assert answer(selector: "$.c", document: "{\"a\":\"A\",\"b\":\"B\"}") == canonical("[[],[]]")
+
+test "cts 11: basic, name shorthand, array data"
+    assert answer(selector: "$.a", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 12: basic, name shorthand, object data, nested"
+    assert answer(selector: "$.a.b.c", document: "{\"a\":{\"b\":{\"c\":\"C\"}}}") == canonical("[[\"C\"],[\"$['a']['b']['c']\"]]")
+
+test "cts 13: basic, wildcard shorthand, object data"
+    assert is_one_of(
+        answer(selector: "$.*", document: "{\"a\":\"A\",\"b\":\"B\"}"),
+        allowed: [canonical("[[\"A\",\"B\"],[\"$['a']\",\"$['b']\"]]"), canonical("[[\"B\",\"A\"],[\"$['b']\",\"$['a']\"]]")]
+    )
+
+test "cts 14: basic, wildcard shorthand, array data"
+    assert answer(selector: "$.*", document: "[\"first\",\"second\"]") == canonical("[[\"first\",\"second\"],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 15: basic, wildcard selector, array data"
+    assert answer(selector: "$[*]", document: "[\"first\",\"second\"]") == canonical("[[\"first\",\"second\"],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 16: basic, wildcard shorthand, then name shorthand"
+    assert is_one_of(
+        answer(selector: "$.*.a", document: "{\"x\":{\"a\":\"Ax\",\"b\":\"Bx\"},\"y\":{\"a\":\"Ay\",\"b\":\"By\"}}"),
+        allowed: [canonical("[[\"Ax\",\"Ay\"],[\"$['x']['a']\",\"$['y']['a']\"]]"), canonical("[[\"Ay\",\"Ax\"],[\"$['y']['a']\",\"$['x']['a']\"]]")]
+    )
+
+test "cts 17: basic, multiple selectors"
+    assert answer(selector: "$[0,2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0,2],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 18: basic, multiple selectors, space instead of comma"
+    assert answer(selector: "$[0 2]", document: "null") == "invalid"
+
+test "cts 19: basic, selector, leading comma"
+    assert answer(selector: "$[,0]", document: "null") == "invalid"
+
+test "cts 20: basic, selector, trailing comma"
+    assert answer(selector: "$[0,]", document: "null") == "invalid"
+
+test "cts 21: basic, selector, trailing comma, space"
+    assert answer(selector: "$[0, ]", document: "null") == "invalid"
+
+test "cts 22: basic, multiple selectors, name and index, array data"
+    assert answer(selector: "$['a',1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1],[\"$[1]\"]]")
+
+test "cts 23: basic, multiple selectors, name and index, object data"
+    assert answer(selector: "$['a',1]", document: "{\"a\":1,\"b\":2}") == canonical("[[1],[\"$['a']\"]]")
+
+test "cts 24: basic, multiple selectors, index and slice"
+    assert answer(selector: "$[1,5:7]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1,5,6],[\"$[1]\",\"$[5]\",\"$[6]\"]]")
+
+test "cts 25: basic, multiple selectors, index and slice, overlapping"
+    assert answer(selector: "$[1,0:3]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1,0,1,2],[\"$[1]\",\"$[0]\",\"$[1]\",\"$[2]\"]]")
+
+test "cts 26: basic, multiple selectors, duplicate index"
+    assert answer(selector: "$[1,1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1,1],[\"$[1]\",\"$[1]\"]]")
+
+test "cts 27: basic, multiple selectors, wildcard and index"
+    assert answer(selector: "$[*,1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0,1,2,3,4,5,6,7,8,9,1],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\",\"$[7]\",\"$[8]\",\"$[9]\",\"$[1]\"]]")
+
+test "cts 28: basic, multiple selectors, wildcard and name"
+    assert is_one_of(
+        answer(selector: "$[*,'a']", document: "{\"a\":\"A\",\"b\":\"B\"}"),
+        allowed: [canonical("[[\"A\",\"B\",\"A\"],[\"$['a']\",\"$['b']\",\"$['a']\"]]"), canonical("[[\"B\",\"A\",\"A\"],[\"$['b']\",\"$['a']\",\"$['a']\"]]")]
+    )
+
+test "cts 29: basic, multiple selectors, wildcard and slice"
+    assert answer(selector: "$[*,0:2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0,1,2,3,4,5,6,7,8,9,0,1],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\",\"$[7]\",\"$[8]\",\"$[9]\",\"$[0]\",\"$[1]\"]]")
+
+test "cts 30: basic, multiple selectors, multiple wildcards"
+    assert answer(selector: "$[*,*]", document: "[0,1,2]") == canonical("[[0,1,2,0,1,2],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[0]\",\"$[1]\",\"$[2]\"]]")
+
+test "cts 31: basic, empty segment"
+    assert answer(selector: "$[]", document: "null") == "invalid"
+
+test "cts 32: basic, descendant segment, index"
+    assert answer(selector: "$..[1]", document: "{\"o\":[0,1,[2,3]]}") == canonical("[[1,3],[\"$['o'][1]\",\"$['o'][2][1]\"]]")
+
+test "cts 33: basic, descendant segment, name shorthand"
+    assert answer(selector: "$..a", document: "{\"o\":[{\"a\":\"b\"},{\"a\":\"c\"}]}") == canonical("[[\"b\",\"c\"],[\"$['o'][0]['a']\",\"$['o'][1]['a']\"]]")
+
+test "cts 34: basic, name shorthand, true"
+    assert answer(selector: "$.true", document: "{\"true\":\"A\",\"_foo\":\"B\"}") == canonical("[[\"A\"],[\"$['true']\"]]")
+
+test "cts 35: basic, name shorthand, false"
+    assert answer(selector: "$.false", document: "{\"false\":\"A\",\"_foo\":\"B\"}") == canonical("[[\"A\"],[\"$['false']\"]]")
+
+test "cts 36: basic, name shorthand, null"
+    assert answer(selector: "$.null", document: "{\"null\":\"A\",\"_foo\":\"B\"}") == canonical("[[\"A\"],[\"$['null']\"]]")
+
+test "cts 37: basic, descendant segment, wildcard shorthand, array data"
+    assert answer(selector: "$..*", document: "[0,1]") == canonical("[[0,1],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 38: basic, descendant segment, wildcard selector, array data"
+    assert answer(selector: "$..[*]", document: "[0,1]") == canonical("[[0,1],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 39: basic, descendant segment, wildcard selector, nested arrays"
+    assert is_one_of(
+        answer(selector: "$..[*]", document: "[[[1]],[2]]"),
+        allowed: [canonical("[[[[1]],[2],[1],1,2],[\"$[0]\",\"$[1]\",\"$[0][0]\",\"$[0][0][0]\",\"$[1][0]\"]]"), canonical("[[[[1]],[2],[1],2,1],[\"$[0]\",\"$[1]\",\"$[0][0]\",\"$[1][0]\",\"$[0][0][0]\"]]")]
+    )
+
+test "cts 40: basic, descendant segment, wildcard selector, nested objects"
+    assert is_one_of(
+        answer(selector: "$..[*]", document: "{\"a\":{\"c\":{\"e\":1}},\"b\":{\"d\":2}}"),
+        allowed: [canonical("[[{\"c\":{\"e\":1}},{\"d\":2},{\"e\":1},1,2],[\"$['a']\",\"$['b']\",\"$['a']['c']\",\"$['a']['c']['e']\",\"$['b']['d']\"]]"), canonical("[[{\"c\":{\"e\":1}},{\"d\":2},{\"e\":1},2,1],[\"$['a']\",\"$['b']\",\"$['a']['c']\",\"$['b']['d']\",\"$['a']['c']['e']\"]]"), canonical("[[{\"c\":{\"e\":1}},{\"d\":2},2,{\"e\":1},1],[\"$['a']\",\"$['b']\",\"$['b']['d']\",\"$['a']['c']\",\"$['a']['c']['e']\"]]"), canonical("[[{\"d\":2},{\"c\":{\"e\":1}},{\"e\":1},1,2],[\"$['b']\",\"$['a']\",\"$['a']['c']\",\"$['a']['c']['e']\",\"$['b']['d']\"]]"), canonical("[[{\"d\":2},{\"c\":{\"e\":1}},{\"e\":1},2,1],[\"$['b']\",\"$['a']\",\"$['a']['c']\",\"$['b']['d']\",\"$['a']['c']['e']\"]]"), canonical("[[{\"d\":2},{\"c\":{\"e\":1}},2,{\"e\":1},1],[\"$['b']\",\"$['a']\",\"$['b']['d']\",\"$['a']['c']\",\"$['a']['c']['e']\"]]")]
+    )
+
+test "cts 41: basic, descendant segment, wildcard shorthand, object data"
+    assert answer(selector: "$..*", document: "{\"a\":\"b\"}") == canonical("[[\"b\"],[\"$['a']\"]]")
+
+test "cts 42: basic, descendant segment, wildcard shorthand, nested data"
+    assert answer(selector: "$..*", document: "{\"o\":[{\"a\":\"b\"}]}") == canonical("[[[{\"a\":\"b\"}],{\"a\":\"b\"},\"b\"],[\"$['o']\",\"$['o'][0]\",\"$['o'][0]['a']\"]]")
+
+test "cts 43: basic, descendant segment, multiple selectors"
+    assert answer(selector: "$..['a','d']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[\"b\",\"e\",\"c\",\"f\"],[\"$[0]['a']\",\"$[0]['d']\",\"$[1]['a']\",\"$[1]['d']\"]]")
+
+test "cts 44: basic, descendant segment, object traversal, multiple selectors"
+    assert is_one_of(
+        answer(selector: "$..['a','d']", document: "{\"x\":{\"a\":\"b\",\"d\":\"e\"},\"y\":{\"a\":\"c\",\"d\":\"f\"}}"),
+        allowed: [canonical("[[\"b\",\"e\",\"c\",\"f\"],[\"$['x']['a']\",\"$['x']['d']\",\"$['y']['a']\",\"$['y']['d']\"]]"), canonical("[[\"c\",\"f\",\"b\",\"e\"],[\"$['y']['a']\",\"$['y']['d']\",\"$['x']['a']\",\"$['x']['d']\"]]")]
+    )
+
+test "cts 45: basic, bald descendant segment"
+    assert answer(selector: "$..", document: "null") == "invalid"
+
+test "cts 46: basic, current node identifier without filter selector"
+    assert answer(selector: "$[@.a]", document: "null") == "invalid"
+
+test "cts 47: basic, root node identifier in brackets without filter selector"
+    assert answer(selector: "$[$.a]", document: "null") == "invalid"
+
+test "cts 48: filter, existence, without segments"
+    assert is_one_of(
+        answer(selector: "$[?@]", document: "{\"a\":1,\"b\":null}"),
+        allowed: [canonical("[[1,null],[\"$['a']\",\"$['b']\"]]"), canonical("[[null,1],[\"$['b']\",\"$['a']\"]]")]
+    )
+
+test "cts 49: filter, existence"
+    assert answer(selector: "$[?@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 50: filter, existence, present with null"
+    assert answer(selector: "$[?@.a]", document: "[{\"a\":null,\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":null,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 51: filter, absolute existence, without segments"
+    assert is_one_of(
+        answer(selector: "$[?$]", document: "{\"a\":1,\"b\":null}"),
+        allowed: [canonical("[[1,null],[\"$['a']\",\"$['b']\"]]"), canonical("[[null,1],[\"$['b']\",\"$['a']\"]]")]
+    )
+
+test "cts 52: filter, absolute existence, with segments"
+    assert answer(selector: "$[?$.*.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 53: filter, equals string, single quotes"
+    assert answer(selector: "$[?@.a=='b']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 54: filter, equals numeric string, single quotes"
+    assert answer(selector: "$[?@.a=='1']", document: "[{\"a\":\"1\",\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":\"1\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 55: filter, equals string, double quotes"
+    assert answer(selector: "$[?@.a==\"b\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 56: filter, equals numeric string, double quotes"
+    assert answer(selector: "$[?@.a==\"1\"]", document: "[{\"a\":\"1\",\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":\"1\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 57: filter, equals number"
+    assert answer(selector: "$[?@.a==1]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 58: filter, equals null"
+    assert answer(selector: "$[?@.a==null]", document: "[{\"a\":null,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":null,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 59: filter, equals null, absent from data"
+    assert answer(selector: "$[?@.a==null]", document: "[{\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 60: filter, equals true"
+    assert answer(selector: "$[?@.a==true]", document: "[{\"a\":true,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":true,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 61: filter, equals false"
+    assert answer(selector: "$[?@.a==false]", document: "[{\"a\":false,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":false,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 62: filter, equals self"
+    assert answer(selector: "$[?@==@]", document: "[1,null,true,{\"a\":\"b\"},[false]]") == canonical("[[1,null,true,{\"a\":\"b\"},[false]],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\",\"$[4]\"]]")
+
+test "cts 63: filter, absolute, equals self"
+    assert answer(selector: "$[?$==$]", document: "[1,null,true,{\"a\":\"b\"},[false]]") == canonical("[[1,null,true,{\"a\":\"b\"},[false]],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\",\"$[4]\"]]")
+
+test "cts 64: filter, equals, absent from index selector equals absent from name selector"
+    assert answer(selector: "$[?@.absent==@.list[9]]", document: "[{\"list\":[1]}]") == canonical("[[{\"list\":[1]}],[\"$[0]\"]]")
+
+test "cts 65: filter, deep equality, arrays"
+    assert answer(selector: "$[?@.a==@.b]", document: "[{\"a\":false,\"b\":[1,2]},{\"a\":[[1,[2]]],\"b\":[[1,[2]]]},{\"a\":[[1,[2]]],\"b\":[[[2],1]]},{\"a\":[[1,[2]]],\"b\":[[1,2]]}]") == canonical("[[{\"a\":[[1,[2]]],\"b\":[[1,[2]]]}],[\"$[1]\"]]")
+
+test "cts 66: filter, deep equality, objects"
+    assert answer(selector: "$[?@.a==@.b]", document: "[{\"a\":false,\"b\":{\"x\":1,\"y\":{\"z\":1}}},{\"a\":{\"x\":1,\"y\":{\"z\":1}},\"b\":{\"x\":1,\"y\":{\"z\":1}}},{\"a\":{\"x\":1,\"y\":{\"z\":1}},\"b\":{\"y\":{\"z\":1},\"x\":1}},{\"a\":{\"x\":1,\"y\":{\"z\":1}},\"b\":{\"x\":1}},{\"a\":{\"x\":1,\"y\":{\"z\":1}},\"b\":{\"x\":1,\"y\":{\"z\":2}}}]") == canonical("[[{\"a\":{\"x\":1,\"y\":{\"z\":1}},\"b\":{\"x\":1,\"y\":{\"z\":1}}},{\"a\":{\"x\":1,\"y\":{\"z\":1}},\"b\":{\"y\":{\"z\":1},\"x\":1}}],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 67: filter, not-equals string, single quotes"
+    assert answer(selector: "$[?@.a!='b']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 68: filter, not-equals numeric string, single quotes"
+    assert answer(selector: "$[?@.a!='1']", document: "[{\"a\":\"1\",\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 69: filter, not-equals string, single quotes, different type"
+    assert answer(selector: "$[?@.a!='b']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 70: filter, not-equals string, double quotes"
+    assert answer(selector: "$[?@.a!=\"b\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 71: filter, not-equals numeric string, double quotes"
+    assert answer(selector: "$[?@.a!=\"1\"]", document: "[{\"a\":\"1\",\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 72: filter, not-equals string, double quotes, different types"
+    assert answer(selector: "$[?@.a!=\"b\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 73: filter, not-equals number"
+    assert answer(selector: "$[?@.a!=1]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"f\"}]") == canonical("[[{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"f\"}],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 74: filter, not-equals number, different types"
+    assert answer(selector: "$[?@.a!=1]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 75: filter, not-equals null"
+    assert answer(selector: "$[?@.a!=null]", document: "[{\"a\":null,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 76: filter, not-equals null, absent from data"
+    assert answer(selector: "$[?@.a!=null]", document: "[{\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 77: filter, not-equals true"
+    assert answer(selector: "$[?@.a!=true]", document: "[{\"a\":true,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 78: filter, not-equals false"
+    assert answer(selector: "$[?@.a!=false]", document: "[{\"a\":false,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 79: filter, less than string, single quotes"
+    assert answer(selector: "$[?@.a<'c']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 80: filter, less than string, double quotes"
+    assert answer(selector: "$[?@.a<\"c\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 81: filter, less than number"
+    assert answer(selector: "$[?@.a<10]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":10,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":20,\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 82: filter, less than null"
+    assert answer(selector: "$[?@.a<null]", document: "[{\"a\":null,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 83: filter, less than true"
+    assert answer(selector: "$[?@.a<true]", document: "[{\"a\":true,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 84: filter, less than false"
+    assert answer(selector: "$[?@.a<false]", document: "[{\"a\":false,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 85: filter, less than or equal to string, single quotes"
+    assert answer(selector: "$[?@.a<='c']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 86: filter, less than or equal to string, double quotes"
+    assert answer(selector: "$[?@.a<=\"c\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 87: filter, less than or equal to number"
+    assert answer(selector: "$[?@.a<=10]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":10,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":20,\"d\":\"f\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"},{\"a\":10,\"d\":\"e\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 88: filter, less than or equal to null"
+    assert answer(selector: "$[?@.a<=null]", document: "[{\"a\":null,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":null,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 89: filter, less than or equal to true"
+    assert answer(selector: "$[?@.a<=true]", document: "[{\"a\":true,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":true,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 90: filter, less than or equal to true, number"
+    assert answer(selector: "$[?@.a<=true]", document: "[{\"a\":0,\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 91: filter, less than or equal to false"
+    assert answer(selector: "$[?@.a<=false]", document: "[{\"a\":false,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":false,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 92: filter, greater than string, single quotes"
+    assert answer(selector: "$[?@.a>'c']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"d\",\"d\":\"f\"}],[\"$[2]\"]]")
+
+test "cts 93: filter, greater than string, double quotes"
+    assert answer(selector: "$[?@.a>\"c\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"d\",\"d\":\"f\"}],[\"$[2]\"]]")
+
+test "cts 94: filter, greater than number"
+    assert answer(selector: "$[?@.a>10]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":10,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":20,\"d\":\"f\"}]") == canonical("[[{\"a\":20,\"d\":\"f\"}],[\"$[3]\"]]")
+
+test "cts 95: filter, greater than null"
+    assert answer(selector: "$[?@.a>null]", document: "[{\"a\":null,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 96: filter, greater than true"
+    assert answer(selector: "$[?@.a>true]", document: "[{\"a\":true,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 97: filter, greater than false"
+    assert answer(selector: "$[?@.a>false]", document: "[{\"a\":false,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 98: filter, greater than false, number"
+    assert answer(selector: "$[?@.a>false]", document: "[{\"a\":0,\"d\":\"e\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 99: filter, greater than or equal to string, single quotes"
+    assert answer(selector: "$[?@.a>='c']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 100: filter, greater than or equal to string, double quotes"
+    assert answer(selector: "$[?@.a>=\"c\"]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 101: filter, greater than or equal to number"
+    assert answer(selector: "$[?@.a>=10]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":10,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":20,\"d\":\"f\"}]") == canonical("[[{\"a\":10,\"d\":\"e\"},{\"a\":20,\"d\":\"f\"}],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 102: filter, greater than or equal to null"
+    assert answer(selector: "$[?@.a>=null]", document: "[{\"a\":null,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":null,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 103: filter, greater than or equal to true"
+    assert answer(selector: "$[?@.a>=true]", document: "[{\"a\":true,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":true,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 104: filter, greater than or equal to false"
+    assert answer(selector: "$[?@.a>=false]", document: "[{\"a\":false,\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":false,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 105: filter, exists and not-equals null, absent from data"
+    assert answer(selector: "$[?@.a&&@.a!=null]", document: "[{\"d\":\"e\"},{\"a\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"c\",\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 106: filter, exists and exists, data false"
+    assert answer(selector: "$[?@.a&&@.b]", document: "[{\"a\":false,\"b\":false},{\"b\":false},{\"c\":false}]") == canonical("[[{\"a\":false,\"b\":false}],[\"$[0]\"]]")
+
+test "cts 107: filter, exists or exists, data false"
+    assert answer(selector: "$[?@.a||@.b]", document: "[{\"a\":false,\"b\":false},{\"b\":false},{\"c\":false}]") == canonical("[[{\"a\":false,\"b\":false},{\"b\":false}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 108: filter, and"
+    assert answer(selector: "$[?@.a>0&&@.a<10]", document: "[{\"a\":-10,\"d\":\"e\"},{\"a\":5,\"d\":\"f\"},{\"a\":20,\"d\":\"f\"}]") == canonical("[[{\"a\":5,\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 109: filter, or"
+    assert answer(selector: "$[?@.a=='b'||@.a=='d']", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"c\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 110: filter, not expression"
+    assert answer(selector: "$[?!(@.a=='b')]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 111: filter, not exists"
+    assert answer(selector: "$[?!@.a]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 112: filter, not exists, data null"
+    assert answer(selector: "$[?!@.a]", document: "[{\"a\":null,\"d\":\"e\"},{\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 113: filter, non-singular existence, wildcard"
+    assert answer(selector: "$[?@.*]", document: "[1,[],[2],{},{\"a\":3}]") == canonical("[[[2],{\"a\":3}],[\"$[2]\",\"$[4]\"]]")
+
+test "cts 114: filter, non-singular existence, multiple"
+    assert answer(selector: "$[?@[0, 0, 'a']]", document: "[1,[],[2],[2,3],{\"a\":3},{\"b\":4},{\"a\":3,\"b\":4}]") == canonical("[[[2],[2,3],{\"a\":3},{\"a\":3,\"b\":4}],[\"$[2]\",\"$[3]\",\"$[4]\",\"$[6]\"]]")
+
+test "cts 115: filter, non-singular existence, slice"
+    assert answer(selector: "$[?@[0:2]]", document: "[1,[],[2],[2,3,4],{},{\"a\":3}]") == canonical("[[[2],[2,3,4]],[\"$[2]\",\"$[3]\"]]")
+
+test "cts 116: filter, non-singular existence, negated"
+    assert answer(selector: "$[?!@.*]", document: "[1,[],[2],{},{\"a\":3}]") == canonical("[[1,[],{}],[\"$[0]\",\"$[1]\",\"$[3]\"]]")
+
+test "cts 117: filter, non-singular query in comparison, slice"
+    assert answer(selector: "$[?@[0:0]==0]", document: "null") == "invalid"
+
+test "cts 118: filter, non-singular query in comparison, all children"
+    assert answer(selector: "$[?@[*]==0]", document: "null") == "invalid"
+
+test "cts 119: filter, non-singular query in comparison, descendants"
+    assert answer(selector: "$[?@..a==0]", document: "null") == "invalid"
+
+test "cts 120: filter, non-singular query in comparison, combined"
+    assert answer(selector: "$[?@.a[*].a==0]", document: "null") == "invalid"
+
+test "cts 121: filter, nested"
+    assert answer(selector: "$[?@[?@>1]]", document: "[[0],[0,1],[0,1,2],[42]]") == canonical("[[[0,1,2],[42]],[\"$[2]\",\"$[3]\"]]")
+
+test "cts 122: filter, name segment on primitive, selects nothing"
+    assert answer(selector: "$[?@.a == 1]", document: "{\"a\":1}") == canonical("[[],[]]")
+
+test "cts 123: filter, name segment on array, selects nothing"
+    assert answer(selector: "$[?@['0'] == 5]", document: "[[5,6]]") == canonical("[[],[]]")
+
+test "cts 124: filter, index segment on object, selects nothing"
+    assert answer(selector: "$[?@[0] == 5]", document: "[{\"0\":5}]") == canonical("[[],[]]")
+
+test "cts 125: filter, followed by name selector"
+    assert answer(selector: "$[?@.a==1].b.x", document: "[{\"a\":1,\"b\":{\"x\":2}}]") == canonical("[[2],[\"$[0]['b']['x']\"]]")
+
+test "cts 126: filter, followed by child segment that selects multiple elements"
+    assert answer(selector: "$[?@.z=='_']['x','y']", document: "[{\"x\":1,\"y\":null,\"z\":\"_\"}]") == canonical("[[1,null],[\"$[0]['x']\",\"$[0]['y']\"]]")
+
+test "cts 127: filter, relative non-singular query, index, equal"
+    assert answer(selector: "$[?(@[0, 0]==42)]", document: "null") == "invalid"
+
+test "cts 128: filter, relative non-singular query, index, not equal"
+    assert answer(selector: "$[?(@[0, 0]!=42)]", document: "null") == "invalid"
+
+test "cts 129: filter, relative non-singular query, index, less-or-equal"
+    assert answer(selector: "$[?(@[0, 0]<=42)]", document: "null") == "invalid"
+
+test "cts 130: filter, relative non-singular query, name, equal"
+    assert answer(selector: "$[?(@['a', 'a']==42)]", document: "null") == "invalid"
+
+test "cts 131: filter, relative non-singular query, name, not equal"
+    assert answer(selector: "$[?(@['a', 'a']!=42)]", document: "null") == "invalid"
+
+test "cts 132: filter, relative non-singular query, name, less-or-equal"
+    assert answer(selector: "$[?(@['a', 'a']<=42)]", document: "null") == "invalid"
+
+test "cts 133: filter, relative non-singular query, combined, equal"
+    assert answer(selector: "$[?(@[0, '0']==42)]", document: "null") == "invalid"
+
+test "cts 134: filter, relative non-singular query, combined, not equal"
+    assert answer(selector: "$[?(@[0, '0']!=42)]", document: "null") == "invalid"
+
+test "cts 135: filter, relative non-singular query, combined, less-or-equal"
+    assert answer(selector: "$[?(@[0, '0']<=42)]", document: "null") == "invalid"
+
+test "cts 136: filter, relative non-singular query, wildcard, equal"
+    assert answer(selector: "$[?(@.*==42)]", document: "null") == "invalid"
+
+test "cts 137: filter, relative non-singular query, wildcard, not equal"
+    assert answer(selector: "$[?(@.*!=42)]", document: "null") == "invalid"
+
+test "cts 138: filter, relative non-singular query, wildcard, less-or-equal"
+    assert answer(selector: "$[?(@.*<=42)]", document: "null") == "invalid"
+
+test "cts 139: filter, relative non-singular query, slice, equal"
+    assert answer(selector: "$[?(@[0:0]==42)]", document: "null") == "invalid"
+
+test "cts 140: filter, relative non-singular query, slice, not equal"
+    assert answer(selector: "$[?(@[0:0]!=42)]", document: "null") == "invalid"
+
+test "cts 141: filter, relative non-singular query, slice, less-or-equal"
+    assert answer(selector: "$[?(@[0:0]<=42)]", document: "null") == "invalid"
+
+test "cts 142: filter, absolute non-singular query, index, equal"
+    assert answer(selector: "$[?($[0, 0]==42)]", document: "null") == "invalid"
+
+test "cts 143: filter, absolute non-singular query, index, not equal"
+    assert answer(selector: "$[?($[0, 0]!=42)]", document: "null") == "invalid"
+
+test "cts 144: filter, absolute non-singular query, index, less-or-equal"
+    assert answer(selector: "$[?($[0, 0]<=42)]", document: "null") == "invalid"
+
+test "cts 145: filter, absolute non-singular query, name, equal"
+    assert answer(selector: "$[?($['a', 'a']==42)]", document: "null") == "invalid"
+
+test "cts 146: filter, absolute non-singular query, name, not equal"
+    assert answer(selector: "$[?($['a', 'a']!=42)]", document: "null") == "invalid"
+
+test "cts 147: filter, absolute non-singular query, name, less-or-equal"
+    assert answer(selector: "$[?($['a', 'a']<=42)]", document: "null") == "invalid"
+
+test "cts 148: filter, absolute non-singular query, combined, equal"
+    assert answer(selector: "$[?($[0, '0']==42)]", document: "null") == "invalid"
+
+test "cts 149: filter, absolute non-singular query, combined, not equal"
+    assert answer(selector: "$[?($[0, '0']!=42)]", document: "null") == "invalid"
+
+test "cts 150: filter, absolute non-singular query, combined, less-or-equal"
+    assert answer(selector: "$[?($[0, '0']<=42)]", document: "null") == "invalid"
+
+test "cts 151: filter, absolute non-singular query, wildcard, equal"
+    assert answer(selector: "$[?($.*==42)]", document: "null") == "invalid"
+
+test "cts 152: filter, absolute non-singular query, wildcard, not equal"
+    assert answer(selector: "$[?($.*!=42)]", document: "null") == "invalid"
+
+test "cts 153: filter, absolute non-singular query, wildcard, less-or-equal"
+    assert answer(selector: "$[?($.*<=42)]", document: "null") == "invalid"
+
+test "cts 154: filter, absolute non-singular query, slice, equal"
+    assert answer(selector: "$[?($[0:0]==42)]", document: "null") == "invalid"
+
+test "cts 155: filter, absolute non-singular query, slice, not equal"
+    assert answer(selector: "$[?($[0:0]!=42)]", document: "null") == "invalid"
+
+test "cts 156: filter, absolute non-singular query, slice, less-or-equal"
+    assert answer(selector: "$[?($[0:0]<=42)]", document: "null") == "invalid"
+
+test "cts 157: filter, multiple selectors"
+    assert answer(selector: "$[?@.a,?@.b]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 158: filter, multiple selectors, comparison"
+    assert answer(selector: "$[?@.a=='b',?@.b=='x']", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 159: filter, multiple selectors, overlapping"
+    assert answer(selector: "$[?@.a,?@.d]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[0]\",\"$[1]\"]]")
+
+test "cts 160: filter, multiple selectors, filter and index"
+    assert answer(selector: "$[?@.a,1]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 161: filter, multiple selectors, filter and wildcard"
+    assert answer(selector: "$[?@.a,*]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}],[\"$[0]\",\"$[0]\",\"$[1]\"]]")
+
+test "cts 162: filter, multiple selectors, filter and slice"
+    assert answer(selector: "$[?@.a,1:]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"},{\"g\":\"h\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"},{\"g\":\"h\"}],[\"$[0]\",\"$[1]\",\"$[2]\"]]")
+
+test "cts 163: filter, multiple selectors, comparison filter, index and slice"
+    assert answer(selector: "$[1, ?@.a=='b', 1:]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"b\":\"c\",\"d\":\"f\"},{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}],[\"$[1]\",\"$[0]\",\"$[1]\"]]")
+
+test "cts 164: filter, equals number, zero and negative zero"
+    assert answer(selector: "$[?@.a==0]", document: "[{\"a\":0,\"d\":\"e\"},{\"a\":0.1,\"d\":\"f\"},{\"a\":\"0\",\"d\":\"g\"}]") == canonical("[[{\"a\":0,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 165: filter, equals number, negative zero and zero"
+    assert answer(selector: "$[?@.a==-0]", document: "[{\"a\":0,\"d\":\"e\"},{\"a\":0.1,\"d\":\"f\"},{\"a\":\"0\",\"d\":\"g\"}]") == canonical("[[{\"a\":0,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 166: filter, equals number, with and without decimal fraction"
+    assert answer(selector: "$[?@.a==1.0]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 167: filter, equals number, exponent"
+    assert answer(selector: "$[?@.a==1e2]", document: "[{\"a\":100,\"d\":\"e\"},{\"a\":100.1,\"d\":\"f\"},{\"a\":\"100\",\"d\":\"g\"}]") == canonical("[[{\"a\":100,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 168: filter, equals number, exponent upper e"
+    assert answer(selector: "$[?@.a==1E2]", document: "[{\"a\":100,\"d\":\"e\"},{\"a\":100.1,\"d\":\"f\"},{\"a\":\"100\",\"d\":\"g\"}]") == canonical("[[{\"a\":100,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 169: filter, equals number, positive exponent"
+    assert answer(selector: "$[?@.a==1e+2]", document: "[{\"a\":100,\"d\":\"e\"},{\"a\":100.1,\"d\":\"f\"},{\"a\":\"100\",\"d\":\"g\"}]") == canonical("[[{\"a\":100,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 170: filter, equals number, negative exponent"
+    assert answer(selector: "$[?@.a==1e-2]", document: "[{\"a\":0.01,\"d\":\"e\"},{\"a\":0.02,\"d\":\"f\"},{\"a\":\"0.01\",\"d\":\"g\"}]") == canonical("[[{\"a\":0.01,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 171: filter, equals number, exponent 0"
+    assert answer(selector: "$[?@.a==1e0]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 172: filter, equals number, exponent -0"
+    assert answer(selector: "$[?@.a==1e-0]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 173: filter, equals number, exponent +0"
+    assert answer(selector: "$[?@.a==1e+0]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 174: filter, equals number, exponent leading -0"
+    assert answer(selector: "$[?@.a==1e-02]", document: "[{\"a\":0.01,\"d\":\"e\"},{\"a\":0.02,\"d\":\"f\"},{\"a\":\"0.01\",\"d\":\"g\"}]") == canonical("[[{\"a\":0.01,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 175: filter, equals number, exponent +00"
+    assert answer(selector: "$[?@.a==1e+00]", document: "[{\"a\":1,\"d\":\"e\"},{\"a\":2,\"d\":\"f\"},{\"a\":\"1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 176: filter, equals number, decimal fraction"
+    assert answer(selector: "$[?@.a==1.1]", document: "[{\"a\":1.1,\"d\":\"e\"},{\"a\":1,\"d\":\"f\"},{\"a\":\"1.1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1.1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 177: filter, equals number, decimal fraction, trailing 0"
+    assert answer(selector: "$[?@.a==1.10]", document: "[{\"a\":1.1,\"d\":\"e\"},{\"a\":1,\"d\":\"f\"},{\"a\":\"1.1\",\"d\":\"g\"}]") == canonical("[[{\"a\":1.1,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 178: filter, equals number, decimal fraction, exponent"
+    assert answer(selector: "$[?@.a==1.1e2]", document: "[{\"a\":110,\"d\":\"e\"},{\"a\":110.1,\"d\":\"f\"},{\"a\":\"110\",\"d\":\"g\"}]") == canonical("[[{\"a\":110,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 179: filter, equals number, decimal fraction, positive exponent"
+    assert answer(selector: "$[?@.a==1.1e+2]", document: "[{\"a\":110,\"d\":\"e\"},{\"a\":110.1,\"d\":\"f\"},{\"a\":\"110\",\"d\":\"g\"}]") == canonical("[[{\"a\":110,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 180: filter, equals number, decimal fraction, negative exponent"
+    assert answer(selector: "$[?@.a==1.1e-2]", document: "[{\"a\":0.011,\"d\":\"e\"},{\"a\":0.012,\"d\":\"f\"},{\"a\":\"0.011\",\"d\":\"g\"}]") == canonical("[[{\"a\":0.011,\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 181: filter, equals number, invalid plus"
+    assert answer(selector: "$[?@.a==+1]", document: "null") == "invalid"
+
+test "cts 182: filter, equals number, invalid minus space"
+    assert answer(selector: "$[?@.a==- 1]", document: "null") == "invalid"
+
+test "cts 183: filter, equals number, invalid double minus"
+    assert answer(selector: "$[?@.a==--1]", document: "null") == "invalid"
+
+test "cts 184: filter, equals number, invalid no int digit"
+    assert answer(selector: "$[?@.a==.1]", document: "null") == "invalid"
+
+test "cts 185: filter, equals number, invalid minus no int digit"
+    assert answer(selector: "$[?@.a==-.1]", document: "null") == "invalid"
+
+test "cts 186: filter, equals number, invalid 00"
+    assert answer(selector: "$[?@.a==00]", document: "null") == "invalid"
+
+test "cts 187: filter, equals number, invalid leading 0"
+    assert answer(selector: "$[?@.a==01]", document: "null") == "invalid"
+
+test "cts 188: filter, equals number, invalid no fractional digit"
+    assert answer(selector: "$[?@.a==1.]", document: "null") == "invalid"
+
+test "cts 189: filter, equals number, invalid middle minus"
+    assert answer(selector: "$[?@.a==1.-1]", document: "null") == "invalid"
+
+test "cts 190: filter, equals number, invalid no fractional digit e"
+    assert answer(selector: "$[?@.a==1.e1]", document: "null") == "invalid"
+
+test "cts 191: filter, equals number, invalid no e digit"
+    assert answer(selector: "$[?@.a==1e]", document: "null") == "invalid"
+
+test "cts 192: filter, equals number, invalid no e digit minus"
+    assert answer(selector: "$[?@.a==1e-]", document: "null") == "invalid"
+
+test "cts 193: filter, equals number, invalid double e"
+    assert answer(selector: "$[?@.a==1eE1]", document: "null") == "invalid"
+
+test "cts 194: filter, equals number, invalid e digit double minus"
+    assert answer(selector: "$[?@.a==1e--1]", document: "null") == "invalid"
+
+test "cts 195: filter, equals number, invalid e digit plus minus"
+    assert answer(selector: "$[?@.a==1e+-1]", document: "null") == "invalid"
+
+test "cts 196: filter, equals number, invalid e decimal"
+    assert answer(selector: "$[?@.a==1e2.3]", document: "null") == "invalid"
+
+test "cts 197: filter, equals number, invalid multi e"
+    assert answer(selector: "$[?@.a==1e2e3]", document: "null") == "invalid"
+
+test "cts 198: filter, equals, special nothing"
+    assert answer(selector: "$.values[?length(@.a) == value($..c)]", document: "{\"c\":\"cd\",\"values\":[{\"a\":\"ab\"},{\"c\":\"d\"},{\"a\":null}]}") == canonical("[[{\"c\":\"d\"},{\"a\":null}],[\"$['values'][1]\",\"$['values'][2]\"]]")
+
+test "cts 199: filter, equals, empty node list and empty node list"
+    assert answer(selector: "$[?@.a == @.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"c\":3}],[\"$[2]\"]]")
+
+test "cts 200: filter, equals, empty node list and special nothing"
+    assert answer(selector: "$[?@.a == length(@.b)]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"b\":2},{\"c\":3}],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 201: filter, object data"
+    assert is_one_of(
+        answer(selector: "$[?@<3]", document: "{\"a\":1,\"b\":2,\"c\":3}"),
+        allowed: [canonical("[[1,2],[\"$['a']\",\"$['b']\"]]"), canonical("[[2,1],[\"$['b']\",\"$['a']\"]]")]
+    )
+
+test "cts 202: filter, two consecutive ands"
+    assert answer(selector: "$[?@.a && @.b && @.c]", document: "[{\"a\":1,\"b\":2},{\"a\":1,\"c\":3},{\"b\":2,\"c\":3},{\"a\":1,\"b\":2,\"c\":3}]") == canonical("[[{\"a\":1,\"b\":2,\"c\":3}],[\"$[3]\"]]")
+
+test "cts 203: filter, two consecutive ors"
+    assert answer(selector: "$[?@.a || @.b || @.c]", document: "[{\"a\":1,\"b\":2},{\"a\":1,\"c\":3},{\"b\":2,\"c\":3},{\"a\":1,\"b\":2,\"c\":3}]") == canonical("[[{\"a\":1,\"b\":2},{\"a\":1,\"c\":3},{\"b\":2,\"c\":3},{\"a\":1,\"b\":2,\"c\":3}],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\"]]")
+
+test "cts 204: filter, multiple consecutive ands"
+    assert answer(selector: "$[?@.a && @.b && @.c && @.d && @.e]", document: "[{\"a\":1,\"b\":2,\"c\":3,\"d\":4},{\"b\":2,\"c\":3,\"d\":4,\"e\":5},{\"a\":1,\"c\":3,\"e\":5},{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5}]") == canonical("[[{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5}],[\"$[3]\"]]")
+
+test "cts 205: filter, multiple consecutive ors"
+    assert answer(selector: "$[?@.a || @.b || @.c || @.d || @.e]", document: "[{\"a\":1,\"b\":2,\"c\":3,\"d\":4},{\"b\":2,\"c\":3,\"d\":4,\"e\":5},{\"a\":1,\"c\":3,\"e\":5},{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5}]") == canonical("[[{\"a\":1,\"b\":2,\"c\":3,\"d\":4},{\"b\":2,\"c\":3,\"d\":4,\"e\":5},{\"a\":1,\"c\":3,\"e\":5},{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5}],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\"]]")
+
+test "cts 206: filter, multiple consecutive ors and ands"
+    assert answer(selector: "$[?@.a && @.b && @.c || @.d || @.e]", document: "[{\"a\":1},{\"e\":5},{\"a\":1,\"b\":2},{\"d\":4,\"e\":5},{\"a\":1,\"b\":2,\"c\":3},{\"c\":3,\"d\":4,\"e\":5},{\"a\":1,\"c\":3,\"e\":5},{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5}]") == canonical("[[{\"e\":5},{\"d\":4,\"e\":5},{\"a\":1,\"b\":2,\"c\":3},{\"c\":3,\"d\":4,\"e\":5},{\"a\":1,\"c\":3,\"e\":5},{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5}],[\"$[1]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\",\"$[7]\"]]")
+
+test "cts 207: filter, and binds more tightly than or"
+    assert answer(selector: "$[?@.a || @.b && @.c]", document: "[{\"a\":1},{\"b\":2,\"c\":3},{\"c\":3},{\"b\":2},{\"a\":1,\"b\":2,\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2,\"c\":3},{\"a\":1,\"b\":2,\"c\":3}],[\"$[0]\",\"$[1]\",\"$[4]\"]]")
+
+test "cts 208: filter, left to right evaluation"
+    assert answer(selector: "$[?@.a && @.b || @.c]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2},{\"a\":1,\"c\":3},{\"b\":1,\"c\":3},{\"c\":3},{\"a\":1,\"b\":2,\"c\":3}]") == canonical("[[{\"a\":1,\"b\":2},{\"a\":1,\"c\":3},{\"b\":1,\"c\":3},{\"c\":3},{\"a\":1,\"b\":2,\"c\":3}],[\"$[2]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\"]]")
+
+test "cts 209: filter, group terms, left"
+    assert answer(selector: "$[?(@.a || @.b) && @.c]", document: "[{\"a\":1,\"b\":2},{\"a\":1,\"c\":3},{\"b\":2,\"c\":3},{\"a\":1},{\"b\":2},{\"c\":3},{\"a\":1,\"b\":2,\"c\":3}]") == canonical("[[{\"a\":1,\"c\":3},{\"b\":2,\"c\":3},{\"a\":1,\"b\":2,\"c\":3}],[\"$[1]\",\"$[2]\",\"$[6]\"]]")
+
+test "cts 210: filter, group terms, right"
+    assert answer(selector: "$[?@.a && (@.b || @.c)]", document: "[{\"a\":1},{\"a\":1,\"b\":2},{\"a\":1,\"c\":2},{\"b\":2},{\"c\":2},{\"a\":1,\"b\":2,\"c\":3}]") == canonical("[[{\"a\":1,\"b\":2},{\"a\":1,\"c\":2},{\"a\":1,\"b\":2,\"c\":3}],[\"$[1]\",\"$[2]\",\"$[5]\"]]")
+
+test "cts 211: filter, string literal, single quote in double quotes"
+    assert answer(selector: "$[?@ == \"quoted' literal\"]", document: "[\"quoted' literal\",\"a\",\"quoted\\\\' literal\"]") == canonical("[[\"quoted' literal\"],[\"$[0]\"]]")
+
+test "cts 212: filter, string literal, double quote in single quotes"
+    assert answer(selector: "$[?@ == 'quoted\" literal']", document: "[\"quoted\\\" literal\",\"a\",\"quoted\\\\\\\" literal\",\"'quoted\\\" literal'\"]") == canonical("[[\"quoted\\\" literal\"],[\"$[0]\"]]")
+
+test "cts 213: filter, string literal, escaped single quote in single quotes"
+    assert answer(selector: "$[?@ == 'quoted\\' literal']", document: "[\"quoted' literal\",\"a\",\"quoted\\\\' literal\",\"'quoted\\\" literal'\"]") == canonical("[[\"quoted' literal\"],[\"$[0]\"]]")
+
+test "cts 214: filter, string literal, escaped double quote in double quotes"
+    assert answer(selector: "$[?@ == \"quoted\\\" literal\"]", document: "[\"quoted\\\" literal\",\"a\",\"quoted\\\\\\\" literal\",\"'quoted\\\" literal'\"]") == canonical("[[\"quoted\\\" literal\"],[\"$[0]\"]]")
+
+test "cts 215: filter, literal true must be compared"
+    assert answer(selector: "$[?true]", document: "null") == "invalid"
+
+test "cts 216: filter, literal false must be compared"
+    assert answer(selector: "$[?false]", document: "null") == "invalid"
+
+test "cts 217: filter, literal string must be compared"
+    assert answer(selector: "$[?'abc']", document: "null") == "invalid"
+
+test "cts 218: filter, literal int must be compared"
+    assert answer(selector: "$[?2]", document: "null") == "invalid"
+
+test "cts 219: filter, literal float must be compared"
+    assert answer(selector: "$[?2.2]", document: "null") == "invalid"
+
+test "cts 220: filter, literal null must be compared"
+    assert answer(selector: "$[?null]", document: "null") == "invalid"
+
+test "cts 221: filter, and, literals must be compared"
+    assert answer(selector: "$[?true && false]", document: "null") == "invalid"
+
+test "cts 222: filter, or, literals must be compared"
+    assert answer(selector: "$[?true || false]", document: "null") == "invalid"
+
+test "cts 223: filter, and, right hand literal must be compared"
+    assert answer(selector: "$[?true == false && false]", document: "null") == "invalid"
+
+test "cts 224: filter, or, right hand literal must be compared"
+    assert answer(selector: "$[?true == false || false]", document: "null") == "invalid"
+
+test "cts 225: filter, and, left hand literal must be compared"
+    assert answer(selector: "$[?false && true == false]", document: "null") == "invalid"
+
+test "cts 226: filter, or, left hand literal must be compared"
+    assert answer(selector: "$[?false || true == false]", document: "null") == "invalid"
+
+test "cts 227: filter, true, incorrectly capitalized"
+    assert answer(selector: "$[?@==True]", document: "null") == "invalid"
+
+test "cts 228: filter, quoted True, double quotes"
+    assert answer(selector: "$[?@.a==\"True\"]", document: "[{\"a\":\"True\"},{\"a\":true},{\"a\":\"SomethingElse\"}]") == canonical("[[{\"a\":\"True\"}],[\"$[0]\"]]")
+
+test "cts 229: filter, quoted True, single quotes"
+    assert answer(selector: "$[?@.a=='True']", document: "[{\"a\":\"True\"},{\"a\":true},{\"a\":\"SomethingElse\"}]") == canonical("[[{\"a\":\"True\"}],[\"$[0]\"]]")
+
+test "cts 230: filter, false, incorrectly capitalized"
+    assert answer(selector: "$[?@==False]", document: "null") == "invalid"
+
+test "cts 231: filter, quoted False, double quotes"
+    assert answer(selector: "$[?@.a==\"False\"]", document: "[{\"a\":\"False\"},{\"a\":false},{\"a\":\"SomethingElse\"}]") == canonical("[[{\"a\":\"False\"}],[\"$[0]\"]]")
+
+test "cts 232: filter, quoted False, single quotes"
+    assert answer(selector: "$[?@.a=='False']", document: "[{\"a\":\"False\"},{\"a\":false},{\"a\":\"SomethingElse\"}]") == canonical("[[{\"a\":\"False\"}],[\"$[0]\"]]")
+
+test "cts 233: filter, null, incorrectly capitalized"
+    assert answer(selector: "$[?@==Null]", document: "null") == "invalid"
+
+test "cts 234: filter, quoted Null, double quotes"
+    assert answer(selector: "$[?@.a==\"Null\"]", document: "[{\"a\":\"Null\"},{\"a\":null},{\"a\":\"SomethingElse\"}]") == canonical("[[{\"a\":\"Null\"}],[\"$[0]\"]]")
+
+test "cts 235: filter, quoted Null, single quotes"
+    assert answer(selector: "$[?@.a=='Null']", document: "[{\"a\":\"Null\"},{\"a\":null},{\"a\":\"SomethingElse\"}]") == canonical("[[{\"a\":\"Null\"}],[\"$[0]\"]]")
+
+test "cts 236: index selector, first element"
+    assert answer(selector: "$[0]", document: "[\"first\",\"second\"]") == canonical("[[\"first\"],[\"$[0]\"]]")
+
+test "cts 237: index selector, second element"
+    assert answer(selector: "$[1]", document: "[\"first\",\"second\"]") == canonical("[[\"second\"],[\"$[1]\"]]")
+
+test "cts 238: index selector, out of bound"
+    assert answer(selector: "$[2]", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 239: index selector, min exact index"
+    assert answer(selector: "$[-9007199254740991]", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 240: index selector, max exact index"
+    assert answer(selector: "$[9007199254740991]", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 241: index selector, min exact index - 1"
+    assert answer(selector: "$[-9007199254740992]", document: "null") == "invalid"
+
+test "cts 242: index selector, max exact index + 1"
+    assert answer(selector: "$[9007199254740992]", document: "null") == "invalid"
+
+test "cts 243: index selector, overflowing index"
+    assert answer(selector: "$[231584178474632390847141970017375815706539969331281128078915168015826259279872]", document: "null") == "invalid"
+
+test "cts 244: index selector, not actually an index, overflowing index leads into general text"
+    assert answer(selector: "$[231584178474632390847141970017375815706539969331281128078915168SomeRandomText]", document: "null") == "invalid"
+
+test "cts 245: index selector, negative"
+    assert answer(selector: "$[-1]", document: "[\"first\",\"second\"]") == canonical("[[\"second\"],[\"$[1]\"]]")
+
+test "cts 246: index selector, more negative"
+    assert answer(selector: "$[-2]", document: "[\"first\",\"second\"]") == canonical("[[\"first\"],[\"$[0]\"]]")
+
+test "cts 247: index selector, negative out of bound"
+    assert answer(selector: "$[-3]", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 248: index selector, on object"
+    assert answer(selector: "$[0]", document: "{\"foo\":1}") == canonical("[[],[]]")
+
+test "cts 249: index selector, leading 0"
+    assert answer(selector: "$[01]", document: "null") == "invalid"
+
+test "cts 250: index selector, decimal"
+    assert answer(selector: "$[1.0]", document: "null") == "invalid"
+
+test "cts 251: index selector, plus"
+    assert answer(selector: "$[+1]", document: "null") == "invalid"
+
+test "cts 252: index selector, minus space"
+    assert answer(selector: "$[- 1]", document: "null") == "invalid"
+
+test "cts 253: index selector, -0"
+    assert answer(selector: "$[-0]", document: "null") == "invalid"
+
+test "cts 254: index selector, leading -0"
+    assert answer(selector: "$[-01]", document: "null") == "invalid"
+
+test "cts 255: index selector, null element"
+    assert answer(selector: "$[1]", document: "[\"first\",null,\"third\"]") == canonical("[[null],[\"$[1]\"]]")
+
+test "cts 256: name selector, double quotes"
+    assert answer(selector: "$[\"a\"]", document: "{\"a\":\"A\",\"b\":\"B\"}") == canonical("[[\"A\"],[\"$['a']\"]]")
+
+test "cts 257: name selector, double quotes, absent data"
+    assert answer(selector: "$[\"c\"]", document: "{\"a\":\"A\",\"b\":\"B\"}") == canonical("[[],[]]")
+
+test "cts 258: name selector, double quotes, array data"
+    assert answer(selector: "$[\"a\"]", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 259: name selector, name, double quotes, contains single quote"
+    assert answer(selector: "$[\"a'\"]", document: "{\"a'\":\"A\",\"b\":\"B\"}") == canonical("[[\"A\"],[\"$['a\\\\'']\"]]")
+
+test "cts 260: name selector, name, double quotes, nested"
+    assert answer(selector: "$[\"a\"][\"b\"][\"c\"]", document: "{\"a\":{\"b\":{\"c\":\"C\"}}}") == canonical("[[\"C\"],[\"$['a']['b']['c']\"]]")
+
+test "cts 261: name selector, double quotes, embedded U+0000"
+    assert answer(selector: "$[\"" + zero_byte() + "\"]", document: "null") == "invalid"
+
+test "cts 262: name selector, double quotes, embedded U+0001"
+    assert answer(selector: "$[\"\u{1}\"]", document: "null") == "invalid"
+
+test "cts 263: name selector, double quotes, embedded U+0002"
+    assert answer(selector: "$[\"\u{2}\"]", document: "null") == "invalid"
+
+test "cts 264: name selector, double quotes, embedded U+0003"
+    assert answer(selector: "$[\"\u{3}\"]", document: "null") == "invalid"
+
+test "cts 265: name selector, double quotes, embedded U+0004"
+    assert answer(selector: "$[\"\u{4}\"]", document: "null") == "invalid"
+
+test "cts 266: name selector, double quotes, embedded U+0005"
+    assert answer(selector: "$[\"\u{5}\"]", document: "null") == "invalid"
+
+test "cts 267: name selector, double quotes, embedded U+0006"
+    assert answer(selector: "$[\"\u{6}\"]", document: "null") == "invalid"
+
+test "cts 268: name selector, double quotes, embedded U+0007"
+    assert answer(selector: "$[\"\u{7}\"]", document: "null") == "invalid"
+
+test "cts 269: name selector, double quotes, embedded U+0008"
+    assert answer(selector: "$[\"\u{8}\"]", document: "null") == "invalid"
+
+test "cts 270: name selector, double quotes, embedded U+0009"
+    assert answer(selector: "$[\"\t\"]", document: "null") == "invalid"
+
+test "cts 271: name selector, double quotes, embedded U+000A"
+    assert answer(selector: "$[\"\n\"]", document: "null") == "invalid"
+
+test "cts 272: name selector, double quotes, embedded U+000B"
+    assert answer(selector: "$[\"\u{b}\"]", document: "null") == "invalid"
+
+test "cts 273: name selector, double quotes, embedded U+000C"
+    assert answer(selector: "$[\"\u{c}\"]", document: "null") == "invalid"
+
+test "cts 274: name selector, double quotes, embedded U+000D"
+    assert answer(selector: "$[\"\r\"]", document: "null") == "invalid"
+
+test "cts 275: name selector, double quotes, embedded U+000E"
+    assert answer(selector: "$[\"\u{e}\"]", document: "null") == "invalid"
+
+test "cts 276: name selector, double quotes, embedded U+000F"
+    assert answer(selector: "$[\"\u{f}\"]", document: "null") == "invalid"
+
+test "cts 277: name selector, double quotes, embedded U+0010"
+    assert answer(selector: "$[\"\u{10}\"]", document: "null") == "invalid"
+
+test "cts 278: name selector, double quotes, embedded U+0011"
+    assert answer(selector: "$[\"\u{11}\"]", document: "null") == "invalid"
+
+test "cts 279: name selector, double quotes, embedded U+0012"
+    assert answer(selector: "$[\"\u{12}\"]", document: "null") == "invalid"
+
+test "cts 280: name selector, double quotes, embedded U+0013"
+    assert answer(selector: "$[\"\u{13}\"]", document: "null") == "invalid"
+
+test "cts 281: name selector, double quotes, embedded U+0014"
+    assert answer(selector: "$[\"\u{14}\"]", document: "null") == "invalid"
+
+test "cts 282: name selector, double quotes, embedded U+0015"
+    assert answer(selector: "$[\"\u{15}\"]", document: "null") == "invalid"
+
+test "cts 283: name selector, double quotes, embedded U+0016"
+    assert answer(selector: "$[\"\u{16}\"]", document: "null") == "invalid"
+
+test "cts 284: name selector, double quotes, embedded U+0017"
+    assert answer(selector: "$[\"\u{17}\"]", document: "null") == "invalid"
+
+test "cts 285: name selector, double quotes, embedded U+0018"
+    assert answer(selector: "$[\"\u{18}\"]", document: "null") == "invalid"
+
+test "cts 286: name selector, double quotes, embedded U+0019"
+    assert answer(selector: "$[\"\u{19}\"]", document: "null") == "invalid"
+
+test "cts 287: name selector, double quotes, embedded U+001A"
+    assert answer(selector: "$[\"\u{1a}\"]", document: "null") == "invalid"
+
+test "cts 288: name selector, double quotes, embedded U+001B"
+    assert answer(selector: "$[\"\u{1b}\"]", document: "null") == "invalid"
+
+test "cts 289: name selector, double quotes, embedded U+001C"
+    assert answer(selector: "$[\"\u{1c}\"]", document: "null") == "invalid"
+
+test "cts 290: name selector, double quotes, embedded U+001D"
+    assert answer(selector: "$[\"\u{1d}\"]", document: "null") == "invalid"
+
+test "cts 291: name selector, double quotes, embedded U+001E"
+    assert answer(selector: "$[\"\u{1e}\"]", document: "null") == "invalid"
+
+test "cts 292: name selector, double quotes, embedded U+001F"
+    assert answer(selector: "$[\"\u{1f}\"]", document: "null") == "invalid"
+
+test "cts 293: name selector, double quotes, embedded U+0020"
+    assert answer(selector: "$[\" \"]", document: "{\" \":\"A\"}") == canonical("[[\"A\"],[\"$[' ']\"]]")
+
+test "cts 294: name selector, double quotes, embedded U+007F"
+    assert answer(selector: "$[\"\u{7f}\"]", document: "{\"\u{7f}\":\"A\"}") == canonical("[[\"A\"],[\"$['\u{7f}']\"]]")
+
+test "cts 295: name selector, double quotes, supplementary plane character"
+    assert answer(selector: "$[\"𝄞\"]", document: "{\"𝄞\":\"A\"}") == canonical("[[\"A\"],[\"$['𝄞']\"]]")
+
+test "cts 296: name selector, double quotes, escaped double quote"
+    assert answer(selector: "$[\"\\\"\"]", document: "{\"\\\"\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\"']\"]]")
+
+test "cts 297: name selector, double quotes, escaped reverse solidus"
+    assert answer(selector: "$[\"\\\\\"]", document: "{\"\\\\\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\\\\\']\"]]")
+
+test "cts 298: name selector, double quotes, escaped solidus"
+    assert answer(selector: "$[\"\\/\"]", document: "{\"/\":\"A\"}") == canonical("[[\"A\"],[\"$['/']\"]]")
+
+test "cts 299: name selector, double quotes, escaped backspace"
+    assert answer(selector: "$[\"\\b\"]", document: "{\"\\b\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\b']\"]]")
+
+test "cts 300: name selector, double quotes, escaped form feed"
+    assert answer(selector: "$[\"\\f\"]", document: "{\"\\f\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\f']\"]]")
+
+test "cts 301: name selector, double quotes, escaped line feed"
+    assert answer(selector: "$[\"\\n\"]", document: "{\"\\n\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\n']\"]]")
+
+test "cts 302: name selector, double quotes, escaped carriage return"
+    assert answer(selector: "$[\"\\r\"]", document: "{\"\\r\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\r']\"]]")
+
+test "cts 303: name selector, double quotes, escaped tab"
+    assert answer(selector: "$[\"\\t\"]", document: "{\"\\t\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\t']\"]]")
+
+test "cts 304: name selector, double quotes, escaped , upper case hex"
+    assert answer(selector: "$[\"\\u263A\"]", document: "{\"☺\":\"A\"}") == canonical("[[\"A\"],[\"$['☺']\"]]")
+
+test "cts 305: name selector, double quotes, escaped , lower case hex"
+    assert answer(selector: "$[\"\\u263a\"]", document: "{\"☺\":\"A\"}") == canonical("[[\"A\"],[\"$['☺']\"]]")
+
+test "cts 306: name selector, double quotes, escaped , lower case hex e"
+    assert answer(selector: "$[\"\\u00e9\"]", document: "{\"é\":\"A\"}") == canonical("[[\"A\"],[\"$['é']\"]]")
+
+test "cts 307: name selector, double quotes, escaped control character"
+    assert answer(selector: "$[\"\\u001f\"]", document: "{\"\\u001f\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\u001f']\"]]")
+
+test "cts 308: name selector, double quotes, surrogate pair"
+    assert answer(selector: "$[\"\\uD834\\uDD1E\"]", document: "{\"𝄞\":\"A\"}") == canonical("[[\"A\"],[\"$['𝄞']\"]]")
+
+test "cts 309: name selector, double quotes, surrogate pair"
+    assert answer(selector: "$[\"\\uD83D\\uDE00\"]", document: "{\"😀\":\"A\"}") == canonical("[[\"A\"],[\"$['😀']\"]]")
+
+test "cts 310: name selector, double quotes, before high surrogates"
+    assert answer(selector: "$[\"\\uD7FF\\uD7FF\"]", document: "{\"퟿퟿\":\"A\"}") == canonical("[[\"A\"],[\"$['퟿퟿']\"]]")
+
+test "cts 311: name selector, double quotes, after low surrogates"
+    assert answer(selector: "$[\"\\uE000\\uE000\"]", document: "{\"\":\"A\"}") == canonical("[[\"A\"],[\"$['']\"]]")
+
+test "cts 312: name selector, double quotes, invalid escaped single quote"
+    assert answer(selector: "$[\"\\'\"]", document: "null") == "invalid"
+
+test "cts 313: name selector, double quotes, embedded double quote"
+    assert answer(selector: "$[\"\"\"]", document: "null") == "invalid"
+
+test "cts 314: name selector, double quotes, incomplete escape"
+    assert answer(selector: "$[\"\\\"]", document: "null") == "invalid"
+
+test "cts 315: name selector, double quotes, escape at end of line"
+    assert answer(selector: "$[\"\\\n\"]", document: "null") == "invalid"
+
+test "cts 316: name selector, double quotes, question mark escape"
+    assert answer(selector: "$[\"\\?\"]", document: "null") == "invalid"
+
+test "cts 317: name selector, double quotes, bell escape"
+    assert answer(selector: "$[\"\\a\"]", document: "null") == "invalid"
+
+test "cts 318: name selector, double quotes, vertical tab escape"
+    assert answer(selector: "$[\"\\v\"]", document: "null") == "invalid"
+
+test "cts 319: name selector, double quotes, 0 escape"
+    assert answer(selector: "$[\"\\0\"]", document: "null") == "invalid"
+
+test "cts 320: name selector, double quotes, x escape"
+    assert answer(selector: "$[\"\\x12\"]", document: "null") == "invalid"
+
+test "cts 321: name selector, double quotes, n escape"
+    assert answer(selector: "$[\"\\N{LATIN CAPITAL LETTER A}\"]", document: "null") == "invalid"
+
+test "cts 322: name selector, double quotes, unicode escape no hex"
+    assert answer(selector: "$[\"\\u\"]", document: "null") == "invalid"
+
+test "cts 323: name selector, double quotes, unicode escape too few hex"
+    assert answer(selector: "$[\"\\u123\"]", document: "null") == "invalid"
+
+test "cts 324: name selector, double quotes, unicode escape upper u"
+    assert answer(selector: "$[\"\\U1234\"]", document: "null") == "invalid"
+
+test "cts 325: name selector, double quotes, unicode escape upper u long"
+    assert answer(selector: "$[\"\\U0010FFFF\"]", document: "null") == "invalid"
+
+test "cts 326: name selector, double quotes, unicode escape plus"
+    assert answer(selector: "$[\"\\u+1234\"]", document: "null") == "invalid"
+
+test "cts 327: name selector, double quotes, unicode escape brackets"
+    assert answer(selector: "$[\"\\u{1234}\"]", document: "null") == "invalid"
+
+test "cts 328: name selector, double quotes, unicode escape brackets long"
+    assert answer(selector: "$[\"\\u{10ffff}\"]", document: "null") == "invalid"
+
+test "cts 329: name selector, double quotes, single high surrogate"
+    assert answer(selector: "$[\"\\uD800\"]", document: "null") == "invalid"
+
+test "cts 330: name selector, double quotes, single low surrogate"
+    assert answer(selector: "$[\"\\uDC00\"]", document: "null") == "invalid"
+
+test "cts 331: name selector, double quotes, high high surrogate"
+    assert answer(selector: "$[\"\\uD800\\uD800\"]", document: "null") == "invalid"
+
+test "cts 332: name selector, double quotes, low low surrogate"
+    assert answer(selector: "$[\"\\uDC00\\uDC00\"]", document: "null") == "invalid"
+
+test "cts 333: name selector, double quotes, surrogate non-surrogate"
+    assert answer(selector: "$[\"\\uD800\\u1234\"]", document: "null") == "invalid"
+
+test "cts 334: name selector, double quotes, non-surrogate surrogate"
+    assert answer(selector: "$[\"\\u1234\\uDC00\"]", document: "null") == "invalid"
+
+test "cts 335: name selector, double quotes, surrogate supplementary"
+    assert answer(selector: "$[\"\\uD800𝄞\"]", document: "null") == "invalid"
+
+test "cts 336: name selector, double quotes, supplementary surrogate"
+    assert answer(selector: "$[\"𝄞\\uDC00\"]", document: "null") == "invalid"
+
+test "cts 337: name selector, double quotes, surrogate incomplete low"
+    assert answer(selector: "$[\"\\uD800\\uDC0\"]", document: "null") == "invalid"
+
+test "cts 338: name selector, single quotes"
+    assert answer(selector: "$['a']", document: "{\"a\":\"A\",\"b\":\"B\"}") == canonical("[[\"A\"],[\"$['a']\"]]")
+
+test "cts 339: name selector, single quotes, absent data"
+    assert answer(selector: "$['c']", document: "{\"a\":\"A\",\"b\":\"B\"}") == canonical("[[],[]]")
+
+test "cts 340: name selector, single quotes, array data"
+    assert answer(selector: "$['a']", document: "[\"first\",\"second\"]") == canonical("[[],[]]")
+
+test "cts 341: name selector, single quotes, embedded U+0000"
+    assert answer(selector: "$['" + zero_byte() + "']", document: "null") == "invalid"
+
+test "cts 342: name selector, single quotes, embedded U+0001"
+    assert answer(selector: "$['\u{1}']", document: "null") == "invalid"
+
+test "cts 343: name selector, single quotes, embedded U+0002"
+    assert answer(selector: "$['\u{2}']", document: "null") == "invalid"
+
+test "cts 344: name selector, single quotes, embedded U+0003"
+    assert answer(selector: "$['\u{3}']", document: "null") == "invalid"
+
+test "cts 345: name selector, single quotes, embedded U+0004"
+    assert answer(selector: "$['\u{4}']", document: "null") == "invalid"
+
+test "cts 346: name selector, single quotes, embedded U+0005"
+    assert answer(selector: "$['\u{5}']", document: "null") == "invalid"
+
+test "cts 347: name selector, single quotes, embedded U+0006"
+    assert answer(selector: "$['\u{6}']", document: "null") == "invalid"
+
+test "cts 348: name selector, single quotes, embedded U+0007"
+    assert answer(selector: "$['\u{7}']", document: "null") == "invalid"
+
+test "cts 349: name selector, single quotes, embedded U+0008"
+    assert answer(selector: "$['\u{8}']", document: "null") == "invalid"
+
+test "cts 350: name selector, single quotes, embedded U+0009"
+    assert answer(selector: "$['\t']", document: "null") == "invalid"
+
+test "cts 351: name selector, single quotes, embedded U+000A"
+    assert answer(selector: "$['\n']", document: "null") == "invalid"
+
+test "cts 352: name selector, single quotes, embedded U+000B"
+    assert answer(selector: "$['\u{b}']", document: "null") == "invalid"
+
+test "cts 353: name selector, single quotes, embedded U+000C"
+    assert answer(selector: "$['\u{c}']", document: "null") == "invalid"
+
+test "cts 354: name selector, single quotes, embedded U+000D"
+    assert answer(selector: "$['\r']", document: "null") == "invalid"
+
+test "cts 355: name selector, single quotes, embedded U+000E"
+    assert answer(selector: "$['\u{e}']", document: "null") == "invalid"
+
+test "cts 356: name selector, single quotes, embedded U+000F"
+    assert answer(selector: "$['\u{f}']", document: "null") == "invalid"
+
+test "cts 357: name selector, single quotes, embedded U+0010"
+    assert answer(selector: "$['\u{10}']", document: "null") == "invalid"
+
+test "cts 358: name selector, single quotes, embedded U+0011"
+    assert answer(selector: "$['\u{11}']", document: "null") == "invalid"
+
+test "cts 359: name selector, single quotes, embedded U+0012"
+    assert answer(selector: "$['\u{12}']", document: "null") == "invalid"
+
+test "cts 360: name selector, single quotes, embedded U+0013"
+    assert answer(selector: "$['\u{13}']", document: "null") == "invalid"
+
+test "cts 361: name selector, single quotes, embedded U+0014"
+    assert answer(selector: "$['\u{14}']", document: "null") == "invalid"
+
+test "cts 362: name selector, single quotes, embedded U+0015"
+    assert answer(selector: "$['\u{15}']", document: "null") == "invalid"
+
+test "cts 363: name selector, single quotes, embedded U+0016"
+    assert answer(selector: "$['\u{16}']", document: "null") == "invalid"
+
+test "cts 364: name selector, single quotes, embedded U+0017"
+    assert answer(selector: "$['\u{17}']", document: "null") == "invalid"
+
+test "cts 365: name selector, single quotes, embedded U+0018"
+    assert answer(selector: "$['\u{18}']", document: "null") == "invalid"
+
+test "cts 366: name selector, single quotes, embedded U+0019"
+    assert answer(selector: "$['\u{19}']", document: "null") == "invalid"
+
+test "cts 367: name selector, single quotes, embedded U+001A"
+    assert answer(selector: "$['\u{1a}']", document: "null") == "invalid"
+
+test "cts 368: name selector, single quotes, embedded U+001B"
+    assert answer(selector: "$['\u{1b}']", document: "null") == "invalid"
+
+test "cts 369: name selector, single quotes, embedded U+001C"
+    assert answer(selector: "$['\u{1c}']", document: "null") == "invalid"
+
+test "cts 370: name selector, single quotes, embedded U+001D"
+    assert answer(selector: "$['\u{1d}']", document: "null") == "invalid"
+
+test "cts 371: name selector, single quotes, embedded U+001E"
+    assert answer(selector: "$['\u{1e}']", document: "null") == "invalid"
+
+test "cts 372: name selector, single quotes, embedded U+001F"
+    assert answer(selector: "$['\u{1f}']", document: "null") == "invalid"
+
+test "cts 373: name selector, single quotes, embedded U+0020"
+    assert answer(selector: "$[' ']", document: "{\" \":\"A\"}") == canonical("[[\"A\"],[\"$[' ']\"]]")
+
+test "cts 374: name selector, single quotes, escaped single quote"
+    assert answer(selector: "$['\\'']", document: "{\"'\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\'']\"]]")
+
+test "cts 375: name selector, single quotes, escaped reverse solidus"
+    assert answer(selector: "$['\\\\']", document: "{\"\\\\\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\\\\\']\"]]")
+
+test "cts 376: name selector, single quotes, escaped solidus"
+    assert answer(selector: "$['\\/']", document: "{\"/\":\"A\"}") == canonical("[[\"A\"],[\"$['/']\"]]")
+
+test "cts 377: name selector, single quotes, escaped backspace"
+    assert answer(selector: "$['\\b']", document: "{\"\\b\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\b']\"]]")
+
+test "cts 378: name selector, single quotes, escaped form feed"
+    assert answer(selector: "$['\\f']", document: "{\"\\f\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\f']\"]]")
+
+test "cts 379: name selector, single quotes, escaped line feed"
+    assert answer(selector: "$['\\n']", document: "{\"\\n\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\n']\"]]")
+
+test "cts 380: name selector, single quotes, escaped carriage return"
+    assert answer(selector: "$['\\r']", document: "{\"\\r\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\r']\"]]")
+
+test "cts 381: name selector, single quotes, escaped tab"
+    assert answer(selector: "$['\\t']", document: "{\"\\t\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\t']\"]]")
+
+test "cts 382: name selector, single quotes, escaped , upper case hex"
+    assert answer(selector: "$['\\u263A']", document: "{\"☺\":\"A\"}") == canonical("[[\"A\"],[\"$['☺']\"]]")
+
+test "cts 383: name selector, single quotes, escaped , lower case hex"
+    assert answer(selector: "$['\\u263a']", document: "{\"☺\":\"A\"}") == canonical("[[\"A\"],[\"$['☺']\"]]")
+
+test "cts 384: name selector, single quotes, escaped , lower case hex e"
+    assert answer(selector: "$['\\u00e9']", document: "{\"é\":\"A\"}") == canonical("[[\"A\"],[\"$['é']\"]]")
+
+test "cts 385: name selector, single quotes, escaped control character"
+    assert answer(selector: "$['\\u001f']", document: "{\"\\u001f\":\"A\"}") == canonical("[[\"A\"],[\"$['\\\\u001f']\"]]")
+
+test "cts 386: name selector, single quotes, surrogate pair"
+    assert answer(selector: "$['\\uD834\\uDD1E']", document: "{\"𝄞\":\"A\"}") == canonical("[[\"A\"],[\"$['𝄞']\"]]")
+
+test "cts 387: name selector, single quotes, surrogate pair"
+    assert answer(selector: "$['\\uD83D\\uDE00']", document: "{\"😀\":\"A\"}") == canonical("[[\"A\"],[\"$['😀']\"]]")
+
+test "cts 388: name selector, single quotes, invalid escaped double quote"
+    assert answer(selector: "$['\\\"']", document: "null") == "invalid"
+
+test "cts 389: name selector, single quotes, embedded single quote"
+    assert answer(selector: "$[''']", document: "null") == "invalid"
+
+test "cts 390: name selector, single quotes, incomplete escape"
+    assert answer(selector: "$['\\']", document: "null") == "invalid"
+
+test "cts 391: name selector, double quotes, empty"
+    assert answer(selector: "$[\"\"]", document: "{\"a\":\"A\",\"b\":\"B\",\"\":\"C\"}") == canonical("[[\"C\"],[\"$['']\"]]")
+
+test "cts 392: name selector, single quotes, empty"
+    assert answer(selector: "$['']", document: "{\"a\":\"A\",\"b\":\"B\",\"\":\"C\"}") == canonical("[[\"C\"],[\"$['']\"]]")
+
+test "cts 393: slice selector, slice selector"
+    assert answer(selector: "$[1:3]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1,2],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 394: slice selector, slice selector with step"
+    assert answer(selector: "$[1:6:2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1,3,5],[\"$[1]\",\"$[3]\",\"$[5]\"]]")
+
+test "cts 395: slice selector, slice selector with everything omitted, short form"
+    assert answer(selector: "$[:]", document: "[0,1,2,3]") == canonical("[[0,1,2,3],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\"]]")
+
+test "cts 396: slice selector, slice selector with everything omitted, long form"
+    assert answer(selector: "$[::]", document: "[0,1,2,3]") == canonical("[[0,1,2,3],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\"]]")
+
+test "cts 397: slice selector, slice selector with start omitted"
+    assert answer(selector: "$[:2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0,1],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 398: slice selector, slice selector with start and end omitted"
+    assert answer(selector: "$[::2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0,2,4,6,8],[\"$[0]\",\"$[2]\",\"$[4]\",\"$[6]\",\"$[8]\"]]")
+
+test "cts 399: slice selector, negative step with default start and end"
+    assert answer(selector: "$[::-1]", document: "[0,1,2,3]") == canonical("[[3,2,1,0],[\"$[3]\",\"$[2]\",\"$[1]\",\"$[0]\"]]")
+
+test "cts 400: slice selector, negative step with default start"
+    assert answer(selector: "$[:0:-1]", document: "[0,1,2,3]") == canonical("[[3,2,1],[\"$[3]\",\"$[2]\",\"$[1]\"]]")
+
+test "cts 401: slice selector, negative step with default end"
+    assert answer(selector: "$[2::-1]", document: "[0,1,2,3]") == canonical("[[2,1,0],[\"$[2]\",\"$[1]\",\"$[0]\"]]")
+
+test "cts 402: slice selector, larger negative step"
+    assert answer(selector: "$[::-2]", document: "[0,1,2,3]") == canonical("[[3,1],[\"$[3]\",\"$[1]\"]]")
+
+test "cts 403: slice selector, negative range with default step"
+    assert answer(selector: "$[-1:-3]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[],[]]")
+
+test "cts 404: slice selector, negative range with negative step"
+    assert answer(selector: "$[-1:-3:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9,8],[\"$[9]\",\"$[8]\"]]")
+
+test "cts 405: slice selector, negative range with larger negative step"
+    assert answer(selector: "$[-1:-6:-2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9,7,5],[\"$[9]\",\"$[7]\",\"$[5]\"]]")
+
+test "cts 406: slice selector, larger negative range with larger negative step"
+    assert answer(selector: "$[-1:-7:-2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9,7,5],[\"$[9]\",\"$[7]\",\"$[5]\"]]")
+
+test "cts 407: slice selector, negative from, positive to"
+    assert answer(selector: "$[-5:7]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[5,6],[\"$[5]\",\"$[6]\"]]")
+
+test "cts 408: slice selector, negative from"
+    assert answer(selector: "$[-2:]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[8,9],[\"$[8]\",\"$[9]\"]]")
+
+test "cts 409: slice selector, positive from, negative to"
+    assert answer(selector: "$[1:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1,2,3,4,5,6,7,8],[\"$[1]\",\"$[2]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\",\"$[7]\",\"$[8]\"]]")
+
+test "cts 410: slice selector, negative from, positive to, negative step"
+    assert answer(selector: "$[-1:1:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9,8,7,6,5,4,3,2],[\"$[9]\",\"$[8]\",\"$[7]\",\"$[6]\",\"$[5]\",\"$[4]\",\"$[3]\",\"$[2]\"]]")
+
+test "cts 411: slice selector, positive from, negative to, negative step"
+    assert answer(selector: "$[7:-5:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[7,6],[\"$[7]\",\"$[6]\"]]")
+
+test "cts 412: slice selector, in serial, on nested array"
+    assert answer(selector: "$[1:3][1:2]", document: "[[\"a\",\"b\",\"c\"],[\"d\",\"e\",\"f\"],[\"g\",\"h\",\"i\"]]") == canonical("[[\"e\",\"h\"],[\"$[1][1]\",\"$[2][1]\"]]")
+
+test "cts 413: slice selector, in serial, on flat array"
+    assert answer(selector: "$[1:3][::]", document: "[0,1,2,3,4,5]") == canonical("[[],[]]")
+
+test "cts 414: slice selector, negative from, negative to, positive step"
+    assert answer(selector: "$[-5:-2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[5,6,7],[\"$[5]\",\"$[6]\",\"$[7]\"]]")
+
+test "cts 415: slice selector, too many colons"
+    assert answer(selector: "$[1:2:3:4]", document: "null") == "invalid"
+
+test "cts 416: slice selector, non-integer array index"
+    assert answer(selector: "$[1:2:a]", document: "null") == "invalid"
+
+test "cts 417: slice selector, zero step"
+    assert answer(selector: "$[1:2:0]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[],[]]")
+
+test "cts 418: slice selector, empty range"
+    assert answer(selector: "$[2:2]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[],[]]")
+
+test "cts 419: slice selector, slice selector with everything omitted with empty array"
+    assert answer(selector: "$[:]", document: "[]") == canonical("[[],[]]")
+
+test "cts 420: slice selector, negative step with empty array"
+    assert answer(selector: "$[::-1]", document: "[]") == canonical("[[],[]]")
+
+test "cts 421: slice selector, maximal range with positive step"
+    assert answer(selector: "$[0:10]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0,1,2,3,4,5,6,7,8,9],[\"$[0]\",\"$[1]\",\"$[2]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\",\"$[7]\",\"$[8]\",\"$[9]\"]]")
+
+test "cts 422: slice selector, maximal range with negative step"
+    assert answer(selector: "$[9:0:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9,8,7,6,5,4,3,2,1],[\"$[9]\",\"$[8]\",\"$[7]\",\"$[6]\",\"$[5]\",\"$[4]\",\"$[3]\",\"$[2]\",\"$[1]\"]]")
+
+test "cts 423: slice selector, excessively large to value"
+    assert answer(selector: "$[2:113667776004]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[2,3,4,5,6,7,8,9],[\"$[2]\",\"$[3]\",\"$[4]\",\"$[5]\",\"$[6]\",\"$[7]\",\"$[8]\",\"$[9]\"]]")
+
+test "cts 424: slice selector, excessively small from value"
+    assert answer(selector: "$[-113667776004:1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[0],[\"$[0]\"]]")
+
+test "cts 425: slice selector, excessively large from value with negative step"
+    assert answer(selector: "$[113667776004:0:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9,8,7,6,5,4,3,2,1],[\"$[9]\",\"$[8]\",\"$[7]\",\"$[6]\",\"$[5]\",\"$[4]\",\"$[3]\",\"$[2]\",\"$[1]\"]]")
+
+test "cts 426: slice selector, excessively small to value with negative step"
+    assert answer(selector: "$[3:-113667776004:-1]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[3,2,1,0],[\"$[3]\",\"$[2]\",\"$[1]\",\"$[0]\"]]")
+
+test "cts 427: slice selector, excessively large step"
+    assert answer(selector: "$[1:10:113667776004]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[1],[\"$[1]\"]]")
+
+test "cts 428: slice selector, excessively small step"
+    assert answer(selector: "$[-1:-10:-113667776004]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9],[\"$[9]\"]]")
+
+test "cts 429: slice selector, start, min exact"
+    assert answer(selector: "$[-9007199254740991::]", document: "[]") == canonical("[[],[]]")
+
+test "cts 430: slice selector, start, max exact"
+    assert answer(selector: "$[9007199254740991::]", document: "[]") == canonical("[[],[]]")
+
+test "cts 431: slice selector, start, min exact - 1"
+    assert answer(selector: "$[-9007199254740992::]", document: "null") == "invalid"
+
+test "cts 432: slice selector, start, max exact + 1"
+    assert answer(selector: "$[9007199254740992::]", document: "null") == "invalid"
+
+test "cts 433: slice selector, end, min exact"
+    assert answer(selector: "$[:-9007199254740991:]", document: "[]") == canonical("[[],[]]")
+
+test "cts 434: slice selector, end, max exact"
+    assert answer(selector: "$[:9007199254740991:]", document: "[]") == canonical("[[],[]]")
+
+test "cts 435: slice selector, end, min exact - 1"
+    assert answer(selector: "$[:-9007199254740992:]", document: "null") == "invalid"
+
+test "cts 436: slice selector, end, max exact + 1"
+    assert answer(selector: "$[:9007199254740992:]", document: "null") == "invalid"
+
+test "cts 437: slice selector, step, min exact"
+    assert answer(selector: "$[::-9007199254740991]", document: "[]") == canonical("[[],[]]")
+
+test "cts 438: slice selector, step, max exact"
+    assert answer(selector: "$[::9007199254740991]", document: "[]") == canonical("[[],[]]")
+
+test "cts 439: slice selector, step, min exact - 1"
+    assert answer(selector: "$[::-9007199254740992]", document: "null") == "invalid"
+
+test "cts 440: slice selector, step, max exact + 1"
+    assert answer(selector: "$[::9007199254740992]", document: "null") == "invalid"
+
+test "cts 441: slice selector, overflowing to value"
+    assert answer(selector: "$[2:231584178474632390847141970017375815706539969331281128078915168015826259279872]", document: "null") == "invalid"
+
+test "cts 442: slice selector, underflowing from value"
+    assert answer(selector: "$[-231584178474632390847141970017375815706539969331281128078915168015826259279872:1]", document: "null") == "invalid"
+
+test "cts 443: slice selector, overflowing from value with negative step"
+    assert answer(selector: "$[231584178474632390847141970017375815706539969331281128078915168015826259279872:0:-1]", document: "null") == "invalid"
+
+test "cts 444: slice selector, underflowing to value with negative step"
+    assert answer(selector: "$[3:-231584178474632390847141970017375815706539969331281128078915168015826259279872:-1]", document: "null") == "invalid"
+
+test "cts 445: slice selector, overflowing step"
+    assert answer(selector: "$[1:10:231584178474632390847141970017375815706539969331281128078915168015826259279872]", document: "null") == "invalid"
+
+test "cts 446: slice selector, underflowing step"
+    assert answer(selector: "$[-1:-10:-231584178474632390847141970017375815706539969331281128078915168015826259279872]", document: "null") == "invalid"
+
+test "cts 447: slice selector, start, leading 0"
+    assert answer(selector: "$[01::]", document: "null") == "invalid"
+
+test "cts 448: slice selector, start, decimal"
+    assert answer(selector: "$[1.0::]", document: "null") == "invalid"
+
+test "cts 449: slice selector, start, plus"
+    assert answer(selector: "$[+1::]", document: "null") == "invalid"
+
+test "cts 450: slice selector, start, minus space"
+    assert answer(selector: "$[- 1::]", document: "null") == "invalid"
+
+test "cts 451: slice selector, start, -0"
+    assert answer(selector: "$[-0::]", document: "null") == "invalid"
+
+test "cts 452: slice selector, start, leading -0"
+    assert answer(selector: "$[-01::]", document: "null") == "invalid"
+
+test "cts 453: slice selector, end, leading 0"
+    assert answer(selector: "$[:01:]", document: "null") == "invalid"
+
+test "cts 454: slice selector, end, decimal"
+    assert answer(selector: "$[:1.0:]", document: "null") == "invalid"
+
+test "cts 455: slice selector, end, plus"
+    assert answer(selector: "$[:+1:]", document: "null") == "invalid"
+
+test "cts 456: slice selector, end, minus space"
+    assert answer(selector: "$[:- 1:]", document: "null") == "invalid"
+
+test "cts 457: slice selector, end, -0"
+    assert answer(selector: "$[:-0:]", document: "null") == "invalid"
+
+test "cts 458: slice selector, end, leading -0"
+    assert answer(selector: "$[:-01:]", document: "null") == "invalid"
+
+test "cts 459: slice selector, step, leading 0"
+    assert answer(selector: "$[::01]", document: "null") == "invalid"
+
+test "cts 460: slice selector, step, decimal"
+    assert answer(selector: "$[::1.0]", document: "null") == "invalid"
+
+test "cts 461: slice selector, step, plus"
+    assert answer(selector: "$[::+1]", document: "null") == "invalid"
+
+test "cts 462: slice selector, step, minus space"
+    assert answer(selector: "$[::- 1]", document: "null") == "invalid"
+
+test "cts 463: slice selector, step, -0"
+    assert answer(selector: "$[::-0]", document: "null") == "invalid"
+
+test "cts 464: slice selector, step, leading -0"
+    assert answer(selector: "$[::-01]", document: "null") == "invalid"
+
+test "cts 465: slice selector, explicit start, omitted end and step"
+    assert answer(selector: "$[9::]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[9],[\"$[9]\"]]")
+
+test "cts 466: slice selector, explicit start equal to length, omitted end and step"
+    assert answer(selector: "$[10::]", document: "[0,1,2,3,4,5,6,7,8,9]") == canonical("[[],[]]")
+
+test "cts 467: functions, count, count function"
+    assert answer(selector: "$[?count(@..*)>2]", document: "[{\"a\":[1,2,3]},{\"a\":[1],\"d\":\"f\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":[1,2,3]},{\"a\":[1],\"d\":\"f\"}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 468: functions, count, single-node arg"
+    assert answer(selector: "$[?count(@.a)>1]", document: "[{\"a\":[1,2,3]},{\"a\":[1],\"d\":\"f\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 469: functions, count, multiple-selector arg"
+    assert answer(selector: "$[?count(@['a','d'])>1]", document: "[{\"a\":[1,2,3]},{\"a\":[1],\"d\":\"f\"},{\"a\":1,\"d\":\"f\"}]") == canonical("[[{\"a\":[1],\"d\":\"f\"},{\"a\":1,\"d\":\"f\"}],[\"$[1]\",\"$[2]\"]]")
+
+test "cts 470: functions, count, non-query arg, number"
+    assert answer(selector: "$[?count(1)>2]", document: "null") == "invalid"
+
+test "cts 471: functions, count, non-query arg, string"
+    assert answer(selector: "$[?count('string')>2]", document: "null") == "invalid"
+
+test "cts 472: functions, count, non-query arg, true"
+    assert answer(selector: "$[?count(true)>2]", document: "null") == "invalid"
+
+test "cts 473: functions, count, non-query arg, false"
+    assert answer(selector: "$[?count(false)>2]", document: "null") == "invalid"
+
+test "cts 474: functions, count, non-query arg, null"
+    assert answer(selector: "$[?count(null)>2]", document: "null") == "invalid"
+
+test "cts 475: functions, count, result must be compared"
+    assert answer(selector: "$[?count(@..*)]", document: "null") == "invalid"
+
+test "cts 476: functions, count, no params"
+    assert answer(selector: "$[?count()==1]", document: "null") == "invalid"
+
+test "cts 477: functions, count, too many params"
+    assert answer(selector: "$[?count(@.a,@.b)==1]", document: "null") == "invalid"
+
+test "cts 478: functions, length, string data"
+    assert answer(selector: "$[?length(@.a)>=2]", document: "[{\"a\":\"ab\"},{\"a\":\"d\"}]") == canonical("[[{\"a\":\"ab\"}],[\"$[0]\"]]")
+
+test "cts 479: functions, length, string data, unicode"
+    assert answer(selector: "$[?length(@)==2]", document: "[\"☺\",\"☺☺\",\"☺☺☺\",\"ж\",\"жж\",\"жжж\",\"磨\",\"阿美\",\"形声字\"]") == canonical("[[\"☺☺\",\"жж\",\"阿美\"],[\"$[1]\",\"$[4]\",\"$[7]\"]]")
+
+test "cts 480: functions, length, array data"
+    assert answer(selector: "$[?length(@.a)>=2]", document: "[{\"a\":[1,2,3]},{\"a\":[1]}]") == canonical("[[{\"a\":[1,2,3]}],[\"$[0]\"]]")
+
+test "cts 481: functions, length, missing data"
+    assert answer(selector: "$[?length(@.a)>=2]", document: "[{\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 482: functions, length, number arg"
+    assert answer(selector: "$[?length(1)>=2]", document: "[{\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 483: functions, length, true arg"
+    assert answer(selector: "$[?length(true)>=2]", document: "[{\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 484: functions, length, false arg"
+    assert answer(selector: "$[?length(false)>=2]", document: "[{\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 485: functions, length, null arg"
+    assert answer(selector: "$[?length(null)>=2]", document: "[{\"d\":\"f\"}]") == canonical("[[],[]]")
+
+test "cts 486: functions, length, result must be compared"
+    assert answer(selector: "$[?length(@.a)]", document: "null") == "invalid"
+
+test "cts 487: functions, length, no params"
+    assert answer(selector: "$[?length()==1]", document: "null") == "invalid"
+
+test "cts 488: functions, length, too many params"
+    assert answer(selector: "$[?length(@.a,@.b)==1]", document: "null") == "invalid"
+
+test "cts 489: functions, length, non-singular query arg"
+    assert answer(selector: "$[?length(@.*)<3]", document: "null") == "invalid"
+
+test "cts 490: functions, length, arg is a function expression"
+    assert answer(selector: "$.values[?length(@.a)==length(value($..c))]", document: "{\"c\":\"cd\",\"values\":[{\"a\":\"ab\"},{\"a\":\"d\"}]}") == canonical("[[{\"a\":\"ab\"}],[\"$['values'][0]\"]]")
+
+test "cts 491: functions, length, arg is special nothing"
+    assert answer(selector: "$[?length(value(@.a))>0]", document: "[{\"a\":\"ab\"},{\"c\":\"d\"},{\"a\":null}]") == canonical("[[{\"a\":\"ab\"}],[\"$[0]\"]]")
+
+test "cts 492: functions, length, non-singular query arg, multiple index selectors"
+    assert answer(selector: "$[?length(@[1, 2])<3]", document: "null") == "invalid"
+
+test "cts 493: functions, length, non-singular query arg, multiple name selectors"
+    assert answer(selector: "$[?length(@['a', 'b'])<3]", document: "null") == "invalid"
+
+test "cts 494: functions, match, found match"
+    assert answer(selector: "$[?match(@.a, 'a.*')]", document: "[{\"a\":\"ab\"}]") == canonical("[[{\"a\":\"ab\"}],[\"$[0]\"]]")
+
+test "cts 495: functions, match, double quotes"
+    assert answer(selector: "$[?match(@.a, \"a.*\")]", document: "[{\"a\":\"ab\"}]") == canonical("[[{\"a\":\"ab\"}],[\"$[0]\"]]")
+
+test "cts 496: functions, match, regex from the document"
+    assert answer(selector: "$.values[?match(@, $.regex)]", document: "{\"regex\":\"b.?b\",\"values\":[\"abc\",\"bcd\",\"bab\",\"bba\",\"bbab\",\"b\",true,[],{}]}") == canonical("[[\"bab\"],[\"$['values'][2]\"]]")
+
+test "cts 497: functions, match, don't select match"
+    assert answer(selector: "$[?!match(@.a, 'a.*')]", document: "[{\"a\":\"ab\"}]") == canonical("[[],[]]")
+
+test "cts 498: functions, match, not a match"
+    assert answer(selector: "$[?match(@.a, 'a.*')]", document: "[{\"a\":\"bc\"}]") == canonical("[[],[]]")
+
+test "cts 499: functions, match, select non-match"
+    assert answer(selector: "$[?!match(@.a, 'a.*')]", document: "[{\"a\":\"bc\"}]") == canonical("[[{\"a\":\"bc\"}],[\"$[0]\"]]")
+
+test "cts 500: functions, match, non-string first arg"
+    assert answer(selector: "$[?match(1, 'a.*')]", document: "[{\"a\":\"bc\"}]") == canonical("[[],[]]")
+
+test "cts 501: functions, match, non-string second arg"
+    assert answer(selector: "$[?match(@.a, 1)]", document: "[{\"a\":\"bc\"}]") == canonical("[[],[]]")
+
+test "cts 502: functions, match, filter, match function, unicode char class, uppercase"
+    assert answer(selector: "$[?match(@, '\\\\p{Lu}')]", document: "[\"ж\",\"Ж\",\"1\",\"жЖ\",true,[],{}]") == canonical("[[\"Ж\"],[\"$[1]\"]]")
+
+test "cts 503: functions, match, filter, match function, unicode char class negated, uppercase"
+    assert answer(selector: "$[?match(@, '\\\\P{Lu}')]", document: "[\"ж\",\"Ж\",\"1\",true,[],{}]") == canonical("[[\"ж\",\"1\"],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 504: functions, match, filter, match function, unicode, surrogate pair"
+    assert answer(selector: "$[?match(@, 'a.b')]", document: "[\"a𐄁b\",\"ab\",\"1\",true,[],{}]") == canonical("[[\"a𐄁b\"],[\"$[0]\"]]")
+
+test "cts 505: functions, match, dot matcher on \\u2028"
+    assert answer(selector: "$[?match(@, '.')]", document: "[\"\\u2028\",\"\\r\",\"\\n\",true,[],{}]") == canonical("[[\"\\u2028\"],[\"$[0]\"]]")
+
+test "cts 506: functions, match, dot matcher on \\u2029"
+    assert answer(selector: "$[?match(@, '.')]", document: "[\"\\u2029\",\"\\r\",\"\\n\",true,[],{}]") == canonical("[[\"\\u2029\"],[\"$[0]\"]]")
+
+test "cts 507: functions, match, result cannot be compared"
+    assert answer(selector: "$[?match(@.a, 'a.*')==true]", document: "null") == "invalid"
+
+test "cts 508: functions, match, too few params"
+    assert answer(selector: "$[?match(@.a)==1]", document: "null") == "invalid"
+
+test "cts 509: functions, match, too many params"
+    assert answer(selector: "$[?match(@.a,@.b,@.c)==1]", document: "null") == "invalid"
+
+test "cts 510: functions, match, arg is a function expression"
+    assert answer(selector: "$.values[?match(@.a, value($..['regex']))]", document: "{\"regex\":\"a.*\",\"values\":[{\"a\":\"ab\"},{\"a\":\"ba\"}]}") == canonical("[[{\"a\":\"ab\"}],[\"$['values'][0]\"]]")
+
+test "cts 511: functions, match, dot in character class"
+    assert answer(selector: "$[?match(@, 'a[.b]c')]", document: "[\"abc\",\"a.c\",\"axc\"]") == canonical("[[\"abc\",\"a.c\"],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 512: functions, match, escaped dot"
+    assert answer(selector: "$[?match(@, 'a\\\\.c')]", document: "[\"abc\",\"a.c\",\"axc\"]") == canonical("[[\"a.c\"],[\"$[1]\"]]")
+
+test "cts 513: functions, match, escaped backslash before dot"
+    assert answer(selector: "$[?match(@, 'a\\\\\\\\.c')]", document: "[\"abc\",\"a.c\",\"axc\",\"a\\\\\\u2028c\"]") == canonical("[[\"a\\\\\\u2028c\"],[\"$[3]\"]]")
+
+test "cts 514: functions, match, escaped left square bracket"
+    assert answer(selector: "$[?match(@, 'a\\\\[.c')]", document: "[\"abc\",\"a.c\",\"a[\\u2028c\"]") == canonical("[[\"a[\\u2028c\"],[\"$[2]\"]]")
+
+test "cts 515: functions, match, escaped right square bracket"
+    assert answer(selector: "$[?match(@, 'a[\\\\].]c')]", document: "[\"abc\",\"a.c\",\"a\\u2028c\",\"a]c\"]") == canonical("[[\"a.c\",\"a]c\"],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 516: functions, match, explicit caret"
+    assert answer(selector: "$[?match(@, '^ab.*')]", document: "[\"abc\",\"axc\",\"ab\",\"xab\"]") == canonical("[[\"abc\",\"ab\"],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 517: functions, match, explicit dollar"
+    assert answer(selector: "$[?match(@, '.*bc$')]", document: "[\"abc\",\"axc\",\"ab\",\"abcx\"]") == canonical("[[\"abc\"],[\"$[0]\"]]")
+
+test "cts 518: functions, search, at the end"
+    assert answer(selector: "$[?search(@.a, 'a.*')]", document: "[{\"a\":\"the end is ab\"}]") == canonical("[[{\"a\":\"the end is ab\"}],[\"$[0]\"]]")
+
+test "cts 519: functions, search, double quotes"
+    assert answer(selector: "$[?search(@.a, \"a.*\")]", document: "[{\"a\":\"the end is ab\"}]") == canonical("[[{\"a\":\"the end is ab\"}],[\"$[0]\"]]")
+
+test "cts 520: functions, search, at the start"
+    assert answer(selector: "$[?search(@.a, 'a.*')]", document: "[{\"a\":\"ab is at the start\"}]") == canonical("[[{\"a\":\"ab is at the start\"}],[\"$[0]\"]]")
+
+test "cts 521: functions, search, in the middle"
+    assert answer(selector: "$[?search(@.a, 'a.*')]", document: "[{\"a\":\"contains two matches\"}]") == canonical("[[{\"a\":\"contains two matches\"}],[\"$[0]\"]]")
+
+test "cts 522: functions, search, regex from the document"
+    assert answer(selector: "$.values[?search(@, $.regex)]", document: "{\"regex\":\"b.?b\",\"values\":[\"abc\",\"bcd\",\"bab\",\"bba\",\"bbab\",\"b\",true,[],{}]}") == canonical("[[\"bab\",\"bba\",\"bbab\"],[\"$['values'][2]\",\"$['values'][3]\",\"$['values'][4]\"]]")
+
+test "cts 523: functions, search, don't select match"
+    assert answer(selector: "$[?!search(@.a, 'a.*')]", document: "[{\"a\":\"contains two matches\"}]") == canonical("[[],[]]")
+
+test "cts 524: functions, search, not a match"
+    assert answer(selector: "$[?search(@.a, 'a.*')]", document: "[{\"a\":\"bc\"}]") == canonical("[[],[]]")
+
+test "cts 525: functions, search, select non-match"
+    assert answer(selector: "$[?!search(@.a, 'a.*')]", document: "[{\"a\":\"bc\"}]") == canonical("[[{\"a\":\"bc\"}],[\"$[0]\"]]")
+
+test "cts 526: functions, search, non-string first arg"
+    assert answer(selector: "$[?search(1, 'a.*')]", document: "[{\"a\":\"bc\"}]") == canonical("[[],[]]")
+
+test "cts 527: functions, search, non-string second arg"
+    assert answer(selector: "$[?search(@.a, 1)]", document: "[{\"a\":\"bc\"}]") == canonical("[[],[]]")
+
+test "cts 528: functions, search, filter, search function, unicode char class, uppercase"
+    assert answer(selector: "$[?search(@, '\\\\p{Lu}')]", document: "[\"ж\",\"Ж\",\"1\",\"жЖ\",true,[],{}]") == canonical("[[\"Ж\",\"жЖ\"],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 529: functions, search, filter, search function, unicode char class negated, uppercase"
+    assert answer(selector: "$[?search(@, '\\\\P{Lu}')]", document: "[\"ж\",\"Ж\",\"1\",true,[],{}]") == canonical("[[\"ж\",\"1\"],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 530: functions, search, filter, search function, unicode, surrogate pair"
+    assert answer(selector: "$[?search(@, 'a.b')]", document: "[\"a𐄁bc\",\"abc\",\"1\",true,[],{}]") == canonical("[[\"a𐄁bc\"],[\"$[0]\"]]")
+
+test "cts 531: functions, search, dot matcher on \\u2028"
+    assert answer(selector: "$[?search(@, '.')]", document: "[\"\\u2028\",\"\\r\\u2028\\n\",\"\\r\",\"\\n\",true,[],{}]") == canonical("[[\"\\u2028\",\"\\r\\u2028\\n\"],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 532: functions, search, dot matcher on \\u2029"
+    assert answer(selector: "$[?search(@, '.')]", document: "[\"\\u2029\",\"\\r\\u2029\\n\",\"\\r\",\"\\n\",true,[],{}]") == canonical("[[\"\\u2029\",\"\\r\\u2029\\n\"],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 533: functions, search, result cannot be compared"
+    assert answer(selector: "$[?search(@.a, 'a.*')==true]", document: "null") == "invalid"
+
+test "cts 534: functions, search, too few params"
+    assert answer(selector: "$[?search(@.a)]", document: "null") == "invalid"
+
+test "cts 535: functions, search, too many params"
+    assert answer(selector: "$[?search(@.a,@.b,@.c)]", document: "null") == "invalid"
+
+test "cts 536: functions, search, arg is a function expression"
+    assert answer(selector: "$.values[?search(@, value($..['regex']))]", document: "{\"regex\":\"b.?b\",\"values\":[\"abc\",\"bcd\",\"bab\",\"bba\",\"bbab\",\"b\",true,[],{}]}") == canonical("[[\"bab\",\"bba\",\"bbab\"],[\"$['values'][2]\",\"$['values'][3]\",\"$['values'][4]\"]]")
+
+test "cts 537: functions, search, dot in character class"
+    assert answer(selector: "$[?search(@, 'a[.b]c')]", document: "[\"x abc y\",\"x a.c y\",\"x axc y\"]") == canonical("[[\"x abc y\",\"x a.c y\"],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 538: functions, search, escaped dot"
+    assert answer(selector: "$[?search(@, 'a\\\\.c')]", document: "[\"x abc y\",\"x a.c y\",\"x axc y\"]") == canonical("[[\"x a.c y\"],[\"$[1]\"]]")
+
+test "cts 539: functions, search, escaped backslash before dot"
+    assert answer(selector: "$[?search(@, 'a\\\\\\\\.c')]", document: "[\"x abc y\",\"x a.c y\",\"x axc y\",\"x a\\\\\\u2028c y\"]") == canonical("[[\"x a\\\\\\u2028c y\"],[\"$[3]\"]]")
+
+test "cts 540: functions, search, escaped left square bracket"
+    assert answer(selector: "$[?search(@, 'a\\\\[.c')]", document: "[\"x abc y\",\"x a.c y\",\"x a[\\u2028c y\"]") == canonical("[[\"x a[\\u2028c y\"],[\"$[2]\"]]")
+
+test "cts 541: functions, search, escaped right square bracket"
+    assert answer(selector: "$[?search(@, 'a[\\\\].]c')]", document: "[\"x abc y\",\"x a.c y\",\"x a\\u2028c y\",\"x a]c y\"]") == canonical("[[\"x a.c y\",\"x a]c y\"],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 542: functions, value, single-value nodelist"
+    assert answer(selector: "$[?value(@.*)==4]", document: "[[4],{\"foo\":4},[5],{\"foo\":5},4]") == canonical("[[[4],{\"foo\":4}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 543: functions, value, multi-value nodelist"
+    assert answer(selector: "$[?value(@.*)==4]", document: "[[4,4],{\"foo\":4,\"bar\":4}]") == canonical("[[],[]]")
+
+test "cts 544: functions, value, too few params"
+    assert answer(selector: "$[?value()==4]", document: "null") == "invalid"
+
+test "cts 545: functions, value, too many params"
+    assert answer(selector: "$[?value(@.a,@.b)==4]", document: "null") == "invalid"
+
+test "cts 546: functions, value, result must be compared"
+    assert answer(selector: "$[?value(@.a)]", document: "null") == "invalid"
+
+test "cts 547: whitespace, filter, space between question mark and expression"
+    assert answer(selector: "$[? @.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 548: whitespace, filter, newline between question mark and expression"
+    assert answer(selector: "$[?\n@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 549: whitespace, filter, tab between question mark and expression"
+    assert answer(selector: "$[?\t@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 550: whitespace, filter, return between question mark and expression"
+    assert answer(selector: "$[?\r@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 551: whitespace, filter, space between question mark and parenthesized expression"
+    assert answer(selector: "$[? (@.a)]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 552: whitespace, filter, newline between question mark and parenthesized expression"
+    assert answer(selector: "$[?\n(@.a)]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 553: whitespace, filter, tab between question mark and parenthesized expression"
+    assert answer(selector: "$[?\t(@.a)]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 554: whitespace, filter, return between question mark and parenthesized expression"
+    assert answer(selector: "$[?\r(@.a)]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 555: whitespace, filter, space between parenthesized expression and bracket"
+    assert answer(selector: "$[?(@.a) ]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 556: whitespace, filter, newline between parenthesized expression and bracket"
+    assert answer(selector: "$[?(@.a)\n]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 557: whitespace, filter, tab between parenthesized expression and bracket"
+    assert answer(selector: "$[?(@.a)\t]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 558: whitespace, filter, return between parenthesized expression and bracket"
+    assert answer(selector: "$[?(@.a)\r]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 559: whitespace, filter, space between bracket and question mark"
+    assert answer(selector: "$[ ?@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 560: whitespace, filter, newline between bracket and question mark"
+    assert answer(selector: "$[\n?@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 561: whitespace, filter, tab between bracket and question mark"
+    assert answer(selector: "$[\t?@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 562: whitespace, filter, return between bracket and question mark"
+    assert answer(selector: "$[\r?@.a]", document: "[{\"a\":\"b\",\"d\":\"e\"},{\"b\":\"c\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"b\",\"d\":\"e\"}],[\"$[0]\"]]")
+
+test "cts 563: whitespace, functions, space between function name and parenthesis"
+    assert answer(selector: "$[?count (@.*)==1]", document: "null") == "invalid"
+
+test "cts 564: whitespace, functions, newline between function name and parenthesis"
+    assert answer(selector: "$[?count\n(@.*)==1]", document: "null") == "invalid"
+
+test "cts 565: whitespace, functions, tab between function name and parenthesis"
+    assert answer(selector: "$[?count\t(@.*)==1]", document: "null") == "invalid"
+
+test "cts 566: whitespace, functions, return between function name and parenthesis"
+    assert answer(selector: "$[?count\r(@.*)==1]", document: "null") == "invalid"
+
+test "cts 567: whitespace, functions, space between parenthesis and arg"
+    assert answer(selector: "$[?count( @.*)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 568: whitespace, functions, newline between parenthesis and arg"
+    assert answer(selector: "$[?count(\n@.*)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 569: whitespace, functions, tab between parenthesis and arg"
+    assert answer(selector: "$[?count(\t@.*)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 570: whitespace, functions, return between parenthesis and arg"
+    assert answer(selector: "$[?count(\r@.*)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 571: whitespace, functions, space between arg and comma"
+    assert answer(selector: "$[?search(@ ,'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 572: whitespace, functions, newline between arg and comma"
+    assert answer(selector: "$[?search(@\n,'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 573: whitespace, functions, tab between arg and comma"
+    assert answer(selector: "$[?search(@\t,'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 574: whitespace, functions, return between arg and comma"
+    assert answer(selector: "$[?search(@\r,'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 575: whitespace, functions, space between comma and arg"
+    assert answer(selector: "$[?search(@, '[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 576: whitespace, functions, newline between comma and arg"
+    assert answer(selector: "$[?search(@,\n'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 577: whitespace, functions, tab between comma and arg"
+    assert answer(selector: "$[?search(@,\t'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 578: whitespace, functions, return between comma and arg"
+    assert answer(selector: "$[?search(@,\r'[a-z]+')]", document: "[\"foo\",\"123\"]") == canonical("[[\"foo\"],[\"$[0]\"]]")
+
+test "cts 579: whitespace, functions, space between arg and parenthesis"
+    assert answer(selector: "$[?count(@.* )==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 580: whitespace, functions, newline between arg and parenthesis"
+    assert answer(selector: "$[?count(@.*\n)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 581: whitespace, functions, tab between arg and parenthesis"
+    assert answer(selector: "$[?count(@.*\t)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 582: whitespace, functions, return between arg and parenthesis"
+    assert answer(selector: "$[?count(@.*\r)==1]", document: "[{\"a\":1},{\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 583: whitespace, functions, spaces in a relative singular selector"
+    assert answer(selector: "$[?length(@ .a .b) == 3]", document: "[{\"a\":{\"b\":\"foo\"}},{}]") == canonical("[[{\"a\":{\"b\":\"foo\"}}],[\"$[0]\"]]")
+
+test "cts 584: whitespace, functions, newlines in a relative singular selector"
+    assert answer(selector: "$[?length(@\n.a\n.b) == 3]", document: "[{\"a\":{\"b\":\"foo\"}},{}]") == canonical("[[{\"a\":{\"b\":\"foo\"}}],[\"$[0]\"]]")
+
+test "cts 585: whitespace, functions, tabs in a relative singular selector"
+    assert answer(selector: "$[?length(@\t.a\t.b) == 3]", document: "[{\"a\":{\"b\":\"foo\"}},{}]") == canonical("[[{\"a\":{\"b\":\"foo\"}}],[\"$[0]\"]]")
+
+test "cts 586: whitespace, functions, returns in a relative singular selector"
+    assert answer(selector: "$[?length(@\r.a\r.b) == 3]", document: "[{\"a\":{\"b\":\"foo\"}},{}]") == canonical("[[{\"a\":{\"b\":\"foo\"}}],[\"$[0]\"]]")
+
+test "cts 587: whitespace, functions, spaces in an absolute singular selector"
+    assert answer(selector: "$..[?length(@)==length($ [0] .a)]", document: "[{\"a\":\"foo\"},{}]") == canonical("[[\"foo\"],[\"$[0]['a']\"]]")
+
+test "cts 588: whitespace, functions, newlines in an absolute singular selector"
+    assert answer(selector: "$..[?length(@)==length($\n[0]\n.a)]", document: "[{\"a\":\"foo\"},{}]") == canonical("[[\"foo\"],[\"$[0]['a']\"]]")
+
+test "cts 589: whitespace, functions, tabs in an absolute singular selector"
+    assert answer(selector: "$..[?length(@)==length($\t[0]\t.a)]", document: "[{\"a\":\"foo\"},{}]") == canonical("[[\"foo\"],[\"$[0]['a']\"]]")
+
+test "cts 590: whitespace, functions, returns in an absolute singular selector"
+    assert answer(selector: "$..[?length(@)==length($\r[0]\r.a)]", document: "[{\"a\":\"foo\"},{}]") == canonical("[[\"foo\"],[\"$[0]['a']\"]]")
+
+test "cts 591: whitespace, operators, space before ||"
+    assert answer(selector: "$[?@.a ||@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 592: whitespace, operators, newline before ||"
+    assert answer(selector: "$[?@.a\n||@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 593: whitespace, operators, tab before ||"
+    assert answer(selector: "$[?@.a\t||@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 594: whitespace, operators, return before ||"
+    assert answer(selector: "$[?@.a\r||@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 595: whitespace, operators, space after ||"
+    assert answer(selector: "$[?@.a|| @.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 596: whitespace, operators, newline after ||"
+    assert answer(selector: "$[?@.a||\n@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 597: whitespace, operators, tab after ||"
+    assert answer(selector: "$[?@.a||\t@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 598: whitespace, operators, return after ||"
+    assert answer(selector: "$[?@.a||\r@.b]", document: "[{\"a\":1},{\"b\":2},{\"c\":3}]") == canonical("[[{\"a\":1},{\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 599: whitespace, operators, space before &&"
+    assert answer(selector: "$[?@.a &&@.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 600: whitespace, operators, newline before &&"
+    assert answer(selector: "$[?@.a\n&&@.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 601: whitespace, operators, tab before &&"
+    assert answer(selector: "$[?@.a\t&&@.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 602: whitespace, operators, return before &&"
+    assert answer(selector: "$[?@.a\r&&@.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 603: whitespace, operators, space after &&"
+    assert answer(selector: "$[?@.a&& @.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 604: whitespace, operators, newline after &&"
+    assert answer(selector: "$[?@.a&& @.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 605: whitespace, operators, tab after &&"
+    assert answer(selector: "$[?@.a&& @.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 606: whitespace, operators, return after &&"
+    assert answer(selector: "$[?@.a&& @.b]", document: "[{\"a\":1},{\"b\":2},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[2]\"]]")
+
+test "cts 607: whitespace, operators, space before =="
+    assert answer(selector: "$[?@.a ==@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 608: whitespace, operators, newline before =="
+    assert answer(selector: "$[?@.a\n==@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 609: whitespace, operators, tab before =="
+    assert answer(selector: "$[?@.a\t==@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 610: whitespace, operators, return before =="
+    assert answer(selector: "$[?@.a\r==@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 611: whitespace, operators, space after =="
+    assert answer(selector: "$[?@.a== @.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 612: whitespace, operators, newline after =="
+    assert answer(selector: "$[?@.a==\n@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 613: whitespace, operators, tab after =="
+    assert answer(selector: "$[?@.a==\t@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 614: whitespace, operators, return after =="
+    assert answer(selector: "$[?@.a==\r@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":1}],[\"$[0]\"]]")
+
+test "cts 615: whitespace, operators, space before !="
+    assert answer(selector: "$[?@.a !=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 616: whitespace, operators, newline before !="
+    assert answer(selector: "$[?@.a\n!=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 617: whitespace, operators, tab before !="
+    assert answer(selector: "$[?@.a\t!=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 618: whitespace, operators, return before !="
+    assert answer(selector: "$[?@.a\r!=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 619: whitespace, operators, space after !="
+    assert answer(selector: "$[?@.a!= @.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 620: whitespace, operators, newline after !="
+    assert answer(selector: "$[?@.a!=\n@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 621: whitespace, operators, tab after !="
+    assert answer(selector: "$[?@.a!=\t@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 622: whitespace, operators, return after !="
+    assert answer(selector: "$[?@.a!=\r@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 623: whitespace, operators, space before <"
+    assert answer(selector: "$[?@.a <@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 624: whitespace, operators, newline before <"
+    assert answer(selector: "$[?@.a\n<@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 625: whitespace, operators, tab before <"
+    assert answer(selector: "$[?@.a\t<@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 626: whitespace, operators, return before <"
+    assert answer(selector: "$[?@.a\r<@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 627: whitespace, operators, space after <"
+    assert answer(selector: "$[?@.a< @.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 628: whitespace, operators, newline after <"
+    assert answer(selector: "$[?@.a<\n@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 629: whitespace, operators, tab after <"
+    assert answer(selector: "$[?@.a<\t@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 630: whitespace, operators, return after <"
+    assert answer(selector: "$[?@.a<\r@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 631: whitespace, operators, space before >"
+    assert answer(selector: "$[?@.b >@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 632: whitespace, operators, newline before >"
+    assert answer(selector: "$[?@.b\n>@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 633: whitespace, operators, tab before >"
+    assert answer(selector: "$[?@.b\t>@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 634: whitespace, operators, return before >"
+    assert answer(selector: "$[?@.b\r>@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 635: whitespace, operators, space after >"
+    assert answer(selector: "$[?@.b> @.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 636: whitespace, operators, newline after >"
+    assert answer(selector: "$[?@.b>\n@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 637: whitespace, operators, tab after >"
+    assert answer(selector: "$[?@.b>\t@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 638: whitespace, operators, return after >"
+    assert answer(selector: "$[?@.b>\r@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}]") == canonical("[[{\"a\":1,\"b\":2}],[\"$[1]\"]]")
+
+test "cts 639: whitespace, operators, space before <="
+    assert answer(selector: "$[?@.a <=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 640: whitespace, operators, newline before <="
+    assert answer(selector: "$[?@.a\n<=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 641: whitespace, operators, tab before <="
+    assert answer(selector: "$[?@.a\t<=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 642: whitespace, operators, return before <="
+    assert answer(selector: "$[?@.a\r<=@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 643: whitespace, operators, space after <="
+    assert answer(selector: "$[?@.a<= @.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 644: whitespace, operators, newline after <="
+    assert answer(selector: "$[?@.a<=\n@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 645: whitespace, operators, tab after <="
+    assert answer(selector: "$[?@.a<=\t@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 646: whitespace, operators, return after <="
+    assert answer(selector: "$[?@.a<=\r@.b]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 647: whitespace, operators, space before >="
+    assert answer(selector: "$[?@.b >=@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 648: whitespace, operators, newline before >="
+    assert answer(selector: "$[?@.b\n>=@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 649: whitespace, operators, tab before >="
+    assert answer(selector: "$[?@.b\t>=@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 650: whitespace, operators, return before >="
+    assert answer(selector: "$[?@.b\r>=@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 651: whitespace, operators, space after >="
+    assert answer(selector: "$[?@.b>= @.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 652: whitespace, operators, newline after >="
+    assert answer(selector: "$[?@.b>=\n@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 653: whitespace, operators, tab after >="
+    assert answer(selector: "$[?@.b>=\t@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 654: whitespace, operators, return after >="
+    assert answer(selector: "$[?@.b>=\r@.a]", document: "[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2},{\"a\":2,\"b\":1}]") == canonical("[[{\"a\":1,\"b\":1},{\"a\":1,\"b\":2}],[\"$[0]\",\"$[1]\"]]")
+
+test "cts 655: whitespace, operators, space between logical not and test expression"
+    assert answer(selector: "$[?! @.a]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 656: whitespace, operators, newline between logical not and test expression"
+    assert answer(selector: "$[?!\n@.a]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 657: whitespace, operators, tab between logical not and test expression"
+    assert answer(selector: "$[?!\t@.a]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 658: whitespace, operators, return between logical not and test expression"
+    assert answer(selector: "$[?!\r@.a]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"d\":\"f\"}],[\"$[1]\"]]")
+
+test "cts 659: whitespace, operators, space between logical not and parenthesized expression"
+    assert answer(selector: "$[?! (@.a=='b')]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 660: whitespace, operators, newline between logical not and parenthesized expression"
+    assert answer(selector: "$[?!\n(@.a=='b')]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 661: whitespace, operators, tab between logical not and parenthesized expression"
+    assert answer(selector: "$[?!\t(@.a=='b')]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 662: whitespace, operators, return between logical not and parenthesized expression"
+    assert answer(selector: "$[?!\r(@.a=='b')]", document: "[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"b\",\"d\":\"f\"},{\"a\":\"d\",\"d\":\"f\"}]") == canonical("[[{\"a\":\"a\",\"d\":\"e\"},{\"a\":\"d\",\"d\":\"f\"}],[\"$[0]\",\"$[2]\"]]")
+
+test "cts 663: whitespace, selectors, space between root and bracket"
+    assert answer(selector: "$ ['a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 664: whitespace, selectors, newline between root and bracket"
+    assert answer(selector: "$\n['a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 665: whitespace, selectors, tab between root and bracket"
+    assert answer(selector: "$\t['a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 666: whitespace, selectors, return between root and bracket"
+    assert answer(selector: "$\r['a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 667: whitespace, selectors, space between bracket and bracket"
+    assert answer(selector: "$['a'] ['b']", document: "{\"a\":{\"b\":\"ab\"}}") == canonical("[[\"ab\"],[\"$['a']['b']\"]]")
+
+test "cts 668: whitespace, selectors, newline between bracket and bracket"
+    assert answer(selector: "$['a'] \n['b']", document: "{\"a\":{\"b\":\"ab\"}}") == canonical("[[\"ab\"],[\"$['a']['b']\"]]")
+
+test "cts 669: whitespace, selectors, tab between bracket and bracket"
+    assert answer(selector: "$['a'] \t['b']", document: "{\"a\":{\"b\":\"ab\"}}") == canonical("[[\"ab\"],[\"$['a']['b']\"]]")
+
+test "cts 670: whitespace, selectors, return between bracket and bracket"
+    assert answer(selector: "$['a'] \r['b']", document: "{\"a\":{\"b\":\"ab\"}}") == canonical("[[\"ab\"],[\"$['a']['b']\"]]")
+
+test "cts 671: whitespace, selectors, space between root and dot"
+    assert answer(selector: "$ .a", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 672: whitespace, selectors, newline between root and dot"
+    assert answer(selector: "$\n.a", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 673: whitespace, selectors, tab between root and dot"
+    assert answer(selector: "$\t.a", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 674: whitespace, selectors, return between root and dot"
+    assert answer(selector: "$\r.a", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 675: whitespace, selectors, space between dot and name"
+    assert answer(selector: "$. a", document: "null") == "invalid"
+
+test "cts 676: whitespace, selectors, newline between dot and name"
+    assert answer(selector: "$.\na", document: "null") == "invalid"
+
+test "cts 677: whitespace, selectors, tab between dot and name"
+    assert answer(selector: "$.\ta", document: "null") == "invalid"
+
+test "cts 678: whitespace, selectors, return between dot and name"
+    assert answer(selector: "$.\ra", document: "null") == "invalid"
+
+test "cts 679: whitespace, selectors, space between recursive descent and name"
+    assert answer(selector: "$.. a", document: "null") == "invalid"
+
+test "cts 680: whitespace, selectors, newline between recursive descent and name"
+    assert answer(selector: "$..\na", document: "null") == "invalid"
+
+test "cts 681: whitespace, selectors, tab between recursive descent and name"
+    assert answer(selector: "$..\ta", document: "null") == "invalid"
+
+test "cts 682: whitespace, selectors, return between recursive descent and name"
+    assert answer(selector: "$..\ra", document: "null") == "invalid"
+
+test "cts 683: whitespace, selectors, space between bracket and selector"
+    assert answer(selector: "$[ 'a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 684: whitespace, selectors, newline between bracket and selector"
+    assert answer(selector: "$[\n'a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 685: whitespace, selectors, tab between bracket and selector"
+    assert answer(selector: "$[\t'a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 686: whitespace, selectors, return between bracket and selector"
+    assert answer(selector: "$[\r'a']", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 687: whitespace, selectors, space between selector and bracket"
+    assert answer(selector: "$['a' ]", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 688: whitespace, selectors, newline between selector and bracket"
+    assert answer(selector: "$['a'\n]", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 689: whitespace, selectors, tab between selector and bracket"
+    assert answer(selector: "$['a'\t]", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 690: whitespace, selectors, return between selector and bracket"
+    assert answer(selector: "$['a'\r]", document: "{\"a\":\"ab\"}") == canonical("[[\"ab\"],[\"$['a']\"]]")
+
+test "cts 691: whitespace, selectors, space between selector and comma"
+    assert answer(selector: "$['a' ,'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 692: whitespace, selectors, newline between selector and comma"
+    assert answer(selector: "$['a'\n,'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 693: whitespace, selectors, tab between selector and comma"
+    assert answer(selector: "$['a'\t,'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 694: whitespace, selectors, return between selector and comma"
+    assert answer(selector: "$['a'\r,'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 695: whitespace, selectors, space between comma and selector"
+    assert answer(selector: "$['a', 'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 696: whitespace, selectors, newline between comma and selector"
+    assert answer(selector: "$['a',\n'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 697: whitespace, selectors, tab between comma and selector"
+    assert answer(selector: "$['a',\t'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 698: whitespace, selectors, return between comma and selector"
+    assert answer(selector: "$['a',\r'b']", document: "{\"a\":\"ab\",\"b\":\"bc\"}") == canonical("[[\"ab\",\"bc\"],[\"$['a']\",\"$['b']\"]]")
+
+test "cts 699: whitespace, slice, space between start and colon"
+    assert answer(selector: "$[1 :5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 700: whitespace, slice, newline between start and colon"
+    assert answer(selector: "$[1\n:5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 701: whitespace, slice, tab between start and colon"
+    assert answer(selector: "$[1\t:5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 702: whitespace, slice, return between start and colon"
+    assert answer(selector: "$[1\r:5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 703: whitespace, slice, space between colon and end"
+    assert answer(selector: "$[1: 5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 704: whitespace, slice, newline between colon and end"
+    assert answer(selector: "$[1:\n5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 705: whitespace, slice, tab between colon and end"
+    assert answer(selector: "$[1:\t5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 706: whitespace, slice, return between colon and end"
+    assert answer(selector: "$[1:\r5:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 707: whitespace, slice, space between end and colon"
+    assert answer(selector: "$[1:5 :2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 708: whitespace, slice, newline between end and colon"
+    assert answer(selector: "$[1:5\n:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 709: whitespace, slice, tab between end and colon"
+    assert answer(selector: "$[1:5\t:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 710: whitespace, slice, return between end and colon"
+    assert answer(selector: "$[1:5\r:2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 711: whitespace, slice, space between colon and step"
+    assert answer(selector: "$[1:5: 2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 712: whitespace, slice, newline between colon and step"
+    assert answer(selector: "$[1:5:\n2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 713: whitespace, slice, tab between colon and step"
+    assert answer(selector: "$[1:5:\t2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")
+
+test "cts 714: whitespace, slice, return between colon and step"
+    assert answer(selector: "$[1:5:\r2]", document: "[1,2,3,4,5,6]") == canonical("[[2,4],[\"$[1]\",\"$[3]\"]]")

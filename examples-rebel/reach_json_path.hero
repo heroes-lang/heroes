@@ -1,0 +1,18 @@
+# Reaches Rebel's `json/path`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), the JSONPath Compliance Test Suite among
+# them. It runs one query against a small document and prints what it
+# selects and where.
+
+use <rebel>/json
+use <rebel>/json/path
+
+function main()
+    doc = json.parse("{\"albums\": [{\"title\": \"Low\", \"year\": 1977}, {\"title\": \"Heroes\", \"year\": 1977}]}").default(
+        .null_value
+    )
+
+    match path.parse("$.albums[?@.year == 1977].title")
+        .err e => print(e.code, ": ", e.msg)
+        .ok q =>
+            for node in path.select_nodes(q, doc)
+                print(node.location, " ", json.format(node.value).default("?"))
