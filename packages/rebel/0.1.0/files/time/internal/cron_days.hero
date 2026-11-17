@@ -1,0 +1,143 @@
+# The days of one month a cron expression allows, as bits 1 to 31: the days of
+# the month it names, the weekdays it names, Quartz's `L`, `W` and `#`, and
+# Vixie cron's rule joining the two fields, the one robfig/cron keeps: where
+# either field is left open the other decides, and where both are restricted a
+# day either allows is allowed.
+
+use time/internal/civil
+use time/internal/cron_read
+
+# The weekday of `year`-`month`-`day`, 0 for Sunday to 6 for Saturday.
+function weekday_of(year: i64, month: i64, day: i64) -> i64
+    return civil.weekday(civil.days_from_date(year: year, month: month, day: day)) % 7
+
+# Whether bit `n` of `bits` is set.
+function has(bits: i64, n: i64) -> bool
+    return bits >> n & 1 == 1
+
+# The weekday, Monday to Friday, nearest day `day` of a month of `last` days
+# whose day `day` falls on `weekday`, never in another month, as Quartz reads
+# `nW`: a Saturday gives the Friday before, or the Monday after where the day
+# is the 1st; a Sunday the Monday after, or the Friday before where the day is
+# the last.
+function nearest_weekday(day: i64, weekday: i64, last: i64) -> i64
+    if weekday == 6
+        if day == 1
+            return 3
+        return day - 1
+
+    if weekday == 0
+        if day == last
+            return day - 2
+        return day + 1
+    return day
+
+# The days of `year`-`month` that `spec`'s day of the month allows.
+function month_days(spec: cron_read.Spec, year: i64, month: i64, last: i64) -> i64
+    bits: i64 @= spec.days & (1 << last + 1) - 2
+
+    for back in range(from: 0, to: 31)
+        if has(bits: spec.from_last, n: back) && last - back >= 1
+            bits @ bits | 1 << last - back
+
+    if has(bits: spec.nearest, n: 0)
+        bits @ bits | 1 << nearest_weekday(day: last, weekday: weekday_of(year: year, month: month, day: last), last: last)
+
+    for day in range(from: 1, to: last + 1)
+        if has(bits: spec.nearest, n: day)
+            bits @ bits | 1 << nearest_weekday(day: day, weekday: weekday_of(year: year, month: month, day: day), last: last)
+
+    return bits
+
+# The days of `year`-`month` that `spec`'s day of the week allows.
+function week_days(spec: cron_read.Spec, year: i64, month: i64, last: i64) -> i64
+    first = weekday_of(year: year, month: month, day: 1)
+    bits: i64 @= 0
+
+    for day in range(from: 1, to: last + 1)
+        weekday = (first + day - 1) % 7
+
+        if has(bits: spec.weekdays, n: weekday)
+            bits @ bits | 1 << day
+
+        if has(bits: spec.last_weekdays, n: weekday) && day + 7 > last
+            bits @ bits | 1 << day
+        nth = (day - 1) / 7
+
+        if has(bits: spec.nth_weekdays, n: nth * 7 + weekday)
+            bits @ bits | 1 << day
+
+    return bits
+
+# The days of `year`-`month` that `spec` allows, bit n for day n.
+function allowed(spec: cron_read.Spec, year: i64, month: i64) -> i64
+    last = civil.days_in_month(year: year, month: month)
+    every_day = (1 << last + 1) - 2
+
+    if spec.any_day && spec.any_weekday
+        return every_day
+
+    if spec.any_day
+        return week_days(spec: spec, year: year, month: month, last: last)
+
+    if spec.any_weekday
+        return month_days(spec: spec, year: year, month: month, last: last)
+    return month_days(spec: spec, year: year, month: month, last: last) | week_days(spec: spec, year: year, month: month, last: last)
+
+# The days a field pair allows, read from an expression, in `year`-`month`.
+function of(s: str, year: i64, month: i64) -> i64
+    return allowed(spec: cron_read.read(s).must(), year: year, month: month)
+
+# The days whose bits are set, in order.
+function listed(bits: i64) -> [i64]
+    out: [i64] @= []
+
+    for day in range(from: 1, to: 32)
+        if has(bits: bits, n: day)
+            out @ out.push(day)
+
+    return out
+
+# Calendars checked with Python's `calendar.monthcalendar` on 2026-11-17:
+# January 2026 begins on a Thursday, February 2026 on a Sunday, August 2026
+# on a Saturday, May 2026 ends on a Sunday.
+
+test "weekday_of: 1970-01-01 a Thursday, 2026-02-01 a Sunday, 2026-08-01 a Saturday"
+    assert weekday_of(year: 1970, month: 1, day: 1) == 4
+    assert weekday_of(year: 2026, month: 2, day: 1) == 0
+    assert weekday_of(year: 2026, month: 8, day: 1) == 6
+
+test "nearest_weekday: a weekday kept, a Saturday back, the 1st a Saturday forward, a Sunday forward, the last a Sunday back"
+    assert nearest_weekday(day: 15, weekday: 3, last: 31) == 15
+    assert nearest_weekday(day: 15, weekday: 6, last: 31) == 14
+    assert nearest_weekday(day: 1, weekday: 6, last: 31) == 3
+    assert nearest_weekday(day: 15, weekday: 0, last: 31) == 16
+    assert nearest_weekday(day: 31, weekday: 0, last: 31) == 29
+
+test "allowed: every day, plain days with a day past the month, L, L-2, LW and 15W"
+    assert listed(of(s: "0 0 * * *", year: 2026, month: 2)).len() == 28
+    assert listed(of(s: "0 0 30,31 * *", year: 2026, month: 2)).len() == 0
+    assert listed(of(s: "0 0 31 * *", year: 2026, month: 1)) == [31]
+    assert listed(of(s: "0 0 L * *", year: 2028, month: 2)) == [29]
+    assert listed(of(s: "0 0 L-2 * *", year: 2026, month: 4)) == [28]
+    assert listed(of(s: "0 0 L-30 * *", year: 2026, month: 2)) == []
+    assert listed(of(s: "0 0 LW * *", year: 2026, month: 5)) == [29]
+    assert listed(of(s: "0 0 15W * *", year: 2026, month: 8)) == [14]
+    assert listed(of(s: "0 0 1W * *", year: 2026, month: 8)) == [3]
+    assert listed(of(s: "0 0 31W * *", year: 2026, month: 5)) == [29]
+    assert listed(of(s: "0 0 31W * *", year: 2026, month: 4)) == []
+
+test "allowed: weekdays, Sunday as 0 and 7, 5L, 5#3, 1#5 absent, and the two fields joined"
+    assert listed(of(s: "0 0 * * 0", year: 2026, month: 2)) == [1, 8, 15, 22]
+    assert listed(of(s: "0 0 * * 7", year: 2026, month: 2)) == [1, 8, 15, 22]
+    assert listed(of(s: "0 0 * * 5L", year: 2026, month: 1)) == [30]
+    assert listed(of(s: "0 0 * * FRIL", year: 2026, month: 1)) == [30]
+    assert listed(of(s: "0 0 * * 5#3", year: 2026, month: 1)) == [16]
+    assert listed(of(s: "0 0 * * fri#5", year: 2026, month: 1)) == [30]
+    assert listed(of(s: "0 0 * * 1#5", year: 2026, month: 2)) == []
+    assert listed(of(s: "0 0 1 * MON", year: 2026, month: 2)) == [1, 2, 9, 16, 23]
+    assert listed(of(s: "0 0 */10 * MON", year: 2026, month: 2)) == [1, 2, 9, 11, 16, 21, 23]
+    assert listed(of(s: "0 0 *,5 * MON", year: 2026, month: 2)) == [2, 9, 16, 23]
+    assert listed(of(s: "0 0 ? * MON", year: 2026, month: 2)) == [2, 9, 16, 23]
+    assert listed(of(s: "0 0 1 * ?", year: 2026, month: 2)) == [1]
+    assert listed(of(s: "0 0 1 * MON,?", year: 2026, month: 2)) == [1]

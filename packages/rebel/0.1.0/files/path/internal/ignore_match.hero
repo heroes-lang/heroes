@@ -1,0 +1,376 @@
+# One pattern of a gitignore file compiled and matched, byte by byte, as git's
+# own matcher reads it with the rule that `*`, `?` and a class never match a
+# `/`: what `path.is_ignored` asks of each pattern.
+#
+# git matches bytes and not characters, so `?` stands for one byte and a class
+# holds bytes: `caff?` does not match `caffè`, whose last character is two
+# bytes, and `x??` does (git 2.56, 2026-11-17). The match runs every place of
+# the pattern at once over the text, so it takes time in proportion to the
+# text times the pattern and no pattern can make it run long.
+
+# One element of a compiled pattern.
+variant Token
+    # A byte that stands for itself.
+    literal
+        # The byte.
+        byte: u8
+    # `?`: one byte that is not `/`.
+    one
+    # `*`: any run of bytes holding no `/`, none included.
+    star
+    # `**` at the end of a pattern, after a `/` or alone: any run of bytes,
+    # `/` included, none included.
+    deep
+    # `**/` after a `/` or at the start: nothing, or any run of bytes that
+    # ends with a `/`. Its second place, `inside`, always follows it.
+    dirs
+    # The place inside a `dirs`, where bytes are being taken.
+    inside
+    # A class, `[...]`: one byte of it, or outside it, never `/`.
+    set
+        # Whether the class is of the bytes outside it, `[!...]` or `[^...]`.
+        negated: bool
+        # For each byte, 0 to 255, whether the class names it.
+        members: [bool]
+
+# A pattern compiled: its tokens, or none where git would never match it.
+record Compiled
+    # Whether the pattern can match: false where it ends with a `\` that
+    # escapes nothing, leaves a class open, or names a class git has not.
+    valid: bool
+    # The tokens, in order.
+    tokens: [Token]
+
+# A class read from a pattern, and where what follows it begins.
+record Class
+    # Whether the class was whole and every name in it one git knows.
+    valid: bool
+    # The class.
+    token: Token
+    # Where what follows the class begins.
+    next: i64
+
+# The byte `b` as a number, 0 to 255.
+function wide(b: u8) -> i64
+    return to_i64(b).must()
+
+# A list of 256 values, each false.
+function no_bytes() -> [bool]
+    out: [bool] @= []
+
+    for _ in range(from: 0, to: 256)
+        out @ out.push(false)
+
+    return out
+
+# Whether the byte `b` is of the POSIX class `name`, in the C locale's ASCII
+# reading; false for a name that is no class.
+function in_named(name: str, b: i64) -> bool
+    upper = b >= 'A' && b <= 'Z'
+    lower = b >= 'a' && b <= 'z'
+    digit = b >= '0' && b <= '9'
+    graph = b > 32 && b < 127
+
+    return match name
+        "alnum"  => upper || lower || digit
+        "alpha"  => upper || lower
+        "blank"  => b == ' ' || b == '\t'
+        "cntrl"  => b < 32 || b == 127
+        "digit"  => digit
+        "graph"  => graph
+        "lower"  => lower
+        "print"  => graph || b == ' '
+        "punct"  => graph && !upper && !lower && !digit
+        "space"  => b == ' ' || b >= 9 && b <= 13
+        "upper"  => upper
+        "xdigit" => digit || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+        _        => false
+
+# Whether `name` names a POSIX class git reads in brackets, `[:alpha:]`.
+function is_class_name(name: str) -> bool
+    return match name
+        "alnum" | "alpha" | "blank" | "cntrl" | "digit" | "graph"  => true
+        "lower" | "print" | "punct" | "space" | "upper" | "xdigit" => true
+        _                                                          => false
+
+# The class of `pattern` that opens with the `[` at `at`. A `]` first, after
+# the opening or its `!` or `^`, stands for itself; `\` makes the next byte
+# stand for itself; a `-` between two bytes makes a range and stands for
+# itself first, last, or after a range; `[:name:]` names a POSIX class, and a
+# `[:` with no `:]` before the next `]` is a `[` that stands for itself.
+function read_class(pattern: str, at: i64) -> Class
+    broken = Class(valid: false, token: .one, next: pattern.len())
+    members: [bool] @= no_bytes()
+    next: i64 @= at + 1
+    negated: bool @= false
+
+    if next < pattern.len() && (pattern[next] == '!' || pattern[next] == '^')
+        negated @ true
+        next @ next + 1
+
+    # The byte before, which a `-` makes the start of a range; -1 after a
+    # range or a named class, where a `-` stands for itself.
+    previous: i64 @= -1
+    first: bool @= true
+
+    while true
+        if next >= pattern.len()
+            return broken
+        b = pattern[next]
+
+        if b == ']' && !first
+            return Class(valid: true, token: .set(negated: negated, members: members), next: next + 1)
+        first @ false
+
+        if b == '\\'
+            if next + 1 >= pattern.len()
+                return broken
+            escaped = wide(pattern[next + 1])
+            members[escaped] @ true
+            previous @ escaped
+            next @ next + 2
+        else if b == '-' && previous >= 0 && next + 1 < pattern.len() && pattern[next + 1] != ']'
+            high_at: i64 @= next + 1
+
+            if pattern[high_at] == '\\'
+                high_at @ high_at + 1
+
+                if high_at >= pattern.len()
+                    return broken
+            high = wide(pattern[high_at])
+            low = previous
+            point: i64 @= low
+
+            while point <= high
+                members[point] @ true
+                point @ point + 1
+
+            previous @ -1
+            next @ high_at + 1
+        else if b == '[' && next + 1 < pattern.len() && pattern[next + 1] == ':'
+            close: i64 @= next + 2
+
+            while close < pattern.len() && pattern[close] != ']'
+                close @ close + 1
+
+            if close >= pattern.len()
+                return broken
+
+            if close - 1 < next + 2 || pattern[close - 1] != ':'
+                members['['] @ true
+                previous @ '['
+                next @ next + 1
+            else
+                name = pattern.slice(from: next + 2, to: close - 1)
+
+                if !is_class_name(name)
+                    return broken
+
+                for point in range(from: 0, to: 256)
+                    if in_named(name, point)
+                        members[point] @ true
+
+                previous @ -1
+                next @ close + 1
+        else
+            members[wide(b)] @ true
+            previous @ wide(b)
+            next @ next + 1
+
+# Whether the stars at `from`, up to `to`, stand at a boundary: after the
+# start or a `/`, and before the end or a `/`, plain or escaped.
+function at_boundary(pattern: str, from: i64, to: i64) -> bool
+    before = from == 0 || pattern[from - 1] == '/'
+    after = to == pattern.len() || pattern[to] == '/' || to + 1 < pattern.len() && pattern[to] == '\\' && pattern[to + 1] == '/'
+    return before && after
+
+# `pattern`, its leading `/` and trailing `/` already taken off, compiled.
+function compile(pattern: str) -> Compiled
+    tokens: [Token] @= []
+    at: i64 @= 0
+
+    while at < pattern.len()
+        b = pattern[at]
+
+        if b == '\\'
+            if at + 1 >= pattern.len()
+                return Compiled(valid: false, tokens: [])
+            tokens @ tokens.push(.literal(byte: pattern[at + 1]))
+            at @ at + 2
+        else if b == '?'
+            tokens @ tokens.push(.one)
+            at @ at + 1
+        else if b == '['
+            read = read_class(pattern, at)
+
+            if !read.valid
+                return Compiled(valid: false, tokens: [])
+            tokens @ tokens.push(read.token)
+            at @ read.next
+        else if b == '*'
+            end: i64 @= at
+
+            while end < pattern.len() && pattern[end] == '*'
+                end @ end + 1
+
+            if end - at >= 2 && at_boundary(pattern, from: at, to: end)
+                if end == pattern.len()
+                    tokens @ tokens.push(.deep)
+                    at @ end
+                else
+                    tokens @ tokens.push(.dirs)
+                    tokens @ tokens.push(.inside)
+                    at @ end + 1
+
+                    if pattern[end] == '\\'
+                        at @ end + 2
+            else
+                tokens @ tokens.push(.star)
+                at @ end
+        else
+            tokens @ tokens.push(.literal(byte: b))
+            at @ at + 1
+
+    return Compiled(valid: true, tokens: tokens)
+
+# `active` with every place reached without taking a byte added: past a star,
+# a `deep` or a `dirs`, into a `dirs`'s inside.
+function closed(tokens: [Token] lent, active: [bool]) -> [bool]
+    out: [bool] @= active
+
+    for at in range(from: 0, to: tokens.len())
+        if out[at]
+            match tokens[at]
+                .star | .deep =>
+                    out[at + 1] @ true
+                .dirs =>
+                    out[at + 1] @ true
+                    out[at + 2] @ true
+                .literal _ | .one | .inside | .set _ =>
+                    _ = 0
+
+    return out
+
+# Whether the tokens of `compiled` match the whole of `text`.
+function matches(compiled: Compiled lent, text: str) -> bool
+    if !compiled.valid
+        return false
+    tokens = compiled.tokens
+    count = tokens.len()
+    empty: [bool] @= []
+
+    for _ in range(from: 0, to: count + 1)
+        empty @ empty.push(false)
+
+    start: [bool] @= empty
+    start[0] @ true
+    active: [bool] @= closed(tokens, active: start)
+
+    for j in range(from: 0, to: text.len())
+        c = text[j]
+        next: [bool] @= empty
+        alive: bool @= false
+
+        for at in range(from: 0, to: count)
+            if active[at]
+                match tokens[at]
+                    .literal l =>
+                        if c == l.byte
+                            next[at + 1] @ true
+                    .one =>
+                        if c != '/'
+                            next[at + 1] @ true
+                    .set s =>
+                        if c != '/' && s.members[wide(c)] != s.negated
+                            next[at + 1] @ true
+                    .star =>
+                        if c != '/'
+                            next[at] @ true
+                    .deep =>
+                        next[at] @ true
+                    .inside =>
+                        next[at] @ true
+
+                        if c == '/'
+                            next[at + 1] @ true
+                    .dirs =>
+                        _ = 0
+
+                alive @ alive || next[at] || next[at + 1]
+
+        if !alive
+            return false
+        active @ closed(tokens, active: next)
+
+    return active[count]
+
+## Tests
+
+# Whether `pattern` compiles and matches `text`.
+function hit(pattern: str, text: str) -> bool
+    return matches(compile(pattern), text: text)
+
+test "compile and matches: empty, a literal, `?` by bytes, and a text of more than one byte"
+    assert hit(pattern: "", text: "")
+    assert !hit(pattern: "", text: "a")
+    assert !hit(pattern: "a", text: "")
+    assert hit(pattern: "abc", text: "abc") && !hit(pattern: "abc", text: "abd")
+    assert hit(pattern: "caff?", text: "caffe")
+    assert !hit(pattern: "caff?", text: "caffè")
+    assert hit(pattern: "x??", text: "xè")
+    assert hit(pattern: "caffè", text: "caffè")
+    assert !hit(pattern: "a?b", text: "a/b")
+
+test "compile and matches: `*` within a name, and `**` away from a boundary standing for `*`"
+    assert hit(pattern: "*.o", text: "a.o") && hit(pattern: "*.o", text: ".o")
+    assert !hit(pattern: "*.o", text: "a/b.o")
+    assert hit(pattern: "c**/d", text: "c/d") && hit(pattern: "c**/d", text: "cx/d")
+    assert !hit(pattern: "c**/d", text: "ca/b/d") && !hit(pattern: "c**/d", text: "c/x/d")
+    assert hit(pattern: "e***", text: "eabc")
+    assert hit(pattern: "a*b*c", text: "axxbyyc") && !hit(pattern: "a*b*c", text: "axxbyy")
+
+test "compile and matches: `**/` first, `/**/` between and `/**` last"
+    assert hit(pattern: "**/deep/x", text: "deep/x") && hit(pattern: "**/deep/x", text: "p/q/deep/x")
+    assert !hit(pattern: "**/deep/x", text: "pdeep/x")
+    assert hit(pattern: "s/**/t", text: "s/t") && hit(pattern: "s/**/t", text: "s/a/b/t")
+    assert !hit(pattern: "s/**/t", text: "s/at") && !hit(pattern: "s/**/t", text: "xs/t")
+    assert hit(pattern: "u/**", text: "u/a") && hit(pattern: "u/**", text: "u/c/b")
+    assert !hit(pattern: "u/**", text: "u")
+    assert hit(pattern: "**", text: "any") && hit(pattern: "a/***", text: "a/b/c")
+    assert hit(pattern: "**\\/x", text: "y/x")
+
+test "compile and matches: escapes, and a `\\` that escapes nothing never matching"
+    assert hit(pattern: "f\\*g", text: "f*g") && !hit(pattern: "f\\*g", text: "fxg")
+    assert hit(pattern: "sp\\ ", text: "sp ")
+    assert hit(pattern: "\\#hash", text: "#hash") && hit(pattern: "\\a", text: "a")
+    assert !compile("k\\").valid
+    assert !hit(pattern: "k\\", text: "k") && !hit(pattern: "k\\", text: "k\\")
+
+test "compile and matches: classes, ranges and a reversed one, negation, a `]` first and a `-` at an end"
+    assert hit(pattern: "[]q]1", text: "]1") && hit(pattern: "[]q]1", text: "q1")
+    assert hit(pattern: "[!]q]2", text: "a2") && !hit(pattern: "[!]q]2", text: "]2")
+    assert hit(pattern: "[^v]w", text: "aw") && !hit(pattern: "[^v]w", text: "vw")
+    assert hit(pattern: "[q-]3", text: "-3") && hit(pattern: "[-q]3", text: "-3")
+    assert hit(pattern: "[a-c]", text: "b") && !hit(pattern: "[a-c]", text: "d")
+    assert !hit(pattern: "[z-a]r", text: "rr") && !hit(pattern: "[z-a]r", text: "ar")
+    assert hit(pattern: "[z-a]r", text: "zr") && hit(pattern: "[c-c]s", text: "cs")
+    assert hit(pattern: "m[\\]]n", text: "m]n")
+    assert hit(pattern: "[a-c-e]", text: "-") && hit(pattern: "[a-c-e]", text: "e") && !hit(pattern: "[a-c-e]", text: "d")
+    assert !hit(pattern: "x[!/]y", text: "x/y") && hit(pattern: "x[!/]y", text: "xay")
+    assert !hit(pattern: "a[/]b", text: "a/b")
+
+test "compile and matches: named classes, a `[:` left as a `[`, and a class open or unknown never matching"
+    assert hit(pattern: "[[:digit:]]*.log", text: "1.log") && !hit(pattern: "[[:digit:]]*.log", text: "a1.log")
+    assert hit(pattern: "[[:upper:]][[:lower:]]", text: "Ab") && !hit(pattern: "[[:upper:]][[:lower:]]", text: "AB")
+    assert hit(pattern: "[a-c[:digit:]]z", text: "bz") && hit(pattern: "[a-c[:digit:]]z", text: "5z")
+    assert hit(pattern: "[[:space:]]", text: "\t") && hit(pattern: "[[:punct:]]", text: "!")
+    assert hit(pattern: "[[:xdigit:]][[:alnum:]][[:alpha:]]", text: "F0z")
+    assert hit(pattern: "[[:blank:]][[:cntrl:]][[:graph:]][[:print:]]", text: " \t~ ")
+    assert hit(pattern: "[[x]", text: "[") && hit(pattern: "[[x]", text: "x")
+    assert !compile("open[ab").valid && !compile("[[:nope:]]x").valid && !compile("[[:digit:").valid
+    assert !compile("[").valid && !compile("[!").valid && !compile("[a\\").valid && !compile("[a-\\").valid
+
+test "at_boundary: alone, after a slash, before a slash plain and escaped, and inside a name"
+    assert at_boundary("**", from: 0, to: 2) && at_boundary("a/**", from: 2, to: 4)
+    assert at_boundary("**/a", from: 0, to: 2) && at_boundary("**\\/a", from: 0, to: 2)
+    assert !at_boundary("a**", from: 1, to: 3) && !at_boundary("**a", from: 0, to: 2)

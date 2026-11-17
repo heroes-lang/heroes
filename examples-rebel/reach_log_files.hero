@@ -1,0 +1,17 @@
+# Reaches Rebel's `log/files`, a logger's lines written to a file that is
+# rotated, so that `heroes test` on this file runs the package's own tests
+# (spec § 12). It prints the name a log's file is set aside under when its
+# last line was at noon of 2026-11-17, touching no disk.
+
+use <rebel>/log/files
+use <rebel>/time
+
+function main()
+    noon = time.parse("2026-11-17T12:00:00Z", .rfc3339)
+
+    match noon
+        .err e => print(e.code, ": ", e.msg)
+        .ok t =>
+            match files.old_name("logs/app.log", last: t)
+                .ok name => print(name)
+                .err e   => print(e.code, ": ", e.msg)

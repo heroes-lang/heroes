@@ -1,0 +1,214 @@
+# A request and a response carried through their bytes in memory, with no
+# connection: what a client writes read back as a server reads it, and what a
+# server writes read back as a client reads it, so a handler is tried as the
+# network would hand it its request and its client its answer.
+
+use bytes
+use http/internal/policy
+use http/internal/read
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+use url
+
+# A request read back: its head, its target and its body, or the status a
+# server refuses it with.
+record Arrived
+    # The head as a server reads it; empty fields where it is refused.
+    head: wire.Head
+    # The target as a server reads it; the request's own where it is
+    # refused.
+    target: url.Url
+    # The body, its chunks joined.
+    content: [u8]
+    # Whether the connection ends after it.
+    closing: bool
+    # The status a server answers instead of serving it, 0 where it serves
+    # it.
+    status: i64
+    # What the refusal says; "" where it is served.
+    why: str
+
+# The index just past the empty line that ends the head of `data`.
+function head_end(data: [u8]) -> i64?
+    return ok(bytes.index_of(s: data, substr: [13, 10, 13, 10])? + 4)
+
+# The request a client writes from these parts, read back as a server reads
+# it within `bounds`: its `Host` the field given, else the target's, else
+# `fallback_host`; 431 for a head past the bounds, 413 for a body, 400 for a
+# target that does not read, 505 for a version other than 1.x, 501 for
+# `CONNECT` and 417 for an `Expect` other than `100-continue`. Fails as
+# `write.request` fails, where no client could write it.
+function arrive(method: str, target: url.Url, fields: [wire.Field], content: [u8], closing: bool, bounds: wire.Bounds, fallback_host: str) -> Arrived?
+    given = wire.values_of(fields, name: "Host")
+    host: str @= policy.host_field(scheme: target.scheme, host: target.host, port: target.port)
+
+    if given.len() > 0
+        host @ given[0]
+
+    if host == ""
+        host @ fallback_host
+    line_target: str @= url.request_target(target)
+
+    if method == "OPTIONS" && target.path == "*"
+        line_target @ "*"
+    data = write.request(method: method, target: line_target, host: host, fields: fields, content: content, closing: closing)?
+    end = head_end(data)?
+    none = wire.Head(method: method, target: line_target, status: 0, reason: "", major: 1, minor: 1, fields: [])
+
+    if end > bounds.head_bytes
+        return ok(
+            refused(none, target: target, status: 431, why: f"reading a request: its head passes the limit of {bounds.head_bytes} bytes")
+        )
+
+    h = match wire.parse_request(data.slice(from: 0, to: end), most_fields: bounds.field_count)
+        .ok got => got
+        .err e =>
+            status = if e.code == syntax.LIMIT
+                431
+            else
+                400
+            return ok(refused(none, target: target, status: status, why: e.msg))
+
+    if h.major != 1
+        return ok(refused(none, target: target, status: 505, why: "reading a request: its version is not 1.x"))
+
+    read_target = if h.method == "CONNECT"
+        url.parse("//" + h.target)
+    else if h.target == "*" && h.method == "OPTIONS"
+        url.parse("*")
+    else
+        url.parse_request_target(h.target)
+
+    served = match read_target
+        .ok u  => u
+        .err e => return ok(refused(none, target: target, status: 400, why: e.msg))
+
+    shown = f"{h.method} {url.request_target(served)}"
+
+    if h.method == "CONNECT"
+        return ok(refused(none, target: target, status: 501, why: f"{shown}: Not Implemented"))
+    expect = wire.values_of(h.fields, name: "Expect")
+
+    if expect.len() > 0 && !(expect.len() == 1 && syntax.same_name(a: expect[0], b: "100-continue"))
+        return ok(refused(none, target: target, status: 417, why: f"{shown}: Expectation Failed"))
+
+    if content.len() > bounds.body_bytes
+        return ok(
+            refused(h, target: target, status: 413, why: f"reading a request: its body passes the limit of {bounds.body_bytes} bytes")
+        )
+    return ok(Arrived(head: h, target: served, content: content, closing: read.closes(h), status: 0, why: ""))
+
+# A refusal of `status`, saying `why`, of the request whose head is `h`.
+function refused(h: wire.Head, target: url.Url, status: i64, why: str) -> Arrived
+    return Arrived(head: h, target: target, content: [], closing: true, status: status, why: why)
+
+# `f` called with `x`: how a function of one argument is handed where a
+# function of a value and an argument is asked.
+function apply<A, B>(f: (function(A) -> B), x: A) -> B
+    return f(x)
+
+# A response read back: what a client reads of what a server wrote.
+record Received
+    # The head as a client reads it.
+    head: wire.Head
+    # The body.
+    content: [u8]
+
+# The response a server writes from these parts, as `policy.response_or_500`
+# makes it, read back as a client reads it: no body for `HEAD`, 1xx, 204 and
+# 304.
+function receive(status_code: i64, reason: str, fields: [wire.Field], content: [u8], closing: bool, keep_alive: bool, head_only: bool) -> Received
+    data = policy.response_or_500(
+        status_code: status_code,
+        reason: reason,
+        fields: fields,
+        content: content,
+        closing: closing,
+        keep_alive: keep_alive,
+        head_only: head_only
+    )
+
+    # The bytes are this package's own, a head the reader reads by
+    # construction.
+    end = head_end(data).must()
+    h = wire.parse_response(data.slice(from: 0, to: end), most_fields: 1_000_000).must()
+    body: [u8] @= []
+
+    if !head_only
+        body @ data.slice(from: end, to: data.len())
+    return Received(head: h, content: body)
+
+## Tests
+
+# Bounds wide enough for every test.
+function wide() -> wire.Bounds
+    return wire.Bounds(head_bytes: 10_000, field_count: 100, body_bytes: 1_000)
+
+# A target of a path alone.
+function root() -> url.Url
+    return url.parse("/a?b=1").must()
+
+test "arrive: a request read back, its Host and its length written, the fallback host where none is named"
+    got = arrive(
+        method: "POST",
+        target: root(),
+        fields: [wire.Field(name: "X", value: "1")],
+        content: [49],
+        closing: false,
+        bounds: wide(),
+        fallback_host: "h"
+    ).must()
+    assert got.status == 0 && got.head.method == "POST" && got.target.path == "/a" && got.target.query == "b=1" && got.content == [49]
+    assert wire.values_of(got.head.fields, name: "Host") == ["h"] && wire.values_of(got.head.fields, name: "Content-Length") == ["1"]
+    named = arrive(
+        method: "GET",
+        target: url.parse("http://x.test:8080/").must(),
+        fields: [],
+        content: [],
+        closing: true,
+        bounds: wide(),
+        fallback_host: "h"
+    ).must()
+    assert wire.values_of(named.head.fields, name: "Host") == ["x.test:8080"] && named.closing
+
+test "arrive: a head, its fields and a body past their bounds refused 431 and 413, CONNECT 501, an expectation 417, a request no client writes failed"
+    tight = wire.Bounds(head_bytes: 20, field_count: 100, body_bytes: 0)
+    assert arrive(method: "GET", target: root(), fields: [], content: [], closing: false, bounds: tight, fallback_host: "h").must().status == 431
+    few = wire.Bounds(head_bytes: 10_000, field_count: 0, body_bytes: 0)
+    assert arrive(method: "GET", target: root(), fields: [], content: [], closing: false, bounds: few, fallback_host: "h").must().status == 431
+    small = wire.Bounds(head_bytes: 10_000, field_count: 100, body_bytes: 0)
+    assert arrive(method: "PUT", target: root(), fields: [], content: [1], closing: false, bounds: small, fallback_host: "h").must().status == 413
+    assert arrive(method: "CONNECT", target: url.parse("//x.test:443").must(), fields: [], content: [], closing: false, bounds: wide(), fallback_host: "h").must().status == 501
+    assert arrive(method: "GET", target: root(), fields: [wire.Field(name: "Expect", value: "x")], content: [], closing: false, bounds: wide(), fallback_host: "h").must().status == 417
+    assert arrive(
+        method: "G T",
+        target: root(),
+        fields: [],
+        content: [],
+        closing: false,
+        bounds: wide(),
+        fallback_host: "h"
+    ).is_err()
+
+test "apply: a function called with its argument"
+    assert apply(widen_twice, x: 21) == 42
+
+# `n` twice.
+function widen_twice(n: i64) -> i64
+    return n * 2
+
+test "receive: a body kept, a HEAD's dropped, a 304's never written, a status no server writes answered 500"
+    a = receive(
+        status_code: 200,
+        reason: "",
+        fields: [],
+        content: [104, 105],
+        closing: false,
+        keep_alive: false,
+        head_only: false
+    )
+    assert a.head.status == 200 && a.head.reason == "OK" && a.content == [104, 105]
+    assert receive(status_code: 200, reason: "", fields: [], content: [104], closing: false, keep_alive: false, head_only: true).content.len() == 0
+    assert receive(status_code: 304, reason: "", fields: [], content: [104], closing: false, keep_alive: false, head_only: false).content.len() == 0
+    assert receive(status_code: 42, reason: "", fields: [], content: [], closing: false, keep_alive: false, head_only: false).head.status == 500

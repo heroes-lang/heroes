@@ -1,0 +1,169 @@
+# Conditional requests and caching's directives, RFC 9110 § 8.8.3 and § 13
+# and RFC 9111 § 5.2: entity tags read from a list and compared, weakly or
+# strongly, and the directives of `Cache-Control` read and written.
+
+use http/internal/params
+use http/internal/syntax
+use strings
+
+# An entity tag read: whether it is weak, and its opaque part with its quotes.
+record Tag
+    # Whether it was written `W/`.
+    weak: bool
+    # The opaque part, its quotes included: `"abc"`.
+    opaque: str
+
+# The entity tag `s`, `"abc"` or `W/"abc"`, its quotes holding no `"`, no
+# space and no control byte. Fails `invalid` where it is not one.
+function tag_of(s: str) -> Tag?
+    weak = strings.has_prefix(s: s, prefix: "W/")
+
+    opaque = if weak
+        s.slice(from: 2, to: s.len())
+    else
+        s
+
+    if opaque.len() < 2 || opaque[0] != '"' || opaque[opaque.len() - 1] != '"'
+        return fail(code: syntax.INVALID, msg: f"{syntax.shown(s)} is no entity tag")
+    at: i64 @= 1
+
+    while at < opaque.len() - 1
+        b = opaque[at]
+
+        if b == '"' || b <= 32 || b == 127
+            return fail(code: syntax.INVALID, msg: f"{syntax.shown(s)} is no entity tag")
+        at @ at + 1
+
+    return ok(Tag(weak: weak, opaque: opaque))
+
+# Whether the list `values`, `If-None-Match`'s or `If-Match`'s values, holds
+# `tag` or `*`: weakly where `strong` is false, both tags' `W/` set aside;
+# strongly where it is true, neither tag weak. A member that is no entity
+# tag matches nothing.
+function list_holds(values: [str], tag: Tag, strong: bool) -> bool
+    for value in values
+        for member in syntax.members(value)
+            if member == "*"
+                return true
+
+            match tag_of(member)
+                .err _ => _ = 0
+                .ok t =>
+                    if t.opaque == tag.opaque && (!strong || !t.weak && !tag.weak)
+                        return true
+
+    return false
+
+# One directive of `Cache-Control`: its name in lower case, and its value.
+record Directive
+    # The name, in lower case: `max-age`.
+    name: str
+    # The value, its quotes read; "" where it has none.
+    value: str
+
+# The directives of `value`, a `Cache-Control` field's value, in their
+# order. Fails `invalid` where a member's name is no token or a quoted value
+# has no closing quote.
+function directives_of(value: str) -> [Directive]?
+    out: [Directive] @= []
+
+    for member in split_outside_quotes(value)
+        one = syntax.trim_ows(member)
+
+        if one == ""
+            continue
+
+        halves = strings.split_once(s: one, sep: "=").default(strings.Halves(before: one, after: ""))
+        name = strings.to_lower_ascii(syntax.trim_ows(halves.before))
+
+        if !syntax.is_token(name)
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading Cache-Control {syntax.shown(value)}: {syntax.shown(halves.before)} is no directive's name"
+            )
+        said = syntax.trim_ows(halves.after)
+
+        if said.len() > 0 && said[0] == '"'
+            got = params.quoted(said, at: 0)?
+
+            if got.end != said.len()
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"reading Cache-Control {syntax.shown(value)}: something follows the quoted value of `{name}`"
+                )
+            out @ out.push(Directive(name: name, value: got.text))
+        else
+            out @ out.push(Directive(name: name, value: said))
+
+    return ok(out)
+
+# The members of `value` parted by its commas outside quotes.
+function split_outside_quotes(value: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+    quoted: bool @= false
+
+    while at < value.len()
+        b = value[at]
+
+        if quoted && b == '\\'
+            at @ at + 2
+            continue
+
+        if b == '"'
+            quoted @ !quoted
+        else if b == ',' && !quoted
+            out @ out.push(value.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(value.slice(from: from, to: value.len()))
+    return out
+
+# `directives` written as a `Cache-Control` value: `name` alone where the
+# value is "", `name=value` where the value is a token, else the value
+# quoted, its `"` and `\` escaped.
+function format(directives: [Directive]) -> str
+    out: [str] @= []
+
+    for d in directives
+        if d.value == ""
+            out @ out.push(d.name)
+        else if syntax.is_token(d.value)
+            out @ out.push(d.name + "=" + d.value)
+        else
+            out @ out.push(
+                d.name + "=\"" + strings.replace_all(s: strings.replace_all(s: d.value, old: "\\", new: "\\\\"), old: "\"", new: "\\\"") + "\""
+            )
+
+    return out.join(", ")
+
+## Tests
+
+test "tag_of: strong, weak, empty, and what is none"
+    assert tag_of("\"abc\"").must() == Tag(weak: false, opaque: "\"abc\"")
+    assert tag_of("W/\"abc\"").must() == Tag(weak: true, opaque: "\"abc\"") && tag_of("\"\"").must().opaque == "\"\""
+
+    for bad in ["abc", "\"a", "w/\"a\"", "\"a\"b\"", "\"a b\"", "", "W/"]
+        assert tag_of(bad).is_err()
+
+test "list_holds: weak and strong comparison, the star, lists across fields, a member that is no tag"
+    strong = tag_of("\"x\"").must()
+    weak = tag_of("W/\"x\"").must()
+    assert list_holds(["W/\"x\""], tag: strong, strong: false) && list_holds(["\"x\""], tag: weak, strong: false)
+    assert !list_holds(["W/\"x\""], tag: strong, strong: true) && !list_holds(["\"x\""], tag: weak, strong: true)
+    assert list_holds(["\"x\""], tag: strong, strong: true) && list_holds(["\"a\", junk", " \"b\" , \"x\""], tag: strong, strong: false)
+    assert list_holds(["*"], tag: weak, strong: true) && !list_holds([], tag: strong, strong: false) && !list_holds(["x"], tag: strong, strong: false)
+
+test "directives_of: names lowered, values quoted and not, a comma inside quotes, empty members"
+    got = directives_of("Max-Age=60, private, no-cache=\"Set-Cookie, X\", , must-revalidate").must()
+    assert got == [Directive(name: "max-age", value: "60"), Directive(name: "private", value: ""), Directive(name: "no-cache", value: "Set-Cookie, X"), Directive(name: "must-revalidate", value: "")]
+    assert directives_of("").must().len() == 0
+
+    for bad in ["a b", "=1", "x=\"1", "x=\"1\"2"]
+        assert directives_of(bad).is_err()
+
+test "format: alone, a token, a value quoted and escaped, none"
+    assert format([Directive(name: "max-age", value: "60"), Directive(name: "public", value: "")]) == "max-age=60, public"
+    assert format([Directive(name: "no-cache", value: "a \"b\"")]) == "no-cache=\"a \\\"b\\\"\"" && format([]) == ""

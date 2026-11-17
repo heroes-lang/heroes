@@ -1,0 +1,776 @@
+# Punycode, RFC 3492: a sequence of code points written in the letters,
+# digits and hyphen a host name may hold, and read back. Written from the
+# RFC's prose (§§ 5, 6.1 to 6.3) with its parameters for IDNA (§ 5). The
+# arithmetic is checked before each step, so a number that would pass the
+# largest `i64` is `invalid` and nothing wraps.
+
+constant INVALID: str
+    "invalid"
+
+# The parameters of RFC 3492 § 5, for IDNA.
+constant BASE: i64
+    36
+
+constant T_MIN: i64
+    1
+
+constant T_MAX: i64
+    26
+
+constant SKEW: i64
+    38
+
+constant DAMP: i64
+    700
+
+constant INITIAL_BIAS: i64
+    72
+
+constant INITIAL_N: i64
+    128
+
+# The largest `i64`, which the decoder's numbers may not pass.
+constant MOST: i64
+    0x7fffffffffffffff
+
+# The largest code point, U+10FFFF.
+constant MAX_CODE_POINT: i64
+    0x10ffff
+
+# The bias after a delta, RFC 3492 § 6.1: `delta` the delta just written or
+# read, `points` how many code points the output holds now, `first` whether it
+# was the first delta.
+function adapted(delta: i64, points: i64, first: bool) -> i64
+    d: i64 @= if first
+        delta / DAMP
+    else
+        delta / 2
+    d @ d + d / points
+    k: i64 @= 0
+
+    while d > (BASE - T_MIN) * T_MAX / 2
+        d @ d / (BASE - T_MIN)
+        k @ k + BASE
+
+    return k + (BASE - T_MIN + 1) * d / (d + SKEW)
+
+# The threshold of the digit at position `k` under `bias`, RFC 3492 § 6.1's
+# `t`: from `T_MIN` to `T_MAX`.
+function threshold(k: i64, bias: i64) -> i64
+    if k <= bias
+        return T_MIN
+
+    if k >= bias + T_MAX
+        return T_MAX
+    return k - bias
+
+# The byte that writes the digit `d`, 0 to 35: "a" to "z", then "0" to "9".
+function digit_byte(d: i64) -> u8
+    if d < 26
+        return ('a' + d).to_u8().must()
+    return ('0' + d - 26).to_u8().must()
+
+# The value of the digit `b` writes, 0 to 35, either case of a letter read
+# alike; -1 where `b` writes no digit.
+function digit_value(b: u8) -> i64
+    if b >= 'a' && b <= 'z'
+        return b.to_i64().must() - 'a'
+
+    if b >= 'A' && b <= 'Z'
+        return b.to_i64().must() - 'A'
+
+    if b >= '0' && b <= '9'
+        return b.to_i64().must() - '0' + 26
+    return -1
+
+# Writes the generalized variable-length integer `q` under `bias` from the
+# position `k` on, RFC 3492 § 6.3's inner loop, into `out`.
+function add_number(@out: [u8], q: i64, bias: i64)
+    rest: i64 @= q
+    k: i64 @= BASE
+
+    while true
+        t = threshold(k: k, bias: bias)
+
+        if rest < t
+            break
+        out @ out.push(digit_byte(t + (rest - t) % (BASE - t)))
+        rest @ (rest - t) / (BASE - t)
+        k @ k + BASE
+
+    out @ out.push(digit_byte(rest))
+
+## Counting by place
+
+# A Fenwick tree over `size` places, every count 0: entry 0 unused, entry `j`
+# the sum of the counts of the places from `j - (j & -j)` up to `j`.
+function counts_of(size: i64) -> [i64]
+    tree: [i64] @= []
+    at: i64 @= 0
+
+    while at <= size
+        tree @ tree.push(0)
+        at @ at + 1
+
+    return tree
+
+# A Fenwick tree over `size` places, every count 1.
+function ones_of(size: i64) -> [i64]
+    tree: [i64] @= [0]
+    at: i64 @= 1
+
+    while at <= size
+        tree @ tree.push(at & -at)
+        at @ at + 1
+
+    return tree
+
+# Adds `value` to the count of the place `place`, from 0, of `tree`.
+function add_count(@tree: [i64], place: i64, value: i64)
+    at: i64 @= place + 1
+
+    while at < tree.len()
+        tree[at] @ tree[at] + value
+        at @ at + (at & -at)
+
+# The sum of the counts of the first `places` places of `tree`.
+function sum_before(tree: [i64] lent, places: i64) -> i64
+    total: i64 @= 0
+    at: i64 @= places
+
+    while at > 0
+        total @ total + tree[at]
+        at @ at - (at & -at)
+
+    return total
+
+# The place, from 0, of the one numbered `rank`, from 0, among the counts of
+# `tree`, each 0 or 1: where they first add up to `rank` plus 1. `tree` holds
+# more than `rank` ones.
+function place_of_one(tree: [i64] lent, rank: i64) -> i64
+    step: i64 @= 1
+
+    while step * 2 < tree.len()
+        step @ step * 2
+
+    place: i64 @= 0
+    remaining: i64 @= rank + 1
+
+    while step > 0
+        next = place + step
+
+        if next < tree.len() && tree[next] < remaining
+            place @ next
+            remaining @ remaining - tree[next]
+        step @ step / 2
+
+    return place
+
+## Encoding and decoding
+
+# The Punycode of `points`, RFC 3492 § 6.3: the basic code points, those
+# below 128, as they are and then a "-" where there is one, then the others
+# as digits. Every entry of `points` is a scalar value. The code points above
+# ASCII are taken in order of value, and how many smaller ones stand before
+# each is counted by a Fenwick tree, so the cost grows with n log n of the
+# code points, where the RFC's own loop reads them all once for each
+# different one. No number passes an `i64` for fewer than 2^40 code points,
+# more than a program's memory holds.
+function encode(points: [i64] lent) -> str
+    out: [u8] @= []
+    tree: [i64] @= counts_of(points.len())
+    pairs: [i64] @= []
+    place: i64 @= 0
+
+    for p in points
+        if p < 0x80
+            out @ out.push(p.to_u8().must())
+            add_count(@tree, place: place, value: 1)
+        else
+            pairs @ pairs.push(p << 40 | place)
+        place @ place + 1
+
+    basic = out.len()
+    handled: i64 @= basic
+
+    if basic > 0
+        out @ out.push('-')
+    order = sort(pairs)
+    n: i64 @= INITIAL_N
+    delta: i64 @= 0
+    bias: i64 @= INITIAL_BIAS
+    next: i64 @= 0
+
+    while next < order.len()
+        m = order[next] >> 40
+        delta @ delta + (m - n) * (handled + 1)
+        n @ m
+        group_end: i64 @= next
+
+        while group_end < order.len() && order[group_end] >> 40 == m
+            group_end @ group_end + 1
+
+        after: i64 @= 0
+        at: i64 @= next
+
+        while at < group_end
+            position = order[at] & 0xffffffffff
+            delta @ delta + sum_before(tree, places: position) - sum_before(tree, places: after)
+            add_number(@out, q: delta, bias: bias)
+            bias @ adapted(delta: delta, points: handled + 1, first: handled == basic)
+            delta @ 0
+            handled @ handled + 1
+            after @ position + 1
+            at @ at + 1
+
+        delta @ delta + sum_before(tree, places: points.len()) - sum_before(tree, places: after)
+        at @ next
+
+        while at < group_end
+            add_count(@tree, place: order[at] & 0xffffffffff, value: 1)
+            at @ at + 1
+
+        delta @ delta + 1
+        n @ n + 1
+        next @ group_end
+
+    return out.validated_bytes().must()
+
+# The code points the Punycode `s` writes, RFC 3492 § 6.2. The basic code
+# points before the last "-" are kept as they are, case and all; a "-" at the
+# start has no code point before it and is read as a digit, so it fails, as
+# the RFC reads it. Digits are read in either case. Fails `invalid` where `s`
+# holds a byte above ASCII before its last "-", a byte that is no digit after
+# it, a number cut short at the end, a number past the largest `i64`, or a
+# code point that is no scalar value; the message names the byte's place.
+# Each code point's place at its insertion is kept, and the places are
+# settled last to first by a Fenwick tree of the free places, so the cost
+# grows with n log n of the code points, where inserting each in a list
+# would grow with their square.
+function decode(s: str) -> [i64]?
+    last: i64 @= s.len() - 1
+
+    while last >= 0 && s[last] != '-'
+        last @ last - 1
+
+    values: [i64] @= []
+    places: [i64] @= []
+    at: i64 @= 0
+
+    if last > 0
+        while at < last
+            if s[at] >= 0x80
+                return fail(code: INVALID, msg: f"Punycode holds a byte above ASCII at {at}, before its last \"-\"")
+            values @ values.push(s[at].to_i64().must())
+            places @ places.push(at)
+            at @ at + 1
+
+        at @ last + 1
+    n: i64 @= INITIAL_N
+    i: i64 @= 0
+    bias: i64 @= INITIAL_BIAS
+
+    while at < s.len()
+        old = i
+        w: i64 @= 1
+        k: i64 @= BASE
+
+        while true
+            if at >= s.len()
+                return fail(code: INVALID, msg: f"Punycode ends inside a number, at {at}")
+            digit = digit_value(s[at])
+
+            if digit < 0
+                return fail(code: INVALID, msg: f"Punycode holds a byte that is no digit, {s[at]}, at {at}")
+
+            if digit > (MOST - i) / w
+                return fail(code: INVALID, msg: f"Punycode writes a number past the largest i64 at {at}")
+            i @ i + digit * w
+            at @ at + 1
+            t = threshold(k: k, bias: bias)
+
+            if digit < t
+                break
+
+            if w > MOST / (BASE - t)
+                return fail(code: INVALID, msg: f"Punycode writes a number past the largest i64 at {at}")
+            w @ w * (BASE - t)
+            k @ k + BASE
+
+        count = values.len() + 1
+        bias @ adapted(delta: i - old, points: count, first: old == 0)
+
+        if i / count > MOST - n
+            return fail(code: INVALID, msg: f"Punycode writes a code point past the largest i64 before {at}")
+        n @ n + i / count
+        i @ i % count
+
+        if n > MAX_CODE_POINT || n >= 0xd800 && n <= 0xdfff
+            return fail(code: INVALID, msg: f"Punycode writes {n}, which is no scalar value, before {at}")
+        values @ values.push(n)
+        places @ places.push(i)
+        i @ i + 1
+
+    return ok(settled(values: values, places: places))
+
+# The list `values` make when each is inserted, in order, at the place of
+# `places` beside it, counted among those inserted before it: the last one
+# takes the free place of its rank, then the one before it, so each lands
+# where the later ones leave it.
+function settled(values: [i64] lent, places: [i64] lent) -> [i64]
+    tree: [i64] @= ones_of(values.len())
+    out: [i64] @= []
+
+    for _ in values
+        out @ out.push(0)
+
+    at: i64 @= values.len() - 1
+
+    while at >= 0
+        place = place_of_one(tree, rank: places[at])
+        out[place] @ values[at]
+        add_count(@tree, place: place, value: -1)
+        at @ at - 1
+
+    return out
+
+## Tests
+
+test "encode: nothing, basic code points alone, a hyphen, one code point above ASCII, the largest, and around the surrogates"
+    assert encode([]) == ""
+    assert encode([0x61]) == "a-"
+    assert encode([0x61, 0x2d]) == "a--"
+    assert encode([0x2d]) == "--"
+    assert encode([0x30]) == "0-"
+    assert encode([0xfc]) == "tda"
+    assert encode([0x10ffff]) == "dn32g"
+    assert encode([0xd7ff]) == "hb9b"
+    assert encode([0xe000]) == "0y0c"
+    assert encode([0x62, 0xfc, 0x63, 0x68, 0x65, 0x72]) == "bcher-kva"
+
+test "decode: nothing, basic code points alone, a hyphen at the start read as a digit, either case, and a last hyphen inside the basic part"
+    assert decode("").must() == []
+    assert decode("a-").must() == [0x61]
+    assert decode("abc-").must() == [0x61, 0x62, 0x63]
+    assert decode("tda").must() == [0xfc]
+    assert decode("TDA").must() == [0xfc]
+    assert decode("bcher-kva").must() == [0x62, 0xfc, 0x63, 0x68, 0x65, 0x72]
+    assert decode("Bcher-KVA").must() == [0x42, 0xfc, 0x63, 0x68, 0x65, 0x72]
+    assert decode("abc").must() == [0x82, 0x81, 0x80]
+    assert decode("dn32g").must() == [0x10ffff]
+    assert decode("-a").is_err()
+    assert decode("-").is_err()
+    assert decode("---").must() == [0x2d, 0x2d]
+
+test "decode: a byte above ASCII before the hyphen, a byte that is no digit, a number cut short, past the largest i64, past U+10FFFF, and a surrogate"
+    assert decode("é-a").is_err()
+    assert decode("a-!").is_err()
+    assert decode("9").is_err()
+    assert decode("zzzzzzzzz").is_err()
+    assert decode("99999999999999999999999999").is_err()
+    assert decode("99999a").is_err()
+    assert decode("ib9b").is_err()
+    assert decode("a-rc4g").is_err()
+
+    match decode("99999999999999999999999999")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "Punycode writes a number past the largest i64 at 17"
+
+test "encode and decode: RFC 3492's samples A to S, encoded as Python's codec encodes them and decoded from the RFC's own text"
+    a = [
+        0x644
+        0x64a
+        0x647
+        0x645
+        0x627
+        0x628
+        0x62a
+        0x643
+        0x644
+        0x645
+        0x648
+        0x634
+        0x639
+        0x631
+        0x628
+        0x64a
+        0x61f
+    ]
+    assert encode(a) == "egbpdaj6bu4bxfgehfvwxn" && decode("egbpdaj6bu4bxfgehfvwxn").must() == a
+    b = [0x4ed6, 0x4eec, 0x4e3a, 0x4ec0, 0x4e48, 0x4e0d, 0x8bf4, 0x4e2d, 0x6587]
+    assert encode(b) == "ihqwcrb4cv8a8dqg056pqjye" && decode("ihqwcrb4cv8a8dqg056pqjye").must() == b
+    c = [0x4ed6, 0x5011, 0x7232, 0x4ec0, 0x9ebd, 0x4e0d, 0x8aaa, 0x4e2d, 0x6587]
+    assert encode(c) == "ihqwctvzc91f659drss3x8bo0yb" && decode("ihqwctvzc91f659drss3x8bo0yb").must() == c
+    d = [
+        0x50
+        0x72
+        0x6f
+        0x10d
+        0x70
+        0x72
+        0x6f
+        0x73
+        0x74
+        0x11b
+        0x6e
+        0x65
+        0x6d
+        0x6c
+        0x75
+        0x76
+        0xed
+        0x10d
+        0x65
+        0x73
+        0x6b
+        0x79
+    ]
+    assert encode(d) == "Proprostnemluvesky-uyb24dma41a" && decode("Proprostnemluvesky-uyb24dma41a").must() == d
+    e = [
+        0x5dc
+        0x5de
+        0x5d4
+        0x5d4
+        0x5dd
+        0x5e4
+        0x5e9
+        0x5d5
+        0x5d8
+        0x5dc
+        0x5d0
+        0x5de
+        0x5d3
+        0x5d1
+        0x5e8
+        0x5d9
+        0x5dd
+        0x5e2
+        0x5d1
+        0x5e8
+        0x5d9
+        0x5ea
+    ]
+    assert encode(e) == "4dbcagdahymbxekheh6e0a7fei0b" && decode("4dbcagdahymbxekheh6e0a7fei0b").must() == e
+    f = [
+        0x92f
+        0x939
+        0x932
+        0x94b
+        0x917
+        0x939
+        0x93f
+        0x928
+        0x94d
+        0x926
+        0x940
+        0x915
+        0x94d
+        0x92f
+        0x94b
+        0x902
+        0x928
+        0x939
+        0x940
+        0x902
+        0x92c
+        0x94b
+        0x932
+        0x938
+        0x915
+        0x924
+        0x947
+        0x939
+        0x948
+        0x902
+    ]
+    assert encode(f) == "i1baa7eci9glrd9b2ae1bj0hfcgg6iyaf8o0a1dig0cd" && decode("i1baa7eci9glrd9b2ae1bj0hfcgg6iyaf8o0a1dig0cd").must() == f
+    g = [
+        0x306a
+        0x305c
+        0x307f
+        0x3093
+        0x306a
+        0x65e5
+        0x672c
+        0x8a9e
+        0x3092
+        0x8a71
+        0x3057
+        0x3066
+        0x304f
+        0x308c
+        0x306a
+        0x3044
+        0x306e
+        0x304b
+    ]
+    assert encode(g) == "n8jok5ay5dzabd5bym9f0cm5685rrjetr6pdxa" && decode("n8jok5ay5dzabd5bym9f0cm5685rrjetr6pdxa").must() == g
+    h = [
+        0xc138
+        0xacc4
+        0xc758
+        0xbaa8
+        0xb4e0
+        0xc0ac
+        0xb78c
+        0xb4e4
+        0xc774
+        0xd55c
+        0xad6d
+        0xc5b4
+        0xb97c
+        0xc774
+        0xd574
+        0xd55c
+        0xb2e4
+        0xba74
+        0xc5bc
+        0xb9c8
+        0xb098
+        0xc88b
+        0xc744
+        0xae4c
+    ]
+    h_puny = "989aomsvi5e83db1d2a355cv1e0vak1dwrv93d5xbh15a0dt30a5jpsd879ccm6fea98c"
+    assert encode(h) == h_puny && decode(h_puny).must() == h
+    i = [
+        0x43f
+        0x43e
+        0x447
+        0x435
+        0x43c
+        0x443
+        0x436
+        0x435
+        0x43e
+        0x43d
+        0x438
+        0x43d
+        0x435
+        0x433
+        0x43e
+        0x432
+        0x43e
+        0x440
+        0x44f
+        0x442
+        0x43f
+        0x43e
+        0x440
+        0x443
+        0x441
+        0x441
+        0x43a
+        0x438
+    ]
+    assert encode(i) == "b1abfaaepdrnnbgefbadotcwatmq2g4l" && decode("b1abfaaepdrnnbgefbaDotcwatmq2g4l").must() == i
+    j = [
+        0x50
+        0x6f
+        0x72
+        0x71
+        0x75
+        0xe9
+        0x6e
+        0x6f
+        0x70
+        0x75
+        0x65
+        0x64
+        0x65
+        0x6e
+        0x73
+        0x69
+        0x6d
+        0x70
+        0x6c
+        0x65
+        0x6d
+        0x65
+        0x6e
+        0x74
+        0x65
+        0x68
+        0x61
+        0x62
+        0x6c
+        0x61
+        0x72
+        0x65
+        0x6e
+        0x45
+        0x73
+        0x70
+        0x61
+        0xf1
+        0x6f
+        0x6c
+    ]
+    assert encode(j) == "PorqunopuedensimplementehablarenEspaol-fmd56a" && decode("PorqunopuedensimplementehablarenEspaol-fmd56a").must() == j
+    k = [
+        0x54
+        0x1ea1
+        0x69
+        0x73
+        0x61
+        0x6f
+        0x68
+        0x1ecd
+        0x6b
+        0x68
+        0xf4
+        0x6e
+        0x67
+        0x74
+        0x68
+        0x1ec3
+        0x63
+        0x68
+        0x1ec9
+        0x6e
+        0xf3
+        0x69
+        0x74
+        0x69
+        0x1ebf
+        0x6e
+        0x67
+        0x56
+        0x69
+        0x1ec7
+        0x74
+    ]
+    assert encode(k) == "TisaohkhngthchnitingVit-kjcr8268qyxafd2f1b9g" && decode("TisaohkhngthchnitingVit-kjcr8268qyxafd2f1b9g").must() == k
+    l = [0x33, 0x5e74, 0x42, 0x7d44, 0x91d1, 0x516b, 0x5148, 0x751f]
+    assert encode(l) == "3B-ww4c5e180e575a65lsy2b" && decode("3B-ww4c5e180e575a65lsy2b").must() == l
+    m = [
+        0x5b89
+        0x5ba4
+        0x5948
+        0x7f8e
+        0x6075
+        0x2d
+        0x77
+        0x69
+        0x74
+        0x68
+        0x2d
+        0x53
+        0x55
+        0x50
+        0x45
+        0x52
+        0x2d
+        0x4d
+        0x4f
+        0x4e
+        0x4b
+        0x45
+        0x59
+        0x53
+    ]
+    assert encode(m) == "-with-SUPER-MONKEYS-pc58ag80a8qai00g7n9n" && decode("-with-SUPER-MONKEYS-pc58ag80a8qai00g7n9n").must() == m
+    n = [
+        0x48
+        0x65
+        0x6c
+        0x6c
+        0x6f
+        0x2d
+        0x41
+        0x6e
+        0x6f
+        0x74
+        0x68
+        0x65
+        0x72
+        0x2d
+        0x57
+        0x61
+        0x79
+        0x2d
+        0x305d
+        0x308c
+        0x305e
+        0x308c
+        0x306e
+        0x5834
+        0x6240
+    ]
+    assert encode(n) == "Hello-Another-Way--fc4qua05auwb3674vfr0b" && decode("Hello-Another-Way--fc4qua05auwb3674vfr0b").must() == n
+    o = [0x3072, 0x3068, 0x3064, 0x5c4b, 0x6839, 0x306e, 0x4e0b, 0x32]
+    assert encode(o) == "2-u9tlzr9756bt3uc0v" && decode("2-u9tlzr9756bt3uc0v").must() == o
+    p = [0x4d, 0x61, 0x6a, 0x69, 0x3067, 0x4b, 0x6f, 0x69, 0x3059, 0x308b, 0x35, 0x79d2, 0x524d]
+    assert encode(p) == "MajiKoi5-783gue6qz075azm5e" && decode("MajiKoi5-783gue6qz075azm5e").must() == p
+    q = [0x30d1, 0x30d5, 0x30a3, 0x30fc, 0x64, 0x65, 0x30eb, 0x30f3, 0x30d0]
+    assert encode(q) == "de-jg4avhby1noc0d" && decode("de-jg4avhby1noc0d").must() == q
+    r = [0x305d, 0x306e, 0x30b9, 0x30d4, 0x30fc, 0x30c9, 0x3067]
+    assert encode(r) == "d9juau41awczczp" && decode("d9juau41awczczp").must() == r
+    s = [0x2d, 0x3e, 0x20, 0x24, 0x31, 0x2e, 0x30, 0x30, 0x20, 0x3c, 0x2d]
+    assert encode(s) == "-> $1.00 <--" && decode("-> $1.00 <--").must() == s
+
+test "encode and decode: a character above ASCII repeated, alone, among basic ones, before a long run of them, and the largest code point twice"
+    a = [0xfc, 0x61, 0xfc, 0x62, 0xf6, 0xfc, 0xdf, 0xfc]
+    assert encode(a) == "ab-hia5g1abcb" && decode("ab-hia5g1abcb").must() == a
+    assert encode([0xe4, 0xe4, 0xe4, 0xe4]) == "4caaaa" && decode("4caaaa").must() == [0xe4, 0xe4, 0xe4, 0xe4]
+    b = [0x61, 0xe4, 0x62, 0xe4, 0x63, 0xe4]
+    assert encode(b) == "abc-qlabb" && decode("abc-qlabb").must() == b
+    run: [i64] @= [0xe4]
+
+    while run.len() < 123
+        run @ run.push(0x61)
+
+    assert encode(run) == repeat("a", 122) + "-pbk" && decode(repeat("a", 122) + "-pbk").must() == run
+    c = [0x10ffff, 0x10000, 0x80, 0x10ffff, 0x80]
+    assert encode(c) == "aa6337qe6r5kca" && decode("aa6337qe6r5kca").must() == c
+
+test "encode and decode: 30,000 code points of 20,000 different values, and 30,000 with a basic one in three, as Python's codec writes them"
+    many: [i64] @= []
+    mixed: [i64] @= []
+    j: i64 @= 0
+
+    while j < 30000
+        many @ many.push(0x4e00 + j * 7919 % 20000)
+
+        if j % 3 == 0
+            mixed @ mixed.push(0x61)
+        else
+            mixed @ mixed.push(0x100 + j * 31 % 5000)
+        j @ j + 1
+
+    text = encode(many)
+    assert text.len() == 88444
+    assert text.slice(from: 0, to: 40) == "4gqacdefgfcgdheinopqrnfogphqir0a1a2a3a4a"
+    assert text.slice(from: text.len() - 40, to: text.len()) == "ggzvspztwyuwyvwywwyl1rm7gmzvn7gnzvo7gozv"
+    assert decode(text).must() == many
+    other = encode(mixed)
+    assert other.len() == 70003
+    assert other.slice(from: 0, to: 40) == repeat("a", 40)
+    assert other.slice(from: other.len() - 40, to: other.len()) == "eu6ln3i28ev6l24euse3qgw6l34epxkypk34ey6l"
+    assert decode(other).must() == mixed
+
+test "counts_of, ones_of, add_count and sum_before: none, one place, and sums across the tree"
+    assert counts_of(0) == [0]
+    assert sum_before(ones_of(0), places: 0) == 0
+    tree: [i64] @= counts_of(10)
+    add_count(@tree, place: 0, value: 1)
+    add_count(@tree, place: 9, value: 1)
+    add_count(@tree, place: 4, value: 2)
+    assert sum_before(tree, places: 0) == 0
+    assert sum_before(tree, places: 1) == 1
+    assert sum_before(tree, places: 5) == 3
+    assert sum_before(tree, places: 10) == 4
+    assert sum_before(ones_of(7), places: 7) == 7
+
+test "place_of_one and settled: the first and the last one, after places are taken, and insertions at the start, inside and at the end"
+    tree: [i64] @= ones_of(5)
+    assert place_of_one(tree, rank: 0) == 0
+    assert place_of_one(tree, rank: 4) == 4
+    add_count(@tree, place: 0, value: -1)
+    add_count(@tree, place: 2, value: -1)
+    assert place_of_one(tree, rank: 0) == 1
+    assert place_of_one(tree, rank: 1) == 3
+    assert settled(values: [], places: []) == []
+    assert settled(values: [1, 2, 3], places: [0, 1, 2]) == [1, 2, 3]
+    assert settled(values: [1, 2, 3], places: [0, 0, 0]) == [3, 2, 1]
+    assert settled(values: [1, 2, 3, 9], places: [0, 1, 2, 1]) == [1, 9, 2, 3]

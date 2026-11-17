@@ -1,0 +1,433 @@
+# A logger's lines written to a file that is rotated: when the next line
+# would take the file past a size, or is of a later day, the file is set
+# aside under an old file's name and a new one begun at the same path; the
+# oldest old files are removed past a count or an age, and the others gzipped
+# where asked. Go's lumberjack is the yardstick, with Python's
+# `RotatingFileHandler` and `TimedRotatingFileHandler`, Serilog's rolling
+# file and Log4j's `RollingFileAppender` beside it.
+#
+# An old file of `logs/app.log` is `logs/app-2026-11-17T10-20-30.123.log`:
+# the time of its last line in UTC to the millisecond, `:` written `-`,
+# lumberjack's form, so the old files sort by their names; `.gz` follows
+# where it was compressed, and a count, `-1`, where two were set aside in one
+# millisecond. A day is UTC's, the time `log` writes on every line.
+#
+# **No line is lost.** The file is renamed and never copied, a name taken
+# already is never written over, and a file compressed stays whole until its
+# `.gz` is in place. Where the rename fails the line is written to the file
+# that was to be set aside, and the call fails saying so; the next line tries
+# again. Where a compression or a removal fails after the line was written,
+# the call fails saying the line is written, and the next rotation tries
+# again.
+#
+# It does not format a line, which `log.format_line` does, nor write to any
+# stream but its file. It holds no thread: the line that rotates the file
+# pays for the rename, the compression and the removals. One process writes
+# a file through one `Rotating`, held in a cell and passed with `@`; two
+# writers of one file, in one process or two, are not ordered here.
+#
+# Fails `invalid` where a `Rotation` is out of its range or a path ends in no
+# name, `limit` where a millisecond holds a thousand old files; and with the
+# codes of `fs` where a file cannot be opened, renamed, compressed or removed,
+# and of `io` where a line cannot be written: `file_not_found`, `permission`,
+# `not_a_directory`, `is_a_directory`, `closed`, `failed`.
+
+use fs
+use io
+use log
+use log/files/internal/fixture
+use log/files/internal/names
+use log/files/internal/rotating
+use path as paths
+use time
+
+## Codes
+
+# The code of a `Rotation` out of its range, and of a path that ends in no
+# name, from `open`.
+constant INVALID: str
+    "invalid"
+
+# The code of a rotation that finds a thousand old files of one millisecond,
+# from `write_line`, `write` and `rotate`.
+constant LIMIT: str
+    "limit"
+
+## The file and its rotation
+
+# When a file is set aside, and what is kept of the old ones. Built directly:
+# every field is 0 or above, and 0 means no bound.
+record Rotation
+    # The most bytes a file holds: a line that would take it past this is
+    # written to a new file. A line longer than this alone is written whole,
+    # alone in its file. 0 for no bound.
+    max_bytes: i64
+    # Whether a line of a later day than the file's last line, by UTC, is
+    # written to a new file.
+    daily: bool
+    # The most old files kept: past it the oldest are removed at each
+    # rotation. 0 keeps every one.
+    keep: i64
+    # The most days an old file is kept, by the day its name stamps against
+    # the day of the line that rotates: one more days old is removed. 0 keeps
+    # every one.
+    keep_days: i64
+    # Whether an old file is gzipped as it is set aside, `.gz` added to its
+    # name.
+    compress: bool
+
+# A log's file open to append, with what decides its next rotation. Made by
+# `open`, written by `write` and `write_line`, set aside by `rotate`, closed
+# by `close`; the caller holds it in a cell and closes it once.
+record Rotating
+    # The file's path, as `open` was given it.
+    path: str
+    # When it is set aside.
+    rotation: Rotation
+    # The file, open to append while `is_open`; closed by `close`.
+    stream: io.Stream
+    # Whether `stream` is open; false after `close`, or after a rotation
+    # that could not open the new file, which the next line tries again.
+    is_open: bool
+    # The bytes the file holds.
+    size: i64
+    # The time of the file's last line, or when it was last written where it
+    # held lines when opened; it names the file once it is set aside.
+    last: time.Instant
+
+# Opens the log at `path` to append, made with the folders on its way where
+# it is not there, for lines rotated by `rotation`.
+#
+# - `path`: the log's path; its old files stand beside it, in its folder.
+#   A file there already is appended to, its size and the time it was last
+#   written read so that a line of a later day sets it aside.
+# - `rotation`: when it is set aside, and what is kept.
+#
+# Fails `invalid` where a field of `rotation` is below 0 or `path` ends in
+# no name, and as `fs.make_dir_all`, `fs.open_with` and `fs.info` fail, with
+# their codes. See also `write`, `close`.
+function open(path: str, rotation: Rotation) -> Rotating?
+    if rotation.max_bytes < 0 || rotation.keep < 0 || rotation.keep_days < 0
+        return fail(
+            code: INVALID,
+            msg: f"a rotation of max_bytes {rotation.max_bytes}, keep {rotation.keep} and keep_days {rotation.keep_days}: none may be below 0"
+        )
+    found = rotating.opened(path)?
+    return ok(
+        Rotating(path: path, rotation: rotation, stream: found.stream, is_open: true, size: found.size, last: found.written)
+    )
+
+# Writes one line at `level` to the file, rotating it first where the line
+# asks, at the time `logger`'s clock reads; where the logger does not write
+# that level, does nothing.
+#
+# - `file`: the log, its size and last time moved past the line.
+# - `logger`: whose level, prefix, form, fields and clock make the line, as
+#   `log.write` makes it; its stream is not read.
+# - `level`: the line's level.
+# - `msg`: the message.
+# - `fields`: the line's own fields, after the logger's.
+#
+# Fails as `write_line` fails, and as the clock fails. See also
+# `write_line`, `log.format_line`.
+function write(@file: Rotating, logger: log.Logger, level: log.Level, msg: str, fields: [log.Field]) -> ()?
+    if !log.is_enabled(logger, level)
+        return ok()
+    read_clock = logger.clock
+    at = read_clock()?
+    return write_line(@file, line: log.format_line(logger, level, at, msg, fields), at: at)
+
+# Writes `line` and a line feed to the file in one write, setting the file
+# aside first where the line would take it past `max_bytes`, or where `at`
+# is of a later day and `daily` is asked; a file holding nothing is never set
+# aside.
+#
+# - `file`: the log; the line is in its file when the call answers.
+# - `line`: the line, without its line feed; a line feed inside it is
+#   written as it is.
+# - `at`: the line's time: it decides the day, and names the file once the
+#   file is set aside.
+#
+# Fails where the line could not be written, its code `io.write`'s or
+# `fs.open_with`'s; and, the line written, where the rotation could not set
+# the file aside (the line then in the file that stays), compress or remove
+# an old file, with that call's code and a message that says the line is
+# written. See also `write`, `rotate`.
+function write_line(@file: Rotating, line: str, at: time.Instant) -> ()?
+    rotation = file.rotation
+    width = line.len() + 1
+    by_size = rotation.max_bytes > 0 && file.size + width > rotation.max_bytes
+    by_day = rotation.daily && names.day_of(at) > names.day_of(file.last)
+    turned: ()? @= ok()
+
+    if file.size > 0 && (by_size || by_day)
+        turned @ rotate(@file, at: at)
+
+    if !file.is_open
+        found = rotating.opened(file.path)?
+        file.stream @ found.stream
+        file.is_open @ true
+        file.size @ found.size
+    io.write_line(file.stream, line: line)?
+    file.size @ file.size + width
+    file.last @ at
+
+    match turned
+        .ok _  => return ok()
+        .err e => return fail(code: e.code, msg: f"the line is written to \"{file.path}\": {e.msg}")
+
+# Sets the file aside under an old file's name and opens a new one at its
+# path, then compresses and removes old files as its rotation asks: what a
+# line past a bound does, and what a program asks on a signal or a schedule
+# of its own.
+#
+# - `file`: the log; it writes to the new file after.
+# - `at`: the time of the rotation, against which `keep_days` is judged.
+#
+# A file holding nothing is set aside all the same. Fails `limit` where a
+# thousand old files share the stamp, and as `fs.rename` fails, the file
+# then reopened where it was so the next line goes there; as `fs.open_with`
+# fails where the new file cannot be made, the next line trying again; and
+# as compressing or removing an old file fails, the new file open. See also
+# `write_line`, `old_files`.
+function rotate(@file: Rotating, at: time.Instant) -> ()?
+    if file.is_open
+        _ = io.close(@file.stream).is_err()
+        file.is_open @ false
+
+    match rotating.set_aside(file.path, last: file.last)
+        .err e =>
+            found = rotating.opened(file.path)?
+            file.stream @ found.stream
+            file.is_open @ true
+            file.size @ found.size
+            return fail(code: e.code, msg: f"\"{file.path}\" was not set aside: {e.msg}")
+        .ok _ => _ = 0
+
+    file.size @ 0
+
+    if !file.is_open
+        found = rotating.opened(file.path)?
+        file.stream @ found.stream
+        file.is_open @ true
+        file.size @ found.size
+    rotation = file.rotation
+    return rotating.tidied(
+        file.path,
+        zip: rotation.compress,
+        keep: rotation.keep,
+        keep_days: rotation.keep_days,
+        now: at
+    )
+
+# Closes the file. A second close does nothing, and a line written after it
+# opens the file again, as lumberjack's does.
+#
+# - `file`: the log.
+#
+# Fails as `io.close` fails, the file closed either way.
+function close(@file: Rotating) -> ()?
+    if !file.is_open
+        return ok()
+    file.is_open @ false
+    return io.close(@file.stream)
+
+# The old files of the log at `path`, in its folder, the newest first: the
+# names `write_line` and `rotate` gave the files they set aside, compressed
+# or not.
+#
+# - `path`: the log's path.
+#
+# Another file of the folder is not among them, though its name begin as
+# the log's. Fails `invalid` where `path` ends in no name, and as
+# `fs.read_dir` fails. See also `old_name`.
+function old_files(path: str) -> [str]?
+    return rotating.old_paths(path)
+
+# The name the log at `path` sets a file aside under when its last line was
+# at `last`, where no file holds that name: its stem, a `-`, the stamp of
+# `last`, its extension.
+#
+# - `path`: the log's path; only its name is read.
+# - `last`: the time of the file's last line, in UTC to the millisecond.
+#
+# Fails `invalid` where `path` ends in no name. See also `old_files`.
+function old_name(path: str, last: time.Instant) -> str?
+    parts = rotating.parts_of(path)?
+    return ok(names.old_name(stem: parts.stem, ext: parts.ext, at: names.stamp(last), count: 0))
+
+## Tests
+
+test "open: a rotation below 0 in each field, and a path that ends in no name"
+    for bad in [Rotation(max_bytes: -1, daily: false, keep: 0, keep_days: 0, compress: false), Rotation(max_bytes: 0, daily: false, keep: -1, keep_days: 0, compress: false), Rotation(max_bytes: 0, daily: false, keep: 0, keep_days: -1, compress: false)]
+        match open("build/x.log", rotation: bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match open("build/", rotation: Rotation(max_bytes: 10, daily: false, keep: 0, keep_days: 0, compress: false))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "write_line: by size, every line kept, the line that passes the bound first in the new file, and one longer than the bound alone"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "app.log"])
+    file @= open(log_at, rotation: Rotation(max_bytes: 10, daily: false, keep: 0, keep_days: 0, compress: false)).must()
+    assert !write_line(@file, line: "1234", at: fixture.at("2026-11-17T10:00:00.001Z")).is_err()
+    assert !write_line(@file, line: "5678", at: fixture.at("2026-11-17T10:00:00.002Z")).is_err()
+    assert !write_line(@file, line: "abc", at: fixture.at("2026-11-17T10:00:00.003Z")).is_err()
+    assert !write_line(@file, line: "a line longer than ten", at: fixture.at("2026-11-17T10:00:00.004Z")).is_err()
+    assert !write_line(@file, line: "z", at: fixture.at("2026-11-17T10:00:00.005Z")).is_err()
+    assert !close(@file).is_err()
+    assert !close(@file).is_err()
+    assert read_file(log_at).must() == "z\n"
+    olds = old_files(log_at).must()
+    assert olds == [paths.join_all([dir, "app-2026-11-17T10-00-00.004.log"]), paths.join_all([dir, "app-2026-11-17T10-00-00.003.log"]), paths.join_all([dir, "app-2026-11-17T10-00-00.002.log"])]
+    assert read_file(olds[0]).must() == "a line longer than ten\n"
+    assert read_file(olds[1]).must() == "abc\n"
+    assert read_file(olds[2]).must() == "1234\n5678\n"
+    assert !fs.remove_all(dir).is_err()
+
+test "write_line: by day, a later day setting the file aside, an earlier one not, and a file there already read by its time"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "day.log"])
+    daily = Rotation(max_bytes: 0, daily: true, keep: 0, keep_days: 0, compress: false)
+    file @= open(log_at, rotation: daily).must()
+    assert !write_line(@file, line: "monday", at: fixture.at("2026-11-16T23:59:59.999Z")).is_err()
+    assert !write_line(@file, line: "tuesday", at: fixture.at("2026-11-17T00:00:00Z")).is_err()
+    assert !write_line(@file, line: "back", at: fixture.at("2026-11-16T12:00:00Z")).is_err()
+    assert !close(@file).is_err()
+    assert read_file(log_at).must() == "tuesday\nback\n"
+    assert old_files(log_at).must() == [paths.join_all([dir, "day-2026-11-16T23-59-59.999.log"])]
+    assert !fs.set_times(log_at, written: fixture.at("2026-11-17T08:00:00Z"), read: fixture.at("2026-11-17T08:00:00Z")).is_err()
+    again @= open(log_at, rotation: daily).must()
+    assert !write_line(@again, line: "wednesday", at: fixture.at("2026-11-18T01:00:00Z")).is_err()
+    assert !close(@again).is_err()
+    assert read_file(log_at).must() == "wednesday\n"
+    assert read_file(paths.join_all([dir, "day-2026-11-17T08-00-00.000.log"])).must() == "tuesday\nback\n"
+    assert !fs.remove_all(dir).is_err()
+
+test "rotate: old files kept by count and compressed, the newest named by its last line"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "r.log"])
+    kept = Rotation(max_bytes: 0, daily: false, keep: 2, keep_days: 0, compress: true)
+    file @= open(log_at, rotation: kept).must()
+
+    for n in range(from: 1, to: 5)
+        assert !write_line(@file, line: f"line {n}", at: time.from_unix_milliseconds(1763380800000 + n).must()).is_err()
+        assert !rotate(@file, at: time.from_unix_milliseconds(1763380800000 + n).must()).is_err()
+
+    olds = old_files(log_at).must()
+    assert olds.len() == 2
+    assert olds[0] == paths.join_all([dir, "r-2025-11-17T12-00-00.004.log.gz"])
+    assert !close(@file).is_err()
+    assert !fs.remove_all(dir).is_err()
+
+test "write_line: a rename the system refuses, the line written to the file that stays and the failure said"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "f.log"])
+    file @= open(log_at, rotation: Rotation(max_bytes: 8, daily: false, keep: 0, keep_days: 0, compress: false)).must()
+    assert !write_line(@file, line: "first", at: fixture.at("2026-11-17T10:00:00Z")).is_err()
+    locked = fs.set_permission(dir, permission: 0o555)
+    turned = write_line(@file, line: "second", at: fixture.at("2026-11-17T10:00:01Z"))
+    assert !fs.set_permission(dir, permission: 0o755).is_err() || locked.is_err()
+
+    match turned
+        .err e =>
+            assert e.code == fs.PERMISSION
+            assert e.msg.slice(from: 0, to: 22) == "the line is written to"
+            assert read_file(log_at).must() == "first\nsecond\n"
+        .ok _ =>
+            # The system let the rename through: a superuser, or Windows,
+            # whose folder takes a rename read-only or not, or will not be
+            # made read-only at all.
+            assert read_file(log_at).must() == "second\n"
+
+    assert !write_line(@file, line: "third", at: fixture.at("2026-11-17T10:00:02Z")).is_err()
+    assert !close(@file).is_err()
+    assert read_file(log_at).must() == "third\n"
+    assert !fs.remove_all(dir).is_err()
+
+test "close and write_line: a line after a close opens the file again, and a second close does nothing"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "c.log"])
+    file @= open(log_at, rotation: Rotation(max_bytes: 0, daily: false, keep: 0, keep_days: 0, compress: false)).must()
+    assert !write_line(@file, line: "before", at: fixture.at("2026-11-17T10:00:00Z")).is_err()
+    assert !close(@file).is_err() && !file.is_open
+    assert !write_line(@file, line: "after", at: fixture.at("2026-11-17T10:00:01Z")).is_err()
+    assert file.is_open && file.size == 13
+    assert !close(@file).is_err() && !close(@file).is_err()
+    assert read_file(log_at).must() == "before\nafter\n"
+    assert !fs.remove_all(dir).is_err()
+
+## Examples
+
+# A log kept to one mebibyte a file: opened, a line written, closed.
+test "open: a log kept to a size"
+    dir = fixture.folder()
+    file @= open(
+        paths.join_all([dir, "app.log"]),
+        rotation: Rotation(max_bytes: 1 << 20, daily: false, keep: 0, keep_days: 0, compress: false)
+    ).must()
+    assert !write_line(@file, line: "started", at: fixture.at("2026-11-17T10:00:00Z")).is_err()
+    assert !close(@file).is_err()
+    assert !fs.remove_all(dir).is_err()
+
+# A logger's line written to a rotating file, its time fixed by a clock.
+test "write: a logger's line in a rotating file"
+    dir = fixture.folder()
+    file @= open(
+        paths.join_all([dir, "app.log"]),
+        rotation: Rotation(max_bytes: 1 << 20, daily: false, keep: 0, keep_days: 0, compress: false)
+    ).must()
+    logger = log.with_clock(log.to(io.stderr()), clock: fixture.ten_o_clock)
+    assert !write(@file, logger, .info, msg: "started", fields: [log.integer(key: "port", value: 8080)]).is_err()
+    assert !close(@file).is_err()
+    assert read_file(paths.join_all([dir, "app.log"])).must() == "2026-11-17T10:00:00.000Z INFO started port=8080\n"
+    assert !fs.remove_all(dir).is_err()
+
+# A line that would pass the bound, written to a new file.
+test "write_line: the line past the bound in a new file"
+    dir = fixture.folder()
+    file @= open(
+        paths.join_all([dir, "app.log"]),
+        rotation: Rotation(max_bytes: 8, daily: false, keep: 0, keep_days: 0, compress: false)
+    ).must()
+    assert !write_line(@file, line: "first", at: fixture.at("2026-11-17T10:00:00Z")).is_err()
+    assert !write_line(@file, line: "second", at: fixture.at("2026-11-17T10:00:01Z")).is_err()
+    assert !close(@file).is_err()
+    assert read_file(paths.join_all([dir, "app.log"])).must() == "second\n"
+    assert !fs.remove_all(dir).is_err()
+
+# A file set aside on the program's own schedule.
+test "rotate: set aside at midnight"
+    dir = fixture.folder()
+    file @= open(
+        paths.join_all([dir, "app.log"]),
+        rotation: Rotation(max_bytes: 0, daily: false, keep: 0, keep_days: 0, compress: false)
+    ).must()
+    assert !write_line(@file, line: "the day's last", at: fixture.at("2026-11-17T23:59:00Z")).is_err()
+    assert !rotate(@file, at: fixture.at("2026-11-18T00:00:00Z")).is_err()
+    assert !close(@file).is_err()
+    assert old_files(paths.join_all([dir, "app.log"])).must() == [paths.join_all([dir, "app-2026-11-17T23-59-00.000.log"])]
+    assert !fs.remove_all(dir).is_err()
+
+# A file closed once the program ends.
+test "close: the log closed at the end"
+    dir = fixture.folder()
+    file @= open(
+        paths.join_all([dir, "app.log"]),
+        rotation: Rotation(max_bytes: 0, daily: false, keep: 0, keep_days: 0, compress: false)
+    ).must()
+    assert !close(@file).is_err()
+    assert !fs.remove_all(dir).is_err()
+
+# The old files of a log, the newest first.
+test "old_files: none before the first rotation"
+    dir = fixture.folder()
+    none: [str] = []
+    assert old_files(paths.join_all([dir, "app.log"])).must() == none
+    assert !fs.remove_all(dir).is_err()
+
+# The name a file is set aside under.
+test "old_name: the stamp of the last line"
+    assert old_name("logs/app.log", last: fixture.at("2026-11-17T10:20:30.123Z")).must() == "app-2026-11-17T10-20-30.123.log"

@@ -210,6 +210,13 @@ capability child/cpu  the CPU time a child used
   python  -
   note    in nanoseconds, once the child was seen to end; `run` answers it in `Finished.cpu`
 
+capability child/usage  the memory and processor time a running child holds and has spent
+  heroes  process.usage_of
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17 (queue 58); psutil's `Popen` and `Process.memory_info` the yardstick; `os.process_usage` of the child's id while the child is held, refused `invalid` once it was waited for or given up, since its id may name another process then (POSIX keeps an unwaited child's id, Windows a process's id while a handle to it is open)
+
 capability child/signal  any signal sent to a child
   heroes  refused: two requests are portable, to end and to end at once; any other signal is POSIX's alone, and the floor sends none
   go      os.Process.Signal, os.Signal

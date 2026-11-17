@@ -257,10 +257,11 @@ capability number/ratio  a number as the exact ratio of two integers
   python  float.as_integer_ratio, int.as_integer_ratio
 
 capability number/complex  a complex number read and written
-  heroes  refused: the language has no complex type
+  heroes  pending
   go      strconv.ParseComplex, strconv.FormatComplex
   rust    -
   python  -
+  note    `math.Complex` holds the number since 2026-11-17; reading and writing it as text goes beside it in `math`, since `numbers` and `math` are both layer 0 and neither may use the other. Refused until that day for a type the language does not have
 
 capability number/truthiness  any value read as a boolean
   heroes  refused: the language has no truthiness (spec § 8); a number is compared with zero
@@ -287,12 +288,20 @@ capability text/printable  whether a character is one a reader sees
   rust    -
   python  -
 
+capability number/half-float  a float rounded to IEEE 754's binary16, the half-precision float, as its 16 bits, and those bits read back as the value they hold
+  heroes  numbers.f64_to_f16_bits, numbers.f32_to_f16_bits, numbers.f16_bits_to_f64, numbers.f16_bits_to_f32
+  go      -
+  rust    f16::from_bits, f16::to_bits, f16::from (into f32 and f64), `as f16` from f32 and f64 (the primitive unstable in Rust 1.100)
+  python  struct.pack, struct.unpack, struct.calcsize (format `e`)
+  note    added 2026-11-17 (queue 58), the yardstick Rust's crate half (f16::from_f32, f16::from_f64, f16::to_f32, f16::to_f64, f16::from_bits, f16::to_bits); rounded half to even from the exact value, as IEEE 754 asks and clang's `_Float16` rounds: 35 values against Python's struct and clang 21 on 2026-11-17 and every one of the 65536 halves read and written back. A value of 65520 or more is an infinity of its sign, as IEEE 754, clang and half answer, where Python's struct raises OverflowError. Every NaN becomes the quiet NaN 0x7e00, its sign and payload lost, since the language reads neither; Python and clang keep the sign (-nan is 0xfe00)
+
 dropped
   go      strconv.AppendBool, strconv.AppendFloat, strconv.AppendInt, strconv.AppendUint, strconv.AppendQuote, strconv.AppendQuoteRune, strconv.AppendQuoteRuneToASCII, strconv.AppendQuoteRuneToGraphic, strconv.AppendQuoteToASCII, strconv.AppendQuoteToGraphic: the same texts appended to a caller's buffer, a capacity hint; a program collects pieces and joins once
   go      strconv.IntSize: the width of Go's `int`, which no Heroes type has, every width being in its type's name
   rust    i64::from_ascii_bytes, i64::from_ascii_bytes_radix and the same of every width: the parse of bytes not yet checked as text; `validated_bytes` makes them text and the parse reads it
   rust    i64::format_into, fmt::NumBuffer: a caller's buffer to write the digits into, a capacity hint
   rust    FromStr and the formatting traits of i128, u128, isize, usize, num::NonZero, num::Wrapping, num::Saturating: types the language does not have
+  rust    f16's arithmetic, comparisons and functions (abs, sqrt, powi, total_cmp, next_up and the rest of its methods): a type the language does not have; a half is held as its bits and computed on as an `f32` or an `f64`, which hold every half exactly
   rust    fmt::Formatter, fmt::FormattingOptions, fmt::Alignment, fmt::Sign, fmt::DebugAsHex: the machinery a trait's `fmt` is handed, where Heroes has no traits; what they select is in the blocks above
   python  the operator methods of int, float and bool (`__add__`, `__sub__`, `__mul__`, `__truediv__`, `__floordiv__`, `__mod__`, `__divmod__`, `__pow__`, `__neg__`, `__pos__`, `__abs__`, `__invert__`, `__and__`, `__or__`, `__xor__`, `__lshift__`, `__rshift__`, their reflected forms `__radd__`, `__rsub__`, `__rmul__`, `__rtruediv__`, `__rfloordiv__`, `__rmod__`, `__rdivmod__`, `__rpow__`, `__rand__`, `__ror__`, `__rxor__`, `__rlshift__`, `__rrshift__`, `__eq__`, `__ne__`, `__lt__`, `__le__`, `__gt__`, `__ge__`): the language's own operators
   python  the object protocol of int, float and bool (`__class__`, `__delattr__`, `__dir__`, `__doc__`, `__getattribute__`, `__getnewargs__`, `__getstate__`, `__hash__`, `__index__`, `__init__`, `__init_subclass__`, `__reduce__`, `__reduce_ex__`, `__setattr__`, `__sizeof__`, `__subclasshook__`, `__getformat__`): what every Python object answers, nothing about numbers

@@ -1,0 +1,166 @@
+# A tree walked as `fs.walk` walks it, leaving out what its gitignore files
+# ignore: what `fs.walk_ignoring` does.
+#
+# Each folder's file of patterns is read as the walk enters the folder, before
+# any entry below it is asked, and added to the patterns at that folder, so it
+# decides for what it stands over before every file above it, as git reads
+# them. An ignored folder is never entered, so a file below it is never read.
+# The walk holds what is left to visit in a stack of its own, so no tree is too
+# deep for it; a link is listed as a link, never entered, and asked as a file,
+# as git asks it.
+
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use fs/internal/listing
+use fs/internal/tree
+use fs/internal/walking
+use fs/internal/whole
+use io/hero_stream
+use path
+
+# `patterns` with the file `name` of the folder `folder` added at `dir`, its
+# path below the root, where such a file is there; a link to one is followed.
+#
+# - `patterns`: the patterns so far.
+# - `folder`: the folder as the caller writes it.
+# - `dir`: the same folder below the root, its names joined by `/`.
+# - `name`: the file's name.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails where the file cannot be read, and `not_text` where it is not UTF-8.
+function with_file_of(patterns: path.Ignores, folder: str, dir: str, name: str, asked: str) -> path.Ignores?
+    at = path.join_all([folder, name])
+
+    if facts.presence(at: at, through: true, asked: asked)? != facts.FILE
+        return ok(patterns)
+    data = whole.read_all(at)?
+
+    match data.validated_bytes()
+        .ok text => return ok(path.with_ignore_file(patterns, dir: dir, text: text))
+        .err _   => return fail(code: codes.NOT_TEXT, msg: f"{asked}: \"{at}\" is not UTF-8")
+
+# Every path under the folder `root` that the patterns leave in, depth first,
+# each folder's entries by their names' bytes.
+#
+# - `root`: the folder; it is followed where it is a link.
+# - `ignores`: the patterns from outside the tree.
+# - `name`: the name of the file of patterns each folder may hold.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails `file_not_found`, `not_a_directory`, `invalid` for an empty `name` or
+# one holding a separator, and on the first folder or file of patterns it
+# cannot read.
+function walked(root: str, ignores: path.Ignores, name: str, asked: str) -> [listing.Found]?
+    codes.checked(path: root, asked: asked)?
+
+    if name == "" || name == "." || name == ".." || path.name(name).default("") != name
+        return fail(code: codes.INVALID, msg: f"{asked}: \"{name}\" is not the name of a file in a folder")
+    kind = facts.presence(at: root, through: true, asked: asked)?
+
+    if kind == facts.NOTHING
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: nothing is there")
+
+    if kind != facts.DIRECTORY
+        return fail(code: codes.NOT_A_DIRECTORY, msg: f"{asked}: it is no folder")
+    patterns: path.Ignores @= with_file_of(ignores, folder: root, dir: "", name: name, asked: asked)?
+    stack: [walking.Step] @= walking.steps_of(dir: root, rel: "", depth: 1, frame: -1, asked: asked)?
+    count: i64 @= stack.len()
+    out: [listing.Found] @= []
+
+    while count > 0
+        count @ count - 1
+        step = stack[count]
+        slashed = path.to_slash(step.rel)
+        is_dir = step.kind == facts.DIRECTORY
+
+        if path.is_ignored(patterns, path: slashed, is_dir: is_dir)
+            continue
+        out @ out.push(listing.Found(name: step.rel, kind: step.kind))
+
+        if is_dir
+            patterns @ with_file_of(patterns, folder: step.full, dir: slashed, name: name, asked: asked)?
+
+            for next in walking.steps_of(dir: step.full, rel: step.rel, depth: step.depth + 1, frame: -1, asked: asked)?
+                if count < stack.len()
+                    stack[count] @ next
+                else
+                    stack @ stack.push(next)
+                count @ count + 1
+
+    return ok(out)
+
+## Tests
+
+# The names of `found`, written with `/` whatever the system's separator.
+function names(found: [listing.Found]) -> [str]
+    out: [str] @= []
+
+    for f in found
+        out @ out.push(path.to_slash(f.name))
+
+    return out
+
+# Writes `text` as the file `at` below `dir`, the folders on its way made.
+function put(dir: str, at: str, text: str) -> bool
+    full = path.join_all([dir, at])
+    parent = path.parent(full)
+    return !tree.made_all(parent).is_err() && !write_file(path: full, text: text).is_err()
+
+test "walked: the files git ls-files --others listed on 2026-11-17, and the folders above them"
+    dir = fixture.folder("ignored")
+    assert put(dir: dir, at: ".gitignore", text: "*.o\nbuild/\n!keep.o\n")
+    assert put(dir: dir, at: "a.c", text: "") && put(dir: dir, at: "a.o", text: "") && put(dir: dir, at: "keep.o", text: "")
+    assert put(dir: dir, at: "build/x", text: "") && put(dir: dir, at: "src/b.o", text: "") && put(dir: dir, at: "src/gen/y", text: "")
+    assert put(dir: dir, at: "src/c.c", text: "") && put(dir: dir, at: "docs/gen", text: "")
+    assert put(dir: dir, at: "src/.gitignore", text: "!*.o\n/gen\n")
+    none = path.parse_ignore("")
+    got = walked(root: dir, ignores: none, name: ".gitignore", asked: "a").must()
+    assert names(got) == [".gitignore", "a.c", "docs", "docs/gen", "keep.o", "src", "src/.gitignore", "src/b.o", "src/c.c"]
+    assert got[2].kind == facts.DIRECTORY && got[3].kind == facts.FILE
+    outside = walked(root: dir, ignores: path.parse_ignore("docs/\n*.c\n"), name: ".gitignore", asked: "a").must()
+    assert names(outside) == [".gitignore", "keep.o", "src", "src/.gitignore", "src/b.o"]
+    other = walked(root: dir, ignores: none, name: ".other", asked: "a").must()
+    assert names(other).len() == 14
+    assert fixture.cleared(dir)
+
+test "walked: an empty folder, a file of patterns that ignores itself, and a link listed as a file is asked"
+    dir = fixture.folder("ignoredlink")
+    none = path.parse_ignore("")
+    empty: [listing.Found] = []
+    assert walked(root: dir, ignores: none, name: ".gitignore", asked: "a").must() == empty
+    assert put(dir: dir, at: ".gitignore", text: ".gitignore\nl/\n")
+    assert put(dir: dir, at: "t/f", text: "")
+
+    if fixture.linked(target: "t", name: path.join_all([dir, "l"]))
+        got = walked(root: dir, ignores: none, name: ".gitignore", asked: "a").must()
+        assert names(got) == ["l", "t", "t/f"]
+        assert got[0].kind == facts.LINK
+    assert fixture.cleared(dir)
+
+test "walked fails: a root not there, a root that is a file, a name that is no name, and a file of patterns not UTF-8"
+    dir = fixture.folder("ignoredfail")
+    none = path.parse_ignore("")
+    assert put(dir: dir, at: "f", text: "x")
+
+    match walked(root: path.join_all([dir, "none"]), ignores: none, name: ".gitignore", asked: "walking")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == "walking: nothing is there"
+
+    match walked(root: path.join_all([dir, "f"]), ignores: none, name: ".gitignore", asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_A_DIRECTORY
+
+    for bad in ["", ".", "..", "a/b"]
+        match walked(root: dir, ignores: none, name: bad, asked: "a")
+            .ok _  => assert false
+            .err e => assert e.code == codes.INVALID
+
+    raw: [u8] = [0x2a, 0xff, 0x0a]
+    assert !whole.written(at: path.join_all([dir, ".gitignore"]), data: raw, access: hero_stream.HERO_STREAM_ACCESS_WRITE, asked: "a").is_err()
+
+    match walked(root: dir, ignores: none, name: ".gitignore", asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_TEXT
+
+    assert fixture.cleared(dir)

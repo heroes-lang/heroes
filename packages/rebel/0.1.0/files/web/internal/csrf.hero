@@ -1,0 +1,95 @@
+# A token against cross-site request forgery, masked anew for each page as
+# Django and gorilla/csrf mask theirs, so a compressed page never repeats the
+# secret's bytes (the BREACH attack): the token is a random mask and the
+# secret's bytes each XORed with the mask's, in URL-safe base 64. Unmasking
+# undoes the XOR; the secret compared is the one the server keeps.
+
+use bytes
+use crypto
+use os
+
+# The code of a token that is not one this module masked.
+constant INVALID: str
+    "invalid"
+
+# The bytes of a secret.
+constant SECRET_BYTES: i64
+    32
+
+# A new secret: `SECRET_BYTES` from the system's generator, in URL-safe base
+# 64. Fails as `os.random_bytes` does.
+function new_secret() -> str?
+    return ok(bytes.format_base64_url_unpadded(os.random_bytes(SECRET_BYTES)?))
+
+# `a` and `b`, of one length, each byte XORed with the other's.
+function xored(a: [u8], b: [u8]) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < a.len()
+        out @ out.push(to_u8(to_i64(a[at]).must() ^ to_i64(b[at]).must()).must())
+        at @ at + 1
+
+    return out
+
+# The bytes of `secret`, as `new_secret` writes one. Fails `invalid` where it
+# is no base 64 or not `SECRET_BYTES` long.
+function secret_bytes(secret: str) -> [u8]?
+    raw = match bytes.parse_base64_url_unpadded(secret)
+        .ok b  => b
+        .err _ => return fail(code: INVALID, msg: "the CSRF secret is no base 64")
+
+    if raw.len() != SECRET_BYTES
+        return fail(code: INVALID, msg: f"the CSRF secret holds {raw.len()} bytes, not {SECRET_BYTES}")
+    return ok(raw)
+
+# The secret `raw` masked with `pad`, `SECRET_BYTES` long: the mask, then the
+# secret XORed with it.
+function masked_with(raw: [u8], pad: [u8]) -> str
+    return bytes.format_base64_url_unpadded(bytes.concat([pad, xored(a: raw, b: pad)]))
+
+# `secret` masked with a mask the system's generator draws. Fails `invalid`
+# where `secret` is not one, and as `os.random_bytes` does.
+function mask(secret: str) -> str?
+    raw = secret_bytes(secret)?
+    return ok(masked_with(raw: raw, pad: os.random_bytes(SECRET_BYTES)?))
+
+# Whether `token`, masked by `mask`, unmasks to `secret`, compared in
+# constant time. A token or a secret that does not read is false.
+function holds(token: str, secret: str) -> bool
+    raw = match secret_bytes(secret)
+        .ok b  => b
+        .err _ => return false
+
+    data = match bytes.parse_base64_url_unpadded(token)
+        .ok d  => d
+        .err _ => return false
+
+    if data.len() != 2 * SECRET_BYTES
+        return false
+    unmasked = xored(a: data.slice(from: SECRET_BYTES, to: data.len()), b: data.slice(from: 0, to: SECRET_BYTES))
+    return crypto.equals_constant_time(a: unmasked, b: raw)
+
+## Tests
+
+test "new_secret: 32 bytes, two of them apart"
+    a = new_secret().must()
+    assert secret_bytes(a).must().len() == 32 && a != new_secret().must() && a.len() == 43
+
+test "xored and masked_with: a mask of zeros keeps the secret, the XOR Python computes"
+    raw = secret_bytes(new_secret().must()).must()
+    zeros: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        zeros @ zeros.push(0)
+
+    assert bytes.parse_base64_url_unpadded(masked_with(raw: raw, pad: zeros)).must().slice(from: 32, to: 64) == raw
+    assert xored(a: [0x0f, 0xff, 0], b: [0xf0, 0x0f, 0]) == [0xff, 0xf0, 0]
+
+test "mask and holds: two masks of one secret apart, each holding it; another secret, a token cut, a token of nonsense"
+    secret = new_secret().must()
+    one = mask(secret).must()
+    two = mask(secret).must()
+    assert one != two && holds(token: one, secret: secret) && holds(token: two, secret: secret)
+    assert !holds(token: one, secret: new_secret().must()) && !holds(token: one.slice(from: 0, to: 40), secret: secret)
+    assert !holds(token: "!", secret: secret) && !holds(token: one, secret: "short") && mask("short").is_err()

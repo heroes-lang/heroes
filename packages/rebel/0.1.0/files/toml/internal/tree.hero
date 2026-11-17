@@ -1,0 +1,293 @@
+# An edit of a document made on its tree of nodes, what the edited text must
+# read back as, and two trees compared: every edit of a document's text is
+# read back and held to the same edit made on the tree of its text before,
+# so that an edit whose bytes would mean anything else fails instead of
+# being written. The tree is `doc.parse_document`'s arena, the root first;
+# a step of a path at an array is an index in decimal.
+
+use toml/internal/doc
+use toml/internal/layout
+use toml/internal/scalar
+
+# The code of a path that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# The node at `at` of `from` and every node below it, copied to the end of
+# `nodes`; answers where the copy of the node at `at` stands.
+function grafted(@nodes: [doc.Node], from: [doc.Node] lent, at: i64) -> i64
+    first = nodes.len()
+    nodes @ nodes.push(from[at])
+
+    # The copies whose children still name nodes of `from`.
+    waiting: [i64] @= [first]
+    k: i64 @= 0
+
+    while k < waiting.len()
+        copy = waiting[k]
+        k @ k + 1
+        kids = nodes[copy].children
+        mapped: [i64] @= []
+
+        for child in kids
+            nodes @ nodes.push(from[child])
+            mapped @ mapped.push(nodes.len() - 1)
+            waiting @ waiting.push(nodes.len() - 1)
+
+        nodes[copy].children @ mapped
+
+    return first
+
+# Where the member `key` of the table at `t` stands among its members, or -1.
+function member_index(nodes: [doc.Node] lent, t: i64, key: str) -> i64
+    names = nodes[t].keys
+
+    for k in range(from: 0, to: names.len())
+        if names[k] == key
+            return k
+
+    return -1
+
+# The node `step` names below the container at `t`: a member of a table, an
+# item of an array by its index; -1 where it names none. Fails `invalid` where
+# `t` is no container or `step` is no index of an array.
+function child_of(nodes: [doc.Node] lent, t: i64, step: str, shown: str) -> i64?
+    n = nodes[t]
+
+    if n.kind == scalar.TABLE
+        k = member_index(nodes: nodes, t: t, key: step)
+
+        if k < 0
+            return ok(-1)
+        return ok(n.children[k])
+
+    if n.kind == scalar.ARRAY
+        i = layout.step_index(step)?
+
+        if i >= n.children.len()
+            return ok(-1)
+        return ok(n.children[i])
+    return fail(code: scalar.INVALID, msg: f"\"{shown}\" is a value, neither a table nor an array")
+
+# Where `path` leads from the root, or -1 where it leads nowhere. Fails
+# `invalid` where it goes through a value that is no container.
+function walk(nodes: [doc.Node] lent, path: [str]) -> i64?
+    t @= 0
+
+    for k in range(from: 0, to: path.len())
+        t @ child_of(nodes: nodes, t: t, step: path[k], shown: path.slice(from: 0, to: k).join("."))?
+
+        if t < 0
+            return ok(-1)
+
+    return ok(t)
+
+# The container at the end of `path` but its last step, the tables on the way
+# made where they are missing. Fails `invalid` through a value, and
+# `not_found` through an index past an array's end.
+function parent_made(@nodes: [doc.Node], path: [str]) -> i64?
+    t @= 0
+
+    for k in range(from: 0, to: path.len() - 1)
+        shown = path.slice(from: 0, to: k + 1).join(".")
+        c = child_of(nodes: nodes, t: t, step: path[k], shown: shown)?
+
+        if c >= 0
+            t @ c
+        else if nodes[t].kind == scalar.ARRAY
+            return fail(code: NOT_FOUND, msg: f"no entry \"{shown}\"")
+        else
+            nodes @ nodes.push(doc.container(kind: scalar.TABLE, depth: 0))
+            made = nodes.len() - 1
+            nodes[t].keys @ nodes[t].keys.push(path[k])
+            nodes[t].children @ nodes[t].children.push(made)
+            t @ made
+
+    return ok(t)
+
+# `nodes` with the value at `at` of `from` put under `path`, replacing what
+# stood there; the tables on the way made where missing.
+function set_at(@nodes: [doc.Node], path: [str], from: [doc.Node] lent, at: i64) -> ()?
+    t = parent_made(@nodes, path)?
+    copy = grafted(nodes: @nodes, from: from, at: at)
+    last = path[path.len() - 1]
+
+    if nodes[t].kind == scalar.ARRAY
+        i = layout.step_index(last)?
+
+        if i >= nodes[t].children.len()
+            return fail(code: NOT_FOUND, msg: f"no entry \"{path.join(".")}\"")
+        nodes[t].children[i] @ copy
+        return ok()
+
+    if nodes[t].kind != scalar.TABLE
+        return fail(code: scalar.INVALID, msg: f"\"{path.join(".")}\" goes through a value")
+    k = member_index(nodes: nodes, t: t, key: last)
+
+    if k >= 0
+        nodes[t].children[k] @ copy
+    else
+        nodes[t].keys @ nodes[t].keys.push(last)
+        nodes[t].children @ nodes[t].children.push(copy)
+    return ok()
+
+# `nodes` with what `path` names taken out. Fails `not_found` where it names
+# nothing.
+function remove_at(@nodes: [doc.Node], path: [str]) -> ()?
+    t = walk(nodes: nodes, path: path.slice(from: 0, to: path.len() - 1))?
+
+    if t < 0
+        return fail(code: NOT_FOUND, msg: f"no key \"{path.join(".")}\"")
+    last = path[path.len() - 1]
+    gone: i64 @= -1
+
+    if nodes[t].kind == scalar.ARRAY
+        i = layout.step_index(last)?
+
+        if i < nodes[t].children.len()
+            gone @ i
+    else if nodes[t].kind == scalar.TABLE
+        gone @ member_index(nodes: nodes, t: t, key: last)
+
+    if gone < 0
+        return fail(code: NOT_FOUND, msg: f"no key \"{path.join(".")}\"")
+    names: [str] @= []
+    kids: [i64] @= []
+
+    for k in range(from: 0, to: nodes[t].children.len())
+        if k != gone
+            kids @ kids.push(nodes[t].children[k])
+
+            if nodes[t].kind == scalar.TABLE
+                names @ names.push(nodes[t].keys[k])
+
+    nodes[t].keys @ names
+    nodes[t].children @ kids
+    return ok()
+
+# `nodes` with the value at `at` of `from` appended to the array `path`
+# names, the array made where missing. Fails `invalid` where `path` names
+# something else.
+function append_at(@nodes: [doc.Node], path: [str], from: [doc.Node] lent, at: i64) -> ()?
+    t = parent_made(@nodes, path)?
+    last = path[path.len() - 1]
+    target = child_of(nodes: nodes, t: t, step: last, shown: path.join("."))?
+    copy = grafted(nodes: @nodes, from: from, at: at)
+
+    if target < 0
+        if nodes[t].kind != scalar.TABLE
+            return fail(code: NOT_FOUND, msg: f"no entry \"{path.join(".")}\"")
+        array @= doc.container(kind: scalar.ARRAY, depth: 0)
+        array.children @ [copy]
+        nodes @ nodes.push(array)
+        nodes[t].keys @ nodes[t].keys.push(last)
+        nodes[t].children @ nodes[t].children.push(nodes.len() - 1)
+        return ok()
+
+    if nodes[target].kind != scalar.ARRAY
+        return fail(code: scalar.INVALID, msg: f"\"{path.join(".")}\" is not an array")
+    nodes[target].children @ nodes[target].children.push(copy)
+    return ok()
+
+# Whether two scalars of one kind hold the same value; two NaNs are the same.
+function same_scalar(a: scalar.Lexed, b: scalar.Lexed) -> bool
+    if a.kind != b.kind
+        return false
+
+    if a.kind == scalar.TEXT
+        return a.text == b.text
+
+    if a.kind == scalar.INTEGER
+        return a.integer == b.integer
+
+    if a.kind == scalar.FLOAT
+        if a.float != a.float
+            return b.float != b.float
+        return a.float == b.float && (a.float != 0.0 || 1.0 / a.float == 1.0 / b.float)
+
+    if a.kind == scalar.BOOLEAN
+        return a.flag == b.flag
+
+    if a.kind == scalar.LOCAL_TIME
+        return a.clock == b.clock
+
+    if a.kind == scalar.DATE_TIME
+        return a.date == b.date && a.integer == b.integer
+    return a.date == b.date
+
+# Whether the trees of `a` and `b` hold the same values from their roots: a
+# table's members in any order, an array's items in order.
+function same(a: [doc.Node] lent, b: [doc.Node] lent) -> bool
+    left: [i64] @= [0]
+    right: [i64] @= [0]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        x = a[left[top]]
+        y_at = right[top]
+        y = b[y_at]
+
+        if x.kind != y.kind || x.children.len() != y.children.len()
+            return false
+
+        if x.kind != scalar.TABLE && x.kind != scalar.ARRAY && !same_scalar(a: x.value, b: y.value)
+            return false
+
+        for k in range(from: 0, to: x.children.len())
+            other: i64 @= k
+
+            if x.kind == scalar.TABLE
+                other @ member_index(nodes: b, t: y_at, key: x.keys[k])
+
+                if other < 0
+                    return false
+
+            if top == left.len()
+                left @ left.push(x.children[k])
+                right @ right.push(y.children[other])
+            else
+                left[top] @ x.children[k]
+                right[top] @ y.children[other]
+            top @ top + 1
+
+    return true
+
+# The tree of `text`, for a test.
+function tree(text: str) -> [doc.Node]
+    return doc.parse_document(text).must()
+
+test "same: members in another order, an item out of place, a kind changed, NaNs and signed zeros"
+    assert same(a: tree("a = 1\nb = [1, 2]\n"), b: tree("b = [1, 2]\na = 1\n"))
+    assert !same(a: tree("b = [1, 2]"), b: tree("b = [2, 1]"))
+    assert !same(a: tree("a = 1"), b: tree("a = 1.0"))
+    assert !same(a: tree("a = 1"), b: tree("a = 1\nb = 2"))
+    assert same(a: tree("a = nan"), b: tree("a = -nan"))
+    assert !same(a: tree("a = 0.0"), b: tree("a = -0.0"))
+    assert same(a: tree("[[t]]\nx = 1\n"), b: tree("t = [{x = 1}]"))
+    assert !same(a: tree("a = 1979-05-27T07:32:00Z"), b: tree("a = 1979-05-27T07:32:00+01:00"))
+
+test "set_at: a key replaced, a key added under tables made on the way, an entry of an array set, one past its end refused"
+    value = tree("v = {x = 1}")
+    at = value[0].children[0]
+    nodes @= tree("a = 1\n")
+    set_at(nodes: @nodes, path: ["b", "c"], from: value, at: at).must()
+    assert same(a: nodes, b: tree("a = 1\nb.c.x = 1\n"))
+    set_at(nodes: @nodes, path: ["a"], from: value, at: at).must()
+    assert same(a: nodes, b: tree("a.x = 1\nb.c.x = 1\n"))
+    entries @= tree("[[t]]\ny = 2\n")
+    set_at(nodes: @entries, path: ["t", "0", "y"], from: value, at: at).must()
+    assert same(a: entries, b: tree("[[t]]\ny.x = 1\n"))
+    assert set_at(nodes: @entries, path: ["t", "1", "y"], from: value, at: at).is_err()
+
+test "remove_at and append_at: a member, an entry, a key absent, an array made, a table refused"
+    nodes @= tree("a = 1\n[[t]]\nx = 1\n[[t]]\nx = 2\n")
+    remove_at(@nodes, path: ["t", "0"]).must()
+    assert same(a: nodes, b: tree("a = 1\n[[t]]\nx = 2\n"))
+    assert remove_at(@nodes, path: ["b"]).is_err()
+    value = tree("v = {x = 3}")
+    append_at(nodes: @nodes, path: ["t"], from: value, at: value[0].children[0]).must()
+    assert same(a: nodes, b: tree("a = 1\n[[t]]\nx = 2\n[[t]]\nx = 3\n"))
+    append_at(nodes: @nodes, path: ["u"], from: value, at: value[0].children[0]).must()
+    assert same(a: nodes, b: tree("a = 1\nu = [{x = 3}]\n[[t]]\nx = 2\n[[t]]\nx = 3\n"))
+    assert append_at(nodes: @nodes, path: ["a"], from: value, at: value[0].children[0]).is_err()

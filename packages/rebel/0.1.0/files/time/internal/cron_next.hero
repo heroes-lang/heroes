@@ -1,0 +1,271 @@
+# When a cron expression next allows, on a zone's clocks. The timeline is cut
+# into stretches where the zone's offset holds still; in each, local time runs
+# straight, so the first local second the expression allows is searched there
+# and moved back to UTC. A local time a change of offset skipped is in no
+# stretch and never runs, and one it repeated is in two and runs twice: what
+# robfig/cron answers. Every pass of every loop moves forward by a second at
+# least, and the search ends at the last second an `i64` of nanoseconds holds.
+
+use time/internal/arith
+use time/internal/civil
+use time/internal/cron_days
+use time/internal/cron_read
+
+# The code of a schedule with no run left before the end of the range.
+constant NOT_FOUND: str
+    "not_found"
+
+# Seconds in a day.
+constant DAY: i64
+    86_400
+
+# The last whole second an `i64` of nanoseconds reaches.
+constant LAST_SECOND: i64
+    9_223_372_036
+
+# The first value from `from` to `to` whose bit is set in `bits`, or `to + 1`
+# where none is.
+function first_set(bits: i64, from: i64, to: i64) -> i64
+    at: i64 @= from
+
+    while at <= to
+        if bits >> at & 1 == 1
+            return at
+        at @ at + 1
+
+    return to + 1
+
+# The local second at which month `month` of `year` begins; a month past 12
+# is the first of the next year.
+function month_start(year: i64, month: i64) -> i64
+    if month > 12
+        return civil.days_from_date(year: year + 1, month: 1, day: 1) * DAY
+    return civil.days_from_date(year: year, month: month, day: 1) * DAY
+
+# The first local second, counted as UTC's from 1970, at or after `from` and
+# before `bound` that `spec` allows. Fails `not_found` where none is.
+function next_local(spec: cron_read.Spec, from: i64, bound: i64) -> i64?
+    at: i64 @= from
+
+    while at < bound
+        days = arith.floor_div(a: at, b: DAY)
+        date = civil.date_from_days(days)
+        within = at - days * DAY
+        hour = within / 3_600
+        minute = within % 3_600 / 60
+        second = within % 60
+
+        if spec.months >> date.month & 1 == 0
+            month = first_set(bits: spec.months, from: date.month + 1, to: 12)
+
+            if month == 13
+                at @ month_start(year: date.year + 1, month: first_set(bits: spec.months, from: 1, to: 12))
+            else
+                at @ month_start(year: date.year, month: month)
+            continue
+        allowed = cron_days.allowed(spec: spec, year: date.year, month: date.month)
+
+        if allowed >> date.day & 1 == 0
+            day = first_set(bits: allowed, from: date.day + 1, to: 31)
+
+            if day == 32
+                at @ month_start(year: date.year, month: date.month + 1)
+            else
+                at @ (days + day - date.day) * DAY
+            continue
+
+        if spec.hours >> hour & 1 == 0
+            next_hour = first_set(bits: spec.hours, from: hour + 1, to: 23)
+            at @ days * DAY + next_hour * 3_600
+            continue
+
+        if spec.minutes >> minute & 1 == 0
+            next_minute = first_set(bits: spec.minutes, from: minute + 1, to: 59)
+            at @ days * DAY + hour * 3_600 + next_minute * 60
+            continue
+
+        if spec.seconds >> second & 1 == 0
+            next_second = first_set(bits: spec.seconds, from: second + 1, to: 59)
+            at @ days * DAY + hour * 3_600 + minute * 60 + next_second
+            continue
+        return ok(at)
+
+    return fail(code: NOT_FOUND, msg: "no time the schedule allows")
+
+# How many of `ats`, in order, are at or before `t`.
+function changes_up_to(ats: [i64] lent, t: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= ats.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if ats[middle] <= t
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# The first instant, in nanoseconds, strictly after `after` that `spec`
+# allows on the clocks of a zone whose offset is `first` before its first
+# change and `offsets[i]` from `ats[i]` on (nanoseconds, the changes in
+# order). Fails `not_found` where none is before the end of the range.
+function next_instant(spec: cron_read.Spec, after: i64, ats: [i64] lent, offsets: [i64] lent, first: i64) -> i64?
+    if spec.every > 0
+        base = after - arith.floor_mod(a: after, b: arith.SECOND)
+
+        match arith.add(a: base, b: spec.every)
+            .ok next => return ok(next)
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: "the next run is past the last instant an i64 of nanoseconds holds"
+            )
+    s: i64 @= arith.floor_div(a: after, b: arith.SECOND) + 1
+
+    while s <= LAST_SECOND
+        count = changes_up_to(ats: ats, t: s * arith.SECOND)
+
+        offset = if count == 0
+            arith.floor_div(a: first, b: arith.SECOND)
+        else
+            arith.floor_div(a: offsets[count - 1], b: arith.SECOND)
+        end: i64 @= LAST_SECOND + 1
+
+        if count < ats.len()
+            end @ 0 - arith.floor_div(a: 0 - ats[count], b: arith.SECOND)
+
+        match next_local(spec: spec, from: s + offset, bound: end + offset)
+            .ok local => return ok((local - offset) * arith.SECOND)
+            .err _    => _ = 0
+
+        s @ end
+
+    return fail(code: NOT_FOUND, msg: "no time the schedule allows before the last instant an i64 of nanoseconds holds")
+
+# A zone for the tests: its offset before its first change, then its changes
+# and the offsets from each on, in nanoseconds.
+record TestZone
+    # The offset before the first change.
+    first: i64
+    # The changes, in order.
+    ats: [i64]
+    # The offset from each change on.
+    offsets: [i64]
+
+# UTC.
+function utc() -> TestZone
+    return TestZone(first: 0, ats: [], offsets: [])
+
+# Rome in 2026, as Python's `zoneinfo` gives it: CET, CEST from
+# 2026-03-29T01:00Z, CET again from 2026-10-25T01:00Z.
+function rome() -> TestZone
+    return TestZone(
+        first: 3_600_000_000_000,
+        ats: [1_774_746_000_000_000_000, 1_792_890_000_000_000_000],
+        offsets: [7_200_000_000_000, 3_600_000_000_000]
+    )
+
+# New York in 2026: EST, EDT from 2026-03-08T07:00Z, EST from 2026-11-01T06:00Z.
+function york() -> TestZone
+    return TestZone(
+        first: -18_000_000_000_000,
+        ats: [1_772_953_200_000_000_000, 1_793_512_800_000_000_000],
+        offsets: [-14_400_000_000_000, -18_000_000_000_000]
+    )
+
+# Lord Howe in 2026, whose clocks move by half an hour: +11:00, +10:30 from
+# 2026-04-04T15:00Z, +11:00 from 2026-10-03T15:30Z.
+function howe() -> TestZone
+    return TestZone(
+        first: 39_600_000_000_000,
+        ats: [1_775_314_800_000_000_000, 1_791_041_400_000_000_000],
+        offsets: [37_800_000_000_000, 39_600_000_000_000]
+    )
+
+# The first `count` runs of the expression `s` after `after` on `zone`'s
+# clocks, fewer where the search ends.
+function runs(s: str, after: i64, count: i64, zone: TestZone) -> [i64]
+    spec = cron_read.read(s).must()
+    out: [i64] @= []
+    at: i64 @= after
+
+    while out.len() < count
+        match next_instant(spec: spec, after: at, ats: zone.ats, offsets: zone.offsets, first: zone.first)
+            .ok t =>
+                out @ out.push(t)
+                at @ t
+            .err _ => break
+
+    return out
+
+test "first_set: from the start, inside, at the end, and none"
+    assert first_set(bits: 0b1010, from: 0, to: 59) == 1
+    assert first_set(bits: 0b1010, from: 2, to: 59) == 3
+    assert first_set(bits: 1 << 59, from: 0, to: 59) == 59
+    assert first_set(bits: 0b1010, from: 4, to: 59) == 60
+
+test "month_start: January, December's next, and before 1970"
+    assert month_start(year: 1970, month: 1) == 0
+    assert month_start(year: 1969, month: 13) == 0
+    assert month_start(year: 1969, month: 12) == -31 * DAY
+
+test "next_local: the bound reached, a second at the bound refused, and a month skipped whole"
+    spec = cron_read.read("0 0 1 3 *").must()
+    assert next_local(spec: spec, from: 0, bound: 100).is_err()
+    march = month_start(year: 1970, month: 3)
+    assert next_local(spec: spec, from: 0, bound: march).is_err()
+    assert next_local(spec: spec, from: 0, bound: march + 1).must() == march
+
+test "changes_up_to: none, before the first, at one, between, after the last"
+    assert changes_up_to(ats: [], t: 5) == 0
+    assert changes_up_to(ats: [10, 20], t: 5) == 0
+    assert changes_up_to(ats: [10, 20], t: 10) == 1
+    assert changes_up_to(ats: [10, 20], t: 15) == 1
+    assert changes_up_to(ats: [10, 20], t: 25) == 2
+
+# Every expected list below is what robfig/cron v3.0.1 (Go 1.27) answered on
+# 2026-11-17 for the same expression, zone and instant, the zone being
+# Go's own; Sunday as 7, L, W and # it refuses, and those are judged by
+# `cron_days`'s tests and the calendar.
+test "next_instant: robfig's answers across gaps and overlaps in Rome, New York and Lord Howe, and in UTC"
+    assert runs(s: "30 2 * * *", after: 1_774_612_800_000_000_000, count: 4, zone: rome()) == [1_774_661_400_000_000_000, 1_774_830_600_000_000_000, 1_774_917_000_000_000_000, 1_775_003_400_000_000_000]
+    assert runs(s: "0 * * * *", after: 1_774_742_400_000_000_000, count: 4, zone: rome()) == [1_774_746_000_000_000_000, 1_774_749_600_000_000_000, 1_774_753_200_000_000_000, 1_774_756_800_000_000_000]
+    assert runs(s: "*/20 * * * *", after: 1_774_742_400_000_000_000, count: 5, zone: rome()) == [1_774_743_600_000_000_000, 1_774_744_800_000_000_000, 1_774_746_000_000_000_000, 1_774_747_200_000_000_000, 1_774_748_400_000_000_000]
+    assert runs(s: "30 2 * * *", after: 1_792_756_800_000_000_000, count: 4, zone: rome()) == [1_792_801_800_000_000_000, 1_792_888_200_000_000_000, 1_792_891_800_000_000_000, 1_792_978_200_000_000_000]
+    assert runs(s: "0 * * * *", after: 1_792_879_200_000_000_000, count: 5, zone: rome()) == [1_792_882_800_000_000_000, 1_792_886_400_000_000_000, 1_792_890_000_000_000_000, 1_792_893_600_000_000_000, 1_792_897_200_000_000_000]
+    assert runs(s: "*/20 * * * *", after: 1_792_884_600_000_000_000, count: 7, zone: rome()) == [1_792_885_200_000_000_000, 1_792_886_400_000_000_000, 1_792_887_600_000_000_000, 1_792_888_800_000_000_000, 1_792_890_000_000_000_000, 1_792_891_200_000_000_000, 1_792_892_400_000_000_000]
+    assert runs(s: "0 2 * * *", after: 1_792_888_200_000_000_000, count: 3, zone: rome()) == [1_792_890_000_000_000_000, 1_792_976_400_000_000_000, 1_793_062_800_000_000_000]
+    assert runs(s: "* * * * * *", after: 1_774_745_999_000_000_000, count: 3, zone: rome()) == [1_774_746_000_000_000_000, 1_774_746_001_000_000_000, 1_774_746_002_000_000_000]
+    assert runs(s: "* * * * * *", after: 1_792_889_998_000_000_000, count: 4, zone: rome()) == [1_792_889_999_000_000_000, 1_792_890_000_000_000_000, 1_792_890_001_000_000_000, 1_792_890_002_000_000_000]
+    assert runs(s: "0 0 * * *", after: 1_774_738_800_000_000_000, count: 3, zone: rome()) == [1_774_821_600_000_000_000, 1_774_908_000_000_000_000, 1_774_994_400_000_000_000]
+    assert runs(s: "30 2 * * *", after: 1_772_884_800_000_000_000, count: 3, zone: york()) == [1_773_037_800_000_000_000, 1_773_124_200_000_000_000, 1_773_210_600_000_000_000]
+    assert runs(s: "0 * * * *", after: 1_793_505_600_000_000_000, count: 5, zone: york()) == [1_793_509_200_000_000_000, 1_793_512_800_000_000_000, 1_793_516_400_000_000_000, 1_793_520_000_000_000_000, 1_793_523_600_000_000_000]
+    assert runs(s: "30 1 * * *", after: 1_793_511_000_000_000_000, count: 3, zone: york()) == [1_793_514_600_000_000_000, 1_793_601_000_000_000_000, 1_793_687_400_000_000_000]
+    assert runs(s: "*/15 * * * *", after: 1_775_304_000_000_000_000, count: 5, zone: howe()) == [1_775_304_900_000_000_000, 1_775_305_800_000_000_000, 1_775_306_700_000_000_000, 1_775_307_600_000_000_000, 1_775_308_500_000_000_000]
+    assert runs(s: "*/15 * * * *", after: 1_791_036_000_000_000_000, count: 5, zone: howe()) == [1_791_036_900_000_000_000, 1_791_037_800_000_000_000, 1_791_038_700_000_000_000, 1_791_039_600_000_000_000, 1_791_040_500_000_000_000]
+    assert runs(s: "0 0 1 * MON", after: 1_767_225_600_000_000_000, count: 3, zone: utc()) == [1_767_571_200_000_000_000, 1_768_176_000_000_000_000, 1_768_780_800_000_000_000]
+    assert runs(s: "0 0 */10 * MON", after: 1_767_225_600_000_000_000, count: 3, zone: utc()) == [1_767_571_200_000_000_000, 1_768_089_600_000_000_000, 1_768_176_000_000_000_000]
+    assert runs(s: "0 0 29 2 *", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_835_395_200_000_000_000, 1_961_625_600_000_000_000]
+    assert runs(s: "5/15 * * * * *", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_767_225_605_000_000_000, 1_767_225_620_000_000_000]
+    assert runs(s: "0 0 * * SUN-SAT/2", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_767_398_400_000_000_000, 1_767_484_800_000_000_000]
+    assert runs(s: "0 0 1 1-12/3 *", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_775_001_600_000_000_000, 1_782_864_000_000_000_000]
+    assert runs(s: "*/100 * * * *", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_767_229_200_000_000_000, 1_767_232_800_000_000_000]
+    assert runs(s: "* * * * * *", after: 1_767_225_600_500_000_000, count: 3, zone: utc()) == [1_767_225_601_000_000_000, 1_767_225_602_000_000_000, 1_767_225_603_000_000_000]
+    assert runs(s: "* * * * * *", after: -500_000_000, count: 2, zone: utc()) == [0, 1_000_000_000]
+    assert runs(s: "@every 1s", after: -500_000_000, count: 2, zone: utc()) == [0, 1_000_000_000]
+    assert runs(s: "@every 1h30m", after: 1_767_225_610_250_000_000, count: 2, zone: utc()) == [1_767_231_010_000_000_000, 1_767_236_410_000_000_000]
+    assert runs(s: "@yearly", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_798_761_600_000_000_000, 1_830_297_600_000_000_000]
+    assert runs(s: "@weekly", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_767_484_800_000_000_000, 1_768_089_600_000_000_000]
+    assert runs(s: "@monthly", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_769_904_000_000_000_000, 1_772_323_200_000_000_000]
+    assert runs(s: "@hourly", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_767_229_200_000_000_000, 1_767_232_800_000_000_000]
+    assert runs(s: "@midnight", after: 1_767_225_600_000_000_000, count: 2, zone: utc()) == [1_767_312_000_000_000_000, 1_767_398_400_000_000_000]
+    assert runs(s: "0 0 1 jan *", after: 1_798_761_599_000_000_000, count: 2, zone: utc()) == [1_798_761_600_000_000_000, 1_830_297_600_000_000_000]
+
+test "next_instant: a schedule that never matches, the end of the range, and @every past it"
+    assert runs(s: "0 0 30 2 *", after: 0, count: 1, zone: rome()).len() == 0
+    assert runs(s: "* * * * * *", after: LAST_SECOND * arith.SECOND, count: 1, zone: utc()).len() == 0
+    assert runs(s: "* * * * * *", after: (LAST_SECOND - 1) * arith.SECOND, count: 3, zone: utc()) == [LAST_SECOND * arith.SECOND]
+    assert runs(s: "@every 1s", after: arith.MAX - 5, count: 1, zone: utc()).len() == 0
+    assert runs(s: "0 0 * 2 5#5", after: 1_767_225_600_000_000_000, count: 1, zone: utc()) == [2_087_856_000_000_000_000]
+    assert runs(s: "0 0 1 1 *", after: arith.MIN, count: 1, zone: utc()) == [-9_214_560_000_000_000_000]

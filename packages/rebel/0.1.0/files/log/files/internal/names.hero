@@ -1,0 +1,205 @@
+# The names of a log's old files: the stamp of a time they carry, how one is
+# made and read back, and the old files of a folder put in order, newest
+# first. Nothing here touches the disk.
+#
+# An old file of the log `app.log` is `app-2026-11-17T10-20-30.123.log`: the
+# log's stem, a `-`, the time of its last line in UTC to the millisecond with
+# `-` for `:`, its extension, and `.gz` where it was compressed, Go's
+# lumberjack's form. Two files of one millisecond are told apart by a count
+# after the stamp, `app-2026-11-17T10-20-30.123-1.log`.
+
+use strings
+use time
+
+# The width of a stamp, `2026-11-17T10-20-30.123`.
+constant STAMP_WIDTH: i64
+    23
+
+# An old file of a log, as its name tells it.
+record Old
+    # The file's name, in its folder.
+    name: str
+    # Its stamp, `2026-11-17T10-20-30.123`.
+    stamp: str
+    # The count after the stamp; 0 where there is none.
+    count: i64
+    # Whether its name ends in `.gz`.
+    compressed: bool
+
+# The day of `t` by UTC: whole days since 1970-01-01, -1 the day before it.
+function day_of(t: time.Instant) -> i64
+    seconds = time.unix_seconds(t)
+    whole = seconds / 86400
+
+    if seconds % 86400 < 0
+        return whole - 1
+    return whole
+
+# The stamp an old file's name carries for `t`: the time in UTC to the
+# millisecond, the rest cut toward the past, `:` written `-` and no `Z`.
+function stamp(t: time.Instant) -> str
+    text = strings.replace_all(s: time.format(t, .rfc3339_milliseconds), old: ":", new: "-")
+
+    if strings.has_suffix(s: text, suffix: "Z")
+        return text.slice(from: 0, to: text.len() - 1)
+    return text
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The instant the stamp `s` writes. Fails `invalid` where `s` is not one
+# stamp as `stamp` writes it.
+function parse_stamp(s: str) -> time.Instant?
+    refused: time.Instant? = fail(code: "invalid", msg: f"\"{s}\" is no stamp of the form 2006-01-02T15-04-05.000")
+
+    if s.len() != STAMP_WIDTH
+        return refused
+
+    for at in range(from: 0, to: STAMP_WIDTH)
+        want = match at
+            4 | 7 | 13 | 16 => s[at] == '-'
+            10              => s[at] == 'T'
+            19              => s[at] == '.'
+            _               => is_digit(s[at])
+
+        if !want
+            return refused
+
+    text = s.slice(from: 0, to: 13) + ":" + s.slice(from: 14, to: 16) + ":" + s.slice(from: 17, to: STAMP_WIDTH) + "Z"
+
+    match time.parse(text, .rfc3339_milliseconds)
+        .ok t  => return ok(t)
+        .err _ => return refused
+
+# The name of an old file of the log whose name has `stem` and `ext`.
+#
+# - `stem`: the log's name without its extension.
+# - `ext`: the log's extension with its dot, or "" for none.
+# - `at`: the stamp.
+# - `count`: 0 for none, else the count written after the stamp.
+function old_name(stem: str, ext: str, at: str, count: i64) -> str
+    if count == 0
+        return f"{stem}-{at}{ext}"
+    return f"{stem}-{at}-{count}{ext}"
+
+# The old file `name` is, of the log whose name has `stem` and `ext`. Fails
+# `not_found` where it is no old file of that log.
+function old_of(name: str, stem: str, ext: str) -> Old?
+    refused: Old? = fail(code: "not_found", msg: f"\"{name}\" is no old file of \"{stem}{ext}\"")
+    prefix = stem + "-"
+
+    if !strings.has_prefix(s: name, prefix: prefix)
+        return refused
+    rest = name.slice(from: prefix.len(), to: name.len())
+    zipped = ext + ".gz"
+    compressed = strings.has_suffix(s: rest, suffix: zipped)
+
+    tail = if compressed
+        zipped
+    else
+        ext
+
+    if !strings.has_suffix(s: rest, suffix: tail) || rest.len() < tail.len() + STAMP_WIDTH
+        return refused
+    core = rest.slice(from: 0, to: rest.len() - tail.len())
+
+    if parse_stamp(core.slice(from: 0, to: STAMP_WIDTH)).is_err()
+        return refused
+    count: i64 @= 0
+
+    if core.len() > STAMP_WIDTH
+        digits = core.slice(from: STAMP_WIDTH + 1, to: core.len())
+
+        if core[STAMP_WIDTH] != '-' || digits == "" || digits.len() > 9 || digits[0] == '0'
+            return refused
+
+        for at in range(from: 0, to: digits.len())
+            if !is_digit(digits[at])
+                return refused
+            count @ count * 10 + to_i64(digits[at] - '0').must()
+
+    return ok(Old(name: name, stamp: core.slice(from: 0, to: STAMP_WIDTH), count: count, compressed: compressed))
+
+# `n`, 0 to 999,999,999, written with nine digits.
+function nine_digits(n: i64) -> str
+    text = to_str(n)
+    return strings.pad_start(s: text, width: 9, pad: "0")
+
+# `olds`, the newest first: by stamp, and of one stamp the larger count
+# first.
+function newest_first(olds: [Old]) -> [Old]
+    ranks: [str] @= []
+
+    for at in range(from: 0, to: olds.len())
+        ranks @ ranks.push(olds[at].stamp + nine_digits(olds[at].count) + nine_digits(at))
+
+    ordered = sort(ranks)
+    out: [Old] @= []
+    at: i64 @= ordered.len() - 1
+
+    while at >= 0
+        key = ordered[at]
+        index = numbers_of(key.slice(from: key.len() - 9, to: key.len()))
+        out @ out.push(olds[index])
+        at @ at - 1
+
+    return out
+
+# The number the digits `s` write.
+function numbers_of(s: str) -> i64
+    n: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        n @ n * 10 + to_i64(s[at] - '0').must()
+
+    return n
+
+## Tests
+
+test "day_of: the first day, a moment before it, a leap day, and the largest second of a day"
+    assert day_of(time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()) == 0
+    assert day_of(time.from_unix(whole_seconds: -1, extra_nanoseconds: 0).must()) == -1
+    assert day_of(time.from_unix(whole_seconds: -86400, extra_nanoseconds: 0).must()) == -1
+    assert day_of(time.from_unix(whole_seconds: 86399, extra_nanoseconds: 999999999).must()) == 0
+    assert day_of(time.parse("2024-02-29T12:00:00Z", .rfc3339).must()) == 19782
+
+test "stamp and parse_stamp: a moment, the milliseconds cut toward the past, and back"
+    t = time.parse("2026-11-17T10:20:30.123987Z", .rfc3339).must()
+    assert stamp(t) == "2026-11-17T10-20-30.123"
+    back = parse_stamp("2026-11-17T10-20-30.123").must()
+    assert time.unix_milliseconds(back) == time.unix_milliseconds(t)
+    assert stamp(time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()) == "1970-01-01T00-00-00.000"
+
+test "parse_stamp fails: empty, short, a colon, no T, a month 13, and a letter"
+    for bad in ["", "2026-11-17T10-20-30", "2026-11-17T10:20:30.123", "2026-11-17x10-20-30.123", "2026-13-17T10-20-30.123", "2026-11-17T10-20-30.12a"]
+        match parse_stamp(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "old_name and old_of: with an extension, without, a count, compressed, and back"
+    assert old_name(stem: "app", ext: ".log", at: "2026-11-17T10-20-30.123", count: 0) == "app-2026-11-17T10-20-30.123.log"
+    assert old_name(stem: "app", ext: "", at: "2026-11-17T10-20-30.123", count: 2) == "app-2026-11-17T10-20-30.123-2"
+    plain = old_of(name: "app-2026-11-17T10-20-30.123.log", stem: "app", ext: ".log").must()
+    assert plain == Old(name: "app-2026-11-17T10-20-30.123.log", stamp: "2026-11-17T10-20-30.123", count: 0, compressed: false)
+    zipped = old_of(name: "app-2026-11-17T10-20-30.123-12.log.gz", stem: "app", ext: ".log").must()
+    assert zipped.count == 12 && zipped.compressed
+    assert old_of(name: "my-app-2026-11-17T10-20-30.123", stem: "my-app", ext: "").must().count == 0
+    assert old_of(name: "café-2026-11-17T10-20-30.123.log", stem: "café", ext: ".log").must().stamp == "2026-11-17T10-20-30.123"
+
+test "old_of fails: another log, the log itself, a stamp malformed, a count of 0, a count with a letter, another extension"
+    for name in ["other-2026-11-17T10-20-30.123.log", "app.log", "app-.log", "app-2026-11-17T10-20-30.12.log", "app-2026-11-17T10-20-30.123-0.log", "app-2026-11-17T10-20-30.123-1a.log", "app-2026-11-17T10-20-30.123.txt", "app-2026-11-17T10-20-30.123-.log", "app-my-2026-11-17T10-20-30.123.log"]
+        match old_of(name: name, stem: "app", ext: ".log")
+            .ok _  => assert false
+            .err e => assert e.code == "not_found"
+
+test "newest_first: none, one, by stamp, and by count within one stamp"
+    none: [Old] = []
+    assert newest_first(none) == none
+    a = Old(name: "a", stamp: "2026-11-17T10-20-30.123", count: 0, compressed: false)
+    b = Old(name: "b", stamp: "2026-11-17T10-20-30.123", count: 1, compressed: true)
+    c = Old(name: "c", stamp: "2026-11-18T00-00-00.000", count: 0, compressed: false)
+    d = Old(name: "d", stamp: "2025-01-01T00-00-00.000", count: 0, compressed: false)
+    assert newest_first([a]) == [a]
+    assert newest_first([a, b, c, d]) == [c, b, a, d]
+    assert newest_first([d, c, b, a]) == [c, b, a, d]

@@ -167,11 +167,11 @@ capability request/form  a form field read
   note    `http.form_of`
 
 capability request/files  a multipart form's files read
-  heroes  pending
+  heroes  http.parts_of, http.part_of, http.FormPart, http.PartLimits
   go      echo.Context.FormFile, MultipartForm, gin.Context.FormFile, MultipartForm, SaveUploadedFile, gin.Engine.MaxMultipartMemory
   rust    -
   python  flask.Request.files, werkzeug.datastructures.FileStorage
-  note    reading a multipart body is `http`'s block request/multipart-read, which waits there
+  note    reading a multipart body is `http`'s block request/multipart-read; a file is held in memory within `http.PartLimits` and saved by `fs` under a name of the program's own, never the client's as it is (gin's `SaveUploadedFile` writes the client's name)
 
 capability request/json  a request's JSON body read
   heroes  web.json_of
@@ -208,11 +208,11 @@ capability request/bearer  the token of `Authorization: Bearer`
   note    the scheme compared without case, RFC 6750
 
 capability request/client-address  the client's address, through proxies the program trusts
-  heroes  web.client_address_of
+  heroes  web.client_address_of, web.forwarded_of, web.trusted_networks, web.Forwarded
   go      echo.Context.RealIP, echo.ExtractIPDirect, ExtractIPFromXFFHeader, ExtractIPFromRealIPHeader, echo.TrustOption, gin.Context.ClientIP, gin.Context.RemoteIP, gin.Engine.SetTrustedProxies, chi/middleware.RealIP
   rust    -
   python  flask.Request.remote_addr, flask.Request.access_route, werkzeug.middleware.proxy_fix.ProxyFix
-  note    `X-Forwarded-For` read only from an address the program trusts, from its last entry back
+  note    `X-Forwarded-For` read only from an address the program trusts, from its last entry back; `forwarded_of` trusts networks (`10.0.0.0/8`) as well as addresses, prefers RFC 7239's `Forwarded`, whose element of the client gives its `proto` and `host`, and else takes the last value of `X-Forwarded-Proto` and `X-Forwarded-Host`, the nearest proxy's, as werkzeug's `ProxyFix` with one hop reads them; ProxyFix and Echo's `TrustOption` count hops or ranges, gin's `SetTrustedProxies` takes networks as here; the client is the first hop from the nearest back that no trusted network holds, so fields a client writes name only hops behind it
 
 capability response/json  a response of JSON
   heroes  http.respond_json, http.respond, json.format_indented
@@ -418,17 +418,17 @@ capability middleware/decompress  a gzip request body read
 
 capability middleware/cross-origin-protection  an unsafe request from another origin refused
   heroes  web.refuse_cross_origin
-  go      net/http.CrossOriginProtection, NewCrossOriginProtection, AddTrustedOrigin, AddInsecureBypassPattern, Check, Handler, SetDenyHandler, echo/middleware.CSRF
+  go      net/http.CrossOriginProtection, NewCrossOriginProtection, AddTrustedOrigin, AddInsecureBypassPattern, Check, Handler, SetDenyHandler
   rust    -
   python  -
-  note    Go's answers on every case tested (observed): a trusted `Origin` first, then `Sec-Fetch-Site`, then `Origin` against `Host` as written; Echo's token is not kept, the two fields refusing what it refuses with no state
+  note    Go's answers on every case tested (observed): a trusted `Origin` first, then `Sec-Fetch-Site`, then `Origin` against `Host` as written; a token kept by the server is middleware/csrf's, beside this
 
 capability middleware/secure  the headers that keep a page from being framed or sniffed
-  heroes  web.with_secure_headers
+  heroes  web.with_secure_headers, web.with_security_headers, web.SecurityHeaders, web.default_security_headers, web.format_hsts
   go      echo/middleware.Secure, SecureWithConfig, chi/middleware.NoCache, chi/middleware.SetHeader
   rust    -
   python  -
-  note    three fields with no cost to any page; HSTS and a content security policy bind a site's whole future, so the program writes them with `http.with_header`
+  note    `with_secure_headers` writes three fields with no cost to any page; `with_security_headers` writes a set the program chooses, made from helmet 8.3.0's defaults as it answered on 2026-11-17 (its policy, HSTS for a year with subdomains, `nosniff`, `SAMEORIGIN`, `no-referrer`, both cross-origin policies `same-origin`, `Origin-Agent-Cluster: ?1` and its four older fields), each written where the response has none; Django 6.1.3's `SecurityMiddleware` and `XFrameOptionsMiddleware` answered with fewer (`nosniff`, `Referrer-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`, `X-Frame-Options: DENY`, no HSTS, which it sends only once `SECURE_HSTS_SECONDS` is set and only over HTTPS); HSTS is written whatever the connection, as helmet writes it, since a browser reads it only over HTTPS (RFC 6797 § 8.1) and a request does not say whether a proxy took TLS off; Echo's `Secure` writes none of them by default
 
 capability middleware/content-type  a body of a type the route does not read refused 415
   heroes  web.require_type
@@ -494,13 +494,69 @@ capability serve/stateful  the loop a program with state writes: accept, read, r
   python  flask.g, flask.current_app, flask.Flask.app_context
   note    no closure carries the state: the router answers the route's name and the program calls its own function with its `@` state, in the loop of `route`'s example; `http.next_request` answers 100, 400, 413, 417, 431, 501 and 505 and `http.write_answer` keeps an HTTP/1.0 connection alive, as `http.serve` does
 
+capability cookie/signed  a cookie's value signed, with its end inside, keys rotated
+  heroes  web.sign_value, web.verify_value, web.secure_cookie_of, web.with_secure_cookie, web.without_cookie, web.CookieOptions, web.default_cookie_options, web.MOST_COOKIE_BYTES, web.LIMIT
+  go      echo.Context.SetCookie, gin.Context.SetCookie, gin.Context.SetSameSite
+  rust    -
+  python  flask.Response.set_cookie, flask.Response.delete_cookie
+  note    HMAC-SHA256 through `crypto` over a label, the cookie's name, the value and its end in Unix seconds, so a value moved to another cookie or kept past its end is refused; the first key signs and every key verifies, compared in constant time, as gorilla/securecookie's `CodecsFromPairs` and itsdangerous's key lists rotate; keys of 32 bytes or more (RFC 2104's L for SHA-256); `Max-Age` and `Expires` both written; past 4,096 bytes `limit`, gorilla's bound; gorilla, itsdangerous and Flask are not on this machine, so their formats are yardsticks of the shape and the tags were observed from Python's `hmac.new`; Echo and gin set a cookie unsigned
+
+capability cookie/sealed  a cookie's value encrypted and authenticated, its end inside
+  heroes  web.seal_value, web.open_value, web.CookieOptions
+  go      -
+  rust    -
+  python  -
+  note    sealed by `crypto/seal` (AES-GCM or ChaCha20-Poly1305 of the system), the name authenticated beside it, the first key sealing and any opening, where gorilla/securecookie encrypts with AES-CTR then signs with HMAC; on macOS `crypto/seal` has no cipher and every seal fails `unsupported`, so a program there signs
+
+capability session/cookie  a session's values kept in a signed or sealed cookie
+  heroes  web.Session, web.new_session, web.session_of, web.with_session
+  go      -
+  rust    -
+  python  flask.session, flask.sessions.SecureCookieSession, SecureCookieSessionInterface, SessionMixin, flask.Flask.secret_key, flask.Flask.permanent_session_lifetime, flask.Flask.session_interface
+  note    the values a JSON object of texts, in a cookie as `with_secure_cookie` writes it, gorilla/sessions' `CookieStore` and Flask's default store being the yardsticks; a session kept on the server is the program's own, under a key such a cookie holds; `session_of` fails `not_found` or `invalid` and the program begins `new_session`, as gorilla's `Get` hands a new session with its error and Flask begins one silently; defaults of `default_cookie_options` are gorilla's path `/` and 30 days, with `Secure`, `HttpOnly` and `SameSite=Lax`, which gorilla leaves off
+
+capability middleware/csrf  a form's token checked against a secret the server keeps
+  heroes  web.check_csrf, web.csrf_secret, web.new_csrf_secret, web.mask_csrf, web.csrf_token_of, web.CSRF_FIELD, web.CSRF_HEADER, web.CSRF_KEY
+  go      echo/middleware.CSRF, CSRFWithConfig, CSRFConfig
+  rust    -
+  python  -
+  note    the synchronizer token (the secret kept in the session) and the double-submit cookie (the secret in a signed cookie of its own, `secure_cookie_of`), the token masked anew for each page by a random pad XORed with the secret, as gorilla/csrf masks it and Django masks its own by another cipher, against BREACH; read from `X-CSRF-Token`, gorilla's, then from the form field `csrf_token`; safe methods go on, as Django lets them; 403 with Django's words; the cross-origin check of `refuse_cross_origin` stands beside it with no state
+
+capability response/etag  a dynamic response given an entity tag, and answered 304 where the client holds it
+  heroes  web.etag_of, web.with_etag, http.is_not_modified, http.respond_not_modified
+  go      -
+  rust    -
+  python  flask.Response.add_etag, flask.Response.make_conditional, werkzeug.http.generate_etag
+  note    the first 16 bytes of the body's SHA-256 in hexadecimal, strong, `W/` where asked; the handler's work is still done and its body not sent, as Django's `ConditionalGetMiddleware` does; a handler's own ETag kept
+
+capability response/negotiated  a route that answers only types the client accepts, 406 otherwise
+  heroes  web.require_acceptable, http.negotiate_type
+  go      gin.Context.Negotiate, NegotiateFormat, gin.Negotiate
+  rust    -
+  python  flask.Request.accept_mimetypes, accept_languages, accept_encodings, accept_charsets
+  note    the type chosen by `http.negotiate_type`, the server's order breaking ties as werkzeug's `best_match`; 406 names what the route offers
+
+capability test/client  a router tried without a network: a request handed in memory and its response read
+  heroes  web.exchange, http.exchange_with, http.to_served, http.to_received
+  go      echo.Echo.ServeHTTP with net/http/httptest, gin.CreateTestContext, gin.CreateTestContextOnly
+  rust    -
+  python  flask.Flask.test_client, flask.testing.FlaskClient, flask.Flask.test_cli_runner, werkzeug.test.Client, werkzeug.test.EnvironBuilder
+  note    the request goes to the server and the response to the client through the bytes a connection would carry, so the refusals and fields of `http` come out as they would; a program with state tries its own function between `http.to_served` and `http.to_received`
+
+capability serve/graceful  serving ended at the stop, the requests in hand answered within a grace
+  heroes  web.serve_until_stopped, http.serve_until_stopped, http.Served
+  go      echo.Echo.Shutdown, net/http.Server.Shutdown
+  rust    -
+  python  -
+  note    `http.serve_until_stopped` with the router as the program's value; what the stop of `net` lets it finish is said in http's server/graceful block
+
 dropped  a context, an interface, a handler type or an error type: the language has none (README § A4, § B3)
   go      echo.Context and its Get, Set, Request, SetRequest, Response, Logger, Echo, Reset, echo.Response, echo.Map, echo.Echo.NewContext, AcquireContext, ReleaseContext, echo.WrapHandler, WrapMiddleware, gin.Context.Copy, Keys, Errors, Error, gin.WrapF, WrapH, gin.HandlerFunc, chi.RouteContext, chi.NewRouteContext, chi.Context, echo.Echo.Validator, Binder, JSONSerializer, IPExtractor as fields
   rust    -
   python  flask.Flask.app_context, request_context, test_request_context, flask.g, flask.session as a proxy, werkzeug.local
 
 dropped  a framework's own server, its modes and its plumbing: the connection is `http`'s and `net`'s
-  go      echo.Echo.Server, TLSServer, Listener, AutoTLSManager, StartAutoTLS, StartServer, StartH2CServer, Shutdown, Close, ListenerAddr, Debug, HideBanner, HidePort, gin.SetMode, gin.Mode, gin.IsDebugging, gin.Engine.RunUnix, RunFd, RunListener, RunQUIC, gin.DisableConsoleColor, gin.ForceConsoleColor
+  go      echo.Echo.Server, TLSServer, Listener, AutoTLSManager, StartAutoTLS, StartServer, StartH2CServer, Close, ListenerAddr, Debug, HideBanner, HidePort, gin.SetMode, gin.Mode, gin.IsDebugging, gin.Engine.RunUnix, RunFd, RunListener, RunQUIC, gin.DisableConsoleColor, gin.ForceConsoleColor
   rust    -
   python  flask.Flask.run's debug and reloader, wsgiref.handlers.BaseHandler, SimpleHandler, BaseCGIHandler, CGIHandler, IISCGIHandler, read_environ, wsgiref.util.FileWrapper, setup_testing_defaults, request_uri, application_uri, guess_scheme, shift_path_info, is_hop_by_hop, wsgiref.headers.Headers, wsgiref.validate.validator and its checks, wsgiref.types, wsgiref.simple_server.ServerHandler, software_version, sys_version
 

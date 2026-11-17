@@ -1,0 +1,161 @@
+# The network interfaces' counters read back from the bytes
+# `hero_sys_network_counters` writes: for each interface its name and a zero
+# byte, then eight counters, each its decimal digits and a zero byte. The face
+# turns each `Interface` here into its own record; this module holds no type
+# of the face, which a private module cannot reach.
+
+use os/internal/codes
+
+# How many counters follow each interface's name: bytes, packets, errors and
+# dropped packets, each received then sent.
+constant COUNTERS: i64
+    8
+
+# One interface as the door wrote it: its name and its counters in the door's
+# order.
+record Interface
+    # The interface's name, as the system gives it.
+    name: str
+    # Its `COUNTERS` counters, each at or above 0.
+    counters: [i64]
+
+# Where the next zero byte stands in `bytes`, from `from` on. Fails `failed`
+# where none does, so the bytes are not the door's form.
+function zero_after(bytes: [u8] lent, from: i64) -> i64?
+    at: i64 @= from
+
+    while at < bytes.len()
+        if bytes[at] == 0
+            return ok(at)
+        at @ at + 1
+
+    return fail(
+        code: codes.FAILED,
+        msg: f"the interfaces' counters end at byte {bytes.len()} inside a piece that opened at byte {from}"
+    )
+
+# The counter written in `bytes` from `from` to `to`, decimal digits alone.
+# Fails `failed` where it is empty, holds another byte, or passes the largest
+# `i64`.
+function counter_of(bytes: [u8] lent, from: i64, to: i64) -> i64?
+    if to == from
+        return fail(code: codes.FAILED, msg: f"the interfaces' counters hold an empty counter at byte {from}")
+    value: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        b = bytes[at]
+
+        if b < '0' || b > '9'
+            return fail(
+                code: codes.FAILED,
+                msg: f"the interfaces' counters hold byte {b} inside a counter at byte {at}"
+            )
+
+        # A byte always fits an `i64`.
+        digit = (b - '0').to_i64().must()
+
+        if value > (9223372036854775807 - digit) / 10
+            return fail(code: codes.FAILED, msg: f"an interface's counter at byte {from} passes the largest i64")
+        value @ value * 10 + digit
+        at @ at + 1
+
+    return ok(value)
+
+# The interfaces `bytes` holds, in the door's order. Fails `not_text` where a
+# name is not UTF-8, and `failed` where the bytes are not the door's form or a
+# counter does not fit an `i64`.
+function interfaces_of(bytes: [u8] lent) -> [Interface]?
+    found: [Interface] @= []
+    at: i64 @= 0
+
+    while at < bytes.len()
+        name_end = zero_after(bytes, from: at)?
+
+        match bytes.slice(from: at, to: name_end).validated_bytes()
+            .ok name =>
+                at @ name_end + 1
+                counters: [i64] @= []
+
+                while counters.len() < COUNTERS
+                    end = zero_after(bytes, from: at)?
+                    counters @ counters.push(counter_of(bytes, from: at, to: end)?)
+                    at @ end + 1
+
+                found @ found.push(Interface(name: name, counters: counters))
+            .err _ =>
+                return fail(
+                    code: codes.NOT_TEXT,
+                    msg: f"an interface's name of {name_end - at} bytes at byte {at} is not UTF-8"
+                )
+
+    return ok(found)
+
+## Tests
+
+# The bytes the door would write for one interface named `name` with the
+# counters `counters`, each written in decimal.
+function written(name: str, counters: [i64]) -> [u8]
+    out: [u8] @= []
+    add_text(@out, text: name)
+
+    for c in counters
+        add_text(@out, text: f"{c}")
+
+    return out
+
+# Adds the bytes of `text` and a zero byte to `out`.
+function add_text(@out: [u8], text: str)
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    out @ out.push(0)
+
+test "interfaces_of: none, one, two in order, a name of more than one byte, and the largest counter"
+    assert interfaces_of([]).must() == []
+    one = interfaces_of(written(name: "lo0", counters: [1, 2, 3, 4, 0, 0, 0, 0])).must()
+    assert one == [Interface(name: "lo0", counters: [1, 2, 3, 4, 0, 0, 0, 0])]
+    two: [u8] @= written(name: "en0", counters: [10, 20, 30, 40, 5, 6, 7, 8])
+
+    for b in written(name: "Ethernet é", counters: [9223372036854775807, 0, 0, 0, 0, 0, 0, 1])
+        two @ two.push(b)
+
+    read = interfaces_of(two).must()
+    assert read.len() == 2
+    assert read[0].name == "en0" && read[0].counters == [10, 20, 30, 40, 5, 6, 7, 8]
+    assert read[1].name == "Ethernet é" && read[1].counters[0] == 9223372036854775807 && read[1].counters[7] == 1
+
+test "interfaces_of fails: a name with no end, a counter missing, an empty counter, a sign, a counter past the largest i64, and a name not UTF-8"
+    whole = written(name: "lo0", counters: [1, 2, 3, 4, 5, 6, 7, 8])
+    cut = whole.slice(from: 0, to: whole.len() - 1)
+    empty_counter = written(name: "lo0", counters: [1, 2, 3, 4, 5, 6, 7]).slice(from: 0, to: 18)
+
+    no_end: [u8] = [108, 111, 48]
+
+    for bad in [no_end, cut, empty_counter]
+        match interfaces_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED
+
+    with_empty: [u8] = [108, 111, 48, 0, 0]
+
+    match interfaces_of(with_empty)
+        .ok _  => assert false
+        .err e => assert e.code == codes.FAILED && e.msg.len() > 0
+
+    match interfaces_of(written(name: "lo0", counters: [-1, 2, 3, 4, 5, 6, 7, 8]))
+        .ok _  => assert false
+        .err e => assert e.code == codes.FAILED
+
+    past: [u8] @= [108, 0]
+    add_text(@past, text: "9223372036854775808")
+
+    match interfaces_of(past)
+        .ok _  => assert false
+        .err e => assert e.code == codes.FAILED
+
+    not_text: [u8] = [255, 254, 0]
+
+    match interfaces_of(not_text)
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_TEXT

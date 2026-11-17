@@ -10,9 +10,9 @@
 # `2006-01-02T15:04:05.123Z INFO started port=8080 name="my server"`. The JSON
 # form: one object, `{"time":"…","level":"INFO","msg":"started","port":8080}`.
 #
-# It does not open files, which `fs.open` does, nor buffer, rotate or send
-# lines anywhere: each line is one write of `io` that reaches the system before
-# the call answers. It does not end the program: a program that must stop
+# It does not open files, which `fs.open` does, nor rotate them, which the
+# subpackage `log/files` does, nor buffer or send lines anywhere: each line is
+# one write of `io` that reaches the system before the call answers. It does not end the program: a program that must stop
 # after a line calls `exit` itself. Its time is UTC's, as `time` keeps it.
 #
 # Fails as `io.write` fails the stream: `closed`, `permission`, `failed`, and

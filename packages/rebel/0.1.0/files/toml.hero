@@ -10,13 +10,21 @@
 # and `instant_of` answers the instant where an `Instant` reaches it. The
 # compiler reads its own `heroes.toml` with its own code, not with this.
 #
+# A `Document` is a TOML text edited in place: a value set, added or taken
+# out by its path, every byte the edit does not touch kept, its comments,
+# blank lines, order and spacing with them, as a program needs that writes a
+# file a person also edits.
+#
 # Fails `invalid` where a text is not TOML 1.0.0, the message opening `line L,
 # column C:`, both from 1 and the column in characters; `does_not_fit` where an
-# integer is past an `i64`; `not_found` where a key looked up is not there.
+# integer is past an `i64`; `not_found` where a key looked up is not there;
+# `exists` where a table added is there already.
 
 use json
 use time
 use toml/internal/doc
+use toml/internal/edit
+use toml/internal/layout
 use toml/internal/scalar
 use toml/internal/write
 
@@ -81,9 +89,14 @@ constant INVALID: str
 constant DOES_NOT_FIT: str
     "does_not_fit"
 
-# The code of a key a table does not hold: `value_at`.
+# The code of a key a table does not hold: `value_at`, `value_of`,
+# `remove_value`.
 constant NOT_FOUND: str
     "not_found"
+
+# The code of a table added where something stands already: `add_table`.
+constant EXISTS: str
+    "exists"
 
 # The deepest a value may stand below the document: the keys of its path and
 # the arrays and inline tables around it counted together. `parse` and
@@ -298,6 +311,159 @@ function format(v: Value) -> str?
         nodes[slot] @ node
 
     return write.document_text(nodes)
+
+## Documents edited in place
+
+# A TOML document held as its text, so that an edit changes only the bytes
+# of what it touches: its comments, blank lines, order, quotes and spacing
+# kept everywhere else, as a program that writes a file a person also edits
+# needs.
+#
+# Made by `parse_document` and written by `format_document`. Every edit is
+# read back and held to the tree the same edit makes of the values, so it
+# never leaves text that is not TOML or that reads otherwise; a document built
+# directly from text that is not TOML makes every edit fail `invalid`.
+record Document
+    # The document's text: every byte as read, or as the last edit left it.
+    text: str
+
+# The document `text` holds, to be edited in place.
+#
+# - `text`: the TOML text, LF or CR LF line ends; empty for an empty
+#   document.
+#
+# Fails where `parse` fails on `text`, with its code and message. See also
+# `format_document`.
+function parse_document(text: str) -> Document?
+    _ = doc.parse_document(text)?
+    return ok(Document(text: text))
+
+# The text of `d`: what was read, every byte an edit did not touch the same.
+#
+# - `d`: the document.
+#
+# A document no edit touched is written back byte for byte. See also
+# `parse_document`.
+function format_document(d: Document) -> str
+    return d.text
+
+# The value under `path` in `d`, each step a key of a table or the index of
+# an item of an array.
+#
+# - `d`: the document.
+# - `path`: the steps, outermost first: a key names a member of a table, and
+#   at an array, an array of tables included, a step is an index in decimal
+#   from "0"; empty for the whole document, as a `table`.
+#
+# Fails `not_found` where a table holds no such key or an array no such
+# index, and `invalid` where a step goes into a value that is no table or
+# array or is no index of an array, or where `d` is not TOML; each message
+# names the path that far. See also `value_at`.
+function value_of(d: Document, path: [str]) -> Value?
+    here @= parse(d.text)?
+
+    for at in range(from: 0, to: path.len())
+        so_far = path.slice(from: 0, to: at + 1).join(".")
+
+        match here
+            .table t =>
+                match t.members[path[at]]
+                    .ok found => here @ found
+                    .err _    => return fail(code: NOT_FOUND, msg: f"no key \"{so_far}\"")
+            .array a =>
+                i = layout.step_index(path[at])?
+
+                if i >= a.items.len()
+                    return fail(code: NOT_FOUND, msg: f"no item \"{so_far}\": the array holds {a.items.len()}")
+                here @ a.items[i]
+            .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ =>
+                return fail(code: INVALID, msg: f"\"{so_far}\" asks a key of a value that is not a table")
+
+    return ok(here)
+
+# Sets the value under `path` in `d` to `value`, written as `format` writes
+# it, every other byte of `d` kept.
+#
+# - `d`: the document, changed only where the call answers `ok`.
+# - `path`: the steps, as `value_of` reads them; the tables missing on the
+#   way are made.
+# - `value`: the value; a table, or an array of tables alone, becomes a
+#   section of its own where it is written whole.
+#
+# Where `path` names a key's value, or a value inside an inline table or an
+# array, its bytes alone are replaced. Where it names nothing, a key and its
+# value go at the end of the key lines of the table that holds them, indented
+# as the last of them, before the blank lines and comments that close it; a
+# table goes as a section `[...]` after the last section of the table that
+# holds it, and where a table on the way is missing, a section names it;
+# inside an inline table, after its last member. Where `path` names a table
+# made by headers or dotted keys, it is replaced whole, a section taking the
+# place of the first.
+#
+# Fails `invalid` where `path` is empty, goes through a value that is no
+# table or array, or names no index of an array, or where `value` holds what
+# no TOML writes; `not_found` where it names an entry past an array's end.
+# See also `remove_value`, `add_table`, `add_table_entry`.
+function set_value(@d: Document, path: [str], value: Value) -> ()?
+    one: {str: Value} = {"v": value}
+    d.text @ edit.set_value(text: d.text, path: path, wrapped: format(.table(members: one))?)?
+    return ok()
+
+# Takes what `path` names out of `d`, with its own bytes and no others.
+#
+# - `d`: the document, changed only where the call answers `ok`.
+# - `path`: the steps, as `value_of` reads them; not empty.
+#
+# A key goes with its line and its trailing comment, never a comment above
+# it; a value inside an inline table or an array with its comma, and in an
+# array written across lines with its own line; a table or an entry of an
+# array of tables with its sections, from each header to its last line that
+# is not blank, the empty lines after it, and its keys written dotted
+# elsewhere. The comments that close a section, above the next header, stay.
+#
+# Fails `not_found` where `path` names nothing, `invalid` where it is empty
+# or goes through a value. See also `set_value`.
+function remove_value(@d: Document, path: [str]) -> ()?
+    d.text @ edit.remove_value(text: d.text, path: path)?
+    return ok()
+
+# Adds an empty table at `path` to `d`: a section `[...]` after the last
+# section of the table that holds it, or `{}` inside an inline table.
+#
+# - `d`: the document, changed only where the call answers `ok`.
+# - `path`: the steps, as `value_of` reads them; the tables missing on the
+#   way are made.
+#
+# Fails `exists` where `path` names something already, and as `set_value`
+# fails otherwise. See also `add_table_entry`.
+function add_table(@d: Document, path: [str]) -> ()?
+    d.text @ edit.add_table(text: d.text, path: path)?
+    return ok()
+
+# Appends `entry` to the array of tables `path` names in `d`, and answers the
+# index it takes.
+#
+# - `d`: the document, changed only where the call answers `ok`.
+# - `path`: the steps, as `value_of` reads them, to an array of tables, to
+#   an array written inline, or to nothing, where the array is made with
+#   `entry` alone.
+# - `entry`: a table; written as a section `[[...]]` after the last section
+#   of the array, or as an inline table after the last item of an array
+#   written inline.
+#
+# Fails `invalid` where `entry` is not a table or `path` names a table or a
+# value that is no array, and as `set_value` fails otherwise. See also
+# `add_table`.
+function add_table_entry(@d: Document, path: [str], entry: Value) -> i64?
+    match entry
+        .table _ => _ = 0
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            return fail(code: INVALID, msg: "an entry of an array of tables is a table")
+
+    one: {str: Value} = {"v": .array(items: [entry])}
+    added = edit.add_entry(text: d.text, path: path, wrapped: format(.table(members: one))?)?
+    d.text @ added.text
+    return ok(added.index)
 
 ## JSON
 
@@ -582,6 +748,47 @@ function from_json(v: json.Value) -> Value?
 
 ## Examples
 
+# A dependency added to a catalogue, its comment and its other entry kept.
+test "set_value: a dependency added under its own header"
+    d @= parse_document("# the program's packages\n[dependencies.yaml]\npath = \"../yaml\"\n").must()
+    entry: {str: Value} = {"version": .text(v: "1.4.2")}
+    set_value(@d, path: ["dependencies", "json"], value: .table(members: entry)).must()
+    assert format_document(d) == "# the program's packages\n[dependencies.yaml]\npath = \"../yaml\"\n\n[dependencies.json]\nversion = \"1.4.2\"\n"
+
+# A document read for editing, written back byte for byte.
+test "parse_document: a document with comments written back unchanged"
+    text = "# settings\nname = 'x'   # quoted so\n\n[server]\nport = 8080\n"
+    assert format_document(parse_document(text).must()) == text
+
+# A document's text, as read or as edited.
+test "format_document: the text of a document no edit touched"
+    assert format_document(parse_document("a = 1 # one\n").must()) == "a = 1 # one\n"
+
+# A value read from a document by its path, an entry of an array of tables by
+# its index.
+test "value_of: a key of the second entry of an array of tables"
+    d = parse_document("[[bin]]\nname = \"a\"\n[[bin]]\nname = \"b\"\n").must()
+    assert value_of(d, ["bin", "1", "name"]).must() == .text(v: "b")
+
+# A key taken out with its line and its trailing comment, nothing else.
+test "remove_value: a key and its comment"
+    d @= parse_document("a = 1 # one\nb = 2 # two\n").must()
+    remove_value(@d, ["a"]).must()
+    assert format_document(d) == "b = 2 # two\n"
+
+# An empty table added as a section of its own.
+test "add_table: a section at the end"
+    d @= parse_document("a = 1\n").must()
+    add_table(@d, ["server"]).must()
+    assert format_document(d) == "a = 1\n\n[server]\n"
+
+# An entry appended to an array of tables, after its last section.
+test "add_table_entry: a second entry"
+    d @= parse_document("[[bin]]\nname = \"a\"\n").must()
+    entry: {str: Value} = {"name": .text(v: "b")}
+    assert add_table_entry(@d, path: ["bin"], entry: .table(members: entry)).must() == 1
+    assert format_document(d) == "[[bin]]\nname = \"a\"\n\n[[bin]]\nname = \"b\"\n"
+
 # A small document read, a value taken out of it by its path.
 test "parse: a table and a key in it"
     doc_value = parse("[server]\nhost = \"example.org\"\nport = 8080\n").must()
@@ -655,3 +862,55 @@ test "from_json: whole numbers at the edges of an i64, minus zero, a fraction, n
 test "from_json and to_json: a nested JSON value crosses both ways unchanged"
     v = json.parse("{\"b\": [1, [2.5, \"x\"], {\"c\": true}], \"a\": {}}").must()
     assert to_json(from_json(v).must()).must() == v
+
+test "set_value and remove_value: a catalogue of spec section 1, an entry added by path, a version changed, an entry taken out"
+    text = "# the program's catalogue\n[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-14a8\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d\"\nsum = \"sha256-cdde\"\n"
+    d @= parse_document(text).must()
+    local: {str: Value} = {"path": .text(v: "../rebel")}
+    set_value(@d, path: ["dependencies", "rebel"], value: .table(members: local)).must()
+    assert format_document(d) == text + "\n[dependencies.rebel]\npath = \"../rebel\"\n"
+    set_value(@d, path: ["dependencies", "json", "version"], value: .text(v: "1.5.0")).must()
+    set_value(@d, path: ["dependencies", "json", "sum"], value: .text(v: "sha256-ffff")).must()
+    remove_value(@d, ["dependencies", "yaml"]).must()
+    expected = "# the program's catalogue\n[dependencies.json]\nversion = \"1.5.0\"\nsum = \"sha256-ffff\"\n\n[dependencies.rebel]\npath = \"../rebel\"\n"
+    assert format_document(d) == expected
+    assert value_of(d, ["dependencies", "rebel", "path"]).must() == .text(v: "../rebel")
+
+test "remove_value and set_value: an entry of git turned to one of a version, its other lines kept"
+    text = "[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\" # mirror\ntag = \"v0.3.1\"\ncommit = \"9fceb02d\"\nsum = \"sha256-cdde\"\n\n[dependencies.json]\nversion = \"1.4.2\"\n"
+    d @= parse_document(text).must()
+
+    for key in ["git", "tag", "commit"]
+        remove_value(@d, ["dependencies", "yaml", key]).must()
+
+    set_value(@d, path: ["dependencies", "yaml", "version"], value: .text(v: "0.3.1")).must()
+    expected = "[dependencies.yaml]\nsum = \"sha256-cdde\"\nversion = \"0.3.1\"\n\n[dependencies.json]\nversion = \"1.4.2\"\n"
+    assert format_document(d) == expected
+
+test "value_of: the whole document, an index past an array, a key below a value, and a step that is no index"
+    d = parse_document("a = [1, 2]\n[t]\nx = 1\n").must()
+    assert value_of(d, []).must() == parse("a = [1, 2]\n[t]\nx = 1\n").must()
+    assert value_of(d, ["a", "1"]).must() == .integer(v: 2)
+
+    match value_of(d, ["a", "2"])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no item \"a.2\": the array holds 2"
+
+    match value_of(d, ["t", "x", "y"])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert value_of(d, ["a", "first"]).is_err()
+    assert value_of(d, ["b"]).is_err()
+
+test "parse_document and the edits: a text that is not TOML refused, an edit that fails leaving the document as it was"
+    assert parse_document("a = ").is_err()
+    d @= parse_document("a = 1 # one\n").must()
+    assert set_value(@d, path: ["a", "b"], value: .integer(v: 2)).is_err()
+    assert remove_value(@d, ["z"]).is_err()
+    assert add_table(@d, ["a"]).is_err()
+    assert add_table_entry(@d, path: ["a"], entry: .integer(v: 1)).is_err()
+    assert format_document(d) == "a = 1 # one\n"
+    broken @= Document(text: "a = ")
+    assert set_value(@broken, path: ["b"], value: .integer(v: 1)).is_err()
+    assert format_document(broken) == "a = "

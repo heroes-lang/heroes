@@ -251,6 +251,34 @@ capability machine/memory  the machine's memory, all of it and what is available
   python  -
   note    added 2026-11-17 (queue 46); none of the three offers it on every system: Go's `syscall.Sysinfo` is Linux's alone and its `Freeram` leaves the kernel's cache out, Python reaches the total through `os.sysconf("SC_PHYS_PAGES")` times `SC_PAGE_SIZE` (block machine/limits; 25769803776 here, as `os.memory` and `sysctl hw.memsize` answered) and the free pages through `SC_AVPHYS_PAGES` on Linux alone (absent here); the available is each system's own word, measured: Darwin's free and inactive pages (10579836928 here, against `vm_stat`'s free, speculative and inactive pages read a moment apart), Linux's `MemAvailable` (equal to `/proc/meminfo`'s in the arm64 container, plain and sanitized, and the `sysinfo` fallback equal to MemFree and Buffers there), Windows' `ullAvailPhys` (unrun, the box was off); a container's limit is read by none
 
+capability machine/cpu-times  the time the machine's processors have spent, and the share of it that was busy between two readings
+  heroes  os.cpu_times, os.CpuTimes, os.cpu_usage
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17 (queue 58); psutil's `cpu_times` and `cpu_percent` (PyPI's 101st) the yardstick, none of the three offering it: the machine's sums in integer microseconds where psutil answers float seconds (nanoseconds summed over 256 processors pass 64 bits within a year and a half), `nice` inside `user_us`, `irq` and `softirq` inside `system_us`, `iowait` as `waiting_us` and `steal` as `stolen_us`, guests' time left in the user's where Linux counts it; `cpu_usage` takes two readings the program made, where `cpu_percent(interval)` sleeps between them itself (`os` sleeps not), and counts the user's, the system's and the stolen time busy, a span with no tick 0.0 as psutil answers. Measured 2026-11-17: Darwin's ticks are 1/100 s (`kern.clockrate`; 1593 over 2 s on 8 processors), each processor's 32 bits summed in 64; Linux's equal to `/proc/stat`'s first line times 10,000 µs in the arm64 container, plain and sanitized; Windows' `GetSystemTimes` unrun, the box off
+
+capability machine/cpu-times-each  the time of each processor apart
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    psutil's `cpu_times(percpu=True)` and `cpu_percent(percpu=True)`; Darwin (`host_processor_info`, already read for the sum) and Linux (`/proc/stat`'s `cpuN` lines) give it, Windows only through `NtQuerySystemInformation`, whose page says it may change, or its performance counters: not written for two systems of three
+
+capability process/usage  what a process holds and has spent, by its id: its resident and virtual memory and its processor time
+  heroes  os.process_usage, os.ProcessUsage
+  go      -
+  rust    -
+  python  resource.getrusage, resource.struct_rusage, resource.RUSAGE_SELF, resource.RUSAGE_CHILDREN
+  note    added 2026-11-17 (queue 58); psutil's `Process(pid).memory_info` (rss, vms) and `cpu_times` (user, system) the yardstick; Python's `getrusage` reads only the process itself and its waited children, its `ru_maxrss` the most it ever held, not what it holds; measured 2026-11-17 against `ps -o rss=,vsz=` on Darwin (2,848 KiB and 488,785,824 KiB, equal) and `/proc/<pid>/stat` in the arm64 container (357 pages and 2,473,984 bytes, equal); Darwin's times converted by `mach_timebase_info` (125/3 here: 8,516,289 units were `getrusage`'s 0.354845 s); Darwin refuses another user's process (`permission`, pid 1 here) where Linux reads it; Windows' virtual is the bytes committed for the process (`PagefileUsage`), its resident the working set, unrun; a child's time once it ended is `process.cpu_of`'s, and a volume's space, psutil's `disk_usage`, is `fs.space` (block fs/space)
+
+capability network/counters  the counters of every network interface: bytes, packets, errors and dropped packets, each way
+  heroes  os.network_counters, os.NetworkCounters
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17 (queue 58); psutil's `net_io_counters(pernic=True)` the yardstick, one record per interface (a sum over them is a loop of the program's); Darwin's are the interface MIB's exact 64-bit counts (`IFMIB_IFDATA`), measured equal to `netstat -ib` (31,016,318,425 bytes received on en0) where `sysctl`'s `NET_RT_IFLIST2` and `getifaddrs` gave this process 950,809,600, cut to 32 bits and rounded to KiB; its dropped sent are its send queue's, 32 bits; Linux's `/proc/net/dev`, equal in the arm64 container; Windows' `GetIfTable2`, its filter interfaces left out since they count again what is below them, unrun
+
 capability machine/family  whether the system is Windows or keeps POSIX's rules
   heroes  os.family
   go      -

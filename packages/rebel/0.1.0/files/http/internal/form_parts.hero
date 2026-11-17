@@ -1,0 +1,459 @@
+# A `multipart/form-data` body read, RFC 7578 over RFC 2046 § 5.1: the parts
+# between its boundaries, each part's head and bytes, its form name and file
+# name from `Content-Disposition`, every count and size bounded before it is
+# held. A line may end with a line feed alone, as Go and werkzeug read it;
+# the preamble and the epilogue are passed over.
+
+use bytes
+use http/internal/params
+use http/internal/syntax
+use strings
+
+# A field of a part's head, as read.
+record Line
+    # The name, as written.
+    name: str
+    # The value, without the spaces around it.
+    value: str
+
+# One part read: the face's `FormPart`, field for field.
+record Piece
+    # The form field's name, from `Content-Disposition`.
+    name: str
+    # The file's name, from `filename*` or `filename`; "" for none.
+    filename: str
+    # Whether `Content-Disposition` names a file, an empty name included.
+    is_file: bool
+    # The part's `Content-Type` as written; "" for none.
+    content_type: str
+    # Every field of the part's head, in order.
+    headers: [Line]
+    # The part's bytes.
+    data: [u8]
+
+# The bounds a body is read within: the face's `PartLimits`, field for field.
+record Bounds
+    # The most parts.
+    parts: i64
+    # The most bytes of one part's head.
+    head_bytes: i64
+    # The most bytes of one part's data.
+    part_bytes: i64
+    # The most bytes of the whole body.
+    body_bytes: i64
+
+# Where a boundary line ends, and whether it closes the body.
+record Mark
+    # The index of the byte after the boundary line, its line end included.
+    after: i64
+    # Whether it is the closing boundary, `--boundary--`.
+    closing: bool
+
+# The parts of `body`, whose boundary is `boundary`, within `bounds`. Fails
+# `invalid` where the boundary is not one RFC 2046 allows, no boundary line
+# opens the parts, a part's head does not read or names no form field, or the
+# body ends before its closing boundary; `limit` past a bound; `not_text`
+# where a head's bytes are not UTF-8.
+function parse(body: [u8], boundary: str, bounds: Bounds) -> [Piece]?
+    if boundary.len() == 0 || boundary.len() > 70
+        return fail(
+            code: syntax.INVALID,
+            msg: f"reading a multipart body: the boundary {syntax.shown(boundary)} is not of 1 to 70 bytes"
+        )
+
+    if body.len() > bounds.body_bytes
+        return fail(
+            code: syntax.LIMIT,
+            msg: f"reading a multipart body: its {body.len()} bytes pass the limit of {bounds.body_bytes}"
+        )
+    dash = bytes.from_text("--" + boundary)
+    line_dash = bytes.from_text("\n--" + boundary)
+    mark @= first_mark(body: body, dash: dash, line_dash: line_dash)?
+    out: [Piece] @= []
+
+    while !mark.closing
+        if out.len() >= bounds.parts
+            return fail(code: syntax.LIMIT, msg: f"reading a multipart body: it holds more than {bounds.parts} parts")
+        head_end = head_end_of(body, from: mark.after, most: bounds.head_bytes)?
+        lines = head_lines(body.slice(from: mark.after, to: head_end.text_end))?
+        start = head_end.after
+        next = next_mark(body: body, from: start, line_dash: line_dash)?
+        end: i64 @= next.at
+
+        if end > start && body[end - 1] == '\r'
+            end @ end - 1
+
+        if end - start > bounds.part_bytes
+            return fail(
+                code: syntax.LIMIT,
+                msg: f"reading a multipart body: part {out.len() + 1} holds {end - start} bytes, past the limit of {bounds.part_bytes}"
+            )
+        out @ out.push(piece_of(lines, data: body.slice(from: start, to: end), number: out.len() + 1)?)
+        mark @ Mark(after: next.after, closing: next.closing)
+
+    return ok(out)
+
+# The first boundary line of `body`: at its start or after a line end.
+function first_mark(body: [u8], dash: [u8], line_dash: [u8]) -> Mark?
+    if starts_at(body: body, at: 0, with: dash)
+        match line_after(body, at: dash.len())
+            .ok m  => return ok(m)
+            .err _ => _ = 0
+
+    next = next_mark(body: body, from: 0, line_dash: line_dash)?
+    return ok(Mark(after: next.after, closing: next.closing))
+
+# A boundary line found: where its line end before it begins, and where it
+# ends.
+record Found
+    # The index of the line feed before the boundary.
+    at: i64
+    # The index of the byte after the boundary line.
+    after: i64
+    # Whether it closes the body.
+    closing: bool
+
+# The next boundary line of `body` from `from`: a line feed, the boundary,
+# then `--`, or spaces and a line end. Fails `invalid` where none comes
+# before the end.
+function next_mark(body: [u8], from: i64, line_dash: [u8]) -> Found?
+    k: i64 @= from
+
+    while true
+        at = match bytes.index_of_from(s: body, substr: line_dash, from: k)
+            .ok got => got
+            .err _ => return fail(
+                code: syntax.INVALID,
+                msg: "reading a multipart body: it ends before its closing boundary"
+            )
+
+        match line_after(body, at: at + line_dash.len())
+            .ok m  => return ok(Found(at: at, after: m.after, closing: m.closing))
+            .err _ => _ = 0
+
+        # The boundary's bytes begin a longer word: no boundary line here.
+        k @ at + 1
+
+# What follows a boundary at `at`: `--` closes the body; else spaces and tabs,
+# then a line end. Fails `not_found` where it is a longer word.
+function line_after(body: [u8], at: i64) -> Mark?
+    if at + 1 < body.len() && body[at] == '-' && body[at + 1] == '-'
+        return ok(Mark(after: body.len(), closing: true))
+    k: i64 @= at
+
+    while k < body.len() && (body[k] == ' ' || body[k] == '\t')
+        k @ k + 1
+
+    if k < body.len() && body[k] == '\n'
+        return ok(Mark(after: k + 1, closing: false))
+
+    if k + 1 < body.len() && body[k] == '\r' && body[k + 1] == '\n'
+        return ok(Mark(after: k + 2, closing: false))
+    return fail(code: "not_found", msg: "no boundary line")
+
+# Whether `body` holds `with` at `at`.
+function starts_at(body: [u8], at: i64, with: [u8]) -> bool
+    if at + with.len() > body.len()
+        return false
+    k: i64 @= 0
+
+    while k < with.len()
+        if body[at + k] != with[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# Where a part's head ends: the end of its text, and the byte after its
+# empty line.
+record HeadEnd
+    # The index where the head's text, its last line end included, ends.
+    text_end: i64
+    # The index of the part's first byte of data.
+    after: i64
+
+# The end of the head beginning at `from`: its first empty line. Fails
+# `limit` where the head passes `most` bytes, `invalid` where the body ends
+# first.
+function head_end_of(body: [u8], from: i64, most: i64) -> HeadEnd?
+    k: i64 @= from
+    line_start: i64 @= from
+
+    while k < body.len()
+        if k - from > most
+            return fail(
+                code: syntax.LIMIT,
+                msg: f"reading a multipart body: a part's head passes the limit of {most} bytes"
+            )
+
+        if body[k] == '\n'
+            blank = k == line_start || k == line_start + 1 && body[line_start] == '\r'
+
+            if blank
+                return ok(HeadEnd(text_end: line_start, after: k + 1))
+            line_start @ k + 1
+        k @ k + 1
+
+    return fail(code: syntax.INVALID, msg: "reading a multipart body: it ends inside a part's head")
+
+# The fields of a head's text `text`, its lines ending with a line feed, a
+# carriage return before it dropped; a line beginning with a space or a tab
+# goes on the line before, as Go reads it. Fails `not_text` where the text is
+# not UTF-8, `invalid` where a line has no `:` or no name.
+function head_lines(text: [u8]) -> [Line]?
+    read = bytes.to_text(text)?
+    out: [Line] @= []
+
+    for raw in strings.split(s: read, sep: "\n")
+        one = strings.trim_suffix(s: raw, suffix: "\r")
+
+        if one == ""
+            continue
+
+        if one[0] == ' ' || one[0] == '\t'
+            if out.len() == 0
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"reading a multipart body: a part's head begins with a folded line, {syntax.shown(one)}"
+                )
+            last = out[out.len() - 1]
+            out[out.len() - 1] @ Line(name: last.name, value: syntax.trim_ows(last.value + " " + syntax.trim_ows(one)))
+            continue
+
+        halves = match strings.split_once(s: one, sep: ":")
+            .ok h => h
+            .err _ => return fail(
+                code: syntax.INVALID,
+                msg: f"reading a multipart body: the head line {syntax.shown(one)} has no `:`"
+            )
+
+        if !syntax.is_token(halves.before)
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading a multipart body: the head line {syntax.shown(one)} has no name"
+            )
+        out @ out.push(Line(name: halves.before, value: syntax.trim_ows(halves.after)))
+
+    return ok(out)
+
+# The part whose head is `lines` and whose bytes are `data`, the `number`th.
+# Fails `invalid` where it has no `Content-Disposition: form-data` naming a
+# field, or that field does not read.
+function piece_of(lines: [Line], data: [u8], number: i64) -> Piece?
+    disposition: str @= ""
+    found: bool @= false
+    content_type: str @= ""
+
+    for l in lines
+        if syntax.same_name(a: l.name, b: "Content-Disposition")
+            disposition @ l.value
+            found @ true
+        else if syntax.same_name(a: l.name, b: "Content-Type")
+            content_type @ l.value
+
+    if !found
+        return fail(code: syntax.INVALID, msg: f"reading a multipart body: part {number} has no Content-Disposition")
+    read = params.read(disposition)?
+
+    if strings.to_lower_ascii(read.first) != "form-data"
+        return fail(
+            code: syntax.INVALID,
+            msg: f"reading a multipart body: part {number} is {syntax.shown(read.first)}, not form-data"
+        )
+
+    name = match params.value_of(read.pairs, name: "name")
+        .ok n  => unescaped(n)
+        .err _ => return fail(code: syntax.INVALID, msg: f"reading a multipart body: part {number} names no form field")
+
+    filename: str @= ""
+    is_file: bool @= false
+
+    match params.value_of(read.pairs, name: "filename")
+        .ok f =>
+            filename @ unescaped(f)
+            is_file @ true
+        .err _ => _ = 0
+
+    match params.value_of(read.pairs, name: "filename*")
+        .ok f =>
+            filename @ extended(f)?
+            is_file @ true
+        .err _ => _ = 0
+
+    return ok(
+        Piece(name: name, filename: filename, is_file: is_file, content_type: content_type, headers: lines, data: data)
+    )
+
+# `s` with `%22`, `%0D` and `%0A` read as `"`, a carriage return and a line
+# feed, in either case, as the HTML standard writes them in a form's names
+# and werkzeug reads them back.
+function unescaped(s: str) -> str
+    if !strings.contains(s: s, substr: "%")
+        return s
+    out: [str] @= []
+    from: i64 @= 0
+    k: i64 @= 0
+
+    while k + 2 < s.len()
+        if s[k] == '%'
+            pair = strings.to_upper_ascii(s.slice(from: k + 1, to: k + 3))
+
+            byte = match pair
+                "22" => "\""
+                "0D" => "\r"
+                "0A" => "\n"
+                _    => ""
+
+            if byte != ""
+                out @ out.push(s.slice(from: from, to: k))
+                out @ out.push(byte)
+                k @ k + 3
+                from @ k
+                continue
+        k @ k + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+# An RFC 5987 value, `UTF-8''%E2%82%AC.txt`: its charset, UTF-8 or ISO-8859-1
+# in any case, a language, and the bytes written with `%` escapes. Fails
+# `invalid` where it is not of that shape, `not_text` where its bytes are not
+# text in its charset.
+function extended(s: str) -> str?
+    first = strings.split_once(s: s, sep: "'")?
+    second = strings.split_once(s: first.after, sep: "'")?
+    charset = strings.to_lower_ascii(first.before)
+    out: [u8] @= []
+    k: i64 @= 0
+
+    while k < second.after.len()
+        b = second.after[k]
+
+        if b == '%'
+            if k + 2 >= second.after.len()
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"reading the file name {syntax.shown(s)}: an escape is cut short"
+                )
+            out @ out.push(
+                to_u8(syntax.hexadecimal(s: second.after.slice(from: k + 1, to: k + 3), what: "an escape")?)?
+            )
+            k @ k + 3
+        else
+            out @ out.push(b)
+            k @ k + 1
+
+    if charset == "utf-8"
+        return bytes.to_text(out)
+
+    if charset == "iso-8859-1"
+        pieces: [str] @= []
+
+        for b in out
+            pieces @ pieces.push(latin1_char(b))
+
+        return ok(pieces.join(""))
+    return fail(
+        code: syntax.INVALID,
+        msg: f"reading the file name {syntax.shown(s)}: the charset {syntax.shown(first.before)} is not UTF-8 or ISO-8859-1"
+    )
+
+# The character of the Latin-1 byte `b`, as UTF-8.
+function latin1_char(b: u8) -> str
+    if b < 128
+        return bytes.to_text([b]).must()
+    return bytes.to_text([to_u8(192 + to_i64(b).must() / 64).must(), to_u8(128 + to_i64(b).must() % 64).must()]).must()
+
+## Tests
+
+# The usual bounds of the tests.
+function wide() -> Bounds
+    return Bounds(parts: 10, head_bytes: 1000, part_bytes: 1000, body_bytes: 10_000)
+
+# The parts of `text`, boundary `B`, within `wide`.
+function parts_of_text(text: str) -> [Piece]?
+    return parse(bytes.from_text(text), boundary: "B", bounds: wide())
+
+test "parse: a field and a file, as Go's mime/multipart reads them"
+    got = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B\r\nContent-Disposition: form-data; name=\"f\"; filename=\"x.txt\"\r\nContent-Type: text/plain\r\n\r\nhi\r\n--B--\r\n"
+    ).must()
+    assert got.len() == 2 && got[0].name == "a" && got[0].filename == "" && !got[0].is_file && got[0].data == [49]
+    assert got[1].name == "f" && got[1].filename == "x.txt" && got[1].is_file && got[1].content_type == "text/plain" && got[1].data == [104, 105]
+    assert got[1].headers.len() == 2 && got[1].headers[1] == Line(name: "Content-Type", value: "text/plain")
+
+test "parse: no part, line feeds alone, a preamble and an epilogue, spaces after a boundary, no line end after the last"
+    assert parts_of_text("--B--\r\n").must().len() == 0
+    assert parts_of_text("--B\nContent-Disposition: form-data; name=\"a\"\n\n1\n--B--\n").must()[0].data == [49]
+    assert parts_of_text("junk\r\n--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B--\r\nepilogue").must()[0].data == [49]
+    assert parts_of_text("--B \t \r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B--  \r\n").must()[0].name == "a"
+    assert parts_of_text("--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B--").must().len() == 1
+
+test "parse: the boundary inside a part's bytes and at the start of a longer word, empty data, data of line ends"
+    inside = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\nx--B y\r\n--Bz\r\nw\r\n--B--\r\n"
+    ).must()
+    assert bytes.to_text(inside[0].data).must() == "x--B y\r\n--Bz\r\nw"
+    assert parts_of_text("--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n\r\n--B--\r\n").must()[0].data.len() == 0
+    assert parts_of_text("--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n\r\n\r\n\r\n--B--\r\n").must()[0].data == [13, 10, 13, 10]
+
+test "parse: a folded line, names in any case, unquoted values, escapes, filename* over filename, an empty file name, UTF-8"
+    folded = parts_of_text("--B\r\nContent-Disposition: form-data;\r\n name=\"a\"\r\n\r\n1\r\n--B--\r\n").must()
+    assert folded[0].name == "a"
+    assert parts_of_text("--B\r\ncontent-disposition: FORM-DATA; NAME=\"a\"\r\n\r\n1\r\n--B--\r\n").must()[0].name == "a"
+    plain = parts_of_text("--B\r\nContent-Disposition: form-data; name=a; filename=b.txt\r\n\r\n1\r\n--B--\r\n").must()
+    assert plain[0].name == "a" && plain[0].filename == "b.txt"
+    escaped = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"a%22b\"; filename=\"q%22%0d.txt\"\r\n\r\n1\r\n--B--\r\n"
+    ).must()
+    assert escaped[0].name == "a\"b" && escaped[0].filename == "q\"\r.txt"
+    star = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"f\"; filename=\"x\"; filename*=UTF-8''%E2%82%AC.txt\r\n\r\n1\r\n--B--\r\n"
+    ).must()
+    assert star[0].filename == "€.txt"
+    latin = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"f\"; filename*=iso-8859-1'en'caf%E9\r\n\r\n1\r\n--B--\r\n"
+    ).must()
+    assert latin[0].filename == "café"
+    empty = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"f\"; filename=\"\"\r\n\r\n\r\n--B--\r\n"
+    ).must()
+    assert empty[0].is_file && empty[0].filename == ""
+    assert parts_of_text("--B\r\nContent-Disposition: form-data; name=\"café\"; filename=\"€.txt\"\r\n\r\n1\r\n--B--\r\n").must()[0].filename == "€.txt"
+    path = parts_of_text(
+        "--B\r\nContent-Disposition: form-data; name=\"g\"; filename=\"a/b/../c.txt\"\r\n\r\n2\r\n--B--\r\n"
+    ).must()
+    assert path[0].filename == "a/b/../c.txt"
+
+test "parse fails invalid: nothing, no closing boundary, a part with no disposition, another disposition, no name, a line with no colon, a name twice"
+    for bad in ["", "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n", "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B\r\n", "--B\r\nContent-Type: text/plain\r\n\r\n1\r\n--B--\r\n", "--B\r\nContent-Disposition: attachment; name=\"a\"\r\n\r\n1\r\n--B--\r\n", "--B\r\nContent-Disposition: form-data\r\n\r\n1\r\n--B--\r\n", "--B\r\nno colon here\r\n\r\n1\r\n--B--\r\n", "--B\r\nContent-Disposition: form-data; name=\"a\"; name=\"b\"\r\n\r\n1\r\n--B--\r\n", "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n", "--B\r\n Content-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B--\r\n"]
+        match parts_of_text(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    for boundary in ["", "x".repeat(71)]
+        assert parse([], boundary: boundary, bounds: wide()).is_err()
+
+test "parse fails limit: a body, a part, a head and a count past their bounds, each at the bound passing"
+    one = "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n12345\r\n--B--\r\n"
+    data = bytes.from_text(one)
+    assert parse(data, boundary: "B", bounds: Bounds(parts: 1, head_bytes: 100, part_bytes: 5, body_bytes: data.len())).must().len() == 1
+
+    for b in [Bounds(parts: 1, head_bytes: 100, part_bytes: 5, body_bytes: data.len() - 1), Bounds(parts: 1, head_bytes: 100, part_bytes: 4, body_bytes: 1000), Bounds(parts: 1, head_bytes: 10, part_bytes: 5, body_bytes: 1000), Bounds(parts: 0, head_bytes: 100, part_bytes: 5, body_bytes: 1000)]
+        match parse(data, boundary: "B", bounds: b)
+            .ok _  => assert false
+            .err e => assert e.code == "limit"
+
+test "parse fails not_text: a head that is not UTF-8"
+    body = bytes.concat(
+        [bytes.from_text("--B\r\nContent-Disposition: form-data; name=\""), [255], bytes.from_text("\"\r\n\r\n1\r\n--B--\r\n")]
+    )
+
+    match parse(body, boundary: "B", bounds: wide())
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+test "unescaped and extended: nothing to read, every escape, a percent of another kind, a cut escape, another charset"
+    assert unescaped("plain") == "plain" && unescaped("%22%0A%0d%41%") == "\"\n\r%41%"
+    assert extended("UTF-8''a%20b").must() == "a b" && extended("utf-8''%E2%8").is_err()
+    assert extended("koi8-r''x").is_err() && extended("no quotes").is_err() && extended("UTF-8''%FF").is_err()

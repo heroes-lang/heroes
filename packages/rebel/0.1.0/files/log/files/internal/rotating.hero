@@ -1,0 +1,269 @@
+# The disk's side of a rotating log: the file opened to append, set aside
+# under an old file's name, the old files listed, compressed and removed.
+# What `log/files` asks for its lines.
+#
+# Nothing here loses a byte: an old file is renamed and never copied; one
+# compressed is written beside itself under a temporary name, renamed into
+# place, and only then removed, so a failure on the way leaves the old file
+# whole; a name taken already is never written over.
+
+use compress
+use fs
+use io
+use log/files/internal/fixture
+use log/files/internal/names
+use path as paths
+use time
+
+# The most counts tried after one stamp before a rotation gives up: a
+# millisecond holding more old files than this is a program rotating without
+# end.
+constant MOST_COUNTS: i64
+    1000
+
+# A log's file opened to append, and what it held then.
+record Opened
+    # The file, open to append; the caller closes it.
+    stream: io.Stream
+    # The bytes it held.
+    size: i64
+    # When it was last written, where it held anything.
+    written: time.Instant
+
+# The log at `at` cut into the folder it stands in, its stem and its
+# extension.
+record Parts
+    # The folder, "." where the path names none.
+    dir: str
+    # The name without its extension.
+    stem: str
+    # The extension with its dot, or "".
+    ext: str
+
+# `at` cut into its folder, stem and extension. Fails `invalid` where `at`
+# ends in no name, or in a separator, which names a folder.
+function parts_of(at: str) -> Parts?
+    if paths.has_trailing_sep(at)
+        return fail(code: "invalid", msg: f"\"{at}\" ends in a separator, so it names a folder and no file")
+
+    match paths.name(at)
+        .err _ => return fail(code: "invalid", msg: f"\"{at}\" names no file")
+        .ok _  => _ = 0
+
+    return ok(Parts(dir: paths.parent(at), stem: paths.stem(at)?, ext: paths.ext(at).default("")))
+
+# The file `at` opened to append, made where it is not there with the
+# permission 0o666 less the process's mask, and the folders on its way made.
+# Fails as `fs.make_dir_all`, `fs.open_with` and `fs.info` fail.
+function opened(at: str) -> Opened?
+    parts = parts_of(at)?
+
+    if parts.dir != "." && parts.dir != ""
+        fs.make_dir_all(parts.dir)?
+    s @= fs.open_with(at, access: .append, permission: 0o666)?
+
+    match fs.info(at)
+        .ok facts => return ok(Opened(stream: s, size: facts.size, written: facts.written))
+        .err e =>
+            _ = io.close(@s).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# The old files of the log at `at` in its folder, the newest first. Fails as
+# `fs.read_dir` fails.
+function olds_of(at: str) -> [names.Old]?
+    parts = parts_of(at)?
+    found: [names.Old] @= []
+
+    for entry in fs.read_dir(parts.dir)?
+        if entry.kind == .file
+            match names.old_of(name: entry.name, stem: parts.stem, ext: parts.ext)
+                .ok old => found @ found.push(old)
+                .err _  => _ = 0
+
+    return ok(names.newest_first(found))
+
+# Whether anything is at `at`. Fails where the system will not say.
+function taken(at: str) -> bool?
+    return fs.exists(at)
+
+# Renames the log at `at` to the first old name of the stamp of `last` that
+# nothing holds, plain or compressed, and answers that path. Fails `limit`
+# where `MOST_COUNTS` names of that stamp are all taken, and as `fs.rename`
+# fails, the log then where it was.
+function set_aside(at: str, last: time.Instant) -> str?
+    parts = parts_of(at)?
+    when = names.stamp(last)
+    count: i64 @= 0
+
+    while count < MOST_COUNTS
+        target = paths.join_all([parts.dir, names.old_name(stem: parts.stem, ext: parts.ext, at: when, count: count)])
+
+        if !taken(target)? && !taken(target + ".gz")?
+            fs.rename(from: at, to: target)?
+            return ok(target)
+        count @ count + 1
+
+    return fail(
+        code: "limit",
+        msg: f"setting \"{at}\" aside: {MOST_COUNTS} old files of the stamp {when} are there already"
+    )
+
+# Answers `first` where it failed, else `second`.
+function first_failure(first: ()?, second: ()?) -> ()?
+    match first
+        .err e => return fail(code: e.code, msg: e.msg)
+        .ok _  => return second
+
+# Gzips the old file `at` into `at` with `.gz` added, through a file beside
+# it that is renamed into place, then removes `at`. Fails as the reads, the
+# writes, the rename and the removal fail; `at` stays whole until the
+# compressed file is in place.
+function compressed(at: str) -> ()?
+    temporary = at + ".gz.tmp"
+    from @= fs.open(at)?
+
+    match fs.open_with(temporary, access: .write, permission: 0o666)
+        .err e =>
+            _ = io.close(@from).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok opened_to =>
+            to @= opened_to
+            done = compress.compress_stream(from: from, to: to, options: compress.defaults(.gzip))
+            closed_from = io.close(@from)
+            closed_to = io.close(@to)
+
+            match done
+                .err e =>
+                    _ = fs.remove(temporary).is_err()
+                    return fail(code: e.code, msg: e.msg)
+                .ok _ => _ = 0
+
+            match first_failure(first: closed_to, second: closed_from)
+                .err e =>
+                    _ = fs.remove(temporary).is_err()
+                    return fail(code: e.code, msg: e.msg)
+                .ok _ => _ = 0
+
+    fs.rename(from: temporary, to: at + ".gz")?
+    return fs.remove(at)
+
+# The old files of the log at `at` put in order: each one not compressed
+# gzipped where `zip` asks, then those past the newest `keep` and those whose
+# stamp is more than `keep_days` days before `now` removed. Fails on the
+# first file it cannot compress or remove, the others left for the next
+# rotation.
+function tidied(at: str, zip: bool, keep: i64, keep_days: i64, now: time.Instant) -> ()?
+    parts = parts_of(at)?
+    olds = olds_of(at)?
+    newest_day = names.day_of(now)
+
+    for index in range(from: 0, to: olds.len())
+        old = olds[index]
+        full = paths.join_all([parts.dir, old.name])
+        too_many = keep > 0 && index >= keep
+        too_old = keep_days > 0 && newest_day - names.day_of(names.parse_stamp(old.stamp)?) > keep_days
+
+        if too_many || too_old
+            fs.remove(full)?
+        else if zip && !old.compressed
+            compressed(full)?
+
+    return ok()
+
+# The paths of the old files of the log at `at`, the newest first. Fails
+# as `olds_of` fails.
+function old_paths(at: str) -> [str]?
+    parts = parts_of(at)?
+    out: [str] @= []
+
+    for old in olds_of(at)?
+        out @ out.push(paths.join_all([parts.dir, old.name]))
+
+    return ok(out)
+
+## Tests
+
+# The names of the files in `dir`, sorted.
+function listed(dir: str) -> [str]
+    out: [str] @= []
+
+    for entry in fs.read_dir(dir).must()
+        out @ out.push(entry.name)
+
+    return out
+
+test "parts_of: a folder, none, no extension, and a path ending in no name"
+    assert parts_of("logs/app.log").must() == Parts(dir: "logs", stem: "app", ext: ".log")
+    assert parts_of("app").must() == Parts(dir: ".", stem: "app", ext: "")
+
+    for bad in ["logs/", "", "/"]
+        match parts_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "opened: a file made with its folders, and one there kept and appended to"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "a", "b", "app.log"])
+    first @= opened(log_at).must()
+    assert first.size == 0
+    assert !io.write_text(first.stream, "one\n").is_err()
+    assert !io.close(@first.stream).is_err()
+    second @= opened(log_at).must()
+    assert second.size == 4
+    assert !io.write_text(second.stream, "two\n").is_err()
+    assert !io.close(@second.stream).is_err()
+    assert read_file(log_at).must() == "one\ntwo\n"
+    assert !fs.remove_all(dir).is_err()
+
+test "set_aside: the stamp of the last line, a count past a name taken plain or compressed, and nothing there"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "app.log"])
+    last = fixture.at("2026-11-17T10:20:30.123Z")
+    assert !write_file(path: log_at, text: "a\n").is_err()
+    first = set_aside(log_at, last: last).must()
+    assert first == paths.join_all([dir, "app-2026-11-17T10-20-30.123.log"])
+    assert !write_file(path: log_at, text: "b\n").is_err()
+    assert !write_file(path: paths.join_all([dir, "app-2026-11-17T10-20-30.123-1.log.gz"]), text: "").is_err()
+    second = set_aside(log_at, last: last).must()
+    assert second == paths.join_all([dir, "app-2026-11-17T10-20-30.123-2.log"])
+    assert read_file(first).must() == "a\n" && read_file(second).must() == "b\n"
+
+    match set_aside(log_at, last: last)
+        .ok _  => assert false
+        .err e => assert e.code == fs.FILE_NOT_FOUND
+
+    assert !fs.remove_all(dir).is_err()
+
+test "compressed: an old file gzipped beside itself and removed, its bytes read back the same"
+    dir = fixture.folder()
+    old = paths.join_all([dir, "app-2026-11-17T10-20-30.123.log"])
+    text = "a line of the log\n".repeat(200)
+    assert !write_file(path: old, text: text).is_err()
+    assert !compressed(old).is_err()
+    assert listed(dir) == ["app-2026-11-17T10-20-30.123.log.gz"]
+    data = fs.read_bytes(old + ".gz").must()
+    assert data.len() < text.len()
+    assert compress.decompress(data, format: .gzip, limit: 1 << 20).must().validated_bytes().must() == text
+
+    match compressed(paths.join_all([dir, "none.log"]))
+        .ok _  => assert false
+        .err e => assert e.code == fs.FILE_NOT_FOUND
+
+    assert !fs.remove_all(dir).is_err()
+
+test "olds_of and tidied: other files left alone, the newest kept, the old by days removed, the rest compressed"
+    dir = fixture.folder()
+    log_at = paths.join_all([dir, "app.log"])
+
+    for name in ["app.log", "other.log", "app-2026-11-10T00-00-00.000.log", "app-2026-11-15T00-00-00.000.log.gz", "app-2026-11-16T00-00-00.000.log", "app-2026-11-16T00-00-00.000-1.log", "app-notes.log"]
+        assert !write_file(path: paths.join_all([dir, name]), text: "x\n").is_err()
+
+    olds = olds_of(log_at).must()
+    assert olds.len() == 4 && olds[0].name == "app-2026-11-16T00-00-00.000-1.log"
+    assert !tidied(log_at, zip: false, keep: 0, keep_days: 0, now: fixture.at("2026-11-17T00:00:00Z")).is_err()
+    assert olds_of(log_at).must().len() == 4
+    assert !tidied(log_at, zip: true, keep: 3, keep_days: 5, now: fixture.at("2026-11-17T12:00:00Z")).is_err()
+    assert listed(dir) == ["app-2026-11-15T00-00-00.000.log.gz", "app-2026-11-16T00-00-00.000-1.log.gz", "app-2026-11-16T00-00-00.000.log.gz", "app-notes.log", "app.log", "other.log"]
+    assert !tidied(log_at, zip: true, keep: 1, keep_days: 0, now: fixture.at("2026-11-17T12:00:00Z")).is_err()
+    assert listed(dir) == ["app-2026-11-16T00-00-00.000-1.log.gz", "app-notes.log", "app.log", "other.log"]
+    assert !fs.remove_all(dir).is_err()

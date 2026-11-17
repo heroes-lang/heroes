@@ -15,6 +15,7 @@
 
 use numbers/internal/fault
 use numbers/internal/forms
+use numbers/internal/half
 use numbers/internal/layout
 use numbers/internal/near
 use numbers/internal/radix
@@ -284,6 +285,54 @@ function format_float_hex(x: f64) -> str
 function round_to(x: f64, decimals: i64) -> f64
     return forms.round_to(x: x, decimals: decimals)
 
+## Half-precision floats
+
+# The bits of the half-precision float (IEEE 754's binary16) nearest to `x`,
+# ties going to the even one.
+#
+# - `x`: any `f64`; a value past the largest half, 65504, by half a step or
+#   more (65520 and above) is an infinity of its sign, a value under half the
+#   smallest half above zero (2 to the -24th) a zero of its sign, and every
+#   NaN the quiet NaN 0x7e00.
+#
+# A half is 1 sign bit, 5 bits of exponent biased by 15 and 10 of fraction,
+# the sign highest. A NaN loses its sign and its payload, which the language
+# does not read. See also `f32_to_f16_bits` and `f16_bits_to_f64`.
+function f64_to_f16_bits(x: f64) -> u16
+    return to_u16(half.bits_of(x)).must()
+
+# The bits of the half-precision float nearest to `x`, an `f32`, ties going
+# to the even one, as `f64_to_f16_bits` rounds the same value.
+#
+# - `x`: any `f32`; 65520 and above is an infinity of its sign, and every NaN
+#   the quiet NaN 0x7e00.
+#
+# The `f32` is widened exactly before it is rounded, so it is rounded once.
+# See also `f16_bits_to_f32`.
+function f32_to_f16_bits(x: f32) -> u16
+    return to_u16(half.bits_of(to_f64(x))).must()
+
+# The value the half-precision float `bits` holds, as an `f64`, exactly.
+#
+# - `bits`: a binary16's 16 bits, the sign highest; every one of the 65536 is
+#   a value: an exponent of all ones is an infinity with a fraction of zero
+#   and a NaN with any other.
+#
+# The answer is one of the halves, 65504 at most either way, the infinities,
+# or the language's one NaN; `f64_to_f16_bits` gives `bits` back for every
+# value that is not a NaN. See also `f16_bits_to_f32`.
+function f16_bits_to_f64(bits: u16) -> f64
+    return half.value_of(to_i64(bits).must())
+
+# The value the half-precision float `bits` holds, as an `f32`, exactly.
+#
+# - `bits`: a binary16's 16 bits, the sign highest, read as
+#   `f16_bits_to_f64` reads them.
+#
+# Every half is an `f32` exactly. See also `f32_to_f16_bits`.
+function f16_bits_to_f32(bits: u16) -> f32
+    return to_f32(half.value_of(to_i64(bits).must()))
+
 ## Booleans
 
 # The boolean `s` spells: `true` for "true" and `false` for "false", the two
@@ -486,3 +535,26 @@ test "with_sign, unsigned_zero and group_digits: the text of a number reshaped"
     assert unsigned_zero("-0.01") == "-0.01"
     assert group_digits(s: "1234567", sep: ",", size: 3) == "1,234,567"
     assert group_digits(s: format_u64_literal(n: 16777215, base: 16), sep: "_", size: 4) == "0xff_ffff"
+
+## Examples
+
+# A float rounded to the half-precision float nearest to it, as a GPU or a
+# model's weights store it.
+test "f64_to_f16_bits: one and a third, and a value past the largest half"
+    assert f64_to_f16_bits(1.0 / 3.0) == 0x3555
+    assert f64_to_f16_bits(65520.0) == 0x7c00
+
+# An `f32` rounded to half precision.
+test "f32_to_f16_bits: one tenth"
+    tenth: f32 = 0.1
+    assert f32_to_f16_bits(tenth) == 0x2e66
+
+# A half's bits read back as the value they hold.
+test "f16_bits_to_f64: the largest half and the smallest above zero"
+    assert f16_bits_to_f64(0x7bff) == 65504.0
+    assert f16_bits_to_f64(0x0001) == 0.000000059604644775390625
+
+# A half's bits read as an `f32`.
+test "f16_bits_to_f32: one and a half"
+    one_and_a_half: f32 = 1.5
+    assert f16_bits_to_f32(0x3e00) == one_and_a_half

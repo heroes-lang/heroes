@@ -87,7 +87,7 @@ capability url/host  the host alone, an IPv6 address without its brackets
   go      url.URL.Hostname
   rust    -
   python  SplitResult.hostname, splithost
-  note    the field `host` of `url.Url`, its ASCII letters in lower case, Python's and RFC 3986 § 6.2.2.1's, where Go keeps the case. In a host an escape writes a character above ASCII or a letter, a digit, `-`, `.`, `_`, `~`, and any other is `invalid`: Go refuses every ASCII escape, Python decodes none. "[fe80::1%25en0]", a zone, is `invalid`: RFC 3986 has none and RFC 9844 obsoleted RFC 6874, which Go and Python read. "[v1.a]", an address of a future version, is `invalid` as in Go, where Python reads it: no version beyond 6 is in use, and its host could not be told from a name once its brackets are gone
+  note    the field `host` of `url.Url`, its ASCII letters in lower case, Python's and RFC 3986 § 6.2.2.1's, where Go keeps the case. In a host an escape writes a character above ASCII or a letter, a digit, `-`, `.`, `_`, `~`, and any other is `invalid`: Go refuses every ASCII escape, Python decodes none. "[fe80::1%25en0]", a zone, is `invalid`: RFC 3986 has none and RFC 9844 obsoleted RFC 6874, which Go and Python read. "[v1.a]", an address of a future version, is `invalid` as in Go, where Python reads it: no version beyond 6 is in use, and its host could not be told from a name once its brackets are gone. A host above ASCII is kept as written, and `url/idna` writes it in ASCII by UTS #46 (`idna.to_ascii`) and back (`idna.to_unicode`), a package apart so that only its users carry its tables (about 289 KB, measured on 2026-11-17 as a program converting a host against one reading `unicode` alone)
 
 capability url/port  the port a URL is reached on, as a number
   heroes  url.port_of

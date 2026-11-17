@@ -1,0 +1,345 @@
+# A circuit breaker as numbers: its state (closed, open, half-open), the
+# failures in a row while closed, the calls and failures of a rolling window
+# kept in ten slots, and the trials let through while half-open. The time is
+# always the caller's, in nanoseconds; nothing here reads a clock.
+
+use time/internal/arith
+
+# Calls go through, and failures are counted.
+constant CLOSED: i64
+    0
+
+# Calls are refused until the open time has passed.
+constant OPEN: i64
+    1
+
+# A few trial calls go through; their outcome closes or opens it again.
+constant HALF_OPEN: i64
+    2
+
+# The slots a window is cut into, as Polly's rolling health metrics cut theirs.
+constant SLOTS: i64
+    10
+
+# The rules a breaker keeps, in nanoseconds where they are times.
+record Rules
+    # The failures in a row that open it; 0 where the count does not.
+    failures: i64
+    # The share of failed calls in the window that opens it, above 0 and at
+    # most 1; 0 where the share does not.
+    ratio: f64
+    # The window's length, above 0 where `ratio` is.
+    window: i64
+    # The calls the window must hold before the share is read.
+    least_calls: i64
+    # How long it stays open before a trial, above 0.
+    open_for: i64
+    # The calls let through while half-open, at least 1.
+    trials: i64
+    # The successes while half-open that close it, from 1 to `trials`.
+    successes: i64
+
+# What a breaker follows and has seen.
+record Machine
+    # The rules it follows.
+    rules: Rules
+    # `CLOSED`, `OPEN` or `HALF_OPEN`.
+    state: i64
+    # The failures in a row since the last success, while closed.
+    in_a_row: i64
+    # When it last opened, in nanoseconds.
+    opened_at: i64
+    # The trials let through since it became half-open.
+    let_through: i64
+    # The trials that succeeded since it became half-open.
+    trial_successes: i64
+    # The newest slot of the window written, as its number from 1970.
+    newest: i64
+    # Whether each slot holds counts of its own number.
+    used: [bool]
+    # The number of the slot each place holds.
+    slots: [i64]
+    # The calls that succeeded in each slot.
+    slot_successes: [i64]
+    # The calls that failed in each slot.
+    slot_failures: [i64]
+
+# A breaker following `rules` that has seen nothing: closed, every count
+# zero.
+function fresh(rules: Rules) -> Machine
+    return Machine(
+        rules: rules,
+        state: CLOSED,
+        in_a_row: 0,
+        opened_at: 0,
+        let_through: 0,
+        trial_successes: 0,
+        newest: 0,
+        used: [false, false, false, false, false, false, false, false, false, false],
+        slots: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        slot_successes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        slot_failures: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    )
+
+# When an open breaker lets a trial through: `opened_at` plus `open_for`, or
+# the last instant where the sum passes it.
+function open_until(machine: Machine lent) -> i64
+    return arith.add(a: machine.opened_at, b: machine.rules.open_for).default(arith.MAX)
+
+# The state `machine` is in at `now`: an open breaker whose open time has
+# passed is half-open, though nothing has asked yet.
+function state_at(machine: Machine lent, now: i64) -> i64
+    if machine.state == OPEN && now >= open_until(machine)
+        return HALF_OPEN
+    return machine.state
+
+# Every count set back to zero, the state kept.
+function forget(@machine: Machine)
+    machine.in_a_row @ 0
+    machine.let_through @ 0
+    machine.trial_successes @ 0
+
+    for at in range(from: 0, to: SLOTS)
+        machine.used[at] @ false
+        machine.slot_successes[at] @ 0
+        machine.slot_failures[at] @ 0
+
+# The breaker opened at `now`, every count forgotten.
+function trip(@machine: Machine, now: i64)
+    forget(@machine)
+    machine.state @ OPEN
+    machine.opened_at @ now
+
+# One call's outcome written into the window's slot for `now`; a `now`
+# earlier than the newest slot counts in the newest.
+function count(@machine: Machine, now: i64, is_failure: bool)
+    width: i64 @= machine.rules.window / SLOTS
+
+    if width < 1
+        width @ 1
+    slot: i64 @= arith.floor_div(a: now, b: width)
+
+    if slot < machine.newest && machine.used[arith.floor_mod(a: machine.newest, b: SLOTS)]
+        slot @ machine.newest
+    place = arith.floor_mod(a: slot, b: SLOTS)
+
+    if !machine.used[place] || machine.slots[place] != slot
+        machine.used[place] @ true
+        machine.slots[place] @ slot
+        machine.slot_successes[place] @ 0
+        machine.slot_failures[place] @ 0
+
+    if is_failure
+        machine.slot_failures[place] @ machine.slot_failures[place] + 1
+    else
+        machine.slot_successes[place] @ machine.slot_successes[place] + 1
+    machine.newest @ slot
+
+# Whether the window's share of failures opens the breaker: at least
+# `least_calls` calls in the slots of the window ending at the newest, and
+# failures at least `ratio` of them.
+function share_trips(machine: Machine lent) -> bool
+    rules = machine.rules
+
+    if rules.ratio != rules.ratio || rules.ratio <= 0.0
+        return false
+    oldest = arith.subtract(a: machine.newest, b: SLOTS - 1).default(arith.MIN)
+    calls: i64 @= 0
+    failures: i64 @= 0
+
+    for at in range(from: 0, to: SLOTS)
+        if machine.used[at] && machine.slots[at] >= oldest
+            calls @ calls + machine.slot_successes[at] + machine.slot_failures[at]
+            failures @ failures + machine.slot_failures[at]
+
+    return calls >= 1 && calls >= rules.least_calls && to_f64(failures) >= rules.ratio * to_f64(calls)
+
+# Whether a call may go at `now`: always while closed; while open, once the
+# open time has passed, as the first trial of the half-open state; while
+# half-open, while trials are left.
+function allow(@machine: Machine, now: i64) -> bool
+    if machine.state == CLOSED
+        return true
+
+    if machine.state == OPEN
+        if now < open_until(machine)
+            return false
+        forget(@machine)
+        machine.state @ HALF_OPEN
+
+    if machine.let_through < machine.rules.trials
+        machine.let_through @ machine.let_through + 1
+        return true
+    return false
+
+# A call that succeeded at `now`: while closed, the failures in a row end;
+# while half-open, enough successes close it; while open, nothing changes.
+function succeeded(@machine: Machine, now: i64)
+    if machine.state == CLOSED
+        machine.in_a_row @ 0
+        count(@machine, now: now, is_failure: false)
+    else if machine.state == HALF_OPEN
+        machine.trial_successes @ machine.trial_successes + 1
+
+        if machine.trial_successes >= machine.rules.successes
+            forget(@machine)
+            machine.state @ CLOSED
+
+# A call that failed at `now`: while closed, counted, and the breaker opens
+# where the failures in a row or the window's share say so; while half-open,
+# it opens again; while open, nothing changes.
+function failed(@machine: Machine, now: i64)
+    if machine.state == CLOSED
+        machine.in_a_row @ machine.in_a_row + 1
+        count(@machine, now: now, is_failure: true)
+
+        if machine.rules.failures > 0 && machine.in_a_row >= machine.rules.failures || share_trips(machine)
+            trip(@machine, now: now)
+    else if machine.state == HALF_OPEN
+        trip(@machine, now: now)
+
+# Rules for the tests: three failures in a row, open for 10 seconds, one
+# trial, no share.
+function plain_rules() -> Rules
+    return Rules(
+        failures: 3,
+        ratio: 0.0,
+        window: 0,
+        least_calls: 0,
+        open_for: 10 * arith.SECOND,
+        trials: 1,
+        successes: 1
+    )
+
+test "allow, succeeded and failed: closed until three failures in a row, a success between starting the count again"
+    rules = plain_rules()
+    m: Machine @= fresh(rules)
+    assert allow(@m, now: 0)
+    failed(@m, now: 1)
+    failed(@m, now: 2)
+    succeeded(@m, now: 3)
+    failed(@m, now: 4)
+    failed(@m, now: 5)
+    assert m.state == CLOSED && m.in_a_row == 2
+    failed(@m, now: 6)
+    assert m.state == OPEN && m.opened_at == 6
+
+test "allow: open refuses until its time, then one trial, then refuses while it is out"
+    rules = plain_rules()
+    m: Machine @= fresh(rules)
+    trip(@m, now: 0)
+    assert !allow(@m, now: 10 * arith.SECOND - 1)
+    assert state_at(machine: m, now: 10 * arith.SECOND) == HALF_OPEN
+    assert m.state == OPEN
+    assert allow(@m, now: 10 * arith.SECOND)
+    assert m.state == HALF_OPEN
+    assert !allow(@m, now: 10 * arith.SECOND + 1)
+
+test "succeeded and failed while half-open: a success closes, a failure opens again from its time"
+    rules = plain_rules()
+    m: Machine @= fresh(rules)
+    trip(@m, now: 0)
+    assert allow(@m, now: 20 * arith.SECOND)
+    failed(@m, now: 21 * arith.SECOND)
+    assert m.state == OPEN && m.opened_at == 21 * arith.SECOND
+    assert !allow(@m, now: 30 * arith.SECOND)
+    assert allow(@m, now: 31 * arith.SECOND)
+    succeeded(@m, now: 31 * arith.SECOND)
+    assert m.state == CLOSED && m.in_a_row == 0
+
+test "succeeded and failed while open: nothing changes"
+    rules = plain_rules()
+    m: Machine @= fresh(rules)
+    trip(@m, now: 0)
+    succeeded(@m, now: 1)
+    failed(@m, now: 2)
+    assert m.state == OPEN && m.opened_at == 0
+
+test "allow: three trials and two successes to close, a third trial refused"
+    rules = Rules(
+        failures: 1,
+        ratio: 0.0,
+        window: 0,
+        least_calls: 0,
+        open_for: 5,
+        trials: 3,
+        successes: 2
+    )
+    m: Machine @= fresh(rules)
+    failed(@m, now: 0)
+    assert m.state == OPEN
+    assert allow(@m, now: 5) && allow(@m, now: 5) && allow(@m, now: 5)
+    assert !allow(@m, now: 5)
+    succeeded(@m, now: 6)
+    assert m.state == HALF_OPEN
+    succeeded(@m, now: 6)
+    assert m.state == CLOSED
+
+test "open_until: an open time past the last instant waits to the last instant"
+    rules = Rules(
+        failures: 1,
+        ratio: 0.0,
+        window: 0,
+        least_calls: 0,
+        open_for: arith.MAX,
+        trials: 1,
+        successes: 1
+    )
+    m: Machine @= fresh(rules)
+    trip(@m, now: 5)
+    assert open_until(m) == arith.MAX
+    assert !allow(@m, now: arith.MAX - 1)
+
+test "failed: a share of half over a window of 10 seconds with 4 calls at least, and old slots forgotten"
+    rules = Rules(
+        failures: 0,
+        ratio: 0.5,
+        window: 10 * arith.SECOND,
+        least_calls: 4,
+        open_for: arith.SECOND,
+        trials: 1,
+        successes: 1
+    )
+    m: Machine @= fresh(rules)
+    failed(@m, now: 0)
+    failed(@m, now: arith.SECOND)
+    failed(@m, now: 2 * arith.SECOND)
+    assert m.state == CLOSED
+    succeeded(@m, now: 30 * arith.SECOND)
+    succeeded(@m, now: 31 * arith.SECOND)
+    succeeded(@m, now: 32 * arith.SECOND)
+    failed(@m, now: 33 * arith.SECOND)
+    assert m.state == CLOSED
+    failed(@m, now: 34 * arith.SECOND)
+    failed(@m, now: 35 * arith.SECOND)
+    assert m.state == OPEN && m.opened_at == 35 * arith.SECOND
+
+test "count and share_trips: a time going back counts in the newest slot, a window under ten nanoseconds, slots past the window left out, and a ratio that is NaN or infinite"
+    rules = Rules(
+        failures: 0,
+        ratio: 1.0,
+        window: 3,
+        least_calls: 2,
+        open_for: 1,
+        trials: 1,
+        successes: 1
+    )
+    m: Machine @= fresh(rules)
+    odd: Machine @= fresh(
+        Rules(failures: 0, ratio: 0.0 / 0.0, window: -1, least_calls: -1, open_for: 1, trials: 1, successes: 1)
+    )
+    failed(@odd, now: 0)
+    infinite: Machine @= fresh(
+        Rules(failures: 0, ratio: 1.0 / 0.0, window: 1, least_calls: 0, open_for: 1, trials: 1, successes: 1)
+    )
+    failed(@infinite, now: 0)
+    assert odd.state == CLOSED && infinite.state == CLOSED
+    succeeded(@m, now: 100)
+    failed(@m, now: 50)
+    assert m.newest == 100 && m.state == CLOSED
+    failed(@m, now: arith.MIN)
+    assert m.state == CLOSED
+    failed(@m, now: 200)
+    assert m.state == CLOSED
+    failed(@m, now: 201)
+    assert m.state == OPEN

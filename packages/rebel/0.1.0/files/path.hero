@@ -1,19 +1,22 @@
 # A path as text, by POSIX's rules and by Windows', touching no disk: what a
 # path's parts are, where it begins, how two paths stand to each other, and a
-# path cleaned, joined or changed. Nothing here asks the system what a path
-# names, so nothing fails for what the disk holds, and a link on the disk may
-# lead where the text does not say.
+# path cleaned, joined or changed, a path matched against a pattern, and
+# whether gitignore files ignore a path. Nothing here asks the system what a
+# path names, so nothing fails for what the disk holds, and a link on the disk
+# may lead where the text does not say.
 #
 # Every function comes in two forms. The short one, `clean`, reads by the rules
 # of the system the program runs on. The one ending in `_by`, `clean_by`, takes
 # the rules, so a program reads a Windows path on any system, and both rules
 # are tested on every machine. A path is a `str`, so UTF-8; every position a
 # function cuts at is beside a separator, a dot or a colon, so none splits a
-# character.
+# character. The patterns of gitignore files are read by git's rules alone,
+# `/` separating, on every system, so they have no `_by` form.
 
 use path/hero_os
 use path/internal/change
 use path/internal/codes
+use path/internal/ignoring
 use path/internal/lexical
 use path/internal/local
 use path/internal/relation
@@ -538,6 +541,120 @@ function matches(path: str, pattern: str) -> bool?
 function matches_by(path: str, pattern: str, rules: Rules) -> bool?
     return wildcard.matches(path: path, pattern: pattern, windows: rules == .windows)
 
+## Paths ignored, as git reads a gitignore file
+
+# The patterns of one or more gitignore files, each with the folder it
+# stands in, as git reads them: what `is_ignored` asks. Built by
+# `parse_ignore` and grown by `with_ignore_file`; a value, so a copy grown
+# leaves the one it was copied from as it was.
+#
+# The files of patterns outside a tree, git's `.git/info/exclude` and the
+# file `core.excludesFile` names, are the caller's to read: given to
+# `parse_ignore` first, before the root's own file is added at `""`, they
+# stand where git puts them, below every gitignore file of the tree.
+record Ignores
+    # The files read, each with its folder, in the order they were added.
+    files: [ignoring.PatternFile]
+
+# The pattern that decides whether a path is ignored, as `ignore_pattern_of`
+# answers it and `git check-ignore -v` prints it.
+record IgnorePattern
+    # The folder of the file it was read from, its names joined by `/`; ""
+    # for the root's.
+    dir: str
+    # Its line in that file, from 1.
+    line: i64
+    # The pattern as its line writes it, its trailing spaces taken off and
+    # its `!` and last `/` kept.
+    text: str
+    # Whether it opens with `!`, so the path it decides is not ignored.
+    negated: bool
+
+# The patterns of `text`, one gitignore file standing in the root's own
+# folder.
+#
+# - `text`: the file's text, UTF-8, as gitignore(5) writes it; the empty
+#   text holds no pattern, so nothing is ignored.
+#
+# A line is read as git 2.56 reads it: a byte order mark at the start and a
+# carriage return before a line feed taken off; a blank line, and one whose
+# first character is `#`, holding no pattern; trailing spaces taken off but
+# one a `\` escapes; `!` first making a negation, which includes again what
+# an earlier pattern ignored, and `\!` or `\#` a pattern that begins with that
+# character; a `/` last making a pattern of folders alone; a `/` first or
+# between names anchoring it to the folder of its file, where a pattern with
+# none matches a last name at any depth below that folder. In a pattern `*`
+# stands for any run of bytes but `/`, `?` for one byte but `/`, `[a-z]`,
+# `[!a-z]`, `[^a-z]` and `[[:digit:]]` for one byte of a class or outside it,
+# never `/`, and `\` before a byte for that byte; `**/` first stands for any
+# number of folders, `/**/` for any number of folders between, none included,
+# and `/**` last for everything inside. A pattern git would never match, one
+# ending in a `\` that escapes nothing, holding a class left open or a class
+# name git has not, matches nothing, as in git.
+#
+# git reads bytes, so `?` is one byte and not one character: `caff?` does
+# not match `caffè`. See also `with_ignore_file`, `is_ignored`.
+function parse_ignore(text: str) -> Ignores
+    return Ignores(files: [ignoring.parsed(dir: "", text: text)])
+
+# A copy of `ignores` with the patterns of one more gitignore file, standing
+# in the folder `dir` below the root.
+#
+# - `ignores`: the patterns read so far.
+# - `dir`: the folder the file stands in, below the root, its names joined
+#   by `/`; empty and `.` names are left out, so `""`, `"."` and `"/"` name
+#   the root itself.
+# - `text`: the file's text, read as `parse_ignore` reads it.
+#
+# A file deeper in the tree decides before one above it, and of two files
+# added for one folder the one added later decides first. See also
+# `parse_ignore`.
+function with_ignore_file(ignores: Ignores, dir: str, text: str) -> Ignores
+    files: [ignoring.PatternFile] @= ignores.files
+    files @ files.push(ignoring.parsed(dir: dir, text: text))
+    return Ignores(files: files)
+
+# Whether `ignores` ignore `path`, as `git check-ignore` answers.
+#
+# - `ignores`: the patterns.
+# - `path`: the path asked, below the root, its names joined by `/`, as
+#   `to_slash` writes a Windows path; empty and `.` names are left out, and a
+#   `\` is part of a name, as git reads it on POSIX. The empty path is never
+#   ignored.
+# - `is_dir`: whether `path` names a folder, which a pattern ending in `/`
+#   asks; the caller knows it, since nothing here reads the disk.
+#
+# It is ignored where a folder above it is ignored, whatever a negation says
+# of it, since git never reads inside an ignored folder; else where the
+# pattern that decides, the last that matches it in the deepest file that has
+# one, is not a negation. It takes time in proportion to the patterns times
+# the path's length, for each folder above the path.
+#
+# See also `ignore_pattern_of`, `fs.walk_ignoring`.
+function is_ignored(ignores: Ignores, path: str, is_dir: bool) -> bool
+    found = ignoring.decision(ignores.files, path: path, is_dir: is_dir)
+    return found.found && !found.negated
+
+# The pattern that decides whether `ignores` ignore `path`, as
+# `git check-ignore -v` names it: what tells a person why a file is left out.
+#
+# - `ignores`: the patterns.
+# - `path`: the path asked, as `is_ignored` reads it.
+# - `is_dir`: whether `path` names a folder.
+#
+# It is the pattern that ignores the highest ignored folder above `path`
+# where there is one, else the last that matches `path` in the deepest file
+# that has one: a negation where `path` is included again.
+#
+# Fails `not_found` where no pattern matches `path` or a folder above it, so
+# it is not ignored. See also `is_ignored`.
+function ignore_pattern_of(ignores: Ignores, path: str, is_dir: bool) -> IgnorePattern?
+    found = ignoring.decision(ignores.files, path: path, is_dir: is_dir)
+
+    if !found.found
+        return fail(code: NOT_FOUND, msg: f"no pattern decides whether \"{path}\" is ignored")
+    return ok(IgnorePattern(dir: found.dir, line: found.line, text: found.text, negated: found.negated))
+
 ## Tests
 
 test "system_rules: Windows' where a program's file takes `.exe`, POSIX's elsewhere"
@@ -602,3 +719,28 @@ test "to_slash_by and from_slash_by: Windows' separators turned each way, POSIX'
     assert to_slash_by("a\\b", .posix) == "a\\b"
     assert from_slash_by("C:/a/b\\c", .windows) == "C:\\a\\b\\c"
     assert from_slash_by("a/b", .posix) == "a/b"
+
+## Examples
+
+# The patterns of one file asked of a file and a folder.
+test "parse_ignore: a project's own patterns read"
+    ignores = parse_ignore("*.o\nbuild/\n!keep.o\n")
+    assert is_ignored(ignores, path: "src/main.o", is_dir: false)
+    assert !is_ignored(ignores, path: "src/keep.o", is_dir: false)
+
+# A folder's own file deciding before the root's.
+test "with_ignore_file: a folder's patterns over the root's"
+    ignores = with_ignore_file(parse_ignore("*.log\n"), dir: "logs", text: "!today.log\n")
+    assert is_ignored(ignores, path: "old.log", is_dir: false)
+    assert !is_ignored(ignores, path: "logs/today.log", is_dir: false)
+
+# A file inside an ignored folder, which no negation brings back.
+test "is_ignored: a file below an ignored folder"
+    ignores = parse_ignore("build/\n!build/keep\n")
+    assert is_ignored(ignores, path: "build/keep", is_dir: false)
+    assert !is_ignored(ignores, path: "src/build", is_dir: false)
+
+# Why a path is left out, as `git check-ignore -v` tells it.
+test "ignore_pattern_of: the line that ignores a file"
+    found = ignore_pattern_of(parse_ignore("# objects\n*.o\n"), path: "a/b.o", is_dir: false).must()
+    assert found == IgnorePattern(dir: "", line: 2, text: "*.o", negated: false)

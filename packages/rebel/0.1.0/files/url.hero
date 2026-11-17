@@ -8,6 +8,10 @@
 # typed. A `%` that is not followed by two hexadecimal digits is `invalid` in
 # every function that reads escapes, and escaped bytes that are not UTF-8 are
 # `not_text` wherever the answer is a text.
+#
+# It does not convert a host between Unicode and its ASCII form in Punycode,
+# "bücher.de" and "xn--bcher-kva.de": `url/idna` does, by UTS #46, apart so
+# that only the programs that convert a host carry its tables.
 
 use strings
 use url/internal/classes

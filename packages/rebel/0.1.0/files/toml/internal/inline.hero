@@ -1,0 +1,444 @@
+# The members of an inline table and the items of an array written as a
+# value, each with the bytes it spans, and the edits inside such a value:
+# a member set, added or removed, an item set, removed or appended. Every
+# edit keeps the bytes it does not touch: an added member goes after the
+# last, `, key = value`; a removed one takes its comma, and in an array
+# written across lines its own line with its trailing comment.
+
+use toml/internal/doc
+use toml/internal/layout
+use toml/internal/scalar
+use toml/internal/write
+
+# The code of a path that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# One member of an inline table or one item of an array.
+record Member
+    # A member's key, dotted keys split; none for an item.
+    keys: [str]
+    # Where its key begins, or the item.
+    start: i64
+    # Where its value begins and the byte past it.
+    value_start: i64
+    value_end: i64
+    # Where the comma after it stands; -1 where none follows it.
+    comma: i64
+
+# An inline table or an array written as a value.
+record Container
+    # Whether it is an array.
+    array: bool
+    # Where its `{` or `[` stands, and its `}` or `]`.
+    open: i64
+    close: i64
+    # Its members or items, in order.
+    members: [Member]
+
+# The inline table or array whose `{` or `[` stands at `at` of `text`, a text
+# `parse_document` accepted. Fails `invalid`, naming `shown`, where the value
+# at `at` is neither.
+function container_at(text: str, at: i64, shown: str) -> Container?
+    if at >= text.len() || text[at] != '{' && text[at] != '['
+        return fail(code: scalar.INVALID, msg: f"\"{shown}\" is a value, neither a table nor an array")
+    array = text[at] == '['
+    members: [Member] @= []
+    here: i64 @= at + 1
+    scratch: [doc.Node] @= []
+
+    if array
+        doc.skip_blank(text, @here)?
+    else
+        doc.skip_spaces(text, @here)
+
+    while here < text.len() && text[here] != ']' && text[here] != '}'
+        start = here
+        names: [str] @= []
+
+        if !array
+            names @ doc.read_inline_key(text, @here)?
+        value_start = here
+        scratch @ []
+        _ = doc.read_value(text: text, at: @here, nodes: @scratch, depth: 0)?
+        value_end = here
+
+        if array
+            doc.skip_blank(text, @here)?
+        else
+            doc.skip_spaces(text, @here)
+        comma: i64 @= -1
+
+        if here < text.len() && text[here] == ','
+            comma @ here
+            here @ here + 1
+
+            if array
+                doc.skip_blank(text, @here)?
+            else
+                doc.skip_spaces(text, @here)
+        members @ members.push(
+            Member(keys: names, start: start, value_start: value_start, value_end: value_end, comma: comma)
+        )
+
+        if comma < 0
+            break
+
+    if here >= text.len()
+        return fail(code: scalar.INVALID, msg: f"\"{shown}\" is not closed")
+    return ok(Container(array: array, open: at, close: here, members: members))
+
+# `text` with the bytes from `from` to `to` replaced by `with`.
+function replaced(text: str, from: i64, to: i64, with: str) -> str
+    return text.slice(from: 0, to: from) + with + text.slice(from: to, to: text.len())
+
+# Where the line holding byte `at` begins.
+function line_start(text: str, at: i64) -> i64
+    k @= at
+
+    while k > 0 && text[k - 1] != '\n'
+        k @ k - 1
+
+    return k
+
+# Whether only spaces and tabs stand before `at` on its line.
+function begins_line(text: str, at: i64) -> bool
+    k @= at
+
+    while k > 0 && (text[k - 1] == ' ' || text[k - 1] == '\t')
+        k @ k - 1
+
+    return k == 0 || text[k - 1] == '\n'
+
+# What follows a byte to the end of its line: the byte past the spaces, the
+# comment and the line end after it, where only those follow on its line;
+# else the byte past its spaces alone.
+record LineRest
+    # Where the rest ends.
+    end: i64
+    # Whether a line end closed it.
+    ended: bool
+
+# What follows `at` to the end of its line, as `LineRest` says.
+function line_rest(text: str, at: i64) -> LineRest
+    k @= at
+    doc.skip_spaces(text, @k)
+    spaces_end = k
+
+    if k < text.len() && text[k] == '#'
+        while k < text.len() && text[k] != '\n'
+            k @ k + 1
+
+    width = scalar.line_end_len(text, k)
+
+    if width > 0
+        return LineRest(end: k + width, ended: true)
+
+    if k >= text.len()
+        return LineRest(end: k, ended: true)
+    return LineRest(end: spaces_end, ended: false)
+
+# Where the target of a path inside a value stands.
+record Spot
+    # The innermost container reached.
+    container: Container
+    # The member of `container` the path names, or -1 where it names none.
+    member: i64
+    # The steps still unread below `container`: a key of one or more parts
+    # for an inline table, an index for an array; all of the path's tail
+    # where `member` is -1.
+    rest: [str]
+    # How the path read so far is shown in a message.
+    shown: str
+
+# The spot `steps` names below the value at `at` of `text`, `shown` naming
+# that value. Fails `invalid` where a step goes into a value that is not a
+# container or names no index of an array, and `not_found` where an index is
+# past an array's end.
+function spot_of(text: str, at: i64, steps: [str], shown: str) -> Spot?
+    here @= at
+    rest @= steps
+    seen @= shown
+
+    while true
+        c = container_at(text: text, at: here, shown: seen)?
+
+        if c.array
+            i = layout.step_index(rest[0])?
+            seen @ seen + "." + rest[0]
+
+            if i >= c.members.len()
+                return fail(code: NOT_FOUND, msg: f"no item {i} in \"{shown}\", which holds {c.members.len()}")
+
+            if rest.len() == 1
+                return ok(Spot(container: c, member: i, rest: rest, shown: seen))
+            here @ c.members[i].value_start
+            rest @ layout.after(path: rest, from: 1)
+        else
+            next: i64 @= -1
+
+            for k in range(from: 0, to: c.members.len())
+                if layout.begins_with(path: rest, prefix: c.members[k].keys)
+                    next @ k
+
+            if next < 0
+                return ok(Spot(container: c, member: -1, rest: rest, shown: seen))
+            m = c.members[next]
+            seen @ seen + "." + m.keys.join(".")
+
+            if m.keys.len() == rest.len()
+                return ok(Spot(container: c, member: next, rest: rest, shown: seen))
+            here @ m.value_start
+            rest @ layout.after(path: rest, from: m.keys.len())
+
+    return fail(code: NOT_FOUND, msg: shown)
+
+# `keys` as a dotted key writes them.
+function dotted_text(names: [str]) -> str
+    parts: [str] @= []
+
+    for key in names
+        parts @ parts.push(write.key_text(key))
+
+    return parts.join(".")
+
+# `text` with `member` of `c` taken out, its comma with it; in an array
+# written across lines, its line and its trailing comment too, never another
+# line's.
+function without(text: str, c: Container, member: i64) -> str
+    m = c.members[member]
+
+    if c.members.len() == 1
+        return replaced(text: text, from: c.open + 1, to: c.close, with: "")
+
+    if m.comma >= 0
+        rest = line_rest(text: text, at: m.comma + 1)
+
+        if c.array && rest.ended && begins_line(text: text, at: m.start)
+            return replaced(text: text, from: line_start(text: text, at: m.start), to: rest.end, with: "")
+        return replaced(text: text, from: m.start, to: c.members[member + 1].start, with: "")
+    before = c.members[member - 1]
+
+    if c.array && begins_line(text: text, at: m.start)
+        rest = line_rest(text: text, at: m.value_end)
+        from = line_start(text: text, at: m.start)
+
+        cut = replaced(text: text, from: from, to: rest.end, with: "")
+        return replaced(text: cut, from: before.comma, to: before.comma + 1, with: "")
+    return replaced(text: text, from: before.comma, to: m.value_end, with: "")
+
+# `text` with `item`, an inline value's text, added after the last item of
+# the array `c`: on its own line where the last stands on its own, else after
+# a comma and a space.
+function appended(text: str, c: Container, item: str, newline: str) -> str
+    if c.members.len() == 0
+        return replaced(text: text, from: c.open + 1, to: c.close, with: item)
+    last = c.members[c.members.len() - 1]
+    own_line = begins_line(text: text, at: last.start)
+
+    if last.comma >= 0
+        rest = line_rest(text: text, at: last.comma + 1)
+
+        if own_line && rest.ended
+            indent = text.slice(from: line_start(text: text, at: last.start), to: last.start)
+            return replaced(text: text, from: rest.end, to: rest.end, with: indent + item + "," + newline)
+        return replaced(text: text, from: last.comma + 1, to: last.comma + 1, with: " " + item + ",")
+    rest = line_rest(text: text, at: last.value_end)
+
+    if own_line && rest.ended
+        indent = text.slice(from: line_start(text: text, at: last.start), to: last.start)
+        added = replaced(text: text, from: rest.end, to: rest.end, with: indent + item + newline)
+        return replaced(text: added, from: last.value_end, to: last.value_end, with: ",")
+    return replaced(text: text, from: last.value_end, to: last.value_end, with: ", " + item)
+
+# `text` with the member `keys` = `value` added to the inline table `c`, after
+# its last member.
+function member_added(text: str, c: Container, member: str) -> str
+    if c.members.len() == 0
+        return replaced(text: text, from: c.open + 1, to: c.close, with: member)
+    last = c.members[c.members.len() - 1]
+    return replaced(text: text, from: last.value_end, to: last.value_end, with: ", " + member)
+
+# The members of the inline table `c` whose keys go on below `rest`, a table
+# their dotted keys make, last first.
+function dotted_members(c: Container, rest: [str]) -> [i64]
+    found: [i64] @= []
+    k @= c.members.len()
+
+    while k > 0
+        k @ k - 1
+
+        if layout.begins_with(path: c.members[k].keys, prefix: rest) && c.members[k].keys.len() > rest.len()
+            found @ found.push(k)
+
+    return found
+
+# `text` with the value `steps` names below the value at `at` set to `value`,
+# an inline value's text, made where the path ends in a table that lacks it;
+# a table that dotted keys make inside the inline table is replaced whole.
+function set_inside(text: str, at: i64, steps: [str], value: str, shown: str) -> str?
+    s = spot_of(text: text, at: at, steps: steps, shown: shown)?
+
+    if s.member >= 0
+        m = s.container.members[s.member]
+        return ok(replaced(text: text, from: m.value_start, to: m.value_end, with: value))
+
+    if s.container.array
+        return fail(code: NOT_FOUND, msg: f"no item in \"{s.shown}\"")
+    dotted = dotted_members(c: s.container, rest: s.rest)
+
+    if dotted.len() > 0
+        cut @= text
+
+        for k in dotted
+            c = container_at(text: cut, at: s.container.open, shown: s.shown)?
+            cut @ without(text: cut, c: c, member: k)
+
+        c = container_at(text: cut, at: s.container.open, shown: s.shown)?
+        return ok(member_added(text: cut, c: c, member: dotted_text(s.rest) + " = " + value))
+    return ok(
+        member_added(text: text, c: s.container, member: dotted_text(s.rest) + " = " + value)
+    )
+
+# `text` with the value `steps` names below the value at `at` taken out.
+# Fails `not_found` where it names nothing.
+function remove_inside(text: str, at: i64, steps: [str], shown: str) -> str?
+    s = spot_of(text: text, at: at, steps: steps, shown: shown)?
+
+    if s.member >= 0
+        m = s.container.members[s.member]
+
+        if !s.container.array && m.keys.len() > 1
+            parent = m.keys.slice(from: 0, to: m.keys.len() - 1)
+
+            if !is_held(c: s.container, names: parent, except: s.member)
+                return ok(replaced(text: text, from: m.start, to: m.value_end, with: dotted_text(parent) + " = {}"))
+        return ok(without(text: text, c: s.container, member: s.member))
+    dotted = dotted_members(c: s.container, rest: s.rest)
+
+    if s.container.array || dotted.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no key \"{s.rest.join(".")}\" in \"{s.shown}\"")
+    cut @= text
+
+    for k in dotted
+        c = container_at(text: cut, at: s.container.open, shown: s.shown)?
+        cut @ without(text: cut, c: c, member: k)
+
+    if s.rest.len() > 1
+        parent = s.rest.slice(from: 0, to: s.rest.len() - 1)
+        c = container_at(text: cut, at: s.container.open, shown: s.shown)?
+
+        if !is_held(c: c, names: parent, except: -1)
+            cut @ member_added(text: cut, c: c, member: dotted_text(parent) + " = {}")
+    return ok(cut)
+
+# Whether a member of the inline table `c` other than `except` (-1 for none)
+# makes the table `names` names: its dotted key goes on below it.
+function is_held(c: Container, names: [str], except: i64) -> bool
+    for k in range(from: 0, to: c.members.len())
+        if k != except && c.members[k].keys.len() > names.len() && layout.begins_with(path: c.members[k].keys, prefix: names)
+            return true
+
+    return false
+
+# What `append_inside` answers.
+record Appended
+    # The text with the item added.
+    text: str
+    # The index the item took.
+    index: i64
+
+# `text` with `item`, an inline value's text, appended to the array `steps`
+# names below the value at `at` (none for that value itself), and the index
+# it takes. Fails `invalid` where that value is not an array, and `not_found`
+# where `steps` names nothing.
+function append_inside(text: str, at: i64, steps: [str], item: str, shown: str, newline: str) -> Appended?
+    where: i64 @= at
+    seen: str @= shown
+
+    if steps.len() > 0
+        s = spot_of(text: text, at: at, steps: steps, shown: shown)?
+
+        if s.member < 0
+            return fail(code: NOT_FOUND, msg: f"no key \"{s.rest.join(".")}\" in \"{s.shown}\"")
+        where @ s.container.members[s.member].value_start
+        seen @ s.shown
+    c = container_at(text: text, at: where, shown: seen)?
+
+    if !c.array
+        return fail(code: scalar.INVALID, msg: f"\"{seen}\" is a table, not an array")
+    return ok(Appended(text: appended(text: text, c: c, item: item, newline: newline), index: c.members.len()))
+
+# `set_inside` on the value of `text` that begins after `v = `, or the
+# failure's message.
+function set_shown(text: str, steps: [str], value: str) -> str
+    match set_inside(text: text, at: 4, steps: steps, value: value, shown: "v")
+        .ok t  => return t
+        .err e => return e.code + ": " + e.msg
+
+# `remove_inside` on the value of `text` that begins after `v = `, or the
+# failure's message.
+function remove_shown(text: str, steps: [str]) -> str
+    match remove_inside(text: text, at: 4, steps: steps, shown: "v")
+        .ok t  => return t
+        .err e => return e.code + ": " + e.msg
+
+# `append_inside` on the value of `text` that begins after `v = `, or the
+# failure's message.
+function append_shown(text: str, steps: [str], item: str) -> str
+    match append_inside(text: text, at: 4, steps: steps, item: item, shown: "v", newline: "\n")
+        .ok a  => return f"{a.index}:{a.text}"
+        .err e => return e.code + ": " + e.msg
+
+test "container_at: an empty table and array, members with dotted keys, items across lines with comments"
+    t = container_at(text: "v = { a.b = 1, c = [2] }", at: 4, shown: "v").must()
+    assert !t.array && t.close == 23 && t.members.len() == 2
+    assert t.members[0].keys == ["a", "b"] && t.members[0].comma == 13
+    assert t.members[1].comma == -1
+    a = container_at(text: "v = [\n  1, # one\n  2\n]", at: 4, shown: "v").must()
+    assert a.array && a.members.len() == 2 && a.members[1].value_start == 19
+    assert container_at(text: "v = {}", at: 4, shown: "v").must().members.len() == 0
+    assert container_at(text: "v = [ ]", at: 4, shown: "v").must().close == 6
+    assert container_at(text: "v = 1", at: 4, shown: "v").is_err()
+
+test "set_inside: a member replaced, added after the last, added to an empty table, and deep through an array"
+    assert set_shown(text: "v = {a = 1, b = 2}", steps: ["a"], value: "3") == "v = {a = 3, b = 2}"
+    assert set_shown(text: "v = { a = 1 }", steps: ["b"], value: "\"x\"") == "v = { a = 1, b = \"x\" }"
+    assert set_shown(text: "v = { }", steps: ["b", "c"], value: "1") == "v = {b.c = 1}"
+    assert set_shown(text: "v = {a = [{b = 1}, {b = 2}]}", steps: ["a", "1", "b"], value: "5") == "v = {a = [{b = 1}, {b = 5}]}"
+    assert set_shown(text: "v = {a.b = 1, a.c = 2, d = 3}", steps: ["a"], value: "{x = 1}") == "v = {d = 3, a = {x = 1}}"
+
+test "set_inside: an index past the end, a step that is no index, a key below a value"
+    assert set_shown(text: "v = [1, 2]", steps: ["2"], value: "3") == "not_found: no item 2 in \"v\", which holds 2"
+    assert set_shown(text: "v = [1, 2]", steps: ["x"], value: "3") == "invalid: \"x\" is no index of an array"
+    assert set_shown(text: "v = {a = 1}", steps: ["a", "b"], value: "3") == "invalid: \"v.a\" is a value, neither a table nor an array"
+
+test "remove_inside: the first, a middle and the last member, the only one, and one not there"
+    assert remove_shown(text: "v = {a = 1, b = 2, c = 3}", steps: ["a"]) == "v = {b = 2, c = 3}"
+    assert remove_shown(text: "v = {a = 1, b = 2, c = 3}", steps: ["b"]) == "v = {a = 1, c = 3}"
+    assert remove_shown(text: "v = {a = 1, b = 2, c = 3}", steps: ["c"]) == "v = {a = 1, b = 2}"
+    assert remove_shown(text: "v = { a = 1 }", steps: ["a"]) == "v = {}"
+    assert remove_shown(text: "v = {a.b = 1, a.c = 2, d = 3}", steps: ["a"]) == "v = {d = 3}"
+    assert remove_shown(text: "v = {a = 1}", steps: ["b"]) == "not_found: no key \"b\" in \"v\""
+    assert remove_shown(text: "v = { x = 1, y.z = 2 }", steps: ["y", "z"]) == "v = { x = 1, y = {} }"
+    assert remove_shown(text: "v = { y.z = 2, y.w = 3 }", steps: ["y", "z"]) == "v = { y.w = 3 }"
+    assert remove_shown(text: "v = {x = 1, y.w.q = 2}", steps: ["y", "w"]) == "v = {x = 1, y = {}}"
+
+test "remove_inside: items of an array on one line and across lines, each comment kept with its own item"
+    assert remove_shown(text: "v = [1, 2, 3]", steps: ["0"]) == "v = [2, 3]"
+    assert remove_shown(text: "v = [1, 2, 3]", steps: ["2"]) == "v = [1, 2]"
+    lines = "v = [\n  1, # one\n  2, # two\n]"
+    assert remove_shown(text: lines, steps: ["0"]) == "v = [\n  2, # two\n]"
+    assert remove_shown(text: lines, steps: ["1"]) == "v = [\n  1, # one\n]"
+    bare_last = "v = [\n  1, # one\n  2 # two\n]"
+    assert remove_shown(text: bare_last, steps: ["1"]) == "v = [\n  1 # one\n]"
+    closed = "v = [\n  1,\n  2]"
+    assert remove_shown(text: closed, steps: ["1"]) == "v = [\n  1\n]"
+
+test "append_inside: to an empty array, one line, across lines with and without a last comma, and to a table refused"
+    assert append_shown(text: "v = []", steps: [], item: "1") == "0:v = [1]"
+    assert append_shown(text: "v = [1, 2]", steps: [], item: "3") == "2:v = [1, 2, 3]"
+    assert append_shown(text: "v = [\n  1,\n  2,\n]", steps: [], item: "3") == "2:v = [\n  1,\n  2,\n  3,\n]"
+    assert append_shown(text: "v = [\n  1,\n  2 # two\n]", steps: [], item: "3") == "2:v = [\n  1,\n  2, # two\n  3\n]"
+    assert append_shown(text: "v = {a = [1]}", steps: ["a"], item: "2") == "1:v = {a = [1, 2]}"
+    assert append_shown(text: "v = {a = 1}", steps: [], item: "2") == "invalid: \"v\" is a table, not an array"

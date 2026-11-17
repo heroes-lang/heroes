@@ -1,0 +1,207 @@
+# The waits of a retry loop as arithmetic on nanoseconds: the exponential wait
+# after a count of failures, capped, and the ways a random fraction spreads it.
+# No clock is read and nothing is drawn here: the caller gives the fraction.
+# The growth is computed in floats, which hold every wait exactly up to 2^53
+# nanoseconds (about 104 days), and never overflows, since a float too large is
+# `inf` and every answer is capped before it becomes an integer again.
+
+use time/internal/arith
+use time/internal/duration_text
+
+# The code of a policy outside its bounds.
+constant INVALID: str
+    "invalid"
+
+# No jitter: the exponential wait itself.
+constant NONE: i64
+    0
+
+# AWS's full jitter: anywhere from zero to the exponential wait.
+constant FULL: i64
+    1
+
+# AWS's equal jitter: half the exponential wait, plus anywhere up to the other
+# half.
+constant EQUAL: i64
+    2
+
+# AWS's decorrelated jitter: from the first wait to the previous wait times
+# the multiplier.
+constant DECORRELATED: i64
+    3
+
+# cenkalti/backoff's randomization factor: within a share of the exponential
+# wait either side.
+constant SPREAD: i64
+    4
+
+# `value` as whole nanoseconds, rounded toward zero, at least 0 and at most
+# `longest`.
+function capped(value: f64, longest: i64) -> i64
+    if value != value || value <= 0.0
+        return 0
+
+    if value >= to_f64(longest)
+        return longest
+    return to_i64(value).must()
+
+# `multiplier` to the power `n`, by squaring, so that it takes at most 63
+# steps whatever `n` is; `inf` where it passes what a float holds.
+function power(multiplier: f64, n: i64) -> f64
+    result: f64 @= 1.0
+    base: f64 @= multiplier
+    left: i64 @= n
+
+    while left > 0
+        if left % 2 == 1
+            result @ result * base
+        base @ base * base
+        left @ left / 2
+
+    return result
+
+# The wait after `failures` failures, jitter aside: `first` times `multiplier`
+# to the power `failures - 1`, at most `longest`. `first` and `longest` are
+# nanoseconds above zero, `multiplier` at least 1, `failures` at least 1.
+function exponential(first: i64, multiplier: f64, longest: i64, failures: i64) -> i64
+    return capped(value: to_f64(first) * power(multiplier: multiplier, n: failures - 1), longest: longest)
+
+# The wait `kind` of jitter draws, from `fraction`, between 0 and 1.
+#
+# `wait` is the exponential wait; `previous` the wait answered before, which
+# decorrelated jitter starts from (zero before the first, read as `first`);
+# `factor` the share of a spread. Every answer is at most `longest`.
+function jittered(kind: i64, wait: i64, previous: i64, first: i64, multiplier: f64, factor: f64, longest: i64, fraction: f64) -> i64
+    if kind == FULL
+        return capped(value: fraction * to_f64(wait), longest: longest)
+
+    if kind == EQUAL
+        low = wait / 2
+        return low + capped(value: fraction * to_f64(wait - low), longest: longest - low)
+
+    if kind == DECORRELATED
+        from: i64 @= previous
+
+        if from < first
+            from @ first
+        high = to_f64(from) * multiplier
+        return capped(value: to_f64(first) + fraction * (high - to_f64(first)), longest: longest)
+
+    if kind == SPREAD
+        return capped(value: to_f64(wait) * (1.0 - factor + 2.0 * factor * fraction), longest: longest)
+    return wait
+
+# Whether `x` is a fraction this module reads: a float from 0 to 1, both
+# included, and no NaN.
+function is_fraction(x: f64) -> bool
+    return x == x && x >= 0.0 && x <= 1.0
+
+# Nothing, where a policy's numbers are within their bounds: `first` above
+# zero, `multiplier` finite and at least 1, `longest` at least `first`,
+# `attempts` at least 0, `total` at least zero and a spread's `factor` from 0
+# to 1. Fails `invalid` naming the first that is not, durations in
+# nanoseconds written as `time` writes them.
+function check(first: i64, multiplier: f64, longest: i64, attempts: i64, total: i64, factor: f64) -> ()?
+    if first <= 0
+        return fail(code: INVALID, msg: f"the first wait, {duration_text.format(first)}, is not above zero")
+
+    if !(multiplier - multiplier == 0.0) || multiplier < 1.0
+        return fail(code: INVALID, msg: f"the multiplier {multiplier} is not a finite number from 1 up")
+
+    if longest < first
+        return fail(
+            code: INVALID,
+            msg: f"the longest wait, {duration_text.format(longest)}, is shorter than the first, {duration_text.format(first)}"
+        )
+
+    if attempts < 0
+        return fail(code: INVALID, msg: f"the attempts allowed, {attempts}, are below 0")
+
+    if total < 0
+        return fail(code: INVALID, msg: f"the total time allowed, {duration_text.format(total)}, is below zero")
+
+    if !is_fraction(factor)
+        return fail(code: INVALID, msg: f"the spread's factor {factor} is outside 0 to 1")
+    return ok()
+
+# The tests below were checked against Python 3.15's float arithmetic on
+# 2026-11-17: `int(1e8 * 2.0 ** 3)` and the like.
+
+test "power: zero, one, a large exponent, and a multiplier of 1"
+    assert power(multiplier: 2.0, n: 0) == 1.0
+    assert power(multiplier: 2.0, n: 1) == 2.0
+    assert power(multiplier: 2.0, n: 10) == 1024.0
+    assert power(multiplier: 1.5, n: 3) == 3.375
+    assert power(multiplier: 1.0, n: arith.MAX) == 1.0
+    assert power(multiplier: 2.0, n: arith.MAX) == 1.0 / 0.0
+
+test "capped: below zero, a NaN, inside, at the cap, past it, and infinity"
+    assert capped(value: -1.0, longest: 10) == 0
+    assert capped(value: 0.0 / 0.0, longest: 10) == 0
+    assert capped(value: 3.9, longest: 10) == 3
+    assert capped(value: 10.0, longest: 10) == 10
+    assert capped(value: power(multiplier: 10.0, n: 300), longest: arith.MAX) == arith.MAX
+    assert capped(value: 1.0 / 0.0, longest: 7) == 7
+    assert capped(value: to_f64(9_200_000_000_000_000_000), longest: arith.MAX) == 9_200_000_000_000_000_000
+
+test "exponential: the first failure, growth by 2 and by 1.5, the cap, and a failure count past any float"
+    assert exponential(first: 100_000_000, multiplier: 2.0, longest: 10_000_000_000, failures: 1) == 100_000_000
+    assert exponential(first: 100_000_000, multiplier: 2.0, longest: 10_000_000_000, failures: 4) == 800_000_000
+    assert exponential(first: 500_000_000, multiplier: 1.5, longest: 60_000_000_000, failures: 3) == 1_125_000_000
+    assert exponential(first: 100_000_000, multiplier: 2.0, longest: 1_000_000_000, failures: 5) == 1_000_000_000
+    assert exponential(first: 100_000_000, multiplier: 2.0, longest: 1_000_000_000, failures: arith.MAX) == 1_000_000_000
+    assert exponential(first: 7, multiplier: 1.0, longest: 100, failures: 1_000_000) == 7
+    assert exponential(first: 1, multiplier: 10.0, longest: arith.MAX, failures: 30) == arith.MAX
+
+test "jittered: none, full, equal, decorrelated and spread at fractions 0, a half and 1"
+    wait = 800_000_000
+    first = 100_000_000
+    longest = 10_000_000_000
+    assert jittered(kind: NONE, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.0, longest: longest, fraction: 0.7) == wait
+    assert jittered(kind: FULL, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.0, longest: longest, fraction: 0.0) == 0
+    assert jittered(kind: FULL, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.0, longest: longest, fraction: 0.5) == 400_000_000
+    assert jittered(kind: FULL, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.0, longest: longest, fraction: 1.0) == wait
+    assert jittered(kind: EQUAL, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.0, longest: longest, fraction: 0.0) == 400_000_000
+    assert jittered(kind: EQUAL, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.0, longest: longest, fraction: 0.25) == 500_000_000
+    assert jittered(kind: EQUAL, wait: 7, previous: 0, first: 1, multiplier: 2.0, factor: 0.0, longest: 7, fraction: 1.0) == 7
+    assert jittered(kind: DECORRELATED, wait: wait, previous: 0, first: first, multiplier: 3.0, factor: 0.0, longest: longest, fraction: 0.5) == 200_000_000
+    assert jittered(kind: DECORRELATED, wait: wait, previous: 300_000_000, first: first, multiplier: 3.0, factor: 0.0, longest: longest, fraction: 0.5) == 500_000_000
+    assert jittered(kind: DECORRELATED, wait: wait, previous: 9_000_000_000, first: first, multiplier: 3.0, factor: 0.0, longest: longest, fraction: 1.0) == longest
+    assert jittered(kind: SPREAD, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.5, longest: longest, fraction: 0.0) == 400_000_000
+    assert jittered(kind: SPREAD, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.5, longest: longest, fraction: 0.25) == 600_000_000
+    assert jittered(kind: SPREAD, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.5, longest: longest, fraction: 1.0) == 1_200_000_000
+    assert jittered(kind: SPREAD, wait: wait, previous: 0, first: first, multiplier: 2.0, factor: 0.5, longest: 1_000_000_000, fraction: 1.0) == 1_000_000_000
+
+test "is_fraction: 0, 1, inside, below, above, and a NaN"
+    assert is_fraction(0.0) && is_fraction(1.0) && is_fraction(0.5)
+    assert !is_fraction(-0.1)
+    assert !is_fraction(1.0000001)
+    assert !is_fraction(0.0 / 0.0)
+
+test "check: a policy within bounds, then each bound broken, its message naming it"
+    assert !check(first: 1, multiplier: 1.0, longest: 1, attempts: 0, total: 0, factor: 0.0).is_err()
+    results: [()?] = [
+        check(first: 0, multiplier: 2.0, longest: 5, attempts: 0, total: 0, factor: 0.0)
+        check(first: 1, multiplier: 0.5, longest: 5, attempts: 0, total: 0, factor: 0.0)
+        check(first: 1, multiplier: 1.0 / 0.0, longest: 5, attempts: 0, total: 0, factor: 0.0)
+        check(first: 1, multiplier: 0.0 / 0.0, longest: 5, attempts: 0, total: 0, factor: 0.0)
+        check(first: 2_000_000_000, multiplier: 2.0, longest: 1_000_000_000, attempts: 0, total: 0, factor: 0.0)
+        check(first: 1, multiplier: 2.0, longest: 5, attempts: -1, total: 0, factor: 0.0)
+        check(first: 1, multiplier: 2.0, longest: 5, attempts: 0, total: -1_000_000, factor: 0.0)
+        check(first: 1, multiplier: 2.0, longest: 5, attempts: 0, total: 0, factor: 1.5)
+    ]
+    messages = [
+        "the first wait, 0s, is not above zero"
+        "the multiplier 0.5 is not a finite number from 1 up"
+        "the multiplier inf is not a finite number from 1 up"
+        "the multiplier nan is not a finite number from 1 up"
+        "the longest wait, 1s, is shorter than the first, 2s"
+        "the attempts allowed, -1, are below 0"
+        "the total time allowed, -1ms, is below zero"
+        "the spread's factor 1.5 is outside 0 to 1"
+    ]
+
+    for at in range(from: 0, to: results.len())
+        match results[at]
+            .ok _  => assert false
+            .err e => assert e.code == INVALID && e.msg == messages[at]

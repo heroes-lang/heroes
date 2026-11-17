@@ -278,6 +278,13 @@ capability path/match  whether a path matches a pattern of `*`, `?` and classes
   python  PurePath.match, PurePath.full_match
   note    `*`, `?` and classes as Go's `Match`, and `**` as Python's `full_match`, observed: a final `**` holds one or more names, so `a/**` does not match `a`. `[!...]` negates as Python's does and `[^...]` as Go's; a `]` first in a class and a `-` at either end stand for themselves, Python's answer, which Go refuses as malformed; a `[` with no `]` is malformed, Go's answer, which Python reads as itself; by POSIX's rules `\` escapes, Go's, which Python does not; by Windows' rules ASCII letters match without case, Python's, which Go does not. Python's `match`, which matches a relative pattern from the right, is `matches` with that pattern after `**/`. Time stays within the pattern's length times the path's: no backtracking
 
+capability path/gitignore  whether a path is ignored by gitignore files, as git reads them, and the pattern that decides
+  heroes  path.Ignores, path.IgnorePattern, path.parse_ignore, path.with_ignore_file, path.is_ignored, path.ignore_pattern_of
+  go      -
+  rust    -
+  python  -
+  note    none of the three standard libraries has one; the yardsticks are PyPI's pathspec (`GitIgnoreSpec`, `PathSpec.match_file`; the 45th most downloaded project, not installed on this machine on 2026-11-17, so unread), the Rust crate `ignore` (`gitignore::Gitignore`, `GitignoreBuilder`) and Go's go-git `plumbing/format/gitignore`. The behaviour is git's own, gitignore(5) and git 2.56 asked through `git check-ignore -v -n --no-index` with `core.ignorecase` false: bytes and not characters (`?` is one byte, so `caff?` does not match `caffè`), classes of bytes with POSIX names (`[[:digit:]]`), `**` special only between slashes or at an end and `*` elsewhere, a reversed range still holding its first byte (`[z-a]` matches `z`), a pattern git never matches (a `\` at the end, a class open or unknown) matching nothing, a byte order mark and a CR before LF taken off, a file inside an ignored folder ignored whatever a negation says. Cross-checked on 2026-11-17 by 6,795 paths of 530 random sets of files in nested folders, every answer git's. Case is kept, as git with `core.ignorecase` false; the files outside a tree (`.git/info/exclude`, `core.excludesFile`) are the caller's to read and given first
+
 capability path/is-empty  whether a path is the empty text
   heroes  built-in ==
   go      -

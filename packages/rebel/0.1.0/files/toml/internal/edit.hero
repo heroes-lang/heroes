@@ -1,0 +1,429 @@
+# A document's text edited by path, every byte the edit does not touch kept:
+# a value replaced in its own bytes, a key added at the end of its table's
+# key lines, a table or an entry of an array of tables added as a section
+# after the last section of the table that holds it, a key or a table taken
+# out with its own lines. The values come as TOML text that `format` wrote,
+# `v = ...` or `[v]`, so that every value is written in toml's own forms.
+# Each edit is read back, and held to the same edit made on the tree the text
+# read as before (`tree`): an edit that would mean anything else fails
+# `invalid` and leaves the text as it was.
+
+use toml/internal/adding
+use toml/internal/doc
+use toml/internal/inline
+use toml/internal/layout
+use toml/internal/scalar
+use toml/internal/sections
+use toml/internal/tree
+use toml/internal/write
+
+# The code of a path that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a table added where something stands already.
+constant EXISTS: str
+    "exists"
+
+# What `table_removed` answers.
+record Cut
+    # The text left.
+    text: str
+    # Where the first bytes taken out began.
+    first: i64
+    # Whether the first statement taken out was a header.
+    header: bool
+
+# The bytes of every statement of the table `path`, made by headers or by
+# dotted keys, taken out of `text`: each section of it from its header to its
+# last statement that is not blank, and the empty lines after it, those
+# before it too where it ends the text; each pair of it in another section,
+# its own line.
+function table_removed(text: str, stmts: [layout.Statement] lent, path: [str]) -> Cut
+    starts: [i64] @= []
+    ends: [i64] @= []
+    first_header: bool @= false
+
+    for k in range(from: 0, to: stmts.len())
+        s = stmts[k]
+        opens = (s.kind == layout.HEADER || s.kind == layout.ENTRY) && layout.begins_with(path: s.path, prefix: path)
+
+        if opens
+            last = sections.last_in(stmts: stmts, h: k, kind: layout.BLANK)
+            end @= stmts[last].end
+            j @= last + 1
+
+            while j < stmts.len() && sections.is_empty_line(text: text, s: stmts[j])
+                end @ stmts[j].end
+                j @ j + 1
+
+            start @= s.start
+
+            if end == text.len()
+                i @= k
+
+                while i > 0 && sections.is_empty_line(text: text, s: stmts[i - 1])
+                    i @ i - 1
+                    start @ stmts[i].start
+
+            if starts.len() == 0
+                first_header @ true
+            starts @ starts.push(start)
+            ends @ ends.push(end)
+        else if s.kind == layout.PAIR && layout.begins_with(path: s.path, prefix: path)
+            held = s.section >= 0 && layout.begins_with(path: stmts[s.section].path, prefix: path)
+
+            if !held
+                starts @ starts.push(s.start)
+                ends @ ends.push(s.end)
+
+    pieces: [str] @= []
+    at: i64 @= 0
+
+    for k in range(from: 0, to: starts.len())
+        if starts[k] > at
+            pieces @ pieces.push(text.slice(from: at, to: starts[k]))
+
+        if ends[k] > at
+            at @ ends[k]
+
+    pieces @ pieces.push(text.slice(from: at, to: text.len()))
+
+    first = if starts.len() > 0
+        starts[0]
+    else
+        -1
+
+    return Cut(text: pieces.join(""), first: first, header: first_header)
+
+# `written` read back and held to `expected`, the tree the edit of `path`
+# must leave. Fails `invalid` where it is not TOML or reads as another tree.
+function checked(written: str, expected: [doc.Node] lent, path: [str]) -> ()?
+    match doc.parse_document(written)
+        .err e => return fail(
+            code: scalar.INVALID,
+            msg: f"the edit of \"{sections.shown(path)}\" would leave a text that is not TOML 1.0.0: {e.msg}"
+        )
+        .ok after =>
+            if !tree.same(a: expected, b: after)
+                return fail(
+                    code: scalar.INVALID,
+                    msg: f"the edit of \"{sections.shown(path)}\" cannot be written in this document's layout so that it reads back as asked"
+                )
+
+    return ok()
+
+# The value `wrapped`, a document of one key, holds, and where it stands.
+function wrapped_value(wrapped: str) -> [doc.Node]?
+    nodes = doc.parse_document(wrapped)?
+
+    if nodes[0].children.len() != 1
+        return fail(code: scalar.INVALID, msg: "a value is given as a document of one key")
+    return ok(nodes)
+
+# `text` with `path` set to the value `wrapped` holds: in its own bytes
+# where `path` names a pair's value or a value inside it, replacing a table
+# whole, or made. Fails `invalid` for an empty path, a step through a value
+# or a step that is no index of an array, `not_found` for an entry past an
+# array's end.
+function set_value(text: str, path: [str], wrapped: str) -> str?
+    if path.len() == 0
+        return fail(
+            code: scalar.INVALID,
+            msg: "an empty path names the document itself, which takes keys and is no value"
+        )
+    before = doc.parse_document(text)?
+    nodes = wrapped_value(wrapped)?
+    v = nodes[0].children[0]
+    stmts = layout.scan(text)?
+    newline = layout.newline_of(text)
+    p = sections.place_of(stmts: stmts, path: path)
+    written: str @= text
+
+    if p.kind == sections.WHOLE_PAIR
+        s = stmts[p.statement]
+        written @ inline.replaced(text: text, from: s.value_start, to: s.value_end, with: write.inline_text(nodes, v)?)
+    else if p.kind == sections.IN_PAIR
+        s = stmts[p.statement]
+        written @ inline.set_inside(text: text, at: s.value_start, steps: p.rest, value: write.inline_text(nodes, v)?, shown: sections.shown(s.path))?
+    else if p.kind == sections.TABLE
+        cut = table_removed(text: text, stmts: stmts, path: path)
+        left = layout.scan(cut.text)?
+
+        hint = if cut.header && adding.is_sectioned(nodes: nodes, at: v)
+            cut.first
+        else
+            -1
+
+        written @ adding.created(text: cut.text, stmts: left, path: path, nodes: nodes, at: v, newline: newline, hint: hint)?
+    else
+        written @ adding.created(text: text, stmts: stmts, path: path, nodes: nodes, at: v, newline: newline, hint: -1)?
+    expected @= before
+    tree.set_at(nodes: @expected, path: path, from: nodes, at: v)?
+    checked(written: written, expected: expected, path: path)?
+    return ok(written)
+
+# `written`, `text` with what `path` names taken out, with the table or the
+# array that held it kept where only what was taken out made it: a key
+# written dotted becomes its tables, `a.b = {}`, in its own bytes; otherwise
+# the table, or the array of tables emptied, is made as `set_value` makes a
+# value, `[...]` or `key = []`.
+function parent_kept(text: str, stmts: [layout.Statement] lent, path: [str], written: str) -> str?
+    if path.len() < 2
+        return ok(written)
+    parent = path.slice(from: 0, to: path.len() - 1)
+    left = layout.scan(written)?
+
+    if sections.place_of(stmts: left, path: parent).kind != sections.ABSENT
+        return ok(written)
+    first @= -1
+
+    for k in range(from: 0, to: stmts.len())
+        if first < 0 && stmts[k].kind != layout.BLANK && layout.begins_with(path: stmts[k].path, prefix: path)
+            first @ k
+
+    if first >= 0 && stmts[first].kind == layout.PAIR && stmts[first].path == path
+        s = stmts[first]
+
+        above: [str] @= []
+
+        if s.section >= 0
+            above @ stmts[s.section].path
+
+        names = layout.after(path: parent, from: above.len())
+        return ok(
+            inline.replaced(text: text, from: s.content, to: s.value_end, with: inline.dotted_text(names) + " = {}")
+        )
+
+    empty = if sections.is_entries(stmts: stmts, path: parent)
+        "v = []\n"
+    else
+        "[v]\n"
+
+    nodes = wrapped_value(empty)?
+    return adding.created(
+        text: written,
+        stmts: left,
+        path: parent,
+        nodes: nodes,
+        at: nodes[0].children[0],
+        newline: layout.newline_of(text),
+        hint: -1
+    )
+
+# `text` with what `path` names taken out: a pair with its line and its
+# trailing comment, a value inside a pair with its comma, a table or an
+# array of tables with every section and key of it. Fails `not_found` where
+# `path` names nothing, `invalid` for an empty path.
+function remove_value(text: str, path: [str]) -> str?
+    if path.len() == 0
+        return fail(code: scalar.INVALID, msg: "an empty path names the document itself, which cannot be taken out")
+    before = doc.parse_document(text)?
+    stmts = layout.scan(text)?
+    p = sections.place_of(stmts: stmts, path: path)
+    written: str @= text
+
+    if p.kind == sections.WHOLE_PAIR
+        s = stmts[p.statement]
+        written @ inline.replaced(text: text, from: s.start, to: s.end, with: "")
+    else if p.kind == sections.IN_PAIR
+        s = stmts[p.statement]
+        written @ inline.remove_inside(text: text, at: s.value_start, steps: p.rest, shown: sections.shown(s.path))?
+    else if p.kind == sections.TABLE
+        written @ table_removed(text: text, stmts: stmts, path: path).text
+    else
+        return fail(code: NOT_FOUND, msg: f"no key \"{sections.shown(path)}\"")
+
+    if p.kind != sections.IN_PAIR
+        written @ parent_kept(text: text, stmts: stmts, path: path, written: written)?
+    expected @= before
+    tree.remove_at(@expected, path)?
+    checked(written: written, expected: expected, path: path)?
+    return ok(written)
+
+# `text` with an empty table made at `path`, a section `[...]` where its
+# table takes sections, else `{}`. Fails `exists` where `path` names
+# something already.
+function add_table(text: str, path: [str]) -> str?
+    if path.len() == 0
+        return fail(code: EXISTS, msg: "the document is a table already")
+    stmts = layout.scan(text)?
+    p = sections.place_of(stmts: stmts, path: path)
+    there: bool @= p.kind == sections.WHOLE_PAIR || p.kind == sections.TABLE
+
+    if p.kind == sections.IN_PAIR
+        s = stmts[p.statement]
+        spot = inline.spot_of(text: text, at: s.value_start, steps: p.rest, shown: sections.shown(s.path))?
+        there @ spot.member >= 0 || inline.dotted_members(c: spot.container, rest: spot.rest).len() > 0
+
+    if there
+        return fail(code: EXISTS, msg: f"\"{sections.shown(path)}\" is there already")
+    return set_value(text: text, path: path, wrapped: "[v]\n")
+
+# What `add_entry` answers.
+record Added
+    # The text with the entry added.
+    text: str
+    # The entry's index in its array.
+    index: i64
+
+# `text` with the table `wrapped` holds as its one entry, `[[v]]`, appended
+# to the array of tables `path` names: a section `[[...]]` after its last
+# entry, an inline table at the end of an array written inline, the array
+# made where `path` names nothing. Fails `invalid` where `path` names a table
+# or another value.
+function add_entry(text: str, path: [str], wrapped: str) -> Added?
+    if path.len() == 0
+        return fail(code: scalar.INVALID, msg: "the document is a table, not an array of tables")
+    before = doc.parse_document(text)?
+    nodes = wrapped_value(wrapped)?
+    array = nodes[0].children[0]
+
+    if nodes[array].kind != scalar.ARRAY || nodes[array].children.len() != 1
+        return fail(code: scalar.INVALID, msg: "an entry is given as a document of one array of one table")
+    entry = nodes[array].children[0]
+    stmts = layout.scan(text)?
+    newline = layout.newline_of(text)
+    p = sections.place_of(stmts: stmts, path: path)
+    written: str @= text
+    index: i64 @= 0
+
+    if p.kind == sections.TABLE
+        if !sections.is_entries(stmts: stmts, path: path)
+            return fail(code: scalar.INVALID, msg: f"\"{sections.shown(path)}\" is a table, not an array of tables")
+        index @ sections.entry_count(stmts: stmts, path: path)
+        section = adding.section_text(nodes: nodes, at: entry, names: sections.header_keys(stmts: stmts, path: path), entry: true, newline: newline)?
+        written @ adding.section_inserted(
+            text: text,
+            at: sections.subtree_end(text: text, stmts: stmts, path: path),
+            section: section,
+            newline: newline
+        )
+    else if p.kind == sections.WHOLE_PAIR || p.kind == sections.IN_PAIR
+        s = stmts[p.statement]
+        made = inline.append_inside(text: text, at: s.value_start, steps: p.rest, item: write.inline_text(nodes, entry)?, shown: sections.shown(s.path), newline: newline)?
+        written @ made.text
+        index @ made.index
+    else
+        written @ adding.created(text: text, stmts: stmts, path: path, nodes: nodes, at: array, newline: newline, hint: -1)?
+    expected @= before
+    tree.append_at(nodes: @expected, path: path, from: nodes, at: entry)?
+    checked(written: written, expected: expected, path: path)?
+    return ok(Added(text: written, index: index))
+
+# `set_value` on `text`, or the failure's code and message.
+function set_shown(text: str, path: [str], wrapped: str) -> str
+    match set_value(text: text, path: path, wrapped: wrapped)
+        .ok t  => return t
+        .err e => return e.code + ": " + e.msg
+
+# `remove_value` on `text`, or the failure's code and message.
+function remove_shown(text: str, path: [str]) -> str
+    match remove_value(text: text, path: path)
+        .ok t  => return t
+        .err e => return e.code + ": " + e.msg
+
+# `add_entry` on `text`, its index before the text, or the failure's code
+# and message.
+function entry_shown(text: str, path: [str], wrapped: str) -> str
+    match add_entry(text: text, path: path, wrapped: wrapped)
+        .ok a  => return f"{a.index}:{a.text}"
+        .err e => return e.code + ": " + e.msg
+
+# `add_table` on `text`, or the failure's code and message.
+function table_shown(text: str, path: [str]) -> str
+    match add_table(text: text, path: path)
+        .ok t  => return t
+        .err e => return e.code + ": " + e.msg
+
+test "set_value: a value replaced in its own bytes, its comment, spacing and quotes elsewhere kept"
+    assert set_shown(text: "a   =  1   # one\nb = 'x'\n", path: ["a"], wrapped: "v = 2\n") == "a   =  2   # one\nb = 'x'\n"
+    assert set_shown(text: "t = {x = 1, y = [1, 2]}\n", path: ["t", "y", "1"], wrapped: "v = \"z\"\n") == "t = {x = 1, y = [1, \"z\"]}\n"
+    assert set_shown(text: "t = { x = 1 }\n", path: ["t", "w"], wrapped: "v = true\n") == "t = { x = 1, w = true }\n"
+    assert set_shown(text: "[[bin]]\nname = \"a\"\n[[bin]]\nname = \"b\"\n", path: ["bin", "1", "name"], wrapped: "v = \"c\"\n") == "[[bin]]\nname = \"a\"\n[[bin]]\nname = \"c\"\n"
+
+test "set_value: a new key after the last key of its table, indented as it, before the blank lines and comments that close it"
+    text = "[a]\n  x = 1 # one\n\n# about b\n[b]\ny = 2\n"
+    assert set_shown(text: text, path: ["a", "z"], wrapped: "v = 3\n") == "[a]\n  x = 1 # one\n  z = 3\n\n# about b\n[b]\ny = 2\n"
+    assert set_shown(text: text, path: ["b", "z"], wrapped: "v = 3\n") == "[a]\n  x = 1 # one\n\n# about b\n[b]\ny = 2\nz = 3\n"
+    assert set_shown(text: "[a]\n[b]\n", path: ["a", "k"], wrapped: "v = 1\n") == "[a]\nk = 1\n[b]\n"
+    assert set_shown(text: "x = 1\n\n[a]\n", path: ["y"], wrapped: "v = 2\n") == "x = 1\ny = 2\n\n[a]\n"
+
+test "set_value: a key at a root that has none, after the file's comment and before the comments of the first header"
+    assert set_shown(text: "# a file\n\n# about a\n[a]\n", path: ["k"], wrapped: "v = 1\n") == "# a file\n\nk = 1\n\n# about a\n[a]\n"
+    assert set_shown(text: "[a]\n", path: ["k"], wrapped: "v = 1\n") == "k = 1\n\n[a]\n"
+    assert set_shown(text: "", path: ["k"], wrapped: "v = 1\n") == "k = 1\n"
+    assert set_shown(text: "# only a comment", path: ["k"], wrapped: "v = 1\n") == "# only a comment\nk = 1"
+    assert set_shown(text: "a = 1", path: ["b"], wrapped: "v = 2\n") == "a = 1\nb = 2"
+
+test "set_value: a table made as a section after the last section of the table that holds it, its sub-tables under it"
+    text = "[dependencies.yaml]\npath = \"../yaml\"\n\n[package]\nname = \"x\"\n"
+    json_entry = "[v]\nversion = \"1.4.2\"\nsum = \"sha256-1\"\n"
+    expected = "[dependencies.yaml]\npath = \"../yaml\"\n\n[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-1\"\n\n[package]\nname = \"x\"\n"
+    assert set_shown(text: text, path: ["dependencies", "json"], wrapped: json_entry) == expected
+    assert set_shown(text: "a = 1\n", path: ["t"], wrapped: "[v]\nx = 1\n[v.s]\ny = 2\n") == "a = 1\n\n[t]\nx = 1\n\n[t.s]\ny = 2\n"
+    assert set_shown(text: "a = 1\n", path: ["t", "u", "k"], wrapped: "v = 1\n") == "a = 1\n\n[t.u]\nk = 1\n"
+    commented = "[dependencies.yaml]\npath = \"y\"\n# the package\n[package]\n"
+    assert set_shown(text: commented, path: ["dependencies", "json", "version"], wrapped: "v = \"1\"\n") == "[dependencies.yaml]\npath = \"y\"\n\n[dependencies.json]\nversion = \"1\"\n\n# the package\n[package]\n"
+    assert set_shown(text: "a = 1\n", path: ["e"], wrapped: "[[v]]\nx = 1\n[[v]]\nx = 2\n") == "a = 1\n\n[[e]]\nx = 1\n\n[[e]]\nx = 2\n"
+
+test "set_value: a key of a table that dotted keys make, written dotted in their section"
+    assert set_shown(text: "[a]\nb.c = 1\n\n[z]\n", path: ["a", "b", "d"], wrapped: "v = 2\n") == "[a]\nb.c = 1\nb.d = 2\n\n[z]\n"
+    assert set_shown(text: "a.b = 1\n", path: ["a", "c", "d"], wrapped: "v = 2\n") == "a.b = 1\na.c.d = 2\n"
+    assert set_shown(text: "[x.y]\nk = 1\n", path: ["x", "z"], wrapped: "v = 2\n") == "[x]\nz = 2\n\n[x.y]\nk = 1\n"
+    assert set_shown(text: "a = 1\n\n# y's\n[x.y]\nk = 1\n", path: ["x", "z"], wrapped: "v = 2\n") == "a = 1\n\n[x]\nz = 2\n\n# y's\n[x.y]\nk = 1\n"
+
+test "set_value: a table replaced whole where it stood, and by a value in its parent's keys"
+    text = "[a]\nx = 1\n\n[a.b]\ny = 2 # why\n\n[a.c]\nz = 3\n"
+    assert set_shown(text: text, path: ["a", "b"], wrapped: "[v]\nw = 4\n") == "[a]\nx = 1\n\n[a.b]\nw = 4\n\n[a.c]\nz = 3\n"
+    assert set_shown(text: text, path: ["a", "b"], wrapped: "v = 4\n") == "[a]\nx = 1\nb = 4\n\n[a.c]\nz = 3\n"
+
+test "set_value: an empty path, a step through a value, an entry past the end, and a step that is no index"
+    assert set_shown(text: "a = 1\n", path: [], wrapped: "v = 1\n") == "invalid: an empty path names the document itself, which takes keys and is no value"
+    assert set_shown(text: "a = 1\n", path: ["a", "b"], wrapped: "v = 1\n") == "invalid: \"a\" is a value, neither a table nor an array"
+    assert set_shown(text: "[[bin]]\nx = 1\n", path: ["bin", "3", "x"], wrapped: "v = 1\n") == "not_found: no entry 3 in the array of tables \"bin\""
+    assert set_shown(text: "[[bin]]\nx = 1\n", path: ["bin", "x"], wrapped: "v = 1\n") == "invalid: \"x\" is no index of an array"
+    assert set_shown(text: "a = [1]\n", path: ["a", "1"], wrapped: "v = 1\n") == "not_found: no item 1 in \"a\", which holds 1"
+
+test "set_value: CR LF line ends kept in every line added"
+    assert set_shown(text: "a = 1\r\n", path: ["b"], wrapped: "v = 2\n") == "a = 1\r\nb = 2\r\n"
+    assert set_shown(text: "a = 1\r\n", path: ["t"], wrapped: "[v]\nx = 1\n") == "a = 1\r\n\r\n[t]\r\nx = 1\r\n"
+
+test "remove_value: a key with its line and its trailing comment, never the comment above it"
+    assert remove_shown(text: "# above\na = 1 # one\nb = 2\n", path: ["a"]) == "# above\nb = 2\n"
+    assert remove_shown(text: "a = 1\nb = 2", path: ["b"]) == "a = 1\n"
+    assert remove_shown(text: "t = {x = 1, y = 2}\n", path: ["t", "x"]) == "t = {y = 2}\n"
+    assert remove_shown(text: "a = 1\n", path: ["b"]) == "not_found: no key \"b\""
+    assert remove_shown(text: "a = 1\n", path: []) == "invalid: an empty path names the document itself, which cannot be taken out"
+
+test "remove_value: a section in the middle, the last one, its sub-tables, and the comments of the next header kept"
+    text = "[a]\nx = 1\n\n[b]\ny = 2\n# c's\n[c]\nz = 3\n\n[b.d]\nw = 4\n"
+    assert remove_shown(text: text, path: ["b"]) == "[a]\nx = 1\n\n# c's\n[c]\nz = 3\n"
+    assert remove_shown(text: text, path: ["c"]) == "[a]\nx = 1\n\n[b]\ny = 2\n# c's\n[b.d]\nw = 4\n"
+    assert remove_shown(text: text, path: ["b", "d"]) == "[a]\nx = 1\n\n[b]\ny = 2\n# c's\n[c]\nz = 3\n"
+
+test "remove_value: an entry of an array of tables, the whole array, and a table dotted keys make"
+    text = "[[bin]]\nname = \"a\"\n\n[[bin]]\nname = \"b\"\n\n[[bin]]\nname = \"c\"\n"
+    assert remove_shown(text: text, path: ["bin", "1"]) == "[[bin]]\nname = \"a\"\n\n[[bin]]\nname = \"c\"\n"
+    assert remove_shown(text: text, path: ["bin"]) == ""
+    assert remove_shown(text: "[a]\nb.c = 1\nb.d = 2\ne = 3\n", path: ["a", "b"]) == "[a]\ne = 3\n"
+
+test "remove_value: the table or the array that held what was taken out kept where only it made them"
+    assert remove_shown(text: "dependencies.json.version = \"1.4.2\" # pinned\n", path: ["dependencies", "json", "version"]) == "dependencies.json = {} # pinned\n"
+    assert remove_shown(text: "a = 1\n[[bin]]\nx = 1\n", path: ["bin", "0"]) == "a = 1\nbin = []\n"
+    assert remove_shown(text: "[a.b]\nx = 1\n", path: ["a", "b"]) == "[a]\n"
+    assert remove_shown(text: "a.b = 1\na.c = 2\n", path: ["a", "b"]) == "a.c = 2\n"
+
+test "add_table: a section, one inside an inline table, and one there already"
+    assert table_shown(text: "a = 1\n", path: ["t"]) == "a = 1\n\n[t]\n"
+    assert table_shown(text: "t = {x = 1}\n", path: ["t", "u"]) == "t = {x = 1, u = {}}\n"
+    assert table_shown(text: "[t]\n", path: ["t"]) == "exists: \"t\" is there already"
+    assert table_shown(text: "a = 1\n", path: ["a"]) == "exists: \"a\" is there already"
+
+test "add_entry: after the last entry and its sub-tables, inline, an array made, and a table refused"
+    text = "[[bin]]\nname = \"a\"\n[bin.opt]\nx = 1\n\n[other]\n"
+    assert entry_shown(text: text, path: ["bin"], wrapped: "[[v]]\nname = \"b\"\n") == "1:[[bin]]\nname = \"a\"\n[bin.opt]\nx = 1\n\n[[bin]]\nname = \"b\"\n\n[other]\n"
+    assert entry_shown(text: "bin = [{name = \"a\"}]\n", path: ["bin"], wrapped: "[[v]]\nname = \"b\"\n") == "1:bin = [{name = \"a\"}, {name = \"b\"}]\n"
+    assert entry_shown(text: "a = 1\n", path: ["bin"], wrapped: "[[v]]\nname = \"b\"\n") == "0:a = 1\n\n[[bin]]\nname = \"b\"\n"
+    assert entry_shown(text: "[t]\n", path: ["t"], wrapped: "[[v]]\n") == "invalid: \"t\" is a table, not an array of tables"
+    assert entry_shown(text: "a = 1\n", path: ["a"], wrapped: "[[v]]\n") == "invalid: \"a\" is a value, neither a table nor an array"

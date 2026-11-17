@@ -1,0 +1,206 @@
+# Where a path stands in a document's statements, and where a table's
+# sections begin and end: what a path names (a pair's value, a place inside
+# it, a table made by headers or dotted keys, or nothing), the header of a
+# table, the keys a header writes for a path, and the first and last
+# statements of a table and the tables under it.
+
+use toml/internal/layout
+
+# A path that names nothing in the document.
+constant ABSENT: i64
+    0
+
+# A path that names a pair's whole value.
+constant WHOLE_PAIR: i64
+    1
+
+# A path that goes inside a pair's value, an inline table or an array.
+constant IN_PAIR: i64
+    2
+
+# A path that names a table or an array of tables made by headers or by
+# dotted keys.
+constant TABLE: i64
+    3
+
+# What a path names in a document.
+record Place
+    # `ABSENT`, `WHOLE_PAIR`, `IN_PAIR` or `TABLE`.
+    kind: i64
+    # The pair, for `WHOLE_PAIR` and `IN_PAIR`; -1 for the others.
+    statement: i64
+    # The steps below the pair's key, for `IN_PAIR`.
+    rest: [str]
+
+# What `path` names among the statements `all`.
+function place_of(stmts: [layout.Statement] lent, path: [str]) -> Place
+    for k in range(from: 0, to: stmts.len())
+        s = stmts[k]
+
+        if s.kind == layout.PAIR
+            if s.path == path
+                return Place(kind: WHOLE_PAIR, statement: k, rest: [])
+
+            if layout.begins_with(path: path, prefix: s.path)
+                return Place(kind: IN_PAIR, statement: k, rest: layout.after(path: path, from: s.path.len()))
+
+    for s in stmts
+        if s.kind != layout.BLANK && layout.begins_with(path: s.path, prefix: path)
+            if s.kind != layout.PAIR || s.path.len() > path.len()
+                return Place(kind: TABLE, statement: -1, rest: [])
+
+    return Place(kind: ABSENT, statement: -1, rest: [])
+
+# Whether `path` names an array of tables that headers `[[...]]` made.
+function is_entries(stmts: [layout.Statement] lent, path: [str]) -> bool
+    for s in stmts
+        if s.kind == layout.ENTRY && s.path.len() == path.len() + 1 && layout.begins_with(path: s.path, prefix: path)
+            return true
+
+    return false
+
+# How many entries the array of tables `path` holds.
+function entry_count(stmts: [layout.Statement] lent, path: [str]) -> i64
+    count: i64 @= 0
+
+    for s in stmts
+        if s.kind == layout.ENTRY && s.path.len() == path.len() + 1 && layout.begins_with(path: s.path, prefix: path)
+            count @ count + 1
+
+    return count
+
+# Where the header whose table is `path` stands, or -1.
+function header_of(stmts: [layout.Statement] lent, path: [str]) -> i64
+    for k in range(from: 0, to: stmts.len())
+        if (stmts[k].kind == layout.HEADER || stmts[k].kind == layout.ENTRY) && stmts[k].path == path
+            return k
+
+    return -1
+
+# The keys a header writes for `path`: its steps but the indices of entries.
+function header_keys(stmts: [layout.Statement] lent, path: [str]) -> [str]
+    names: [str] @= []
+
+    for k in range(from: 0, to: path.len())
+        h = header_of(stmts: stmts, path: path.slice(from: 0, to: k + 1))
+
+        if h < 0 || stmts[h].kind != layout.ENTRY
+            names @ names.push(path[k])
+
+    return names
+
+# Where the section opened at `h` ends among the statements: the index of the
+# next header, or past the last; `h` is -1 for the root's.
+function section_stop(stmts: [layout.Statement] lent, h: i64) -> i64
+    k @= h + 1
+
+    while k < stmts.len() && stmts[k].kind != layout.HEADER && stmts[k].kind != layout.ENTRY
+        k @ k + 1
+
+    return k
+
+# The last statement of `kind` in the section opened at `h`, or -1;
+# `layout.BLANK` asks for the last that is not blank, the header included.
+function last_in(stmts: [layout.Statement] lent, h: i64, kind: i64) -> i64
+    found: i64 @= -1
+
+    if h >= 0 && kind == layout.BLANK
+        found @ h
+
+    for k in range(from: h + 1, to: section_stop(stmts: stmts, h: h))
+        wanted = if kind == layout.BLANK
+            stmts[k].kind != layout.BLANK
+        else
+            stmts[k].kind == kind
+
+        if wanted
+            found @ k
+
+    return found
+
+# Whether the statement is a line of nothing but spaces.
+function is_empty_line(text: str, s: layout.Statement) -> bool
+    return s.kind == layout.BLANK && (s.content >= text.len() || text[s.content] != '#')
+
+# The byte past the last statement that is not blank in the sections of the
+# table `path` and the tables under it, where a section for one more of them
+# goes; the text's end where none is.
+function subtree_end(text: str, stmts: [layout.Statement] lent, path: [str]) -> i64
+    last: i64 @= -1
+
+    for k in range(from: 0, to: stmts.len())
+        if (stmts[k].kind == layout.HEADER || stmts[k].kind == layout.ENTRY) && layout.begins_with(path: stmts[k].path, prefix: path)
+            last @ k
+
+    if last < 0 && path.len() > 0
+        return text.len()
+    filled = last_in(stmts: stmts, h: last, kind: layout.BLANK)
+
+    if filled < 0
+        return text.len()
+    return stmts[filled].end
+
+# Where the first section of the table `path` and the tables under it
+# begins, the comments that stand on its header included: where a header
+# for that table itself goes, before its sub-tables, as Python's tomlkit puts
+# it; the text's end where none is.
+function subtree_start(text: str, stmts: [layout.Statement] lent, path: [str]) -> i64
+    for k in range(from: 0, to: stmts.len())
+        if (stmts[k].kind == layout.HEADER || stmts[k].kind == layout.ENTRY) && layout.begins_with(path: stmts[k].path, prefix: path)
+            j @= k
+
+            while j > 0 && stmts[j - 1].kind == layout.BLANK && !is_empty_line(text: text, s: stmts[j - 1])
+                j @ j - 1
+
+            return stmts[j].start
+
+    return text.len()
+
+# `path` shown in a message.
+function shown(path: [str]) -> str
+    return path.join(".")
+
+# What `place_of` answers for `path` in `text`, as a test reads it: the
+# kind's letter and, inside a pair, the steps below it.
+function place_shown(text: str, path: [str]) -> str
+    p = place_of(stmts: layout.scan(text).must(), path: path)
+
+    if p.kind == WHOLE_PAIR
+        return "pair"
+
+    if p.kind == IN_PAIR
+        return "in " + p.rest.join(".")
+
+    if p.kind == TABLE
+        return "table"
+    return "absent"
+
+test "place_of: a pair's value, a place inside it, tables by a header and by dotted keys, an array of tables, nothing"
+    text = "a.b = {c = [1]}\n[t]\nx = 1\n[[e]]\n[[e]]\n"
+    assert place_shown(text: text, path: ["a", "b"]) == "pair"
+    assert place_shown(text: text, path: ["a", "b", "c", "0"]) == "in c.0"
+    assert place_shown(text: text, path: ["a"]) == "table"
+    assert place_shown(text: text, path: ["t"]) == "table"
+    assert place_shown(text: text, path: ["e"]) == "table"
+    assert place_shown(text: text, path: ["e", "1"]) == "table"
+    assert place_shown(text: text, path: ["e", "2"]) == "absent"
+    assert place_shown(text: text, path: ["z"]) == "absent"
+
+test "header_keys, is_entries and entry_count: the indices of entries left out of a header"
+    stmts = layout.scan("[[a]]\n[a.b]\n[[a]]\n[[a.c]]\n").must()
+    assert header_keys(stmts: stmts, path: ["a", "1", "c", "0"]) == ["a", "c"]
+    assert header_keys(stmts: stmts, path: ["a", "0", "b", "x"]) == ["a", "b", "x"]
+    assert is_entries(stmts: stmts, path: ["a"])
+    assert !is_entries(stmts: stmts, path: ["a", "0", "b"])
+    assert entry_count(stmts: stmts, path: ["a"]) == 2
+
+test "subtree_end and subtree_start: past a table's last line that is not blank, and before the comments on its first header"
+    text = "a = 1\n\n# t's\n[t]\nx = 1\n\n# u's\n[u]\n[t.s]\ny = 2\n\n"
+    stmts = layout.scan(text).must()
+    assert subtree_end(text: text, stmts: stmts, path: ["t"]) == 46
+    assert subtree_start(text: text, stmts: stmts, path: ["t"]) == 7
+    assert subtree_end(text: text, stmts: stmts, path: []) == 46
+    assert subtree_end(text: text, stmts: stmts, path: ["z"]) == text.len()
+    assert subtree_start(text: text, stmts: stmts, path: ["z"]) == text.len()
+    assert last_in(stmts: stmts, h: -1, kind: layout.PAIR) == 0
+    assert section_stop(stmts: stmts, h: -1) == 3

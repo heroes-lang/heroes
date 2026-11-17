@@ -10,7 +10,10 @@
  * user's folders are, what the environment holds, random bytes, how large
  * the terminal is, which system and processor it runs on, the system's
  * version, the user's name, the processor time spent, the load and the
- * machine's memory.
+ * machine's memory; and what a monitor of the machine reads (round 5): the
+ * processors' time, a process's memory and time by its id and the counters of
+ * the network interfaces. A volume's space is `hero_disk.h`'s
+ * (`hero_disk_space`).
  *
  * A HEADER OF THE PLATFORM LAYER, AND NOT OF THE RUNTIME, as `hero_net.h` is:
  * its functions are defined in `platform/hero_sys.c`, a member of the archive
@@ -18,7 +21,7 @@
  * that calls one; a group binds them by naming this header,
  * `extern "hero_sys.h"`, with no `link` word and no flag. On Windows the
  * member, and only a program that takes it, links `bcrypt`, `shell32`,
- * `ole32`, `uuid` and `advapi32`.
+ * `ole32`, `uuid`, `advapi32` and `iphlpapi`.
  *
  * WHAT IS NOT HERE IS IN `hero_os.h` ALREADY: the process's own id
  * (`hero_os_pid`), the path of its executable and the reading of one
@@ -244,6 +247,67 @@ int64_t hero_sys_load_average(int64_t *one, int64_t *five, int64_t *fifteen);
  * `ullTotalPhys` and `ullAvailPhys`. On a POSIX system neither Darwin nor
  * Linux, -1 with `HERO_SYS_UNSUPPORTED`. */
 int64_t hero_sys_memory(int64_t *total, int64_t *available);
+
+/* The time the machine's processors have spent since it started, summed over
+ * every processor, in MICROSECONDS (nanoseconds summed over 256 processors
+ * pass what 64 bits hold within a year and a half), in one reading: running
+ * programs' own code, niced ones included, into `*user_us`; the system's own
+ * code, interrupts included, into `*system_us`; idle into `*idle_us`; idle
+ * while a read or a write the system waits for is pending into
+ * `*waiting_us`; taken by a hypervisor for another machine into
+ * `*stolen_us`. Answers 0, or -1 with the five left as they were.
+ * On Darwin the ticks `host_processor_info` counts for each processor, a tick
+ * being `kern.clockrate`'s, summed in 64 bits, waiting and stolen 0, which
+ * it does not tell apart; on Linux the first line of `/proc/stat`, in the
+ * ticks of `sysconf(_SC_CLK_TCK)`, interrupts and soft interrupts in the
+ * system's, guests' time left in the user's where the kernel counts it; on
+ * Windows `GetSystemTimes`, whose kernel time holds the idle time, taken out
+ * of the system's here, waiting and stolen 0. On a POSIX system neither
+ * Darwin nor Linux, -1 with `HERO_SYS_UNSUPPORTED`. Darwin counts each
+ * processor's ticks in 32 bits, so one of them starts again from 0 after
+ * about 497 days of its time: a later reading then has less, and a caller
+ * comparing two readings says so rather than reading a negative span. */
+int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_us, int64_t *waiting_us, int64_t *stolen_us);
+
+/* What the process `pid` holds and has spent, in one reading: its resident
+ * memory in bytes into `*resident`, its virtual memory in bytes into
+ * `*virtual_bytes`, and the processor time it has spent, every thread of it,
+ * in its own code into `*user_ns` and in the system's on its behalf into
+ * `*system_ns`, in nanoseconds. Answers 0, or -1 with the four left as they
+ * were: `HERO_SYS_INVALID` for an id below 1 or above what the platform's
+ * ids hold, `HERO_SYS_NOT_FOUND` where no process has that id, and
+ * `HERO_SYS_DENIED` where the system does not let this process read that one
+ * (on Darwin a process of another user). On Darwin `proc_pidinfo`'s
+ * `PROC_PIDTASKINFO`, its times converted by `mach_timebase_info` and the
+ * virtual memory the size of the address space; on Linux `/proc/<pid>/stat`,
+ * the times in the ticks of `sysconf(_SC_CLK_TCK)` and the resident memory
+ * in pages; on Windows `GetProcessTimes` and `K32GetProcessMemoryInfo` of a
+ * handle `OpenProcess` gives for `PROCESS_QUERY_LIMITED_INFORMATION`, the
+ * resident memory the working set and the virtual memory the bytes committed
+ * for the process alone (`PagefileUsage`), not its address space. A process
+ * that has ended and is not yet waited for answers what the system still
+ * keeps of it, on Linux a resident memory of 0, or `HERO_SYS_NOT_FOUND`. On
+ * a POSIX system neither Darwin nor Linux, -1 with `HERO_SYS_UNSUPPORTED`. */
+int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_bytes, int64_t *user_ns, int64_t *system_ns);
+
+/* The counters of every network interface of the machine since it started,
+ * by the fill form, in the system's order (on Darwin each interface is
+ * asked in turn, so two of them are not read at one moment): for each
+ * interface its name's bytes and one zero byte, then eight counters, each
+ * written in decimal digits and followed by one zero byte: the bytes
+ * received, the bytes sent, the packets received, the packets sent, the
+ * errors receiving, the errors sending, the packets dropped received and the
+ * packets dropped sent. No interface is left out but Windows' filter
+ * interfaces, which count again what an interface below them counts. On
+ * Darwin the interfaces `if_nameindex` lists, each one's exact counters asked
+ * of the interface MIB (`IFMIB_IFDATA`), the dropped sent its send queue's
+ * drops, counted in 32 bits (the list `NET_RT_IFLIST2` gives an ordinary
+ * process cuts its bytes to 32 bits and rounds them to KiB); on Linux
+ * `/proc/net/dev`, read whole, its dropped packets the `drop` columns; on
+ * Windows `GetIfTable2`, each row's `Alias` the name, its unicast and other
+ * packets added, its discards the dropped. On a POSIX system neither Darwin
+ * nor Linux, -1 with `HERO_SYS_UNSUPPORTED`. */
+int64_t hero_sys_network_counters(void *buffer, uint64_t count);
 
 /* The kind of the last call's failure on this thread, `HERO_SYS_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the

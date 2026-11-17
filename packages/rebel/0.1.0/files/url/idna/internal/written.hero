@@ -1,0 +1,61 @@
+# How a message writes what it names: a code point as "U+00E9", a label in
+# quotes with what a reader cannot see escaped, and code points as a text.
+
+use unicode
+
+# The digits of `n`, at least 0, in hexadecimal, at least `least` of them:
+# "0123456789ABCDEF"'s or `digits`'s, whichever the caller hands.
+function hex_of(n: i64, least: i64, digits: str) -> str
+    pieces: [str] @= []
+    rest: i64 @= n
+
+    while rest > 0 || pieces.len() < least
+        d = rest % 16
+        pieces @ pieces.push(digits.slice(from: d, to: d + 1))
+        rest @ rest / 16
+
+    reversed: [str] @= []
+    at: i64 @= pieces.len() - 1
+
+    while at >= 0
+        reversed @ reversed.push(pieces[at])
+        at @ at - 1
+
+    return reversed.join("")
+
+# `n` as a message names it: "U+00E9".
+function code_name(n: i64) -> str
+    return "U+" + hex_of(n: n, least: 4, digits: "0123456789ABCDEF")
+
+# `points` in double quotes for a message: a printable character as itself,
+# and a quote, a backslash or any other as a string of this language escapes
+# it, `\u{22}`, so that a message never holds a control character or one a
+# reader cannot see.
+function shown(points: [i64] lent) -> str
+    pieces: [str] @= ["\""]
+
+    for p in points
+        c = unicode.from_code_point(p).must()
+
+        if p != '"' && p != '\\' && unicode.is_printable(c)
+            pieces @ pieces.push(c)
+        else
+            pieces @ pieces.push("\\u{" + hex_of(n: p, least: 1, digits: "0123456789abcdef") + "}")
+
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# The text `points` write. Every entry is a scalar value: the mapping
+# table's, a host's own, or Punycode's, which `punycode.decode` checks.
+function text_of(points: [i64] lent) -> str
+    return unicode.from_code_points(points).must()
+
+## Tests
+
+test "hex_of, code_name and shown: zero, the largest, a quote, a control character and a character of two bytes"
+    assert hex_of(n: 0, least: 4, digits: "0123456789ABCDEF") == "0000"
+    assert hex_of(n: 0, least: 1, digits: "0123456789abcdef") == "0"
+    assert hex_of(n: 0x10ffff, least: 4, digits: "0123456789ABCDEF") == "10FFFF"
+    assert code_name(0xe9) == "U+00E9"
+    assert shown([]) == "\"\""
+    assert shown([0x61, 0x22, 0x5c, 0x9, 0xe9]) == "\"a\\u{22}\\u{5c}\\u{9}é\""

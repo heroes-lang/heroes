@@ -45,12 +45,22 @@
 #include <string.h>
 
 #if defined(_WIN32)
+/* Before `windows.h`, which otherwise reads the older `winsock.h`, whose names
+ * `iphlpapi.h`'s own headers define again; `ws2tcpip.h` reads `ws2ipdef.h`,
+ * without which `iphlpapi.h` declares no `MIB_IF_ROW2` (round 5, the order
+ * `hero_net.c` reads them in). */
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <bcrypt.h>
 #include <objbase.h>
 #include <shlobj.h>
 #include <tlhelp32.h>
 #include <wchar.h>
+/* A process's memory (`K32GetProcessMemoryInfo`, in `kernel32` since
+ * Windows 7) and the interfaces' counters (`GetIfTable2`), round 5. */
+#include <psapi.h>
+#include <iphlpapi.h>
 /* The libraries the member needs, named by the member, as `hero_net.c` names
  * `ws2_32`: the request travels in the object, and the linker reads it only
  * where it takes this member, so a program that asks nothing of this header
@@ -64,6 +74,9 @@
 #pragma comment(lib, "uuid.lib")
 /* `GetUserNameW`, as `parts/replace.c` names it for `GetFileSecurityW`. */
 #pragma comment(lib, "advapi32.lib")
+/* `GetIfTable2` and `FreeMibTable`, for `hero_sys_network_counters` alone
+ * (round 5). */
+#pragma comment(lib, "iphlpapi.lib")
 #endif
 #else
 #include <errno.h>
@@ -96,6 +109,15 @@ extern char **environ;
 #if defined(__linux__)
 #include <fcntl.h>
 #include <sys/sysinfo.h>
+#endif
+/* What a monitor reads (round 5): on Darwin a process's task by its id, the
+ * clock that counts its time, and the interfaces' list and their MIB. */
+#if defined(__APPLE__)
+#include <libproc.h>
+#include <mach/mach_time.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <net/if_mib.h>
 #endif
 #endif
 
@@ -143,6 +165,7 @@ static int64_t hero_sys_kind_of(int64_t code) {
     case EAGAIN:
         return HERO_SYS_LIMIT;
     case ENOENT:
+    case ESRCH:
         return HERO_SYS_NOT_FOUND;
     case ENOSYS:
     case ENOTSUP:
@@ -237,6 +260,52 @@ static bool hero_sys_nanoseconds(int64_t seconds, int64_t parts, int64_t scale, 
     }
     return true;
 }
+
+#if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
+
+/* `value` times `numerator` over `denominator`, rounded down, into `*out`,
+ * computed so that no step passes 64 bits where the answer does not: a count
+ * of ticks or of a clock's units turned into micro- or nanoseconds. False
+ * where the answer does not fit an `int64_t` or the denominator is 0. */
+static bool hero_sys_scaled(uint64_t value, uint64_t numerator, uint64_t denominator, int64_t *out) {
+    uint64_t whole = 0;
+    uint64_t part = 0;
+    uint64_t sum = 0;
+
+    if (denominator == 0) {
+        return false;
+    }
+    if (__builtin_mul_overflow(value / denominator, numerator, &whole) || __builtin_mul_overflow(value % denominator, numerator, &part)) {
+        return false;
+    }
+    if (__builtin_add_overflow(whole, part / denominator, &sum) || sum > (uint64_t)INT64_MAX) {
+        return false;
+    }
+    *out = (int64_t)sum;
+    return true;
+}
+
+/* One counter of `hero_sys_network_counters`: its decimal digits, no sign and
+ * no zero before them, then one zero byte. */
+static void hero_sys_counter(hero_sys_fill *f, uint64_t value) {
+    char digits[21];
+    size_t n = 0;
+
+    do {
+        digits[sizeof digits - 2 - n] = (char)('0' + (int)(value % 10u));
+        value /= 10u;
+        n += 1;
+    } while (value > 0);
+    digits[sizeof digits - 1] = '\0';
+    hero_sys_put(f, digits + sizeof digits - 1 - n, n + 1);
+}
+
+/* The zero byte that ends a name, or a counter the platform does not keep. */
+static void hero_sys_zero(hero_sys_fill *f) {
+    hero_sys_put(f, "", 1);
+}
+
+#endif
 
 #if defined(_WIN32)
 
@@ -651,6 +720,154 @@ int64_t hero_sys_memory(int64_t *total, int64_t *available) {
     *available = (int64_t)free_now;
     hero_sys_fine();
     return 0;
+}
+
+/* A `FILETIME` span's 100-nanosecond units, its two halves joined. */
+static uint64_t hero_sys_units(const FILETIME *span) {
+    return ((uint64_t)span->dwHighDateTime << 32) | (uint64_t)span->dwLowDateTime;
+}
+
+/* `GetSystemTimes` sums every processor's time; its kernel time holds the
+ * idle time (its page), which is taken out of it here. Windows tells no time
+ * waiting for a read and none stolen by a hypervisor apart. */
+int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_us, int64_t *waiting_us, int64_t *stolen_us) {
+    FILETIME idle;
+    FILETIME kernel;
+    FILETIME user;
+    uint64_t in_idle = 0;
+    uint64_t in_kernel = 0;
+    int64_t idle_now = 0;
+    int64_t system_now = 0;
+    int64_t user_now = 0;
+
+    if (user_us == NULL || system_us == NULL || idle_us == NULL || waiting_us == NULL || stolen_us == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (!GetSystemTimes(&idle, &kernel, &user)) {
+        DWORD code = GetLastError();
+
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    in_idle = hero_sys_units(&idle);
+    in_kernel = hero_sys_units(&kernel);
+    if (in_kernel < in_idle) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    if (!hero_sys_scaled(in_idle, 1, 10, &idle_now) || !hero_sys_scaled(in_kernel - in_idle, 1, 10, &system_now) || !hero_sys_scaled(hero_sys_units(&user), 1, 10, &user_now)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    *user_us = user_now;
+    *system_us = system_now;
+    *idle_us = idle_now;
+    *waiting_us = 0;
+    *stolen_us = 0;
+    hero_sys_fine();
+    return 0;
+}
+
+/* `OpenProcess` refuses an id no process has with `ERROR_INVALID_PARAMETER`
+ * (its page), which is that id not found. The handle asks for the least
+ * access both calls need, which a process of another user still grants where
+ * it is not protected; it is closed before any answer. */
+int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_bytes, int64_t *user_ns, int64_t *system_ns) {
+    HANDLE process = NULL;
+    FILETIME created;
+    FILETIME ended;
+    FILETIME kernel;
+    FILETIME user;
+    PROCESS_MEMORY_COUNTERS counters;
+    int64_t in_user = 0;
+    int64_t in_system = 0;
+    BOOL timed = FALSE;
+    BOOL counted = FALSE;
+    DWORD code = 0;
+
+    if (resident == NULL || virtual_bytes == NULL || user_ns == NULL || system_ns == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (pid < 1 || pid > (int64_t)MAXDWORD) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid);
+    if (process == NULL) {
+        code = GetLastError();
+        return hero_sys_fail(code == ERROR_INVALID_PARAMETER ? HERO_SYS_NOT_FOUND : hero_sys_kind_of(code), code);
+    }
+    memset(&counters, 0, sizeof counters);
+    counters.cb = (DWORD)sizeof counters;
+    timed = GetProcessTimes(process, &created, &ended, &kernel, &user);
+    if (!timed) {
+        code = GetLastError();
+    } else {
+        counted = K32GetProcessMemoryInfo(process, &counters, (DWORD)sizeof counters);
+        if (!counted) {
+            code = GetLastError();
+        }
+    }
+    (void)CloseHandle(process);
+    if (!timed || !counted) {
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    if (!hero_sys_filetime(&user, &in_user) || !hero_sys_filetime(&kernel, &in_system)) {
+        return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    if ((uint64_t)counters.WorkingSetSize > (uint64_t)INT64_MAX || (uint64_t)counters.PagefileUsage > (uint64_t)INT64_MAX) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    *resident = (int64_t)counters.WorkingSetSize;
+    *virtual_bytes = (int64_t)counters.PagefileUsage;
+    *user_ns = in_user;
+    *system_ns = in_system;
+    hero_sys_fine();
+    return 0;
+}
+
+/* `GetIfTable2` hands a table it allocated, given back by `FreeMibTable`
+ * whatever is written. A filter interface (an NDIS filter over another,
+ * which the row's flags name) counts again its interface's packets and is
+ * left out. A row's counters are 64 bits; a sum that does not fit is a
+ * reading gone wrong. */
+int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
+    MIB_IF_TABLE2 *table = NULL;
+    hero_sys_fill f = hero_sys_into(buffer, count);
+    DWORD code = 0;
+    bool over = false;
+
+    if (!hero_sys_room(buffer, count)) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    code = GetIfTable2(&table);
+    if (code != NO_ERROR || table == NULL) {
+        return hero_sys_fail(code == NO_ERROR ? HERO_SYS_OTHER : hero_sys_kind_of((int64_t)code), (int64_t)code);
+    }
+    for (ULONG i = 0; i < table->NumEntries && !over; i += 1) {
+        const MIB_IF_ROW2 *row = &table->Table[i];
+        uint64_t packets_in = 0;
+        uint64_t packets_out = 0;
+
+        if (row->InterfaceAndOperStatusFlags.FilterInterface) {
+            continue;
+        }
+        if (__builtin_add_overflow((uint64_t)row->InUcastPkts, (uint64_t)row->InNUcastPkts, &packets_in) || __builtin_add_overflow((uint64_t)row->OutUcastPkts, (uint64_t)row->OutNUcastPkts, &packets_out)) {
+            over = true;
+            break;
+        }
+        hero_sys_wide(&f, row->Alias, wcsnlen(row->Alias, sizeof row->Alias / sizeof row->Alias[0]));
+        hero_sys_zero(&f);
+        hero_sys_counter(&f, (uint64_t)row->InOctets);
+        hero_sys_counter(&f, (uint64_t)row->OutOctets);
+        hero_sys_counter(&f, packets_in);
+        hero_sys_counter(&f, packets_out);
+        hero_sys_counter(&f, (uint64_t)row->InErrors);
+        hero_sys_counter(&f, (uint64_t)row->OutErrors);
+        hero_sys_counter(&f, (uint64_t)row->InDiscards);
+        hero_sys_counter(&f, (uint64_t)row->OutDiscards);
+    }
+    FreeMibTable(table);
+    if (over) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    return hero_sys_filled(&f);
 }
 
 #else
@@ -1261,6 +1478,507 @@ int64_t hero_sys_memory(int64_t *total, int64_t *available) {
  * written for it, and none is invented. */
 int64_t hero_sys_memory(int64_t *total, int64_t *available) {
     if (total == NULL || available == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);
+}
+
+#endif
+
+/* ---- What a monitor reads (round 5): the processors' time, a process by
+ * its id, a volume's space and the interfaces' counters. ---- */
+
+#if defined(__APPLE__)
+
+int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_us, int64_t *waiting_us, int64_t *stolen_us) {
+    struct clockinfo clock;
+    size_t clock_size = sizeof clock;
+    natural_t processors = 0;
+    processor_info_array_t info = NULL;
+    mach_msg_type_number_t words = 0;
+    mach_port_t host = MACH_PORT_NULL;
+    kern_return_t asked = KERN_SUCCESS;
+    uint64_t sums[CPU_STATE_MAX];
+    int64_t user_now = 0;
+    int64_t system_now = 0;
+    int64_t idle_now = 0;
+    bool whole = true;
+
+    if (user_us == NULL || system_us == NULL || idle_us == NULL || waiting_us == NULL || stolen_us == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    memset(&clock, 0, sizeof clock);
+    if (sysctlbyname("kern.clockrate", &clock, &clock_size, NULL, 0) != 0) {
+        int code = errno;
+
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    if (clock_size != sizeof clock || clock.hz <= 0) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    /* As in `hero_sys_memory`, the reference `mach_host_self` adds is given
+     * back whatever the question answered; the array the kernel hands is the
+     * caller's to give back too. */
+    host = mach_host_self();
+    asked = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processors, &info, &words);
+    (void)mach_port_deallocate(mach_task_self(), host);
+    if (asked != KERN_SUCCESS) {
+        return hero_sys_fail(HERO_SYS_OTHER, (int64_t)asked);
+    }
+    memset(sums, 0, sizeof sums);
+    if ((uint64_t)words < (uint64_t)processors * (uint64_t)CPU_STATE_MAX) {
+        whole = false;
+    }
+    for (natural_t p = 0; whole && p < processors; p += 1) {
+        for (int state = 0; state < CPU_STATE_MAX; state += 1) {
+            /* Each processor's count is 32 bits; the sums of a machine's
+             * processors, fewer than 2^32 of them, are not. */
+            sums[state] += (uint64_t)(uint32_t)info[(uint64_t)p * CPU_STATE_MAX + (uint64_t)state];
+        }
+    }
+    (void)vm_deallocate(mach_task_self(), (vm_address_t)info, (vm_size_t)words * sizeof(integer_t));
+    if (!whole) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    if (!hero_sys_scaled(sums[CPU_STATE_USER] + sums[CPU_STATE_NICE], 1000000, (uint64_t)clock.hz, &user_now) || !hero_sys_scaled(sums[CPU_STATE_SYSTEM], 1000000, (uint64_t)clock.hz, &system_now) || !hero_sys_scaled(sums[CPU_STATE_IDLE], 1000000, (uint64_t)clock.hz, &idle_now)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    *user_us = user_now;
+    *system_us = system_now;
+    *idle_us = idle_now;
+    *waiting_us = 0;
+    *stolen_us = 0;
+    hero_sys_fine();
+    return 0;
+}
+
+/* `proc_pidinfo` answers the bytes it wrote, and fewer than the record's,
+ * with `errno` set, where it refused: `ESRCH` for an id no process has (an
+ * ended process not yet waited for among them), `EPERM` for a process of
+ * another user. Its times are counted in the units of `mach_absolute_time`,
+ * which `mach_timebase_info` turns into nanoseconds (125/3 on Apple's arm64
+ * processors, 1/1 on Intel's: measured 2026-11-17 against `getrusage`). */
+int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_bytes, int64_t *user_ns, int64_t *system_ns) {
+    struct proc_taskinfo task;
+    mach_timebase_info_data_t base;
+    int got = 0;
+    int64_t in_user = 0;
+    int64_t in_system = 0;
+
+    if (resident == NULL || virtual_bytes == NULL || user_ns == NULL || system_ns == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (pid < 1 || pid > (int64_t)INT32_MAX) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    memset(&task, 0, sizeof task);
+    errno = 0;
+    got = proc_pidinfo((int)pid, PROC_PIDTASKINFO, 0, &task, (int)sizeof task);
+    if (got != (int)sizeof task) {
+        int code = errno;
+
+        return hero_sys_fail(code == 0 ? HERO_SYS_OTHER : hero_sys_kind_of(code), code);
+    }
+    memset(&base, 0, sizeof base);
+    if (mach_timebase_info(&base) != KERN_SUCCESS || base.denom == 0) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    if (!hero_sys_scaled(task.pti_total_user, base.numer, base.denom, &in_user) || !hero_sys_scaled(task.pti_total_system, base.numer, base.denom, &in_system)) {
+        return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    if (task.pti_resident_size > (uint64_t)INT64_MAX || task.pti_virtual_size > (uint64_t)INT64_MAX) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    *resident = (int64_t)task.pti_resident_size;
+    *virtual_bytes = (int64_t)task.pti_virtual_size;
+    *user_ns = in_user;
+    *system_ns = in_system;
+    hero_sys_fine();
+    return 0;
+}
+
+/* The interfaces are listed by `if_nameindex`, and each one's counters asked
+ * of the interface MIB by its index (`net/if_mib.h`: `IFMIB_IFDATA` and
+ * `IFDATA_GENERAL`), which answers its exact 64-bit counters. The list
+ * `sysctl`'s `NET_RT_IFLIST2` gives, and `getifaddrs`, hand an ordinary
+ * process the bytes cut to 32 bits and rounded down to KiB (measured
+ * 2026-11-17: 950,809,600 bytes received on `en0` where `netstat -ib` and
+ * this MIB said 31,015,581,622). An interface gone between the list and its
+ * question (`ENOENT`) is left out. The packets dropped sent are the drops of
+ * the interface's send queue, which Darwin counts in 32 bits. */
+int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
+    hero_sys_fill f = hero_sys_into(buffer, count);
+    struct if_nameindex *interfaces = NULL;
+
+    if (!hero_sys_room(buffer, count)) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    errno = 0;
+    interfaces = if_nameindex();
+    if (interfaces == NULL) {
+        int code = errno;
+
+        return hero_sys_fail(code == 0 ? HERO_SYS_OTHER : hero_sys_kind_of(code), code);
+    }
+    for (struct if_nameindex *one = interfaces; one->if_index != 0; one += 1) {
+        int names[6] = {CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, (int)one->if_index, IFDATA_GENERAL};
+        struct ifmibdata data;
+        size_t size = sizeof data;
+
+        if (one->if_index > (unsigned int)INT32_MAX) {
+            continue;
+        }
+        memset(&data, 0, sizeof data);
+        if (sysctl(names, 6, &data, &size, NULL, 0) != 0) {
+            int code = errno;
+
+            if (code == ENOENT) {
+                continue;
+            }
+            if_freenameindex(interfaces);
+            return hero_sys_fail(hero_sys_kind_of(code), code);
+        }
+        if (size != sizeof data) {
+            if_freenameindex(interfaces);
+            return hero_sys_fail(HERO_SYS_OTHER, 0);
+        }
+        hero_sys_put(&f, data.ifmd_name, strnlen(data.ifmd_name, sizeof data.ifmd_name));
+        hero_sys_zero(&f);
+        hero_sys_counter(&f, data.ifmd_data.ifi_ibytes);
+        hero_sys_counter(&f, data.ifmd_data.ifi_obytes);
+        hero_sys_counter(&f, data.ifmd_data.ifi_ipackets);
+        hero_sys_counter(&f, data.ifmd_data.ifi_opackets);
+        hero_sys_counter(&f, data.ifmd_data.ifi_ierrors);
+        hero_sys_counter(&f, data.ifmd_data.ifi_oerrors);
+        hero_sys_counter(&f, data.ifmd_data.ifi_iqdrops);
+        hero_sys_counter(&f, (uint64_t)data.ifmd_snd_drops);
+    }
+    if_freenameindex(interfaces);
+    return hero_sys_filled(&f);
+}
+
+#elif defined(__linux__)
+
+/* The most a file of `/proc` is read into: `/proc/net/dev` holds about 120
+ * bytes an interface, so some hundred thousand interfaces. */
+#define HERO_SYS_PROC_MOST ((size_t)16 << 20)
+
+/* The file at `path` read whole into memory `*text` the caller frees, its
+ * length into `*length`; -1 with the kind set where it cannot be opened or
+ * read, or holds more than `HERO_SYS_PROC_MOST`. A file of `/proc` tells no
+ * size, so the room grows until a read finds the end. */
+static int64_t hero_sys_proc_file(const char *path, char **text, size_t *length) {
+    int file = open(path, O_RDONLY | O_CLOEXEC);
+    size_t room = 4096;
+    size_t got = 0;
+    char *bytes = NULL;
+
+    if (file < 0) {
+        int code = errno;
+
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    bytes = malloc(room);
+    if (bytes == NULL) {
+        (void)close(file);
+        return hero_sys_fail(HERO_SYS_LIMIT, ENOMEM);
+    }
+    for (;;) {
+        ssize_t read_now = 0;
+
+        if (got == room) {
+            char *larger = NULL;
+
+            if (room >= HERO_SYS_PROC_MOST) {
+                free(bytes);
+                (void)close(file);
+                return hero_sys_fail(HERO_SYS_LIMIT, 0);
+            }
+            larger = realloc(bytes, room * 2);
+            if (larger == NULL) {
+                free(bytes);
+                (void)close(file);
+                return hero_sys_fail(HERO_SYS_LIMIT, ENOMEM);
+            }
+            bytes = larger;
+            room *= 2;
+        }
+        read_now = read(file, bytes + got, room - got);
+        if (read_now < 0 && errno == EINTR) {
+            continue;
+        }
+        if (read_now < 0) {
+            int code = errno;
+
+            free(bytes);
+            (void)close(file);
+            return hero_sys_fail(hero_sys_kind_of(code), code);
+        }
+        if (read_now == 0) {
+            break;
+        }
+        got += (size_t)read_now;
+    }
+    (void)close(file);
+    *text = bytes;
+    *length = got;
+    return 0;
+}
+
+/* The unsigned decimal number at `*at` in `text`, spaces before it skipped,
+ * into `*value`, `*at` moved past it; false where no digit stands there
+ * before the line's end or the number does not fit. */
+static bool hero_sys_proc_number(const char *text, size_t length, size_t *at, uint64_t *value) {
+    size_t i = *at;
+    uint64_t n = 0;
+    bool digits = false;
+
+    while (i < length && (text[i] == ' ' || text[i] == '\t')) {
+        i += 1;
+    }
+    while (i < length && text[i] >= '0' && text[i] <= '9') {
+        if (__builtin_mul_overflow(n, (uint64_t)10, &n) || __builtin_add_overflow(n, (uint64_t)(text[i] - '0'), &n)) {
+            return false;
+        }
+        digits = true;
+        i += 1;
+    }
+    *at = i;
+    *value = n;
+    return digits;
+}
+
+/* The ticks `/proc` counts time in, from `sysconf`; 0 where it tells none. */
+static uint64_t hero_sys_proc_hertz(void) {
+    long hertz = sysconf(_SC_CLK_TCK);
+
+    return hertz > 0 ? (uint64_t)hertz : 0;
+}
+
+/* `/proc/stat`'s first line is `cpu` and the machine's sums: user, nice,
+ * system, idle, iowait, irq, softirq, steal, then guest and guest_nice, which
+ * the user's and nice already hold (proc(5)); a kernel before 2.6 writes the
+ * first four alone. A Linux with no `/proc` has nothing to give. */
+int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_us, int64_t *waiting_us, int64_t *stolen_us) {
+    char *text = NULL;
+    size_t length = 0;
+    size_t at = 0;
+    uint64_t columns[8];
+    int read_columns = 0;
+    uint64_t hertz = hero_sys_proc_hertz();
+    uint64_t user = 0;
+    uint64_t system = 0;
+    int64_t out[5];
+
+    if (user_us == NULL || system_us == NULL || idle_us == NULL || waiting_us == NULL || stolen_us == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (hertz == 0) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    if (hero_sys_proc_file("/proc/stat", &text, &length) != 0) {
+        return hero_sys_last_error() == HERO_SYS_NOT_FOUND ? hero_sys_fail(HERO_SYS_UNSUPPORTED, hero_sys_last_os_error()) : -1;
+    }
+    memset(columns, 0, sizeof columns);
+    if (length < 4 || memcmp(text, "cpu ", 4) != 0) {
+        free(text);
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    at = 4;
+    while (read_columns < 8 && hero_sys_proc_number(text, length, &at, &columns[read_columns])) {
+        read_columns += 1;
+    }
+    free(text);
+    if (read_columns < 4 || __builtin_add_overflow(columns[0], columns[1], &user) || __builtin_add_overflow(columns[2], columns[5], &system) || __builtin_add_overflow(system, columns[6], &system)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    if (!hero_sys_scaled(user, 1000000, hertz, &out[0]) || !hero_sys_scaled(system, 1000000, hertz, &out[1]) || !hero_sys_scaled(columns[3], 1000000, hertz, &out[2]) || !hero_sys_scaled(columns[4], 1000000, hertz, &out[3]) || !hero_sys_scaled(columns[7], 1000000, hertz, &out[4])) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    *user_us = out[0];
+    *system_us = out[1];
+    *idle_us = out[2];
+    *waiting_us = out[3];
+    *stolen_us = out[4];
+    hero_sys_fine();
+    return 0;
+}
+
+/* `/proc/<pid>/stat` (proc(5)): the id, the command in parentheses, which
+ * may hold spaces and parentheses itself, so the fields are counted from the
+ * LAST `)`, then the state and the numbers; `utime` and `stime` are the 14th
+ * and 15th fields, in ticks, `vsize` the 23rd, in bytes, and `rss` the 24th,
+ * in pages. A process that has ended and is not yet waited for keeps its
+ * line with a resident size of 0. */
+int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_bytes, int64_t *user_ns, int64_t *system_ns) {
+    char path[32];
+    char digits[20];
+    size_t n = 0;
+    size_t p = 0;
+    char *text = NULL;
+    size_t length = 0;
+    size_t at = 0;
+    uint64_t fields[22];
+    uint64_t hertz = hero_sys_proc_hertz();
+    long page = sysconf(_SC_PAGESIZE);
+    uint64_t resident_bytes = 0;
+    int64_t out[2];
+    uint64_t id = 0;
+
+    if (resident == NULL || virtual_bytes == NULL || user_ns == NULL || system_ns == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (pid < 1 || pid > (int64_t)INT32_MAX) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (hertz == 0 || page <= 0) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    id = (uint64_t)pid;
+    do {
+        digits[n] = (char)('0' + (int)(id % 10u));
+        id /= 10u;
+        n += 1;
+    } while (id > 0);
+    memcpy(path, "/proc/", 6);
+    p = 6;
+    while (n > 0) {
+        n -= 1;
+        path[p] = digits[n];
+        p += 1;
+    }
+    memcpy(path + p, "/stat", 6);
+    if (hero_sys_proc_file(path, &text, &length) != 0) {
+        return -1;
+    }
+    at = length;
+    while (at > 0 && text[at - 1] != ')') {
+        at -= 1;
+    }
+    /* After the `)`, a space, the state's one letter, then the numbers from
+     * the 4th field on: `fields[k]` is field `k + 4`. */
+    if (at == 0 || length - at < 3 || text[at] != ' ') {
+        free(text);
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    at += 2;
+    memset(fields, 0, sizeof fields);
+    for (int k = 0; k < 21; k += 1) {
+        if (!hero_sys_proc_number(text, length, &at, &fields[k])) {
+            /* A field before `rss` may be negative (the priority and the
+             * nice value): read past its sign, its value never used. */
+            if (at < length && text[at] == '-' && k != 10 && k != 11 && k != 19 && k != 20) {
+                at += 1;
+                if (hero_sys_proc_number(text, length, &at, &fields[k])) {
+                    continue;
+                }
+            }
+            free(text);
+            return hero_sys_fail(HERO_SYS_OTHER, 0);
+        }
+    }
+    free(text);
+    /* `fields[10]` is utime, `[11]` stime, `[19]` vsize, `[20]` rss. */
+    if (__builtin_mul_overflow(fields[20], (uint64_t)page, &resident_bytes) || resident_bytes > (uint64_t)INT64_MAX || fields[19] > (uint64_t)INT64_MAX) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    if (!hero_sys_scaled(fields[10], 1000000000, hertz, &out[0]) || !hero_sys_scaled(fields[11], 1000000000, hertz, &out[1])) {
+        return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    *resident = (int64_t)resident_bytes;
+    *virtual_bytes = (int64_t)fields[19];
+    *user_ns = out[0];
+    *system_ns = out[1];
+    hero_sys_fine();
+    return 0;
+}
+
+/* `/proc/net/dev` (proc(5)): two lines of headings, then a line for each
+ * interface: its name, which holds no `:`, a `:`, eight counters received
+ * (bytes, packets, errs, drop, fifo, frame, compressed, multicast) and eight
+ * sent (bytes, packets, errs, drop, fifo, colls, carrier, compressed). */
+int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
+    hero_sys_fill f = hero_sys_into(buffer, count);
+    char *text = NULL;
+    size_t length = 0;
+    size_t at = 0;
+    int line = 0;
+
+    if (!hero_sys_room(buffer, count)) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (hero_sys_proc_file("/proc/net/dev", &text, &length) != 0) {
+        return hero_sys_last_error() == HERO_SYS_NOT_FOUND ? hero_sys_fail(HERO_SYS_UNSUPPORTED, hero_sys_last_os_error()) : -1;
+    }
+    while (at < length) {
+        size_t end = at;
+        size_t name_from = at;
+        size_t name_to = 0;
+        uint64_t columns[16];
+
+        while (end < length && text[end] != '\n') {
+            end += 1;
+        }
+        line += 1;
+        if (line > 2 && end > at) {
+            while (name_from < end && text[name_from] == ' ') {
+                name_from += 1;
+            }
+            name_to = name_from;
+            while (name_to < end && text[name_to] != ':') {
+                name_to += 1;
+            }
+            if (name_to == end || name_to == name_from) {
+                free(text);
+                return hero_sys_fail(HERO_SYS_OTHER, 0);
+            }
+            {
+                size_t i = name_to + 1;
+
+                for (int k = 0; k < 16; k += 1) {
+                    if (!hero_sys_proc_number(text, end, &i, &columns[k])) {
+                        free(text);
+                        return hero_sys_fail(HERO_SYS_OTHER, 0);
+                    }
+                }
+            }
+            hero_sys_put(&f, text + name_from, name_to - name_from);
+            hero_sys_zero(&f);
+            hero_sys_counter(&f, columns[0]);
+            hero_sys_counter(&f, columns[8]);
+            hero_sys_counter(&f, columns[1]);
+            hero_sys_counter(&f, columns[9]);
+            hero_sys_counter(&f, columns[2]);
+            hero_sys_counter(&f, columns[10]);
+            hero_sys_counter(&f, columns[3]);
+            hero_sys_counter(&f, columns[11]);
+        }
+        at = end + 1;
+    }
+    free(text);
+    return hero_sys_filled(&f);
+}
+
+#else
+
+/* A POSIX system neither Darwin nor Linux: none of these readings is written
+ * for it, and none is invented. */
+int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_us, int64_t *waiting_us, int64_t *stolen_us) {
+    if (user_us == NULL || system_us == NULL || idle_us == NULL || waiting_us == NULL || stolen_us == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);
+}
+
+int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_bytes, int64_t *user_ns, int64_t *system_ns) {
+    if (resident == NULL || virtual_bytes == NULL || user_ns == NULL || system_ns == NULL || pid < 1) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);
+}
+
+int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
+    if (!hero_sys_room(buffer, count)) {
         return hero_sys_fail(HERO_SYS_INVALID, 0);
     }
     return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);

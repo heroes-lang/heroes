@@ -1,6 +1,7 @@
 # Reaches Rebel's `toml`, so that `heroes test` on this file runs the
 # package's own tests (spec § 12). It reads a small document, takes a value
-# out of it by its path and writes the document back.
+# out of it by its path and writes the document back, then edits a document
+# in place, its comment kept.
 
 use <rebel>/toml
 
@@ -13,3 +14,12 @@ function main()
                 .err e   => print(e.msg)
 
             print(toml.format(found).default("?"))
+
+    match toml.parse_document("# kept\n[album]\nyear = 1977\n")
+        .err e => print(e.msg)
+        .ok d =>
+            edited @= d
+
+            match toml.set_value(@edited, path: ["album", "title"], value: .text(v: "Low"))
+                .ok _  => print(toml.format_document(edited))
+                .err e => print(e.msg)

@@ -11,6 +11,7 @@ use os/hero_disk
 use os/hero_os
 use os/hero_sys
 use os/internal/codes
+use os/internal/counters
 use os/internal/expansion
 use os/internal/filled
 use os/internal/variables
@@ -436,6 +437,189 @@ function memory() -> Memory?
         return codes.sys_failed(asked: "the machine's memory")
     return ok(Memory(total_bytes: total, available_bytes: available))
 
+## What a monitor reads
+
+# What `cpu_times` answers: the time every processor of the machine has spent
+# since it started, summed over the processors, in microseconds, read at one
+# moment. Two readings make a share of busy time: `cpu_usage`.
+record CpuTimes
+    # Microseconds running programs' own code, niced ones included.
+    user_us: i64
+    # Microseconds running the system's own code, interrupts included.
+    system_us: i64
+    # Microseconds idle.
+    idle_us: i64
+    # Microseconds idle while a read or a write was waited for: Linux's
+    # `iowait`; 0 on Darwin and Windows, whose idle holds it.
+    waiting_us: i64
+    # Microseconds a hypervisor took for another machine: Linux's `steal`; 0
+    # on Darwin and Windows.
+    stolen_us: i64
+
+# What `process_usage` answers: what a process holds and has spent, read at
+# one moment.
+record ProcessUsage
+    # Bytes of its memory in RAM now: its resident set, on Windows its working
+    # set.
+    resident_bytes: i64
+    # Bytes of its virtual memory: on Darwin and Linux the size of its address
+    # space, which on Darwin is hundreds of gigabytes for any program; on
+    # Windows the bytes committed for it alone.
+    virtual_bytes: i64
+    # Nanoseconds spent running its own code, every thread counted.
+    user_ns: i64
+    # Nanoseconds the system spent working on its behalf.
+    system_ns: i64
+
+# What `network_counters` answers for one network interface: what it has
+# carried since the machine started, every count at or above 0. A count goes
+# back to 0 where the system starts it again: an interface removed and added,
+# a driver reloaded.
+record NetworkCounters
+    # The interface's name: `en0` on Darwin, `eth0` on Linux, the name a
+    # person gave it on Windows (`Ethernet`, `Wi-Fi`).
+    name: str
+    # Bytes received.
+    bytes_received: i64
+    # Bytes sent.
+    bytes_sent: i64
+    # Packets received.
+    packets_received: i64
+    # Packets sent.
+    packets_sent: i64
+    # Packets received with an error.
+    errors_received: i64
+    # Packets the interface failed to send.
+    errors_sent: i64
+    # Packets received and dropped.
+    dropped_received: i64
+    # Packets dropped before they were sent: on Darwin those of the send
+    # queue, counted in 32 bits.
+    dropped_sent: i64
+
+# The time every processor of the machine has spent since it started, summed,
+# in microseconds, in one reading.
+#
+# On Darwin the ticks each processor counts, a hundredth of a second each,
+# which start again from 0 after about 497 days of one processor's time; on
+# Linux `/proc/stat`'s first line; on Windows `GetSystemTimes`. Time the
+# machine spent asleep is no processor's.
+#
+# Fails `unsupported` on a POSIX system neither Darwin nor Linux, and with the
+# system's code where it cannot be read. See also `cpu_usage`.
+function cpu_times() -> CpuTimes?
+    user: i64 @= 0
+    system_us: i64 @= 0
+    idle: i64 @= 0
+    waiting: i64 @= 0
+    stolen: i64 @= 0
+
+    if hero_sys.cpu_times(user_us: @user, system_us: @system_us, idle_us: @idle, waiting_us: @waiting, stolen_us: @stolen) != 0
+        if hero_sys.last_error() == hero_sys.HERO_SYS_UNSUPPORTED
+            return fail(
+                code: codes.UNSUPPORTED,
+                msg: "the processors' time of this system is not read: Darwin, Linux and Windows are"
+            )
+        return codes.sys_failed(asked: "the processors' time")
+    return ok(CpuTimes(user_us: user, system_us: system_us, idle_us: idle, waiting_us: waiting, stolen_us: stolen))
+
+# The share of the machine's processors' time that was busy between two
+# readings, in percent, from 0.0 to 100.0, as psutil's `cpu_percent` answers.
+#
+# - `before`: the earlier reading of `cpu_times`.
+# - `after`: a later reading of the same machine.
+#
+# Busy is the user's, the system's and the stolen time; idle and waiting are
+# not. Two readings within one tick of the system's clock answer 0.0, nothing
+# having been counted between them. The program waits between the two itself,
+# a second for a reading as `top` shows one.
+#
+# Fails `invalid` where a time of `after` is below the same time of `before`:
+# the two are not two readings of one machine in order, or a count started
+# again. See also `cpu_times`.
+function cpu_usage(before: CpuTimes, after: CpuTimes) -> f64?
+    if after.user_us < before.user_us || after.system_us < before.system_us || after.idle_us < before.idle_us
+        return fail(
+            code: codes.INVALID,
+            msg: "`after` holds less time than `before`: not a later reading of the same machine"
+        )
+
+    if after.waiting_us < before.waiting_us || after.stolen_us < before.stolen_us
+        return fail(
+            code: codes.INVALID,
+            msg: "`after` holds less time than `before`: not a later reading of the same machine"
+        )
+    user = (after.user_us - before.user_us).to_f64()
+    busy = user + (after.system_us - before.system_us).to_f64() + (after.stolen_us - before.stolen_us).to_f64()
+    idle = (after.idle_us - before.idle_us).to_f64() + (after.waiting_us - before.waiting_us).to_f64()
+
+    if busy + idle == 0.0
+        return ok(0.0)
+    return ok(busy / (busy + idle) * 100.0)
+
+# What the process `id` holds and has spent, read at one moment: its
+# resident and virtual memory, and its time in its own code and the system's.
+#
+# - `id`: the system's id of the process, `pid()` for this one; above 0.
+#
+# A process that has ended and is not yet waited for answers what the system
+# still keeps of it: on Linux its times and a resident memory of 0, on Darwin
+# `not_found`.
+#
+# Fails `invalid` for an id below 1, `not_found` where no process has it,
+# `permission` where the system does not let this process read that one (on
+# Darwin a process of another user), `unsupported` on a POSIX system neither
+# Darwin nor Linux, and with the system's code where it cannot be read. An id
+# names whichever process holds it now: one that ended may have given its id
+# to another. See also `process_times`, `process.usage_of`.
+function process_usage(id: i64) -> ProcessUsage?
+    if id < 1
+        return fail(code: codes.INVALID, msg: f"no process has the id {id}: ids are above 0")
+    resident: i64 @= 0
+    virtual_bytes: i64 @= 0
+    user: i64 @= 0
+    system_ns: i64 @= 0
+
+    if hero_sys.process_usage(pid: id, resident: @resident, virtual_bytes: @virtual_bytes, user_ns: @user, system_ns: @system_ns) != 0
+        kind = hero_sys.last_error()
+
+        if kind == hero_sys.HERO_SYS_NOT_FOUND
+            return fail(code: codes.NOT_FOUND, msg: f"no process has the id {id}")
+
+        if kind == hero_sys.HERO_SYS_INVALID
+            return fail(code: codes.INVALID, msg: f"no process has the id {id}: the system's ids are smaller")
+
+        if kind == hero_sys.HERO_SYS_UNSUPPORTED
+            return fail(
+                code: codes.UNSUPPORTED,
+                msg: "another process is not read on this system: Darwin, Linux and Windows are"
+            )
+        return codes.sys_failed(asked: f"the usage of the process {id}")
+    return ok(ProcessUsage(resident_bytes: resident, virtual_bytes: virtual_bytes, user_ns: user, system_ns: system_ns))
+
+# The counters of every network interface of the machine, in the system's
+# order, each since the machine started.
+#
+# On Darwin the interface MIB's exact counts, each interface read in turn; on
+# Linux `/proc/net/dev`; on Windows `GetIfTable2`, filter interfaces left out
+# since they count again what the interface below them counts. A rate is two
+# readings apart, the program's own clock between them.
+#
+# Fails `unsupported` on a POSIX system neither Darwin nor Linux, `not_text`
+# where an interface's name is not UTF-8, and with the system's code where
+# they cannot be read.
+function network_counters() -> [NetworkCounters]?
+    found = counters.interfaces_of(filled.bytes_of(.network)?)?
+    answer: [NetworkCounters] @= []
+
+    for one in found
+        c = one.counters
+        answer @ answer.push(
+            NetworkCounters(name: one.name, bytes_received: c[0], bytes_sent: c[1], packets_received: c[2], packets_sent: c[3], errors_received: c[4], errors_sent: c[5], dropped_received: c[6], dropped_sent: c[7])
+        )
+
+    return ok(answer)
+
 ## Random bytes and the terminal
 
 # `count` bytes from the system's generator for keys, fit for a unique name or
@@ -664,6 +848,98 @@ test "terminal_size: columns and rows above 0, or unsupported where the output i
         .ok size => assert size.columns > 0 && size.rows > 0
         .err e   => assert e.code == UNSUPPORTED
 
+test "cpu_times: five times at or above 0, the busy and the idle above 0, read twice in order, or unsupported on another POSIX system"
+    match cpu_times()
+        .ok first =>
+            assert system() != .other
+            assert first.user_us > 0 && first.system_us > 0 && first.idle_us > 0
+            assert first.waiting_us >= 0 && first.stolen_us >= 0
+            second = cpu_times().must()
+            share = cpu_usage(before: first, after: second).must()
+            assert share >= 0.0 && share <= 100.0
+        .err e => assert e.code == UNSUPPORTED && system() == .other
+
+test "cpu_usage: no time between, all busy, half, waiting counted idle, stolen counted busy, the largest times, and each time going back"
+    zero = CpuTimes(user_us: 0, system_us: 0, idle_us: 0, waiting_us: 0, stolen_us: 0)
+    assert cpu_usage(before: zero, after: zero).must() == 0.0
+    busy = CpuTimes(user_us: 10, system_us: 30, idle_us: 0, waiting_us: 0, stolen_us: 0)
+    assert cpu_usage(before: zero, after: busy).must() == 100.0
+    half = CpuTimes(user_us: 25, system_us: 25, idle_us: 50, waiting_us: 0, stolen_us: 0)
+    assert cpu_usage(before: zero, after: half).must() == 50.0
+    waits = CpuTimes(user_us: 0, system_us: 0, idle_us: 0, waiting_us: 40, stolen_us: 0)
+    assert cpu_usage(before: zero, after: waits).must() == 0.0
+    steals = CpuTimes(user_us: 0, system_us: 0, idle_us: 75, waiting_us: 0, stolen_us: 25)
+    assert cpu_usage(before: zero, after: steals).must() == 25.0
+    most = 9223372036854775807
+    largest = CpuTimes(user_us: most, system_us: most, idle_us: most, waiting_us: most, stolen_us: most)
+    assert cpu_usage(before: zero, after: largest).must() == 60.0
+    assert cpu_usage(before: largest, after: largest).must() == 0.0
+    later = CpuTimes(user_us: 2, system_us: 2, idle_us: 2, waiting_us: 2, stolen_us: 2)
+    backs = [
+        CpuTimes(user_us: 1, system_us: 2, idle_us: 2, waiting_us: 2, stolen_us: 2)
+        CpuTimes(user_us: 2, system_us: 1, idle_us: 2, waiting_us: 2, stolen_us: 2)
+        CpuTimes(user_us: 2, system_us: 2, idle_us: 1, waiting_us: 2, stolen_us: 2)
+        CpuTimes(user_us: 2, system_us: 2, idle_us: 2, waiting_us: 1, stolen_us: 2)
+        CpuTimes(user_us: 2, system_us: 2, idle_us: 2, waiting_us: 2, stolen_us: 1)
+    ]
+
+    for back in backs
+        match cpu_usage(before: later, after: back)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "process_usage: this process, its memory above 0 and its time growing, or unsupported on another POSIX system"
+    match process_usage(pid())
+        .ok first =>
+            assert system() != .other
+            assert first.resident_bytes > 0 && first.virtual_bytes > 0
+            assert first.user_ns >= 0 && first.system_ns >= 0
+            spent: i64 @= 0
+
+            for i in range(from: 0, to: 200000)
+                spent @ spent + i % 7
+
+            assert spent > 0
+            second = process_usage(pid()).must()
+            assert second.user_ns >= first.user_ns && second.system_ns >= first.system_ns
+        .err e => assert e.code == UNSUPPORTED && system() == .other
+
+test "process_usage fails: ids 0 and below, an id past the system's, and an id nobody has"
+    for id in [0, -1, -9223372036854775807 - 1, 9223372036854775807]
+        match process_usage(id)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID || e.code == UNSUPPORTED && system() == .other
+
+    match process_usage(2147483647)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED && system() == .other
+
+test "process_usage: the first process the system started is read, refused to another user, or not there"
+    match process_usage(1)
+        .ok usage => assert usage.resident_bytes >= 0 && usage.user_ns >= 0
+        .err e    => assert e.code == PERMISSION || e.code == NOT_FOUND || e.code == UNSUPPORTED && system() == .other
+
+test "network_counters: at least one interface, names not empty and not repeated, counts at or above 0, never less a moment later"
+    match network_counters()
+        .ok first =>
+            assert system() != .other
+            assert first.len() > 0
+            names: {str: i64} @= {}
+
+            for one in first
+                assert one.name != "" && names[one.name].is_err()
+                names[one.name] @ one.bytes_received
+                assert one.bytes_received >= 0 && one.bytes_sent >= 0
+                assert one.packets_received >= 0 && one.packets_sent >= 0
+                assert one.errors_received >= 0 && one.errors_sent >= 0
+                assert one.dropped_received >= 0 && one.dropped_sent >= 0
+
+            for one in network_counters().must()
+                match names[one.name]
+                    .ok before => assert one.bytes_received >= before
+                    .err _     => _ = 0
+        .err e => assert e.code == UNSUPPORTED && system() == .other
+
 ## Examples
 
 # The share of the machine's memory available now, as a percentage.
@@ -672,4 +948,44 @@ test "memory: the share of the memory available now"
         .ok memory_now =>
             share = memory_now.available_bytes.to_f64() / memory_now.total_bytes.to_f64() * 100.0
             assert share > 0.0 && share <= 100.0
+        .err e => assert e.code == UNSUPPORTED
+
+# The time the machine's processors have spent idle since it started, in
+# seconds.
+test "cpu_times: the processors' idle time in seconds"
+    match cpu_times()
+        .ok times => assert times.idle_us / 1000000 >= 0
+        .err e    => assert e.code == UNSUPPORTED
+
+# The share of the processors' time that was busy over a span the program
+# chose, as `top` shows it.
+test "cpu_usage: the processors' busy share over a span"
+    match cpu_times()
+        .ok before =>
+            spent: i64 @= 0
+
+            for i in range(from: 0, to: 100000)
+                spent @ spent + i % 3
+
+            assert spent > 0
+            share = cpu_usage(before: before, after: cpu_times().must()).must()
+            assert share >= 0.0 && share <= 100.0
+        .err e => assert e.code == UNSUPPORTED
+
+# The memory this process holds now, in mebibytes.
+test "process_usage: this process's own memory"
+    match process_usage(pid())
+        .ok usage => assert usage.resident_bytes / 1048576 >= 0
+        .err e    => assert e.code == UNSUPPORTED
+
+# The bytes every network interface has received, summed.
+test "network_counters: the bytes received on every interface"
+    match network_counters()
+        .ok interfaces =>
+            received: i64 @= 0
+
+            for one in interfaces
+                received @ received + one.bytes_received / 1024
+
+            assert received >= 0
         .err e => assert e.code == UNSUPPORTED

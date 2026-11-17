@@ -1,0 +1,20 @@
+# What the tests of `log/files` share: a folder of their own, a time from
+# its text, and a clock that reads one time.
+
+use fs
+use time
+
+# A new folder for one test under `build/`, which the tests run beside; the
+# test removes it.
+function folder() -> str
+    return fs.make_temp_dir(dir: "build", pattern: "rebel-log-files-*").must()
+
+# The instant the RFC 3339 text `s` writes.
+#
+# - `s`: a time the test writes; one that is not RFC 3339 aborts the test.
+function at(s: str) -> time.Instant
+    return time.parse(s, .rfc3339).must()
+
+# A clock that reads 2026-11-17T10:00:00Z at every call.
+function ten_o_clock() -> time.Instant?
+    return ok(at("2026-11-17T10:00:00Z"))

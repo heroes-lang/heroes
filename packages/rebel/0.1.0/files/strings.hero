@@ -6,7 +6,9 @@
 # character, and a function that takes a function takes a top-level one over
 # one character. What the language does itself is not here: `join`, `repeat`,
 # `chars`, `slice`, `+`, and `map`, `filter`, `any` and `all` over
-# `s.chars()`.
+# `s.chars()`. A word quoted for a POSIX shell is `process.quote`'s, beside
+# the shell it runs; a text read as the words a shell or a Windows command
+# line gives is here.
 
 use strings/internal/bounds
 use strings/internal/bytewise
@@ -16,7 +18,11 @@ use strings/internal/pieces
 use strings/internal/replacing
 use strings/internal/runs
 use strings/internal/search
+use strings/internal/shell
+use strings/internal/slug
+use strings/internal/styles
 use strings/internal/trimming
+use strings/internal/windows_args
 use unicode
 
 ## Codes
@@ -26,7 +32,8 @@ constant NOT_FOUND: str
     "not_found"
 
 # The code `slice_checked` fails with where its indices cut no part of the
-# text.
+# text, `split_shell` where a quote is never closed or a backslash ends the
+# line, and `quote_windows_args` where a program name holds a double quote.
 constant INVALID: str
     "invalid"
 
@@ -470,6 +477,184 @@ function is_upper(s: str) -> bool
 function is_title(s: str) -> bool
     return casing.is_title(s)
 
+## Case styles
+
+# The words of `s` as the case style functions cut them, each as it stands
+# in `s`: its runs of letters and numbers, every other character ending one,
+# each run cut after a lower case letter that an upper case one follows, and
+# before the last capital of a run of them that a lower case letter follows,
+# so "XMLHttpRequest" is "XML", "Http" and "Request". A digit or a letter with
+# no case cuts nothing: "Version2Point0" is "Version2" and "Point0".
+#
+# - `s`: the name or text cut; a combining mark that follows a letter stays
+#   in its word.
+#
+# The words are in the order of `s`, none of them empty, so a text with no
+# letter or number has none. These are the boundaries of Rust's crate heck.
+# See also `to_snake_case`.
+function case_words(s: str) -> [str]
+    return styles.case_words(s)
+
+# `s` as snake_case: the words of `case_words` in lower case, joined by `_`.
+#
+# - `s`: the name or text written; the empty text answers itself.
+#
+# See also `to_screaming_snake_case` and `to_kebab_case`.
+function to_snake_case(s: str) -> str
+    return styles.snake(s)
+
+# `s` as kebab-case: the words of `case_words` in lower case, joined by `-`.
+#
+# - `s`: the name or text written.
+#
+# See also `to_snake_case`.
+function to_kebab_case(s: str) -> str
+    return styles.kebab(s)
+
+# `s` as SCREAMING_SNAKE_CASE: the words of `case_words` in upper case, joined
+# by `_`, the form of a constant's name. A letter's upper case may be longer:
+# "ß" is "SS".
+#
+# - `s`: the name or text written.
+#
+# See also `to_snake_case`.
+function to_screaming_snake_case(s: str) -> str
+    return styles.screaming_snake(s)
+
+# `s` as SCREAMING-KEBAB-CASE: the words of `case_words` in upper case, joined
+# by `-`.
+#
+# - `s`: the name or text written.
+#
+# See also `to_kebab_case`.
+function to_screaming_kebab_case(s: str) -> str
+    return styles.screaming_kebab(s)
+
+# `s` as camelCase: the first word of `case_words` in lower case and every
+# other with its first character in title case and the rest in lower case,
+# joined with nothing between.
+#
+# - `s`: the name or text written; words that are digits alone join with
+#   nothing between, so "1_2" is "12".
+#
+# See also `to_pascal_case`.
+function to_camel_case(s: str) -> str
+    return styles.camel(s)
+
+# `s` as PascalCase: every word of `case_words` with its first character in
+# title case and the rest in lower case, joined with nothing between. Title
+# case is the form a letter takes at the start of a word: "ǅ" for "ǆ", "Ss"
+# for "ß", where heck writes the upper case, "Ǆ" and "SS".
+#
+# - `s`: the name or text written.
+#
+# See also `to_camel_case` and `to_title_case`.
+function to_pascal_case(s: str) -> str
+    return styles.pascal(s)
+
+# `s` as Title Case: the words of `case_words`, each capitalised as
+# `to_pascal_case` capitalises it, joined by one space. Unlike `to_title`,
+# which keeps every character of `s`, it cuts `s` into words first:
+# "XMLHttpRequest" is "Xml Http Request".
+#
+# - `s`: the name or text written.
+#
+# See also `to_train_case`.
+function to_title_case(s: str) -> str
+    return styles.title_words(s)
+
+# `s` as Train-Case: the words of `case_words`, each capitalised as
+# `to_pascal_case` capitalises it, joined by `-`, the form of an HTTP header's
+# name.
+#
+# - `s`: the name or text written.
+#
+# See also `to_title_case`.
+function to_train_case(s: str) -> str
+    return styles.train(s)
+
+# The slug of `s`, the part of a URL that names a page, as Django's
+# `slugify` makes it: `s` in lower case, kept to its letters, numbers,
+# underscores, hyphens and white space, each run of white space and hyphens
+# written as one `-`, and `-` and `_` taken off both ends.
+#
+# - `s`: the title; a text with no letter or number answers the empty text.
+#
+# Letters and numbers of every script stay, so "日本語" is a slug of its own. A
+# text is not decomposed first: an accent written as a mark of its own is
+# taken away, "e" and U+0301 giving "e", but one written in the same
+# character as its letter stays, "é" giving "é", until the package
+# `unicode/normalize` decomposes it as Django's NFKD does. See also
+# `to_kebab_case`.
+function to_slug(s: str) -> str
+    return slug.slug(s)
+
+## Command lines
+
+# The words a POSIX shell reads in `s`, by its quoting alone: blanks (space,
+# tab, line feed) between words; single quotes, inside which every character
+# stands as it is; double quotes, inside which a backslash takes `$`, a
+# backquote, `"`, a backslash or a line feed as itself and stands as itself
+# before any other character; a backslash outside quotes that takes the
+# character after it as itself; a backslash before a line feed taken away
+# with it; and a comment from a `#` that begins a word to the end of its
+# line.
+#
+# - `s`: the line; empty quotes make an empty word.
+#
+# Nothing is expanded and no operator is read, as Python's `shlex.split` and
+# Rust's crate shlex read them: `$HOME`, `*.txt` and `a;b` are words as they
+# stand. Fails `invalid` where a quote is never closed or a backslash ends
+# `s`, the message naming its byte. See also `process.quote`, which writes a
+# word this reads back whole, and `split_windows_args`.
+function split_shell(s: str) -> [str]?
+    return shell.split(s)
+
+# The arguments of a Windows command line, the program name first, as
+# `CommandLineToArgvW` and the C runtime read them by Microsoft's documented
+# rules: arguments between spaces and tabs; double quotes that group, two
+# side by side inside a quoted part making one; backslashes as they stand
+# but before a double quote, where they are halved and an odd one left makes
+# the quote itself; and a program name that runs to the first blank outside
+# double quotes, its quotes taken away and its backslashes as they stand.
+#
+# - `s`: the command line; one that begins with a blank names an empty
+#   program, and one that ends inside double quotes ends its last argument.
+#
+# The empty line has no arguments, where `CommandLineToArgvW` answers the
+# path of the program running. See also `quote_windows_args` and
+# `split_shell`.
+function split_windows_args(s: str) -> [str]
+    return windows_args.split(s)
+
+# `arg` written as one argument of a Windows command line, read back whole by
+# `split_windows_args` after the program name: as it stands where it is not
+# empty and holds no space or tab, else between double quotes; each double
+# quote after a backslash, and the backslashes before it doubled, and the
+# backslashes that end a quoted argument doubled, as Python's
+# `subprocess.list2cmdline` writes it.
+#
+# - `arg`: the argument; the empty one is written `""`.
+#
+# See also `quote_windows_args`.
+function quote_windows_arg(arg: str) -> str
+    return windows_args.quoted(arg)
+
+# The Windows command line whose arguments are `arguments`, read back by
+# `split_windows_args` as the same list: the program name `arguments[0]` between
+# double quotes where it is empty or holds a space or a tab, each other
+# argument by `quote_windows_arg`, one space between.
+#
+# - `arguments`: the program name, then its arguments; none make the empty
+#   line.
+#
+# Fails `invalid` where the program name holds a double quote, which its own
+# rule cannot carry. Python's `list2cmdline` writes a program name as an
+# argument, so a name that ends in a backslash, "C:\dir\", is read back with
+# the backslash doubled; here it is not. See also `split_windows_args`.
+function quote_windows_args(arguments: [str]) -> str?
+    return windows_args.quoted_line(arguments)
+
 ## Bytes and boundaries
 
 # Whether every character of `s` is ASCII, which is whether every byte is
@@ -533,3 +718,63 @@ test "split_once_last: the last separator, an empty one, a missing one, and char
     accents = split_once_last(s: "città→è→à", sep: "→").must()
     assert accents.before == "città→è" && accents.after == "à"
     assert split_once_last(s: "abc", sep: ";").is_err()
+
+## Examples
+
+# The words of a name in camel case, a run of capitals among them.
+test "case_words: a name with an acronym"
+    assert case_words("parseXMLDocument2") == ["parse", "XML", "Document2"]
+
+# A field's name in Rust or Python from its name in JavaScript.
+test "to_snake_case: a name in camel case"
+    assert to_snake_case("userAccountID") == "user_account_id"
+
+# A name as a command-line option writes it.
+test "to_kebab_case: a name in Pascal case"
+    assert to_kebab_case("MaxRetryCount") == "max-retry-count"
+
+# A constant's name from a phrase.
+test "to_screaming_snake_case: a phrase"
+    assert to_screaming_snake_case("default page size") == "DEFAULT_PAGE_SIZE"
+
+# The name of an environment variable some tools write with hyphens.
+test "to_screaming_kebab_case: a name in snake case"
+    assert to_screaming_kebab_case("http_proxy") == "HTTP-PROXY"
+
+# A JSON field's name from a column's.
+test "to_camel_case: a column's name"
+    assert to_camel_case("created_at") == "createdAt"
+
+# A type's name from a file's.
+test "to_pascal_case: a file's name"
+    assert to_pascal_case("user-profile.hero") == "UserProfileHero"
+
+# A heading from an identifier.
+test "to_title_case: an identifier"
+    assert to_title_case("first_name") == "First Name"
+
+# An HTTP header's name.
+test "to_train_case: a header in lower case"
+    assert to_train_case("content_type") == "Content-Type"
+
+# The slug of an article's title.
+test "to_slug: an article's title"
+    assert to_slug("Hello, World: Rebel's 1st Release!") == "hello-world-rebels-1st-release"
+
+# A command line written in a configuration file, read into its words.
+test "split_shell: a command with a quoted argument"
+    assert split_shell("grep -n 'two words' \"my file.txt\"").must() == ["grep", "-n", "two words", "my file.txt"]
+
+# A Windows command line read into its arguments.
+test "split_windows_args: a program in Program Files and a quoted argument"
+    assert split_windows_args("\"C:\\Program Files\\app.exe\" --name \"a b\"") == ["C:\\Program Files\\app.exe", "--name", "a b"]
+
+# An argument with a space and a quote, written for a Windows command line.
+test "quote_windows_arg: a space and a quote"
+    assert quote_windows_arg("say \"hi\"") == "\"say \\\"hi\\\"\""
+
+# A command line written from a list, read back the same.
+test "quote_windows_args: a program and two arguments"
+    line = quote_windows_args(["C:\\Tools\\run.exe", "a b", "c"]).must()
+    assert line == "C:\\Tools\\run.exe \"a b\" c"
+    assert split_windows_args(line) == ["C:\\Tools\\run.exe", "a b", "c"]

@@ -1,0 +1,246 @@
+# The words of a name as the case styles cut them, and the styles that join
+# them again: snake_case, camelCase, PascalCase, kebab-case and the others.
+# The boundaries are those of Rust's crate heck 0.5.0, whose answers were
+# observed on 2026-11-17 and matched by this module's rule over twelve
+# thousand generated texts; each word's case is `unicode`'s, with the sigma
+# that ends a word written by `casing` as Unicode's Final_Sigma says.
+
+use strings/internal/casing
+use strings/internal/scan
+use unicode
+
+# The side a run of characters stands on while it is cut: nothing known yet.
+constant UNKNOWN: i64
+    0
+
+# The run has reached a lower case letter.
+constant LOWER: i64
+    1
+
+# The run has reached an upper case letter.
+constant UPPER: i64
+    2
+
+# Whether `c` stands in a word: a letter or a number, Unicode's Alphabetic or
+# Numeric as Rust's `is_alphanumeric` reads them, or a mark that follows one,
+# `in_run`, so that a letter written with a combining accent stays whole.
+function is_word_char(c: str, in_run: bool) -> bool
+    if unicode.is_alphanumeric(c)
+        return true
+    return in_run && unicode.is_mark(c)
+
+# The side the run stands on after `c`: lower or upper after a letter of that
+# case, and the side before it, `side`, after a digit, a mark or a letter with
+# no case.
+function side_after(c: str, side: i64) -> i64
+    if unicode.is_lower(c)
+        return LOWER
+
+    if unicode.is_upper(c)
+        return UPPER
+    return side
+
+# Adds to `words` the words of `run`, one run of word characters, cut after a
+# lower case letter, or a digit that follows one, that an upper case letter
+# follows, and before the last upper case letter of a run of them that a
+# lower case letter follows: "XMLHttp" is "XML" and "Http".
+function cut_run(run: [str] lent, @words: [str])
+    side: i64 @= UNKNOWN
+    start: i64 @= 0
+    at: i64 @= 0
+    last = run.len() - 1
+
+    while at < last
+        c = run[at]
+        next = run[at + 1]
+        after = side_after(c: c, side: side)
+
+        if after == LOWER && unicode.is_upper(next)
+            words @ words.push(run.slice(from: start, to: at + 1).join(""))
+            start @ at + 1
+            side @ UNKNOWN
+        else if side == UPPER && unicode.is_upper(c) && unicode.is_lower(next)
+            words @ words.push(run.slice(from: start, to: at).join(""))
+            start @ at
+            side @ UPPER
+        else
+            side @ after
+        at @ at + 1
+
+    words @ words.push(run.slice(from: start, to: run.len()).join(""))
+
+# The words of `s` as the case styles cut them: its runs of letters and
+# numbers, each cut where its case changes.
+function case_words(s: str) -> [str]
+    words: [str] @= []
+    run: [str] @= []
+
+    for c in s.chars()
+        if is_word_char(c: c, in_run: run.len() > 0)
+            run @ run.push(c)
+        else if run.len() > 0
+            cut_run(run: run, words: @words)
+            run @ []
+
+    if run.len() > 0
+        cut_run(run: run, words: @words)
+    return words
+
+# `word` in lower case.
+function lower_word(word: str) -> str
+    return casing.to_lower(word)
+
+# `word` in upper case.
+function upper_word(word: str) -> str
+    return casing.to_upper(word)
+
+# `word`, which is not empty, with its first character in title case and the
+# others in lower case. The lower case of the whole word begins with that of
+# its first character, since a sigma at the start ends no word, so the rest
+# is cut from it and keeps the sigma that ends the word.
+function capital_word(word: str) -> str
+    first_end = scan.next_at(word, 0)
+    first = word.slice(from: 0, to: first_end)
+    lower = casing.to_lower(word)
+    skip = unicode.to_lower(first).len()
+    return unicode.to_title(first) + lower.slice(from: skip, to: lower.len())
+
+# The words of `s` joined by `sep`, the first written by `first` and every
+# other by `rest`.
+function styled(s: str, sep: str, first: (function(str) -> str), rest: (function(str) -> str)) -> str
+    out: [str] @= []
+
+    for word in case_words(s)
+        if out.len() == 0
+            out @ out.push(first(word))
+        else
+            out @ out.push(rest(word))
+
+    return out.join(sep)
+
+# `s` as snake_case.
+function snake(s: str) -> str
+    return styled(s: s, sep: "_", first: lower_word, rest: lower_word)
+
+# `s` as kebab-case.
+function kebab(s: str) -> str
+    return styled(s: s, sep: "-", first: lower_word, rest: lower_word)
+
+# `s` as SCREAMING_SNAKE_CASE.
+function screaming_snake(s: str) -> str
+    return styled(s: s, sep: "_", first: upper_word, rest: upper_word)
+
+# `s` as SCREAMING-KEBAB-CASE.
+function screaming_kebab(s: str) -> str
+    return styled(s: s, sep: "-", first: upper_word, rest: upper_word)
+
+# `s` as camelCase.
+function camel(s: str) -> str
+    return styled(s: s, sep: "", first: lower_word, rest: capital_word)
+
+# `s` as PascalCase.
+function pascal(s: str) -> str
+    return styled(s: s, sep: "", first: capital_word, rest: capital_word)
+
+# `s` as Title Case.
+function title_words(s: str) -> str
+    return styled(s: s, sep: " ", first: capital_word, rest: capital_word)
+
+# `s` as Train-Case.
+function train(s: str) -> str
+    return styled(s: s, sep: "-", first: capital_word, rest: capital_word)
+
+# heck 0.5.0 answered every case below on 2026-11-17, but where this module
+# says otherwise in its comments: the sigma, the title case of a first
+# letter, and a combining mark.
+test "case_words: empty, separators alone, one letter, and separators at both ends"
+    assert case_words("").len() == 0
+    assert case_words(" _-.").len() == 0
+    assert case_words("a") == ["a"]
+    assert case_words("__foo__bar__") == ["foo", "bar"]
+    assert case_words("  foo  bar  ") == ["foo", "bar"]
+    assert case_words("\tTab\tSeparated") == ["Tab", "Separated"]
+
+test "case_words: lower then upper, a run of capitals before a word, and capitals alone"
+    assert case_words("camelCase") == ["camel", "Case"]
+    assert case_words("XMLHttpRequest") == ["XML", "Http", "Request"]
+    assert case_words("HTTPServer") == ["HTTP", "Server"]
+    assert case_words("ABC") == ["ABC"]
+    assert case_words("iOSDevice") == ["i", "OS", "Device"]
+    assert case_words("MIXEDcase") == ["MIXE", "Dcase"]
+    assert case_words("aB") == ["a", "B"]
+    assert case_words("AbC") == ["Ab", "C"]
+
+test "case_words: digits keep the side they follow, and a letter with no case cuts nothing"
+    assert case_words("abc123def") == ["abc123def"]
+    assert case_words("abc123Def") == ["abc123", "Def"]
+    assert case_words("ABC123DEF") == ["ABC123DEF"]
+    assert case_words("A1B") == ["A1B"]
+    assert case_words("Version2Point0") == ["Version2", "Point0"]
+    assert case_words("1a") == ["1a"]
+    assert case_words("日本語Text") == ["日本語Text"]
+    assert case_words("x½y") == ["x½y"]
+
+test "case_words: characters of more than one byte, a symbol between, and a combining accent kept"
+    assert case_words("ÉtéChaud") == ["Été", "Chaud"]
+    assert case_words("àÉ") == ["à", "É"]
+    assert case_words("hello😀world") == ["hello", "world"]
+    assert case_words("ⅫBig") == ["Ⅻ", "Big"]
+
+    # heck cuts at the accent, U+0301, and loses it: "Cafe" and "Noir".
+    assert case_words("CaféNoir") == ["Café", "Noir"]
+    assert case_words("́a") == ["a"]
+
+test "snake and kebab: words, separators of every kind, and capitals"
+    assert snake("CamelCase") == "camel_case"
+    assert snake("foo-bar") == "foo_bar"
+    assert snake("foo.bar") == "foo_bar"
+    assert snake("foo:bar") == "foo_bar"
+    assert snake("PascalCase_with-mixed Separators") == "pascal_case_with_mixed_separators"
+    assert snake("straße_GROSS") == "straße_gross"
+    assert snake("1_2") == "1_2"
+    assert snake("") == ""
+    assert kebab("XMLHttpRequest") == "xml-http-request"
+    assert kebab("a--b") == "a-b"
+    assert kebab("ÉtéChaud") == "été-chaud"
+
+test "snake: the sigma that ends a word by Unicode's rule, where heck writes the final form after any letter"
+    assert snake("ΟΔΟΣ ΤΕΛΟΣ") == "οδος_τελος"
+    assert snake("ΣΑΣ") == "σας"
+    assert snake("aΣb") == "a_σb"
+
+    # heck writes "ς" for a word that is a sigma alone; Unicode's Final_Sigma
+    # needs a cased letter before it, as Rust's `to_lowercase` and Python's
+    # `lower` read it.
+    assert snake("Σ") == "σ"
+    assert snake("AbΣ") == "ab_σ"
+
+test "screaming snake and kebab: the full upper case of every word"
+    assert screaming_snake("camelCase") == "CAMEL_CASE"
+    assert screaming_snake("straße_GROSS") == "STRASSE_GROSS"
+    assert screaming_snake("1_2") == "1_2"
+    assert screaming_kebab("Train-Case") == "TRAIN-CASE"
+    assert screaming_kebab("日本語Text") == "日本語TEXT"
+
+test "camel and pascal: the first word, the others capitalised, and digits joined"
+    assert camel("foo_bar") == "fooBar"
+    assert camel("XMLHttpRequest") == "xmlHttpRequest"
+    assert camel("a.b.c") == "aBC"
+    assert camel("1_2") == "12"
+    assert camel("ΣΑΣ x") == "σαςX"
+    assert pascal("foo_bar") == "FooBar"
+    assert pascal("iOSDevice") == "IOsDevice"
+    assert pascal("ÉtéChaud") == "ÉtéChaud"
+    assert pascal("1a") == "1a"
+
+test "pascal, title and train: the title case of a first letter, where heck writes its upper case"
+    # heck writes "Ǆungla", "SSa" and "FIle": the upper case of the first
+    # letter. Its title case is the letter that begins a word.
+    assert pascal("ǅungla") == "ǅungla"
+    assert pascal("ßa") == "Ssa"
+    assert pascal("ﬁleName") == "FileName"
+    assert title_words("ΣΑΣ") == "Σας"
+    assert title_words("XMLHttpRequest") == "Xml Http Request"
+    assert title_words("  foo  bar  ") == "Foo Bar"
+    assert train("abc123Def") == "Abc123-Def"
+    assert train("İstanbul") == "İstanbul"

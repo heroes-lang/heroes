@@ -1,0 +1,300 @@
+# A TOML document read as its statements, each with the bytes it spans, so
+# that an edit rewrites only the bytes of what it touches: a line of nothing
+# or of a comment, a table's header, an array of tables' header, and a key
+# with its value. Each statement knows the path it names from the root, an
+# entry of an array of tables named by its index written in decimal, which
+# is how a program's path names it too. The text is one `parse_document`
+# has accepted, so the statements are read without the rules of definition,
+# which that parse has held already.
+
+use toml/internal/doc
+use toml/internal/scalar
+
+# A line holding nothing, spaces, or a comment.
+constant BLANK: i64
+    0
+
+# A table's header, `[a.b]`.
+constant HEADER: i64
+    1
+
+# An array of tables' header, `[[a.b]]`, opening one entry.
+constant ENTRY: i64
+    2
+
+# A key and its value, `a.b = 1`, its value across lines where it is an array
+# or a string of several lines.
+constant PAIR: i64
+    3
+
+# One statement of a document and the bytes it spans.
+record Statement
+    # `BLANK`, `HEADER`, `ENTRY` or `PAIR`.
+    kind: i64
+    # Where its line begins, its indentation included.
+    start: i64
+    # The byte past its line end, or the text's end on the last line.
+    end: i64
+    # Where its first byte that is not a space or a tab stands.
+    content: i64
+    # The path it names from the root: a header's table, an entry's table
+    # with its index last, a pair's key under its section; none for `BLANK`.
+    path: [str]
+    # The keys as written: a header's, a pair's dotted key split.
+    written: [str]
+    # Where a pair's value begins and the byte past it; 0 for the others.
+    value_start: i64
+    value_end: i64
+    # Where the header that opens its section stands among the statements,
+    # its own for a header; -1 for the root's.
+    section: i64
+
+# `path` written as one text no two paths share: each key after its length.
+function encoded(path: [str]) -> str
+    parts: [str] @= []
+
+    for key in path
+        parts @ parts.push(f"{key.len()}:{key}")
+
+    return parts.join("")
+
+# Whether `path` begins with every key of `prefix`, `prefix` itself included.
+function begins_with(path: [str], prefix: [str]) -> bool
+    if prefix.len() > path.len()
+        return false
+
+    for k in range(from: 0, to: prefix.len())
+        if path[k] != prefix[k]
+            return false
+
+    return true
+
+# The keys of `path` from `from` on.
+function after(path: [str], from: i64) -> [str]
+    return path.slice(from: from, to: path.len())
+
+# The line end the document writes: CR LF where its first line end is one,
+# else a line feed.
+function newline_of(text: str) -> str
+    for k in range(from: 0, to: text.len())
+        if text[k] == '\n'
+            if k > 0 && text[k - 1] == '\r'
+                return "\r\n"
+            return "\n"
+
+    return "\n"
+
+# The index a step of a path names in an array: decimal digits, no sign and
+# no leading zero but in "0" itself. Fails `invalid` for any other step.
+function step_index(step: str) -> i64?
+    if step.len() == 0 || step.len() > 18 || step.len() > 1 && step[0] == '0'
+        return fail(code: scalar.INVALID, msg: f"\"{step}\" is no index of an array")
+
+    n: i64 @= 0
+
+    for k in range(from: 0, to: step.len())
+        if !scalar.is_digit(step[k])
+            return fail(code: scalar.INVALID, msg: f"\"{step}\" is no index of an array")
+        n @ n * 10 + to_i64(step[k] - '0').must()
+
+    return ok(n)
+
+# The path a header of `keys` opens, `entry` for `[[...]]`: each key that
+# names an array of tables followed by the index of its last entry, and an
+# entry's own index last. `counts` holds how many entries each array of
+# tables has had so far, by `encoded` path; a new entry adds one.
+function resolved(names: [str], entry: bool, @counts: {str: i64}) -> [str]
+    path: [str] @= []
+
+    for k in range(from: 0, to: names.len())
+        path @ path.push(names[k])
+        key = encoded(path)
+
+        if k == names.len() - 1 && entry
+            n = counts[key].default(0)
+            counts[key] @ n + 1
+            path @ path.push(to_str(n))
+        else
+            match counts[key]
+                .ok n  => path @ path.push(to_str(n - 1))
+                .err _ => _ = 0
+
+    return path
+
+# A statement of no key and no value.
+function plain(kind: i64, start: i64, end: i64, content: i64, section: i64) -> Statement
+    return Statement(
+        kind: kind,
+        start: start,
+        end: end,
+        content: content,
+        path: [],
+        written: [],
+        value_start: 0,
+        value_end: 0,
+        section: section
+    )
+
+# Every statement of `text`, in order, their spans covering every byte.
+# Fails `invalid` where `text` is not TOML 1.0.0; a text `parse_document`
+# accepted is read whole.
+function scan(text: str) -> [Statement]?
+    out: [Statement] @= []
+    counts: {str: i64} @= {}
+    section: i64 @= -1
+    section_path: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        start = at
+        doc.skip_spaces(text, @at)
+        content = at
+
+        if at >= text.len()
+            out @ out.push(plain(kind: BLANK, start: start, end: at, content: content, section: section))
+            break
+        b = text[at]
+
+        if b == '#' || scalar.line_end_len(text, at) > 0
+            doc.end_line(text, @at)?
+            out @ out.push(plain(kind: BLANK, start: start, end: at, content: content, section: section))
+        else if b == '['
+            entry = scalar.holds(text: text, at: at, want: "[[")
+            close: str @= "]"
+
+            if entry
+                close @ "]]"
+                at @ at + 2
+            else
+                at @ at + 1
+            doc.skip_spaces(text, @at)
+            names = doc.read_key(text, @at)?
+            doc.skip_spaces(text, @at)
+
+            if !scalar.holds(text: text, at: at, want: close)
+                return scalar.wrong(text: text, at: at, what: f"expected \"{close}\" to close the header")
+            at @ at + close.len()
+            doc.end_line(text, @at)?
+            path = resolved(names: names, entry: entry, counts: @counts)
+            section @ out.len()
+            section_path @ path
+            made @= plain(kind: HEADER, start: start, end: at, content: content, section: section)
+
+            if entry
+                made.kind @ ENTRY
+            made.path @ path
+            made.written @ names
+            out @ out.push(made)
+        else
+            names = doc.read_key(text, @at)?
+            doc.skip_spaces(text, @at)
+
+            if at >= text.len() || text[at] != '='
+                return scalar.wrong(text: text, at: at, what: "expected \"=\" after a key")
+            at @ at + 1
+            doc.skip_spaces(text, @at)
+            value_start = at
+            scratch: [doc.Node] @= []
+            _ = doc.read_value(text: text, at: @at, nodes: @scratch, depth: 0)?
+            value_end = at
+            doc.end_line(text, @at)?
+            made @= plain(kind: PAIR, start: start, end: at, content: content, section: section)
+            full @= section_path
+
+            for key in names
+                full @ full.push(key)
+
+            made.path @ full
+            made.written @ names
+            made.value_start @ value_start
+            made.value_end @ value_end
+            out @ out.push(made)
+
+    return ok(out)
+
+# Each statement of `text` as a test reads it: its kind's letter, its path
+# and its span, or the failure's message.
+function shown(text: str) -> str
+    match scan(text)
+        .err e => return e.msg
+        .ok got =>
+            parts: [str] @= []
+
+            for s in got
+                letter = if s.kind == BLANK
+                    "b"
+                else if s.kind == HEADER
+                    "h"
+                else if s.kind == ENTRY
+                    "e"
+                else
+                    "p"
+
+                parts @ parts.push(f"{letter}{s.path.join(".")}@{s.start}-{s.end}")
+
+            return parts.join(" ")
+
+test "scan: blank lines, comments, a header, a pair, and a last line with no line end"
+    assert shown("") == ""
+    assert shown("a = 1") == "pa@0-5"
+    assert shown("# c\n\na = 1 # one\n[t]\n  b = 'x'\n  ") == "b@0-4 b@4-5 pa@5-17 ht@17-21 pt.b@21-31 b@31-33"
+    assert shown("a = 1\r\n[t]\r\n") == "pa@0-7 ht@7-12"
+
+test "scan: arrays of tables numbered, their sub-tables and nested arrays under the entry they follow"
+    text = "[[a]]\nx = 1\n[a.b]\ny = 2\n[[a]]\n[[a.c]]\n[[a.c]]\nz.w = 3\n"
+    assert shown(text) == "ea.0@0-6 pa.0.x@6-12 ha.0.b@12-18 pa.0.b.y@18-24 ea.1@24-30 ea.1.c.0@30-38 ea.1.c.1@38-46 pa.1.c.1.z.w@46-54"
+
+test "scan: a value across lines, a string of several lines, an inline table, keys quoted and dotted"
+    text = "a = [\n  1, # one\n  2,\n]\nb = \"\"\"\nx\n\"\"\"\n\"c d\" . e = {f = 1}\n"
+    assert shown(text) == "pa@0-24 pb@24-38 pc d.e@38-58"
+
+test "scan: the value's span and the written keys of a pair"
+    got = scan("[t]\n  a . b = [1, 2]   # c\n").must()
+    assert got[1].written == ["a", "b"]
+    assert got[1].path == ["t", "a", "b"]
+    assert got[1].value_start == 14 && got[1].value_end == 20
+    assert got[1].content == 6 && got[1].section == 0
+
+test "step_index: zero, a number, a leading zero, a sign, a letter, empty and too long"
+    assert step_index("0").must() == 0
+    assert step_index("12").must() == 12
+    assert step_index("01").is_err()
+    assert step_index("+1").is_err()
+    assert step_index("x").is_err()
+    assert step_index("").is_err()
+    assert step_index("1234567890123456789").is_err()
+
+test "newline_of, begins_with and encoded"
+    assert newline_of("a = 1\r\nb = 2\n") == "\r\n"
+    assert newline_of("a = 1\n") == "\n"
+    assert newline_of("a = 1") == "\n"
+    assert begins_with(path: ["a", "b"], prefix: ["a"])
+    assert begins_with(path: ["a"], prefix: [])
+    assert !begins_with(path: ["a"], prefix: ["a", "b"])
+    assert encoded(["a.b"]) != encoded(["a", "b"])
+
+# Whether the statements of `text` cover every byte of it once, in order.
+function covers(text: str) -> bool
+    match scan(text)
+        .err _ => return false
+        .ok got =>
+            at: i64 @= 0
+
+            for s in got
+                if s.start != at || s.end <= s.start
+                    return false
+                at @ s.end
+
+            return at == text.len()
+
+test "scan: every byte of a document covered once, in order, across every kind of statement and value"
+    assert covers("")
+    assert covers("\n\n\n")
+    assert covers("   ")
+    assert covers("a = 1")
+    assert covers("# only\r\n# comments")
+    assert covers("a = \"\"\"\none\n  two\"\"\" # c\nb = '''\n'''\n")
+    assert covers(
+        "x = [\n  [1, 2],\n  { y = 1 },\n  # inside\n]\n[t . 'u']\n\t z = 1979-05-27T07:32:00Z\n[[e]]\n[[e]]\n"
+    )
+    assert covers("a = {b = {c = [1, {d = 2}]}}\n\"q\".r = -inf\n")

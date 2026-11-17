@@ -1,0 +1,170 @@
+# A cookie's value signed or sealed with its end inside, so the client keeps
+# it and cannot change it unseen, nor keep it past its end. Signed: the value,
+# its end and an HMAC-SHA256 tag over the cookie's name, the value and the
+# end, each in URL-safe base 64 or decimal, parted by `.`. Sealed: the end and
+# the value encrypted by `crypto/seal`, the name authenticated beside them.
+# Keys rotate: the first signs or seals, every one verifies or opens.
+
+use bytes
+use crypto
+use crypto/seal
+use numbers
+use strings
+
+# The code of a value that is not one this module signed, or is past its end.
+constant INVALID: str
+    "invalid"
+
+# The fewest bytes a signing key holds: SHA-256's output, as RFC 2104 asks.
+constant FEWEST_KEY_BYTES: i64
+    32
+
+# What the tag covers before the name: this format's own label, so a tag of
+# another use of the same key never reads as one of a cookie.
+constant LABEL: str
+    "rebel-cookie-1\n"
+
+# Whether `ring` may sign: one key or more, each `FEWEST_KEY_BYTES` or more.
+function are_keys(ring: [[u8]]) -> bool
+    if ring.len() == 0
+        return false
+
+    for k in ring
+        if k.len() < FEWEST_KEY_BYTES
+            return false
+
+    return true
+
+# The bytes the tag covers: the label, the name, a line feed, the value's
+# base 64, `.`, the end's decimal.
+function covered(name: str, encoded: str, expires: i64) -> [u8]
+    return bytes.from_text(f"{LABEL}{name}\n{encoded}.{expires}")
+
+# `value` signed for the cookie `name` with `ring[0]`, valid before the
+# instant `expires`, in Unix seconds.
+function sign(ring: [[u8]], name: str, value: str, expires: i64) -> str
+    encoded = bytes.format_base64_url_unpadded(bytes.from_text(value))
+    tag = crypto.hmac(.sha256, key: ring[0], data: covered(name: name, encoded: encoded, expires: expires))
+    return f"{encoded}.{expires}.{bytes.format_base64_url_unpadded(tag)}"
+
+# The value `signed` holds for the cookie `name`, its tag held by one of
+# `ring` and its end after `now`, in Unix seconds. Fails `invalid` where it
+# is not of the form, no key's tag matches, compared in constant time, or its
+# end has come; `not_text` where its value is not UTF-8.
+function verify(ring: [[u8]], name: str, signed: str, now: i64) -> str?
+    parts = strings.split(s: signed, sep: ".")
+
+    if parts.len() != 3
+        return fail(code: INVALID, msg: f"reading the cookie {name}: its value is not three parts parted by `.`")
+
+    expires = match numbers.parse_int(parts[1])
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: f"reading the cookie {name}: its end is no number")
+
+    given = match bytes.parse_base64_url_unpadded(parts[2])
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: f"reading the cookie {name}: its tag is no base 64")
+
+    data = covered(name: name, encoded: parts[0], expires: expires)
+    held: bool @= false
+
+    for k in ring
+        if crypto.equals_constant_time(a: crypto.hmac(.sha256, key: k, data: data), b: given)
+            held @ true
+
+    if !held
+        return fail(code: INVALID, msg: f"reading the cookie {name}: its tag matches no key")
+
+    if now >= expires
+        return fail(code: INVALID, msg: f"reading the cookie {name}: it ended at {expires}, before {now}")
+
+    value = match bytes.parse_base64_url_unpadded(parts[0])
+        .ok v  => v
+        .err _ => return fail(code: INVALID, msg: f"reading the cookie {name}: its value is no base 64")
+
+    return bytes.to_text(value)
+
+# What sealing covers beside the text: the label and the name.
+function associated(name: str) -> [u8]
+    return bytes.from_text(LABEL + name)
+
+# `value` sealed for the cookie `name` under `ring[0]`, valid before
+# `expires`, in Unix seconds: the end's decimal, `.`, the value, sealed, in
+# URL-safe base 64. Fails as `seal.seal` does, `unsupported` on macOS.
+function seal_value(ring: [seal.Key], name: str, value: str, expires: i64) -> str?
+    sealed = seal.seal(ring[0], text: bytes.from_text(f"{expires}.{value}"), associated: associated(name))?
+    return ok(bytes.format_base64_url_unpadded(sealed))
+
+# The value `sealed` holds for the cookie `name`, opened by one of `ring`,
+# its end after `now`. Fails `invalid` where it is no base 64, no key opens
+# it, or its end has come; `unsupported` and `closed` as `seal.open` fails;
+# `not_text` where its value is not UTF-8.
+function open_value(ring: [seal.Key], name: str, sealed: str, now: i64) -> str?
+    data = match bytes.parse_base64_url_unpadded(sealed)
+        .ok d  => d
+        .err _ => return fail(code: INVALID, msg: f"reading the cookie {name}: its value is no base 64")
+
+    for k in ring
+        match seal.open(k, sealed: data, associated: associated(name))
+            .ok text =>
+                read = bytes.to_text(text)?
+                halves = strings.split_once(s: read, sep: ".")?
+                expires = numbers.parse_int(halves.before)?
+
+                if now >= expires
+                    return fail(code: INVALID, msg: f"reading the cookie {name}: it ended at {expires}, before {now}")
+                return ok(halves.after)
+            .err e =>
+                if e.code != INVALID
+                    return fail(code: e.code, msg: e.msg)
+                _ = 0
+
+    return fail(code: INVALID, msg: f"reading the cookie {name}: no key opens it")
+
+## Tests
+
+# A key of 32 bytes, each `b`.
+function key_of(b: u8) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        out @ out.push(b)
+
+    return out
+
+test "are_keys: none, one too short, one and two long enough"
+    assert !are_keys([]) && !are_keys([[1, 2]]) && are_keys([key_of(1)]) && !are_keys([key_of(1), [1]])
+
+test "sign: the value, the end and the tag Python's hmac.new computes"
+    got = sign([key_of(7)], name: "s", value: "hi", expires: 1_000)
+    assert got == "aGk.1000.wqXaUfsreV6P1mVDBrMxEYG97ncVYi7GVJPYjSAPFvc"
+
+test "verify: the value read back, a second key verifying, the second-to-last second, text of more than one byte"
+    signed = sign([key_of(7)], name: "s", value: "café", expires: 1_000)
+    assert verify([key_of(7)], name: "s", signed: signed, now: 999).must() == "café"
+    assert verify([key_of(9), key_of(7)], name: "s", signed: signed, now: 0).must() == "café"
+    assert verify([key_of(7)], name: "s", signed: sign([key_of(7)], name: "s", value: "", expires: 5), now: 4).must() == ""
+
+test "verify fails invalid: another name, another key, a byte changed, its end come, parts missing, an end that is no number"
+    signed = sign([key_of(7)], name: "s", value: "hi", expires: 1_000)
+
+    for bad in [verify([key_of(7)], name: "t", signed: signed, now: 0), verify([key_of(8)], name: "s", signed: signed, now: 0), verify([key_of(7)], name: "s", signed: "aGl" + signed.slice(from: 3, to: signed.len()), now: 0), verify([key_of(7)], name: "s", signed: signed, now: 1_000), verify([key_of(7)], name: "s", signed: "aGk.1000", now: 0), verify([key_of(7)], name: "s", signed: "aGk.x.y", now: 0), verify([key_of(7)], name: "s", signed: "", now: 0)]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "seal_value and open_value: read back with a second key on a machine that seals; unsupported on macOS"
+    if !seal.is_available(.aes_256_gcm)
+        match seal.generate(.aes_256_gcm)
+            .ok _  => assert false
+            .err e => assert e.code == "unsupported"
+
+        return
+    first @= seal.generate(.aes_256_gcm).must()
+    second @= seal.generate(.aes_256_gcm).must()
+    sealed = seal_value([first], name: "s", value: "café", expires: 1_000).must()
+    assert open_value([second, first], name: "s", sealed: sealed, now: 999).must() == "café"
+    assert open_value([first], name: "t", sealed: sealed, now: 0).is_err() && open_value([second], name: "s", sealed: sealed, now: 0).is_err()
+    assert open_value([first], name: "s", sealed: sealed, now: 1_000).is_err() && open_value([first], name: "s", sealed: "!", now: 0).is_err()
+    seal.close(@first).must()
+    seal.close(@second).must()

@@ -156,6 +156,27 @@ capability crypto/password-strings  a password's hash stored as a string and ver
   python  -
   note    Argon2's PHC string (`$argon2id$v=19$m=..,t=..,p=..$salt$tag`, base 64 with no padding) as the reference implementation writes it; strings Zig wrote in the three types verify, a string with no `v=` is version 16 as the reference reads it, and every part read from a stored string is bounded before anything is allocated, its memory by `MOST_MEMORY`. `parse_argon2` and `parse_bcrypt_cost` answer what a hash was made with, which `argon2-cffi`'s `check_needs_rehash` and Go's `bcrypt.Cost` ask. No salt is made here: `crypto` stands on no C, and the salt comes from `random` or `os.random_bytes`. A secret and associated data have no field in the string, so `hash_argon2` takes neither
 
+capability crypto/hotp  a one-time password made from a counter (HOTP), and one received checked within a window of counters
+  heroes  crypto.hotp, crypto.verify_hotp, crypto.Otp, crypto.new_otp, crypto.MOST_OTP_WINDOW
+  go      -
+  rust    -
+  python  -
+  note    RFC 4226's Appendix D vectors, and the other cases as Python's `hmac` and `struct` answered them on 2026-11-17. The yardstick is Python's pyotp (not on this machine): `HOTP.at` and `HOTP.verify`, which answers a `bool` where `verify_hotp` answers the counter that matched, which RFC 4226's look-ahead resynchronisation needs. Codes of 6 to 10 digits (RFC 4226 asks 6 at least, and its 31 bits fill 10); a key of one byte at least, where RFC 4226 asks 16 and services often hand apps 10; SHA-1, SHA-256 and SHA-512 alone, the truncation reading 20 bytes of the tag. Every counter of the window is computed and compared in constant time through `equals_constant_time`'s work, whatever matched. None of the three standard libraries has HOTP
+
+capability crypto/totp  a one-time password made from a time the caller gives (TOTP), and one received checked within a window of steps
+  heroes  crypto.totp, crypto.verify_totp, crypto.MOST_OTP_WINDOW
+  go      -
+  rust    -
+  python  -
+  note    RFC 6238's Appendix B, every time by its three digests and seeds. pyotp's `TOTP.at` and `TOTP.verify(valid_window=)` are the yardstick; `verify_totp` answers the step that matched, the nearest to the time's own first, so that the caller refuses a step it has taken already (RFC 6238's section 5.2). No clock is read: the caller gives the seconds since 1970, and T0 is 0, RFC 6238's default; a window above `MOST_OTP_WINDOW` (1000) or below 0 fails `invalid`. None of the three standard libraries has TOTP
+
+capability crypto/otp-uri  the otpauth URI that hands a one-time password's key to an authenticator app
+  heroes  crypto.format_hotp_uri, crypto.format_totp_uri
+  go      -
+  rust    -
+  python  -
+  note    Google Authenticator's Key Uri Format: the label `issuer:account`, the key in base 32 with no padding (RFC 4648), then `issuer`, `algorithm`, `digits`, and `counter` or `period`, all always written as that format's own example writes them, where pyotp's `provisioning_uri` leaves out a default; the label and the issuer escaped but for RFC 3986's unreserved characters, as Python's `urllib.parse.quote(s, safe="")` answered on 2026-11-17, and a colon in either refused `invalid`. The base 32 and the escape are written in `crypto/internal/otp`, since `bytes` holds base 32 `pending` and `url` stands on this package's own layer; they move to `bytes` once it has base 32. The URI is written, never read
+
 dropped registry  Go's table of hash constructors filled at start-up: there are no mutable globals, and `Algorithm` is closed
   go      crypto.RegisterHash
   rust    -

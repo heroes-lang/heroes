@@ -1,0 +1,240 @@
+# A value written where a path names nothing yet, every byte around it
+# kept: a key line at the end of its table's key lines, indented as the last
+# of them; a section `[...]`, or one per entry `[[...]]`, after the last
+# section of the table that holds it, a blank line before it and after it
+# where text stands; a member inside an inline table. The values are nodes
+# of a document `format` wrote, so they are written in toml's own forms.
+
+use strings
+use toml/internal/doc
+use toml/internal/inline
+use toml/internal/layout
+use toml/internal/scalar
+use toml/internal/sections
+use toml/internal/tree
+use toml/internal/write
+
+# Whether the line that ends just before `at` holds nothing but spaces; true
+# at the text's start.
+function blank_before(text: str, at: i64) -> bool
+    if at == 0
+        return true
+
+    if text[at - 1] != '\n'
+        return false
+    k @= at - 1
+
+    while k > 0 && text[k - 1] != '\n'
+        k @ k - 1
+        b = text[k]
+
+        if b != ' ' && b != '\t' && b != '\r'
+            return false
+
+    return true
+
+# Whether the line that begins at `at` holds nothing but spaces and its end.
+function blank_at(text: str, at: i64) -> bool
+    k @= at
+    doc.skip_spaces(text, @k)
+    return k >= text.len() || scalar.line_end_len(text, k) > 0
+
+# `text` with `line` added as a line of its own at `at`, a line's start or
+# the text's end.
+function line_inserted(text: str, at: i64, line: str, newline: str) -> str
+    if at == text.len() && at > 0 && text[at - 1] != '\n'
+        return text + newline + line
+    return text.slice(from: 0, to: at) + line + newline + text.slice(from: at, to: text.len())
+
+# `text` with `section`, whole lines, added at `at`, a line's start or the
+# text's end, a blank line kept before it and after it where text stands.
+function section_inserted(text: str, at: i64, section: str, newline: str) -> str
+    lead: str @= ""
+
+    if at == text.len() && at > 0 && text[at - 1] != '\n'
+        lead @ newline + newline
+    else if !blank_before(text: text, at: at)
+        lead @ newline
+
+    tail = if at < text.len() && !blank_at(text: text, at: at)
+        newline
+    else
+        ""
+
+    return text.slice(from: 0, to: at) + lead + section + tail + text.slice(from: at, to: text.len())
+
+# `line`, a key and its value, added at the end of the key lines of the
+# section opened at `h` (-1 for the root's), indented as the last of them:
+# after the header where it has none; at the root, before the first header
+# and the comments that stand on it, a blank line between.
+function key_line_inserted(text: str, stmts: [layout.Statement] lent, h: i64, line: str, newline: str) -> str
+    last = sections.last_in(stmts: stmts, h: h, kind: layout.PAIR)
+
+    if last >= 0
+        s = stmts[last]
+        indent = text.slice(from: s.start, to: s.content)
+        return line_inserted(text: text, at: s.end, line: indent + line, newline: newline)
+
+    if h >= 0
+        return line_inserted(text: text, at: stmts[h].end, line: line, newline: newline)
+    first = sections.section_stop(stmts: stmts, h: -1)
+
+    if first >= stmts.len()
+        return line_inserted(text: text, at: text.len(), line: line, newline: newline)
+    k @= first
+
+    while k > 0 && stmts[k - 1].kind == layout.BLANK && !sections.is_empty_line(text: text, s: stmts[k - 1])
+        k @ k - 1
+
+    at = stmts[k].start
+    return text.slice(from: 0, to: at) + line + newline + newline + text.slice(from: at, to: text.len())
+
+# The headers of `body`, a text `write.document_text` wrote, put under
+# `keys`; its line ends made `newline`.
+function under(body: str, names: [str], newline: str) -> str
+    prefix = write.path_text(names) + "."
+    lines: [str] @= []
+
+    for line in strings.split(s: body, sep: "\n")
+        if strings.has_prefix(s: line, prefix: "[[")
+            lines @ lines.push("[[" + prefix + line.slice(from: 2, to: line.len()))
+        else if strings.has_prefix(s: line, prefix: "[")
+            lines @ lines.push("[" + prefix + line.slice(from: 1, to: line.len()))
+        else
+            lines @ lines.push(line)
+
+    return lines.join(newline)
+
+# The table at `at` of `nodes` written as a section of its own under the
+# header `keys`, `[[...]]` for an entry: its keys, then its tables.
+function section_text(nodes: [doc.Node] lent, at: i64, names: [str], entry: bool, newline: str) -> str?
+    alone: [doc.Node] @= []
+    _ = tree.grafted(nodes: @alone, from: nodes, at: at)
+    body @= write.document_text(alone)?
+
+    if strings.has_prefix(s: body, prefix: "[")
+        body @ "\n" + body
+
+    head = if entry
+        "[[" + write.path_text(names) + "]]"
+    else
+        "[" + write.path_text(names) + "]"
+
+    return ok(head + newline + under(body: body, names: names, newline: newline))
+
+# The array of tables at `at` of `nodes` written as one section per entry.
+function entries_text(nodes: [doc.Node] lent, at: i64, names: [str], newline: str) -> str?
+    parts: [str] @= []
+
+    for item in nodes[at].children
+        parts @ parts.push(section_text(nodes: nodes, at: item, names: names, entry: true, newline: newline)?)
+
+    return ok(parts.join(newline))
+
+# Whether the value at `at` of `nodes` is written as sections of its own: a
+# table, or an array of tables alone and not empty.
+function is_sectioned(nodes: [doc.Node] lent, at: i64) -> bool
+    return nodes[at].kind == scalar.TABLE || write.is_table_array(nodes, at)
+
+# `text` with the value at `at` of `nodes` written under `path`, which
+# names nothing yet: inside the value of the pair that holds its nearest
+# ancestor; as a key of the table that holds it; as a section of its own
+# where it is a table or an array of tables, or where a table on the way is
+# missing. `hint`, where it is not -1, is where a section goes. Fails
+# `not_found` through an entry past an array of tables' end, and `invalid`
+# through a value.
+function created(text: str, stmts: [layout.Statement] lent, path: [str], nodes: [doc.Node] lent, at: i64, newline: str, hint: i64) -> str?
+    depth @= path.len() - 1
+
+    while depth > 0 && sections.place_of(stmts: stmts, path: path.slice(from: 0, to: depth)).kind == sections.ABSENT
+        depth @ depth - 1
+
+    ancestor = path.slice(from: 0, to: depth)
+    near = sections.place_of(stmts: stmts, path: ancestor)
+
+    if depth > 0 && (near.kind == sections.WHOLE_PAIR || near.kind == sections.IN_PAIR)
+        s = stmts[near.statement]
+        value = write.inline_text(nodes, at)?
+        return inline.set_inside(
+            text: text,
+            at: s.value_start,
+            steps: layout.after(path: path, from: s.path.len()),
+            value: value,
+            shown: sections.shown(s.path)
+        )
+
+    if depth > 0 && sections.is_entries(stmts: stmts, path: ancestor)
+        step = path[depth]
+        _ = layout.step_index(step)?
+        return fail(
+            code: inline.NOT_FOUND,
+            msg: f"no entry {step} in the array of tables \"{sections.shown(ancestor)}\""
+        )
+    sectioned = is_sectioned(nodes: nodes, at: at)
+    h = sections.header_of(stmts: stmts, path: ancestor)
+    direct = path.len() == depth + 1
+    last = path[path.len() - 1]
+
+    if !sectioned && direct && (depth == 0 || h >= 0)
+        line = write.key_text(last) + " = " + write.inline_text(nodes, at)?
+        return ok(key_line_inserted(text: text, stmts: stmts, h: h, line: line, newline: newline))
+
+    if depth > 0 && h < 0
+        for s in stmts
+            if s.kind == layout.PAIR && s.path.len() > depth && layout.begins_with(path: s.path, prefix: ancestor)
+                above: [str] @= []
+
+                if s.section >= 0
+                    above @ stmts[s.section].path
+
+                if above.len() < depth
+                    names = layout.after(path: path, from: above.len())
+                    line = inline.dotted_text(names) + " = " + write.inline_text(nodes, at)?
+                    return ok(key_line_inserted(text: text, stmts: stmts, h: s.section, line: line, newline: newline))
+
+    names @= sections.header_keys(stmts: stmts, path: ancestor)
+
+    for key in layout.after(path: path, from: depth)
+        names @ names.push(key)
+
+    section: str @= ""
+
+    if nodes[at].kind == scalar.TABLE
+        section @ section_text(nodes: nodes, at: at, names: names, entry: false, newline: newline)?
+    else if sectioned
+        section @ entries_text(nodes: nodes, at: at, names: names, newline: newline)?
+    else
+        line = write.key_text(last) + " = " + write.inline_text(nodes, at)?
+        head = "[" + write.path_text(names.slice(from: 0, to: names.len() - 1)) + "]"
+        section @ head + newline + line + newline
+
+    if !strings.has_suffix(s: section, suffix: newline)
+        section @ section + newline
+
+    place = if hint >= 0
+        hint
+    else if !sectioned && direct
+        sections.subtree_start(text: text, stmts: stmts, path: ancestor)
+    else
+        sections.subtree_end(text: text, stmts: stmts, path: ancestor)
+
+    return ok(section_inserted(text: text, at: place, section: section, newline: newline))
+
+test "line_inserted: inside, at the end, after a last line with no line end, into nothing"
+    assert line_inserted(text: "a = 1\nc = 3\n", at: 6, line: "b = 2", newline: "\n") == "a = 1\nb = 2\nc = 3\n"
+    assert line_inserted(text: "a = 1\n", at: 6, line: "b = 2", newline: "\n") == "a = 1\nb = 2\n"
+    assert line_inserted(text: "a = 1", at: 5, line: "b = 2", newline: "\r\n") == "a = 1\r\nb = 2"
+    assert line_inserted(text: "", at: 0, line: "b = 2", newline: "\n") == "b = 2\n"
+
+test "section_inserted: a blank line before it and after it where text stands, and none twice"
+    assert section_inserted(text: "a = 1\n", at: 6, section: "[t]\n", newline: "\n") == "a = 1\n\n[t]\n"
+    assert section_inserted(text: "a = 1\n[u]\n", at: 6, section: "[t]\n", newline: "\n") == "a = 1\n\n[t]\n\n[u]\n"
+    assert section_inserted(text: "a = 1\n\n[u]\n", at: 7, section: "[t]\n", newline: "\n") == "a = 1\n\n[t]\n\n[u]\n"
+    assert section_inserted(text: "a = 1", at: 5, section: "[t]\n", newline: "\n") == "a = 1\n\n[t]\n"
+    assert section_inserted(text: "", at: 0, section: "[t]\n", newline: "\n") == "[t]\n"
+    assert blank_before(text: "a\n  \n", at: 5) && !blank_before(text: "a\n", at: 2)
+    assert blank_at(text: "a\n\t\nb", at: 2) && !blank_at(text: "a\nb", at: 2)
+
+test "under: the headers of a written table put under a path, quoted where they must be"
+    assert under(body: "x = 1\n\n[s]\ny = 2\n\n[[s.e]]\n", names: ["a b", "c"], newline: "\n") == "x = 1\n\n[\"a b\".c.s]\ny = 2\n\n[[\"a b\".c.s.e]]\n"
+    assert under(body: "x = 1\n", names: ["t"], newline: "\r\n") == "x = 1\r\n"

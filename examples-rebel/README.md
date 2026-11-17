@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and thirty packages, in layers. **A package may use any package of a layer below
+A hundred and thirty-two packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -55,6 +55,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
 | 1 | `containers/trie` | a prefix tree of texts to values: prefixes, the longest prefix of a text | `lists` |  |
 | 1 | `containers/disjoint` | union-find: sets merged and asked whether two values are in one | `lists` |  |
+| 1 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
 | 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping | `numbers`, `strings`, `unicode` |  |
@@ -137,6 +138,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `net`, `tls`, `bytes`, `time` |  |
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `net`, `tls`, `dns`, `crypto`, `io`, `strings`, `time` |  |
+| 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `http2`, `protobuf`, `compress`, `tls`, `time` |  |

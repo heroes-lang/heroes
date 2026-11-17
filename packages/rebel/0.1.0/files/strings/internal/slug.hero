@@ -1,0 +1,72 @@
+# A slug: a title made into the part of a URL that names a page, as
+# Django's `slugify` makes one, in lower case, with letters, numbers,
+# underscores and hyphens only, its runs of blanks and hyphens one hyphen.
+# A text is not decomposed first, which Django's does by NFKD and this
+# module cannot until the package `unicode/normalize` is written: a letter
+# written with its accent in one character keeps it, and an accent written
+# as a mark of its own is taken away.
+
+use strings/internal/casing
+use strings/internal/trimming
+use unicode
+
+# Whether `c` stays in a slug: a letter, a number, an underscore, a hyphen or
+# white space. A mark, a punctuation sign and a symbol do not.
+function stays(c: str) -> bool
+    return unicode.is_letter(c) || unicode.is_number(c) || c == "_" || c == "-" || unicode.is_space(c)
+
+# Whether `c` separates two words of a slug: a hyphen or white space.
+function separates(c: str) -> bool
+    return c == "-" || unicode.is_space(c)
+
+# The slug of `s`.
+function slug(s: str) -> str
+    out: [str] @= []
+    pending: bool @= false
+
+    for c in casing.to_lower(s).chars()
+        if !stays(c)
+            continue
+
+        if separates(c)
+            pending @ true
+            continue
+
+        if pending && out.len() > 0
+            out @ out.push("-")
+        pending @ false
+        out @ out.push(c)
+
+    return trimming.trim_any(s: out.join(""), set: "-_")
+
+# The expected values are Django's steps after its normalisation, run in
+# Python 3.15 on 2026-11-17: `re.sub(r"[^\w\s-]", "", s.lower())`, then
+# `re.sub(r"[-\s]+", "-", ...)`, then `strip("-_")`.
+test "slug: empty, separators alone, and punctuation and symbols taken away"
+    assert slug("") == ""
+    assert slug("---") == ""
+    assert slug("Hello, World!") == "hello-world"
+    assert slug("C++ & Rust") == "c-rust"
+    assert slug("a😀b") == "ab"
+    assert slug("Jack & Jill like numbers 1,2,3 and 4 and silly characters ?%.$!/") == "jack-jill-like-numbers-123-and-4-and-silly-characters"
+
+test "slug: blanks and hyphens collapsed, underscores kept inside and taken off both ends"
+    assert slug(" Joel is a slug ") == "joel-is-a-slug"
+    assert slug("a\tb\nc") == "a-b-c"
+    assert slug("a b") == "a-b"
+    assert slug("_foo_") == "foo"
+    assert slug("_-a-_") == "a"
+    assert slug("_ a _") == "a"
+    assert slug("a_-_b") == "a_-_b"
+    assert slug("a -_ b") == "a-_-b"
+
+test "slug: letters and numbers of every script kept, and a mark of its own taken away"
+    assert slug("über-cool") == "über-cool"
+    assert slug("  Café au lait  ") == "café-au-lait"
+    assert slug("Café au lait") == "cafe-au-lait"
+    assert slug("日本語 テキスト") == "日本語-テキスト"
+    assert slug("ΟΔΟΣ ΤΕΛΟΣ") == "οδος-τελος"
+    assert slug("İstanbul") == "istanbul"
+    assert slug("x²") == "x²"
+    assert slug("Ⅻ ½") == "ⅻ-½"
+    assert slug("spam & ıçüş") == "spam-ıçüş"

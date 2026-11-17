@@ -243,6 +243,13 @@ capability fs/walk  every path under a folder, depth first, each folder's entrie
   python  os.walk, os.fwalk, Path.walk
   note    a list, since no callback can hold state; links are not followed unless asked, and a link that leads back into a folder the walk is inside is never entered. A folder the walk cannot read fails it, where Python passes over it
 
+capability fs/walk-ignoring  every path under a folder that its gitignore files leave in, each folder's file read as the walk enters it
+  heroes  fs.walk_ignoring
+  go      -
+  rust    -
+  python  -
+  note    none of the three standard libraries has one; the yardsticks are the Rust crate `ignore` (`WalkBuilder` with its `git_ignore`), PyPI's pathspec (`PathSpec.match_tree_files`) and `git ls-files --others --exclude-standard`, whose list for the test's tree git gave on 2026-11-17. The patterns are `path.is_ignored`'s; an ignored folder is never entered nor its files read, as git; a link is asked as a file and never entered; the files outside the tree are the caller's to give, `.git/` among them where git's own folder should be left out, since nothing here knows it
+
 capability fs/glob  the paths that match a pattern
   heroes  fs.glob
   go      filepath.Glob

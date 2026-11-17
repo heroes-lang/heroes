@@ -1,0 +1,254 @@
+# A Windows command line read into its arguments, and arguments written
+# into one, by the rules Microsoft documents for `CommandLineToArgvW` and
+# for the C runtime since Visual Studio 2008 ("Parsing C++ command-line
+# arguments"): arguments between spaces and tabs, double quotes that group,
+# a backslash that is itself but before a double quote, and the program
+# name read by a rule of its own. Every byte this module stops at is ASCII,
+# so every cut stands between two characters.
+
+# The code `quoted_line` fails with where a program name holds a double
+# quote, which no line can carry.
+constant INVALID: str
+    "invalid"
+
+# Whether `b` separates two arguments: a space or a tab, and nothing else.
+function is_blank(b: u8) -> bool
+    return b == ' ' || b == '\t'
+
+# Where the run of blanks that begins at byte `at` of `s` ends.
+function after_blanks(s: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < s.len() && is_blank(s[here])
+        here @ here + 1
+
+    return here
+
+# Adds to `found` the program name that begins `s`, which is not empty, and
+# answers where it ends. It runs to the first blank outside double quotes,
+# the quotes taken away and every backslash as it stands, so a line that
+# begins with a blank names an empty program.
+function program_name(s: str, @found: [str]) -> i64
+    pieces: [str] @= []
+    inside: bool @= false
+    stretch: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len() && (inside || !is_blank(s[at]))
+        if s[at] == '"'
+            pieces @ pieces.push(s.slice(from: stretch, to: at))
+            inside @ !inside
+            stretch @ at + 1
+        at @ at + 1
+
+    pieces @ pieces.push(s.slice(from: stretch, to: at))
+    found @ found.push(pieces.join(""))
+    return at
+
+# Where the run of backslashes that begins at byte `at` of `s` ends.
+function after_backslashes(s: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < s.len() && s[here] == '\\'
+        here @ here + 1
+
+    return here
+
+# Adds to `found` the argument that begins at byte `at` of `s`, which is no
+# blank, and answers where it ends, always past `at`. Backslashes before a
+# double quote are halved, an odd one left making the quote itself; a double
+# quote else opens or closes a quoted part, in which two of them side by
+# side are one; a line that ends inside a quoted part ends the argument.
+function argument(s: str, at: i64, @found: [str]) -> i64
+    pieces: [str] @= []
+    inside: bool @= false
+    stretch: i64 @= at
+    here: i64 @= at
+
+    while here < s.len() && (inside || !is_blank(s[here]))
+        b = s[here]
+
+        if b == '\\'
+            end = after_backslashes(s: s, at: here)
+
+            if end < s.len() && s[end] == '"'
+                count = end - here
+                pieces @ pieces.push(s.slice(from: stretch, to: here))
+                pieces @ pieces.push(repeat("\\", to_u64(count / 2).must()))
+
+                if count % 2 == 1
+                    pieces @ pieces.push("\"")
+                    here @ end + 1
+                else
+                    here @ end
+                stretch @ here
+            else
+                here @ end
+        else if b == '"'
+            pieces @ pieces.push(s.slice(from: stretch, to: here))
+
+            if inside && here + 1 < s.len() && s[here + 1] == '"'
+                pieces @ pieces.push("\"")
+                here @ here + 2
+            else
+                inside @ !inside
+                here @ here + 1
+            stretch @ here
+        else
+            here @ here + 1
+
+    pieces @ pieces.push(s.slice(from: stretch, to: here))
+    found @ found.push(pieces.join(""))
+    return here
+
+# The arguments of the command line `s`, the program name first. The empty
+# line has none.
+function split(s: str) -> [str]
+    found: [str] @= []
+
+    if s.len() == 0
+        return found
+    at: i64 @= program_name(s, @found)
+    at @ after_blanks(s: s, at: at)
+
+    while at < s.len()
+        at @ argument(s: s, at: at, @found)
+        at @ after_blanks(s: s, at: at)
+
+    return found
+
+# Whether `arg` must stand between double quotes: it is empty, or holds a
+# space or a tab.
+function needs_quotes(arg: str) -> bool
+    if arg.len() == 0
+        return true
+
+    for i in range(from: 0, to: arg.len())
+        if is_blank(arg[i])
+            return true
+
+    return false
+
+# `arg` written so that `argument` reads it back whole, as Python's
+# `subprocess.list2cmdline` writes each one: between double quotes where it
+# is empty or holds a blank, every double quote after a backslash and the
+# backslashes before it doubled, and the backslashes that end a quoted
+# argument doubled.
+function quoted(arg: str) -> str
+    quotes = needs_quotes(arg)
+    pieces: [str] @= []
+
+    if quotes
+        pieces @ pieces.push("\"")
+    stretch: i64 @= 0
+    backslashes: i64 @= 0
+    at: i64 @= 0
+
+    while at < arg.len()
+        b = arg[at]
+
+        if b == '\\'
+            backslashes @ backslashes + 1
+        else if b == '"'
+            pieces @ pieces.push(arg.slice(from: stretch, to: at))
+            pieces @ pieces.push(repeat("\\", to_u64(backslashes).must()))
+            pieces @ pieces.push("\\\"")
+            stretch @ at + 1
+            backslashes @ 0
+        else
+            backslashes @ 0
+        at @ at + 1
+
+    pieces @ pieces.push(arg.slice(from: stretch, to: arg.len()))
+
+    if quotes
+        pieces @ pieces.push(repeat("\\", to_u64(backslashes).must()))
+        pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# A whole command line: the program name `words[0]` between double quotes
+# where it is empty or holds a blank, every other argument by `quoted`, one
+# space between. No arguments make the empty line. Fails `invalid` where the
+# program name holds a double quote.
+function quoted_line(words: [str]) -> str?
+    if words.len() == 0
+        return ok("")
+    program = words[0]
+
+    for i in range(from: 0, to: program.len())
+        if program[i] == '"'
+            return fail(
+                code: INVALID,
+                msg: f"the program name \"{program}\" holds a double quote, which a Windows command line cannot carry in it"
+            )
+
+    pieces: [str] @= []
+
+    if needs_quotes(program)
+        pieces @ pieces.push("\"" + program + "\"")
+    else
+        pieces @ pieces.push(program)
+
+    for arg in words.slice(from: 1, to: words.len())
+        pieces @ pieces.push(quoted(arg))
+
+    return ok(pieces.join(" "))
+
+# The cases below follow the rules Microsoft documents; `CommandLineToArgvW`
+# itself is unrun on this Mac.
+test "split: the empty line, a program alone, blanks of both kinds, and blanks at both ends"
+    assert split("").len() == 0
+    assert split("prog") == ["prog"]
+    assert split("prog a\tb  c ") == ["prog", "a", "b", "c"]
+    assert split(" a") == ["", "a"]
+    assert split("prog\na b") == ["prog\na", "b"]
+
+test "split: the program name, quoted with a blank, with a quoted part inside, and its backslashes as they stand"
+    assert split("\"C:\\Program Files\\x.exe\" a") == ["C:\\Program Files\\x.exe", "a"]
+    assert split("\"a b\"c d") == ["a bc", "d"]
+    assert split("C:\\dir\\ a") == ["C:\\dir\\", "a"]
+    assert split("\"C:\\dir\\\" a") == ["C:\\dir\\", "a"]
+    assert split("\"\" a") == ["", "a"]
+    assert split("\"unclosed name") == ["unclosed name"]
+
+test "split: quoted arguments, an empty one, a quoted part inside one, and a line that ends inside quotes"
+    assert split("p \"a b\" c") == ["p", "a b", "c"]
+    assert split("p \"\" c") == ["p", "", "c"]
+    assert split("p a\"b c\"d") == ["p", "ab cd"]
+    assert split("p \"a b") == ["p", "a b"]
+    assert split("p \"") == ["p", ""]
+
+test "split: backslashes, alone, before a quote odd and even, and two quotes inside a quoted part"
+    assert split("p a\\b a\\\\b a\\") == ["p", "a\\b", "a\\\\b", "a\\"]
+    assert split("p a\\\"b") == ["p", "a\"b"]
+    assert split("p a\\\\\"b c\"") == ["p", "a\\b c"]
+    assert split("p a\\\\\\\"b") == ["p", "a\\\"b"]
+    assert split("p \"a\"\"b\" c") == ["p", "a\"b", "c"]
+    assert split("p \"a\"\"\"") == ["p", "a\""]
+    assert split("p \"é ü\" ñ") == ["p", "é ü", "ñ"]
+
+test "quoted: plain, empty, blanks, quotes and backslashes as Python's list2cmdline writes them"
+    assert quoted("a") == "a"
+    assert quoted("") == "\"\""
+    assert quoted("a b") == "\"a b\""
+    assert quoted("a\tb") == "\"a\tb\""
+    assert quoted("a\"b") == "a\\\"b"
+    assert quoted("a\\b") == "a\\b"
+    assert quoted("a\\") == "a\\"
+    assert quoted("a b\\") == "\"a b\\\\\""
+    assert quoted("a\\\"b") == "a\\\\\\\"b"
+    assert quoted("\"") == "\\\""
+    assert quoted("a\nb") == "a\nb"
+    assert quoted("é ü") == "\"é ü\""
+
+test "quoted_line: none, a program with a blank, the arguments, and every one read back by split"
+    assert quoted_line([]).must() == ""
+    assert quoted_line(["C:\\Program Files\\x.exe", "a b", ""]).must() == "\"C:\\Program Files\\x.exe\" \"a b\" \"\""
+    assert quoted_line([""]).must() == "\"\""
+    words = ["C:\\dir with space\\", "a\\", "b c\\", "\"q\"", "", "x\\\\\"y", "é"]
+    assert split(quoted_line(words).must()) == words
+
+test "quoted_line fails: a program name holding a double quote"
+    match quoted_line(["a\"b", "c"])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

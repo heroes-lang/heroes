@@ -25,7 +25,8 @@
 # through `hero_disk.h`'s own doors; what is still not here is in the ledger,
 # `fs.ledger`, as `pending`. Since round 4 (2026-11-17) a file is written
 # atomically, and a file is mapped in memory and read and written by copy,
-# no address of it reaching the program.
+# no address of it reaching the program. Since round 5 (2026-11-17) a walk
+# leaves out what a tree's gitignore files ignore, by `path`'s patterns.
 
 use fs/internal/atomic
 use fs/internal/changes
@@ -33,6 +34,7 @@ use fs/internal/codes
 use fs/internal/copying
 use fs/internal/facts
 use fs/internal/fixture
+use fs/internal/ignored
 use fs/internal/links
 use fs/internal/listing
 use fs/internal/locks
@@ -502,6 +504,44 @@ function walk(root: str) -> [Entry]?
 # links and not entered, so a tree that loops is walked once.
 function walk_following_links(root: str) -> [Entry]?
     found = walking.walked(root: root, follow: true, most_depth: -1, asked: f"walking \"{root}\" through its links")?
+    kinds: [Kind] = [.file, .directory, .link, .other]
+    entries: [Entry] @= []
+
+    for f in found
+        entries @ entries.push(Entry(name: f.name, kind: kinds[f.kind]))
+
+    return ok(entries)
+
+# Every path under the folder `root` that its gitignore files leave in, as
+# `walk` lists them: what git leaves for a program to see, the files a tool
+# reads or copies and the folders above them.
+#
+# - `root`: the folder walked, the root of the patterns; it is followed where
+#   it is a link.
+# - `ignores`: the patterns that stand outside the tree, below every file of
+#   it: git's `.git/info/exclude` and the file `core.excludesFile` names,
+#   read by the caller, or `path.parse_ignore("")` for none. A `.git/` among
+#   them leaves out git's own folder, which git never lists.
+# - `name`: the name of the file of patterns every folder may hold, the
+#   root's included: `.gitignore` for git's own. Any other name is read the
+#   same way, gitignore(5)'s.
+#
+# An entry the patterns ignore is not listed, and a folder ignored is not
+# entered, so nothing below it is listed and no file below it is read: what
+# `path.is_ignored` answers for its path below `root` with `/` between its
+# names. Each folder's file is read as the walk enters the folder and decides
+# for what is below it before the files above it. A link is listed as a link
+# and never entered, and asked as a file, as git asks it. The files of
+# patterns are listed like any other, unless they ignore themselves.
+#
+# Fails `file_not_found` where nothing is at `root`, `not_a_directory` where
+# it is no folder, `invalid` where `name` is empty, `.`, `..` or holds a
+# separator, `not_text` where a file of patterns is not UTF-8, and on the
+# first folder or file it cannot read, never answering a list that misses
+# it. Each entry is asked of every file of patterns read so far, for each
+# folder above it. See also `walk`, `path.is_ignored`, `path.parse_ignore`.
+function walk_ignoring(root: str, ignores: paths.Ignores, name: str) -> [Entry]?
+    found = ignored.walked(root: root, ignores: ignores, name: name, asked: f"walking \"{root}\" by its {name} files")?
     kinds: [Kind] = [.file, .directory, .link, .other]
     entries: [Entry] @= []
 
@@ -1387,6 +1427,18 @@ test "lock, try_lock and unlock: shared beside shared, exclusive refused at once
     assert fixture.cleared(dir)
 
 ## Examples
+
+# The files of a project git would see, its build output and git's own folder
+# left out.
+test "walk_ignoring: a project's sources, its build left out"
+    dir = fixture.folder("example-walk-ignoring")
+    assert !write_file(path: dir + "/.gitignore", text: "build/\n").is_err()
+    assert !write_file(path: dir + "/main.hero", text: "").is_err()
+    assert !make_dir_all(dir + "/build").is_err() && !make_dir_all(dir + "/.git").is_err()
+    assert !write_file(path: dir + "/build/main", text: "").is_err()
+    found = walk_ignoring(root: dir, ignores: paths.parse_ignore(".git/\n"), name: ".gitignore").must()
+    assert found == [Entry(name: ".gitignore", kind: .file), Entry(name: "main.hero", kind: .file)]
+    assert fixture.cleared(dir)
 
 # A second name for a file: both names read the same bytes.
 test "hard_link: a file under two names"

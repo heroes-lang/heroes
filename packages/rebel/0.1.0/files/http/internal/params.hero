@@ -1,0 +1,158 @@
+# A field's value of the shape `first; name=value; name="quoted value"`,
+# RFC 9110 § 5.6.6: what `Content-Type`, a part's `Content-Disposition` and
+# each member of `Accept` hold. A quoted value has its `\` escapes read; a
+# name is compared without case.
+
+use http/internal/syntax
+use strings
+
+# One parameter: its name in lower case and its value, unquoted.
+record Param
+    # The name, in lower case.
+    name: str
+    # The value, its quotes and escapes read.
+    value: str
+
+# A value read: what stands before the first `;`, and the parameters after.
+record Params
+    # What stands before the first `;`, without the spaces around it, as
+    # written.
+    first: str
+    # The parameters, in their order.
+    pairs: [Param]
+
+# `value` read into what stands first and its parameters. A `;` with nothing
+# after it is passed over. Fails `invalid` where a parameter has no `=` or
+# no name, a quoted value has no closing quote, or a name stands twice.
+function read(value: str) -> Params?
+    at: i64 @= 0
+
+    while at < value.len() && value[at] != ';'
+        at @ at + 1
+
+    first = syntax.trim_ows(value.slice(from: 0, to: at))
+    pairs: [Param] @= []
+
+    while at < value.len()
+        # `value[at]` is a `;`.
+        at @ at + 1
+
+        while at < value.len() && (value[at] == ' ' || value[at] == '\t')
+            at @ at + 1
+
+        if at >= value.len() || value[at] == ';'
+            continue
+        name_from = at
+
+        while at < value.len() && value[at] != '=' && value[at] != ';'
+            at @ at + 1
+
+        name = strings.to_lower_ascii(syntax.trim_ows(value.slice(from: name_from, to: at)))
+
+        if at >= value.len() || value[at] != '=' || name == ""
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading the parameters of {syntax.shown(value)}: a parameter has no name or no `=`"
+            )
+        at @ at + 1
+
+        while at < value.len() && (value[at] == ' ' || value[at] == '\t')
+            at @ at + 1
+
+        said: str @= ""
+
+        if at < value.len() && value[at] == '"'
+            got = quoted(value, at: at)?
+            said @ got.text
+            at @ got.end
+
+            while at < value.len() && value[at] != ';'
+                if value[at] != ' ' && value[at] != '\t'
+                    return fail(
+                        code: syntax.INVALID,
+                        msg: f"reading the parameters of {syntax.shown(value)}: something follows the quoted value of `{name}`"
+                    )
+                at @ at + 1
+        else
+            value_from = at
+
+            while at < value.len() && value[at] != ';'
+                at @ at + 1
+
+            said @ syntax.trim_ows(value.slice(from: value_from, to: at))
+
+        for p in pairs
+            if p.name == name
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"reading the parameters of {syntax.shown(value)}: the parameter `{name}` stands twice"
+                )
+
+        pairs @ pairs.push(Param(name: name, value: said))
+
+    return ok(Params(first: first, pairs: pairs))
+
+# A quoted string read: its text and the byte after its closing quote.
+record Quoted
+    # The text, its escapes read.
+    text: str
+    # The index of the byte after the closing quote.
+    end: i64
+
+# The quoted string beginning at `at` of `s`, which holds a `"`: a `\` and the
+# byte after it stand for that byte. Fails `invalid` where it has no closing
+# quote. It cuts `s` only at a quote or a backslash, so never inside a
+# character.
+function quoted(s: str, at: i64) -> Quoted?
+    pieces: [str] @= []
+    from: i64 @= at + 1
+    k: i64 @= at + 1
+
+    while k < s.len()
+        if s[k] == '"'
+            pieces @ pieces.push(s.slice(from: from, to: k))
+            return ok(Quoted(text: pieces.join(""), end: k + 1))
+
+        if s[k] == '\\' && k + 1 < s.len()
+            pieces @ pieces.push(s.slice(from: from, to: k))
+            from @ k + 1
+            k @ k + 2
+
+            # The escaped byte is kept with what follows it.
+            continue
+        k @ k + 1
+
+    return fail(code: syntax.INVALID, msg: f"reading {syntax.shown(s)}: a quoted value has no closing quote")
+
+# The value of the parameter `name`, in lower case, among `pairs`. Fails
+# `not_found` where none is so named.
+function value_of(pairs: [Param], name: str) -> str?
+    for p in pairs
+        if p.name == name
+            return ok(p.value)
+
+    return fail(code: "not_found", msg: f"no parameter `{name}`")
+
+## Tests
+
+test "read: a type alone, parameters quoted and not, spaces, a trailing `;`, names in any case"
+    a = read("text/plain").must()
+    assert a.first == "text/plain" && a.pairs.len() == 0
+    b = read(" multipart/form-data ; Boundary=\"a b;c\" ; x=1 ;").must()
+    assert b.first == "multipart/form-data" && b.pairs.len() == 2
+    assert b.pairs[0] == Param(name: "boundary", value: "a b;c") && b.pairs[1] == Param(name: "x", value: "1")
+    assert read("").must().first == "" && read(";;").must().pairs.len() == 0
+
+test "read: escapes in a quoted value, and a value of more than one byte"
+    a = read("form-data; name=\"a\\\"b\\\\c\"; filename=\"café.txt\"").must()
+    assert value_of(a.pairs, name: "name").must() == "a\"b\\c" && value_of(a.pairs, name: "filename").must() == "café.txt"
+
+test "read fails: no `=`, no name, no closing quote, a name twice, something after the quote"
+    for bad in ["a; b", "a; =1", "a; b=\"x", "a; b=1; B=2", "a; b=\"x\" y"]
+        match read(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "value_of: there and not there"
+    pairs = [Param(name: "q", value: "0.5")]
+    assert value_of(pairs, name: "q").must() == "0.5" && value_of(pairs, name: "x").is_err()

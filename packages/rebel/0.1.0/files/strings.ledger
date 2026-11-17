@@ -517,6 +517,34 @@ capability text/case-by-locale  a text in the upper, lower or title case of one 
   python  -
   note    waits on `unicode`'s case/of-a-language, pending there; with it, a program maps the characters as for title-case-letters
 
+capability text/case-words  the words of a name, cut where its case changes and at every character that is no letter or number
+  heroes  strings.case_words
+  go      -
+  rust    -
+  python  -
+  note    the boundaries of Rust's crate heck 0.5.0, which offers no such function but stands its styles on them: observed on 2026-11-17 and matched by this rule over 12,000 generated texts; a combining mark after a letter stays in its word, where heck cuts there and loses the mark
+
+capability text/case-styles  a name written in snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, SCREAMING-KEBAB-CASE, Title Case or Train-Case
+  heroes  strings.to_snake_case, strings.to_kebab_case, strings.to_camel_case, strings.to_pascal_case, strings.to_screaming_snake_case, strings.to_screaming_kebab_case, strings.to_title_case, strings.to_train_case
+  go      -
+  rust    -
+  python  -
+  note    the yardstick is Rust's crate heck 0.5.0 (`ToSnakeCase`, `ToKebabCase`, `ToLowerCamelCase`, `ToUpperCamelCase`, `ToShoutySnakeCase`, `ToShoutyKebabCase`, `ToTitleCase`, `ToTrainCase`), whose answers of 2026-11-17 the tests hold but in two places: a capitalised word begins with its first letter's title case ("ǅungla", "Ssa", "FileName"), as Python's `capitalize` does, where heck writes its upper case ("Ǆungla", "SSa", "FIleName"); and a sigma is written final by Unicode's Final_Sigma, as `to_lower` writes it, where heck writes "ς" for every sigma that ends a word, a word of one sigma included. None of the three standard libraries has these styles
+
+capability text/slug  a title made into the part of a URL that names a page
+  heroes  strings.to_slug
+  go      -
+  rust    -
+  python  -
+  note    Django's `slugify` (`django.utils.text`, not on this machine), as its documentation states it; its steps after the normalisation, run in Python 3.15 on 2026-11-17, gave the tests: lower case, letters, numbers, `_`, `-` and white space kept, each run of white space and `-` one `-`, `-` and `_` taken off both ends. Letters of every script stay, as with Django's `allow_unicode=True`; its default drops what NFKD leaves outside ASCII, so "日本語" would have no slug
+
+capability text/slug-decomposed  a slug's letters decomposed first, so that an accent written in its letter's own character is taken away as a mark
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    waits on the package `unicode/normalize`, not written yet: with it `to_slug` decomposes by NFKD before taking the marks away, so "Café" gives "cafe" as Django's does, where it gives "café" now; an accent already written as a mark of its own is taken away today
+
 capability text/is-lower  whether the letters of a text are all lower case
   heroes  strings.is_lower
   go      -
@@ -646,6 +674,34 @@ capability text/format  a text built from a pattern and values
   go      -
   rust    -
   python  str.format, str.format_map
+
+capability text/split-shell  the words a POSIX shell reads in a line, by its quoting
+  heroes  strings.split_shell
+  go      -
+  rust    -
+  python  shlex.split, shlex.shlex
+  note    `/bin/sh`'s reading, which Rust's crate shlex 1.3.0 (`shlex::split`) and `/bin/sh` answered alike on 2026-11-17: a backslash before a line feed taken away, a backslash inside double quotes taking `$`, a backquote, `"`, a backslash and a line feed as themselves, a comment from a `#` that begins a word, a carriage return part of a word. Python's `shlex.split` keeps the backslash before `$` and a backquote, keeps the line feed after a backslash, reads no comment unless asked (`comments=True`) and splits at a carriage return; its `shlex.shlex`, a lexer with its own sets of characters, is read here in its POSIX form with `whitespace_split`. An unclosed quote and a backslash that ends the line fail `invalid`, where Python raises `ValueError` and the crate answers `None`. Nothing is expanded and no operator is read, as neither of them does
+
+capability text/quote-shell  a word quoted so that a POSIX shell reads it back whole, and words joined into one line
+  heroes  process.quote, process.quote_all
+  go      -
+  rust    -
+  python  shlex.quote, shlex.join
+  note    `process`'s, beside the shell it runs; `split_shell` reads back what they write. Rust's crate shlex offers `try_quote` and `try_join`
+
+capability text/split-windows-command-line  the arguments of a Windows command line, the program name first
+  heroes  strings.split_windows_args
+  go      -
+  rust    -
+  python  -
+  note    Microsoft's documented rules for `CommandLineToArgvW` and the C runtime since Visual Studio 2008 ("Parsing C++ command-line arguments"), the program name by its own rule: two double quotes inside a quoted part are one quote and the part goes on, where the C runtime before 2008, and `CommandLineToArgvW` by reports, also close the part; the empty line has no arguments, where `CommandLineToArgvW` answers the running program's path. Go's `golang.org/x/sys/windows.DecomposeCommandLine` and Rust's `std::env::args` on Windows read the same rules and are not on this Mac; unrun on Windows, where the box compares it with `CommandLineToArgvW`
+
+capability text/quote-windows-command-line  arguments written into a Windows command line that its rules read back as the same list
+  heroes  strings.quote_windows_arg, strings.quote_windows_args
+  go      -
+  rust    -
+  python  subprocess.list2cmdline
+  note    an argument as Python's `list2cmdline` writes it, asked on 2026-11-17 (quoted only where empty or holding a space or a tab, the backslashes before a quote and at the end of a quoted argument doubled), which the rules of 2008 and those before read alike, since it never writes two quotes side by side; the program name by its own rule, which `list2cmdline` does not know, so a name ending in a backslash is read back from its line with the backslash doubled there and whole here, and one holding a double quote fails `invalid`. Go's `syscall.EscapeArg` and `golang.org/x/sys/windows.ComposeCommandLine` are Windows-only and not on this Mac
 
 capability text/read-as-stream  a text read like a file
   heroes  refused: a stream is `io`'s, which stands above `strings` and so cannot be named here

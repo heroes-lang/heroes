@@ -1,0 +1,11 @@
+# Reaches Rebel's package `url/idna`, so that `heroes test` on this file runs
+# the package's own tests, UTS #46's conformance cases among them (spec
+# § 12). It prints a host name in ASCII and back.
+
+use <rebel>/url/idna
+
+function main()
+    match idna.to_ascii("Bücher.de", options: idna.strict_options())
+        .ok ascii =>
+            print(ascii, " ", idna.to_unicode(ascii, options: idna.strict_options()).default("?"))
+        .err e => print(e.code, ": ", e.msg)

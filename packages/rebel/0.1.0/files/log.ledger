@@ -36,6 +36,13 @@ capability log/close  the stream closed once the last line is written
   python  Handler.close, FileHandler.close, shutdown
   note    the logger never closes its stream: whoever opened it closes it, as every `io.Stream` is closed
 
+capability log/rotate  lines written to a file rotated by size or by day, the old files kept to a count or an age and gzipped where asked
+  heroes  log/files.open, log/files.write, log/files.write_line, log/files.rotate, log/files.close, log/files.old_files
+  go      -
+  rust    -
+  python  logging.handlers.RotatingFileHandler, logging.handlers.TimedRotatingFileHandler, logging.handlers.BaseRotatingHandler
+  note    in the subpackage `log/files` (its own ledger, `log/files.ledger`), since `log` is of layer 4 beside `fs`, which it may not use, and so that only the programs that rotate carry `fs` and `compress`. Go's lumberjack is the yardstick, the author's of 2026-11-17
+
 capability log/flush  lines held back, written out
   heroes  refused: nothing is held; each line is one write of `io` that reaches the system before the call answers
   go      -

@@ -1,0 +1,283 @@
+# A cron expression read into the values each of its fields allows, as sets of
+# bits: five fields (minute, hour, day of the month, month, day of the week),
+# six with the seconds first, or a descriptor (`@daily`, `@every 90s`). The
+# day fields also read Quartz's `L`, `W` and `#`.
+
+use time/internal/cron_items
+use time/internal/duration_text
+
+# The code of an expression this reader refuses; the message names the field
+# and its text.
+constant INVALID: str
+    "invalid"
+
+# Nanoseconds in a second.
+constant SECOND: i64
+    1_000_000_000
+
+# What an expression allows, each set a bit for each value it holds.
+record Spec
+    # Bit n for second n, 0 to 59; bit 0 alone for five fields.
+    seconds: i64
+    # Bit n for minute n, 0 to 59.
+    minutes: i64
+    # Bit n for hour n, 0 to 23.
+    hours: i64
+    # Bit n for day n of the month, 1 to 31.
+    days: i64
+    # Bit n for the day n days before the month's last, `L-n`; bit 0 is `L`.
+    from_last: i64
+    # Bit n for the weekday nearest day n, `nW`; bit 0 is `LW`, the last
+    # weekday of the month.
+    nearest: i64
+    # Bit n for month n, 1 to 12.
+    months: i64
+    # Bit n for weekday n, 0 for Sunday to 6 for Saturday.
+    weekdays: i64
+    # Bit n for the last weekday n of the month, `nL`.
+    last_weekdays: i64
+    # Bit (k - 1) * 7 + n for the k-th weekday n of the month, `n#k`.
+    nth_weekdays: i64
+    # Whether the day of the month was left open (`*` or `?`), so that the
+    # day of the week alone decides.
+    any_day: bool
+    # Whether the day of the week was left open.
+    any_weekday: bool
+    # The delay of `@every`, in nanoseconds; 0 for a calendar expression.
+    every: i64
+
+# The day of the month's sets: plain days, days counted from the last, the
+# weekdays nearest a day.
+record Days
+    # Bit n for day n.
+    days: i64
+    # Bit n for `L-n`.
+    from_last: i64
+    # Bit n for `nW`, bit 0 for `LW`.
+    nearest: i64
+    # Whether an item was `*` or `?`.
+    open: bool
+
+# The day of the week's sets: plain weekdays, the last of a weekday, the k-th.
+record Weekdays
+    # Bit n for weekday n.
+    weekdays: i64
+    # Bit n for `nL`.
+    last: i64
+    # Bit (k - 1) * 7 + n for `n#k`.
+    nth: i64
+    # Whether an item was `*` or `?`.
+    open: bool
+
+# The day-of-the-month field: items as `plain` reads them, and `L`, `L-n` (n
+# from 0 to 30), `LW` and `nW` (n from 1 to 31).
+function days_of(text: str) -> Days?
+    field = cron_items.day_field()
+    out: Days @= Days(days: 0, from_last: 0, nearest: 0, open: false)
+
+    for part in cron_items.items(text)
+        if part.len() == 0
+            return fail(code: INVALID, msg: cron_items.refused(field: field, text: text, why: "an item is empty"))
+
+        if part == "L"
+            out.from_last @ out.from_last | 1
+        else if part == "LW"
+            out.nearest @ out.nearest | 1
+        else if part.len() > 2 && part[0] == 'L' && part[1] == '-'
+            back = cron_items.number(s: part.slice(from: 2, to: part.len()), field: field, text: text)?
+
+            if back > 30
+                return fail(
+                    code: INVALID,
+                    msg: cron_items.refused(field: field, text: text, why: f"\"{part}\" counts back more than 30 days")
+                )
+            out.from_last @ out.from_last | 1 << back
+        else if part.len() > 1 && part[part.len() - 1] == 'W'
+            day = cron_items.value(s: part.slice(from: 0, to: part.len() - 1), field: field, text: text)?
+            out.nearest @ out.nearest | 1 << day
+        else
+            it = cron_items.item(s: part, field: field, text: text)?
+            out.days @ out.days | cron_items.bits_of(it: it, wrap: 64)
+
+            if it.open
+                out.open @ true
+
+    return ok(out)
+
+# The day-of-the-week field: items as `plain` reads them (7 and a range's end
+# at Sunday read as Sunday), `nL` for the last weekday n of the month and
+# `n#k` for its k-th, k from 1 to 5; `n` a number or a name.
+function weekdays_of(text: str) -> Weekdays?
+    field = cron_items.weekday_field()
+    out: Weekdays @= Weekdays(weekdays: 0, last: 0, nth: 0, open: false)
+
+    for part in cron_items.items(text)
+        if part.len() == 0
+            return fail(code: INVALID, msg: cron_items.refused(field: field, text: text, why: "an item is empty"))
+        hash = cron_items.byte_at(s: part, c: '#')
+
+        if part == "L"
+            return fail(
+                code: INVALID,
+                msg: cron_items.refused(field: field, text: text, why: "\"L\" alone names no weekday: write 5L for the last Friday")
+            )
+        else if hash < part.len()
+            day = cron_items.value(s: part.slice(from: 0, to: hash), field: field, text: text)? % 7
+            nth = cron_items.number(s: part.slice(from: hash + 1, to: part.len()), field: field, text: text)?
+
+            if nth < 1 || nth > 5
+                return fail(
+                    code: INVALID,
+                    msg: cron_items.refused(field: field, text: text, why: f"\"{part}\" asks a week outside 1 to 5")
+                )
+            out.nth @ out.nth | 1 << (nth - 1) * 7 + day
+        else if part.len() > 1 && part[part.len() - 1] == 'L'
+            day = cron_items.value(s: part.slice(from: 0, to: part.len() - 1), field: field, text: text)? % 7
+            out.last @ out.last | 1 << day
+        else
+            it = cron_items.item(s: part, field: field, text: text)?
+            out.weekdays @ out.weekdays | cron_items.bits_of(it: it, wrap: 7)
+
+            if it.open
+                out.open @ true
+
+    return ok(out)
+
+# The fields of an expression already split into five or six words.
+function fields_of(parts: [str]) -> Spec?
+    first = parts.len() - 5
+
+    seconds = if first == 1
+        cron_items.plain(text: parts[0], field: cron_items.second_field())?.bits
+    else
+        1
+    minutes = cron_items.plain(text: parts[first], field: cron_items.minute_field())?
+    hours = cron_items.plain(text: parts[first + 1], field: cron_items.hour_field())?
+    days = days_of(parts[first + 2])?
+    months = cron_items.plain(text: parts[first + 3], field: cron_items.month_field())?
+    weekdays = weekdays_of(parts[first + 4])?
+    return ok(
+        Spec(seconds: seconds, minutes: minutes.bits, hours: hours.bits, days: days.days, from_last: days.from_last, nearest: days.nearest, months: months.bits, weekdays: weekdays.weekdays, last_weekdays: weekdays.last, nth_weekdays: weekdays.nth, any_day: days.open, any_weekday: weekdays.open, every: 0)
+    )
+
+# The five fields a descriptor stands for, or the empty text for a word that
+# is none.
+function descriptor(word: str) -> str
+    if word == "@yearly" || word == "@annually"
+        return "0 0 1 1 *"
+
+    if word == "@monthly"
+        return "0 0 1 * *"
+
+    if word == "@weekly"
+        return "0 0 * * 0"
+
+    if word == "@daily" || word == "@midnight"
+        return "0 0 * * *"
+
+    if word == "@hourly"
+        return "0 * * * *"
+    return ""
+
+# `@every <duration>`: the delay, whole seconds from one up.
+function every_of(parts: [str], s: str) -> Spec?
+    if parts.len() != 2
+        return fail(code: INVALID, msg: f"\"{s}\": @every takes one duration, as \"@every 1h30m\"")
+    delay = duration_text.parse(parts[1])?
+
+    if delay < SECOND || delay % SECOND != 0
+        return fail(code: INVALID, msg: f"\"{s}\": the delay of @every is whole seconds from 1s up")
+    return ok(
+        Spec(seconds: 0, minutes: 0, hours: 0, days: 0, from_last: 0, nearest: 0, months: 0, weekdays: 0, last_weekdays: 0, nth_weekdays: 0, any_day: true, any_weekday: true, every: delay)
+    )
+
+# What the cron expression `s` allows. Fails `invalid` where it is not five
+# or six fields or a descriptor, the message naming the field and its text.
+function read(s: str) -> Spec?
+    parts = cron_items.words(s)
+
+    if parts.len() == 0
+        return fail(code: INVALID, msg: "the cron expression is empty")
+    head = parts[0]
+
+    if head.len() > 0 && head[0] == '@'
+        if head == "@every"
+            return every_of(parts: parts, s: s)
+        fields = descriptor(head)
+
+        if fields == "" || parts.len() != 1
+            return fail(
+                code: INVALID,
+                msg: f"\"{s}\" is no descriptor: @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @every <duration>"
+            )
+        return fields_of(cron_items.words(fields))
+
+    if cron_items.byte_at(s: head, c: '=') < head.len()
+        return fail(code: INVALID, msg: f"\"{s}\": a zone is given to the search, not written in the expression")
+
+    if parts.len() != 5 && parts.len() != 6
+        return fail(
+            code: INVALID,
+            msg: f"\"{s}\" has {parts.len()} fields where cron reads 5, or 6 with the seconds first"
+        )
+    return fields_of(parts)
+
+test "read: five fields, six, the seconds of five fields, and the fields of a descriptor"
+    five = read("*/15 9-17 * * MON-FRI").must()
+    assert five.seconds == 1
+    assert five.minutes == 1 | 1 << 15 | 1 << 30 | 1 << 45
+    assert five.hours == (1 << 18) - (1 << 9)
+    assert five.any_day && !five.any_weekday
+    assert five.weekdays == 0b111110
+    six = read("30 0 0 1 1 *").must()
+    assert six.seconds == 1 << 30 && six.minutes == 1 && six.hours == 1 && six.days == 2 && six.months == 2
+    assert read("@yearly").must() == read("0 0 1 1 *").must()
+    assert read("@annually").must() == read("0 0 1 1 *").must()
+    assert read("@monthly").must() == read("0 0 1 * *").must()
+    assert read("@weekly").must() == read("0 0 * * 0").must()
+    assert read("@daily").must() == read("0 0 * * *").must()
+    assert read("@midnight").must() == read("0 0 * * *").must()
+    assert read("@hourly").must() == read("0 * * * *").must()
+    assert read("@every 1h30m").must().every == 5_400_000_000_000
+
+test "read: L, L-3, LW and 15W in the day of the month, 5L, FRIL, 5#3 and 7 in the day of the week"
+    days = read("0 0 L,L-3,LW,15W * *").must()
+    assert days.from_last == 1 | 1 << 3 && days.nearest == 1 | 1 << 15 && days.days == 0 && !days.any_day
+    week = read("0 0 * * 5L,FRIL,5#3,SUN#1,7").must()
+    assert week.last_weekdays == 1 << 5 && week.nth_weekdays == 1 << 19 | 1 && week.weekdays == 1
+    assert read("0 0 * * 0-7").must().weekdays == 0b1111111
+
+test "read: every refusal names its field and its text"
+    cases = [
+        ["", "the cron expression is empty"]
+        ["   ", "the cron expression is empty"]
+        ["* * * *", "\"* * * *\" has 4 fields where cron reads 5, or 6 with the seconds first"]
+        ["* * * * * * *", "\"* * * * * * *\" has 7 fields where cron reads 5, or 6 with the seconds first"]
+        ["60 * * * *", "the minute field \"60\": 60 is outside 0 to 59"]
+        ["* 24 * * *", "the hour field \"24\": 24 is outside 0 to 23"]
+        ["* * 0 * *", "the day of the month field \"0\": 0 is outside 1 to 31"]
+        ["* * * 13 *", "the month field \"13\": 13 is outside 1 to 12"]
+        ["* * * * 8", "the day of the week field \"8\": 8 is outside 0 to 7"]
+        ["* * * * L", "the day of the week field \"L\": \"L\" alone names no weekday: write 5L for the last Friday"]
+        ["* * * * 5#6", "the day of the week field \"5#6\": \"5#6\" asks a week outside 1 to 5"]
+        ["* * L-31 * *", "the day of the month field \"L-31\": \"L-31\" counts back more than 30 days"]
+        ["* * 32W * *", "the day of the month field \"32W\": 32 is outside 1 to 31"]
+        ["* * 1,,2 * *", "the day of the month field \"1,,2\": an item is empty"]
+        ["* * * * MON,", "the day of the week field \"MON,\": an item is empty"]
+        ["@reboot", "\"@reboot\" is no descriptor: @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @every <duration>"]
+        ["@Yearly", "\"@Yearly\" is no descriptor: @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @every <duration>"]
+        ["@daily 5", "\"@daily 5\" is no descriptor: @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @every <duration>"]
+        ["@every", "\"@every\": @every takes one duration, as \"@every 1h30m\""]
+        ["@every 500ms", "\"@every 500ms\": the delay of @every is whole seconds from 1s up"]
+        ["@every 1500ms", "\"@every 1500ms\": the delay of @every is whole seconds from 1s up"]
+        ["@every -1s", "\"@every -1s\": the delay of @every is whole seconds from 1s up"]
+        ["CRON_TZ=Europe/Rome 0 9 * * *", "\"CRON_TZ=Europe/Rome 0 9 * * *\": a zone is given to the search, not written in the expression"]
+        ["0 0 ° * *", "the day of the month field \"°\": \"°\" is not a number"]
+    ]
+
+    for pair in cases
+        match read(pair[0])
+            .ok _  => assert false
+            .err e => assert e.code == INVALID && e.msg == pair[1]
+
+    assert read("@every soon").is_err()

@@ -770,6 +770,36 @@ function cpu_of(child: Child) -> CpuTime?
                 why: "it has not been seen to end; `wait` for it"
             )
 
+# What `child` holds and has spent now, while it runs: its resident and
+# virtual memory and the processor time it has used, as `os.process_usage`
+# reads a process.
+#
+# - `child`: a child `start` began, not yet seen to end by `wait` or
+#   `has_ended` and not given up by `release`.
+#
+# A child that has ended and that neither `wait` nor `has_ended` has seen yet
+# answers what the system still keeps of it, which `os.process_usage` says.
+#
+# Fails `invalid` where `child` has been seen to end or was given up, since its
+# id may name another process by then (`cpu_of` answers an ended child's
+# time); and where `os.process_usage` fails, with its code. See also `cpu_of`.
+function usage_of(child: Child) -> os.ProcessUsage?
+    if child.handle == nullptr
+        return codes.of(
+            code: codes.INVALID,
+            asked: f"reading the usage of \"{child.command.program}\"",
+            why: "it was waited for or given up, and its id may name another process now"
+        )
+
+    match child.state
+        .ended _ =>
+            return codes.of(
+                code: codes.INVALID,
+                asked: f"reading the usage of \"{child.command.program}\"",
+                why: "it has been seen to end; `cpu_of` answers the time it used"
+            )
+        .running => return os.process_usage(child.id)
+
 ## Asking how a child ended
 
 # Whether `status` says the child ended by itself with the exit code 0.
@@ -1283,3 +1313,34 @@ test "quote and quote_all: the empty word, a plain word, a quote inside, no word
     none: [str] = []
     assert quote_all(none) == ""
     assert quote_all(["a", "b c", ""]) == "a 'b c' ''"
+
+test "usage_of: a running child read twice, then refused once waited for, and refused once given up"
+    child @= start(with_input(command(fixture.copier(), []), from: .pipe)).must()
+    first = usage_of(child).must()
+    assert first.resident_bytes > 0 && first.virtual_bytes > 0
+    assert first.user_ns >= 0 && first.system_ns >= 0
+    second = usage_of(child).must()
+    assert second.user_ns >= first.user_ns && second.system_ns >= first.system_ns
+    io.close(@child.input).must()
+    assert wait(@child).must() == .exited(code: 0)
+
+    match usage_of(child)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    other @= start(with_input(command(fixture.copier(), []), from: .pipe)).must()
+    release(@other).must()
+
+    match usage_of(other)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+## Examples
+
+# The memory a child holds while it runs, then its end waited for.
+test "usage_of: the memory a running child holds"
+    child @= start(with_input(command(fixture.copier(), []), from: .pipe)).must()
+    held = usage_of(child).must().resident_bytes
+    assert held > 0
+    io.close(@child.input).must()
+    assert wait(@child).must() == .exited(code: 0)

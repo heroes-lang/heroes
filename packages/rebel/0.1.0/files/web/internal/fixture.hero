@@ -57,6 +57,17 @@ function lay_out() -> str
     fs.set_times(path.join_all([root, "a.txt"]), written: at, read: at).must()
     return root
 
+# Two signing keys of 32 bytes, the first of sevens and the second of nines.
+function ring() -> [[u8]]
+    sevens: [u8] @= []
+    nines: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        sevens @ sevens.push(7)
+        nines @ nines.push(9)
+
+    return [sevens, nines]
+
 # Writes `text` to the file `file`.
 function write(file: str, text: str)
     write_file(path: file, text: text).must()
@@ -81,6 +92,10 @@ test "visit: the count grows in the caller's place"
     _ = visit(@hits, name: "a", id: "1")
     got = visit(@hits, name: "user", id: "7")
     assert hits == 2 && http.text_of(got).must() == "user 7 2"
+
+test "ring: two keys of 32 bytes, apart"
+    keys_made = ring()
+    assert keys_made.len() == 2 && keys_made[0].len() == 32 && keys_made[1].len() == 32 && keys_made[0] != keys_made[1]
 
 test "clock: RFC 9110's instant, and 250 ms before it"
     assert time.between(from: started(), to: clock().must()).must().nanoseconds == 250_000_000

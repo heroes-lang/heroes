@@ -9,6 +9,9 @@
 # `n` bytes long and answers how many bytes the whole answer has; where that
 # is above `n` the buffer was too short and holds nothing to read, and the
 # caller asks again with that many. No function here writes the environment.
+# The tests ask `os/hero_os`, the other floor, for the process's own id.
+
+use os/hero_os
 
 extern "hero_sys.h"
     # The kinds of failure `last_error` answers. They are the same numbers on
@@ -52,6 +55,9 @@ extern "hero_sys.h"
     function hero_sys_process_times(@user_ns: i64, @system_ns: i64) -> i64
     function hero_sys_load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
     function hero_sys_memory(@total: i64, @available: i64) -> i64
+    function hero_sys_cpu_times(@user_us: i64, @system_us: i64, @idle_us: i64, @waiting_us: i64, @stolen_us: i64) -> i64
+    function hero_sys_process_usage(pid: i64, @resident: i64, @virtual_bytes: i64, @user_ns: i64, @system_ns: i64) -> i64
+    function hero_sys_network_counters(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_last_error() -> i64
     function hero_sys_last_os_error() -> i64
 
@@ -177,6 +183,41 @@ function load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
 # on a POSIX system neither Darwin nor Linux.
 function memory(@total: i64, @available: i64) -> i64
     return hero_sys_memory(total: @total, available: @available)
+
+# 0, once the five hold the time every processor of the machine has spent
+# since it started, summed, in microseconds: in programs' own code, in the
+# system's, idle, idle while a read or a write was waited for, and taken by a
+# hypervisor; or -1 with the five left as they were, `HERO_SYS_UNSUPPORTED` on
+# a POSIX system neither Darwin nor Linux.
+function cpu_times(@user_us: i64, @system_us: i64, @idle_us: i64, @waiting_us: i64, @stolen_us: i64) -> i64
+    return hero_sys_cpu_times(
+        user_us: @user_us,
+        system_us: @system_us,
+        idle_us: @idle_us,
+        waiting_us: @waiting_us,
+        stolen_us: @stolen_us
+    )
+
+# 0, once the four hold the resident and the virtual memory of the process
+# `pid`, in bytes, and the time it has spent in its own code and in the
+# system's, in nanoseconds; or -1 with the four left as they were:
+# `HERO_SYS_INVALID` for an id below 1, `HERO_SYS_NOT_FOUND` where no process
+# has it, `HERO_SYS_DENIED` where the system does not let this process read
+# that one.
+function process_usage(pid: i64, @resident: i64, @virtual_bytes: i64, @user_ns: i64, @system_ns: i64) -> i64
+    return hero_sys_process_usage(
+        pid: pid,
+        resident: @resident,
+        virtual_bytes: @virtual_bytes,
+        user_ns: @user_ns,
+        system_ns: @system_ns
+    )
+
+# How many bytes the counters of every network interface take, or -1. They are
+# written into `buffer` where `n` bytes hold them: each interface's name and a
+# zero byte, then eight counters, each its decimal digits and a zero byte.
+function network_counters(@buffer: [u8], n: u64) -> i64
+    return hero_sys_network_counters(@buffer, n: n)
 
 # The kind of the last call's failure on this thread. It is `HERO_SYS_OK`
 # after a call that did not fail.
@@ -467,3 +508,98 @@ test "memory: a total above 0, the available above 0 and never above it, twice, 
         again_available: i64 @= -1
         assert memory(total: @again_total, available: @again_available) == 0
         assert again_total > 0 && again_available > 0 && again_available <= again_total
+
+test "cpu_times: five spans at or above 0, the busy and the idle above 0, a second reading never below the first, or HERO_SYS_UNSUPPORTED on another POSIX system"
+    user: i64 @= -1
+    system_us: i64 @= -1
+    idle: i64 @= -1
+    waiting: i64 @= -1
+    stolen: i64 @= -1
+    answer = cpu_times(user_us: @user, system_us: @system_us, idle_us: @idle, waiting_us: @waiting, stolen_us: @stolen)
+
+    if system() == HERO_SYS_SYSTEM_OTHER
+        assert answer == -1 && last_error() == HERO_SYS_UNSUPPORTED
+        assert user == -1 && stolen == -1
+    else
+        assert answer == 0 && last_error() == HERO_SYS_OK
+        assert user > 0 && system_us > 0 && idle > 0 && waiting >= 0 && stolen >= 0
+        again_user: i64 @= -1
+        again_system: i64 @= -1
+        again_idle: i64 @= -1
+        again_waiting: i64 @= -1
+        again_stolen: i64 @= -1
+        assert cpu_times(user_us: @again_user, system_us: @again_system, idle_us: @again_idle, waiting_us: @again_waiting, stolen_us: @again_stolen) == 0
+        assert again_user >= user && again_system >= system_us && again_idle >= idle
+        assert again_waiting >= waiting && again_stolen >= stolen
+
+test "process_usage: the process itself, ids 0 and below refused, the largest id and one nobody has not found, the four left as they were"
+    resident: i64 @= -1
+    virtual_bytes: i64 @= -1
+    user: i64 @= -1
+    system_ns: i64 @= -1
+
+    if system() == HERO_SYS_SYSTEM_OTHER
+        assert process_usage(pid: hero_os.os_pid(), resident: @resident, virtual_bytes: @virtual_bytes, user_ns: @user, system_ns: @system_ns) == -1
+        assert last_error() == HERO_SYS_UNSUPPORTED
+    else
+        assert process_usage(pid: hero_os.os_pid(), resident: @resident, virtual_bytes: @virtual_bytes, user_ns: @user, system_ns: @system_ns) == 0
+        assert last_error() == HERO_SYS_OK
+        assert resident > 0 && virtual_bytes > 0 && user >= 0 && system_ns >= 0
+
+    for pid in [0, -1, -9223372036854775807 - 1]
+        left_resident: i64 @= -7
+        left_virtual: i64 @= -7
+        left_user: i64 @= -7
+        left_system: i64 @= -7
+        assert process_usage(pid: pid, resident: @left_resident, virtual_bytes: @left_virtual, user_ns: @left_user, system_ns: @left_system) == -1
+        assert last_error() == HERO_SYS_INVALID
+        assert left_resident == -7 && left_virtual == -7 && left_user == -7 && left_system == -7
+
+    for pid in [9223372036854775807, 2147483647]
+        left_resident: i64 @= -7
+        left_virtual: i64 @= -7
+        left_user: i64 @= -7
+        left_system: i64 @= -7
+        answer = process_usage(
+            pid: pid,
+            resident: @left_resident,
+            virtual_bytes: @left_virtual,
+            user_ns: @left_user,
+            system_ns: @left_system
+        )
+        kind = last_error()
+        assert answer == -1
+        assert left_resident == -7 && left_virtual == -7 && left_user == -7 && left_system == -7
+        assert kind == HERO_SYS_INVALID || kind == HERO_SYS_NOT_FOUND || kind == HERO_SYS_UNSUPPORTED
+
+test "network_counters: no buffer measures, one byte is too few, the count asked is filled, every interface a name and eight counters of digits"
+    nothing: [u8] @= []
+    need = network_counters(@nothing, n: 0)
+
+    if system() == HERO_SYS_SYSTEM_OTHER
+        assert need == -1 && last_error() == HERO_SYS_UNSUPPORTED
+    else
+        assert need > 0 && last_error() == HERO_SYS_OK
+        short: [u8] @= []
+        assert network_counters(@short, n: 1) >= need
+        room = need + 4096
+        buffer: [u8] @= []
+        got = network_counters(@buffer, n: room.to_u64().must())
+        assert got > 0 && got <= room && buffer.len() == room
+        pieces: i64 @= 0
+        piece_bytes: i64 @= 0
+        at: i64 @= 0
+
+        while at < got
+            if buffer[at] == 0
+                if pieces % 9 == 0
+                    assert piece_bytes > 0
+                pieces @ pieces + 1
+                piece_bytes @ 0
+            else
+                if pieces % 9 != 0
+                    assert buffer[at] >= '0' && buffer[at] <= '9'
+                piece_bytes @ piece_bytes + 1
+            at @ at + 1
+
+        assert piece_bytes == 0 && pieces > 0 && pieces % 9 == 0

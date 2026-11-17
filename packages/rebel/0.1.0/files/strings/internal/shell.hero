@@ -1,0 +1,222 @@
+# A line read into the words a POSIX shell would give a command, by the
+# shell's quoting alone: single quotes, double quotes, the backslash, a
+# backslash before a line feed taken away, and a comment from a `#` that
+# begins a word. Nothing is expanded and no operator is read: `$HOME`, `*`
+# and `a;b` are words as they stand, as Python's `shlex.split` and Rust's
+# crate shlex read them. Every byte this module stops at is ASCII, so every
+# cut stands between two characters.
+
+use strings/internal/scan
+
+# The code `split` fails with where a quote is never closed or a backslash
+# ends the line.
+constant INVALID: str
+    "invalid"
+
+# Whether `b` separates two words: a space, a tab or a line feed, the
+# shell's blanks and its end of line. A carriage return is part of a word,
+# as the shell reads it.
+function is_blank(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n'
+
+# Whether `b` ends a run of characters that stand as they are in a word.
+function ends_plain(b: u8) -> bool
+    return is_blank(b) || b == '\\' || b == '\'' || b == '"'
+
+# Where the line that holds byte `at` of `s` ends: the index of its line feed,
+# or the end of `s`.
+function line_end(s: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < s.len() && s[here] != '\n'
+        here @ here + 1
+
+    return here
+
+# Adds to `pieces` the text of the single quotes that open at byte `at` of
+# `s`, every character as it stands, and answers where the text after the
+# closing quote begins. Fails `invalid` where no quote closes them.
+function single_quoted(s: str, at: i64, @pieces: [str]) -> i64?
+    here: i64 @= at + 1
+
+    while here < s.len()
+        if s[here] == '\''
+            pieces @ pieces.push(s.slice(from: at + 1, to: here))
+            return ok(here + 1)
+        here @ here + 1
+
+    return fail(code: INVALID, msg: f"the single quote at byte {at} is never closed")
+
+# Whether a backslash inside double quotes takes `b` as itself: `$`, a
+# backquote, `"`, a backslash, and a line feed, which it takes away.
+function escapes_in_double(b: u8) -> bool
+    return b == '$' || b == '`' || b == '"' || b == '\\' || b == '\n'
+
+# Adds to `pieces` the text of the double quotes that open at byte `at` of
+# `s`, and answers where the text after the closing quote begins. Inside
+# them a backslash takes the character after it as itself where
+# `escapes_in_double` says so, and stands as itself before any other. Fails
+# `invalid` where no quote closes them.
+function double_quoted(s: str, at: i64, @pieces: [str]) -> i64?
+    stretch: i64 @= at + 1
+    here: i64 @= at + 1
+
+    while here < s.len()
+        b = s[here]
+
+        if b == '"'
+            pieces @ pieces.push(s.slice(from: stretch, to: here))
+            return ok(here + 1)
+
+        if b == '\\' && here + 1 < s.len() && escapes_in_double(s[here + 1])
+            pieces @ pieces.push(s.slice(from: stretch, to: here))
+
+            if s[here + 1] != '\n'
+                pieces @ pieces.push(s.slice(from: here + 1, to: here + 2))
+            here @ here + 2
+            stretch @ here
+        else
+            here @ here + 1
+
+    return fail(code: INVALID, msg: f"the double quote at byte {at} is never closed")
+
+# Adds to `pieces` the part of a word that begins at byte `at` of `s`, which
+# is no blank: an escaped character, a quoted text, or a run of characters
+# that stand as they are. Answers where the next part begins, always past
+# `at`. Fails `invalid` where a quote is never closed or a backslash ends
+# the line.
+function word_part(s: str, at: i64, @pieces: [str]) -> i64?
+    b = s[at]
+
+    if b == '\\'
+        if at + 1 >= s.len()
+            return fail(code: INVALID, msg: f"the backslash at byte {at} ends the line and escapes nothing")
+        end = scan.next_at(s, at + 1)
+        pieces @ pieces.push(s.slice(from: at + 1, to: end))
+        return ok(end)
+
+    if b == '\''
+        return single_quoted(s: s, at: at, @pieces)
+
+    if b == '"'
+        return double_quoted(s: s, at: at, @pieces)
+    here: i64 @= at + 1
+
+    while here < s.len() && !ends_plain(s[here])
+        here @ here + 1
+
+    pieces @ pieces.push(s.slice(from: at, to: here))
+    return ok(here)
+
+# The words of `s` as a POSIX shell reads them. Every pass moves past at
+# least one byte.
+function split(s: str) -> [str]?
+    words: [str] @= []
+    pieces: [str] @= []
+    in_word: bool @= false
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '\\' && at + 1 < s.len() && s[at + 1] == '\n'
+            at @ at + 2
+        else if is_blank(b)
+            if in_word
+                words @ words.push(pieces.join(""))
+                pieces @ []
+                in_word @ false
+            at @ at + 1
+        else if !in_word && b == '#'
+            at @ line_end(s: s, at: at)
+        else
+            in_word @ true
+            at @ word_part(s: s, at: at, @pieces)?
+
+    if in_word
+        words @ words.push(pieces.join(""))
+    return ok(words)
+
+# The words below are those Rust's crate shlex 1.3.0 and `/bin/sh` answered
+# on 2026-11-17; Python's `shlex.split` answers the same where a note does
+# not say otherwise.
+test "split: empty, blanks alone, words between blanks of every kind, and blanks at both ends"
+    assert split("").must().len() == 0
+    assert split(" \t\n ").must().len() == 0
+    assert split("a b c").must() == ["a", "b", "c"]
+    assert split("  a   b  ").must() == ["a", "b"]
+    assert split("a\tb\nc").must() == ["a", "b", "c"]
+
+    # A carriage return is part of a word to the shell; Python splits at it.
+    assert split("a\rb c").must() == ["a\rb", "c"]
+
+test "split: single quotes keep everything, double quotes and an embedded quoted part"
+    assert split("a 'b c' d").must() == ["a", "b c", "d"]
+    assert split("a \"b c\" d").must() == ["a", "b c", "d"]
+    assert split("'a''b'").must() == ["ab"]
+    assert split("a\"b c\"d").must() == ["ab cd"]
+    assert split("'a\\b'").must() == ["a\\b"]
+    assert split("'a\"b'").must() == ["a\"b"]
+    assert split("\"a'b\"").must() == ["a'b"]
+    assert split("'a\nb'").must() == ["a\nb"]
+
+test "split: empty quotes make an empty word, alone and between others"
+    assert split("''").must() == [""]
+    assert split("\"\"").must() == [""]
+    assert split("a '' b").must() == ["a", "", "b"]
+    assert split("\"\"\"\"").must() == [""]
+
+test "split: the backslash outside quotes, before a blank, a quote, itself, and a character of two bytes"
+    assert split("a\\ b").must() == ["a b"]
+    assert split("a\\\\b").must() == ["a\\b"]
+    assert split("a\\\"b").must() == ["a\"b"]
+    assert split("\\'").must() == ["'"]
+    assert split("a\\ \\ b").must() == ["a  b"]
+    assert split("\\éa").must() == ["éa"]
+
+test "split: the backslash inside double quotes, before what it escapes and before what it does not"
+    assert split("\"a\\\"b\"").must() == ["a\"b"]
+    assert split("\"a\\\\b\"").must() == ["a\\b"]
+
+    # Python keeps the backslash before `$` and a backquote; the shell does not.
+    assert split("\"a\\$b\"").must() == ["a$b"]
+    assert split("\"a\\`b\"").must() == ["a`b"]
+    assert split("\"a\\xb\"").must() == ["a\\xb"]
+    assert split("\"a\\éb\"").must() == ["a\\éb"]
+
+test "split: a backslash before a line feed is taken away, outside and inside double quotes, and kept in single ones"
+    # Python keeps the line feed in the word outside quotes, and both inside.
+    assert split("a\\\nb").must() == ["ab"]
+    assert split("\"a\\\nb\"").must() == ["ab"]
+    assert split("a \\\n b").must() == ["a", "b"]
+    assert split("a\\\n").must() == ["a"]
+    assert split("'a\\\nb'").must() == ["a\\\nb"]
+
+test "split: a comment from a hash that begins a word, to the end of its line, and a hash inside a word"
+    # Python's `split` reads comments only where it is asked to.
+    assert split("#comment x").must().len() == 0
+    assert split("a #b").must() == ["a"]
+    assert split("a #b\nc").must() == ["a", "c"]
+    assert split("a#b c").must() == ["a#b", "c"]
+    assert split("\"#\" x").must() == ["#", "x"]
+    assert split("\\#x y").must() == ["#x", "y"]
+
+test "split: no operator and no expansion, and characters of more than one byte"
+    assert split("x;y|z&w>v").must() == ["x;y|z&w>v"]
+    assert split("$HOME ~ *.txt").must() == ["$HOME", "~", "*.txt"]
+    assert split("é 'à b' \"ü\"").must() == ["é", "à b", "ü"]
+
+test "split fails: a single and a double quote never closed, and a backslash that ends the line"
+    match split("a 'unclosed")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the single quote at byte 2 is never closed"
+
+    match split("\"unclosed")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the double quote at byte 0 is never closed"
+
+    match split("trailing\\")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the backslash at byte 8 ends the line and escapes nothing"
+
+    assert split("\"a\\\"").is_err()

@@ -1,0 +1,197 @@
+# IEEE 754's binary16, the half-precision float, made from a double and read
+# back by exact arithmetic: the language has no cast between a float and its
+# bits, so a double is split into its integer significand and its power of two
+# (`exact.split`), rounded half to even at the half's place, and a half's bits
+# are read back by multiplying by a power of two (`near.pow2`), exact for every
+# half. A half holds 1 sign bit, 5 bits of exponent biased by 15 and 10 bits of
+# fraction; every half is an `f32` and an `f64` exactly.
+
+use numbers/internal/exact
+use numbers/internal/near
+
+# The bits of the quiet NaN with its sign clear, which every NaN becomes: the
+# language reads neither a NaN's sign nor its payload.
+constant QUIET_NAN: i64
+    0x7e00
+
+# The bits of positive infinity; with `SIGN` set, negative infinity.
+constant INFINITY: i64
+    0x7c00
+
+# The sign bit.
+constant SIGN: i64
+    0x8000
+
+# How many bits a number needs, 0 for 0; `n` is at or above 0.
+function bit_len(n: i64) -> i64
+    count: i64 @= 0
+    left: i64 @= n
+
+    while left > 0
+        left @ left >> 1
+        count @ count + 1
+
+    return count
+
+# `s` times 2 to the `-k`th rounded to an integer, ties to the even one; `s`
+# is at or above 0 and under 2 to the 53rd, and `k` above 0.
+function shifted_even(s: i64, k: i64) -> i64
+    if k >= 63
+        return 0
+    kept = s >> k
+    rest = s & (1 << k) - 1
+    half = 1 << k - 1
+
+    if rest > half || rest == half && kept & 1 == 1
+        return kept + 1
+    return kept
+
+# The bits of the half nearest to `x`, ties going to the even one: a value
+# past the largest half, 65504, by half a step or more is an infinity of its
+# sign, and a value below the smallest, 2 to the -24th, by more than half of
+# it is a zero of its sign.
+function bits_of(x: f64) -> i64
+    if x != x
+        return QUIET_NAN
+    negative = x < 0.0 || x == 0.0 && 1.0 / x < 0.0
+
+    sign = if negative
+        SIGN
+    else
+        0
+
+    a = if negative
+        -x
+    else
+        x
+
+    if a == 0.0
+        return sign
+
+    if a - a != 0.0
+        return sign | INFINITY
+    parts = exact.split(a)
+    s = parts.significand
+    e = parts.exp
+
+    # The power of two of the half's leading bit, and the weight of its last.
+    lead: i64 @= e + bit_len(s) - 1
+
+    if lead < -14
+        lead @ -14
+
+    if lead > 15
+        return sign | INFINITY
+    step = lead - 10
+    m: i64 @= 0
+
+    if e >= step
+        m @ s << e - step
+    else
+        m @ shifted_even(s: s, k: step - e)
+
+    if m == 2048
+        m @ 1024
+        lead @ lead + 1
+
+    if lead > 15
+        return sign | INFINITY
+
+    if m < 1024
+        return sign | m
+    return sign | lead + 15 << 10 | m - 1024
+
+# The double a half's bits hold, exactly: an infinity where the exponent's
+# bits are all ones and the fraction's none, a NaN where the fraction holds
+# any, and a zero of its sign.
+function value_of(bits: i64) -> f64
+    negative = bits & SIGN != 0
+    field = bits >> 10 & 31
+    fraction = bits & 1023
+    magnitude: f64 @= 0.0
+
+    if field == 31
+        if fraction != 0
+            return near.not_a_number()
+        magnitude @ near.infinity()
+    else if field == 0
+        magnitude @ to_f64(fraction) * near.pow2(-24)
+    else
+        magnitude @ to_f64(1024 + fraction) * near.pow2(field - 25)
+
+    if negative
+        return -magnitude
+    return magnitude
+
+test "bits_of: zeros of both signs, one, the infinities, and every NaN the quiet one"
+    assert bits_of(0.0) == 0x0000
+    assert bits_of(-0.0) == 0x8000
+    assert bits_of(1.0) == 0x3c00
+    assert bits_of(-1.0) == 0xbc00
+    assert bits_of(near.infinity()) == 0x7c00
+    assert bits_of(-near.infinity()) == 0xfc00
+    assert bits_of(near.not_a_number()) == 0x7e00
+
+test "bits_of: the subnormals, the smallest normal, and what rounds to zero"
+    assert bits_of(near.pow2(-24)) == 0x0001
+    assert bits_of(near.pow2(-25)) == 0x0000
+    assert bits_of(near.pow2(-25) * 1.0000001) == 0x0001
+    assert bits_of(3.0 * near.pow2(-25)) == 0x0002
+    assert bits_of(1.5 * near.pow2(-25)) == 0x0001
+    assert bits_of(near.pow2(-14) - near.pow2(-24)) == 0x03ff
+    assert bits_of(near.pow2(-14)) == 0x0400
+    assert bits_of(near.pow2(-14) + near.pow2(-25)) == 0x0400
+    assert bits_of(near.pow2(-14) + 3.0 * near.pow2(-25)) == 0x0402
+    assert bits_of(0.00000001) == 0x0000
+    assert bits_of(near.pow2(-1074)) == 0x0000
+    assert bits_of(-near.pow2(-1074)) == 0x8000
+
+test "bits_of: the largest half, the last value that rounds to it, and the first that overflows"
+    assert bits_of(65504.0) == 0x7bff
+    assert bits_of(65519.99) == 0x7bff
+    assert bits_of(65520.0 - near.pow2(-30)) == 0x7bff
+    assert bits_of(65520.0) == 0x7c00
+    assert bits_of(-65520.0) == 0xfc00
+    assert bits_of(near.pow2(1000)) == 0x7c00
+
+test "bits_of: halfway cases going to the even fraction both ways, and a value just past halfway"
+    assert bits_of(1.0 + near.pow2(-11)) == 0x3c00
+    assert bits_of(1.0 + 3.0 * near.pow2(-11)) == 0x3c02
+    assert bits_of(1.0 + near.pow2(-11) + near.pow2(-40)) == 0x3c01
+    assert bits_of(2049.0) == 0x6800
+    assert bits_of(2050.0) == 0x6801
+    assert bits_of(2051.0) == 0x6802
+    assert bits_of(4097.0) == 0x6c00
+
+test "bits_of: values that are no half, rounded as clang's _Float16 rounds them"
+    assert bits_of(0.1) == 0x2e66
+    assert bits_of(1.0 / 3.0) == 0x3555
+
+test "value_of: the subnormals, the smallest normal, the largest, the infinities and the NaNs"
+    assert value_of(0x0001) == near.pow2(-24)
+    assert value_of(0x8001) == -near.pow2(-24)
+    assert value_of(0x03ff) == near.pow2(-14) - near.pow2(-24)
+    assert value_of(0x0400) == near.pow2(-14)
+    assert value_of(0x7bff) == 65504.0
+    assert value_of(0xfbff) == -65504.0
+    assert value_of(0x7c00) == near.infinity()
+    assert value_of(0xfc00) == -near.infinity()
+    assert value_of(0x7e00) != value_of(0x7e00)
+    assert value_of(0x7c01) != value_of(0x7c01)
+    assert value_of(0x3555) == 0.333251953125
+
+test "value_of: both zeros, the minus one kept"
+    assert value_of(0x0000) == 0.0 && 1.0 / value_of(0x0000) > 0.0
+    assert value_of(0x8000) == 0.0 && 1.0 / value_of(0x8000) < 0.0
+
+test "value_of and bits_of: every one of the 65536 halves goes and comes back the same, the NaNs aside"
+    b: i64 @= 0
+
+    while b < 65536
+        v = value_of(b)
+
+        if v == v
+            assert bits_of(v) == b
+        else
+            assert bits_of(v) == QUIET_NAN
+        b @ b + 1

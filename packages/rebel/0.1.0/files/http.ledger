@@ -117,10 +117,11 @@ capability request/multipart  a body of parts with files, written
   note    RFC 7578; names escaped as the HTML standard writes them (`%22`, `%0D`, `%0A`), as requests' urllib3 writes them; the boundary is the first `----rebel-N` no part holds, never random
 
 capability request/multipart-read  a multipart body read by a server
-  heroes  pending
-  go      net/http.Request.ParseMultipartForm, net/http.Request.MultipartReader, net/http.Request.FormFile
+  heroes  http.parts_of, http.parse_multipart, http.part_of, http.FormPart, http.PartLimits, http.default_part_limits
+  go      net/http.Request.ParseMultipartForm, net/http.Request.MultipartReader, net/http.Request.FormFile, net/http.Request.MultipartForm, mime/multipart.NewReader, mime/multipart.Reader.NextPart, NextRawPart, ReadForm, mime/multipart.Form, FileHeader, Part.FormName, Part.FileName, mime/multipart.ErrMessageTooLarge
   rust    -
   python  -
+  note    every part held in memory within `PartLimits` (1,000 parts as Go's `multipartmaxparts` and werkzeug's `max_form_parts`; heads of 16 KiB; 10 MiB a part and a body), `limit` past one, where Go spills files to the disk past `maxMemory`; observed against Go 1.27's `mime/multipart` and werkzeug 3.1.9's `parse_form_data` on 2026-11-17: line feeds alone, a preamble, an epilogue, spaces after a boundary, folded head lines, `filename*` over `filename` and an empty `filename` read as both read them; `%22`, `%0D` and `%0A` in a name read back as werkzeug reads them (Go keeps them); a file name kept as written, `a/b/../c.txt` whole, as werkzeug keeps it, where Go's `FileName` keeps its last part by the platform's own separator; a body with no closing boundary, a part with no `form-data` disposition or no name, and a name given twice refused `invalid`, as werkzeug refuses them, where Go reads on; Python's standard library lost `cgi.FieldStorage` in 3.13 (`import cgi` fails on 3.15), and `email`'s parser is `mail`'s yardstick
 
 capability auth/basic  Basic credentials written and read
   heroes  http.with_basic_auth, http.basic_auth_of, http.Credentials
@@ -464,9 +465,9 @@ capability server/options  how a server serves, made with its usual values
 
 capability server/serve  connections accepted and served with a handler until the program asks to stop
   heroes  http.serve
-  go      net/http.Serve, net/http.ListenAndServe, net/http.Server.Serve, net/http.Server.ListenAndServe, net/http.Server.Close, net/http.Server.Shutdown, net/http.Server.RegisterOnShutdown, net/http.ErrServerClosed, net/http.Handler, net/http.HandlerFunc
+  go      net/http.Serve, net/http.ListenAndServe, net/http.Server.Serve, net/http.Server.ListenAndServe, net/http.Server.Close, net/http.ErrServerClosed, net/http.Handler, net/http.HandlerFunc
   rust    -
-  python  http.server.HTTPServer.serve_forever, shutdown, server_close, http.server.test
+  python  http.server.HTTPServer.serve_forever, server_close, http.server.test
   note    ONE CONNECTION AT A TIME, a fact the face states; the stop is `net`'s (`catch_stop`, `ask_stop`); a handler is a top-level function value
 
 capability server/state  a handler that reads a value of the program, beside each request
@@ -538,6 +539,55 @@ capability date/parse  an HTTP date read in its three forms
   rust    -
   python  email.utils.parsedate_to_datetime as http.server reads If-Modified-Since
   note    Go reads the three as one instant, 784111777, and so does this (observed)
+
+capability server/graceful  a server ended at the stop without cutting the requests in hand: no new connection, idle ones closed, the ones begun answered within a grace, how many were cut told
+  heroes  http.serve_until_stopped, http.serve_stream_until_stopped, http.Served
+  go      net/http.Server.Shutdown, net/http.Server.RegisterOnShutdown
+  rust    -
+  python  socketserver.BaseServer.shutdown as http.server.HTTPServer has it
+  note    Go's `Shutdown` closes the listeners, closes the idle connections and waits for the active ones to become idle; here the stop is `net`'s, after which no call waits, so a request whose bytes have come by then is read and answered with `Connection: close` within `grace_ms`, and one whose bytes are still coming, or whose answer the system cannot take at once, is cut and counted; a handler runs to its end, as Go's does (it has no way to stop one either); a deadline that holds the reads open after the stop would need a door of `hero_net` that waits past it, which no member offers (2026-11-17): the in-flight request still arriving is the part of Go's behaviour not reached; the stop is never asked in a test, since it cannot be taken back in the process that asks it
+
+capability negotiate/type  the media type a server answers chosen from Accept
+  heroes  http.negotiate_type
+  go      -
+  rust    -
+  python  -
+  note    RFC 9110 § 12.5.1: a type weighs as its most specific range, a weight of 0 refusing it; equals by the server's order, as werkzeug 3.1.9's `MIMEAccept.best_match` answered on 2026-11-17 on seventeen headers, where Django 6.1.3's `HttpRequest.get_preferred_type` takes the client's order, answers `text/html` for `text/html;q=0, */*` and `text/plain` for `text/*, text/plain;q=0`, both against the RFC; no Accept accepts every type, as Django and the RFC read it, where werkzeug answers none for an empty field; a member whose weight is no qvalue (`q=abc`, `q=1.5`) passed over, as werkzeug passes it, where Django reads it as 1; neither Go's nor Python's standard library negotiates
+
+capability negotiate/language  the language a server answers chosen from Accept-Language
+  heroes  http.negotiate_language
+  go      -
+  rust    -
+  python  locale.normalize as a language tag's reader alone
+  note    RFC 4647's basic filtering, then its lookup where it finds nothing, so `en-US` finds `en` and `en` finds `en-US`, as werkzeug 3.1.9's `LanguageAccept.best_match` answered on ten headers; `golang.org/x/text/language.Matcher` is outside Go's standard library
+
+capability negotiate/encoding  the content coding a server applies chosen from Accept-Encoding
+  heroes  http.negotiate_encoding
+  go      -
+  rust    -
+  python  -
+  note    RFC 9110 § 12.5.3: `*` for a coding not named, `identity` acceptable unless refused, so an empty field accepts `identity` alone; `with_compression` makes its own choice of gzip and deflate
+
+capability cache/control  Cache-Control's directives read and written
+  heroes  http.parse_cache_control, http.format_cache_control, http.directive_of, http.Directive
+  go      -
+  rust    -
+  python  -
+  note    RFC 9111 § 5.2: every directive kept, names lowered, a quoted value read (`no-cache="Set-Cookie, X"`), a value written quoted where it is no token; werkzeug's `ResponseCacheControl` and Django's `patch_cache_control` as yardsticks of the use, neither in a standard library
+
+capability conditional/etag  entity tags compared, and a response that the request holds answered 304
+  heroes  http.has_etag, http.is_not_modified, http.respond_not_modified
+  go      net/http.ServeContent's If-None-Match, If-Match and its 304, which it keeps private for any other body
+  rust    -
+  python  -
+  note    RFC 9110 § 8.8.3.2 and § 13.2.2: weak comparison for `If-None-Match`, strong for `If-Match`, `*` matching a response that has a tag; `If-Modified-Since` read only where `If-None-Match` is absent, to the second; only a 2xx to GET or HEAD answered 304; the 304 keeps every field but `Content-Type`, `Content-Length`, `Content-Encoding`, `Transfer-Encoding` and, where an ETag stands, `Last-Modified`, as Go's `writeNotModified` keeps them; `If-Match` and `If-Unmodified-Since` before a change are the program's, with `has_etag`
+
+capability server/in-memory  a handler tried with no network: a request as a server reads it, a response as a client reads it
+  heroes  http.to_served, http.to_received, http.exchange, http.exchange_with, http.TEST_REMOTE, http.TEST_HOST
+  go      net/http/httptest.NewRequest, NewRequestWithContext, NewRecorder, ResponseRecorder, ResponseRecorder.Result, Header, Write, WriteString, WriteHeader, Flush, DefaultRemoteAddr, Server, NewServer, NewTLSServer, NewUnstartedServer
+  rust    -
+  python  wsgiref.util.setup_testing_defaults
+  note    both ways through the bytes the wire would carry, so a field with a line end, a body past the limits, 417 and 501 come out as a server answers them, and a response gains its Date and loses a HEAD's body as a client sees it; `192.0.2.1:1234` and `example.com` as Go 1.27's `httptest.NewRequest` gave them on 2026-11-17 (its recorder's `DefaultRemoteAddr` is `1.2.3.4`); httptest's `Server`, a real listener, is `net.listen` and `serve` here
 
 dropped  an interface, an error type or a context: Heroes has none, a failure is a code and a message (README § A4)
   go      net/http.ErrNotSupported, ErrBodyNotAllowed, ErrAbortHandler, ErrBodyReadAfterClose, ErrHandlerTimeout, ErrLineTooLong, ErrNoCookie, ErrNoLocation, ErrSkipAltProtocol, ServerContextKey, LocalAddrContextKey, ProtocolError.Error, ProtocolError.Is, MaxBytesError.Error, Request.Context, Request.WithContext, NewRequestWithContext, ResponseWriter, Hijacker, CloseNotifier, Pusher, PushOptions, ResponseController and its EnableFullDuplex, Hijack, SetReadDeadline, SetWriteDeadline, HandlerFunc.ServeHTTP, ConnState.String

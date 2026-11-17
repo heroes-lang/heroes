@@ -1,0 +1,390 @@
+# One-time passwords, HOTP (RFC 4226) and TOTP (RFC 6238): the HMAC of an
+# eight-byte counter, cut by RFC 4226's dynamic truncation to a number of 31
+# bits and written as its last decimal digits; codes compared in constant
+# time over a window of counters; and the otpauth URI of Google
+# Authenticator's Key Uri Format, which hands a key to an authenticator app,
+# its key in base 32 (RFC 4648) and its label and issuer percent-escaped
+# (RFC 3986). The base 32 and the escaping are written here because
+# `bytes` has no base 32 yet and `url` stands on this package's own layer.
+
+use bytes
+use crypto/internal/compare
+use crypto/internal/engine
+
+# The code a check fails with.
+constant INVALID: str
+    "invalid"
+
+# The fewest digits a code may have, RFC 4226's R4.
+constant LEAST_DIGITS: i64
+    6
+
+# The most digits a code may have: the number cut from the HMAC has 31
+# bits, below 10^10, so a longer code would only add zeros in front.
+constant MOST_DIGITS: i64
+    10
+
+# The alphabet of base 32, RFC 4648's.
+constant BASE32: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+
+# The hexadecimal digits a percent escape writes, upper case as RFC 3986
+# recommends.
+constant HEX: str
+    "0123456789ABCDEF"
+
+# Whether `kind` is one of the three digests RFC 6238 names, the ones the
+# truncation reads at least 20 bytes from.
+function is_otp_kind(kind: engine.Kind) -> bool
+    return match kind
+        .sha1 | .sha256 | .sha512 => true
+        .md5 | .sha224 | .sha384 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 | .shake128 | .shake256 | .cshake128 | .cshake256 => false
+
+# The name the Key Uri Format writes for `kind`, one of the three.
+function kind_name(kind: engine.Kind) -> str
+    return match kind
+        .sha256 => "SHA256"
+        .sha512 => "SHA512"
+        .sha1 | .md5 | .sha224 | .sha384 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 | .shake128 | .shake256 | .cshake128 | .cshake256 => "SHA1"
+
+# Whether a code can be made with these settings: one of the three digests,
+# a key of at least one byte, `LEAST_DIGITS` to `MOST_DIGITS` digits and a
+# period of at least a second. Fails `invalid` naming the first that is not.
+function check(kind: engine.Kind, key_len: i64, digits: i64, period: i64) -> ()?
+    if !is_otp_kind(kind)
+        return fail(
+            code: INVALID,
+            msg: "a one-time password is made with SHA-1, SHA-256 or SHA-512, as RFC 6238 says, and no other digest"
+        )
+
+    if key_len == 0
+        return fail(code: INVALID, msg: "an empty key, where a one-time password needs a shared secret")
+
+    if digits < LEAST_DIGITS || digits > MOST_DIGITS
+        return fail(code: INVALID, msg: f"a code of {digits} digits, where one has {LEAST_DIGITS} to {MOST_DIGITS}")
+
+    if period < 1
+        return fail(code: INVALID, msg: f"a period of {period} seconds, where a code lasts at least 1")
+    return ok()
+
+# `counter` as eight bytes, the highest first, which is what the HMAC reads.
+function counter_bytes(counter: u64) -> [u8]
+    out: [u8] @= [0, 0, 0, 0, 0, 0, 0, 0]
+    rest: u64 @= counter
+    at: i64 @= 7
+
+    while at >= 0
+        out[at] @ to_u8(rest % 256).must()
+        rest @ rest / 256
+        at @ at - 1
+
+    return out
+
+# 10 to the power `digits`, which is 0 to `MOST_DIGITS`.
+function power_of_ten(digits: i64) -> i64
+    power: i64 @= 1
+
+    for _ in range(from: 0, to: digits)
+        power @ power * 10
+
+    return power
+
+# The code of `counter` under `keyed`, an HMAC's work begun with the key and
+# fed nothing: its tag cut by RFC 4226's dynamic truncation, from the byte
+# its last four bits name, to 31 bits, then to its last `digits` decimal
+# digits, zeros written in front to that length.
+function code_at(keyed: engine.Run, counter: u64, digits: i64) -> str
+    run @= keyed
+    engine.absorb(@run, counter_bytes(counter))
+    tag = engine.finish(run)
+    offset = to_i64(tag[tag.len() - 1]).must() & 0x0f
+    first = to_i64(tag[offset]).must() & 0x7f
+    number = first << 24 | to_i64(tag[offset + 1]).must() << 16 | to_i64(tag[offset + 2]).must() << 8 | to_i64(tag[offset + 3]).must()
+    text = f"{number % power_of_ten(digits)}"
+    return repeat("0", to_u64(digits - text.len()).must()) + text
+
+# The code of `counter` under `key` by `kind`, the settings checked first.
+function code(kind: engine.Kind, key: [u8], counter: u64, digits: i64) -> str?
+    check(kind: kind, key_len: key.len(), digits: digits, period: 1)?
+    return ok(code_at(keyed: engine.begin_keyed(kind, key), counter: counter, digits: digits))
+
+# The index in `counters` of the first whose code is `given`, or -1 where
+# none is. Every counter's code is made and compared in constant time,
+# whatever matched before it, so the time tells how many counters were
+# tried and not which one matched.
+function first_match(keyed: engine.Run, digits: i64, given: str, counters: [u64]) -> i64
+    wanted = bytes.from_text(given)
+    found: i64 @= -1
+    at: i64 @= 0
+
+    while at < counters.len()
+        made = bytes.from_text(code_at(keyed: keyed, counter: counters[at], digits: digits))
+        same = compare.equals(a: made, b: wanted)
+
+        if same && found < 0
+            found @ at
+        at @ at + 1
+
+    return found
+
+# The counters an HOTP check tries: `counter` and the `window` after it, as
+# RFC 4226's look-ahead does, none past the largest `u64`.
+function counters_ahead(counter: u64, window: u64) -> [u64]
+    out: [u64] @= [counter]
+    at: u64 @= counter
+    taken: u64 @= 0
+    largest: u64 = 18446744073709551615
+
+    while taken < window && at < largest
+        at @ at + 1
+        out @ out.push(at)
+        taken @ taken + 1
+
+    return out
+
+# The time steps a TOTP check tries, `step` first, then one before and one
+# after it, two before and two after, out to `window`, none below 0, so that
+# the step a code names is the nearest to `step` where two would match.
+function steps_around(step: u64, window: u64) -> [u64]
+    out: [u64] @= [step]
+    distance: u64 @= 1
+
+    while distance <= window
+        if distance <= step
+            out @ out.push(step - distance)
+        out @ out.push(step + distance)
+        distance @ distance + 1
+
+    return out
+
+# `data` in base 32, RFC 4648's alphabet with no padding, as the Key Uri
+# Format writes a key.
+function base32(data: [u8]) -> str
+    out: [str] @= []
+    buffer: i64 @= 0
+    bits: i64 @= 0
+
+    for b in data
+        buffer @ buffer << 8 | to_i64(b).must()
+        bits @ bits + 8
+
+        while bits >= 5
+            index = buffer >> bits - 5 & 31
+            out @ out.push(BASE32.slice(from: index, to: index + 1))
+            bits @ bits - 5
+
+        buffer @ buffer & (1 << bits) - 1
+
+    if bits > 0
+        index = buffer << 5 - bits & 31
+        out @ out.push(BASE32.slice(from: index, to: index + 1))
+    return out.join("")
+
+# Whether `b` stands as itself in a URI, RFC 3986's unreserved characters:
+# ASCII letters and digits, `-`, `.`, `_` and `~`.
+function is_unreserved(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    return b == '-' || b == '.' || b == '_' || b == '~'
+
+# `s` with every byte but the unreserved written as `%` and two upper case
+# hexadecimal digits, as Python's `urllib.parse.quote(s, safe="")` writes it.
+# Only ASCII bytes are cut out whole, so no character is split.
+function escaped(s: str) -> str
+    out: [str] @= []
+
+    for i in range(from: 0, to: s.len())
+        b = s[i]
+
+        if is_unreserved(b)
+            out @ out.push(s.slice(from: i, to: i + 1))
+        else
+            value = to_i64(b).must()
+            out @ out.push(
+                "%" + HEX.slice(from: value >> 4, to: (value >> 4) + 1) + HEX.slice(from: value & 15, to: (value & 15) + 1)
+            )
+
+    return out.join("")
+
+# Whether `s` holds a colon, which the Key Uri Format's label keeps between
+# the issuer and the account.
+function has_colon(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] == ':'
+            return true
+
+    return false
+
+# An otpauth URI of the type `kind_word`, "hotp" or "totp": the label, the
+# issuer and a colon before the account where there is an issuer, each
+# escaped; then the key in base 32, the issuer, the digest's name, the
+# digits, and `last`, the counter or the period with its name. Fails
+# `invalid` where the settings are, or the account is empty, or the account
+# or the issuer holds a colon.
+function uri(kind_word: str, account: str, issuer: str, kind: engine.Kind, key: [u8], digits: i64, last: str) -> str?
+    check(kind: kind, key_len: key.len(), digits: digits, period: 1)?
+
+    if account.len() == 0
+        return fail(code: INVALID, msg: "an empty account, where the URI's label names one")
+
+    if has_colon(account) || has_colon(issuer)
+        return fail(
+            code: INVALID,
+            msg: f"the account \"{account}\" or the issuer \"{issuer}\" holds a colon, which the label keeps between the two"
+        )
+
+    label = if issuer.len() == 0
+        escaped(account)
+    else
+        escaped(issuer) + ":" + escaped(account)
+    pieces: [str] @= [f"otpauth://{kind_word}/{label}?secret={base32(key)}"]
+
+    if issuer.len() > 0
+        pieces @ pieces.push("&issuer=" + escaped(issuer))
+    pieces @ pieces.push(f"&algorithm={kind_name(kind)}&digits={digits}&{last}")
+    return ok(pieces.join(""))
+
+# RFC 4226's secret, the ASCII digits "12345678901234567890".
+function rfc_key() -> [u8]
+    return bytes.from_text("12345678901234567890")
+
+test "otp code: RFC 4226 Appendix D, the counters 0 to 9 by SHA-1"
+    wanted = ["755224", "287082", "359152", "969429", "338314", "254676", "287922", "162583", "399871", "520489"]
+    keyed = engine.begin_keyed(.sha1, rfc_key())
+
+    for counter in range(from: 0, to: 10)
+        assert code_at(keyed: keyed, counter: to_u64(counter).must(), digits: 6) == wanted[counter]
+
+# RFC 6238's seeds are 20, 32 and 64 bytes of the same digits; its table's
+# times are counted in steps of 30 seconds here, the face dividing.
+test "otp code: RFC 6238 Appendix B, every time of its table by SHA-1, SHA-256 and SHA-512, eight digits"
+    key256 = bytes.from_text("12345678901234567890123456789012")
+    key512 = bytes.from_text("1234567890123456789012345678901234567890123456789012345678901234")
+    steps: [u64] = [1, 37037036, 37037037, 41152263, 66666666, 666666666]
+    sha1: [str] = ["94287082", "07081804", "14050471", "89005924", "69279037", "65353130"]
+    sha256: [str] = ["46119246", "68084774", "67062674", "91819424", "90698825", "77737706"]
+    sha512: [str] = ["90693936", "25091201", "99943326", "93441116", "38618901", "47863826"]
+
+    for i in range(from: 0, to: steps.len())
+        assert code(kind: .sha1, key: rfc_key(), counter: steps[i], digits: 8).must() == sha1[i]
+        assert code(kind: .sha256, key: key256, counter: steps[i], digits: 8).must() == sha256[i]
+        assert code(kind: .sha512, key: key512, counter: steps[i], digits: 8).must() == sha512[i]
+
+# Python's `hmac` and `struct` answered these on 2026-11-17.
+test "otp code: seven, nine and ten digits, zeros written in front, the largest counter, and a key of one byte"
+    assert code(kind: .sha1, key: rfc_key(), counter: 0, digits: 7).must() == "4755224"
+    assert code(kind: .sha1, key: rfc_key(), counter: 0, digits: 9).must() == "284755224"
+    assert code(kind: .sha1, key: rfc_key(), counter: 0, digits: 10).must() == "1284755224"
+    assert code(kind: .sha1, key: rfc_key(), counter: 18446744073709551615, digits: 6).must() == "094451"
+    assert code(kind: .sha1, key: rfc_key(), counter: 18446744073709551615, digits: 10).must() == "1663094451"
+    assert code(kind: .sha1, key: rfc_key(), counter: 9223372036854775808, digits: 6).must() == "959616"
+    assert code(kind: .sha1, key: [0], counter: 0, digits: 6).must() == "328482"
+    assert code(kind: .sha256, key: [0x61], counter: 5, digits: 6).must() == "394162"
+
+test "otp check: every refusal, at each edge"
+    assert check(kind: .sha1, key_len: 1, digits: 6, period: 1).is_err() == false
+    assert check(kind: .sha512, key_len: 64, digits: 10, period: 30).is_err() == false
+    assert check(kind: .md5, key_len: 20, digits: 6, period: 30).is_err()
+    assert check(kind: .sha3_256, key_len: 20, digits: 6, period: 30).is_err()
+    assert check(kind: .sha1, key_len: 0, digits: 6, period: 30).is_err()
+    assert check(kind: .sha1, key_len: 20, digits: 5, period: 30).is_err()
+    assert check(kind: .sha1, key_len: 20, digits: 11, period: 30).is_err()
+    assert check(kind: .sha1, key_len: 20, digits: 6, period: 0).is_err()
+
+    match check(kind: .sha1, key_len: 20, digits: 5, period: 30)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a code of 5 digits, where one has 6 to 10"
+
+test "otp counter_bytes: zero, one, 256, and the largest, the highest byte first"
+    assert counter_bytes(0) == [0, 0, 0, 0, 0, 0, 0, 0]
+    assert counter_bytes(1) == [0, 0, 0, 0, 0, 0, 0, 1]
+    assert counter_bytes(256) == [0, 0, 0, 0, 0, 0, 1, 0]
+    assert counter_bytes(18446744073709551615) == [255, 255, 255, 255, 255, 255, 255, 255]
+
+test "otp first_match: none, the first, the last, a code of another length, and the first of two that match"
+    keyed = engine.begin_keyed(.sha1, rfc_key())
+    assert first_match(keyed: keyed, digits: 6, given: "000000", counters: [0, 1, 2]) == -1
+    assert first_match(keyed: keyed, digits: 6, given: "755224", counters: [0, 1, 2]) == 0
+    assert first_match(keyed: keyed, digits: 6, given: "359152", counters: [0, 1, 2]) == 2
+    assert first_match(keyed: keyed, digits: 6, given: "75522", counters: [0]) == -1
+    assert first_match(keyed: keyed, digits: 6, given: "287082", counters: [1, 1]) == 0
+    assert first_match(keyed: keyed, digits: 6, given: "287082", counters: []) == -1
+
+test "otp counters_ahead and steps_around: no window, a window, the largest counter, and step 0"
+    assert counters_ahead(counter: 5, window: 0) == [5]
+    assert counters_ahead(counter: 5, window: 2) == [5, 6, 7]
+    assert counters_ahead(counter: 18446744073709551614, window: 3) == [18446744073709551614, 18446744073709551615]
+    assert steps_around(step: 10, window: 0) == [10]
+    assert steps_around(step: 10, window: 2) == [10, 9, 11, 8, 12]
+    assert steps_around(step: 0, window: 1) == [0, 1]
+    assert steps_around(step: 1, window: 2) == [1, 0, 2, 3]
+
+# Python's `base64.b32encode`, its padding taken off, answered these.
+test "otp base32: no bytes, one to five, six, and RFC 4226's secret"
+    assert base32([]) == ""
+    assert base32(bytes.from_text("f")) == "MY"
+    assert base32(bytes.from_text("fo")) == "MZXQ"
+    assert base32(bytes.from_text("foo")) == "MZXW6"
+    assert base32(bytes.from_text("foob")) == "MZXW6YQ"
+    assert base32(bytes.from_text("fooba")) == "MZXW6YTB"
+    assert base32(bytes.from_text("foobar")) == "MZXW6YTBOI"
+    assert base32(rfc_key()) == "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+    assert base32([255, 255, 255, 255, 255]) == "77777777"
+
+# Python's `urllib.parse.quote(s, safe="")` answered these.
+test "otp escaped: unreserved characters kept, a space, an at sign, characters of two bytes, and the signs of a query"
+    assert escaped("") == ""
+    assert escaped("a~b_c-d.e") == "a~b_c-d.e"
+    assert escaped("ACME Co") == "ACME%20Co"
+    assert escaped("john.doe@email.com") == "john.doe%40email.com"
+    assert escaped("é/ü:?&=#+%") == "%C3%A9%2F%C3%BC%3A%3F%26%3D%23%2B%25"
+
+test "otp uri: with an issuer, without one, and the refusals"
+    made = uri(
+        kind_word: "totp",
+        account: "alice@example.com",
+        issuer: "ACME Co",
+        kind: .sha1,
+        key: rfc_key(),
+        digits: 6,
+        last: "period=30"
+    ).must()
+    assert made == "otpauth://totp/ACME%20Co:alice%40example.com?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=ACME%20Co&algorithm=SHA1&digits=6&period=30"
+    bare = uri(
+        kind_word: "hotp",
+        account: "bob",
+        issuer: "",
+        kind: .sha512,
+        key: [0x66],
+        digits: 8,
+        last: "counter=7"
+    ).must()
+    assert bare == "otpauth://hotp/bob?secret=MY&algorithm=SHA512&digits=8&counter=7"
+    assert uri(
+        kind_word: "totp",
+        account: "",
+        issuer: "x",
+        kind: .sha1,
+        key: [1],
+        digits: 6,
+        last: "period=30"
+    ).is_err()
+    assert uri(
+        kind_word: "totp",
+        account: "a:b",
+        issuer: "x",
+        kind: .sha1,
+        key: [1],
+        digits: 6,
+        last: "period=30"
+    ).is_err()
+    assert uri(
+        kind_word: "totp",
+        account: "a",
+        issuer: "x:y",
+        kind: .sha1,
+        key: [1],
+        digits: 6,
+        last: "period=30"
+    ).is_err()
+    assert uri(kind_word: "totp", account: "a", issuer: "", kind: .md5, key: [1], digits: 6, last: "period=30").is_err()

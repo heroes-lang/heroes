@@ -108,11 +108,39 @@ capability toml/write  a tree of values written as TOML text that reads back as 
   note    tomllib writes nothing; each table's plain keys first, then its tables under headers and its arrays of tables under `[[...]]`, every other value inline, a float in the fewest digits that read back; a date, a time or an offset outside its range fails `invalid`
 
 capability toml/comments-kept  a document's comments and layout kept from read to write
-  heroes  refused: the tree holds values, as tomllib's does; a document edited with its comments kept is a text edited as text
+  heroes  toml.Document, toml.parse_document, toml.format_document
   go      -
   rust    -
   python  -
-  note    -
+  note    refused until 2026-11-17, when the author's decision (queue 58) asked for it: the package manager writes `heroes.toml` with it. The yardsticks are Rust's crate toml_edit (77th crate; DocumentMut, its parse and Display) and PyPI's tomlkit (53rd; parse, dumps, TOMLDocument), neither in a standard library. A document is held as its text and every edit rewrites only the bytes it touches; measured on 2026-11-17 over every TOML file the repository tracks, 232 of which 222 are TOML 1.0.0 (the other 10 refused by `parse` and `parse_document` alike), each written back byte for byte, and over the 45 TOML 1.0.0 inputs of this package's own tests
+
+capability toml/edit-set  a value set by its path in a document edited in place, made where it is missing, every other byte kept
+  heroes  toml.set_value, toml.add_table
+  go      -
+  rust    -
+  python  -
+  note    the yardsticks toml_edit (Table::insert, IndexMut, Item, value, table, InlineTable::insert) and tomlkit (TOMLDocument.__setitem__, Table.add, Table.append, tomlkit.table, tomlkit.inline_table), tomlkit 0.15.2 observed on 2026-11-17 from a copy in the scratch folder, toml_edit not on this machine. A value replaced keeps its line, its spacing and its comment; a new key goes after the last key line of its table, indented as it, before the blank lines and comments that close the table, where tomlkit puts it after those comments; a new table is a section after the last section of the table that holds it, a table's own header before its sub-tables, as tomlkit does both; a root with no key takes one before the comments that stand on its first header, where tomlkit puts it after them; CR LF documents get CR LF lines, where tomlkit writes LF; a member added to an inline table goes after the last, `{ x = 1, w = true }` where tomlkit writes `{ x = 1, w = true}`. Values in `format`'s forms; a value set to itself is written back byte for byte where the file used those forms (493 of 497 leaves of the repository's files; the 4 others a literal string, a string of three quotes, a raw tab and a `\u` escape, each rewritten in its own bytes). Every edit is read back and held to the same edit made on the tree, so none can leave text that reads otherwise; the repository's 222 files took a key added to each of their 676 tables, none failing
+
+capability toml/edit-remove  a key, a value inside an array or an inline table, a table or an entry of an array of tables taken out of a document edited in place
+  heroes  toml.remove_value
+  go      -
+  rust    -
+  python  -
+  note    the yardsticks toml_edit (Table::remove, Array::remove, ArrayOfTables::remove) and tomlkit (`del`, Container.remove, Array.pop); a key goes with its line and its trailing comment, never the comment above it, as tomlkit does; a table with its sections and the empty lines after them, the comments above the next header kept, where tomlkit takes them with the table; a table or an array that only the removed key made stays, `a.b = {}` or `key = []`, so that the tree is the tree with that one value gone, where tomlkit lets such tables vanish and puts `bin = []` at the top of the document; an item of an array written across lines takes its own line and comment, as tomlkit does. Every leaf of the repository's 222 files removed once, 497, none failing
+
+capability toml/edit-array-of-tables  an entry appended to an array of tables in a document edited in place, its index answered
+  heroes  toml.add_table_entry
+  go      -
+  rust    -
+  python  -
+  note    the yardsticks toml_edit (ArrayOfTables::push) and tomlkit (AoT.append); a section `[[...]]` after the array's last entry and that entry's sub-tables, a blank line kept before the section that follows, where tomlkit leaves none; an array written inline takes the entry as an inline table after its last item; an absent path makes the array
+
+capability toml/edit-lookup  a value of a document edited in place read by a path of keys and array indices
+  heroes  toml.value_of
+  go      -
+  rust    -
+  python  -
+  note    the yardsticks toml_edit's Index (`doc["bin"][1]["name"]`) and tomlkit's `__getitem__`; a step at an array is an index in decimal from "0", no sign and no leading zero, so an entry of an array of tables is named as `["bin", "1", "name"]`, the shape of a JSON pointer's steps
 
 capability toml/to-json  a TOML document or value crossed to a JSON value
   heroes  toml.to_json

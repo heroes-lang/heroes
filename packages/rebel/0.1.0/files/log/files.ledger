@@ -1,0 +1,104 @@
+# The ledger of `log/files`: a logger's lines written to a file that is
+# rotated, by size or by day, its old files kept to a count or an age and
+# gzipped where asked. No standard library of the three has it but Python's
+# `logging.handlers` (3.15, `dir()` of its rotating handlers on 2026-11-17);
+# the yardsticks the author named are Go's lumberjack (gopkg.in/natefinch/
+# lumberjack.v2), Serilog's rolling file and Log4j's RollingFileAppender,
+# none of which is on this machine: their behaviour below is as their
+# documentation states it, unrun here. A subpackage of `log` because `log` is
+# layer 4 beside `fs`, which it may not use, and so that only the programs
+# that rotate carry `fs` and `compress`.
+
+capability log-files/open  a file of lines opened to append, made with its folders where it is not there
+  heroes  log/files.open, log/files.Rotating
+  go      -
+  rust    -
+  python  RotatingFileHandler, TimedRotatingFileHandler, BaseRotatingHandler
+  note    lumberjack opens its file at the first write and makes its folders with 0755; here `open` does it at once, so a path that cannot be written fails before the first line, and the folders take 0777 less the mask, as `fs.make_dir_all` makes them. A file there already is appended to, its size and its last write read, as lumberjack and Python read them
+
+capability log-files/by-size  a new file begun where the next line would take the file past a size
+  heroes  log/files.Rotation.max_bytes, log/files.write_line
+  go      -
+  rust    -
+  python  RotatingFileHandler.shouldRollover, RotatingFileHandler.doRollover
+  note    in bytes, where lumberjack's MaxSize is in megabytes; the line that would pass the bound is written whole to the new file and never split, Python's and lumberjack's rule; a line longer than the bound alone is written whole, alone in its file, where lumberjack refuses the write with an error: no line is lost here
+
+capability log-files/by-day  a new file begun when a line is of a later day than the file's last line
+  heroes  log/files.Rotation.daily, log/files.write_line
+  go      -
+  rust    -
+  python  TimedRotatingFileHandler.shouldRollover, TimedRotatingFileHandler.computeRollover, TimedRotatingFileHandler.doRollover
+  note    the day is UTC's, the time every line of `log` writes; a line of an earlier day, a clock set back, goes to the file it finds, never rotating it, as Python never rotates backwards. Python's other periods (seconds, minutes, hours, a weekday, `atTime`, `interval`) are left to `rotate`, which a program calls on a schedule of its own; lumberjack has no rotation by time at all
+
+capability log-files/rotate  the file set aside now, at the program's asking
+  heroes  log/files.rotate
+  go      -
+  rust    -
+  python  RotatingFileHandler.doRollover, TimedRotatingFileHandler.doRollover
+  note    lumberjack's `Logger.Rotate`, which a program calls on SIGHUP; a file holding nothing is set aside all the same, as lumberjack's is
+
+capability log-files/names  the names old files take, sorting by when they were set aside
+  heroes  log/files.old_name, log/files.old_files
+  go      -
+  rust    -
+  python  BaseRotatingHandler.namer, BaseRotatingHandler.rotation_filename, TimedRotatingFileHandler.getFilesToDelete
+  note    lumberjack's form, `app-2006-01-02T15-04-05.000.log` in UTC, but the stamp is the time of the old file's last line rather than the moment of the rotation, so a file set aside at the day's change carries its own day, as Python's timed names do; one file is renamed at each rotation and no other, where Python's `RotatingFileHandler` renames every old file (`.1` to `.2`); a name taken already is never written over: a count follows the stamp, `-1`, where two files are set aside in one millisecond. A namer of the program's own is refused: it needs a function that holds state, and the names must be read back to keep and remove the old files
+
+capability log-files/keep-count  the oldest old files removed past a count
+  heroes  log/files.Rotation.keep
+  go      -
+  rust    -
+  python  RotatingFileHandler (backupCount), TimedRotatingFileHandler (backupCount)
+  note    lumberjack's MaxBackups; judged at each rotation, on the old files `old_files` reads back, the newest first by their stamps
+
+capability log-files/keep-age  old files removed past an age
+  heroes  log/files.Rotation.keep_days
+  go      -
+  rust    -
+  python  -
+  note    lumberjack's MaxAge, in days and judged by the stamp in the name against the day of the rotation, as lumberjack judges it by the name and not by the file's time
+
+capability log-files/compress  old files gzipped
+  heroes  log/files.Rotation.compress
+  go      -
+  rust    -
+  python  BaseRotatingHandler.rotator, BaseRotatingHandler.rotate
+  note    lumberjack's Compress, `.gz` added to the name, through `compress`'s gzip with an empty header; written beside the old file under a temporary name, renamed into place, and only then the old file removed, so a failure leaves the old file whole and the next rotation compresses it, as lumberjack's mill does every old file not compressed. Python offers the hook (`rotator`) and no compression of its own. It runs in the call that rotates, since nothing here holds a thread, where lumberjack compresses in a goroutine
+
+capability log-files/write  a logger's line written to the rotating file
+  heroes  log/files.write, log/files.write_line
+  go      -
+  rust    -
+  python  BaseRotatingHandler.emit
+  note    the line is `log.format_line`'s, at the time the logger's clock reads; `write_line` takes a line of the program's own and its time, which is how a test fixes both. One write each, as `log.write`
+
+capability log-files/never-lose  no line lost by a rotation that fails
+  heroes  log/files.write_line
+  go      -
+  rust    -
+  python  -
+  note    where the rename fails the line is written to the file that stays and the call fails saying the line is written; where the new file cannot be opened the line is not written and the call fails saying so, the next line trying again; where a compression or a removal fails the line is written and the call fails saying so. Python hands a failure to `Handler.handleError`, which prints it and drops the line; lumberjack answers the error and the line is not written
+
+capability log-files/close  the file closed, and opened again by a later line
+  heroes  log/files.close
+  go      -
+  rust    -
+  python  Handler.close
+  note    lumberjack's `Logger.Close`, after which a write opens the file again, as here
+
+capability log-files/watched  a file another program rotated, opened again where it was moved
+  heroes  refused: the rotation is this package's own, so the file it writes is never moved by another; a program sharing a file with logrotate opens it again itself with `close` and the next line
+  go      -
+  rust    -
+  python  WatchedFileHandler, WatchedFileHandler.reopenIfNeeded
+  note    -
+
+capability log-files/local-time  old files named and days counted by the local zone
+  heroes  pending
+  go      -
+  rust    -
+  python  TimedRotatingFileHandler (utc)
+  note    lumberjack's LocalTime and Python's default; every line of `log` writes UTC's time, so its files are named and cut by UTC's days; a zone would come from `time`'s zones, and is left for a later round
+
+dropped
+  python  BaseRotatingHandler.namer and rotator as attributes: a function the program sets on a handler, which a value with no closure cannot hold

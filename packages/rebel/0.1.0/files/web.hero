@@ -8,6 +8,12 @@
 # a body's limit, Basic and Bearer checks, gzip, a rate limit per client.
 # Responses of a template, of a file and of a folder's files, served safely,
 # errors as text or JSON, and server-sent events written as they are made.
+# Cookies signed or sealed with their end inside, sessions kept in them, and
+# CSRF tokens checked against the secret the server keeps; helmet's security
+# headers; the client read through the proxies the program trusts; entity
+# tags and 304 for a handler's own responses; a route refusing 406 what it
+# cannot answer; a router tried with no network; and serving ended gracefully
+# at the stop.
 #
 # **Why the program dispatches.** The language has no closure, and a function
 # value takes no `@` parameter (spec § 9), so no handler a router held could
@@ -30,17 +36,20 @@
 # message are `http`'s, a URL's parts `url`'s, a JSON value `json`'s, a
 # template `template`'s, a file `fs`'s, a line of log `log`'s. A query, a form,
 # a field and Basic's credentials are read by `http.query_of`, `http.form_of`,
-# `http.value_of` and `http.basic_auth_of`. A multipart body's files are not
-# read here (`http`'s pending block). A body is held whole, as `http` holds it,
+# `http.value_of` and `http.basic_auth_of`, a multipart body's files by
+# `http.parts_of`. A body is held whole, as `http` holds it,
 # but an event stream's, which `start_events` begins and the program writes
 # as it goes; a client reads one with `http.event_reader`.
 # A handler cannot be stopped midway, so no step times one out.
 #
-# The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`, and,
+# The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`,
+# `limit` (a cookie too long), `unsupported` (a cookie sealed on macOS), and,
 # from the connection, `closed`, `timeout`, `stopped`, `limit` and `failed`.
 
 use bytes
 use compress
+use crypto
+use crypto/seal
 use http
 use io
 use json
@@ -53,14 +62,17 @@ use time
 use tls
 use url
 use uuid
+use web/internal/csrf
 use web/internal/event_stream
 use web/internal/extensions
 use web/internal/fixture
 use web/internal/folders
 use web/internal/limiting
 use web/internal/patterns
+use web/internal/proxies
 use web/internal/reading
 use web/internal/routing
+use web/internal/signing
 use web/internal/sniffing
 
 ## Codes
@@ -79,6 +91,10 @@ constant NOT_FOUND: str
 # a name given to a second pattern.
 constant EXISTS: str
     "exists"
+
+# The code of a cookie that would pass `MOST_COOKIE_BYTES`.
+constant LIMIT: str
+    "limit"
 
 ## Routers
 
@@ -1386,6 +1402,682 @@ function serve_tls(server: http.Server, l: tls.Listener, router: Router, handler
 function serve_stream(server: http.Server, stream: io.Stream, remote: str, router: Router, handler: (function(Router, http.Request) -> http.Response)) -> i64
     return http.serve_stream_with(server, stream: stream, remote: remote, state: router, handler: handler)
 
+## Signed and sealed cookies
+
+# The most bytes a `Set-Cookie` value this package writes may hold, as
+# gorilla/securecookie bounds its own: a browser keeps 4,096 bytes of a
+# cookie at least (RFC 6265 § 6.1) and no more is promised.
+constant MOST_COOKIE_BYTES: i64
+    4096
+
+# How a cookie this package signs or seals is written and read. Made by
+# `default_cookie_options`; the program changes its fields directly.
+record CookieOptions
+    # The cookie's name, a token: `session`.
+    name: str
+    # The path below which the browser sends it: `/`.
+    path: str
+    # The host it is sent to with its subdomains; "" for this host alone.
+    domain: str
+    # The seconds it lasts, 1 or more: written as `Max-Age` and signed or
+    # sealed inside the value, so a client that keeps it longer has it
+    # refused.
+    max_age_s: i64
+    # Whether the browser sends it over HTTPS alone.
+    secure: bool
+    # Whether no script of the page may read it.
+    http_only: bool
+    # Its `SameSite`: `"Lax"`, `"Strict"`, `"None"`, or "" for none.
+    same_site: str
+    # The keys that sign, of 32 bytes or more each: the first signs, every
+    # one verifies, so a key is rotated by putting the new one first and
+    # keeping the old one until its cookies have ended.
+    keys: [[u8]]
+    # The keys that seal, where the value must also be unreadable: the
+    # first seals, every one opens. Where it is empty the value is signed by
+    # `keys` and readable by the client; else sealed, and `keys` is not
+    # read. The program closes them.
+    sealing: [seal.Key]
+
+# Options for a cookie named `name` signed by `keys`: the path `/`, 30 days,
+# `Secure`, `HttpOnly` and `SameSite=Lax`, nothing sealed.
+#
+# - `name`: the cookie's name.
+# - `ring`: the signing keys, as `CookieOptions.keys` reads them.
+#
+# gorilla/sessions' path and 30 days; `Secure`, `HttpOnly` and `Lax` where
+# its options leave them false and none, since a session's cookie wants
+# them. See also `secure_cookie_of`, `with_secure_cookie`.
+function default_cookie_options(name: str, ring: [[u8]]) -> CookieOptions
+    return CookieOptions(
+        name: name,
+        path: "/",
+        domain: "",
+        max_age_s: 2_592_000,
+        secure: true,
+        http_only: true,
+        same_site: "Lax",
+        keys: ring,
+        sealing: []
+    )
+
+# `value` signed for the cookie `name` with the first of `ring`, valid before
+# `expires`: the value and the end in the clear, and an HMAC-SHA256 tag over
+# the name, the value and the end.
+#
+# - `ring`: the keys; the first signs. Aborts where there is none or one
+#   holds fewer than 32 bytes.
+# - `name`: the cookie's name, bound into the tag, so a value moved to
+#   another cookie is refused.
+# - `value`: any text.
+# - `expires`: the instant from which `verify_value` refuses it, to the
+#   second.
+#
+# URL-safe base 64 and digits parted by `.`, which a cookie holds as it is.
+# See also `verify_value`, `seal_value`.
+function sign_value(ring: [[u8]], name: str, value: str, expires: time.Instant) -> str
+    assert signing.are_keys(ring)
+    return signing.sign(ring, name: name, value: value, expires: time.unix_seconds(expires))
+
+# The value `signed` holds for the cookie `name`, as `sign_value` wrote it.
+#
+# - `ring`: the keys; any one of them may have signed it. Aborts as
+#   `sign_value` does.
+# - `name`: the cookie's name.
+# - `signed`: the cookie's value, as the client sent it.
+# - `now`: the instant compared with its end.
+#
+# Fails `invalid` where it is not of the form, no key's tag matches, each
+# compared in constant time, or its end is not after `now`; `not_text` where
+# its value is not UTF-8. See also `sign_value`.
+function verify_value(ring: [[u8]], name: str, signed: str, now: time.Instant) -> str?
+    assert signing.are_keys(ring)
+    return signing.verify(ring, name: name, signed: signed, now: time.unix_seconds(now))
+
+# `value` sealed for the cookie `name` under the first of `ring`, valid
+# before `expires`: encrypted and authenticated by `crypto/seal`, the name
+# bound beside it, as gorilla/securecookie's encrypted form keeps a value
+# from the client's eyes.
+#
+# - `ring`: the keys; the first seals. Aborts where there is none.
+# - `name`: the cookie's name, authenticated, not encrypted.
+# - `value`: any text.
+# - `expires`: the instant from which `open_value` refuses it.
+#
+# URL-safe base 64. Fails as `seal.seal` does: `unsupported` on macOS, whose
+# system offers no such cipher. See also `open_value`.
+function seal_value(ring: [seal.Key], name: str, value: str, expires: time.Instant) -> str?
+    assert ring.len() > 0
+    return signing.seal_value(ring, name: name, value: value, expires: time.unix_seconds(expires))
+
+# The value `sealed` holds for the cookie `name`, as `seal_value` wrote it.
+#
+# - `ring`: the keys; any one of them may have sealed it.
+# - `name`: the cookie's name.
+# - `sealed`: the cookie's value, as the client sent it.
+# - `now`: the instant compared with its end.
+#
+# Fails `invalid` where it is no base 64, no key opens it, or its end is not
+# after `now`; `unsupported` and `closed` as `seal.open` fails; `not_text`
+# where its value is not UTF-8. See also `seal_value`.
+function open_value(ring: [seal.Key], name: str, sealed: str, now: time.Instant) -> str?
+    return signing.open_value(ring, name: name, sealed: sealed, now: time.unix_seconds(now))
+
+# The value of the cookie `options.name` that `r` sends, verified or opened
+# as `options` says.
+#
+# - `r`: the request; the first cookie of that name is read.
+# - `options`: how the cookie was written.
+# - `now`: the instant compared with its end.
+#
+# Fails `not_found` where `r` sends no such cookie, and as `verify_value` or
+# `open_value` fails. See also `with_secure_cookie`.
+function secure_cookie_of(r: http.Request, options: CookieOptions, now: time.Instant) -> str?
+    said = cookie_of(r, name: options.name)?
+
+    if options.sealing.len() > 0
+        return open_value(options.sealing, name: options.name, sealed: said, now: now)
+    return verify_value(options.keys, name: options.name, signed: said, now: now)
+
+# A copy of `response` setting the cookie `options.name` to `value`, signed
+# or sealed as `options` says, for `options.max_age_s` from `now`.
+#
+# - `response`: the response; a `Set-Cookie` field is added after its own.
+# - `options`: how the cookie is written; aborts where its name is no token,
+#   its `max_age_s` below 1, or its keys as `sign_value` refuses them.
+# - `value`: any text.
+# - `now`: the instant the cookie's life counts from.
+#
+# The field holds `Max-Age` and `Expires` both. Fails `limit` where the
+# field's value would pass `MOST_COOKIE_BYTES`, and as `seal_value` does.
+# See also `secure_cookie_of`, `without_cookie`.
+function with_secure_cookie(response: http.Response, options: CookieOptions, value: str, now: time.Instant) -> http.Response?
+    assert options.max_age_s >= 1
+    expires = time.add(now, d: time.seconds(options.max_age_s).default(time.max_duration())).default(time.max_instant())
+    written: str @= ""
+
+    if options.sealing.len() > 0
+        written @ seal_value(options.sealing, name: options.name, value: value, expires: expires)?
+    else
+        written @ sign_value(options.keys, name: options.name, value: value, expires: expires)
+    c = http.Cookie(
+        name: options.name,
+        value: written,
+        domain: options.domain,
+        host_only: options.domain == "",
+        path: options.path,
+        expires: expires,
+        persistent: true,
+        secure: options.secure,
+        http_only: options.http_only,
+        same_site: options.same_site
+    )
+    field = http.format_set_cookie(c) + f"; Max-Age={options.max_age_s}"
+
+    if field.len() > MOST_COOKIE_BYTES
+        return fail(
+            code: LIMIT,
+            msg: f"setting the cookie {options.name}: its {field.len()} bytes pass the {MOST_COOKIE_BYTES} a browser keeps"
+        )
+    out @= response
+    out.headers @ out.headers.push(http.Header(name: "Set-Cookie", value: field))
+    return ok(out)
+
+# A copy of `response` that makes the browser forget the cookie
+# `options.name`: an empty value, `Max-Age=0` and an end in 1970.
+#
+# - `response`: the response; a `Set-Cookie` field is added after its own.
+# - `options`: the cookie's name, path and domain, as it was written.
+#
+# Aborts where the name is no token. See also `with_secure_cookie`.
+function without_cookie(response: http.Response, options: CookieOptions) -> http.Response
+    c = http.Cookie(
+        name: options.name,
+        value: "",
+        domain: options.domain,
+        host_only: options.domain == "",
+        path: options.path,
+        expires: time.epoch(),
+        persistent: true,
+        secure: options.secure,
+        http_only: options.http_only,
+        same_site: options.same_site
+    )
+    out @= response
+    out.headers @ out.headers.push(http.Header(name: "Set-Cookie", value: http.format_set_cookie(c) + "; Max-Age=0"))
+    return out
+
+## Sessions
+
+# A session kept in a cookie: values the server gave the client to send back,
+# signed or sealed so it cannot change them, as Flask's and gorilla's cookie
+# stores keep one. Made by `new_session` or read by `session_of`; the
+# program changes `values` directly and writes it with `with_session`.
+record Session
+    # The values, by their keys, in the order they were first set.
+    values: {str: str}
+    # Whether it was made new, no cookie read.
+    is_new: bool
+
+# An empty session, new.
+#
+# See also `session_of`.
+function new_session() -> Session
+    return Session(values: {}, is_new: true)
+
+# The session `r`'s cookie holds, as `with_session` wrote it.
+#
+# - `r`: the request.
+# - `options`: how the session's cookie was written.
+# - `now`: the instant compared with its end.
+#
+# Fails `not_found` where `r` sends no such cookie, `invalid` where the
+# cookie is refused (changed, signed by no key, ended) or holds no session,
+# and as `secure_cookie_of` fails; a program begins a `new_session` then, as
+# gorilla's and Flask's stores begin one. See also `with_session`.
+function session_of(r: http.Request, options: CookieOptions, now: time.Instant) -> Session?
+    text = secure_cookie_of(r, options: options, now: now)?
+
+    members = match json.members_of(json.parse(text).default(.null_value))
+        .ok m => m
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"reading the session of the cookie {options.name}: its value is no object"
+        )
+
+    values: {str: str} @= {}
+
+    for k in keys(members)
+        match json.text_of(members[k].must())
+            .ok v => values[k] @ v
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"reading the session of the cookie {options.name}: the value of {k} is no text"
+            )
+
+    return ok(Session(values: values, is_new: false))
+
+# A copy of `response` writing `session` into its cookie, as
+# `with_secure_cookie` writes one, its values as a JSON object.
+#
+# - `response`: the response.
+# - `session`: the session; its `is_new` is not written.
+# - `options`: how the cookie is written.
+# - `now`: the instant the cookie's life counts from.
+#
+# Fails `limit` where the cookie would pass `MOST_COOKIE_BYTES`, and as
+# `with_secure_cookie` fails. See also `session_of`, `without_cookie`.
+function with_session(response: http.Response, session: Session, options: CookieOptions, now: time.Instant) -> http.Response?
+    members: {str: json.Value} @= {}
+
+    for k in keys(session.values)
+        members[k] @ .text(v: session.values[k].must())
+
+    text = json.format(.object(members: members))?
+    return with_secure_cookie(response, options: options, value: text, now: now)
+
+## Forms protected from forgery (CSRF)
+
+# The form field a CSRF token is read from: `csrf_token`.
+constant CSRF_FIELD: str
+    "csrf_token"
+
+# The header field a CSRF token is read from, gorilla/csrf's: `X-CSRF-Token`.
+constant CSRF_HEADER: str
+    "X-CSRF-Token"
+
+# The key of `Session.values` under which `csrf_secret` keeps a session's
+# secret.
+constant CSRF_KEY: str
+    "_csrf"
+
+# A new secret for CSRF tokens: 32 bytes from the system's generator, in
+# URL-safe base 64, which the server keeps, in the session or in a signed
+# cookie of its own, and never writes into a page.
+#
+# Fails as `os.random_bytes` does. See also `csrf_secret`, `mask_csrf`.
+function new_csrf_secret() -> str?
+    return csrf.new_secret()
+
+# The CSRF secret `session` keeps, made and kept in it where it has none:
+# the synchronizer token pattern, the secret living as long as the session.
+#
+# - `session`: the session; a new secret is set under `CSRF_KEY`, and the
+#   program writes the session back with `with_session`.
+#
+# Fails as `new_csrf_secret` does. See also `check_csrf`.
+function csrf_secret(@session: Session) -> str?
+    match session.values[CSRF_KEY]
+        .ok s  => return ok(s)
+        .err _ => _ = 0
+
+    made = new_csrf_secret()?
+    session.values[CSRF_KEY] @ made
+    return ok(made)
+
+# The token a page writes in its form, or a script sends in `CSRF_HEADER`,
+# for `secret`: masked anew at each call, so a compressed page never repeats
+# the secret's bytes, as Django and gorilla/csrf mask theirs against BREACH.
+#
+# - `secret`: the secret, as `new_csrf_secret` made it.
+#
+# 86 characters of URL-safe base 64. Fails `invalid` where `secret` is no
+# secret, and as `os.random_bytes` does. See also `check_csrf`.
+function mask_csrf(secret: str) -> str?
+    return csrf.mask(secret)
+
+# The CSRF token `r` sends: its `CSRF_HEADER` field, else its form's
+# `CSRF_FIELD`, a form sent as `application/x-www-form-urlencoded` or as
+# `multipart/form-data`.
+#
+# - `r`: the request.
+#
+# Fails `not_found` where it sends none. See also `check_csrf`.
+function csrf_token_of(r: http.Request) -> str?
+    match http.value_of(r.headers, name: CSRF_HEADER)
+        .ok t  => return ok(t)
+        .err _ => _ = 0
+
+    match http.form_of(r)
+        .ok pairs =>
+            for p in pairs
+                if p.key == CSRF_FIELD
+                    return ok(p.value)
+        .err _ => _ = 0
+
+    match http.parts_of(r, limits: http.default_part_limits())
+        .ok parts =>
+            match http.part_of(parts, name: CSRF_FIELD)
+                .ok part => return bytes.to_text(part.data)
+                .err _   => _ = 0
+        .err _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"the request sends no CSRF token, by {CSRF_HEADER} or the field {CSRF_FIELD}")
+
+# Refuses `r` 403 where it changes something and its CSRF token does not
+# unmask to `secret`; a safe method goes on.
+#
+# - `r`: the request; `GET`, `HEAD`, `OPTIONS` and `TRACE` go on, as Django
+#   lets them.
+# - `secret`: the secret the server keeps: the session's (`csrf_secret`),
+#   or, for the double-submit cookie, the one its own signed cookie holds
+#   (`secure_cookie_of`).
+#
+# The token is read by `csrf_token_of` and compared in constant time; 403
+# says Django's words, `CSRF token missing.` or `CSRF token incorrect.`. It
+# stands beside `refuse_cross_origin`, which needs no state. See also
+# `mask_csrf`.
+function check_csrf(r: http.Request, secret: str) -> Step
+    if r.method == http.METHOD_GET || r.method == http.METHOD_HEAD || r.method == http.METHOD_OPTIONS || r.method == http.METHOD_TRACE
+        return .go_on(request: r)
+
+    token = match csrf_token_of(r)
+        .ok t => t
+        .err _ =>
+            return .answer(
+                response: error_response(.text, status: http.STATUS_FORBIDDEN, message: "CSRF token missing.")
+            )
+
+    if !csrf.holds(token: token, secret: secret)
+        return .answer(response: error_response(.text, status: http.STATUS_FORBIDDEN, message: "CSRF token incorrect."))
+    return .go_on(request: r)
+
+## Security headers
+
+# The fields a response carries against framing, sniffing, leaking its
+# address and loading what it did not mean to: helmet's set, each field ""
+# where it is not written. Made by `default_security_headers`; the program
+# changes its fields directly.
+record SecurityHeaders
+    # `Content-Security-Policy`: what a page may load and run.
+    content_security_policy: str
+    # `Strict-Transport-Security`: how long the browser comes back over HTTPS
+    # alone; `format_hsts` writes one.
+    strict_transport_security: str
+    # `X-Content-Type-Options`: `nosniff`.
+    content_type_options: str
+    # `X-Frame-Options`: `SAMEORIGIN` or `DENY`.
+    frame_options: str
+    # `Referrer-Policy`: what the browser says of this page when it leaves.
+    referrer_policy: str
+    # `Permissions-Policy`: the browser's features the page may use,
+    # `camera=(), microphone=()`.
+    permissions_policy: str
+    # `Cross-Origin-Opener-Policy`: `same-origin` keeps other pages' windows
+    # apart.
+    opener_policy: str
+    # `Cross-Origin-Resource-Policy`: who may load this response.
+    resource_policy: str
+    # `Origin-Agent-Cluster`: `?1` asks a process of its own.
+    origin_agent_cluster: str
+    # Other fields, written as they are: helmet's older ones.
+    others: [http.Header]
+
+# helmet's defaults, as helmet 8.3.0 answered on 2026-11-17: a policy of
+# `self` for everything, `object-src 'none'`, `upgrade-insecure-requests`;
+# HSTS for a year with subdomains; `nosniff`; `SAMEORIGIN`; `no-referrer`;
+# `same-origin` for both cross-origin policies; `?1`; and its older fields
+# `X-DNS-Prefetch-Control: off`, `X-Download-Options: noopen`,
+# `X-Permitted-Cross-Domain-Policies: none` and `X-XSS-Protection: 0`. No
+# `Permissions-Policy`, which helmet does not write.
+#
+# Django's `SecurityMiddleware` writes fewer by default: `nosniff`,
+# `Referrer-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`,
+# `X-Frame-Options: DENY`, no HSTS. See also `with_security_headers`.
+function default_security_headers() -> SecurityHeaders
+    return SecurityHeaders(
+        content_security_policy: "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        strict_transport_security: format_hsts(max_age_s: 31_536_000, subdomains: true, preload: false),
+        content_type_options: "nosniff",
+        frame_options: "SAMEORIGIN",
+        referrer_policy: "no-referrer",
+        permissions_policy: "",
+        opener_policy: "same-origin",
+        resource_policy: "same-origin",
+        origin_agent_cluster: "?1",
+        others: [http.Header(name: "X-DNS-Prefetch-Control", value: "off"), http.Header(name: "X-Download-Options", value: "noopen"), http.Header(name: "X-Permitted-Cross-Domain-Policies", value: "none"), http.Header(name: "X-XSS-Protection", value: "0")]
+    )
+
+# A `Strict-Transport-Security` value, RFC 6797 § 6.1.
+#
+# - `max_age_s`: the seconds the browser comes back over HTTPS alone, 0 or
+#   more; 0 makes it forget.
+# - `subdomains`: whether `includeSubDomains` is written.
+# - `preload`: whether `preload` is written, which browsers' lists read.
+#
+# A browser reads it only over HTTPS (RFC 6797 § 8.1), so it is written
+# whatever the connection, as helmet writes it; Django writes it only on a
+# request it knows came over HTTPS. Aborts where `max_age_s` is below 0.
+function format_hsts(max_age_s: i64, subdomains: bool, preload: bool) -> str
+    assert max_age_s >= 0
+    out: [str] @= [f"max-age={max_age_s}"]
+
+    if subdomains
+        out @ out.push("includeSubDomains")
+
+    if preload
+        out @ out.push("preload")
+    return out.join("; ")
+
+# A copy of `response` carrying each field of `headers` that is not "",
+# where `response` has none of that name, so a handler's own field wins.
+#
+# - `response`: the response.
+# - `headers`: the fields, as `default_security_headers` makes them.
+#
+# A step after the handler; `with_secure_headers` writes three of them alone.
+function with_security_headers(response: http.Response, headers: SecurityHeaders) -> http.Response
+    pairs: [http.Header] @= [
+        http.Header(name: "Content-Security-Policy", value: headers.content_security_policy)
+        http.Header(name: "Strict-Transport-Security", value: headers.strict_transport_security)
+        http.Header(name: "X-Content-Type-Options", value: headers.content_type_options)
+        http.Header(name: "X-Frame-Options", value: headers.frame_options)
+        http.Header(name: "Referrer-Policy", value: headers.referrer_policy)
+        http.Header(name: "Permissions-Policy", value: headers.permissions_policy)
+        http.Header(name: "Cross-Origin-Opener-Policy", value: headers.opener_policy)
+        http.Header(name: "Cross-Origin-Resource-Policy", value: headers.resource_policy)
+        http.Header(name: "Origin-Agent-Cluster", value: headers.origin_agent_cluster)
+    ]
+
+    for h in headers.others
+        pairs @ pairs.push(h)
+
+    out @= response.headers
+
+    for h in pairs
+        if h.value != "" && !http.has_header(out, name: h.name)
+            out @ out.push(h)
+
+    answer @= response
+    answer.headers @ out
+    return answer
+
+## The client behind proxies
+
+# What a request says of its client once the proxies the program trusts are
+# read through: made by `forwarded_of`.
+record Forwarded
+    # The client's address, without its port: `203.0.113.7`, `2001:db8::1`;
+    # a proxy's word where it hid it (`unknown`, `_hidden`); "" where the
+    # request has no `remote`.
+    address: str
+    # The scheme the client asked with, `http` or `https`, as the trusted
+    # proxy says it; "" where none says, the program knowing whether it
+    # serves TLS itself.
+    scheme: str
+    # The host the client asked for, as the trusted proxy says it, else the
+    # request's own `Host`.
+    host: str
+    # The trusted proxies read through: 0 where the connection's own peer is
+    # not trusted.
+    proxies: i64
+
+# The networks of `list`, each an address, `10.0.0.1` or `::1`, or a network,
+# `10.0.0.0/8` or `fd00::/8`: the proxies a program trusts.
+#
+# - `list`: the addresses and networks.
+#
+# An address alone is a network of itself only. Fails `invalid` where one
+# reads as neither, its message naming it. See also `forwarded_of`.
+function trusted_networks(list: [str]) -> [net.Network]?
+    out: [net.Network] @= []
+
+    for item in list
+        if strings.contains(s: item, substr: "/")
+            out @ out.push(net.parse_network(item)?)
+        else
+            a = net.unmap(net.parse_address(item)?)
+            out @ out.push(net.network_of(a, bits: net.bits_of(a))?)
+
+    return ok(out)
+
+# The client of `r`, read through the proxies `trusted` holds: from RFC
+# 7239's `Forwarded` where `r` sends one, else from `X-Forwarded-For`,
+# `X-Forwarded-Proto` and `X-Forwarded-Host`.
+#
+# - `r`: the request; its `remote` is the nearest hop.
+# - `trusted`: the networks of the proxies the program trusts, as
+#   `trusted_networks` makes them; none trusts none, and no field is read.
+#
+# The hops are walked from the nearest back while each is trusted, so the
+# client is the first hop no trusted network holds, or the farthest where
+# every one is held: a client that writes the fields itself names only hops
+# behind it. With `Forwarded` the scheme and the host are its element's
+# `proto` and `host`; with `X-Forwarded-For`, the last value of
+# `X-Forwarded-Proto` and of `X-Forwarded-Host`, the nearest proxy's, as
+# werkzeug's `ProxyFix` reads one value each. See also
+# `client_address_of`.
+function forwarded_of(r: http.Request, trusted: [net.Network]) -> Forwarded
+    host = http.value_of(r.headers, name: "Host").default("")
+
+    if r.remote == ""
+        return Forwarded(address: "", scheme: "", host: host, proxies: 0)
+    direct = proxies.address_part(r.remote)
+
+    if !proxies.is_trusted(direct, trusted: trusted)
+        return Forwarded(address: direct, scheme: "", host: host, proxies: 0)
+    elements = http.values_of(r.headers, name: "Forwarded")
+
+    if elements.len() > 0
+        hops = proxies.hops_of_forwarded(elements)
+        w = proxies.walk(hops, trusted: trusted)
+
+        if hops.len() == 0
+            return Forwarded(address: direct, scheme: "", host: host, proxies: 0)
+        hop = hops[w.at]
+
+        told_host = if hop.host != ""
+            hop.host
+        else
+            host
+        return Forwarded(address: hop.address, scheme: hop.scheme, host: told_host, proxies: w.passed)
+
+    hops = proxies.hops_of_list(http.values_of(r.headers, name: "X-Forwarded-For"))
+
+    if hops.len() == 0
+        return Forwarded(address: direct, scheme: "", host: host, proxies: 0)
+    w = proxies.walk(hops, trusted: trusted)
+    scheme = strings.to_lower_ascii(proxies.last_member(http.values_of(r.headers, name: "X-Forwarded-Proto")))
+    said_host = proxies.last_member(http.values_of(r.headers, name: "X-Forwarded-Host"))
+
+    told_host = if said_host != ""
+        said_host
+    else
+        host
+    return Forwarded(address: hops[w.at].address, scheme: scheme, host: told_host, proxies: w.passed)
+
+## Caching dynamic responses
+
+# A strong entity tag for `body`, or a weak one: the first 16 bytes of its
+# SHA-256 in hexadecimal, quoted, `W/` before it where `weak`.
+#
+# - `body`: the bytes the tag stands for.
+# - `weak`: whether the tag is weak, for a body that may differ in bytes and
+#   not in meaning (a date inside it, its spaces).
+#
+# Equal bodies have equal tags; 128 bits make two different ones meet by
+# chance about never. See also `with_etag`.
+function etag_of(body: [u8], weak: bool) -> str
+    tag = "\"" + bytes.format_hex(crypto.sha256(body).slice(from: 0, to: 16)) + "\""
+
+    if weak
+        return "W/" + tag
+    return tag
+
+# A step after the handler: `response` given a strong `ETag` of its body
+# where it is a 200 to `GET` or `HEAD` with none, then answered 304 where `r`
+# holds its copy, by `If-None-Match` or by `If-Modified-Since` against its
+# `Last-Modified`.
+#
+# - `r`: the request.
+# - `response`: the handler's response; its own `ETag` is kept.
+#
+# The work is still done, as Django's `ConditionalGetMiddleware` does it:
+# what is spared is the body on the wire. See also `http.is_not_modified`,
+# `http.respond_not_modified`.
+function with_etag(r: http.Request, response: http.Response) -> http.Response
+    out @= response
+
+    if response.status == http.STATUS_OK && (r.method == http.METHOD_GET || r.method == http.METHOD_HEAD) && !http.has_header(response.headers, name: "ETag")
+        out.headers @ out.headers.push(http.Header(name: "ETag", value: etag_of(response.body, weak: false)))
+
+    if http.is_not_modified(r, response: out)
+        return http.respond_not_modified(out)
+    return out
+
+## Negotiation
+
+# A step that refuses `r` 406 where it accepts none of `offered`, by its
+# `Accept` fields, saying what is offered.
+#
+# - `r`: the request.
+# - `offered`: the media types the route answers, its preferred first.
+#
+# The handler then answers `http.negotiate_type(r, offered)`'s type, which
+# is not a failure once this step goes on.
+function require_acceptable(r: http.Request, offered: [str]) -> Step
+    match http.negotiate_type(r, offered: offered)
+        .ok _ => return .go_on(request: r)
+        .err _ =>
+            return .answer(
+                response: error_response(.text, status: http.STATUS_NOT_ACCEPTABLE, message: f"this route answers {offered.join(", ")}, none of which the request accepts")
+            )
+
+## Handlers tried without a network
+
+# The response `handler` gives `r` with `router`, carried both ways in
+# memory as a connection would carry them: `http.exchange_with` with the
+# router as the program's value, as Go's `httptest` and Flask's
+# `test_client` try a handler.
+#
+# - `r`: the request, as a client makes it.
+# - `router`: handed to `handler`.
+# - `handler`: called once with `router` and the request as a server reads
+#   it, unless the server would refuse it first.
+#
+# A program with state tries its own function between `http.to_served` and
+# `http.to_received`. Fails as `http.exchange_with` does.
+function exchange(r: http.Request, router: Router, handler: (function(Router, http.Request) -> http.Response)) -> http.Response?
+    return http.exchange_with(r, state: router, handler: handler)
+
+## Stopping gracefully
+
+# Serves every connection `l` accepts, one at a time, until the program asks
+# to stop, and ends gracefully: `http.serve_until_stopped` with the router as
+# the program's value.
+#
+# - `server`: how it serves.
+# - `l`: the listener; its owner closes it.
+# - `router`: handed to `handler` with each request.
+# - `handler`: called once for each request, with `router` and the request.
+# - `grace_ms`: the milliseconds after the stop during which a request whose
+#   bytes have come may still begin to be answered, 0 or more.
+#
+# The counts of what it served and what the stop cut. Fails as
+# `http.serve_until_stopped` does. See also `serve`.
+function serve_until_stopped(server: http.Server, l: net.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response), grace_ms: i64) -> http.Served?
+    return http.serve_until_stopped(server, l: l, state: router, handler: handler, grace_ms: grace_ms)
+
 ## Tests
 
 test "route: a fixed segment before a parameter before a wildcard, parameters unescaped"
@@ -2056,6 +2748,260 @@ test "serve_stream: Expect 100-continue answered 100 before the body, HTTP/1.0 k
     io.close(@two.second.stream).must()
     io.close(@reader.stream).must()
 
+test "with_secure_cookie and secure_cookie_of: read back, Max-Age and Expires written, refused after its end, past the size refused"
+    now = fixture.clock().must()
+    options = default_cookie_options("s", ring: fixture.ring())
+    written = with_secure_cookie(http.respond_status(http.STATUS_OK), options: options, value: "v", now: now).must()
+    field = http.value_of(written.headers, name: "Set-Cookie").must()
+    assert strings.contains(s: field, substr: "; Max-Age=2592000") && strings.contains(s: field, substr: "Expires=") && strings.contains(s: field, substr: "Secure; HttpOnly; SameSite=Lax")
+    cookie = http.parse_set_cookie(field, now: now).must()
+    r = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: f"s={cookie.value}")]
+    )
+    assert secure_cookie_of(r, options: options, now: now).must() == "v"
+    later = time.add(now, d: time.seconds(2_592_000).must()).must()
+    assert secure_cookie_of(r, options: options, now: later).is_err()
+    assert with_secure_cookie(
+        http.respond_status(http.STATUS_OK),
+        options: options,
+        value: "x".repeat(4096),
+        now: now
+    ).is_err()
+
+test "secure_cookie_of: no cookie not_found, a cookie of another key or name invalid, a rotated key read"
+    now = fixture.clock().must()
+    options = default_cookie_options("s", ring: fixture.ring())
+    none = fixture.request_of(method: "GET", target: "/", headers: [])
+
+    match secure_cookie_of(none, options: options, now: now)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    by_second = sign_value(
+        [fixture.ring()[1]],
+        name: "s",
+        value: "old",
+        expires: time.add(now, d: time.seconds(60).must()).must()
+    )
+    old = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: f"s={by_second}")]
+    )
+    assert secure_cookie_of(old, options: options, now: now).must() == "old"
+    other = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: f"t={by_second}; s=x.1.y")]
+    )
+
+    match secure_cookie_of(other, options: options, now: now)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "session_of and with_session: values of more than one byte read back, a cookie that is no session refused"
+    now = fixture.clock().must()
+    options = default_cookie_options("session", ring: fixture.ring())
+    s @= new_session()
+    s.values["user"] @ "zoë"
+    s.values["n"] @ ""
+    written = with_session(http.respond_status(http.STATUS_OK), session: s, options: options, now: now).must()
+    cookie = http.parse_set_cookie(http.value_of(written.headers, name: "Set-Cookie").must(), now: now).must()
+    r = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: f"session={cookie.value}")]
+    )
+    got = session_of(r, options: options, now: now).must()
+    assert !got.is_new && got.values["user"].must() == "zoë" && got.values["n"].must() == "" && keys(got.values) == ["user", "n"]
+    plain = sign_value(
+        fixture.ring(),
+        name: "session",
+        value: "[1]",
+        expires: time.add(now, d: time.seconds(60).must()).must()
+    )
+    bad = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: f"session={plain}")]
+    )
+
+    match session_of(bad, options: options, now: now)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "without_cookie: an empty value, Max-Age=0, an end in 1970"
+    got = without_cookie(
+        http.respond_status(http.STATUS_OK),
+        options: default_cookie_options("s", ring: fixture.ring())
+    )
+    field = http.value_of(got.headers, name: "Set-Cookie").must()
+    assert strings.has_prefix(s: field, prefix: "s=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT") && strings.has_suffix(s: field, suffix: "; Max-Age=0")
+
+test "seal_value and open_value through the face: unsupported on macOS, read back elsewhere"
+    now = fixture.clock().must()
+    later = time.add(now, d: time.seconds(60).must()).must()
+
+    if !seal.is_available(.aes_256_gcm)
+        return
+    k @= seal.generate(.aes_256_gcm).must()
+    sealed = seal_value([k], name: "s", value: "secret", expires: later).must()
+    assert open_value([k], name: "s", sealed: sealed, now: now).must() == "secret" && open_value([k], name: "s", sealed: sealed, now: later).is_err()
+    seal.close(@k).must()
+
+test "check_csrf: safe methods go on; a POST with no token, a wrong one and a right one by field, header and multipart"
+    secret = new_csrf_secret().must()
+    get = fixture.request_of(method: "GET", target: "/", headers: [])
+    assert check_csrf(get, secret: secret) == .go_on(request: get)
+    bare = fixture.request_of(method: "POST", target: "/", headers: [])
+
+    match check_csrf(bare, secret: secret)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == http.STATUS_FORBIDDEN && http.text_of(a.response).must() == "CSRF token missing.\n"
+
+    wrong = http.with_form(bare, pairs: [url.Pair(key: CSRF_FIELD, value: mask_csrf(new_csrf_secret().must()).must())])
+
+    match check_csrf(wrong, secret: secret)
+        .go_on _  => assert false
+        .answer a => assert http.text_of(a.response).must() == "CSRF token incorrect.\n"
+
+    by_form = http.with_form(
+        bare,
+        pairs: [url.Pair(key: "a", value: "1"), url.Pair(key: CSRF_FIELD, value: mask_csrf(secret).must())]
+    )
+    assert check_csrf(by_form, secret: secret) == .go_on(request: by_form)
+    by_header = fixture.request_of(
+        method: "DELETE",
+        target: "/",
+        headers: [http.Header(name: CSRF_HEADER, value: mask_csrf(secret).must())]
+    )
+    assert check_csrf(by_header, secret: secret) == .go_on(request: by_header)
+    by_part = http.with_multipart(
+        bare,
+        parts: [http.Part(name: CSRF_FIELD, filename: "", content_type: "", data: bytes.from_text(mask_csrf(secret).must()))]
+    )
+    assert check_csrf(by_part, secret: secret) == .go_on(request: by_part)
+
+test "csrf_secret: made once and kept in the session"
+    s @= new_session()
+    first = csrf_secret(@s).must()
+    assert csrf_secret(@s).must() == first && s.values[CSRF_KEY].must() == first
+
+test "with_security_headers: every field written where none stands, a handler's own kept, an empty one not written"
+    own @= http.respond_text(http.STATUS_OK, text: "x")
+    own.headers @ own.headers.push(http.Header(name: "X-Frame-Options", value: "DENY"))
+    got = with_security_headers(own, headers: default_security_headers())
+    assert http.value_of(got.headers, name: "X-Frame-Options").must() == "DENY" && http.values_of(got.headers, name: "X-Frame-Options").len() == 1
+    assert http.value_of(got.headers, name: "Strict-Transport-Security").must() == "max-age=31536000; includeSubDomains"
+    assert http.value_of(got.headers, name: "X-XSS-Protection").must() == "0" && !http.has_header(got.headers, name: "Permissions-Policy")
+    assert got.headers.len() == own.headers.len() + 11
+
+test "format_hsts: forgetting, every part, and none"
+    assert format_hsts(max_age_s: 0, subdomains: false, preload: false) == "max-age=0"
+    assert format_hsts(max_age_s: 63_072_000, subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
+
+test "trusted_networks: addresses and networks of both families, a mapped address, what reads as neither"
+    got = trusted_networks(["10.0.0.1", "::1", "192.168.0.0/16", "fd00::/8", "::ffff:10.0.0.2"]).must()
+    assert got.len() == 5 && net.format_network(got[0]) == "10.0.0.1/32" && net.format_network(got[1]) == "::1/128"
+    assert net.format_network(got[4]) == "10.0.0.2/32" && trusted_networks([]).must().len() == 0
+
+    for bad in [["x"], ["10.0.0.0/33"], [""]]
+        assert trusted_networks(bad).is_err()
+
+test "forwarded_of: no remote, an untrusted peer's fields ignored, X-Forwarded-For walked, Forwarded preferred, every hop trusted"
+    trusted = trusted_networks(["10.0.0.0/8", "127.0.0.1"]).must()
+    r @= fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Host", value: "inner"), http.Header(name: "X-Forwarded-For", value: "1.1.1.1, 203.0.113.7, 10.0.0.5"), http.Header(name: "X-Forwarded-Proto", value: "HTTPS"), http.Header(name: "X-Forwarded-Host", value: "a.test, example.com")]
+    )
+    assert forwarded_of(r, trusted: trusted) == Forwarded(address: "", scheme: "", host: "inner", proxies: 0)
+    r.remote @ "198.51.100.9:4000"
+    assert forwarded_of(r, trusted: trusted) == Forwarded(address: "198.51.100.9", scheme: "", host: "inner", proxies: 0)
+    r.remote @ "10.0.0.2:4000"
+    assert forwarded_of(r, trusted: trusted) == Forwarded(address: "203.0.113.7", scheme: "https", host: "example.com", proxies: 2)
+    assert forwarded_of(r, trusted: []).address == "10.0.0.2"
+    both @= r
+    both.headers @ both.headers.push(
+        http.Header(name: "Forwarded", value: "for=192.0.2.43;proto=http;host=f.test, for=\"[2001:db8::7]:99\";proto=https")
+    )
+    assert forwarded_of(both, trusted: trusted) == Forwarded(address: "2001:db8::7", scheme: "https", host: "inner", proxies: 1)
+    every @= r
+    every.headers @ [http.Header(name: "X-Forwarded-For", value: "10.9.9.9, 10.0.0.5")]
+    assert forwarded_of(every, trusted: trusted) == Forwarded(address: "10.9.9.9", scheme: "", host: "", proxies: 2)
+    empty @= r
+    empty.headers @ [http.Header(name: "X-Forwarded-For", value: " , ")]
+    assert forwarded_of(empty, trusted: trusted).address == "10.0.0.2"
+
+test "etag_of: strong and weak, the empty body's, Python's SHA-256 cut to 16 bytes"
+    assert etag_of([], weak: false) == "\"e3b0c44298fc1c149afbf4c8996fb924\"" && etag_of([], weak: true) == "W/\"e3b0c44298fc1c149afbf4c8996fb924\""
+
+test "with_etag: a tag added and a 304 for its copy, a tag of the handler's kept, a POST and a 404 left alone, If-Modified-Since"
+    get = fixture.request_of(method: "GET", target: "/", headers: [])
+    tagged = with_etag(get, response: http.respond_text(http.STATUS_OK, text: "hello"))
+    tag = http.value_of(tagged.headers, name: "ETag").must()
+    assert tagged.status == 200 && tag == etag_of(bytes.from_text("hello"), weak: false)
+    again = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "If-None-Match", value: "W/" + tag)]
+    )
+    assert with_etag(again, response: http.respond_text(http.STATUS_OK, text: "hello")).status == http.STATUS_NOT_MODIFIED
+    assert with_etag(again, response: http.respond_text(http.STATUS_OK, text: "changed")).status == http.STATUS_OK
+    post = fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "If-None-Match", value: "*")])
+    assert !http.has_header(with_etag(post, response: http.respond_text(http.STATUS_OK, text: "x")).headers, name: "ETag")
+    assert with_etag(again, response: http.respond_status(http.STATUS_NOT_FOUND)).status == http.STATUS_NOT_FOUND
+    dated @= http.respond_text(http.STATUS_OK, text: "x")
+    dated.headers @ [
+        http.Header(name: "ETag", value: "\"mine\"")
+        http.Header(name: "Last-Modified", value: "Sun, 06 Nov 1994 08:49:37 GMT")
+    ]
+    since = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "If-Modified-Since", value: "Sun, 06 Nov 1994 08:49:37 GMT")]
+    )
+    assert with_etag(since, response: dated).status == http.STATUS_NOT_MODIFIED
+    older = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "If-Modified-Since", value: "Sun, 06 Nov 1994 08:49:36 GMT")]
+    )
+    assert with_etag(older, response: dated).status == http.STATUS_OK
+    both = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "If-None-Match", value: "\"other\""), http.Header(name: "If-Modified-Since", value: "Sun, 06 Nov 1994 08:49:37 GMT")]
+    )
+    assert with_etag(both, response: dated).status == http.STATUS_OK
+
+test "require_acceptable: no Accept goes on, an accepted type goes on, none answered 406"
+    none = fixture.request_of(method: "GET", target: "/", headers: [])
+    assert require_acceptable(none, offered: ["application/json"]) == .go_on(request: none)
+    image = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Accept", value: "image/*")])
+
+    match require_acceptable(image, offered: ["application/json", "text/html"])
+        .go_on _  => assert false
+        .answer a => assert a.response.status == http.STATUS_NOT_ACCEPTABLE && http.text_of(a.response).must() == "this route answers application/json, text/html, none of which the request accepts\n"
+
+test "exchange: a route's 405 with its Allow, a refusal before the handler"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/a", name: "a").must()
+    got = exchange(
+        fixture.request_of(method: "POST", target: "/a", headers: []),
+        router: rt,
+        handler: not_routed
+    ).must()
+    assert got.status == http.STATUS_METHOD_NOT_ALLOWED && http.value_of(got.headers, name: "Allow").must() == "GET, HEAD, OPTIONS"
+    refused = exchange(
+        fixture.request_of(method: "GET", target: "/a", headers: [http.Header(name: "Expect", value: "x")]),
+        router: rt,
+        handler: not_routed
+    ).must()
+    assert refused.status == http.STATUS_EXPECTATION_FAILED && refused.closing
+
 ## Examples
 
 # An empty router, whose errors are text.
@@ -2579,3 +3525,223 @@ test "limit_rate: 429 and Retry-After past one request a second"
         .answer a =>
             assert a.response.status == http.STATUS_TOO_MANY_REQUESTS
             assert http.value_of(a.response.headers, name: "Retry-After").must() == "1"
+
+# The options of a session's cookie.
+test "default_cookie_options: a month, secure, the path /"
+    options = default_cookie_options("session", ring: fixture.ring())
+    assert options.max_age_s == 2_592_000 && options.secure && options.http_only && options.same_site == "Lax" && options.path == "/"
+
+# A value signed for a cookie, then verified.
+test "sign_value: a user's name kept by the client, unchangeable"
+    now = fixture.clock().must()
+    signed = sign_value(
+        fixture.ring(),
+        name: "user",
+        value: "ada",
+        expires: time.add(now, d: time.seconds(3_600).must()).must()
+    )
+    assert verify_value(fixture.ring(), name: "user", signed: signed, now: now).must() == "ada"
+
+# A signed value refused once changed.
+test "verify_value: one byte changed is refused"
+    now = fixture.clock().must()
+    signed = sign_value(
+        fixture.ring(),
+        name: "user",
+        value: "ada",
+        expires: time.add(now, d: time.seconds(60).must()).must()
+    )
+    assert verify_value(
+        fixture.ring(),
+        name: "user",
+        signed: "b" + signed.slice(from: 1, to: signed.len()),
+        now: now
+    ).is_err()
+
+# A value sealed for a cookie, where the system seals.
+test "seal_value: a secret kept by the client, unreadable"
+    if seal.is_available(.aes_128_gcm)
+        k @= seal.generate(.aes_128_gcm).must()
+        now = fixture.clock().must()
+        sealed = seal_value(
+            [k],
+            name: "c",
+            value: "42",
+            expires: time.add(now, d: time.seconds(60).must()).must()
+        ).must()
+        assert !strings.contains(s: sealed, substr: "42") && open_value([k], name: "c", sealed: sealed, now: now).must() == "42"
+        seal.close(@k).must()
+
+# A sealed value no key opens, refused.
+test "open_value: a value no key of the ring opens"
+    match open_value([], name: "c", sealed: "AAAA", now: fixture.clock().must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# A signed cookie read from a request.
+test "secure_cookie_of: the value of a cookie this server set"
+    now = fixture.clock().must()
+    options = default_cookie_options("theme", ring: fixture.ring())
+    value = sign_value(
+        options.keys,
+        name: "theme",
+        value: "dark",
+        expires: time.add(now, d: time.seconds(60).must()).must()
+    )
+    r = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Cookie", value: f"theme={value}")])
+    assert secure_cookie_of(r, options: options, now: now).must() == "dark"
+
+# A signed cookie set on a response.
+test "with_secure_cookie: one Set-Cookie field with its attributes"
+    got = with_secure_cookie(
+        http.respond_status(http.STATUS_OK),
+        options: default_cookie_options("theme", ring: fixture.ring()),
+        value: "dark",
+        now: fixture.clock().must()
+    ).must()
+    assert strings.has_prefix(s: http.value_of(got.headers, name: "Set-Cookie").must(), prefix: "theme=ZGFyaw.")
+
+# A cookie forgotten by the browser.
+test "without_cookie: the session ended"
+    got = without_cookie(
+        http.respond_status(http.STATUS_OK),
+        options: default_cookie_options("session", ring: fixture.ring())
+    )
+    assert strings.has_suffix(s: http.value_of(got.headers, name: "Set-Cookie").must(), suffix: "Max-Age=0")
+
+# A new session, empty.
+test "new_session: empty and new"
+    assert new_session() == Session(values: {}, is_new: true)
+
+# A session written to a response and read from the next request.
+test "session_of: the user kept between two requests"
+    now = fixture.clock().must()
+    options = default_cookie_options("session", ring: fixture.ring())
+    s @= new_session()
+    s.values["user"] @ "ada"
+    written = with_session(http.respond_status(http.STATUS_OK), session: s, options: options, now: now).must()
+    cookie = http.parse_set_cookie(http.value_of(written.headers, name: "Set-Cookie").must(), now: now).must()
+    next = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: "session=" + cookie.value)]
+    )
+    assert session_of(next, options: options, now: now).must().values["user"].must() == "ada"
+
+# A session's values written into its cookie.
+test "with_session: a cart of two items"
+    s @= new_session()
+    s.values["cart"] @ "2"
+    got = with_session(
+        http.respond_status(http.STATUS_OK),
+        session: s,
+        options: default_cookie_options("session", ring: fixture.ring()),
+        now: fixture.clock().must()
+    ).must()
+    assert http.values_of(got.headers, name: "Set-Cookie").len() == 1
+
+# A secret for CSRF tokens.
+test "new_csrf_secret: 43 characters of base 64"
+    assert new_csrf_secret().must().len() == 43
+
+# The secret a session keeps for its forms.
+test "csrf_secret: made in a new session"
+    s @= new_session()
+    secret = csrf_secret(@s).must()
+    assert s.values[CSRF_KEY].must() == secret
+
+# A token for one page's form.
+test "mask_csrf: two pages, two tokens, one secret"
+    secret = new_csrf_secret().must()
+    assert mask_csrf(secret).must() != mask_csrf(secret).must()
+
+# The token a form sends back.
+test "csrf_token_of: the form's field"
+    r = http.with_form(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        pairs: [url.Pair(key: CSRF_FIELD, value: "t")]
+    )
+    assert csrf_token_of(r).must() == "t"
+
+# A form's POST checked against the session's secret.
+test "check_csrf: the token of the page accepted"
+    s @= new_session()
+    secret = csrf_secret(@s).must()
+    r = http.with_form(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        pairs: [url.Pair(key: CSRF_FIELD, value: mask_csrf(secret).must())]
+    )
+    assert check_csrf(r, secret: secret) == .go_on(request: r)
+
+# helmet's fields.
+test "default_security_headers: helmet's policy and fields"
+    h = default_security_headers()
+    assert h.frame_options == "SAMEORIGIN" && h.referrer_policy == "no-referrer" && h.others.len() == 4
+
+# A two-year HSTS value for a site in browsers' preload lists.
+test "format_hsts: two years, subdomains, preload"
+    assert format_hsts(max_age_s: 63_072_000, subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
+
+# A response given helmet's fields, a policy of the program's own among them.
+test "with_security_headers: a stricter frame policy"
+    h @= default_security_headers()
+    h.frame_options @ "DENY"
+    got = with_security_headers(http.respond_text(http.STATUS_OK, text: "hi"), headers: h)
+    assert http.value_of(got.headers, name: "X-Frame-Options").must() == "DENY" && http.has_header(got.headers, name: "Content-Security-Policy")
+
+# The proxies a program trusts.
+test "trusted_networks: a load balancer and a private network"
+    assert trusted_networks(["10.0.0.1", "172.16.0.0/12"]).must().len() == 2
+
+# The client behind a trusted proxy.
+test "forwarded_of: the client a load balancer names"
+    r @= fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "X-Forwarded-For", value: "203.0.113.7"), http.Header(name: "X-Forwarded-Proto", value: "https")]
+    )
+    r.remote @ "10.0.0.1:51000"
+    got = forwarded_of(r, trusted: trusted_networks(["10.0.0.1"]).must())
+    assert got.address == "203.0.113.7" && got.scheme == "https" && got.proxies == 1
+
+# The entity tag of a body.
+test "etag_of: the tag of a page"
+    assert etag_of(bytes.from_text("hello"), weak: false) == "\"2cf24dba5fb0a30e26e83b2ac5b9e29e\""
+
+# A page not sent again to a client holding it.
+test "with_etag: 304 for a client holding the page"
+    page = http.respond_text(http.STATUS_OK, text: "hello")
+    r = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "If-None-Match", value: etag_of(page.body, weak: false))]
+    )
+    assert with_etag(r, response: page).status == http.STATUS_NOT_MODIFIED
+
+# A route answering JSON alone, refusing a client that wants an image.
+test "require_acceptable: 406 for a client that wants an image"
+    r = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Accept", value: "image/png")])
+
+    match require_acceptable(r, offered: ["application/json"])
+        .go_on _  => assert false
+        .answer a => assert a.response.status == http.STATUS_NOT_ACCEPTABLE
+
+# A router tried without a network.
+test "exchange: a path no route takes answered 404"
+    got = exchange(
+        fixture.request_of(method: "GET", target: "/nothing", headers: []),
+        router: new_router(),
+        handler: not_routed
+    ).must()
+    assert got.status == http.STATUS_NOT_FOUND
+
+# A router served until the stop, here ended by its listener's deadline.
+test "serve_until_stopped: a listener with no client, its deadline passed"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, ms: 100).must()
+
+    match serve_until_stopped(http.default_server(), l: l, router: new_router(), handler: not_routed, grace_ms: 1_000)
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    net.close_listener(@l).must()

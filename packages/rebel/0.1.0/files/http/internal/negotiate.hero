@@ -1,0 +1,296 @@
+# Proactive negotiation, RFC 9110 § 12.5: the members of `Accept`,
+# `Accept-Language` and `Accept-Encoding` read with their weights, and the
+# best of what a server offers chosen. A weight is kept in thousandths, as
+# RFC 9110 § 12.4.2 writes it with three decimals at most, so no float is
+# compared. A member that does not read, a weight among them, is passed over,
+# as werkzeug passes it over.
+
+use http/internal/params
+use http/internal/syntax
+use strings
+
+# One member of an `Accept`-like field: what it names, its parameters and its
+# weight.
+record Member
+    # What it names, in lower case: `text/html`, `text/*`, `en-us`, `gzip`.
+    value: str
+    # Its parameters but `q`, names in lower case, as written.
+    pairs: [params.Param]
+    # Its weight in thousandths, 0 to 1000; 1000 where it writes none.
+    weight: i64
+
+# The members of `values`, the fields' values, in their order: each read by
+# `params.read`, `q` taken out as its weight. A member that does not read, or
+# whose weight is not RFC 9110's qvalue, is passed over.
+function members_of(values: [str]) -> [Member]
+    out: [Member] @= []
+
+    for value in values
+        for one in syntax.members(value)
+            match params.read(one)
+                .err _ => _ = 0
+                .ok read =>
+                    weight: i64 @= 1000
+                    good: bool @= read.first != ""
+                    kept: [params.Param] @= []
+
+                    for p in read.pairs
+                        if p.name == "q"
+                            match qvalue(p.value)
+                                .ok w  => weight @ w
+                                .err _ => good @ false
+                        else
+                            kept @ kept.push(p)
+
+                    if good
+                        out @ out.push(Member(value: strings.to_lower_ascii(read.first), pairs: kept, weight: weight))
+
+    return out
+
+# The weight `s` writes, RFC 9110 § 12.4.2: `0` or `1`, then a point and at
+# most three digits, `1`'s all zeros; in thousandths. Fails `invalid` for
+# anything else.
+function qvalue(s: str) -> i64?
+    if s.len() == 0 || s.len() > 5 || s[0] != '0' && s[0] != '1'
+        return fail(code: syntax.INVALID, msg: f"the weight {syntax.shown(s)} is no qvalue")
+    whole = syntax.widen(s[0] - '0')
+
+    if s.len() == 1
+        return ok(whole * 1000)
+
+    if s[1] != '.'
+        return fail(code: syntax.INVALID, msg: f"the weight {syntax.shown(s)} is no qvalue")
+    out: i64 @= whole * 1000
+    scale: i64 @= 100
+    at: i64 @= 2
+
+    while at < s.len()
+        if s[at] < '0' || s[at] > '9'
+            return fail(code: syntax.INVALID, msg: f"the weight {syntax.shown(s)} is no qvalue")
+        out @ out + syntax.widen(s[at] - '0') * scale
+        scale @ scale / 10
+        at @ at + 1
+
+    if out > 1000
+        return fail(code: syntax.INVALID, msg: f"the weight {syntax.shown(s)} is above 1")
+    return ok(out)
+
+# How closely a range matches: the weight of the closest, and how close.
+record Match
+    # The weight of the closest range, in thousandths; -1 where none matches.
+    weight: i64
+    # How specific the closest range is; higher is closer.
+    rank: i64
+
+# The weight `ranges` give the media type `offered`, `type/subtype` with its
+# parameters: that of the most specific range matching it, a range with
+# parameters (each of them the type's own) over `type/subtype` over `type/*`
+# over `*/*`.
+function type_match(ranges: [Member], offered: str) -> Match
+    read = params.read(offered).default(params.Params(first: offered, pairs: []))
+    kind = strings.to_lower_ascii(read.first)
+    major = strings.split_once(s: kind, sep: "/").default(strings.Halves(before: kind, after: "")).before
+    best @= Match(weight: -1, rank: -1)
+
+    for r in ranges
+        rank: i64 @= -1
+
+        if r.value == "*/*"
+            rank @ 0
+        else if r.value == major + "/*"
+            rank @ 1
+        else if r.value == kind
+            rank @ 2
+
+        if rank >= 0 && r.pairs.len() > 0
+            if rank == 2 && holds_all(pairs: read.pairs, wanted: r.pairs)
+                rank @ 3
+            else
+                rank @ -1
+
+        if rank > best.rank
+            best @ Match(weight: r.weight, rank: rank)
+
+    return best
+
+# Whether `pairs` holds each of `wanted`, names compared in lower case and
+# values without case.
+function holds_all(pairs: [params.Param], wanted: [params.Param]) -> bool
+    for w in wanted
+        found: bool @= false
+
+        for p in pairs
+            if p.name == w.name && strings.to_lower_ascii(p.value) == strings.to_lower_ascii(w.value)
+                found @ true
+
+        if !found
+            return false
+
+    return true
+
+# The weight `ranges` give the language tag `offered`, RFC 4647 § 3.3.1's
+# basic filtering: of the longest range equal to it or a prefix of it before
+# a `-`, `*` matching every tag.
+function language_match(ranges: [Member], offered: str) -> Match
+    tag = strings.to_lower_ascii(offered)
+    best @= Match(weight: -1, rank: -1)
+
+    for r in ranges
+        rank: i64 @= -1
+
+        if r.value == "*"
+            rank @ 0
+        else if r.value == tag || strings.has_prefix(s: tag, prefix: r.value + "-")
+            rank @ r.value.len()
+
+        if rank > best.rank
+            best @ Match(weight: r.weight, rank: rank)
+
+    return best
+
+# The weight `ranges` give the content coding `offered`, RFC 9110 § 12.5.3: of
+# the coding named, else of `*`; `identity` keeps 1000 where neither names
+# it.
+function coding_match(ranges: [Member], offered: str) -> Match
+    coding = strings.to_lower_ascii(offered)
+    best @= Match(weight: -1, rank: -1)
+
+    for r in ranges
+        rank: i64 @= -1
+
+        if r.value == "*"
+            rank @ 0
+        else if r.value == coding
+            rank @ 1
+
+        if rank > best.rank
+            best @ Match(weight: r.weight, rank: rank)
+
+    if best.rank < 0 && coding == "identity"
+        return Match(weight: 1000, rank: 0)
+    return best
+
+# Which kind of field a negotiation reads.
+variant Kind
+    # `Accept`: media types.
+    media
+    # `Accept-Language`: language tags.
+    language
+    # `Accept-Encoding`: content codings.
+    coding
+
+# The index in `offered` of the one `ranges` weigh highest above 0, the
+# first offered among equals. Fails `not_found` where every one weighs 0 or
+# matches no range.
+function best_of(ranges: [Member], offered: [str], kind: Kind) -> i64?
+    best: i64 @= -1
+    best_weight: i64 @= 0
+    at: i64 @= 0
+
+    while at < offered.len()
+        m = match kind
+            .media    => type_match(ranges, offered: offered[at])
+            .language => language_match(ranges, offered: offered[at])
+            .coding   => coding_match(ranges, offered: offered[at])
+
+        if m.weight > best_weight
+            best @ at
+            best_weight @ m.weight
+        at @ at + 1
+
+    if best < 0
+        return fail(code: "not_found", msg: "the request accepts none of what is offered")
+    return ok(best)
+
+# The index in `offered` RFC 4647 § 3.4's lookup finds for `ranges`, where
+# basic filtering found none: each range, the heaviest first, cut at its last
+# `-` until it equals an offered tag; `*` and a range of weight 0 pass over.
+# Fails `not_found` where none is found.
+function lookup_of(ranges: [Member], offered: [str]) -> i64?
+    order @= ranges
+
+    # A stable insertion sort by weight, heaviest first: the client's order
+    # kept among equals.
+    i: i64 @= 1
+
+    while i < order.len()
+        j: i64 @= i
+
+        while j > 0 && order[j - 1].weight < order[j].weight
+            held = order[j]
+            order[j] @ order[j - 1]
+            order[j - 1] @ held
+            j @ j - 1
+
+        i @ i + 1
+
+    for r in order
+        if r.weight == 0 || r.value == "*"
+            continue
+        wanted @= r.value
+
+        while wanted != ""
+            at: i64 @= 0
+
+            while at < offered.len()
+                if strings.to_lower_ascii(offered[at]) == wanted
+                    return ok(at)
+                at @ at + 1
+
+            wanted @ strings.split_once_last(s: wanted, sep: "-").default(strings.Halves(before: "", after: "")).before
+
+    return fail(code: "not_found", msg: "no language range finds an offered tag")
+
+# The first of `offered`, which a request with no `field` accepts. Fails
+# `not_found` where `offered` is empty.
+function first_of(offered: [str], field: str) -> str?
+    if offered.len() == 0
+        return fail(code: "not_found", msg: f"negotiating by {field}: nothing is offered")
+    return ok(offered[0])
+
+## Tests
+
+test "first_of: the first, and nothing offered"
+    assert first_of(["a", "b"], field: "Accept").must() == "a" && first_of([], field: "Accept").is_err()
+
+test "qvalue: the edges, three decimals, and what is no qvalue"
+    assert qvalue("0").must() == 0 && qvalue("1").must() == 1000 && qvalue("0.5").must() == 500
+    assert qvalue("0.001").must() == 1 && qvalue("1.000").must() == 1000 && qvalue("0.").must() == 0
+
+    for bad in ["", "1.5", "1.001", "0.0001", "2", "abc", "0,5", ".5", "-0"]
+        assert qvalue(bad).is_err()
+
+test "members_of: weights read, parameters kept, members that do not read passed over, several fields"
+    got = members_of(["text/html;level=1;q=0.5, TEXT/Plain", "a/b;q=abc, ;q=1, c/d;q=0"])
+    assert got.len() == 3 && got[0].value == "text/html" && got[0].weight == 500 && got[0].pairs.len() == 1
+    assert got[1].value == "text/plain" && got[1].weight == 1000 && got[2].value == "c/d" && got[2].weight == 0
+    assert members_of([]).len() == 0 && members_of([""]).len() == 0
+
+test "type_match: the most specific range wins, parameters held or not"
+    ranges = members_of(["text/*;q=0.3, text/html;q=0.7, text/html;level=1, */*;q=0.5"])
+    assert type_match(ranges, offered: "text/html;level=1").weight == 1000
+    assert type_match(ranges, offered: "text/html").weight == 700 && type_match(ranges, offered: "text/plain").weight == 300
+    assert type_match(ranges, offered: "image/png").weight == 500 && type_match(ranges, offered: "text/html;level=2").weight == 700
+    assert type_match(members_of(["text/plain"]), offered: "image/png").weight == -1
+
+test "language_match and coding_match: prefixes before a dash, the star, identity's default"
+    ranges = members_of(["en;q=0.8, en-us, *;q=0.1"])
+    assert language_match(ranges, offered: "en-US").weight == 1000 && language_match(ranges, offered: "en-GB").weight == 800
+    assert language_match(ranges, offered: "fr").weight == 100 && language_match(members_of(["en"]), offered: "eng").weight == -1
+    codings = members_of(["gzip;q=0.5, *;q=0.2"])
+    assert coding_match(codings, offered: "GZIP").weight == 500 && coding_match(codings, offered: "br").weight == 200
+    assert coding_match(codings, offered: "identity").weight == 200 && coding_match(members_of(["gzip"]), offered: "identity").weight == 1000
+    assert coding_match(members_of(["identity;q=0"]), offered: "identity").weight == 0
+
+test "best_of: the heaviest, the first offered among equals, none above 0"
+    ranges = members_of(["application/json;q=0.5, text/html;q=0.5"])
+    assert best_of(ranges, offered: ["text/html", "application/json"], kind: .media).must() == 0
+    assert best_of(ranges, offered: ["application/json", "text/html"], kind: .media).must() == 0
+    assert best_of(members_of(["text/html;q=0, */*"]), offered: ["text/html", "application/json"], kind: .media).must() == 1
+    assert best_of(members_of(["text/html;q=0"]), offered: ["text/html"], kind: .media).is_err()
+    assert best_of(ranges, offered: [], kind: .media).is_err()
+
+test "lookup_of: a range cut at its dashes, the heaviest first, a star and a zero passed over"
+    assert lookup_of(members_of(["en-US, fr;q=0.5"]), offered: ["fr", "en"]).must() == 1
+    assert lookup_of(members_of(["zh-Hant-TW"]), offered: ["zh", "zh-Hant"]).must() == 1
+    assert lookup_of(members_of(["de;q=0, *"]), offered: ["de"]).is_err()

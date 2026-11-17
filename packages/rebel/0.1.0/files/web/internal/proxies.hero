@@ -1,0 +1,221 @@
+# The client behind proxies: the hops a request passed, read from RFC 7239's
+# `Forwarded` or from `X-Forwarded-For`, walked from the nearest back while
+# each is a proxy the program trusts, so a client can never name itself by
+# writing the fields: the first hop not trusted is the client.
+
+use net
+use strings
+
+# One hop a request passed, as a proxy recorded it.
+record Hop
+    # The address it came from, its port and brackets taken away; as written
+    # where it is no address (`unknown`, `_hidden`).
+    address: str
+    # The scheme it was received with, lower case; "" where none is said.
+    scheme: str
+    # The host it asked for; "" where none is said.
+    host: str
+
+# The address `s` names, its port and its brackets taken away: `192.0.2.1`
+# for `192.0.2.1:80`, `2001:db8::1` for `[2001:db8::1]:80`, a bare IPv6
+# address kept whole.
+function address_part(s: str) -> str
+    t = strings.trim(s)
+
+    if strings.has_prefix(s: t, prefix: "[")
+        match strings.split_once(s: t.slice(from: 1, to: t.len()), sep: "]")
+            .ok h  => return h.before
+            .err _ => return t
+
+    if strings.count_of(s: t, substr: ":") == 1
+        return strings.split_once(s: t, sep: ":").must().before
+    return t
+
+# Whether `address` is one of `trusted`'s networks.
+function is_trusted(address: str, trusted: [net.Network]) -> bool
+    a = match net.parse_address(address)
+        .ok got => net.unmap(got)
+        .err _  => return false
+
+    for n in trusted
+        if net.contains(n, a: a)
+            return true
+
+    return false
+
+# The hops of `forwarded`, the values of the request's `Forwarded` fields, in
+# their order, the client's first: each element's `for`, `proto` and `host`.
+# An element that does not read is a hop of no address, which no network
+# trusts.
+function hops_of_forwarded(forwarded: [str]) -> [Hop]
+    out: [Hop] @= []
+
+    for value in forwarded
+        for element in split_outside_quotes(value, sep: ',')
+            match pairs_of(element)
+                .err _ => out @ out.push(Hop(address: "", scheme: "", host: ""))
+                .ok read =>
+                    out @ out.push(
+                        Hop(address: address_part(read["for"].default("")), scheme: strings.to_lower_ascii(read["proto"].default("")), host: read["host"].default(""))
+                    )
+
+    return out
+
+# The pairs of one `Forwarded` element, `for=x;proto="y"`, by their names in
+# lower case, a quoted value's `\` escapes read. Fails `invalid` where a pair
+# has no `=` or a name stands twice.
+function pairs_of(element: str) -> {str: str}?
+    out: {str: str} @= {}
+
+    for pair in split_outside_quotes(element, sep: ';')
+        t = strings.trim(pair)
+
+        if t == ""
+            continue
+
+        halves = match strings.split_once(s: t, sep: "=")
+            .ok h  => h
+            .err _ => return fail(code: "invalid", msg: f"the Forwarded pair {t} has no `=`")
+
+        name = strings.to_lower_ascii(strings.trim(halves.before))
+
+        if !out[name].is_err()
+            return fail(code: "invalid", msg: f"the Forwarded pair {name} stands twice")
+        out[name] @ unquoted(strings.trim(halves.after))
+
+    return ok(out)
+
+# `s` without its quotes, each `\` and the byte after it read as that byte;
+# `s` itself where it is not quoted.
+function unquoted(s: str) -> str
+    if s.len() < 2 || s[0] != '"' || s[s.len() - 1] != '"'
+        return s
+    pieces: [str] @= []
+    from: i64 @= 1
+    at: i64 @= 1
+
+    while at < s.len() - 1
+        if s[at] == '\\' && at + 1 < s.len() - 1
+            pieces @ pieces.push(s.slice(from: from, to: at))
+            from @ at + 1
+            at @ at + 2
+            continue
+        at @ at + 1
+
+    pieces @ pieces.push(s.slice(from: from, to: s.len() - 1))
+    return pieces.join("")
+
+# The pieces of `value` parted by `sep` outside quotes.
+function split_outside_quotes(value: str, sep: u8) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+    quoted: bool @= false
+
+    while at < value.len()
+        b = value[at]
+
+        if quoted && b == '\\'
+            at @ at + 2
+            continue
+
+        if b == '"'
+            quoted @ !quoted
+        else if b == sep && !quoted
+            out @ out.push(value.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(value.slice(from: from, to: value.len()))
+    return out
+
+# The hops of `addresses`, the values of the request's `X-Forwarded-For`
+# fields, in their order, the client's first; each entry trimmed, empty ones
+# passed over.
+function hops_of_list(addresses: [str]) -> [Hop]
+    out: [Hop] @= []
+
+    for value in addresses
+        for item in strings.split(s: value, sep: ",")
+            t = strings.trim(item)
+
+            if t != ""
+                out @ out.push(Hop(address: address_part(t), scheme: "", host: ""))
+
+    return out
+
+# Where the walk stopped: the index of the client's hop in `hops`, and how
+# many trusted proxies were passed.
+record Walked
+    # The index of the client's hop; `hops.len()` where the walk took none.
+    at: i64
+    # The trusted proxies passed, the connection's own peer among them.
+    passed: i64
+
+# The walk of `hops` from the last back, past each trusted one: the first not
+# trusted, or the first of all where every one is trusted.
+function walk(hops: [Hop], trusted: [net.Network]) -> Walked
+    at: i64 @= hops.len() - 1
+    passed: i64 @= 1
+
+    while at >= 0
+        if !is_trusted(hops[at].address, trusted: trusted)
+            return Walked(at: at, passed: passed)
+        passed @ passed + 1
+        at @ at - 1
+
+    if hops.len() > 0
+        return Walked(at: 0, passed: passed - 1)
+    return Walked(at: 0, passed: 1)
+
+# The last member of the comma-separated lists `values` hold, trimmed; ""
+# where they hold none.
+function last_member(values: [str]) -> str
+    last: str @= ""
+
+    for value in values
+        for item in strings.split(s: value, sep: ",")
+            t = strings.trim(item)
+
+            if t != ""
+                last @ t
+
+    return last
+
+## Tests
+
+test "last_member: across fields, empty members passed over, none"
+    assert last_member(["https, http", " HTTPS , "]) == "HTTPS" && last_member([]) == "" && last_member([" , "]) == ""
+
+# The networks of the tests: a loopback address and a private network.
+function nets() -> [net.Network]
+    return [net.parse_network("127.0.0.1/32").must(), net.parse_network("10.0.0.0/8").must()]
+
+test "address_part: an address and a port, IPv6 in brackets, IPv6 bare, a word"
+    assert address_part("192.0.2.1:80") == "192.0.2.1" && address_part(" [2001:db8::1]:80 ") == "2001:db8::1"
+    assert address_part("2001:db8::1") == "2001:db8::1" && address_part("unknown") == "unknown" && address_part("[x") == "[x"
+
+test "is_trusted: inside a network, outside, an IPv4 address mapped in IPv6, a word"
+    assert is_trusted("10.1.2.3", trusted: nets()) && !is_trusted("192.0.2.1", trusted: nets())
+    assert is_trusted("::ffff:127.0.0.1", trusted: nets()) && !is_trusted("unknown", trusted: nets()) && !is_trusted("10.0.0.1", trusted: [])
+
+test "hops_of_forwarded: RFC 7239's examples, quoted IPv6 with a port, a comma inside quotes, an element that does not read"
+    got = hops_of_forwarded(
+        ["for=192.0.2.60;proto=HTTP;by=203.0.113.43", "for=\"[2001:db8:cafe::17]:4711\";host=\"a,b\", for=unknown"]
+    )
+    assert got.len() == 3 && got[0] == Hop(address: "192.0.2.60", scheme: "http", host: "")
+    assert got[1] == Hop(address: "2001:db8:cafe::17", scheme: "", host: "a,b") && got[2].address == "unknown"
+    assert hops_of_forwarded(["for"])[0].address == "" && hops_of_forwarded(["for=a;FOR=b"])[0].address == "" && hops_of_forwarded([]).len() == 0
+
+test "unquoted: quotes and escapes read, a value with none kept"
+    assert unquoted("\"a\\\"b\"") == "a\"b" && unquoted("abc") == "abc" && unquoted("\"") == "\""
+
+test "hops_of_list: several fields, spaces, empty entries, ports"
+    got = hops_of_list(["203.0.113.7, 10.0.0.2", " , 127.0.0.1:99"])
+    assert got.len() == 3 && got[0].address == "203.0.113.7" && got[2].address == "127.0.0.1"
+
+test "walk: the first untrusted from the right, every one trusted, none at all"
+    hops = hops_of_list(["203.0.113.7, 198.51.100.1, 10.0.0.2"])
+    assert walk(hops, trusted: nets()) == Walked(at: 1, passed: 2)
+    assert walk(hops_of_list(["10.0.0.9, 10.0.0.2"]), trusted: nets()) == Walked(at: 0, passed: 2)
+    assert walk([], trusted: nets()) == Walked(at: 0, passed: 1)

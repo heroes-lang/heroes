@@ -1,0 +1,225 @@
+# What the two tables say of one code point: its status in UTS #46's mapping
+# table and what the Map step makes of it, and the four properties the checks
+# read. Each answer is one binary search of a table's runs; a code point is
+# a number from 0 to U+10FFFF, as every caller hands it.
+
+use url/idna/internal/mapping_table
+use url/idna/internal/property_table
+
+# The statuses of the mapping table, as `mapping_table.RUNS` numbers them.
+constant VALID: i64
+    0
+
+constant IGNORED: i64
+    1
+
+constant MAPPED: i64
+    2
+
+constant DEVIATION: i64
+    3
+
+constant DISALLOWED: i64
+    4
+
+# The bidirectional classes RFC 5893 names, as `property_table.RUNS` numbers
+# them; `OTHER` is every class it does not name.
+constant L: i64
+    0
+
+constant R: i64
+    1
+
+constant AL: i64
+    2
+
+constant AN: i64
+    3
+
+constant EN: i64
+    4
+
+constant ES: i64
+    5
+
+constant CS: i64
+    6
+
+constant ET: i64
+    7
+
+constant ON: i64
+    8
+
+constant BN: i64
+    9
+
+constant NSM: i64
+    10
+
+constant OTHER: i64
+    11
+
+# The joining types RFC 5892's Appendix A reads; `JOINS_NOT` is every other.
+constant JOINS_NOT: i64
+    0
+
+constant JOINS_LEFT: i64
+    1
+
+constant JOINS_DUAL: i64
+    2
+
+constant JOINS_RIGHT: i64
+    3
+
+constant JOINS_THROUGH: i64
+    4
+
+# The answers of the NFC quick check.
+constant QUICK_YES: i64
+    0
+
+constant QUICK_MAYBE: i64
+    1
+
+constant QUICK_NO: i64
+    2
+
+# The canonical combining class of a virama.
+constant VIRAMA: i64
+    9
+
+# The last entry of `runs`, which ascend from one whose key is 0, that is at
+# or below `key`.
+function run_at(runs: [i64] lent, key: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= runs.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if runs[middle] <= key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return runs[low - 1]
+
+# The run of the mapping table that holds the code point `n`.
+function mapping_run(n: i64) -> i64
+    return run_at(mapping_table.RUNS, n << 16 | 0xffff)
+
+# The status of `n` in the mapping table: `VALID` to `DISALLOWED`.
+function status_of(n: i64) -> i64
+    return mapping_run(n) & 7
+
+# Adds to `points` what UTS #46's Map step makes of `n`: nothing where it is
+# ignored, its mapping where it is mapped, or a deviation under
+# `transitional`, and `n` itself otherwise. Under `transitional` U+1E9E
+# becomes "ss", which the table maps to U+00DF.
+function add_mapped(@points: [i64], n: i64, transitional: bool)
+    run = mapping_run(n)
+    status = run & 7
+
+    if status == IGNORED
+        return
+
+    if status == MAPPED && transitional && n == 0x1e9e
+        points @ points.push('s')
+        points @ points.push('s')
+        return
+
+    if status == MAPPED || status == DEVIATION && transitional
+        target = run >> 3 & 8191
+        at: i64 @= mapping_table.STARTS[target]
+        end = mapping_table.STARTS[target + 1]
+
+        while at < end
+            points @ points.push(mapping_table.POINTS[at])
+            at @ at + 1
+
+        return
+    points @ points.push(n)
+
+# The run of the properties table that holds `n`.
+function properties_of(n: i64) -> i64
+    return run_at(property_table.RUNS, n << 21 | 0x1fffff)
+
+# The bidirectional class of `n`: `L` to `NSM`, or `OTHER`.
+function bidi_of(n: i64) -> i64
+    return properties_of(n) >> 14 & 15
+
+# The joining type of `n`: `JOINS_NOT` to `JOINS_THROUGH`.
+function joining_of(n: i64) -> i64
+    return properties_of(n) >> 11 & 7
+
+# The NFC quick check of `n`: `QUICK_YES`, `QUICK_MAYBE` or `QUICK_NO`.
+function quick_of(n: i64) -> i64
+    return properties_of(n) >> 8 & 7
+
+# The canonical combining class of `n`, 0 to 254.
+function combining_of(n: i64) -> i64
+    return properties_of(n) & 255
+
+# The code points `n` becomes under `transitional`, for the tests.
+function mapped_alone(n: i64, transitional: bool) -> [i64]
+    points: [i64] @= []
+    add_mapped(@points, n: n, transitional: transitional)
+    return points
+
+## Tests
+
+test "status_of: a letter, a capital, a soft hyphen, the deviations, a full stop's forms, the largest, zero, a solidus"
+    assert status_of(0x61) == VALID
+    assert status_of(0x41) == MAPPED
+    assert status_of(0xad) == IGNORED
+    assert status_of(0xdf) == DEVIATION
+    assert status_of(0x3c2) == DEVIATION
+    assert status_of(0x200c) == DEVIATION
+    assert status_of(0x200d) == DEVIATION
+    assert status_of(0xff0e) == MAPPED
+    assert status_of(0x10ffff) == DISALLOWED
+    assert status_of(0) == VALID
+    assert status_of(0x2f) == VALID
+    assert status_of(0x2488) == DISALLOWED
+    assert status_of(0xe000) == DISALLOWED
+
+test "add_mapped: a capital, the deviations both ways, U+1E9E both ways, an ignored one, a full stop's forms, and a mapping of eighteen code points"
+    assert mapped_alone(n: 0x41, transitional: false) == [0x61]
+    assert mapped_alone(n: 0xdf, transitional: false) == [0xdf]
+    assert mapped_alone(n: 0xdf, transitional: true) == [0x73, 0x73]
+    assert mapped_alone(n: 0x3c2, transitional: true) == [0x3c3]
+    assert mapped_alone(n: 0x200c, transitional: false) == [0x200c]
+    assert mapped_alone(n: 0x200d, transitional: true) == []
+    assert mapped_alone(n: 0x1e9e, transitional: false) == [0xdf]
+    assert mapped_alone(n: 0x1e9e, transitional: true) == [0x73, 0x73]
+    assert mapped_alone(n: 0xad, transitional: false) == []
+    assert mapped_alone(n: 0x3002, transitional: false) == [0x2e]
+    assert mapped_alone(n: 0x958, transitional: false) == [0x915, 0x93c]
+    assert mapped_alone(n: 0xfdfa, transitional: false) == [0x635, 0x644, 0x649, 0x20, 0x627, 0x644, 0x644, 0x647, 0x20, 0x639, 0x644, 0x64a, 0x647, 0x20, 0x648, 0x633, 0x644, 0x645]
+    assert mapped_alone(n: 0x10ffff, transitional: false) == [0x10ffff]
+
+test "bidi_of, joining_of, quick_of and combining_of: as Unicode 17.0.0's files say, at both ends"
+    assert bidi_of(0x61) == L
+    assert bidi_of(0x5d0) == R
+    assert bidi_of(0x627) == AL
+    assert bidi_of(0x660) == AN
+    assert bidi_of(0x30) == EN
+    assert bidi_of(0x2f) == CS
+    assert bidi_of(0x300) == NSM
+    assert bidi_of(0) == BN
+    assert bidi_of(0x10ffff) == BN
+    assert bidi_of(0x20) == OTHER
+    assert joining_of(0x628) == JOINS_DUAL
+    assert joining_of(0x627) == JOINS_RIGHT
+    assert joining_of(0x300) == JOINS_THROUGH
+    assert joining_of(0x200d) == JOINS_NOT
+    assert joining_of(0x61) == JOINS_NOT
+    assert quick_of(0x61) == QUICK_YES
+    assert quick_of(0x300) == QUICK_MAYBE
+    assert quick_of(0x958) == QUICK_NO
+    assert combining_of(0x94d) == VIRAMA
+    assert combining_of(0x300) == 230
+    assert combining_of(0x61) == 0
+    assert combining_of(0x10ffff) == 0

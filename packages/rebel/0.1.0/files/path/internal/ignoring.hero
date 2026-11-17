@@ -1,0 +1,274 @@
+# The files of gitignore patterns read, and which pattern decides whether a
+# path is ignored: what `path.is_ignored` and `path.ignore_pattern_of` answer.
+#
+# A file's lines are read as git reads them (git 2.56, 2026-11-17): a UTF-8
+# byte order mark at its start skipped, a carriage return before a line feed
+# taken off, a blank line and one opening with `#` skipped, trailing spaces
+# taken off unless a `\` escapes them, a `!` first making the pattern a
+# negation and a `/` last making it match folders alone. A pattern with no
+# `/` left in it matches a path's last name at any depth below its file's
+# folder; any other matches the whole path below that folder.
+#
+# Which pattern decides: the deepest file first, and in a file the last
+# pattern that matches; files of one folder in the reverse of the order they
+# were added. A folder above the path that is ignored ignores it, whatever a
+# later pattern says, as git never reads inside an ignored folder.
+
+use path/internal/ignore_match
+use path/internal/scan
+
+# One pattern of a file, read.
+record Pattern
+    # Its line in the file, from 1.
+    line: i64
+    # The line as written, trailing spaces taken off.
+    text: str
+    # Whether it opens with `!`.
+    negated: bool
+    # Whether it ends with `/`, matching folders alone.
+    dir_only: bool
+    # Whether it holds no `/` but a last one, so it matches a last name.
+    basename: bool
+    # What it matches.
+    compiled: ignore_match.Compiled
+
+# The patterns of one file and the folder it stands in.
+record PatternFile
+    # The folder, its names joined by `/`; "" for the root.
+    dir: str
+    # The patterns, in the file's order.
+    patterns: [Pattern]
+
+# The pattern that decided, where one did.
+record Decision
+    # Whether a pattern matched; the other fields are empty where none did.
+    found: bool
+    # The folder of the pattern's file.
+    dir: str
+    # The pattern's line.
+    line: i64
+    # The pattern as written.
+    text: str
+    # Whether the pattern is a negation, so the path is not ignored.
+    negated: bool
+
+# `line` with its trailing spaces taken off, but one a `\` escapes.
+function trimmed(line: str) -> str
+    end: i64 @= 0
+    at: i64 @= 0
+
+    while at < line.len()
+        b = line[at]
+
+        if b == '\\'
+            at @ at + 2
+
+            if at > line.len()
+                at @ line.len()
+            end @ at
+        else if b == ' '
+            at @ at + 1
+        else
+            at @ at + 1
+            end @ at
+
+    return line.slice(from: 0, to: end)
+
+# The lines of `text`: a byte order mark at its start skipped, each cut at a
+# line feed, a carriage return before it taken off.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    if text.len() >= 3 && text[0] == 0xef && text[1] == 0xbb && text[2] == 0xbf
+        start @ 3
+    at: i64 @= start
+
+    while at <= text.len()
+        if at == text.len() || text[at] == '\n'
+            end: i64 @= at
+
+            if end > start && text[end - 1] == '\r' && at < text.len()
+                end @ end - 1
+
+            if at < text.len() || start < text.len()
+                out @ out.push(text.slice(from: start, to: end))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# Whether `s` holds a `/`.
+function has_slash(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] == '/'
+            return true
+
+    return false
+
+# `dir` cleaned: its names joined by `/`, empty and `.` names left out.
+function cleaned(dir: str) -> str
+    return scan.names_in(dir, false).join("/")
+
+# The patterns of the file `text`, which stands in the folder `dir`.
+function parsed(dir: str, text: str) -> PatternFile
+    patterns: [Pattern] @= []
+    number: i64 @= 0
+
+    for raw in lines_of(text)
+        number @ number + 1
+        line = trimmed(raw)
+
+        if line == "" || line[0] == '#'
+            continue
+        body: str @= line
+        negated = body[0] == '!'
+
+        if negated
+            body @ body.slice(from: 1, to: body.len())
+        dir_only = body.len() > 0 && body[body.len() - 1] == '/'
+
+        if dir_only
+            body @ body.slice(from: 0, to: body.len() - 1)
+        basename = !has_slash(body)
+
+        if body.len() > 0 && body[0] == '/'
+            body @ body.slice(from: 1, to: body.len())
+        patterns @ patterns.push(
+            Pattern(line: number, text: line, negated: negated, dir_only: dir_only, basename: basename, compiled: ignore_match.compile(body))
+        )
+
+    return PatternFile(dir: cleaned(dir), patterns: patterns)
+
+# The decision where no pattern matched.
+function nothing() -> Decision
+    return Decision(found: false, dir: "", line: 0, text: "", negated: false)
+
+# The last pattern that matches the path made of `names`, the deepest file
+# first; none where none does.
+function last_match(files: [PatternFile] lent, names: [str] lent, is_dir: bool) -> Decision
+    last = names[names.len() - 1]
+    depth: i64 @= names.len() - 1
+
+    while depth >= 0
+        dir = names.slice(from: 0, to: depth).join("/")
+        rel = names.slice(from: depth, to: names.len()).join("/")
+        index: i64 @= files.len() - 1
+
+        while index >= 0
+            file = files[index]
+
+            if file.dir == dir
+                patterns = file.patterns
+                at: i64 @= patterns.len() - 1
+
+                while at >= 0
+                    p = patterns[at]
+
+                    text = if p.basename
+                        last
+                    else
+                        rel
+
+                    if (!p.dir_only || is_dir) && ignore_match.matches(p.compiled, text: text)
+                        return Decision(found: true, dir: dir, line: p.line, text: p.text, negated: p.negated)
+                    at @ at - 1
+            index @ index - 1
+
+        depth @ depth - 1
+
+    return nothing()
+
+# The pattern that decides whether `path`, its names joined by `/`, is
+# ignored: that of the highest folder above it that is ignored, else the last
+# that matches it.
+function decision(files: [PatternFile] lent, path: str, is_dir: bool) -> Decision
+    names = scan.names_in(path, false)
+
+    if names.len() == 0
+        return nothing()
+
+    for count in range(from: 1, to: names.len())
+        above = last_match(files, names: names.slice(from: 0, to: count), is_dir: true)
+
+        if above.found && !above.negated
+            return above
+
+    return last_match(files, names: names, is_dir: is_dir)
+
+## Tests
+
+test "trimmed: no space, spaces kept inside, trailing ones taken off, escaped ones kept"
+    assert trimmed("") == "" && trimmed("   ") == ""
+    assert trimmed("a b") == "a b" && trimmed("trail  ") == "trail"
+    assert trimmed("sp\\ ") == "sp\\ " && trimmed("sp\\  ") == "sp\\ "
+    assert trimmed("a\\\\ ") == "a\\\\" && trimmed("k\\") == "k\\"
+    assert trimmed(" lead") == " lead" && trimmed("tab\t") == "tab\t"
+
+test "lines_of: empty, a last line with no line feed, CR LF, a lone CR kept, and a byte order mark"
+    nothing_read: [str] = []
+    assert lines_of("") == nothing_read
+    assert lines_of("a") == ["a"] && lines_of("a\n") == ["a"]
+    assert lines_of("a\r\nb\r\n") == ["a", "b"]
+    assert lines_of("a\rb\n") == ["a\rb"]
+    assert lines_of("\n\nx") == ["", "", "x"]
+    mark: [u8] = [0xef, 0xbb, 0xbf]
+    assert lines_of(mark.validated_bytes().must() + "bom\n") == ["bom"]
+    assert lines_of("é\n") == ["é"]
+
+test "parsed: comments and blanks skipped, a negation, a folder alone, an anchor, and line numbers"
+    file = parsed(dir: "./a//b/", text: "# c\n\n*.o\n!keep.o\nbuild/\n/top\ndoc/frotz/\n\\#x\n")
+    assert file.dir == "a/b"
+    assert file.patterns.len() == 6
+    assert file.patterns[0].line == 3 && file.patterns[0].basename && !file.patterns[0].negated
+    assert file.patterns[1].negated && file.patterns[1].text == "!keep.o"
+    assert file.patterns[2].dir_only && file.patterns[2].basename
+    assert !file.patterns[3].basename && ignore_match.matches(file.patterns[3].compiled, text: "top")
+    assert file.patterns[4].dir_only && !file.patterns[4].basename
+    assert file.patterns[5].line == 8 && ignore_match.matches(file.patterns[5].compiled, text: "#x")
+    assert parsed(dir: "", text: "").patterns.len() == 0
+
+test "decision: what git check-ignore answered on 2026-11-17 for one file at the root"
+    files = [parsed(dir: "", text: "*.o\nbuild/\n/top\ndoc/frotz/\nfoo/*\n!foo/keep\nbar/\n!bar/keep\n")]
+    assert decision(files, path: "a.o", is_dir: false).line == 1
+    assert decision(files, path: "src/b.o", is_dir: false).line == 1
+    assert decision(files, path: "build", is_dir: true).line == 2
+    assert !decision(files, path: "build", is_dir: false).found
+    assert decision(files, path: "build/x", is_dir: false).line == 2
+    assert decision(files, path: "src/build", is_dir: true).line == 2
+    assert decision(files, path: "top", is_dir: false).line == 3
+    assert !decision(files, path: "src/top", is_dir: false).found
+    assert decision(files, path: "doc/frotz", is_dir: true).line == 4
+    assert !decision(files, path: "a/doc/frotz", is_dir: true).found
+    assert decision(files, path: "foo/x", is_dir: false).line == 5
+    kept = decision(files, path: "foo/keep", is_dir: false)
+    assert kept.found && kept.negated && kept.line == 6
+    assert decision(files, path: "bar/keep", is_dir: false) == Decision(found: true, dir: "", line: 7, text: "bar/", negated: false)
+    assert !decision(files, path: "", is_dir: true).found && !decision(files, path: "./", is_dir: true).found
+
+test "decision: what git check-ignore answered on 2026-11-17 for files in nested folders"
+    files = [
+        parsed(dir: "", text: "*.log\n!keep.log\nsub/deep.txt\n/anch\nlevel\n")
+        parsed(dir: "sub", text: "!*.log\n/anch\ndeep.txt\n!level\n")
+        parsed(dir: "sub/inner", text: "*.txt\n!x.txt\n")
+        parsed(dir: "other", text: "!a.log\n")
+    ]
+    assert decision(files, path: "a.log", is_dir: false).line == 1
+    assert decision(files, path: "keep.log", is_dir: false).negated
+    sub_log = decision(files, path: "sub/a.log", is_dir: false)
+    assert sub_log.dir == "sub" && sub_log.negated
+    assert decision(files, path: "sub/deep.txt", is_dir: false).dir == "sub"
+    assert decision(files, path: "sub/x/deep.txt", is_dir: false).dir == "sub"
+    assert decision(files, path: "sub/anch", is_dir: false).dir == "sub"
+    assert !decision(files, path: "sub/x/anch", is_dir: false).found
+    assert decision(files, path: "sub/inner/level", is_dir: false).negated
+    assert !decision(files, path: "sub/inner/y.txt", is_dir: false).negated
+    assert decision(files, path: "sub/inner/x.txt", is_dir: false).negated
+    assert decision(files, path: "other/a.log", is_dir: false).dir == "other"
+    assert decision(files, path: "other/b.log", is_dir: false).dir == ""
+    assert !decision(files, path: "x/sub/deep.txt", is_dir: false).found
+
+test "decision: two files of one folder, the one added later deciding"
+    files = [parsed(dir: "", text: "*.tmp\n"), parsed(dir: "", text: "!a.tmp\n")]
+    assert decision(files, path: "a.tmp", is_dir: false).negated
+    assert !decision(files, path: "b.tmp", is_dir: false).negated

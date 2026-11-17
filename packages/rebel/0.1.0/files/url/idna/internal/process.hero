@@ -1,0 +1,313 @@
+# UTS #46's processing of a domain name (§ 4, Unicode 17.0.0): each code
+# point mapped by its status, the text broken into labels at ".", a label
+# written in Punycode decoded, and each label held to the validity criteria
+# (§ 4.1), RFC 5892's ContextJ rules and RFC 5893's bidi rule; then ToASCII
+# (§ 4.2) and ToUnicode (§ 4.3) over it. Written from UTS #46's text.
+#
+# The normalization to NFC of § 4's second step, and the label's own NFC
+# criterion, wait for `unicode/normalize`. The quick check of UAX #15 settles
+# most texts without it: a text it answers yes is in NFC already, so the step
+# changes nothing; a decoded label it answers no is not in NFC, a fault. Where
+# it cannot settle the question the answer is `unsupported`, never a host
+# that may be another.
+
+use unicode
+use url/idna/internal/criteria
+use url/idna/internal/lookup
+use url/idna/internal/punycode
+use url/idna/internal/written
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The longest label and the longest name ToASCII's length check allows, in
+# bytes (RFC 1034 § 3.5).
+constant MAX_LABEL_BYTES: i64
+    63
+
+constant MAX_NAME_BYTES: i64
+    253
+
+# The labels after processing, each label's code points, and why the answer
+# waits for a normalization to NFC, "" where it does not.
+record Converted
+    # The labels in order, each its code points: decoded where it was written
+    # in Punycode, as written where it kept its Punycode.
+    labels: [[i64]]
+    # Why a label's normalization cannot be settled, "" where every one is.
+    undecided: str
+
+## Processing
+
+# The fault said of the label numbered `number`, from 1, of `host`.
+function label_fault(host: str, number: i64, label: [i64] lent, fault: str) -> str
+    return f"label {number} {written.shown(label)} of {written.shown(unicode.code_points(host))} {fault}"
+
+# The labels of `points`, cut at every ".", one more than there are.
+function labels_of(points: [i64] lent) -> [[i64]]
+    labels: [[i64]] @= []
+    label: [i64] @= []
+
+    for p in points
+        if p == '.'
+            labels @ labels.push(label)
+            label @ []
+        else
+            label @ label.push(p)
+
+    labels @ labels.push(label)
+    return labels
+
+# The bytes of `points`, every one below 128, as a text.
+function ascii_of(points: [i64] lent, from: i64) -> str
+    bytes: [u8] @= []
+    at: i64 @= from
+
+    while at < points.len()
+        bytes @ bytes.push(points[at].to_u8().must())
+        at @ at + 1
+
+    return bytes.validated_bytes().must()
+
+# UTS #46's processing of `host` (§ 4) under `checks`: mapped, cut into
+# labels, each label written in Punycode decoded, and every label held to the
+# criteria; then RFC 5893's rule where the domain is a Bidi domain name.
+# Fails `invalid` at the first fault, the message naming the label and the
+# rule with its code in UTS #46's test file; `unsupported` where the mapped
+# text may need normalizing to NFC.
+function converted(host: str, checks: criteria.Checks) -> Converted?
+    mapped: [i64] @= []
+    at: i64 @= 0
+
+    while at < host.len()
+        lookup.add_mapped(@mapped, n: unicode.code_point_at(host, at), transitional: checks.transitional)
+        at @ at + unicode.width_at(host, at)
+
+    if criteria.quick_check(mapped) != lookup.QUICK_YES
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"{written.shown(unicode.code_points(host))} maps to {written.shown(mapped)}, which may need normalizing to NFC, and that waits for unicode/normalize"
+        )
+    labels: [[i64]] @= []
+    checked: [i64] @= []
+    undecided: str @= ""
+    number: i64 @= 0
+
+    for label in labels_of(mapped)
+        number @ number + 1
+
+        if criteria.is_ace(label)
+            for p in label
+                if p >= 0x80
+                    return fail(
+                        code: INVALID,
+                        msg: label_fault(host: host, number: number, label: label, fault: f"begins with \"xn--\" and holds {written.code_name(p)}, above ASCII (P4)")
+                    )
+
+            match punycode.decode(ascii_of(label, from: 4))
+                .ok decoded =>
+                    ascii: bool @= true
+
+                    for p in decoded
+                        if p >= 0x80
+                            ascii @ false
+
+                    if ascii
+                        return fail(
+                            code: INVALID,
+                            msg: label_fault(host: host, number: number, label: label, fault: "is Punycode that writes nothing above ASCII (P4)")
+                        )
+                    v = criteria.verdict(decoded, checks: checks, transitional: false)
+
+                    if v.fault != ""
+                        return fail(
+                            code: INVALID,
+                            msg: label_fault(host: host, number: number, label: decoded, fault: f"written {written.shown(label)} {v.fault}")
+                        )
+
+                    if v.undecided && undecided == ""
+                        undecided @ f"label {number} {written.shown(decoded)} may not be in NFC, which waits for unicode/normalize to tell"
+                    checked @ checked.push(labels.len())
+                    labels @ labels.push(decoded)
+                .err e =>
+                    if !checks.ignore_invalid_punycode
+                        return fail(
+                            code: INVALID,
+                            msg: label_fault(host: host, number: number, label: label, fault: f"is Punycode that does not decode: {e.msg} (P4)")
+                        )
+                    labels @ labels.push(label)
+        else
+            if label.len() > 0
+                v = criteria.verdict(label, checks: checks, transitional: checks.transitional)
+
+                if v.fault != ""
+                    return fail(
+                        code: INVALID,
+                        msg: label_fault(host: host, number: number, label: label, fault: v.fault)
+                    )
+            checked @ checked.push(labels.len())
+            labels @ labels.push(label)
+
+    if checks.bidi && criteria.is_bidi_domain(labels)
+        for index in checked
+            fault = criteria.bidi_fault(labels[index])
+
+            if fault != ""
+                return fail(
+                    code: INVALID,
+                    msg: label_fault(host: host, number: index + 1, label: labels[index], fault: fault)
+                )
+
+    return ok(Converted(labels: labels, undecided: undecided))
+
+# The labels' texts joined by ".".
+function joined(texts: [str]) -> str
+    return texts.join(".")
+
+# UTS #46's ToUnicode (§ 4.3) of `host`: the processed labels, joined by ".".
+# Fails as `converted` does, and `unsupported` where a decoded label may not be
+# in NFC.
+function to_unicode(host: str, checks: criteria.Checks) -> str?
+    c = converted(host, checks: checks)?
+
+    if c.undecided != ""
+        return fail(code: UNSUPPORTED, msg: c.undecided)
+    texts: [str] @= []
+
+    for label in c.labels
+        texts @ texts.push(written.text_of(label))
+
+    return ok(joined(texts))
+
+# UTS #46's ToASCII (§ 4.2) of `host`: the processed labels, each one holding
+# a character above ASCII written "xn--" and its Punycode, joined by ".";
+# under `checks.dns_length`, the name 1 to 253 bytes and each label 1 to 63.
+# Fails as `converted` does, `invalid` for a length, and `unsupported` where a
+# decoded label may not be in NFC.
+function to_ascii(host: str, checks: criteria.Checks) -> str?
+    c = converted(host, checks: checks)?
+    texts: [str] @= []
+
+    for label in c.labels
+        ascii: bool @= true
+
+        for p in label
+            if p >= 0x80
+                ascii @ false
+
+        if ascii
+            texts @ texts.push(written.text_of(label))
+        else
+            texts @ texts.push("xn--" + punycode.encode(label))
+
+    name = joined(texts)
+
+    if checks.dns_length
+        if name.len() == 0 || name.len() > MAX_NAME_BYTES
+            return fail(
+                code: INVALID,
+                msg: f"{written.shown(unicode.code_points(host))} is {name.len()} bytes as ASCII, outside 1 to {MAX_NAME_BYTES} (A4_1)"
+            )
+        number: i64 @= 0
+
+        for text in texts
+            number @ number + 1
+
+            if text.len() == 0 || text.len() > MAX_LABEL_BYTES
+                return fail(
+                    code: INVALID,
+                    msg: f"label {number} of {written.shown(unicode.code_points(host))} is {text.len()} bytes as ASCII, outside 1 to {MAX_LABEL_BYTES} (A4_2)"
+                )
+
+    if c.undecided != ""
+        return fail(code: UNSUPPORTED, msg: c.undecided)
+    return ok(name)
+
+## Tests
+
+test "labels_of: none, one, an empty one at either end, and two dots"
+    assert labels_of([]) == [[]]
+    assert labels_of([0x61]) == [[0x61]]
+    assert labels_of([0x2e, 0x61, 0x2e]) == [[], [0x61], []]
+    assert labels_of([0x61, 0x2e, 0x2e, 0x62]) == [[0x61], [], [0x62]]
+
+test "to_ascii and to_unicode: ASCII, a German host, a sharp s both ways, the forms of a full stop, and a host already in Punycode"
+    assert to_ascii("example.com", checks: criteria.strict()).must() == "example.com"
+    assert to_ascii("Bücher.de", checks: criteria.strict()).must() == "xn--bcher-kva.de"
+    assert to_unicode("xn--bcher-kva.de", checks: criteria.strict()).must() == "bücher.de"
+    assert to_ascii("faß.de", checks: criteria.strict()).must() == "xn--fa-hia.de"
+    transitional = criteria.Checks(
+        hyphens: true,
+        bidi: true,
+        joiners: true,
+        std3: true,
+        transitional: true,
+        dns_length: true,
+        ignore_invalid_punycode: false
+    )
+    assert to_ascii("faß.de", checks: transitional).must() == "fass.de"
+    assert to_ascii("a。b．c｡d", checks: criteria.strict()).must() == "a.b.c.d"
+    assert to_unicode("xn--fa-hia.de", checks: transitional).must() == "faß.de"
+
+test "to_ascii: the lengths, an empty root label with and without them, and a label of 64 bytes"
+    assert to_ascii("example.com.", checks: criteria.strict()).is_err()
+    assert to_ascii("example.com.", checks: criteria.lax()).must() == "example.com."
+    assert to_ascii("", checks: criteria.strict()).is_err()
+    assert to_ascii("", checks: criteria.lax()).must() == ""
+    long = repeat("a", 64)
+    assert to_ascii(long, checks: criteria.strict()).is_err()
+    assert to_ascii(long, checks: criteria.lax()).must() == long
+
+test "converted: a fault's message names the label, its number and the rule"
+    match to_ascii("a.bc--de", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "label 2 \"bc--de\" of \"a.bc--de\" holds \"--\" at its third and fourth characters (V2)"
+
+    match to_unicode("xn--a-.com", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "label 1 \"xn--a-\" of \"xn--a-.com\" is Punycode that writes nothing above ASCII (P4)"
+
+    match to_unicode("xn--a.com", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "label 1 \"\\u{80}\" of \"xn--a.com\" written \"xn--a\" holds U+0080, whose status is disallowed (V7)"
+
+    match to_unicode("xn---a.com", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "converted: a Punycode label that does not decode, ignored on request; one above ASCII; and a text that waits for NFC"
+    ignore = criteria.Checks(
+        hyphens: true,
+        bidi: true,
+        joiners: true,
+        std3: true,
+        transitional: false,
+        dns_length: false,
+        ignore_invalid_punycode: true
+    )
+    assert to_unicode("xn---a.com", checks: criteria.strict()).is_err()
+    assert to_unicode("xn---a.com", checks: ignore).must() == "xn---a.com"
+    assert to_unicode("xn--é.com", checks: criteria.strict()).is_err()
+
+    match to_ascii("á.com", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match to_unicode("xn--a-xbb.com", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "to_unicode: a name of 100,000 labels is read in one pass, and its last label's fault named"
+    many = repeat("a.", 100000) + "b"
+    assert to_unicode(many, checks: criteria.lax()).must() == many
+
+    match to_unicode(repeat("a.", 100000) + "-b", checks: criteria.strict())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && ends_with(s: e.msg, suffix: "begins or ends with \"-\" (V3)")
+
+# Whether `s` ends with `suffix`, for the tests.
+function ends_with(s: str, suffix: str) -> bool
+    return s.len() >= suffix.len() && s.slice(from: s.len() - suffix.len(), to: s.len()) == suffix

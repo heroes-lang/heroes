@@ -1,0 +1,149 @@
+# Runs the conformance cases `conformance_cases` holds, UTS #46's own test
+# file, through `process`: each case's three operations, with every check on
+# as the file runs them, held to the outcome the case writes.
+
+use unicode
+use url/idna/internal/criteria
+use url/idna/internal/process
+
+# The value of the hexadecimal digit `b` writes, lower case; 0 for any
+# other byte, which the cases never hold there.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return b.to_i64().must() - '0'
+
+    if b >= 'a' && b <= 'f'
+        return b.to_i64().must() - 'a' + 10
+    return 0
+
+# The text a case's column writes: a byte as itself, and `^`, hexadecimal
+# digits and `^` as the character of that code point. Aborts where the column
+# writes no scalar value, which a case made from the file never does.
+function text_of(column: str) -> str
+    points: [i64] @= []
+    at: i64 @= 0
+
+    while at < column.len()
+        if column[at] == '^'
+            value: i64 @= 0
+            at @ at + 1
+
+            while at < column.len() && column[at] != '^'
+                value @ value * 16 + hex_value(column[at])
+                at @ at + 1
+
+            points @ points.push(value)
+            at @ at + 1
+        else
+            points @ points.push(column[at].to_i64().must())
+            at @ at + 1
+
+    return unicode.from_code_points(points).must()
+
+# The columns of `entry`, cut at every ";".
+function columns_of(entry: str) -> [str]
+    columns: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < entry.len()
+        if entry[at] == ';'
+            columns @ columns.push(entry.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    columns @ columns.push(entry.slice(from: start, to: entry.len()))
+    return columns
+
+# The column's text, or `before` where the column is empty.
+function text_or(column: str, before: str) -> str
+    if column == ""
+        return before
+    return text_of(column)
+
+# Every check on, as UTS #46's file runs ToUnicode and ToASCII:
+# `transitional` and `dns_length` as asked.
+function checks_of(transitional: bool, dns_length: bool) -> criteria.Checks
+    return criteria.Checks(
+        hyphens: true,
+        bidi: true,
+        joiners: true,
+        std3: true,
+        transitional: transitional,
+        dns_length: dns_length,
+        ignore_invalid_punycode: false
+    )
+
+# Adds to `found` a line naming `entry` and `operation` where `answer` is not
+# the `outcome` the case writes, one letter: `o` the text `expected`, `e` a failure
+# `invalid`, `n` a failure `unsupported`.
+function add_mismatch(@found: [str], entry: str, operation: str, answer: str?, expected: str, outcome: str)
+    match answer
+        .ok text =>
+            if outcome != "o" || text != expected
+                found @ found.push(f"{entry}: {operation} answered a text where the case expects {outcome}")
+        .err e =>
+            if outcome == "o"
+                found @ found.push(f"{entry}: {operation} failed {e.code}: {e.msg}")
+            else if outcome == "e" && e.code != process.INVALID
+                found @ found.push(f"{entry}: {operation} failed {e.code} where the case expects invalid")
+            else if outcome == "n" && e.code != process.UNSUPPORTED
+                found @ found.push(f"{entry}: {operation} failed {e.code} where the case expects unsupported")
+
+# The cases of `cases` whose answers are not the outcomes they write, one line
+# each naming the case and the operation; empty where every one agrees.
+function failures(cases: [str]) -> [str]
+    found: [str] @= []
+
+    for entry in cases
+        columns = columns_of(entry)
+        source = text_of(columns[0])
+        unicode_text = text_or(column: columns[1], before: source)
+        ascii_text = text_or(column: columns[2], before: unicode_text)
+        transitional_text = text_or(column: columns[3], before: ascii_text)
+        outcomes = columns[4]
+        unicode_answer = process.to_unicode(source, checks: checks_of(transitional: false, dns_length: false))
+        add_mismatch(
+            @found,
+            entry: entry,
+            operation: "ToUnicode",
+            answer: unicode_answer,
+            expected: unicode_text,
+            outcome: outcomes.slice(from: 0, to: 1)
+        )
+        ascii_answer = process.to_ascii(source, checks: checks_of(transitional: false, dns_length: true))
+        add_mismatch(
+            @found,
+            entry: entry,
+            operation: "ToASCII",
+            answer: ascii_answer,
+            expected: ascii_text,
+            outcome: outcomes.slice(from: 1, to: 2)
+        )
+        transitional_answer = process.to_ascii(source, checks: checks_of(transitional: true, dns_length: true))
+        add_mismatch(
+            @found,
+            entry: entry,
+            operation: "ToASCII transitional",
+            answer: transitional_answer,
+            expected: transitional_text,
+            outcome: outcomes.slice(from: 2, to: 3)
+        )
+
+    return found
+
+## Tests
+
+test "text_of and columns_of: ASCII, an escape, an escape of five digits, nothing, and empty columns"
+    assert text_of("") == ""
+    assert text_of("ab") == "ab"
+    assert text_of("^e9^") == "é"
+    assert text_of("a^5d0^b") == "a" + unicode.from_code_point(0x5d0).must() + "b"
+    assert text_of("^1f600^") == unicode.from_code_point(0x1f600).must()
+    assert columns_of("a;;b;;ooo") == ["a", "", "b", "", "ooo"]
+    assert columns_of("") == [""]
+
+test "failures: a case that agrees, one that does not, and each outcome"
+    assert failures(["fass.de;;;;ooo", "fa^df^.de;;xn--fa-hia.de;fass.de;ooo", "a.bc--de.f;;;;eee"]) == []
+    assert failures(["fass.de;;;;eoo"]).len() == 1
+    assert failures(["a^301^;;;;nnn"]) == []
