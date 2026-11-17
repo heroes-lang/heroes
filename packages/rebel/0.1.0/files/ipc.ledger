@@ -1,0 +1,282 @@
+# The ledger of `ipc`: what a program can do to talk with another process of
+# the same machine, one block per capability, and what Rebel answers. The
+# lists are this machine's, 2026-11-17: Go 1.27's `go doc -all net` (its
+# `Unix*` entries) and `golang.org/x/sys` v0.46.0 read by `go doc -all` for
+# unix (darwin and linux) and windows; Rust 1.100's `std::os::unix::net` and
+# `std::os::linux::net` documentation (the methods of each struct, read from
+# the documentation's own anchors); Python 3.15's `dir()` of
+# `multiprocessing.connection` (and its `Connection` and `Listener`),
+# `multiprocessing.shared_memory` (and `SharedMemory`, `ShareableList`),
+# `mmap` (and `mmap.mmap`) and `socket`'s local-socket names. `posix_ipc` is
+# not installed here; its lines name the capabilities its documentation
+# gives, as the author's request named it, and so do the `rust` lines that
+# name the `interprocess` crate, the request's yardstick (no crate source is
+# on this machine, and none was opened).
+
+capability ipc/listen-path  a listener on a socket file at a path
+  heroes  ipc.listen
+  go      net.ListenUnix, net.Listen (network "unix"), net.ResolveUnixAddr, net.UnixAddr, net.UnixAddr.Network, net.UnixAddr.String, net.UnixListener
+  rust    UnixListener::bind, UnixListener::bind_addr, SocketAddr::from_pathname, interprocess::local_socket::ListenerOptions, interprocess::local_socket::GenericFilePath
+  python  socket.AF_UNIX, socket.socket.bind, socket.socket.listen, multiprocessing.connection.Listener, multiprocessing.connection.SocketListener, multiprocessing.connection.families, multiprocessing.connection.default_family, multiprocessing.connection.address_type
+  note    the same door on Darwin, Linux and Windows 10 1803 and later (AF_UNIX there too; the Windows arm compiled against MinGW-w64's `afunix.h` and unrun on the box on 2026-11-17)
+
+capability ipc/listen-permission  who may connect, by the socket file's permission
+  heroes  ipc.listen
+  go      - (os.Chmod after net.Listen)
+  rust    - (std::fs::set_permissions after bind)
+  python  - (os.chmod after bind)
+  note    the permission is a parameter, set between the bind and the listen, so no client connects while the file has the mask's bits (Go, Rust and Python leave that gap to the program); 0o600 lets only this user connect. Windows has no such bits and ignores it
+
+capability ipc/stale-socket-file  a socket file a process that died left at a listener's path
+  heroes  ipc.listen, ipc.close_listener
+  go      net.UnixListener.SetUnlinkOnClose, net.UnixListener.Close
+  rust    -
+  python  -
+  note    as Go does (observed 2026-11-17: `listen` on a stale file fails "address already in use" and leaves it; `Close` removes the file it made): `listen` fails `exists` and leaves the file, and `close_listener` removes the file where it is still the one `listen` made (its device and inode compared). A connect to such a file fails `not_found` with words saying nothing listens there (ECONNREFUSED, measured on Darwin and Linux). Go's unlink-on-close cannot be turned off here: a listener that leaves its file behind is the stale file itself
+
+capability ipc/accept  the next connection on a listener, with a bound on the wait
+  heroes  ipc.accept
+  go      net.UnixListener.Accept, net.UnixListener.AcceptUnix, net.UnixListener.SetDeadline
+  rust    UnixListener::accept, UnixListener::incoming, Incoming, interprocess::local_socket::Listener::accept
+  python  multiprocessing.connection.Listener.accept, multiprocessing.connection.Listener.last_accepted, socket.socket.accept
+  note    the bound is given at the call, `within_ms`, where Go sets a deadline on the listener: one call, one bound, and a close from another thread ends the wait within 50 ms. The peer's address of an accepted local socket is unnamed on every platform, so `accept` answers the stream alone, and `peer_of` says who connected
+
+capability ipc/connect  a connection to a listener at a path
+  heroes  ipc.connect
+  go      net.DialUnix, net.Dial (network "unix"), net.Dialer.DialUnix
+  rust    UnixStream::connect, UnixStream::connect_addr, interprocess::local_socket::Stream::connect
+  python  multiprocessing.connection.Client, multiprocessing.connection.SocketClient, socket.socket.connect, multiprocessing.connection.CONNECTION_TIMEOUT
+  note    nothing at the path and a socket file nobody listens on are both `not_found`, their messages apart; `within_ms` bounds the wait while the listener's queue is full (Linux answers EAGAIN then, asked again in steps)
+
+capability ipc/channel-bytes  a channel's bytes read and written
+  heroes  io.read, io.write
+  go      net.UnixConn.Read, net.UnixConn.Write
+  rust    UnixStream (Read, Write), interprocess::local_socket::Stream (Read, Write)
+  python  socket.socket.recv, socket.socket.send, socket.socket.sendall
+  note    a channel is an `io.Stream` (`hero_stream_make` over the member's table), so `io` reads, writes, buffers and copies it; nothing here reads a channel. A write to a peer gone fails `closed`, never a signal
+
+capability ipc/channel-peek  bytes looked at without taking them
+  heroes  io.peek
+  go      -
+  rust    UnixStream::peek
+  python  -
+  note    a reader of `io` buffers and peeks; no second way here
+
+capability ipc/channel-close  a channel closed
+  heroes  io.close
+  go      net.UnixConn.Close
+  rust    - (drop)
+  python  multiprocessing.connection.Connection.close, multiprocessing.connection.Connection.closed, socket.socket.close
+
+capability ipc/listener-close  a listener closed
+  heroes  ipc.close_listener
+  go      net.UnixListener.Close
+  rust    - (drop)
+  python  multiprocessing.connection.Listener.close
+
+capability ipc/channel-deadline  a channel's reads and writes bounded in time
+  heroes  ipc.set_deadline
+  go      net.UnixConn.SetDeadline, net.UnixConn.SetReadDeadline, net.UnixConn.SetWriteDeadline
+  rust    UnixStream::set_read_timeout, UnixStream::set_write_timeout, UnixStream::read_timeout, UnixStream::write_timeout
+  python  socket.socket.settimeout
+  note    a time, as Go's and `net.set_deadline`, never a span per call: a peer that sends a byte before each limit still meets it. One deadline for both directions, as `net` keeps it; Go's two halves were not asked for by any other Rebel package
+
+capability ipc/channel-half-close  a channel's writing side closed while it still reads
+  heroes  ipc.close_write
+  go      net.UnixConn.CloseWrite, net.UnixConn.CloseRead
+  rust    UnixStream::shutdown
+  python  socket.socket.shutdown
+  note    the writing side alone: the reading side ends with `io.close`. A Windows named pipe has no half and fails `unsupported`
+
+capability ipc/peer-credentials  who is at the other end of a channel
+  heroes  ipc.peer_of
+  go      golang.org/x/sys/unix.GetsockoptUcred, golang.org/x/sys/unix.GetsockoptXucred, golang.org/x/sys/windows.GetNamedPipeClientProcessId, golang.org/x/sys/windows.GetNamedPipeServerProcessId
+  rust    UnixStream::peer_cred, UCred
+  python  socket.SO_PEERCRED, socket.LOCAL_PEERCRED, socket.socket.getsockopt
+  note    the process id and the user id, read once when the connection is made and kept: Darwin answers no peer once it has closed its side (ENOTCONN, measured 2026-11-17), where Linux keeps the credentials of the connect. Linux by SO_PEERCRED, Darwin by LOCAL_PEERPID and getpeereid, Windows by SIO_AF_UNIX_GETPEERPID and the pipe's process ids, its user -1 (unrun on the box)
+
+capability ipc/addresses  a socket's own address and its peer's
+  heroes  ipc.Listener
+  go      net.UnixConn.LocalAddr, net.UnixConn.RemoteAddr, net.UnixListener.Addr
+  rust    UnixListener::local_addr, UnixStream::local_addr, UnixStream::peer_addr, SocketAddr::as_pathname, SocketAddr::is_unnamed
+  python  socket.socket.getsockname, socket.socket.getpeername, multiprocessing.connection.Listener.address
+  note    a listener keeps the path or name it was made on in its `name` and `space`; a connection's own and peer's addresses are unnamed for the side that connected and the side that accepted, so who connected is `peer_of`'s
+
+capability ipc/abstract-names  a channel named in Linux's abstract space, which no file holds
+  heroes  ipc.listen_abstract, ipc.connect_abstract
+  go      net.Listen and net.Dial with a name beginning "@" (Linux; `go doc net`, UnixAddr)
+  rust    SocketAddr::from_abstract_name, SocketAddr::as_abstract_name, std::os::linux::net::SocketAddrExt, interprocess::local_socket::GenericNamespaced
+  python  socket.AF_UNIX with an address beginning "\0"
+  note    Linux alone (measured in the Linux arm64 container: listen, connect); `unsupported` elsewhere, Windows' abstract names left unasked. The name follows `is_name`'s rule
+
+capability ipc/named-pipes  a channel on a Windows named pipe, `\\.\pipe\<name>`
+  heroes  ipc.listen_pipe, ipc.connect_pipe
+  go      golang.org/x/sys/windows.CreateNamedPipe, golang.org/x/sys/windows.ConnectNamedPipe, golang.org/x/sys/windows.DisconnectNamedPipe, golang.org/x/sys/windows.GetNamedPipeInfo, golang.org/x/sys/windows.GetNamedPipeHandleState, golang.org/x/sys/windows.SetNamedPipeHandleState
+  rust    interprocess::os::windows::named_pipe (PipeListenerOptions, DuplexPipeStream)
+  python  multiprocessing.connection.Listener and Client with an address "\\.\pipe\..." (family "AF_PIPE"), multiprocessing.connection.arbitrary_address
+  note    a second Windows door beside AF_UNIX, said so: byte mode, overlapped, local clients alone, the first instance claiming the name (a second listener fails `exists`), a client that may be identified and never impersonated (`SECURITY_IDENTIFICATION`). One accept at a time on a listener. `unsupported` off Windows. Its arm is compiled and unrun (2026-11-17)
+
+capability ipc/named-pipe-messages  a Windows pipe's message mode, each write read as one message
+  heroes  refused: a message is framed by `write_message` on every platform and every kind of stream; a mode of one platform's pipes would be a second way
+  go      -
+  rust    interprocess::os::windows::named_pipe (message streams)
+  python  - (multiprocessing.connection frames its own)
+
+capability ipc/messages  a message written whole and read back whole
+  heroes  ipc.write_message, ipc.read_message
+  go      -
+  rust    -
+  python  multiprocessing.connection.Connection.send_bytes, multiprocessing.connection.Connection.recv_bytes, multiprocessing.connection.Connection.recv_bytes_into, multiprocessing.connection.BufferTooShort, multiprocessing.connection.MESSAGE_LENGTH, multiprocessing.connection.BUFSIZE
+  note    Python's framing, observed 2026-11-17 (`abc` is `00000003616263`, the empty message `00000000`, the long form `ffffffff` then 8 bytes read back by `recv_bytes`), so a Heroes and a Python program read each other's. Two decisions where Python differs: a length of -2 or below is refused `invalid`, where Python's `recv_bytes` answered `b''`; and one past `most` is refused before its bytes are read, as Python's `maxlength` refuses ("bad message length"), the stream then left for the program to close. `recv_bytes_into`'s buffer of the caller's has no Heroes form: a read answers a list
+
+capability ipc/objects  a value of the language sent whole, pickled
+  heroes  refused: no pickle and no reflection; a message's bytes are made by `json`, `msgpack`, `cbor` or `protobuf`, then `write_message`
+  go      -
+  rust    -
+  python  multiprocessing.connection.Connection.send, multiprocessing.connection.Connection.recv, multiprocessing.connection.XmlListener, multiprocessing.connection.XmlClient, multiprocessing.connection.rebuild_connection, multiprocessing.connection.reduce_connection
+
+capability ipc/authentication  a listener and a client proving a shared key to each other
+  heroes  refused: who may connect is the socket file's permission, and who did connect is `peer_of`; a challenge over a shared key is a protocol a program writes over a channel with `crypto.hmac`
+  go      -
+  rust    -
+  python  multiprocessing.connection.answer_challenge, multiprocessing.connection.deliver_challenge, multiprocessing.connection.AuthenticationError, multiprocessing.connection.Listener (authkey), multiprocessing.connection.Client (authkey)
+
+capability ipc/readiness  a wait on channels for the first with bytes to read
+  heroes  pending: `poll` waits on a stream by its descriptor, and a channel is a stream made over a table of this member's, which has none (`hero_stream_descriptor` answers `UNSUPPORTED`); a door from `hero_ipc.h` that `hero_poll.h` can wait on is owed, and `poll` is another package's
+  go      - (goroutines over the runtime's poller)
+  rust    -
+  python  multiprocessing.connection.Connection.poll, multiprocessing.connection.wait, multiprocessing.connection.Connection.readable, multiprocessing.connection.Connection.writable
+
+capability ipc/pair  two connected ends made within one process
+  heroes  net.pair
+  go      golang.org/x/sys/unix.Socketpair
+  rust    UnixStream::pair, UnixDatagram::pair
+  python  socket.socketpair, multiprocessing.connection.Pipe
+  note    within one process `net.pair` answers two connected streams on every platform; a pair whose one end goes to a child is passing a stream, the pending block `ipc/pass-stream`
+
+capability ipc/pass-stream  a stream handed to another process over a channel
+  heroes  pending: SCM_RIGHTS on POSIX needs a byte of data beside the descriptor, which an `io.Reader` buffering the channel may already have taken, and a stream to hand that has a descriptor (`hero_stream_hold`), where a socket's and a channel's stream have none; Windows' `DuplicateHandle` needs a handle on the receiving process, asked by its id, and a word telling the receiver the number. Neither half was made safe and whole on 2026-11-17, and none is written badly
+  go      golang.org/x/sys/unix.UnixRights, golang.org/x/sys/unix.ParseUnixRights, golang.org/x/sys/unix.ParseSocketControlMessage, golang.org/x/sys/unix.Sendmsg, golang.org/x/sys/unix.SendmsgN, golang.org/x/sys/unix.Recvmsg, golang.org/x/sys/unix.SendmsgBuffers, golang.org/x/sys/unix.RecvmsgBuffers, golang.org/x/sys/unix.PidfdGetfd, golang.org/x/sys/windows.DuplicateHandle, net.UnixConn.ReadMsgUnix, net.UnixConn.WriteMsgUnix, net.UnixConn.File, net.UnixListener.File
+  rust    SocketAncillary, AncillaryData, AncillaryError, ScmRights, ScmCredentials, Messages, SocketCred, UnixStream::send_vectored_with_ancillary, UnixStream::recv_vectored_with_ancillary, UnixStream::passcred, UnixStream::set_passcred, UnixDatagram::send_vectored_with_ancillary, UnixDatagram::send_vectored_with_ancillary_to, UnixDatagram::recv_vectored_with_ancillary, UnixDatagram::recv_vectored_with_ancillary_from, UnixDatagram::passcred, UnixDatagram::set_passcred
+  python  socket.send_fds, socket.recv_fds, socket.SCM_RIGHTS, socket.SCM_CREDS, socket.CMSG_LEN, socket.CMSG_SPACE
+
+capability ipc/datagrams  local datagram and sequenced-packet sockets
+  heroes  pending: POSIX has them and Windows' AF_UNIX takes stream sockets alone, so they are a door of POSIX with `unsupported` on Windows, sending to and receiving from an address each call; not written on 2026-11-17
+  go      net.ListenUnixgram, net.UnixConn.ReadFrom, net.UnixConn.ReadFromUnix, net.UnixConn.WriteTo, net.UnixConn.WriteToUnix, net.Listen (network "unixpacket")
+  rust    UnixDatagram, UnixDatagram::bind, UnixDatagram::bind_addr, UnixDatagram::unbound, UnixDatagram::connect, UnixDatagram::connect_addr, UnixDatagram::send, UnixDatagram::send_to, UnixDatagram::send_to_addr, UnixDatagram::recv, UnixDatagram::recv_from, UnixDatagram::peek, UnixDatagram::peek_from, UnixDatagram::peer_addr, UnixDatagram::local_addr, UnixDatagram::read_timeout, UnixDatagram::write_timeout, UnixDatagram::set_read_timeout, UnixDatagram::set_write_timeout, UnixDatagram::shutdown, UnixDatagram::take_error, UnixDatagram::set_nonblocking, UnixDatagram::try_clone
+  python  socket.SOCK_DGRAM and socket.SOCK_SEQPACKET with socket.AF_UNIX
+
+capability ipc/fifo  a named pipe of the file system, `mkfifo`
+  heroes  refused: `fs`'s block `fs/special-files` refuses making one (Windows has none, and its pipes are `listen_pipe`'s); one made by another program is a path `fs.open` opens as a stream
+  go      golang.org/x/sys/unix.Mkfifo
+  rust    interprocess::os::unix::fifo_file
+  python  - (os.mkfifo, `fs`'s ledger)
+
+capability ipc/memory-create  memory shared by name, made
+  heroes  ipc.create_memory
+  go      golang.org/x/sys/windows.CreateFileMapping, golang.org/x/sys/windows.MapViewOfFile, golang.org/x/sys/unix.Mmap (over a descriptor the program opened)
+  rust    -
+  python  multiprocessing.shared_memory.SharedMemory (create=True), posix_ipc.SharedMemory (O_CREAT, O_EXCL)
+  note    POSIX's `shm_open` name `/<name>`, so Python's `SharedMemory(name=...)` opens what this makes and the other way round; the size is the system's, as Python's `size` answers (observed 2026-11-17: 100 asked is 16384 on macOS, for the maker and an opener alike); a size of 0 is refused, as Python refuses it. On Linux the pages are reserved at the making (`posix_fallocate`), where Python leaves a write to a full `/dev/shm` to end the program with SIGBUS: measured in the container, 200 MB on a `/dev/shm` of 64 MB fails `limit` at once
+
+capability ipc/memory-open  memory shared by name, opened, and its size
+  heroes  ipc.open_memory, ipc.Memory
+  go      golang.org/x/sys/windows.OpenFileMapping
+  rust    -
+  python  multiprocessing.shared_memory.SharedMemory (name), multiprocessing.shared_memory.SharedMemory.name, multiprocessing.shared_memory.SharedMemory.size, posix_ipc.SharedMemory (name)
+  note    memory its maker has not sized yet is `not_found`, a client that waits for a server opening again
+
+capability ipc/memory-bytes  shared memory's bytes read and written
+  heroes  ipc.read_at, ipc.write_at
+  go      - (the []byte golang.org/x/sys/unix.Mmap answers)
+  rust    -
+  python  multiprocessing.shared_memory.SharedMemory.buf
+  note    by copies, every offset and count held against the size before a byte moves, since Heroes values are copies and no address reaches a program; Python hands a `memoryview` and Go a slice over the mapping
+
+capability ipc/memory-atomics  a word of shared memory read, written, added to and swapped whole, with no lock
+  heroes  ipc.load_at, ipc.store_at, ipc.add_at, ipc.swap_at
+  go      sync/atomic.LoadInt64, sync/atomic.StoreInt64, sync/atomic.AddInt64, sync/atomic.CompareAndSwapInt64 (on a pointer into the mapping)
+  rust    std::sync::atomic::AtomicI64::from_ptr (on a pointer into the mapping)
+  python  -
+  note    an `i64` at a multiple of 8, sequentially consistent; the sum wraps at 64 bits, as Go's and Rust's do, the one place in Rebel a number wraps, since no process can stop another's. Measured: a thousand adds from each of two processes keep all 2000
+
+capability ipc/memory-close  shared memory unmapped from this process, its name taken away
+  heroes  ipc.close_memory, ipc.remove_memory
+  go      golang.org/x/sys/windows.UnmapViewOfFile, golang.org/x/sys/unix.Munmap
+  rust    -
+  python  multiprocessing.shared_memory.SharedMemory.close, multiprocessing.shared_memory.SharedMemory.unlink, posix_ipc.unlink_shared_memory, posix_ipc.SharedMemory.unlink
+  note    on Windows the system takes a name away with its last handle, so `remove_memory` there asks that the name is open and changes nothing, `not_found` where it is not, as POSIX answers. Nothing removes a name at this process's exit: the memory is the program's to remove
+
+capability ipc/memory-list  a list of values laid out in shared memory
+  heroes  refused: a layout of values is a format a program writes with `write_at`, `msgpack` or `cbor` among them; a list whose items change size in place is Python's structure
+  go      -
+  rust    -
+  python  multiprocessing.shared_memory.ShareableList, multiprocessing.shared_memory.ShareableList.count, multiprocessing.shared_memory.ShareableList.format, multiprocessing.shared_memory.ShareableList.index
+
+capability ipc/file-mapping  a file mapped into memory
+  heroes  refused: Rebel hands no address to a program, so a mapping would be read and written by copies, which is what `io.seek` and `io.read` already do to a file
+  go      golang.org/x/sys/unix.Mmap, golang.org/x/sys/unix.MmapPtr, golang.org/x/sys/unix.Munmap, golang.org/x/sys/unix.MunmapPtr, golang.org/x/sys/unix.Msync, golang.org/x/sys/unix.Madvise, golang.org/x/sys/unix.Mlock, golang.org/x/sys/unix.Mlockall, golang.org/x/sys/unix.Mremap, golang.org/x/sys/unix.MremapPtr, golang.org/x/sys/windows.FlushViewOfFile
+  rust    -
+  python  mmap.mmap, mmap.mmap.close, mmap.mmap.closed, mmap.mmap.find, mmap.mmap.rfind, mmap.mmap.flush, mmap.mmap.madvise, mmap.mmap.move, mmap.mmap.read, mmap.mmap.read_byte, mmap.mmap.readline, mmap.mmap.seek, mmap.mmap.seekable, mmap.mmap.tell, mmap.mmap.size, mmap.mmap.write, mmap.mmap.write_byte, mmap.mmap.set_name, mmap.ACCESS_COPY, mmap.ACCESS_DEFAULT, mmap.ACCESS_READ, mmap.ACCESS_WRITE, mmap.PAGESIZE, mmap.ALLOCATIONGRANULARITY, mmap.PROT_EXEC, mmap.PROT_READ, mmap.PROT_WRITE, mmap.MS_ASYNC, mmap.MS_INVALIDATE, mmap.MS_SYNC, mmap.error
+
+capability ipc/anonymous-shared-memory  memory shared with a child by inheritance, no name
+  heroes  refused: a child of `process` is a program started anew, never a fork of this one, so memory reaches it by name
+  go      golang.org/x/sys/unix.MemfdCreate
+  rust    -
+  python  mmap.MAP_ANON, mmap.MAP_ANONYMOUS, mmap.MAP_SHARED, mmap.MAP_PRIVATE, mmap.MAP_32BIT, mmap.MAP_HASSEMAPHORE, mmap.MAP_JIT, mmap.MAP_NOCACHE, mmap.MAP_NOEXTEND, mmap.MAP_NORESERVE, mmap.MAP_RESILIENT_CODESIGN, mmap.MAP_RESILIENT_MEDIA, mmap.MAP_TPRO, mmap.MAP_TRANSLATED_ALLOW_EXECUTE, mmap.MAP_UNIX03, mmap.MADV_DONTNEED, mmap.MADV_FREE, mmap.MADV_FREE_REUSABLE, mmap.MADV_FREE_REUSE, mmap.MADV_NORMAL, mmap.MADV_RANDOM, mmap.MADV_SEQUENTIAL, mmap.MADV_WILLNEED
+
+capability ipc/system-v  System V's shared memory, semaphores and queues, keyed by number
+  heroes  refused: their keys are numbers no name tells, they outlive every process with no owner to remove them, and Windows has none; POSIX's named objects are taken instead
+  go      golang.org/x/sys/unix.SysvShmGet, golang.org/x/sys/unix.SysvShmAttach, golang.org/x/sys/unix.SysvShmDetach, golang.org/x/sys/unix.SysvShmCtl
+  rust    -
+  python  -
+
+capability ipc/semaphore  a semaphore shared by name: made, opened, taken with a bound, given back, closed, its name taken away
+  heroes  ipc.create_semaphore, ipc.open_semaphore, ipc.acquire_semaphore, ipc.release_semaphore, ipc.close_semaphore, ipc.remove_semaphore
+  go      -
+  rust    -
+  python  posix_ipc.Semaphore, posix_ipc.Semaphore.acquire, posix_ipc.Semaphore.release, posix_ipc.Semaphore.close, posix_ipc.Semaphore.unlink, posix_ipc.Semaphore.name, posix_ipc.unlink_semaphore, posix_ipc.O_CREAT, posix_ipc.O_EXCL, posix_ipc.SEMAPHORE_VALUE_MAX, posix_ipc.SEMAPHORE_TIMEOUT_SUPPORTED
+  note    `sem_open`'s `/<name>`, a count of 0 to 32,767 at its making (macOS's most; 32,768 refused there, measured). macOS has no `sem_timedwait`: the robust route taken tries again in steps from 0.1 ms to 2 ms, measured over four runs to see a release 1.0 to 1.8 ms late on average and 3.0 ms at worst, at under 1% of a core while it waits; a thread kept in `sem_wait` and given up at the bound was the other route, and it would take a count from the semaphore after its caller had gone. Linux waits in `sem_clockwait` (glibc 2.30), 0.1 to 0.3 ms late; Windows on the object (unrun)
+
+capability ipc/semaphore-value  a semaphore's count read
+  heroes  refused: macOS answers no count (`sem_getvalue` fails ENOSYS, measured 2026-11-17), and a count read is stale before it is used
+  go      -
+  rust    -
+  python  posix_ipc.Semaphore.value
+
+capability ipc/lock  a lock between processes by name, taken with a bound and released
+  heroes  ipc.open_lock, ipc.acquire_lock, ipc.release_lock, ipc.close_lock, ipc.remove_lock
+  go      golang.org/x/sys/unix.Flock, golang.org/x/sys/unix.FcntlFlock, golang.org/x/sys/windows.CreateMutex, golang.org/x/sys/windows.CreateMutexEx, golang.org/x/sys/windows.OpenMutex, golang.org/x/sys/windows.ReleaseMutex, golang.org/x/sys/windows.WaitForSingleObject, golang.org/x/sys/windows.LockFileEx, golang.org/x/sys/windows.UnlockFileEx
+  rust    -
+  python  - (fcntl.flock; posix_ipc.Semaphore with a count of 1)
+  note    on POSIX a lock is the file `/tmp/heroes-lock-<name>` locked whole by `flock`, which the system releases when the holding process ends however it ends; the other route the brief named, a semaphore of one, stays taken forever when its holder is killed. On Windows a mutex. Held by one thread: a release by another is refused `invalid`, and a thread asking a lock it holds is refused at once, where `flock` would let a second call through and a Windows mutex count a second hold. `flock` takes no bound, so the wait steps as macOS's semaphore does (a release seen 1.5 to 2.1 ms late on average and 3.5 ms at worst, measured on Darwin and in the Linux arm64 container)
+
+capability ipc/lock-abandoned  a lock whose holder died, told to its next holder
+  heroes  ipc.acquire_lock, ipc.Acquired
+  go      golang.org/x/sys/windows.WAIT_ABANDONED
+  rust    -
+  python  -
+  note    on Windows `WAIT_ABANDONED`, a thread's end included; on POSIX the lock's first byte, `H` while held and zero once released, which the next holder reads: measured on Darwin and Linux, a holder killed by SIGKILL left the lock taken `abandoned` within 0.1 ms. What POSIX cannot tell: a holder killed after it took the lock and before it wrote the byte, an instant, reads as clean; and a thread that ends holding a lock while its process runs on leaves it held until the process closes the lock or ends, the hold being the open file's
+
+capability ipc/message-queues  queues of messages by name, kept by the system
+  heroes  refused: macOS has no POSIX message queue (`mq_open`) and Windows none; a channel with `write_message` carries messages on every platform
+  go      -
+  rust    -
+  python  posix_ipc.MessageQueue, posix_ipc.unlink_message_queue, posix_ipc.MESSAGE_QUEUES_SUPPORTED
+
+capability ipc/events  an event object one process sets and another waits on
+  heroes  refused: Windows' alone; a semaphore given back once is the event every platform has
+  go      golang.org/x/sys/windows.CreateEvent, golang.org/x/sys/windows.CreateEventEx, golang.org/x/sys/windows.OpenEvent, golang.org/x/sys/unix.Eventfd
+  rust    -
+  python  -
+
+capability ipc/process-handles  a descriptor of another process by its id
+  heroes  refused: Linux's alone, and waiting for a process is `process`'s
+  go      golang.org/x/sys/unix.PidfdOpen
+  rust    -
+  python  -
+
+dropped
+  go      net.UnixConn.SyscallConn, net.UnixListener.SyscallConn (raw descriptors); net.UnixConn.SetReadBuffer, net.UnixConn.SetWriteBuffer (capacity hints)
+  rust    UnixListener::set_nonblocking, UnixStream::set_nonblocking, UnixListener::take_error, UnixStream::take_error (a failure is a value at each call), UnixListener::try_clone, UnixStream::try_clone (every copy of a handle reaches the same channel), UnixStream::set_mark (Linux's routing mark, a network's), as_fd, as_raw_fd, from_raw_fd, into_raw_fd (raw descriptors), std::os::linux::net::UnixSocketExt (credentials passing, `ipc/pass-stream`'s)
+  python  multiprocessing.connection.Connection.fileno (a raw descriptor); multiprocessing.connection.ConnectionWrapper (Python's own wrapping); multiprocessing.connection.errno, io, itertools, os, reduction, selectors, socket, struct, sys, time, util and multiprocessing.shared_memory.errno, mmap, os, partial, resource_tracker, secrets, struct, types (the modules' own imports)

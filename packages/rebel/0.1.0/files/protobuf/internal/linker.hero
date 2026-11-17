@@ -1,0 +1,601 @@
+# Files read and joined into one schema: each file parsed, the files ordered
+# so that an import comes before its importer, every name declared once, every
+# type name resolved by the language's scoping rules and seen only where its
+# file is imported, and each field's facts decided by its file's features.
+
+use protobuf/internal/carried
+use protobuf/internal/model
+use protobuf/internal/parser
+use protobuf/internal/rules
+use protobuf/internal/syntax
+
+# A message type.
+constant MESSAGE_SYMBOL: i64
+    1
+
+# An enum type.
+constant ENUM_SYMBOL: i64
+    2
+
+# A service.
+constant SERVICE_SYMBOL: i64
+    3
+
+# A package, or a part of one.
+constant PACKAGE_SYMBOL: i64
+    4
+
+# A field, a oneof, an enum value, a method or an extension.
+constant OTHER_SYMBOL: i64
+    5
+
+# A type name resolved.
+record Resolved
+    # The full name, no leading dot.
+    full_name: str
+    # `MESSAGE_SYMBOL` or `ENUM_SYMBOL`.
+    kind: i64
+
+# Every name declared, with what it is and the file declaring it.
+record Symbols
+    # What each full name is.
+    kinds: {str: i64}
+    # The file declaring each.
+    owners: {str: str}
+
+# The files `text`, the file `name`, imports.
+function imports_of(name: str, text: str) -> [str]?
+    return ok(parser.parse_file(name: name, text: text)?.file.dependencies)
+
+# The scope around `name`: all of it before its last dot.
+function parent_of(name: str) -> str
+    at: i64 @= name.len() - 1
+
+    while at >= 0 && name[at] != '.'
+        at @ at - 1
+
+    if at < 0
+        return ""
+    return name.slice(from: 0, to: at)
+
+# Adds `name` to `symbols`.
+function declare(@symbols: Symbols, name: str, kind: i64, file: str) -> ()?
+    match symbols.kinds[name]
+        .ok was =>
+            if was == PACKAGE_SYMBOL && kind == PACKAGE_SYMBOL
+                return ok()
+            other = symbols.owners[name].default(file)
+            return fail(code: "invalid", msg: f"{file}: {name} is declared twice, in {other} and {file}")
+        .err _ =>
+            symbols.kinds[name] @ kind
+            symbols.owners[name] @ file
+            return ok()
+
+# The type `name` names from inside `scope`, seen from a file that sees the
+# files `visible`.
+function resolve(symbols: Symbols lent, name: str, scope: str, visible: {str: bool}, where: str) -> Resolved?
+    if name.len() > 0 && name[0] == '.'
+        full = name.slice(from: 1, to: name.len())
+        return found(symbols, full: full, name: name, visible: visible, where: where)
+    first_end: i64 @= 0
+
+    while first_end < name.len() && name[first_end] != '.'
+        first_end @ first_end + 1
+
+    first = name.slice(from: 0, to: first_end)
+    s: str @= scope
+    going: bool @= true
+
+    while going
+        candidate = syntax.joined(scope: s, name: first)
+
+        match symbols.kinds[candidate]
+            .ok kind =>
+                full = syntax.joined(scope: s, name: name)
+                got = symbols.kinds[full].default(0)
+
+                if got == MESSAGE_SYMBOL || got == ENUM_SYMBOL
+                    return found(symbols, full: full, name: name, visible: visible, where: where)
+
+                if kind == MESSAGE_SYMBOL || kind == PACKAGE_SYMBOL || kind == ENUM_SYMBOL
+                    return fail(code: "invalid", msg: f"{where}: \"{name}\" names nothing: \"{full}\" is not a type")
+            .err _ => _ = 0
+
+        if s == ""
+            going @ false
+        else
+            s @ parent_of(s)
+
+    return fail(code: "invalid", msg: f"{where}: the type \"{name}\" names nothing")
+
+# The type `full`, where it is one and its file is seen.
+function found(symbols: Symbols lent, full: str, name: str, visible: {str: bool}, where: str) -> Resolved?
+    kind = symbols.kinds[full].default(0)
+
+    if kind != MESSAGE_SYMBOL && kind != ENUM_SYMBOL
+        return fail(code: "invalid", msg: f"{where}: \"{name}\" names no message or enum")
+    owner = symbols.owners[full].default("")
+
+    if visible[owner].is_err()
+        return fail(
+            code: "invalid",
+            msg: f"{where}: \"{name}\" is declared in {owner}, which this file does not import"
+        )
+    return ok(Resolved(full_name: full, kind: kind))
+
+# The schema the files `texts` declare, by name, each import of a file the
+# package carries read from its own copy.
+function read(texts: {str: str}) -> model.Schema?
+    parsed: {str: parser.Parsed} @= {}
+    pending: [str] @= []
+    wanted_by: {str: str} @= {}
+
+    for name in keys(texts)
+        pending @ pending.push(name)
+
+    while pending.len() > 0
+        name = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        if parsed[name].is_err()
+            text: str @= ""
+
+            match texts[name]
+                .ok given => text @ given
+                .err _ =>
+                    match carried.text_of(name)
+                        .ok own => text @ own
+                        .err _ =>
+                            asker = wanted_by[name].default("a file")
+                            return fail(code: "not_found", msg: f"{asker} imports {name}, which was not given")
+
+            p = parser.parse_file(name: name, text: text)?
+            parsed[name] @ p
+
+            for d in p.file.dependencies
+                if wanted_by[d].is_err()
+                    wanted_by[d] @ name
+                pending @ pending.push(d)
+
+    order = ordered(parsed)?
+    symbols: Symbols @= Symbols(kinds: {}, owners: {})
+
+    for file_name in order
+        p = parsed[file_name].must()
+        declare_all(@symbols, p: p)?
+
+    schema: model.Schema @= model.empty()
+    exported: {str: [str]} @= {}
+
+    for file_name in order
+        p = parsed[file_name].must()
+        shown: [str] @= [file_name]
+
+        for d in p.file.public_dependencies
+            for e in exported[d].default([])
+                shown @ shown.push(e)
+
+        exported[file_name] @ shown
+        visible: {str: bool} @= {}
+        visible[file_name] @ true
+
+        for d in p.file.dependencies
+            for e in exported[d].default([])
+                visible[e] @ true
+
+        add_file(@schema, p: p, symbols: symbols, visible: visible)?
+
+    return ok(schema)
+
+# The files of `parsed` in an order where every import comes before its
+# importer; a file importing itself, through others or not, fails.
+function ordered(parsed: {str: parser.Parsed}) -> [str]?
+    order: [str] @= []
+    state: {str: i64} @= {}
+
+    for root in keys(parsed)
+        if state[root].is_err()
+            names: [str] @= [root]
+            next: [i64] @= [0]
+            state[root] @ 1
+
+            while names.len() > 0
+                top = names.len() - 1
+                name = names[top]
+                k = next[top]
+                deps = parsed[name].must().file.dependencies
+
+                if k < deps.len()
+                    next[top] @ k + 1
+                    d = deps[k]
+
+                    match state[d]
+                        .ok s =>
+                            if s == 1
+                                return fail(
+                                    code: "invalid",
+                                    msg: f"{name}: importing {d} closes a cycle of imports, {names.join(" imports ")} imports {d}"
+                                )
+                        .err _ =>
+                            state[d] @ 1
+                            names @ names.push(d)
+                            next @ next.push(0)
+                else
+                    state[name] @ 2
+                    order @ order.push(name)
+                    names @ names.slice(from: 0, to: top)
+                    next @ next.slice(from: 0, to: top)
+
+    return ok(order)
+
+# Declares every name the file `p` declares.
+function declare_all(@symbols: Symbols, p: parser.Parsed) -> ()?
+    file = p.file.name
+
+    if p.file.package != ""
+        parts: [str] @= []
+        at: i64 @= 0
+        start: i64 @= 0
+        package = p.file.package
+
+        while at <= package.len()
+            if at == package.len() || package[at] == '.'
+                parts @ parts.push(package.slice(from: start, to: at))
+                declare(@symbols, name: parts.join("."), kind: PACKAGE_SYMBOL, file: file)?
+                start @ at + 1
+            at @ at + 1
+
+    for m in p.messages
+        declare(@symbols, name: m.full_name, kind: MESSAGE_SYMBOL, file: file)?
+
+        for f in m.fields
+            declare(@symbols, name: f.full_name, kind: OTHER_SYMBOL, file: file)?
+
+        for o in m.oneofs
+            if !o.synthetic
+                declare(@symbols, name: o.full_name, kind: OTHER_SYMBOL, file: file)?
+
+    for e in p.enums
+        declare(@symbols, name: e.full_name, kind: ENUM_SYMBOL, file: file)?
+        scope = parent_of(e.full_name)
+
+        for v in e.values
+            declare(@symbols, name: syntax.joined(scope: scope, name: v.name), kind: OTHER_SYMBOL, file: file)?
+
+    for s in p.services
+        declare(@symbols, name: s.full_name, kind: SERVICE_SYMBOL, file: file)?
+
+        for method in s.methods
+            declare(@symbols, name: method.full_name, kind: OTHER_SYMBOL, file: file)?
+
+    for x in p.extensions
+        declare(@symbols, name: x.full_name, kind: OTHER_SYMBOL, file: file)?
+
+    return ok()
+
+# `ranges` with a `max` read as the largest field number.
+function field_ranges(ranges: [model.Range]) -> [model.Range]
+    out: [model.Range] @= []
+
+    for r in ranges
+        if r.last == 2147483647
+            out @ out.push(model.Range(first: r.first, last: 536870911))
+        else
+            out @ out.push(r)
+
+    return out
+
+# `f`, declared in `scope` of a file of `form` under `features`, with its type
+# resolved and its facts decided.
+function linked_field(f: model.Field, scope: str, features: rules.Features, form: str, schema: model.Schema lent, symbols: Symbols lent, visible: {str: bool}) -> model.Field?
+    out: model.Field @= f
+    where = f"{f.full_name}"
+
+    if f.type_name != ""
+        got = resolve(symbols, name: f.type_name, scope: scope, visible: visible, where: where)?
+        out.type_name @ got.full_name
+
+        if f.kind == 0
+            if got.kind == MESSAGE_SYMBOL
+                out.kind @ model.MESSAGE
+            else
+                out.kind @ model.ENUM
+    out @ rules.decided(out, features: features, form: form, where: where)?
+    values: [model.EnumValue] @= []
+
+    if out.kind == model.ENUM
+        e = schema.enums[out.type_name].must()
+        out.closed_enum @ e.closed
+
+        if e.closed && form == "proto3"
+            return fail(
+                code: "invalid",
+                msg: f"{where}: the enum {e.full_name} is closed, and a proto3 field takes only an open one"
+            )
+        values @ e.values
+    out.default_bits @ rules.default_bits(out, values: values, where: where)?
+
+    if out.kind == model.STRING && out.has_default
+        match out.default_bytes.validated_bytes()
+            .ok _  => _ = 0
+            .err _ => return fail(code: "invalid", msg: f"{where}: a string's default is not UTF-8")
+    return ok(out)
+
+# Adds what the file `p` declares to `schema`.
+function add_file(@schema: model.Schema, p: parser.Parsed, symbols: Symbols lent, visible: {str: bool}) -> ()?
+    form = p.file.syntax
+    file_features = rules.apply(rules.defaults(form), settings: p.file.options, form: form, where: p.file.name)?
+    features_of: {str: rules.Features} @= {}
+
+    for m in p.messages
+        base = features_of[parent_of(m.full_name)].default(file_features)
+        features_of[m.full_name] @ rules.apply(base, settings: m.options, form: form, where: m.full_name)?
+
+    for e in p.enums
+        base = features_of[parent_of(e.full_name)].default(file_features)
+        own = rules.apply(base, settings: e.options, form: form, where: e.full_name)?
+        linked: model.Enum @= e
+        linked.closed @ own.enum_type == "CLOSED"
+        by_number: {i64: i64} @= {}
+        by_name: {str: i64} @= {}
+
+        for k in range(from: 0, to: e.values.len())
+            v = e.values[k]
+
+            if by_number[v.number].is_err()
+                by_number[v.number] @ k
+            by_name[v.name] @ k
+
+        linked.by_number @ by_number
+        linked.by_name @ by_name
+        rules.check_enum(linked)?
+        schema.enums[e.full_name] @ linked
+
+    for m in p.messages
+        message_features = features_of[m.full_name].must()
+        linked: model.Message @= m
+        fields: [model.Field] @= []
+        by_number: {i64: i64} @= {}
+        by_name: {str: i64} @= {}
+        by_json: {str: i64} @= {}
+        numbers: [i64] @= []
+
+        for k in range(from: 0, to: m.fields.len())
+            f = m.fields[k]
+            base: rules.Features @= message_features
+
+            if f.oneof >= 0
+                base @ rules.apply(base, settings: m.oneofs[f.oneof].options, form: form, where: m.oneofs[f.oneof].full_name)?
+            own = rules.apply(base, settings: f.options, form: form, where: f.full_name)?
+            made: model.Field @= linked_field(f, scope: m.full_name, features: own, form: form, schema: schema, symbols: symbols, visible: visible)?
+
+            if m.map_entry && made.kind == model.GROUP && f.kind != model.GROUP
+                made.kind @ model.MESSAGE
+                made.delimited @ false
+            fields @ fields.push(made)
+
+            if made.label == model.REQUIRED
+                schema.requires @ true
+            by_number[made.number] @ k
+            by_name[made.name] @ k
+            by_json[made.json_name] @ k
+            numbers @ numbers.push(made.number)
+
+        for k in range(from: 0, to: fields.len())
+            if by_json[fields[k].name].is_err()
+                by_json[fields[k].name] @ k
+
+        order: [i64] @= []
+
+        for n in sort(numbers)
+            order @ order.push(by_number[n].must())
+
+        linked.fields @ fields
+        linked.by_number @ by_number
+        linked.by_name @ by_name
+        linked.by_json @ by_json
+        linked.order @ order
+        linked.extension_ranges @ field_ranges(m.extension_ranges)
+        linked.reserved_ranges @ field_ranges(m.reserved_ranges)
+        rules.check_message(linked, form: form, json: message_features.json)?
+        schema.messages[m.full_name] @ linked
+
+    for s in p.services
+        linked: model.Service @= s
+        methods: [model.Method] @= []
+        scope = parent_of(s.full_name)
+
+        for method in s.methods
+            made: model.Method @= method
+            input = resolve(symbols, name: method.input_type, scope: scope, visible: visible, where: method.full_name)?
+            output = resolve(symbols, name: method.output_type, scope: scope, visible: visible, where: method.full_name)?
+
+            if input.kind != MESSAGE_SYMBOL || output.kind != MESSAGE_SYMBOL
+                return fail(code: "invalid", msg: f"{method.full_name}: a method's request and response are messages")
+            made.input_type @ input.full_name
+            made.output_type @ output.full_name
+            methods @ methods.push(made)
+
+        linked.methods @ methods
+        schema.services[s.full_name] @ linked
+
+    for x in p.extensions
+        scope = parent_of(x.full_name)
+        base = features_of[scope].default(file_features)
+        own = rules.apply(base, settings: x.options, form: form, where: x.full_name)?
+        extendee = resolve(symbols, name: x.extendee, scope: scope, visible: visible, where: x.full_name)?
+
+        if extendee.kind != MESSAGE_SYMBOL
+            return fail(code: "invalid", msg: f"{x.full_name}: it extends {extendee.full_name}, which is no message")
+        made: model.Field @= linked_field(x, scope: scope, features: own, form: form, schema: schema, symbols: symbols, visible: visible)?
+        made.extendee @ extendee.full_name
+        target = schema.messages[extendee.full_name].must()
+
+        if !rules.in_ranges(made.number, ranges: target.extension_ranges)
+            return fail(
+                code: "invalid",
+                msg: f"{x.full_name}: the number {made.number} is in no extension range of {target.full_name}"
+            )
+        key = model.extension_key(extendee: extendee.full_name, number: made.number)
+
+        match schema.extension_at[key]
+            .ok other => return fail(
+                code: "invalid",
+                msg: f"{x.full_name}: {target.full_name}'s number {made.number} is extended by {other} already"
+            )
+            .err _ => schema.extension_at[key] @ x.full_name
+
+        schema.extensions[x.full_name] @ made
+
+    check_settings(schema, settings: p.file.options, kind: "File", scope: p.file.package, symbols: symbols, visible: visible)?
+
+    for m in p.messages
+        check_settings(schema, settings: m.options, kind: "Message", scope: m.full_name, symbols: symbols, visible: visible)?
+
+        for f in m.fields
+            check_settings(schema, settings: f.options, kind: "Field", scope: m.full_name, symbols: symbols, visible: visible)?
+
+        for o in m.oneofs
+            check_settings(schema, settings: o.options, kind: "Oneof", scope: m.full_name, symbols: symbols, visible: visible)?
+
+    for e in p.enums
+        scope = parent_of(e.full_name)
+        check_settings(schema, settings: e.options, kind: "Enum", scope: scope, symbols: symbols, visible: visible)?
+
+        for v in e.values
+            check_settings(schema, settings: v.options, kind: "EnumValue", scope: scope, symbols: symbols, visible: visible)?
+
+    for s in p.services
+        scope = parent_of(s.full_name)
+        check_settings(schema, settings: s.options, kind: "Service", scope: scope, symbols: symbols, visible: visible)?
+
+        for method in s.methods
+            check_settings(schema, settings: method.options, kind: "Method", scope: scope, symbols: symbols, visible: visible)?
+
+    for x in p.extensions
+        check_settings(schema, settings: x.options, kind: "Field", scope: parent_of(x.full_name), symbols: symbols, visible: visible)?
+
+    schema.files[p.file.name] @ p.file
+    return ok()
+
+# Checks the names of `settings`, a declaration's of `kind` inside `scope`: a
+# word descriptor.proto gives that kind, or an extension of its options message
+# that the file sees.
+function check_settings(schema: model.Schema lent, settings: [model.Setting], kind: str, scope: str, symbols: Symbols lent, visible: {str: bool}) -> ()?
+    known = rules.known_options(kind)
+
+    place = if scope == ""
+        "the file"
+    else
+        scope
+
+    for s in settings
+        head = rules.option_head(s.name)
+
+        if head.len() > 2 && head[0] == '('
+            name = head.slice(from: 1, to: head.len() - 1)
+            target: str @= ""
+
+            if name[0] == '.'
+                target @ name.slice(from: 1, to: name.len())
+            else
+                at: str @= scope
+                going: bool @= true
+
+                while going && target == ""
+                    candidate = syntax.joined(scope: at, name: name)
+
+                    if !schema.extensions[candidate].is_err()
+                        target @ candidate
+
+                    if at == ""
+                        going @ false
+                    else
+                        at @ parent_of(at)
+
+            match schema.extensions[target]
+                .err _ => return fail(
+                    code: "invalid",
+                    msg: f"{place}: the option ({name}) names no extension this file sees"
+                )
+                .ok x =>
+                    if x.extendee != "google.protobuf." + kind + "Options"
+                        return fail(
+                            code: "invalid",
+                            msg: f"{place}: the option ({name}) extends {x.extendee}, not google.protobuf.{kind}Options"
+                        )
+
+                    if visible[symbols.owners[target].default("")].is_err()
+                        return fail(
+                            code: "invalid",
+                            msg: f"{place}: the option ({name}) is declared in a file this one does not import"
+                        )
+        else
+            named: bool @= false
+
+            for k in known
+                if k == head
+                    named @ true
+
+            if !named
+                return fail(code: "invalid", msg: f"{place}: `{s.name}` is no option of a {kind}")
+
+    return ok()
+
+test "read: two files, an import, nested scopes, an enum's default, and a service"
+    texts = {
+        "a.proto": "syntax = \"proto2\";\npackage x.y;\nenum Size { SMALL = 1; LARGE = 2; }\nmessage Base { extensions 100 to 199; }\n"
+        "b.proto": "syntax = \"proto2\";\npackage x.z;\nimport \"a.proto\";\nmessage M {\n  message In { optional y.Size size = 1 [default = LARGE]; }\n  optional In in = 1;\n  repeated int32 n = 2 [packed = true];\n}\nextend x.y.Base { optional string tag = 100; }\nservice S { rpc Do (M) returns (M.In); }\n"
+    }
+    schema = read(texts).must()
+    assert keys(schema.files) == ["a.proto", "b.proto"]
+    inner = schema.messages["x.z.M.In"].must()
+    assert inner.fields[0].type_name == "x.y.Size" && inner.fields[0].kind == model.ENUM
+    assert inner.fields[0].closed_enum && inner.fields[0].default_bits == 2
+    m = schema.messages["x.z.M"].must()
+    assert m.fields[0].type_name == "x.z.M.In" && m.fields[1].packed
+    assert schema.extension_at["x.y.Base#100"].must() == "x.z.tag"
+    assert schema.services["x.z.S"].must().methods[0].output_type == "x.z.M.In"
+
+test "read: proto3's facts, a map, the well-known types carried, and editions' features"
+    texts = {
+        "c.proto": "syntax = \"proto3\";\nimport \"google/protobuf/timestamp.proto\";\nmessage C {\n  int32 a = 1;\n  optional int32 b = 2;\n  repeated int32 c = 3;\n  map<string, C> d = 4;\n  google.protobuf.Timestamp t = 5;\n  string s = 6;\n}\n"
+        "e.proto": "edition = \"2023\";\noption features.field_presence = IMPLICIT;\nmessage E {\n  int32 a = 1;\n  int32 b = 2 [features.field_presence = EXPLICIT];\n  repeated int32 c = 3 [features.repeated_field_encoding = EXPANDED];\n  E e = 4 [features.message_encoding = DELIMITED];\n  string s = 5 [features.utf8_validation = NONE];\n}\n"
+    }
+    schema = read(texts).must()
+    c = schema.messages["C"].must()
+    assert !c.fields[0].presence && c.fields[1].presence && c.fields[2].packed && c.fields[3].is_map
+    assert c.fields[4].type_name == "google.protobuf.Timestamp" && c.fields[5].validate_utf8
+    assert schema.messages["C.DEntry"].must().map_entry
+    e = schema.messages["E"].must()
+    assert !e.fields[0].presence && e.fields[1].presence && !e.fields[2].packed
+    assert e.fields[3].kind == model.GROUP && e.fields[3].delimited && !e.fields[4].validate_utf8
+
+test "read: each way the files are wrong"
+    bad = [
+        {"a.proto": "syntax = \"proto3\";\nimport \"b.proto\";\n", "b.proto": "syntax = \"proto3\";\nimport \"a.proto\";\n"}
+        {"a.proto": "syntax = \"proto3\";\nmessage A { Missing m = 1; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nmessage A { int32 a = 1; int32 b = 1; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nmessage A { int32 a = 1; }\nmessage A { int32 b = 1; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nenum E { ONE = 1; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nmessage A { int32 a = 19000; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nmessage A { reserved 1; int32 a = 1; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nmessage A { int32 foo_bar = 1; int32 fooBar = 2; }\n"}
+        {"a.proto": "syntax = \"proto2\";\nmessage A { optional int32 a = 1; }\nextend A { optional int32 b = 2; }\n"}
+        {"a.proto": "syntax = \"proto3\";\nimport \"c.proto\";\n"}
+        {"a.proto": "syntax = \"proto2\";\nenum E { A = 1; }\n", "b.proto": "syntax = \"proto3\";\nimport \"a.proto\";\nmessage B { E e = 1; }\n"}
+        {"a.proto": "syntax = \"proto2\";\nmessage A { optional int32 a = 1 [default = 1.5]; }\n"}
+    ]
+
+    for texts in bad
+        assert read(texts).is_err()
+
+test "read: messages nested a hundred deep, and one level more refused"
+    deep = "syntax = \"proto3\";\n" + repeat("message M { ", 100) + repeat("}", 100) + "\n"
+    schema = read({"d.proto": deep}).must()
+    assert schema.messages.len() == 100
+    deeper = "syntax = \"proto3\";\n" + repeat("message M { ", 101) + repeat("}", 101) + "\n"
+
+    match read({"d.proto": deeper})
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

@@ -1,0 +1,124 @@
+# Messages whole over a stream: each written with its length before it and
+# read back whole, in the framing Python's `multiprocessing.connection` writes
+# with `send_bytes` and reads with `recv_bytes` (observed 2026-11-17: `abc`
+# goes as `00000003616263`, the empty message as `00000000`), so a Heroes
+# program and a Python one read each other's: the length in 4 bytes, signed
+# and big-endian, or -1 there and the length in 8 unsigned bytes for one past
+# 2,147,483,647 bytes.
+
+use bytes
+use io
+use ipc/internal/failure
+
+# The longest message the short length holds.
+constant SHORT_MOST: i64
+    2147483647
+
+# The bytes written before a message of `count` bytes.
+function header(count: i64) -> [u8]
+    if count <= SHORT_MOST
+        return bytes.encode_i32_be(count.to_i32().must())
+    long @= bytes.encode_i32_be(-1)
+
+    for b in bytes.encode_u64_be(count.to_u64().must())
+        long @ long.push(b)
+
+    return long
+
+# Writes `data` to `s` as one message.
+function write(s: io.Stream, data: [u8]) -> ()?
+    io.write(s, data: header(data.len()))?
+
+    if data.len() == 0
+        return ok()
+    return io.write(s, data: data)
+
+# The next message of `s`, at most `most` bytes long.
+function read(s: io.Stream, most: i64) -> [u8]?
+    asked = "reading a message of " + s.name
+
+    if most < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the most is 0 or more bytes, and {most} is not")
+    short = bytes.decode_i32_be(io.read_exact(s, count: 4)?, at: 0)?
+    count @= short.to_i64().must()
+
+    if short == -1
+        long = bytes.decode_u64_be(io.read_exact(s, count: 8)?, at: 0)?
+
+        match long.to_i64()
+            .ok n => count @ n
+            .err _ => return failure.of(
+                code: failure.INVALID,
+                asked: asked,
+                why: f"a length of {long} bytes is past what a list holds"
+            )
+    else if short < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: f"a length of {short} is no message's")
+
+    if count > most
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"the message holds {count} bytes, past the most of {most}"
+        )
+    return io.read_exact(s, count: count)
+
+## Tests
+
+test "header: 0, one byte, the longest short length, and one past it in the long form"
+    assert header(0) == [0, 0, 0, 0]
+    assert header(3) == [0, 0, 0, 3]
+    assert header(2147483647) == [127, 255, 255, 255]
+    assert header(2147483648) == [255, 255, 255, 255, 0, 0, 0, 0, 128, 0, 0, 0]
+
+test "write and read through a pipe: an empty message, one of three bytes, one past its most refused, and the end before a whole one"
+    p = io.pipe().must()
+    reader @= p.reader
+    writer @= p.writer
+    assert write(writer, data: []) == ok()
+    assert write(writer, data: [97, 98, 99]) == ok()
+    assert write(writer, data: [1, 2, 3, 4]) == ok()
+    assert read(reader, most: 10).must() == []
+    assert read(reader, most: 3).must() == [97, 98, 99]
+
+    match read(reader, most: 3)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "reading a message of a pipe's reading end: the message holds 4 bytes, past the most of 3"
+
+    assert io.read_exact(reader, count: 4).must() == [1, 2, 3, 4]
+    assert io.write(writer, data: [0, 0, 0, 9, 1]) == ok()
+    assert io.close(@writer) == ok()
+
+    match read(reader, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    assert io.close(@reader) == ok()
+
+test "read: a negative most is refused, a length of -2 is no message's, and the long form read back"
+    p = io.pipe().must()
+    reader @= p.reader
+    writer @= p.writer
+
+    match read(reader, most: -1)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    assert io.write(writer, data: [255, 255, 255, 254]) == ok()
+
+    match read(reader, most: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading a message of a pipe's reading end: a length of -2 is no message's"
+
+    assert io.write(writer, data: [255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 2, 7, 8]) == ok()
+    assert read(reader, most: 2).must() == [7, 8]
+    assert io.write(writer, data: [255, 255, 255, 255, 128, 0, 0, 0, 0, 0, 0, 0]) == ok()
+
+    match read(reader, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    assert io.close(@writer) == ok()
+    assert io.close(@reader) == ok()

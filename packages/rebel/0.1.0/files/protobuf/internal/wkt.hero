@@ -1,0 +1,381 @@
+# The text forms the JSON mapping gives the well-known types: a Timestamp as
+# RFC 3339 in UTC over the years 1 to 9999, a Duration as seconds with a
+# fraction, a FieldMask as its paths in lowerCamelCase; and a field mask's
+# paths normalized, joined and intersected. The calendar is the proleptic
+# Gregorian one, counted here in days, since a timestamp reaches years that a
+# `time.Instant` does not.
+
+use strings
+
+# The seconds of 0001-01-01T00:00:00Z since 1970.
+constant MIN_SECONDS: i64
+    -62135596800
+
+# The seconds of 9999-12-31T23:59:59Z since 1970.
+constant MAX_SECONDS: i64
+    253402300799
+
+# The largest duration either way, in seconds: ten thousand years.
+constant MAX_DURATION: i64
+    315576000000
+
+# A moment or a length: whole seconds and nanoseconds.
+record Moment
+    # The seconds.
+    seconds: i64
+    # The nanoseconds, 0 to 999,999,999 for a moment, of the seconds' sign for
+    # a length.
+    nanos: i64
+
+# A day of the calendar.
+record Civil
+    # The year.
+    year: i64
+    # The month, 1 to 12.
+    month: i64
+    # The day, 1 to 31.
+    day: i64
+
+# The days from 1970-01-01 to the given day.
+function days_from_civil(year: i64, month: i64, day: i64) -> i64
+    y = if month <= 2
+        year - 1
+    else
+        year
+
+    era = if y >= 0
+        y / 400
+    else
+        (y - 399) / 400
+    yoe = y - era * 400
+
+    mp = if month > 2
+        month - 3
+    else
+        month + 9
+    doy = (153 * mp + 2) / 5 + day - 1
+    doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+    return era * 146097 + doe - 719468
+
+# The day `days` after 1970-01-01.
+function civil_from_days(days: i64) -> Civil
+    z = days + 719468
+
+    era = if z >= 0
+        z / 146097
+    else
+        (z - 146096) / 146097
+    doe = z - era * 146097
+    yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+    mp = (5 * doy + 2) / 153
+    day = doy - (153 * mp + 2) / 5 + 1
+
+    month = if mp < 10
+        mp + 3
+    else
+        mp - 9
+
+    bump = if month <= 2
+        1
+    else
+        0
+    year = yoe + era * 400 + bump
+    return Civil(year: year, month: month, day: day)
+
+# `n` written with at least `width` digits.
+function digits(n: i64, width: i64) -> str
+    return strings.pad_zeros(f"{n}", width)
+
+# The fraction `nanos` writes after a point: none, or 3, 6 or 9 digits.
+function fraction(nanos: i64) -> str
+    if nanos == 0
+        return ""
+
+    if nanos % 1000000 == 0
+        return "." + digits(n: nanos / 1000000, width: 3)
+
+    if nanos % 1000 == 0
+        return "." + digits(n: nanos / 1000, width: 6)
+    return "." + digits(n: nanos, width: 9)
+
+# The RFC 3339 text of a timestamp.
+function format_timestamp(seconds: i64, nanos: i64) -> str?
+    if seconds < MIN_SECONDS || seconds > MAX_SECONDS
+        return fail(code: "invalid", msg: f"a timestamp of {seconds} seconds is outside 0001-01-01 to 9999-12-31")
+
+    if nanos < 0 || nanos > 999999999
+        return fail(code: "invalid", msg: f"a timestamp's nanoseconds, {nanos}, are outside 0 to 999999999")
+
+    days = if seconds >= 0
+        seconds / 86400
+    else
+        (seconds - 86399) / 86400
+    rest = seconds - days * 86400
+    c = civil_from_days(days)
+    date = f"{digits(n: c.year, width: 4)}-{digits(n: c.month, width: 2)}-{digits(n: c.day, width: 2)}"
+    clock = f"{digits(n: rest / 3600, width: 2)}:{digits(n: rest / 60 % 60, width: 2)}:{digits(n: rest % 60, width: 2)}"
+    return ok(f"{date}T{clock}{fraction(nanos)}Z")
+
+# The number the decimal digits of `s` from `from` to `to` write.
+function number_at(s: str, from: i64, to: i64) -> i64?
+    if to > s.len() || from >= to
+        return fail(code: "invalid", msg: f"\"{s}\" ends where digits were expected")
+    n: i64 @= 0
+
+    for k in range(from: from, to: to)
+        if s[k] < '0' || s[k] > '9'
+            return fail(code: "invalid", msg: f"\"{s}\" holds a byte that is no digit at {k}")
+        n @ n * 10 + to_i64(s[k] - '0').must()
+
+    return ok(n)
+
+# Whether byte `at` of `s` is `c`.
+function byte_is(s: str, at: i64, c: u8) -> bool
+    return at < s.len() && s[at] == c
+
+# The digits of a fraction from `at`: the nanoseconds they write and where they
+# end; none where no point stands at `at`.
+function nanos_at(s: str, at: i64) -> Moment?
+    if !byte_is(s, at: at, c: '.')
+        return ok(Moment(seconds: 0, nanos: at))
+    end: i64 @= at + 1
+
+    while end < s.len() && s[end] >= '0' && s[end] <= '9'
+        end @ end + 1
+
+    count = end - at - 1
+
+    if count < 1 || count > 9
+        return fail(code: "invalid", msg: f"\"{s}\": a fraction takes 1 to 9 digits")
+    n: i64 @= number_at(s, from: at + 1, to: end)?
+
+    for _ in range(from: count, to: 9)
+        n @ n * 10
+
+    return ok(Moment(seconds: n, nanos: end))
+
+# The timestamp an RFC 3339 text writes.
+function parse_timestamp(s: str) -> Moment?
+    bad = f"\"{s}\" is no RFC 3339 time, as 1972-01-01T10:00:20.021Z is"
+
+    if s.len() < 20 || !byte_is(s, at: 4, c: '-') || !byte_is(s, at: 7, c: '-') || !byte_is(s, at: 10, c: 'T') || !byte_is(s, at: 13, c: ':') || !byte_is(s, at: 16, c: ':')
+        return fail(code: "invalid", msg: bad)
+    year = number_at(s, from: 0, to: 4)?
+    month = number_at(s, from: 5, to: 7)?
+    day = number_at(s, from: 8, to: 10)?
+    hour = number_at(s, from: 11, to: 13)?
+    minute = number_at(s, from: 14, to: 16)?
+    second = number_at(s, from: 17, to: 19)?
+    leap = year % 4 == 0 && year % 100 != 0 || year % 400 == 0
+    lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    if month < 1 || month > 12 || day < 1 || hour > 23 || minute > 59 || second > 59 || year < 1
+        return fail(code: "invalid", msg: bad)
+
+    if day > lengths[month - 1] && !(month == 2 && leap && day == 29)
+        return fail(code: "invalid", msg: f"\"{s}\" names a day its month does not hold")
+    frac = nanos_at(s, at: 19)?
+    at = frac.nanos
+    offset: i64 @= 0
+
+    if byte_is(s, at: at, c: 'Z')
+        if at + 1 != s.len()
+            return fail(code: "invalid", msg: bad)
+    else if (byte_is(s, at: at, c: '+') || byte_is(s, at: at, c: '-')) && at + 6 == s.len() && byte_is(s, at: at + 3, c: ':')
+        hours = number_at(s, from: at + 1, to: at + 3)?
+        minutes = number_at(s, from: at + 4, to: at + 6)?
+
+        if hours > 23 || minutes > 59
+            return fail(code: "invalid", msg: bad)
+        offset @ hours * 3600 + minutes * 60
+
+        if s[at] == '-'
+            offset @ 0 - offset
+    else
+        return fail(code: "invalid", msg: bad)
+    seconds = days_from_civil(year: year, month: month, day: day) * 86400 + hour * 3600 + minute * 60 + second - offset
+
+    if seconds < MIN_SECONDS || seconds > MAX_SECONDS
+        return fail(code: "invalid", msg: f"\"{s}\" is outside 0001-01-01 to 9999-12-31 in UTC")
+    return ok(Moment(seconds: seconds, nanos: frac.seconds))
+
+# The text of a duration: seconds, a fraction, `s`.
+function format_duration(seconds: i64, nanos: i64) -> str?
+    if seconds > MAX_DURATION || seconds < 0 - MAX_DURATION
+        return fail(code: "invalid", msg: f"a duration of {seconds} seconds passes ten thousand years")
+
+    if nanos > 999999999 || nanos < -999999999 || seconds > 0 && nanos < 0 || seconds < 0 && nanos > 0
+        return fail(
+            code: "invalid",
+            msg: f"a duration's seconds, {seconds}, and nanoseconds, {nanos}, differ in sign or pass a second"
+        )
+
+    sign = if seconds < 0 || nanos < 0
+        "-"
+    else
+        ""
+
+    whole = if seconds < 0
+        0 - seconds
+    else
+        seconds
+
+    part = if nanos < 0
+        0 - nanos
+    else
+        nanos
+    return ok(f"{sign}{whole}{fraction(part)}s")
+
+# The duration a text writes.
+function parse_duration(s: str) -> Moment?
+    bad = f"\"{s}\" is no duration, as -1.5s is"
+
+    if s.len() < 2 || s[s.len() - 1] != 's'
+        return fail(code: "invalid", msg: bad)
+    negative = s[0] == '-'
+
+    start = if negative
+        1
+    else
+        0
+    end: i64 @= start
+
+    while end < s.len() && s[end] >= '0' && s[end] <= '9'
+        end @ end + 1
+
+    if end == start || end - start > 12
+        return fail(code: "invalid", msg: bad)
+    whole = number_at(s, from: start, to: end)?
+    frac = nanos_at(s, at: end)?
+
+    if frac.nanos != s.len() - 1
+        return fail(code: "invalid", msg: bad)
+
+    if whole > MAX_DURATION
+        return fail(code: "invalid", msg: f"\"{s}\" passes ten thousand years")
+
+    if negative
+        return ok(Moment(seconds: 0 - whole, nanos: 0 - frac.seconds))
+    return ok(Moment(seconds: whole, nanos: frac.seconds))
+
+# A field mask's paths as the JSON mapping writes them.
+function format_mask(paths: [str]) -> str?
+    out: [str] @= []
+
+    for path in paths
+        pieces: [str] @= []
+        upper: bool @= false
+
+        for c in path.chars()
+            b = c[0]
+
+            if b >= 'A' && b <= 'Z'
+                return fail(
+                    code: "invalid",
+                    msg: f"the path \"{path}\" holds a capital, which its JSON text would not give back"
+                )
+
+            if c == "_"
+                if upper
+                    return fail(code: "invalid", msg: f"the path \"{path}\" holds a `_` no lower-case letter follows")
+                upper @ true
+            else if upper
+                if b < 'a' || b > 'z'
+                    return fail(code: "invalid", msg: f"the path \"{path}\" holds a `_` no lower-case letter follows")
+                pieces @ pieces.push(strings.to_upper_ascii(c))
+                upper @ false
+            else
+                pieces @ pieces.push(c)
+
+        if upper
+            return fail(code: "invalid", msg: f"the path \"{path}\" ends with a `_`")
+        out @ out.push(pieces.join(""))
+
+    return ok(out.join(","))
+
+# The paths of a field mask's JSON text.
+function parse_mask(s: str) -> [str]?
+    out: [str] @= []
+
+    if s == ""
+        return ok(out)
+
+    for path in strings.split(s: s, sep: ",")
+        pieces: [str] @= []
+
+        for c in path.chars()
+            b = c[0]
+
+            if c == "_"
+                return fail(code: "invalid", msg: f"the path \"{path}\" holds a `_`, which no JSON name holds")
+
+            if b >= 'A' && b <= 'Z'
+                pieces @ pieces.push("_" + strings.to_lower_ascii(c))
+            else
+                pieces @ pieces.push(c)
+
+        out @ out.push(pieces.join(""))
+
+    return ok(out)
+
+# Whether the path `a` covers `b`: it is `b`, or `b` lies under it.
+function covers(a: str, b: str) -> bool
+    return a == b || b.len() > a.len() && b.slice(from: 0, to: a.len()) == a && b[a.len()] == '.'
+
+# `paths` sorted, each once, none another covers.
+function normalize(paths: [str]) -> [str]
+    out: [str] @= []
+
+    for p in sort(paths)
+        if out.len() == 0 || !covers(a: out[out.len() - 1], b: p)
+            out @ out.push(p)
+
+    return out
+
+# The paths both `a` and `b` cover.
+function intersect(a: [str], b: [str]) -> [str]
+    out: [str] @= []
+
+    for x in normalize(a)
+        for y in normalize(b)
+            if covers(a: x, b: y)
+                out @ out.push(y)
+            else if covers(a: y, b: x)
+                out @ out.push(x)
+
+    return normalize(out)
+
+test "format_timestamp and parse_timestamp: the epoch, both ends, each fraction's width, an offset, and what is no time"
+    assert format_timestamp(seconds: 0, nanos: 0).must() == "1970-01-01T00:00:00Z"
+    assert format_timestamp(seconds: MIN_SECONDS, nanos: 0).must() == "0001-01-01T00:00:00Z"
+    assert format_timestamp(seconds: MAX_SECONDS, nanos: 999999999).must() == "9999-12-31T23:59:59.999999999Z"
+    assert format_timestamp(seconds: 63108020, nanos: 21000000).must() == "1972-01-01T10:00:20.021Z"
+    assert format_timestamp(seconds: -1, nanos: 5000).must() == "1969-12-31T23:59:59.000005Z"
+    assert format_timestamp(seconds: MAX_SECONDS + 1, nanos: 0).is_err() && format_timestamp(seconds: 0, nanos: -1).is_err()
+    assert parse_timestamp("1972-01-01T10:00:20.021Z").must() == Moment(seconds: 63108020, nanos: 21000000)
+    assert parse_timestamp("1970-01-01T01:00:00+01:00").must() == Moment(seconds: 0, nanos: 0)
+    assert parse_timestamp("2000-02-29T00:00:00.5Z").must().nanos == 500000000
+
+    for bad in ["", "1970-01-01 00:00:00Z", "1970-01-01T00:00:00", "1970-13-01T00:00:00Z", "1999-02-29T00:00:00Z", "1970-01-01T00:00:00.Z", "1970-01-01T00:00:00.1234567891Z", "0000-12-31T23:59:59Z"]
+        assert parse_timestamp(bad).is_err()
+
+test "format_duration and parse_duration: zero, a fraction, a negative one, both ends, and what is none"
+    assert format_duration(seconds: 0, nanos: 0).must() == "0s" && format_duration(seconds: 1, nanos: 500000000).must() == "1.500s"
+    assert format_duration(seconds: 0, nanos: -1).must() == "-0.000000001s" && format_duration(seconds: -3, nanos: -100000).must() == "-3.000100s"
+    assert format_duration(seconds: MAX_DURATION + 1, nanos: 0).is_err() && format_duration(seconds: 1, nanos: -1).is_err()
+    assert parse_duration("-1.5s").must() == Moment(seconds: -1, nanos: -500000000)
+    assert parse_duration("315576000000s").must().seconds == MAX_DURATION
+
+    for bad in ["", "s", "1", "1.s", "+1s", "1.0000000001s", "315576000001s", "1 s"]
+        assert parse_duration(bad).is_err()
+
+test "format_mask and parse_mask: names in lowerCamelCase both ways, and paths that do not come back"
+    assert format_mask(["a.b_c", "d"]).must() == "a.bC,d" && format_mask([]).must() == ""
+    assert parse_mask("a.bC,d").must() == ["a.b_c", "d"] && parse_mask("").must().len() == 0
+    assert format_mask(["aB"]).is_err() && format_mask(["a__b"]).is_err() && format_mask(["a_1"]).is_err()
+    assert parse_mask("a_b").is_err()
+
+test "normalize and intersect: covered paths taken out, and what two masks share"
+    assert normalize(["b", "a.b", "a", "b"]) == ["a", "b"]
+    assert intersect(a: ["a", "b.c"], b: ["a.x", "b"]) == ["a.x", "b.c"]

@@ -1,0 +1,677 @@
+# A `.proto` file read into declarations: its syntax, package, imports and
+# options, and every message, enum, service and extension it declares, each
+# with its full name. Type names stay as written, to be resolved once every
+# file is read; a group's and a map's types, which the file itself makes, are
+# written resolved, with a leading dot. Declarations nest no deeper than
+# `syntax.MAX_NESTING`.
+
+use protobuf/internal/enums as enum_reader
+use protobuf/internal/lexer
+use protobuf/internal/model
+use protobuf/internal/services as service_reader
+use protobuf/internal/syntax
+
+# What a message or an `extend` declares, the message itself first.
+record Bundle
+    # The messages, nested ones and groups included.
+    messages: [model.Message]
+    # The enums.
+    enums: [model.Enum]
+    # The extensions, their extendee as written.
+    extensions: [model.Field]
+
+# What a file declares.
+record Parsed
+    # The file, its lists of names filled.
+    file: model.File
+    # Every message, nested ones included.
+    messages: [model.Message]
+    # Every enum.
+    enums: [model.Enum]
+    # Every service.
+    services: [model.Service]
+    # Every extension, top-level and nested.
+    extensions: [model.Field]
+
+# The kind of the scalar type `name`, or 0 where it names none.
+function scalar_kind(name: str) -> i64
+    kinds = {
+        "double": model.DOUBLE
+        "float": model.FLOAT
+        "int64": model.INT64
+        "uint64": model.UINT64
+        "int32": model.INT32
+        "fixed64": model.FIXED64
+        "fixed32": model.FIXED32
+        "bool": model.BOOL
+        "string": model.STRING
+        "bytes": model.BYTES
+        "uint32": model.UINT32
+        "sfixed32": model.SFIXED32
+        "sfixed64": model.SFIXED64
+        "sint32": model.SINT32
+        "sint64": model.SINT64
+    }
+    return kinds[name].default(0)
+
+# The name of a map field's entry: `my_map` gives `MyMapEntry`.
+function entry_name(field: str) -> str
+    out: [str] @= []
+    upper: bool @= true
+
+    for c in field.chars()
+        if c == "_"
+            upper @ true
+        else if upper && c[0] >= 'a' && c[0] <= 'z'
+            out @ out.push(to_str_upper(c))
+            upper @ false
+        else
+            out @ out.push(c)
+            upper @ false
+
+    return out.join("") + "Entry"
+
+# The one ASCII letter `c` in upper case.
+function to_str_upper(c: str) -> str
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    k = to_i64(c[0] - 'a').must()
+    return letters.slice(from: k, to: k + 1)
+
+# A field with no option, no default and nothing resolved.
+function plain_field(name: str, full_name: str, number: i64, kind: i64, label: i64, type_name: str) -> model.Field
+    nothing: [u8] = []
+    settings: [model.Setting] = []
+    return model.Field(
+        name: name,
+        full_name: full_name,
+        json_name: "",
+        number: number,
+        kind: kind,
+        label: label,
+        type_name: type_name,
+        presence: false,
+        packed: false,
+        is_map: false,
+        oneof: -1,
+        proto3_optional: false,
+        has_default: false,
+        default_text: "",
+        default_bytes: nothing,
+        default_bits: 0,
+        validate_utf8: false,
+        delimited: false,
+        closed_enum: false,
+        extendee: "",
+        options: settings
+    )
+
+# A message with nothing in it.
+function plain_message(name: str, full_name: str, file: str) -> model.Message
+    return model.Message(
+        name: name,
+        full_name: full_name,
+        file: file,
+        fields: [],
+        by_number: {},
+        by_name: {},
+        by_json: {},
+        oneofs: [],
+        messages: [],
+        enums: [],
+        extension_ranges: [],
+        reserved_ranges: [],
+        reserved_names: [],
+        extensions: [],
+        map_entry: false,
+        options: [],
+        order: []
+    )
+
+# Copies `options` into `field`, the `default` among them read into its own
+# place.
+function with_options(field: model.Field, options: [model.Setting]) -> model.Field
+    out: model.Field @= field
+    kept: [model.Setting] @= []
+
+    for s in options
+        if s.name == "default"
+            out.has_default @ true
+
+            if s.kind == model.QUOTED
+                out.default_bytes @ s.data
+            else
+                out.default_text @ s.text
+        else
+            kept @ kept.push(s)
+
+    out.options @ kept
+    return out
+
+# The file `name` read from `text`.
+function parse_file(name: str, text: str) -> Parsed?
+    tokens = lexer.tokens(name: name, text: text)?
+    at: i64 @= 0
+    settings: [model.Setting] = []
+    names: [str] = []
+    info: model.File @= model.File(
+        name: name,
+        package: "",
+        syntax: "proto2",
+        edition: "",
+        dependencies: names,
+        public_dependencies: names,
+        weak_dependencies: names,
+        messages: names,
+        enums: names,
+        services: names,
+        extensions: [],
+        options: settings
+    )
+    messages: [model.Message] @= []
+    enums: [model.Enum] @= []
+    services: [model.Service] @= []
+    extensions: [model.Field] @= []
+    top_messages: [str] @= []
+    top_enums: [str] @= []
+    top_services: [str] @= []
+    options: [model.Setting] @= []
+    dependencies: [str] @= []
+    public: [str] @= []
+    weak: [str] @= []
+    first: bool @= true
+    package_seen: bool @= false
+
+    while syntax.peek(tokens, at: at).kind != lexer.END
+        t = syntax.peek(tokens, at: at)
+
+        if syntax.is_at(tokens, at: at, text: ";")
+            at @ at + 1
+        else if t.kind == lexer.IDENT && (t.text == "syntax" || t.text == "edition")
+            if !first
+                return fail(
+                    code: "invalid",
+                    msg: f"{lexer.where(name, line: t.line, column: t.column)}: `{t.text}` must be the file's first statement"
+                )
+            at @ at + 1
+            syntax.expect(tokens, @at, name: name, symbol: "=")?
+            value = syntax.quoted_text(tokens, @at, name: name, what: "the syntax")?
+            syntax.expect(tokens, @at, name: name, symbol: ";")?
+
+            if t.text == "syntax"
+                if value != "proto2" && value != "proto3"
+                    return fail(
+                        code: "invalid",
+                        msg: f"{lexer.where(name, line: t.line, column: t.column)}: syntax \"{value}\" is neither proto2 nor proto3"
+                    )
+                info.syntax @ value
+            else
+                if value != "2023" && value != "2024"
+                    return fail(
+                        code: "invalid",
+                        msg: f"{lexer.where(name, line: t.line, column: t.column)}: edition \"{value}\" is not one this package reads, 2023 or 2024"
+                    )
+                info.syntax @ "editions"
+                info.edition @ value
+        else if t.kind == lexer.IDENT && t.text == "package"
+            if package_seen
+                return fail(
+                    code: "invalid",
+                    msg: f"{lexer.where(name, line: t.line, column: t.column)}: a second `package`"
+                )
+            at @ at + 1
+            info.package @ syntax.dotted(tokens, @at, name: name, what: "the package's name")?
+            syntax.expect(tokens, @at, name: name, symbol: ";")?
+            package_seen @ true
+        else if t.kind == lexer.IDENT && t.text == "import"
+            at @ at + 1
+            kind: str @= ""
+
+            if syntax.is_at(tokens, at: at, text: "public") || syntax.is_at(tokens, at: at, text: "weak")
+                kind @ syntax.peek(tokens, at: at).text
+                at @ at + 1
+            path = syntax.quoted_text(tokens, @at, name: name, what: "the imported file's name")?
+            syntax.expect(tokens, @at, name: name, symbol: ";")?
+            dependencies @ dependencies.push(path)
+
+            if kind == "public"
+                public @ public.push(path)
+            else if kind == "weak"
+                weak @ weak.push(path)
+        else if t.kind == lexer.IDENT && t.text == "option"
+            at @ at + 1
+            options @ options.push(syntax.option_statement(tokens, @at, name: name)?)
+        else if t.kind == lexer.IDENT && t.text == "message"
+            at @ at + 1
+            got = message_decl(tokens, at: @at, file: name, scope: info.package, form: info.syntax, depth: 1)?
+            top_messages @ top_messages.push(got.messages[0].full_name)
+            add_bundle(@messages, @enums, @extensions, got: got)
+        else if t.kind == lexer.IDENT && t.text == "enum"
+            at @ at + 1
+            e = enum_reader.enum_decl(tokens, @at, file: name, scope: info.package)?
+            top_enums @ top_enums.push(e.full_name)
+            enums @ enums.push(e)
+        else if t.kind == lexer.IDENT && t.text == "service"
+            at @ at + 1
+            s = service_reader.service_decl(tokens, @at, file: name, scope: info.package)?
+            top_services @ top_services.push(s.full_name)
+            services @ services.push(s)
+        else if t.kind == lexer.IDENT && t.text == "extend"
+            at @ at + 1
+            got = extend_decl(tokens, at: @at, file: name, scope: info.package, form: info.syntax, depth: 1)?
+            add_bundle(@messages, @enums, @extensions, got: got)
+        else
+            return fail(
+                code: "invalid",
+                msg: syntax.expected(name: name, t: t, what: "a declaration: message, enum, service, extend, import, package or option")
+            )
+        first @ false
+
+    top_extensions: [model.Field] @= []
+
+    for x in extensions
+        if x.full_name == syntax.joined(scope: info.package, name: x.name)
+            top_extensions @ top_extensions.push(x)
+
+    info.messages @ top_messages
+    info.enums @ top_enums
+    info.services @ top_services
+    info.extensions @ top_extensions
+    info.options @ options
+    info.dependencies @ dependencies
+    info.public_dependencies @ public
+    info.weak_dependencies @ weak
+    return ok(Parsed(file: info, messages: messages, enums: enums, services: services, extensions: extensions))
+
+# Adds what `got` declares to the three lists.
+function add_bundle(@messages: [model.Message], @enums: [model.Enum], @extensions: [model.Field], got: Bundle)
+    for m in got.messages
+        messages @ messages.push(m)
+
+    for e in got.enums
+        enums @ enums.push(e)
+
+    for x in got.extensions
+        extensions @ extensions.push(x)
+
+# A message, the word `message` passed: its name, then its body.
+function message_decl(tokens: [lexer.Token] lent, @at: i64, file: str, scope: str, form: str, depth: i64) -> Bundle?
+    t = syntax.peek(tokens, at: at)
+    name = syntax.ident(tokens, @at, name: file, what: "the message's name")?
+    syntax.expect(tokens, @at, name: file, symbol: "{")?
+    return body(
+        tokens,
+        at: @at,
+        file: file,
+        start: t,
+        made: plain_message(name: name, full_name: syntax.joined(scope: scope, name: name), file: file),
+        form: form,
+        depth: depth
+    )
+
+# The body of a message or a group after its `{`, through its `}`.
+function body(tokens: [lexer.Token] lent, @at: i64, file: str, start: lexer.Token, made: model.Message, form: str, depth: i64) -> Bundle?
+    if depth > syntax.MAX_NESTING
+        return fail(
+            code: "invalid",
+            msg: f"{lexer.where(file, line: start.line, column: start.column)}: declarations nested deeper than {syntax.MAX_NESTING}"
+        )
+    m: model.Message @= made
+    full = m.full_name
+    fields: [model.Field] @= []
+    oneofs: [model.Oneof] @= []
+    nested: [model.Message] @= []
+    enums: [model.Enum] @= []
+    extensions: [model.Field] @= []
+    nested_names: [str] @= []
+    enum_names: [str] @= []
+    options: [model.Setting] @= []
+    extension_ranges: [model.Range] @= []
+    reserved_ranges: [model.Range] @= []
+    reserved_names: [str] @= []
+
+    while !syntax.is_at(tokens, at: at, text: "}")
+        t = syntax.peek(tokens, at: at)
+
+        if t.kind == lexer.END
+            return fail(code: "invalid", msg: syntax.expected(name: file, t: t, what: f"\"}}\", which closes {full}"))
+
+        if syntax.is_at(tokens, at: at, text: ";")
+            at @ at + 1
+        else if t.text == "option" && t.kind == lexer.IDENT
+            at @ at + 1
+            options @ options.push(syntax.option_statement(tokens, @at, name: file)?)
+        else if t.text == "message" && t.kind == lexer.IDENT
+            at @ at + 1
+            got = message_decl(tokens, at: @at, file: file, scope: full, form: form, depth: depth + 1)?
+            nested_names @ nested_names.push(got.messages[0].full_name)
+            add_bundle(@nested, @enums, @extensions, got: got)
+        else if t.text == "enum" && t.kind == lexer.IDENT
+            at @ at + 1
+            e = enum_reader.enum_decl(tokens, @at, file: file, scope: full)?
+            enum_names @ enum_names.push(e.full_name)
+            enums @ enums.push(e)
+        else if t.text == "extend" && t.kind == lexer.IDENT
+            at @ at + 1
+            got = extend_decl(tokens, at: @at, file: file, scope: full, form: form, depth: depth + 1)?
+
+            for g in got.messages
+                nested_names @ nested_names.push(g.full_name)
+
+            add_bundle(@nested, @enums, @extensions, got: got)
+        else if (t.text == "extensions" || t.text == "reserved") && t.kind == lexer.IDENT
+            at @ at + 1
+            names: [str] @= []
+            spans = syntax.ranges(tokens, @at, name: file, @names)?
+
+            if t.text == "extensions"
+                if names.len() > 0
+                    return fail(
+                        code: "invalid",
+                        msg: f"{lexer.where(file, line: t.line, column: t.column)}: `extensions` takes numbers, not names"
+                    )
+                _ = syntax.bracketed(tokens, @at, name: file)?
+
+                for s in spans
+                    extension_ranges @ extension_ranges.push(s)
+            else
+                for s in spans
+                    reserved_ranges @ reserved_ranges.push(s)
+
+                for n in names
+                    reserved_names @ reserved_names.push(n)
+
+            syntax.expect(tokens, @at, name: file, symbol: ";")?
+        else if t.text == "oneof" && t.kind == lexer.IDENT && syntax.peek(tokens, at: at + 1).kind == lexer.IDENT
+            at @ at + 1
+            oneof_name = syntax.ident(tokens, @at, name: file, what: "the oneof's name")?
+            syntax.expect(tokens, @at, name: file, symbol: "{")?
+            index = oneofs.len()
+            members: [i64] @= []
+            oneof_options: [model.Setting] @= []
+
+            while !syntax.is_at(tokens, at: at, text: "}")
+                o = syntax.peek(tokens, at: at)
+
+                if o.kind == lexer.END
+                    return fail(
+                        code: "invalid",
+                        msg: syntax.expected(name: file, t: o, what: "\"}\", which closes the oneof")
+                    )
+
+                if syntax.is_at(tokens, at: at, text: ";")
+                    at @ at + 1
+                else if o.text == "option" && o.kind == lexer.IDENT
+                    at @ at + 1
+                    oneof_options @ oneof_options.push(syntax.option_statement(tokens, @at, name: file)?)
+                else
+                    got = field_decl(tokens, at: @at, file: file, scope: full, form: form, in_oneof: true, depth: depth)?
+                    members @ members.push(fields.len())
+                    f: model.Field @= got.extensions[0]
+                    f.oneof @ index
+                    fields @ fields.push(f)
+
+                    for g in got.messages
+                        nested_names @ nested_names.push(g.full_name)
+                        nested @ nested.push(g)
+
+            at @ at + 1
+            oneofs @ oneofs.push(
+                model.Oneof(name: oneof_name, full_name: syntax.joined(scope: full, name: oneof_name), synthetic: false, fields: members, options: oneof_options)
+            )
+        else
+            got = field_decl(tokens, at: @at, file: file, scope: full, form: form, in_oneof: false, depth: depth)?
+            fields @ fields.push(got.extensions[0])
+
+            for g in got.messages
+                nested_names @ nested_names.push(g.full_name)
+                nested @ nested.push(g)
+
+    at @ at + 1
+
+    for k in range(from: 0, to: fields.len())
+        if fields[k].proto3_optional
+            synthetic: [i64] = [k]
+            fields[k].oneof @ oneofs.len()
+            oneofs @ oneofs.push(
+                model.Oneof(name: "_" + fields[k].name, full_name: syntax.joined(scope: full, name: "_" + fields[k].name), synthetic: true, fields: synthetic, options: [])
+            )
+
+    m.fields @ fields
+    m.oneofs @ oneofs
+    m.messages @ nested_names
+    m.enums @ enum_names
+    m.extension_ranges @ extension_ranges
+    m.reserved_ranges @ reserved_ranges
+    m.reserved_names @ reserved_names
+    m.options @ options
+    own: [model.Field] @= []
+
+    for x in extensions
+        if x.full_name == syntax.joined(scope: full, name: x.name)
+            own @ own.push(x)
+
+    m.extensions @ own
+    out: [model.Message] @= [m]
+
+    for n in nested
+        out @ out.push(n)
+
+    return ok(Bundle(messages: out, enums: enums, extensions: extensions))
+
+# One field, a group or a map field, at `at`: the field in `extensions[0]`,
+# and the messages a group or a map makes in `messages`.
+function field_decl(tokens: [lexer.Token] lent, @at: i64, file: str, scope: str, form: str, in_oneof: bool, depth: i64) -> Bundle?
+    t = syntax.peek(tokens, at: at)
+    label: i64 @= model.OPTIONAL
+    labelled: bool @= false
+    optional: bool @= false
+
+    if t.kind == lexer.IDENT && (t.text == "optional" || t.text == "required" || t.text == "repeated")
+        if in_oneof
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: t.line, column: t.column)}: a field of a oneof takes no label"
+            )
+
+        if form == "editions" && t.text != "repeated"
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: t.line, column: t.column)}: `{t.text}` is not a label of an edition; its field presence is a feature"
+            )
+
+        if form == "proto3" && t.text == "required"
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: t.line, column: t.column)}: proto3 has no required fields"
+            )
+        at @ at + 1
+        labelled @ true
+
+        if t.text == "required"
+            label @ model.REQUIRED
+        else if t.text == "repeated"
+            label @ model.REPEATED
+        else
+            optional @ true
+
+    if syntax.is_at(tokens, at: at, text: "map") && syntax.is_at(tokens, at: at + 1, text: "<")
+        if labelled || in_oneof
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: t.line, column: t.column)}: a map field takes no label and stands in no oneof"
+            )
+        at @ at + 2
+        key_word = syntax.peek(tokens, at: at)
+        key_type = syntax.dotted(tokens, @at, name: file, what: "the map's key type")?
+        key_kind = scalar_kind(key_type)
+
+        if key_kind == 0 || key_kind == model.DOUBLE || key_kind == model.FLOAT || key_kind == model.BYTES
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: key_word.line, column: key_word.column)}: a map's key is an integer, a bool or a string, not {key_type}"
+            )
+        syntax.expect(tokens, @at, name: file, symbol: ",")?
+        value_type = syntax.dotted(tokens, @at, name: file, what: "the map's value type")?
+        syntax.expect(tokens, @at, name: file, symbol: ">")?
+        name = syntax.ident(tokens, @at, name: file, what: "the field's name")?
+        syntax.expect(tokens, @at, name: file, symbol: "=")?
+        number = syntax.number(tokens, @at, name: file, what: "a field number")?
+        options = syntax.bracketed(tokens, @at, name: file)?
+        syntax.expect(tokens, @at, name: file, symbol: ";")?
+        entry_full = syntax.joined(scope: scope, name: entry_name(name))
+        entry: model.Message @= plain_message(name: entry_name(name), full_name: entry_full, file: file)
+        entry.map_entry @ true
+        value_kind = scalar_kind(value_type)
+
+        value_name = if value_kind == 0
+            value_type
+        else
+            ""
+        entry.fields @ [
+            plain_field(name: "key", full_name: entry_full + ".key", number: 1, kind: key_kind, label: model.OPTIONAL, type_name: "")
+            plain_field(name: "value", full_name: entry_full + ".value", number: 2, kind: value_kind, label: model.OPTIONAL, type_name: value_name)
+        ]
+        made: model.Field @= with_options(
+            field: plain_field(name: name, full_name: syntax.joined(scope: scope, name: name), number: number, kind: model.MESSAGE, label: model.REPEATED, type_name: "." + entry_full),
+            options: options
+        )
+        made.is_map @ true
+        return ok(Bundle(messages: [entry], enums: [], extensions: [made]))
+
+    if !labelled && !in_oneof && form == "proto2"
+        return fail(
+            code: "invalid",
+            msg: syntax.expected(name: file, t: t, what: "a label, `optional`, `required` or `repeated`, which proto2 asks of a field")
+        )
+
+    if syntax.is_at(tokens, at: at, text: "group") && syntax.peek(tokens, at: at + 1).kind == lexer.IDENT
+        if form != "proto2"
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: t.line, column: t.column)}: groups are proto2's; an edition writes a message field with `features.message_encoding = DELIMITED`"
+            )
+        at @ at + 1
+        start = syntax.peek(tokens, at: at)
+        group_name = syntax.ident(tokens, @at, name: file, what: "the group's name")?
+
+        if group_name[0] < 'A' || group_name[0] > 'Z'
+            return fail(
+                code: "invalid",
+                msg: f"{lexer.where(file, line: start.line, column: start.column)}: a group's name begins with a capital letter"
+            )
+        syntax.expect(tokens, @at, name: file, symbol: "=")?
+        number = syntax.number(tokens, @at, name: file, what: "a field number")?
+        options = syntax.bracketed(tokens, @at, name: file)?
+        syntax.expect(tokens, @at, name: file, symbol: "{")?
+        group_full = syntax.joined(scope: scope, name: group_name)
+        got = body(tokens, at: @at, file: file, start: start, made: plain_message(name: group_name, full_name: group_full, file: file), form: form, depth: depth + 1)?
+        lower = lowered(group_name)
+        made = with_options(
+            field: plain_field(name: lower, full_name: syntax.joined(scope: scope, name: lower), number: number, kind: model.GROUP, label: label, type_name: "." + group_full),
+            options: options
+        )
+        return ok(Bundle(messages: got.messages, enums: got.enums, extensions: [made]))
+    type_word = syntax.peek(tokens, at: at)
+    type_name = syntax.dotted(tokens, @at, name: file, what: "the field's type")?
+    name = syntax.ident(tokens, @at, name: file, what: "the field's name")?
+    syntax.expect(tokens, @at, name: file, symbol: "=")?
+    number = syntax.number(tokens, @at, name: file, what: "a field number")?
+    options = syntax.bracketed(tokens, @at, name: file)?
+    syntax.expect(tokens, @at, name: file, symbol: ";")?
+    kind = scalar_kind(type_name)
+
+    written = if kind == 0
+        type_name
+    else
+        ""
+
+    if type_word.kind != lexer.IDENT && !syntax.is_at(tokens, at: at, text: ".")
+        return fail(code: "invalid", msg: syntax.expected(name: file, t: type_word, what: "the field's type"))
+    made: model.Field @= with_options(
+        field: plain_field(name: name, full_name: syntax.joined(scope: scope, name: name), number: number, kind: kind, label: label, type_name: written),
+        options: options
+    )
+    made.proto3_optional @ optional && form == "proto3"
+    return ok(Bundle(messages: [], enums: [], extensions: [made]))
+
+# `name` with its ASCII capitals in lower case.
+function lowered(name: str) -> str
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    out: [str] @= []
+
+    for c in name.chars()
+        if c[0] >= 'A' && c[0] <= 'Z'
+            k = to_i64(c[0] - 'A').must()
+            out @ out.push(letters.slice(from: k, to: k + 1))
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+# The fields of `extend Name { ... }`, the word `extend` passed.
+function extend_decl(tokens: [lexer.Token] lent, @at: i64, file: str, scope: str, form: str, depth: i64) -> Bundle?
+    extendee = syntax.dotted(tokens, @at, name: file, what: "the extended message's name")?
+    syntax.expect(tokens, @at, name: file, symbol: "{")?
+    messages: [model.Message] @= []
+    enums: [model.Enum] @= []
+    fields: [model.Field] @= []
+
+    while !syntax.is_at(tokens, at: at, text: "}")
+        t = syntax.peek(tokens, at: at)
+
+        if t.kind == lexer.END
+            return fail(code: "invalid", msg: syntax.expected(name: file, t: t, what: "\"}\", which closes the extend"))
+
+        if syntax.is_at(tokens, at: at, text: ";")
+            at @ at + 1
+        else
+            got = field_decl(tokens, at: @at, file: file, scope: scope, form: form, in_oneof: false, depth: depth)?
+            f: model.Field @= got.extensions[0]
+
+            if f.is_map
+                return fail(
+                    code: "invalid",
+                    msg: f"{lexer.where(file, line: t.line, column: t.column)}: an extension is no map"
+                )
+            f.extendee @ extendee
+            fields @ fields.push(f)
+            add_bundle(
+                @messages,
+                @enums,
+                @fields,
+                got: Bundle(messages: got.messages, enums: got.enums, extensions: [])
+            )
+
+    at @ at + 1
+    return ok(Bundle(messages: messages, enums: enums, extensions: fields))
+
+test "file: a proto3 file's package, imports, options, messages, enums and services"
+    text = "syntax = \"proto3\";\npackage shop.v1;\nimport public \"a.proto\";\nimport \"b.proto\";\noption go_package = \"x\";\nmessage Order {\n  message Item { string sku = 1; }\n  repeated Item items = 1;\n  map<string, int32> counts = 2;\n  optional int64 id = 3 [json_name = \"ident\"];\n  oneof pay { string card = 4; int32 cash = 5; }\n  reserved 9 to 11, \"old\";\n}\nenum Color { RED = 0; BLUE = 1 [deprecated = true]; }\nservice Shop { rpc Get (Order) returns (stream Order); }\n"
+    got = parse_file(name: "o.proto", text: text).must()
+    assert got.file.syntax == "proto3" && got.file.package == "shop.v1"
+    assert got.file.dependencies == ["a.proto", "b.proto"] && got.file.public_dependencies == ["a.proto"]
+    assert got.file.messages == ["shop.v1.Order"] && got.file.enums == ["shop.v1.Color"]
+    assert got.messages.len() == 3 && got.messages[0].messages == ["shop.v1.Order.Item", "shop.v1.Order.CountsEntry"]
+    order = got.messages[0]
+    assert order.fields.len() == 5 && order.fields[1].is_map && order.fields[1].type_name == ".shop.v1.Order.CountsEntry"
+    assert order.fields[2].proto3_optional && order.fields[2].oneof == 1 && order.oneofs[1].synthetic
+    assert order.fields[3].oneof == 0 && order.oneofs[0].fields == [3, 4]
+    assert order.reserved_names == ["old"] && order.fields[2].options[0].name == "json_name"
+    assert got.services[0].methods[0].server_streaming && !got.services[0].methods[0].client_streaming
+
+test "file: proto2's labels, a group, an extension, a default, and the errors of each syntax"
+    text = "syntax = \"proto2\";\nmessage M {\n  required int32 a = 1 [default = -5];\n  optional group G = 2 { optional string s = 1; }\n  extensions 100 to max;\n}\nextend M { optional bytes b = 100 [default = \"\\001\"]; }\n"
+    got = parse_file(name: "m.proto", text: text).must()
+    m = got.messages[0]
+    assert m.fields[0].label == model.REQUIRED && m.fields[0].default_text == "-5"
+    assert m.fields[1].kind == model.GROUP && m.fields[1].name == "g" && m.fields[1].type_name == ".M.G"
+    assert got.extensions.len() == 1 && got.extensions[0].extendee == "M" && got.extensions[0].default_bytes == [0x01]
+
+    for bad in ["syntax = \"proto2\"; message M { int32 a = 1; }", "syntax = \"proto3\"; message M { required int32 a = 1; }", "edition = \"2023\"; message M { optional int32 a = 1; }", "message M { optional int32 a = 1 }", "package a; package b;", "syntax = \"proto4\";", "message M { map<float, int32> m = 1; }", "enum E {}"]
+        match parse_file(name: "bad.proto", text: bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "entry_name and lowered: a map's entry and a group's field"
+    assert entry_name("my_map") == "MyMapEntry" && entry_name("counts") == "CountsEntry"
+    assert lowered("MyGroup") == "mygroup"

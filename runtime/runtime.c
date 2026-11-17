@@ -320,8 +320,12 @@
  * are the names below under `platform/`, in the order written, each after its
  * own header. */
 #if 0
+#include "hero_crypto.h"
+#include "platform/hero_crypto.c"
 #include "hero_disk.h"
 #include "platform/hero_disk.c"
+#include "hero_ipc.h"
+#include "platform/hero_ipc.c"
 #include "hero_net.h"
 #include "platform/hero_net.c"
 #include "hero_poll.h"

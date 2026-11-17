@@ -1,0 +1,204 @@
+capability keypairs/ed25519  a message signed by an Ed25519 key and checked by its public key (RFC 8032)
+  heroes  keypairs.sign, keypairs.verify, keypairs.Scheme
+  go      ed25519.Sign, ed25519.Verify, ed25519.PrivateKey.Sign, ed25519.SignatureSize
+  rust    ring::signature::Ed25519KeyPair::sign, ring::signature::ED25519, ring::signature::UnparsedPublicKey::verify
+  python  Ed25519PrivateKey.sign, Ed25519PublicKey.verify
+  note    Linux's `EVP_DigestSign` with no digest: RFC 8032 § 7.1's TEST 1 to 3 signed to their bytes, Wycheproof's 210 cases (117 valid held, 64 invalid refused) on Linux arm64 2026-11-17. PENDING on macOS: `SecKey` takes no Curve25519 key (`kSecAttrKeyType*` of the macOS 27.2 SDK: RSA and the NIST curves alone) and CryptoKit's `Curve25519` is Swift's alone. PENDING on Windows: no CNG algorithm identifier names Ed25519 or EdDSA (CNG Algorithm Identifiers, read 2026-11-17). Both fail `unsupported`, never a curve of Heroes' own
+capability keypairs/ed25519-variants  Ed25519ph and Ed25519ctx, a context or a prehashed message
+  heroes  pending
+  go      ed25519.VerifyWithOptions, ed25519.Options, ed25519.Options.HashFunc
+  rust    ring::signature::EdDSAParameters
+  python  -
+  note    OpenSSL 3 offers both by its `instance` parameter; no format of Rebel needs them yet
+capability keypairs/ecdsa  a message signed by ECDSA on P-256 or P-384 and checked, the signature in X9.62's DER
+  heroes  keypairs.sign, keypairs.verify, keypairs.Scheme
+  go      ecdsa.SignASN1, ecdsa.VerifyASN1, ecdsa.PrivateKey.Sign
+  rust    ring::signature::EcdsaKeyPair::sign, ring::signature::EcdsaSigningAlgorithm, ring::signature::EcdsaVerificationAlgorithm, ring::signature::ECDSA_P256_SHA256_ASN1, ring::signature::ECDSA_P256_SHA256_ASN1_SIGNING, ring::signature::ECDSA_P256_SHA384_ASN1, ring::signature::ECDSA_P384_SHA256_ASN1, ring::signature::ECDSA_P384_SHA384_ASN1, ring::signature::ECDSA_P384_SHA384_ASN1_SIGNING
+  python  EllipticCurvePrivateKey.sign, EllipticCurvePublicKey.verify, ec.ECDSA, ec.EllipticCurveSignatureAlgorithm
+  note    The signature has one form on every platform: the member reads X9.62's DER strictly before any system sees it, because the Security framework held BER's long-form and zero-padded lengths and non-minimal tags (Wycheproof's `BerEncodedSignature` and `InvalidEncoding`, 9 cases on each curve, measured 2026-11-17); since, Wycheproof's 484 P-256 and 504 P-384 cases agree on macOS and Linux arm64, 0 failed. Windows' CNG writes the two numbers side by side, which the member puts in DER (UNRUN)
+capability keypairs/ecdsa-fixed  an ECDSA signature as its two numbers side by side, r || s (JWS's form)
+  heroes  pending
+  go      ecdsa.Sign, ecdsa.Verify
+  rust    ring::signature::ECDSA_P256_SHA256_FIXED, ring::signature::ECDSA_P256_SHA256_FIXED_SIGNING, ring::signature::ECDSA_P384_SHA384_FIXED, ring::signature::ECDSA_P384_SHA384_FIXED_SIGNING
+  python  utils.decode_dss_signature, utils.encode_dss_signature
+  note    a conversion of form the member already makes for Windows; it waits for the package `asn1` (queue 35) to be written once
+capability keypairs/rsa-pss  a message signed by RSA-PSS and checked, the salt as long as the hash
+  heroes  keypairs.sign, keypairs.verify, keypairs.Scheme
+  go      rsa.SignPSS, rsa.VerifyPSS, rsa.PSSOptions, rsa.PSSOptions.HashFunc, rsa.PSSSaltLengthAuto, rsa.PSSSaltLengthEqualsHash
+  rust    ring::signature::RSA_PSS_SHA256, ring::signature::RSA_PSS_SHA384, ring::signature::RSA_PSS_SHA512, ring::signature::RSA_PSS_2048_8192_SHA256, ring::signature::RSA_PSS_2048_8192_SHA384, ring::signature::RSA_PSS_2048_8192_SHA512, ring::signature::RsaKeyPair, ring::signature::RsaEncoding
+  python  padding.PSS, padding.MGF1, padding.calculate_max_pss_salt_length
+  note    the salt is the hash's length when signing and checking, ring's rule; Go's `VerifyPSS` with no options and Python's `PSS.AUTO` accept any salt, a signature with another salt does not hold here. Wycheproof's 108 cases of `rsa_pss_2048_sha256_mgf1_32` agree on macOS and Linux arm64
+capability keypairs/rsa-pkcs1  a message signed by RSA PKCS #1 v1.5 and checked
+  heroes  keypairs.sign, keypairs.verify, keypairs.Scheme
+  go      rsa.SignPKCS1v15, rsa.VerifyPKCS1v15
+  rust    ring::signature::RSA_PKCS1_SHA256, ring::signature::RSA_PKCS1_SHA384, ring::signature::RSA_PKCS1_SHA512, ring::signature::RSA_PKCS1_2048_8192_SHA256, ring::signature::RSA_PKCS1_2048_8192_SHA384, ring::signature::RSA_PKCS1_2048_8192_SHA512, ring::signature::RSA_PKCS1_3072_8192_SHA384, ring::signature::RSA_PKCS1_1024_8192_SHA256_FOR_LEGACY_USE_ONLY, ring::signature::RSA_PKCS1_1024_8192_SHA512_FOR_LEGACY_USE_ONLY
+  python  padding.PKCS1v15
+  note    a signature is exactly the modulus's bytes and below the modulus on every platform: the Security framework took one past it (Wycheproof's `SignatureMalleability`, tcId 244, measured 2026-11-17). RSA keys read hold 1024 to 8192 bits, keys made 2048, 3072 or 4096
+capability keypairs/rsa-sha1  an RSA signature over SHA-1, for certificates and protocols of before 2017
+  heroes  pending
+  go      -
+  rust    ring::signature::RSA_PKCS1_1024_8192_SHA1_FOR_LEGACY_USE_ONLY, ring::signature::RSA_PKCS1_2048_8192_SHA1_FOR_LEGACY_USE_ONLY
+  python  -
+  note    checking alone would be offered, never signing: SHA-1 collides; waits for `x509` to say it needs it
+capability keypairs/signed-digest  a digest computed elsewhere signed or checked
+  heroes  pending
+  go      rsa.SignPKCS1v15 (on a digest), rsa.SignPSS (on a digest), rsa.VerifyPKCS1v15, rsa.VerifyPSS, ecdsa.SignASN1 (on a digest), rsa.PrivateKey.Sign, ecdsa.PrivateKey.Sign
+  rust    -
+  python  utils.Prehashed, utils.NoDigestInfo, RSAPublicKey.recover_data_from_signature
+  note    every platform offers it (SecKey's `Digest` algorithms, CNG signs a hash, OpenSSL's `EVP_PKEY_sign`); `sign` here takes the message and hashes it, as ring does
+capability keypairs/rsa-oaep  a short text encrypted to an RSA public key and decrypted by its private key
+  heroes  keypairs.encrypt, keypairs.decrypt
+  go      rsa.EncryptOAEP, rsa.DecryptOAEP, rsa.EncryptOAEPWithOptions, rsa.OAEPOptions, rsa.PrivateKey.Decrypt, rsa.ErrMessageTooLong
+  rust    -
+  python  padding.OAEP, RSAPublicKey.encrypt, RSAPrivateKey.decrypt
+  note    OAEP with SHA-256 and MGF1 over SHA-256 and no label, Python's usual form; data that do not decrypt fail `invalid` saying no more. Other hashes and labels wait for a format that needs them. Wycheproof's 29 cases without a label agree on macOS and Linux arm64
+capability keypairs/rsa-pkcs1-encryption  RSA PKCS #1 v1.5 encryption
+  heroes  refused: its decryption is an oracle by design (Bleichenbacher, 1998, and every revival since), which a library cannot close by care; OAEP replaces it
+  go      rsa.EncryptPKCS1v15, rsa.DecryptPKCS1v15, rsa.DecryptPKCS1v15SessionKey, rsa.PKCS1v15DecryptOptions, rsa.ErrDecryption
+  rust    -
+  python  -
+capability keypairs/x25519  a secret agreed by X25519 (RFC 7748)
+  heroes  keypairs.agree
+  go      ecdh.X25519, ecdh.PrivateKey.ECDH
+  rust    ring::agreement::X25519, ring::agreement::agree_ephemeral, ring::agreement::EphemeralPrivateKey
+  python  X25519PrivateKey.exchange
+  note    RFC 7748 § 6.1's Alice and Bob agree on its secret; an all-zero secret, a peer's key of small order, fails `invalid` (RFC 7748 § 6.1), so Wycheproof's 31 such acceptable cases are refused and its 487 others held on Linux arm64. PENDING on macOS (no Curve25519 key in `SecKey`, as `keypairs/ed25519`) and on Windows: CNG names `curve25519` for ECDH and documents neither its key blob's byte order nor its raw secret's for that curve, so the arm answers `unsupported` until the box measures them
+capability keypairs/ecdh  a secret agreed by ECDH on P-256 or P-384 (SEC 1)
+  heroes  keypairs.agree
+  go      ecdh.P256, ecdh.P384, ecdh.PrivateKey.ECDH, ecdsa.PrivateKey.ECDH, ecdsa.PublicKey.ECDH, ecdh.KeyExchanger
+  rust    ring::agreement::ECDH_P256, ring::agreement::ECDH_P384, ring::agreement::Algorithm
+  python  ec.ECDH, EllipticCurvePrivateKey.exchange
+  note    the shared point's x coordinate, as SEC 1 writes it; Wycheproof's 330 valid cases held and 52 invalid refused on macOS and Linux arm64 (its 230 acceptable ones, compressed points, refused on both). CNG gives the raw secret little-endian (BCryptDeriveKey's page), which the member turns (UNRUN)
+capability keypairs/generate  a new key pair drawn by the system
+  heroes  keypairs.generate, keypairs.Kind
+  go      ed25519.GenerateKey, ecdsa.GenerateKey, rsa.GenerateKey, ecdh.Curve.GenerateKey, ecdh.Curve
+  rust    ring::signature::Ed25519KeyPair::generate_pkcs8, ring::signature::EcdsaKeyPair::generate_pkcs8, ring::agreement::EphemeralPrivateKey::generate
+  python  Ed25519PrivateKey.generate, X25519PrivateKey.generate, ec.generate_private_key, rsa.generate_private_key
+  note    the private half never enters the program's memory; RSA of 2048, 3072 or 4096 bits and the exponent 65537 every platform uses, Python's `public_exponent` not taken
+capability keypairs/public-half  a private key's public half
+  heroes  keypairs.public_of, keypairs.PublicKey
+  go      ed25519.PrivateKey.Public, ecdsa.PrivateKey.Public, rsa.PrivateKey.Public, ecdh.PrivateKey.PublicKey, ecdh.PrivateKey.Public
+  rust    ring::signature::KeyPair::public_key, ring::agreement::EphemeralPrivateKey::compute_public_key, ring::agreement::PublicKey
+  python  Ed25519PrivateKey.public_key, X25519PrivateKey.public_key, EllipticCurvePrivateKey.public_key, RSAPrivateKey.public_key
+  note    a private key and a public key are two types, so a public key never signs, decrypts or agrees by mistake: a compile error
+capability keypairs/close  a key's end, its secret overwritten
+  heroes  keypairs.close, keypairs.close_public
+  go      -
+  rust    -
+  python  -
+  note    the secret lives in C (a `SecKeyRef`, an `EVP_PKEY`, a block of the layer's overwritten before it is given back) from the call that makes it to the close; a key nobody closes is told when `main` returns
+capability keypairs/pkcs8  a private key read from and written as PKCS #8 DER
+  heroes  keypairs.parse_private_der, keypairs.format_private_der
+  go      x509.ParsePKCS8PrivateKey, x509.MarshalPKCS8PrivateKey
+  rust    ring::signature::Ed25519KeyPair::from_pkcs8, ring::signature::Ed25519KeyPair::from_pkcs8_maybe_unchecked, ring::signature::EcdsaKeyPair::from_pkcs8, ring::signature::RsaKeyPair::from_pkcs8, ring::pkcs8::Document
+  python  serialization.load_der_private_key, Ed25519PrivateKey.private_bytes, EllipticCurvePrivateKey.private_bytes, RSAPrivateKey.private_bytes, serialization.PrivateFormat, serialization.Encoding, serialization.NoEncryption
+  note    the same bytes on every platform and the same as Go's and Python's (a P-256 key's, measured 2026-11-17: version 0, the EC key's public point, its curve not repeated); the member reads and writes the form itself, `SecKeyCreateWithData` refusing PKCS #8 (measured) and CNG's blobs being its own. An EC key without its public point is read on Linux alone, macOS and Windows computing none (`unsupported` there)
+capability keypairs/spki  a public key read from and written as SubjectPublicKeyInfo DER
+  heroes  keypairs.parse_public_der, keypairs.format_public_der
+  go      x509.ParsePKIXPublicKey, x509.MarshalPKIXPublicKey
+  rust    -
+  python  serialization.load_der_public_key, serialization.PublicFormat, Ed25519PublicKey.public_bytes, EllipticCurvePublicKey.public_bytes, RSAPublicKey.public_bytes
+capability keypairs/verify-der  a signature checked against a key's SubjectPublicKeyInfo bytes, with no key to close: a certificate's signature against its issuer's key
+  heroes  keypairs.verify_der
+  go      x509.Certificate.CheckSignature, x509.Certificate.CheckSignatureFrom
+  rust    ring::signature::UnparsedPublicKey::verify
+  python  -
+  note    the call `x509` makes (queue 35); Go's two names are the certificate's, read here for the capability alone
+capability keypairs/pem  keys read from and written as PEM's `PRIVATE KEY` and `PUBLIC KEY`
+  heroes  keypairs.parse_private_pem, keypairs.parse_public_pem, keypairs.format_private_pem, keypairs.format_public_pem
+  go      -
+  rust    -
+  python  serialization.load_pem_private_key, serialization.load_pem_public_key
+  note    a minimal reader of those two labels in a private module, `crypto/keypairs/internal/armour`, to be replaced by the package `pem` (queue 35); an encrypted key and OpenSSL's older labels are refused saying which. Go's PEM is `encoding/pem`, `pem`'s census
+capability keypairs/raw  a key read from and written as its own bytes: Ed25519's and X25519's 32, an EC point, an EC scalar
+  heroes  keypairs.parse_private_raw, keypairs.parse_public_raw, keypairs.format_private_raw, keypairs.format_public_raw
+  go      ed25519.NewKeyFromSeed, ed25519.PrivateKey.Seed, ed25519.PublicKey, ed25519.PrivateKey, ed25519.PublicKeySize, ed25519.PrivateKeySize, ed25519.SeedSize, ecdh.Curve.NewPrivateKey, ecdh.Curve.NewPublicKey, ecdh.PrivateKey.Bytes, ecdh.PublicKey.Bytes, ecdsa.ParseUncompressedPublicKey, ecdsa.PrivateKey.Bytes, ecdsa.PublicKey.Bytes
+  rust    ring::signature::Ed25519KeyPair::from_seed_unchecked, ring::signature::Ed25519KeyPair::from_seed_and_public_key, ring::signature::UnparsedPublicKey::new, ring::signature::ED25519_PUBLIC_KEY_LEN, ring::agreement::UnparsedPublicKey
+  python  Ed25519PrivateKey.from_private_bytes, Ed25519PrivateKey.private_bytes_raw, Ed25519PublicKey.from_public_bytes, Ed25519PublicKey.public_bytes_raw, X25519PrivateKey.from_private_bytes, X25519PrivateKey.private_bytes_raw, X25519PublicKey.from_public_bytes, X25519PublicKey.public_bytes_raw, EllipticCurvePublicKey.from_encoded_point
+  note    through fixed DER heads in a private module, `crypto/keypairs/internal/forms`, measured against Python's output and to be replaced by `asn1`; a compressed point is refused
+capability keypairs/raw-ec-scalar  a P-256 or P-384 private key read from its scalar alone
+  heroes  pending
+  go      ecdsa.ParseRawPrivateKey, ecdh.Curve.NewPrivateKey (for P-256, P-384)
+  rust    -
+  python  ec.derive_private_key
+  note    the public point must be computed from the scalar, which macOS's `SecKeyCreateWithData` and CNG's blobs ask to be given; Linux alone would read it, so it waits rather than split the platforms
+capability keypairs/older-forms  OpenSSL's older forms: PKCS #1's RSAPrivateKey and RSAPublicKey, SEC 1's ECPrivateKey
+  heroes  pending
+  go      x509.ParsePKCS1PrivateKey, x509.MarshalPKCS1PrivateKey, x509.ParsePKCS1PublicKey, x509.MarshalPKCS1PublicKey, x509.ParseECPrivateKey, x509.MarshalECPrivateKey
+  rust    -
+  python  serialization.PrivateFormat (TraditionalOpenSSL)
+  note    refused today saying how to write them as PKCS #8; a conversion of form that waits for `asn1`
+capability keypairs/encrypted-pkcs8  a private key encrypted under a password
+  heroes  pending
+  go      x509.IsEncryptedPEMBlock, x509.DecryptPEMBlock, x509.EncryptPEMBlock, x509.PEMCipher, x509.IncorrectPasswordError
+  rust    -
+  python  serialization.BestAvailableEncryption, serialization.KeySerializationEncryption
+  note    Go's are deprecated (their own documentation: insecure by design); PBES2 over the system's cipher would be the form
+capability keypairs/other-kinds  P-521, secp256k1, the Brainpool curves, Ed448, X448, DSA and finite-field Diffie-Hellman
+  heroes  pending
+  go      ecdh.P521, ecdsa (on P-521)
+  rust    -
+  python  ec.SECP521R1, ec.SECP256K1, ec.SECP192R1, ec.SECP224R1, ec.BrainpoolP256R1, ec.BrainpoolP384R1, ec.BrainpoolP512R1, ec.EllipticCurve, ec.EllipticCurveOID, ec.get_curve_for_oid, ec.ObjectIdentifier
+  note    P-521 is offered by all three systems and waits for a format that needs it; the others are offered by Linux alone or by none, and DSA and finite-field DH are retired by NIST (FIPS 186-5, SP 800-56A r3's preference)
+capability keypairs/numbers  a key's numbers: an RSA key's primes and exponents, an EC key's coordinates, read and built
+  heroes  refused: a key's numbers in the program's memory are the secret this package keeps in C, and arithmetic on them in Heroes is what the refusal of ciphers excludes; a key crosses as PKCS #8, SubjectPublicKeyInfo or its raw bytes
+  go      rsa.PrivateKey (its fields), rsa.PublicKey (its fields), rsa.PrecomputedValues, rsa.CRTValue, rsa.PrivateKey.Precompute, rsa.PrivateKey.Validate, rsa.GenerateMultiPrimeKey, ecdsa.PrivateKey (its fields), ecdsa.PublicKey (its fields)
+  rust    ring::signature::RsaPublicKeyComponents
+  python  rsa.RSAPrivateNumbers, rsa.RSAPublicNumbers, rsa.rsa_crt_dmp1, rsa.rsa_crt_dmq1, rsa.rsa_crt_iqmp, rsa.rsa_recover_prime_factors, rsa.rsa_recover_private_exponent, rsa.gcd, rsa.lcm, ec.EllipticCurvePrivateNumbers, ec.EllipticCurvePublicNumbers, EllipticCurvePrivateKey.private_numbers, EllipticCurvePublicKey.public_numbers, RSAPrivateKey.private_numbers, RSAPublicKey.public_numbers
+capability keypairs/facts  a key's kind and size
+  heroes  keypairs.PrivateKey, keypairs.PublicKey, keypairs.format_kind
+  go      rsa.PublicKey.Size, ecdh.PrivateKey.Curve, ecdh.PublicKey.Curve, x509.PublicKeyAlgorithm
+  rust    -
+  python  EllipticCurvePrivateKey.curve, EllipticCurvePublicKey.curve, EllipticCurvePrivateKey.key_size, EllipticCurvePublicKey.key_size, RSAPrivateKey.key_size, RSAPublicKey.key_size
+  note    a key's `kind` field, an RSA kind holding its bits
+capability keypairs/equal  two public keys compared
+  heroes  keypairs.format_public_der, built-in ==
+  go      ed25519.PrivateKey.Equal, ed25519.PublicKey.Equal, ecdsa.PrivateKey.Equal, ecdsa.PublicKey.Equal, rsa.PrivateKey.Equal, rsa.PublicKey.Equal, ecdh.PrivateKey.Equal, ecdh.PublicKey.Equal
+  rust    -
+  python  -
+  note    two keys are the same where their SubjectPublicKeyInfo bytes are, which every platform writes alike; a private key is compared by its public half
+capability keypairs/names  a kind or a scheme named as text and read back
+  heroes  keypairs.format_kind, keypairs.format_scheme, keypairs.parse_scheme
+  go      -
+  rust    -
+  python  -
+capability keypairs/availability  whether this machine has a kind, asked before a key is made
+  heroes  keypairs.is_available
+  go      -
+  rust    -
+  python  -
+capability keypairs/ssh  SSH's own key and certificate formats
+  heroes  refused: SSH's formats are the SSH protocol's, and belong to a package of it over this one
+  go      -
+  rust    -
+  python  serialization.load_ssh_private_key, serialization.load_ssh_public_key, serialization.load_ssh_public_identity, serialization.ssh_key_fingerprint, serialization.SSHCertificate, serialization.SSHCertificateBuilder, serialization.SSHCertificateType, serialization.SSHCertPrivateKeyTypes, serialization.SSHCertPublicKeyTypes, serialization.SSHPrivateKeyTypes, serialization.SSHPublicKeyTypes, serialization.ssh
+capability keypairs/parameters  DH and DSA parameters read and written
+  heroes  refused: they serve finite-field Diffie-Hellman and DSA alone (`keypairs/other-kinds`)
+  go      -
+  rust    -
+  python  serialization.load_der_parameters, serialization.load_pem_parameters, serialization.ParameterFormat
+
+dropped randomness  a source of randomness passed in: the system's generator is the one used, and nothing lets a program weaken it
+  go      rsa.GenerateKey (its `random`), ecdsa.GenerateKey (its `random`), ed25519.GenerateKey (its `random`)
+  rust    ring::rand::SystemRandom, ring::rand::SecureRandom, ring::rand::Random, ring::rand::RandomlyConstructable, ring::rand::generate
+  python  -
+
+dropped interfaces  Go's `crypto.Signer` and `crypto.Decrypter` shapes, ring's `KeyPair` and `VerificationAlgorithm` traits, Python's abstract classes: there are no interfaces, and the scheme is a value
+  go      ecdh.KeyExchanger (as an interface), rsa.PSSOptions.HashFunc, ed25519.Options.HashFunc
+  rust    ring::signature::KeyPair, ring::signature::VerificationAlgorithm, ring::signature::Signature, ring::signature::EdDSAParameters
+  python  ec.EllipticCurvePrivateKeyWithSerialization, ec.EllipticCurvePublicKeyWithSerialization, rsa.RSAPrivateKeyWithSerialization, rsa.RSAPublicKeyWithSerialization, padding.AsymmetricPadding, rsa.AsymmetricPadding, padding.MGF, ec.UnsupportedAlgorithm, x25519.UnsupportedAlgorithm
+
+dropped error-values  Go's error values: a failure is a code of § A4 and a message
+  go      rsa.ErrVerification, x509.ErrUnsupportedAlgorithm
+  rust    -
+  python  -
+
+dropped certificates  x509's certificates, requests, revocation lists, pools and checks: the package `x509`'s (queue 35); its key functions stand above
+  go      x509.Certificate, x509.CertPool, x509.CertificateRequest, x509.RevocationList, x509.VerifyOptions, x509.InvalidReason, x509.NotAuthorizedToSign, x509.UnknownPublicKeyAlgorithm
+  rust    -
+  python  -
+
+dropped internals  Python's module plumbing and helpers of other packages
+  go      -
+  rust    -
+  python  annotations, rust_openssl, abc, typing, utils, hashes, asym_utils, random, Buffer, base

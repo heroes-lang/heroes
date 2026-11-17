@@ -1,0 +1,163 @@
+# The known answers `crypto/keypairs` is held to: RFC 8032 § 7.1's first three
+# Ed25519 tests, RFC 7748 § 6.1's X25519 exchange, and cases of Wycheproof's
+# files (the C2SP repository's `testvectors_v1`), fetched 2026-11-17 into the
+# scratch folder and run there whole through the member's C probe (2,724
+# cases of signatures, agreement and OAEP on Linux arm64, every applicable
+# one on macOS, 0 failed). The few here are the package's own tests on every
+# platform, a kind the platform lacks passed over.
+
+use bytes
+use crypto/keypairs/internal/forms
+use crypto/keypairs/internal/operations
+
+# A signature known to hold or not: the public key as SubjectPublicKeyInfo,
+# the message and the signature, as hexadecimal.
+record Signed
+    # Where it comes from, for a failure's words.
+    name: str
+    # The scheme's name, as `format_scheme` writes it.
+    scheme: str
+    # The public key, SubjectPublicKeyInfo DER as hexadecimal.
+    public_der: str
+    # The message, as hexadecimal.
+    message: str
+    # The signature, as hexadecimal.
+    signature: str
+    # Whether it holds.
+    holds: bool
+
+# One of RFC 8032 § 7.1's tests: the secret key, the public key, the message
+# and the signature, as hexadecimal.
+record Rfc8032
+    # The test's number.
+    name: str
+    # The secret key's 32 bytes.
+    secret: str
+    # The public key's 32 bytes.
+    public: str
+    # The message.
+    message: str
+    # The signature, 64 bytes.
+    signature: str
+
+# `b` changed to another byte, so a test makes bytes that do not hold.
+function changed(b: u8) -> u8
+    if b == 255
+        return 0
+    return b + 1
+
+# RFC 8032 § 7.1's TEST 1, 2 and 3, as its text prints them.
+function rfc8032() -> [Rfc8032]
+    return [
+        Rfc8032(name: "TEST 1", secret: "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60", public: "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "", signature: "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b")
+        Rfc8032(name: "TEST 2", secret: "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb", public: "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c", message: "72", signature: "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00")
+        Rfc8032(name: "TEST 3", secret: "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7", public: "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025", message: "af82", signature: "6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a")
+    ]
+
+# Wycheproof's cases held here: an ECDSA signature that holds and one in
+# BER that must not, an RSA PKCS #1 v1.5 signature that holds and one past
+# the modulus that must not (the two macOS took before the member read a
+# signature's one form), an Ed25519 signature that must not.
+function signed() -> [Signed]
+    return [
+        Signed(name: "Wycheproof ecdsa256 tcId 1", scheme: "ecdsa_sha256", public_der: "3059301306072a8648ce3d020106082a8648ce3d0301070342000404aaec73635726f213fb8a9e64da3b8632e41495a944d0045b522eba7240fad587d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d", message: "", signature: "3045022100b292a619339f6e567a305c951c0dcbcc42d16e47f219f9e98e76e09d8770b34a02200177e60492c5a8242f76f07bfe3661bde59ec2a17ce5bd2dab2abebdf89a62e2", holds: true)
+        Signed(name: "Wycheproof ecdsa256 tcId 8", scheme: "ecdsa_sha256", public_der: "3059301306072a8648ce3d020106082a8648ce3d030107034200042927b10512bae3eddcfe467828128bad2903269919f7086069c8c4df6c732838c7787964eaac00e5921fb1498a60f4606766b3d9685001558d1a974e7341513e", message: "313233343030", signature: "30814502202ba3a8be6b94d5ec80a6d9d1190a436effe50d85a1eee859b8cc6af9bd5c2e18022100b329f479a2bbd0a5c384ee1493b1f5186a87139cac5df4087c134b49156847db", holds: false)
+        Signed(name: "Wycheproof pkcs1_256 tcId 1", scheme: "rsa_pkcs1_sha256", public_der: "30820122300d06092a864886f70d01010105000382010f003082010a0282010100a2b451a07d0aa5f96e455671513550514a8a5b462ebef717094fa1fee82224e637f9746d3f7cafd31878d80325b6ef5a1700f65903b469429e89d6eac8845097b5ab393189db92512ed8a7711a1253facd20f79c15e8247f3d3e42e46e48c98e254a2fe9765313a03eff8f17e1a029397a1fa26a8dce26f490ed81299615d9814c22da610428e09c7d9658594266f5c021d0fceca08d945a12be82de4d1ece6b4c03145b5d3495d4ed5411eb878daf05fd7afc3e09ada0f1126422f590975a1969816f48698bcbba1b4d9cae79d460d8f9f85e7975005d9bc22c4e5ac0f7c1a45d12569a62807d3b9a02e5a530e773066f453d1f5b4c2e9cf7820283f742b9d50203010001", message: "", signature: "840f5dac53106dd1f9c57219224cf51289290c42f20466875ba8e830ac5690e541536fcc8ab03b731f82bf66d83f194e7e180b3963ec7a2f3f7904a7ce49aed47da4d4b79421eaf937d301b3e696169297b797c32c076a12be4de0b58e003c5123051a84a10c62f8dac2f42a8640008eb3c7cccd6760ff5b51b689763922582845f048fb8150e5a7a6ca2eccc7bdc85349ad5b26c52137a79fa3fe5c29ab5cd7615013219c1941b6708e9c3c23feff5febaf0c8ebca5750b54e3e6e99a3e876b396f27860b7f3ec4e9191703c6332d944f6f69751167680c79c4f6b57f1cc8755d24b6ec158ccdbacdb23107a33cb6b332516c13274d1f9dccc21dced869e486", holds: true)
+        Signed(name: "Wycheproof pkcs1_256 tcId 244", scheme: "rsa_pkcs1_sha256", public_der: "30820122300d06092a864886f70d01010105000382010f003082010a0282010100a2b451a07d0aa5f96e455671513550514a8a5b462ebef717094fa1fee82224e637f9746d3f7cafd31878d80325b6ef5a1700f65903b469429e89d6eac8845097b5ab393189db92512ed8a7711a1253facd20f79c15e8247f3d3e42e46e48c98e254a2fe9765313a03eff8f17e1a029397a1fa26a8dce26f490ed81299615d9814c22da610428e09c7d9658594266f5c021d0fceca08d945a12be82de4d1ece6b4c03145b5d3495d4ed5411eb878daf05fd7afc3e09ada0f1126422f590975a1969816f48698bcbba1b4d9cae79d460d8f9f85e7975005d9bc22c4e5ac0f7c1a45d12569a62807d3b9a02e5a530e773066f453d1f5b4c2e9cf7820283f742b9d50203010001", message: "313233343030", signature: "ba0d3d34d59915be6351725300fff4617210fa767b6c48522900ce2e2c8f88b3f855bc9de7609603f2f405a81d3d6c1b8ac05a79fd278bb9c6af6dc90a6323c5d77c0562cded072bb63e9ce533d9ca497479ecf7d75e6b6a4d4a86418909b86521c5d6c7d5d634352d2ed6b15b16873f26b918e31b81e9363ad0ab373e7ac982e6aa3eccaa4cb6dbc1a807b73082dfac6a5d7b2abbb0a8d3f12f3c8aac976fe66b44350a2b7a8840f53bcd1fe76d9a0bdec6c6eacfc2081b58c3e818f2e40bb8d07b360c5fce83ece59267d39141c87807fdbee5b4ed5fc86e51111a57020211a593e4d91a6dd0ebde6317ebc12f52f405415527e7df07ba8af42ecbefc41d7d", holds: false)
+        Signed(name: "Wycheproof ed25519 tcId 10", scheme: "ed25519", public_der: "302a300506032b65700321007d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", message: "3f", signature: "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", holds: false)
+    ]
+
+# "" where the RFC 8032 test `t` is answered as it says, else what went
+# otherwise; "" too where the platform has no Ed25519.
+function ed25519_answered(t: Rfc8032) -> str
+    if !operations.offers("ed25519")
+        return ""
+    der: [u8] @= []
+
+    if forms.private_der_of_raw(der: @der, name: "ed25519", raw: bytes.parse_hex(t.secret).must()).is_err()
+        return t.name + ": no PKCS #8"
+    read = forms.read_private(der).must()
+    key @= read.handle
+    signature = operations.sign(handle: key, scheme: "ed25519", message: bytes.parse_hex(t.message).must()).must()
+    public_der = forms.write_public(key).must()
+    operations.close(@key).must()
+
+    if bytes.format_hex(signature) != t.signature
+        return t.name + ": signed otherwise"
+
+    if bytes.format_hex(forms.raw_of_public_der(name: "ed25519", der: public_der).must()) != t.public
+        return t.name + ": another public key"
+    return ""
+
+# "" where the Wycheproof case `c` is answered as it says; "" too where the
+# platform lacks the kind.
+function signed_answered(c: Signed) -> str
+    match forms.read_public(bytes.parse_hex(c.public_der).must())
+        .err e =>
+            if e.code == "unsupported"
+                return ""
+            return c.name + ": key refused: " + e.msg
+        .ok read =>
+            key @= read.handle
+            answer = operations.verify(
+                handle: key,
+                scheme: c.scheme,
+                message: bytes.parse_hex(c.message).must(),
+                signature: bytes.parse_hex(c.signature).must()
+            )
+            operations.close(@key).must()
+
+            if answer.must() != c.holds
+                return c.name + ": answered otherwise"
+            return ""
+
+## Tests
+
+test "changed: a byte below 255 and 255 itself become another byte"
+    assert changed(0) == 1
+    assert changed(255) == 0
+
+test "rfc8032: TEST 1, 2 and 3 signed by their secret keys give their signatures and public keys, where the platform has Ed25519"
+    for t in rfc8032()
+        assert ed25519_answered(t) == ""
+
+test "signed: Wycheproof's signatures hold or do not as they say, on every platform that has their kind"
+    for c in signed()
+        assert signed_answered(c) == ""
+
+test "rfc7748: Alice's and Bob's keys agree on RFC 7748 6.1's secret, and an all-zero public key is refused, where the platform has X25519"
+    if !operations.offers("x25519")
+        return
+    alice_der: [u8] @= []
+    bob_der: [u8] @= []
+    forms.private_der_of_raw(
+        der: @alice_der,
+        name: "x25519",
+        raw: bytes.parse_hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a").must()
+    ).must()
+    forms.private_der_of_raw(
+        der: @bob_der,
+        name: "x25519",
+        raw: bytes.parse_hex("5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb").must()
+    ).must()
+    alice @= forms.read_private(alice_der).must().handle
+    bob_public_der = forms.public_der_of_raw(
+        name: "x25519",
+        raw: bytes.parse_hex("de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f").must()
+    ).must()
+    bob_public @= forms.read_public(bob_public_der).must().handle
+    secret = operations.agree(mine: alice, theirs: bob_public).must()
+    assert bytes.format_hex(secret) == "4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742"
+    bob @= forms.read_private(bob_der).must().handle
+    alice_public = forms.raw_of_public_der(name: "x25519", der: forms.write_public(alice).must()).must()
+    assert bytes.format_hex(alice_public) == "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
+    zero @= forms.read_public(forms.public_der_of_raw(name: "x25519", raw: bytes.repeated([0], n: 32)).must()).must().handle
+
+    match operations.agree(mine: bob, theirs: zero)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    operations.close(@zero).must()
+    operations.close(@bob).must()
+    operations.close(@bob_public).must()
+    operations.close(@alice).must()

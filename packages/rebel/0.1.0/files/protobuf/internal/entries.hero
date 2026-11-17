@@ -1,0 +1,111 @@
+# A map field's entries read from the wire: each entry's key and value, the
+# last of a key kept, the entries in the order of their keys, and an entry
+# whose closed enum value names nothing kept with the unknown fields.
+
+use protobuf/internal/event
+use protobuf/internal/model
+use protobuf/internal/occurrence
+use protobuf/internal/wire
+
+# The keys and values of the map field `f`'s entries, each key once, the last
+# of it kept, in the order of the keys.
+function map_items(@items: [occurrence.Task], @unknown: [u8], schema: model.Schema lent, f: model.Field, found: [occurrence.Occurrence], data: [u8] lent, t: occurrence.Task, reading: occurrence.Reading) -> ()?
+    entry_type = schema.messages[f.type_name].must()
+    key_field = entry_type.fields[entry_type.by_number[1].must()]
+    value_field = entry_type.fields[entry_type.by_number[2].must()]
+    value_wire = occurrence.wire_of(value_field.kind)
+    message_value = value_field.kind == model.MESSAGE || value_field.kind == model.GROUP
+    closed = value_field.kind == model.ENUM && value_field.closed_enum
+    keys_seen: [event.Event] @= []
+    values_seen: [[occurrence.Occurrence]] @= []
+    order: {str: i64} @= {}
+
+    for o in found
+        at: i64 @= o.from
+        key: event.Event @= occurrence.default_event(key_field)
+        values: [occurrence.Occurrence] @= []
+        named: bool @= true
+
+        while at < o.to
+            tg = occurrence.located(wire.tag(data, at: at), path: t.path)?
+            end = occurrence.located(wire.skip(data, number: tg.number, wire: tg.wire, at: tg.next, max_depth: reading.max_depth), path: t.path)?
+
+            if end > o.to
+                return fail(code: "invalid", msg: f"{t.path}.{f.name}: an entry's field passes the end of the entry")
+
+            if tg.number == 1 && tg.wire == occurrence.wire_of(key_field.kind)
+                if tg.wire == wire.BYTES
+                    s = occurrence.located(wire.span(data, at: tg.next), path: t.path)?
+                    key @ occurrence.scalar(key_field, o: occurrence.Occurrence(value: 0, from: s.next, to: end), data: data, path: f"{t.path}.{f.name}")?
+                else
+                    got = if tg.wire == wire.VARINT
+                        occurrence.located(wire.varint(data, at: tg.next), path: t.path)?
+                    else if tg.wire == wire.FIXED32
+                        occurrence.located(wire.fixed32(data, at: tg.next), path: t.path)?
+                    else
+                        occurrence.located(wire.fixed64(data, at: tg.next), path: t.path)?
+                    key @ occurrence.scalar(key_field, o: occurrence.Occurrence(value: got.value, from: 0, to: 0), data: data, path: t.path)?
+            else if tg.number == 2 && tg.wire == value_wire
+                value: occurrence.Occurrence @= occurrence.Occurrence(value: 0, from: 0, to: 0)
+
+                if tg.wire == wire.BYTES
+                    s = occurrence.located(wire.span(data, at: tg.next), path: t.path)?
+                    value @ occurrence.Occurrence(value: 0, from: s.next, to: end)
+                else if tg.wire == wire.START_GROUP
+                    value @ occurrence.Occurrence(
+                        value: 0,
+                        from: tg.next,
+                        to: end - wire.varint_size(to_u64(tg.number * 8 + 4).must())
+                    )
+                else
+                    got = if tg.wire == wire.VARINT
+                        occurrence.located(wire.varint(data, at: tg.next), path: t.path)?
+                    else if tg.wire == wire.FIXED32
+                        occurrence.located(wire.fixed32(data, at: tg.next), path: t.path)?
+                    else
+                        occurrence.located(wire.fixed64(data, at: tg.next), path: t.path)?
+                    value @ occurrence.Occurrence(value: got.value, from: 0, to: 0)
+
+                if message_value
+                    values @ values.push(value)
+                else
+                    values @ [value]
+            at @ end
+
+        if closed && values.len() > 0
+            e = schema.enums[value_field.type_name].must()
+            named @ occurrence.names_number(e, v: values[0].value)
+
+        if !named
+            if !reading.discard_unknown
+                wire.push_tag(@unknown, number: f.number, wire: wire.BYTES)
+                entry: [u8] @= []
+                occurrence.copy_into(to_bytes: @entry, data: data, from: o.from, to: o.to)
+                wire.push_bytes(to: @unknown, v: entry)
+        else
+            order[occurrence.sort_key(key)] @ keys_seen.len()
+            keys_seen @ keys_seen.push(key)
+            values_seen @ values_seen.push(values)
+
+    for sk in sort(keys(order))
+        j = order[sk].must()
+        items @ items.push(occurrence.of_event(keys_seen[j]))
+        values = values_seen[j]
+
+        if message_value
+            if values.len() == 0
+                items @ items.push(occurrence.of_event(event.text(kind: event.MESSAGE, s: value_field.type_name)))
+                items @ items.push(occurrence.of_event(event.mark(event.END)))
+            else
+                whole = occurrence.joined(data, occurrences: values)
+                items @ items.push(
+                    occurrence.Task(is_event: false, e: event.mark(event.END), data: whole, from: 0, to: whole.len(), type_name: value_field.type_name, depth: t.depth + 2, path: f"{t.path}.{f.name}[{sk}]")
+                )
+        else if values.len() == 0
+            items @ items.push(occurrence.of_event(occurrence.default_event(value_field)))
+        else
+            items @ items.push(
+                occurrence.of_event(occurrence.scalar(value_field, o: values[0], data: data, path: t.path)?)
+            )
+
+    return ok()

@@ -1,0 +1,485 @@
+# The platform layer's cryptography, `hero_crypto.h`, bound thin: one
+# function per C function, each answering what C answers, in C's order.
+# Where a call fails its key is `nullptr` or its count -1, and `last_error`
+# then names the kind, `last_message` the system's own words. The floor of
+# Rebel's `crypto/seal` and `crypto/keypairs` (`examples/packages/README.md`
+# § 4.1): no policy stands here, and the faces above it turn every kind into
+# a code.
+#
+# The layer is C of the language's own beside the runtime, so this group
+# names its header and no `link`: on Windows the member links CNG's
+# `bcrypt` itself, on macOS the Security framework, and on Linux it opens
+# `libcrypto.so.3` at the first call that needs it, so the same lines bind
+# it everywhere. What each platform offers is `offers`'s answer, measured in
+# the member's opening comment: macOS has no authenticated cipher, no
+# Ed25519 and no X25519 for C; Windows has no Ed25519.
+#
+# Bytes cross by the fill form: a call that answers bytes is handed a list
+# and the count of bytes C may write, and answers how many the whole answer
+# has; above the count, the list was short and nothing in it is the answer.
+
+use bytes
+
+extern "hero_crypto.h"
+    # A key, secret, private or public. It is a handle the layer issues and
+    # checks: one closed already, `nullptr`, or one it never issued is
+    # `HERO_CRYPTO_NOT_OPEN`, never a read of freed memory.
+    record Key tag hero_crypto_key
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_CRYPTO_OK: i64
+    constant HERO_CRYPTO_INVALID: i64
+    constant HERO_CRYPTO_NOT_OPEN: i64
+    constant HERO_CRYPTO_LIMIT: i64
+    constant HERO_CRYPTO_UNSUPPORTED: i64
+    constant HERO_CRYPTO_OTHER: i64
+    constant HERO_CRYPTO_FORGED: i64
+    # What a key is for: three secret keys that seal, five kinds of pair.
+    constant HERO_CRYPTO_AES_128_GCM: i64
+    constant HERO_CRYPTO_AES_256_GCM: i64
+    constant HERO_CRYPTO_CHACHA20_POLY1305: i64
+    constant HERO_CRYPTO_ED25519: i64
+    constant HERO_CRYPTO_X25519: i64
+    constant HERO_CRYPTO_P256: i64
+    constant HERO_CRYPTO_P384: i64
+    constant HERO_CRYPTO_RSA: i64
+    # How a signature is made and checked, and how a text is encrypted to an
+    # RSA key.
+    constant HERO_CRYPTO_SIGN_ED25519: i64
+    constant HERO_CRYPTO_SIGN_ECDSA_SHA256: i64
+    constant HERO_CRYPTO_SIGN_ECDSA_SHA384: i64
+    constant HERO_CRYPTO_SIGN_RSA_PSS_SHA256: i64
+    constant HERO_CRYPTO_SIGN_RSA_PSS_SHA384: i64
+    constant HERO_CRYPTO_SIGN_RSA_PSS_SHA512: i64
+    constant HERO_CRYPTO_SIGN_RSA_PKCS1_SHA256: i64
+    constant HERO_CRYPTO_SIGN_RSA_PKCS1_SHA384: i64
+    constant HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512: i64
+    constant HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256: i64
+    # The bytes a seal adds before and after a text, the most texts a key
+    # seals, the most bytes of a text, and the sizes an RSA key read takes.
+    constant HERO_CRYPTO_NONCE_BYTES: u64
+    constant HERO_CRYPTO_TAG_BYTES: u64
+    constant HERO_CRYPTO_SEALS_MOST: u64
+    constant HERO_CRYPTO_TEXT_MOST: u64
+    constant HERO_CRYPTO_RSA_BITS_LEAST: i64
+    constant HERO_CRYPTO_RSA_BITS_MOST: i64
+    # The call that ends a key's life, which every mark below names.
+    function hero_crypto_close(k: Key consumes) -> i64
+    function hero_crypto_offers(what: i64) -> i64
+    function hero_crypto_generate(kind: i64, bits: i64) -> Key acquires hero_crypto_close
+    function hero_crypto_from_secret(kind: i64, @secret: [u8] counted_by count lent, count: u64) -> Key acquires hero_crypto_close
+    function hero_crypto_read_private(@der: [u8] counted_by count lent, count: u64) -> Key acquires hero_crypto_close
+    function hero_crypto_read_public(@der: [u8] counted_by count lent, count: u64) -> Key acquires hero_crypto_close
+    function hero_crypto_public_of(k: Key) -> Key acquires hero_crypto_close
+    function hero_crypto_kind(k: Key) -> i64
+    function hero_crypto_bits(k: Key) -> i64
+    function hero_crypto_is_public(k: Key) -> i64
+    function hero_crypto_write_private(k: Key, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_crypto_write_public(k: Key, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_crypto_seal(k: Key, @text: [u8] counted_by text_count lent, text_count: u64, @associated: [u8] counted_by associated_count lent, associated_count: u64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_crypto_seal_nonce_for_tests(k: Key, @nonce: [u8] counted_by nonce_count lent, nonce_count: u64, @text: [u8] counted_by text_count lent, text_count: u64, @associated: [u8] counted_by associated_count lent, associated_count: u64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_crypto_open(k: Key, @sealed: [u8] counted_by sealed_count lent, sealed_count: u64, @associated: [u8] counted_by associated_count lent, associated_count: u64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_crypto_sign(k: Key, scheme: i64, @message: [u8] counted_by count lent, count: u64, @buffer: [u8] counted_by buffer_count lent, buffer_count: u64) -> i64
+    function hero_crypto_verify(k: Key, scheme: i64, @message: [u8] counted_by count lent, count: u64, @signature: [u8] counted_by signature_count lent, signature_count: u64) -> i64
+    function hero_crypto_agree(mine: Key, theirs: Key, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_crypto_encrypt(k: Key, scheme: i64, @text: [u8] counted_by count lent, count: u64, @buffer: [u8] counted_by buffer_count lent, buffer_count: u64) -> i64
+    function hero_crypto_decrypt(k: Key, scheme: i64, @data: [u8] counted_by count lent, count: u64, @buffer: [u8] counted_by buffer_count lent, buffer_count: u64) -> i64
+    function hero_crypto_last_error() -> i64
+    function hero_crypto_last_os_error() -> i64
+    function hero_crypto_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
+
+# 1 where this machine computes `what`, a kind or a scheme, 0 where it does
+# not, -1 for a number that names neither.
+function offers(what: i64) -> i64
+    return hero_crypto_offers(what)
+
+# A new key of `kind`, drawn by the system, or `nullptr`: `bits` is an RSA
+# key's size, 2048, 3072 or 4096, and 0 for every other kind; a pair answers
+# its private half.
+function generate(kind: i64, bits: i64) -> Key
+    return hero_crypto_generate(kind: kind, bits: bits)
+
+# A secret key of `kind` from the first `count` bytes of `secret`, which C
+# copies, or `nullptr`.
+function from_secret(kind: i64, @secret: [u8], count: u64) -> Key
+    return hero_crypto_from_secret(kind, @secret, count: count)
+
+# A private key from the first `count` bytes of `der`, PKCS #8, or
+# `nullptr`.
+function read_private(@der: [u8], count: u64) -> Key
+    return hero_crypto_read_private(@der, count: count)
+
+# A public key from the first `count` bytes of `der`, SubjectPublicKeyInfo,
+# or `nullptr`.
+function read_public(@der: [u8], count: u64) -> Key
+    return hero_crypto_read_public(@der, count: count)
+
+# The public half of `k` as a new key the caller closes, or `nullptr`.
+function public_of(k: Key) -> Key
+    return hero_crypto_public_of(k)
+
+# `k`'s kind, or -1.
+function kind_of(k: Key) -> i64
+    return hero_crypto_kind(k)
+
+# `k`'s size in bits, or -1.
+function bits_of(k: Key) -> i64
+    return hero_crypto_bits(k)
+
+# 1 where `k` is a public key, 0 where it is not, -1 where it is none.
+function is_public(k: Key) -> i64
+    return hero_crypto_is_public(k)
+
+# The length of `k`'s PKCS #8, written into `buffer`'s first `count` bytes
+# where it fits, or -1.
+function write_private(k: Key, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_write_private(k, @buffer, count: count)
+
+# The length of `k`'s SubjectPublicKeyInfo, written into `buffer`'s first
+# `count` bytes where it fits, or -1.
+function write_public(k: Key, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_write_public(k, @buffer, count: count)
+
+# 0, or -1 where `k` was not open; `k` is given back either way, its secret
+# overwritten.
+function close(@k: Key) -> i64
+    return hero_crypto_close(k)
+
+# The length of the sealed text, a drawn nonce, the ciphertext and the tag,
+# written into `buffer`'s first `count` bytes where it fits, or -1.
+function seal(k: Key, @text: [u8], text_count: u64, @associated: [u8], associated_count: u64, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_seal(
+        k,
+        text: @text,
+        text_count: text_count,
+        associated: @associated,
+        associated_count: associated_count,
+        buffer: @buffer,
+        count: count
+    )
+
+# `seal` with the first `nonce_count` bytes of `nonce`, FOR KNOWN-ANSWER
+# TESTS ONLY: a nonce used twice under one key gives both texts away.
+function seal_nonce_for_tests(k: Key, @nonce: [u8], nonce_count: u64, @text: [u8], text_count: u64, @associated: [u8], associated_count: u64, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_seal_nonce_for_tests(
+        k,
+        nonce: @nonce,
+        nonce_count: nonce_count,
+        text: @text,
+        text_count: text_count,
+        associated: @associated,
+        associated_count: associated_count,
+        buffer: @buffer,
+        count: count
+    )
+
+# The length of the text the first `sealed_count` bytes of `sealed` hold,
+# opened into `buffer`'s first `count` bytes where it fits, or -1:
+# `HERO_CRYPTO_FORGED` where the tag does not hold.
+function open(k: Key, @sealed: [u8], sealed_count: u64, @associated: [u8], associated_count: u64, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_open(
+        k,
+        sealed: @sealed,
+        sealed_count: sealed_count,
+        associated: @associated,
+        associated_count: associated_count,
+        buffer: @buffer,
+        count: count
+    )
+
+# The length of `k`'s signature of the first `count` bytes of `message` by
+# `scheme`, written into `buffer` where it fits, or -1; a `buffer_count` of
+# 0 measures the most it can be.
+function sign(k: Key, scheme: i64, @message: [u8], count: u64, @buffer: [u8], buffer_count: u64) -> i64
+    return hero_crypto_sign(
+        k,
+        scheme: scheme,
+        message: @message,
+        count: count,
+        buffer: @buffer,
+        buffer_count: buffer_count
+    )
+
+# 1 where the first `signature_count` bytes of `signature` are `k`'s
+# signature of `message` by `scheme`, 0 where not, -1 for a failure.
+function verify(k: Key, scheme: i64, @message: [u8], count: u64, @signature: [u8], signature_count: u64) -> i64
+    return hero_crypto_verify(
+        k,
+        scheme: scheme,
+        message: @message,
+        count: count,
+        signature: @signature,
+        signature_count: signature_count
+    )
+
+# The length of the secret `mine` agrees with `theirs`, written into
+# `buffer` where it fits, or -1.
+function agree(mine: Key, theirs: Key, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_agree(mine: mine, theirs: theirs, buffer: @buffer, count: count)
+
+# The length of the first `count` bytes of `text` encrypted to `k` by
+# `scheme`, written into `buffer` where it fits, or -1.
+function encrypt(k: Key, scheme: i64, @text: [u8], count: u64, @buffer: [u8], buffer_count: u64) -> i64
+    return hero_crypto_encrypt(
+        k,
+        scheme: scheme,
+        text: @text,
+        count: count,
+        buffer: @buffer,
+        buffer_count: buffer_count
+    )
+
+# The length of the first `count` bytes of `data` decrypted by `k`, written
+# into `buffer` where it fits, or -1: `HERO_CRYPTO_FORGED` for data that do
+# not decrypt.
+function decrypt(k: Key, scheme: i64, @data: [u8], count: u64, @buffer: [u8], buffer_count: u64) -> i64
+    return hero_crypto_decrypt(
+        k,
+        scheme: scheme,
+        data: @data,
+        count: count,
+        buffer: @buffer,
+        buffer_count: buffer_count
+    )
+
+# The kind of the last call's failure on this thread, `HERO_CRYPTO_OK` after
+# a call that did not fail.
+function last_error() -> i64
+    return hero_crypto_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# itself refused.
+function last_os_error() -> i64
+    return hero_crypto_last_os_error()
+
+# The length of the last failure's words, written into `buffer`'s first
+# bytes with a zero after them and cut where a character ends, or -1 where
+# `count` is 0.
+function last_message(@buffer: [u8], count: u64) -> i64
+    return hero_crypto_last_message(@buffer, count: count)
+
+## Tests
+
+test "offers: every kind and scheme answers 1 or 0, and a number naming neither -1 invalid"
+    for what in [1, 2, 3, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30]
+        assert offers(what) == 1 || offers(what) == 0
+
+    assert offers(0) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert offers(99) == -1
+
+test "a key that is none: close, kind_of, bits_of, is_public, public_of and sign of nullptr fail not open"
+    k: Key @= nullptr
+    assert kind_of(k) == -1
+    assert last_error() == HERO_CRYPTO_NOT_OPEN
+    assert bits_of(k) == -1
+    assert is_public(k) == -1
+    none = public_of(k)
+    assert none == nullptr
+    assert last_error() == HERO_CRYPTO_NOT_OPEN
+    message: [u8] @= [1, 2, 3]
+    out: [u8] @= []
+    assert sign(k, scheme: HERO_CRYPTO_SIGN_ECDSA_SHA256, message: @message, count: 3, buffer: @out, buffer_count: 72) == -1
+    assert last_error() == HERO_CRYPTO_NOT_OPEN
+    assert close(@k) == -1
+    assert last_error() == HERO_CRYPTO_NOT_OPEN
+
+test "generate refuses a kind it does not know, RSA of 1024 bits, and a size given a curve"
+    a = generate(kind: 99, bits: 0)
+    assert a == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    b = generate(kind: HERO_CRYPTO_RSA, bits: 1024)
+    assert b == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    c = generate(kind: HERO_CRYPTO_P256, bits: 256)
+    assert c == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+
+test "from_secret: no bytes, a key of the wrong size and a kind that does not seal are invalid, and the platform without AEAD says unsupported"
+    none: [u8] @= []
+    a = from_secret(kind: HERO_CRYPTO_AES_128_GCM, @none, count: 0)
+    assert a == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    short: [u8] @= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    b = from_secret(kind: HERO_CRYPTO_AES_128_GCM, @short, count: 15)
+    assert b == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    c = from_secret(kind: HERO_CRYPTO_P256, @short, count: 15)
+    assert c == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    whole: [u8] @= bytes.repeated([7], n: 16)
+    d @= from_secret(kind: HERO_CRYPTO_AES_128_GCM, @whole, count: 16)
+    said = last_error()
+
+    if offers(HERO_CRYPTO_AES_128_GCM) == 1
+        assert d != nullptr
+        assert kind_of(d) == HERO_CRYPTO_AES_128_GCM
+        assert bits_of(d) == 128
+        assert close(@d) == 0
+    else
+        assert d == nullptr
+        assert said == HERO_CRYPTO_UNSUPPORTED
+
+test "read_private and read_public: no bytes, bytes that are no DER, a key on P-521 and an encrypted PKCS #8 are invalid"
+    none: [u8] @= []
+    a = read_private(@none, count: 0)
+    assert a == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    junk: [u8] @= [48, 3, 2, 1]
+    b = read_public(@junk, count: 4)
+    assert b == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+
+    # The SPKI head of a P-521 key, its point cut: the curve is read first.
+    p521: [u8] @= bytes.parse_hex("30819b301006072a8648ce3d020106052b8104002303818600").must()
+    c = read_public(@p521, count: 25)
+    assert c == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+
+    # An EncryptedPrivateKeyInfo's head: a SEQUENCE whose first field is no
+    # version.
+    sealed: [u8] @= bytes.parse_hex("3009300706052b0e03021a").must()
+    d = read_private(@sealed, count: 11)
+    assert d == nullptr
+    assert last_error() == HERO_CRYPTO_INVALID
+    words: [u8] @= []
+    assert last_message(@words, count: 512) > 0
+
+test "seal_nonce_for_tests and open: RFC 8439's vector of 2.8.2, measures, a changed byte forged, fewer than 28 bytes invalid"
+    secret: [u8] @= bytes.parse_hex("808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f").must()
+    k @= from_secret(kind: HERO_CRYPTO_CHACHA20_POLY1305, @secret, count: 32)
+    said = last_error()
+
+    if offers(HERO_CRYPTO_CHACHA20_POLY1305) == 0
+        assert k == nullptr
+        assert said == HERO_CRYPTO_UNSUPPORTED
+        return
+    nonce: [u8] @= bytes.parse_hex("070000004041424344454647").must()
+    text: [u8] @= bytes.from_text(
+        "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
+    )
+    associated: [u8] @= bytes.parse_hex("50515253c0c1c2c3c4c5c6c7").must()
+    out: [u8] @= []
+    assert seal_nonce_for_tests(k, nonce: @nonce, nonce_count: 12, text: @text, text_count: 114, associated: @associated, associated_count: 12, buffer: @out, count: 0) == 142
+    sealed: [u8] @= []
+    assert seal_nonce_for_tests(k, nonce: @nonce, nonce_count: 12, text: @text, text_count: 114, associated: @associated, associated_count: 12, buffer: @sealed, count: 142) == 142
+    expected = "070000004041424344454647" + "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d63dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b3692ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc3ff4def08e4b7a9de576d26586cec64b6116" + "1ae10b594f09e26a7e902ecbd0600691"
+    assert bytes.format_hex(sealed) == expected
+    back: [u8] @= []
+    assert open(k, sealed: @sealed, sealed_count: 142, associated: @associated, associated_count: 12, buffer: @back, count: 114) == 114
+    assert back == text
+    sealed[20] @ to_u8((to_i64(sealed[20]).must() + 1) % 256).must()
+    assert open(k, sealed: @sealed, sealed_count: 142, associated: @associated, associated_count: 12, buffer: @back, count: 114) == -1
+    assert last_error() == HERO_CRYPTO_FORGED
+    assert open(k, sealed: @sealed, sealed_count: 27, associated: @associated, associated_count: 12, buffer: @back, count: 114) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert close(@k) == 0
+
+test "sign and verify: a P-256 key made, its signature checked by its public half, a changed byte does not hold, a scheme of another kind invalid"
+    k @= generate(kind: HERO_CRYPTO_P256, bits: 0)
+
+    if offers(HERO_CRYPTO_P256) == 0
+        assert k == nullptr
+        return
+    message: [u8] @= bytes.from_text("ground control")
+    signature: [u8] @= []
+    most = sign(
+        k,
+        scheme: HERO_CRYPTO_SIGN_ECDSA_SHA256,
+        message: @message,
+        count: 14,
+        buffer: @signature,
+        buffer_count: 0
+    )
+    assert most == 72
+    length = sign(
+        k,
+        scheme: HERO_CRYPTO_SIGN_ECDSA_SHA256,
+        message: @message,
+        count: 14,
+        buffer: @signature,
+        buffer_count: 72
+    )
+    assert length > 60 && length <= 72
+    p @= public_of(k)
+    assert is_public(p) == 1
+    assert verify(p, scheme: HERO_CRYPTO_SIGN_ECDSA_SHA256, message: @message, count: 14, signature: @signature, signature_count: to_u64(length).must()) == 1
+    message[0] @ to_u8((to_i64(message[0]).must() + 1) % 256).must()
+    assert verify(p, scheme: HERO_CRYPTO_SIGN_ECDSA_SHA256, message: @message, count: 14, signature: @signature, signature_count: to_u64(length).must()) == 0
+    assert verify(p, scheme: HERO_CRYPTO_SIGN_RSA_PSS_SHA256, message: @message, count: 14, signature: @signature, signature_count: to_u64(length).must()) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert close(@p) == 0
+    assert close(@k) == 0
+
+test "write_private: Python's PKCS #8 of a P-256 key read and written back byte for byte, a public key writes none"
+    hex = "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b02010104200000000000000000000000000000000000000000000000001234567890abcdefa144034200049fad84aeae08bbef7f010014d82cef6a09de2b0cf871b5ce0c4f1d13a59a593407cb45769f1070e2c2470fe5b1bfe63133c0b0cdc64ea4bf3791a8ec2a07fd4f"
+    der: [u8] @= bytes.parse_hex(hex).must()
+    k @= read_private(@der, count: 138)
+
+    if offers(HERO_CRYPTO_P256) == 0
+        assert k == nullptr
+        return
+    out: [u8] @= []
+    assert write_private(k, @out, count: 0) == 138
+    assert write_private(k, @out, count: 138) == 138
+    assert bytes.format_hex(out) == hex
+    p @= public_of(k)
+    assert write_private(p, @out, count: 138) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    spki: [u8] @= []
+    assert write_public(p, @spki, count: 91) == 91
+    assert bytes.format_hex(spki.slice(from: 0, to: 26)) == "3059301306072a8648ce3d020106082a8648ce3d030107034200"
+    assert close(@p) == 0
+    assert close(@k) == 0
+
+test "agree: two P-256 keys agree both ways on one secret of 32 bytes; a public key and keys of two kinds are invalid"
+    a @= generate(kind: HERO_CRYPTO_P256, bits: 0)
+
+    if offers(HERO_CRYPTO_P256) == 0
+        assert a == nullptr
+        return
+    b @= generate(kind: HERO_CRYPTO_P256, bits: 0)
+    c @= generate(kind: HERO_CRYPTO_P384, bits: 0)
+    ap @= public_of(a)
+    bp @= public_of(b)
+    x: [u8] @= []
+    y: [u8] @= []
+    assert agree(mine: a, theirs: bp, buffer: @x, count: 32) == 32
+    assert agree(mine: b, theirs: ap, buffer: @y, count: 32) == 32
+    assert x == y
+    assert agree(mine: ap, theirs: b, buffer: @x, count: 32) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert agree(mine: a, theirs: c, buffer: @x, count: 48) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert close(@a) == 0
+    assert close(@b) == 0
+    assert close(@c) == 0
+    assert close(@ap) == 0
+    assert close(@bp) == 0
+
+test "encrypt and decrypt: RSA-OAEP of 2048 bits, the measures, a text past 190 bytes invalid, a changed byte forged"
+    k @= generate(kind: HERO_CRYPTO_RSA, bits: 2048)
+
+    if offers(HERO_CRYPTO_RSA) == 0
+        assert k == nullptr
+        return
+    text: [u8] @= bytes.from_text("a short secret")
+    data: [u8] @= []
+    assert encrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, text: @text, count: 14, buffer: @data, buffer_count: 0) == 256
+    assert encrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, text: @text, count: 14, buffer: @data, buffer_count: 256) == 256
+    back: [u8] @= []
+    assert decrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, data: @data, count: 256, buffer: @back, buffer_count: 0) == 190
+    assert decrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, data: @data, count: 256, buffer: @back, buffer_count: 190) == 14
+    assert back.slice(from: 0, to: 14) == text
+    long: [u8] @= bytes.repeated([1], n: 191)
+    assert encrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, text: @long, count: 191, buffer: @data, buffer_count: 256) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    data[100] @ to_u8((to_i64(data[100]).must() + 1) % 256).must()
+    assert decrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, data: @data, count: 256, buffer: @back, buffer_count: 190) == -1
+    assert last_error() == HERO_CRYPTO_FORGED
+    assert close(@k) == 0
+
+test "last_message refuses a buffer of no bytes"
+    words: [u8] @= []
+    assert last_message(@words, count: 0) == -1
+    assert last_error() == HERO_CRYPTO_INVALID

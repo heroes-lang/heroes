@@ -1,0 +1,181 @@
+# The semaphores and locks of `ipc`: made or opened by name, waited on with a
+# bound, given back, closed and their names taken away. A lock's take answers
+# whether its holder before ended without releasing it. Each takes the
+# floor's handle and the name for its messages; the face `ipc` holds the
+# semaphore or the lock.
+
+use ipc/hero_ipc
+use ipc/internal/channels
+use ipc/internal/failure
+use ipc/internal/names
+
+# The most a semaphore counts at its making on every platform, macOS's
+# `SEM_VALUE_MAX` (measured 2026-11-17: 32,768 refused `EINVAL`).
+constant COUNT_MOST: i64
+    32767
+
+# How messages name the semaphore `name`.
+function semaphore_label(name: str) -> str
+    return f"the semaphore \"{name}\""
+
+# How messages name the lock `name`.
+function lock_label(name: str) -> str
+    return f"the lock \"{name}\""
+
+# Nothing where `permission` is 0 to 0o777, else `invalid`.
+function checked_permission(permission: i64, asked: str) -> ()?
+    if permission < 0 || permission > 0o777
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a permission is 0 to 0o777, and {permission} is not"
+        )
+    return ok()
+
+# A new semaphore named `name` counting `count`.
+function create_semaphore(name: str, count: i64, permission: i64) -> hero_ipc.Semaphore?
+    asked = f"making {semaphore_label(name)} counting {count}"
+    names.checked(name: name, asked: asked)?
+    checked_permission(permission, asked: asked)?
+
+    if count < 0 || count > COUNT_MOST
+        return failure.of(code: failure.INVALID, asked: asked, why: f"a count is 0 to {COUNT_MOST}")
+    s = hero_ipc.semaphore_create(name, count: count, perm: permission)
+
+    if s == nullptr
+        return failure.last(asked: asked)
+    return ok(s)
+
+# The semaphore named `name`.
+function open_semaphore(name: str) -> hero_ipc.Semaphore?
+    asked = "opening " + semaphore_label(name)
+    names.checked(name: name, asked: asked)?
+    s = hero_ipc.semaphore_open(name)
+
+    if s == nullptr
+        return failure.last(asked: asked)
+    return ok(s)
+
+# One taken from the count of `handle`, waiting at most `within_ms`.
+function acquire_semaphore(handle: hero_ipc.Semaphore, name: str, within_ms: i64) -> ()?
+    asked = "taking one from " + semaphore_label(name)
+    channels.checked_bound(within_ms, asked: asked)?
+    return failure.done(hero_ipc.semaphore_wait(handle, within_ms: within_ms), asked: asked)
+
+# One added to the count of `handle`.
+function release_semaphore(handle: hero_ipc.Semaphore, name: str) -> ()?
+    return failure.done(hero_ipc.semaphore_post(handle), asked: "adding one to " + semaphore_label(name))
+
+# Closes the semaphore `handle` and empties the place.
+function close_semaphore(@handle: hero_ipc.Semaphore, name: str) -> ()?
+    asked = "closing " + semaphore_label(name)
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "it is closed already")
+    answer = hero_ipc.semaphore_close(@handle)
+    handle @ nullptr
+    return failure.done(answer, asked: asked)
+
+# Takes the name `name` from its semaphore.
+function remove_semaphore(name: str) -> ()?
+    asked = "removing the name of " + semaphore_label(name)
+    names.checked(name: name, asked: asked)?
+    return failure.done(hero_ipc.semaphore_remove(name), asked: asked)
+
+# The lock named `name`, made where it is not yet.
+function open_lock(name: str, permission: i64) -> hero_ipc.Lock?
+    asked = "opening " + lock_label(name)
+    names.checked(name: name, asked: asked)?
+    checked_permission(permission, asked: asked)?
+    l = hero_ipc.lock_open(name, perm: permission)
+
+    if l == nullptr
+        return failure.last(asked: asked)
+    return ok(l)
+
+# The lock `handle` taken by the calling thread, waiting at most
+# `within_ms`: true where its holder before ended without releasing it.
+function acquire_lock(handle: hero_ipc.Lock, name: str, within_ms: i64) -> bool?
+    asked = "taking " + lock_label(name)
+    channels.checked_bound(within_ms, asked: asked)?
+    answer = hero_ipc.lock_acquire(handle, within_ms: within_ms)
+
+    if answer < 0
+        return failure.last(asked: asked)
+    return ok(answer == 1)
+
+# The lock `handle` released by the calling thread.
+function release_lock(handle: hero_ipc.Lock, name: str) -> ()?
+    return failure.done(hero_ipc.lock_release(handle), asked: "releasing " + lock_label(name))
+
+# Closes the lock `handle` and empties the place.
+function close_lock(@handle: hero_ipc.Lock, name: str) -> ()?
+    asked = "closing " + lock_label(name)
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "it is closed already")
+    answer = hero_ipc.lock_close(@handle)
+    handle @ nullptr
+    return failure.done(answer, asked: asked)
+
+# Takes the name `name` from its lock.
+function remove_lock(name: str) -> ()?
+    asked = "removing the name of " + lock_label(name)
+    names.checked(name: name, asked: asked)?
+    return failure.done(hero_ipc.lock_remove(name), asked: asked)
+
+## Tests
+
+test "create_semaphore: a count of -1 and 32,768 and a permission of -1 are told, and a semaphore counts in one process"
+    name = f"hw-s-{channels.test_pid()}"
+
+    match create_semaphore(name, count: -1, permission: 0o600)
+        .ok _  => assert false
+        .err e => assert e.msg == f"making the semaphore \"{name}\" counting -1: a count is 0 to 32767"
+
+    assert create_semaphore(name, count: 32768, permission: 0o600).is_err()
+    assert create_semaphore(name, count: 1, permission: -1).is_err()
+    s @= create_semaphore(name, count: 1, permission: 0o600).must()
+    assert acquire_semaphore(s, name: name, within_ms: 0) == ok()
+
+    match acquire_semaphore(s, name: name, within_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT
+
+    match acquire_semaphore(s, name: name, within_ms: -3)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    assert release_semaphore(s, name: name) == ok()
+    o @= open_semaphore(name).must()
+    assert acquire_semaphore(o, name: name, within_ms: 10) == ok()
+    assert close_semaphore(@o, name: name) == ok()
+    assert close_semaphore(@s, name: name) == ok()
+    assert close_semaphore(@s, name: name).is_err()
+    assert remove_semaphore(name) == ok()
+
+    match open_semaphore(name)
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_FOUND
+
+test "acquire_lock: clean, refused to the thread that holds it, released, and a release by no holder invalid"
+    name = f"hw-l-{channels.test_pid()}"
+    l @= open_lock(name, permission: 0o600).must()
+    assert acquire_lock(l, name: name, within_ms: 0).must() == false
+
+    match acquire_lock(l, name: name, within_ms: 5)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == f"taking the lock \"{name}\": the layer refuses the argument"
+
+    assert release_lock(l, name: name) == ok()
+
+    match release_lock(l, name: name)
+        .ok _  => assert false
+        .err e => assert e.msg == f"releasing the lock \"{name}\": the calling thread does not hold the lock"
+
+    assert close_lock(@l, name: name) == ok()
+    assert remove_lock(name) == ok()
+    assert remove_lock(name).is_err()
+    assert open_lock("..", permission: 0o600).is_err()

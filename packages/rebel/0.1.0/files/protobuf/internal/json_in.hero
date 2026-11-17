@@ -1,0 +1,550 @@
+# A `json.Value` read by the proto3 JSON mapping into events: members found by
+# their JSON or declared names, `null` read as unset, numbers and texts read
+# as the field's kind asks, and the well-known types from their own forms.
+# What is left to read waits on a stack this module holds; only an `Any`,
+# whose message is encoded into its bytes, calls this module again, no deeper
+# than the depth allowed. The events stand in the order the members do, and
+# the decoder puts them in the protocol's.
+
+use bytes
+use json
+use math
+use numbers
+use protobuf/internal/encoder
+use protobuf/internal/event
+use protobuf/internal/json_out
+use protobuf/internal/model
+use protobuf/internal/wkt
+
+# An event to write.
+constant EMIT: i64
+    1
+
+# A JSON value to read as a message.
+constant AS_MESSAGE: i64
+    2
+
+# A JSON value to read as a field's value.
+constant AS_VALUE: i64
+    3
+
+# How JSON is read.
+record Reading
+    # Whether a member that names no field, and an enum's name the enum does
+    # not hold, are passed over.
+    ignore_unknown: bool
+    # The deepest nesting read.
+    max_depth: i64
+
+# A piece of work on the stack.
+record Task
+    # `EMIT`, `AS_MESSAGE` or `AS_VALUE`.
+    kind: i64
+    # The event to write.
+    e: event.Event
+    # The JSON value to read.
+    v: json.Value
+    # The message type to read it as.
+    type_name: str
+    # The field to read it as.
+    field: model.Field
+    # Whether it is one item of a repeated field.
+    item: bool
+    # Its JSON pointer.
+    path: str
+    # How deep it stands.
+    depth: i64
+
+# A task that writes `e`.
+function emit(e: event.Event) -> Task
+    return Task(kind: EMIT, e: e, v: .null_value, type_name: "", field: blank(), item: false, path: "", depth: 0)
+
+# A field with nothing in it.
+function blank() -> model.Field
+    return model.Field(
+        name: "",
+        full_name: "",
+        json_name: "",
+        number: 0,
+        kind: 0,
+        label: 0,
+        type_name: "",
+        presence: false,
+        packed: false,
+        is_map: false,
+        oneof: -1,
+        proto3_optional: false,
+        has_default: false,
+        default_text: "",
+        default_bytes: [],
+        default_bits: 0,
+        validate_utf8: false,
+        delimited: false,
+        closed_enum: false,
+        extendee: "",
+        options: []
+    )
+
+# The integer `v` writes, as a number with no fraction or as a text.
+function integer(v: json.Value, path: str) -> i64?
+    match v
+        .number n =>
+            if n.v != n.v || n.v - n.v != 0.0 || n.v >= 9223372036854775807.0 || n.v < -9223372036854775807.0
+                return fail(code: "invalid", msg: f"{path}: {n.v} is no integer")
+            whole = to_i64(n.v).must()
+
+            if to_f64(whole) != n.v
+                return fail(code: "invalid", msg: f"{path}: {n.v} is no integer")
+            return ok(whole)
+        .text t =>
+            match numbers.parse_int(t.v)
+                .ok whole => return ok(whole)
+                .err e    => return fail(code: e.code, msg: f"{path}: \"{t.v}\" is no integer that fits")
+        .null_value | .boolean _ | .list _ | .object _ =>
+            return fail(code: "invalid", msg: f"{path}: expected an integer, found {json.kind_of(v)}")
+
+# The unsigned integer `v` writes.
+function unsigned(v: json.Value, path: str) -> u64?
+    match v
+        .text t =>
+            match numbers.parse_u64(t.v)
+                .ok whole => return ok(whole)
+                .err e    => return fail(code: e.code, msg: f"{path}: \"{t.v}\" is no unsigned integer that fits")
+        .number _ | .null_value | .boolean _ | .list _ | .object _ =>
+            n = integer(v, path: path)?
+
+            if n < 0
+                return fail(code: "does_not_fit", msg: f"{path}: {n} is negative")
+            return ok(to_u64(n).must())
+
+# The event of the scalar field `f`'s value `v`.
+function scalar(schema: model.Schema lent, f: model.Field, v: json.Value, path: str) -> event.Event?
+    k = f.kind
+
+    if k == model.INT32 || k == model.SINT32 || k == model.SFIXED32
+        n = integer(v, path: path)?
+
+        if n < -2147483648 || n > 2147483647
+            return fail(code: "does_not_fit", msg: f"{path}: {n} is past an int32")
+        return ok(event.signed(kind: event.INT32, n: n))
+
+    if k == model.INT64 || k == model.SINT64 || k == model.SFIXED64
+        return ok(event.signed(kind: event.INT64, n: integer(v, path: path)?))
+
+    if k == model.UINT32 || k == model.FIXED32
+        n = unsigned(v, path: path)?
+
+        if n > 4294967295
+            return fail(code: "does_not_fit", msg: f"{path}: {n} is past a uint32")
+        return ok(event.unsigned(kind: event.UINT32, n: n))
+
+    if k == model.UINT64 || k == model.FIXED64
+        return ok(event.unsigned(kind: event.UINT64, n: unsigned(v, path: path)?))
+
+    if k == model.FLOAT || k == model.DOUBLE
+        x: f64 @= 0.0
+
+        match v
+            .number n => x @ n.v
+            .text t =>
+                if t.v == "NaN"
+                    x @ math.NAN
+                else if t.v == "Infinity"
+                    x @ math.INF
+                else if t.v == "-Infinity"
+                    x @ -math.INF
+                else
+                    match numbers.parse_float(t.v)
+                        .ok y  => x @ y
+                        .err _ => return fail(code: "invalid", msg: f"{path}: \"{t.v}\" is no number")
+            .null_value | .boolean _ | .list _ | .object _ =>
+                return fail(code: "invalid", msg: f"{path}: expected a number, found {json.kind_of(v)}")
+
+        if k == model.FLOAT
+            if x == x && x * 0.5 != x && (x > to_f64(math.MAX_F32) || x < -to_f64(math.MAX_F32))
+                return fail(code: "does_not_fit", msg: f"{path}: {x} is past a float")
+            return ok(event.real(kind: event.FLOAT, x: to_f64(to_f32(x))))
+        return ok(event.real(kind: event.DOUBLE, x: x))
+
+    if k == model.BOOL
+        match v
+            .boolean b =>
+                n: i64 = if b.v
+                    1
+                else
+                    0
+                return ok(event.signed(kind: event.BOOL, n: n))
+            .null_value | .number _ | .text _ | .list _ | .object _ =>
+                return fail(code: "invalid", msg: f"{path}: expected a boolean, found {json.kind_of(v)}")
+
+    text = match v
+        .text t => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            if k != model.ENUM
+                return fail(code: "invalid", msg: f"{path}: expected a text, found {json.kind_of(v)}")
+            ""
+
+    if k == model.STRING
+        return ok(event.text(kind: event.TEXT, s: text))
+
+    if k == model.BYTES
+        for parse in [bytes.parse_base64, bytes.parse_base64_unpadded, bytes.parse_base64_url, bytes.parse_base64_url_unpadded]
+            match parse(text)
+                .ok data => return ok(event.bytes(kind: event.BYTES, data: data))
+                .err _   => _ = 0
+
+        return fail(code: "invalid", msg: f"{path}: \"{text}\" is no base 64")
+
+    match v
+        .text t =>
+            e = schema.enums[f.type_name].must()
+
+            match e.by_name[t.v]
+                .ok index => return ok(event.signed(kind: event.ENUM, n: e.values[index].number))
+                .err _    => return fail(code: "not_found", msg: f"{path}: {e.full_name} has no value {t.v}")
+        .null_value =>
+            if f.type_name == "google.protobuf.NullValue"
+                return ok(event.signed(kind: event.ENUM, n: 0))
+            return fail(code: "invalid", msg: f"{path}: expected an enum's name or number, found null")
+        .boolean _ | .number _ | .list _ | .object _ =>
+            n = integer(v, path: path)?
+
+            if n < -2147483648 || n > 2147483647
+                return fail(code: "does_not_fit", msg: f"{path}: {n} is past an enum's int32")
+            return ok(event.signed(kind: event.ENUM, n: n))
+
+# Whether `f`'s value `v` is an enum's name the enum does not hold.
+function unknown_name(schema: model.Schema lent, f: model.Field, v: json.Value) -> bool
+    if f.kind != model.ENUM
+        return false
+
+    match v
+        .text t => return schema.enums[f.type_name].must().by_name[t.v].is_err()
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => return false
+
+# The event of a map key written as the member name `name`.
+function key_event(f: model.Field, name: str, path: str) -> event.Event?
+    k = f.kind
+
+    if k == model.STRING
+        return ok(event.text(kind: event.TEXT, s: name))
+
+    if k == model.BOOL
+        if name == "true"
+            return ok(event.signed(kind: event.BOOL, n: 1))
+
+        if name == "false"
+            return ok(event.signed(kind: event.BOOL, n: 0))
+        return fail(code: "invalid", msg: f"{path}: a bool key is \"true\" or \"false\", not \"{name}\"")
+    return scalar(model.empty(), f: f, v: .text(v: name), path: path)
+
+# The events `v` writes as a message of the type `type_name`.
+function read(schema: model.Schema lent, type_name: str, v: json.Value, reading: Reading, depth: i64) -> [event.Event]?
+    out: [event.Event] @= []
+    stack: [Task] @= [
+        Task(kind: AS_MESSAGE, e: event.mark(event.END), v: v, type_name: type_name, field: blank(), item: false, path: "", depth: depth + 1)
+    ]
+
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        t = stack[top]
+
+        if t.kind == EMIT
+            out @ out.push(t.e)
+        else
+            items = if t.kind == AS_MESSAGE
+                message_tasks(schema, t: t, reading: reading)?
+            else
+                value_tasks(schema, t: t, reading: reading)?
+            k: i64 @= items.len()
+
+            while k > 0
+                k @ k - 1
+                encoder.put(@stack, top: top, item: items[k])
+                top @ top + 1
+
+    return ok(out)
+
+# A task reading `v` as a message of `type_name`, one level below `t`.
+function as_message(v: json.Value, type_name: str, path: str, depth: i64) -> Task
+    return Task(
+        kind: AS_MESSAGE,
+        e: event.mark(event.END),
+        v: v,
+        type_name: type_name,
+        field: blank(),
+        item: false,
+        path: path,
+        depth: depth + 1
+    )
+
+# A task reading `v` as a value of the field `f`.
+function as_value(v: json.Value, f: model.Field, item: bool, path: str, depth: i64) -> Task
+    return Task(
+        kind: AS_VALUE,
+        e: event.mark(event.END),
+        v: v,
+        type_name: "",
+        field: f,
+        item: item,
+        path: path,
+        depth: depth
+    )
+
+# The work the message task `t` stands for.
+function message_tasks(schema: model.Schema lent, t: Task, reading: Reading) -> [Task]?
+    if t.depth > reading.max_depth
+        return fail(code: "invalid", msg: f"{t.path}: nested deeper than {reading.max_depth}")
+    name = t.type_name
+    v = t.v
+    m = schema.messages[name].must()
+    out: [Task] @= [emit(event.text(kind: event.MESSAGE, s: name))]
+
+    where = if t.path == ""
+        "/"
+    else
+        t.path
+
+    if name == "google.protobuf.Timestamp" || name == "google.protobuf.Duration"
+        text = json.text_of(v)
+
+        moment: wkt.Moment? = if text.is_err()
+            fail(code: "invalid", msg: f"{where}: a {name} is written as a text")
+        else if name == "google.protobuf.Timestamp"
+            wkt.parse_timestamp(text.must())
+        else
+            wkt.parse_duration(text.must())
+
+        match moment
+            .err e => return fail(code: e.code, msg: f"{where}: {e.msg}")
+            .ok got =>
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 1)))
+                out @ out.push(emit(event.signed(kind: event.INT64, n: got.seconds)))
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 2)))
+                out @ out.push(emit(event.signed(kind: event.INT32, n: got.nanos)))
+    else if name == "google.protobuf.FieldMask"
+        text = json.text_of(v)
+
+        if text.is_err()
+            return fail(code: "invalid", msg: f"{where}: a FieldMask is written as a text")
+
+        match wkt.parse_mask(text.must())
+            .err e => return fail(code: e.code, msg: f"{where}: {e.msg}")
+            .ok paths =>
+                if paths.len() > 0
+                    out @ out.push(emit(event.signed(kind: event.FIELD, n: 1)))
+                    out @ out.push(emit(event.mark(event.LIST)))
+
+                    for p in paths
+                        out @ out.push(emit(event.text(kind: event.TEXT, s: p)))
+
+                    out @ out.push(emit(event.mark(event.END)))
+    else if name == "google.protobuf.Value"
+        match v
+            .null_value =>
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 1)))
+                out @ out.push(emit(event.signed(kind: event.ENUM, n: 0)))
+            .number n =>
+                if n.v != n.v || n.v * 0.5 == n.v && n.v != 0.0
+                    return fail(code: "invalid", msg: f"{where}: a Value holds no nan or infinity")
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 2)))
+                out @ out.push(emit(event.real(kind: event.DOUBLE, x: n.v)))
+            .text s =>
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 3)))
+                out @ out.push(emit(event.text(kind: event.TEXT, s: s.v)))
+            .boolean b =>
+                n: i64 = if b.v
+                    1
+                else
+                    0
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 4)))
+                out @ out.push(emit(event.signed(kind: event.BOOL, n: n)))
+            .object _ =>
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 5)))
+                out @ out.push(as_message(v, type_name: "google.protobuf.Struct", path: t.path, depth: t.depth))
+            .list _ =>
+                out @ out.push(emit(event.signed(kind: event.FIELD, n: 6)))
+                out @ out.push(as_message(v, type_name: "google.protobuf.ListValue", path: t.path, depth: t.depth))
+    else if name == "google.protobuf.Struct" || name == "google.protobuf.ListValue" || json_out.is_unwrapped(name) && name != "google.protobuf.Empty"
+        if name == "google.protobuf.Struct" && json.members_of(v).is_err()
+            return fail(code: "invalid", msg: f"{where}: a Struct is written as an object")
+
+        if name == "google.protobuf.ListValue" && json.items_of(v).is_err()
+            return fail(code: "invalid", msg: f"{where}: a ListValue is written as a list")
+        out @ out.push(emit(event.signed(kind: event.FIELD, n: 1)))
+        out @ out.push(as_value(v, f: m.fields[0], item: false, path: t.path, depth: t.depth))
+    else if name == "google.protobuf.Any"
+        for task in any_tasks(schema, t: t, reading: reading)?
+            out @ out.push(task)
+    else
+        members = json.members_of(v)
+
+        if members.is_err()
+            return fail(code: "invalid", msg: f"{where}: a {name} is written as an object, not as {json.kind_of(v)}")
+        held = members.must()
+        seen: {i64: bool} @= {}
+        oneofs: {i64: str} @= {}
+
+        for key in keys(held)
+            member = held[key].must()
+            path = t.path + "/" + key
+            f: model.Field @= blank()
+            found: bool @= false
+
+            if key.len() > 2 && key[0] == '[' && key[key.len() - 1] == ']'
+                match schema.extensions[key.slice(from: 1, to: key.len() - 1)]
+                    .ok x =>
+                        if x.extendee == name
+                            f @ x
+                            found @ true
+                    .err _ => _ = 0
+            else
+                match m.by_json[key]
+                    .ok index =>
+                        f @ m.fields[index]
+                        found @ true
+                    .err _ => _ = 0
+
+            if !found
+                if !reading.ignore_unknown
+                    return fail(code: "invalid", msg: f"{path}: {name} has no field \"{key}\"")
+            else if !seen[f.number].is_err()
+                return fail(code: "invalid", msg: f"{path}: the field {f.name} is written twice")
+            else
+                seen[f.number] @ true
+                is_null = json.is_null(member)
+                keeps_null = f.type_name == "google.protobuf.Value" || f.type_name == "google.protobuf.NullValue"
+
+                if f.oneof >= 0 && (!is_null || keeps_null)
+                    match oneofs[f.oneof]
+                        .ok other => return fail(
+                            code: "invalid",
+                            msg: f"{path}: {other} and {f.name} are of one oneof, and only one is written"
+                        )
+                        .err _ => oneofs[f.oneof] @ f.name
+                skip_name = reading.ignore_unknown && f.label != model.REPEATED && unknown_name(schema, f: f, v: member)
+
+                if (!is_null || keeps_null && f.label != model.REPEATED && !f.is_map) && !skip_name
+                    out @ out.push(emit(event.signed(kind: event.FIELD, n: f.number)))
+                    out @ out.push(as_value(member, f: f, item: false, path: path, depth: t.depth))
+
+    out @ out.push(emit(event.mark(event.END)))
+    return ok(out)
+
+# The work of an `Any`: its message read, encoded, and written as its bytes.
+function any_tasks(schema: model.Schema lent, t: Task, reading: Reading) -> [Task]?
+    out: [Task] @= []
+
+    where = if t.path == ""
+        "/"
+    else
+        t.path
+    members = json.members_of(t.v)
+
+    if members.is_err()
+        return fail(code: "invalid", msg: f"{where}: an Any is written as an object")
+    held = members.must()
+
+    if keys(held).len() == 0
+        return ok(out)
+    url = json.text_of(held["@type"].default(.null_value))
+
+    if url.is_err()
+        return fail(code: "invalid", msg: f"{where}: an Any's \"@type\" is missing or no text")
+    u = url.must()
+    at: i64 @= u.len()
+
+    while at > 0 && u[at - 1] != '/'
+        at @ at - 1
+
+    name = u.slice(from: at, to: u.len())
+
+    if schema.messages[name].is_err()
+        return fail(code: "not_found", msg: f"{where}: an Any holds a {name}, which the schema does not hold")
+    inner: json.Value @= .null_value
+
+    if json_out.is_special(name)
+        inner @ held["value"].default(.null_value)
+
+        if json.is_null(inner) && name != "google.protobuf.Value"
+            return fail(code: "invalid", msg: f"{where}: an Any holding a {name} writes it as \"value\"")
+    else
+        rest: {str: json.Value} @= {}
+
+        for key in keys(held)
+            if key != "@type"
+                rest[key] @ held[key].must()
+
+        inner @ .object(members: rest)
+    events = read(schema, type_name: name, v: inner, reading: reading, depth: t.depth)?
+    data = encoder.write(schema, events: events)?
+    out @ out.push(emit(event.signed(kind: event.FIELD, n: 1)))
+    out @ out.push(emit(event.text(kind: event.TEXT, s: u)))
+    out @ out.push(emit(event.signed(kind: event.FIELD, n: 2)))
+    out @ out.push(emit(event.bytes(kind: event.BYTES, data: data)))
+    return ok(out)
+
+# The work of the value task `t`: the field's value, a list's or a map's.
+function value_tasks(schema: model.Schema lent, t: Task, reading: Reading) -> [Task]?
+    f = t.field
+    v = t.v
+    out: [Task] @= []
+
+    where = if t.path == ""
+        "/"
+    else
+        t.path
+
+    if f.is_map && !t.item
+        members = json.members_of(v)
+
+        if members.is_err()
+            return fail(code: "invalid", msg: f"{where}: a map is written as an object")
+        entry = schema.messages[f.type_name].must()
+        key_field = entry.fields[entry.by_number[1].must()]
+        value_field = entry.fields[entry.by_number[2].must()]
+        held = members.must()
+        out @ out.push(emit(event.mark(event.MAP)))
+
+        for key in keys(held)
+            member = held[key].must()
+            path = t.path + "/" + key
+
+            if json.is_null(member) && value_field.type_name != "google.protobuf.Value"
+                return fail(code: "invalid", msg: f"{path}: a map's value is not null")
+
+            if !(reading.ignore_unknown && unknown_name(schema, f: value_field, v: member))
+                out @ out.push(emit(key_event(key_field, name: key, path: path)?))
+                out @ out.push(as_value(member, f: value_field, item: true, path: path, depth: t.depth))
+
+        out @ out.push(emit(event.mark(event.END)))
+        return ok(out)
+
+    if f.label == model.REPEATED && !t.item
+        items = json.items_of(v)
+
+        if items.is_err()
+            return fail(code: "invalid", msg: f"{where}: a repeated field is written as a list")
+        out @ out.push(emit(event.mark(event.LIST)))
+        list = items.must()
+
+        for k in range(from: 0, to: list.len())
+            item = list[k]
+            path = t.path + f"/{k}"
+
+            if json.is_null(item) && f.type_name != "google.protobuf.Value"
+                return fail(code: "invalid", msg: f"{path}: a list's item is not null")
+
+            if !(reading.ignore_unknown && unknown_name(schema, f: f, v: item))
+                out @ out.push(as_value(item, f: f, item: true, path: path, depth: t.depth))
+
+        out @ out.push(emit(event.mark(event.END)))
+        return ok(out)
+
+    if f.kind == model.MESSAGE || f.kind == model.GROUP
+        out @ out.push(as_message(v, type_name: f.type_name, path: t.path, depth: t.depth))
+        return ok(out)
+    out @ out.push(emit(scalar(schema, f: f, v: v, path: where)?))
+    return ok(out)

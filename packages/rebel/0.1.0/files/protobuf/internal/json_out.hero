@@ -1,0 +1,438 @@
+# Events written as the proto3 JSON mapping's `json.Value`: members named by
+# their JSON names in the order of their numbers, 64-bit integers as texts,
+# bytes as base 64, enums by name, and the well-known types in their own
+# forms. Every open message, list and map is a frame on a stack this module
+# holds; only an `Any`, whose message is read from its bytes, calls this
+# module again, no deeper than the depth allowed.
+
+use bytes
+use json
+use numbers
+use protobuf/internal/decoder
+use protobuf/internal/encoder
+use protobuf/internal/event
+use protobuf/internal/model
+use protobuf/internal/occurrence
+use protobuf/internal/wkt
+
+# A message written as an object.
+constant OBJECT: i64
+    1
+
+# A repeated field written as a list.
+constant ARRAY: i64
+    2
+
+# A map field written as an object.
+constant MAPPED: i64
+    3
+
+# A well-known type written as the one value it holds: a wrapper, `Struct`,
+# `ListValue`, `Value`, `Empty`.
+constant UNWRAP: i64
+    4
+
+# A `Timestamp`.
+constant TIMESTAMP: i64
+    5
+
+# A `Duration`.
+constant DURATION: i64
+    6
+
+# A `FieldMask`.
+constant MASK: i64
+    7
+
+# An `Any`.
+constant ANY: i64
+    8
+
+# How a message is written.
+record Writing
+    # Whether members take their declared names.
+    proto_names: bool
+    # Whether enums are written as numbers.
+    enum_numbers: bool
+    # Whether fields without presence are written at their defaults.
+    emit_defaults: bool
+    # The deepest nesting of `Any` inside `Any` written.
+    max_depth: i64
+
+# The scalars of the frame open now.
+record Frame
+    # `OBJECT` to `ANY`.
+    kind: i64
+    # The message's type, or the list's or map's field's message.
+    message: model.Message
+    # The field whose value comes next.
+    field: model.Field
+    # A map's key waiting for its value.
+    key: str
+    # Whether `key` waits.
+    has_key: bool
+    # A `Timestamp`'s or a `Duration`'s seconds.
+    seconds: i64
+    # Its nanoseconds.
+    nanos: i64
+    # An `Any`'s type URL.
+    url: str
+    # An `Any`'s bytes.
+    data: [u8]
+    # The value an unwrapped type holds.
+    held: json.Value
+    # Whether it holds one.
+    has_held: bool
+
+# Whether `name` is a well-known type with a JSON form of its own.
+function is_special(name: str) -> bool
+    return name == "google.protobuf.Timestamp" || name == "google.protobuf.Duration" || name == "google.protobuf.FieldMask" || name == "google.protobuf.Any" || is_unwrapped(name)
+
+# Whether `name` is written as the one value it holds.
+function is_unwrapped(name: str) -> bool
+    wrappers = [
+        "Struct"
+        "ListValue"
+        "Value"
+        "Empty"
+        "DoubleValue"
+        "FloatValue"
+        "Int64Value"
+        "UInt64Value"
+        "Int32Value"
+        "UInt32Value"
+        "BoolValue"
+        "StringValue"
+        "BytesValue"
+    ]
+
+    for w in wrappers
+        if name == "google.protobuf." + w
+            return true
+
+    return false
+
+# A frame of `kind` for the message `message`.
+function frame_of(kind: i64, message: model.Message, field: model.Field) -> Frame
+    return Frame(
+        kind: kind,
+        message: message,
+        field: field,
+        key: "",
+        has_key: false,
+        seconds: 0,
+        nanos: 0,
+        url: "",
+        data: [],
+        held: .null_value,
+        has_held: false
+    )
+
+# The text of a map key's event.
+function key_text(e: event.Event) -> str
+    if e.kind == event.TEXT
+        return e.text
+
+    if e.kind == event.BOOL
+        if e.number == 1
+            return "true"
+        return "false"
+
+    if e.kind == event.UINT32 || e.kind == event.UINT64
+        return f"{e.unsigned}"
+    return f"{e.number}"
+
+# A float's JSON: a number, or the text of a `nan` or an infinity.
+function real_json(x: f64, single: bool) -> json.Value
+    if x != x
+        return .text(v: "NaN")
+
+    if x > 1.0 && x * 0.5 == x
+        return .text(v: "Infinity")
+
+    if x < -1.0 && x * 0.5 == x
+        return .text(v: "-Infinity")
+
+    if single
+        return .number(v: numbers.parse_float(numbers.format_f32_shortest(to_f32(x))).must())
+    return .number(v: x)
+
+# The JSON of the scalar `e`, a value of the field `f`.
+function scalar(schema: model.Schema lent, f: model.Field, e: event.Event, writing: Writing) -> json.Value?
+    k = e.kind
+
+    if k == event.BOOL
+        return ok(.boolean(v: e.number == 1))
+
+    if k == event.INT32
+        return ok(.number(v: to_f64(e.number)))
+
+    if k == event.INT64
+        return ok(.text(v: f"{e.number}"))
+
+    if k == event.UINT32
+        return ok(.number(v: to_f64(e.unsigned)))
+
+    if k == event.UINT64
+        return ok(.text(v: f"{e.unsigned}"))
+
+    if k == event.FLOAT || k == event.DOUBLE
+        return ok(real_json(e.real, single: k == event.FLOAT))
+
+    if k == event.TEXT
+        return ok(.text(v: e.text))
+
+    if k == event.BYTES
+        if f.kind == model.STRING
+            return fail(code: "invalid", msg: f"{f.full_name}: a string that is not UTF-8 has no JSON")
+        return ok(.text(v: bytes.format_base64(e.data)))
+
+    if f.type_name == "google.protobuf.NullValue"
+        return ok(.null_value)
+
+    if !writing.enum_numbers
+        match schema.enums[f.type_name]
+            .ok e_type =>
+                match e_type.by_number[e.number]
+                    .ok index => return ok(.text(v: e_type.values[index].name))
+                    .err _    => _ = 0
+            .err _ => _ = 0
+    return ok(.number(v: to_f64(e.number)))
+
+# The JSON of `f` at its default, as `emit_defaults` writes it.
+function default_json(schema: model.Schema lent, f: model.Field, writing: Writing) -> json.Value?
+    if f.is_map
+        return ok(.object(members: {}))
+
+    if f.label == model.REPEATED
+        return ok(.list(items: []))
+    zero = occurrence.default_event(f)
+    return scalar(schema, f: f, e: zero, writing: writing)
+
+# The name of the member `f` is written under.
+function member_name(f: model.Field, writing: Writing) -> str
+    if f.extendee != ""
+        return "[" + f.full_name + "]"
+
+    if writing.proto_names
+        return f.name
+    return f.json_name
+
+# The `json.Value` that `events`, one message's, write.
+function write(schema: model.Schema lent, events: [event.Event] lent, writing: Writing, depth: i64) -> json.Value?
+    if depth > writing.max_depth
+        return fail(code: "invalid", msg: f"an Any nested deeper than {writing.max_depth}")
+    blank_field = occurrence.default_field()
+    blank_message = model.Message(
+        name: "",
+        full_name: "",
+        file: "",
+        fields: [],
+        by_number: {},
+        by_name: {},
+        by_json: {},
+        oneofs: [],
+        messages: [],
+        enums: [],
+        extension_ranges: [],
+        reserved_ranges: [],
+        reserved_names: [],
+        extensions: [],
+        map_entry: false,
+        options: [],
+        order: []
+    )
+    frame: Frame @= frame_of(kind: 0, message: blank_message, field: blank_field)
+    names: [str] @= []
+    values: [json.Value] @= []
+    numbers_seen: [i64] @= []
+    held_frames: [Frame] @= []
+    held_names: [[str]] @= []
+    held_values: [[json.Value]] @= []
+    held_numbers: [[i64]] @= []
+    level: i64 @= 0
+    result: json.Value @= .null_value
+
+    for e in events
+        ready: bool @= true
+        made: json.Value @= .null_value
+
+        if e.kind == event.FIELD
+            frame.field @ encoder.field_of(schema, m: frame.message, number: e.number)?
+            ready @ false
+        else if e.kind == event.MESSAGE || e.kind == event.LIST || e.kind == event.MAP
+            encoder.put(@held_frames, top: level, item: frame)
+            encoder.put(@held_names, top: level, item: names)
+            encoder.put(@held_values, top: level, item: values)
+            encoder.put(@held_numbers, top: level, item: numbers_seen)
+            level @ level + 1
+            names @ []
+            values @ []
+            numbers_seen @ []
+
+            if e.kind == event.MESSAGE
+                name = e.text
+                message = schema.messages[name].must()
+
+                kind = if name == "google.protobuf.Timestamp"
+                    TIMESTAMP
+                else if name == "google.protobuf.Duration"
+                    DURATION
+                else if name == "google.protobuf.FieldMask"
+                    MASK
+                else if name == "google.protobuf.Any"
+                    ANY
+                else if is_unwrapped(name)
+                    UNWRAP
+                else
+                    OBJECT
+                frame @ frame_of(kind: kind, message: message, field: blank_field)
+            else if e.kind == event.LIST
+                frame @ frame_of(kind: ARRAY, message: frame.message, field: frame.field)
+            else
+                entry = schema.messages[frame.field.type_name].must()
+                value_field = entry.fields[entry.by_number[2].must()]
+                frame @ frame_of(kind: MAPPED, message: entry, field: value_field)
+            ready @ false
+        else if e.kind == event.END
+            kind = frame.kind
+
+            if kind == OBJECT
+                if writing.emit_defaults
+                    for f in frame.message.fields
+                        absent: bool @= true
+
+                        for n in numbers_seen
+                            if n == f.number
+                                absent @ false
+
+                        if absent && !f.presence && f.oneof < 0
+                            names @ names.push(member_name(f, writing: writing))
+                            values @ values.push(default_json(schema, f: f, writing: writing)?)
+                            numbers_seen @ numbers_seen.push(f.number)
+                at: {i64: i64} @= {}
+
+                for k in range(from: 0, to: numbers_seen.len())
+                    at[numbers_seen[k]] @ k
+
+                members: {str: json.Value} @= {}
+
+                for n in sort(numbers_seen)
+                    k = at[n].must()
+                    members[names[k]] @ values[k]
+
+                made @ .object(members: members)
+            else if kind == ARRAY
+                made @ .list(items: values)
+            else if kind == MAPPED
+                members: {str: json.Value} @= {}
+
+                for k in range(from: 0, to: names.len())
+                    members[names[k]] @ values[k]
+
+                made @ .object(members: members)
+            else if kind == UNWRAP
+                name = frame.message.full_name
+
+                if frame.has_held
+                    made @ frame.held
+                else if name == "google.protobuf.Value"
+                    return fail(code: "invalid", msg: "a google.protobuf.Value holds none of its kinds")
+                else if name == "google.protobuf.Struct" || name == "google.protobuf.Empty"
+                    made @ .object(members: {})
+                else if name == "google.protobuf.ListValue"
+                    made @ .list(items: [])
+                else
+                    made @ default_json(schema, f: frame.message.fields[0], writing: writing)?
+            else if kind == TIMESTAMP
+                made @ .text(v: wkt.format_timestamp(seconds: frame.seconds, nanos: frame.nanos)?)
+            else if kind == DURATION
+                made @ .text(v: wkt.format_duration(seconds: frame.seconds, nanos: frame.nanos)?)
+            else if kind == MASK
+                paths: [str] @= []
+
+                for v in values
+                    for item in json.items_of(v)?
+                        paths @ paths.push(json.text_of(item)?)
+
+                made @ .text(v: wkt.format_mask(paths)?)
+            else
+                made @ any_json(schema, url: frame.url, data: frame.data, writing: writing, depth: depth)?
+            level @ level - 1
+            frame @ held_frames[level]
+            names @ held_names[level]
+            values @ held_values[level]
+            numbers_seen @ held_numbers[level]
+            held_names[level] @ []
+            held_values[level] @ []
+            held_numbers[level] @ []
+        else if frame.kind == TIMESTAMP || frame.kind == DURATION
+            if frame.field.number == 1
+                frame.seconds @ e.number
+            else
+                frame.nanos @ e.number
+            ready @ false
+        else if frame.kind == ANY
+            if frame.field.number == 1
+                frame.url @ e.text
+            else
+                frame.data @ e.data
+            ready @ false
+        else if frame.kind == MAPPED && !frame.has_key
+            frame.key @ key_text(e)
+            frame.has_key @ true
+            ready @ false
+        else
+            if frame.kind == UNWRAP && frame.message.full_name == "google.protobuf.Value" && e.kind == event.DOUBLE && (e.real != e.real || e.real * 0.5 == e.real && e.real != 0.0)
+                return fail(
+                    code: "invalid",
+                    msg: "a google.protobuf.Value holds a nan or an infinity, which JSON has no number for"
+                )
+            made @ scalar(schema, f: frame.field, e: e, writing: writing)?
+
+        if ready
+            if level == 0
+                result @ made
+            else if frame.kind == OBJECT
+                names @ names.push(member_name(frame.field, writing: writing))
+                values @ values.push(made)
+                numbers_seen @ numbers_seen.push(frame.field.number)
+            else if frame.kind == ARRAY || frame.kind == MASK
+                values @ values.push(made)
+            else if frame.kind == MAPPED
+                names @ names.push(frame.key)
+                values @ values.push(made)
+                frame.has_key @ false
+            else if frame.kind == UNWRAP
+                frame.held @ made
+                frame.has_held @ true
+
+    return ok(result)
+
+# The JSON of an `Any` holding the bytes `data` of the type `url` names.
+function any_json(schema: model.Schema lent, url: str, data: [u8], writing: Writing, depth: i64) -> json.Value?
+    if url == "" && data.len() == 0
+        return ok(.object(members: {}))
+    at: i64 @= url.len()
+
+    while at > 0 && url[at - 1] != '/'
+        at @ at - 1
+
+    name = url.slice(from: at, to: url.len())
+
+    if schema.messages[name].is_err()
+        return fail(code: "not_found", msg: f"an Any holds a {name}, which the schema does not hold")
+    reading = occurrence.Reading(max_depth: 9223372036854775807, allow_partial: true, discard_unknown: true)
+    inner = write(schema, events: decoder.read(schema, type_name: name, data: data, reading: reading)?, writing: writing, depth: depth + 1)?
+    members: {str: json.Value} @= {}
+    members["@type"] @ .text(v: url)
+
+    if is_special(name)
+        members["value"] @ inner
+    else
+        held = json.members_of(inner)?
+
+        for k in keys(held)
+            members[k] @ held[k].must()
+
+    return ok(.object(members: members))

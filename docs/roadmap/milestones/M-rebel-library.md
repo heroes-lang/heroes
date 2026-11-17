@@ -138,9 +138,53 @@ notes did not read them from a clock.
     channel by name, shared memory, a lock and a semaphore between processes;
     the local sockets `net` had refused), `protobuf`, `http2` and `grpc`,
     `websocket`, `mail` and `mail/smtp`, `semver` (which the package manager
-    needs), `diff`, `markdown`, and `crypto/seal` and `crypto/keys` from the
+    needs), `diff`, `markdown`, and `crypto/seal` and `crypto/keypairs` from the
     system's own cryptography (lifting `crypto`'s refusal of ciphers by the
     route `tls` took). Rebel is 71 packages.
+27. **The list closes at 85, after a census of four more standard
+    libraries** (2026-11-17, the author: *before closing the set for good,
+    look at what Odin, Zig, .NET and Java hold that Rebel does not*). Read
+    that day from their own trees: Zig 0.15.2's `lib/std` and Odin
+    dev-2026-11's `core/` and `vendor/` on this Mac, the JDK's modules in
+    `openjdk/jdk` and .NET's libraries in `dotnet/runtime` on GitHub; each
+    candidate then looked for in Rebel's ledgers. Added, each the author's
+    choice: `containers` (ordered map and set, deque, bit set, LRU cache,
+    topological order), `asn1`, `pem` and `x509`, `math/linear` with complex
+    numbers in `math` (lifting `math`'s refusal), `fs/watch`,
+    `unicode/encodings` (WHATWG), `i18n` (catalogs, plurals, locale formats,
+    collation, from CLDR), `dns`, `keyring`, `sql/odbc`, `ldap`,
+    `compress/lz4`, `serial`; and small additions: argon2 and bcrypt in
+    `crypto`, atomic writes and mapped files in `fs`, memory in `os`, the line
+    editor and text tables in `term`, server-sent events and a rate limit in
+    `web`, ping in `net`. Left out, with the coordinator's reasons accepted:
+    graphics, windows, audio and games (a family of C bindings for later);
+    QUIC and HTTP/3; reflection, dependency injection and automatic
+    serialization (no reflection); channels, pools and atomics (threads share
+    nothing); SIMD and tensors, loading C at run time (the language's
+    questions); a parser of Heroes (a second grammar); object-file formats,
+    Windows-only services, scripting, feeds.
+28. **And 102, after a census of the third-party libraries most used in Go,
+    Python and Rust** (2026-11-17, the author: *look at the most used external
+    libraries and see what makes sense to do*). Measured that day: PyPI's
+    downloads of the last 30 days (15,000 projects, the ranking of
+    2026-11-01), crates.io's 300 most downloaded crates of late (its API), and
+    for Go, where no ranking is published, pkg.go.dev's *imported by* count of
+    90 candidates the coordinator chose (the list is the coordinator's, the
+    counts are pkg.go.dev's). Added, each the author's choice: `jose`,
+    `oauth2` with OpenID Connect, `metrics`, `html/sanitize` (lifting `html`'s
+    refusal as a subpackage of its own), `config` with `.env` files,
+    `json/schema`, `json/patch`, `json/path`, `xlsx`, `pdf`, `s3`, `nats`,
+    `mqtt`, `amqp`, `kafka`, `jsonrpc`, `mcp`; and small additions: IDNA in
+    `url`, case styles and shell quoting in `strings`, a TOML document edited
+    in place in `toml`, gitignore patterns in `path`, retries' waits and cron
+    in `time`, system and process statistics in `os` and `process`, half
+    floats in `numbers`, sessions and signed cookies in `web`, multipart read
+    in `http`, an insertion-ordered map in `containers`, the detection of an
+    undeclared encoding in `unicode/encodings`. Left out, the coordinator's
+    reasons accepted: data science (n-dimensional arrays, data frames,
+    plotting), terminal UI frameworks for now, validation and mapping by
+    reflection, cloud SDKs beyond S3, AI API clients, syntax highlighting,
+    git.
 
 ## Decided on the fly by the coordinator, for the author to turn
 

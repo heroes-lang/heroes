@@ -1,0 +1,373 @@
+# The descriptors as the package's own modules read them: what a `.proto` file
+# declares, every name resolved to its full name and every edition's features
+# resolved into the plain facts the wire and JSON need. The face copies these
+# into its public records once, after a schema is read; the codecs read these.
+
+## Kinds and labels, numbered as descriptor.proto numbers them
+
+# A `double`.
+constant DOUBLE: i64
+    1
+
+# A `float`.
+constant FLOAT: i64
+    2
+
+# An `int64`.
+constant INT64: i64
+    3
+
+# A `uint64`.
+constant UINT64: i64
+    4
+
+# An `int32`.
+constant INT32: i64
+    5
+
+# A `fixed64`.
+constant FIXED64: i64
+    6
+
+# A `fixed32`.
+constant FIXED32: i64
+    7
+
+# A `bool`.
+constant BOOL: i64
+    8
+
+# A `string`.
+constant STRING: i64
+    9
+
+# A group: a message written between two tags.
+constant GROUP: i64
+    10
+
+# A message.
+constant MESSAGE: i64
+    11
+
+# A `bytes`.
+constant BYTES: i64
+    12
+
+# A `uint32`.
+constant UINT32: i64
+    13
+
+# An enum.
+constant ENUM: i64
+    14
+
+# An `sfixed32`.
+constant SFIXED32: i64
+    15
+
+# An `sfixed64`.
+constant SFIXED64: i64
+    16
+
+# An `sint32`.
+constant SINT32: i64
+    17
+
+# An `sint64`.
+constant SINT64: i64
+    18
+
+# A singular field.
+constant OPTIONAL: i64
+    1
+
+# A field proto2 requires.
+constant REQUIRED: i64
+    2
+
+# A repeated field, a map field included.
+constant REPEATED: i64
+    3
+
+# An option's value written as an identifier.
+constant IDENTIFIER: i64
+    1
+
+# An option's value written as a number, its sign included.
+constant NUMBER: i64
+    2
+
+# An option's value written as a string literal.
+constant QUOTED: i64
+    3
+
+# An option's value written as a message between braces.
+constant AGGREGATE: i64
+    4
+
+## The records
+
+# One option: its name as written and its value.
+record Setting
+    # The name, `deprecated` or `(my.ext).field`.
+    name: str
+    # `IDENTIFIER`, `NUMBER`, `QUOTED` or `AGGREGATE`.
+    kind: i64
+    # The identifier, the number's text or the aggregate's text.
+    text: str
+    # A string literal's bytes, its escapes read.
+    data: [u8]
+
+# A range of numbers, both ends included.
+record Range
+    # The first number.
+    first: i64
+    # The last number.
+    last: i64
+
+# A field, or an extension.
+record Field
+    # Its name as declared.
+    name: str
+    # Its full name.
+    full_name: str
+    # Its name in JSON.
+    json_name: str
+    # Its number.
+    number: i64
+    # Its kind, `DOUBLE` to `SINT64`.
+    kind: i64
+    # `OPTIONAL`, `REQUIRED` or `REPEATED`.
+    label: i64
+    # The full name of its message or enum type, or empty.
+    type_name: str
+    # Whether it tracks presence.
+    presence: bool
+    # Whether it is written packed.
+    packed: bool
+    # Whether it is a map field.
+    is_map: bool
+    # The index of its oneof in its message's, or -1.
+    oneof: i64
+    # Whether it is proto3's `optional`.
+    proto3_optional: bool
+    # Whether the file wrote a default.
+    has_default: bool
+    # The default as written, a string's or a bytes' escapes read into
+    # `default_bytes` instead.
+    default_text: str
+    # A string's or a bytes' default.
+    default_bytes: [u8]
+    # A number's, a bool's or an enum's default as the 64 bits its value
+    # takes: an integer's two's complement, a float's or a double's IEEE 754
+    # bits as a double, a bool's 0 or 1.
+    default_bits: u64
+    # Whether a string must be UTF-8.
+    validate_utf8: bool
+    # Whether a message is written between two tags.
+    delimited: bool
+    # Whether its enum is closed.
+    closed_enum: bool
+    # The message it extends, or empty.
+    extendee: str
+    # Its options.
+    options: [Setting]
+
+# A oneof.
+record Oneof
+    # Its name.
+    name: str
+    # Its full name.
+    full_name: str
+    # Whether proto3's `optional` made it.
+    synthetic: bool
+    # The indices of its fields in the message's.
+    fields: [i64]
+    # Its options.
+    options: [Setting]
+
+# A message type.
+record Message
+    # Its name.
+    name: str
+    # Its full name.
+    full_name: str
+    # The file declaring it.
+    file: str
+    # Its fields, as declared.
+    fields: [Field]
+    # The index of each field, by number.
+    by_number: {i64: i64}
+    # The index of each field, by name.
+    by_name: {str: i64}
+    # The index of each field, by JSON name.
+    by_json: {str: i64}
+    # Its oneofs.
+    oneofs: [Oneof]
+    # The full names of its nested messages.
+    messages: [str]
+    # The full names of its nested enums.
+    enums: [str]
+    # Its extension ranges.
+    extension_ranges: [Range]
+    # Its reserved numbers.
+    reserved_ranges: [Range]
+    # Its reserved names.
+    reserved_names: [str]
+    # The extensions declared inside it.
+    extensions: [Field]
+    # Whether it is a map field's entry.
+    map_entry: bool
+    # Its options.
+    options: [Setting]
+    # The indices of its fields in the order of their numbers.
+    order: [i64]
+
+# One value of an enum.
+record EnumValue
+    # Its name.
+    name: str
+    # Its number.
+    number: i64
+    # Its options.
+    options: [Setting]
+
+# An enum type.
+record Enum
+    # Its name.
+    name: str
+    # Its full name.
+    full_name: str
+    # The file declaring it.
+    file: str
+    # Its values, as declared.
+    values: [EnumValue]
+    # The index of the first value of each number.
+    by_number: {i64: i64}
+    # The index of each value, by name.
+    by_name: {str: i64}
+    # Whether a number it does not name is kept as unknown.
+    closed: bool
+    # Its reserved numbers.
+    reserved_ranges: [Range]
+    # Its reserved names.
+    reserved_names: [str]
+    # Its options.
+    options: [Setting]
+
+# One method of a service.
+record Method
+    # Its name.
+    name: str
+    # Its full name.
+    full_name: str
+    # The full name of its request.
+    input_type: str
+    # The full name of its response.
+    output_type: str
+    # Whether the client sends a stream.
+    client_streaming: bool
+    # Whether the server sends a stream.
+    server_streaming: bool
+    # Its options.
+    options: [Setting]
+
+# A service.
+record Service
+    # Its name.
+    name: str
+    # Its full name.
+    full_name: str
+    # The file declaring it.
+    file: str
+    # Its methods.
+    methods: [Method]
+    # Its options.
+    options: [Setting]
+
+# A file.
+record File
+    # Its name, as imported.
+    name: str
+    # Its package, or empty.
+    package: str
+    # `proto2`, `proto3` or `editions`.
+    syntax: str
+    # The edition, `2023`, or empty.
+    edition: str
+    # The files it imports.
+    dependencies: [str]
+    # Those imported `public`.
+    public_dependencies: [str]
+    # Those imported `weak`.
+    weak_dependencies: [str]
+    # Its top-level messages.
+    messages: [str]
+    # Its top-level enums.
+    enums: [str]
+    # Its services.
+    services: [str]
+    # The extensions declared at its top.
+    extensions: [Field]
+    # Its options.
+    options: [Setting]
+
+# Every file read and what they declare.
+record Schema
+    # The files, in the order they were read.
+    files: {str: File}
+    # The messages, by full name.
+    messages: {str: Message}
+    # The enums, by full name.
+    enums: {str: Enum}
+    # The services, by full name.
+    services: {str: Service}
+    # The extensions, by full name.
+    extensions: {str: Field}
+    # The full name of each extension, by the message it extends and its
+    # number, the two joined as `message#number`.
+    extension_at: {str: str}
+    # Whether any message requires a field, so that a check for them is owed.
+    requires: bool
+
+# The empty schema.
+function empty() -> Schema
+    return Schema(files: {}, messages: {}, enums: {}, services: {}, extensions: {}, extension_at: {}, requires: false)
+
+# The key of an extension in `Schema.extension_at`.
+function extension_key(extendee: str, number: i64) -> str
+    return f"{extendee}#{number}"
+
+# The word a `.proto` file writes for the kind `kind`, or `unknown`.
+function wire_kind_name(kind: i64) -> str
+    names = [
+        ""
+        "double"
+        "float"
+        "int64"
+        "uint64"
+        "int32"
+        "fixed64"
+        "fixed32"
+        "bool"
+        "string"
+        "group"
+        "message"
+        "bytes"
+        "uint32"
+        "enum"
+        "sfixed32"
+        "sfixed64"
+        "sint32"
+        "sint64"
+    ]
+
+    if kind < 1 || kind > 18
+        return "unknown"
+    return names[kind]
+
+test "wire_kind_name: each end, and a number that is no kind"
+    assert wire_kind_name(1) == "double"
+    assert wire_kind_name(18) == "sint64"
+    assert wire_kind_name(0) == "unknown"
+    assert extension_key(extendee: "a.B", number: 7) == "a.B#7"

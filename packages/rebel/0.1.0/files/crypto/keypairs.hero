@@ -1,0 +1,809 @@
+# Key pairs, signatures, key agreement and encryption to a public key, by
+# the system's own cryptography: Ed25519 (RFC 8032), ECDSA on P-256 and
+# P-384 (FIPS 186-5, signatures in X9.62's DER), RSA-PSS and RSA PKCS #1
+# v1.5 signatures and RSA-OAEP encryption (RFC 8017), X25519 (RFC 7748) and
+# ECDH on P-256 and P-384 (SEC 1). Every computation on a secret is the
+# system's library's, never Heroes': the Security framework on macOS, CNG
+# on Windows, OpenSSL 3's `libcrypto.so.3` on Linux, which keep the promise
+# that a key's arithmetic takes a time its secret does not decide.
+#
+# **What each platform offers, measured 2026-11-17** (`is_available` asks
+# it): Linux everything here; macOS P-256, P-384 and RSA, and no Ed25519 or
+# X25519, which Apple offers to Swift alone; Windows everything but Ed25519,
+# which CNG lacks, and X25519, which waits for a measurement on the machine.
+# A kind a platform lacks fails `unsupported` there at every call.
+#
+# **A key is a handle, and its secret stays in C.** A private key made by
+# `generate` or read never stands in the program's memory but where the
+# program asks for its bytes (`format_private_der`, `format_private_pem`,
+# `format_private_raw`); a cell the language lends C a secret through is
+# overwritten before the call answers, and `close` overwrites C's copy. A
+# private key and a public key are two types, so a public key never signs
+# and a private key's public half is taken by `public_of`.
+#
+# **Every signature has one form**: an ECDSA signature is X9.62's DER, read
+# strictly (BER's longer lengths and padded numbers do not hold), and an RSA
+# signature is as long as the modulus and below it, on every platform alike
+# (the Security framework took both of the others: Wycheproof's cases,
+# measured). RSA-PSS's salt is as long as its hash, on both sides.
+#
+# Keys are written as PKCS #8 and SubjectPublicKeyInfo, DER or PEM, the same
+# bytes on every platform, as Go and Python write them, and Ed25519's,
+# X25519's and an EC point's raw bytes. An encrypted PKCS #8 is not read, nor
+# OpenSSL's older forms (PKCS #1, SEC 1), which are refused saying so.
+#
+# It does not seal a text under a secret key (`crypto/seal`), digest, make
+# an HMAC or derive a key from a secret (`crypto`), read a certificate
+# (`x509`), or read PEM and DER in general (`pem`, `asn1`).
+#
+# It fails with `invalid` (an argument refused: a key of the wrong kind for
+# the call, bytes of no form read here, data that do not decrypt), `closed`
+# (a key closed), `limit` (no memory or key left), `unsupported` (a kind
+# this platform lacks) and `failed` (the system failed, its words in the
+# message).
+
+use bytes
+use crypto/hero_crypto
+use crypto/keypairs/internal/forms
+use crypto/keypairs/internal/known
+use crypto/keypairs/internal/operations
+
+## Codes
+
+# An argument refused: a key of the wrong kind or half, bytes of no form
+# read here, a text past what RSA-OAEP encrypts, data that do not decrypt.
+constant INVALID: str
+    "invalid"
+
+# A key is closed: every function that takes one.
+constant CLOSED: str
+    "closed"
+
+# No memory or key left: every function that makes a key.
+constant LIMIT: str
+    "limit"
+
+# This platform's own cryptography lacks the kind: Ed25519 and X25519 on
+# macOS, Ed25519 and X25519 on Windows, everything on a Linux machine with
+# no `libcrypto.so.3`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system failed for another reason, its words in the message.
+constant FAILED: str
+    "failed"
+
+## Kinds, schemes and keys
+
+# Which kind of key pair.
+variant Kind
+    # Ed25519 (RFC 8032): signatures of 64 bytes, keys of 32.
+    ed25519
+    # X25519 (RFC 7748): key agreement, keys and secrets of 32 bytes.
+    x25519
+    # The NIST curve P-256: ECDSA and ECDH, secrets of 32 bytes.
+    p256
+    # The NIST curve P-384: ECDSA and ECDH, secrets of 48 bytes.
+    p384
+    # RSA: signatures and encryption.
+    rsa
+        # The modulus's bits: 2048, 3072 or 4096 for a key made, 1024 to
+        # 8192 for a key read.
+        bits: i64
+
+# How a signature is made and checked.
+variant Scheme
+    # Ed25519, of the message itself; deterministic.
+    ed25519
+    # ECDSA over SHA-256, on either curve; the signature in X9.62's DER.
+    ecdsa_sha256
+    # ECDSA over SHA-384, on either curve.
+    ecdsa_sha384
+    # RSA-PSS with SHA-256 and MGF1 over SHA-256, a salt of 32 bytes.
+    rsa_pss_sha256
+    # RSA-PSS with SHA-384, a salt of 48 bytes.
+    rsa_pss_sha384
+    # RSA-PSS with SHA-512, a salt of 64 bytes.
+    rsa_pss_sha512
+    # RSA PKCS #1 v1.5 with SHA-256, as TLS 1.2 and most certificates sign.
+    rsa_pkcs1_sha256
+    # RSA PKCS #1 v1.5 with SHA-384.
+    rsa_pkcs1_sha384
+    # RSA PKCS #1 v1.5 with SHA-512.
+    rsa_pkcs1_sha512
+
+# A private key, made by `generate` or read by a `parse_private_*`
+# function. It holds a handle: `close` closes it, overwriting its secret,
+# and one nobody closes is told when `main` returns.
+record PrivateKey
+    # The layer's key, `nullptr` once `close` has emptied this place.
+    handle: hero_crypto.Key
+    # Its kind.
+    kind: Kind
+
+# A public key, taken by `public_of` or read by a `parse_public_*`
+# function. It holds a handle: `close_public` closes it.
+record PublicKey
+    # The layer's key, `nullptr` once `close_public` has emptied this place.
+    handle: hero_crypto.Key
+    # Its kind.
+    kind: Kind
+
+# Whether this machine's own cryptography makes and uses keys of `kind`:
+# false for Ed25519 and X25519 on macOS and Windows.
+#
+# - `kind`: the kind asked about; an RSA kind's bits are not looked at.
+#
+# See also `generate`.
+function is_available(kind: Kind) -> bool
+    return operations.offers(format_kind(kind))
+
+# The name of `kind`: `ed25519`, `x25519`, `p256`, `p384` or `rsa`, an RSA
+# kind's bits left out.
+#
+# - `kind`: the kind named.
+#
+# See also `format_scheme`.
+function format_kind(kind: Kind) -> str
+    return match kind
+        .ed25519 => "ed25519"
+        .x25519  => "x25519"
+        .p256    => "p256"
+        .p384    => "p384"
+        .rsa _   => "rsa"
+
+# The name of `scheme` as its case is written: `ed25519`, `ecdsa_sha256`,
+# `rsa_pss_sha256`, `rsa_pkcs1_sha512` and the others.
+#
+# - `scheme`: the scheme named.
+#
+# See also `parse_scheme`.
+function format_scheme(scheme: Scheme) -> str
+    return match scheme
+        .ed25519          => "ed25519"
+        .ecdsa_sha256     => "ecdsa_sha256"
+        .ecdsa_sha384     => "ecdsa_sha384"
+        .rsa_pss_sha256   => "rsa_pss_sha256"
+        .rsa_pss_sha384   => "rsa_pss_sha384"
+        .rsa_pss_sha512   => "rsa_pss_sha512"
+        .rsa_pkcs1_sha256 => "rsa_pkcs1_sha256"
+        .rsa_pkcs1_sha384 => "rsa_pkcs1_sha384"
+        .rsa_pkcs1_sha512 => "rsa_pkcs1_sha512"
+
+# The scheme `name` names, as `format_scheme` writes it.
+#
+# - `name`: a scheme's name, lower case.
+#
+# Fails `invalid` for any other text, the message quoting it. See also
+# `format_scheme`.
+function parse_scheme(name: str) -> Scheme?
+    every: [Scheme] = [
+        .ed25519
+        .ecdsa_sha256
+        .ecdsa_sha384
+        .rsa_pss_sha256
+        .rsa_pss_sha384
+        .rsa_pss_sha512
+        .rsa_pkcs1_sha256
+        .rsa_pkcs1_sha384
+        .rsa_pkcs1_sha512
+    ]
+
+    for scheme in every
+        if format_scheme(scheme) == name
+            return ok(scheme)
+
+    return fail(code: INVALID, msg: f"no scheme is named \"{name}\"")
+
+## Making and closing keys
+
+# A new key pair of `kind`, drawn by the system's generator; its private
+# half never enters the program's memory.
+#
+# - `kind`: the kind; an RSA key's bits are 2048, 3072 or 4096.
+#
+# The key is the caller's to close. Fails `invalid` for RSA of other bits,
+# `unsupported` where `is_available` is false. RSA of 4096 bits takes
+# seconds. See also `public_of`, `close`.
+function generate(kind: Kind) -> PrivateKey?
+    bits = match kind
+        .rsa r                             => r.bits
+        .ed25519 | .x25519 | .p256 | .p384 => 0
+
+    handle = operations.generate(name: format_kind(kind), bits: bits)?
+    return ok(PrivateKey(handle: handle, kind: kind))
+
+# The public half of `key`, a new key the caller closes.
+#
+# - `key`: the private key, which stays open.
+#
+# Fails `closed` where `key` is closed. See also `close_public`.
+function public_of(key: PrivateKey) -> PublicKey?
+    handle = operations.public_of(key.handle)?
+    return ok(PublicKey(handle: handle, kind: key.kind))
+
+# Closes `key` and overwrites its secret in C; the place is emptied, so a
+# second close fails `closed` and never reaches C.
+#
+# - `key`: the caller's private key, emptied.
+#
+# Fails `closed` where `key` is closed already. See also `close_public`.
+function close(@key: PrivateKey) -> ()?
+    return operations.close(@key.handle)
+
+# Closes the public `key`; the place is emptied.
+#
+# - `key`: the caller's public key, emptied.
+#
+# Fails `closed` where `key` is closed already. See also `close`.
+function close_public(@key: PublicKey) -> ()?
+    return operations.close(@key.handle)
+
+## Signatures
+
+# `key`'s signature of `message` by `scheme`: 64 bytes for Ed25519, at most
+# 72 for ECDSA on P-256 and 104 on P-384, as many as the modulus for RSA.
+#
+# - `key`: a private key of the scheme's kind, which stays open.
+# - `scheme`: how it signs; ECDSA's on either curve.
+# - `message`: the bytes signed, any length up to 4294967040; the scheme
+#   hashes them itself.
+#
+# Ed25519 and RSA PKCS #1 v1.5 answer the same signature every time, ECDSA
+# and RSA-PSS another each time. Fails `invalid` for a scheme of another
+# kind, `closed`, `unsupported`. See also `verify`.
+function sign(key: PrivateKey, scheme: Scheme, message: [u8]) -> [u8]?
+    return operations.sign(handle: key.handle, scheme: format_scheme(scheme), message: message)
+
+# Whether `signature` is the signature of `message` by `scheme` of the
+# private key whose public half is `key`.
+#
+# - `key`: the public key, which stays open.
+# - `scheme`: how it was signed.
+# - `message`: the bytes signed.
+# - `signature`: the signature's bytes; bytes of no signature's form are
+#   false.
+#
+# False, never a failure, for a signature that does not hold. Fails
+# `invalid` for a scheme of another kind, `closed`, `unsupported`. See also
+# `sign`, `verify_der`.
+function verify(key: PublicKey, scheme: Scheme, message: [u8], signature: [u8]) -> bool?
+    return operations.verify(handle: key.handle, scheme: format_scheme(scheme), message: message, signature: signature)
+
+# Whether `signature` is the signature of `message` by `scheme` of the key
+# whose SubjectPublicKeyInfo is `public_der`: a certificate's signature
+# checked against its issuer's key, with no key to close.
+#
+# - `public_der`: the public key as SubjectPublicKeyInfo DER, as a
+#   certificate holds it.
+# - `scheme`: how it was signed.
+# - `message`: the bytes signed, a certificate's `tbsCertificate`.
+# - `signature`: the signature's bytes.
+#
+# Fails as `parse_public_der` does for `public_der`, and as `verify` does.
+# See also `verify`, `parse_public_der`.
+function verify_der(public_der: [u8], scheme: Scheme, message: [u8], signature: [u8]) -> bool?
+    read = forms.read_public(public_der)?
+    handle @= read.handle
+    answer = operations.verify(handle: handle, scheme: format_scheme(scheme), message: message, signature: signature)
+    closed = operations.close(@handle)
+
+    if closed.is_err() && !answer.is_err()
+        return fail(
+            code: FAILED,
+            msg: "checking a signature against a key read from SubjectPublicKeyInfo: the key could not be closed"
+        )
+    return answer
+
+## Agreement and encryption
+
+# The secret `mine` and the holder of `theirs`'s private half both compute:
+# 32 bytes for X25519 and P-256, 48 for P-384.
+#
+# - `mine`: a private X25519, P-256 or P-384 key, which stays open.
+# - `theirs`: the other side's public key, of the same kind.
+#
+# The secret is not uniform: derive keys from it (`crypto.hkdf`), never use
+# it as one. Fails `invalid` where the kinds differ or are none that agree,
+# and where X25519 answers all zeros, a peer's key of small order (RFC 7748
+# § 6.1); `closed`; `unsupported`. See also `generate`.
+function agree(mine: PrivateKey, theirs: PublicKey) -> [u8]?
+    return operations.agree(mine: mine.handle, theirs: theirs.handle)
+
+# `text` encrypted to the RSA `key` by OAEP with SHA-256 and MGF1 over
+# SHA-256, no label: as many bytes as the modulus, others each time.
+#
+# - `key`: an RSA public key, which stays open.
+# - `text`: at most the modulus's bytes less 66: 190 for 2048 bits.
+#
+# Fails `invalid` for a longer text or a key of another kind, `closed`. See
+# also `decrypt`.
+function encrypt(key: PublicKey, text: [u8]) -> [u8]?
+    return operations.encrypt(handle: key.handle, text: text)
+
+# The text `data` holds, decrypted by the RSA `key` as `encrypt` wrote it.
+#
+# - `key`: the RSA private key, which stays open.
+# - `data`: as many bytes as the modulus.
+#
+# Fails `invalid` for data that do not decrypt, saying no more, and a key of
+# another kind; `closed`. See also `encrypt`.
+function decrypt(key: PrivateKey, data: [u8]) -> [u8]?
+    return operations.decrypt(handle: key.handle, data: data)
+
+## Forms
+
+# A private key read from `der`, PKCS #8 (RFC 5208, or RFC 5958's version 2),
+# unencrypted.
+#
+# - `der`: the DER; a cell lending it to C is overwritten after.
+#
+# The key is the caller's to close. Fails `invalid` for bytes of no PKCS #8,
+# an encrypted one, a kind other than the five here, RSA outside 1024 to
+# 8192 bits; `unsupported` for a kind this platform lacks, and on macOS and
+# Windows an EC key that does not hold its public point. See also
+# `format_private_der`, `parse_private_pem`.
+function parse_private_der(der: [u8]) -> PrivateKey?
+    read = forms.read_private(der)?
+
+    kind: Kind = match read.facts.name
+        "ed25519" => .ed25519
+        "x25519"  => .x25519
+        "p256"    => .p256
+        "p384"    => .p384
+        _         => .rsa(bits: read.facts.bits)
+
+    return ok(PrivateKey(handle: read.handle, kind: kind))
+
+# A public key read from `der`, SubjectPublicKeyInfo (RFC 5280).
+#
+# - `der`: the DER; an EC point in it must be uncompressed.
+#
+# The key is the caller's to close. Fails as `parse_private_der` does. See
+# also `format_public_der`, `verify_der`.
+function parse_public_der(der: [u8]) -> PublicKey?
+    read = forms.read_public(der)?
+
+    kind: Kind = match read.facts.name
+        "ed25519" => .ed25519
+        "x25519"  => .x25519
+        "p256"    => .p256
+        "p384"    => .p384
+        _         => .rsa(bits: read.facts.bits)
+
+    return ok(PublicKey(handle: read.handle, kind: kind))
+
+# `key` as PKCS #8 DER, unencrypted: the secret, handed to the caller.
+#
+# - `key`: the private key, which stays open.
+#
+# The same bytes on every platform, as Go's `MarshalPKCS8PrivateKey` and
+# Python's `PrivateFormat.PKCS8` write them. Fails `closed`. See also
+# `parse_private_der`.
+function format_private_der(key: PrivateKey) -> [u8]?
+    return forms.write_private(key.handle)
+
+# `key` as SubjectPublicKeyInfo DER.
+#
+# - `key`: the public key, which stays open.
+#
+# Fails `closed`. See also `parse_public_der`.
+function format_public_der(key: PublicKey) -> [u8]?
+    return forms.write_public(key.handle)
+
+# A private key read from the first `PRIVATE KEY` block of PEM in `text`.
+#
+# - `text`: PEM, other text before and after the block passed over.
+#
+# Fails `invalid` where `text` holds no such block, an `ENCRYPTED PRIVATE
+# KEY`, or OpenSSL's older `RSA PRIVATE KEY` or `EC PRIVATE KEY`, each said;
+# and as `parse_private_der` does. See also `format_private_pem`.
+function parse_private_pem(text: str) -> PrivateKey?
+    der @= forms.private_der_of_pem(text)?
+    key = parse_private_der(der)
+    operations.wiped(@der)
+    return key
+
+# A public key read from the first `PUBLIC KEY` block of PEM in `text`.
+#
+# - `text`: PEM, other text before and after the block passed over.
+#
+# Fails `invalid` where `text` holds no such block; and as
+# `parse_public_der` does. See also `format_public_pem`.
+function parse_public_pem(text: str) -> PublicKey?
+    der = forms.public_der_of_pem(text)?
+    return parse_public_der(der)
+
+# `key` as PEM's `PRIVATE KEY`, lines of 64 characters each ending in `\n`.
+#
+# - `key`: the private key, which stays open.
+#
+# Fails `closed`. See also `parse_private_pem`.
+function format_private_pem(key: PrivateKey) -> str?
+    return forms.write_private_pem(key.handle)
+
+# `key` as PEM's `PUBLIC KEY`.
+#
+# - `key`: the public key, which stays open.
+#
+# Fails `closed`. See also `parse_public_pem`.
+function format_public_pem(key: PublicKey) -> str?
+    return forms.write_public_pem(key.handle)
+
+# An Ed25519 or X25519 private key read from its 32 bytes: RFC 8032's
+# secret key, RFC 7748's scalar.
+#
+# - `kind`: `.ed25519` or `.x25519`.
+# - `raw`: the 32 bytes; the cell lending them to C is overwritten after.
+#
+# Fails `invalid` for another kind (a P-256 or P-384 scalar alone is read by
+# no platform here: read it from PKCS #8) or another length;
+# `unsupported`. See also `format_private_raw`.
+function parse_private_raw(kind: Kind, raw: [u8]) -> PrivateKey?
+    der: [u8] @= []
+    forms.private_der_of_raw(der: @der, name: format_kind(kind), raw: raw)?
+    key = parse_private_der(der)
+    operations.wiped(@der)
+    return key
+
+# A public key read from its raw bytes: an Ed25519 or X25519 key's 32, a
+# P-256 or P-384 point uncompressed, 65 or 97 bytes beginning with 4.
+#
+# - `kind`: the key's kind; RSA has no raw form here.
+# - `raw`: the bytes.
+#
+# Fails `invalid` for RSA, another length or a compressed point, and a point
+# not on the curve. See also `format_public_raw`.
+function parse_public_raw(kind: Kind, raw: [u8]) -> PublicKey?
+    der = forms.public_der_of_raw(name: format_kind(kind), raw: raw)?
+    return parse_public_der(der)
+
+# `key`'s raw bytes: an Ed25519 or X25519 key's 32, a P-256 or P-384
+# scalar, 32 or 48 bytes: the secret, handed to the caller.
+#
+# - `key`: the private key, which stays open.
+#
+# Fails `invalid` for RSA, `closed`. See also `parse_private_raw`.
+function format_private_raw(key: PrivateKey) -> [u8]?
+    der @= forms.write_private(key.handle)?
+    raw = forms.raw_of_private_der(name: format_kind(key.kind), der: der)
+    operations.wiped(@der)
+    return raw
+
+# `key`'s raw bytes: an Ed25519 or X25519 key's 32, a P-256 or P-384 point
+# uncompressed, 65 or 97 bytes.
+#
+# - `key`: the public key, which stays open.
+#
+# Fails `invalid` for RSA, `closed`. See also `parse_public_raw`.
+function format_public_raw(key: PublicKey) -> [u8]?
+    der = forms.write_public(key.handle)?
+    return forms.raw_of_public_der(name: format_kind(key.kind), der: der)
+
+## Tests
+
+test "parse_private_raw and sign: RFC 8032's TEST 1 to 3 where the platform has Ed25519, and Ed25519 unsupported where it has not"
+    for t in known.rfc8032()
+        match parse_private_raw(.ed25519, raw: bytes.parse_hex(t.secret).must())
+            .err e =>
+                assert e.code == UNSUPPORTED
+                assert !is_available(.ed25519)
+            .ok made =>
+                key @= made
+                signature = sign(key: key, scheme: .ed25519, message: bytes.parse_hex(t.message).must()).must()
+                assert bytes.format_hex(signature) == t.signature
+                public @= public_of(key).must()
+                assert bytes.format_hex(format_public_raw(public).must()) == t.public
+                assert verify(
+                    key: public,
+                    scheme: .ed25519,
+                    message: bytes.parse_hex(t.message).must(),
+                    signature: signature
+                ).must()
+                close_public(@public).must()
+                close(@key).must()
+
+test "verify_der: a changed signature does not hold, bytes of no key are invalid, and a scheme of another kind is invalid"
+    if !is_available(.p256)
+        return
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    der = format_public_der(public).must()
+    signature: [u8] @= sign(key: key, scheme: .ecdsa_sha384, message: [1, 2, 3]).must()
+    assert verify_der(public_der: der, scheme: .ecdsa_sha384, message: [1, 2, 3], signature: signature).must()
+    signature[10] @ known.changed(signature[10])
+    assert !verify_der(public_der: der, scheme: .ecdsa_sha384, message: [1, 2, 3], signature: signature).must()
+
+    match verify_der(public_der: [48, 1], scheme: .ecdsa_sha256, message: [], signature: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match verify_der(public_der: der, scheme: .rsa_pss_sha256, message: [], signature: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    close_public(@public).must()
+    close(@key).must()
+
+test "generate, close and close_public: RSA of 1024 bits invalid, a key closed twice closed, and Ed25519 and X25519 unsupported where the platform lacks them"
+    match generate(.rsa(bits: 1024))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    every: [Kind] = [.ed25519, .x25519, .p256, .p384]
+
+    for kind in every
+        match generate(kind)
+            .err e =>
+                assert e.code == UNSUPPORTED
+                assert !is_available(kind)
+            .ok made =>
+                key @= made
+                assert key.kind == kind
+                public @= public_of(key).must()
+                close_public(@public).must()
+                close(@key).must()
+
+                match close(@key)
+                    .ok _  => assert false
+                    .err e => assert e.code == CLOSED
+
+test "format_kind, format_scheme and parse_scheme: every scheme both ways, an RSA kind's bits left out, and a name of none"
+    every: [Scheme] = [
+        .ed25519
+        .ecdsa_sha256
+        .ecdsa_sha384
+        .rsa_pss_sha256
+        .rsa_pss_sha384
+        .rsa_pss_sha512
+        .rsa_pkcs1_sha256
+        .rsa_pkcs1_sha384
+        .rsa_pkcs1_sha512
+    ]
+
+    for scheme in every
+        assert parse_scheme(format_scheme(scheme)).must() == scheme
+
+    assert format_kind(.rsa(bits: 3072)) == "rsa"
+
+    match parse_scheme("ES256")
+        .ok _  => assert false
+        .err e => assert e.msg == "no scheme is named \"ES256\""
+
+test "parse_public_raw and format_public_raw: a P-256 point read and written back, a compressed point and RSA invalid"
+    match parse_public_raw(.rsa(bits: 2048), raw: [1])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    if !is_available(.p256)
+        return
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    point = format_public_raw(public).must()
+    assert point.len() == 65
+    assert point[0] == 4
+    again @= parse_public_raw(.p256, raw: point).must()
+    assert format_public_der(again).must() == format_public_der(public).must()
+
+    match parse_public_raw(.p256, raw: bytes.concat([[3], point.slice(from: 1, to: 33)]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    close_public(@again).must()
+    close_public(@public).must()
+    close(@key).must()
+
+## Examples
+
+# A message signed with a new P-256 key and checked with its public half.
+test "sign: a message signed by ECDSA and checked"
+    if !is_available(.p256)
+        return
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    message = bytes.from_text("ground control")
+    signature = sign(key: key, scheme: .ecdsa_sha256, message: message).must()
+    assert verify(key: public, scheme: .ecdsa_sha256, message: message, signature: signature).must()
+    close_public(@public).must()
+    close(@key).must()
+
+# Whether this machine makes Ed25519 keys: false on macOS and Windows.
+test "is_available: asked before a key is made"
+    if is_available(.ed25519)
+        key @= generate(.ed25519).must()
+        close(@key).must()
+
+# A kind written as its name, an RSA kind's bits left out.
+test "format_kind: P-384 and RSA"
+    assert format_kind(.p384) == "p384"
+    assert format_kind(.rsa(bits: 2048)) == "rsa"
+
+# A scheme written as its name.
+test "format_scheme: RSA-PSS with SHA-256"
+    assert format_scheme(.rsa_pss_sha256) == "rsa_pss_sha256"
+
+# A scheme read from its name.
+test "parse_scheme: ECDSA with SHA-384"
+    assert parse_scheme("ecdsa_sha384").must() == .ecdsa_sha384
+
+# A new P-256 key pair, its private half answered.
+test "generate: a P-256 key"
+    key @= generate(.p256).must()
+    assert key.kind == .p256
+    close(@key).must()
+
+# A private key's public half, a key of its own to close.
+test "public_of: the public half of a P-384 key"
+    key @= generate(.p384).must()
+    public @= public_of(key).must()
+    assert public.kind == .p384
+    close_public(@public).must()
+    close(@key).must()
+
+# A private key closed, its secret overwritten.
+test "close: a key made and closed"
+    key @= generate(.p256).must()
+    close(@key).must()
+
+# A public key closed.
+test "close_public: a public half closed before its private key"
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    close_public(@public).must()
+    close(@key).must()
+
+# A signature checked by the public half of the key that made it.
+test "verify: an RSA-PSS signature that holds and one of another message that does not"
+    key @= generate(.rsa(bits: 2048)).must()
+    public @= public_of(key).must()
+    signature = sign(key: key, scheme: .rsa_pss_sha256, message: [1, 2, 3]).must()
+    assert verify(key: public, scheme: .rsa_pss_sha256, message: [1, 2, 3], signature: signature).must()
+    assert !verify(key: public, scheme: .rsa_pss_sha256, message: [1, 2, 4], signature: signature).must()
+    close_public(@public).must()
+    close(@key).must()
+
+# A signature checked against a public key's SubjectPublicKeyInfo, as a
+# certificate's issuer holds it.
+test "verify_der: a signature checked against a key's DER"
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    der = format_public_der(public).must()
+    signature = sign(key: key, scheme: .ecdsa_sha256, message: [9]).must()
+    assert verify_der(public_der: der, scheme: .ecdsa_sha256, message: [9], signature: signature).must()
+    close_public(@public).must()
+    close(@key).must()
+
+# Two sides agree on one secret, each with its private key and the other's
+# public key.
+test "agree: ECDH on P-256 both ways"
+    mine @= generate(.p256).must()
+    theirs @= generate(.p256).must()
+    mine_public @= public_of(mine).must()
+    theirs_public @= public_of(theirs).must()
+    secret = agree(mine: mine, theirs: theirs_public).must()
+    assert secret.len() == 32
+    assert agree(mine: theirs, theirs: mine_public).must() == secret
+    close_public(@mine_public).must()
+    close_public(@theirs_public).must()
+    close(@mine).must()
+    close(@theirs).must()
+
+# A short secret encrypted to an RSA public key.
+test "encrypt: RSA-OAEP to a key of 2048 bits"
+    key @= generate(.rsa(bits: 2048)).must()
+    public @= public_of(key).must()
+    data = encrypt(key: public, text: bytes.from_text("a key of 16 byte")).must()
+    assert data.len() == 256
+    close_public(@public).must()
+    close(@key).must()
+
+# Data encrypted to a public key, decrypted by its private half.
+test "decrypt: what encrypt wrote, read back"
+    key @= generate(.rsa(bits: 2048)).must()
+    public @= public_of(key).must()
+    data = encrypt(key: public, text: [1, 2, 3]).must()
+    assert decrypt(key: key, data: data).must() == [1, 2, 3]
+    close_public(@public).must()
+    close(@key).must()
+
+# A private key read from PKCS #8, the form Go and Python write.
+test "parse_private_der: a P-256 key Python wrote"
+    der = bytes.parse_hex(
+        "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b02010104200000000000000000000000000000000000000000000000001234567890abcdefa144034200049fad84aeae08bbef7f010014d82cef6a09de2b0cf871b5ce0c4f1d13a59a593407cb45769f1070e2c2470fe5b1bfe63133c0b0cdc64ea4bf3791a8ec2a07fd4f"
+    ).must()
+    key @= parse_private_der(der).must()
+    assert key.kind == .p256
+    assert format_private_der(key).must() == der
+    close(@key).must()
+
+# A public key read from SubjectPublicKeyInfo.
+test "parse_public_der: a key's own DER read back"
+    key @= generate(.p384).must()
+    public @= public_of(key).must()
+    again @= parse_public_der(format_public_der(public).must()).must()
+    assert again.kind == .p384
+    close_public(@again).must()
+    close_public(@public).must()
+    close(@key).must()
+
+# A private key written as PKCS #8, the secret handed to the program.
+test "format_private_der: a P-256 key's PKCS #8 of 138 bytes"
+    key @= generate(.p256).must()
+    assert format_private_der(key).must().len() == 138
+    close(@key).must()
+
+# A public key written as SubjectPublicKeyInfo.
+test "format_public_der: a P-256 key's 91 bytes"
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    assert format_public_der(public).must().len() == 91
+    close_public(@public).must()
+    close(@key).must()
+
+# A private key read from PEM's `PRIVATE KEY`.
+test "parse_private_pem: a key's PEM read back"
+    key @= generate(.p256).must()
+    again @= parse_private_pem(format_private_pem(key).must()).must()
+    assert format_private_der(again).must() == format_private_der(key).must()
+    close(@again).must()
+    close(@key).must()
+
+# A public key read from PEM's `PUBLIC KEY`.
+test "parse_public_pem: a public key's PEM read back"
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    again @= parse_public_pem(format_public_pem(public).must()).must()
+    assert again.kind == .p256
+    close_public(@again).must()
+    close_public(@public).must()
+    close(@key).must()
+
+# A private key written as PEM.
+test "format_private_pem: its first line"
+    key @= generate(.p256).must()
+    assert format_private_pem(key).must().slice(from: 0, to: 27) == "-----BEGIN PRIVATE KEY-----"
+    close(@key).must()
+
+# A public key written as PEM.
+test "format_public_pem: its first line"
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    assert format_public_pem(public).must().slice(from: 0, to: 26) == "-----BEGIN PUBLIC KEY-----"
+    close_public(@public).must()
+    close(@key).must()
+
+# An X25519 private key read from its 32 bytes, RFC 7748's Alice.
+test "parse_private_raw: RFC 7748's Alice"
+    if !is_available(.x25519)
+        return
+    key @= parse_private_raw(
+        .x25519,
+        raw: bytes.parse_hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a").must()
+    ).must()
+    public @= public_of(key).must()
+    assert bytes.format_hex(format_public_raw(public).must()) == "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
+    close_public(@public).must()
+    close(@key).must()
+
+# An Ed25519 public key read from its 32 bytes, RFC 8032's TEST 1.
+test "parse_public_raw: RFC 8032's TEST 1 key checks its signature"
+    if !is_available(.ed25519)
+        return
+    t = known.rfc8032()[0]
+    public @= parse_public_raw(.ed25519, raw: bytes.parse_hex(t.public).must()).must()
+    assert verify(key: public, scheme: .ed25519, message: [], signature: bytes.parse_hex(t.signature).must()).must()
+    close_public(@public).must()
+
+# A P-256 private key's scalar, 32 bytes, the secret handed to the program.
+test "format_private_raw: a P-256 scalar"
+    key @= generate(.p256).must()
+    assert format_private_raw(key).must().len() == 32
+    close(@key).must()
+
+# A P-256 public key's point, uncompressed.
+test "format_public_raw: a P-256 point of 65 bytes"
+    key @= generate(.p256).must()
+    public @= public_of(key).must()
+    assert format_public_raw(public).must().len() == 65
+    close_public(@public).must()
+    close(@key).must()

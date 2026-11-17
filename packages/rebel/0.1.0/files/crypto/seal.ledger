@@ -1,0 +1,93 @@
+capability seal/aes-gcm  a text sealed and opened under an AES key of 128 or 256 bits in GCM, with associated data
+  heroes  seal.seal, seal.open, seal.Algorithm
+  go      aes.NewCipher, cipher.NewGCM, cipher.NewGCMWithRandomNonce, cipher.AEAD, cipher.AEAD.Seal, cipher.AEAD.Open
+  rust    ring::aead::AES_128_GCM, ring::aead::AES_256_GCM, ring::aead::LessSafeKey, ring::aead::Aad
+  python  AESGCM, AESGCM.encrypt, AESGCM.decrypt
+  note    The system's own cipher on each platform: OpenSSL 3's `EVP_aes_*_gcm` on Linux (every NIST CAVP case of a 96-bit IV and a 128-bit tag, 1113 valid held and 387 FAIL refused, and Wycheproof's 133, run through the member's C probe on Linux arm64 2026-11-17), CNG's AES in GCM chaining on Windows (written from the Win32 reference, compiled against MinGW-w64's headers, UNRUN: the box was off). PENDING on macOS: CommonCrypto's public modes are ECB, CBC, CFB, CTR, OFB, RC4 and CFB8 (`CommonCryptor.h`, macOS 27.2 SDK), its GCM is in a private header the SDK does not ship, and CryptoKit, which has it, is Swift's alone; `is_available` answers false there and every call fails `unsupported`, never a cipher of Heroes' own. Sealed bytes are the nonce, the ciphertext and the tag, Go's `NewGCMWithRandomNonce` layout
+capability seal/chacha20-poly1305  a text sealed and opened under ChaCha20-Poly1305 (RFC 8439), with associated data
+  heroes  seal.seal, seal.open, seal.Algorithm
+  go      -
+  rust    ring::aead::CHACHA20_POLY1305
+  python  ChaCha20Poly1305, ChaCha20Poly1305.encrypt, ChaCha20Poly1305.decrypt
+  note    Go's is `golang.org/x/crypto/chacha20poly1305`, outside the standard library. RFC 8439 § 2.8.2's vector and Wycheproof's 316 cases held on Linux (`EVP_chacha20_poly1305`); CNG's CHACHA20_POLY1305 on Windows, documented from Windows 10, UNRUN; PENDING on macOS as AES-GCM is
+capability seal/keys  a secret key drawn by the system or made of bytes, its size, and its end
+  heroes  seal.generate, seal.from_secret, seal.key_size, seal.close, seal.Key
+  go      -
+  rust    ring::aead::UnboundKey, ring::aead::Algorithm
+  python  AESGCM.generate_key, ChaCha20Poly1305.generate_key
+  note    Go's key is a `[]byte` the program holds; here a key is a handle and its secret stays in C: a drawn key never enters the program's memory, one made of bytes is copied once and the language's lent copy overwritten, and `close` overwrites C's copy. `aes.KeySizeError` is the code `invalid`
+capability seal/sizes  the bytes of a nonce, of a tag, and what sealing adds
+  heroes  seal.NONCE_BYTES, seal.TAG_BYTES, seal.OVERHEAD
+  go      cipher.AEAD.NonceSize, cipher.AEAD.Overhead, aes.BlockSize
+  rust    ring::aead::NONCE_LEN, ring::aead::MAX_TAG_LEN
+  python  -
+capability seal/nonce-bound  a key that refuses to seal past the texts its random nonces allow
+  heroes  seal.SEALS_MOST
+  go      -
+  rust    ring::aead::NonceSequence
+  python  -
+  note    2^32 texts under one key, NIST SP 800-38D § 8.3's bound for random 96-bit nonces, counted in C under the key table's lock; past it `seal` fails `limit`. Go and Python leave the bound to the program; ring's `NonceSequence` makes the program count
+capability seal/caller-nonce  a text sealed with a nonce the caller chooses
+  heroes  refused: a nonce used twice under one key gives both texts away and lets anyone forge, and an API that takes the nonce makes that mistake one line long; `seal` draws it, and `open` reads any sealed bytes whose nonce comes first, so text sealed by Go or Python with their own nonces opens here
+  go      cipher.AEAD.Seal (with its nonce), cipher.NewGCMWithNonceSize
+  rust    ring::aead::SealingKey, ring::aead::OpeningKey, ring::aead::BoundKey, ring::aead::Nonce, ring::aead::LessSafeKey::seal_in_place_append_tag
+  python  AESGCM.encrypt (with its nonce), ChaCha20Poly1305.encrypt (with its nonce)
+  note    the floor keeps `seal_nonce_for_tests` for the known-answer tests alone, named as such, as `tls` keeps its unchecked connection
+capability seal/counted-nonces  nonces counted by the key, for protocols whose peer computes them (TLS, QUIC records)
+  heroes  pending
+  go      -
+  rust    ring::aead::NonceSequence, ring::aead::BoundKey
+  python  -
+  note    a counter the key holds, never the caller's, is the one safe shape of a nonce not drawn; no protocol of Rebel needs it yet, `tls` keeping its records in the system's library
+capability seal/short-tags-and-nonces  GCM with a tag shorter than 16 bytes or a nonce other than 12
+  heroes  refused: NIST SP 800-38D allows them for formats that need them and each weakens the tag or makes the nonce a hash, and no format of Rebel needs one
+  go      cipher.NewGCMWithTagSize, cipher.NewGCMWithNonceSize
+  rust    -
+  python  -
+capability seal/other-aeads  AES-GCM-SIV, AES-SIV, AES-OCB3, AES-CCM and XChaCha20-Poly1305
+  heroes  pending
+  go      -
+  rust    -
+  python  AESGCMSIV, AESSIV, AESOCB3, AESCCM
+  note    measured 2026-11-17: macOS offers none to C; CNG documents CCM as a chaining mode of AES; OpenSSL 3 has GCM-SIV, SIV, OCB and CCM. Each waits for a program that needs it, the face's `Algorithm` taking a case per cipher
+capability seal/unauthenticated-modes  a block cipher in CBC, CFB, CTR or OFB, and streams of it
+  heroes  refused: a mode with no tag lets anyone change the text unseen, and every such mode is the setting of a published attack (padding oracles, bit flipping); Rebel offers authenticated encryption alone
+  go      cipher.NewCBCEncrypter, cipher.NewCBCDecrypter, cipher.NewCFBEncrypter, cipher.NewCFBDecrypter, cipher.NewCTR, cipher.NewOFB, cipher.BlockMode, cipher.Stream, cipher.StreamReader, cipher.StreamReader.Read, cipher.StreamWriter, cipher.StreamWriter.Write, cipher.StreamWriter.Close
+  rust    -
+  python  -
+capability seal/raw-block  the AES block function alone
+  heroes  refused: a block cipher alone is the part modes are built of, and building one is writing a cipher, which this package exists not to do
+  go      aes.NewCipher (as a cipher.Block), cipher.Block
+  rust    -
+  python  -
+capability seal/algorithm-names  an algorithm named as text and read back
+  heroes  seal.format_algorithm, seal.parse_algorithm
+  go      -
+  rust    -
+  python  -
+capability seal/availability  whether this machine seals with an algorithm, asked before a key is made
+  heroes  seal.is_available
+  go      -
+  rust    -
+  python  -
+  note    false on macOS for every algorithm (`seal/aes-gcm`), and on a Linux machine with no `libcrypto.so.3`, which the member opens at its first call
+capability seal/protocol-keys  ciphers shaped for one protocol: QUIC's header protection, OpenSSH's ChaCha20-Poly1305
+  heroes  refused: each is that protocol's own construction, and belongs to a package of that protocol over the system's own cipher
+  go      -
+  rust    ring::aead::quic::HeaderProtectionKey, ring::aead::quic::Algorithm, ring::aead::quic::AES_128, ring::aead::quic::AES_256, ring::aead::quic::CHACHA20, ring::aead::chacha20_poly1305_openssh::SealingKey, ring::aead::chacha20_poly1305_openssh::OpeningKey, ring::aead::chacha20_poly1305_openssh::KEY_LEN, ring::aead::chacha20_poly1305_openssh::PACKET_LENGTH_LEN, ring::aead::chacha20_poly1305_openssh::TAG_LEN
+  python  -
+
+dropped in-place  sealing into the caller's own buffer (Python's `encrypt_into`, `decrypt_into`; ring's `seal_in_place_*`, `open_in_place`, `Tag`): every value is a copy, and `seal` answers a new list, the text's own cell overwritten
+  go      -
+  rust    ring::aead::Tag
+  python  AESGCM.encrypt_into, AESGCM.decrypt_into
+
+dropped interfaces  Go's `cipher.AEAD` as an interface and ring's `BoundKey` trait: there are no interfaces, and `Key` holds which algorithm it is
+  go      cipher.AEAD
+  rust    ring::aead::BoundKey
+  python  -
+
+dropped internals  Python's module plumbing
+  go      -
+  rust    -
+  python  annotations, rust_openssl

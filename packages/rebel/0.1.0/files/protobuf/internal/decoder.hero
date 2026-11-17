@@ -1,0 +1,374 @@
+# The wire's bytes read into events by a schema, in canonical order: each
+# message's fields by number, a scalar written twice read as its last, a
+# message written twice merged by reading its two encodings as one, a oneof
+# holding its last field. Fields the type does not declare, a closed enum's
+# numbers it does not name among them, are kept as the bytes they were read
+# from. Messages inside messages wait on a stack this module holds, so the
+# nesting is never followed by recursion; a map's entries are `entries`'.
+
+use protobuf/internal/encoder
+use protobuf/internal/entries
+use protobuf/internal/event
+use protobuf/internal/linker
+use protobuf/internal/model
+use protobuf/internal/occurrence
+use protobuf/internal/wire
+
+# The events `data` writes as a message of the type `type_name`.
+function read(schema: model.Schema lent, type_name: str, data: [u8], reading: occurrence.Reading) -> [event.Event]?
+    if schema.messages[type_name].is_err()
+        return fail(code: "not_found", msg: f"the schema holds no message {type_name}")
+    out: [event.Event] @= []
+    stack: [occurrence.Task] @= [
+        occurrence.Task(is_event: false, e: event.mark(event.END), data: data, from: 0, to: data.len(), type_name: type_name, depth: 1, path: type_name)
+    ]
+
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        t = stack[top]
+
+        if t.is_event
+            out @ out.push(t.e)
+        else
+            items = message_items(schema, t: t, reading: reading)?
+            k: i64 @= items.len()
+
+            while k > 0
+                k @ k - 1
+                encoder.put(@stack, top: top, item: items[k])
+                top @ top + 1
+
+    return ok(out)
+
+# Adds the occurrence `o` to the field at `k`.
+function add(@occurrences: [occurrence.Occurrence], @next_of: [i64], @first: [i64], @last: [i64], k: i64, o: occurrence.Occurrence)
+    j = occurrences.len()
+    occurrences @ occurrences.push(o)
+    next_of @ next_of.push(-1)
+
+    if last[k] < 0
+        first[k] @ j
+    else
+        next_of[last[k]] @ j
+    last[k] @ j
+
+# The events and the messages inside the message `t` reads, in order.
+function message_items(schema: model.Schema lent, t: occurrence.Task, reading: occurrence.Reading) -> [occurrence.Task]?
+    if t.depth > reading.max_depth
+        return fail(code: "invalid", msg: f"{t.path}: nested deeper than {reading.max_depth}")
+    m = schema.messages[t.type_name].must()
+    data = t.data
+    fields: [model.Field] @= m.fields
+    first: [i64] @= []
+    last: [i64] @= []
+
+    for _ in m.fields
+        first @ first.push(-1)
+        last @ last.push(-1)
+
+    occurrences: [occurrence.Occurrence] @= []
+    next_of: [i64] @= []
+    oneof_now: [i64] @= []
+
+    for _ in m.oneofs
+        oneof_now @ oneof_now.push(-1)
+
+    extra: {i64: i64} @= {}
+    unknown: [u8] @= []
+    at: i64 @= t.from
+
+    while at < t.to
+        start = at
+        tg = occurrence.located(wire.tag(data, at: at), path: t.path)?
+        k: i64 @= -1
+
+        match m.by_number[tg.number]
+            .ok index => k @ index
+            .err _ =>
+                match extra[tg.number]
+                    .ok index => k @ index
+                    .err _ =>
+                        key = model.extension_key(extendee: m.full_name, number: tg.number)
+
+                        match schema.extension_at[key]
+                            .ok name =>
+                                k @ fields.len()
+                                extra[tg.number] @ k
+                                fields @ fields.push(schema.extensions[name].must())
+                                first @ first.push(-1)
+                                last @ last.push(-1)
+                            .err _ => _ = 0
+
+        known: bool @= k >= 0
+        expect: i64 @= -1
+        packable: bool @= false
+
+        if known
+            f = fields[k]
+            expect @ occurrence.wire_of(f.kind)
+            packable @ f.label == model.REPEATED && expect != wire.BYTES && expect != wire.START_GROUP
+
+            if tg.wire != expect && !(packable && tg.wire == wire.BYTES)
+                known @ false
+
+        if !known
+            end = occurrence.located(wire.skip(data, number: tg.number, wire: tg.wire, at: tg.next, max_depth: reading.max_depth), path: t.path)?
+
+            if !reading.discard_unknown
+                occurrence.copy_into(to_bytes: @unknown, data: data, from: start, to: end)
+            at @ end
+        else
+            f = fields[k]
+            closed = f.kind == model.ENUM && f.closed_enum
+            enum_type: model.Enum = schema.enums[f.type_name].default(
+                model.Enum(name: "", full_name: "", file: "", values: [], by_number: {}, by_name: {}, closed: false, reserved_ranges: [], reserved_names: [], options: [])
+            )
+
+            if tg.wire == wire.BYTES && packable
+                s = occurrence.located(wire.span(data, at: tg.next), path: t.path)?
+                end = s.next + to_i64(s.value).must()
+                p: i64 @= s.next
+
+                while p < end
+                    got = if expect == wire.VARINT
+                        occurrence.located(wire.varint(data, at: p), path: t.path)?
+                    else if expect == wire.FIXED32
+                        occurrence.located(wire.fixed32(data, at: p), path: t.path)?
+                    else
+                        occurrence.located(wire.fixed64(data, at: p), path: t.path)?
+
+                    if got.next > end
+                        return fail(
+                            code: "invalid",
+                            msg: f"{t.path}: byte {p}: a packed value passes the end of its list"
+                        )
+
+                    if closed && !occurrence.names_number(enum_type, v: got.value)
+                        if !reading.discard_unknown
+                            wire.push_tag(@unknown, number: f.number, wire: wire.VARINT)
+                            wire.push_varint(@unknown, got.value)
+                    else
+                        add(
+                            @occurrences,
+                            next_of: @next_of,
+                            first: @first,
+                            last: @last,
+                            k: k,
+                            o: occurrence.Occurrence(value: got.value, from: 0, to: 0)
+                        )
+                    p @ got.next
+
+                at @ end
+            else
+                o: occurrence.Occurrence @= occurrence.Occurrence(value: 0, from: 0, to: 0)
+                end: i64 @= at
+
+                if tg.wire == wire.VARINT || tg.wire == wire.FIXED32 || tg.wire == wire.FIXED64
+                    got = if tg.wire == wire.VARINT
+                        occurrence.located(wire.varint(data, at: tg.next), path: t.path)?
+                    else if tg.wire == wire.FIXED32
+                        occurrence.located(wire.fixed32(data, at: tg.next), path: t.path)?
+                    else
+                        occurrence.located(wire.fixed64(data, at: tg.next), path: t.path)?
+                    o @ occurrence.Occurrence(value: got.value, from: 0, to: 0)
+                    end @ got.next
+                else if tg.wire == wire.BYTES
+                    s = occurrence.located(wire.span(data, at: tg.next), path: t.path)?
+                    end @ s.next + to_i64(s.value).must()
+                    o @ occurrence.Occurrence(value: 0, from: s.next, to: end)
+                else
+                    end @ occurrence.located(wire.skip(data, number: tg.number, wire: tg.wire, at: tg.next, max_depth: reading.max_depth), path: t.path)?
+                    o @ occurrence.Occurrence(
+                        value: 0,
+                        from: tg.next,
+                        to: end - wire.varint_size(to_u64(tg.number * 8 + 4).must())
+                    )
+
+                if closed && !occurrence.names_number(enum_type, v: o.value)
+                    if !reading.discard_unknown
+                        occurrence.copy_into(to_bytes: @unknown, data: data, from: start, to: end)
+                else
+                    if f.oneof >= 0 && k < m.fields.len()
+                        now = oneof_now[f.oneof]
+
+                        if now >= 0 && now != k
+                            first[now] @ -1
+                            last[now] @ -1
+                        oneof_now[f.oneof] @ k
+
+                    if f.label != model.REPEATED && f.kind != model.MESSAGE && f.kind != model.GROUP
+                        first[k] @ -1
+                        last[k] @ -1
+                    add(@occurrences, next_of: @next_of, first: @first, last: @last, k: k, o: o)
+                at @ end
+
+    if !reading.allow_partial
+        for k in range(from: 0, to: m.fields.len())
+            if m.fields[k].label == model.REQUIRED && first[k] < 0
+                return fail(code: "invalid", msg: f"{t.path}.{m.fields[k].name}: the required field is not set")
+    items: [occurrence.Task] @= [occurrence.of_event(event.text(kind: event.MESSAGE, s: m.full_name))]
+    numbers: [i64] @= []
+    by: {i64: i64} @= {}
+
+    for k in range(from: 0, to: fields.len())
+        if first[k] >= 0
+            numbers @ numbers.push(fields[k].number)
+            by[fields[k].number] @ k
+
+    for n in sort(numbers)
+        k = by[n].must()
+        f = fields[k]
+        found: [occurrence.Occurrence] @= []
+        j: i64 @= first[k]
+
+        while j >= 0
+            found @ found.push(occurrences[j])
+            j @ next_of[j]
+
+        message_kind = f.kind == model.MESSAGE || f.kind == model.GROUP
+        here = f"{t.path}.{f.name}"
+
+        if f.is_map
+            items @ items.push(occurrence.of_event(event.signed(kind: event.FIELD, n: n)))
+            items @ items.push(occurrence.of_event(event.mark(event.MAP)))
+            entries.map_items(@items, unknown: @unknown, schema: schema, f: f, found: found, data: data, t: t, reading: reading)?
+            items @ items.push(occurrence.of_event(event.mark(event.END)))
+        else if f.label == model.REPEATED
+            items @ items.push(occurrence.of_event(event.signed(kind: event.FIELD, n: n)))
+            items @ items.push(occurrence.of_event(event.mark(event.LIST)))
+
+            for i in range(from: 0, to: found.len())
+                o = found[i]
+
+                if message_kind
+                    items @ items.push(
+                        occurrence.Task(is_event: false, e: event.mark(event.END), data: data, from: o.from, to: o.to, type_name: f.type_name, depth: t.depth + 1, path: f"{here}[{i}]")
+                    )
+                else
+                    items @ items.push(occurrence.of_event(occurrence.scalar(f, o: o, data: data, path: t.path)?))
+
+            items @ items.push(occurrence.of_event(event.mark(event.END)))
+        else if message_kind
+            items @ items.push(occurrence.of_event(event.signed(kind: event.FIELD, n: n)))
+
+            if found.len() == 1
+                items @ items.push(
+                    occurrence.Task(is_event: false, e: event.mark(event.END), data: data, from: found[0].from, to: found[0].to, type_name: f.type_name, depth: t.depth + 1, path: here)
+                )
+            else
+                whole = occurrence.joined(data, occurrences: found)
+                items @ items.push(
+                    occurrence.Task(is_event: false, e: event.mark(event.END), data: whole, from: 0, to: whole.len(), type_name: f.type_name, depth: t.depth + 1, path: here)
+                )
+        else
+            e = occurrence.scalar(f, o: found[found.len() - 1], data: data, path: t.path)?
+
+            if f.presence || !event.is_zero(e)
+                items @ items.push(occurrence.of_event(event.signed(kind: event.FIELD, n: n)))
+                items @ items.push(occurrence.of_event(e))
+
+    items @ items.push(occurrence.of_event(event.bytes(kind: event.END, data: unknown)))
+    return ok(items)
+
+test "read: a field twice keeps the last, a message twice is merged, a packed and an unpacked list both read"
+    schema = test_schema()
+    data: [u8] = [
+        0x08
+        0x01
+        0x08
+        0x02
+        0x4a
+        0x02
+        0x08
+        0x05
+        0x4a
+        0x02
+        0x10
+        0x02
+        0x38
+        0x07
+        0x3a
+        0x02
+        0x08
+        0x09
+    ]
+    got = read(
+        schema,
+        type_name: "T",
+        data: data,
+        reading: occurrence.Reading(max_depth: 100, allow_partial: false, discard_unknown: false)
+    ).must()
+    kinds: [i64] @= []
+
+    for e in got
+        kinds @ kinds.push(e.kind)
+
+    assert kinds == [event.MESSAGE, event.FIELD, event.INT32, event.FIELD, event.LIST, event.INT32, event.INT32, event.INT32, event.END, event.FIELD, event.MESSAGE, event.FIELD, event.INT32, event.FIELD, event.INT32, event.END, event.END]
+    assert got[2].number == 2 && got[5].number == 7 && got[6].number == 8 && got[7].number == 9
+    assert got[12].number == 5 && got[14].number == 1
+
+test "read: a map's entries ordered by key, the last of a key kept, and unknown fields kept as read"
+    schema = test_schema()
+    data: [u8] = [
+        0x42
+        0x05
+        0x0a
+        0x01
+        0x62
+        0x10
+        0x01
+        0x42
+        0x05
+        0x0a
+        0x01
+        0x61
+        0x10
+        0x02
+        0x42
+        0x05
+        0x0a
+        0x01
+        0x62
+        0x10
+        0x03
+        0x98
+        0x06
+        0x01
+    ]
+    got = read(
+        schema,
+        type_name: "T",
+        data: data,
+        reading: occurrence.Reading(max_depth: 100, allow_partial: false, discard_unknown: false)
+    ).must()
+    assert got.len() == 9 && got[2].kind == event.MAP && got[3].text == "a" && got[4].number == 2
+    assert got[5].text == "b" && got[6].number == 3 && got[8].data == [0x98, 0x06, 0x01]
+
+test "read: bytes cut short, a wire type that does not fit kept as unknown, and the depth passed"
+    schema = test_schema()
+    reading = occurrence.Reading(max_depth: 100, allow_partial: false, discard_unknown: false)
+    assert read(schema, type_name: "T", data: [0x08], reading: reading).is_err()
+    assert read(schema, type_name: "T", data: [0x0a, 0x05, 0x61], reading: reading).is_err()
+    odd = read(schema, type_name: "T", data: [0x0d, 1, 2, 3, 4], reading: reading).must()
+    assert odd.len() == 2 && odd[1].data == [0x0d, 1, 2, 3, 4]
+    deep: [u8] @= [0x08, 0x01]
+
+    for _ in range(from: 0, to: 120)
+        inner = deep
+        deep @ [0x4a]
+        wire.push_varint(@deep, to_u64(inner.len()).must())
+
+        for b in inner
+            deep @ deep.push(b)
+
+    assert read(schema, type_name: "T", data: deep, reading: reading).is_err()
+    wide = occurrence.Reading(max_depth: 200, allow_partial: false, discard_unknown: false)
+    assert read(schema, type_name: "T", data: deep, reading: wide).must().len() == 3 * 121 + 1
+    assert read(schema, type_name: "U", data: [], reading: reading).is_err()
+
+# The schema the tests read by: a proto3 message `T`.
+function test_schema() -> model.Schema
+    text = "syntax = \"proto3\";\nmessage T {\n  int32 a = 1;\n  sint32 b = 2;\n  float c = 3;\n  double d = 4;\n  bool e = 5;\n  string f = 6;\n  repeated int32 g = 7;\n  map<string, int32> h = 8;\n  T i = 9;\n}\n"
+    return linker.read({"t.proto": text}).must()

@@ -1,0 +1,146 @@
+# The codes `ipc` fails with, and the one place a kind of the floor
+# `ipc/hero_ipc` becomes one: every failure of a call on a listener, memory, a
+# semaphore or a lock is built here, its message saying what was asked and
+# what the system answered (README § A4). A channel's reads and writes fail
+# through `io`, whose own codes they are.
+
+use ipc/hero_ipc
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant EXISTS: str
+    "exists"
+
+constant PERMISSION: str
+    "permission"
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant STOPPED: str
+    "stopped"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the layer or the system answered, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of `HERO_IPC_*`, the platform's own
+# number `os_error` in the words where the layer names no kind of its own.
+function told(kind: i64, os_error: i64) -> Told
+    if kind == hero_ipc.HERO_IPC_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument")
+
+    if kind == hero_ipc.HERO_IPC_NOT_OPEN
+        return Told(code: CLOSED, why: "it is closed")
+
+    if kind == hero_ipc.HERO_IPC_NOT_FOUND
+        return Told(code: NOT_FOUND, why: "the name names nothing")
+
+    if kind == hero_ipc.HERO_IPC_REFUSED
+        return Told(
+            code: NOT_FOUND,
+            why: "a socket file is there and nothing listens on it, one a process that died may have left"
+        )
+
+    if kind == hero_ipc.HERO_IPC_EXISTS
+        return Told(code: EXISTS, why: "the name is taken already")
+
+    if kind == hero_ipc.HERO_IPC_DENIED
+        return Told(code: PERMISSION, why: "the system refuses it to this user")
+
+    if kind == hero_ipc.HERO_IPC_LIMIT
+        return Told(code: LIMIT, why: "the system has no descriptor, handle, memory or room left")
+
+    if kind == hero_ipc.HERO_IPC_CLOSED_PEER
+        return Told(code: CLOSED, why: "the other end is closed")
+
+    if kind == hero_ipc.HERO_IPC_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "this platform has no such thing")
+
+    if kind == hero_ipc.HERO_IPC_NOT_HELD
+        return Told(code: INVALID, why: "the calling thread does not hold the lock")
+
+    if kind == hero_ipc.HERO_IPC_TIMED_OUT
+        return Told(code: TIMEOUT, why: "the time allowed ran out")
+
+    if kind == hero_ipc.HERO_IPC_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+    return Told(code: FAILED, why: f"the system failed, its error {os_error} (kind {kind})")
+
+# The failure the floor's last call on this thread named, as a `T?`, its
+# message `asked` then what was answered. Called right after the call that
+# failed, before any other call of the floor on this thread.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_ipc.last_error(), os_error: hero_ipc.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` the package finds before the floor is asked, its
+# message `asked` then `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+# Nothing, or the failure the floor's call named where it answered below 0,
+# read as `last` reads it.
+function done(answer: i64, asked: str) -> ()?
+    if answer < 0
+        return last(asked: asked)
+    return ok()
+
+## Tests
+
+test "told: every kind of the floor is a code of README § A4, a refused connection is not_found, and an unknown kind is failed with its number"
+    assert told(kind: hero_ipc.HERO_IPC_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_ipc.HERO_IPC_NOT_OPEN, os_error: 0).code == CLOSED
+    assert told(kind: hero_ipc.HERO_IPC_NOT_FOUND, os_error: 2).code == NOT_FOUND
+    assert told(kind: hero_ipc.HERO_IPC_REFUSED, os_error: 61).code == NOT_FOUND
+    assert told(kind: hero_ipc.HERO_IPC_EXISTS, os_error: 17).code == EXISTS
+    assert told(kind: hero_ipc.HERO_IPC_DENIED, os_error: 13).code == PERMISSION
+    assert told(kind: hero_ipc.HERO_IPC_LIMIT, os_error: 24).code == LIMIT
+    assert told(kind: hero_ipc.HERO_IPC_CLOSED_PEER, os_error: 32).code == CLOSED
+    assert told(kind: hero_ipc.HERO_IPC_UNSUPPORTED, os_error: 0).code == UNSUPPORTED
+    assert told(kind: hero_ipc.HERO_IPC_NOT_HELD, os_error: 0).code == INVALID
+    assert told(kind: hero_ipc.HERO_IPC_TIMED_OUT, os_error: 0).code == TIMEOUT
+    assert told(kind: hero_ipc.HERO_IPC_STOPPED, os_error: 0).code == STOPPED
+    assert told(kind: hero_ipc.HERO_IPC_OTHER, os_error: 5).code == FAILED
+    assert told(kind: hero_ipc.HERO_IPC_OTHER, os_error: 5).why == "the system failed, its error 5 (kind 12)"
+    assert told(kind: 99, os_error: -1).code == FAILED
+
+test "done and last: 0 and above is nothing, -1 is the floor's failure with what was asked before it"
+    assert done(answer: 0, asked: "x") == ok()
+    assert done(answer: 3, asked: "x") == ok()
+    assert hero_ipc.memory_size(nullptr) == -1
+    r = done(answer: -1, asked: "asking the size of the memory \"m\"")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == CLOSED
+            assert e.msg == "asking the size of the memory \"m\": it is closed"
+
+test "of: the message is what was asked, then why"
+    r: i64? = of(code: INVALID, asked: "reading 5 bytes at -1", why: "an offset is 0 or more")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "reading 5 bytes at -1: an offset is 0 or more"

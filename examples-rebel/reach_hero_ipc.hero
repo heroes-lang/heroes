@@ -1,0 +1,13 @@
+# Reaches Rebel's floor over the platform layer's communication between
+# processes, `hero_ipc.h`, so that `heroes test` on this file runs the floor's
+# own tests (spec § 12, § 13). It asks for memory under a name that is no
+# name, and prints the kind the floor answers: 1, `HERO_IPC_INVALID`.
+
+use <rebel>/ipc/hero_ipc
+
+function main()
+    m @= hero_ipc.memory_create("a/b", size: 8, perm: 0o600)
+
+    if m != nullptr
+        _ = hero_ipc.memory_close(@m)
+    print(hero_ipc.last_error())

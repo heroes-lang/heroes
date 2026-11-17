@@ -1,0 +1,193 @@
+# What the decoder and its map reader share: the options of a reading, one
+# occurrence of a field on the wire, a piece of work on the decoder's stack,
+# and a scalar's event read from an occurrence, its default, and the order of
+# a map's keys.
+
+use protobuf/internal/bits
+use protobuf/internal/event
+use protobuf/internal/model
+use protobuf/internal/wire
+
+# What a decoding is asked to do.
+record Reading
+    # The deepest nesting read.
+    max_depth: i64
+    # Whether a required field may be missing.
+    allow_partial: bool
+    # Whether unknown fields are dropped.
+    discard_unknown: bool
+
+# One occurrence of a field on the wire.
+record Occurrence
+    # A varint's or a fixed number's value.
+    value: u64
+    # Where a length-delimited value or a group's fields begin.
+    from: i64
+    # Where they end.
+    to: i64
+
+# A piece of work on the stack: an event to write, or a message to read.
+record Task
+    # Whether it is an event.
+    is_event: bool
+    # The event.
+    e: event.Event
+    # The bytes holding the message.
+    data: [u8]
+    # Where its fields begin.
+    from: i64
+    # Where they end.
+    to: i64
+    # Its type's full name.
+    type_name: str
+    # How deep it stands, the outermost message 1.
+    depth: i64
+    # Its path from the outermost message, for messages.
+    path: str
+
+# A task that writes `e`.
+function of_event(e: event.Event) -> Task
+    return Task(is_event: true, e: e, data: [], from: 0, to: 0, type_name: "", depth: 0, path: "")
+
+# The wire type a field of `kind` is read with, its packed form aside.
+function wire_of(kind: i64) -> i64
+    if kind == model.FIXED32 || kind == model.SFIXED32 || kind == model.FLOAT
+        return wire.FIXED32
+
+    if kind == model.FIXED64 || kind == model.SFIXED64 || kind == model.DOUBLE
+        return wire.FIXED64
+
+    if kind == model.STRING || kind == model.BYTES || kind == model.MESSAGE
+        return wire.BYTES
+
+    if kind == model.GROUP
+        return wire.START_GROUP
+    return wire.VARINT
+
+# The event of the scalar field `f`'s value `o`, read from `data`.
+function scalar(f: model.Field, o: Occurrence, data: [u8] lent, path: str) -> event.Event?
+    k = f.kind
+    v = o.value
+
+    if k == model.INT32 || k == model.SFIXED32
+        return ok(event.signed(kind: event.INT32, n: to_i64(bits.i32_of(v)).must()))
+
+    if k == model.ENUM
+        return ok(event.signed(kind: event.ENUM, n: to_i64(bits.i32_of(v)).must()))
+
+    if k == model.SINT32
+        return ok(event.signed(kind: event.INT32, n: bits.unzigzag(v % 4294967296)))
+
+    if k == model.INT64 || k == model.SFIXED64
+        return ok(event.signed(kind: event.INT64, n: bits.i64_of(v)))
+
+    if k == model.SINT64
+        return ok(event.signed(kind: event.INT64, n: bits.unzigzag(v)))
+
+    if k == model.UINT32 || k == model.FIXED32
+        return ok(event.unsigned(kind: event.UINT32, n: v % 4294967296))
+
+    if k == model.UINT64 || k == model.FIXED64
+        return ok(event.unsigned(kind: event.UINT64, n: v))
+
+    if k == model.BOOL
+        n: i64 = if v != 0
+            1
+        else
+            0
+        return ok(event.signed(kind: event.BOOL, n: n))
+
+    if k == model.FLOAT
+        return ok(event.real(kind: event.FLOAT, x: to_f64(bits.float_of(bits.u32_of(v)))))
+
+    if k == model.DOUBLE
+        return ok(event.real(kind: event.DOUBLE, x: bits.double_of(v)))
+    raw = data.slice(from: o.from, to: o.to)
+
+    if k == model.STRING
+        match raw.validated_bytes()
+            .ok s => return ok(event.text(kind: event.TEXT, s: s))
+            .err _ =>
+                if f.validate_utf8
+                    return fail(code: "not_text", msg: f"{path}.{f.name}: the string is not UTF-8")
+    return ok(event.bytes(kind: event.BYTES, data: raw))
+
+# Whether a closed enum `e` names the number `v` holds.
+function names_number(e: model.Enum lent, v: u64) -> bool
+    return !e.by_number[to_i64(bits.i32_of(v)).must()].is_err()
+
+# `n` written as twenty digits, so that texts sort as the numbers do.
+function padded(n: u64) -> str
+    s = f"{n}"
+    return repeat("0", to_u64(20 - s.len()).must()) + s
+
+# A text that sorts as the map key `e` does among keys of its kind.
+function sort_key(e: event.Event) -> str
+    if e.kind == event.TEXT
+        return e.text
+
+    if e.kind == event.UINT32 || e.kind == event.UINT64
+        return padded(e.unsigned)
+
+    if e.number >= 0
+        return padded(to_u64(e.number).must() + bits.SIGN_64)
+    return padded(to_u64(e.number + 9223372036854775807 + 1).must())
+
+# The bytes between `from` and `to` of each occurrence, one after the other.
+function joined(data: [u8] lent, occurrences: [Occurrence]) -> [u8]
+    out: [u8] @= []
+
+    for o in occurrences
+        for k in range(from: o.from, to: o.to)
+            out @ out.push(data[k])
+
+    return out
+
+# `got` with `path` before its message where it failed.
+function located<T>(got: T?, path: str) -> T?
+    match got
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: f"{path}: {e.msg}")
+
+# A field with nothing in it, which no message declares.
+function default_field() -> model.Field
+    return model.Field(
+        name: "",
+        full_name: "",
+        json_name: "",
+        number: 0,
+        kind: 0,
+        label: 0,
+        type_name: "",
+        presence: false,
+        packed: false,
+        is_map: false,
+        oneof: -1,
+        proto3_optional: false,
+        has_default: false,
+        default_text: "",
+        default_bytes: [],
+        default_bits: 0,
+        validate_utf8: false,
+        delimited: false,
+        closed_enum: false,
+        extendee: "",
+        options: []
+    )
+
+# The value of `f` where the wire holds none: its default.
+function default_event(f: model.Field) -> event.Event
+    k = f.kind
+    v = f.default_bits
+
+    if k == model.STRING
+        return event.text(kind: event.TEXT, s: f.default_bytes.validated_bytes().default(""))
+
+    if k == model.BYTES
+        return event.bytes(kind: event.BYTES, data: f.default_bytes)
+    return scalar(f, o: Occurrence(value: v, from: 0, to: 0), data: [], path: "").must()
+
+# Writes the bytes from `from` to `to` of `data` at the end of `to_bytes`.
+function copy_into(@to_bytes: [u8], data: [u8] lent, from: i64, to: i64)
+    for k in range(from: from, to: to)
+        to_bytes @ to_bytes.push(data[k])

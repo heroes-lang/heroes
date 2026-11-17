@@ -1,0 +1,155 @@
+# PEM, minimal, for two labels alone: `PRIVATE KEY` around PKCS #8 and
+# `PUBLIC KEY` around SubjectPublicKeyInfo (RFC 7468 §§ 10 and 13). A
+# STAND-IN, private on purpose: the package `pem` (queue 35, 2026-11-17) is
+# PEM's home, and the coherence pass replaces this module with it; nothing
+# outside `crypto/keypairs` may reach it. Written as RFC 7468's strict form:
+# lines of 64 base-64 characters, each ending in `\n`; read as its lax one,
+# a line's `\r` and blank lines passed over, nothing else between the two
+# lines but base 64. A block of another label is refused saying what it is.
+
+use bytes
+use crypto/keypairs/internal/failure
+
+# The label around a private key, PKCS #8.
+constant PRIVATE_LABEL: str
+    "PRIVATE KEY"
+
+# The label around a public key, SubjectPublicKeyInfo.
+constant PUBLIC_LABEL: str
+    "PUBLIC KEY"
+
+# `der` written as PEM under `label`: its BEGIN line, base 64 in lines of 64
+# characters, its END line, each ending in `\n`.
+function armoured(der: [u8], label: str) -> str
+    encoded = bytes.format_base64(der)
+    lines: [str] @= ["-----BEGIN " + label + "-----"]
+    at: i64 @= 0
+
+    while at < encoded.len()
+        end = if at + 64 < encoded.len()
+            at + 64
+        else
+            encoded.len()
+
+        lines @ lines.push(encoded.slice(from: at, to: end))
+        at @ end
+
+    lines @ lines.push("-----END " + label + "-----")
+    lines @ lines.push("")
+    return lines.join("\n")
+
+# What a block of a label other than `label` is, in words, for a refusal.
+function other_label(found: str, label: str) -> str
+    if found == "ENCRYPTED PRIVATE KEY"
+        return "the key is encrypted: decrypt it first"
+
+    if found == "RSA PRIVATE KEY" || found == "EC PRIVATE KEY"
+        return "the key is in OpenSSL's older form, \"" + found + "\": write it as PKCS #8, \"" + PRIVATE_LABEL + "\""
+
+    if found == "RSA PUBLIC KEY"
+        return "the key is PKCS #1's RSAPublicKey: write it as SubjectPublicKeyInfo, \"" + PUBLIC_LABEL + "\""
+    return "the block is a \"" + found + "\", not a \"" + label + "\""
+
+# The DER inside the first block of `label` in `text`.
+function unarmoured(text: str, label: str) -> [u8]?
+    asked = "reading PEM's \"" + label + "\""
+    data = bytes.from_text(text)
+    begin = bytes.from_text("-----BEGIN ")
+
+    match bytes.index_of(s: data, substr: begin)
+        .err _ => return failure.of(code: failure.INVALID, asked: asked, why: "the text holds no BEGIN line")
+        .ok first =>
+            after_begin = first + begin.len()
+            dashes = bytes.from_text("-----")
+            close = bytes.index_of_from(s: data, substr: dashes, from: after_begin)
+
+            if close.is_err()
+                return failure.of(code: failure.INVALID, asked: asked, why: "the BEGIN line has no end")
+            found_end = close.must()
+            found = bytes.to_text(data.slice(from: after_begin, to: found_end)).default("")
+
+            if found != label
+                return failure.of(code: failure.INVALID, asked: asked, why: other_label(found: found, label: label))
+            body_from = found_end + dashes.len()
+            ending = bytes.from_text("-----END " + label + "-----")
+
+            match bytes.index_of_from(s: data, substr: ending, from: body_from)
+                .err _   => return failure.of(code: failure.INVALID, asked: asked, why: "the block has no END line")
+                .ok last => return decoded(data.slice(from: body_from, to: last), asked: asked)
+
+# The bytes the base 64 between a block's two lines writes: its line ends,
+# `\r` and blank lines passed over, nothing else.
+function decoded(body: [u8], asked: str) -> [u8]?
+    kept: [u8] @= []
+
+    for b in body
+        if b != '\n' && b != '\r'
+            kept @ kept.push(b)
+
+    if kept.len() == 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "the block holds no bytes")
+
+    match bytes.to_text(kept)
+        .err _ => return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "the block holds bytes that are not base 64"
+        )
+        .ok encoded =>
+            match bytes.parse_base64(encoded)
+                .ok der => return ok(der)
+                .err e => return failure.of(
+                    code: failure.INVALID,
+                    asked: asked,
+                    why: "the block is not base 64: " + e.msg
+                )
+
+## Tests
+
+test "armoured: no bytes, 48 bytes on one line of 64, and 49 bytes on two lines"
+    assert armoured([], label: PUBLIC_LABEL) == "-----BEGIN PUBLIC KEY-----\n-----END PUBLIC KEY-----\n"
+    one = armoured(bytes.repeated([0], n: 48), label: PUBLIC_LABEL)
+    assert one == "-----BEGIN PUBLIC KEY-----\n" + repeat("A", 64) + "\n-----END PUBLIC KEY-----\n"
+    two = armoured(bytes.repeated([0], n: 49), label: PUBLIC_LABEL)
+    assert two == "-----BEGIN PUBLIC KEY-----\n" + repeat("A", 64) + "\nAA==\n-----END PUBLIC KEY-----\n"
+
+test "unarmoured: what armoured writes, read back; line ends of \\r\\n; text before and after the block"
+    der = bytes.repeated([7, 200], n: 40)
+    assert unarmoured(text: armoured(der, label: PRIVATE_LABEL), label: PRIVATE_LABEL).must() == der
+    windows = "-----BEGIN PUBLIC KEY-----\r\nBwc=\r\n-----END PUBLIC KEY-----\r\n"
+    assert unarmoured(text: windows, label: PUBLIC_LABEL).must() == [7, 7]
+    around = "a comment\n-----BEGIN PUBLIC KEY-----\nBwc=\n-----END PUBLIC KEY-----\nand after"
+    assert unarmoured(text: around, label: PUBLIC_LABEL).must() == [7, 7]
+
+test "unarmoured: no BEGIN line, an encrypted key, OpenSSL's older forms, a block of another label, no END line, an empty block, and bytes that are not base 64"
+    match unarmoured(text: "", label: PRIVATE_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PRIVATE KEY\": the text holds no BEGIN line"
+
+    match unarmoured(text: "-----BEGIN ENCRYPTED PRIVATE KEY-----\nBwc=\n-----END ENCRYPTED PRIVATE KEY-----\n", label: PRIVATE_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PRIVATE KEY\": the key is encrypted: decrypt it first"
+
+    match unarmoured(text: "-----BEGIN RSA PRIVATE KEY-----\nBwc=\n-----END RSA PRIVATE KEY-----\n", label: PRIVATE_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PRIVATE KEY\": the key is in OpenSSL's older form, \"RSA PRIVATE KEY\": write it as PKCS #8, \"PRIVATE KEY\""
+
+    match unarmoured(text: "-----BEGIN CERTIFICATE-----\nBwc=\n-----END CERTIFICATE-----\n", label: PUBLIC_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PUBLIC KEY\": the block is a \"CERTIFICATE\", not a \"PUBLIC KEY\""
+
+    match unarmoured(text: "-----BEGIN PUBLIC KEY-----\nBwc=\n", label: PUBLIC_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PUBLIC KEY\": the block has no END line"
+
+    match unarmoured(text: "-----BEGIN PUBLIC KEY-----\n\n-----END PUBLIC KEY-----\n", label: PUBLIC_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PUBLIC KEY\": the block holds no bytes"
+
+    match unarmoured(text: "-----BEGIN PUBLIC KEY-----\nBw c=\n-----END PUBLIC KEY-----\n", label: PUBLIC_LABEL)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    match unarmoured(text: "-----BEGIN PUBLIC KEY", label: PUBLIC_LABEL)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading PEM's \"PUBLIC KEY\": the BEGIN line has no end"

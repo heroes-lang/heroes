@@ -1,0 +1,368 @@
+# Authenticated encryption by the system's own cryptography: a text sealed
+# under a secret key, so that nobody without the key reads it and nobody
+# changes a byte of it, or of the associated data beside it, unseen.
+# AES-128-GCM, AES-256-GCM (NIST SP 800-38D) and ChaCha20-Poly1305 (RFC
+# 8439), computed by the system's library and never by Heroes: CNG on
+# Windows, OpenSSL 3's `libcrypto.so.3` on Linux. A cipher must compute in a
+# time its key and its text do not decide, and the system's library keeps
+# that promise where nothing proves it of the C the compiler makes.
+#
+# **On macOS nothing here works, and `is_available` says so**: Apple offers
+# C no authenticated cipher (CommonCrypto's public modes hold none, CryptoKit
+# is Swift's alone, measured 2026-11-17), so every function fails
+# `unsupported` there.
+#
+# **The nonce is the call's own.** `seal` draws a nonce of 12 bytes from the
+# system's generator for every text and writes it before the ciphertext, so
+# no program reuses one by mistake, which would give two texts away and let
+# anyone forge. Random nonces of 96 bits collide past about 2^32 texts under
+# one key (NIST SP 800-38D § 8.3), so a key seals `SEALS_MOST` texts and then
+# fails `limit`: make another key. Sealed bytes are the nonce, the
+# ciphertext, as long as the text, and the tag of 16 bytes: `OVERHEAD` bytes
+# more than the text, the layout Go's `NewGCMWithRandomNonce` writes.
+#
+# **A key is a handle, and its secret stays in C.** A key made by `generate`
+# never enters the program's memory; one made by `from_secret` is copied
+# into C once, the language's copy of it overwritten before the call
+# answers, and `close` overwrites C's copy. A text to seal is copied once
+# into a cell the call lends to C and overwritten there once sealed; the
+# text opened is the answer, and so the caller's.
+#
+# It does not derive keys from a password or a secret, digest or
+# authenticate with an HMAC (`crypto`), sign, agree on a key or encrypt to a
+# public key (`crypto/keypairs`), or draw random bytes (`random`).
+#
+# It fails with `invalid` (an argument refused, sealed bytes that do not
+# open: changed, cut, or sealed under another key or with other associated
+# data), `closed` (a key closed), `limit` (no memory or key left, or a key
+# past `SEALS_MOST`), `unsupported` (macOS, or a Linux machine with no
+# `libcrypto.so.3`) and `failed` (the system failed, its words in the
+# message).
+
+use bytes
+use crypto/hero_crypto
+use crypto/seal/internal/known
+use crypto/seal/internal/sealing
+
+## Codes
+
+# An argument refused, or sealed bytes that do not open under the key with
+# the associated data given: `from_secret`, `seal`, `open`.
+constant INVALID: str
+    "invalid"
+
+# The key is closed: `seal`, `open`, `close`.
+constant CLOSED: str
+    "closed"
+
+# No memory or key left, or a key that has sealed `SEALS_MOST` texts:
+# `generate`, `from_secret`, `seal`.
+constant LIMIT: str
+    "limit"
+
+# This platform's own cryptography does not offer the algorithm: every
+# function on macOS, and on a Linux machine with no `libcrypto.so.3`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system failed for another reason, its words in the message.
+constant FAILED: str
+    "failed"
+
+## Algorithms and keys
+
+# Which authenticated cipher a key is for.
+variant Algorithm
+    # AES with a key of 128 bits in Galois/Counter Mode (NIST SP 800-38D),
+    # a tag of 16 bytes.
+    aes_128_gcm
+    # AES with a key of 256 bits in Galois/Counter Mode, a tag of 16 bytes.
+    aes_256_gcm
+    # ChaCha20 and Poly1305 (RFC 8439), a key of 256 bits, a tag of 16
+    # bytes; as fast as AES where the processor has no AES instructions.
+    chacha20_poly1305
+
+# A secret key that seals and opens, made only by `generate` or
+# `from_secret`. It holds a handle: `close` closes it, overwriting its
+# secret, and one nobody closes is told when `main` returns.
+record Key
+    # The layer's key, `nullptr` once `close` has emptied this place.
+    handle: hero_crypto.Key
+    # The cipher it seals with.
+    algorithm: Algorithm
+
+# The bytes of the nonce `seal` draws for each text and writes first.
+constant NONCE_BYTES: i64
+    12
+
+# The bytes of the tag `seal` writes last, which `open` checks.
+constant TAG_BYTES: i64
+    16
+
+# The bytes sealed bytes hold more than their text: a nonce and a tag.
+constant OVERHEAD: i64
+    28
+
+# The most texts one key seals: past it, two random nonces of 96 bits meet
+# with a chance NIST SP 800-38D § 8.3 does not allow.
+constant SEALS_MOST: i64
+    4294967296
+
+# Whether this machine's own cryptography seals with `algorithm`: false on
+# macOS for every one, and on a Linux machine with no `libcrypto.so.3`.
+#
+# - `algorithm`: the cipher asked about.
+#
+# See also `generate`.
+function is_available(algorithm: Algorithm) -> bool
+    return hero_crypto.offers(sealing.kind_of(format_algorithm(algorithm))) == 1
+
+# The bytes of a key for `algorithm`: 16 for AES-128-GCM, 32 for the others.
+#
+# - `algorithm`: the cipher asked about.
+#
+# See also `from_secret`.
+function key_size(algorithm: Algorithm) -> i64
+    return sealing.size_of(format_algorithm(algorithm))
+
+# The name of `algorithm` as its case is written: `aes_128_gcm`,
+# `aes_256_gcm`, `chacha20_poly1305`.
+#
+# - `algorithm`: the cipher named.
+#
+# See also `parse_algorithm`.
+function format_algorithm(algorithm: Algorithm) -> str
+    return match algorithm
+        .aes_128_gcm       => "aes_128_gcm"
+        .aes_256_gcm       => "aes_256_gcm"
+        .chacha20_poly1305 => "chacha20_poly1305"
+
+# The algorithm `name` names, as `format_algorithm` writes it.
+#
+# - `name`: `aes_128_gcm`, `aes_256_gcm` or `chacha20_poly1305`, lower case.
+#
+# Fails `invalid` for any other text, the message quoting it. See also
+# `format_algorithm`.
+function parse_algorithm(name: str) -> Algorithm?
+    if name == "aes_128_gcm"
+        return ok(.aes_128_gcm)
+
+    if name == "aes_256_gcm"
+        return ok(.aes_256_gcm)
+
+    if name == "chacha20_poly1305"
+        return ok(.chacha20_poly1305)
+    return fail(
+        code: INVALID,
+        msg: f"no algorithm is named \"{name}\": aes_128_gcm, aes_256_gcm and chacha20_poly1305 are"
+    )
+
+# A new key for `algorithm`, drawn by the system's generator; its secret
+# never enters the program's memory.
+#
+# - `algorithm`: the cipher the key seals with.
+#
+# The key is the caller's to close. Fails `unsupported` where
+# `is_available` is false, `limit` where the system has no key left. See
+# also `from_secret`, `close`.
+function generate(algorithm: Algorithm) -> Key?
+    handle = sealing.generate(format_algorithm(algorithm))?
+    return ok(Key(handle: handle, algorithm: algorithm))
+
+# A key for `algorithm` made of `secret`'s bytes: a key agreed, derived or
+# kept elsewhere. C copies the bytes once and this function overwrites the
+# language's copy it lent; the caller's own `secret` is the caller's.
+#
+# - `secret`: `key_size(algorithm)` bytes.
+#
+# The key is the caller's to close. Fails `invalid` where `secret` is of
+# another length, `unsupported` where `is_available` is false. See also
+# `generate`, `key_size`.
+function from_secret(algorithm: Algorithm, secret: [u8]) -> Key?
+    handle = sealing.from_secret(name: format_algorithm(algorithm), secret: secret)?
+    return ok(Key(handle: handle, algorithm: algorithm))
+
+# Closes `key` and overwrites its secret in C; the place is emptied, so a
+# second close fails `closed` and never reaches C.
+#
+# - `key`: the caller's key, emptied.
+#
+# Fails `closed` where `key` is closed already. See also `generate`.
+function close(@key: Key) -> ()?
+    return sealing.close(@key.handle)
+
+## Sealing and opening
+
+# `text` sealed under `key`, with `associated` authenticated beside it and
+# not encrypted: a nonce of `NONCE_BYTES` the call draws, the ciphertext, as
+# long as `text`, and a tag of `TAG_BYTES`.
+#
+# - `key`: the key, which stays open.
+# - `text`: the bytes to seal, empty or up to 4294967040.
+# - `associated`: bytes that `open` must be given the same, a header or a
+#   name the text is bound to; empty for none. They are not in the answer.
+#
+# Two seals of one text differ, their nonces drawn apart. Fails `closed`
+# where `key` is closed, `limit` past `SEALS_MOST` texts under one key,
+# `invalid` for a text past its bound, `unsupported` where the platform has
+# no such cipher. The text crosses to C in one copy the call overwrites.
+# See also `open`.
+function seal(key: Key, text: [u8], associated: [u8]) -> [u8]?
+    return sealing.seal(key: key.handle, text: text, associated: associated)
+
+# The text `sealed` holds, opened under `key` with `associated`.
+#
+# - `key`: the key that sealed it, which stays open.
+# - `sealed`: bytes as `seal` writes them, or as Go's `Seal(nonce, nonce,
+#   ...)` and Python's `nonce + AESGCM.encrypt(nonce, ...)` write them: the
+#   nonce of 12 bytes first, the tag of 16 last.
+# - `associated`: the same associated data `seal` was given.
+#
+# Fails `invalid` where the tag does not hold, the bytes changed, cut,
+# sealed under another key or with other associated data, and then nothing
+# of the text is told; `invalid` for fewer than `OVERHEAD` bytes; `closed`
+# where `key` is closed. See also `seal`.
+function open(key: Key, sealed: [u8], associated: [u8]) -> [u8]?
+    return sealing.open(key: key.handle, sealed: sealed, associated: associated)
+
+## Tests
+
+test "is_available, key_size, format_algorithm and parse_algorithm: each algorithm, and a name of none"
+    every: [Algorithm] = [.aes_128_gcm, .aes_256_gcm, .chacha20_poly1305]
+
+    for algorithm in every
+        assert parse_algorithm(format_algorithm(algorithm)).must() == algorithm
+        assert is_available(algorithm) == (hero_crypto.offers(hero_crypto.HERO_CRYPTO_AES_128_GCM) == 1)
+
+    assert key_size(.aes_128_gcm) == 16
+    assert key_size(.aes_256_gcm) == 32
+    assert key_size(.chacha20_poly1305) == 32
+
+    match parse_algorithm("AES_128_GCM")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "no algorithm is named \"AES_128_GCM\": aes_128_gcm, aes_256_gcm and chacha20_poly1305 are"
+
+test "seal and open: an empty text, empty associated data, a text of every length up to 40, other associated data, a changed byte, and a closed key"
+    if !is_available(.aes_128_gcm)
+        match generate(.aes_128_gcm)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+        return
+    key @= generate(.aes_128_gcm).must()
+    empty = seal(key: key, text: [], associated: []).must()
+    assert empty.len() == OVERHEAD
+    assert open(key: key, sealed: empty, associated: []).must().len() == 0
+    text: [u8] @= []
+
+    for n in range(from: 0, to: 41)
+        sealed = seal(key: key, text: text, associated: [1, 2]).must()
+        assert sealed.len() == n + OVERHEAD
+        assert open(key: key, sealed: sealed, associated: [1, 2]).must() == text
+        assert open(key: key, sealed: sealed, associated: [1, 3]).is_err()
+        text @ text.push(to_u8(n).must())
+
+    sealed: [u8] @= seal(key: key, text: [7, 7, 7], associated: []).must()
+    sealed[14] @ known.changed(sealed[14])
+
+    match open(key: key, sealed: sealed, associated: [])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "opening 31 sealed bytes: the bytes do not open under this key with this associated data: changed, cut, or sealed under another key (the sealed bytes do not open under this key with this associated data)"
+
+    close(@key).must()
+
+    match close(@key)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+test "seal: two seals of one text draw two nonces, and one key's sealed bytes do not open under another"
+    if !is_available(.chacha20_poly1305)
+        return
+    first @= generate(.chacha20_poly1305).must()
+    second @= generate(.chacha20_poly1305).must()
+    a = seal(key: first, text: [1, 2, 3], associated: []).must()
+    b = seal(key: first, text: [1, 2, 3], associated: []).must()
+    assert a.slice(from: 0, to: 12) != b.slice(from: 0, to: 12)
+    assert open(key: second, sealed: a, associated: []).is_err()
+    close(@first).must()
+    close(@second).must()
+
+test "from_secret: RFC 8439's key opens RFC 8439's sealed bytes, and a key of 31 bytes is invalid"
+    secret = bytes.parse_hex("808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f").must()
+
+    match from_secret(.chacha20_poly1305, secret: secret.slice(from: 0, to: 31))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    if !is_available(.chacha20_poly1305)
+        return
+    key @= from_secret(.chacha20_poly1305, secret: secret).must()
+    associated = bytes.parse_hex("50515253c0c1c2c3c4c5c6c7").must()
+    text = open(key: key, sealed: known.rfc8439_sealed(), associated: associated).must()
+    assert bytes.to_text(text).must() == "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
+    close(@key).must()
+
+## Examples
+
+# A message sealed under a new key, bound to its header, and opened again.
+test "seal: a message sealed and opened with the same header"
+    if !is_available(.aes_256_gcm)
+        return
+    key @= generate(.aes_256_gcm).must()
+    sealed = seal(key: key, text: bytes.from_text("ground control"), associated: bytes.from_text("to major tom")).must()
+    opened = open(key: key, sealed: sealed, associated: bytes.from_text("to major tom")).must()
+    assert bytes.to_text(opened).must() == "ground control"
+    close(@key).must()
+
+# Sealed bytes opened with another header fail `invalid`, telling nothing of
+# the text.
+test "open: another header is refused"
+    if !is_available(.aes_256_gcm)
+        return
+    key @= generate(.aes_256_gcm).must()
+    sealed = seal(key: key, text: [1, 2, 3], associated: [1]).must()
+    assert open(key: key, sealed: sealed, associated: [2]).is_err()
+    close(@key).must()
+
+# Whether this machine seals with ChaCha20-Poly1305: false on macOS.
+test "is_available: asked before a key is made"
+    if is_available(.chacha20_poly1305)
+        key @= generate(.chacha20_poly1305).must()
+        close(@key).must()
+
+# A key made of 32 bytes kept elsewhere.
+test "from_secret: a key of 32 bytes"
+    if !is_available(.aes_256_gcm)
+        return
+    key @= from_secret(.aes_256_gcm, secret: bytes.repeated([42], n: 32)).must()
+    assert open(key: key, sealed: seal(key: key, text: [5], associated: []).must(), associated: []).must() == [5]
+    close(@key).must()
+
+# A key closed, its secret overwritten.
+test "close: a key made and closed"
+    if !is_available(.aes_128_gcm)
+        return
+    key @= generate(.aes_128_gcm).must()
+    close(@key).must()
+
+# A key's length in bytes, before it is made of a secret.
+test "key_size: AES-128-GCM's 16 bytes"
+    assert key_size(.aes_128_gcm) == 16
+
+# An algorithm written as its name and read back.
+test "format_algorithm: the name of ChaCha20-Poly1305"
+    assert format_algorithm(.chacha20_poly1305) == "chacha20_poly1305"
+
+# An algorithm read from its name.
+test "parse_algorithm: AES-256-GCM by name"
+    assert parse_algorithm("aes_256_gcm").must() == .aes_256_gcm
+
+# A new key for ChaCha20-Poly1305 where the platform seals with it.
+test "generate: a key where the platform offers it"
+    if is_available(.chacha20_poly1305)
+        key @= generate(.chacha20_poly1305).must()
+        close(@key).must()

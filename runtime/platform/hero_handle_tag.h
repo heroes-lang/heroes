@@ -62,6 +62,14 @@
 #define HERO_HANDLE_TAG_PROC 4
 #define HERO_HANDLE_TAG_TLS 5
 #define HERO_HANDLE_TAG_TERM 6
-/* 7 to 15 are free; the next member takes 7. */
+/* `hero_ipc.c`'s four kinds of handle (2026-11-17), one tag each, so a
+ * listener's handle is never memory's at any slot and life. */
+#define HERO_HANDLE_TAG_IPC_LISTENER 7
+#define HERO_HANDLE_TAG_IPC_MEMORY 8
+#define HERO_HANDLE_TAG_IPC_SEMAPHORE 9
+#define HERO_HANDLE_TAG_IPC_LOCK 10
+/* `hero_crypto.c`'s keys (2026-11-17). */
+#define HERO_HANDLE_TAG_CRYPTO 11
+/* 12 to 15 are free; the next member takes 12. */
 
 #endif

@@ -1,0 +1,117 @@
+# The record and the `.proto` texts the face's examples read, kept here so
+# that the face declares only what a program writes.
+
+# A person as a program holds one, moved into and out of the message
+# `shop.Person` by its field names.
+record Person
+    # The name.
+    name: str
+    # The number that names the person.
+    id: i64
+    # The addresses, in order.
+    emails: [str]
+
+# A proto3 file: a shop's orders and a service.
+function shop_proto() -> str
+    lines = [
+        "syntax = \"proto3\";"
+        "package shop;"
+        "import \"google/protobuf/timestamp.proto\";"
+        "enum Color { COLOR_UNSET = 0; RED = 1; BLUE = 2; }"
+        "message Item { string sku = 1; int32 count = 2; }"
+        "message Order {"
+        "  int64 id = 1;"
+        "  repeated Item items = 2;"
+        "  map<string, int32> stock = 3;"
+        "  Color color = 4;"
+        "  oneof pay { string card = 5; int64 cash = 6; }"
+        "  optional string note = 7;"
+        "  google.protobuf.Timestamp placed = 8;"
+        "  double total = 9;"
+        "  bytes token = 10;"
+        "  uint64 serial = 11;"
+        "  float ratio = 12;"
+        "}"
+        "message Person { string name = 1; int64 id = 2; repeated string emails = 3; }"
+        "service Shop { rpc Get (Order) returns (Order); rpc Watch (Order) returns (stream Order); }"
+    ]
+    return lines.join("\n") + "\n"
+
+# A proto2 file: a required field, a default, an extension.
+function legacy_proto() -> str
+    lines = [
+        "syntax = \"proto2\";"
+        "package legacy;"
+        "message Req {"
+        "  required int32 id = 1;"
+        "  optional string name = 2 [default = \"anon\"];"
+        "  extensions 100 to 199;"
+        "}"
+        "extend Req { optional int32 priority = 100; }"
+    ]
+    return lines.join("\n") + "\n"
+
+# The text of the file `name` among the examples' files.
+function shop_proto_named(name: str) -> str?
+    if name == "shop.proto"
+        return ok(shop_proto())
+
+    if name == "legacy.proto"
+        return ok(legacy_proto())
+    return fail(code: "file_not_found", msg: f"no file {name} among the examples")
+
+# A proto3 file holding a field of every kind and every well-known type, the
+# tests' oracle cases written against it.
+function all_proto() -> str
+    lines = [
+        "syntax = \"proto3\";"
+        "package t;"
+        "import \"google/protobuf/timestamp.proto\";"
+        "import \"google/protobuf/duration.proto\";"
+        "import \"google/protobuf/struct.proto\";"
+        "import \"google/protobuf/any.proto\";"
+        "import \"google/protobuf/wrappers.proto\";"
+        "import \"google/protobuf/field_mask.proto\";"
+        "import \"google/protobuf/empty.proto\";"
+        "enum Color { COLOR_UNSET = 0; RED = 1; BLUE = 2; }"
+        "message Inner { int32 a = 1; string s = 2; }"
+        "message All {"
+        "  int32 i32 = 1; int64 i64 = 2; uint32 u32 = 3; uint64 u64 = 4;"
+        "  sint32 s32 = 5; sint64 s64 = 6; fixed32 f32 = 7; fixed64 f64 = 8;"
+        "  sfixed32 sf32 = 9; sfixed64 sf64 = 10; float fl = 11; double db = 12;"
+        "  bool b = 13; string str = 14; bytes by = 15; Color color = 16;"
+        "  Inner inner = 17; repeated int32 ri = 18; repeated string rs = 19;"
+        "  repeated Inner rm = 20; map<string, int32> ms = 21; map<int32, Inner> mi = 22;"
+        "  optional int32 opt = 23; oneof choice { string name = 24; int32 num = 25; Inner box = 26; }"
+        "  google.protobuf.Timestamp ts = 27; google.protobuf.Duration du = 28;"
+        "  google.protobuf.Struct st = 29; google.protobuf.Value va = 30; google.protobuf.Any an = 31;"
+        "  google.protobuf.Int64Value w64 = 32; google.protobuf.FieldMask fm = 33; google.protobuf.Empty em = 34;"
+        "  repeated Color rc = 35; google.protobuf.ListValue lv = 36; map<bool, string> mb = 37;"
+        "  google.protobuf.BytesValue wb = 38; google.protobuf.FloatValue wf = 39;"
+        "}"
+    ]
+    return lines.join("\n") + "\n"
+
+# A proto2 file: closed enums, a group, packed and unpacked lists, an
+# extension.
+function p2_proto() -> str
+    lines = [
+        "syntax = \"proto2\";"
+        "package u;"
+        "enum Size { SMALL = 1; LARGE = 2; }"
+        "message Req { required int32 id = 1; optional string name = 2 [default = \"x\"]; }"
+        "message P2 {"
+        "  optional int32 a = 1 [default = 7];"
+        "  repeated int32 unpacked = 2;"
+        "  repeated int32 packed = 3 [packed = true];"
+        "  optional Size size = 4;"
+        "  repeated Size sizes = 5;"
+        "  optional group G = 6 { optional int32 x = 7; }"
+        "  optional Req req = 8;"
+        "  repeated Req reqs = 9;"
+        "  optional string s = 10;"
+        "  extensions 100 to 199;"
+        "}"
+        "extend P2 { optional int32 ext = 100; }"
+    ]
+    return lines.join("\n") + "\n"

@@ -1,0 +1,345 @@
+# A key read from and written to its forms: PKCS #8 and
+# SubjectPublicKeyInfo as DER, which the floor reads and writes (the same
+# bytes on every platform, as Go and Python write them), PEM around them
+# (`armour`), and a key's raw bytes, which this module turns to and from the
+# DER by fixed heads: RFC 8410's for Ed25519 and X25519, SEC 1's uncompressed
+# point under SubjectPublicKeyInfo for P-256 and P-384. A STAND-IN for the
+# DER of the raw forms, private on purpose: the package `asn1` (queue 35,
+# 2026-11-17) is DER's home, and the coherence pass replaces these heads with
+# it. A key's private DER is a secret: every cell here that held one is
+# overwritten before the call answers.
+
+use bytes
+use crypto/hero_crypto
+use crypto/keypairs/internal/armour
+use crypto/keypairs/internal/failure
+use crypto/keypairs/internal/operations
+
+# A key the floor read, with what it knows of it.
+record Read
+    # The floor's key, the caller's to close.
+    handle: hero_crypto.Key
+    # Its kind's name and bits.
+    facts: operations.Facts
+
+# The DER head of an Ed25519 private key's 32 bytes (RFC 8410 § 7).
+constant ED25519_PRIVATE_HEAD: str
+    "302e020100300506032b657004220420"
+
+# The DER head of an X25519 private key's 32 bytes.
+constant X25519_PRIVATE_HEAD: str
+    "302e020100300506032b656e04220420"
+
+# The DER head of an Ed25519 public key's 32 bytes.
+constant ED25519_PUBLIC_HEAD: str
+    "302a300506032b6570032100"
+
+# The DER head of an X25519 public key's 32 bytes.
+constant X25519_PUBLIC_HEAD: str
+    "302a300506032b656e032100"
+
+# The DER head of a P-256 public key's uncompressed point, 65 bytes
+# (measured against Python's `cryptography` 2026-11-17).
+constant P256_PUBLIC_HEAD: str
+    "3059301306072a8648ce3d020106082a8648ce3d030107034200"
+
+# The DER head of a P-384 public key's uncompressed point, 97 bytes.
+constant P384_PUBLIC_HEAD: str
+    "3076301006072a8648ce3d020106052b81040022036200"
+
+# The PKCS #8 head before a P-256 key's scalar, 32 bytes, as the floor writes
+# it (measured as Python and Go write it).
+constant P256_PRIVATE_HEAD: str
+    "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b0201010420"
+
+# The PKCS #8 head before a P-384 key's scalar, 48 bytes.
+constant P384_PRIVATE_HEAD: str
+    "3081b6020100301006072a8648ce3d020106052b8104002204819e30819b0201010430"
+
+# The key `handle` read, with its facts; the handle closed where its facts
+# cannot be read.
+function with_facts(@handle: hero_crypto.Key, asked: str) -> Read?
+    match operations.facts(handle)
+        .ok f => return ok(Read(handle: handle, facts: f))
+        .err e =>
+            _ = hero_crypto.close(@handle)
+            handle @ nullptr
+            return fail(code: e.code, msg: asked + ": " + e.msg)
+
+# A private key read from `der`, PKCS #8. The cell that lent `der` to C is
+# overwritten before this answers.
+function read_private(der: [u8]) -> Read?
+    asked = "reading a private key of " + to_str(der.len()) + " bytes of PKCS #8"
+    cell: [u8] @= der
+    handle @= hero_crypto.read_private(@cell, count: operations.length_u64(cell))
+    operations.wiped(@cell)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return with_facts(@handle, asked: asked)
+
+# A public key read from `der`, SubjectPublicKeyInfo.
+function read_public(der: [u8]) -> Read?
+    asked = "reading a public key of " + to_str(der.len()) + " bytes of SubjectPublicKeyInfo"
+    cell: [u8] @= der
+    handle @= hero_crypto.read_public(@cell, count: operations.length_u64(cell))
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return with_facts(@handle, asked: asked)
+
+# `handle`'s private half as PKCS #8 DER: the secret, handed to the caller.
+function write_private(handle: hero_crypto.Key) -> [u8]?
+    asked = "writing a private key as PKCS #8"
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    out: [u8] @= []
+    whole = hero_crypto.write_private(handle, @out, count: 0)
+
+    if whole < 0
+        return failure.last(asked: asked)
+
+    if hero_crypto.write_private(handle, @out, count: to_u64(whole).must()) != whole
+        operations.wiped(@out)
+        return failure.last(asked: asked)
+    return ok(out)
+
+# `handle`'s public half as SubjectPublicKeyInfo DER.
+function write_public(handle: hero_crypto.Key) -> [u8]?
+    asked = "writing a public key as SubjectPublicKeyInfo"
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    out: [u8] @= []
+    whole = hero_crypto.write_public(handle, @out, count: 0)
+
+    if whole < 0
+        return failure.last(asked: asked)
+
+    if hero_crypto.write_public(handle, @out, count: to_u64(whole).must()) != whole
+        return failure.last(asked: asked)
+    return ok(out)
+
+# The PKCS #8 of a 25519 key of the kind `name` names, from its 32 bytes,
+# written into the caller's `der`.
+function private_der_of_raw(@der: [u8], name: str, raw: [u8]) -> ()?
+    asked = "reading a " + name + " private key of " + to_str(raw.len()) + " bytes"
+
+    head = match name
+        "ed25519" => ED25519_PRIVATE_HEAD
+        "x25519"  => X25519_PRIVATE_HEAD
+        _         => ""
+
+    if head == ""
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "a key is read from its bytes alone where it is Ed25519 or X25519; read a P-256, P-384 or RSA key from PKCS #8"
+        )
+
+    if raw.len() != 32
+        return failure.of(code: failure.INVALID, asked: asked, why: "the key is 32 bytes")
+    der @ bytes.parse_hex(head).must()
+    bytes.push_all(to: @der, from: raw)
+    return ok()
+
+# The SubjectPublicKeyInfo of a public key of the kind `name` names, from its
+# raw bytes: a 25519 key's 32, an EC key's uncompressed point.
+function public_der_of_raw(name: str, raw: [u8]) -> [u8]?
+    asked = "reading a " + name + " public key of " + to_str(raw.len()) + " bytes"
+
+    wanted = match name
+        "ed25519" | "x25519" => 32
+        "p256"               => 65
+        "p384"               => 97
+        _                    => 0
+
+    if wanted == 0
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "an RSA key has no raw form here: read it from SubjectPublicKeyInfo"
+        )
+
+    if raw.len() != wanted
+        return failure.of(code: failure.INVALID, asked: asked, why: "the key is " + to_str(wanted) + " bytes")
+
+    if wanted > 32 && raw[0] != 4
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "the point is not uncompressed: its first byte is not 4"
+        )
+
+    head = match name
+        "ed25519" => ED25519_PUBLIC_HEAD
+        "x25519"  => X25519_PUBLIC_HEAD
+        "p256"    => P256_PUBLIC_HEAD
+        _         => P384_PUBLIC_HEAD
+
+    return ok(bytes.concat([bytes.parse_hex(head).must(), raw]))
+
+# The raw bytes of a private key of the kind `name` names, from the PKCS #8
+# the floor wrote: a 25519 key's 32 bytes, an EC key's scalar.
+function raw_of_private_der(name: str, der: [u8]) -> [u8]?
+    head = match name
+        "ed25519" => ED25519_PRIVATE_HEAD
+        "x25519"  => X25519_PRIVATE_HEAD
+        "p256"    => P256_PRIVATE_HEAD
+        "p384"    => P384_PRIVATE_HEAD
+        _         => ""
+
+    width = if name == "p384"
+        48
+    else
+        32
+
+    if head == ""
+        return failure.of(
+            code: failure.INVALID,
+            asked: "writing a private key's bytes",
+            why: "an RSA key has no raw form here: write it as PKCS #8"
+        )
+    start = bytes.parse_hex(head).must()
+
+    if !bytes.has_prefix(s: der, prefix: start) || der.len() < start.len() + width
+        return failure.of(
+            code: failure.FAILED,
+            asked: "writing a private key's bytes",
+            why: "the floor wrote PKCS #8 of another form"
+        )
+    return ok(der.slice(from: start.len(), to: start.len() + width))
+
+# The raw bytes of a public key of the kind `name` names, from the
+# SubjectPublicKeyInfo the floor wrote.
+function raw_of_public_der(name: str, der: [u8]) -> [u8]?
+    head = match name
+        "ed25519" => ED25519_PUBLIC_HEAD
+        "x25519"  => X25519_PUBLIC_HEAD
+        "p256"    => P256_PUBLIC_HEAD
+        "p384"    => P384_PUBLIC_HEAD
+        _         => ""
+
+    if head == ""
+        return failure.of(
+            code: failure.INVALID,
+            asked: "writing a public key's bytes",
+            why: "an RSA key has no raw form here: write it as SubjectPublicKeyInfo"
+        )
+    start = bytes.parse_hex(head).must()
+
+    if !bytes.has_prefix(s: der, prefix: start)
+        return failure.of(
+            code: failure.FAILED,
+            asked: "writing a public key's bytes",
+            why: "the floor wrote SubjectPublicKeyInfo of another form"
+        )
+    return ok(der.slice(from: start.len(), to: der.len()))
+
+# The PKCS #8 inside PEM's `PRIVATE KEY` block in `text`: a secret the
+# caller overwrites once read.
+function private_der_of_pem(text: str) -> [u8]?
+    return armour.unarmoured(text: text, label: armour.PRIVATE_LABEL)
+
+# The SubjectPublicKeyInfo inside PEM's `PUBLIC KEY` block in `text`.
+function public_der_of_pem(text: str) -> [u8]?
+    return armour.unarmoured(text: text, label: armour.PUBLIC_LABEL)
+
+# `handle`'s private half as PEM's `PRIVATE KEY`.
+function write_private_pem(handle: hero_crypto.Key) -> str?
+    der @= write_private(handle)?
+    text = armour.armoured(der, label: armour.PRIVATE_LABEL)
+    operations.wiped(@der)
+    return ok(text)
+
+# `handle`'s public half as PEM's `PUBLIC KEY`.
+function write_public_pem(handle: hero_crypto.Key) -> str?
+    der = write_public(handle)?
+    return ok(armour.armoured(der, label: armour.PUBLIC_LABEL))
+
+## Tests
+
+test "private_der_of_raw: an Ed25519 key's 32 bytes under RFC 8410's head, a key of 31 bytes and a P-256 scalar invalid"
+    der: [u8] @= []
+    private_der_of_raw(der: @der, name: "ed25519", raw: bytes.repeated([1], n: 32)).must()
+    assert der.len() == 48
+    assert bytes.format_hex(der.slice(from: 0, to: 16)) == ED25519_PRIVATE_HEAD
+    assert private_der_of_raw(der: @der, name: "x25519", raw: [1]).is_err()
+
+    match private_der_of_raw(der: @der, name: "p256", raw: bytes.repeated([1], n: 32))
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "public_der_of_raw: each kind's head, a point that is compressed, a length of another kind, and RSA invalid"
+    assert public_der_of_raw(name: "x25519", raw: bytes.repeated([9], n: 32)).must().len() == 44
+    point = bytes.concat([[4], bytes.repeated([1], n: 64)])
+    assert public_der_of_raw(name: "p256", raw: point).must().len() == 91
+
+    match public_der_of_raw(name: "p256", raw: bytes.concat([[2], bytes.repeated([1], n: 64)]))
+        .ok _  => assert false
+        .err e => assert e.msg == "reading a p256 public key of 65 bytes: the point is not uncompressed: its first byte is not 4"
+
+    match public_der_of_raw(name: "p384", raw: point)
+        .ok _  => assert false
+        .err e => assert e.msg == "reading a p384 public key of 65 bytes: the key is 97 bytes"
+
+    match public_der_of_raw(name: "rsa", raw: [1])
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "raw_of_private_der and raw_of_public_der: Python's P-256 key's scalar and point, and bytes of another form failed"
+    der = bytes.parse_hex(
+        P256_PRIVATE_HEAD + "0000000000000000000000000000000000000000000000001234567890abcdef" + "a144034200049fad84aeae08bbef7f010014d82cef6a09de2b0cf871b5ce0c4f1d13a59a593407cb45769f1070e2c2470fe5b1bfe63133c0b0cdc64ea4bf3791a8ec2a07fd4f"
+    ).must()
+    assert bytes.format_hex(raw_of_private_der(name: "p256", der: der).must()) == "0000000000000000000000000000000000000000000000001234567890abcdef"
+
+    match raw_of_private_der(name: "p384", der: der)
+        .ok _  => assert false
+        .err e => assert e.code == failure.FAILED
+
+    spki = bytes.parse_hex(ED25519_PUBLIC_HEAD).must()
+    assert raw_of_public_der(name: "ed25519", der: spki).must().len() == 0
+    assert raw_of_public_der(name: "rsa", der: spki).is_err()
+
+test "read_private, read_public, write_private and write_public: Python's P-256 key both ways where the platform reads it, a key of no form, and a place emptied"
+    hex = P256_PRIVATE_HEAD + "0000000000000000000000000000000000000000000000001234567890abcdef" + "a144034200049fad84aeae08bbef7f010014d82cef6a09de2b0cf871b5ce0c4f1d13a59a593407cb45769f1070e2c2470fe5b1bfe63133c0b0cdc64ea4bf3791a8ec2a07fd4f"
+    none: hero_crypto.Key = nullptr
+    assert write_private(none).is_err()
+    assert write_public(none).is_err()
+
+    match read_public([48, 0])
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    if !operations.offers("p256")
+        return
+    read = read_private(bytes.parse_hex(hex).must()).must()
+    handle @= read.handle
+    assert read.facts.name == "p256"
+    assert bytes.format_hex(write_private(handle).must()) == hex
+    spki = write_public(handle).must()
+    assert bytes.format_hex(spki.slice(from: 0, to: 26)) == P256_PUBLIC_HEAD
+    again = read_public(spki).must()
+    other @= again.handle
+    assert again.facts.is_public
+    operations.close(@other).must()
+    operations.close(@handle).must()
+
+test "private_der_of_pem, write_private_pem, public_der_of_pem and write_public_pem: a key written and read back, and a public block read as a private one refused"
+    if !operations.offers("p384")
+        return
+    made @= operations.generate(name: "p384", bits: 0).must()
+    pem = write_private_pem(made).must()
+    assert pem.slice(from: 0, to: 28) == "-----BEGIN PRIVATE KEY-----\n"
+    back = read_private(private_der_of_pem(pem).must()).must()
+    other @= back.handle
+    assert write_private(other).must() == write_private(made).must()
+    public_text = write_public_pem(made).must()
+    seen = read_public(public_der_of_pem(public_text).must()).must()
+    third @= seen.handle
+    assert seen.facts.name == "p384"
+    assert private_der_of_pem(public_text).is_err()
+    operations.close(@third).must()
+    operations.close(@other).must()
+    operations.close(@made).must()

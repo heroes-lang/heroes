@@ -1,0 +1,457 @@
+# Events written as the wire's bytes, each value checked against its field's
+# kind. Every open message, list, map and map entry holds a buffer of its own
+# on a stack this module keeps, so nesting is never followed by recursion; a
+# finished child is written into its parent, after its length or between a
+# group's two tags.
+
+use bytes
+use protobuf/internal/bits
+use protobuf/internal/event
+use protobuf/internal/linker
+use protobuf/internal/model
+use protobuf/internal/wire
+
+# A message's frame.
+constant MESSAGE_FRAME: i64
+    1
+
+# A repeated field's frame.
+constant LIST_FRAME: i64
+    2
+
+# A map field's frame.
+constant MAP_FRAME: i64
+    3
+
+# A map entry's frame.
+constant ENTRY_FRAME: i64
+    4
+
+# The event kind a value of the field kind `kind` is written as.
+function value_kind(kind: i64) -> i64
+    if kind == model.INT32 || kind == model.SINT32 || kind == model.SFIXED32
+        return event.INT32
+
+    if kind == model.INT64 || kind == model.SINT64 || kind == model.SFIXED64
+        return event.INT64
+
+    if kind == model.UINT32 || kind == model.FIXED32
+        return event.UINT32
+
+    if kind == model.UINT64 || kind == model.FIXED64
+        return event.UINT64
+
+    if kind == model.FLOAT
+        return event.FLOAT
+
+    if kind == model.DOUBLE
+        return event.DOUBLE
+
+    if kind == model.BOOL
+        return event.BOOL
+
+    if kind == model.STRING
+        return event.TEXT
+
+    if kind == model.BYTES
+        return event.BYTES
+
+    if kind == model.ENUM
+        return event.ENUM
+    return event.MESSAGE
+
+# The wire type a scalar of `kind` is written with.
+function wire_of(kind: i64) -> i64
+    if kind == model.FIXED32 || kind == model.SFIXED32 || kind == model.FLOAT
+        return wire.FIXED32
+
+    if kind == model.FIXED64 || kind == model.SFIXED64 || kind == model.DOUBLE
+        return wire.FIXED64
+
+    if kind == model.STRING || kind == model.BYTES || kind == model.MESSAGE
+        return wire.BYTES
+    return wire.VARINT
+
+# Writes the scalar `e` of the field `f`, with its tag unless `packed`.
+function push_scalar(@to: [u8], f: model.Field, e: event.Event, packed: bool) -> ()?
+    want = value_kind(f.kind)
+
+    if e.kind != want && !(f.kind == model.STRING && !f.validate_utf8 && e.kind == event.BYTES)
+        return fail(
+            code: "invalid",
+            msg: f"{f.full_name}: a {model.wire_kind_name(f.kind)} field holds no {event.value_name(e.kind)}"
+        )
+
+    if !packed
+        wire.push_tag(@to, number: f.number, wire: wire_of(f.kind))
+    k = f.kind
+
+    if k == model.INT32 || k == model.INT64 || k == model.ENUM
+        wire.push_varint(@to, bits.u64_of(e.number))
+    else if k == model.SINT32 || k == model.SINT64
+        wire.push_varint(@to, bits.zigzag(e.number))
+    else if k == model.SFIXED32
+        wire.push_fixed32(@to, bits.u32_of(bits.u64_of(e.number)))
+    else if k == model.SFIXED64
+        wire.push_fixed64(@to, bits.u64_of(e.number))
+    else if k == model.UINT32 || k == model.UINT64
+        wire.push_varint(@to, e.unsigned)
+    else if k == model.FIXED32
+        wire.push_fixed32(@to, bits.u32_of(e.unsigned))
+    else if k == model.FIXED64
+        wire.push_fixed64(@to, e.unsigned)
+    else if k == model.BOOL
+        wire.push_varint(@to, bits.u64_of(e.number))
+    else if k == model.FLOAT
+        wire.push_fixed32(@to, bits.of_float(to_f32(e.real)))
+    else if k == model.DOUBLE
+        wire.push_fixed64(@to, bits.of_double(e.real))
+    else if e.kind == event.TEXT
+        wire.push_bytes(to: @to, v: bytes.from_text(e.text))
+    else
+        wire.push_bytes(to: @to, v: e.data)
+    return ok()
+
+# The field numbered `number` of the message `m`, an extension of it included.
+function field_of(schema: model.Schema lent, m: model.Message lent, number: i64) -> model.Field?
+    match m.by_number[number]
+        .ok k => return ok(m.fields[k])
+        .err _ =>
+            match schema.extension_at[model.extension_key(extendee: m.full_name, number: number)]
+                .ok name => return ok(schema.extensions[name].must())
+                .err _   => return fail(code: "invalid", msg: f"{m.full_name} has no field numbered {number}")
+
+# Writes the finished child `child`, a message's bytes, into its parent's
+# buffer `to` as the field `f`.
+function push_child(@to: [u8], f: model.Field, number: i64, child: [u8])
+    if f.delimited
+        wire.push_tag(@to, number: number, wire: wire.START_GROUP)
+
+        for b in child
+            to @ to.push(b)
+
+        wire.push_tag(@to, number: number, wire: wire.END_GROUP)
+    else
+        wire.push_tag(@to, number: number, wire: wire.BYTES)
+        wire.push_bytes(to: @to, v: child)
+
+# Puts `item` at `top` of `items`, growing it by one where `top` is its
+# length.
+function put<T>(@items: [T], top: i64, item: T)
+    if top == items.len()
+        items @ items.push(item)
+    else
+        items[top] @ item
+
+# The bytes `events` write, a message's events from its `MESSAGE` to its
+# `END`.
+function write(schema: model.Schema lent, events: [event.Event] lent) -> [u8]?
+    if events.len() == 0 || events[0].kind != event.MESSAGE
+        return fail(code: "invalid", msg: "the events do not begin with a message")
+    nothing: [u8] = []
+    cur: [u8] @= []
+    held: [[u8]] @= []
+    kinds: [i64] @= []
+    types: [model.Message] @= []
+    infos: [model.Field] @= []
+    counts: [i64] @= []
+    depth: i64 @= 0
+    out: [u8] @= []
+    done: bool @= false
+    blank = model.Field(
+        name: "",
+        full_name: "",
+        json_name: "",
+        number: 0,
+        kind: 0,
+        label: 0,
+        type_name: "",
+        presence: false,
+        packed: false,
+        is_map: false,
+        oneof: -1,
+        proto3_optional: false,
+        has_default: false,
+        default_text: "",
+        default_bytes: [],
+        default_bits: 0,
+        validate_utf8: false,
+        delimited: false,
+        closed_enum: false,
+        extendee: "",
+        options: []
+    )
+    blank_type = model.Message(
+        name: "",
+        full_name: "",
+        file: "",
+        fields: [],
+        by_number: {},
+        by_name: {},
+        by_json: {},
+        oneofs: [],
+        messages: [],
+        enums: [],
+        extension_ranges: [],
+        reserved_ranges: [],
+        reserved_names: [],
+        extensions: [],
+        map_entry: false,
+        options: [],
+        order: []
+    )
+    expecting: bool @= false
+
+    for e in events
+        if done
+            return fail(code: "invalid", msg: "events follow the message's end")
+
+        if e.kind == event.FIELD
+            if depth == 0 || kinds[depth - 1] != MESSAGE_FRAME || expecting
+                return fail(code: "invalid", msg: "a field stands where no message is open")
+            here = types[depth - 1]
+            infos[depth - 1] @ field_of(schema, m: here, number: e.number)?
+            expecting @ true
+        else if e.kind == event.END
+            if depth == 0 || expecting
+                return fail(code: "invalid", msg: "an end with nothing open")
+            depth @ depth - 1
+            kind = kinds[depth]
+            info = infos[depth]
+            child: [u8] @= cur
+            cur @ held[depth]
+            held[depth] @ nothing
+
+            if kind == MESSAGE_FRAME
+                for b in e.data
+                    child @ child.push(b)
+
+                if depth == 0
+                    out @ child
+                    done @ true
+                else
+                    parent = kinds[depth - 1]
+                    owner = infos[depth - 1]
+
+                    if parent == ENTRY_FRAME
+                        wire.push_tag(@cur, number: 2, wire: wire.BYTES)
+                        wire.push_bytes(to: @cur, v: child)
+                        counts[depth - 1] @ 2
+                    else
+                        push_child(to: @cur, f: owner, number: owner.number, child: child)
+            else if kind == LIST_FRAME
+                if info.packed
+                    if child.len() > 0
+                        wire.push_tag(@cur, number: info.number, wire: wire.BYTES)
+                        wire.push_bytes(to: @cur, v: child)
+                else
+                    for b in child
+                        cur @ cur.push(b)
+            else if kind == MAP_FRAME
+                for b in child
+                    cur @ cur.push(b)
+            else
+                return fail(code: "invalid", msg: "an end inside a map entry")
+
+            if depth > 0 && kinds[depth - 1] == ENTRY_FRAME && counts[depth - 1] == 2
+                depth @ depth - 1
+                entry: [u8] = cur
+                cur @ held[depth]
+                held[depth] @ nothing
+                wire.push_tag(@cur, number: infos[depth].number, wire: wire.BYTES)
+                wire.push_bytes(to: @cur, v: entry)
+        else
+            # A value: of the field just named, an item of a list, or a map's
+            # key or value.
+            target: model.Field @= blank
+            slot: i64 @= 0
+
+            if depth == 0
+                if e.kind != event.MESSAGE
+                    return fail(code: "invalid", msg: "a value stands where no field is named")
+            else if kinds[depth - 1] == MESSAGE_FRAME
+                if !expecting
+                    return fail(
+                        code: "invalid",
+                        msg: f"{types[depth - 1].full_name}: a value with no field named before it"
+                    )
+                expecting @ false
+                target @ infos[depth - 1]
+                slot @ 1
+            else if kinds[depth - 1] == LIST_FRAME
+                target @ infos[depth - 1]
+                slot @ 2
+            else if kinds[depth - 1] == MAP_FRAME
+                # A key opens an entry, whose frame then takes the value.
+                entry_type = types[depth - 1]
+                counts[depth - 1] @ counts[depth - 1] + 1
+                put(@held, top: depth, item: cur)
+                cur @ []
+                put(@kinds, top: depth, item: ENTRY_FRAME)
+                put(@types, top: depth, item: entry_type)
+                put(@infos, top: depth, item: infos[depth - 1])
+                put(@counts, top: depth, item: 0)
+                depth @ depth + 1
+                target @ entry_type.fields[entry_type.by_number[1].must()]
+                slot @ 3
+            else
+                entry_type = types[depth - 1]
+                target @ entry_type.fields[entry_type.by_number[2].must()]
+                slot @ 4
+
+            if slot == 3 && (e.kind == event.LIST || e.kind == event.MAP || e.kind == event.MESSAGE)
+                return fail(code: "invalid", msg: f"{infos[depth - 1].full_name}: a map's key is a scalar")
+
+            if e.kind == event.LIST
+                if slot != 1 || target.label != model.REPEATED || target.is_map
+                    return fail(code: "invalid", msg: f"{target.full_name}: a list where the field is not repeated")
+                put(@held, top: depth, item: cur)
+                cur @ []
+                put(@kinds, top: depth, item: LIST_FRAME)
+                put(@types, top: depth, item: blank_type)
+                put(@infos, top: depth, item: target)
+                put(@counts, top: depth, item: 0)
+                depth @ depth + 1
+            else if e.kind == event.MAP
+                if slot != 1 || !target.is_map
+                    return fail(code: "invalid", msg: f"{target.full_name}: a map where the field is no map")
+                put(@held, top: depth, item: cur)
+                cur @ []
+                put(@kinds, top: depth, item: MAP_FRAME)
+                put(@types, top: depth, item: schema.messages[target.type_name].must())
+                put(@infos, top: depth, item: target)
+                put(@counts, top: depth, item: 0)
+                depth @ depth + 1
+            else if e.kind == event.MESSAGE
+                name = e.text
+
+                if slot != 0
+                    if target.kind != model.MESSAGE && target.kind != model.GROUP || target.is_map
+                        return fail(
+                            code: "invalid",
+                            msg: f"{target.full_name}: a message where the field is a {model.wire_kind_name(target.kind)}"
+                        )
+
+                    if target.type_name != name
+                        return fail(
+                            code: "invalid",
+                            msg: f"{target.full_name}: a {name} where the field holds a {target.type_name}"
+                        )
+
+                    if slot == 1 && target.label == model.REPEATED
+                        return fail(
+                            code: "invalid",
+                            msg: f"{target.full_name}: one message where the field is repeated, which takes a list"
+                        )
+
+                match schema.messages[name]
+                    .err _ => return fail(code: "not_found", msg: f"the schema holds no message {name}")
+                    .ok t =>
+                        put(@held, top: depth, item: cur)
+                        cur @ []
+                        put(@kinds, top: depth, item: MESSAGE_FRAME)
+                        put(@types, top: depth, item: t)
+                        put(@infos, top: depth, item: blank)
+                        put(@counts, top: depth, item: 0)
+                        depth @ depth + 1
+            else
+                if slot == 1 && target.label == model.REPEATED
+                    return fail(
+                        code: "invalid",
+                        msg: f"{target.full_name}: one value where the field is repeated, which takes a list"
+                    )
+                skip = slot == 1 && !target.presence && event.is_zero(e)
+
+                if !skip
+                    push_scalar(@cur, f: target, e: e, packed: slot == 2 && target.packed)?
+
+                if slot == 3
+                    counts[depth - 1] @ 1
+                else if slot == 4
+                    depth @ depth - 1
+                    entry: [u8] = cur
+                    cur @ held[depth]
+                    held[depth] @ nothing
+                    wire.push_tag(@cur, number: infos[depth].number, wire: wire.BYTES)
+                    wire.push_bytes(to: @cur, v: entry)
+
+    if !done
+        return fail(code: "invalid", msg: "the message has no end")
+    return ok(out)
+
+test "write: scalars of every kind as Go's Marshal writes them, a zero left out, a negative zero kept"
+    schema = test_schema()
+    events = [
+        event.text(kind: event.MESSAGE, s: "T")
+        event.signed(kind: event.FIELD, n: 1)
+        event.signed(kind: event.INT32, n: -1)
+        event.signed(kind: event.FIELD, n: 2)
+        event.signed(kind: event.INT32, n: -1)
+        event.signed(kind: event.FIELD, n: 3)
+        event.real(kind: event.FLOAT, x: to_f64(to_f32(1.1)))
+        event.signed(kind: event.FIELD, n: 4)
+        event.real(kind: event.DOUBLE, x: -0.0)
+        event.signed(kind: event.FIELD, n: 5)
+        event.signed(kind: event.BOOL, n: 0)
+        event.signed(kind: event.FIELD, n: 6)
+        event.text(kind: event.TEXT, s: "z")
+        event.mark(event.END)
+    ]
+    got = write(schema, events: events).must()
+    assert bytes.format_hex(got) == "08ffffffffffffffffff0110011dcdcc8c3f2100000000000000803201" + "7a"
+
+test "write: a packed list, a list of messages, a map, a nested message, and unknown bytes kept"
+    schema = test_schema()
+    events = [
+        event.text(kind: event.MESSAGE, s: "T")
+        event.signed(kind: event.FIELD, n: 7)
+        event.mark(event.LIST)
+        event.signed(kind: event.INT32, n: 1)
+        event.signed(kind: event.INT32, n: 300)
+        event.mark(event.END)
+        event.signed(kind: event.FIELD, n: 8)
+        event.mark(event.MAP)
+        event.text(kind: event.TEXT, s: "a")
+        event.signed(kind: event.INT32, n: 1)
+        event.text(kind: event.TEXT, s: "b")
+        event.signed(kind: event.INT32, n: 2)
+        event.mark(event.END)
+        event.signed(kind: event.FIELD, n: 9)
+        event.text(kind: event.MESSAGE, s: "T")
+        event.signed(kind: event.FIELD, n: 1)
+        event.signed(kind: event.INT32, n: 5)
+        event.mark(event.END)
+        event.bytes(kind: event.END, data: [0x98, 0x06, 0x01])
+    ]
+    got = write(schema, events: events).must()
+    assert bytes.format_hex(got) == "3a0301ac02" + "42050a01611001" + "42050a01621002" + "4a020805" + "980601"
+
+test "write: a value of the wrong kind, a field that is none, a list where one value goes"
+    schema = test_schema()
+    wrong = [
+        event.text(kind: event.MESSAGE, s: "T")
+        event.signed(kind: event.FIELD, n: 1)
+        event.text(kind: event.TEXT, s: "x")
+        event.mark(event.END)
+    ]
+    assert write(schema, events: wrong).is_err()
+    none = [
+        event.text(kind: event.MESSAGE, s: "T")
+        event.signed(kind: event.FIELD, n: 99)
+        event.signed(kind: event.INT32, n: 1)
+        event.mark(event.END)
+    ]
+    assert write(schema, events: none).is_err()
+    listed = [
+        event.text(kind: event.MESSAGE, s: "T")
+        event.signed(kind: event.FIELD, n: 1)
+        event.mark(event.LIST)
+        event.mark(event.END)
+        event.mark(event.END)
+    ]
+    assert write(schema, events: listed).is_err()
+
+# The schema the tests write by: a proto3 message `T`.
+function test_schema() -> model.Schema
+    text = "syntax = \"proto3\";\nmessage T {\n  int32 a = 1;\n  sint32 b = 2;\n  float c = 3;\n  double d = 4;\n  bool e = 5;\n  string f = 6;\n  repeated int32 g = 7;\n  map<string, int32> h = 8;\n  T i = 9;\n}\n"
+    return linker.read({"t.proto": text}).must()

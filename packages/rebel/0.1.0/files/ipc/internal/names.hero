@@ -1,0 +1,61 @@
+# The rule of a name of memory, a semaphore, a lock, an abstract channel or a
+# pipe, judged before the floor is asked, so a name outside it is told in
+# words of its own: 1 to 29 ASCII letters, digits, `.`, `_` and `-`, the first
+# no `.`. 29 is macOS's: a semaphore's name there holds at most 30 bytes with
+# the `/` POSIX puts before it (measured 2026-11-17, 31 refused
+# `ENAMETOOLONG`).
+
+use ipc/hero_ipc
+use ipc/internal/failure
+
+# What a message says the rule is.
+constant RULE: str
+    "a name is 1 to 29 ASCII letters, digits, `.`, `_` and `-`, the first no `.`"
+
+# Whether `name` follows the rule.
+function is_name(name: str) -> bool
+    if name.len() == 0 || name.len() > hero_ipc.HERO_IPC_NAME_MOST || name[0] == '.'
+        return false
+
+    for at in range(from: 0, to: name.len())
+        if !is_name_byte(name[at])
+            return false
+
+    return true
+
+# Whether `b` may stand in a name.
+function is_name_byte(b: u8) -> bool
+    letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+    digit = b >= '0' && b <= '9'
+    return letter || digit || b == '.' || b == '_' || b == '-'
+
+# Nothing where `name` follows the rule, else `invalid` with a message that
+# begins with `asked`.
+function checked(name: str, asked: str) -> ()?
+    if is_name(name)
+        return ok()
+    return failure.of(code: failure.INVALID, asked: asked, why: RULE)
+
+## Tests
+
+test "is_name: empty, one byte, 29 and 30 bytes, a first dot, a slash, a space and a character of two bytes"
+    assert !is_name("")
+    assert is_name("a")
+    assert is_name("A.b_c-9")
+    assert is_name(repeat("x", 29))
+    assert !is_name(repeat("x", 30))
+    assert !is_name(".hidden")
+    assert is_name("a.")
+    assert !is_name("a/b")
+    assert !is_name("a b")
+    assert !is_name("é")
+    assert !is_name("a\\b")
+
+test "checked: a name outside the rule is invalid, the rule in the message"
+    match checked(name: "a/b", asked: "opening the lock \"a/b\"")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "opening the lock \"a/b\": " + RULE
+
+    assert checked(name: "ok", asked: "x") == ok()

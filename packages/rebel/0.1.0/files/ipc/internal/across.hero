@@ -1,0 +1,130 @@
+# What the tests of two processes stand on: this test's own program started
+# again as a child, given a role by its arguments, and the child's part of
+# each role. A test binary runs the test whose number is its first argument
+# (`heroes test` starts one process per test, so), so the child runs the same
+# test, finds `ROLE` second among its arguments, plays its role and ends with
+# its code; no program calls this but the tests of `ipc`.
+
+use io
+use ipc/hero_ipc
+use ipc/internal/channels
+use ipc/internal/failure
+use ipc/internal/messages
+use ipc/internal/shared
+use ipc/internal/waits
+use os
+use process
+use threads
+
+# The argument that makes a run a child of a test.
+constant ROLE: str
+    "ipc-child-role"
+
+# The longest a child runs before the system ends it, in nanoseconds, so a
+# test that fails before it waits for its child leaves none running.
+constant CHILD_LIMIT_NS: i64
+    60000000000
+
+# Whether this run of the program is a child a test started.
+function is_child() -> bool
+    a = args()
+    return a.len() >= 3 && a[1] == ROLE
+
+# This test's own program started as a child playing `role` with `words`,
+# which the caller waits for.
+function start(role: str, words: [str]) -> process.Child?
+    program = os.executable_path()?
+    arguments @= [args()[0], ROLE, role]
+
+    for w in words
+        arguments @ arguments.push(w)
+
+    c = process.with_time_limit(process.command(program, arguments: arguments), nanoseconds: CHILD_LIMIT_NS)
+    return process.start(c)
+
+# The child's part, by its role: 0 where it went as the test expects, 1
+# where a step failed, the failure printed.
+function child() -> i64
+    a = args()
+    done: ()? @= ok()
+
+    if a[2] == "echo"
+        done @ echo(a[3])
+    else if a[2] == "memory"
+        done @ fill(a[3])
+    else if a[2] == "hold"
+        done @ hold(lock: a[3], ready: a[4], go: a[5])
+    else
+        done @ fail(code: "invalid", msg: f"no role \"{a[2]}\"")
+
+    match done
+        .ok _ => return 0
+        .err e =>
+            print("child: ", e.msg)
+            return 1
+
+# Connects to the listener at `path`, reads one message and writes it back
+# with a `!` after it.
+function echo(path: str) -> ()?
+    s @= channels.connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: 20000)?
+    got @= messages.read(s, most: 1024)?
+    got @ got.push('!')
+    messages.write(s, data: got)?
+    return io.close(@s)
+
+# Opens the memory `name`, writes 1, 2, 3 at its start and adds 1 to its
+# word at 8 a thousand times.
+function fill(name: str) -> ()?
+    m = shared.open(name)?
+    handle @= m.handle
+    shared.write_at(handle, name: name, size: m.size, offset: 0, data: [1, 2, 3])?
+
+    for _ in range(from: 0, to: 1000)
+        _ = shared.add_at(handle, name: name, size: m.size, offset: 8, delta: 1)?
+
+    return shared.close(@handle, name: name)
+
+# Takes the lock `lock`, tells the test so through the semaphore `ready`,
+# waits for `go`, then releases it: killed meanwhile, it holds it to its end.
+function hold(lock: str, ready: str, go: str) -> ()?
+    l @= waits.open_lock(lock, permission: 0o600)?
+    _ = waits.acquire_lock(l, name: lock, within_ms: 20000)?
+    told @= waits.open_semaphore(ready)?
+    waits.release_semaphore(told, name: ready)?
+    wait @= waits.open_semaphore(go)?
+    waits.acquire_semaphore(wait, name: go, within_ms: 30000)?
+    waits.release_lock(l, name: lock)?
+    waits.close_semaphore(@wait, name: go)?
+    waits.close_semaphore(@told, name: ready)?
+    return waits.close_lock(@l, name: lock)
+
+# What another thread of this process answers when it opens the lock `name`
+# and tries it once: `taken` (and released again), `refused` where it timed
+# out, or the failure's code.
+function try_from_another_thread(name: str) -> str
+    t @= threads.spawn_text(try_once, arg: name)
+    return threads.wait_text(@t)
+
+# The thread's part of `try_from_another_thread`.
+function try_once(name: str) -> str
+    match waits.open_lock(name, permission: 0o600)
+        .err e => return e.code
+        .ok made =>
+            l @= made
+            answer: str @= "refused"
+
+            match waits.acquire_lock(l, name: name, within_ms: 0)
+                .ok _ =>
+                    answer @ "taken"
+                    _ = waits.release_lock(l, name: name).is_err()
+                .err e =>
+                    if e.code != failure.TIMEOUT
+                        answer @ e.code
+
+            _ = waits.close_lock(@l, name: name).is_err()
+            return answer
+
+## Tests
+
+test "is_child: a run of the tests is no child"
+    assert !is_child()

@@ -1,0 +1,220 @@
+# Memory shared by name: made, opened, read and written by copies, its words
+# read and changed whole, closed and its name taken away. Every offset and
+# count is held against the memory's size here before the floor is asked, so
+# no count from outside ever sizes a buffer the memory cannot fill, and the
+# floor holds them again before a byte moves. Each takes the floor's handle
+# and the memory's name for its messages; the face `ipc` holds the memory.
+
+use ipc/hero_ipc
+use ipc/internal/failure
+use ipc/internal/names
+use os
+
+# What `create` and `open` answer: the floor's handle and the size.
+record Mapped
+    # The floor's handle, which the caller closes.
+    handle: hero_ipc.Memory
+    # The memory's size in bytes, as the system holds it.
+    size: i64
+
+# How messages name the memory `name`.
+function label(name: str) -> str
+    return f"the memory \"{name}\""
+
+# The mapping `handle` with its size, or its failure; `handle` is closed
+# where the size cannot be read.
+function sized(@handle: hero_ipc.Memory, asked: str) -> Mapped?
+    size = hero_ipc.memory_size(handle)
+
+    if size < 0
+        failed: Mapped? = failure.last(asked: asked)
+        _ = hero_ipc.memory_close(@handle)
+        return failed
+    return ok(Mapped(handle: handle, size: size))
+
+# New memory named `name` of at least `size` bytes.
+function create(name: str, size: i64, permission: i64) -> Mapped?
+    asked = f"making {label(name)} of {size} bytes"
+    names.checked(name: name, asked: asked)?
+
+    if size < 1
+        return failure.of(code: failure.INVALID, asked: asked, why: "memory holds 1 byte or more")
+
+    if permission < 0 || permission > 0o777
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a permission is 0 to 0o777, and {permission} is not"
+        )
+    handle @= hero_ipc.memory_create(name, size: size, perm: permission)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return sized(@handle, asked: asked)
+
+# The memory named `name`.
+function open(name: str) -> Mapped?
+    asked = "opening " + label(name)
+    names.checked(name: name, asked: asked)?
+    handle @= hero_ipc.memory_open(name)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return sized(@handle, asked: asked)
+
+# Nothing where `count` bytes from `offset` stand inside `size` bytes, else
+# `invalid` saying which edge they pass.
+function inside(offset: i64, count: i64, size: i64, asked: str) -> ()?
+    if offset < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "an offset is 0 or more")
+
+    if count < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "a count is 0 or more")
+
+    if offset > size || count > size - offset
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the memory holds {size} bytes")
+    return ok()
+
+# Nothing where `offset` is a word's place inside `size` bytes, a multiple of
+# 8, else `invalid`.
+function aligned(offset: i64, size: i64, asked: str) -> ()?
+    inside(offset: offset, count: 8, size: size, asked: asked)?
+
+    if offset % 8 != 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "a word's offset is a multiple of 8")
+    return ok()
+
+# A copy of `count` bytes from `offset` of the memory `handle` of `size`.
+function read_at(handle: hero_ipc.Memory, name: str, size: i64, offset: i64, count: i64) -> [u8]?
+    asked = f"reading {count} bytes at {offset} of {label(name)}"
+    inside(offset: offset, count: count, size: size, asked: asked)?
+    room: [u8] @= []
+
+    if hero_ipc.memory_read(handle, offset: offset, @room, count: count.to_u64().must()) < 0
+        return failure.last(asked: asked)
+    return ok(room)
+
+# Copies `data` to `offset` of the memory `handle` of `size`.
+function write_at(handle: hero_ipc.Memory, name: str, size: i64, offset: i64, data: [u8]) -> ()?
+    asked = f"writing {data.len()} bytes at {offset} of {label(name)}"
+    inside(offset: offset, count: data.len(), size: size, asked: asked)?
+    copy @= data
+    return failure.done(
+        hero_ipc.memory_write(handle, offset: offset, @copy, count: data.len().to_u64().must()),
+        asked: asked
+    )
+
+# The word at `offset`.
+function load_at(handle: hero_ipc.Memory, name: str, size: i64, offset: i64) -> i64?
+    asked = f"reading the word at {offset} of {label(name)}"
+    aligned(offset: offset, size: size, asked: asked)?
+    value: i64 @= 0
+    failure.done(hero_ipc.memory_load(handle, offset: offset, value: @value), asked: asked)?
+    return ok(value)
+
+# The word at `offset` made `value`.
+function store_at(handle: hero_ipc.Memory, name: str, size: i64, offset: i64, value: i64) -> ()?
+    asked = f"writing the word at {offset} of {label(name)}"
+    aligned(offset: offset, size: size, asked: asked)?
+    return failure.done(hero_ipc.memory_store(handle, offset: offset, value: value), asked: asked)
+
+# The word at `offset` plus `delta`, wrapping, and the sum.
+function add_at(handle: hero_ipc.Memory, name: str, size: i64, offset: i64, delta: i64) -> i64?
+    asked = f"adding {delta} to the word at {offset} of {label(name)}"
+    aligned(offset: offset, size: size, asked: asked)?
+    value: i64 @= 0
+    failure.done(hero_ipc.memory_add(handle, offset: offset, delta: delta, value: @value), asked: asked)?
+    return ok(value)
+
+# The word at `offset` made `desired` where it is `expected`, and the word
+# found.
+function swap_at(handle: hero_ipc.Memory, name: str, size: i64, offset: i64, expected: i64, desired: i64) -> i64?
+    asked = f"swapping the word at {offset} of {label(name)}"
+    aligned(offset: offset, size: size, asked: asked)?
+    found: i64 @= 0
+    failure.done(hero_ipc.memory_swap(handle, offset: offset, expected: expected, desired: desired, found: @found), asked: asked)?
+    return ok(found)
+
+# Closes the memory `handle` named `name` and empties the place.
+function close(@handle: hero_ipc.Memory, name: str) -> ()?
+    asked = "closing " + label(name)
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "it is closed already")
+    answer = hero_ipc.memory_close(@handle)
+    handle @ nullptr
+    return failure.done(answer, asked: asked)
+
+# Takes the name `name` from its memory.
+function remove(name: str) -> ()?
+    asked = "removing the name of " + label(name)
+    names.checked(name: name, asked: asked)?
+    return failure.done(hero_ipc.memory_remove(name), asked: asked)
+
+## Tests
+
+# A name for a test's memory, unique to this process.
+function test_name(what: str) -> str
+    return f"hs-{what}-{os.pid()}"
+
+test "inside and aligned: the edges of a memory of 16 bytes"
+    assert inside(offset: 0, count: 16, size: 16, asked: "x") == ok()
+    assert inside(offset: 16, count: 0, size: 16, asked: "x") == ok()
+    assert inside(offset: 16, count: 1, size: 16, asked: "x").is_err()
+    assert inside(offset: 17, count: 0, size: 16, asked: "x").is_err()
+    assert inside(offset: -1, count: 1, size: 16, asked: "x").is_err()
+    assert inside(offset: 0, count: -1, size: 16, asked: "x").is_err()
+    assert inside(offset: 1, count: 9223372036854775807, size: 16, asked: "x").is_err()
+    assert aligned(offset: 8, size: 16, asked: "x") == ok()
+    assert aligned(offset: 16, size: 16, asked: "x").is_err()
+    assert aligned(offset: 4, size: 16, asked: "x").is_err()
+
+test "create: a size of 0, a name outside the rule and a permission past 0o777 are told before the floor"
+    match create(test_name("z"), size: 0, permission: 0o600)
+        .ok _  => assert false
+        .err e => assert e.msg == f"making the memory \"{test_name("z")}\" of 0 bytes: memory holds 1 byte or more"
+
+    match create("a b", size: 8, permission: 0o600)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    match create(test_name("p"), size: 8, permission: 0o1000)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "read_at, write_at and the words through two mappings, a read past the end refused before a buffer is made, and close twice"
+    name = test_name("rw")
+    made = create(name, size: 32, permission: 0o600).must()
+    first @= made.handle
+    seen = open(name).must()
+    second @= seen.handle
+    assert seen.size == made.size
+    assert write_at(first, name: name, size: made.size, offset: 3, data: [7, 8, 9]) == ok()
+    assert read_at(second, name: name, size: seen.size, offset: 3, count: 3).must() == [7, 8, 9]
+    assert read_at(second, name: name, size: seen.size, offset: 0, count: 0).must() == []
+
+    match read_at(second, name: name, size: seen.size, offset: 0, count: 1 << 40)
+        .ok _  => assert false
+        .err e => assert e.msg == f"reading 1099511627776 bytes at 0 of the memory \"{name}\": the memory holds {seen.size} bytes"
+
+    assert store_at(first, name: name, size: made.size, offset: 8, value: 40) == ok()
+    assert add_at(second, name: name, size: seen.size, offset: 8, delta: 2).must() == 42
+    assert load_at(first, name: name, size: made.size, offset: 8).must() == 42
+    assert swap_at(first, name: name, size: made.size, offset: 8, expected: 42, desired: -1).must() == 42
+    assert load_at(second, name: name, size: seen.size, offset: 8).must() == -1
+    assert close(@second, name: name) == ok()
+    assert close(@first, name: name) == ok()
+
+    match close(@first, name: name)
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    assert remove(name) == ok()
+
+    match open(name)
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_FOUND
+
+    match remove(name)
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_FOUND

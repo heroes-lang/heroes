@@ -1,0 +1,3545 @@
+# Protocol Buffers: the wire format read and written field by field, `.proto`
+# files read at run time into a schema, messages held as a tree a program
+# matches on and encoded or decoded by that schema, the proto3 JSON mapping to
+# and from a `json.Value`, and the well-known types. There is no code
+# generator: a program reads its `.proto` files when it starts, holds each
+# message as a `Message`, and moves a record of its own into and out of one by
+# the record's checked field names, `Person::name` (spec § 9), as the example
+# of `set_int` shows.
+#
+# Nothing here follows the data with recursion: a message nested deep is read
+# and written on stacks this package holds, and `decode` reads no deeper than
+# `DEFAULT_MAX_DEPTH` unless it is asked to. It reads no stream and frames no
+# call: `io` moves the bytes, and `grpc` frames them. It does not write the
+# text format, nor a `FileDescriptorSet`; its ledger says why.
+#
+# It fails with `invalid`, `not_found`, `does_not_fit` and `not_text`, and
+# hands on the failure of the function a program gives `parse_schema`.
+
+use bytes
+use json
+use maps
+use protobuf/internal/bits as twos
+use protobuf/internal/carried
+use protobuf/internal/decoder
+use protobuf/internal/encoder
+use protobuf/internal/event
+use protobuf/internal/json_in
+use protobuf/internal/json_out
+use protobuf/internal/linker
+use protobuf/internal/model
+use protobuf/internal/occurrence
+use protobuf/internal/samples
+use protobuf/internal/wire as wires
+use protobuf/internal/wkt
+use strings
+use time
+
+## The value
+
+# One value of a field: a `match` on it answers all thirteen cases. Each
+# number keeps the width its kind has on the wire, so a value read and written
+# again is the same bytes.
+variant Value
+    # A `bool`.
+    boolean
+        # The truth value.
+        v: bool
+    # An `int32`, `sint32` or `sfixed32`.
+    int32
+        # The number.
+        v: i32
+    # An `int64`, `sint64` or `sfixed64`.
+    int64
+        # The number.
+        v: i64
+    # A `uint32` or `fixed32`.
+    uint32
+        # The number.
+        v: u32
+    # A `uint64` or `fixed64`.
+    uint64
+        # The number.
+        v: u64
+    # A `float`.
+    float
+        # The number, `nan` and the infinities included.
+        v: f32
+    # A `double`.
+    double
+        # The number, `nan` and the infinities included.
+        v: f64
+    # A `string`.
+    text
+        # The characters.
+        v: str
+    # A `bytes`, or a `string` whose bytes are not UTF-8 where its file does
+    # not ask them to be, as proto2's do not: it is kept, never lost.
+    binary
+        # The bytes.
+        v: [u8]
+    # A value of an enum, by its number, which the enum may not name.
+    enumeration
+        # The number.
+        number: i32
+    # A message, a group's included.
+    message
+        # The message.
+        m: Message
+    # The values of a repeated field, in order.
+    list
+        # The values, each of the field's kind.
+        items: [Value]
+    # The entries of a map field, in the order of their keys.
+    entries
+        # The entries, no key twice.
+        entries: [Entry]
+
+# One entry of a map field.
+record Entry
+    # The key: a `boolean`, an integer of the key's kind or a `text`.
+    key: Value
+    # The value, of the map's value kind.
+    value: Value
+
+# A message of any type the schema holds, as a tree: the fields it holds by
+# number, and the bytes of those its type does not declare. `new_message`
+# makes an empty one, and `set` and its neighbours fill it checking each
+# value's kind; built directly, it is checked when it is encoded.
+#
+# A field absent from `fields` is unset, and reads as its default. A field
+# without presence, as proto3's plain scalars are, is never held at its
+# default: `set` and `decode` leave it out. A repeated field is held only while
+# it holds a value, as a `.list`, and a map field as `.entries`. So `==` on two
+# messages is the protocol's equality, but that two `nan` are never equal and
+# that unknown bytes are compared as read.
+record Message
+    # The full name of its type, `shop.Order`, with no leading dot.
+    type_name: str
+    # The values set, by field number. An extension stands here by its number.
+    fields: {i64: Value}
+    # The fields its type does not declare, as they were read: tags and values
+    # in order, written back after the others by `encode`.
+    unknown: [u8]
+
+## Codes and limits
+
+# The code of bytes, a `.proto` text or JSON that is not what the function
+# reads, and of a value not of its field's kind.
+constant INVALID: str
+    "invalid"
+
+# The code of a type, a field, a file or a name the schema does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a number past what its field's kind holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a `string` field whose bytes are not UTF-8 where its file asks
+# them to be.
+constant NOT_TEXT: str
+    "not_text"
+
+# The deepest nesting `decode` and `from_json` read: a message inside a message
+# is 2 deep. C++ and Python's runtimes stop at the same depth.
+constant DEFAULT_MAX_DEPTH: i64
+    100
+
+# The largest field number, 2^29 - 1.
+constant MAX_FIELD_NUMBER: i64
+    536870911
+
+# The prefix `pack_any` writes before a type's full name, as every runtime
+# writes it.
+constant TYPE_URL_PREFIX: str
+    "type.googleapis.com/"
+
+## The wire, field by field
+
+# How a field's value is written on the wire.
+variant WireType
+    # A varint, wire type 0.
+    varint
+    # Eight bytes, wire type 1.
+    fixed64
+    # A varint length, then that many bytes, wire type 2.
+    length_delimited
+    # The start of a group, wire type 3.
+    start_group
+    # The end of a group, wire type 4.
+    end_group
+    # Four bytes, wire type 5.
+    fixed32
+
+# A number read from the wire, and where the bytes after it begin.
+record WireNumber
+    # The number: a varint's, or four or eight bytes' little-endian.
+    value: u64
+    # The index of the byte after it.
+    next: i64
+
+# A field's tag read from the wire.
+record WireTag
+    # The field number, 1 to `MAX_FIELD_NUMBER`.
+    number: i64
+    # How its value is written.
+    wire: WireType
+    # The index of the value's first byte.
+    next: i64
+
+# A length-delimited value read from the wire.
+record WireBytes
+    # The bytes, the length taken off.
+    value: [u8]
+    # The index of the byte after them.
+    next: i64
+
+# Writes `number`'s tag with `wire` at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `number`: the field number, 1 to `MAX_FIELD_NUMBER`.
+# - `wire`: how the value after it is written.
+#
+# Aborts where `number` is outside 1 to `MAX_FIELD_NUMBER`. See also
+# `decode_tag`.
+function push_tag(@to: [u8], number: i64, wire: WireType)
+    code = match wire
+        .varint           => 0
+        .fixed64          => 1
+        .length_delimited => 2
+        .start_group      => 3
+        .end_group        => 4
+        .fixed32          => 5
+
+    wires.push_tag(@to, number: number, wire: code)
+
+# Writes `v` as a varint at the end of `to`: seven bits a byte, the lowest
+# first.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: any `u64`; one byte up to 127, ten for the largest.
+#
+# See also `decode_varint`, `to_zigzag`.
+function push_varint(@to: [u8], v: u64)
+    wires.push_varint(@to, v)
+
+# Writes `v` as four bytes, the lowest first, at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: any `u32`.
+#
+# See also `decode_fixed32`, `bits_of_float`.
+function push_fixed32(@to: [u8], v: u32)
+    wires.push_fixed32(@to, v)
+
+# Writes `v` as eight bytes, the lowest first, at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: any `u64`.
+#
+# See also `decode_fixed64`, `bits_of_double`.
+function push_fixed64(@to: [u8], v: u64)
+    wires.push_fixed64(@to, v)
+
+# Writes the length of `v` as a varint, then `v`, at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: the bytes, of any length, the empty list included.
+#
+# See also `decode_length_delimited`.
+function push_length_delimited(@to: [u8], v: [u8])
+    wires.push_bytes(to: @to, v: v)
+
+# The tag that begins at byte `at` of `data`.
+#
+# - `data`: the bytes.
+# - `at`: the index of the tag's first byte, 0 to the length of `data`.
+#
+# Fails `invalid` where the bytes end inside the tag, where its varint passes
+# 32 bits, where its wire type is 6 or 7, and where its number is 0 or past
+# `MAX_FIELD_NUMBER`; the message names the byte. See also `push_tag`,
+# `skip_field`.
+function decode_tag(data: [u8], at: i64) -> WireTag?
+    t = wires.tag(data, at: at)?
+
+    wire: WireType = if t.wire == 0
+        .varint
+    else if t.wire == 1
+        .fixed64
+    else if t.wire == 2
+        .length_delimited
+    else if t.wire == 3
+        .start_group
+    else if t.wire == 4
+        .end_group
+    else
+        .fixed32
+    return ok(WireTag(number: t.number, wire: wire, next: t.next))
+
+# The varint that begins at byte `at` of `data`.
+#
+# - `data`: the bytes.
+# - `at`: the index of its first byte, 0 to the length of `data`.
+#
+# A varint written longer than it needs is read, up to ten bytes. Fails
+# `invalid` where the bytes end inside it, and where it has an eleventh byte or
+# a tenth above 1, which pass 64 bits. See also `push_varint`.
+function decode_varint(data: [u8], at: i64) -> WireNumber?
+    got = wires.varint(data, at: at)?
+    return ok(WireNumber(value: got.value, next: got.next))
+
+# The four bytes that begin at byte `at` of `data`, the lowest first.
+#
+# - `data`: the bytes.
+# - `at`: the index of the first, 0 to the length of `data`.
+#
+# Fails `invalid` where fewer than four bytes are left. See also
+# `push_fixed32`, `float_of_bits`.
+function decode_fixed32(data: [u8], at: i64) -> WireNumber?
+    got = wires.fixed32(data, at: at)?
+    return ok(WireNumber(value: got.value, next: got.next))
+
+# The eight bytes that begin at byte `at` of `data`, the lowest first.
+#
+# - `data`: the bytes.
+# - `at`: the index of the first, 0 to the length of `data`.
+#
+# Fails `invalid` where fewer than eight bytes are left. See also
+# `push_fixed64`, `double_of_bits`.
+function decode_fixed64(data: [u8], at: i64) -> WireNumber?
+    got = wires.fixed64(data, at: at)?
+    return ok(WireNumber(value: got.value, next: got.next))
+
+# The length-delimited value that begins at byte `at` of `data`: a varint
+# length, then that many bytes.
+#
+# - `data`: the bytes.
+# - `at`: the index of the length's first byte, 0 to the length of `data`.
+#
+# Fails `invalid` where the length is not a varint or passes the bytes left,
+# before anything is held for it. See also `push_length_delimited`.
+function decode_length_delimited(data: [u8], at: i64) -> WireBytes?
+    got = wires.delimited(data, at: at)?
+    return ok(WireBytes(value: got.data, next: got.next))
+
+# The index past the value of the field whose tag `tag` is, a group's end tag
+# included: the way past a field a program does not read.
+#
+# - `data`: the bytes holding the field.
+# - `tag`: the field's tag, as `decode_tag` answered it at its place in `data`.
+#
+# A group is skipped to the end tag of its own number, the groups inside it
+# too, no deeper than `DEFAULT_MAX_DEPTH`. Fails `invalid` where the value
+# passes the end of `data`, where a group's end tag is missing or of another
+# number, where `tag` is itself an end tag, and where groups nest deeper. See
+# also `decode_tag`.
+function skip_field(data: [u8], tag: WireTag) -> i64?
+    code = match tag.wire
+        .varint           => 0
+        .fixed64          => 1
+        .length_delimited => 2
+        .start_group      => 3
+        .end_group        => 4
+        .fixed32          => 5
+
+    return wires.skip(data, number: tag.number, wire: code, at: tag.next, max_depth: DEFAULT_MAX_DEPTH)
+
+# `n` in zig-zag form, as `sint32` and `sint64` write it: 0, -1, 1, -2 become
+# 0, 1, 2, 3.
+#
+# - `n`: any `i64`.
+#
+# See also `from_zigzag`.
+function to_zigzag(n: i64) -> u64
+    return twos.zigzag(n)
+
+# The number whose zig-zag form `n` is.
+#
+# - `n`: any `u64`.
+#
+# See also `to_zigzag`.
+function from_zigzag(n: u64) -> i64
+    return twos.unzigzag(n)
+
+# How many bytes `push_varint` writes for `v`, 1 to 10.
+#
+# - `v`: any `u64`.
+#
+# See also `push_varint`.
+function size_of_varint(v: u64) -> i64
+    return wires.varint_size(v)
+
+# The 32 bits of `x` as IEEE 754 lays them out, the sign highest, as a `float`
+# field writes them.
+#
+# - `x`: any `f32`; every `nan` is the quiet one with its sign clear,
+#   `0x7fc00000`, since the language reads no float's own bits.
+#
+# See also `float_of_bits`.
+function bits_of_float(x: f32) -> u32
+    return twos.of_float(x)
+
+# The `f32` whose bits are `bits`.
+#
+# - `bits`: any `u32`; every `nan` among them gives the one `nan`.
+#
+# See also `bits_of_float`.
+function float_of_bits(bits: u32) -> f32
+    return twos.float_of(bits)
+
+# The 64 bits of `x` as IEEE 754 lays them out, as a `double` field writes
+# them.
+#
+# - `x`: any `f64`; every `nan` is `0x7ff8000000000000`.
+#
+# See also `double_of_bits`.
+function bits_of_double(x: f64) -> u64
+    return twos.of_double(x)
+
+# The `f64` whose bits are `bits`.
+#
+# - `bits`: any `u64`; every `nan` among them gives the one `nan`.
+#
+# See also `bits_of_double`.
+function double_of_bits(bits: u64) -> f64
+    return twos.double_of(bits)
+
+## Bytes read with no schema
+
+# One field read with no schema: its number and its value as the wire holds
+# it, which says nothing of the kind its `.proto` declares.
+record RawField
+    # The field number.
+    number: i64
+    # The value.
+    value: RawValue
+
+# A field's value as the wire holds it.
+variant RawValue
+    # A varint, wire type 0.
+    varint
+        # The number.
+        v: u64
+    # Eight bytes, wire type 1.
+    fixed64
+        # The bytes as a little-endian number.
+        v: u64
+    # A length-delimited value, wire type 2: a string, bytes, a message or a
+    # packed list, which the wire does not tell apart.
+    length_delimited
+        # The bytes.
+        v: [u8]
+    # A group, wire types 3 and 4: the fields between its two tags.
+    group
+        # The fields, in order.
+        fields: [RawField]
+    # Four bytes, wire type 5.
+    fixed32
+        # The bytes as a little-endian number.
+        v: u32
+
+# The fields `data` holds, read with no schema, as `protoc --decode_raw` reads
+# them.
+#
+# - `data`: the encoded fields; the empty list holds none.
+#
+# Fails `invalid` where a tag, a value or a group is not whole, and where
+# groups nest deeper than `DEFAULT_MAX_DEPTH`; the message names the byte. A
+# length-delimited value is not looked inside. See also `encode_raw`.
+function decode_raw(data: [u8]) -> [RawField]?
+    raws = wires.raw_fields(data, max_depth: DEFAULT_MAX_DEPTH)?
+
+    # The fields of the groups still open, the innermost last, and their
+    # numbers.
+    levels: [[RawField]] @= []
+    numbers: [i64] @= []
+    current: [RawField] @= []
+
+    for r in raws
+        if r.wire == wires.START_GROUP
+            levels @ levels.push(current)
+            numbers @ numbers.push(r.number)
+            current @ []
+        else if r.wire == wires.END_GROUP
+            inner = current
+            current @ levels[levels.len() - 1]
+            levels @ levels.slice(from: 0, to: levels.len() - 1)
+            numbers @ numbers.slice(from: 0, to: numbers.len() - 1)
+            current @ current.push(RawField(number: r.number, value: .group(fields: inner)))
+        else
+            value: RawValue = if r.wire == wires.VARINT
+                .varint(v: r.value)
+            else if r.wire == wires.FIXED64
+                .fixed64(v: r.value)
+            else if r.wire == wires.FIXED32
+                .fixed32(v: to_u32(r.value).must())
+            else
+                .length_delimited(v: r.data)
+            current @ current.push(RawField(number: r.number, value: value))
+
+    return ok(current)
+
+# `fields` written on the wire, in their order.
+#
+# - `fields`: the fields; numbers outside 1 to `MAX_FIELD_NUMBER` abort.
+#
+# `decode_raw` reads back every list this writes. Aborts where a number is
+# outside 1 to `MAX_FIELD_NUMBER`. See also `decode_raw`.
+function encode_raw(fields: [RawField]) -> [u8]
+    out: [u8] @= []
+
+    # What is left to write, the next on top, and for each the number of the
+    # group it ends, or 0 for a field.
+    left: [RawField] @= []
+    ends: [i64] @= []
+    k: i64 @= fields.len()
+
+    while k > 0
+        k @ k - 1
+        left @ left.push(fields[k])
+        ends @ ends.push(0)
+
+    while left.len() > 0
+        here = left[left.len() - 1]
+        end = ends[ends.len() - 1]
+        left @ left.slice(from: 0, to: left.len() - 1)
+        ends @ ends.slice(from: 0, to: ends.len() - 1)
+
+        if end > 0
+            wires.push_tag(@out, number: end, wire: wires.END_GROUP)
+        else
+            match here.value
+                .varint x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.VARINT)
+                    wires.push_varint(@out, x.v)
+                .fixed64 x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.FIXED64)
+                    wires.push_fixed64(@out, x.v)
+                .length_delimited x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.BYTES)
+                    wires.push_bytes(to: @out, v: x.v)
+                .fixed32 x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.FIXED32)
+                    wires.push_fixed32(@out, x.v)
+                .group g =>
+                    wires.push_tag(@out, number: here.number, wire: wires.START_GROUP)
+                    left @ left.push(here)
+                    ends @ ends.push(here.number)
+                    j: i64 @= g.fields.len()
+
+                    while j > 0
+                        j @ j - 1
+                        left @ left.push(g.fields[j])
+                        ends @ ends.push(0)
+
+    return out
+
+## The schema
+
+# How a `.proto` file is written: proto2, proto3, or an edition.
+variant Syntax
+    # `syntax = "proto2";`, or no syntax line.
+    proto2
+    # `syntax = "proto3";`.
+    proto3
+    # `edition = "2023";` and later.
+    editions
+        # The edition as written, `2023`.
+        edition: str
+
+# The kind of a field, as its `.proto` names it.
+variant Kind
+    # `double`.
+    double
+    # `float`.
+    float
+    # `int32`.
+    int32
+    # `int64`.
+    int64
+    # `uint32`.
+    uint32
+    # `uint64`.
+    uint64
+    # `sint32`, zig-zag on the wire.
+    sint32
+    # `sint64`, zig-zag on the wire.
+    sint64
+    # `fixed32`.
+    fixed32
+    # `fixed64`.
+    fixed64
+    # `sfixed32`.
+    sfixed32
+    # `sfixed64`.
+    sfixed64
+    # `bool`.
+    boolean
+    # `string`.
+    text
+    # `bytes`.
+    binary
+    # An enum, which `Field.type_name` names.
+    enumeration
+    # A message, which `Field.type_name` names.
+    message
+    # A group, proto2's or an edition's delimited message, which
+    # `Field.type_name` names.
+    group
+
+# How many values a field holds.
+variant Cardinality
+    # One at most.
+    optional
+    # One, which proto2 requires a message to hold.
+    required
+    # Any number, a map field's entries included.
+    repeated
+
+# The value of an option, as the file wrote it.
+variant Constant
+    # An identifier: `true`, `false`, `inf`, `nan` or an enum value's name.
+    identifier
+        # The identifier, dots included.
+        v: str
+    # A number, as written with its sign: `-12`, `0x1f`, `1.5e3`.
+    number
+        # The text of the number.
+        text: str
+    # A string literal, adjacent ones joined, its escapes read.
+    quoted
+        # The bytes, which may not be UTF-8.
+        v: [u8]
+    # A message in the text format, between braces.
+    aggregate
+        # The text between the braces, as written.
+        text: str
+
+# One option a declaration sets.
+record OptionSetting
+    # The option's name as written: `deprecated`, `features.field_presence`,
+    # `(my.option).size`.
+    name: str
+    # Its value.
+    value: Constant
+
+# A range of numbers, both ends included, as `reserved 9 to 11;` writes it.
+record Range
+    # The first number.
+    first: i64
+    # The last number, `MAX_FIELD_NUMBER` where the file wrote `max`.
+    last: i64
+
+# A field of a message, or an extension. Every fact an edition's features
+# decide is resolved here into the field's own flags.
+record Field
+    # The name as declared, `order_id`.
+    name: str
+    # The full name, `shop.Order.order_id`.
+    full_name: str
+    # The name in JSON: the file's `json_name`, or the name in lowerCamelCase,
+    # `orderId`.
+    json_name: str
+    # The number, 1 to `MAX_FIELD_NUMBER`.
+    number: i64
+    # The kind.
+    kind: Kind
+    # How many values it holds.
+    cardinality: Cardinality
+    # The full name of its message or enum type for the kinds that have one,
+    # and empty for the others.
+    type_name: str
+    # Whether a message records that it is set even at its default: a
+    # message's field, a oneof's, proto2's, proto3's `optional`, an edition's
+    # `EXPLICIT`. A repeated field has none.
+    has_presence: bool
+    # Whether a repeated scalar is written packed, one length-delimited value
+    # holding them all.
+    packed: bool
+    # Whether it is a map field: then `type_name` names its entry message,
+    # whose field 1 is the key and field 2 the value.
+    is_map: bool
+    # The name of the oneof holding it, and empty where none does; no oneof's
+    # name is empty.
+    oneof: str
+    # Whether proto3's `optional` declared it.
+    proto3_optional: bool
+    # The value it reads as when unset: the file's `default` where it wrote
+    # one, else the kind's zero, an enum's first value where the enum is
+    # closed, and the empty message for a message.
+    default_value: Value
+    # Whether the file wrote a `default`.
+    has_default: bool
+    # Whether a `string` value must be UTF-8 on the wire.
+    validate_utf8: bool
+    # Whether its enum is closed: a number the enum does not name is then
+    # kept with the unknown fields, as proto2 keeps it.
+    closed_enum: bool
+    # For an extension, the full name of the message it extends; empty for a
+    # field.
+    extendee: str
+    # The options it sets, as written.
+    options: [OptionSetting]
+
+# A oneof: fields of which a message holds at most one.
+record Oneof
+    # The name.
+    name: str
+    # The full name.
+    full_name: str
+    # Whether proto3's `optional` made it for one field.
+    synthetic: bool
+    # The names of its fields, as declared.
+    fields: [str]
+    # The options it sets.
+    options: [OptionSetting]
+
+# A message type: what `new_message`, `decode` and the JSON mapping read.
+record MessageType
+    # The name, `Order`.
+    name: str
+    # The full name, `shop.Order`.
+    full_name: str
+    # The file declaring it.
+    file: str
+    # The fields, as declared.
+    fields: [Field]
+    # The oneofs, as declared.
+    oneofs: [Oneof]
+    # The full names of the messages declared inside it.
+    nested_messages: [str]
+    # The full names of the enums declared inside it.
+    nested_enums: [str]
+    # The numbers extensions may take.
+    extension_ranges: [Range]
+    # The numbers reserved.
+    reserved_ranges: [Range]
+    # The names reserved.
+    reserved_names: [str]
+    # Whether it is the entry of a map field, made by the file's `map<K, V>`.
+    is_map_entry: bool
+    # The options it sets.
+    options: [OptionSetting]
+
+# One value of an enum.
+record EnumValue
+    # The name, `COLOR_RED`.
+    name: str
+    # The number.
+    number: i32
+    # The options it sets.
+    options: [OptionSetting]
+
+# An enum type.
+record EnumType
+    # The name.
+    name: str
+    # The full name.
+    full_name: str
+    # The file declaring it.
+    file: str
+    # The values, as declared; two may share a number where the enum sets
+    # `allow_alias`.
+    values: [EnumValue]
+    # Whether it is closed, as proto2's are: a number it does not name, read
+    # from the wire, goes to the unknown fields.
+    closed: bool
+    # The numbers reserved.
+    reserved_ranges: [Range]
+    # The names reserved.
+    reserved_names: [str]
+    # The options it sets.
+    options: [OptionSetting]
+
+# One method of a service, what `grpc` calls.
+record Method
+    # The name, `GetOrder`.
+    name: str
+    # The full name, `shop.Shop.GetOrder`.
+    full_name: str
+    # The full name of the request's message type.
+    input_type: str
+    # The full name of the response's message type.
+    output_type: str
+    # Whether the client sends a stream of requests.
+    client_streaming: bool
+    # Whether the server sends a stream of responses.
+    server_streaming: bool
+    # The options it sets.
+    options: [OptionSetting]
+
+# A service.
+record Service
+    # The name.
+    name: str
+    # The full name, `shop.Shop`.
+    full_name: str
+    # The file declaring it.
+    file: str
+    # The methods, as declared.
+    methods: [Method]
+    # The options it sets.
+    options: [OptionSetting]
+
+# A `.proto` file, read.
+record File
+    # The name it was read by, as an `import` names it.
+    name: str
+    # Its package, empty where it declares none.
+    package: str
+    # How it is written.
+    syntax: Syntax
+    # The files it imports, in order.
+    dependencies: [str]
+    # Those it imports `public`.
+    public_dependencies: [str]
+    # Those it imports `weak`.
+    weak_dependencies: [str]
+    # The full names of its top-level messages.
+    messages: [str]
+    # The full names of its top-level enums.
+    enums: [str]
+    # The full names of its services.
+    services: [str]
+    # The full names of the extensions declared at its top level.
+    extensions: [str]
+    # The options it sets.
+    options: [OptionSetting]
+
+# Every file a program read and everything they declare, each name resolved:
+# made only by `parse_schema` and `parse_schema_text`. The fields are for a
+# program to read; changing one changes nothing this package reads.
+record Schema
+    # The files, by name, in the order they were read, an import before the
+    # file importing it.
+    files: {str: File}
+    # The message types, by full name, a map field's entries included.
+    messages: {str: MessageType}
+    # The enums, by full name.
+    enums: {str: EnumType}
+    # The services, by full name.
+    services: {str: Service}
+    # The extensions, by full name, those declared inside a message included.
+    extensions: {str: Field}
+    # The same descriptors as this package's own modules read them.
+    compiled: model.Schema
+
+## Reading `.proto` files
+
+# The schema the files `names` and every file they import declare, each file's
+# text given by `open`.
+#
+# - `names`: the files to read, as an `import` would name them,
+#   `shop/order.proto`; at least one.
+# - `open`: called once with the name of each file to read, `names`' and those
+#   they import, and answers its text; a failure it answers is handed on. The
+#   well-known types' files, `google/protobuf/timestamp.proto` and its
+#   neighbours, and `google/protobuf/descriptor.proto` for options, are this
+#   package's own and never asked of it.
+#
+# Reads proto2, proto3 and edition 2023, and resolves every type name by the
+# language's scoping rules. Fails where `open` fails, with its code; fails
+# `invalid` where a text is not a `.proto` file, where two files import each
+# other, where a type name names nothing or names what is not a type, where a
+# number or a name is used twice, reserved, or outside its range, and where a
+# feature or an option is not one the file's syntax allows. A failure of the
+# text's grammar opens with the file's name, the line and the column, counted
+# from 1, and one of its meaning with the declaration's full name. Declarations
+# nest no deeper than 100. See also `parse_schema_text`, `message_named`.
+function parse_schema(names: [str], open: (function(str) -> str?)) -> Schema?
+    if names.len() == 0
+        return fail(code: INVALID, msg: "no file was named to read")
+    texts: {str: str} @= {}
+    pending: [str] @= names
+
+    while pending.len() > 0
+        name = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        if texts[name].is_err() && !carried.is_carried(name)
+            text = open(name)?
+            texts[name] @ text
+
+            for d in linker.imports_of(name: name, text: text)?
+                pending @ pending.push(d)
+
+    return parse_schema_texts(texts)
+
+# The schema the one file `text` declares, read under the name `name`.
+#
+# - `name`: the name the file is known by, `order.proto`.
+# - `text`: the file's text; it may import the well-known types' files and
+#   nothing else.
+#
+# Fails as `parse_schema` fails, and `not_found` where `text` imports a file
+# that is not a well-known type's. See also `parse_schema`.
+function parse_schema_text(name: str, text: str) -> Schema?
+    texts: {str: str} @= {}
+    texts[name] @ text
+    return parse_schema_texts(texts)
+
+# The schema the files `texts` declare, each file's text given by its name,
+# imports read among them.
+#
+# - `texts`: each file's text by the name an `import` gives it; the well-known
+#   types' files may be imported without being given.
+#
+# Fails as `parse_schema` fails, and `not_found` where a file imports one
+# `texts` does not hold. See also `parse_schema`.
+function parse_schema_texts(texts: {str: str}) -> Schema?
+    compiled = linker.read(texts)?
+
+    # Every declaration's options are made public in one pass: the walk below
+    # notes where each declaration's begin in `flat`, and the walk after it
+    # takes them back in the same order. The fields of the messages come
+    # first, then the extensions, so that one loop makes every `Field`.
+    flat: [model.Setting] @= []
+    starts: [i64] @= []
+    every_field: [model.Field] @= []
+    oneof_names: [str] @= []
+
+    for name in keys(compiled.messages)
+        m = compiled.messages[name].must()
+
+        for f in m.fields
+            starts @ starts.push(flat.len())
+
+            for o in f.options
+                flat @ flat.push(o)
+
+            every_field @ every_field.push(f)
+
+            in_oneof = if f.oneof >= 0
+                m.oneofs[f.oneof].name
+            else
+                ""
+            oneof_names @ oneof_names.push(in_oneof)
+
+    for name in keys(compiled.extensions)
+        x = compiled.extensions[name].must()
+        starts @ starts.push(flat.len())
+
+        for o in x.options
+            flat @ flat.push(o)
+
+        every_field @ every_field.push(x)
+        oneof_names @ oneof_names.push("")
+
+    for name in keys(compiled.messages)
+        m = compiled.messages[name].must()
+        starts @ starts.push(flat.len())
+
+        for o in m.options
+            flat @ flat.push(o)
+
+        for one in m.oneofs
+            starts @ starts.push(flat.len())
+
+            for o in one.options
+                flat @ flat.push(o)
+
+    for name in keys(compiled.enums)
+        e = compiled.enums[name].must()
+        starts @ starts.push(flat.len())
+
+        for o in e.options
+            flat @ flat.push(o)
+
+        for v in e.values
+            starts @ starts.push(flat.len())
+
+            for o in v.options
+                flat @ flat.push(o)
+
+    for name in keys(compiled.services)
+        s = compiled.services[name].must()
+        starts @ starts.push(flat.len())
+
+        for o in s.options
+            flat @ flat.push(o)
+
+        for method in s.methods
+            starts @ starts.push(flat.len())
+
+            for o in method.options
+                flat @ flat.push(o)
+
+    for name in keys(compiled.files)
+        starts @ starts.push(flat.len())
+
+        for o in compiled.files[name].must().options
+            flat @ flat.push(o)
+
+    starts @ starts.push(flat.len())
+    settings: [OptionSetting] @= []
+
+    for o in flat
+        value: Constant = if o.kind == model.IDENTIFIER
+            .identifier(v: o.text)
+        else if o.kind == model.NUMBER
+            .number(text: o.text)
+        else if o.kind == model.QUOTED
+            .quoted(v: o.data)
+        else
+            .aggregate(text: o.text)
+        settings @ settings.push(OptionSetting(name: o.name, value: value))
+
+    d: i64 @= 0
+    made_fields: [Field] @= []
+
+    for k in range(from: 0, to: every_field.len())
+        f = every_field[k]
+        options = settings.slice(from: starts[d], to: starts[d + 1])
+        d @ d + 1
+        b = f.default_bits
+        c = f.kind
+
+        kind: Kind = if c == model.DOUBLE
+            .double
+        else if c == model.FLOAT
+            .float
+        else if c == model.INT64
+            .int64
+        else if c == model.UINT64
+            .uint64
+        else if c == model.INT32
+            .int32
+        else if c == model.FIXED64
+            .fixed64
+        else if c == model.FIXED32
+            .fixed32
+        else if c == model.BOOL
+            .boolean
+        else if c == model.STRING
+            .text
+        else if c == model.GROUP
+            .group
+        else if c == model.MESSAGE
+            .message
+        else if c == model.BYTES
+            .binary
+        else if c == model.UINT32
+            .uint32
+        else if c == model.ENUM
+            .enumeration
+        else if c == model.SFIXED32
+            .sfixed32
+        else if c == model.SFIXED64
+            .sfixed64
+        else if c == model.SINT32
+            .sint32
+        else
+            .sint64
+
+        fallback: Value = if c == model.DOUBLE
+            .double(v: twos.double_of(b))
+        else if c == model.FLOAT
+            .float(v: to_f32(twos.double_of(b)))
+        else if c == model.INT64 || c == model.SINT64 || c == model.SFIXED64
+            .int64(v: twos.i64_of(b))
+        else if c == model.INT32 || c == model.SINT32 || c == model.SFIXED32
+            .int32(v: twos.i32_of(b))
+        else if c == model.UINT64 || c == model.FIXED64
+            .uint64(v: b)
+        else if c == model.UINT32 || c == model.FIXED32
+            .uint32(v: twos.u32_of(b))
+        else if c == model.BOOL
+            .boolean(v: b == 1)
+        else if c == model.STRING
+            .text(v: f.default_bytes.validated_bytes().default(""))
+        else if c == model.BYTES
+            .binary(v: f.default_bytes)
+        else if c == model.ENUM
+            .enumeration(number: twos.i32_of(b))
+        else
+            .message(m: Message(type_name: f.type_name, fields: {}, unknown: []))
+
+        cardinality: Cardinality = if f.label == model.REPEATED
+            .repeated
+        else if f.label == model.REQUIRED
+            .required
+        else
+            .optional
+        made_fields @ made_fields.push(
+            Field(name: f.name, full_name: f.full_name, json_name: f.json_name, number: f.number, kind: kind, cardinality: cardinality, type_name: f.type_name, has_presence: f.presence, packed: f.packed, is_map: f.is_map, oneof: oneof_names[k], proto3_optional: f.proto3_optional, default_value: fallback, has_default: f.has_default, validate_utf8: f.validate_utf8, closed_enum: f.closed_enum, extendee: f.extendee, options: options)
+        )
+
+    messages: {str: MessageType} @= {}
+    taken: i64 @= 0
+
+    for name in keys(compiled.messages)
+        m = compiled.messages[name].must()
+        fields = made_fields.slice(from: taken, to: taken + m.fields.len())
+        taken @ taken + m.fields.len()
+        messages[name] @ MessageType(
+            name: m.name,
+            full_name: m.full_name,
+            file: m.file,
+            fields: fields,
+            oneofs: [],
+            nested_messages: m.messages,
+            nested_enums: m.enums,
+            extension_ranges: [],
+            reserved_ranges: [],
+            reserved_names: m.reserved_names,
+            is_map_entry: m.map_entry,
+            options: []
+        )
+
+    extensions: {str: Field} @= {}
+
+    for name in keys(compiled.extensions)
+        extensions[name] @ made_fields[taken]
+        taken @ taken + 1
+
+    for name in keys(compiled.messages)
+        m = compiled.messages[name].must()
+        made: MessageType @= messages[name].must()
+        made.options @ settings.slice(from: starts[d], to: starts[d + 1])
+        d @ d + 1
+        oneofs: [Oneof] @= []
+
+        for one in m.oneofs
+            members: [str] @= []
+
+            for k in one.fields
+                members @ members.push(m.fields[k].name)
+
+            oneofs @ oneofs.push(
+                Oneof(name: one.name, full_name: one.full_name, synthetic: one.synthetic, fields: members, options: settings.slice(from: starts[d], to: starts[d + 1]))
+            )
+            d @ d + 1
+
+        extension_ranges: [Range] @= []
+
+        for r in m.extension_ranges
+            extension_ranges @ extension_ranges.push(Range(first: r.first, last: r.last))
+
+        reserved_ranges: [Range] @= []
+
+        for r in m.reserved_ranges
+            reserved_ranges @ reserved_ranges.push(Range(first: r.first, last: r.last))
+
+        made.oneofs @ oneofs
+        made.extension_ranges @ extension_ranges
+        made.reserved_ranges @ reserved_ranges
+        messages[name] @ made
+
+    enums: {str: EnumType} @= {}
+
+    for name in keys(compiled.enums)
+        e = compiled.enums[name].must()
+        own = settings.slice(from: starts[d], to: starts[d + 1])
+        d @ d + 1
+        values: [EnumValue] @= []
+
+        for v in e.values
+            values @ values.push(
+                EnumValue(name: v.name, number: to_i32(v.number).must(), options: settings.slice(from: starts[d], to: starts[d + 1]))
+            )
+            d @ d + 1
+
+        reserved_ranges: [Range] @= []
+
+        for r in e.reserved_ranges
+            reserved_ranges @ reserved_ranges.push(Range(first: r.first, last: r.last))
+
+        enums[name] @ EnumType(
+            name: e.name,
+            full_name: e.full_name,
+            file: e.file,
+            values: values,
+            closed: e.closed,
+            reserved_ranges: reserved_ranges,
+            reserved_names: e.reserved_names,
+            options: own
+        )
+
+    services: {str: Service} @= {}
+
+    for name in keys(compiled.services)
+        s = compiled.services[name].must()
+        own = settings.slice(from: starts[d], to: starts[d + 1])
+        d @ d + 1
+        methods: [Method] @= []
+
+        for method in s.methods
+            methods @ methods.push(
+                Method(name: method.name, full_name: method.full_name, input_type: method.input_type, output_type: method.output_type, client_streaming: method.client_streaming, server_streaming: method.server_streaming, options: settings.slice(from: starts[d], to: starts[d + 1]))
+            )
+            d @ d + 1
+
+        services[name] @ Service(name: s.name, full_name: s.full_name, file: s.file, methods: methods, options: own)
+
+    files: {str: File} @= {}
+
+    for name in keys(compiled.files)
+        f = compiled.files[name].must()
+
+        syntax: Syntax = if f.syntax == "proto3"
+            .proto3
+        else if f.syntax == "editions"
+            .editions(edition: f.edition)
+        else
+            .proto2
+        extension_names: [str] @= []
+
+        for x in f.extensions
+            extension_names @ extension_names.push(x.full_name)
+
+        files[name] @ File(
+            name: f.name,
+            package: f.package,
+            syntax: syntax,
+            dependencies: f.dependencies,
+            public_dependencies: f.public_dependencies,
+            weak_dependencies: f.weak_dependencies,
+            messages: f.messages,
+            enums: f.enums,
+            services: f.services,
+            extensions: extension_names,
+            options: settings.slice(from: starts[d], to: starts[d + 1])
+        )
+        d @ d + 1
+
+    return ok(
+        Schema(files: files, messages: messages, enums: enums, services: services, extensions: extensions, compiled: compiled)
+    )
+
+# The field `field` of the message type `type_name`, an extension's full name
+# included.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name.
+# - `field`: the field's name as declared, or, where it holds a dot, the full
+#   name of an extension of the type.
+#
+# Fails `not_found` where the type is not in the schema, declares no such
+# field, or the extension extends another type. See also `field_named`.
+function field_of(schema: Schema, type_name: str, field: str) -> Field?
+    t = message_named(schema, name: type_name)?
+
+    for k in range(from: 0, to: field.len())
+        if field[k] == '.'
+            x = extension_named(schema, name: field)?
+
+            if x.extendee != t.full_name
+                return fail(code: NOT_FOUND, msg: f"{x.full_name} extends {x.extendee}, not {t.full_name}")
+            return ok(x)
+
+    return field_named(t, name: field)
+
+# The message type whose full name is `name`.
+#
+# - `schema`: the schema to look in.
+# - `name`: the full name, `shop.Order`; a leading dot is taken off.
+#
+# Fails `not_found` where the schema holds no such message. See also
+# `field_named`.
+function message_named(schema: Schema, name: str) -> MessageType?
+    full = if name.len() > 0 && name[0] == '.'
+        name.slice(from: 1, to: name.len())
+    else
+        name
+
+    match schema.messages[full]
+        .ok t  => return ok(t)
+        .err _ => return fail(code: NOT_FOUND, msg: f"the schema holds no message {full}")
+
+# The enum whose full name is `name`.
+#
+# - `schema`: the schema to look in.
+# - `name`: the full name, `shop.Color`; a leading dot is taken off.
+#
+# Fails `not_found` where the schema holds no such enum. See also
+# `enum_value_named`.
+function enum_named(schema: Schema, name: str) -> EnumType?
+    full = if name.len() > 0 && name[0] == '.'
+        name.slice(from: 1, to: name.len())
+    else
+        name
+
+    match schema.enums[full]
+        .ok e  => return ok(e)
+        .err _ => return fail(code: NOT_FOUND, msg: f"the schema holds no enum {full}")
+
+# The service whose full name is `name`.
+#
+# - `schema`: the schema to look in.
+# - `name`: the full name, `shop.Shop`; a leading dot is taken off.
+#
+# Fails `not_found` where the schema holds no such service. See also
+# `method_named`.
+function service_named(schema: Schema, name: str) -> Service?
+    full = if name.len() > 0 && name[0] == '.'
+        name.slice(from: 1, to: name.len())
+    else
+        name
+
+    match schema.services[full]
+        .ok s  => return ok(s)
+        .err _ => return fail(code: NOT_FOUND, msg: f"the schema holds no service {full}")
+
+# The file read under the name `name`.
+#
+# - `schema`: the schema to look in.
+# - `name`: the name the file was read by.
+#
+# Fails `not_found` where no file was read by that name.
+function file_named(schema: Schema, name: str) -> File?
+    match schema.files[name]
+        .ok f  => return ok(f)
+        .err _ => return fail(code: NOT_FOUND, msg: f"no file was read as {name}")
+
+# The extension whose full name is `name`.
+#
+# - `schema`: the schema to look in.
+# - `name`: the full name, `shop.priority`; a leading dot is taken off.
+#
+# Fails `not_found` where the schema holds no such extension.
+function extension_named(schema: Schema, name: str) -> Field?
+    full = if name.len() > 0 && name[0] == '.'
+        name.slice(from: 1, to: name.len())
+    else
+        name
+
+    match schema.extensions[full]
+        .ok x  => return ok(x)
+        .err _ => return fail(code: NOT_FOUND, msg: f"the schema holds no extension {full}")
+
+# The field of `t` named `name`.
+#
+# - `t`: the message type.
+# - `name`: the field's name as declared, never its JSON name.
+#
+# Fails `not_found` where `t` declares no such field, and the message names
+# those it declares. See also `field_numbered`.
+function field_named(t: MessageType, name: str) -> Field?
+    names: [str] @= []
+
+    for f in t.fields
+        if f.name == name
+            return ok(f)
+        names @ names.push(f.name)
+
+    return fail(code: NOT_FOUND, msg: f"{t.full_name} has no field {name}; it has {names.join(", ")}")
+
+# The field of `t` whose number is `number`.
+#
+# - `t`: the message type.
+# - `number`: the field number.
+#
+# Fails `not_found` where `t` declares no field of that number. See also
+# `field_named`.
+function field_numbered(t: MessageType, number: i64) -> Field?
+    for f in t.fields
+        if f.number == number
+            return ok(f)
+
+    return fail(code: NOT_FOUND, msg: f"{t.full_name} has no field numbered {number}")
+
+# The method of `s` named `name`.
+#
+# - `s`: the service.
+# - `name`: the method's name, `GetOrder`.
+#
+# Fails `not_found` where `s` declares no such method. See also
+# `service_named`.
+function method_named(s: Service, name: str) -> Method?
+    for method in s.methods
+        if method.name == name
+            return ok(method)
+
+    return fail(code: NOT_FOUND, msg: f"{s.full_name} has no method {name}")
+
+# The value of `e` named `name`.
+#
+# - `e`: the enum.
+# - `name`: the value's name, `COLOR_RED`.
+#
+# Fails `not_found` where `e` names no such value. See also
+# `enum_value_numbered`.
+function enum_value_named(e: EnumType, name: str) -> EnumValue?
+    for v in e.values
+        if v.name == name
+            return ok(v)
+
+    return fail(code: NOT_FOUND, msg: f"{e.full_name} has no value {name}")
+
+# The first value of `e` whose number is `number`.
+#
+# - `e`: the enum.
+# - `number`: the number; an alias shares it, and the first declared answers.
+#
+# Fails `not_found` where `e` names no value of that number, which an open
+# enum's field may still hold. See also `enum_value_named`.
+function enum_value_numbered(e: EnumType, number: i32) -> EnumValue?
+    for v in e.values
+        if v.number == number
+            return ok(v)
+
+    return fail(code: NOT_FOUND, msg: f"{e.full_name} names no value {number}")
+
+## Messages
+
+# An empty message of the type `type_name`.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name; a leading dot is taken off.
+#
+# Fails `not_found` where the schema holds no such message. See also `set`,
+# `decode`.
+function new_message(schema: Schema, type_name: str) -> Message?
+    t = message_named(schema, name: type_name)?
+    return ok(Message(type_name: t.full_name, fields: {}, unknown: []))
+
+# The value of `m`'s field `field`, or its default where it is unset.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+# - `field`: the field's name as declared, or an extension's full name.
+#
+# An unset repeated field answers an empty `.list`, a map field empty
+# `.entries`, a message field the empty message. Fails `not_found` where the
+# type declares no such field. See also `has`, `set`.
+function get(schema: Schema, m: Message, field: str) -> Value?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+
+    match m.fields[f.number]
+        .ok v => return ok(v)
+        .err _ =>
+            if f.is_map
+                return ok(.entries(entries: []))
+
+            match f.cardinality
+                .repeated             => return ok(.list(items: []))
+                .optional | .required => return ok(f.default_value)
+
+# Whether `m` holds a value for `field`.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+# - `field`: the field's name as declared, or an extension's full name.
+#
+# A repeated or map field is held while it holds a value; a field without
+# presence while it is not at its default. Fails `not_found` where the type
+# declares no such field. See also `get`.
+function has(schema: Schema, m: Message, field: str) -> bool?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    return ok(!m.fields[f.number].is_err())
+
+# Sets `m`'s field `field` to `value`.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the field's name as declared, or an extension's full name.
+# - `value`: a value of the field's kind: a `.list` for a repeated field,
+#   `.entries` for a map; a message of the field's own type.
+#
+# Setting a field of a oneof clears the oneof's others; setting a field
+# without presence to its default, or a repeated one to an empty list, clears
+# it. A map's entries are ordered by key, the last of a key kept. Fails
+# `not_found` where the type declares no such field, and `invalid` where
+# `value` is not of its kind or holds a number its closed enum does not name.
+# It encodes the value once and reads it back, so it costs the value's size.
+# See also `set_int`, `get`, `clear`.
+function set(schema: Schema, @m: Message, field: str, value: Value) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    probe = Message(type_name: m.type_name, fields: {f.number: value}, unknown: [])
+    loose = DecodeOptions(max_depth: 9223372036854775807, allow_partial: true, discard_unknown: false)
+    back = decode_with(schema, type_name: m.type_name, data: encode_partial(schema, probe)?, options: loose)?
+
+    if back.unknown.len() > 0
+        return fail(code: INVALID, msg: f"{f.full_name}: its enum is closed and names no number the value holds")
+
+    if f.oneof != ""
+        t = message_named(schema, name: m.type_name)?
+
+        for o in t.oneofs
+            if o.name == f.oneof
+                for name in o.fields
+                    other = field_named(t, name: name)?
+
+                    if other.number != f.number
+                        m.fields @ maps.remove(m.fields, key: other.number)
+
+    match back.fields[f.number]
+        .ok v  => m.fields[f.number] @ v
+        .err _ => m.fields @ maps.remove(m.fields, key: f.number)
+
+    return ok()
+
+# Sets `m`'s integer field `field` to `n`, at the field's own width and sign.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the name of a singular field of an integer kind.
+# - `n`: the number.
+#
+# Fails `does_not_fit` where `n` is past what the field's kind holds, a
+# negative one for an unsigned kind; `invalid` where the field is not a
+# singular integer; `not_found` where the type declares no such field. See
+# also `set`, `int_of`.
+function set_int(schema: Schema, @m: Message, field: str, n: i64) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    past = f"{n} is past what {f.full_name} holds"
+
+    match f.cardinality
+        .repeated             => return fail(code: INVALID, msg: f"{f.full_name} is repeated; `add_item` adds to it")
+        .optional | .required => _ = 0
+
+    value: Value = match f.kind
+        .int32 | .sint32 | .sfixed32 =>
+            match to_i32(n)
+                .ok v  => .int32(v: v)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: past)
+        .int64 | .sint64 | .sfixed64 => .int64(v: n)
+        .uint32 | .fixed32 =>
+            match to_u32(n)
+                .ok v  => .uint32(v: v)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: past)
+        .uint64 | .fixed64 =>
+            match to_u64(n)
+                .ok v  => .uint64(v: v)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: past)
+        .double | .float | .boolean | .text | .binary | .enumeration | .message | .group =>
+            return fail(code: INVALID, msg: f"{f.full_name} holds no integer")
+
+    return set(schema, @m, field: field, value: value)
+
+# Sets `m`'s unsigned field `field` to `n`.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the name of a singular field of an integer kind.
+# - `n`: the number.
+#
+# Fails as `set_int` fails. See also `set_int`, `uint_of`.
+function set_uint(schema: Schema, @m: Message, field: str, n: u64) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    past = f"{n} is past what {f.full_name} holds"
+
+    match f.cardinality
+        .repeated             => return fail(code: INVALID, msg: f"{f.full_name} is repeated; `add_item` adds to it")
+        .optional | .required => _ = 0
+
+    value: Value = match f.kind
+        .int32 | .sint32 | .sfixed32 =>
+            match to_i32(n)
+                .ok v  => .int32(v: v)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: past)
+        .int64 | .sint64 | .sfixed64 =>
+            match to_i64(n)
+                .ok v  => .int64(v: v)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: past)
+        .uint32 | .fixed32 =>
+            match to_u32(n)
+                .ok v  => .uint32(v: v)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: past)
+        .uint64 | .fixed64 => .uint64(v: n)
+        .double | .float | .boolean | .text | .binary | .enumeration | .message | .group =>
+            return fail(code: INVALID, msg: f"{f.full_name} holds no integer")
+
+    return set(schema, @m, field: field, value: value)
+
+# Sets `m`'s `float` or `double` field `field` to `x`.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the name of a singular `float` or `double` field.
+# - `x`: the number; a `float` field holds the nearest `f32`.
+#
+# Fails `invalid` where the field is of another kind; `not_found` where the
+# type declares no such field. See also `set`, `float_of`.
+function set_float(schema: Schema, @m: Message, field: str, x: f64) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+
+    value: Value = match f.kind
+        .float  => .float(v: to_f32(x))
+        .double => .double(v: x)
+        .int32 | .int64 | .uint32 | .uint64 | .sint32 | .sint64 | .fixed32 | .fixed64 | .sfixed32 | .sfixed64 | .boolean | .text | .binary | .enumeration | .message | .group =>
+            return fail(code: INVALID, msg: f"{f.full_name} is no float or double")
+
+    return set(schema, @m, field: field, value: value)
+
+# Sets `m`'s enum field `field` to the value its enum names `name`.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the name of a singular enum field.
+# - `name`: the value's name, `COLOR_RED`.
+#
+# Fails `not_found` where the field's enum names no such value or the type
+# declares no such field; `invalid` where the field is not an enum's. See also
+# `enum_name_of`.
+function set_enum(schema: Schema, @m: Message, field: str, name: str) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    e = enum_named(schema, name: f.type_name)
+
+    is_enum = match f.kind
+        .enumeration => true
+        .double | .float | .int32 | .int64 | .uint32 | .uint64 | .sint32 | .sint64 | .fixed32 | .fixed64 | .sfixed32 | .sfixed64 | .boolean | .text | .binary | .message | .group => false
+
+    if !is_enum || e.is_err()
+        return fail(code: INVALID, msg: f"{f.full_name} is no enum's field")
+    v = enum_value_named(e.must(), name: name)?
+    return set(schema, @m, field: field, value: .enumeration(number: v.number))
+
+# The name of the value `m`'s enum field `field` holds.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+# - `field`: the name of a singular enum field.
+#
+# Fails `not_found` where the enum names no value of the number held, as an
+# open enum's field may hold, or the type declares no such field; `invalid`
+# where the field is not an enum's. See also `set_enum`.
+function enum_name_of(schema: Schema, m: Message, field: str) -> str?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    held = get(schema, m: m, field: field)?
+
+    match held
+        .enumeration x =>
+            e = enum_named(schema, name: f.type_name)?
+            return ok(enum_value_numbered(e, number: x.number)?.name)
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .text _ | .binary _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"{f.full_name} is no enum's field")
+
+# Takes `m`'s field `field` back to unset.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the field's name as declared, or an extension's full name.
+#
+# Fails `not_found` where the type declares no such field. See also `set`.
+function clear(schema: Schema, @m: Message, field: str) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+    m.fields @ maps.remove(m.fields, key: f.number)
+    return ok()
+
+# The name of the field of the oneof `oneof` that `m` holds.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+# - `oneof`: the oneof's name as declared.
+#
+# Fails `not_found` where the type declares no such oneof, or `m` holds none
+# of its fields. See also `set`.
+function which_oneof(schema: Schema, m: Message, oneof: str) -> str?
+    t = message_named(schema, name: m.type_name)?
+
+    for o in t.oneofs
+        if o.name == oneof
+            for name in o.fields
+                f = field_named(t, name: name)?
+
+                if !m.fields[f.number].is_err()
+                    return ok(name)
+
+            return fail(code: NOT_FOUND, msg: f"{m.type_name} holds none of the fields of {oneof}")
+
+    return fail(code: NOT_FOUND, msg: f"{m.type_name} has no oneof {oneof}")
+
+# Adds `item` at the end of `m`'s repeated field `field`.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the name of a repeated field that is no map.
+# - `item`: one value of the field's kind.
+#
+# Fails `invalid` where the field is not repeated, is a map, or `item` is not
+# of its kind; `not_found` where the type declares no such field. See also
+# `set`.
+function add_item(schema: Schema, @m: Message, field: str, item: Value) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+
+    repeated = match f.cardinality
+        .repeated             => true
+        .optional | .required => false
+
+    if !repeated || f.is_map
+        return fail(code: INVALID, msg: f"{f.full_name} is no repeated field that is no map")
+    _ = encode_partial(schema, m: Message(type_name: m.type_name, fields: {f.number: .list(items: [item])}, unknown: []))?
+    items: [Value] @= []
+
+    match m.fields[f.number]
+        .ok v  => items @ items_of(v)?
+        .err _ => _ = 0
+
+    items @ items.push(item)
+    m.fields[f.number] @ .list(items: items)
+    return ok()
+
+# Puts `value` under `key` in `m`'s map field `field`, in place of any value
+# the key held.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+# - `field`: the name of a map field.
+# - `key`: a value of the map's key kind.
+# - `value`: a value of the map's value kind.
+#
+# The entries stay in the order of their keys. Fails `invalid` where the field
+# is not a map or a value is not of its kind; `not_found` where the type
+# declares no such field. See also `entry_value`.
+function put_entry(schema: Schema, @m: Message, field: str, key: Value, value: Value) -> ()?
+    f = field_of(schema, type_name: m.type_name, field: field)?
+
+    if !f.is_map
+        return fail(code: INVALID, msg: f"{f.full_name} is no map")
+    entries: [Entry] @= []
+
+    match m.fields[f.number]
+        .ok v  => entries @ entries_of(v)?
+        .err _ => _ = 0
+
+    entries @ entries.push(Entry(key: key, value: value))
+    return set(schema, @m, field: field, value: .entries(entries: entries))
+
+# Merges `from` into `into`, as the protocol merges two messages of one type.
+#
+# - `schema`: the schema holding their type.
+# - `into`: the message changed.
+# - `from`: the message merged in, of the same type.
+#
+# Each scalar `from` holds replaces `into`'s, a message is merged into
+# `into`'s, a repeated field's values are added after `into`'s, a map's
+# entries put in place, and the unknown bytes added after `into`'s: what
+# decoding the two encodings one after the other answers. Fails `invalid` where
+# the two types differ or a value is not of its field's kind. See also
+# `decode`.
+function merge(schema: Schema, @into: Message, from: Message) -> ()?
+    if into.type_name != from.type_name
+        return fail(code: INVALID, msg: f"a {from.type_name} is not merged into a {into.type_name}")
+    data = bytes.concat([encode_partial(schema, m: into)?, encode_partial(schema, m: from)?])
+    loose = DecodeOptions(max_depth: 9223372036854775807, allow_partial: true, discard_unknown: false)
+    into @ decode_with(schema, type_name: into.type_name, data: data, options: loose)?
+    return ok()
+
+# Checks that `m`, and every message inside it, holds each field its type
+# requires.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+#
+# Fails `invalid` naming the first required field unset by its path,
+# `shop.Order.items[2].sku`. Only proto2 and an edition's `LEGACY_REQUIRED`
+# require one. See also `encode`.
+function check_required(schema: Schema, m: Message) -> ()?
+    data = encode_partial(schema, m: m)?
+    reading = occurrence.Reading(max_depth: 9223372036854775807, allow_partial: false, discard_unknown: true)
+    _ = decoder.read(schema.compiled, type_name: m.type_name, data: data, reading: reading)?
+    return ok()
+
+# Takes away the unknown bytes of `m` and of every message inside it.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message, which this changes.
+#
+# Fails as `encode_partial` fails. See also `DecodeOptions`.
+function clear_unknown(schema: Schema, @m: Message) -> ()?
+    loose = DecodeOptions(max_depth: 9223372036854775807, allow_partial: true, discard_unknown: true)
+    m @ decode_with(schema, type_name: m.type_name, data: encode_partial(schema, m: m)?, options: loose)?
+    return ok()
+
+## Reading a value
+
+# The name of `v`'s case: `boolean`, `int32`, `int64`, `uint32`, `uint64`,
+# `float`, `double`, `text`, `binary`, `enumeration`, `message`, `list` or
+# `entries`.
+#
+# - `v`: any value.
+function kind_of(v: Value) -> str
+    return match v
+        .boolean _     => "boolean"
+        .int32 _       => "int32"
+        .int64 _       => "int64"
+        .uint32 _      => "uint32"
+        .uint64 _      => "uint64"
+        .float _       => "float"
+        .double _      => "double"
+        .text _        => "text"
+        .binary _      => "binary"
+        .enumeration _ => "enumeration"
+        .message _     => "message"
+        .list _        => "list"
+        .entries _     => "entries"
+
+# The `bool` of a `.boolean`.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case, and the message names it.
+function bool_of(v: Value) -> bool?
+    match v
+        .boolean b => return ok(b.v)
+        .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .text _ | .binary _ | .enumeration _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected a boolean, found {kind_of(v)}")
+
+# The integer of an integer value, or an enum's number.
+#
+# - `v`: an `.int32`, `.int64`, `.uint32`, `.uint64` or `.enumeration`.
+#
+# Fails `does_not_fit` where a `.uint64` is past an `i64`, and `invalid` where
+# `v` is of another case. See also `uint_of`, `set_int`.
+function int_of(v: Value) -> i64?
+    match v
+        .int32 x       => return ok(to_i64(x.v).must())
+        .int64 x       => return ok(x.v)
+        .uint32 x      => return ok(to_i64(x.v).must())
+        .enumeration x => return ok(to_i64(x.number).must())
+        .uint64 x =>
+            match to_i64(x.v)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: f"{x.v} is past an i64")
+        .boolean _ | .float _ | .double _ | .text _ | .binary _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected an integer, found {kind_of(v)}")
+
+# The integer of an integer value that is not negative.
+#
+# - `v`: an `.int32`, `.int64`, `.uint32` or `.uint64`.
+#
+# Fails `does_not_fit` where it is negative, and `invalid` where `v` is of
+# another case. See also `int_of`.
+function uint_of(v: Value) -> u64?
+    negative = f"a negative number, which no u64 holds"
+
+    match v
+        .uint32 x => return ok(to_u64(x.v).must())
+        .uint64 x => return ok(x.v)
+        .int32 x =>
+            match to_u64(x.v)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: negative)
+        .int64 x =>
+            match to_u64(x.v)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: DOES_NOT_FIT, msg: negative)
+        .boolean _ | .float _ | .double _ | .text _ | .binary _ | .enumeration _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected an integer, found {kind_of(v)}")
+
+# The number of a `.float` or a `.double`, as an `f64`.
+#
+# - `v`: the value; a `.float` widens exactly.
+#
+# Fails `invalid` where `v` is of another case. See also `set_float`.
+function float_of(v: Value) -> f64?
+    match v
+        .float x  => return ok(to_f64(x.v))
+        .double x => return ok(x.v)
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .text _ | .binary _ | .enumeration _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected a float or a double, found {kind_of(v)}")
+
+# The text of a `.text`.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case, a `.binary` included.
+function text_of(v: Value) -> str?
+    match v
+        .text x => return ok(x.v)
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .binary _ | .enumeration _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected a text, found {kind_of(v)}")
+
+# The bytes of a `.binary`, or of a `.text` as UTF-8.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case.
+function bytes_of(v: Value) -> [u8]?
+    match v
+        .binary x => return ok(x.v)
+        .text x   => return ok(bytes.from_text(x.v))
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .enumeration _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected bytes, found {kind_of(v)}")
+
+# The message of a `.message`.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case.
+function message_of(v: Value) -> Message?
+    match v
+        .message x => return ok(x.m)
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .text _ | .binary _ | .enumeration _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected a message, found {kind_of(v)}")
+
+# The values of a `.list`, in order.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case.
+function items_of(v: Value) -> [Value]?
+    match v
+        .list x => return ok(x.items)
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .text _ | .binary _ | .enumeration _ | .message _ | .entries _ =>
+            return fail(code: INVALID, msg: f"expected a list, found {kind_of(v)}")
+
+# The entries of an `.entries`, in the order of their keys.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `entry_value`.
+function entries_of(v: Value) -> [Entry]?
+    match v
+        .entries x => return ok(x.entries)
+        .boolean _ | .int32 _ | .int64 _ | .uint32 _ | .uint64 _ | .float _ | .double _ | .text _ | .binary _ | .enumeration _ | .message _ | .list _ =>
+            return fail(code: INVALID, msg: f"expected the entries of a map, found {kind_of(v)}")
+
+# The value an `.entries` holds under `key`.
+#
+# - `v`: the map's value.
+# - `key`: the key, compared by `==`.
+#
+# Fails `not_found` where no entry has that key, and `invalid` where `v` is
+# not an `.entries`. See also `put_entry`.
+function entry_value(v: Value, key: Value) -> Value?
+    for e in entries_of(v)?
+        if e.key == key
+            return ok(e.value)
+
+    return fail(code: NOT_FOUND, msg: f"no entry has the key, a {kind_of(key)}")
+
+## Encoding and decoding
+
+# How bytes are decoded. `strict` answers the protocol's own reading.
+record DecodeOptions
+    # The deepest nesting read, a message, a group and a map entry each
+    # counting a level; deeper fails `invalid`.
+    max_depth: i64
+    # Whether a message may lack a field its type requires.
+    allow_partial: bool
+    # Whether fields the type does not declare are dropped instead of kept.
+    discard_unknown: bool
+
+# What `decode_delimited` answers.
+record Decoded
+    # The message.
+    message: Message
+    # The index of the byte after it.
+    next: i64
+
+# The options of the protocol's own reading: nesting to `DEFAULT_MAX_DEPTH`,
+# required fields checked, unknown fields kept.
+function strict() -> DecodeOptions
+    return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, allow_partial: false, discard_unknown: false)
+
+# `m` encoded, its fields in the order of their numbers.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+#
+# A map's entries are written in the order of their keys and the unknown bytes
+# last, so one message always gives the same bytes. Fails `invalid` where a
+# required field is unset, naming its path, or a value is not of its field's
+# kind; `not_found` where a type is not in the schema. See also
+# `encode_partial`, `decode`.
+function encode(schema: Schema, m: Message) -> [u8]?
+    data = encode_partial(schema, m: m)?
+
+    if schema.compiled.requires
+        reading = occurrence.Reading(max_depth: 9223372036854775807, allow_partial: false, discard_unknown: true)
+        _ = decoder.read(schema.compiled, type_name: m.type_name, data: data, reading: reading)?
+    return ok(data)
+
+# `m` encoded as `encode` encodes it, a required field unset allowed.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+#
+# Fails as `encode` fails, but for a required field. See also `encode`.
+function encode_partial(schema: Schema, m: Message) -> [u8]?
+    events: [event.Event] @= []
+
+    # What is left to write, the next on top: a value, a field's number to
+    # name, or an end, as its mark says, with a message's unknown bytes.
+    left: [Value] @= [.message(m: m)]
+    marks: [i64] @= [0]
+    numbers: [i64] @= [0]
+    tails: [[u8]] @= [[]]
+    top: i64 @= 1
+    nothing: [u8] = []
+
+    while top > 0
+        top @ top - 1
+        mark = marks[top]
+        here = left[top]
+        left[top] @ .boolean(v: false)
+
+        if mark == 1
+            events @ events.push(event.signed(kind: event.FIELD, n: numbers[top]))
+        else if mark == 2
+            events @ events.push(event.bytes(kind: event.END, data: tails[top]))
+            tails[top] @ nothing
+        else
+            match here
+                .boolean b =>
+                    n: i64 = if b.v
+                        1
+                    else
+                        0
+                    events @ events.push(event.signed(kind: event.BOOL, n: n))
+                .int32 x       => events @ events.push(event.signed(kind: event.INT32, n: to_i64(x.v).must()))
+                .int64 x       => events @ events.push(event.signed(kind: event.INT64, n: x.v))
+                .uint32 x      => events @ events.push(event.unsigned(kind: event.UINT32, n: to_u64(x.v).must()))
+                .uint64 x      => events @ events.push(event.unsigned(kind: event.UINT64, n: x.v))
+                .float x       => events @ events.push(event.real(kind: event.FLOAT, x: to_f64(x.v)))
+                .double x      => events @ events.push(event.real(kind: event.DOUBLE, x: x.v))
+                .text x        => events @ events.push(event.text(kind: event.TEXT, s: x.v))
+                .binary x      => events @ events.push(event.bytes(kind: event.BYTES, data: x.v))
+                .enumeration x => events @ events.push(event.signed(kind: event.ENUM, n: to_i64(x.number).must()))
+                .message x =>
+                    events @ events.push(event.text(kind: event.MESSAGE, s: x.m.type_name))
+                    encoder.put(@left, top: top, item: .boolean(v: false))
+                    encoder.put(@marks, top: top, item: 2)
+                    encoder.put(@numbers, top: top, item: 0)
+                    encoder.put(@tails, top: top, item: x.m.unknown)
+                    top @ top + 1
+                    order = sort(keys(x.m.fields))
+                    k: i64 @= order.len()
+
+                    while k > 0
+                        k @ k - 1
+                        encoder.put(@left, top: top, item: x.m.fields[order[k]].must())
+                        encoder.put(@marks, top: top, item: 0)
+                        encoder.put(@numbers, top: top, item: 0)
+                        encoder.put(@tails, top: top, item: nothing)
+                        encoder.put(@left, top: top + 1, item: .boolean(v: false))
+                        encoder.put(@marks, top: top + 1, item: 1)
+                        encoder.put(@numbers, top: top + 1, item: order[k])
+                        encoder.put(@tails, top: top + 1, item: nothing)
+                        top @ top + 2
+                .list x =>
+                    events @ events.push(event.mark(event.LIST))
+                    encoder.put(@left, top: top, item: .boolean(v: false))
+                    encoder.put(@marks, top: top, item: 2)
+                    encoder.put(@numbers, top: top, item: 0)
+                    encoder.put(@tails, top: top, item: nothing)
+                    top @ top + 1
+                    k: i64 @= x.items.len()
+
+                    while k > 0
+                        k @ k - 1
+                        encoder.put(@left, top: top, item: x.items[k])
+                        encoder.put(@marks, top: top, item: 0)
+                        encoder.put(@numbers, top: top, item: 0)
+                        encoder.put(@tails, top: top, item: nothing)
+                        top @ top + 1
+                .entries x =>
+                    events @ events.push(event.mark(event.MAP))
+                    encoder.put(@left, top: top, item: .boolean(v: false))
+                    encoder.put(@marks, top: top, item: 2)
+                    encoder.put(@numbers, top: top, item: 0)
+                    encoder.put(@tails, top: top, item: nothing)
+                    top @ top + 1
+                    k: i64 @= x.entries.len()
+
+                    while k > 0
+                        k @ k - 1
+                        encoder.put(@left, top: top, item: x.entries[k].value)
+                        encoder.put(@marks, top: top, item: 0)
+                        encoder.put(@numbers, top: top, item: 0)
+                        encoder.put(@tails, top: top, item: nothing)
+                        encoder.put(@left, top: top + 1, item: x.entries[k].key)
+                        encoder.put(@marks, top: top + 1, item: 0)
+                        encoder.put(@numbers, top: top + 1, item: 0)
+                        encoder.put(@tails, top: top + 1, item: nothing)
+                        top @ top + 2
+
+    return encoder.write(schema.compiled, events: events)
+
+# The message of the type `type_name` that `data` encodes, read as `strict`
+# reads.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name.
+# - `data`: the encoded fields; the empty list is the empty message.
+#
+# A field written twice keeps the last value, a message written twice is
+# merged, packed and unpacked repeated fields are both read, and fields the type
+# does not declare are kept in `Message.unknown`. Fails `invalid` where `data`
+# is not whole, a value's wire type does not fit its field, a required field
+# is missing, or the nesting passes `DEFAULT_MAX_DEPTH`; `not_text` where a
+# string that must be UTF-8 is not; `not_found` where the type is not in the
+# schema. Each message names the byte. See also `decode_with`, `encode`.
+function decode(schema: Schema, type_name: str, data: [u8]) -> Message?
+    return decode_with(schema, type_name: type_name, data: data, options: strict())
+
+# The message `data` encodes, read as `options` say.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name.
+# - `data`: the encoded fields.
+# - `options`: the depth, whether a required field may be missing, whether
+#   unknown fields are dropped.
+#
+# Fails as `decode` fails. See also `decode`.
+function decode_with(schema: Schema, type_name: str, data: [u8], options: DecodeOptions) -> Message?
+    reading = occurrence.Reading(
+        max_depth: options.max_depth,
+        allow_partial: options.allow_partial,
+        discard_unknown: options.discard_unknown
+    )
+    t = message_named(schema, name: type_name)?
+    events = decoder.read(schema.compiled, type_name: t.full_name, data: data, reading: reading)?
+
+    # The container open now, its fields, items or entries in plain names, and
+    # those that hold it, saved on the stacks below, `depth` of them.
+    kinds: [i64] @= []
+    names: [str] @= []
+    numbers: [i64] @= []
+    held_fields: [{i64: Value}] @= []
+    held_items: [[Value]] @= []
+    held_entries: [[Entry]] @= []
+    held_keys: [Value] @= []
+    kind: i64 @= 0
+    name: str @= ""
+    number: i64 @= 0
+    fields: {i64: Value} @= {}
+    items: [Value] @= []
+    entries: [Entry] @= []
+    key: Value @= .boolean(v: false)
+    depth: i64 @= 0
+    done: Value @= .boolean(v: false)
+
+    for e in events
+        ready: bool @= true
+        made: Value @= .boolean(v: false)
+
+        if e.kind == event.FIELD
+            number @ e.number
+            ready @ false
+        else if e.kind == event.MESSAGE || e.kind == event.LIST || e.kind == event.MAP
+            encoder.put(@kinds, top: depth, item: kind)
+            encoder.put(@names, top: depth, item: name)
+            encoder.put(@numbers, top: depth, item: number)
+            encoder.put(@held_fields, top: depth, item: fields)
+            encoder.put(@held_items, top: depth, item: items)
+            encoder.put(@held_entries, top: depth, item: entries)
+            encoder.put(@held_keys, top: depth, item: key)
+            depth @ depth + 1
+            kind @ e.kind
+            name @ e.text
+            number @ 0
+            fields @ {}
+            items @ []
+            entries @ []
+            ready @ false
+        else if e.kind == event.END
+            if kind == event.MESSAGE
+                made @ .message(m: Message(type_name: name, fields: fields, unknown: e.data))
+            else if kind == event.LIST
+                made @ .list(items: items)
+            else
+                made @ .entries(entries: entries)
+            depth @ depth - 1
+            kind @ kinds[depth]
+            name @ names[depth]
+            number @ numbers[depth]
+            fields @ held_fields[depth]
+            items @ held_items[depth]
+            entries @ held_entries[depth]
+            key @ held_keys[depth]
+            held_fields[depth] @ {}
+            held_items[depth] @ []
+            held_entries[depth] @ []
+        else if e.kind == event.BOOL
+            made @ .boolean(v: e.number == 1)
+        else if e.kind == event.INT32
+            made @ .int32(v: to_i32(e.number).must())
+        else if e.kind == event.INT64
+            made @ .int64(v: e.number)
+        else if e.kind == event.UINT32
+            made @ .uint32(v: to_u32(e.unsigned).must())
+        else if e.kind == event.UINT64
+            made @ .uint64(v: e.unsigned)
+        else if e.kind == event.FLOAT
+            made @ .float(v: to_f32(e.real))
+        else if e.kind == event.DOUBLE
+            made @ .double(v: e.real)
+        else if e.kind == event.TEXT
+            made @ .text(v: e.text)
+        else if e.kind == event.BYTES
+            made @ .binary(v: e.data)
+        else
+            made @ .enumeration(number: to_i32(e.number).must())
+
+        if ready
+            if depth == 0
+                done @ made
+            else if kind == event.MESSAGE
+                fields[number] @ made
+            else if kind == event.LIST
+                items @ items.push(made)
+            else if number % 2 == 0
+                key @ made
+                number @ number + 1
+            else
+                entries @ entries.push(Entry(key: key, value: made))
+                number @ number + 1
+
+    return message_of(done)
+
+# `m` encoded after its length as a varint, as a stream of messages holds it.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+#
+# Fails as `encode` fails. See also `decode_delimited`.
+function encode_delimited(schema: Schema, m: Message) -> [u8]?
+    data = encode(schema, m: m)?
+    out: [u8] @= []
+    wires.push_bytes(to: @out, v: data)
+    return ok(out)
+
+# The message whose length is the varint at byte `at` of `data`, and where the
+# next begins.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name.
+# - `data`: the bytes, holding messages one after another.
+# - `at`: the index of the length's first byte, 0 to the length of `data`.
+#
+# Fails as `decode` fails, and `invalid` where the length passes the bytes
+# left. See also `encode_delimited`.
+function decode_delimited(schema: Schema, type_name: str, data: [u8], at: i64) -> Decoded?
+    got = wires.delimited(data, at: at)?
+    return ok(Decoded(message: decode(schema, type_name: type_name, data: got.data)?, next: got.next))
+
+## JSON
+
+# How a message is written as JSON. `json_options` answers the mapping's own.
+record JsonOptions
+    # Whether a field is named as declared, `order_id`, instead of by its
+    # JSON name, `orderId`.
+    use_proto_names: bool
+    # Whether an enum's value is written as its number instead of its name.
+    use_enum_numbers: bool
+    # Whether a field without presence is written at its default too, and an
+    # empty repeated or map field as `[]` or `{}`.
+    emit_defaults: bool
+
+# How JSON is read. `json_read_options` answers the mapping's own.
+record JsonReadOptions
+    # Whether a member that names no field is passed over instead of refused,
+    # and an enum name the enum does not hold read as unset.
+    ignore_unknown: bool
+    # The deepest nesting read; deeper fails `invalid`.
+    max_depth: i64
+
+# The options of the mapping's own writing: JSON names, enum names, defaults
+# left out.
+function json_options() -> JsonOptions
+    return JsonOptions(use_proto_names: false, use_enum_numbers: false, emit_defaults: false)
+
+# The options of the mapping's own reading: an unknown member refused, nesting
+# to `DEFAULT_MAX_DEPTH`.
+function json_read_options() -> JsonReadOptions
+    return JsonReadOptions(ignore_unknown: false, max_depth: DEFAULT_MAX_DEPTH)
+
+# `m` as the proto3 JSON mapping writes it.
+#
+# - `schema`: the schema holding `m`'s type, and the type of any `Any` inside
+#   it.
+# - `m`: the message.
+#
+# Members stand in the order of their fields' numbers, named in
+# lowerCamelCase. A 64-bit integer is a text, `"12"`; bytes are base 64 with
+# padding; an enum is its name, or its number where the enum names none; a
+# `nan` or an infinity is `"NaN"`, `"Infinity"`, `"-Infinity"`; a `float` is
+# the shortest decimal its `f32` reads back from. The well-known types take
+# their own forms: a `Timestamp` is RFC 3339 text in UTC, a `Duration`
+# `"1.5s"`, a `FieldMask` `"a.b,cD"`, a wrapper its value, `Struct`, `Value`
+# and `ListValue` the JSON they hold, an `Any` an object with `"@type"`.
+# Unknown fields are not written. Fails `invalid` where a value is not of its
+# field's kind, a required field is unset, a well-known type's value is outside
+# its range, or a `string` holds bytes that are not UTF-8; `not_found` where an
+# `Any`'s type is not in the schema. `json.format` writes the text. See also
+# `to_json_with`, `from_json`.
+function to_json(schema: Schema, m: Message) -> json.Value?
+    return to_json_with(schema, m: m, options: json_options())
+
+# `m` as JSON, written as `options` say.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message.
+# - `options`: the names, the enums, the defaults.
+#
+# Fails as `to_json` fails. See also `to_json`.
+function to_json_with(schema: Schema, m: Message, options: JsonOptions) -> json.Value?
+    data = encode_partial(schema, m: m)?
+    reading = occurrence.Reading(max_depth: 9223372036854775807, allow_partial: false, discard_unknown: true)
+    events = decoder.read(schema.compiled, type_name: m.type_name, data: data, reading: reading)?
+    writing = json_out.Writing(
+        proto_names: options.use_proto_names,
+        enum_numbers: options.use_enum_numbers,
+        emit_defaults: options.emit_defaults,
+        max_depth: DEFAULT_MAX_DEPTH
+    )
+    return json_out.write(schema.compiled, events: events, writing: writing, depth: 0)
+
+# The message of the type `type_name` that the JSON value `v` writes, as the
+# proto3 JSON mapping reads it.
+#
+# - `schema`: the schema holding the type, and the type of any `Any` in `v`.
+# - `type_name`: the type's full name.
+# - `v`: the JSON value, an object for every type but the well-known ones that
+#   take another form.
+#
+# A member is found by its JSON name or its declared name; `null` leaves a
+# field unset; a 64-bit integer is read from a number or a text; bytes from base
+# 64, standard or URL-safe, padded or not; an enum from its name or number.
+# Fails `invalid` where a member names no field, names one twice, holds a
+# value its field cannot take, or a required field is missing, the message
+# naming its JSON pointer; `not_found` where an enum's name names no value;
+# `does_not_fit` where a number is past its kind; `not_found` where an `Any`'s
+# type is not in the schema. `json.parse` reads the text; a 64-bit integer
+# written as a number past 2^53 is read exactly only where it is parsed with
+# `json.ParseOptions.exact_integers`, which refuses it. See also
+# `from_json_with`, `to_json`.
+function from_json(schema: Schema, type_name: str, v: json.Value) -> Message?
+    return from_json_with(schema, type_name: type_name, v: v, options: json_read_options())
+
+# The message `v` writes, read as `options` say.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name.
+# - `v`: the JSON value.
+# - `options`: whether unknown members are passed over, and the depth.
+#
+# Fails as `from_json` fails. See also `from_json`.
+function from_json_with(schema: Schema, type_name: str, v: json.Value, options: JsonReadOptions) -> Message?
+    t = message_named(schema, name: type_name)?
+    reading = json_in.Reading(ignore_unknown: options.ignore_unknown, max_depth: options.max_depth)
+    events = json_in.read(schema.compiled, type_name: t.full_name, v: v, reading: reading, depth: 0)?
+    data = encoder.write(schema.compiled, events: events)?
+    whole = DecodeOptions(max_depth: 9223372036854775807, allow_partial: false, discard_unknown: false)
+    return decode_with(schema, type_name: t.full_name, data: data, options: whole)
+
+## The well-known types
+
+# A `google.protobuf.Timestamp` holding the instant `t`.
+#
+# - `t`: any instant.
+#
+# See also `to_instant`, `format_timestamp`.
+function from_instant(t: time.Instant) -> Message
+    seconds: i64 @= t.unix_nanoseconds / 1000000000
+    nanos: i64 @= t.unix_nanoseconds % 1000000000
+
+    if nanos < 0
+        seconds @ seconds - 1
+        nanos @ nanos + 1000000000
+    fields: {i64: Value} @= {}
+
+    if seconds != 0
+        fields[1] @ .int64(v: seconds)
+
+    if nanos != 0
+        fields[2] @ .int32(v: to_i32(nanos).must())
+    return Message(type_name: "google.protobuf.Timestamp", fields: fields, unknown: [])
+
+# The instant a `google.protobuf.Timestamp` holds.
+#
+# - `m`: the timestamp.
+#
+# Fails `invalid` where `m` is of another type or its nanoseconds are outside
+# 0 to 999,999,999; `does_not_fit` where its moment is outside what a
+# `time.Instant` holds, 1677 to 2262, though a timestamp holds the years 1 to
+# 9999. See also `from_instant`.
+function to_instant(m: Message) -> time.Instant?
+    if m.type_name != "google.protobuf.Timestamp"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Timestamp")
+    seconds: i64 @= 0
+    nanos: i64 @= 0
+
+    match m.fields[1]
+        .ok v  => seconds @ int_of(v)?
+        .err _ => _ = 0
+
+    match m.fields[2]
+        .ok v  => nanos @ int_of(v)?
+        .err _ => _ = 0
+
+    if nanos < 0 || nanos > 999999999
+        return fail(code: INVALID, msg: f"a timestamp's nanoseconds, {nanos}, are outside 0 to 999999999")
+
+    match time.from_unix(whole_seconds: seconds, extra_nanoseconds: nanos)
+        .ok t => return ok(t)
+        .err _ => return fail(
+            code: DOES_NOT_FIT,
+            msg: f"the timestamp of {seconds} seconds is outside what a time.Instant holds"
+        )
+
+# A `google.protobuf.Duration` holding `d`.
+#
+# - `d`: any duration.
+#
+# See also `to_duration`, `format_duration`.
+function from_duration(d: time.Duration) -> Message
+    seconds = d.nanoseconds / 1000000000
+    nanos = d.nanoseconds % 1000000000
+    fields: {i64: Value} @= {}
+
+    if seconds != 0
+        fields[1] @ .int64(v: seconds)
+
+    if nanos != 0
+        fields[2] @ .int32(v: to_i32(nanos).must())
+    return Message(type_name: "google.protobuf.Duration", fields: fields, unknown: [])
+
+# The duration a `google.protobuf.Duration` holds.
+#
+# - `m`: the duration.
+#
+# Fails `invalid` where `m` is of another type, its seconds and nanoseconds
+# differ in sign or its nanoseconds pass a second; `does_not_fit` where it is
+# past what a `time.Duration` holds, about 292 years. See also
+# `from_duration`.
+function to_duration(m: Message) -> time.Duration?
+    if m.type_name != "google.protobuf.Duration"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Duration")
+    seconds: i64 @= 0
+    nanos: i64 @= 0
+
+    match m.fields[1]
+        .ok v  => seconds @ int_of(v)?
+        .err _ => _ = 0
+
+    match m.fields[2]
+        .ok v  => nanos @ int_of(v)?
+        .err _ => _ = 0
+
+    if nanos > 999999999 || nanos < -999999999 || seconds > 0 && nanos < 0 || seconds < 0 && nanos > 0
+        return fail(
+            code: INVALID,
+            msg: f"a duration's seconds, {seconds}, and nanoseconds, {nanos}, differ in sign or pass a second"
+        )
+
+    match time.seconds(seconds)
+        .err _ => return fail(
+            code: DOES_NOT_FIT,
+            msg: f"a duration of {seconds} seconds is past what a time.Duration holds"
+        )
+        .ok whole =>
+            match time.sum(a: whole, b: time.nanoseconds(nanos))
+                .ok d => return ok(d)
+                .err _ => return fail(
+                    code: DOES_NOT_FIT,
+                    msg: f"a duration of {seconds} seconds is past what a time.Duration holds"
+                )
+
+# The text the JSON mapping writes for a `google.protobuf.Timestamp`: RFC 3339
+# in UTC, with 0, 3, 6 or 9 digits of fraction, `1972-01-01T10:00:20.021Z`.
+#
+# - `m`: the timestamp.
+#
+# Fails `invalid` where `m` is of another type or outside 0001-01-01 to
+# 9999-12-31, or its nanoseconds outside 0 to 999,999,999. See also
+# `parse_timestamp`.
+function format_timestamp(m: Message) -> str?
+    if m.type_name != "google.protobuf.Timestamp"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Timestamp")
+    seconds: i64 @= 0
+    nanos: i64 @= 0
+
+    match m.fields[1]
+        .ok v  => seconds @ int_of(v)?
+        .err _ => _ = 0
+
+    match m.fields[2]
+        .ok v  => nanos @ int_of(v)?
+        .err _ => _ = 0
+
+    return wkt.format_timestamp(seconds: seconds, nanos: nanos)
+
+# The `google.protobuf.Timestamp` that the RFC 3339 text `s` writes.
+#
+# - `s`: the text, with `Z` or an offset, and up to nine digits of fraction.
+#
+# Fails `invalid` where `s` is not such a text or names a moment outside
+# 0001-01-01 to 9999-12-31 in UTC. See also `format_timestamp`.
+function parse_timestamp(s: str) -> Message?
+    got = wkt.parse_timestamp(s)?
+    fields: {i64: Value} @= {}
+
+    if got.seconds != 0
+        fields[1] @ .int64(v: got.seconds)
+
+    if got.nanos != 0
+        fields[2] @ .int32(v: to_i32(got.nanos).must())
+    return ok(Message(type_name: "google.protobuf.Timestamp", fields: fields, unknown: []))
+
+# The text the JSON mapping writes for a `google.protobuf.Duration`: seconds
+# with 0, 3, 6 or 9 digits of fraction and `s`, `-1.5s`.
+#
+# - `m`: the duration.
+#
+# Fails `invalid` where `m` is of another type, is past 315,576,000,000
+# seconds either way, or its seconds and nanoseconds differ in sign. See also
+# `parse_duration`.
+function format_duration(m: Message) -> str?
+    if m.type_name != "google.protobuf.Duration"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Duration")
+    seconds: i64 @= 0
+    nanos: i64 @= 0
+
+    match m.fields[1]
+        .ok v  => seconds @ int_of(v)?
+        .err _ => _ = 0
+
+    match m.fields[2]
+        .ok v  => nanos @ int_of(v)?
+        .err _ => _ = 0
+
+    return wkt.format_duration(seconds: seconds, nanos: nanos)
+
+# The `google.protobuf.Duration` that `s` writes, as `format_duration` writes
+# it.
+#
+# - `s`: the text: a sign, seconds, up to nine digits of fraction, and `s`.
+#
+# Fails `invalid` where `s` is not such a text or is past 315,576,000,000
+# seconds either way. See also `format_duration`.
+function parse_duration(s: str) -> Message?
+    got = wkt.parse_duration(s)?
+    fields: {i64: Value} @= {}
+
+    if got.seconds != 0
+        fields[1] @ .int64(v: got.seconds)
+
+    if got.nanos != 0
+        fields[2] @ .int32(v: to_i32(got.nanos).must())
+    return ok(Message(type_name: "google.protobuf.Duration", fields: fields, unknown: []))
+
+# A `google.protobuf.Any` holding `m`, encoded, under the type URL `prefix`
+# followed by its type's full name.
+#
+# - `schema`: the schema holding `m`'s type.
+# - `m`: the message to hold.
+# - `prefix`: the URL before the name, `TYPE_URL_PREFIX` as every runtime
+#   writes it; a `/` is added where it does not end with one.
+#
+# Fails as `encode` fails. See also `unpack_any`.
+function pack_any(schema: Schema, m: Message, prefix: str) -> Message?
+    data = encode(schema, m: m)?
+
+    url = if prefix.len() > 0 && prefix[prefix.len() - 1] == '/'
+        prefix + m.type_name
+    else
+        prefix + "/" + m.type_name
+    fields: {i64: Value} @= {}
+    fields[1] @ .text(v: url)
+
+    if data.len() > 0
+        fields[2] @ .binary(v: data)
+    return ok(Message(type_name: "google.protobuf.Any", fields: fields, unknown: []))
+
+# The message a `google.protobuf.Any` holds, its type found in `schema` by the
+# last part of its type URL.
+#
+# - `schema`: the schema to find the type in, the resolver of every `Any`.
+# - `m`: the `Any`.
+#
+# Fails `not_found` where the schema holds no type of that name; `invalid`
+# where `m` is not an `Any` or its type URL has no name; as `decode` fails on
+# its bytes. See also `pack_any`, `any_type_name`.
+function unpack_any(schema: Schema, m: Message) -> Message?
+    name = any_type_name(m)?
+    data: [u8] @= []
+
+    match m.fields[2]
+        .ok v  => data @ bytes_of(v)?
+        .err _ => _ = 0
+
+    return decode(schema, type_name: name, data: data)
+
+# The full name of the type a `google.protobuf.Any` holds: its type URL after
+# the last `/`.
+#
+# - `m`: the `Any`.
+#
+# Fails `invalid` where `m` is not an `Any` or its URL ends with `/`. See
+# also `unpack_any`.
+function any_type_name(m: Message) -> str?
+    if m.type_name != "google.protobuf.Any"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Any")
+    url: str @= ""
+
+    match m.fields[1]
+        .ok v  => url @ text_of(v)?
+        .err _ => _ = 0
+
+    at: i64 @= url.len()
+
+    while at > 0 && url[at - 1] != '/'
+        at @ at - 1
+
+    if at == url.len()
+        return fail(code: INVALID, msg: f"the type URL \"{url}\" names no type after its last `/`")
+    return ok(url.slice(from: at, to: url.len()))
+
+# The JSON a `google.protobuf.Value`, `Struct` or `ListValue` holds.
+#
+# - `m`: the message.
+#
+# Fails `invalid` where `m` is of another type, a `Value` holds none of its
+# kinds, or a number is a `nan` or an infinity. See also `from_json_value`.
+function to_json_value(m: Message) -> json.Value?
+    if m.type_name != "google.protobuf.Value" && m.type_name != "google.protobuf.Struct" && m.type_name != "google.protobuf.ListValue"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Value, Struct or ListValue")
+    own = parse_schema_text(
+        name: "google/protobuf/struct.proto",
+        text: carried.text_of("google/protobuf/struct.proto").must()
+    ).must()
+    return to_json(own, m: m)
+
+# The `google.protobuf.Value` holding `v`.
+#
+# - `v`: any JSON value.
+#
+# Fails `invalid` where a number in `v` is a `nan` or an infinity, which a
+# `Value` would hold and JSON could not write. See also `to_json_value`,
+# `struct_from_json`.
+function from_json_value(v: json.Value) -> Message?
+    own = parse_schema_text(
+        name: "google/protobuf/struct.proto",
+        text: carried.text_of("google/protobuf/struct.proto").must()
+    ).must()
+    return from_json(own, type_name: "google.protobuf.Value", v: v)
+
+# The `google.protobuf.Struct` holding the members of the JSON object `v`.
+#
+# - `v`: a JSON object.
+#
+# Fails `invalid` where `v` is not an object, or holds a `nan` or an infinity.
+# See also `from_json_value`.
+function struct_from_json(v: json.Value) -> Message?
+    if json.members_of(v).is_err()
+        return fail(code: INVALID, msg: f"a Struct holds an object, not {json.kind_of(v)}")
+    own = parse_schema_text(
+        name: "google/protobuf/struct.proto",
+        text: carried.text_of("google/protobuf/struct.proto").must()
+    ).must()
+    return from_json(own, type_name: "google.protobuf.Struct", v: v)
+
+# The wrapper message holding `v`: a `google.protobuf.BoolValue`,
+# `Int32Value`, `Int64Value`, `UInt32Value`, `UInt64Value`, `FloatValue`,
+# `DoubleValue`, `StringValue` or `BytesValue`, by `v`'s case.
+#
+# - `v`: a scalar value.
+#
+# Fails `invalid` where `v` is an `.enumeration`, a `.message`, a `.list` or
+# `.entries`. See also `from_wrapper`.
+function to_wrapper(v: Value) -> Message?
+    name = match v
+        .boolean _ => "BoolValue"
+        .int32 _   => "Int32Value"
+        .int64 _   => "Int64Value"
+        .uint32 _  => "UInt32Value"
+        .uint64 _  => "UInt64Value"
+        .float _   => "FloatValue"
+        .double _  => "DoubleValue"
+        .text _    => "StringValue"
+        .binary _  => "BytesValue"
+        .enumeration _ | .message _ | .list _ | .entries _ =>
+            return fail(code: INVALID, msg: f"no wrapper holds {kind_of(v)}")
+
+    zero = match v
+        .boolean x                                         => !x.v
+        .int32 x                                           => x.v == 0
+        .int64 x                                           => x.v == 0
+        .uint32 x                                          => x.v == 0
+        .uint64 x                                          => x.v == 0
+        .float x                                           => twos.of_float(x.v) == 0
+        .double x                                          => twos.of_double(x.v) == 0
+        .text x                                            => x.v == ""
+        .binary x                                          => x.v.len() == 0
+        .enumeration _ | .message _ | .list _ | .entries _ => true
+
+    fields: {i64: Value} @= {}
+
+    if !zero
+        fields[1] @ v
+    return ok(Message(type_name: "google.protobuf." + name, fields: fields, unknown: []))
+
+# The value a wrapper message holds, its default where it holds none.
+#
+# - `m`: a wrapper, as `to_wrapper` names them.
+#
+# Fails `invalid` where `m` is of another type. See also `to_wrapper`.
+function from_wrapper(m: Message) -> Value?
+    n = m.type_name
+    nothing: [u8] = []
+
+    fallback: Value = if n == "google.protobuf.BoolValue"
+        .boolean(v: false)
+    else if n == "google.protobuf.Int32Value"
+        .int32(v: 0)
+    else if n == "google.protobuf.Int64Value"
+        .int64(v: 0)
+    else if n == "google.protobuf.UInt32Value"
+        .uint32(v: 0)
+    else if n == "google.protobuf.UInt64Value"
+        .uint64(v: 0)
+    else if n == "google.protobuf.FloatValue"
+        .float(v: 0.0)
+    else if n == "google.protobuf.DoubleValue"
+        .double(v: 0.0)
+    else if n == "google.protobuf.StringValue"
+        .text(v: "")
+    else if n == "google.protobuf.BytesValue"
+        .binary(v: nothing)
+    else
+        return fail(code: INVALID, msg: f"a {n} is no wrapper")
+    return ok(m.fields[1].default(fallback))
+
+# A `google.protobuf.FieldMask` holding `paths`.
+#
+# - `paths`: field paths of declared names, `address.city`, in order.
+#
+# See also `paths_of`.
+function field_mask_of(paths: [str]) -> Message
+    fields: {i64: Value} @= {}
+
+    if paths.len() > 0
+        items: [Value] @= []
+
+        for p in paths
+            items @ items.push(.text(v: p))
+
+        fields[1] @ .list(items: items)
+    return Message(type_name: "google.protobuf.FieldMask", fields: fields, unknown: [])
+
+# The paths a `google.protobuf.FieldMask` holds.
+#
+# - `m`: the field mask.
+#
+# Fails `invalid` where `m` is of another type. See also `field_mask_of`.
+function paths_of(m: Message) -> [str]?
+    if m.type_name != "google.protobuf.FieldMask"
+        return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.FieldMask")
+    out: [str] @= []
+
+    match m.fields[1]
+        .err _ => _ = 0
+        .ok v =>
+            for item in items_of(v)?
+                out @ out.push(text_of(item)?)
+
+    return ok(out)
+
+# The text the JSON mapping writes for a field mask's `paths`: each in
+# lowerCamelCase, joined by `,`, `address.cityName,id`.
+#
+# - `paths`: the paths, of declared names in lower case.
+#
+# Fails `invalid` where a path holds an upper-case letter, or a `_` that no
+# lower-case letter follows, which the text could not give back. See also
+# `parse_field_mask`.
+function format_field_mask(paths: [str]) -> str?
+    return wkt.format_mask(paths)
+
+# The paths of a field mask's JSON text, each in declared names.
+#
+# - `s`: the text, paths in lowerCamelCase joined by `,`; the empty text holds
+#   none.
+#
+# Fails `invalid` where a path holds a `_`. See also `format_field_mask`.
+function parse_field_mask(s: str) -> [str]?
+    return wkt.parse_mask(s)
+
+# `paths` sorted, each path once, and none that another path holds: `a` covers
+# `a.b`.
+#
+# - `paths`: the paths, in any order.
+#
+# See also `union_masks`, `intersect_masks`.
+function normalize_mask(paths: [str]) -> [str]
+    return wkt.normalize(paths)
+
+# The paths either mask covers, normalized.
+#
+# - `a`: the first mask's paths.
+# - `b`: the second's.
+#
+# See also `normalize_mask`.
+function union_masks(a: [str], b: [str]) -> [str]
+    both: [str] @= a
+
+    for p in b
+        both @ both.push(p)
+
+    return wkt.normalize(both)
+
+# The paths both masks cover, normalized.
+#
+# - `a`: the first mask's paths.
+# - `b`: the second's.
+#
+# See also `normalize_mask`.
+function intersect_masks(a: [str], b: [str]) -> [str]
+    return wkt.intersect(a: a, b: b)
+
+# Checks that each path of `paths` names fields of the type `type_name`, every
+# part but the last a singular message.
+#
+# - `schema`: the schema holding the type.
+# - `type_name`: the type's full name.
+# - `paths`: the paths.
+#
+# Fails `invalid` naming the first path that names no field; `not_found` where
+# the type is not in the schema. See also `field_mask_of`.
+function check_mask(schema: Schema, type_name: str, paths: [str]) -> ()?
+    t = message_named(schema, name: type_name)?
+
+    for path in paths
+        here: MessageType @= t
+        parts = strings.split(s: path, sep: ".")
+
+        for k in range(from: 0, to: parts.len())
+            match field_named(here, name: parts[k])
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"the path \"{path}\" names no field {parts[k]} of {here.full_name}"
+                )
+                .ok f =>
+                    if k < parts.len() - 1
+                        singular = match f.cardinality
+                            .repeated             => false
+                            .optional | .required => true
+
+                        message_kind = match f.kind
+                            .message | .group => true
+                            .double | .float | .int32 | .int64 | .uint32 | .uint64 | .sint32 | .sint64 | .fixed32 | .fixed64 | .sfixed32 | .sfixed64 | .boolean | .text | .binary | .enumeration => false
+
+                        if !singular || !message_kind || f.is_map
+                            return fail(
+                                code: INVALID,
+                                msg: f"the path \"{path}\" goes on past {f.full_name}, which is no singular message"
+                            )
+                        here @ message_named(schema, name: f.type_name)?
+
+    return ok()
+
+## Tests
+
+# Every value below was observed from Go's protobuf module 1.36.12
+# (`protojson`, `proto.MarshalOptions{Deterministic: true}`) on 2026-11-17,
+# or, where a test says so, from Python's upb runtime of protobuf 7.36.2.
+test "encode and decode: every scalar kind at its edges, as Go writes and reads them"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    text = "{\"i64\":\"-9223372036854775808\",\"u32\":4294967295,\"u64\":\"18446744073709551615\",\"s64\":\"-2\",\"f32\":7,\"f64\":\"8\",\"sf32\":-9,\"sf64\":\"-10\",\"str\":\"città\",\"by\":\"AAEC/w==\"}"
+    m = from_json(schema, type_name: "t.All", v: json.parse(text).must()).must()
+    data = encode(schema, m: m).must()
+    assert bytes.format_hex(data) == "108080808080808080800118ffffffff0f20ffffffffffffffffff0130033d070000004108000000000000004df7ffffff51f6ffffffffffffff720663697474c3a07a04000102ff"
+    assert json.format(to_json(schema, m: decode(schema, type_name: "t.All", data: data).must()).must()).must() == text
+
+test "encode: a negative int32 in ten bytes, a negative zero kept, a zero left out, a map by key, a oneof"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    text = "{\"i32\":-1,\"s32\":-1,\"fl\":1.1,\"db\":-0.0,\"b\":false,\"ri\":[1,2,300],\"rs\":[\"a\"],\"ms\":{\"b\":2,\"a\":1},\"color\":\"BLUE\",\"opt\":0,\"name\":\"z\"}"
+    m = from_json(schema, type_name: "t.All", v: json.parse(text).must()).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "08ffffffffffffffffff0128015dcdcc8c3f6100000000000000808001029201040102ac029a010161aa01050a01611001aa01050a01621002b80100c201017a"
+    assert json.format(to_json(schema, m: m).must()).must() == "{\"i32\":-1,\"s32\":-1,\"fl\":1.1,\"db\":-0,\"color\":\"BLUE\",\"ri\":[1,2,300],\"rs\":[\"a\"],\"ms\":{\"a\":1,\"b\":2},\"opt\":0,\"name\":\"z\"}"
+
+test "to_json and from_json: Timestamp, Duration, a wrapper, FieldMask, Empty, and a wrapper at zero"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    m = from_json(
+        schema,
+        type_name: "t.All",
+        v: json.parse("{\"ts\":\"1972-01-01T10:00:20.021Z\",\"du\":\"-1.5s\",\"w64\":\"7\",\"fm\":\"a.bC,d\",\"em\":{},\"wb\":\"\",\"wf\":0}").must()
+    ).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "da010a08b4e78b1e10c0de810ae2011608ffffffffffffffffff011080b6ca91feffffffff0182020208078a020a0a05612e625f630a0164920200b20200ba0200"
+    assert json.format(to_json(schema, m: m).must()).must() == "{\"ts\":\"1972-01-01T10:00:20.021Z\",\"du\":\"-1.500s\",\"w64\":\"7\",\"fm\":\"a.bC,d\",\"em\":{},\"wb\":\"\",\"wf\":0}"
+
+test "to_json and from_json: Struct, Value holding null, ListValue, and nesting inside them"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    text = "{\"st\":{\"k\":[1,\"a\",null,true,{\"z\":{}}]},\"va\":null,\"lv\":[1.5,{}]}"
+    m = from_json(schema, type_name: "t.All", v: json.parse(text).must()).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "ea012e0a2c0a016b122732250a0911000000000000f03f0a031a01610a0208000a0220010a0b2a090a070a017a12022a00f201020800a2020f0a0911000000000000f83f0a022a00"
+    assert json.format(to_json(schema, m: m).must()).must() == text
+
+test "to_json and from_json: an Any of a message, and an Any of a well-known type under value"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    plain = "{\"an\":{\"@type\":\"type.googleapis.com/t.Inner\",\"a\":3}}"
+    m = from_json(schema, type_name: "t.All", v: json.parse(plain).must()).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "fa01210a1b747970652e676f6f676c65617069732e636f6d2f742e496e6e657212020803"
+    assert json.format(to_json(schema, m: m).must()).must() == plain
+    special = "{\"an\":{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"3s\"}}"
+    n = from_json(schema, type_name: "t.All", v: json.parse(special).must()).must()
+    assert bytes.format_hex(encode(schema, m: n).must()) == "fa01320a2c747970652e676f6f676c65617069732e636f6d2f676f6f676c652e70726f746f6275662e4475726174696f6e12020803"
+    assert json.format(to_json(schema, m: n).must()).must() == special
+    lost = "{\"an\":{\"@type\":\"type.googleapis.com/t.Missing\"}}"
+
+    match from_json(schema, type_name: "t.All", v: json.parse(lost).must())
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "to_json and from_json: a message, a list of messages, maps of int and bool keys, an enum's number it does not name"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    m = from_json(
+        schema,
+        type_name: "t.All",
+        v: json.parse("{\"inner\":{\"a\":5,\"s\":\"x\"},\"rm\":[{\"a\":1},{}],\"mi\":{\"-1\":{\"a\":2},\"3\":{}},\"mb\":{\"true\":\"t\",\"false\":\"f\"},\"rc\":[\"RED\",2,7]}").must()
+    ).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "8a01050805120178a201020801a20100b2010f08ffffffffffffffffff0112020802b20104080312009a0203010207aa02050800120166aa02050801120174"
+    assert json.format(to_json(schema, m: m).must()).must() == "{\"inner\":{\"a\":5,\"s\":\"x\"},\"rm\":[{\"a\":1},{}],\"mi\":{\"-1\":{\"a\":2},\"3\":{}},\"rc\":[\"RED\",\"BLUE\",7],\"mb\":{\"false\":\"f\",\"true\":\"t\"}}"
+
+test "to_json and from_json: nan, minus infinity, and bytes in the URL-safe alphabet read and written standard"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    m = from_json(
+        schema,
+        type_name: "t.All",
+        v: json.parse("{\"fl\":\"NaN\",\"db\":\"-Infinity\",\"by\":\"_-8\"}").must()
+    ).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "5d0000c07f61000000000000f0ff7a02ffef"
+    assert json.format(to_json(schema, m: m).must()).must() == "{\"fl\":\"NaN\",\"db\":\"-Infinity\",\"by\":\"/+8=\"}"
+
+test "to_json_with: every field at its default, in the order of their numbers, as Go's EmitDefaultValues writes"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    m = decode(schema, type_name: "t.All", data: [0x08, 0x01, 0xb8, 0x01, 0x00]).must()
+    options = JsonOptions(use_proto_names: true, use_enum_numbers: true, emit_defaults: true)
+    want = "{\"i32\":1,\"i64\":\"0\",\"u32\":0,\"u64\":\"0\",\"s32\":0,\"s64\":\"0\",\"f32\":0,\"f64\":\"0\",\"sf32\":0,\"sf64\":\"0\",\"fl\":0,\"db\":0,\"b\":false,\"str\":\"\",\"by\":\"\",\"color\":0,\"ri\":[],\"rs\":[],\"rm\":[],\"ms\":{},\"mi\":{},\"opt\":0,\"rc\":[],\"mb\":{}}"
+    assert json.format(to_json_with(schema, m: m, options: options).must()).must() == want
+
+test "from_json: each way a member is refused, a oneof written twice, an integer with a fraction, an enum that names nothing"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+
+    for text in ["{\"num\":3,\"box\":{\"a\":1}}", "{\"i32\":1.5}", "{\"nope\":1}", "{\"i32\":\"x\"}", "{\"b\":\"true\"}", "{\"ri\":[1,null]}", "{\"ts\":\"1972-01-01\"}", "{\"by\":\"!\"}"]
+        match from_json(schema, type_name: "t.All", v: json.parse(text).must())
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    for text in ["{\"fl\":1e40}", "{\"i32\":2147483648}", "{\"u32\":-1}"]
+        match from_json(schema, type_name: "t.All", v: json.parse(text).must())
+            .ok _  => assert false
+            .err e => assert e.code == "does_not_fit"
+
+    assert from_json(schema, type_name: "t.All", v: json.parse("{\"i32\":\"12\",\"i64\":1e2,\"name\":null}").must()).must().fields == {1: .int32(v: 12), 2: .int64(v: 100)}
+
+test "decode: a field twice keeps the last, a message twice is merged, a map's key twice keeps the last, invalid UTF-8 refused"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    twice = decode(schema, type_name: "t.All", data: bytes.parse_hex("0801080210031003").must()).must()
+    assert twice.fields == {1: .int32(v: 2), 2: .int64(v: 3)}
+    merged = decode(schema, type_name: "t.All", data: bytes.parse_hex("8a0102080a8a0103120178").must()).must()
+    assert json.format(to_json(schema, m: merged).must()).must() == "{\"inner\":{\"a\":10,\"s\":\"x\"}}"
+    keyed = decode(schema, type_name: "t.All", data: bytes.parse_hex("aa01050a01611001aa01050a01611002").must()).must()
+    assert json.format(to_json(schema, m: keyed).must()).must() == "{\"ms\":{\"a\":2}}"
+
+    match decode(schema, type_name: "t.All", data: bytes.parse_hex("7202c328").must())
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+test "decode: a wire type its field does not take kept as unknown, cut bytes and an eleventh varint byte refused"
+    schema = parse_schema_text(name: "t3.proto", text: samples.all_proto()).must()
+    odd = decode(schema, type_name: "t.All", data: [0x0d, 1, 2, 3, 4]).must()
+    assert odd.fields.len() == 0 && odd.unknown == [0x0d, 1, 2, 3, 4]
+
+    for hex in ["08", "0a05", "08ffffffffffffffffff02", "088080808080808080808000", "0f", "00", "80808080108a01"]
+        match decode(schema, type_name: "t.All", data: bytes.parse_hex(hex).must())
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "decode: a closed enum's number it does not name kept with the unknown fields, as Python's upb keeps it"
+    schema = parse_schema_text(name: "t2.proto", text: samples.p2_proto()).must()
+    m = decode(schema, type_name: "u.P2", data: bytes.parse_hex("1a02010220032805280133380734").must()).must()
+    assert json.format(to_json(schema, m: m).must()).must() == "{\"packed\":[1,2],\"sizes\":[\"SMALL\"],\"g\":{\"x\":7}}"
+    assert bytes.format_hex(encode(schema, m: m).must()) == "1a02010228013338073420032805"
+    n = decode(schema, type_name: "u.P2", data: bytes.parse_hex("20072802280728012a03020701").must()).must()
+    assert bytes.format_hex(encode(schema, m: n).must()) == "2802280128022801200728072807"
+
+test "encode: proto2's defaults, a group, packed and unpacked lists and an extension, in the order of their numbers, as Python writes them"
+    schema = parse_schema_text(name: "t2.proto", text: samples.p2_proto()).must()
+    text = "{\"a\":7,\"unpacked\":[1,2],\"packed\":[3,4],\"size\":\"LARGE\",\"sizes\":[\"SMALL\",\"LARGE\"],\"g\":{\"x\":5},\"req\":{\"id\":1},\"s\":\"\",\"[u.ext]\":9}"
+    m = from_json(schema, type_name: "u.P2", v: json.parse(text).must()).must()
+    assert bytes.format_hex(encode(schema, m: m).must()) == "0807100110021a02030420022801280233380534420208015200a00609"
+    assert json.format(to_json(schema, m: m).must()).must() == text
+    assert get(schema, m: new_message(schema, type_name: "u.P2").must(), field: "a").must() == .int32(v: 7)
+    assert get(schema, m: m, field: "u.ext").must() == .int32(v: 9)
+
+    match from_json(schema, type_name: "u.P2", v: json.parse("{\"req\":{}}").must())
+        .ok _  => assert false
+        .err e => assert e.msg == "u.P2.req.id: the required field is not set"
+
+test "set: a value of another kind, a message of another type, a list where one value goes, a closed enum's unnamed number"
+    schema = parse_schema_text(name: "t2.proto", text: samples.p2_proto()).must()
+    m: Message @= new_message(schema, type_name: "u.P2").must()
+    assert set(schema, @m, field: "a", value: .int64(v: 1)).is_err()
+    assert set(
+        schema,
+        @m,
+        field: "req",
+        value: .message(m: Message(type_name: "u.P2", fields: {}, unknown: []))
+    ).is_err()
+    assert set(schema, @m, field: "a", value: .list(items: [.int32(v: 1)])).is_err()
+    assert set(schema, @m, field: "size", value: .enumeration(number: 3)).is_err()
+    assert set(schema, @m, field: "nothing", value: .int32(v: 1)).is_err()
+    assert set_int(schema, @m, field: "a", n: 2147483648).is_err()
+    set(schema, @m, field: "size", value: .enumeration(number: 2)).must()
+    assert enum_name_of(schema, m: m, field: "size").must() == "LARGE"
+
+test "decode_raw and encode_raw: every wire type, a nested group, and back to the same bytes"
+    data = bytes.parse_hex("0896011101000000000000001a0161230b2d020000000c242d07000000").must()
+    fields = decode_raw(data).must()
+    assert fields.len() == 5 && fields[3].value == .group(fields: [RawField(number: 1, value: .group(fields: [RawField(number: 5, value: .fixed32(v: 2))]))])
+    assert encode_raw(fields) == data
+    assert decode_raw([0x23]).is_err() && decode_raw([0x0e]).is_err()
+
+## Examples
+
+# A tag written after the bytes before it.
+test "push_tag: field 1, a varint"
+    out: [u8] @= []
+    push_tag(@out, number: 1, wire: .varint)
+    assert out == [0x08]
+
+# 300 takes two bytes.
+test "push_varint: 300"
+    out: [u8] @= []
+    push_varint(@out, 300)
+    assert out == [0xac, 0x02]
+
+# Four bytes, the lowest first.
+test "push_fixed32: 1"
+    out: [u8] @= []
+    push_fixed32(@out, 1)
+    assert out == [0x01, 0x00, 0x00, 0x00]
+
+# Eight bytes, the lowest first.
+test "push_fixed64: 258"
+    out: [u8] @= []
+    push_fixed64(@out, 258)
+    assert out == [0x02, 0x01, 0, 0, 0, 0, 0, 0]
+
+# A length, then the bytes.
+test "push_length_delimited: two bytes"
+    out: [u8] @= []
+    push_length_delimited(to: @out, v: [0x61, 0x62])
+    assert out == [0x02, 0x61, 0x62]
+
+# The tag of field 2, length-delimited.
+test "decode_tag: field 2, length-delimited"
+    tag = decode_tag([0x12, 0x00], at: 0).must()
+    assert tag.number == 2 && tag.wire == .length_delimited && tag.next == 1
+
+# A varint and where the next byte is.
+test "decode_varint: 150"
+    got = decode_varint([0x96, 0x01], at: 0).must()
+    assert got.value == 150 && got.next == 2
+
+# Four bytes read as a number.
+test "decode_fixed32: 7"
+    assert decode_fixed32([0x07, 0, 0, 0], at: 0).must().value == 7
+
+# Eight bytes read as a number.
+test "decode_fixed64: 7"
+    assert decode_fixed64([0x07, 0, 0, 0, 0, 0, 0, 0], at: 0).must().next == 8
+
+# The bytes after a length.
+test "decode_length_delimited: a word"
+    got = decode_length_delimited([0x02, 0x6f, 0x6b], at: 0).must()
+    assert got.value == [0x6f, 0x6b] && got.next == 3
+
+# A field a program does not read, passed over.
+test "skip_field: a varint passed over"
+    data: [u8] = [0x08, 0x96, 0x01, 0x10, 0x01]
+    tag = decode_tag(data, at: 0).must()
+    assert skip_field(data, tag: tag).must() == 3
+
+# -1 is 1 in zig-zag form.
+test "to_zigzag: minus one"
+    assert to_zigzag(-1) == 1
+
+# 3 in zig-zag form is -2.
+test "from_zigzag: three"
+    assert from_zigzag(3) == -2
+
+# How long a varint is.
+test "size_of_varint: 300"
+    assert size_of_varint(300) == 2
+
+# The bits a `float` field writes for 1.0.
+test "bits_of_float: one"
+    assert bits_of_float(1.0) == 0x3f800000
+
+# The float of those bits.
+test "float_of_bits: one"
+    assert float_of_bits(0x3f800000) == 1.0
+
+# The bits a `double` field writes for 1.0.
+test "bits_of_double: one"
+    assert bits_of_double(1.0) == 0x3ff0000000000000
+
+# The double of those bits.
+test "double_of_bits: one"
+    assert double_of_bits(0x3ff0000000000000) == 1.0
+
+# A message read with no schema: a varint and a string.
+test "decode_raw: two fields"
+    fields = decode_raw([0x08, 0x96, 0x01, 0x12, 0x01, 0x61]).must()
+    assert fields == [RawField(number: 1, value: .varint(v: 150)), RawField(number: 2, value: .length_delimited(v: [0x61]))]
+
+# A group written between its two tags.
+test "encode_raw: a group"
+    fields = [RawField(number: 3, value: .group(fields: [RawField(number: 1, value: .varint(v: 1))]))]
+    assert encode_raw(fields) == [0x1b, 0x08, 0x01, 0x1c]
+
+# A file read through a function that gives its text.
+test "parse_schema: a file and the well-known type it imports"
+    schema = parse_schema(["shop.proto"], open: samples.shop_proto_named).must()
+    assert keys(schema.files) == ["google/protobuf/timestamp.proto", "shop.proto"]
+
+# One file given whole.
+test "parse_schema_text: one file"
+    schema = parse_schema_text(name: "legacy.proto", text: samples.legacy_proto()).must()
+    assert file_named(schema, name: "legacy.proto").must().syntax == .proto2
+
+# Two files given by name, one importing the other.
+test "parse_schema_texts: an import among the files given"
+    texts = {
+        "a.proto": "syntax = \"proto3\";\nmessage A {}\n"
+        "b.proto": "syntax = \"proto3\";\nimport \"a.proto\";\nmessage B { A a = 1; }\n"
+    }
+    schema = parse_schema_texts(texts).must()
+    assert field_of(schema, type_name: "B", field: "a").must().type_name == "A"
+
+# A field found by its type's name and its own.
+test "field_of: a field and an extension"
+    schema = parse_schema_text(name: "legacy.proto", text: samples.legacy_proto()).must()
+    assert field_of(schema, type_name: "legacy.Req", field: "id").must().number == 1
+    assert field_of(schema, type_name: "legacy.Req", field: "legacy.priority").must().number == 100
+
+# A message type by its full name.
+test "message_named: an order"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert message_named(schema, name: "shop.Order").must().fields.len() == 12
+
+# An enum by its full name.
+test "enum_named: a colour"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert enum_named(schema, name: ".shop.Color").must().values.len() == 3
+
+# A service and its methods.
+test "service_named: the shop"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert service_named(schema, name: "shop.Shop").must().methods.len() == 2
+
+# A file by the name it was read by.
+test "file_named: its package"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert file_named(schema, name: "shop.proto").must().package == "shop"
+
+# An extension by its full name.
+test "extension_named: the extendee"
+    schema = parse_schema_text(name: "legacy.proto", text: samples.legacy_proto()).must()
+    assert extension_named(schema, name: "legacy.priority").must().extendee == "legacy.Req"
+
+# A field by its name, with its JSON name.
+test "field_named: a JSON name"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    order = message_named(schema, name: "shop.Order").must()
+    assert field_named(order, name: "placed").must().json_name == "placed"
+
+# A field by its number.
+test "field_numbered: field 4"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    order = message_named(schema, name: "shop.Order").must()
+    assert field_numbered(order, number: 4).must().kind == .enumeration
+
+# A method and its streams.
+test "method_named: a stream of responses"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    watch = method_named(service_named(schema, name: "shop.Shop").must(), name: "Watch").must()
+    assert watch.server_streaming && !watch.client_streaming && watch.input_type == "shop.Order"
+
+# An enum's value by name.
+test "enum_value_named: RED"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert enum_value_named(enum_named(schema, name: "shop.Color").must(), name: "RED").must().number == 1
+
+# An enum's value by number.
+test "enum_value_numbered: 2"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert enum_value_numbered(enum_named(schema, name: "shop.Color").must(), number: 2).must().name == "BLUE"
+
+# An empty message of a type.
+test "new_message: an empty order"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m = new_message(schema, type_name: "shop.Order").must()
+    assert m.fields.len() == 0
+
+# A field unset reads as its default.
+test "get: a default"
+    schema = parse_schema_text(name: "legacy.proto", text: samples.legacy_proto()).must()
+    req = new_message(schema, type_name: "legacy.Req").must()
+    assert get(schema, m: req, field: "name").must() == .text(v: "anon")
+
+# A field without presence is not held at its default.
+test "has: a zero is not held"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_int(schema, @m, field: "id", n: 0).must()
+    assert !has(schema, m: m, field: "id").must()
+
+# A value set, checked against its field's kind.
+test "set: a text"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Item").must()
+    set(schema, @m, field: "sku", value: .text(v: "a1")).must()
+    assert set(schema, @m, field: "count", value: .text(v: "two")).is_err()
+    assert get(schema, m: m, field: "sku").must() == .text(v: "a1")
+
+# A record moved into a message and back by its checked field names.
+test "set_int: a record written and read back by its field names"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    p = samples.Person(name: "Ziggy", id: 1972, emails: ["z@mars.example"])
+    m: Message @= new_message(schema, type_name: "shop.Person").must()
+    set(schema, @m, field: samples.Person::name, value: .text(v: p.name)).must()
+    set_int(schema, @m, field: samples.Person::id, n: p.id).must()
+
+    for e in p.emails
+        add_item(schema, @m, field: samples.Person::emails, item: .text(v: e)).must()
+
+    data = encode(schema, m: m).must()
+    assert bytes.format_hex(data) == "0a055a6967677910b40f1a0e7a406d6172732e6578616d706c65"
+    back = decode(schema, type_name: "shop.Person", data: data).must()
+    emails: [str] @= []
+
+    for item in items_of(get(schema, m: back, field: samples.Person::emails).must()).must()
+        emails @ emails.push(text_of(item).must())
+
+    name = text_of(get(schema, m: back, field: samples.Person::name).must()).must()
+    id = int_of(get(schema, m: back, field: samples.Person::id).must()).must()
+    assert samples.Person(name: name, id: id, emails: emails) == p
+
+# An unsigned field set past what an i64 holds.
+test "set_uint: the largest u64"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_uint(schema, @m, field: "serial", n: 18446744073709551615).must()
+    assert uint_of(get(schema, m: m, field: "serial").must()).must() == 18446744073709551615
+
+# A `float` field holds the nearest `f32`.
+test "set_float: a float"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_float(schema, @m, field: "ratio", x: 0.5).must()
+    assert get(schema, m: m, field: "ratio").must() == .float(v: 0.5)
+
+# An enum set by its value's name.
+test "set_enum: RED"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_enum(schema, @m, field: "color", name: "RED").must()
+    assert get(schema, m: m, field: "color").must() == .enumeration(number: 1)
+
+# An enum read back by its value's name.
+test "enum_name_of: BLUE"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_enum(schema, @m, field: "color", name: "BLUE").must()
+    assert enum_name_of(schema, m: m, field: "color").must() == "BLUE"
+
+# A field taken back to unset.
+test "clear: a note"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set(schema, @m, field: "note", value: .text(v: "")).must()
+    assert has(schema, m: m, field: "note").must()
+    clear(schema, @m, field: "note").must()
+    assert !has(schema, m: m, field: "note").must()
+
+# Which field of a oneof is held: the last one set.
+test "which_oneof: the last set"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set(schema, @m, field: "card", value: .text(v: "visa")).must()
+    set_int(schema, @m, field: "cash", n: 5).must()
+    assert which_oneof(schema, m: m, oneof: "pay").must() == "cash"
+    assert !has(schema, m: m, field: "card").must()
+
+# An item added to a repeated field.
+test "add_item: an item of an order"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    item: Message @= new_message(schema, type_name: "shop.Item").must()
+    set(schema, @item, field: "sku", value: .text(v: "a1")).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    add_item(schema, @m, field: "items", item: .message(m: item)).must()
+    assert items_of(get(schema, m: m, field: "items").must()).must().len() == 1
+
+# Entries kept in the order of their keys.
+test "put_entry: two keys"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    put_entry(schema, @m, field: "stock", key: .text(v: "b"), value: .int32(v: 1)).must()
+    put_entry(schema, @m, field: "stock", key: .text(v: "a"), value: .int32(v: 2)).must()
+    entries = entries_of(get(schema, m: m, field: "stock").must()).must()
+    assert entries[0].key == .text(v: "a") && entries[1].value == .int32(v: 1)
+
+# Two messages merged: a scalar replaced, a list added to.
+test "merge: a scalar and a list"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    a: Message @= new_message(schema, type_name: "shop.Person").must()
+    set_int(schema, @a, field: "id", n: 1).must()
+    add_item(schema, @a, field: "emails", item: .text(v: "a@x")).must()
+    b: Message @= new_message(schema, type_name: "shop.Person").must()
+    set_int(schema, @b, field: "id", n: 2).must()
+    add_item(schema, @b, field: "emails", item: .text(v: "b@x")).must()
+    merge(schema, into: @a, from: b).must()
+    assert int_of(get(schema, m: a, field: "id").must()).must() == 2
+    assert items_of(get(schema, m: a, field: "emails").must()).must().len() == 2
+
+# A required field unset, named by its path.
+test "check_required: a request with no id"
+    schema = parse_schema_text(name: "legacy.proto", text: samples.legacy_proto()).must()
+    req = new_message(schema, type_name: "legacy.Req").must()
+
+    match check_required(schema, m: req)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "legacy.Req.id: the required field is not set"
+
+# Unknown bytes taken away.
+test "clear_unknown: a field the type does not declare"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= decode(schema, type_name: "shop.Item", data: [0x18, 0x01]).must()
+    assert m.unknown == [0x18, 0x01]
+    clear_unknown(schema, @m).must()
+    assert m.unknown.len() == 0
+
+# The name of a value's case.
+test "kind_of: an enumeration"
+    assert kind_of(.enumeration(number: 1)) == "enumeration"
+
+# A bool read out of a value.
+test "bool_of: true"
+    assert bool_of(.boolean(v: true)).must()
+
+# Any integer read as an `i64`.
+test "int_of: an int32"
+    assert int_of(.int32(v: -5)).must() == -5
+
+# An integer read as a `u64`.
+test "uint_of: a uint32"
+    assert uint_of(.uint32(v: 7)).must() == 7
+
+# A float widened exactly.
+test "float_of: a float"
+    assert float_of(.float(v: 0.5)).must() == 0.5
+
+# A text read out of a value.
+test "text_of: a text"
+    assert text_of(.text(v: "città")).must() == "città"
+
+# Bytes read out of a value.
+test "bytes_of: bytes"
+    assert bytes_of(.binary(v: [0x01])).must() == [0x01]
+
+# A message read out of a value.
+test "message_of: an empty message"
+    assert message_of(.message(m: Message(type_name: "x.Y", fields: {}, unknown: []))).must().type_name == "x.Y"
+
+# A list's items.
+test "items_of: two items"
+    assert items_of(.list(items: [.int32(v: 1), .int32(v: 2)])).must().len() == 2
+
+# A map's entries.
+test "entries_of: one entry"
+    assert entries_of(.entries(entries: [Entry(key: .text(v: "a"), value: .int32(v: 1))])).must().len() == 1
+
+# A map's value by its key.
+test "entry_value: the value under a"
+    v: Value = .entries(entries: [Entry(key: .text(v: "a"), value: .int32(v: 1))])
+    assert entry_value(v: v, key: .text(v: "a")).must() == .int32(v: 1)
+
+# The options of the protocol's own reading.
+test "strict: a hundred levels"
+    assert strict().max_depth == 100 && !strict().allow_partial
+
+# A message encoded as Go's and Python's runtimes encode it.
+test "encode: an order"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_int(schema, @m, field: "id", n: 7).must()
+    assert encode(schema, m: m).must() == [0x08, 0x07]
+
+# A required field left unset, encoded all the same.
+test "encode_partial: a request with no id"
+    schema = parse_schema_text(name: "legacy.proto", text: samples.legacy_proto()).must()
+    req = new_message(schema, type_name: "legacy.Req").must()
+    assert encode(schema, m: req).is_err()
+    assert encode_partial(schema, m: req).must().len() == 0
+
+# Bytes decoded by a type.
+test "decode: an item"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    item = decode(schema, type_name: "shop.Item", data: [0x0a, 0x02, 0x61, 0x31, 0x10, 0x02]).must()
+    assert get(schema, m: item, field: "sku").must() == .text(v: "a1")
+
+# Unknown fields dropped as they are read.
+test "decode_with: unknown fields dropped"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    options = DecodeOptions(max_depth: 100, allow_partial: false, discard_unknown: true)
+    assert decode_with(schema, type_name: "shop.Item", data: [0x18, 0x01], options: options).must().unknown.len() == 0
+
+# A message after its length.
+test "encode_delimited: an id"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Person").must()
+    set_int(schema, @m, field: "id", n: 1).must()
+    assert encode_delimited(schema, m: m).must() == [0x02, 0x10, 0x01]
+
+# Two messages read one after the other.
+test "decode_delimited: two people"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    data: [u8] = [0x02, 0x10, 0x01, 0x02, 0x10, 0x02]
+    first = decode_delimited(schema, type_name: "shop.Person", data: data, at: 0).must()
+    second = decode_delimited(schema, type_name: "shop.Person", data: data, at: first.next).must()
+    assert int_of(get(schema, m: second.message, field: "id").must()).must() == 2 && second.next == 6
+
+# The mapping's own writing options.
+test "json_options: JSON names"
+    assert !json_options().use_proto_names
+
+# The mapping's own reading options.
+test "json_read_options: unknown members refused"
+    assert !json_read_options().ignore_unknown
+
+# An order as JSON, as Go's protojson writes it.
+test "to_json: an order"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    v = json.parse(
+        "{\"id\": \"7\", \"stock\": {\"b\": 1}, \"color\": \"RED\", \"placed\": \"2026-11-17T09:30:00Z\", \"token\": \"AQI=\"}"
+    ).must()
+    m = from_json(schema, type_name: "shop.Order", v: v).must()
+    want = "{\"id\":\"7\",\"stock\":{\"b\":1},\"color\":\"RED\",\"placed\":\"2026-11-17T09:30:00Z\",\"token\":\"AQI=\"}"
+    assert json.format(to_json(schema, m: m).must()).must() == want
+
+# Declared names and enum numbers.
+test "to_json_with: declared names and numbers"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    m: Message @= new_message(schema, type_name: "shop.Order").must()
+    set_enum(schema, @m, field: "color", name: "BLUE").must()
+    options = JsonOptions(use_proto_names: true, use_enum_numbers: true, emit_defaults: false)
+    assert json.format(to_json_with(schema, m: m, options: options).must()).must() == "{\"color\":2}"
+
+# JSON read into a message.
+test "from_json: an item"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    item = from_json(schema, type_name: "shop.Item", v: json.parse("{\"sku\": \"a1\", \"count\": 2}").must()).must()
+    assert get(schema, m: item, field: "count").must() == .int32(v: 2)
+
+# An unknown member passed over.
+test "from_json_with: an unknown member passed over"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    v = json.parse("{\"sku\": \"a1\", \"colour\": 2}").must()
+    assert from_json(schema, type_name: "shop.Item", v: v).is_err()
+    options = JsonReadOptions(ignore_unknown: true, max_depth: 100)
+    assert !from_json_with(schema, type_name: "shop.Item", v: v, options: options).is_err()
+
+# An instant held as a timestamp.
+test "from_instant: the epoch and a second"
+    assert from_instant(time.Instant(unix_nanoseconds: 1500000000)).fields == {1: .int64(v: 1), 2: .int32(v: 500000000)}
+
+# A timestamp read as an instant.
+test "to_instant: one second"
+    assert to_instant(from_instant(time.Instant(unix_nanoseconds: 1000000000))).must().unix_nanoseconds == 1000000000
+
+# A duration held as a message.
+test "from_duration: minus a second and a half"
+    assert from_duration(time.Duration(nanoseconds: -1500000000)).fields == {1: .int64(v: -1), 2: .int32(v: -500000000)}
+
+# A duration read back.
+test "to_duration: two seconds"
+    assert to_duration(from_duration(time.Duration(nanoseconds: 2000000000))).must().nanoseconds == 2000000000
+
+# A timestamp as RFC 3339 text.
+test "format_timestamp: 1972"
+    assert format_timestamp(parse_timestamp("1972-01-01T10:00:20.021Z").must()).must() == "1972-01-01T10:00:20.021Z"
+
+# RFC 3339 with an offset, moved to UTC.
+test "parse_timestamp: an offset"
+    assert format_timestamp(parse_timestamp("2026-11-17T10:30:00+01:00").must()).must() == "2026-11-17T09:30:00Z"
+
+# A duration as text.
+test "format_duration: a second and a half"
+    assert format_duration(from_duration(time.Duration(nanoseconds: 1500000000))).must() == "1.500s"
+
+# A duration read from text.
+test "parse_duration: minus three seconds"
+    assert parse_duration("-3s").must().fields == {1: .int64(v: -3)}
+
+# A message held in an Any.
+test "pack_any: an item"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    item = from_json(schema, type_name: "shop.Item", v: json.parse("{\"count\": 2}").must()).must()
+    packed = pack_any(schema, m: item, prefix: TYPE_URL_PREFIX).must()
+    assert packed.fields[1].must() == .text(v: "type.googleapis.com/shop.Item")
+
+# The message an Any holds.
+test "unpack_any: an item back"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    item = from_json(schema, type_name: "shop.Item", v: json.parse("{\"count\": 2}").must()).must()
+    assert unpack_any(schema, m: pack_any(schema, m: item, prefix: TYPE_URL_PREFIX).must()).must() == item
+
+# The type an Any holds.
+test "any_type_name: an item"
+    m = Message(type_name: "google.protobuf.Any", fields: {1: .text(v: "type.googleapis.com/shop.Item")}, unknown: [])
+    assert any_type_name(m).must() == "shop.Item"
+
+# The JSON a Value holds.
+test "to_json_value: a list"
+    v = json.parse("[1, \"a\", null]").must()
+    assert to_json_value(from_json_value(v).must()).must() == v
+
+# Any JSON held as a Value.
+test "from_json_value: an object"
+    m = from_json_value(json.parse("{\"a\": true}").must()).must()
+    assert m.type_name == "google.protobuf.Value"
+
+# An object held as a Struct.
+test "struct_from_json: an object"
+    assert struct_from_json(json.parse("{\"a\": 1}").must()).must().type_name == "google.protobuf.Struct"
+
+# A scalar held in its wrapper.
+test "to_wrapper: an int64"
+    assert to_wrapper(.int64(v: 7)).must() == Message(type_name: "google.protobuf.Int64Value", fields: {1: .int64(v: 7)}, unknown: [])
+
+# A wrapper's value, its default where it holds none.
+test "from_wrapper: an empty BoolValue"
+    assert from_wrapper(Message(type_name: "google.protobuf.BoolValue", fields: {}, unknown: [])).must() == .boolean(v: false)
+
+# Paths held in a FieldMask.
+test "field_mask_of: two paths"
+    assert paths_of(field_mask_of(["a.b", "c"])).must() == ["a.b", "c"]
+
+# A FieldMask's paths.
+test "paths_of: none"
+    assert paths_of(field_mask_of([])).must().len() == 0
+
+# Paths in lowerCamelCase.
+test "format_field_mask: two paths"
+    assert format_field_mask(["user.display_name", "id"]).must() == "user.displayName,id"
+
+# Paths read back.
+test "parse_field_mask: two paths"
+    assert parse_field_mask("user.displayName,id").must() == ["user.display_name", "id"]
+
+# A path another covers, taken out.
+test "normalize_mask: a covered path"
+    assert normalize_mask(["a.b", "a", "c"]) == ["a", "c"]
+
+# What either mask covers.
+test "union_masks: two masks"
+    assert union_masks(a: ["a.b"], b: ["a", "c"]) == ["a", "c"]
+
+# What both masks cover.
+test "intersect_masks: two masks"
+    assert intersect_masks(a: ["a"], b: ["a.b", "c"]) == ["a.b"]
+
+# Paths checked against a type.
+test "check_mask: a path that goes on past a list"
+    schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
+    assert !check_mask(schema, type_name: "shop.Order", paths: ["id", "placed.seconds"]).is_err()
+    assert check_mask(schema, type_name: "shop.Order", paths: ["items.sku"]).is_err()

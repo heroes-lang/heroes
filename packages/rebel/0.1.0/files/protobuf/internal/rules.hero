@@ -1,0 +1,508 @@
+# What a file's syntax and an edition's features decide about each field and
+# enum, and the rules a message, an enum and a default must keep. Proto2 and
+# proto3 are read as the editions that stand for them, so every syntax goes
+# through the same features.
+
+use numbers
+use protobuf/internal/bits
+use protobuf/internal/model
+use protobuf/internal/syntax
+
+# An edition's features that change what is written or read.
+record Features
+    # `EXPLICIT`, `IMPLICIT` or `LEGACY_REQUIRED`.
+    presence: str
+    # `OPEN` or `CLOSED`.
+    enum_type: str
+    # `PACKED` or `EXPANDED`.
+    repeated: str
+    # `VERIFY` or `NONE`.
+    utf8: str
+    # `LENGTH_PREFIXED` or `DELIMITED`.
+    encoding: str
+    # `ALLOW` or `LEGACY_BEST_EFFORT`.
+    json: str
+
+# The features a file of `form` begins with: `proto2`, `proto3` or `editions`.
+function defaults(form: str) -> Features
+    if form == "proto2"
+        return Features(
+            presence: "EXPLICIT",
+            enum_type: "CLOSED",
+            repeated: "EXPANDED",
+            utf8: "NONE",
+            encoding: "LENGTH_PREFIXED",
+            json: "LEGACY_BEST_EFFORT"
+        )
+
+    if form == "proto3"
+        return Features(
+            presence: "IMPLICIT",
+            enum_type: "OPEN",
+            repeated: "PACKED",
+            utf8: "VERIFY",
+            encoding: "LENGTH_PREFIXED",
+            json: "ALLOW"
+        )
+    return Features(
+        presence: "EXPLICIT",
+        enum_type: "OPEN",
+        repeated: "PACKED",
+        utf8: "VERIFY",
+        encoding: "LENGTH_PREFIXED",
+        json: "ALLOW"
+    )
+
+# `base` with the features `settings` set; `where` names the declaration.
+function apply(base: Features, settings: [model.Setting], form: str, where: str) -> Features?
+    out: Features @= base
+
+    for s in settings
+        if s.name.len() > 9 && s.name.slice(from: 0, to: 9) == "features."
+            if form != "editions"
+                return fail(code: "invalid", msg: f"{where}: `{s.name}` is a feature, which only an edition sets")
+            feature = s.name.slice(from: 9, to: s.name.len())
+            value = s.text
+            allowed = {
+                "field_presence": ["EXPLICIT", "IMPLICIT", "LEGACY_REQUIRED"]
+                "enum_type": ["OPEN", "CLOSED"]
+                "repeated_field_encoding": ["PACKED", "EXPANDED"]
+                "utf8_validation": ["VERIFY", "NONE"]
+                "message_encoding": ["LENGTH_PREFIXED", "DELIMITED"]
+                "json_format": ["ALLOW", "LEGACY_BEST_EFFORT"]
+            }
+
+            match allowed[feature]
+                .err _ => _ = 0
+                .ok values =>
+                    known: bool @= false
+
+                    for v in values
+                        if v == value && s.kind == model.IDENTIFIER
+                            known @ true
+
+                    if !known
+                        return fail(
+                            code: "invalid",
+                            msg: f"{where}: `{value}` is not a value of `{s.name}`, which takes {values.join(", ")}"
+                        )
+
+                    if feature == "field_presence"
+                        out.presence @ value
+                    else if feature == "enum_type"
+                        out.enum_type @ value
+                    else if feature == "repeated_field_encoding"
+                        out.repeated @ value
+                    else if feature == "utf8_validation"
+                        out.utf8 @ value
+                    else if feature == "message_encoding"
+                        out.encoding @ value
+                    else
+                        out.json @ value
+
+    return ok(out)
+
+# The name in JSON of the field `name`: each `_` taken out and the letter after
+# it made a capital, as protoc makes it.
+function json_name(name: str) -> str
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    out: [str] @= []
+    upper: bool @= false
+
+    for c in name.chars()
+        if c == "_"
+            upper @ true
+        else if upper && c[0] >= 'a' && c[0] <= 'z'
+            k = to_i64(c[0] - 'a').must()
+            out @ out.push(letters.slice(from: k, to: k + 1))
+            upper @ false
+        else
+            out @ out.push(c)
+            upper @ false
+
+    return out.join("")
+
+# Whether `kind` is a scalar that may be packed.
+function is_packable(kind: i64) -> bool
+    return kind != model.STRING && kind != model.BYTES && kind != model.MESSAGE && kind != model.GROUP
+
+# `f`, declared in a file of `form` under `features`, with its presence,
+# packing, validation, encoding and JSON name decided.
+function decided(f: model.Field, features: Features, form: str, where: str) -> model.Field?
+    out: model.Field @= f
+    message_like = f.kind == model.MESSAGE || f.kind == model.GROUP
+    packed_option = syntax.setting_named(f.options, option: "packed")
+
+    if form == "editions"
+        if !packed_option.is_err()
+            return fail(
+                code: "invalid",
+                msg: f"{where}: an edition writes `features.repeated_field_encoding`, not `packed`"
+            )
+
+        if features.presence == "LEGACY_REQUIRED" && f.label != model.REPEATED && f.oneof < 0
+            out.label @ model.REQUIRED
+
+        own = syntax.setting_named(f.options, option: "features.field_presence")
+        own_implicit = !own.is_err() && own.must().text == "IMPLICIT"
+
+        if own_implicit && (message_like || f.oneof >= 0 || f.extendee != "" || f.label == model.REPEATED)
+            return fail(
+                code: "invalid",
+                msg: f"{where}: a message's field, a oneof's and an extension cannot be IMPLICIT"
+            )
+
+        if f.kind == model.MESSAGE && features.encoding == "DELIMITED" && !f.is_map
+            out.kind @ model.GROUP
+
+    if f.label == model.REPEATED
+        out.presence @ false
+    else if f.oneof >= 0 || message_like || f.extendee != "" || f.proto3_optional
+        out.presence @ true
+    else
+        out.presence @ features.presence != "IMPLICIT"
+
+    if f.label == model.REPEATED && is_packable(f.kind)
+        match packed_option
+            .ok s  => out.packed @ s.kind == model.IDENTIFIER && s.text == "true"
+            .err _ => out.packed @ features.repeated == "PACKED"
+    else if !packed_option.is_err()
+        return fail(code: "invalid", msg: f"{where}: only a repeated scalar may be packed")
+    out.validate_utf8 @ f.kind == model.STRING && features.utf8 == "VERIFY"
+    out.delimited @ out.kind == model.GROUP
+
+    match syntax.setting_named(f.options, option: "json_name")
+        .ok s =>
+            if f.extendee != ""
+                return fail(code: "invalid", msg: f"{where}: an extension takes no `json_name`")
+
+            match s.data.validated_bytes()
+                .ok text => out.json_name @ text
+                .err _   => return fail(code: "invalid", msg: f"{where}: `json_name` is not UTF-8")
+        .err _ => out.json_name @ json_name(f.name)
+
+    if f.has_default && (form == "proto3" || f.label == model.REPEATED || message_like || !out.presence)
+        return fail(
+            code: "invalid",
+            msg: f"{where}: only a singular scalar with presence takes a default, and proto3 none"
+        )
+    return ok(out)
+
+# The 64 bits of the default `f` writes, its enum's values given as
+# `values`, where its kind is a number, a bool or an enum.
+function default_bits(f: model.Field, values: [model.EnumValue], where: str) -> u64?
+    k = f.kind
+
+    if k == model.ENUM
+        if !f.has_default
+            if values.len() == 0
+                return ok(0)
+            return ok(bits.u64_of(values[0].number))
+
+        for v in values
+            if v.name == f.default_text
+                return ok(bits.u64_of(v.number))
+
+        return fail(code: "invalid", msg: f"{where}: the default `{f.default_text}` is no value of its enum")
+
+    if !f.has_default
+        return ok(0)
+    text = f.default_text
+
+    if k == model.BOOL
+        if text == "true"
+            return ok(1)
+
+        if text == "false"
+            return ok(0)
+        return fail(code: "invalid", msg: f"{where}: a bool's default is `true` or `false`, not `{text}`")
+
+    if k == model.STRING || k == model.BYTES
+        if text != ""
+            return fail(code: "invalid", msg: f"{where}: a {model.wire_kind_name(k)}'s default is a string")
+        return ok(0)
+
+    if k == model.FLOAT
+        match numbers.parse_f32(text)
+            .ok x  => return ok(bits.of_double(to_f64(x)))
+            .err _ => return fail(code: "invalid", msg: f"{where}: `{text}` is no float")
+
+    if k == model.DOUBLE
+        match numbers.parse_float(text)
+            .ok x  => return ok(bits.of_double(x))
+            .err _ => return fail(code: "invalid", msg: f"{where}: `{text}` is no double")
+    negative = text.len() > 0 && text[0] == '-'
+
+    digits = if negative || text.len() > 0 && text[0] == '+'
+        text.slice(from: 1, to: text.len())
+    else
+        text
+    magnitude = syntax.int_value(digits)
+
+    if magnitude.is_err()
+        return fail(code: "invalid", msg: f"{where}: `{text}` is no integer")
+    m = magnitude.must()
+    signed = k == model.INT32 || k == model.SINT32 || k == model.SFIXED32 || k == model.INT64 || k == model.SINT64 || k == model.SFIXED64
+    wide = k == model.INT64 || k == model.SINT64 || k == model.SFIXED64 || k == model.UINT64 || k == model.FIXED64
+
+    limit: u64 = if !signed && wide
+        18446744073709551615
+    else if !signed
+        4294967295
+    else if wide && negative
+        9223372036854775808
+    else if wide
+        9223372036854775807
+    else if negative
+        2147483648
+    else
+        2147483647
+
+    if negative && !signed && m > 0 || m > limit
+        return fail(code: "invalid", msg: f"{where}: the default {text} is past what a {model.wire_kind_name(k)} holds")
+
+    if negative && m > 0
+        return ok(bits.u64_of(-1 - to_i64(m - 1).must()))
+    return ok(m)
+
+# Whether `n` falls in one of `ranges`.
+function in_ranges(n: i64, ranges: [model.Range]) -> bool
+    for r in ranges
+        if n >= r.first && n <= r.last
+            return true
+
+    return false
+
+# Checks the numbers and names of `m`'s fields, read from a file of `form`.
+function check_message(m: model.Message, form: str, json: str) -> ()?
+    numbers_seen: {i64: str} @= {}
+    names_seen: {str: bool} @= {}
+    json_seen: {str: str} @= {}
+
+    if form == "proto3" && m.extension_ranges.len() > 0 && m.file != "google/protobuf/descriptor.proto"
+        return fail(code: "invalid", msg: f"{m.full_name}: proto3 declares no extension range")
+
+    for r in m.extension_ranges
+        if r.first < 1 || r.last > 536870911
+            return fail(
+                code: "invalid",
+                msg: f"{m.full_name}: the extension range {r.first} to {r.last} passes 1 to 536870911"
+            )
+
+    for f in m.fields
+        n = f.number
+
+        if n < 1 || n > 536870911
+            return fail(code: "invalid", msg: f"{f.full_name}: the number {n} is outside 1 to 536870911")
+
+        if n >= 19000 && n <= 19999
+            return fail(code: "invalid", msg: f"{f.full_name}: the numbers 19000 to 19999 are the protocol's own")
+
+        match numbers_seen[n]
+            .ok other => return fail(code: "invalid", msg: f"{f.full_name}: the number {n} is {other}'s already")
+            .err _    => numbers_seen[n] @ f.name
+
+        if !names_seen[f.name].is_err()
+            return fail(code: "invalid", msg: f"{f.full_name}: the name is declared twice")
+        names_seen[f.name] @ true
+
+        if in_ranges(n, ranges: m.reserved_ranges)
+            return fail(code: "invalid", msg: f"{f.full_name}: the number {n} is reserved")
+
+        if in_ranges(n, ranges: m.extension_ranges)
+            return fail(code: "invalid", msg: f"{f.full_name}: the number {n} is in an extension range")
+
+        for r in m.reserved_names
+            if r == f.name
+                return fail(code: "invalid", msg: f"{f.full_name}: the name is reserved")
+
+        if json == "ALLOW"
+            lower = f.json_name
+
+            match json_seen[lower]
+                .ok other => return fail(
+                    code: "invalid",
+                    msg: f"{f.full_name}: its JSON name \"{lower}\" is {other}'s already"
+                )
+                .err _ => json_seen[lower] @ f.name
+
+    return ok()
+
+# Checks `e`'s values: a first value of 0 where the enum is open, and no
+# number twice unless the enum allows aliases.
+function check_enum(e: model.Enum) -> ()?
+    if !e.closed && e.values[0].number != 0
+        return fail(code: "invalid", msg: f"{e.full_name}: an open enum's first value is 0")
+    alias = syntax.setting_named(e.options, option: "allow_alias")
+    allowed = !alias.is_err() && alias.must().text == "true"
+    seen: {i64: str} @= {}
+    names: {str: bool} @= {}
+    twice: bool @= false
+
+    for v in e.values
+        if !names[v.name].is_err()
+            return fail(code: "invalid", msg: f"{e.full_name}: the value {v.name} is declared twice")
+        names[v.name] @ true
+
+        if in_ranges(v.number, ranges: e.reserved_ranges)
+            return fail(code: "invalid", msg: f"{e.full_name}.{v.name}: the number {v.number} is reserved")
+
+        for r in e.reserved_names
+            if r == v.name
+                return fail(code: "invalid", msg: f"{e.full_name}.{v.name}: the name is reserved")
+
+        match seen[v.number]
+            .ok other =>
+                if !allowed
+                    return fail(
+                        code: "invalid",
+                        msg: f"{e.full_name}: {v.name} and {other} share the number {v.number}, and the enum does not set `allow_alias`"
+                    )
+                twice @ true
+            .err _ => seen[v.number] @ v.name
+
+    if allowed && !twice
+        return fail(code: "invalid", msg: f"{e.full_name}: `allow_alias` is set and no two values share a number")
+    return ok()
+
+test "json_name: underscores taken out, as protoc names them"
+    assert json_name("foo_bar") == "fooBar" && json_name("_foo") == "Foo" && json_name("foo__bar") == "fooBar"
+    assert json_name("foo_1") == "foo1" && json_name("FooBar") == "FooBar" && json_name("x") == "x"
+
+test "apply: a feature set, one in a proto3 file, a value that is none"
+    base = defaults("editions")
+    set = [model.Setting(name: "features.field_presence", kind: model.IDENTIFIER, text: "IMPLICIT", data: [])]
+    assert apply(base, settings: set, form: "editions", where: "m").must().presence == "IMPLICIT"
+    assert apply(base, settings: set, form: "proto3", where: "m").is_err()
+    bad = [model.Setting(name: "features.enum_type", kind: model.IDENTIFIER, text: "SHUT", data: [])]
+    assert apply(base, settings: bad, form: "editions", where: "m").is_err()
+
+test "default_bits: integers at their edges, a negative one, floats, a bool, and one past its kind"
+    f: model.Field @= model.Field(
+        name: "a",
+        full_name: "M.a",
+        json_name: "a",
+        number: 1,
+        kind: model.INT32,
+        label: model.OPTIONAL,
+        type_name: "",
+        presence: true,
+        packed: false,
+        is_map: false,
+        oneof: -1,
+        proto3_optional: false,
+        has_default: true,
+        default_text: "-2147483648",
+        default_bytes: [],
+        default_bits: 0,
+        validate_utf8: false,
+        delimited: false,
+        closed_enum: false,
+        extendee: "",
+        options: []
+    )
+    values: [model.EnumValue] = []
+    assert default_bits(f, values: values, where: "M.a").must() == 18446744071562067968
+    f.default_text @ "2147483648"
+    assert default_bits(f, values: values, where: "M.a").is_err()
+    f.kind @ model.UINT64
+    f.default_text @ "0xFFFFFFFFFFFFFFFF"
+    assert default_bits(f, values: values, where: "M.a").must() == 18446744073709551615
+    f.default_text @ "-1"
+    assert default_bits(f, values: values, where: "M.a").is_err()
+    f.kind @ model.DOUBLE
+    f.default_text @ "-inf"
+    assert default_bits(f, values: values, where: "M.a").must() == 18442240474082181120
+    f.kind @ model.BOOL
+    f.default_text @ "true"
+    assert default_bits(f, values: values, where: "M.a").must() == 1
+
+# The options descriptor.proto gives a declaration of `kind`, `File` to
+# `Method`, by their names; `features` is every kind's.
+function known_options(kind: str) -> [str]
+    if kind == "File"
+        return [
+            "java_package"
+            "java_outer_classname"
+            "java_multiple_files"
+            "java_generate_equals_and_hash"
+            "java_string_check_utf8"
+            "optimize_for"
+            "go_package"
+            "cc_generic_services"
+            "java_generic_services"
+            "py_generic_services"
+            "deprecated"
+            "cc_enable_arenas"
+            "objc_class_prefix"
+            "csharp_namespace"
+            "swift_prefix"
+            "php_class_prefix"
+            "php_namespace"
+            "php_metadata_namespace"
+            "ruby_package"
+            "features"
+        ]
+
+    if kind == "Message"
+        return [
+            "message_set_wire_format"
+            "no_standard_descriptor_accessor"
+            "deprecated"
+            "map_entry"
+            "deprecated_legacy_json_field_conflicts"
+            "features"
+        ]
+
+    if kind == "Field"
+        return [
+            "ctype"
+            "packed"
+            "jstype"
+            "lazy"
+            "unverified_lazy"
+            "deprecated"
+            "weak"
+            "debug_redact"
+            "retention"
+            "targets"
+            "edition_defaults"
+            "features"
+            "feature_support"
+            "json_name"
+        ]
+
+    if kind == "Enum"
+        return ["allow_alias", "deprecated", "deprecated_legacy_json_field_conflicts", "features"]
+
+    if kind == "EnumValue"
+        return ["deprecated", "features", "debug_redact", "feature_support"]
+
+    if kind == "Service"
+        return ["deprecated", "features"]
+
+    if kind == "Method"
+        return ["deprecated", "idempotency_level", "features"]
+    return ["features"]
+
+# The first part of an option's name: a word, or an extension's name between
+# parentheses with them.
+function option_head(name: str) -> str
+    if name.len() > 0 && name[0] == '('
+        at: i64 @= 1
+
+        while at < name.len() && name[at] != ')'
+            at @ at + 1
+
+        return name.slice(from: 0, to: at + 1)
+    at: i64 @= 0
+
+    while at < name.len() && name[at] != '.'
+        at @ at + 1
+
+    return name.slice(from: 0, to: at)
+
+test "known_options and option_head: a field's options, an extension's name, a feature's"
+    assert option_head("(google.api.http).get") == "(google.api.http)" && option_head("features.field_presence") == "features"
+    assert option_head("deprecated") == "deprecated"
+    assert known_options("Field").len() == 14 && known_options("Oneof") == ["features"]

@@ -1,0 +1,53 @@
+# An enum's declaration in a `.proto` file: its values with their numbers and
+# options, its own options, and its reserved numbers and names.
+
+use protobuf/internal/lexer
+use protobuf/internal/model
+use protobuf/internal/syntax
+
+# An enum, the word `enum` passed.
+function enum_decl(tokens: [lexer.Token] lent, @at: i64, file: str, scope: str) -> model.Enum?
+    name = syntax.ident(tokens, @at, name: file, what: "the enum's name")?
+    syntax.expect(tokens, @at, name: file, symbol: "{")?
+    values: [model.EnumValue] @= []
+    options: [model.Setting] @= []
+    reserved_ranges: [model.Range] @= []
+    reserved_names: [str] @= []
+
+    while !syntax.is_at(tokens, at: at, text: "}")
+        t = syntax.peek(tokens, at: at)
+
+        if t.kind == lexer.END
+            return fail(code: "invalid", msg: syntax.expected(name: file, t: t, what: "\"}\", which closes the enum"))
+
+        if syntax.is_at(tokens, at: at, text: ";")
+            at @ at + 1
+        else if t.text == "option" && t.kind == lexer.IDENT && !syntax.is_at(tokens, at: at + 1, text: "=")
+            at @ at + 1
+            options @ options.push(syntax.option_statement(tokens, @at, name: file)?)
+        else if t.text == "reserved" && t.kind == lexer.IDENT && !syntax.is_at(tokens, at: at + 1, text: "=")
+            at @ at + 1
+            names: [str] @= []
+
+            for s in syntax.ranges(tokens, @at, name: file, @names)?
+                reserved_ranges @ reserved_ranges.push(s)
+
+            for n in names
+                reserved_names @ reserved_names.push(n)
+
+            syntax.expect(tokens, @at, name: file, symbol: ";")?
+        else
+            value_name = syntax.ident(tokens, @at, name: file, what: "a value's name")?
+            syntax.expect(tokens, @at, name: file, symbol: "=")?
+            number = syntax.number(tokens, @at, name: file, what: "an enum's number")?
+            settings = syntax.bracketed(tokens, @at, name: file)?
+            syntax.expect(tokens, @at, name: file, symbol: ";")?
+            values @ values.push(model.EnumValue(name: value_name, number: number, options: settings))
+
+    at @ at + 1
+
+    if values.len() == 0
+        return fail(code: "invalid", msg: f"{file}: the enum {syntax.joined(scope: scope, name: name)} holds no value")
+    return ok(
+        model.Enum(name: name, full_name: syntax.joined(scope: scope, name: name), file: file, values: values, by_number: {}, by_name: {}, closed: false, reserved_ranges: reserved_ranges, reserved_names: reserved_names, options: options)
+    )

@@ -1,0 +1,341 @@
+# The small parts of a `.proto` file's grammar that every declaration reads:
+# the token at a place, a symbol or an identifier expected, a dotted name, an
+# integer, an option's name and its value. Each failure is `invalid` and opens
+# with the file's name, the line and the column.
+
+use protobuf/internal/lexer
+use protobuf/internal/model
+
+# The deepest nesting of declarations and of braces in an option read.
+constant MAX_NESTING: i64
+    100
+
+# The token at `at`, the `END` token past the last.
+function peek(tokens: [lexer.Token] lent, at: i64) -> lexer.Token
+    if at >= tokens.len()
+        return tokens[tokens.len() - 1]
+    return tokens[at]
+
+# Whether the token at `at` is the symbol or the identifier `text`.
+function is_at(tokens: [lexer.Token] lent, at: i64, text: str) -> bool
+    t = peek(tokens, at: at)
+    return (t.kind == lexer.SYMBOL || t.kind == lexer.IDENT) && t.text == text
+
+# The failure of a file `name` at the token `t`, which was not `what`.
+function expected(name: str, t: lexer.Token, what: str) -> str
+    found = if t.kind == lexer.END
+        "the end of the file"
+    else
+        f"\"{t.text}\""
+    return f"{lexer.where(name, line: t.line, column: t.column)}: expected {what}, found {found}"
+
+# Moves past the symbol `symbol`, which must stand at `at`.
+function expect(tokens: [lexer.Token] lent, @at: i64, name: str, symbol: str) -> ()?
+    t = peek(tokens, at: at)
+
+    if t.kind != lexer.SYMBOL || t.text != symbol
+        return fail(code: "invalid", msg: expected(name: name, t: t, what: f"\"{symbol}\""))
+    at @ at + 1
+    return ok()
+
+# The identifier at `at`, moved past.
+function ident(tokens: [lexer.Token] lent, @at: i64, name: str, what: str) -> str?
+    t = peek(tokens, at: at)
+
+    if t.kind != lexer.IDENT
+        return fail(code: "invalid", msg: expected(name: name, t: t, what: what))
+    at @ at + 1
+    return ok(t.text)
+
+# A name of parts joined by dots, a leading dot kept, moved past.
+function dotted(tokens: [lexer.Token] lent, @at: i64, name: str, what: str) -> str?
+    parts: [str] @= []
+
+    if is_at(tokens, at: at, text: ".")
+        at @ at + 1
+        parts @ parts.push("")
+    parts @ parts.push(ident(tokens, @at, name: name, what: what)?)
+
+    while is_at(tokens, at: at, text: ".")
+        at @ at + 1
+        parts @ parts.push(ident(tokens, @at, name: name, what: "a name after \".\"")?)
+
+    return ok(parts.join("."))
+
+# The string literals at `at`, adjacent ones joined, moved past.
+function quoted(tokens: [lexer.Token] lent, @at: i64, name: str, what: str) -> [u8]?
+    t = peek(tokens, at: at)
+
+    if t.kind != lexer.STRING
+        return fail(code: "invalid", msg: expected(name: name, t: t, what: what))
+    out: [u8] @= []
+
+    while peek(tokens, at: at).kind == lexer.STRING
+        for b in peek(tokens, at: at).data
+            out @ out.push(b)
+
+        at @ at + 1
+
+    return ok(out)
+
+# The text of a string literal that must be UTF-8.
+function quoted_text(tokens: [lexer.Token] lent, @at: i64, name: str, what: str) -> str?
+    t = peek(tokens, at: at)
+    data = quoted(tokens, @at, name: name, what: what)?
+
+    match data.validated_bytes()
+        .ok s => return ok(s)
+        .err _ => return fail(
+            code: "invalid",
+            msg: f"{lexer.where(name, line: t.line, column: t.column)}: {what} is not UTF-8"
+        )
+
+# The value of the integer token `text`: decimal, octal or hexadecimal.
+function int_value(text: str) -> u64?
+    base: u64 @= 10
+    at: i64 @= 0
+
+    if text.len() > 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')
+        base @ 16
+        at @ 2
+    else if text.len() > 1 && text[0] == '0'
+        base @ 8
+        at @ 1
+    v: u64 @= 0
+
+    while at < text.len()
+        d = lexer.hex_value(text[at])
+
+        if d < 0 || to_u64(d).must() >= base
+            return fail(code: "invalid", msg: f"\"{text}\" is no integer")
+
+        if v > (18446744073709551615 - to_u64(d).must()) / base
+            return fail(code: "does_not_fit", msg: f"{text} is past 64 bits")
+        v @ v * base + to_u64(d).must()
+        at @ at + 1
+
+    return ok(v)
+
+# A field or enum number at `at`, a sign allowed, moved past.
+function number(tokens: [lexer.Token] lent, @at: i64, name: str, what: str) -> i64?
+    negative = is_at(tokens, at: at, text: "-")
+
+    if negative
+        at @ at + 1
+    t = peek(tokens, at: at)
+
+    if t.kind != lexer.INT
+        return fail(code: "invalid", msg: expected(name: name, t: t, what: what))
+    at @ at + 1
+
+    match int_value(t.text)
+        .err _ => return fail(
+            code: "invalid",
+            msg: f"{lexer.where(name, line: t.line, column: t.column)}: {t.text} is past what {what} holds"
+        )
+        .ok v =>
+            if v > 2147483648 || !negative && v > 2147483647
+                return fail(
+                    code: "invalid",
+                    msg: f"{lexer.where(name, line: t.line, column: t.column)}: {t.text} is past what {what} holds"
+                )
+            n = to_i64(v).must()
+
+            if negative
+                return ok(0 - n)
+            return ok(n)
+
+# An option's name: parts joined by dots, an extension's in parentheses.
+function option_name(tokens: [lexer.Token] lent, @at: i64, name: str) -> str?
+    parts: [str] @= []
+    going: bool @= true
+
+    while going
+        if is_at(tokens, at: at, text: "(")
+            at @ at + 1
+            inner = dotted(tokens, @at, name: name, what: "an extension's name")?
+            expect(tokens, @at, name: name, symbol: ")")?
+            parts @ parts.push(f"({inner})")
+        else
+            parts @ parts.push(ident(tokens, @at, name: name, what: "an option's name")?)
+
+        if is_at(tokens, at: at, text: ".")
+            at @ at + 1
+        else
+            going @ false
+
+    return ok(parts.join("."))
+
+# An option's value at `at`, moved past.
+function constant_value(tokens: [lexer.Token] lent, @at: i64, name: str, option: str) -> model.Setting?
+    nothing: [u8] = []
+    t = peek(tokens, at: at)
+
+    if t.kind == lexer.STRING
+        data = quoted(tokens, @at, name: name, what: "a string")?
+        return ok(model.Setting(name: option, kind: model.QUOTED, text: "", data: data))
+
+    if t.kind == lexer.SYMBOL && t.text == "{"
+        at @ at + 1
+        depth: i64 @= 1
+        pieces: [str] @= []
+
+        while depth > 0
+            p = peek(tokens, at: at)
+
+            if p.kind == lexer.END
+                return fail(
+                    code: "invalid",
+                    msg: expected(name: name, t: p, what: "\"}\", which closes the option's message")
+                )
+
+            if p.kind == lexer.SYMBOL && (p.text == "{" || p.text == "<")
+                depth @ depth + 1
+
+                if depth > MAX_NESTING
+                    return fail(
+                        code: "invalid",
+                        msg: f"{lexer.where(name, line: p.line, column: p.column)}: an option nested deeper than {MAX_NESTING}"
+                    )
+            else if p.kind == lexer.SYMBOL && (p.text == "}" || p.text == ">")
+                depth @ depth - 1
+
+            if depth > 0
+                pieces @ pieces.push(p.text)
+            at @ at + 1
+
+        return ok(model.Setting(name: option, kind: model.AGGREGATE, text: pieces.join(" "), data: nothing))
+    sign: str @= ""
+
+    if is_at(tokens, at: at, text: "-") || is_at(tokens, at: at, text: "+")
+        sign @ peek(tokens, at: at).text
+        at @ at + 1
+    v = peek(tokens, at: at)
+
+    if v.kind == lexer.INT || v.kind == lexer.FLOAT
+        at @ at + 1
+        return ok(model.Setting(name: option, kind: model.NUMBER, text: sign + v.text, data: nothing))
+
+    if v.kind == lexer.IDENT
+        word = dotted(tokens, @at, name: name, what: "a value")?
+
+        if sign != "" && word != "inf" && word != "nan" && word != "infinity"
+            return fail(code: "invalid", msg: expected(name: name, t: v, what: "a number after the sign"))
+
+        if sign != ""
+            return ok(model.Setting(name: option, kind: model.NUMBER, text: sign + word, data: nothing))
+        return ok(model.Setting(name: option, kind: model.IDENTIFIER, text: word, data: nothing))
+    return fail(code: "invalid", msg: expected(name: name, t: v, what: "an option's value"))
+
+# The options between `[` and `]` after a field or a value, moved past; none
+# where no `[` stands at `at`.
+function bracketed(tokens: [lexer.Token] lent, @at: i64, name: str) -> [model.Setting]?
+    out: [model.Setting] @= []
+
+    if !is_at(tokens, at: at, text: "[")
+        return ok(out)
+    at @ at + 1
+    going: bool @= true
+
+    while going
+        option = option_name(tokens, @at, name: name)?
+        expect(tokens, @at, name: name, symbol: "=")?
+        out @ out.push(constant_value(tokens, @at, name: name, option: option)?)
+
+        if is_at(tokens, at: at, text: ",")
+            at @ at + 1
+        else
+            going @ false
+
+    expect(tokens, @at, name: name, symbol: "]")?
+    return ok(out)
+
+# `option name = value;` at `at`, the word `option` already passed.
+function option_statement(tokens: [lexer.Token] lent, @at: i64, name: str) -> model.Setting?
+    option = option_name(tokens, @at, name: name)?
+    expect(tokens, @at, name: name, symbol: "=")?
+    setting = constant_value(tokens, @at, name: name, option: option)?
+    expect(tokens, @at, name: name, symbol: ";")?
+    return ok(setting)
+
+# The ranges and names of `reserved ...;`, or the ranges of `extensions ...;`,
+# the word already passed.
+function ranges(tokens: [lexer.Token] lent, @at: i64, name: str, @names: [str]) -> [model.Range]?
+    out: [model.Range] @= []
+    going: bool @= true
+
+    while going
+        t = peek(tokens, at: at)
+
+        if t.kind == lexer.STRING
+            names @ names.push(quoted_text(tokens, @at, name: name, what: "a reserved name")?)
+        else if t.kind == lexer.IDENT && t.text != "max"
+            at @ at + 1
+            names @ names.push(t.text)
+        else
+            first = number(tokens, @at, name: name, what: "a number")?
+            last: i64 @= first
+
+            if is_at(tokens, at: at, text: "to")
+                at @ at + 1
+
+                if is_at(tokens, at: at, text: "max")
+                    at @ at + 1
+                    last @ 2147483647
+                else
+                    last @ number(tokens, @at, name: name, what: "a number")?
+
+            if last < first
+                return fail(
+                    code: "invalid",
+                    msg: f"{lexer.where(name, line: t.line, column: t.column)}: the range {first} to {last} ends before it begins"
+                )
+            out @ out.push(model.Range(first: first, last: last))
+
+        if is_at(tokens, at: at, text: ",")
+            at @ at + 1
+        else
+            going @ false
+
+    return ok(out)
+
+# The setting named `option` among `settings`.
+function setting_named(settings: [model.Setting], option: str) -> model.Setting?
+    for s in settings
+        if s.name == option
+            return ok(s)
+
+    return fail(code: "not_found", msg: f"no option {option}")
+
+# `name` inside `scope`.
+function joined(scope: str, name: str) -> str
+    if scope == ""
+        return name
+    return scope + "." + name
+
+test "int_value: decimal, octal, hexadecimal, the largest u64, and one past it"
+    assert int_value("0").must() == 0 && int_value("017").must() == 15 && int_value("0x1f").must() == 31
+    assert int_value("18446744073709551615").must() == 18446744073709551615
+    assert int_value("18446744073709551616").is_err() && int_value("08").is_err()
+
+test "option_name, constant_value and bracketed: an extension's name, every kind of value, and the list"
+    got = lexer.tokens(
+        name: "a.proto",
+        text: "[(a.b).c = -1, d = \"x\" \"y\", e = { f: 1 g { } }, h = inf, i = -inf]"
+    ).must()
+    at: i64 @= 0
+    settings = bracketed(got, @at, name: "a.proto").must()
+    assert settings.len() == 5 && at == got.len() - 1
+    assert settings[0].name == "(a.b).c" && settings[0].kind == model.NUMBER && settings[0].text == "-1"
+    assert settings[1].data == [0x78, 0x79] && settings[2].text == "f : 1 g { }"
+    assert settings[3].kind == model.IDENTIFIER && settings[4].kind == model.NUMBER && settings[4].text == "-inf"
+
+test "ranges: numbers, a span, max, names quoted and bare, and a span backwards"
+    got = lexer.tokens(name: "a.proto", text: "2, 9 to 11, 40 to max, \"foo\", bar; 5 to 3").must()
+    at: i64 @= 0
+    names: [str] @= []
+    spans = ranges(got, @at, name: "a.proto", @names).must()
+    assert spans == [model.Range(first: 2, last: 2), model.Range(first: 9, last: 11), model.Range(first: 40, last: 2147483647)]
+    assert names == ["foo", "bar"]
+    at @ at + 1
+    assert ranges(got, @at, name: "a.proto", @names).is_err()

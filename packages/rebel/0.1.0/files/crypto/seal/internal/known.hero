@@ -1,0 +1,141 @@
+# The known answers `crypto/seal` is held to: RFC 8439's own vector, cases
+# of NIST CAVP's AES-GCM files and of Wycheproof's (the C2SP repository's
+# `testvectors_v1`), fetched 2026-11-17 into the scratch folder and run
+# there whole through the member's C probe, 1500 and 449 cases on Linux
+# arm64; a few of each stand here so the package's own tests hold them on
+# every platform that seals. A seal with a nonce given is the floor's
+# `seal_nonce_for_tests`, which no face offers.
+
+use bytes
+use crypto/hero_crypto
+
+# One known answer: a key of the floor's `kind`, the nonce, the associated
+# data, the text and the sealed bytes as `seal` writes them (the nonce, the
+# ciphertext, the tag), all as hexadecimal; `holds` false where the sealed
+# bytes must not open.
+record Case
+    # Where it comes from, for a failure's words.
+    name: str
+    # `HERO_CRYPTO_AES_128_GCM`, `HERO_CRYPTO_AES_256_GCM` or
+    # `HERO_CRYPTO_CHACHA20_POLY1305`.
+    kind: i64
+    # The key, as hexadecimal.
+    key: str
+    # The nonce of 12 bytes, as hexadecimal.
+    nonce: str
+    # The associated data, as hexadecimal.
+    associated: str
+    # The text, as hexadecimal.
+    text: str
+    # The ciphertext then the tag, as hexadecimal.
+    sealed: str
+    # Whether the sealed bytes open to the text.
+    holds: bool
+
+# `b` changed to another byte, so a test makes bytes that do not hold.
+function changed(b: u8) -> u8
+    if b == 255
+        return 0
+    return b + 1
+
+# RFC 8439 § 2.8.2's sealed bytes, its nonce first.
+function rfc8439_sealed() -> [u8]
+    return bytes.parse_hex(
+        "070000004041424344454647" + "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d63dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b3692ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc3ff4def08e4b7a9de576d26586cec64b6116" + "1ae10b594f09e26a7e902ecbd0600691"
+    ).must()
+
+# The cases held here.
+function cases() -> [Case]
+    return [
+        Case(name: "CAVP gcmEncryptExtIV128, a text and associated data", kind: hero_crypto.HERO_CRYPTO_AES_128_GCM, key: "c939cc13397c1d37de6ae0e1cb7c423c", nonce: "b3d8cc017cbb89b39e0f67e2", associated: "24825602bd12a984e0092d3e448eda5f", text: "c3b3c41f113a31b73d9a5cd432103069", sealed: "93fe7d9e9bfd10348a5606e5cafa7354" + "0032a1dc85f1c9786925a2e71d8272dd", holds: true)
+        Case(name: "CAVP gcmDecrypt128, a text of 32 bytes", kind: hero_crypto.HERO_CRYPTO_AES_128_GCM, key: "5580619cb4b0820fad559b143ce0cf34", nonce: "d1c93408a0ca93e94adff306", associated: "318dc3a4bafb2514346b520336bb5fed", text: "9d81e6fb879c506e83e641dcf9015f6994a1417d03c1eacbf6d7cba0c349cbb4", sealed: "a461d08c458fd1b026839f8cf781f834b3214a31dde0477fa8c9b6e57bad8bd0" + "7fc2d6bdd8326d540c02dd0fdf55e9fb", holds: true)
+        Case(name: "CAVP gcmEncryptExtIV256, no text", kind: hero_crypto.HERO_CRYPTO_AES_256_GCM, key: "22fc82db5b606998ad45099b7978b5b4f9dd4ea6017e57370ac56141caaabd12", nonce: "880d05c5ee599e5f151e302f", associated: "3e3eb5747e390f7bc80e748233484ffc", text: "", sealed: "2e122a478e64463286f8b489dcdd09c8", holds: true)
+        Case(name: "CAVP gcmDecrypt256, a tag marked FAIL", kind: hero_crypto.HERO_CRYPTO_AES_256_GCM, key: "c90ac1e868bb79467a58383f02440f9155d57dc719f0a22d0d6f088ebe7c18ae", nonce: "149a0b9691b35750f72e03e9", associated: "2426db7f430a090f5132c63d23504350", text: "", sealed: "807b58bebd6de9752f62eec313def53b", holds: false)
+        Case(name: "Wycheproof aes_gcm tcId 92", kind: hero_crypto.HERO_CRYPTO_AES_256_GCM, key: "29d3a44f8723dc640239100c365423a312934ac80239212ac3df3421a2098123", nonce: "00112233445566778899aabb", associated: "aabbccddeeff", text: "", sealed: "2a7d77fa526b8250cb296078926b5020", holds: true)
+        Case(name: "Wycheproof chacha20_poly1305 tcId 7", kind: hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305, key: "c8833dce5ea9f248aa2030eacfe72bffe69a620caf793344e5718fe0d7ab1a58", nonce: "61546ba5f1720590b6040ac6", associated: "88364fc8060518bf", text: "ddf2", sealed: "b60d" + "ead0fd4697ec2e5558237719d02437a2", holds: true)
+        Case(name: "Wycheproof chacha20_poly1305 tcId 146, bit 0 of the tag flipped", kind: hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305, key: "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f", nonce: "000102030405060708090a0b", associated: "000102", text: "", sealed: "f5409bb729039d0814ac514054323f44", holds: false)
+    ]
+
+# "" where `c` is answered as it says, else what went otherwise. A case
+# whose algorithm the platform does not offer is answered `""`.
+function answered(c: Case) -> str
+    if hero_crypto.offers(c.kind) == 0
+        return ""
+    secret: [u8] @= bytes.parse_hex(c.key).must()
+    key @= hero_crypto.from_secret(kind: c.kind, @secret, count: to_u64(secret.len()).must())
+
+    if key == nullptr
+        return c.name + ": no key"
+    found = check(key: key, c: c)
+    _ = hero_crypto.close(@key)
+    return found
+
+# The case `c` answered under `key`, made of its key.
+function check(key: hero_crypto.Key, c: Case) -> str
+    sealed: [u8] @= bytes.parse_hex(c.nonce + c.sealed).must()
+    beside: [u8] @= bytes.parse_hex(c.associated).must()
+    text: [u8] @= bytes.parse_hex(c.text).must()
+    out: [u8] @= []
+    opened = hero_crypto.open(
+        key,
+        sealed: @sealed,
+        sealed_count: to_u64(sealed.len()).must(),
+        associated: @beside,
+        associated_count: to_u64(beside.len()).must(),
+        buffer: @out,
+        count: to_u64(sealed.len() - 28).must()
+    )
+
+    if !c.holds
+        if opened != -1 || hero_crypto.last_error() != hero_crypto.HERO_CRYPTO_FORGED
+            return c.name + ": opened bytes that must not open"
+        return ""
+
+    if opened != text.len() || out != text
+        return c.name + ": did not open to its text"
+    nonce: [u8] @= bytes.parse_hex(c.nonce).must()
+    again: [u8] @= []
+    written = hero_crypto.seal_nonce_for_tests(
+        key,
+        nonce: @nonce,
+        nonce_count: 12,
+        text: @text,
+        text_count: to_u64(text.len()).must(),
+        associated: @beside,
+        associated_count: to_u64(beside.len()).must(),
+        buffer: @again,
+        count: to_u64(sealed.len()).must()
+    )
+
+    if written != sealed.len() || again != sealed
+        return c.name + ": sealed to other bytes"
+    return ""
+
+## Tests
+
+test "changed: a byte below 255 and 255 itself become another byte"
+    assert changed(0) == 1
+    assert changed(254) == 255
+    assert changed(255) == 0
+
+test "rfc8439_sealed: the nonce, 114 bytes of ciphertext and the tag"
+    sealed = rfc8439_sealed()
+    assert sealed.len() == 142
+    assert bytes.format_hex(sealed.slice(from: 0, to: 12)) == "070000004041424344454647"
+
+test "cases: CAVP's and Wycheproof's answers, sealed with their nonce and opened, a forged tag refused, on every platform that seals"
+    for c in cases()
+        assert answered(c) == ""
+
+test "answered: RFC 8439's own vector sealed with its nonce gives its bytes"
+    c = Case(
+        name: "RFC 8439 2.8.2",
+        kind: hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305,
+        key: "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        nonce: "070000004041424344454647",
+        associated: "50515253c0c1c2c3c4c5c6c7",
+        text: bytes.format_hex(bytes.from_text("Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.")),
+        sealed: bytes.format_hex(rfc8439_sealed().slice(from: 12, to: 142)),
+        holds: true
+    )
+    assert answered(c) == ""

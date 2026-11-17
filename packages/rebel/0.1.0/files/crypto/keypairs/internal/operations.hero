@@ -1,0 +1,382 @@
+# The work of `crypto/keypairs` on a key's handle: a pair made, its public half
+# taken, a message signed and checked, a secret agreed, a text encrypted to
+# a public key and decrypted, each through the floor `crypto/hero_crypto`
+# and each answer turned into a `T?`. Kinds and schemes cross as the names
+# the face writes (`format_kind`, `format_scheme`), turned into the floor's
+# numbers here. A secret the language holds for a call (a text decrypted
+# before it is cut to length) is overwritten before the call answers.
+
+use crypto/hero_crypto
+use crypto/keypairs/internal/failure
+
+# What the floor knows of a key: its kind's name, its bits, whether public.
+record Facts
+    # `ed25519`, `x25519`, `p256`, `p384` or `rsa`.
+    name: str
+    # The curve's bits, or the modulus's.
+    bits: i64
+    # Whether it is a public key.
+    is_public: bool
+
+# The floor's number of the kind `name` names, 0 for none.
+function kind_number(name: str) -> i64
+    return match name
+        "ed25519" => hero_crypto.HERO_CRYPTO_ED25519
+        "x25519"  => hero_crypto.HERO_CRYPTO_X25519
+        "p256"    => hero_crypto.HERO_CRYPTO_P256
+        "p384"    => hero_crypto.HERO_CRYPTO_P384
+        "rsa"     => hero_crypto.HERO_CRYPTO_RSA
+        _         => 0
+
+# The name of the floor's kind `number`, "" for none.
+function kind_name(number: i64) -> str
+    if number == hero_crypto.HERO_CRYPTO_ED25519
+        return "ed25519"
+
+    if number == hero_crypto.HERO_CRYPTO_X25519
+        return "x25519"
+
+    if number == hero_crypto.HERO_CRYPTO_P256
+        return "p256"
+
+    if number == hero_crypto.HERO_CRYPTO_P384
+        return "p384"
+
+    if number == hero_crypto.HERO_CRYPTO_RSA
+        return "rsa"
+    return ""
+
+# The floor's number of the scheme `name` names, 0 for none.
+function scheme_number(name: str) -> i64
+    return match name
+        "ed25519"          => hero_crypto.HERO_CRYPTO_SIGN_ED25519
+        "ecdsa_sha256"     => hero_crypto.HERO_CRYPTO_SIGN_ECDSA_SHA256
+        "ecdsa_sha384"     => hero_crypto.HERO_CRYPTO_SIGN_ECDSA_SHA384
+        "rsa_pss_sha256"   => hero_crypto.HERO_CRYPTO_SIGN_RSA_PSS_SHA256
+        "rsa_pss_sha384"   => hero_crypto.HERO_CRYPTO_SIGN_RSA_PSS_SHA384
+        "rsa_pss_sha512"   => hero_crypto.HERO_CRYPTO_SIGN_RSA_PSS_SHA512
+        "rsa_pkcs1_sha256" => hero_crypto.HERO_CRYPTO_SIGN_RSA_PKCS1_SHA256
+        "rsa_pkcs1_sha384" => hero_crypto.HERO_CRYPTO_SIGN_RSA_PKCS1_SHA384
+        "rsa_pkcs1_sha512" => hero_crypto.HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512
+        _                  => 0
+
+# `xs`'s length as the floor counts it.
+function length_u64(xs: [u8] lent) -> u64
+    return to_u64(xs.len()).must()
+
+# Every byte of the caller's `cell` overwritten with 0, in place.
+function wiped(@cell: [u8])
+    at: i64 @= 0
+
+    while at < cell.len()
+        cell[at] @ 0
+        at @ at + 1
+
+# Whether this machine's own cryptography makes and uses keys of the kind
+# `name` names.
+function offers(name: str) -> bool
+    return hero_crypto.offers(kind_number(name)) == 1
+
+# What the floor knows of `handle`.
+function facts(handle: hero_crypto.Key) -> Facts?
+    number = hero_crypto.kind_of(handle)
+
+    if number < 0
+        return failure.last(asked: "reading a key's kind")
+    return ok(
+        Facts(name: kind_name(number), bits: hero_crypto.bits_of(handle), is_public: hero_crypto.is_public(handle) == 1)
+    )
+
+# A new key of the kind `name` names, `bits` an RSA key's size and 0 for
+# every other kind.
+function generate(name: str, bits: i64) -> hero_crypto.Key?
+    made = hero_crypto.generate(kind: kind_number(name), bits: bits)
+
+    if made == nullptr
+        return failure.last(asked: "making a " + name + " key")
+    return ok(made)
+
+# The public half of `handle`, a new key the caller closes.
+function public_of(handle: hero_crypto.Key) -> hero_crypto.Key?
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: "taking a key's public half", why: "the key is closed")
+    made = hero_crypto.public_of(handle)
+
+    if made == nullptr
+        return failure.last(asked: "taking a key's public half")
+    return ok(made)
+
+# Closes the key in the caller's place and empties the place.
+function close(@handle: hero_crypto.Key) -> ()?
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: "closing a key", why: "it is closed already")
+    answer = hero_crypto.close(@handle)
+    handle @ nullptr
+
+    if answer != 0
+        return failure.last(asked: "closing a key")
+    return ok()
+
+# `handle`'s signature of `message` by the scheme `scheme` names.
+function sign(handle: hero_crypto.Key, scheme: str, message: [u8]) -> [u8]?
+    asked = "signing " + to_str(message.len()) + " bytes by " + scheme
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    held: [u8] @= message
+    out: [u8] @= []
+    most = hero_crypto.sign(
+        handle,
+        scheme: scheme_number(scheme),
+        message: @held,
+        count: length_u64(held),
+        buffer: @out,
+        buffer_count: 0
+    )
+
+    if most < 0
+        return failure.last(asked: asked)
+    written = hero_crypto.sign(
+        handle,
+        scheme: scheme_number(scheme),
+        message: @held,
+        count: length_u64(held),
+        buffer: @out,
+        buffer_count: to_u64(most).must()
+    )
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out.slice(from: 0, to: written))
+
+# Whether `signature` is `handle`'s signature of `message` by `scheme`.
+function verify(handle: hero_crypto.Key, scheme: str, message: [u8], signature: [u8]) -> bool?
+    asked = "checking a signature of " + to_str(signature.len()) + " bytes by " + scheme
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    held: [u8] @= message
+    signed: [u8] @= signature
+    answer = hero_crypto.verify(
+        handle,
+        scheme: scheme_number(scheme),
+        message: @held,
+        count: length_u64(held),
+        signature: @signed,
+        signature_count: length_u64(signed)
+    )
+
+    if answer < 0
+        return failure.last(asked: asked)
+    return ok(answer == 1)
+
+# The secret `mine` agrees with `theirs`.
+function agree(mine: hero_crypto.Key, theirs: hero_crypto.Key) -> [u8]?
+    asked = "agreeing on a secret"
+
+    if mine == nullptr || theirs == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "a key is closed")
+    out: [u8] @= []
+    width = hero_crypto.agree(mine: mine, theirs: theirs, buffer: @out, count: 0)
+
+    if width < 0
+        return failure.last(asked: asked)
+    written = hero_crypto.agree(mine: mine, theirs: theirs, buffer: @out, count: to_u64(width).must())
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out)
+
+# `text` encrypted to `handle` by RSA-OAEP with SHA-256.
+function encrypt(handle: hero_crypto.Key, text: [u8]) -> [u8]?
+    asked = "encrypting " + to_str(text.len()) + " bytes to an RSA key"
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    plain: [u8] @= text
+    out: [u8] @= []
+    scheme = hero_crypto.HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256
+    whole = hero_crypto.encrypt(
+        handle,
+        scheme: scheme,
+        text: @plain,
+        count: length_u64(plain),
+        buffer: @out,
+        buffer_count: 0
+    )
+
+    if whole < 0
+        wiped(@plain)
+        return failure.last(asked: asked)
+    written = hero_crypto.encrypt(
+        handle,
+        scheme: scheme,
+        text: @plain,
+        count: length_u64(plain),
+        buffer: @out,
+        buffer_count: to_u64(whole).must()
+    )
+    wiped(@plain)
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out)
+
+# `data` decrypted by `handle`, a private RSA key.
+function decrypt(handle: hero_crypto.Key, data: [u8]) -> [u8]?
+    asked = "decrypting " + to_str(data.len()) + " bytes by an RSA key"
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    held: [u8] @= data
+    out: [u8] @= []
+    scheme = hero_crypto.HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256
+    most = hero_crypto.decrypt(
+        handle,
+        scheme: scheme,
+        data: @held,
+        count: length_u64(held),
+        buffer: @out,
+        buffer_count: 0
+    )
+
+    if most < 0
+        return failure.last(asked: asked)
+    written = hero_crypto.decrypt(
+        handle,
+        scheme: scheme,
+        data: @held,
+        count: length_u64(held),
+        buffer: @out,
+        buffer_count: to_u64(most).must()
+    )
+
+    if written < 0
+        return failure.last(asked: asked)
+    text = out.slice(from: 0, to: written)
+    wiped(@out)
+    return ok(text)
+
+## Tests
+
+test "kind_number, kind_name and scheme_number: every name both ways, and a name of none"
+    for name in ["ed25519", "x25519", "p256", "p384", "rsa"]
+        assert kind_name(kind_number(name)) == name
+
+    assert kind_number("p521") == 0
+    assert kind_name(0) == ""
+    assert scheme_number("ecdsa_sha384") == hero_crypto.HERO_CRYPTO_SIGN_ECDSA_SHA384
+    assert scheme_number("rsa_pkcs1_sha512") == hero_crypto.HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512
+    assert scheme_number("dsa") == 0
+
+test "wiped: an empty cell, one byte, and many bytes left zero"
+    none: [u8] @= []
+    wiped(@none)
+    assert none.len() == 0
+    many: [u8] @= [1, 2, 3]
+    wiped(@many)
+    assert many == [0, 0, 0]
+
+test "facts, generate and public_of: a P-256 key's facts, a public half's, and a kind of none"
+    match generate(name: "p521", bits: 0)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    if !offers("p256")
+        return
+    k @= generate(name: "p256", bits: 0).must()
+    f = facts(k).must()
+    assert f.name == "p256"
+    assert f.bits == 256
+    assert !f.is_public
+    p @= public_of(k).must()
+    assert facts(p).must().is_public
+    close(@p).must()
+    close(@k).must()
+
+test "close, sign, verify, agree, encrypt and decrypt of a place emptied: closed, before the floor is asked"
+    none: hero_crypto.Key @= nullptr
+
+    match close(@none)
+        .ok _  => assert false
+        .err e => assert e.msg == "closing a key: it is closed already"
+
+    match sign(handle: none, scheme: "ed25519", message: [1])
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    match verify(handle: none, scheme: "ed25519", message: [1], signature: [2])
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    match agree(mine: none, theirs: none)
+        .ok _  => assert false
+        .err e => assert e.msg == "agreeing on a secret: a key is closed"
+
+    match encrypt(handle: none, text: [1])
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    match decrypt(handle: none, data: [1])
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    match public_of(none)
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+test "sign and verify: an empty message, a scheme of another kind invalid, and a signature of no form that does not hold"
+    if !offers("p384")
+        return
+    k @= generate(name: "p384", bits: 0).must()
+    p @= public_of(k).must()
+    signature = sign(handle: k, scheme: "ecdsa_sha384", message: []).must()
+    assert signature.len() <= 104
+    assert verify(handle: p, scheme: "ecdsa_sha384", message: [], signature: signature).must()
+    assert !verify(handle: p, scheme: "ecdsa_sha384", message: [0], signature: signature).must()
+    assert !verify(handle: p, scheme: "ecdsa_sha384", message: [], signature: [48, 0]).must()
+    assert !verify(handle: p, scheme: "ecdsa_sha384", message: [], signature: []).must()
+
+    match sign(handle: k, scheme: "rsa_pss_sha256", message: [1])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "signing 1 bytes by rsa_pss_sha256: the layer refuses an argument (the scheme is not one of P-384's)"
+
+    close(@p).must()
+    close(@k).must()
+
+test "agree, encrypt and decrypt: P-384's 48 bytes both ways, RSA-OAEP of an empty text and of 190 bytes, a text of 191 invalid"
+    if !offers("p384")
+        return
+    a @= generate(name: "p384", bits: 0).must()
+    b @= generate(name: "p384", bits: 0).must()
+    x = agree(mine: a, theirs: b).must()
+    y = agree(mine: b, theirs: a).must()
+    assert x.len() == 48
+    assert x == y
+    close(@a).must()
+    close(@b).must()
+    k @= generate(name: "rsa", bits: 2048).must()
+    empty = encrypt(handle: k, text: []).must()
+    assert empty.len() == 256
+    assert decrypt(handle: k, data: empty).must().len() == 0
+    full: [u8] @= []
+
+    for i in range(from: 0, to: 190)
+        full @ full.push(to_u8(i).must())
+
+    assert decrypt(handle: k, data: encrypt(handle: k, text: full).must()).must() == full
+    full @ full.push(0)
+
+    match encrypt(handle: k, text: full)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    match decrypt(handle: k, data: [1, 2, 3])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "decrypting 3 bytes by an RSA key: the data do not decrypt under this key (the data do not decrypt under this key)"
+
+    close(@k).must()

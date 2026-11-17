@@ -1,0 +1,87 @@
+# The `.proto` files this package carries, so that a file may import them
+# without the program giving their text: the well-known types, written from
+# their documented fields, and a descriptor.proto reduced to the option
+# messages a custom option extends.
+
+# Whether `name` is a file this package carries.
+function is_carried(name: str) -> bool
+    return !text_of(name).is_err()
+
+# The names of every file carried.
+function names() -> [str]
+    return [
+        "google/protobuf/any.proto"
+        "google/protobuf/duration.proto"
+        "google/protobuf/empty.proto"
+        "google/protobuf/field_mask.proto"
+        "google/protobuf/struct.proto"
+        "google/protobuf/timestamp.proto"
+        "google/protobuf/wrappers.proto"
+        "google/protobuf/descriptor.proto"
+    ]
+
+# The text of the carried file `name`.
+function text_of(name: str) -> str?
+    head = "syntax = \"proto3\";\npackage google.protobuf;\n"
+
+    if name == "google/protobuf/any.proto"
+        return ok(head + "message Any {\n  string type_url = 1;\n  bytes value = 2;\n}\n")
+
+    if name == "google/protobuf/duration.proto"
+        return ok(head + "message Duration {\n  int64 seconds = 1;\n  int32 nanos = 2;\n}\n")
+
+    if name == "google/protobuf/empty.proto"
+        return ok(head + "message Empty {}\n")
+
+    if name == "google/protobuf/field_mask.proto"
+        return ok(head + "message FieldMask {\n  repeated string paths = 1;\n}\n")
+
+    if name == "google/protobuf/timestamp.proto"
+        return ok(head + "message Timestamp {\n  int64 seconds = 1;\n  int32 nanos = 2;\n}\n")
+
+    if name == "google/protobuf/struct.proto"
+        lines = [
+            "message Struct {"
+            "  map<string, Value> fields = 1;"
+            "}"
+            "message Value {"
+            "  oneof kind {"
+            "    NullValue null_value = 1;"
+            "    double number_value = 2;"
+            "    string string_value = 3;"
+            "    bool bool_value = 4;"
+            "    Struct struct_value = 5;"
+            "    ListValue list_value = 6;"
+            "  }"
+            "}"
+            "enum NullValue {"
+            "  NULL_VALUE = 0;"
+            "}"
+            "message ListValue {"
+            "  repeated Value values = 1;"
+            "}"
+        ]
+        return ok(head + lines.join("\n") + "\n")
+
+    if name == "google/protobuf/wrappers.proto"
+        parts: [str] @= []
+
+        for pair in [["Double", "double"], ["Float", "float"], ["Int64", "int64"], ["UInt64", "uint64"], ["Int32", "int32"], ["UInt32", "uint32"], ["Bool", "bool"], ["String", "string"], ["Bytes", "bytes"]]
+            parts @ parts.push(f"message {pair[0]}Value {{\n  {pair[1]} value = 1;\n}}\n")
+
+        return ok(head + parts.join(""))
+
+    if name == "google/protobuf/descriptor.proto"
+        parts: [str] @= ["syntax = \"proto2\";\npackage google.protobuf;\n"]
+
+        for message in ["FileOptions", "MessageOptions", "FieldOptions", "OneofOptions", "EnumOptions", "EnumValueOptions", "ServiceOptions", "MethodOptions", "ExtensionRangeOptions", "FeatureSet"]
+            parts @ parts.push(f"message {message} {{\n  extensions 1000 to max;\n}}\n")
+
+        return ok(parts.join(""))
+    return fail(code: "not_found", msg: f"{name} is not a file this package carries")
+
+test "text_of: each file carried, and one that is not"
+    for name in names()
+        assert text_of(name).must().len() > 30
+
+    assert is_carried("google/protobuf/struct.proto") && !is_carried("google/api/annotations.proto")

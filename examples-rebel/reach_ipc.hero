@@ -1,0 +1,8 @@
+# Reaches Rebel's `ipc`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). It asks whether `a/b` is a name of shared memory and
+# prints the answer: false, since a name holds no slash.
+
+use <rebel>/ipc
+
+function main()
+    print(ipc.is_name("a/b"))

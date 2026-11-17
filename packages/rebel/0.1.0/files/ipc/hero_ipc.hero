@@ -1,0 +1,558 @@
+# The platform layer's communication between processes, `hero_ipc.h`, bound
+# thin: one function per C function, in C's order, each answering what C
+# answers. Rebel's floor of `ipc` (`examples/packages/README.md` § 4.1): where
+# a call fails its handle or stream is `nullptr` or its count -1, and
+# `last_error` then the kind; no policy stands here, and the face above it
+# turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. A listener, memory, a semaphore and a lock are
+# each begun by the call that opens it and ended by its own `close`; a
+# channel is a stream of `hero_stream.h`, begun by `accept` or `connect` and
+# ended by `hero_stream_close`, which the floor `io/hero_stream` binds.
+
+use io/hero_stream
+
+extern "hero_ipc.h"
+    # A listening channel the layer holds open. Each of the four is a handle
+    # the layer issues and checks: one closed already, `nullptr`, or one it
+    # never issued is `HERO_IPC_NOT_OPEN`, never a read of freed memory.
+    record Listener tag hero_ipc_listener
+    # Memory shared by name and mapped into this process.
+    record Memory tag hero_ipc_memory
+    # A semaphore shared by name.
+    record Semaphore tag hero_ipc_semaphore
+    # A lock shared by name.
+    record Lock tag hero_ipc_lock
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform and the stream's numbers where `hero_stream.h` has the kind.
+    constant HERO_IPC_OK: i64
+    constant HERO_IPC_INVALID: i64
+    constant HERO_IPC_NOT_OPEN: i64
+    constant HERO_IPC_NOT_FOUND: i64
+    constant HERO_IPC_EXISTS: i64
+    constant HERO_IPC_DENIED: i64
+    constant HERO_IPC_LIMIT: i64
+    constant HERO_IPC_CLOSED_PEER: i64
+    constant HERO_IPC_UNSUPPORTED: i64
+    constant HERO_IPC_OTHER: i64
+    constant HERO_IPC_REFUSED: i64
+    constant HERO_IPC_NOT_HELD: i64
+    constant HERO_IPC_TIMED_OUT: i64
+    constant HERO_IPC_STOPPED: i64
+    # What a wait's `within_ms` takes for no bound.
+    constant HERO_IPC_FOREVER: i64
+    # Where a channel's name lives: a path, Linux's abstract space, a
+    # Windows pipe.
+    constant HERO_IPC_SPACE_PATH: i64
+    constant HERO_IPC_SPACE_ABSTRACT: i64
+    constant HERO_IPC_SPACE_PIPE: i64
+    # The most bytes a name of memory, a semaphore, a lock, an abstract
+    # channel or a pipe holds.
+    constant HERO_IPC_NAME_MOST: i64
+    # The calls the marks below name: a stream's end, which the header
+    # declares through `hero_stream.h`, and each handle's own.
+    function hero_stream_close(s: hero_stream.Stream consumes) -> i64
+    function hero_ipc_listener_close(l: Listener consumes) -> i64
+    function hero_ipc_memory_close(m: Memory consumes) -> i64
+    function hero_ipc_semaphore_close(s: Semaphore consumes) -> i64
+    function hero_ipc_lock_close(l: Lock consumes) -> i64
+    function hero_ipc_listen(name: cstr lent, space: i64, perm: i64) -> Listener acquires hero_ipc_listener_close
+    function hero_ipc_accept(l: Listener, within_ms: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_ipc_connect(name: cstr lent, space: i64, within_ms: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_ipc_set_deadline(s: hero_stream.Stream, ms: i64) -> i64
+    function hero_ipc_shutdown_write(s: hero_stream.Stream) -> i64
+    function hero_ipc_peer(s: hero_stream.Stream, @pid: i64, @uid: i64) -> i64
+    function hero_ipc_memory_create(name: cstr lent, size: i64, perm: i64) -> Memory acquires hero_ipc_memory_close
+    function hero_ipc_memory_open(name: cstr lent) -> Memory acquires hero_ipc_memory_close
+    function hero_ipc_memory_size(m: Memory) -> i64
+    function hero_ipc_memory_read(m: Memory, offset: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ipc_memory_write(m: Memory, offset: i64, @data: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ipc_memory_load(m: Memory, offset: i64, @value: i64) -> i64
+    function hero_ipc_memory_store(m: Memory, offset: i64, value: i64) -> i64
+    function hero_ipc_memory_add(m: Memory, offset: i64, delta: i64, @value: i64) -> i64
+    function hero_ipc_memory_swap(m: Memory, offset: i64, expected: i64, desired: i64, @found: i64) -> i64
+    function hero_ipc_memory_remove(name: cstr lent) -> i64
+    function hero_ipc_semaphore_create(name: cstr lent, count: i64, perm: i64) -> Semaphore acquires hero_ipc_semaphore_close
+    function hero_ipc_semaphore_open(name: cstr lent) -> Semaphore acquires hero_ipc_semaphore_close
+    function hero_ipc_semaphore_wait(s: Semaphore, within_ms: i64) -> i64
+    function hero_ipc_semaphore_post(s: Semaphore) -> i64
+    function hero_ipc_semaphore_remove(name: cstr lent) -> i64
+    function hero_ipc_lock_open(name: cstr lent, perm: i64) -> Lock acquires hero_ipc_lock_close
+    function hero_ipc_lock_acquire(l: Lock, within_ms: i64) -> i64
+    function hero_ipc_lock_release(l: Lock) -> i64
+    function hero_ipc_lock_remove(name: cstr lent) -> i64
+    function hero_ipc_last_error() -> i64
+    function hero_ipc_last_os_error() -> i64
+
+# For the tests alone: the process's own number, to keep the names of two
+# runs of them apart.
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+
+## Channels
+
+# A listener on `name` in `space`, one of `HERO_IPC_SPACE_*`, a socket file
+# at a path made with the permission `perm`; or `nullptr`.
+function listen(name: str, space: i64, perm: i64) -> Listener
+    return hero_ipc_listen(name.cstr(), space: space, perm: perm)
+
+# The next connection on `l` as a stream, waiting at most `within_ms`
+# milliseconds, `HERO_IPC_FOREVER` for no bound; or `nullptr`.
+function accept(l: Listener, within_ms: i64) -> hero_stream.Stream
+    return hero_ipc_accept(l, within_ms: within_ms)
+
+# A connection to the listener on `name` in `space` as a stream, waiting at
+# most `within_ms` while the listener has no room; or `nullptr`.
+function connect(name: str, space: i64, within_ms: i64) -> hero_stream.Stream
+    return hero_ipc_connect(name.cstr(), space: space, within_ms: within_ms)
+
+# 0, or -1 where the listener was not open; `l` is given back either way, and
+# a path's socket file removed where the listen made it.
+function close_listener(@l: Listener) -> i64
+    return hero_ipc_listener_close(l)
+
+# 0 once every read and write of the channel `s` ends by `ms` milliseconds
+# from now, 0 taking the deadline away; or -1.
+function set_deadline(s: hero_stream.Stream, ms: i64) -> i64
+    return hero_ipc_set_deadline(s, ms: ms)
+
+# 0 once the writing side of the channel `s` is closed, or -1.
+function shutdown_write(s: hero_stream.Stream) -> i64
+    return hero_ipc_shutdown_write(s)
+
+# 0 with the peer's process id in `pid` and its user's id in `uid` (-1 on
+# Windows), or -1.
+function peer(s: hero_stream.Stream, @pid: i64, @uid: i64) -> i64
+    return hero_ipc_peer(s, pid: @pid, uid: @uid)
+
+## Shared memory
+
+# New memory named `name` of at least `size` bytes, all zero, or `nullptr`.
+function memory_create(name: str, size: i64, perm: i64) -> Memory
+    return hero_ipc_memory_create(name.cstr(), size: size, perm: perm)
+
+# The memory named `name`, or `nullptr`.
+function memory_open(name: str) -> Memory
+    return hero_ipc_memory_open(name.cstr())
+
+# The memory's size in bytes, or -1.
+function memory_size(m: Memory) -> i64
+    return hero_ipc_memory_size(m)
+
+# `count`, once that many bytes from `offset` are copied into the first
+# `count` of `buffer`, or -1; `buffer` is left `count` bytes long.
+function memory_read(m: Memory, offset: i64, @buffer: [u8], count: u64) -> i64
+    return hero_ipc_memory_read(m, offset: offset, @buffer, count: count)
+
+# `count`, once the first `count` bytes of `data` are copied to `offset`, or
+# -1; `data` is left as it was handed, `count` bytes long.
+function memory_write(m: Memory, offset: i64, @data: [u8], count: u64) -> i64
+    return hero_ipc_memory_write(m, offset: offset, @data, count: count)
+
+# 0 with the word at `offset` in `value`, or -1.
+function memory_load(m: Memory, offset: i64, @value: i64) -> i64
+    return hero_ipc_memory_load(m, offset: offset, value: @value)
+
+# 0 once the word at `offset` is `value`, or -1.
+function memory_store(m: Memory, offset: i64, value: i64) -> i64
+    return hero_ipc_memory_store(m, offset: offset, value: value)
+
+# 0 with the word at `offset` plus `delta` in `value` and in the memory,
+# wrapping at 64 bits; or -1.
+function memory_add(m: Memory, offset: i64, delta: i64, @value: i64) -> i64
+    return hero_ipc_memory_add(m, offset: offset, delta: delta, value: @value)
+
+# 0 with the word found at `offset` in `found`, made `desired` where it was
+# `expected`; or -1.
+function memory_swap(m: Memory, offset: i64, expected: i64, desired: i64, @found: i64) -> i64
+    return hero_ipc_memory_swap(m, offset: offset, expected: expected, desired: desired, found: @found)
+
+# 0, or -1 where the memory was not open; `m` is given back either way.
+function memory_close(@m: Memory) -> i64
+    return hero_ipc_memory_close(m)
+
+# 0 once the name `name` is taken from its memory, or -1.
+function memory_remove(name: str) -> i64
+    return hero_ipc_memory_remove(name.cstr())
+
+## Semaphores
+
+# A new semaphore named `name` counting `count`, or `nullptr`.
+function semaphore_create(name: str, count: i64, perm: i64) -> Semaphore
+    return hero_ipc_semaphore_create(name.cstr(), count: count, perm: perm)
+
+# The semaphore named `name`, or `nullptr`.
+function semaphore_open(name: str) -> Semaphore
+    return hero_ipc_semaphore_open(name.cstr())
+
+# 0 once one is taken from the count, waiting at most `within_ms`; or -1.
+function semaphore_wait(s: Semaphore, within_ms: i64) -> i64
+    return hero_ipc_semaphore_wait(s, within_ms: within_ms)
+
+# 0 once one is added to the count, or -1.
+function semaphore_post(s: Semaphore) -> i64
+    return hero_ipc_semaphore_post(s)
+
+# 0, or -1 where the semaphore was not open; `s` is given back either way.
+function semaphore_close(@s: Semaphore) -> i64
+    return hero_ipc_semaphore_close(s)
+
+# 0 once the name `name` is taken from its semaphore, or -1.
+function semaphore_remove(name: str) -> i64
+    return hero_ipc_semaphore_remove(name.cstr())
+
+## Locks
+
+# The lock named `name`, made where it is not yet, or `nullptr`.
+function lock_open(name: str, perm: i64) -> Lock
+    return hero_ipc_lock_open(name.cstr(), perm: perm)
+
+# 0 once the lock is taken, 1 once it is taken from a holder that ended
+# without releasing it, waiting at most `within_ms`; or -1.
+function lock_acquire(l: Lock, within_ms: i64) -> i64
+    return hero_ipc_lock_acquire(l, within_ms: within_ms)
+
+# 0 once the calling thread's hold is released, or -1.
+function lock_release(l: Lock) -> i64
+    return hero_ipc_lock_release(l)
+
+# 0, or -1 where the lock was not open; `l` is given back either way,
+# released first where the calling thread holds it.
+function lock_close(@l: Lock) -> i64
+    return hero_ipc_lock_close(l)
+
+# 0 once the name `name` is taken from its lock, or -1.
+function lock_remove(name: str) -> i64
+    return hero_ipc_lock_remove(name.cstr())
+
+## The last failure
+
+# The kind of the last call's failure on this thread.
+function last_error() -> i64
+    return hero_ipc_last_error()
+
+# The platform's own number for that failure, 0 where the layer refused.
+function last_os_error() -> i64
+    return hero_ipc_last_os_error()
+
+## The tests: the edges first
+
+# What a Windows pipe answers, walked once on the listener `pipe` on `name`,
+# which it closes: 0 where every step answered as the header says, else the
+# number of the first step that did not. A second listener on the name is
+# refused, an accept with no client gives up at its bound (its instance
+# replaced), a client is accepted, the server's bytes reach the client after
+# the server closed, the peer is this process, and a pipe has no half to
+# close.
+function round_trip_on_a_pipe(@pipe: Listener, name: str) -> i64
+    step: i64 @= 0
+    second @= listen(name, space: HERO_IPC_SPACE_PIPE, perm: 0)
+
+    if second != nullptr
+        step @ 1
+        _ = close_listener(@second)
+    else if last_error() != HERO_IPC_EXISTS
+        step @ 1
+    none @= accept(pipe, within_ms: 0)
+
+    if none != nullptr
+        step @ 2
+        _ = hero_stream.close(@none)
+    else if step == 0 && last_error() != HERO_IPC_TIMED_OUT
+        step @ 2
+    client @= connect(name, space: HERO_IPC_SPACE_PIPE, within_ms: 1000)
+    server @= accept(pipe, within_ms: 1000)
+
+    if step == 0 && (client == nullptr || server == nullptr)
+        step @ 3
+    out: [u8] @= [1, 2]
+
+    if step == 0 && hero_stream.write(server, @out, n: 2) != 2
+        step @ 4
+
+    if server != nullptr && hero_stream.close(@server) != 0 && step == 0
+        step @ 5
+    got: [u8] @= [0, 0, 0]
+
+    if step == 0 && hero_stream.read(client, @got, n: 3) != 2
+        step @ 6
+
+    if step == 0 && hero_stream.read(client, @got, n: 3) != 0
+        step @ 7
+    pid: i64 @= 0
+    uid: i64 @= 0
+
+    if step == 0 && (peer(client, pid: @pid, uid: @uid) != 0 || pid != hero_os_pid() || uid != -1)
+        step @ 8
+
+    if step == 0 && (shutdown_write(client) != -1 || last_error() != HERO_IPC_UNSUPPORTED)
+        step @ 9
+
+    if client != nullptr && hero_stream.close(@client) != 0 && step == 0
+        step @ 10
+
+    if close_listener(@pipe) != 0 && step == 0
+        step @ 11
+    return step
+
+# A name for a test's object, unique to this process.
+function test_name(what: str) -> str
+    return f"hi-{what}-{hero_os_pid()}"
+
+test "listen: a space that is none, a permission out of range, an empty path and one past the address are refused invalid"
+    a = listen("build/x.sock", space: 0, perm: 0o600)
+    assert a == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    b = listen("build/x.sock", space: 4, perm: 0o600)
+    assert b == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    c = listen("build/x.sock", space: HERO_IPC_SPACE_PATH, perm: -1)
+    assert c == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    d = listen("build/x.sock", space: HERO_IPC_SPACE_PATH, perm: 0o1000)
+    assert d == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    e = listen("", space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert e == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    f = listen("build/" + repeat("a", 200), space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert f == nullptr
+    assert last_error() == HERO_IPC_INVALID
+
+test "listen, connect and accept in one process: bytes both ways, the peer is this process, and the file goes at close"
+    path = f"build/{test_name("round")}.sock"
+    l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert l != nullptr
+    again = listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert again == nullptr
+    assert last_error() == HERO_IPC_EXISTS
+    client @= connect(path, space: HERO_IPC_SPACE_PATH, within_ms: 1000)
+    assert client != nullptr
+    server @= accept(l, within_ms: 1000)
+    assert server != nullptr
+    out: [u8] @= [104, 105]
+    assert hero_stream.write(client, @out, n: 2) == 2
+    got: [u8] @= [0, 0, 0, 0]
+    assert hero_stream.read(server, @got, n: 4) == 2
+    assert got[0] == 104 && got[1] == 105
+    pid: i64 @= 0
+    uid: i64 @= 0
+    assert peer(server, pid: @pid, uid: @uid) == 0
+    assert pid == hero_os_pid()
+    assert shutdown_write(client) == 0
+    assert hero_stream.read(server, @got, n: 4) == 0
+    assert hero_stream.close(@client) == 0
+    assert hero_stream.close(@server) == 0
+    assert close_listener(@l) == 0
+    gone = connect(path, space: HERO_IPC_SPACE_PATH, within_ms: 0)
+    assert gone == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+
+test "accept: within 0 and within 50 time out, -2 is refused, and no listener is not open"
+    path = f"build/{test_name("bound")}.sock"
+    l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert l != nullptr
+    none = accept(l, within_ms: 0)
+    assert none == nullptr
+    assert last_error() == HERO_IPC_TIMED_OUT
+    later = accept(l, within_ms: 50)
+    assert later == nullptr
+    assert last_error() == HERO_IPC_TIMED_OUT
+    bad = accept(l, within_ms: -2)
+    assert bad == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    assert close_listener(@l) == 0
+    nothing = accept(nullptr, within_ms: 0)
+    assert nothing == nullptr
+    assert last_error() == HERO_IPC_NOT_OPEN
+
+test "set_deadline: a read past it times out, -1 is refused, and a stream of another member is no channel"
+    path = f"build/{test_name("late")}.sock"
+    l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    client @= connect(path, space: HERO_IPC_SPACE_PATH, within_ms: 1000)
+    server @= accept(l, within_ms: 1000)
+    assert set_deadline(server, ms: 30) == 0
+    got: [u8] @= [0]
+    assert hero_stream.read(server, @got, n: 1) == -1
+    assert hero_stream.last_error() == hero_stream.HERO_STREAM_TIMED_OUT
+    assert set_deadline(server, ms: 0) == 0
+    assert set_deadline(server, ms: -1) == -1
+    assert last_error() == HERO_IPC_INVALID
+    reader: hero_stream.Stream @= nullptr
+    writer: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @reader, writer: @writer) == 0
+    assert set_deadline(reader, ms: 10) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert hero_stream.close(@reader) == 0
+    assert hero_stream.close(@writer) == 0
+    assert hero_stream.close(@client) == 0
+    assert hero_stream.close(@server) == 0
+    assert close_listener(@l) == 0
+
+test "connect: an abstract name and a pipe answer by platform, a space that is none is refused"
+    a = connect("x", space: 9, within_ms: 0)
+    assert a == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    name = test_name("abs")
+    abstract @= listen(name, space: HERO_IPC_SPACE_ABSTRACT, perm: 0)
+
+    if abstract == nullptr
+        assert last_error() == HERO_IPC_UNSUPPORTED
+    else
+        c @= connect(name, space: HERO_IPC_SPACE_ABSTRACT, within_ms: 1000)
+        assert c != nullptr
+        assert hero_stream.close(@c) == 0
+        assert close_listener(@abstract) == 0
+    pipe @= listen(name, space: HERO_IPC_SPACE_PIPE, perm: 0)
+
+    if pipe == nullptr
+        assert last_error() == HERO_IPC_UNSUPPORTED
+    else
+        assert round_trip_on_a_pipe(@pipe, name: name) == 0
+
+test "a path with a character of two bytes: listened on, connected to and accepted"
+    path = f"build/ipc-é-{hero_os_pid()}.sock"
+    l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert l != nullptr
+    client @= connect(path, space: HERO_IPC_SPACE_PATH, within_ms: 1000)
+    assert client != nullptr
+    server @= accept(l, within_ms: 1000)
+    assert server != nullptr
+    assert hero_stream.close(@client) == 0
+    assert hero_stream.close(@server) == 0
+    assert close_listener(@l) == 0
+
+test "memory: a size of 0 or below, a bad name and one of 30 bytes are refused, and the size is at least the one asked"
+    zero = memory_create(test_name("m0"), size: 0, perm: 0o600)
+    assert zero == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    below = memory_create(test_name("m1"), size: -5, perm: 0o600)
+    assert below == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    slash = memory_create("a/b", size: 8, perm: 0o600)
+    assert slash == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    dot = memory_create(".a", size: 8, perm: 0o600)
+    assert dot == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    long = memory_create(repeat("a", 30), size: 8, perm: 0o600)
+    assert long == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    name = test_name("m2")
+    m @= memory_create(name, size: 100, perm: 0o600)
+    assert m != nullptr
+    assert memory_size(m) >= 100
+    twice = memory_create(name, size: 100, perm: 0o600)
+    assert twice == nullptr
+    assert last_error() == HERO_IPC_EXISTS
+    assert memory_close(@m) == 0
+    assert memory_remove(name) == 0
+    assert memory_remove(name) == -1
+    assert last_error() == HERO_IPC_NOT_FOUND
+    gone = memory_open(name)
+    assert gone == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+
+test "memory: bytes written are read by a second mapping, and every offset past the size is refused before a byte moves"
+    name = test_name("m3")
+    m @= memory_create(name, size: 64, perm: 0o600)
+    o @= memory_open(name)
+    assert o != nullptr
+    size = memory_size(o)
+    data: [u8] @= [1, 2, 255]
+    assert memory_write(m, offset: 0, @data, count: 3) == 3
+    back: [u8] @= [0, 0, 0]
+    assert memory_read(o, offset: 0, @back, count: 3) == 3
+    assert back[2] == 255
+    assert memory_read(o, offset: size - 2, @back, count: 3) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert memory_read(o, offset: -1, @back, count: 1) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert memory_write(o, offset: size, @data, count: 1) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert memory_write(o, offset: size, @data, count: 0) == 0
+    empty: [u8] @= []
+    assert memory_read(o, offset: 0, @empty, count: 0) == 0
+    assert memory_close(@o) == 0
+    assert memory_close(@m) == 0
+    assert memory_remove(name) == 0
+
+test "memory words: load, store, add wrapping at the largest i64, swap made and not made, and an offset not a multiple of 8"
+    name = test_name("m4")
+    m @= memory_create(name, size: 64, perm: 0o600)
+    value: i64 @= -1
+    assert memory_load(m, offset: 8, value: @value) == 0
+    assert value == 0
+    assert memory_store(m, offset: 8, value: 9223372036854775807) == 0
+    assert memory_add(m, offset: 8, delta: 1, value: @value) == 0
+    assert value == -9223372036854775807 - 1
+    found: i64 @= 0
+    assert memory_swap(m, offset: 16, expected: 0, desired: 5, found: @found) == 0
+    assert found == 0
+    assert memory_swap(m, offset: 16, expected: 0, desired: 6, found: @found) == 0
+    assert found == 5
+    assert memory_load(m, offset: 4, value: @value) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert memory_load(m, offset: memory_size(m), value: @value) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert memory_close(@m) == 0
+    assert memory_size(nullptr) == -1
+    assert last_error() == HERO_IPC_NOT_OPEN
+    assert memory_remove(name) == 0
+
+test "semaphore: a count of -1 or 32,768 is refused, a wait of 0 on 0 times out, a post is taken once, and a name taken is told"
+    name = test_name("s")
+    negative = semaphore_create(name, count: -1, perm: 0o600)
+    assert negative == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    past = semaphore_create(name, count: 32768, perm: 0o600)
+    assert past == nullptr
+    assert last_error() == HERO_IPC_INVALID
+    s @= semaphore_create(name, count: 0, perm: 0o600)
+    assert s != nullptr
+    assert semaphore_wait(s, within_ms: 0) == -1
+    assert last_error() == HERO_IPC_TIMED_OUT
+    assert semaphore_wait(s, within_ms: 20) == -1
+    assert last_error() == HERO_IPC_TIMED_OUT
+    assert semaphore_post(s) == 0
+    o @= semaphore_open(name)
+    assert o != nullptr
+    assert semaphore_wait(o, within_ms: 0) == 0
+    assert semaphore_wait(s, within_ms: 0) == -1
+    twice = semaphore_create(name, count: 1, perm: 0o600)
+    assert twice == nullptr
+    assert last_error() == HERO_IPC_EXISTS
+    assert semaphore_close(@o) == 0
+    assert semaphore_close(@s) == 0
+    assert semaphore_remove(name) == 0
+    gone = semaphore_open(name)
+    assert gone == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+
+test "lock: taken, refused to its own thread through either handle, released once, and a name with a slash refused"
+    name = test_name("l")
+    l @= lock_open(name, perm: 0o600)
+    assert l != nullptr
+    assert lock_acquire(l, within_ms: 0) == 0
+    assert lock_acquire(l, within_ms: 10) == -1
+    assert last_error() == HERO_IPC_INVALID
+    second @= lock_open(name, perm: 0o600)
+    assert lock_acquire(second, within_ms: 10) == -1
+    assert last_error() == HERO_IPC_INVALID
+    assert lock_release(second) == -1
+    assert last_error() == HERO_IPC_NOT_HELD
+    assert lock_release(l) == 0
+    assert lock_release(l) == -1
+    assert last_error() == HERO_IPC_NOT_HELD
+    assert lock_acquire(second, within_ms: 0) == 0
+    assert lock_close(@second) == 0
+    assert lock_acquire(l, within_ms: 0) == 0
+    assert lock_close(@l) == 0
+    assert lock_remove(name) == 0
+    assert lock_remove(name) == -1
+    assert last_error() == HERO_IPC_NOT_FOUND
+    bad = lock_open("a/b", perm: 0o600)
+    assert bad == nullptr
+    assert last_error() == HERO_IPC_INVALID

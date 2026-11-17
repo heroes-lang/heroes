@@ -1,0 +1,21 @@
+# Reaches Rebel's `protobuf`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small `.proto` file, fills a
+# message, and prints its bytes' length and its JSON.
+
+use <rebel>/json
+use <rebel>/protobuf
+
+function shown() -> str?
+    text = "syntax = \"proto3\";\npackage demo;\nmessage Point { int64 x = 1; int64 y = 2; }\n"
+    schema = protobuf.parse_schema_text(name: "point.proto", text: text)?
+    point: protobuf.Message @= protobuf.new_message(schema, "demo.Point")?
+    protobuf.set_int(schema, @point, field: "x", n: 3)?
+    protobuf.set_int(schema, @point, field: "y", n: -4)?
+    data = protobuf.encode(schema, point)?
+    shown_json = json.format(protobuf.to_json(schema, point)?)?
+    return ok(f"{data.len()} bytes, {shown_json}")
+
+function main()
+    match shown()
+        .ok s  => print(s)
+        .err e => print(e.code, ": ", e.msg)

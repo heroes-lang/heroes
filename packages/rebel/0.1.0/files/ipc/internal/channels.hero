@@ -1,0 +1,229 @@
+# The channels of `ipc`: a listener made on a path, an abstract name or a
+# pipe, a connection accepted or made and handed to `io` as a stream, and
+# what the floor does to a channel after it became one (its deadline, its
+# writing side closed, its peer). Each takes the floor's handle or name and
+# the words its messages begin with; the face `ipc` holds the listener.
+
+use io
+use ipc/hero_ipc
+use ipc/internal/failure
+use ipc/internal/names
+use os
+
+# What a process at the other end is, as the system told it.
+record Ends
+    # The peer's process id.
+    pid: i64
+    # The peer's user id, -1 where the platform numbers none.
+    uid: i64
+
+# How messages name the place `name` in `space`, one of
+# `hero_ipc.HERO_IPC_SPACE_*`: a path in quotes, or the space's word before it.
+function label(name: str, space: i64) -> str
+    if space == hero_ipc.HERO_IPC_SPACE_ABSTRACT
+        return f"the abstract name \"{name}\""
+
+    if space == hero_ipc.HERO_IPC_SPACE_PIPE
+        return f"the pipe \"{name}\""
+    return f"\"{name}\""
+
+# How messages name a listener on `name`, in Linux's abstract space where
+# `abstract`, a Windows pipe where `pipe`, else a path.
+function listener_label(name: str, abstract: bool, pipe: bool) -> str
+    if abstract
+        return label(name, space: hero_ipc.HERO_IPC_SPACE_ABSTRACT)
+
+    if pipe
+        return label(name, space: hero_ipc.HERO_IPC_SPACE_PIPE)
+    return label(name, space: hero_ipc.HERO_IPC_SPACE_PATH)
+
+# What the face checks of a name before the floor is asked: a path is not
+# empty, an abstract name or a pipe's follows `names`'s rule.
+function checked_name(name: str, space: i64, asked: str) -> ()?
+    if space == hero_ipc.HERO_IPC_SPACE_PATH
+        if name.len() == 0
+            return failure.of(code: failure.INVALID, asked: asked, why: "the path is empty")
+        return ok()
+    return names.checked(name: name, asked: asked)
+
+# Nothing where `within_ms` is 0 or more or `hero_ipc.HERO_IPC_FOREVER`, else
+# `invalid`.
+function checked_bound(within_ms: i64, asked: str) -> ()?
+    if within_ms < 0 && within_ms != hero_ipc.HERO_IPC_FOREVER
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a bound is 0 or more milliseconds, or FOREVER, and {within_ms} is neither"
+        )
+    return ok()
+
+# The floor's listener on `name` in `space`, its socket file made with
+# `permission` where `space` is a path, or the failure.
+function listen(name: str, space: i64, permission: i64) -> hero_ipc.Listener?
+    asked = "listening on " + label(name, space: space)
+    checked_name(name: name, space: space, asked: asked)?
+
+    if permission < 0 || permission > 0o777
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a permission is 0 to 0o777, and {permission} is not"
+        )
+    l = hero_ipc.listen(name, space: space, perm: permission)
+
+    if l == nullptr
+        return failure.last(asked: asked)
+    return ok(l)
+
+# The next connection on the listener `handle`, named `where` in messages, as
+# a stream, waiting at most `within_ms`.
+function accept(handle: hero_ipc.Listener, within_ms: i64, where: str) -> io.Stream?
+    asked = "accepting a connection on " + where
+    checked_bound(within_ms, asked: asked)?
+    s = hero_ipc.accept(handle, within_ms: within_ms)
+
+    if s == nullptr
+        return failure.last(asked: asked)
+    return ok(io.of_handle(s, name: "a channel accepted on " + where))
+
+# A connection to the listener on `name` in `space` as a stream, waiting at
+# most `within_ms` while it has no room.
+function connect(name: str, space: i64, within_ms: i64) -> io.Stream?
+    where = label(name, space: space)
+    asked = "connecting to " + where
+    checked_name(name: name, space: space, asked: asked)?
+    checked_bound(within_ms, asked: asked)?
+    s = hero_ipc.connect(name, space: space, within_ms: within_ms)
+
+    if s == nullptr
+        return failure.last(asked: asked)
+    return ok(io.of_handle(s, name: "the channel to " + where))
+
+# Closes the listener `handle`, named `where`, and empties the place.
+function close(@handle: hero_ipc.Listener, where: str) -> ()?
+    asked = "closing the listener on " + where
+
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "it is closed already")
+    answer = hero_ipc.close_listener(@handle)
+    handle @ nullptr
+    return failure.done(answer, asked: asked)
+
+# Makes every read and write of the channel `s` end by `ms` from now.
+function set_deadline(s: io.Stream, ms: i64) -> ()?
+    asked = f"setting a deadline of {ms} ms on {s.name}"
+
+    if ms < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "a deadline is 0 or more milliseconds")
+
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    return failure.done(hero_ipc.set_deadline(s.handle, ms: ms), asked: asked)
+
+# Closes the writing side of the channel `s`.
+function close_write(s: io.Stream) -> ()?
+    asked = "closing the writing side of " + s.name
+
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    return failure.done(hero_ipc.shutdown_write(s.handle), asked: asked)
+
+# The process at the other end of the channel `s`.
+function peer(s: io.Stream) -> Ends?
+    asked = "asking who is at the other end of " + s.name
+
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    pid: i64 @= -1
+    uid: i64 @= -1
+    failure.done(hero_ipc.peer(s.handle, pid: @pid, uid: @uid), asked: asked)?
+    return ok(Ends(pid: pid, uid: uid))
+
+## Tests
+
+# This process's id, which keeps the names of two runs of the tests apart.
+function test_pid() -> i64
+    return os.pid()
+
+# A path for a test's socket file, unique to this process.
+function test_path(what: str) -> str
+    return f"build/ipc-{what}-{test_pid()}.sock"
+
+test "label and listener_label: a path in quotes, an abstract name and a pipe named by their space"
+    assert listener_label("p", abstract: false, pipe: false) == "\"p\""
+    assert listener_label("p", abstract: true, pipe: false) == "the abstract name \"p\""
+    assert listener_label("p", abstract: false, pipe: true) == "the pipe \"p\""
+    assert label("a/b.sock", space: hero_ipc.HERO_IPC_SPACE_PATH) == "\"a/b.sock\""
+    assert label("x", space: hero_ipc.HERO_IPC_SPACE_ABSTRACT) == "the abstract name \"x\""
+    assert label("x", space: hero_ipc.HERO_IPC_SPACE_PIPE) == "the pipe \"x\""
+
+test "checked_bound: 0, a large bound and FOREVER pass, -2 and the smallest i64 are invalid"
+    assert checked_bound(0, asked: "x") == ok()
+    assert checked_bound(9223372036854775807, asked: "x") == ok()
+    assert checked_bound(hero_ipc.HERO_IPC_FOREVER, asked: "x") == ok()
+    assert checked_bound(-2, asked: "x").is_err()
+    assert checked_bound(-9223372036854775807 - 1, asked: "x").is_err()
+
+test "listen: an empty path, a permission past 0o777 and a pipe's bad name are told before the floor, a path taken is exists"
+    match listen("", space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "listening on \"\": the path is empty"
+
+    match listen("build/p.sock", space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o1000)
+        .ok _  => assert false
+        .err e => assert e.msg == "listening on \"build/p.sock\": a permission is 0 to 0o777, and 512 is not"
+
+    match listen("a b", space: hero_ipc.HERO_IPC_SPACE_PIPE, permission: 0)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    path = test_path("taken")
+
+    match listen(path, space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600)
+        .err _ => assert false
+        .ok l =>
+            first @= l
+
+            match listen(path, space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600)
+                .ok _  => assert false
+                .err e => assert e.code == failure.EXISTS
+
+            assert close(@first, where: label(path, space: hero_ipc.HERO_IPC_SPACE_PATH)) == ok()
+            assert close(@first, where: "x").is_err()
+
+test "connect: nothing at the path is not_found, a bound of -5 is invalid, and accept, peer, close_write and set_deadline answer on a channel"
+    path = test_path("conn")
+
+    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_FOUND
+
+    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: -5)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    l @= listen(path, space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600).must()
+    where = label(path, space: hero_ipc.HERO_IPC_SPACE_PATH)
+    client @= connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: 1000).must()
+    server @= accept(l, within_ms: 1000, where: where).must()
+    assert peer(server).must().pid == os.pid()
+    assert set_deadline(client, ms: 20) == ok()
+    assert set_deadline(client, ms: -1).is_err()
+
+    match io.read(client, most: 1)
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT
+
+    assert close_write(server) == ok()
+    assert io.read(client, most: 1).must().len() == 0
+    assert io.close(@client) == ok()
+    assert io.close(@server) == ok()
+    assert set_deadline(server, ms: 5).is_err()
+
+    match accept(l, within_ms: 0, where: where)
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT
+
+    assert close(@l, where: where) == ok()

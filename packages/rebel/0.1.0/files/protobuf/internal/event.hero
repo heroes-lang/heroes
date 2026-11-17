@@ -1,0 +1,147 @@
+# A message as a list of events, the currency between the face's tree and the
+# codecs: a message opens with `MESSAGE`, each field set is a `FIELD` and its
+# value, and `END` closes the message, a list or a map. A list's items and a
+# map's keys and values, in turn, stand between `LIST` or `MAP` and `END`.
+# The decoder writes them in canonical order: fields by number, a map's
+# entries by key, each key once.
+
+# A message begins; `text` is its type's full name.
+constant MESSAGE: i64
+    1
+
+# A message, a list or a map ends; a message's `data` is its unknown bytes.
+constant END: i64
+    2
+
+# A field's value follows; `number` is the field's.
+constant FIELD: i64
+    3
+
+# A repeated field's values follow, to `END`.
+constant LIST: i64
+    4
+
+# A map's keys and values follow, one after the other, to `END`.
+constant MAP: i64
+    5
+
+# A bool, in `number`: 0 or 1.
+constant BOOL: i64
+    6
+
+# A 32-bit signed integer, in `number`.
+constant INT32: i64
+    7
+
+# A 64-bit signed integer, in `number`.
+constant INT64: i64
+    8
+
+# A 32-bit unsigned integer, in `unsigned`.
+constant UINT32: i64
+    9
+
+# A 64-bit unsigned integer, in `unsigned`.
+constant UINT64: i64
+    10
+
+# A float, in `real`, which holds its `f32` exactly.
+constant FLOAT: i64
+    11
+
+# A double, in `real`.
+constant DOUBLE: i64
+    12
+
+# A string, in `text`.
+constant TEXT: i64
+    13
+
+# Bytes, in `data`; a string's whose bytes are not UTF-8, kept.
+constant BYTES: i64
+    14
+
+# An enum's number, in `number`.
+constant ENUM: i64
+    15
+
+# One event.
+record Event
+    # `MESSAGE` to `ENUM`.
+    kind: i64
+    # A field's number, a bool, a signed integer or an enum's number.
+    number: i64
+    # An unsigned integer.
+    unsigned: u64
+    # A float or a double.
+    real: f64
+    # A type's name or a string.
+    text: str
+    # Bytes, or a message's unknown bytes.
+    data: [u8]
+
+# An event of `kind` holding nothing.
+function mark(kind: i64) -> Event
+    return Event(kind: kind, number: 0, unsigned: 0, real: 0.0, text: "", data: [])
+
+# An event of `kind` holding the signed `n`.
+function signed(kind: i64, n: i64) -> Event
+    return Event(kind: kind, number: n, unsigned: 0, real: 0.0, text: "", data: [])
+
+# An event of `kind` holding the unsigned `n`.
+function unsigned(kind: i64, n: u64) -> Event
+    return Event(kind: kind, number: 0, unsigned: n, real: 0.0, text: "", data: [])
+
+# An event of `kind` holding the number `x`.
+function real(kind: i64, x: f64) -> Event
+    return Event(kind: kind, number: 0, unsigned: 0, real: x, text: "", data: [])
+
+# An event of `kind` holding the text `s`.
+function text(kind: i64, s: str) -> Event
+    return Event(kind: kind, number: 0, unsigned: 0, real: 0.0, text: s, data: [])
+
+# An event of `kind` holding the bytes `data`.
+function bytes(kind: i64, data: [u8]) -> Event
+    return Event(kind: kind, number: 0, unsigned: 0, real: 0.0, text: "", data: data)
+
+# Whether `e`, a scalar's event, holds its kind's zero; a negative zero is not.
+function is_zero(e: Event) -> bool
+    if e.kind == FLOAT || e.kind == DOUBLE
+        return e.real == 0.0 && 1.0 / e.real > 0.0
+
+    if e.kind == TEXT
+        return e.text == ""
+
+    if e.kind == BYTES
+        return e.data.len() == 0
+    return e.number == 0 && e.unsigned == 0
+
+# The name of the value an event of `kind` holds, as the face names a
+# value's case.
+function value_name(kind: i64) -> str
+    names = [
+        ""
+        "message"
+        "end"
+        "field"
+        "list"
+        "entries"
+        "boolean"
+        "int32"
+        "int64"
+        "uint32"
+        "uint64"
+        "float"
+        "double"
+        "text"
+        "binary"
+        "enumeration"
+    ]
+
+    if kind < 1 || kind > 15
+        return "nothing"
+    return names[kind]
+
+test "value_name: each end, and a kind that is none"
+    assert value_name(MESSAGE) == "message" && value_name(ENUM) == "enumeration" && value_name(0) == "nothing"
+    assert signed(kind: INT64, n: -1).number == -1 && unsigned(kind: UINT64, n: 7).unsigned == 7

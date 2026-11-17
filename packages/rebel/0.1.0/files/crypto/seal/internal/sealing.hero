@@ -1,0 +1,200 @@
+# The work of `crypto/seal`: a key made, a text sealed and opened, through
+# the floor `crypto/hero_crypto`, each answer turned into a `T?`. A secret's
+# bytes cross to C in a cell this module makes, which it overwrites with
+# zeros once C has copied them, so the language's copy of a key or of a text
+# does not outlive the call.
+
+use crypto/hero_crypto
+use crypto/seal/internal/failure
+
+# The floor's number of an algorithm, `HERO_CRYPTO_*`.
+function kind_of(name: str) -> i64
+    if name == "aes_128_gcm"
+        return hero_crypto.HERO_CRYPTO_AES_128_GCM
+
+    if name == "aes_256_gcm"
+        return hero_crypto.HERO_CRYPTO_AES_256_GCM
+    return hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305
+
+# The bytes of a key of the algorithm named `name`: 16 for AES-128-GCM, 32
+# for the others.
+function size_of(name: str) -> i64
+    if name == "aes_128_gcm"
+        return 16
+    return 32
+
+# `xs`'s length as the floor counts it.
+function length_u64(xs: [u8] lent) -> u64
+    return to_u64(xs.len()).must()
+
+# Every byte of the caller's `cell` overwritten with 0, in place.
+function wiped(@cell: [u8])
+    at: i64 @= 0
+
+    while at < cell.len()
+        cell[at] @ 0
+        at @ at + 1
+
+# A new key of the algorithm `name` names, drawn by the system.
+function generate(name: str) -> hero_crypto.Key?
+    made = hero_crypto.generate(kind: kind_of(name), bits: 0)
+
+    if made == nullptr
+        return failure.last(asked: "making an " + name + " key")
+    return ok(made)
+
+# A key of the algorithm `name` names from `secret`'s bytes, which C copies;
+# the cell that lent them is overwritten before this answers.
+function from_secret(name: str, secret: [u8]) -> hero_crypto.Key?
+    asked = "making an " + name + " key from " + to_str(secret.len()) + " bytes"
+
+    if secret.len() != size_of(name)
+        return failure.of(code: failure.INVALID, asked: asked, why: "the key is " + to_str(size_of(name)) + " bytes")
+    cell: [u8] @= secret
+    made = hero_crypto.from_secret(kind: kind_of(name), @cell, count: length_u64(cell))
+    wiped(@cell)
+
+    if made == nullptr
+        return failure.last(asked: asked)
+    return ok(made)
+
+# `text` sealed under `key` with `associated`: a nonce, the ciphertext and
+# the tag. The text's cell is overwritten once sealed.
+function seal(key: hero_crypto.Key, text: [u8], associated: [u8]) -> [u8]?
+    asked = "sealing " + to_str(text.len()) + " bytes"
+
+    if key == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    plain: [u8] @= text
+    beside: [u8] @= associated
+    out: [u8] @= []
+    whole = length_u64(plain) + hero_crypto.HERO_CRYPTO_NONCE_BYTES + hero_crypto.HERO_CRYPTO_TAG_BYTES
+    written = hero_crypto.seal(
+        key,
+        text: @plain,
+        text_count: length_u64(plain),
+        associated: @beside,
+        associated_count: length_u64(beside),
+        buffer: @out,
+        count: whole
+    )
+    wiped(@plain)
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out)
+
+# The text `sealed` holds, opened under `key` with `associated`; never a
+# byte of it where its tag does not hold.
+function open(key: hero_crypto.Key, sealed: [u8], associated: [u8]) -> [u8]?
+    asked = "opening " + to_str(sealed.len()) + " sealed bytes"
+
+    if key == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+
+    if sealed.len() < 28
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "sealed bytes hold a nonce of 12 and a tag of 16 at the least"
+        )
+    held: [u8] @= sealed
+    beside: [u8] @= associated
+    out: [u8] @= []
+    written = hero_crypto.open(
+        key,
+        sealed: @held,
+        sealed_count: length_u64(held),
+        associated: @beside,
+        associated_count: length_u64(beside),
+        buffer: @out,
+        count: length_u64(held) - 28
+    )
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out)
+
+# Closes the key in the caller's place and empties the place.
+function close(@key: hero_crypto.Key) -> ()?
+    if key == nullptr
+        return failure.of(code: failure.CLOSED, asked: "closing a key", why: "it is closed already")
+    answer = hero_crypto.close(@key)
+    key @ nullptr
+
+    if answer != 0
+        return failure.last(asked: "closing a key")
+    return ok()
+
+## Tests
+
+test "kind_of and size_of: each algorithm's floor number and key length"
+    assert kind_of("aes_128_gcm") == hero_crypto.HERO_CRYPTO_AES_128_GCM
+    assert kind_of("aes_256_gcm") == hero_crypto.HERO_CRYPTO_AES_256_GCM
+    assert kind_of("chacha20_poly1305") == hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305
+    assert size_of("aes_128_gcm") == 16
+    assert size_of("aes_256_gcm") == 32
+    assert size_of("chacha20_poly1305") == 32
+
+test "wiped: an empty cell, one byte, and many bytes left zero"
+    none: [u8] @= []
+    wiped(@none)
+    assert none.len() == 0
+    one: [u8] @= [255]
+    wiped(@one)
+    assert one == [0]
+    many: [u8] @= [1, 2, 3, 4, 5]
+    wiped(@many)
+    assert many == [0, 0, 0, 0, 0]
+
+test "from_secret: a secret of the wrong length is invalid before the floor is asked, and no algorithm here is unsupported but where the platform lacks it"
+    match from_secret(name: "aes_128_gcm", secret: [1, 2, 3])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "making an aes_128_gcm key from 3 bytes: the key is 16 bytes"
+
+    secret: [u8] = [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+
+    match from_secret(name: "aes_128_gcm", secret: secret)
+        .ok k =>
+            key @= k
+            assert hero_crypto.offers(hero_crypto.HERO_CRYPTO_AES_128_GCM) == 1
+            assert close(@key).is_err() == false
+        .err e =>
+            assert e.code == failure.UNSUPPORTED
+            assert hero_crypto.offers(hero_crypto.HERO_CRYPTO_AES_128_GCM) == 0
+
+test "seal and open: a closed key, fewer than 28 bytes, and a round trip where the platform seals"
+    none: hero_crypto.Key = nullptr
+
+    match seal(key: none, text: [1], associated: [])
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    match open(key: none, sealed: [1], associated: [])
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    match generate("chacha20_poly1305")
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok k =>
+            key @= k
+
+            match open(key: key, sealed: [1, 2, 3], associated: [])
+                .ok _  => assert false
+                .err e => assert e.msg == "opening 3 sealed bytes: sealed bytes hold a nonce of 12 and a tag of 16 at the least"
+
+            sealed = seal(key: key, text: [1, 2, 3], associated: [4]).must()
+            assert sealed.len() == 31
+            assert open(key: key, sealed: sealed, associated: [4]).must() == [1, 2, 3]
+            assert close(@key).is_err() == false
+
+test "close: a place emptied already is closed"
+    key: hero_crypto.Key @= nullptr
+
+    match close(@key)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.CLOSED
+            assert e.msg == "closing a key: it is closed already"

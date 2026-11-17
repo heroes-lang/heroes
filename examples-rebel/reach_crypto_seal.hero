@@ -1,0 +1,8 @@
+# Reaches Rebel's `crypto/seal`, so that `heroes test` on this file runs
+# the package's tests and its examples (spec § 12). It prints whether this
+# machine's own cryptography seals with AES-256-GCM.
+
+use <rebel>/crypto/seal
+
+function main()
+    print(seal.is_available(.aes_256_gcm))

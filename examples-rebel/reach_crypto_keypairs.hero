@@ -1,0 +1,8 @@
+# Reaches Rebel's `crypto/keypairs`, so that `heroes test` on this file runs
+# the package's tests and its examples (spec § 12). It prints whether this
+# machine's own cryptography makes Ed25519 keys.
+
+use <rebel>/crypto/keypairs
+
+function main()
+    print(keypairs.is_available(.ed25519))

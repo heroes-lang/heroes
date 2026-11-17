@@ -632,10 +632,11 @@ capability ipv6/available  whether the machine has IPv6
   python  socket.has_ipv6, socket.has_dualstack_ipv6
 
 capability unix/sockets  sockets of the local machine named by a path
-  heroes  refused: `net`'s area is TCP, UDP, names and addresses (README § A1); a local socket is a path of the system and no floor binds one
+  heroes  refused: `net`'s area is TCP, UDP, names and addresses (README § A1); a local socket is `ipc`'s (README § A1, layer 4)
   go      net.DialUnix, net.ListenUnix, net.ListenUnixgram, net.ResolveUnixAddr, net.UnixAddr, net.UnixAddr.Network, net.UnixAddr.String, net.UnixConn, net.UnixConn.Close, net.UnixConn.CloseRead, net.UnixConn.CloseWrite, net.UnixConn.File, net.UnixConn.LocalAddr, net.UnixConn.Read, net.UnixConn.ReadFrom, net.UnixConn.ReadFromUnix, net.UnixConn.ReadMsgUnix, net.UnixConn.RemoteAddr, net.UnixConn.SetDeadline, net.UnixConn.SetReadBuffer, net.UnixConn.SetReadDeadline, net.UnixConn.SetWriteBuffer, net.UnixConn.SetWriteDeadline, net.UnixConn.SyscallConn, net.UnixConn.Write, net.UnixConn.WriteMsgUnix, net.UnixConn.WriteTo, net.UnixConn.WriteToUnix, net.UnixListener, net.UnixListener.Accept, net.UnixListener.AcceptUnix, net.UnixListener.Addr, net.UnixListener.Close, net.UnixListener.File, net.UnixListener.SetDeadline, net.UnixListener.SetUnlinkOnClose, net.UnixListener.SyscallConn
   rust    -
   python  socket.AF_UNIX, socket.send_fds, socket.recv_fds
+  note    `ipc` holds them since 2026-11-17: `ipc.listen`, `ipc.accept`, `ipc.connect`, `ipc.close_listener`, `ipc.set_deadline`, `ipc.close_write`, `ipc.peer_of`, and Linux's abstract names; `ipc.ledger`'s blocks `ipc/listen-path` to `ipc/datagrams` place every entry above, the datagrams and the passing of descriptors pending there
 
 capability ip/raw  raw IP packets sent and received
   heroes  refused: they need privileges, and no floor binds a raw socket

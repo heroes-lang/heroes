@@ -1,0 +1,310 @@
+# The tokens of a `.proto` file: identifiers, numbers, string literals with
+# their escapes read, and symbols, each with its line and column; comments and
+# white space are passed over. Every pass of the loop moves at least one byte.
+
+# An identifier, `message` and `int32` included.
+constant IDENT: i64
+    1
+
+# An integer: decimal, octal with a leading 0, or hexadecimal.
+constant INT: i64
+    2
+
+# A number with a fraction or an exponent.
+constant FLOAT: i64
+    3
+
+# A string literal, its escapes read into `data`.
+constant STRING: i64
+    4
+
+# A symbol: one byte of `{}[]()<>;,=.-+:/`.
+constant SYMBOL: i64
+    5
+
+# The end of the text.
+constant END: i64
+    6
+
+# One token.
+record Token
+    # `IDENT` to `END`.
+    kind: i64
+    # The token as written, a string's quotes included.
+    text: str
+    # A string literal's bytes.
+    data: [u8]
+    # The line, from 1.
+    line: i64
+    # The column, from 1, in bytes.
+    column: i64
+
+# Whether `c` may begin an identifier.
+function is_letter(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
+
+# Whether `c` is a decimal digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# The value of the hexadecimal digit `c`, or -1.
+function hex_value(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c - 'a').must() + 10
+
+    if c >= 'A' && c <= 'F'
+        return to_i64(c - 'A').must() + 10
+    return -1
+
+# The place `name:line:column:` that opens a message.
+function where(name: str, line: i64, column: i64) -> str
+    return f"{name}:{line}:{column}"
+
+# Writes the code point `cp` as UTF-8 at the end of `to`.
+function push_utf8(@to: [u8], cp: i64)
+    if cp < 0x80
+        to @ to.push(to_u8(cp).must())
+    else if cp < 0x800
+        to @ to.push(to_u8(0xc0 | cp >> 6).must())
+        to @ to.push(to_u8(0x80 | cp & 0x3f).must())
+    else if cp < 0x10000
+        to @ to.push(to_u8(0xe0 | cp >> 12).must())
+        to @ to.push(to_u8(0x80 | cp >> 6 & 0x3f).must())
+        to @ to.push(to_u8(0x80 | cp & 0x3f).must())
+    else
+        to @ to.push(to_u8(0xf0 | cp >> 18).must())
+        to @ to.push(to_u8(0x80 | cp >> 12 & 0x3f).must())
+        to @ to.push(to_u8(0x80 | cp >> 6 & 0x3f).must())
+        to @ to.push(to_u8(0x80 | cp & 0x3f).must())
+
+# The tokens of `text`, the file `name`, ending with one `END`.
+function tokens(name: str, text: str) -> [Token]?
+    out: [Token] @= []
+    at: i64 @= 0
+    line: i64 @= 1
+    line_start: i64 @= 0
+    nothing: [u8] = []
+
+    while at < text.len()
+        c = text[at]
+        column = at - line_start + 1
+
+        if c == '\n'
+            at @ at + 1
+            line @ line + 1
+            line_start @ at
+        else if c == ' ' || c == '\t' || c == '\r' || c == 0x0b || c == 0x0c
+            at @ at + 1
+        else if c == '/' && at + 1 < text.len() && text[at + 1] == '/'
+            while at < text.len() && text[at] != '\n'
+                at @ at + 1
+        else if c == '/' && at + 1 < text.len() && text[at + 1] == '*'
+            at @ at + 2
+            closed: bool @= false
+
+            while at < text.len() && !closed
+                if text[at] == '*' && at + 1 < text.len() && text[at + 1] == '/'
+                    closed @ true
+                    at @ at + 2
+                else
+                    if text[at] == '\n'
+                        line @ line + 1
+                        line_start @ at + 1
+                    at @ at + 1
+
+            if !closed
+                return fail(code: "invalid", msg: f"{where(name, line: line, column: column)}: a comment is not closed")
+        else if is_letter(c)
+            start = at
+
+            while at < text.len() && (is_letter(text[at]) || is_digit(text[at]))
+                at @ at + 1
+
+            out @ out.push(
+                Token(kind: IDENT, text: text.slice(from: start, to: at), data: nothing, line: line, column: column)
+            )
+        else if is_digit(c) || c == '.' && at + 1 < text.len() && is_digit(text[at + 1])
+            start = at
+            is_float: bool @= false
+
+            if c == '0' && at + 1 < text.len() && (text[at + 1] == 'x' || text[at + 1] == 'X')
+                at @ at + 2
+
+                while at < text.len() && hex_value(text[at]) >= 0
+                    at @ at + 1
+            else
+                while at < text.len() && (is_digit(text[at]) || text[at] == '.')
+                    if text[at] == '.'
+                        is_float @ true
+                    at @ at + 1
+
+                if at < text.len() && (text[at] == 'e' || text[at] == 'E')
+                    is_float @ true
+                    at @ at + 1
+
+                    if at < text.len() && (text[at] == '+' || text[at] == '-')
+                        at @ at + 1
+
+                    while at < text.len() && is_digit(text[at])
+                        at @ at + 1
+
+            if at < text.len() && (is_letter(text[at]) || text[at] == '.')
+                return fail(
+                    code: "invalid",
+                    msg: f"{where(name, line: line, column: column)}: a number runs into \"{text.slice(from: at, to: at + 1)}\""
+                )
+
+            kind = if is_float
+                FLOAT
+            else
+                INT
+            out @ out.push(
+                Token(kind: kind, text: text.slice(from: start, to: at), data: nothing, line: line, column: column)
+            )
+        else if c == '"' || c == '\''
+            start = at
+            at @ at + 1
+            data: [u8] @= []
+            closed: bool @= false
+
+            while at < text.len() && !closed
+                b = text[at]
+
+                if b == c
+                    closed @ true
+                    at @ at + 1
+                else if b == '\n'
+                    return fail(
+                        code: "invalid",
+                        msg: f"{where(name, line: line, column: column)}: a string runs to the end of its line"
+                    )
+                else if b != '\\'
+                    data @ data.push(b)
+                    at @ at + 1
+                else if at + 1 >= text.len()
+                    at @ at + 1
+                else
+                    e = text[at + 1]
+                    at @ at + 2
+
+                    if e == 'n'
+                        data @ data.push('\n')
+                    else if e == 't'
+                        data @ data.push('\t')
+                    else if e == 'r'
+                        data @ data.push('\r')
+                    else if e == 'a'
+                        data @ data.push(0x07)
+                    else if e == 'b'
+                        data @ data.push(0x08)
+                    else if e == 'f'
+                        data @ data.push(0x0c)
+                    else if e == 'v'
+                        data @ data.push(0x0b)
+                    else if e == '\\' || e == '\'' || e == '"' || e == '?'
+                        data @ data.push(e)
+                    else if e == 'x' || e == 'X'
+                        v: i64 @= 0
+                        digits: i64 @= 0
+
+                        while digits < 2 && at < text.len() && hex_value(text[at]) >= 0
+                            v @ v * 16 + hex_value(text[at])
+                            digits @ digits + 1
+                            at @ at + 1
+
+                        if digits == 0
+                            return fail(
+                                code: "invalid",
+                                msg: f"{where(name, line: line, column: column)}: `\\x` with no hexadecimal digit after it"
+                            )
+                        data @ data.push(to_u8(v).must())
+                    else if e >= '0' && e <= '7'
+                        v: i64 @= to_i64(e - '0').must()
+                        digits: i64 @= 1
+
+                        while digits < 3 && at < text.len() && text[at] >= '0' && text[at] <= '7'
+                            v @ v * 8 + to_i64(text[at] - '0').must()
+                            digits @ digits + 1
+                            at @ at + 1
+
+                        if v > 255
+                            return fail(
+                                code: "invalid",
+                                msg: f"{where(name, line: line, column: column)}: an octal escape past 255"
+                            )
+                        data @ data.push(to_u8(v).must())
+                    else if e == 'u' || e == 'U'
+                        width = if e == 'u'
+                            4
+                        else
+                            8
+                        v: i64 @= 0
+
+                        for _ in range(from: 0, to: width)
+                            if at >= text.len() || hex_value(text[at]) < 0
+                                return fail(
+                                    code: "invalid",
+                                    msg: f"{where(name, line: line, column: column)}: `\\{text.slice(from: at - 1, to: at)}` needs {width} hexadecimal digits"
+                                )
+                            v @ v * 16 + hex_value(text[at])
+                            at @ at + 1
+
+                        if v > 0x10ffff || v >= 0xd800 && v <= 0xdfff
+                            return fail(
+                                code: "invalid",
+                                msg: f"{where(name, line: line, column: column)}: U+{v} is no character"
+                            )
+                        push_utf8(@data, v)
+                    else
+                        return fail(
+                            code: "invalid",
+                            msg: f"{where(name, line: line, column: column)}: an escape that is none, after a backslash"
+                        )
+
+            if !closed
+                return fail(code: "invalid", msg: f"{where(name, line: line, column: column)}: a string is not closed")
+            out @ out.push(
+                Token(kind: STRING, text: text.slice(from: start, to: at), data: data, line: line, column: column)
+            )
+        else if c == '{' || c == '}' || c == '[' || c == ']' || c == '(' || c == ')' || c == '<' || c == '>' || c == ';' || c == ',' || c == '=' || c == '.' || c == '-' || c == '+' || c == ':' || c == '/'
+            out @ out.push(
+                Token(kind: SYMBOL, text: text.slice(from: at, to: at + 1), data: nothing, line: line, column: column)
+            )
+            at @ at + 1
+        else
+            shown = if c < 0x80
+                f"\"{text.slice(from: at, to: at + 1)}\""
+            else
+                "a byte past ASCII"
+            return fail(
+                code: "invalid",
+                msg: f"{where(name, line: line, column: column)}: {shown} stands where no token begins"
+            )
+
+    out @ out.push(Token(kind: END, text: "", data: nothing, line: line, column: at - line_start + 1))
+    return ok(out)
+
+test "tokens: identifiers, numbers of every base, symbols, and comments passed over"
+    got = tokens(name: "a.proto", text: "message M { // c\n  int32 x = 0x1F; /* b\n */ double y = 1.5e3; }").must()
+    texts: [str] @= []
+
+    for t in got
+        texts @ texts.push(t.text)
+
+    assert texts == ["message", "M", "{", "int32", "x", "=", "0x1F", ";", "double", "y", "=", "1.5e3", ";", "}", ""]
+    assert got[3].line == 2 && got[3].column == 3 && got[11].kind == FLOAT && got[6].kind == INT
+    assert got[14].kind == END
+
+test "tokens: string escapes of every kind, and a character past ASCII"
+    got = tokens(name: "a.proto", text: "\"a\\n\\x41\\101\\u00e9\\U0001F600\\'\" 'b\"'").must()
+    assert got[0].data == [0x61, 0x0a, 0x41, 0x41, 0xc3, 0xa9, 0xf0, 0x9f, 0x98, 0x80, 0x27]
+    assert got[1].data == [0x62, 0x22]
+
+test "tokens: a string not closed, an escape that is none, a comment not closed, and a stray byte"
+    for text in ["\"abc", "\"a\nb\"", "\"\\q\"", "/* x", "#", "1x", "\"\\x\""]
+        match tokens(name: "f.proto", text: text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 8) == "f.proto:"
